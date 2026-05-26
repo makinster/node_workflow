@@ -60,3 +60,4 @@ Think of the project as a factory floor with a control room:
 
 For deeper architecture detail, see `docs/ARCHITECTURE.md`.
 For component responsibilities, data trades, signals, and execution scenarios, see `docs/SIGNAL_FLOW.md`.
+For the Python v0.5 proof-of-concept build plan and phase breakdown, see `docs/V05_BUILD_PLAN.md`.

@@ -1,0 +1,45 @@
+"""
+Event definitions for the AttackOfTheNodes event bus.
+
+Event names are strings for simple publish/subscribe dispatch. State values
+are enums so typos in state transitions are easier to catch.
+"""
+
+from enum import Enum
+
+
+WORKFLOW_STATE_UPDATE = "WORKFLOW_STATE_UPDATE"
+WORKFLOW_DIRTY = "WORKFLOW_DIRTY"
+
+SUPERVISOR_REGISTER = "SUPERVISOR_REGISTER"
+SUPERVISOR_TERMINATING = "SUPERVISOR_TERMINATING"
+SUPERVISOR_STATE_UPDATE = "SUPERVISOR_STATE_UPDATE"
+SUPERVISOR_REQUEST_BRANCH = "SUPERVISOR_REQUEST_BRANCH"
+SUPERVISOR_ERROR = "SUPERVISOR_ERROR"
+
+USER_INPUT_NEEDED = "USER_INPUT_NEEDED"
+ERROR_OCCURRED = "ERROR_OCCURRED"
+
+MEMORY_UPDATE = "MEMORY_UPDATE"
+OUTPUT_UPDATE = "OUTPUT_UPDATE"
+
+
+class WorkflowState(str, Enum):
+    """Overall workflow run state, owned by MasterState."""
+
+    IDLE = "IDLE"
+    RUNNING = "RUNNING"
+    PAUSED = "PAUSED"
+    WAITING_FOR_INPUT = "WAITING_FOR_INPUT"
+    FINISHED = "FINISHED"
+    ERROR = "ERROR"
+
+
+class SupervisorState(str, Enum):
+    """State of an individual supervisor walking one branch."""
+
+    IDLE = "IDLE"
+    RUNNING = "RUNNING"
+    WAITING_FOR_INPUT = "WAITING_FOR_INPUT"
+    ERROR = "ERROR"
+    TERMINATED = "TERMINATED"
