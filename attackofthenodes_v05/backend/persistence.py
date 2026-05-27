@@ -12,6 +12,10 @@ from typing import Any, Dict, List, Optional
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 WORKFLOWS_DIR = _PROJECT_ROOT / "workflows"
+RUN_HISTORY_DIR = _PROJECT_ROOT / "run_history"
+RUN_ERRORS_DIR = _PROJECT_ROOT / "run_errors"
+SETTINGS_DIR = _PROJECT_ROOT / "settings"
+RUN_OUTPUTS_DIR = _PROJECT_ROOT / "run_outputs"
 
 
 def save_workflow(workflow_id: str, workflow_data: Dict[str, Any]) -> None:
@@ -66,3 +70,37 @@ def delete_workflow(workflow_id: str) -> bool:
 def workflow_exists(workflow_id: str) -> bool:
     """Return True when a workflow file exists on disk."""
     return (WORKFLOWS_DIR / f"{workflow_id}.json").exists()
+
+
+def save_json_record(directory: Path, record_id: str, data: Dict[str, Any]) -> None:
+    """Save an arbitrary JSON record under a project data directory."""
+    directory.mkdir(exist_ok=True)
+    file_path = directory / f"{record_id}.json"
+    with open(file_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+
+
+def load_json_record(directory: Path, record_id: str) -> Optional[Dict[str, Any]]:
+    """Load an arbitrary JSON record."""
+    file_path = directory / f"{record_id}.json"
+    if not file_path.exists():
+        return None
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (json.JSONDecodeError, OSError) as exc:
+        print(f"Error loading record {file_path}: {exc}")
+        return None
+
+
+def list_json_records(directory: Path) -> List[Dict[str, Any]]:
+    """List arbitrary JSON records in a project data directory."""
+    directory.mkdir(exist_ok=True)
+    records: List[Dict[str, Any]] = []
+    for file_path in directory.glob("*.json"):
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                records.append(json.load(f))
+        except (json.JSONDecodeError, OSError) as exc:
+            print(f"Error reading record {file_path}: {exc}")
+    return records

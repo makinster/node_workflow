@@ -26,4 +26,4 @@ class StartNode(Node):
 
     async def execute(self, context: NodeContext) -> None:
         greeting = self.config.get("greeting", "Workflow started")
-        context.signal_done({"data": {"message": greeting}, "next_node_id": None})
+        context.signal_done({"data": {"default": greeting}, "next_node_id": None})

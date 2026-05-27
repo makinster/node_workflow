@@ -25,11 +25,19 @@ if TYPE_CHECKING:
 
 @dataclass
 class NodeContext:
-    """Execution context passed to a node's execute method."""
+    """
+    Execution context passed to a node's execute method.
+
+    The supervisor populates inputs before calling execute() by reading each
+    input port's connected upstream output from the memory bank's transient
+    store. Nodes read inputs through this dict instead of resolving graph
+    connections themselves.
+    """
 
     node_id: str
     branch_id: str
     run_id: str
+    inputs: Dict[str, Any]
     memory_bank: "MemoryBank"
     signal_done: Callable[[Dict[str, Any]], None]
     signal_error: Callable[[Exception], None]

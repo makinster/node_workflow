@@ -1,4 +1,4 @@
-"""Text Output Node: placeholder for Phase 2 execution logic."""
+"""Text Output Node: reads input, formats it, and appends to output log."""
 
 from typing import Any, ClassVar, Dict, List
 
@@ -6,11 +6,11 @@ from ..node_base import Node, NodeContext
 
 
 class TextOutputNode(Node):
-    """Processes an input value and appends formatted text to the output log."""
+    """Formats input through a template and records the result."""
 
     node_type: ClassVar[str] = "text_output_node"
     display_name: ClassVar[str] = "Text Output"
-    description: ClassVar[str] = "Processes input and produces text output"
+    description: ClassVar[str] = "Formats input through a template and logs it"
 
     input_ports: ClassVar[List[str]] = ["input"]
     output_ports: ClassVar[List[str]] = ["default"]
@@ -18,6 +18,8 @@ class TextOutputNode(Node):
     default_config: ClassVar[Dict[str, Any]] = {
         "label": "Output",
         "template": "{input}",
+        "request_user_input": False,
+        "prompt": "Enter a value:",
     }
     config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {
         "label": {
@@ -27,10 +29,42 @@ class TextOutputNode(Node):
         },
         "template": {
             "type": "string",
-            "description": "Format string with {input} placeholder",
+            "description": "str.format template with {input} placeholder",
             "required": True,
+        },
+        "request_user_input": {
+            "type": "boolean",
+            "description": "Pause and prompt the user before producing output",
+            "required": False,
+        },
+        "prompt": {
+            "type": "string",
+            "description": "Prompt text shown when requesting user input",
+            "required": False,
         },
     }
 
     async def execute(self, context: NodeContext) -> None:
-        context.signal_error(NotImplementedError("TextOutputNode arrives in Phase 2"))
+        label = self.config.get("label", "Output")
+        template = self.config.get("template", "{input}")
+        request_input = self.config.get("request_user_input", False)
+        prompt = self.config.get("prompt", "Enter a value:")
+
+        input_value = context.inputs.get("input", "")
+        if request_input:
+            input_value = await context.signal_waiting_for_input(prompt)
+
+        try:
+            formatted = template.format(input=input_value)
+        except (KeyError, IndexError, ValueError) as exc:
+            context.signal_error(
+                ValueError(f"Template formatting failed in {context.node_id}: {exc}")
+            )
+            return
+
+        full_output = f"[{label}] {formatted}"
+        log = list(context.memory_bank.read_persistent("output_log", default=[]))
+        log.append(full_output)
+        context.memory_bank.store_persistent("output_log", log)
+
+        context.signal_done({"data": {"default": full_output}, "next_node_id": None})

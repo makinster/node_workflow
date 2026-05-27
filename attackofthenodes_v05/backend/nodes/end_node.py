@@ -1,4 +1,4 @@
-"""End Node: placeholder for Phase 2 execution logic."""
+"""End Node: terminates a branch and records a completion message."""
 
 from typing import Any, ClassVar, Dict, List
 
@@ -25,4 +25,16 @@ class EndNode(Node):
     }
 
     async def execute(self, context: NodeContext) -> None:
-        context.signal_error(NotImplementedError("EndNode arrives in Phase 2"))
+        message = self.config.get("message", "Branch completed")
+        input_value = context.inputs.get("input", "")
+
+        if input_value:
+            full = f"[END] {message} (received: {input_value})"
+        else:
+            full = f"[END] {message}"
+
+        log = list(context.memory_bank.read_persistent("output_log", default=[]))
+        log.append(full)
+        context.memory_bank.store_persistent("output_log", log)
+
+        context.signal_done({"data": {}, "next_node_id": None})

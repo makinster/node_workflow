@@ -16,3 +16,15 @@ Thumbs.db
 *.log
 .tmp/
 tmp/
+
+# AttackOfTheNodes runtime data
+attackofthenodes_v05/logs/
+attackofthenodes_v05/settings/*.json
+attackofthenodes_v05/run_errors/*.json
+attackofthenodes_v05/run_history/*.json
+attackofthenodes_v05/run_outputs/*.json
+attackofthenodes_v05/workflows/*.json
+!attackofthenodes_v05/workflows/.gitkeep
+
+# Local workflow import/export scratch files
+attackofthenodes_v05/_*_test.json
