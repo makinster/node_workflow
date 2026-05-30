@@ -30,3 +30,17 @@
 - Verification:
   - `python -m compileall -q .`
   - `python -m pytest tests/test_debug_nodes.py -v`
+
+## 2026-05-30 — Phase 3 Membank I/O + Registry
+
+- Removed port-edge mutation controls from `NodeConfigScreen`; connections are
+  shown read-only there and remain an editor-path responsibility.
+- Added memory-bank output controls that store `membank_outputs` as id +
+  description records.
+- Added memory-bank input controls that store selected ids in `membank_inputs`.
+- Added a frontend registry helper that scans declared `membank_outputs` and
+  filters downstream-only writers with `WorkflowMap.nodes_reachable_from()`.
+- Added a focused registry/filter regression test.
+- Verification:
+  - `python -m compileall -q .`
+  - `python -m pytest tests/test_debug_nodes.py -v`

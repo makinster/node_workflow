@@ -65,8 +65,8 @@ Add the phase's own tests, confirm green, and append a short entry to
 | 0 | Memory leak fixes | ✅ Done |
 | 1 | Forward-reachability helper | ✅ Done (`dfafea1`) |
 | 2 | Dependency list + validation | ✅ Done |
-| 3 | Membank I/O + registry + descriptions | ⏳ Next |
-| 4 | Delete + insert nodes | ⏳ |
+| 3 | Membank I/O + registry + descriptions | ✅ Done |
+| 4 | Delete + insert nodes | ⏳ Next |
 | 5 | Config tabs | ⏳ |
 | 6 | Breakpoints | ⏳ (floats — see notes) |
 | 7 | Per-node execution timing | ⏳ (floats — see notes) |
@@ -98,6 +98,12 @@ Reused by Phases 3, 8, 9. Suite at 13 tests green.
 derive `input_sources` from incoming connections plus defensive
 `membank_inputs` config reads. Validation flags missing derived node sources and
 missing membank declarations. Suite at 16 tests green.
+
+**Phase 3 — Membank I/O + registry + descriptions.** The node config modal now
+manages memory-bank outputs/inputs separately from core schema config, derives
+the selectable input registry from declared `membank_outputs`, filters
+downstream-only writers via `nodes_reachable_from`, and leaves port-edge editing
+to editor path tools. Suite at 17 tests green.
 
 ---
 
@@ -147,7 +153,7 @@ a frontend registry helper. **Depends on:** 1, 2.
 
 **Decision:** a downstream-writer membank selection is a **warning**, not a hard
 error. **Done when:** the modal manages only membank I/O + core config and the
-registry/filter work from structure with no stored duplication.
+registry/filter work from structure with no stored duplication. ✅ Done.
 
 ### Phase 4 — Delete + Insert Nodes
 **Files:** `frontend/screens/editor.py` + WorkflowMap connect/disconnect.
@@ -245,7 +251,7 @@ correct under uneven, dynamically-spawning branches.
 Phase 0  Memory leak fixes        ✅
 Phase 1  Reachability helper      ✅   → used by 3, 8, 9
 Phase 2  Dependency list + valid. ✅   (needs 1)        → used by 4, 8
-Phase 3  Membank I/O + registry        (needs 1, 2)
+Phase 3  Membank I/O + registry   ✅   (needs 1, 2)
 Phase 4  Delete + insert               (needs 2)
 Phase 5  Config tabs                   (needs 3)
 Phase 6  Breakpoints                   (after 0; floats)

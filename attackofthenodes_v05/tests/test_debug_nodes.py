@@ -589,6 +589,56 @@ def test_validator_flags_missing_membank_input_sources():
 
 
 # ---------------------------------------------------------------------------
+# 17. Membank registry filters downstream-only writers
+# ---------------------------------------------------------------------------
+
+def test_membank_registry_filters_downstream_writers():
+    from frontend.screens.node_config import (
+        build_membank_registry,
+        membank_input_options,
+        normalize_membank_inputs,
+        normalize_membank_outputs,
+    )
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("membank_registry")
+    upstream = wm.add_node("logger_node")
+    consumer = wm.add_node("logger_node")
+    downstream = wm.add_node("logger_node")
+    sibling = wm.add_node("logger_node")
+
+    wm.update_node_config(
+        upstream,
+        {"membank_outputs": [{"id": "session_id", "description": "Session id"}]},
+    )
+    wm.update_node_config(
+        downstream,
+        {"membank_outputs": [{"id": "future_value", "description": "Future"}]},
+    )
+    wm.update_node_config(
+        sibling,
+        {"membank_outputs": [{"id": "sibling_value", "description": "Sibling"}]},
+    )
+    wm.connect(upstream, "default", consumer, "input")
+    wm.connect(consumer, "default", downstream, "input")
+
+    registry = build_membank_registry(wm)
+    assert registry["session_id"]["writers"] == [upstream]
+    assert normalize_membank_outputs(wm.get_node_data(upstream)["config"]) == [
+        {"id": "session_id", "description": "Session id"}
+    ]
+    assert normalize_membank_inputs({"membank_inputs": [{"id": "session_id"}]}) == [
+        "session_id"
+    ]
+
+    option_values = {value for _, value in membank_input_options(wm, consumer)}
+    assert "session_id" in option_values
+    assert "sibling_value" in option_values
+    assert "future_value" not in option_values
+    print("test_membank_registry_filters_downstream_writers PASSED")
+
+
+# ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
 
@@ -610,6 +660,7 @@ if __name__ == "__main__":
         test_save_manager_writes_input_sources,
         test_validator_flags_missing_input_sources,
         test_validator_flags_missing_membank_input_sources,
+        test_membank_registry_filters_downstream_writers,
     ]
     failed = []
     for t in tests:
