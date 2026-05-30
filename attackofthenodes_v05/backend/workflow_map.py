@@ -214,6 +214,34 @@ class WorkflowMap:
                 }
         return None
 
+    def nodes_reachable_from(self, node_id: str) -> set[str]:
+        """Return all node ids reachable by following output connections forward.
+
+        The starting node is excluded from the result, even if a cycle points
+        back to it. Missing connection targets are ignored here; validation owns
+        reporting broken references.
+        """
+        if node_id not in self._nodes:
+            return set()
+
+        reachable: set[str] = set()
+        seen: set[str] = {node_id}
+        stack = [
+            conn.get("target_node_id")
+            for conn in self._nodes[node_id].get("connections", {}).get("outputs", [])
+        ]
+
+        while stack:
+            current_id = stack.pop()
+            if not current_id or current_id in seen or current_id not in self._nodes:
+                continue
+            seen.add(current_id)
+            reachable.add(current_id)
+            for conn in self._nodes[current_id].get("connections", {}).get("outputs", []):
+                stack.append(conn.get("target_node_id"))
+
+        return reachable
+
     def add_node(
         self,
         node_type: str,
