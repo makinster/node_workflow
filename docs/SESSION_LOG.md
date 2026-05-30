@@ -14,3 +14,19 @@
   - `python -m compileall -q .`
   - `python tests/test_debug_nodes.py`
 
+## 2026-05-30 — Phase 2 Dependency List + Validation
+
+- Replaced `docs/MASTER_BUILD_PLAN.md` with the updated build handoff that marks
+  Phase 0 and Phase 1 complete and makes Phase 2/3 sequencing explicit.
+- Installed `pytest` and `pytest-asyncio` in the project venv and added
+  `pytest.ini` with `asyncio_mode = auto`.
+- Added derived `input_sources` to workflow save/export/duplicate data. The
+  cache is derived from node input connections plus defensive reads of
+  `config["membank_inputs"]`.
+- Added validation for missing derived node input sources and missing membank
+  declarations.
+- Added focused tests for save-file `input_sources`, missing node input sources,
+  and missing membank input sources.
+- Verification:
+  - `python -m compileall -q .`
+  - `python -m pytest tests/test_debug_nodes.py -v`

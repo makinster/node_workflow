@@ -10,13 +10,15 @@ obsolete. Backend services remain UI-agnostic; frontend behavior lives under
 ## Active Build Plan
 
 Use `docs/MASTER_BUILD_PLAN.md` as the dependency-ordered plan. Phase 0 memory
-leak fixes are complete. The next unfinished phase after this handoff is Phase 2
+leak fixes are complete. The next unfinished phase after this handoff is Phase 3
 unless `docs/SESSION_LOG.md` says otherwise.
 
 Completed from the master plan:
 
 - Phase 0: Memory leak fixes.
 - Phase 1: `WorkflowMap.nodes_reachable_from(node_id)`.
+- Phase 2: derived `input_sources` at save/export/duplicate and input-source
+  validation.
 
 ## Read First
 
@@ -37,4 +39,3 @@ Completed from the master plan:
 python -m compileall -q .
 python tests/test_debug_nodes.py
 ```
-

@@ -488,6 +488,107 @@ def test_nodes_reachable_from_branching_graph():
 
 
 # ---------------------------------------------------------------------------
+# 14. SaveManager writes derived input_sources
+# ---------------------------------------------------------------------------
+
+def test_save_manager_writes_input_sources():
+    from backend.persistence import delete_workflow, load_workflow
+    from backend.save_manager import SaveManager
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("input_sources_save")
+    start = wm.add_node("start_node")
+    consumer = wm.add_node("logger_node")
+    end = wm.add_node("end_node")
+
+    wm.update_node_config(consumer, {"membank_inputs": ["session_id"]})
+    wm.connect(start, "default", consumer, "input")
+    wm.connect(consumer, "default", end, "input")
+
+    workflow_id = wm.workflow_id
+    try:
+        assert SaveManager(wm).save_current_workflow()
+        saved = load_workflow(workflow_id) or {}
+    finally:
+        delete_workflow(workflow_id)
+
+    sources = saved["nodes"][consumer]["input_sources"]
+    assert {"type": "node", "source_id": start, "port": "default"} in sources
+    assert {"type": "membank", "source_id": "session_id"} in sources
+    assert "input_sources" in saved["nodes"][start]
+    print("test_save_manager_writes_input_sources PASSED")
+
+
+# ---------------------------------------------------------------------------
+# 15. Validator flags missing derived input sources
+# ---------------------------------------------------------------------------
+
+def test_validator_flags_missing_input_sources():
+    from backend.validator import validate_workflow
+
+    _, wm, _, _ = _make_services()
+    factory = wm._factory
+    wm.create_new("input_sources_validation")
+    start = wm.add_node("start_node")
+    consumer = wm.add_node("logger_node")
+    end = wm.add_node("end_node")
+
+    wm.connect(start, "default", consumer, "input")
+    wm.connect(consumer, "default", end, "input")
+    consumer_data = wm.get_node_data(consumer)
+    consumer_data["connections"]["inputs"].append(
+        {
+            "target_port": "input",
+            "source_node_id": "missing_node",
+            "source_port": "default",
+        }
+    )
+
+    result = validate_workflow(wm, factory)
+    assert not result["success"]
+    assert any(
+        err["node_id"] == consumer
+        and "Input source missing node: missing_node" in err["message"]
+        for err in result["errors"]
+    ), result["errors"]
+    print("test_validator_flags_missing_input_sources PASSED")
+
+
+def test_validator_flags_missing_membank_input_sources():
+    from backend.validator import validate_workflow
+
+    _, wm, _, _ = _make_services()
+    factory = wm._factory
+    wm.create_new("membank_validation")
+    start = wm.add_node("start_node")
+    consumer = wm.add_node("logger_node")
+    writer = wm.add_node("logger_node")
+    end = wm.add_node("end_node")
+
+    wm.update_node_config(consumer, {"membank_inputs": ["session_id"]})
+    wm.connect(start, "default", consumer, "input")
+    wm.connect(consumer, "default", end, "input")
+
+    missing_result = validate_workflow(wm, factory)
+    assert any(
+        err["node_id"] == consumer
+        and "Membank input source not declared: session_id" in err["message"]
+        for err in missing_result["errors"]
+    ), missing_result["errors"]
+
+    wm.update_node_config(
+        writer,
+        {"membank_outputs": [{"id": "session_id", "description": "Session id"}]},
+    )
+    declared_result = validate_workflow(wm, factory)
+    assert not any(
+        "Membank input source not declared: session_id" in err["message"]
+        for err in declared_result["errors"]
+    ), declared_result["errors"]
+    print("test_validator_flags_missing_membank_input_sources PASSED")
+
+
+# ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
 
@@ -506,6 +607,9 @@ if __name__ == "__main__":
         test_run_history_respects_memory_cap,
         test_run_history_record_has_no_embedded_outputs,
         test_nodes_reachable_from_branching_graph,
+        test_save_manager_writes_input_sources,
+        test_validator_flags_missing_input_sources,
+        test_validator_flags_missing_membank_input_sources,
     ]
     failed = []
     for t in tests:

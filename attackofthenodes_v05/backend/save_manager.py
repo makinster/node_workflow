@@ -13,6 +13,7 @@ from typing import Any, Dict, Optional
 from .configuration_manager import ConfigurationManager
 from .memory_bank import MemoryBank
 from .persistence import delete_workflow, load_workflow, save_workflow
+from .validator import derive_input_sources
 from .workflow_map import WorkflowMap
 
 
@@ -38,7 +39,9 @@ class SaveManager:
         """Persist the currently loaded workflow."""
         if not self._workflow_map.is_loaded:
             return False
-        data = self._workflow_map.get_workflow_data_for_save()
+        data = self._workflow_data_with_input_sources(
+            self._workflow_map.get_workflow_data_for_save()
+        )
         if options and options.get("include_memory") and self._memory_bank is not None:
             data["memory_state"] = self._memory_bank.get_state()
         save_workflow(data["id"], data)
@@ -62,11 +65,14 @@ class SaveManager:
     def export_workflow(self, workflow_id: str, file_path: str) -> bool:
         """Export a workflow JSON file to an arbitrary path."""
         if workflow_id == self._workflow_map.workflow_id:
-            data = self._workflow_map.get_workflow_data_for_save()
+            data = self._workflow_data_with_input_sources(
+                self._workflow_map.get_workflow_data_for_save()
+            )
         else:
             data = load_workflow(workflow_id)
             if data is None:
                 return False
+            data = self._workflow_data_with_input_sources(data)
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
         return True
@@ -87,11 +93,14 @@ class SaveManager:
         if source_id is None:
             return None
         if source_id == self._workflow_map.workflow_id:
-            data = self._workflow_map.get_workflow_data_for_save()
+            data = self._workflow_data_with_input_sources(
+                self._workflow_map.get_workflow_data_for_save()
+            )
         else:
             data = load_workflow(source_id)
             if data is None:
                 return None
+            data = self._workflow_data_with_input_sources(data)
         new_id = f"wf_{uuid.uuid4().hex[:12]}"
         copy_data = json.loads(json.dumps(data))
         copy_data["id"] = new_id
@@ -110,3 +119,13 @@ class SaveManager:
         removed = delete_workflow(workflow_id)
         self._workflow_map.close_workflow(workflow_id)
         return removed
+
+    def _workflow_data_with_input_sources(
+        self, data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Return workflow save data with derived input source caches."""
+        data = json.loads(json.dumps(data))
+        nodes = data.get("nodes", {})
+        for node_id, sources in derive_input_sources(nodes).items():
+            nodes[node_id]["input_sources"] = sources
+        return data
