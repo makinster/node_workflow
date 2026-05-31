@@ -268,6 +268,7 @@ class EditorScreen(Screen):
                 branch_node_label=label,
                 output_ports=list(row["output_ports"]),
                 active_port=row["active_port"],
+                port_labels=row.get("port_labels", {}),
             ),
             self._select_branch_from_modal,
         )
@@ -285,7 +286,9 @@ class EditorScreen(Screen):
             "active_port": branch_port,
         }
         self.refresh_from_backend()
-        self.app.notify(f"Viewing branch: {branch_port}")
+        branch_node = self.workflow_map.get_node_data(branch_node_id) or {}
+        branch_label = self._branch_port_labels(branch_node).get(branch_port, branch_port)
+        self.app.notify(f"Viewing branch: {branch_label}")
 
     def _connect_new_node(self, source_node_id: str, source_port: str, target_node_id: str) -> None:
         source = self.workflow_map.get_node_data(source_node_id)
@@ -414,6 +417,7 @@ class EditorScreen(Screen):
             return "-"
         pieces = []
         outputs = node.get("connections", {}).get("outputs", [])
+        port_labels = self._branch_port_labels(node)
         for port in ports:
             target_text = "-"
             for conn in outputs:
@@ -422,8 +426,16 @@ class EditorScreen(Screen):
                     target_node = self.workflow_map.get_node_data(target_id) or {}
                     target_text = self._node_label(target_id, target_node)
                     break
-            pieces.append(f"{port} -> {target_text}")
+            label = port_labels.get(port, port)
+            pieces.append(f"{label} -> {target_text}")
         return "; ".join(pieces)
+
+    def _branch_port_labels(self, node: Dict[str, Any]) -> Dict[str, str]:
+        config = node.get("config") or {}
+        return {
+            "path_a": str(config.get("path_a_label") or "Path A"),
+            "path_b": str(config.get("path_b_label") or "Path B"),
+        }
 
     def _select_row(self, row: Optional[Dict[str, Any]]) -> None:
         self.selected_row = row
@@ -463,12 +475,15 @@ class EditorScreen(Screen):
                 if active_port not in output_ports:
                     active_port = output_ports[0]
                 self.active_branch_ports[current_node_id] = active_port
+                port_labels = self._branch_port_labels(node)
                 rows.append(
                     {
                         "kind": "branch_select",
                         "branch_node_id": current_node_id,
                         "active_port": active_port,
+                        "active_label": port_labels.get(active_port, active_port),
                         "output_ports": output_ports,
+                        "port_labels": port_labels,
                     }
                 )
                 current_node_id = self._target_for_port(node, active_port)
@@ -595,10 +610,11 @@ class EditorScreen(Screen):
     def _format_branch_selector_details(self, row: Dict[str, Any]) -> str:
         branch_node = self.workflow_map.get_node_data(row["branch_node_id"]) or {}
         target_id = self._target_for_port(branch_node, row["active_port"])
+        branch_label = row.get("active_label") or row["active_port"]
         lines = [
             "Branch Select",
             f"Branch node: {branch_node.get('alias') or row['branch_node_id']}",
-            f"Selected branch: {row['active_port']}",
+            f"Selected branch: {branch_label}",
             f"Target: {target_id or '-'}",
             "",
             "Press ENTER to choose another branch.",

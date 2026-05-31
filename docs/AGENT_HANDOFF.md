@@ -23,6 +23,17 @@ Completed from the master plan:
 - Phase 4: insert-after-highlight editor behavior and no-cascade tombstone
   deletion.
 
+Recent usability patch:
+
+- Node config modals use text-field-safe bindings only: `Esc`, `Ctrl+S`,
+  `Ctrl+Enter`, and buttons.
+- Memory-bank reads render above core node settings; memory-bank writes render
+  at the bottom.
+- Branch nodes have configurable `path_a_label` and `path_b_label` display
+  names.
+- Node selector filtered lists highlight the first item when tabbing into the
+  list.
+
 ## Read First
 
 - `docs/MASTER_BUILD_PLAN.md` for implementation order and contracts.

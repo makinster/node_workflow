@@ -3,6 +3,7 @@
 from typing import Any, ClassVar, Dict, List
 
 from ..node_base import Node, NodeContext
+from ..node_category import NodeCategory
 
 
 class BranchNode(Node):
@@ -11,6 +12,7 @@ class BranchNode(Node):
     node_type: ClassVar[str] = "branch_node"
     display_name: ClassVar[str] = "Branch"
     description: ClassVar[str] = "Routes execution based on string matching"
+    category: ClassVar[str] = NodeCategory.FLOW
 
     input_ports: ClassVar[List[str]] = ["input"]
     output_ports: ClassVar[List[str]] = ["path_a", "path_b"]
@@ -22,6 +24,8 @@ class BranchNode(Node):
         "case_sensitive": False,
         "on_match": "path_a",
         "on_no_match": "path_b",
+        "path_a_label": "Path A",
+        "path_b_label": "Path B",
     }
     config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {
         "condition": {
@@ -57,7 +61,17 @@ class BranchNode(Node):
             "description": "Output port used when the match fails",
             "required": False,
             "options": ["path_a", "path_b"],
-        }
+        },
+        "path_a_label": {
+            "type": "string",
+            "description": "Editor display name for path_a",
+            "required": False,
+        },
+        "path_b_label": {
+            "type": "string",
+            "description": "Editor display name for path_b",
+            "required": False,
+        },
     }
 
     async def execute(self, context: NodeContext) -> None:

@@ -91,12 +91,6 @@ class NodeConfigScreen(ModalScreen):
 
     BINDINGS = [
         ("escape", "cancel", "Cancel"),
-        ("q", "cancel", "Cancel"),
-        ("w", "focus_previous_field", "Previous"),
-        ("s", "focus_next_field", "Next"),
-        ("a", "focus_previous_field", "Previous"),
-        ("d", "focus_next_field", "Next"),
-        ("e", "save", "Save"),
         ("ctrl+s", "save", "Save"),
         ("ctrl+enter", "save", "Save"),
     ]
@@ -129,18 +123,19 @@ class NodeConfigScreen(ModalScreen):
 
         with Vertical(id="modal-card", classes="node-config-modal"):
             yield Label(f"Edit Node: {self.node_data.get('alias') or self.node_id}", classes="modal-title")
-            yield Static("E save  Esc/Q close  W/S or A/D move focus", classes="modal-help")
+            yield Static("Ctrl+S save  Ctrl+Enter save  Esc close  Tab moves focus", classes="modal-help")
             yield Label("Alias", classes="form-label")
             yield Input(value=self.node_data.get("alias", ""), id="alias-input")
             yield Static(self._format_metadata(metadata), id="node-config-summary")
-            yield form
-            yield Label("Memory Bank Outputs", classes="form-label")
-            yield from self._compose_membank_outputs(config)
             yield Label("Memory Bank Inputs", classes="form-label")
             yield from self._compose_membank_inputs(config)
+            yield Label("Node Settings", classes="form-label")
+            yield form
             yield Label("Connections", classes="form-label")
             yield Static("Connection editing lives in the editor path tools.", classes="form-description")
             yield Static(self._format_connections(), id="connection-summary")
+            yield Label("Memory Bank Outputs", classes="form-label")
+            yield from self._compose_membank_outputs(config)
             with Horizontal(classes="button-row"):
                 yield Button("Save", id="save-node-config", variant="primary")
                 yield Button("Cancel", id="cancel-node-config", variant="default")
@@ -162,12 +157,6 @@ class NodeConfigScreen(ModalScreen):
 
     def action_cancel(self) -> None:
         self.dismiss(None)
-
-    def action_focus_next_field(self) -> None:
-        self.focus_next()
-
-    def action_focus_previous_field(self) -> None:
-        self.focus_previous()
 
     def _metadata_for_type(self, node_type: str) -> Optional[Dict[str, Any]]:
         for item in self.factory.get_node_types_metadata():

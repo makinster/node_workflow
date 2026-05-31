@@ -1,5 +1,22 @@
 # AttackOfTheNodes Session Log
 
+## 2026-05-31 — Config Modal Usability Patch
+
+- Reordered node config modals so memory-bank reads are above core node
+  settings and memory-bank writes are at the bottom.
+- Removed `Q` and other single-letter navigation/save bindings from the
+  text-heavy node config modal so typing in fields works normally.
+- Added branch label config fields (`path_a_label`, `path_b_label`) and editor
+  display support so branch rows can show names instead of raw `path_a/path_b`.
+- Improved node selector keyboard behavior: tab focuses the node list and the
+  top filtered item is highlighted immediately; arrow keys move the highlighted
+  item.
+- Added pass-through defaults to variable writer nodes so utility writes can
+  preserve input as output.
+- Verification:
+  - `python -m compileall -q .`
+  - `python -m pytest tests/test_debug_nodes.py -v`
+
 ## 2026-05-30 — Phase 1 Reachability Helper
 
 - Treated `docs/MASTER_BUILD_PLAN.md` Phase 0 memory-leak fixes as complete.

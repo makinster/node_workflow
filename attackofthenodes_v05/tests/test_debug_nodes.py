@@ -718,6 +718,56 @@ def test_tombstone_delete_does_not_cascade_branch_nodes():
 
 
 # ---------------------------------------------------------------------------
+# 20. Utility memory writers can pass input through
+# ---------------------------------------------------------------------------
+
+def test_set_variable_node_can_pass_input_through():
+    asyncio.run(_test_set_variable_node_can_pass_input_through())
+
+
+async def _test_set_variable_node_can_pass_input_through():
+    master, wm, mb, _ = _make_services()
+    wm.create_new("set_variable_pass_through")
+    start = wm.add_node("start_node")
+    setter = wm.add_node("set_variable_node")
+    logger = wm.add_node("logger_node")
+    end = wm.add_node("end_node")
+
+    wm.update_node_config(start, {"greeting": "original-input"})
+    wm.update_node_config(
+        setter,
+        {
+            "variable_name": "saved",
+            "value_source": "literal",
+            "value": "stored-value",
+            "pass_through": True,
+        },
+    )
+    wm.update_node_config(logger, {"label": "after_set", "include_input": True})
+    wm.connect(start, "default", setter, "input")
+    wm.connect(setter, "default", logger, "input")
+    wm.connect(logger, "default", end, "input")
+
+    await master.start_workflow()
+    await master.wait_for_completion()
+
+    assert mb.read_persistent("saved") == "stored-value"
+    log = [str(entry) for entry in mb.read_persistent("output_log", default=[])]
+    assert any("original-input" in entry for entry in log), log
+    print("test_set_variable_node_can_pass_input_through PASSED")
+
+
+def test_branch_node_default_labels_are_configurable():
+    from backend.nodes.branch_node import BranchNode
+
+    assert BranchNode.default_config["path_a_label"] == "Path A"
+    assert BranchNode.default_config["path_b_label"] == "Path B"
+    assert "path_a_label" in BranchNode.config_schema
+    assert "path_b_label" in BranchNode.config_schema
+    print("test_branch_node_default_labels_are_configurable PASSED")
+
+
+# ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
 
@@ -742,6 +792,8 @@ if __name__ == "__main__":
         test_membank_registry_filters_downstream_writers,
         test_insert_between_rewires_below_source_node,
         test_tombstone_delete_does_not_cascade_branch_nodes,
+        test_set_variable_node_can_pass_input_through,
+        test_branch_node_default_labels_are_configurable,
     ]
     failed = []
     for t in tests:
