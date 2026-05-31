@@ -639,6 +639,85 @@ def test_membank_registry_filters_downstream_writers():
 
 
 # ---------------------------------------------------------------------------
+# 18. Insert-between rewires below the selected source node
+# ---------------------------------------------------------------------------
+
+def test_insert_between_rewires_below_source_node():
+    _, wm, _, _ = _make_services()
+    wm.create_new("insert_between")
+    start = wm.add_node("start_node")
+    highlighted = wm.add_node("logger_node")
+    downstream = wm.add_node("logger_node")
+    inserted = wm.add_node("logger_node")
+
+    wm.connect(start, "default", highlighted, "input")
+    wm.connect(highlighted, "default", downstream, "input")
+
+    old_edge = wm.get_node_data(highlighted)["connections"]["outputs"][0]
+    assert old_edge["target_node_id"] == downstream
+    assert wm.disconnect(
+        highlighted,
+        "default",
+        downstream,
+        old_edge.get("target_port", "input"),
+    )
+    assert wm.connect(highlighted, "default", inserted, "input")
+    assert wm.connect(inserted, "default", downstream, "input")
+
+    highlighted_outputs = wm.get_node_data(highlighted)["connections"]["outputs"]
+    inserted_outputs = wm.get_node_data(inserted)["connections"]["outputs"]
+    downstream_inputs = wm.get_node_data(downstream)["connections"]["inputs"]
+
+    assert highlighted_outputs == [
+        {
+            "source_port": "default",
+            "target_node_id": inserted,
+            "target_port": "input",
+        }
+    ]
+    assert inserted_outputs == [
+        {
+            "source_port": "default",
+            "target_node_id": downstream,
+            "target_port": "input",
+        }
+    ]
+    assert downstream_inputs == [
+        {
+            "target_port": "input",
+            "source_node_id": inserted,
+            "source_port": "default",
+        }
+    ]
+    print("test_insert_between_rewires_below_source_node PASSED")
+
+
+# ---------------------------------------------------------------------------
+# 19. Tombstone delete does not cascade downstream branch nodes
+# ---------------------------------------------------------------------------
+
+def test_tombstone_delete_does_not_cascade_branch_nodes():
+    _, wm, _, _ = _make_services()
+    wm.create_new("delete_no_cascade")
+    start = wm.add_node("start_node")
+    branch = wm.add_node("branch_node")
+    left = wm.add_node("logger_node")
+    right = wm.add_node("logger_node")
+
+    wm.connect(start, "default", branch, "input")
+    wm.connect(branch, "path_a", left, "input")
+    wm.connect(branch, "path_b", right, "input")
+
+    assert wm.replace_with_tombstone(branch)
+    all_nodes = wm.get_all_node_data()
+    assert branch in all_nodes
+    assert all_nodes[branch]["type"] == "tombstone_node"
+    assert left in all_nodes
+    assert right in all_nodes
+    print("test_tombstone_delete_does_not_cascade_branch_nodes PASSED")
+
+
+# ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
 
@@ -661,6 +740,8 @@ if __name__ == "__main__":
         test_validator_flags_missing_input_sources,
         test_validator_flags_missing_membank_input_sources,
         test_membank_registry_filters_downstream_writers,
+        test_insert_between_rewires_below_source_node,
+        test_tombstone_delete_does_not_cascade_branch_nodes,
     ]
     failed = []
     for t in tests:

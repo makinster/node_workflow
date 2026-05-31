@@ -10,7 +10,7 @@ obsolete. Backend services remain UI-agnostic; frontend behavior lives under
 ## Active Build Plan
 
 Use `docs/MASTER_BUILD_PLAN.md` as the dependency-ordered plan. Phase 0 memory
-leak fixes are complete. The next unfinished phase after this handoff is Phase 4
+leak fixes are complete. The next unfinished phase after this handoff is Phase 5
 unless `docs/SESSION_LOG.md` says otherwise.
 
 Completed from the master plan:
@@ -20,6 +20,8 @@ Completed from the master plan:
 - Phase 2: derived `input_sources` at save/export/duplicate and input-source
   validation.
 - Phase 3: membank output/input config sections and structure-derived registry.
+- Phase 4: insert-after-highlight editor behavior and no-cascade tombstone
+  deletion.
 
 ## Read First
 

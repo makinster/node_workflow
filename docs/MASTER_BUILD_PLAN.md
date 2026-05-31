@@ -66,8 +66,8 @@ Add the phase's own tests, confirm green, and append a short entry to
 | 1 | Forward-reachability helper | ✅ Done (`dfafea1`) |
 | 2 | Dependency list + validation | ✅ Done |
 | 3 | Membank I/O + registry + descriptions | ✅ Done |
-| 4 | Delete + insert nodes | ⏳ Next |
-| 5 | Config tabs | ⏳ |
+| 4 | Delete + insert nodes | ✅ Done |
+| 5 | Config tabs | ⏳ Next |
 | 6 | Breakpoints | ⏳ (floats — see notes) |
 | 7 | Per-node execution timing | ⏳ (floats — see notes) |
 | 8 | Completion registry + wait-until node | ⏳ |
@@ -104,6 +104,12 @@ manages memory-bank outputs/inputs separately from core schema config, derives
 the selectable input registry from declared `membank_outputs`, filters
 downstream-only writers via `nodes_reachable_from`, and leaves port-edge editing
 to editor path tools. Suite at 17 tests green.
+
+**Phase 4 — Delete + insert nodes.** Editor `I` now inserts immediately after
+the highlighted node or active branch row, while `A` keeps add-at-tail behavior.
+Insert rewires the old downstream edge through the new node. Delete no longer
+cascades branch subtrees; the tombstone remains as the visible replacement cue.
+Suite at 19 tests green.
 
 ---
 
@@ -167,6 +173,7 @@ registry/filter work from structure with no stored duplication. ✅ Done.
 3. Bind insert to a key (e.g. `i`) with `priority=True`.
 
 **Done when:** both are pure edge ops and validation catches a delete's fallout.
+✅ Done.
 
 ### Phase 5 — Config Tabs
 **Files:** `frontend/widgets/form_generator.py`. **Depends on:** 3.
@@ -252,7 +259,7 @@ Phase 0  Memory leak fixes        ✅
 Phase 1  Reachability helper      ✅   → used by 3, 8, 9
 Phase 2  Dependency list + valid. ✅   (needs 1)        → used by 4, 8
 Phase 3  Membank I/O + registry   ✅   (needs 1, 2)
-Phase 4  Delete + insert               (needs 2)
+Phase 4  Delete + insert          ✅   (needs 2)
 Phase 5  Config tabs                   (needs 3)
 Phase 6  Breakpoints                   (after 0; floats)
 Phase 7  Per-node timing               (after 0; floats)

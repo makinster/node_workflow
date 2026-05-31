@@ -31,6 +31,20 @@
   - `python -m compileall -q .`
   - `python -m pytest tests/test_debug_nodes.py -v`
 
+## 2026-05-30 — Phase 4 Delete + Insert Nodes
+
+- Split editor add/insert intent: `A` keeps add-at-tail behavior, while `I`
+  inserts after the highlighted node or active branch row.
+- Insert rewiring disconnects the highlighted node's old downstream edge,
+  connects highlighted -> new node, then connects new node -> old downstream.
+- Removed cascade subtree deletion from editor delete; tombstones remain as the
+  visible "choose a replacement" cue and downstream branch nodes are retained.
+- Added focused tests for insert-between rewiring and no-cascade tombstone
+  deletion.
+- Verification:
+  - `python -m compileall -q .`
+  - `python -m pytest tests/test_debug_nodes.py -v`
+
 ## 2026-05-30 — Phase 3 Membank I/O + Registry
 
 - Removed port-edge mutation controls from `NodeConfigScreen`; connections are
