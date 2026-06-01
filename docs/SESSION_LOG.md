@@ -1,5 +1,16 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-01 — Visible Dynamic Memory Output Fields
+
+- Changed dynamically revealed memory-bank output rows from a compact horizontal
+  row into stacked full-width fields so Textual does not collapse the inputs
+  while only showing the scrollbar.
+- Added styling for memory-bank output fields and extended the mounted config
+  regression test to assert the revealed fields have visible layout.
+- Verification:
+  - `python -m compileall -q .`
+  - `python -m pytest tests/test_debug_nodes.py -v`
+
 ## 2026-06-01 — Escape Leaves Text Editing
 
 - Updated command-mode text fields so `Esc` exits editing mode and keeps the

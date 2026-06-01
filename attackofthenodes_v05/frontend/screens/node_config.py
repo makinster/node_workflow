@@ -493,21 +493,31 @@ class NodeConfigScreen(ModalScreen):
     def _membank_output_row_widgets(self, outputs: list[Dict[str, str]]) -> list[Any]:
         widgets: list[Any] = []
         for index, current in enumerate(outputs[:MAX_MEMBANK_OUTPUT_ROWS]):
-            widgets.append(Label(f"Output {index + 1}", classes="form-description"))
-            widgets.append(
-                Horizontal(
-                    CommandInput(
-                        value=current.get("id", ""),
-                        id=f"membank-output-id-{index}",
-                        placeholder="memory id",
-                    ),
-                    CommandInput(
-                        value=current.get("description", ""),
-                        id=f"membank-output-desc-{index}",
-                        placeholder="description",
-                    ),
-                    classes="connection-row",
-                )
+            output_number = index + 1
+            id_input = CommandInput(
+                value=current.get("id", ""),
+                id=f"membank-output-id-{index}",
+                placeholder="memory id",
+                classes="membank-output-field",
+            )
+            desc_input = CommandInput(
+                value=current.get("description", ""),
+                id=f"membank-output-desc-{index}",
+                placeholder="description",
+                classes="membank-output-field",
+            )
+            id_input.styles.height = 3
+            id_input.styles.width = "100%"
+            desc_input.styles.height = 3
+            desc_input.styles.width = "100%"
+            widgets.extend(
+                [
+                    Label(f"Output {output_number} memory id", classes="form-description"),
+                    id_input,
+                    Label(f"Output {output_number} description", classes="form-description"),
+                    desc_input,
+                    Static("", classes="membank-output-spacer"),
+                ]
             )
         return widgets
 

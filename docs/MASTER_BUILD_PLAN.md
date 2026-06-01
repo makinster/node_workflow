@@ -416,6 +416,9 @@ Done when:
   save shortcuts.
 - Memory-bank reads belong above core settings; memory-bank writes belong at the
   bottom.
+- Dynamic memory-bank output fields should render as reliable full-width fields
+  in the scrollable config modal; avoid compact row layouts that can collapse in
+  terminal viewports.
 - Branch labels are user-facing names and should replace raw `path_a`/`path_b`
   where the editor displays branch paths.
 - When filtering in add/insert selectors, tabbing into the list should highlight

@@ -79,6 +79,18 @@ Screen {
     overflow-y: auto;
 }
 
+#membank-output-rows {
+    height: auto;
+}
+
+.membank-output-field {
+    width: 100%;
+}
+
+.membank-output-spacer {
+    height: 1;
+}
+
 .modal-title {
     height: 1;
     color: #50c878;

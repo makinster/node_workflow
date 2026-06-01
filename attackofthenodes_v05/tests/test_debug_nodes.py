@@ -1039,7 +1039,7 @@ async def _test_node_config_dynamic_membank_output_rows():
             yield NodeConfigScreen(wm._factory, wm, node_id, node_data)
 
     app = ConfigApp()
-    async with app.run_test():
+    async with app.run_test() as pilot:
         screen = app.query_one(NodeConfigScreen)
         writes = app.query_one("#membank-writes", Checkbox)
         count = app.query_one("#membank-output-count", Input)
@@ -1049,24 +1049,32 @@ async def _test_node_config_dynamic_membank_output_rows():
 
         writes.value = True
         await screen._refresh_membank_output_rows()
+        await pilot.pause()
         assert count.disabled is False
         assert count.value == "1"
-        assert app.query_one("#membank-output-id-0", Input)
+        first_output = app.query_one("#membank-output-id-0", Input)
+        assert first_output
+        assert first_output.has_class("membank-output-field")
+        assert first_output.parent and first_output.parent.id == "membank-output-rows"
+        assert str(first_output.styles.height) == "3"
 
         app.query_one("#membank-output-id-0", Input).value = "first"
         app.query_one("#membank-output-desc-0", Input).value = "First output"
         count.value = "3"
         await screen._refresh_membank_output_rows()
+        await pilot.pause()
 
         output_id_inputs = [
             widget for widget in app.query(Input) if str(widget.id or "").startswith("membank-output-id-")
         ]
         assert len(output_id_inputs) == 3
+        assert all(widget.has_class("membank-output-field") for widget in output_id_inputs)
         assert app.query_one("#membank-output-id-0", Input).value == "first"
         assert app.query_one("#membank-output-desc-0", Input).value == "First output"
 
         count.value = "2"
         await screen._refresh_membank_output_rows()
+        await pilot.pause()
         output_id_inputs = [
             widget for widget in app.query(Input) if str(widget.id or "").startswith("membank-output-id-")
         ]
