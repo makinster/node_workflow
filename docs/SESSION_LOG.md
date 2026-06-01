@@ -1,5 +1,20 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-01 — Long Output Text Areas + Description-First Inputs
+
+- Changed memory-bank output declarations to render bounded multiline text
+  areas for both `Output Description:` and `Output:` so long values wrap safely
+  inside the config modal.
+- Kept backward compatibility with existing `id`-based saved configs while also
+  saving the clearer `output` key for future code.
+- Updated revealed memory-bank input choices to lead with the output
+  description, then show the output key.
+- Extended tests for long descriptions, multiline output fields, saved output
+  data, and `output`-key registry compatibility.
+- Verification:
+  - `python -m compileall -q .`
+  - `python -m pytest tests/test_debug_nodes.py -v`
+
 ## 2026-06-01 — Visible Dynamic Memory Output Fields
 
 - Changed dynamically revealed memory-bank output rows from a compact horizontal

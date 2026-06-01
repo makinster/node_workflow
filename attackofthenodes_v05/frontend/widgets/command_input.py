@@ -13,6 +13,8 @@ class CommandInput(Input):
         super().__init__(*args, **kwargs)
         self.editing = False
         self.add_class("command-input")
+        self.styles.height = 8
+        self.styles.width = "100%"
 
     def begin_edit(self) -> None:
         self.editing = True

@@ -26,12 +26,13 @@ def normalize_membank_outputs(config: Dict[str, Any]) -> list[Dict[str, str]]:
     for entry in outputs:
         if not isinstance(entry, dict):
             continue
-        output_id = str(entry.get("id") or "").strip()
+        output_id = str(entry.get("output") or entry.get("id") or "").strip()
         if not output_id:
             continue
         normalized.append(
             {
                 "id": output_id,
+                "output": output_id,
                 "description": str(entry.get("description") or "").strip(),
             }
         )
@@ -84,7 +85,7 @@ def membank_input_options(workflow_map, current_node_id: str) -> list[tuple[str,
         if writers and writers.issubset(downstream):
             continue
         description = entry.get("description") or "No description"
-        options.append((f"{output_id} - {description}", output_id))
+        options.append((f"Output Description: {description} | Output: {output_id}", output_id))
     return options
 
 
@@ -423,11 +424,15 @@ class NodeConfigScreen(ModalScreen):
             count = 0
         if writes_enabled and count > 0:
             for index in range(min(count, MAX_MEMBANK_OUTPUT_ROWS)):
-                output_id = self.query_one(f"#membank-output-id-{index}", Input).value.strip()
-                description = self.query_one(f"#membank-output-desc-{index}", Input).value.strip()
+                output_id = self._text_widget_value(f"#membank-output-id-{index}")
+                description = self._text_widget_value(f"#membank-output-desc-{index}")
                 if output_id:
                     values["membank_outputs"].append(
-                        {"id": output_id, "description": description}
+                        {
+                            "id": output_id,
+                            "output": output_id,
+                            "description": description,
+                        }
                     )
 
         reads_enabled = self.query_one("#membank-reads", Checkbox).value
@@ -470,8 +475,8 @@ class NodeConfigScreen(ModalScreen):
             if id_query and desc_query:
                 values.append(
                     {
-                        "id": id_query.first().value,
-                        "description": desc_query.first().value,
+                        "id": self._widget_text_value(id_query.first()),
+                        "description": self._widget_text_value(desc_query.first()),
                     }
                 )
             elif index < len(self._initial_membank_outputs):
@@ -494,32 +499,40 @@ class NodeConfigScreen(ModalScreen):
         widgets: list[Any] = []
         for index, current in enumerate(outputs[:MAX_MEMBANK_OUTPUT_ROWS]):
             output_number = index + 1
-            id_input = CommandInput(
-                value=current.get("id", ""),
-                id=f"membank-output-id-{index}",
-                placeholder="memory id",
-                classes="membank-output-field",
-            )
-            desc_input = CommandInput(
-                value=current.get("description", ""),
+            desc_input = CommandTextArea(
+                current.get("description", ""),
                 id=f"membank-output-desc-{index}",
-                placeholder="description",
-                classes="membank-output-field",
+                classes="membank-output-field membank-output-textarea",
             )
-            id_input.styles.height = 3
-            id_input.styles.width = "100%"
-            desc_input.styles.height = 3
+            id_input = CommandTextArea(
+                current.get("id", ""),
+                id=f"membank-output-id-{index}",
+                classes="membank-output-field membank-output-textarea",
+            )
+            desc_input.placeholder = "Describe what this output contains"
+            id_input.placeholder = "Memory-bank output key or output value"
+            desc_input.styles.height = 6
             desc_input.styles.width = "100%"
+            id_input.styles.height = 6
+            id_input.styles.width = "100%"
             widgets.extend(
                 [
-                    Label(f"Output {output_number} memory id", classes="form-description"),
-                    id_input,
-                    Label(f"Output {output_number} description", classes="form-description"),
+                    Label(f"Output {output_number} Description:", classes="form-description"),
                     desc_input,
+                    Label(f"Output {output_number}:", classes="form-description"),
+                    id_input,
                     Static("", classes="membank-output-spacer"),
                 ]
             )
         return widgets
+
+    def _text_widget_value(self, selector: str) -> str:
+        return self._widget_text_value(self.query_one(selector))
+
+    def _widget_text_value(self, widget) -> str:
+        if isinstance(widget, TextArea):
+            return widget.text.strip()
+        return str(getattr(widget, "value", "")).strip()
 
     def _wait_config_values(self) -> Dict[str, Any]:
         if self.node_data.get("type") != "wait_until_node":

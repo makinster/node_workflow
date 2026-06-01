@@ -87,6 +87,10 @@ Screen {
     width: 100%;
 }
 
+.membank-output-textarea {
+    height: 6;
+}
+
 .membank-output-spacer {
     height: 1;
 }

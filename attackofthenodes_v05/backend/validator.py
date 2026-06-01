@@ -155,5 +155,5 @@ def _membank_source_id(entry: Any) -> str:
     if isinstance(entry, str):
         return entry
     if isinstance(entry, dict):
-        return str(entry.get("source_id") or entry.get("id") or "")
+        return str(entry.get("source_id") or entry.get("output") or entry.get("id") or "")
     return ""

@@ -419,6 +419,12 @@ Done when:
 - Dynamic memory-bank output fields should render as reliable full-width fields
   in the scrollable config modal; avoid compact row layouts that can collapse in
   terminal viewports.
+- Memory-bank output declarations use two user-facing fields:
+  `Output Description:` and `Output:`. Render them as bounded multiline fields
+  because real workflow values may be long.
+- When showing selectable memory-bank inputs, lead with the upstream
+  `Output Description:` text so users can recognize what they are reading
+  before seeing the output key.
 - Branch labels are user-facing names and should replace raw `path_a`/`path_b`
   where the editor displays branch paths.
 - When filtering in add/insert selectors, tabbing into the list should highlight

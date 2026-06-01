@@ -617,7 +617,7 @@ def test_membank_registry_filters_downstream_writers():
     )
     wm.update_node_config(
         sibling,
-        {"membank_outputs": [{"id": "sibling_value", "description": "Sibling"}]},
+        {"membank_outputs": [{"output": "sibling_value", "description": "Sibling"}]},
     )
     wm.connect(upstream, "default", consumer, "input")
     wm.connect(consumer, "default", downstream, "input")
@@ -625,16 +625,22 @@ def test_membank_registry_filters_downstream_writers():
     registry = build_membank_registry(wm)
     assert registry["session_id"]["writers"] == [upstream]
     assert normalize_membank_outputs(wm.get_node_data(upstream)["config"]) == [
-        {"id": "session_id", "description": "Session id"}
+        {"id": "session_id", "output": "session_id", "description": "Session id"}
     ]
     assert normalize_membank_inputs({"membank_inputs": [{"id": "session_id"}]}) == [
         "session_id"
     ]
 
-    option_values = {value for _, value in membank_input_options(wm, consumer)}
+    option_rows = membank_input_options(wm, consumer)
+    option_values = {value for _, value in option_rows}
     assert "session_id" in option_values
     assert "sibling_value" in option_values
     assert "future_value" not in option_values
+    assert any(
+        label.startswith("Output Description: Session id | Output: session_id")
+        for label, value in option_rows
+        if value == "session_id"
+    )
     print("test_membank_registry_filters_downstream_writers PASSED")
 
 
@@ -1025,7 +1031,7 @@ def test_node_config_dynamic_membank_output_rows():
 
 async def _test_node_config_dynamic_membank_output_rows():
     from textual.app import App, ComposeResult
-    from textual.widgets import Checkbox, Input
+    from textual.widgets import Checkbox, Input, TextArea
 
     from frontend.screens.node_config import NodeConfigScreen
 
@@ -1052,31 +1058,39 @@ async def _test_node_config_dynamic_membank_output_rows():
         await pilot.pause()
         assert count.disabled is False
         assert count.value == "1"
-        first_output = app.query_one("#membank-output-id-0", Input)
+        first_output = app.query_one("#membank-output-id-0", TextArea)
         assert first_output
         assert first_output.has_class("membank-output-field")
         assert first_output.parent and first_output.parent.id == "membank-output-rows"
-        assert str(first_output.styles.height) == "3"
+        assert str(first_output.styles.height) == "6"
+        assert app.query_one("#membank-output-desc-0", TextArea)
 
-        app.query_one("#membank-output-id-0", Input).value = "first"
-        app.query_one("#membank-output-desc-0", Input).value = "First output"
+        app.query_one("#membank-output-id-0", TextArea).text = "first"
+        app.query_one("#membank-output-desc-0", TextArea).text = (
+            "First output with a long description that can safely wrap across "
+            "multiple lines without collapsing the config modal."
+        )
         count.value = "3"
         await screen._refresh_membank_output_rows()
         await pilot.pause()
 
         output_id_inputs = [
-            widget for widget in app.query(Input) if str(widget.id or "").startswith("membank-output-id-")
+            widget for widget in app.query(TextArea) if str(widget.id or "").startswith("membank-output-id-")
         ]
         assert len(output_id_inputs) == 3
         assert all(widget.has_class("membank-output-field") for widget in output_id_inputs)
-        assert app.query_one("#membank-output-id-0", Input).value == "first"
-        assert app.query_one("#membank-output-desc-0", Input).value == "First output"
+        assert app.query_one("#membank-output-id-0", TextArea).text == "first"
+        assert "long description" in app.query_one("#membank-output-desc-0", TextArea).text
+        saved_values = screen._membank_config_values()["membank_outputs"]
+        assert saved_values[0]["id"] == "first"
+        assert saved_values[0]["output"] == "first"
+        assert "long description" in saved_values[0]["description"]
 
         count.value = "2"
         await screen._refresh_membank_output_rows()
         await pilot.pause()
         output_id_inputs = [
-            widget for widget in app.query(Input) if str(widget.id or "").startswith("membank-output-id-")
+            widget for widget in app.query(TextArea) if str(widget.id or "").startswith("membank-output-id-")
         ]
         assert len(output_id_inputs) == 2
 
