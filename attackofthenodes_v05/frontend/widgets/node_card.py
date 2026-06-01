@@ -24,11 +24,13 @@ class NodeCard(Static):
         node_id: str,
         node_data: Dict[str, Any],
         status: str = "idle",
+        timing_seconds: float | None = None,
     ) -> None:
         super().__init__()
         self.node_id = node_id
         self.node_data = node_data
         self.status = status
+        self.timing_seconds = timing_seconds
 
     def on_mount(self) -> None:
         self.add_class("node-card")
@@ -39,7 +41,15 @@ class NodeCard(Static):
         node_type = self.node_data.get("type", "unknown")
         icon = STATUS_ICONS.get(self.status, STATUS_ICONS["idle"])
         breakpoint_marker = " ●" if self.node_data.get("breakpoint") else ""
-        self.update(f"{icon}{breakpoint_marker} [{node_type}] {alias}")
+        timing = f" ({self._format_timing(self.timing_seconds)})" if self.timing_seconds else ""
+        self.update(f"{icon}{breakpoint_marker} [{node_type}] {alias}{timing}")
+
+    def _format_timing(self, seconds: float | None) -> str:
+        if seconds is None:
+            return ""
+        if seconds < 1:
+            return f"{seconds * 1000:.0f}ms"
+        return f"{seconds:.2f}s"
 
 
 class BranchSelectCard(Static):

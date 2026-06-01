@@ -99,7 +99,7 @@ class EditorScreen(Screen):
                     }
                 )
         node_list = self.query_one(NodeList)
-        node_list.refresh_rows(rows)
+        node_list.refresh_rows(rows, timings=self._average_node_timings())
         if self.selected_row and not self._row_still_visible(self.selected_row, rows):
             self.selected_row = rows[0] if rows else None
             self.selected_node_id = (
@@ -384,6 +384,10 @@ class EditorScreen(Screen):
             lines.append(f"  inputs: {self._format_input_ports(node_id, metadata)}")
             lines.append(f"  outputs: {self._format_output_ports(node, metadata)}")
         lines.append("")
+        average_timing = self._average_node_timings().get(node_id)
+        if average_timing is not None:
+            lines.append(f"Average time: {self._format_timing(average_timing)}")
+            lines.append("")
         lines.append("Configuration:")
         config = node.get("config") or {}
         if config:
@@ -405,6 +409,35 @@ class EditorScreen(Screen):
         else:
             lines.append("  outputs: -")
         return "\n".join(lines)
+
+    def _average_node_timings(self) -> Dict[str, float]:
+        master_state = getattr(self.app, "master_state", None)
+        run_history = getattr(master_state, "run_history", None)
+        if run_history is None:
+            return {}
+        totals: Dict[str, float] = {}
+        counts: Dict[str, int] = {}
+        for run in run_history.list_runs():
+            timings = run.get("node_timings") or {}
+            if not isinstance(timings, dict):
+                continue
+            for node_id, seconds in timings.items():
+                try:
+                    value = float(seconds)
+                except (TypeError, ValueError):
+                    continue
+                totals[node_id] = totals.get(node_id, 0.0) + value
+                counts[node_id] = counts.get(node_id, 0) + 1
+        return {
+            node_id: totals[node_id] / counts[node_id]
+            for node_id in totals
+            if counts.get(node_id)
+        }
+
+    def _format_timing(self, seconds: float) -> str:
+        if seconds < 1:
+            return f"{seconds * 1000:.0f}ms"
+        return f"{seconds:.2f}s"
 
     def _metadata_for_type(self, node_type: str) -> Optional[Dict[str, Any]]:
         for item in self.factory.get_node_types_metadata():

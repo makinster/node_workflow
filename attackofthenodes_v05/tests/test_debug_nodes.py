@@ -906,6 +906,43 @@ async def _test_breakpoint_pauses_before_node_execution_and_resumes():
 
 
 # ---------------------------------------------------------------------------
+# 26. Per-node execution timing is recorded in run history
+# ---------------------------------------------------------------------------
+
+def test_node_timings_are_recorded_for_run_history():
+    asyncio.run(_test_node_timings_are_recorded_for_run_history())
+
+
+async def _test_node_timings_are_recorded_for_run_history():
+    from backend.events import NODE_TIMING_UPDATE
+
+    master, wm, _, bus = _make_services()
+    timing_events = []
+    bus.subscribe(NODE_TIMING_UPDATE, timing_events.append)
+
+    wm.create_new("node_timing")
+    start = wm.add_node("start_node")
+    sleep = wm.add_node("sleep_node")
+    end = wm.add_node("end_node")
+
+    wm.update_node_config(sleep, {"duration": 0.05})
+    wm.connect(start, "default", sleep, "input")
+    wm.connect(sleep, "default", end, "input")
+
+    await master.start_workflow()
+    await master.wait_for_completion()
+
+    assert master.state.value == "FINISHED"
+    assert sleep in master.node_timings
+    assert master.node_timings[sleep] >= 0.04, master.node_timings
+    assert any(event.get("node_id") == sleep for event in timing_events)
+
+    latest = master.run_history.list_runs()[0]
+    assert latest["node_timings"][sleep] == master.node_timings[sleep]
+    print("test_node_timings_are_recorded_for_run_history PASSED")
+
+
+# ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
 
@@ -936,6 +973,7 @@ if __name__ == "__main__":
         test_form_generator_mounts_tabbed_and_single_group_forms,
         test_workflow_map_breakpoint_flags_are_persisted_in_node_data,
         test_breakpoint_pauses_before_node_execution_and_resumes,
+        test_node_timings_are_recorded_for_run_history,
     ]
     failed = []
     for t in tests:

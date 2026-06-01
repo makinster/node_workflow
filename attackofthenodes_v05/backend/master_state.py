@@ -15,6 +15,7 @@ from .event_bus import EventBus
 from .events import (
     BREAKPOINT_HIT,
     ERROR_OCCURRED,
+    NODE_TIMING_UPDATE,
     SUPERVISOR_ERROR,
     SUPERVISOR_REGISTER,
     SUPERVISOR_REQUEST_BRANCH,
@@ -61,6 +62,7 @@ class MasterState:
         self.current_run_id: Optional[str] = None
         self._started_at: Optional[str] = None
         self.run_outputs: List[str] = []
+        self.node_timings: Dict[str, float] = {}
 
         self._supervisors: Dict[str, Supervisor] = {}
         self._supervisor_tasks: Dict[str, asyncio.Task] = {}
@@ -75,6 +77,7 @@ class MasterState:
         )
         self._event_bus.subscribe(SUPERVISOR_ERROR, self._on_supervisor_error)
         self._event_bus.subscribe(BREAKPOINT_HIT, self._on_breakpoint_hit)
+        self._event_bus.subscribe(NODE_TIMING_UPDATE, self._on_node_timing_update)
         self._event_bus.subscribe(
             TERMINATE_WORKFLOW_REQUESTED, self._on_terminate_workflow_requested
         )
@@ -93,6 +96,7 @@ class MasterState:
         self.current_run_id = f"run_{uuid.uuid4().hex[:8]}"
         self._started_at = datetime.now(timezone.utc).isoformat()
         self.run_outputs = []
+        self.node_timings = {}
         self._output_manager.clear_run(self.current_run_id)
         self._memory_bank.clear()
         self._supervisors.clear()
@@ -226,6 +230,15 @@ class MasterState:
             supervisor.request_pause()
         self._set_state(WorkflowState.PAUSED)
 
+    def _on_node_timing_update(self, payload: Dict[str, Any]) -> None:
+        if payload.get("run_id") != self.current_run_id:
+            return
+        node_id = payload.get("node_id")
+        if not node_id:
+            return
+        seconds = float(payload.get("seconds") or 0.0)
+        self.node_timings[node_id] = self.node_timings.get(node_id, 0.0) + seconds
+
     def _on_terminate_workflow_requested(self, _payload: Dict[str, Any]) -> None:
         self.stop()
         self._set_state(WorkflowState.ERROR)
@@ -266,9 +279,11 @@ class MasterState:
                 "final_state": final_state,
                 "error_count": len(errors),
                 "output_count": len(self.run_outputs),
-                "outputs": list(self.run_outputs),
+                "node_timings": dict(self.node_timings),
+                # "outputs" removed — values already persisted by OutputManager
             }
         )
+        self._error_handler.finalize_run(self.current_run_id)
 
     @property
     def output_manager(self) -> OutputManager:

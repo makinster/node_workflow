@@ -1,5 +1,20 @@
 # AttackOfTheNodes Session Log
 
+## 2026-05-31 — Phase 7 Per-Node Execution Timing
+
+- Added `NODE_TIMING_UPDATE` events from supervisors around every
+  `node.execute()` call.
+- Aggregated timing totals per node on `MasterState` and persisted
+  `node_timings` into run history records.
+- Mirrored live timings in the Textual app so execution node cards can show
+  elapsed time during a run.
+- Added editor average timing display based on stored run history.
+- Added a regression test proving timing events are emitted and persisted for a
+  workflow containing `SleepNode`.
+- Verification:
+  - `python -m compileall -q .`
+  - `python -m pytest tests/test_debug_nodes.py -v`
+
 ## 2026-05-31 — Phase 6 Breakpoints
 
 - Added persisted node breakpoint flags plus `WorkflowMap.set_breakpoint()` and

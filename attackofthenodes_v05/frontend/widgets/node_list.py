@@ -20,16 +20,23 @@ class NodeList(ListView):
         self,
         nodes: Dict[str, Dict[str, Any]],
         statuses: Optional[Dict[str, str]] = None,
+        timings: Optional[Dict[str, float]] = None,
     ) -> None:
         """Replace the list contents with current workflow nodes."""
         statuses = statuses or {}
+        timings = timings or {}
         self.clear()
         self._rows = [
             {"kind": "node", "node_id": node_id, "node": node_data}
             for node_id, node_data in nodes.items()
         ]
         for node_id, node_data in nodes.items():
-            card = NodeCard(node_id, node_data, statuses.get(node_id, "idle"))
+            card = NodeCard(
+                node_id,
+                node_data,
+                statuses.get(node_id, "idle"),
+                timings.get(node_id),
+            )
             self.append(ListItem(card))
         if not nodes:
             self.append(ListItem(Label("No nodes. Press Ctrl+N to create a workflow.")))
@@ -38,15 +45,22 @@ class NodeList(ListView):
         self,
         rows: list[Dict[str, Any]],
         statuses: Optional[Dict[str, str]] = None,
+        timings: Optional[Dict[str, float]] = None,
     ) -> None:
         """Replace the list contents with node and branch selector rows."""
         statuses = statuses or {}
+        timings = timings or {}
         self.clear()
         self._rows = list(rows)
         for row in self._rows:
             if row["kind"] == "node":
                 node_id = row["node_id"]
-                card = NodeCard(node_id, row["node"], statuses.get(node_id, "idle"))
+                card = NodeCard(
+                    node_id,
+                    row["node"],
+                    statuses.get(node_id, "idle"),
+                    timings.get(node_id),
+                )
             else:
                 card = BranchSelectCard(
                     row["branch_node_id"],

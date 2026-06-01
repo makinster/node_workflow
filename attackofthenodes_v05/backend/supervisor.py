@@ -8,11 +8,13 @@ supervisors at incremented depth; each walks independently.
 import asyncio
 import logging
 from dataclasses import dataclass
+from time import perf_counter
 from typing import Any, Dict, List, Optional
 
 from .event_bus import EventBus
 from .events import (
     BREAKPOINT_HIT,
+    NODE_TIMING_UPDATE,
     RECOVERY_OPTIONS_AVAILABLE,
     SUPERVISOR_ERROR,
     SUPERVISOR_REGISTER,
@@ -277,11 +279,22 @@ class Supervisor:
             signal_waiting_for_input=signal_waiting_for_input,
         )
 
+        started_at = perf_counter()
         try:
             await node.execute(context)
         except Exception as exc:
             result.completed = True
             result.error = exc
+        finally:
+            self._event_bus.publish(
+                NODE_TIMING_UPDATE,
+                {
+                    "run_id": self.run_id,
+                    "branch_id": self.branch_id,
+                    "node_id": self.current_node_id,
+                    "seconds": perf_counter() - started_at,
+                },
+            )
 
         return result
 
@@ -344,6 +357,13 @@ class Supervisor:
         explicit_next = payload.get("next_node_id")
         if explicit_next:
             return explicit_next
+
+        # Port routing hint embedded in data (used by RandomBranchNode and similar)
+        route_port = (payload.get("data") or {}).get("_route_via_port")
+        if route_port:
+            return self._workflow_map.find_next_node_id(
+                self.current_node_id or "", output_port=route_port
+            )
 
         output_port = payload.get("output_port", "default")
         return self._workflow_map.find_next_node_id(

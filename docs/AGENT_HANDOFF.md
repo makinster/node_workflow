@@ -28,6 +28,8 @@ Completed from the master plan:
   group; simple configs stay flat.
 - Phase 6: node breakpoints pause globally before execution and resume through
   the existing pause path.
+- Phase 7: per-node execution timings publish live, render in the TUI, and
+  persist into run history.
 
 Recent usability patch:
 
@@ -49,8 +51,8 @@ Recent docs pass:
 
 Latest phase:
 
-- Phase 6 breakpoints are complete. The next unfinished implementation phase is
-  Phase 7 per-node execution timing.
+- Phase 7 per-node execution timing is complete. The next unfinished
+  implementation phase is Phase 8 completion registry plus wait-until node.
 
 ## Read First
 

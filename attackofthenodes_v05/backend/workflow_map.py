@@ -425,6 +425,94 @@ class WorkflowMap:
             return True
         return False
 
+    # ------------------------------------------------------------------
+    # Tombstone / delete helpers
+    # ------------------------------------------------------------------
+
+    def replace_with_tombstone(self, node_id: str) -> bool:
+        """Swap a node in-place with a TombstoneNode, preserving all connections."""
+        node = self._nodes.get(node_id)
+        if node is None:
+            return False
+        original_type = node.get("type", "")
+        # Resolve display name from factory metadata
+        original_display = original_type
+        for meta in self._factory.get_node_types_metadata():
+            if meta["type"] == original_type:
+                original_display = meta.get("display_name", original_type)
+                break
+        node["type"] = "tombstone_node"
+        node["config"] = {
+            "original_type": original_type,
+            "original_display_name": original_display,
+            "original_input_ports": list(
+                {c.get("target_port", "") for c in node.get("connections", {}).get("inputs", [])}
+            ),
+            "original_output_ports": list(
+                {c.get("source_port", "") for c in node.get("connections", {}).get("outputs", [])}
+            ),
+        }
+        self._mark_dirty()
+        return True
+
+    def replace_node_type(self, node_id: str, new_type: str) -> bool:
+        """Replace a node's type (typically swapping a tombstone for a real node)."""
+        if node_id not in self._nodes:
+            return False
+        default_config = self._factory.create_config_template(new_type) or {}
+        self._nodes[node_id]["type"] = new_type
+        self._nodes[node_id]["config"] = default_config
+        self._nodes[node_id]["alias"] = ""
+        self._mark_dirty()
+        return True
+
+    def collect_downstream_subtree(self, node_id: str) -> List[str]:
+        """Return all node IDs reachable from node_id's output connections (DFS).
+
+        The starting node itself is NOT included. Useful for computing the set
+        of nodes that will become orphaned when a multi-output node is deleted.
+        """
+        node = self._nodes.get(node_id)
+        if not node:
+            return []
+        seed_ids = [
+            c["target_node_id"]
+            for c in node.get("connections", {}).get("outputs", [])
+            if c.get("target_node_id") and c["target_node_id"] in self._nodes
+        ]
+        visited: List[str] = []
+        stack = list(seed_ids)
+        seen: set = set()
+        while stack:
+            nid = stack.pop()
+            if nid in seen or nid == node_id:
+                continue
+            seen.add(nid)
+            visited.append(nid)
+            child = self._nodes.get(nid)
+            if child:
+                for conn in child.get("connections", {}).get("outputs", []):
+                    target = conn.get("target_node_id")
+                    if target and target in self._nodes and target not in seen:
+                        stack.append(target)
+        return visited
+
+    def delete_subtree(self, node_ids: List[str]) -> None:
+        """Delete every node in node_ids and scrub all cross-references."""
+        id_set = set(node_ids)
+        for nid in node_ids:
+            self._nodes.pop(nid, None)
+        for other in self._nodes.values():
+            conns = other.get("connections", {})
+            conns["inputs"] = [
+                c for c in conns.get("inputs", []) if c.get("source_node_id") not in id_set
+            ]
+            conns["outputs"] = [
+                c for c in conns.get("outputs", []) if c.get("target_node_id") not in id_set
+            ]
+        if node_ids:
+            self._mark_dirty()
+
     def _mark_dirty(self) -> None:
         self._is_dirty = True
         self._sync_active_to_cache()

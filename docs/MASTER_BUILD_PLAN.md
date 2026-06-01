@@ -159,8 +159,8 @@ Append a short entry to `docs/SESSION_LOG.md` for every phase or notable patch.
 | 4.5 | Config modal and selector usability | Done (`0d53c04`) |
 | 5 | Config tabs | Done |
 | 6 | Breakpoints | Done |
-| 7 | Per-node execution timing | Next, can float earlier |
-| 8 | Completion registry + wait-until node | Open |
+| 7 | Per-node execution timing | Done |
+| 8 | Completion registry + wait-until node | Next |
 | 9 | Merge dynamic list + lineage barrier | Open |
 | 10 | Documentation modernization | Open, docs-only project |
 | 11 | Real AI node execution | Deferred |
@@ -168,8 +168,6 @@ Append a short entry to `docs/SESSION_LOG.md` for every phase or notable patch.
 
 Sequencing:
 
-- Phase 7 depends only on the memory-leak cleanup and can be pulled forward
-  before heavier engine phases.
 - Phase 8 depends on Phases 1 and 2.
 - Phase 9 depends on Phase 1 and should start by verifying master-state lineage
   support.
@@ -278,28 +276,22 @@ Example config:
 - Tests cover breakpoint persistence, pause-before-execute behavior, and resume
   through completion.
 
+### Phase 7 — Per-Node Execution Timing
+
+- Supervisors bracket each `node.execute()` with `perf_counter()`.
+- `NODE_TIMING_UPDATE` publishes live timing records with run, branch, node, and
+  elapsed seconds.
+- `MasterState` aggregates per-run `node_timings` and stores them in run
+  history records.
+- The Textual app mirrors live timing updates for the execution screen.
+- Node cards can render timing badges; execution shows live run timings and the
+  editor shows average timings from stored run history.
+- Tests cover timing events, master-state aggregation, and run-history
+  persistence.
+
 ---
 
 ## 6. Remaining Implementation Plan
-
-### Phase 7 — Per-Node Execution Timing
-
-**Files:** `backend/supervisor.py`, `backend/master_state.py`,
-`frontend/screens/execution.py`, `frontend/screens/editor.py`.
-**Depends on:** Phase 0 only.
-
-Requirements:
-
-- Bracket `node.execute()` with `time.perf_counter()`.
-- Publish live node timing to the execution view.
-- Store `node_timings: {node_id: seconds}` in the run record.
-- Editor displays rolling average timing per node from stored runs.
-
-Done when:
-
-- Execution screen shows live timing.
-- Run history records per-node timings.
-- Editor shows averages without slowing normal navigation.
 
 ### Phase 8 — Completion Registry + Wait-Until Node
 
