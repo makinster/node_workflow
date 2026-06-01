@@ -14,6 +14,9 @@ class SleepNode(Node):
     display_name: ClassVar[str] = "Sleep"
     description: ClassVar[str] = "Pauses execution for a fixed duration"
     category: ClassVar[str] = NodeCategory.DEBUG
+    ui_hints: ClassVar[Dict[str, Any]] = {
+        "pass_through": "Pauses, then forwards the previous node output unchanged.",
+    }
     input_ports: ClassVar[List[str]] = ["input"]
     output_ports: ClassVar[List[str]] = ["default"]
     default_config: ClassVar[Dict[str, Any]] = {"duration": 0.1}

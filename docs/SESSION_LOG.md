@@ -1,5 +1,22 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-01 — Schema-Driven Branch Config and Command Field UX
+
+- Added node `ui_hints` metadata to factory output so nodes can describe UI
+  behavior without custom frontend config screens.
+- Added a Sleep node pass-through hint and displayed it in node config so users
+  know the previous output is forwarded unchanged.
+- Generated branch-name fields from multi-output node ports and hid memory-bank
+  output controls for branch/router nodes.
+- Generalized editor branch labels so any output port can use
+  `<port>_label`, including future `path_c`-style ports.
+- Updated node config help text to the keyboard-first wording and added visual
+  selected-vs-editing styles for command-mode text fields.
+- Mouse-clicking a command-mode textbox now enters typing mode immediately.
+- Verification:
+  - `python -m compileall -q .`
+  - `python -m pytest tests/test_debug_nodes.py -v`
+
 ## 2026-06-01 — Compact Output Count and Description Fields
 
 - Kept the actual `Output:` field as a bounded multiline text area for long

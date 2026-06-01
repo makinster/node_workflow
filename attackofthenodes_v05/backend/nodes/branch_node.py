@@ -64,13 +64,17 @@ class BranchNode(Node):
         },
         "path_a_label": {
             "type": "string",
+            "label": "Path A branch name",
             "description": "Editor display name for path_a",
             "required": False,
+            "group": "Branch Names",
         },
         "path_b_label": {
             "type": "string",
+            "label": "Path B branch name",
             "description": "Editor display name for path_b",
             "required": False,
+            "group": "Branch Names",
         },
     }
 

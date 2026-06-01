@@ -154,6 +154,7 @@ class NodeConfigScreen(ModalScreen):
     def compose(self) -> ComposeResult:
         metadata = self._metadata_for_type(self.node_data.get("type", ""))
         schema = metadata.get("config_schema", {}) if metadata else {}
+        schema = self._schema_with_generated_branch_labels(metadata, schema)
         config = self.node_data.get("config") or {}
         excluded_config_keys = {"membank_outputs", "membank_inputs"}
         if self.node_data.get("type") == "wait_until_node":
@@ -173,11 +174,14 @@ class NodeConfigScreen(ModalScreen):
 
         with Vertical(id="modal-card", classes="node-config-modal"):
             yield Label(f"Edit Node: {self.node_data.get('alias') or self.node_id}", classes="modal-title")
-            yield Static("Ctrl+S save  Ctrl+Enter save  Esc close  Tab moves focus", classes="modal-help")
+            yield Static("w = up, s = down    e = edit/select    esc = cancel/close", classes="modal-help")
             with VerticalScroll(id="node-config-scroll"):
                 yield Label("Alias", classes="form-label")
                 yield CommandInput(value=self.node_data.get("alias", ""), id="alias-input")
                 yield Static(self._format_metadata(metadata), id="node-config-summary")
+                pass_through_note = self._pass_through_note(metadata)
+                if pass_through_note:
+                    yield Static(pass_through_note, classes="form-description pass-through-note")
                 yield Label("Previous Node Output", classes="form-label")
                 yield Checkbox(
                     "Show previous node output",
@@ -195,8 +199,9 @@ class NodeConfigScreen(ModalScreen):
                 yield Label("Connections", classes="form-label")
                 yield Static("Connection editing lives in the editor path tools.", classes="form-description")
                 yield Static(self._format_connections(), id="connection-summary")
-                yield Label("Memory Bank Outputs", classes="form-label")
-                yield from self._compose_membank_outputs(config)
+                if self._supports_membank_outputs(metadata):
+                    yield Label("Memory Bank Outputs", classes="form-label")
+                    yield from self._compose_membank_outputs(config)
             with Horizontal(classes="button-row"):
                 yield Button("Save", id="save-node-config", variant="primary")
                 yield Button("Cancel", id="cancel-node-config", variant="default")
@@ -299,6 +304,48 @@ class NodeConfigScreen(ModalScreen):
             if item["type"] == node_type:
                 return item
         return None
+
+    def _schema_with_generated_branch_labels(
+        self,
+        metadata: Optional[Dict[str, Any]],
+        schema: Dict[str, Dict[str, Any]],
+    ) -> Dict[str, Dict[str, Any]]:
+        if metadata is None:
+            return dict(schema)
+        output_ports = list(metadata.get("output_ports") or [])
+        if len(output_ports) <= 1:
+            return dict(schema)
+
+        enhanced = dict(schema)
+        for port in output_ports:
+            key = f"{port}_label"
+            enhanced.setdefault(
+                key,
+                {
+                    "type": "string",
+                    "label": f"{port} branch name",
+                    "description": f"Editor display name for {port}",
+                    "required": False,
+                    "group": "Branch Names",
+                },
+            )
+        return enhanced
+
+    def _supports_membank_outputs(self, metadata: Optional[Dict[str, Any]]) -> bool:
+        if metadata is None:
+            return True
+        return len(metadata.get("output_ports") or []) <= 1
+
+    def _pass_through_note(self, metadata: Optional[Dict[str, Any]]) -> str:
+        if metadata is None:
+            return ""
+        hint = (metadata.get("ui_hints") or {}).get("pass_through")
+        if hint:
+            return f"Pass-through: {hint}"
+        description = str(metadata.get("description") or "").lower()
+        if "passes input through" in description or "passes it through" in description:
+            return "Pass-through: forwards the previous node output to its own output."
+        return ""
 
     def _format_metadata(self, metadata: Optional[Dict[str, Any]]) -> str:
         if metadata is None:
@@ -418,6 +465,15 @@ class NodeConfigScreen(ModalScreen):
     def _membank_config_values(self) -> Dict[str, Any]:
         values: Dict[str, Any] = {"membank_outputs": [], "membank_inputs": []}
 
+        writes_query = self.query("#membank-writes")
+        if not writes_query:
+            reads_enabled = self.query_one("#membank-reads", Checkbox).value
+            if reads_enabled:
+                selection_lists = self.query("#membank-inputs")
+                if selection_lists:
+                    values["membank_inputs"] = list(selection_lists.first().selected)
+            return values
+
         writes_enabled = self.query_one("#membank-writes", Checkbox).value
         try:
             count = int(self.query_one("#membank-output-count", Input).value)
@@ -444,6 +500,8 @@ class NodeConfigScreen(ModalScreen):
         return values
 
     def _sync_membank_output_controls(self) -> None:
+        if not self.query("#membank-writes"):
+            return
         writes_enabled = self.query_one("#membank-writes", Checkbox).value
         count_input = self.query_one("#membank-output-count", Input)
         count_input.disabled = not writes_enabled

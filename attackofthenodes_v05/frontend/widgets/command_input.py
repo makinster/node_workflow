@@ -13,7 +13,7 @@ class CommandInput(Input):
         super().__init__(*args, **kwargs)
         self.editing = False
         self.add_class("command-input")
-        self.styles.height = 8
+        self.styles.height = 3
         self.styles.width = "100%"
 
     def begin_edit(self) -> None:
@@ -27,6 +27,9 @@ class CommandInput(Input):
 
     def on_blur(self) -> None:
         self.end_edit()
+
+    def on_click(self, _event: events.Click) -> None:
+        self.begin_edit()
 
     async def _on_key(self, event: events.Key) -> None:
         if self.editing:
@@ -91,6 +94,9 @@ class CommandTextArea(TextArea):
 
     def on_blur(self) -> None:
         self.end_edit()
+
+    def on_click(self, _event: events.Click) -> None:
+        self.begin_edit()
 
     async def _on_key(self, event: events.Key) -> None:
         if self.editing:

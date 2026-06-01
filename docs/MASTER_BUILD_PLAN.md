@@ -428,6 +428,10 @@ Done when:
   before seeing the output key.
 - Branch labels are user-facing names and should replace raw `path_a`/`path_b`
   where the editor displays branch paths.
+- Branch/router nodes name their paths through generated `<port>_label` config
+  fields. These labels come from node `output_ports` and should work for future
+  ports like `path_c` without custom UI code. Branch/router nodes should not
+  show memory-bank output controls.
 - When filtering in add/insert selectors, tabbing into the list should highlight
   the first visible item automatically.
 - Arrow keys should move the visible highlight whenever a highlighted list is on
@@ -436,10 +440,16 @@ Done when:
   keep moving between controls until the user presses `E` to activate a field.
 - `Esc` inside an active text field exits editing mode first; a second `Esc`
   may close the modal.
+- Command-mode text fields need distinct selected and editing visual states.
+  Mouse-clicking a text field should enter editing mode immediately.
 - Focus changes near the bottom of scrollable modals should scroll the active
   control into view.
 - Utility/write nodes that primarily update memory should support pass-through
   so input can continue to downstream nodes.
+- Nodes define config UI through their class-level `config_schema`. Fields can
+  declare `type`, `label`, `description`, `required`, `options`, and `group`;
+  the frontend generator chooses the widget. Nodes can also expose `ui_hints`
+  for display-only behavior notes such as passive pass-through.
 - A brand-new workflow may keep its backend start node hidden until the first
   user node is placed; the start node should reappear after it is connected.
 - Config screens may offer opt-in previews of upstream transient output, but

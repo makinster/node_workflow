@@ -770,7 +770,69 @@ def test_branch_node_default_labels_are_configurable():
     assert BranchNode.default_config["path_b_label"] == "Path B"
     assert "path_a_label" in BranchNode.config_schema
     assert "path_b_label" in BranchNode.config_schema
+    assert BranchNode.config_schema["path_a_label"]["label"] == "Path A branch name"
+    assert BranchNode.config_schema["path_a_label"]["group"] == "Branch Names"
     print("test_branch_node_default_labels_are_configurable PASSED")
+
+
+def test_branch_config_uses_generated_labels_without_memory_outputs():
+    asyncio.run(_test_branch_config_uses_generated_labels_without_memory_outputs())
+
+
+async def _test_branch_config_uses_generated_labels_without_memory_outputs():
+    from textual.app import App, ComposeResult
+
+    from frontend.screens.node_config import NodeConfigScreen
+    from frontend.screens.editor import EditorScreen
+    from frontend.widgets.command_input import CommandInput
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("branch_config_labels")
+    branch = wm.add_node("random_branch_node")
+    wm.update_node_config(
+        branch,
+        {
+            "seed": "stable",
+            "path_a_label": "Approve",
+            "path_b_label": "Reject",
+            "membank_outputs": [{"id": "should_not_render"}],
+        },
+    )
+    node_data = wm.get_node_data(branch)
+
+    class ConfigApp(App):
+        def compose(self) -> ComposeResult:
+            yield NodeConfigScreen(wm._factory, wm, branch, node_data)
+
+    app = ConfigApp()
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        screen = app.query_one(NodeConfigScreen)
+        assert app.query_one("#field-path_a_label", CommandInput).value == "Approve"
+        assert app.query_one("#field-path_b_label", CommandInput).value == "Reject"
+        assert not app.query("#membank-writes")
+        values = screen._membank_config_values()
+        assert values["membank_outputs"] == []
+
+    editor = EditorScreen(wm._factory, wm)
+    labels = editor._branch_port_labels(wm.get_node_data(branch))
+    assert labels["path_a"] == "Approve"
+    assert labels["path_b"] == "Reject"
+    print("test_branch_config_uses_generated_labels_without_memory_outputs PASSED")
+
+
+def test_sleep_config_shows_pass_through_hint():
+    from frontend.screens.node_config import NodeConfigScreen
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("sleep_pass_through_hint")
+    sleep = wm.add_node("sleep_node")
+    screen = NodeConfigScreen(wm._factory, wm, sleep, wm.get_node_data(sleep))
+    metadata = screen._metadata_for_type("sleep_node")
+
+    assert metadata["ui_hints"]["pass_through"]
+    assert "forwards the previous node output" in screen._pass_through_note(metadata)
+    print("test_sleep_config_shows_pass_through_hint PASSED")
 
 
 # ---------------------------------------------------------------------------
@@ -1262,6 +1324,8 @@ if __name__ == "__main__":
         test_tombstone_delete_does_not_cascade_branch_nodes,
         test_set_variable_node_can_pass_input_through,
         test_branch_node_default_labels_are_configurable,
+        test_branch_config_uses_generated_labels_without_memory_outputs,
+        test_sleep_config_shows_pass_through_hint,
         test_form_generator_groups_schema_for_tabs,
         test_form_generator_mounts_tabbed_and_single_group_forms,
         test_workflow_map_breakpoint_flags_are_persisted_in_node_data,

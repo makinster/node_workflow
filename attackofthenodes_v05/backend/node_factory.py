@@ -67,6 +67,7 @@ class NodeFactory:
                     "output_ports": list(node_class.output_ports),
                     "config_schema": dict(node_class.config_schema),
                     "default_config": dict(node_class.default_config),
+                    "ui_hints": dict(getattr(node_class, "ui_hints", {})),
                 }
             )
         return sorted(metadata, key=lambda item: item["display_name"])

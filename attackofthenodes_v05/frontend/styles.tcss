@@ -120,6 +120,20 @@ Screen {
     color: #a9b8c6;
 }
 
+.command-input:focus {
+    border: tall #d6b85a;
+    background: #171f29;
+}
+
+.command-input.editing:focus {
+    border: tall #50c878;
+    background: #0f2519;
+}
+
+.pass-through-note {
+    color: #50c878;
+}
+
 .button-row {
     height: auto;
     margin-top: 1;

@@ -494,10 +494,12 @@ class EditorScreen(Screen):
 
     def _branch_port_labels(self, node: Dict[str, Any]) -> Dict[str, str]:
         config = node.get("config") or {}
-        return {
-            "path_a": str(config.get("path_a_label") or "Path A"),
-            "path_b": str(config.get("path_b_label") or "Path B"),
-        }
+        metadata = self._metadata_for_type(node.get("type", ""))
+        labels: Dict[str, str] = {}
+        for port in (metadata.get("output_ports") if metadata else []) or []:
+            label = str(config.get(f"{port}_label") or "").strip()
+            labels[port] = label or port.replace("_", " ").title()
+        return labels
 
     def _select_row(self, row: Optional[Dict[str, Any]]) -> None:
         self.selected_row = row
