@@ -160,15 +160,14 @@ Append a short entry to `docs/SESSION_LOG.md` for every phase or notable patch.
 | 5 | Config tabs | Done |
 | 6 | Breakpoints | Done |
 | 7 | Per-node execution timing | Done |
-| 8 | Completion registry + wait-until node | Next |
-| 9 | Merge dynamic list + lineage barrier | Open |
+| 8 | Completion registry + wait-until node | Done |
+| 9 | Merge dynamic list + lineage barrier | Next |
 | 10 | Documentation modernization | Open, docs-only project |
 | 11 | Real AI node execution | Deferred |
 | 12 | Packaging and release hardening | Deferred |
 
 Sequencing:
 
-- Phase 8 depends on Phases 1 and 2.
 - Phase 9 depends on Phase 1 and should start by verifying master-state lineage
   support.
 - Phase 10 can happen any time, but it should not block engine/UI work unless
@@ -289,33 +288,23 @@ Example config:
 - Tests cover timing events, master-state aggregation, and run-history
   persistence.
 
+### Phase 8 — Completion Registry + Wait-Until Node
+
+- `MasterState` now owns a per-run `completed_nodes` registry plus an
+  `asyncio.Condition`.
+- Supervisors mark nodes complete after successful execution and expose a
+  completion wait callback through `NodeContext`.
+- Added `WaitUntilNode`, registered as a flow node, which waits for configured
+  node ids and passes input through after all targets complete.
+- Wait-until timeouts use explicit node config when provided, otherwise the
+  supervisor/global node timeout path.
+- Node config now renders wait targets as a selectable list derived from current
+  workflow structure, excluding self and downstream targets.
+- Tests cover cross-branch gating order and the wait-target filter.
+
 ---
 
 ## 6. Remaining Implementation Plan
-
-### Phase 8 — Completion Registry + Wait-Until Node
-
-**Files:** `backend/master_state.py`, new wait node,
-`backend/nodes/__init__.py`, `frontend/screens/node_config.py`.
-**Depends on:** Phases 1 and 2.
-
-Requirements:
-
-- Master state owns `completed_nodes: set[str]` plus an `asyncio.Condition`.
-- When a supervisor advances past a node, add that node id and notify waiters.
-- Add `WaitUntilNode` with config target ids.
-- Node waits until all targets have completed at least once, then passes input
-  through.
-- Target selector filters out downstream nodes using
-  `nodes_reachable_from(self)` to avoid obvious deadlocks.
-- Use existing node timeout settings so unsatisfied waits error instead of
-  hanging.
-
-Done when:
-
-- Cross-branch gating works deterministically.
-- Downstream targets are not selectable.
-- Timeout failure is reported as a normal node error.
 
 ### Phase 9 — Merge Dynamic List + Lineage Barrier
 

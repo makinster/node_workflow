@@ -30,6 +30,8 @@ Completed from the master plan:
   the existing pause path.
 - Phase 7: per-node execution timings publish live, render in the TUI, and
   persist into run history.
+- Phase 8: completion registry and `WaitUntilNode` support cross-branch
+  gating with downstream target filtering in config.
 
 Recent usability patch:
 
@@ -51,8 +53,9 @@ Recent docs pass:
 
 Latest phase:
 
-- Phase 7 per-node execution timing is complete. The next unfinished
-  implementation phase is Phase 8 completion registry plus wait-until node.
+- Phase 8 completion registry plus wait-until node is complete. The next
+  unfinished implementation phase is Phase 9 merge dynamic list plus lineage
+  barrier.
 
 ## Read First
 

@@ -943,6 +943,83 @@ async def _test_node_timings_are_recorded_for_run_history():
 
 
 # ---------------------------------------------------------------------------
+# 27. WaitUntilNode gates one branch on another branch's completion
+# ---------------------------------------------------------------------------
+
+def test_wait_until_node_gates_cross_branch_completion():
+    asyncio.run(_test_wait_until_node_gates_cross_branch_completion())
+
+
+async def _test_wait_until_node_gates_cross_branch_completion():
+    master, wm, mb, _ = _make_services()
+    wm.create_new("wait_until")
+    start = wm.add_node("start_node")
+    branch = wm.add_node("branch_node")
+    sleep = wm.add_node("sleep_node")
+    first = wm.add_node("logger_node")
+    wait = wm.add_node("wait_until_node")
+    second = wm.add_node("logger_node")
+    end_a = wm.add_node("end_node")
+    end_b = wm.add_node("end_node")
+
+    wm.update_node_config(branch, {"condition": "always_branch"})
+    wm.update_node_config(sleep, {"duration": 0.05})
+    wm.update_node_config(first, {"label": "first_branch", "include_input": False})
+    wm.update_node_config(
+        wait,
+        {"target_node_ids": first, "timeout_seconds": 1.0},
+    )
+    wm.update_node_config(second, {"label": "second_branch", "include_input": False})
+
+    wm.connect(start, "default", branch, "input")
+    wm.connect(branch, "path_a", sleep, "input")
+    wm.connect(sleep, "default", first, "input")
+    wm.connect(first, "default", end_a, "input")
+    wm.connect(branch, "path_b", wait, "input")
+    wm.connect(wait, "default", second, "input")
+    wm.connect(second, "default", end_b, "input")
+
+    await master.start_workflow()
+    await master.wait_for_completion()
+
+    assert master.state.value == "FINISHED"
+    assert first in master.completed_nodes
+    log = [str(entry) for entry in mb.read_persistent("output_log", default=[])]
+    first_index = next(i for i, entry in enumerate(log) if "first_branch" in entry)
+    second_index = next(i for i, entry in enumerate(log) if "second_branch" in entry)
+    assert first_index < second_index, log
+    print("test_wait_until_node_gates_cross_branch_completion PASSED")
+
+
+def test_wait_target_options_exclude_downstream_nodes():
+    from frontend.screens.node_config import (
+        normalize_wait_target_ids,
+        wait_target_options,
+    )
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("wait_target_options")
+    upstream = wm.add_node("logger_node")
+    wait = wm.add_node("wait_until_node")
+    downstream = wm.add_node("logger_node")
+    sibling = wm.add_node("logger_node")
+
+    wm.connect(upstream, "default", wait, "input")
+    wm.connect(wait, "default", downstream, "input")
+
+    assert normalize_wait_target_ids({"target_node_ids": f"{upstream}, {sibling}"}) == [
+        upstream,
+        sibling,
+    ]
+    option_values = [value for _label, value in wait_target_options(wm, wait)]
+    assert upstream in option_values
+    assert sibling in option_values
+    assert wait not in option_values
+    assert downstream not in option_values
+    print("test_wait_target_options_exclude_downstream_nodes PASSED")
+
+
+# ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
 
@@ -974,6 +1051,8 @@ if __name__ == "__main__":
         test_workflow_map_breakpoint_flags_are_persisted_in_node_data,
         test_breakpoint_pauses_before_node_execution_and_resumes,
         test_node_timings_are_recorded_for_run_history,
+        test_wait_until_node_gates_cross_branch_completion,
+        test_wait_target_options_exclude_downstream_nodes,
     ]
     failed = []
     for t in tests:

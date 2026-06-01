@@ -86,6 +86,33 @@ def membank_input_options(workflow_map, current_node_id: str) -> list[tuple[str,
     return options
 
 
+def normalize_wait_target_ids(config: Dict[str, Any]) -> list[str]:
+    """Return wait-until target node ids from config."""
+    configured = config.get("target_node_ids") or []
+    if isinstance(configured, list):
+        raw_values = configured
+    else:
+        raw_values = str(configured).replace("\n", ",").split(",")
+    normalized: list[str] = []
+    for value in raw_values:
+        node_id = str(value).strip()
+        if node_id and node_id not in normalized:
+            normalized.append(node_id)
+    return normalized
+
+
+def wait_target_options(workflow_map, current_node_id: str) -> list[tuple[str, str]]:
+    """Return wait targets, excluding self and downstream nodes."""
+    downstream = workflow_map.nodes_reachable_from(current_node_id)
+    options: list[tuple[str, str]] = []
+    for node_id, node in sorted(workflow_map.get_all_node_data().items()):
+        if node_id == current_node_id or node_id in downstream:
+            continue
+        label = node.get("alias") or node.get("type") or node_id
+        options.append((f"{label} ({node_id})", node_id))
+    return options
+
+
 class NodeConfigScreen(ModalScreen):
     """Edit-node modal powered by the schema form generator."""
 
@@ -113,10 +140,18 @@ class NodeConfigScreen(ModalScreen):
         metadata = self._metadata_for_type(self.node_data.get("type", ""))
         schema = metadata.get("config_schema", {}) if metadata else {}
         config = self.node_data.get("config") or {}
+        excluded_config_keys = {"membank_outputs", "membank_inputs"}
+        if self.node_data.get("type") == "wait_until_node":
+            excluded_config_keys.add("target_node_ids")
+        schema = {
+            key: value
+            for key, value in schema.items()
+            if key not in excluded_config_keys
+        }
         core_config = {
             key: value
             for key, value in config.items()
-            if key not in {"membank_outputs", "membank_inputs"}
+            if key not in excluded_config_keys
         }
         form, getter = build_form(schema, core_config)
         self._get_form_values = getter
@@ -129,6 +164,9 @@ class NodeConfigScreen(ModalScreen):
             yield Static(self._format_metadata(metadata), id="node-config-summary")
             yield Label("Memory Bank Inputs", classes="form-label")
             yield from self._compose_membank_inputs(config)
+            if self.node_data.get("type") == "wait_until_node":
+                yield Label("Wait Targets", classes="form-label")
+                yield from self._compose_wait_targets(config)
             yield Label("Node Settings", classes="form-label")
             yield form
             yield Label("Connections", classes="form-label")
@@ -153,6 +191,7 @@ class NodeConfigScreen(ModalScreen):
         alias = self.query_one("#alias-input", Input).value
         config = self._get_form_values() if self._get_form_values else {}
         config.update(self._membank_config_values())
+        config.update(self._wait_config_values())
         self.dismiss({"alias": alias, "config": config})
 
     def action_cancel(self) -> None:
@@ -247,6 +286,18 @@ class NodeConfigScreen(ModalScreen):
         else:
             yield Static("No upstream memory-bank outputs are available.", classes="form-description")
 
+    def _compose_wait_targets(self, config: Dict[str, Any]):
+        selected = set(normalize_wait_target_ids(config))
+        options = wait_target_options(self.workflow_map, self.node_id)
+        if options:
+            selection_options = [
+                (label, value, value in selected)
+                for label, value in options
+            ]
+            yield SelectionList(*selection_options, id="wait-targets")
+        else:
+            yield Static("No non-downstream wait targets are available.", classes="form-description")
+
     def _membank_config_values(self) -> Dict[str, Any]:
         values: Dict[str, Any] = {"membank_outputs": [], "membank_inputs": []}
 
@@ -270,6 +321,14 @@ class NodeConfigScreen(ModalScreen):
             if selection_lists:
                 values["membank_inputs"] = list(selection_lists.first().selected)
         return values
+
+    def _wait_config_values(self) -> Dict[str, Any]:
+        if self.node_data.get("type") != "wait_until_node":
+            return {}
+        selection_lists = self.query("#wait-targets")
+        if not selection_lists:
+            return {"target_node_ids": []}
+        return {"target_node_ids": list(selection_lists.first().selected)}
 
     def _node_label(self, node_id: str, node: Dict[str, Any]) -> str:
         name = node.get("alias") or node.get("type") or node_id

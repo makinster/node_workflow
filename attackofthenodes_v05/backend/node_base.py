@@ -42,6 +42,7 @@ class NodeContext:
     signal_done: Callable[[Dict[str, Any]], None]
     signal_error: Callable[[Exception], None]
     signal_waiting_for_input: Callable[[str], Awaitable[str]]
+    wait_for_nodes: Callable[[List[str], Optional[float]], Awaitable[None]]
 
 
 class Node(ABC):

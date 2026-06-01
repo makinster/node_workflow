@@ -63,6 +63,8 @@ class MasterState:
         self._started_at: Optional[str] = None
         self.run_outputs: List[str] = []
         self.node_timings: Dict[str, float] = {}
+        self.completed_nodes: set[str] = set()
+        self._completion_condition = asyncio.Condition()
 
         self._supervisors: Dict[str, Supervisor] = {}
         self._supervisor_tasks: Dict[str, asyncio.Task] = {}
@@ -97,6 +99,7 @@ class MasterState:
         self._started_at = datetime.now(timezone.utc).isoformat()
         self.run_outputs = []
         self.node_timings = {}
+        self.completed_nodes = set()
         self._output_manager.clear_run(self.current_run_id)
         self._memory_bank.clear()
         self._supervisors.clear()
@@ -112,6 +115,11 @@ class MasterState:
             memory_bank=self._memory_bank,
             event_bus=self._event_bus,
             error_handler=self._error_handler,
+            mark_node_completed=self.mark_node_completed,
+            wait_for_nodes=self.wait_until_nodes_completed,
+            node_timeout_seconds=float(
+                self._configuration_manager.get("node_timeout_seconds")
+            ),
         )
         self._supervisor_tasks[root.branch_id] = asyncio.create_task(root.run())
         return True
@@ -209,8 +217,38 @@ class MasterState:
             error_handler=self._error_handler,
             initial_data=payload.get("initial_data", {}),
             parent_branch_id=payload["parent_branch_id"],
+            mark_node_completed=self.mark_node_completed,
+            wait_for_nodes=self.wait_until_nodes_completed,
+            node_timeout_seconds=float(
+                self._configuration_manager.get("node_timeout_seconds")
+            ),
         )
         self._supervisor_tasks[child.branch_id] = asyncio.create_task(child.run())
+
+    async def mark_node_completed(self, node_id: str) -> None:
+        """Record a node completion and wake wait-until nodes."""
+        async with self._completion_condition:
+            self.completed_nodes.add(node_id)
+            self._completion_condition.notify_all()
+
+    async def wait_until_nodes_completed(
+        self, target_node_ids: List[str], timeout_seconds: Optional[float] = None
+    ) -> None:
+        """Wait until all target nodes have completed at least once this run."""
+        targets = {node_id for node_id in target_node_ids if node_id}
+        if not targets:
+            return
+
+        async def wait_for_targets() -> None:
+            async with self._completion_condition:
+                await self._completion_condition.wait_for(
+                    lambda: targets.issubset(self.completed_nodes)
+                )
+
+        if timeout_seconds is None or timeout_seconds <= 0:
+            await wait_for_targets()
+            return
+        await asyncio.wait_for(wait_for_targets(), timeout=timeout_seconds)
 
     def _on_supervisor_state_update(self, payload: Dict[str, Any]) -> None:
         if payload["state"] == "WAITING_FOR_INPUT":

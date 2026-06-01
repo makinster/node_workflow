@@ -9,7 +9,7 @@ import asyncio
 import logging
 from dataclasses import dataclass
 from time import perf_counter
-from typing import Any, Dict, List, Optional
+from typing import Any, Awaitable, Callable, Dict, List, Optional
 
 from .event_bus import EventBus
 from .events import (
@@ -58,6 +58,11 @@ class Supervisor:
         error_handler: Optional[ErrorHandler] = None,
         initial_data: Optional[Dict[str, Any]] = None,
         parent_branch_id: Optional[str] = None,
+        mark_node_completed: Optional[Callable[[str], Awaitable[None]]] = None,
+        wait_for_nodes: Optional[
+            Callable[[List[str], Optional[float]], Awaitable[None]]
+        ] = None,
+        node_timeout_seconds: float = 30.0,
     ) -> None:
         self.run_id = run_id
         self.branch_id = branch_id
@@ -81,6 +86,9 @@ class Supervisor:
         self._pending_input_future: Optional[asyncio.Future] = None
         self._pending_recovery_future: Optional[asyncio.Future] = None
         self._skip_breakpoint_once_for: Optional[str] = None
+        self._mark_node_completed = mark_node_completed
+        self._wait_for_nodes = wait_for_nodes
+        self._node_timeout_seconds = float(node_timeout_seconds)
 
     async def run(self) -> None:
         """Run this supervisor until its path ends or errors."""
@@ -183,6 +191,10 @@ class Supervisor:
                 self._fail(f"Node {self.current_node_id} returned without signaling")
                 return
 
+            completed_node_id = self.current_node_id
+            if completed_node_id and self._mark_node_completed is not None:
+                await self._mark_node_completed(completed_node_id)
+
             if result.payload:
                 self.current_node_id = self._handle_payload(result.payload)
 
@@ -268,6 +280,18 @@ class Supervisor:
             self._publish_state_update()
             return value
 
+        async def wait_for_nodes(
+            target_node_ids: List[str], timeout_seconds: Optional[float] = None
+        ) -> None:
+            if self._wait_for_nodes is None:
+                raise RuntimeError("Completion registry is not available")
+            timeout = (
+                self._node_timeout_seconds
+                if timeout_seconds is None
+                else timeout_seconds
+            )
+            await self._wait_for_nodes(target_node_ids, timeout)
+
         context = NodeContext(
             node_id=self.current_node_id or "",
             branch_id=self.branch_id,
@@ -277,6 +301,7 @@ class Supervisor:
             signal_done=signal_done,
             signal_error=signal_error,
             signal_waiting_for_input=signal_waiting_for_input,
+            wait_for_nodes=wait_for_nodes,
         )
 
         started_at = perf_counter()

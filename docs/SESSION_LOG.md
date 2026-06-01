@@ -1,5 +1,20 @@
 # AttackOfTheNodes Session Log
 
+## 2026-05-31 — Phase 8 Completion Registry + Wait-Until Node
+
+- Added a per-run completion registry to `MasterState` with an
+  `asyncio.Condition` for waiters.
+- Supervisors now mark nodes complete after successful execution and provide a
+  `NodeContext.wait_for_nodes()` callback to nodes.
+- Added and registered `WaitUntilNode`, which waits for configured target node
+  ids and passes input through when all targets have completed.
+- Added wait-target config helpers that list eligible targets from workflow
+  structure and exclude self/downstream nodes to avoid obvious deadlocks.
+- Added tests for cross-branch wait gating and target filtering.
+- Verification:
+  - `python -m compileall -q .`
+  - `python -m pytest tests/test_debug_nodes.py -v`
+
 ## 2026-05-31 — Phase 7 Per-Node Execution Timing
 
 - Added `NODE_TIMING_UPDATE` events from supervisors around every

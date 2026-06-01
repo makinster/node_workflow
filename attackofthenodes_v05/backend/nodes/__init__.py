@@ -13,20 +13,57 @@ from .set_variable_node import SetVariableNode
 from .start_node import StartNode
 from .text_output_node import TextOutputNode
 from .user_text_input_node import UserTextInputNode
+from .wait_until_node import WaitUntilNode
+
+# ── Debug nodes ───────────────────────────────────────────────────────────────
+from .debug.counter_node import CounterNode
+from .debug.tombstone_node import TombstoneNode
+from .debug.deep_branch_node import DeepBranchNode
+from .debug.echo_node import EchoNode
+from .debug.error_node import ErrorNode
+from .debug.logger_node import LoggerNode
+from .debug.memory_snapshot_node import MemorySnapshotNode
+from .debug.no_op_node import NoOpNode
+from .debug.probe_node import ProbeNode
+from .debug.random_branch_node import RandomBranchNode
+from .debug.repeat_node import RepeatCounterNode
+from .debug.sleep_node import SleepNode
+from .debug.variable_reader_node import VariableReaderNode
+from .debug.variable_setter_node import VariableSetterNode
 
 
 ALL_NODE_CLASSES = [
+    # Flow
     StartNode,
-    TextOutputNode,
+    EndNode,
     BranchNode,
     ConditionalNode,
-    ChatCompletionNode,
-    ImageGenerationNode,
-    EmbeddingNode,
+    WaitUntilNode,
+    # Data
     SetVariableNode,
     GetVariableNode,
     ConcatNode,
+    VariableSetterNode,
+    VariableReaderNode,
+    # IO
+    TextOutputNode,
     UserTextInputNode,
     FileReaderNode,
-    EndNode,
+    # AI
+    ChatCompletionNode,
+    ImageGenerationNode,
+    EmbeddingNode,
+    # Debug
+    TombstoneNode,
+    EchoNode,
+    LoggerNode,
+    SleepNode,
+    CounterNode,
+    MemorySnapshotNode,
+    ProbeNode,
+    ErrorNode,
+    RandomBranchNode,
+    DeepBranchNode,
+    NoOpNode,
+    RepeatCounterNode,
 ]
