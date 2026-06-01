@@ -28,6 +28,11 @@ class CommandInput(Input):
 
     async def _on_key(self, event: events.Key) -> None:
         if self.editing:
+            if event.key == "escape":
+                self.end_edit()
+                event.stop()
+                event.prevent_default()
+                return
             await super()._on_key(event)
             return
 
@@ -87,6 +92,11 @@ class CommandTextArea(TextArea):
 
     async def _on_key(self, event: events.Key) -> None:
         if self.editing:
+            if event.key == "escape":
+                self.end_edit()
+                event.stop()
+                event.prevent_default()
+                return
             await super()._on_key(event)
             return
 

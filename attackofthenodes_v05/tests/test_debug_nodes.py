@@ -1203,6 +1203,12 @@ async def _test_node_config_command_inputs_require_activation():
         assert alias.editing is True
         await alias._on_key(events.Key("x", "x"))
         assert alias.value.endswith("x")
+        await alias._on_key(events.Key("escape", None))
+        assert alias.editing is False
+        assert app.focused is alias
+        await alias._on_key(events.Key("s", "s"))
+        assert not alias.value.endswith("xs")
+        assert app.focused is not alias
 
     print("test_node_config_command_inputs_require_activation PASSED")
 

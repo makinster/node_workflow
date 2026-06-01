@@ -424,6 +424,8 @@ Done when:
   screen.
 - Text fields should be keyboard-selectable before they are editable: `W`/`S`
   keep moving between controls until the user presses `E` to activate a field.
+- `Esc` inside an active text field exits editing mode first; a second `Esc`
+  may close the modal.
 - Focus changes near the bottom of scrollable modals should scroll the active
   control into view.
 - Utility/write nodes that primarily update memory should support pass-through

@@ -1,5 +1,15 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-01 — Escape Leaves Text Editing
+
+- Updated command-mode text fields so `Esc` exits editing mode and keeps the
+  field selected instead of closing the surrounding modal.
+- Added regression coverage proving a field can be activated with `E`, typed
+  into, exited with `Esc`, and then return to `W`/`S` navigation.
+- Verification:
+  - `python -m compileall -q .`
+  - `python -m pytest tests/test_debug_nodes.py -v`
+
 ## 2026-06-01 — Keyboard-First Text Field Navigation
 
 - Added command-mode text widgets so text fields can be selected with keyboard
