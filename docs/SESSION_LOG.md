@@ -1,5 +1,20 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-01 — Keyboard-First Text Field Navigation
+
+- Added command-mode text widgets so text fields can be selected with keyboard
+  navigation without immediately consuming `W`/`S` as typed characters.
+- Updated the add/insert node selector to open on the node list with the first
+  node highlighted; `W` moves to the filter row and `E` activates typing.
+- Applied the same `E`-to-edit pattern to node config fields, generated schema
+  inputs, multiline text areas, settings, user-input prompts, and import/export
+  path prompts.
+- Added keyboard regression coverage for node selector filter activation and
+  node config input activation.
+- Verification:
+  - `python -m compileall -q .`
+  - `python -m pytest tests/test_debug_nodes.py -v`
+
 ## 2026-06-01 — Empty Start View + Previous Output Preview
 
 - Hid the backend-only start node in an otherwise empty editor view so a new

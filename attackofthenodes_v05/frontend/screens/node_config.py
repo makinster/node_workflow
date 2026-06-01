@@ -5,10 +5,12 @@ from __future__ import annotations
 from typing import Any, Dict, Optional
 
 from textual.app import ComposeResult
+from textual.binding import Binding
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.screen import ModalScreen
-from textual.widgets import Button, Checkbox, Input, Label, SelectionList, Static
+from textual.widgets import Button, Checkbox, Input, Label, Select, SelectionList, Static, TextArea
 
+from frontend.widgets.command_input import CommandInput, CommandTextArea
 from frontend.widgets.form_generator import WidgetGetter, build_form
 
 
@@ -120,6 +122,12 @@ class NodeConfigScreen(ModalScreen):
         ("escape", "cancel", "Cancel"),
         ("ctrl+s", "save", "Save"),
         ("ctrl+enter", "save", "Save"),
+        Binding("up", "cursor_up", "Up", priority=True),
+        Binding("down", "cursor_down", "Down", priority=True),
+        Binding("w", "cursor_up", "Up", priority=True),
+        Binding("s", "cursor_down", "Down", priority=True),
+        Binding("e", "activate_focused", "Activate", priority=True),
+        Binding("enter", "activate_focused", "Activate", priority=True),
     ]
 
     def __init__(
@@ -167,7 +175,7 @@ class NodeConfigScreen(ModalScreen):
             yield Static("Ctrl+S save  Ctrl+Enter save  Esc close  Tab moves focus", classes="modal-help")
             with VerticalScroll(id="node-config-scroll"):
                 yield Label("Alias", classes="form-label")
-                yield Input(value=self.node_data.get("alias", ""), id="alias-input")
+                yield CommandInput(value=self.node_data.get("alias", ""), id="alias-input")
                 yield Static(self._format_metadata(metadata), id="node-config-summary")
                 yield Label("Previous Node Output", classes="form-label")
                 yield Checkbox(
@@ -193,9 +201,23 @@ class NodeConfigScreen(ModalScreen):
                 yield Button("Cancel", id="cancel-node-config", variant="default")
 
     def on_mount(self) -> None:
-        self.query_one("#alias-input", Input).focus()
+        self.app.set_focus(self.query_one("#alias-input", CommandInput))
         self._sync_membank_output_controls()
         self._sync_previous_output_preview()
+        self.call_after_refresh(
+            lambda: self.app.set_focus(self.query_one("#alias-input", CommandInput))
+        )
+        self.set_timer(
+            0.01,
+            lambda: self.app.set_focus(self.query_one("#alias-input", CommandInput)),
+        )
+
+    def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
+        focused = self.app.focused
+        if isinstance(focused, (CommandInput, CommandTextArea)) and focused.editing:
+            if action in {"cursor_up", "cursor_down", "activate_focused"}:
+                return False
+        return True
 
     async def on_checkbox_changed(self, event: Checkbox.Changed) -> None:
         if event.checkbox.id == "membank-writes":
@@ -223,6 +245,53 @@ class NodeConfigScreen(ModalScreen):
 
     def action_cancel(self) -> None:
         self.dismiss(None)
+
+    def action_cursor_up(self) -> None:
+        self._move_keyboard_focus(-1)
+
+    def action_cursor_down(self) -> None:
+        self._move_keyboard_focus(1)
+
+    def action_activate_focused(self) -> None:
+        focused = self.app.focused
+        if isinstance(focused, (CommandInput, CommandTextArea)):
+            focused.begin_edit()
+        elif isinstance(focused, Checkbox):
+            focused.value = not focused.value
+        elif isinstance(focused, Button):
+            focused.press()
+
+    def _move_keyboard_focus(self, direction: int) -> None:
+        widgets = self._keyboard_focus_widgets()
+        if not widgets:
+            return
+        current = self.app.focused
+        try:
+            current_index = widgets.index(current)
+        except ValueError:
+            current_index = 0 if direction > 0 else len(widgets) - 1
+        next_index = max(0, min(len(widgets) - 1, current_index + direction))
+        focused = widgets[next_index]
+        if isinstance(focused, (CommandInput, CommandTextArea)):
+            focused.end_edit()
+        self.app.set_focus(focused)
+        focused.scroll_visible()
+
+    def _keyboard_focus_widgets(self) -> list[Any]:
+        focusable_types = (
+            CommandInput,
+            CommandTextArea,
+            Checkbox,
+            SelectionList,
+            Select,
+            TextArea,
+            Button,
+        )
+        return [
+            widget
+            for widget in self.query("*")
+            if isinstance(widget, focusable_types) and not getattr(widget, "disabled", False)
+        ]
 
     def _metadata_for_type(self, node_type: str) -> Optional[Dict[str, Any]]:
         for item in self.factory.get_node_types_metadata():
@@ -310,7 +379,7 @@ class NodeConfigScreen(ModalScreen):
         enabled = bool(outputs)
         yield Checkbox("Writes to memory bank", value=enabled, id="membank-writes")
         yield Label("Number of outputs", classes="form-description")
-        yield Input(
+        yield CommandInput(
             value=str(len(outputs) if outputs else 0),
             type="integer",
             id="membank-output-count",
@@ -427,12 +496,12 @@ class NodeConfigScreen(ModalScreen):
             widgets.append(Label(f"Output {index + 1}", classes="form-description"))
             widgets.append(
                 Horizontal(
-                    Input(
+                    CommandInput(
                         value=current.get("id", ""),
                         id=f"membank-output-id-{index}",
                         placeholder="memory id",
                     ),
-                    Input(
+                    CommandInput(
                         value=current.get("description", ""),
                         id=f"membank-output-desc-{index}",
                         placeholder="description",

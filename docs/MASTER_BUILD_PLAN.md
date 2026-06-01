@@ -422,6 +422,10 @@ Done when:
   the first visible item automatically.
 - Arrow keys should move the visible highlight whenever a highlighted list is on
   screen.
+- Text fields should be keyboard-selectable before they are editable: `W`/`S`
+  keep moving between controls until the user presses `E` to activate a field.
+- Focus changes near the bottom of scrollable modals should scroll the active
+  control into view.
 - Utility/write nodes that primarily update memory should support pass-through
   so input can continue to downstream nodes.
 - A brand-new workflow may keep its backend start node hidden until the first
@@ -460,7 +464,7 @@ python -m pytest tests/test_debug_nodes.py -v
 
 Expected latest known signal:
 
-- 31 tests passing after the empty-start and previous-output preview patch.
+- 33 tests passing after the keyboard-first text-field navigation patch.
 
 For docs-only changes:
 

@@ -8,7 +8,9 @@ from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Vertical
 from textual.screen import ModalScreen
-from textual.widgets import Button, Input, Label, ListItem, ListView, Static
+from textual.widgets import Button, Label, ListItem, ListView, Static
+
+from frontend.widgets.command_input import CommandInput
 
 
 class NodeSelectorScreen(ModalScreen):
@@ -23,7 +25,7 @@ class NodeSelectorScreen(ModalScreen):
         Binding("w", "cursor_up", "Up", priority=True),
         Binding("s", "cursor_down", "Down", priority=True),
         ("enter", "choose", "Add"),
-        ("e", "choose", "Add"),
+        Binding("e", "choose", "Add", priority=True),
         ("d", "choose", "Add"),
     ]
 
@@ -36,23 +38,33 @@ class NodeSelectorScreen(ModalScreen):
     def compose(self) -> ComposeResult:
         with Vertical(id="modal-card"):
             yield Label("Add Node", classes="modal-title")
-            yield Input(placeholder="Filter nodes", id="node-filter")
+            yield CommandInput(placeholder="Filter nodes", id="node-filter")
             yield ListView(id="node-type-list")
-            yield Static("↑↓ navigate  ENTER add  / filter  ESC close", classes="modal-help")
+            yield Static("W/S navigate  E activate/add  / filter  ESC close", classes="modal-help")
             yield Button("Cancel", id="cancel-node-select", variant="default")
 
     def on_mount(self) -> None:
         self._all_nodes = self.factory.get_node_types_metadata()
         self._apply_filter("")
-        self.query_one("#node-filter", Input).focus()
+        self._focus_node_list()
+        self.call_after_refresh(self._focus_node_list)
+        self.set_timer(0.01, self._focus_node_list)
 
-    def on_input_changed(self, event: Input.Changed) -> None:
+    def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
+        focused = self.focused
+        if isinstance(focused, CommandInput) and focused.editing:
+            if action in {"cursor_up", "cursor_down", "choose", "focus_filter", "focus_node_list"}:
+                return False
+        return True
+
+    def on_input_changed(self, event: CommandInput.Changed) -> None:
         if event.input.id == "node-filter":
             self._apply_filter(event.value)
 
-    def on_input_submitted(self, event: Input.Submitted) -> None:
+    def on_input_submitted(self, event: CommandInput.Submitted) -> None:
         if event.input.id == "node-filter":
-            self._dismiss_selected(0)
+            event.input.end_edit()
+            self._focus_node_list()
 
     def on_list_view_selected(self, event: ListView.Selected) -> None:
         self._dismiss_selected(event.list_view.index)
@@ -62,12 +74,16 @@ class NodeSelectorScreen(ModalScreen):
             self.dismiss(None)
 
     def action_focus_filter(self) -> None:
-        self.query_one("#node-filter", Input).focus()
+        self.app.set_focus(self.query_one("#node-filter", CommandInput))
 
     def action_focus_node_list(self) -> None:
         self._focus_node_list()
 
     def action_choose(self) -> None:
+        focused = self.app.focused
+        if isinstance(focused, CommandInput):
+            focused.begin_edit()
+            return
         list_view = self.query_one("#node-type-list", ListView)
         self._dismiss_selected(list_view.index)
 
@@ -75,9 +91,16 @@ class NodeSelectorScreen(ModalScreen):
         self.dismiss(None)
 
     def action_cursor_up(self) -> None:
+        focused = self.app.focused
+        if isinstance(focused, CommandInput):
+            return
         self._move_selection(-1)
 
     def action_cursor_down(self) -> None:
+        focused = self.app.focused
+        if isinstance(focused, CommandInput):
+            self._focus_node_list()
+            return
         self._move_selection(1)
 
     def _apply_filter(self, query: str) -> None:
@@ -110,7 +133,7 @@ class NodeSelectorScreen(ModalScreen):
             list_view.index = 0
         elif self._visible_nodes:
             list_view.index = max(0, min(list_view.index or 0, len(self._visible_nodes) - 1))
-        list_view.focus()
+        self.app.set_focus(list_view)
 
     def _dismiss_selected(self, index: Optional[int]) -> None:
         if index is None or index < 0 or index >= len(self._visible_nodes):
@@ -122,5 +145,10 @@ class NodeSelectorScreen(ModalScreen):
             return
         list_view = self.query_one("#node-type-list", ListView)
         current = list_view.index if list_view.index is not None else 0
-        list_view.index = max(0, min(len(self._visible_nodes) - 1, current + delta))
-        list_view.focus()
+        next_index = max(0, min(len(self._visible_nodes) - 1, current + delta))
+        if delta < 0 and current == 0:
+            self.action_focus_filter()
+            return
+        list_view.index = next_index
+        self.app.set_focus(list_view)
+        list_view.scroll_visible()

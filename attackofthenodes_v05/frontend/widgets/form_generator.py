@@ -18,6 +18,8 @@ from textual.widgets import (
     TextArea,
 )
 
+from frontend.widgets.command_input import CommandInput, CommandTextArea
+
 
 WidgetGetter = Callable[[], Dict[str, Any]]
 DEFAULT_GROUP = "Settings"
@@ -125,7 +127,7 @@ def _widget_for_field(
             id=f"field-{field_name}",
         )
     if field_type in {"multiline", "code"}:
-        return TextArea("" if value is None else str(value), id=f"field-{field_name}")
+        return CommandTextArea("" if value is None else str(value), id=f"field-{field_name}")
     if field_type == "boolean":
         return Checkbox(value=bool(value), id=f"field-{field_name}")
     if field_type == "select":
@@ -143,7 +145,7 @@ def _widget_for_field(
     elif field_type in {"float", "number"}:
         input_type = "number"
     text_value = "" if value is None else str(value)
-    return Input(value=text_value, type=input_type, id=f"field-{field_name}")
+    return CommandInput(value=text_value, type=input_type, id=f"field-{field_name}")
 
 
 def _select_options(options: Iterable[Any]) -> list[tuple[str, Any]]:

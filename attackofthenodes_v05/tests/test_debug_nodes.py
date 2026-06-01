@@ -1120,6 +1120,93 @@ def test_node_config_previous_output_preview_reads_transient_source():
     print("test_node_config_previous_output_preview_reads_transient_source PASSED")
 
 
+def test_node_selector_opens_on_list_and_activates_filter_with_e():
+    asyncio.run(_test_node_selector_opens_on_list_and_activates_filter_with_e())
+
+
+async def _test_node_selector_opens_on_list_and_activates_filter_with_e():
+    from textual.app import App, ComposeResult
+    from textual.widgets import ListView
+
+    from frontend.screens.node_selector import NodeSelectorScreen
+    from frontend.widgets.command_input import CommandInput
+
+    _, wm, _, _ = _make_services()
+
+    class SelectorApp(App):
+        def compose(self) -> ComposeResult:
+            yield NodeSelectorScreen(wm._factory)
+
+    app = SelectorApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        screen = app.query_one(NodeSelectorScreen)
+        node_list = app.query_one("#node-type-list", ListView)
+        filter_input = app.query_one("#node-filter", CommandInput)
+
+        screen._focus_node_list()
+        assert app.focused is node_list
+        assert node_list.index == 0
+
+        screen.action_cursor_up()
+        assert app.focused is filter_input
+        assert filter_input.editing is False
+        assert filter_input.value == ""
+
+        screen.action_choose()
+        assert filter_input.editing is True
+
+        await pilot.press("s")
+        assert filter_input.value == "s"
+
+    print("test_node_selector_opens_on_list_and_activates_filter_with_e PASSED")
+
+
+def test_node_config_command_inputs_require_activation():
+    asyncio.run(_test_node_config_command_inputs_require_activation())
+
+
+async def _test_node_config_command_inputs_require_activation():
+    from textual import events
+    from textual.app import App, ComposeResult
+
+    from frontend.screens.node_config import NodeConfigScreen
+    from frontend.widgets.command_input import CommandInput
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("command_input_config")
+    node_id = wm.add_node("logger_node")
+    node_data = wm.get_node_data(node_id)
+
+    class ConfigApp(App):
+        def compose(self) -> ComposeResult:
+            yield NodeConfigScreen(wm._factory, wm, node_id, node_data)
+
+    app = ConfigApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        screen = app.query_one(NodeConfigScreen)
+        alias = app.query_one("#alias-input", CommandInput)
+        app.set_focus(alias)
+        assert app.focused is alias
+        assert alias.editing is False
+
+        screen.action_cursor_down()
+        assert alias.value == node_data.get("alias", "")
+        assert app.focused is not alias
+
+        screen.action_cursor_up()
+        assert app.focused is alias
+        assert alias.editing is False
+
+        screen.action_activate_focused()
+        assert alias.editing is True
+        await alias._on_key(events.Key("x", "x"))
+        assert alias.value.endswith("x")
+
+    print("test_node_config_command_inputs_require_activation PASSED")
+
+
 # ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
@@ -1157,6 +1244,8 @@ if __name__ == "__main__":
         test_node_config_dynamic_membank_output_rows,
         test_editor_hides_empty_start_until_first_node_added,
         test_node_config_previous_output_preview_reads_transient_source,
+        test_node_selector_opens_on_list_and_activates_filter_with_e,
+        test_node_config_command_inputs_require_activation,
     ]
     failed = []
     for t in tests:
