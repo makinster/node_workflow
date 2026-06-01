@@ -128,12 +128,14 @@ class NodeConfigScreen(ModalScreen):
         workflow_map,
         node_id: str,
         node_data: Dict[str, Any],
+        memory_bank=None,
     ) -> None:
         super().__init__()
         self.factory = factory
         self.workflow_map = workflow_map
         self.node_id = node_id
         self.node_data = node_data
+        self.memory_bank = memory_bank
         self._get_form_values: Optional[WidgetGetter] = None
         self._initial_membank_outputs = normalize_membank_outputs(
             node_data.get("config") or {}
@@ -167,6 +169,13 @@ class NodeConfigScreen(ModalScreen):
                 yield Label("Alias", classes="form-label")
                 yield Input(value=self.node_data.get("alias", ""), id="alias-input")
                 yield Static(self._format_metadata(metadata), id="node-config-summary")
+                yield Label("Previous Node Output", classes="form-label")
+                yield Checkbox(
+                    "Show previous node output",
+                    value=False,
+                    id="show-previous-output",
+                )
+                yield Static("", id="previous-output-preview", classes="form-description")
                 yield Label("Memory Bank Inputs", classes="form-label")
                 yield from self._compose_membank_inputs(config)
                 if self.node_data.get("type") == "wait_until_node":
@@ -186,11 +195,14 @@ class NodeConfigScreen(ModalScreen):
     def on_mount(self) -> None:
         self.query_one("#alias-input", Input).focus()
         self._sync_membank_output_controls()
+        self._sync_previous_output_preview()
 
     async def on_checkbox_changed(self, event: Checkbox.Changed) -> None:
         if event.checkbox.id == "membank-writes":
             self._sync_membank_output_controls()
             await self._refresh_membank_output_rows()
+        elif event.checkbox.id == "show-previous-output":
+            self._sync_previous_output_preview()
 
     async def on_input_changed(self, event: Input.Changed) -> None:
         if event.input.id == "membank-output-count":
@@ -261,6 +273,37 @@ class NodeConfigScreen(ModalScreen):
         if not inputs and not outputs:
             lines.append("  -")
         return "\n".join(lines)
+
+    def _previous_output_text(self) -> str:
+        self._refresh_node_data()
+        inputs = self.node_data.get("connections", {}).get("inputs", [])
+        if not inputs:
+            return "No upstream connection."
+        connection = inputs[0]
+        source_id = connection.get("source_node_id")
+        source_port = connection.get("source_port", "default")
+        source_node = self.workflow_map.get_node_data(source_id) if source_id else {}
+        source_label = self._node_label(source_id or "?", source_node or {})
+        prefix = f"Source: {source_label}.{source_port}"
+        if self.memory_bank is None:
+            return f"{prefix}\nNo captured run output is available yet."
+        value = self.memory_bank.read_transient(source_id, source_port, default=None)
+        if value is None:
+            return f"{prefix}\nNo captured output yet. Run the workflow to populate it."
+        rendered = repr(value)
+        if len(rendered) > 800:
+            rendered = f"{rendered[:797]}..."
+        return f"{prefix}\n{rendered}"
+
+    def _sync_previous_output_preview(self) -> None:
+        checkbox_query = self.query("#show-previous-output")
+        preview_query = self.query("#previous-output-preview")
+        if not checkbox_query or not preview_query:
+            return
+        enabled = checkbox_query.first().value
+        preview = preview_query.first()
+        preview.display = enabled
+        preview.update(self._previous_output_text() if enabled else "")
 
     def _compose_membank_outputs(self, config: Dict[str, Any]):
         outputs = normalize_membank_outputs(config)

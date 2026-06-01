@@ -1,5 +1,20 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-01 — Empty Start View + Previous Output Preview
+
+- Hid the backend-only start node in an otherwise empty editor view so a new
+  workflow presents as empty and invites the user to add the first real node.
+- Kept the hidden start node as the connection source for `A` add and `I`
+  insert, then rendered it again once the first user node is connected.
+- Added a dynamic config-modal checkbox that reveals the selected node's first
+  upstream transient output when a run has captured one.
+- Updated empty node-list copy to point users at `A` for adding a node.
+- Added regression tests for the empty-start editor behavior and previous-output
+  preview helper.
+- Verification:
+  - `python -m compileall -q .`
+  - `python -m pytest tests/test_debug_nodes.py -v`
+
 ## 2026-06-01 — Dynamic Node Config Output Rows
 
 - Made the node config modal body scrollable so longer config sections are

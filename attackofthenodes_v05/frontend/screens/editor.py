@@ -198,7 +198,13 @@ class EditorScreen(Screen):
             )
             return
         self.app.push_screen(
-            NodeConfigScreen(self.factory, self.workflow_map, self.selected_node_id, node),
+            NodeConfigScreen(
+                self.factory,
+                self.workflow_map,
+                self.selected_node_id,
+                node,
+                memory_bank=getattr(self.app, "memory_bank", None),
+            ),
             self._save_node_config_from_modal,
         )
 
@@ -512,6 +518,8 @@ class EditorScreen(Screen):
 
     def _build_visible_rows(self) -> list[Dict[str, Any]]:
         nodes = self.workflow_map.get_all_node_data()
+        if self._hidden_empty_start_node_id(nodes):
+            return []
         start_node_id = self.workflow_map.find_start_node_id() or next(iter(nodes), None)
         rows: list[Dict[str, Any]] = []
         visited: set[str] = set()
@@ -550,6 +558,18 @@ class EditorScreen(Screen):
                 next_port = output_ports[0]
             current_node_id = self._target_for_port(node, next_port)
         return rows
+
+    def _hidden_empty_start_node_id(
+        self, nodes: Optional[Dict[str, Dict[str, Any]]] = None
+    ) -> Optional[str]:
+        nodes = nodes if nodes is not None else self.workflow_map.get_all_node_data()
+        if len(nodes) != 1:
+            return None
+        node_id, node = next(iter(nodes.items()))
+        if node.get("type") != "start_node":
+            return None
+        outputs = node.get("connections", {}).get("outputs", [])
+        return None if outputs else node_id
 
     def _target_for_port(self, node: Dict[str, Any], source_port: str) -> Optional[str]:
         connection = self._connection_for_port(node, source_port)
@@ -609,6 +629,9 @@ class EditorScreen(Screen):
         return None
 
     def _source_for_new_node(self) -> Optional[Dict[str, str]]:
+        hidden_start_id = self._hidden_empty_start_node_id()
+        if hidden_start_id:
+            return {"node_id": hidden_start_id, "port": "default"}
         if self.selected_row and self.selected_row["kind"] == "branch_select":
             branch_node_id = self.selected_row["branch_node_id"]
             active_port = self.active_branch_ports.get(
@@ -630,6 +653,9 @@ class EditorScreen(Screen):
 
     def _source_for_insert_node(self) -> Optional[Dict[str, str]]:
         """Return the highlighted row source for insert-after behavior."""
+        hidden_start_id = self._hidden_empty_start_node_id()
+        if hidden_start_id:
+            return {"node_id": hidden_start_id, "port": "default"}
         if self.selected_row and self.selected_row["kind"] == "branch_select":
             branch_node_id = self.selected_row["branch_node_id"]
             active_port = self.active_branch_ports.get(

@@ -39,7 +39,7 @@ class NodeList(ListView):
             )
             self.append(ListItem(card))
         if not nodes:
-            self.append(ListItem(Label("No nodes. Press Ctrl+N to create a workflow.")))
+            self.append(ListItem(Label("No nodes. Press A to add a node.")))
 
     def refresh_rows(
         self,
@@ -69,7 +69,7 @@ class NodeList(ListView):
                 )
             self.append(ListItem(card))
         if not rows:
-            self.append(ListItem(Label("No nodes. Press Ctrl+N to create a workflow.")))
+            self.append(ListItem(Label("No nodes. Press A to add a node.")))
 
     def node_id_for_index(self, index: int | None) -> Optional[str]:
         """Return the node id matching a ListView index."""

@@ -424,6 +424,11 @@ Done when:
   screen.
 - Utility/write nodes that primarily update memory should support pass-through
   so input can continue to downstream nodes.
+- A brand-new workflow may keep its backend start node hidden until the first
+  user node is placed; the start node should reappear after it is connected.
+- Config screens may offer opt-in previews of upstream transient output, but
+  preview toggles are inspection UI unless a node explicitly documents runtime
+  config semantics.
 - Ports are graph edges. Edit them in the editor, not in the general config
   form.
 
@@ -455,7 +460,7 @@ python -m pytest tests/test_debug_nodes.py -v
 
 Expected latest known signal:
 
-- 21 tests passing after the config modal usability patch.
+- 31 tests passing after the empty-start and previous-output preview patch.
 
 For docs-only changes:
 

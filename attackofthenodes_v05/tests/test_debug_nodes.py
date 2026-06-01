@@ -1075,6 +1075,51 @@ async def _test_node_config_dynamic_membank_output_rows():
     print("test_node_config_dynamic_membank_output_rows PASSED")
 
 
+def test_editor_hides_empty_start_until_first_node_added():
+    from frontend.screens.editor import EditorScreen
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("hidden_empty_start")
+    start = wm.add_node("start_node")
+    screen = EditorScreen(wm._factory, wm)
+
+    assert screen._build_visible_rows() == []
+    assert screen._source_for_new_node() == {"node_id": start, "port": "default"}
+    assert screen._source_for_insert_node() == {"node_id": start, "port": "default"}
+
+    first = wm.add_node("logger_node")
+    wm.connect(start, "default", first, "input")
+    rows = screen._build_visible_rows()
+
+    assert [row["node_id"] for row in rows if row["kind"] == "node"] == [start, first]
+    print("test_editor_hides_empty_start_until_first_node_added PASSED")
+
+
+def test_node_config_previous_output_preview_reads_transient_source():
+    from frontend.screens.node_config import NodeConfigScreen
+
+    _, wm, mb, _ = _make_services()
+    wm.create_new("previous_output_preview")
+    source = wm.add_node("logger_node")
+    target = wm.add_node("logger_node")
+    wm.connect(source, "default", target, "input")
+    mb.store_transient(source, "default", {"message": "hello"})
+
+    screen = NodeConfigScreen(
+        wm._factory,
+        wm,
+        target,
+        wm.get_node_data(target),
+        memory_bank=mb,
+    )
+    text = screen._previous_output_text()
+
+    assert "Source:" in text
+    assert source in text
+    assert "hello" in text
+    print("test_node_config_previous_output_preview_reads_transient_source PASSED")
+
+
 # ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
@@ -1110,6 +1155,8 @@ if __name__ == "__main__":
         test_wait_until_node_gates_cross_branch_completion,
         test_wait_target_options_exclude_downstream_nodes,
         test_node_config_dynamic_membank_output_rows,
+        test_editor_hides_empty_start_until_first_node_added,
+        test_node_config_previous_output_preview_reads_transient_source,
     ]
     failed = []
     for t in tests:
