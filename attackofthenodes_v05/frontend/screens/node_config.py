@@ -384,6 +384,7 @@ class NodeConfigScreen(ModalScreen):
             value=str(len(outputs) if outputs else 0),
             type="integer",
             id="membank-output-count",
+            classes="compact-number-field",
         )
         with Vertical(id="membank-output-rows"):
             yield from self._membank_output_row_widgets(outputs if enabled else [])
@@ -499,10 +500,10 @@ class NodeConfigScreen(ModalScreen):
         widgets: list[Any] = []
         for index, current in enumerate(outputs[:MAX_MEMBANK_OUTPUT_ROWS]):
             output_number = index + 1
-            desc_input = CommandTextArea(
-                current.get("description", ""),
+            desc_input = CommandInput(
+                value=current.get("description", ""),
                 id=f"membank-output-desc-{index}",
-                classes="membank-output-field membank-output-textarea",
+                classes="membank-output-field membank-output-description-field",
             )
             id_input = CommandTextArea(
                 current.get("id", ""),
@@ -511,7 +512,7 @@ class NodeConfigScreen(ModalScreen):
             )
             desc_input.placeholder = "Describe what this output contains"
             id_input.placeholder = "Memory-bank output key or output value"
-            desc_input.styles.height = 6
+            desc_input.styles.height = 3
             desc_input.styles.width = "100%"
             id_input.styles.height = 6
             id_input.styles.width = "100%"

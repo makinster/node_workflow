@@ -1051,6 +1051,7 @@ async def _test_node_config_dynamic_membank_output_rows():
         count = app.query_one("#membank-output-count", Input)
 
         assert count.disabled is True
+        assert count.has_class("compact-number-field")
         assert not app.query("#membank-output-id-0")
 
         writes.value = True
@@ -1063,13 +1064,12 @@ async def _test_node_config_dynamic_membank_output_rows():
         assert first_output.has_class("membank-output-field")
         assert first_output.parent and first_output.parent.id == "membank-output-rows"
         assert str(first_output.styles.height) == "6"
-        assert app.query_one("#membank-output-desc-0", TextArea)
+        first_desc = app.query_one("#membank-output-desc-0", Input)
+        assert first_desc.has_class("membank-output-description-field")
+        assert str(first_desc.styles.height) == "3"
 
         app.query_one("#membank-output-id-0", TextArea).text = "first"
-        app.query_one("#membank-output-desc-0", TextArea).text = (
-            "First output with a long description that can safely wrap across "
-            "multiple lines without collapsing the config modal."
-        )
+        app.query_one("#membank-output-desc-0", Input).value = "First output"
         count.value = "3"
         await screen._refresh_membank_output_rows()
         await pilot.pause()
@@ -1080,11 +1080,11 @@ async def _test_node_config_dynamic_membank_output_rows():
         assert len(output_id_inputs) == 3
         assert all(widget.has_class("membank-output-field") for widget in output_id_inputs)
         assert app.query_one("#membank-output-id-0", TextArea).text == "first"
-        assert "long description" in app.query_one("#membank-output-desc-0", TextArea).text
+        assert app.query_one("#membank-output-desc-0", Input).value == "First output"
         saved_values = screen._membank_config_values()["membank_outputs"]
         assert saved_values[0]["id"] == "first"
         assert saved_values[0]["output"] == "first"
-        assert "long description" in saved_values[0]["description"]
+        assert saved_values[0]["description"] == "First output"
 
         count.value = "2"
         await screen._refresh_membank_output_rows()

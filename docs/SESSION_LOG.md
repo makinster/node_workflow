@@ -1,5 +1,17 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-01 — Compact Output Count and Description Fields
+
+- Kept the actual `Output:` field as a bounded multiline text area for long
+  values.
+- Returned `Number of outputs` and `Output Description:` to compact fields so
+  the config modal uses less vertical space.
+- Updated the dynamic output-row regression test for the compact description
+  field and compact output count styling.
+- Verification:
+  - `python -m compileall -q .`
+  - `python -m pytest tests/test_debug_nodes.py -v`
+
 ## 2026-06-01 — Long Output Text Areas + Description-First Inputs
 
 - Changed memory-bank output declarations to render bounded multiline text

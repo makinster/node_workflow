@@ -87,6 +87,15 @@ Screen {
     width: 100%;
 }
 
+.compact-number-field {
+    width: 16;
+    height: 3;
+}
+
+.membank-output-description-field {
+    height: 3;
+}
+
 .membank-output-textarea {
     height: 6;
 }
