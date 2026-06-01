@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Optional
 
 from .event_bus import EventBus
 from .events import (
+    BREAKPOINT_HIT,
     RECOVERY_OPTIONS_AVAILABLE,
     SUPERVISOR_ERROR,
     SUPERVISOR_REGISTER,
@@ -77,6 +78,7 @@ class Supervisor:
         self._resume_event.set()
         self._pending_input_future: Optional[asyncio.Future] = None
         self._pending_recovery_future: Optional[asyncio.Future] = None
+        self._skip_breakpoint_once_for: Optional[str] = None
 
     async def run(self) -> None:
         """Run this supervisor until its path ends or errors."""
@@ -141,6 +143,10 @@ class Supervisor:
                 if self._stop_requested:
                     break
 
+            if await self._pause_for_breakpoint_if_needed():
+                if self._stop_requested:
+                    break
+
             node = self._workflow_map.get_node_instance(self.current_node_id)
             if node is None:
                 self._fail(f"Node {self.current_node_id} not found in workflow map")
@@ -181,6 +187,34 @@ class Supervisor:
         if self.state != SupervisorState.ERROR:
             self.state = SupervisorState.TERMINATED
             self._publish_state_update()
+
+    async def _pause_for_breakpoint_if_needed(self) -> bool:
+        """Pause before executing the current node when its breakpoint is set."""
+        current_node_id = self.current_node_id
+        if current_node_id is None:
+            return False
+        node_data = self._workflow_map.get_node_data(current_node_id) or {}
+        if not node_data.get("breakpoint"):
+            return False
+        if self._skip_breakpoint_once_for == current_node_id:
+            self._skip_breakpoint_once_for = None
+            return False
+
+        self._event_bus.publish(
+            BREAKPOINT_HIT,
+            {
+                "run_id": self.run_id,
+                "branch_id": self.branch_id,
+                "node_id": current_node_id,
+                "depth": self.depth,
+            },
+        )
+        if not self._pause_requested:
+            self.request_pause()
+        self._publish_state_update()
+        await self._resume_event.wait()
+        self._skip_breakpoint_once_for = current_node_id
+        return True
 
     def _prepare_inputs(self, node: Node) -> Dict[str, Any]:
         """Build node inputs from connected upstream transient outputs."""

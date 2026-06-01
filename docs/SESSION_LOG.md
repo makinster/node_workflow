@@ -1,5 +1,21 @@
 # AttackOfTheNodes Session Log
 
+## 2026-05-31 — Phase 6 Breakpoints
+
+- Added persisted node breakpoint flags plus `WorkflowMap.set_breakpoint()` and
+  `clear_all_breakpoints()`.
+- Added editor breakpoint controls: `B` toggles the selected node and `Ctrl+B`
+  clears all breakpoints; node cards show a breakpoint marker.
+- Added `BREAKPOINT_HIT`; supervisors publish it before executing a marked node,
+  and `MasterState` reuses the existing global pause/resume path.
+- Updated in-app help text for breakpoint keys and the newer text-field-safe
+  node config shortcuts.
+- Added tests for breakpoint persistence and pause-before-execution/resume
+  behavior.
+- Verification:
+  - `python -m compileall -q .`
+  - `python -m pytest tests/test_debug_nodes.py -v`
+
 ## 2026-05-31 — Phase 5 Config Tabs
 
 - Updated the schema form generator so fields sharing a single `group` render as

@@ -26,6 +26,8 @@ Completed from the master plan:
   deletion.
 - Phase 5: grouped schema fields render as tabs when there is more than one
   group; simple configs stay flat.
+- Phase 6: node breakpoints pause globally before execution and resume through
+  the existing pause path.
 
 Recent usability patch:
 
@@ -47,8 +49,8 @@ Recent docs pass:
 
 Latest phase:
 
-- Phase 5 config tabs are complete. The next unfinished implementation phase is
-  Phase 6 breakpoints, though Phase 7 timing can still float earlier if desired.
+- Phase 6 breakpoints are complete. The next unfinished implementation phase is
+  Phase 7 per-node execution timing.
 
 ## Read First
 

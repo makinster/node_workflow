@@ -260,6 +260,7 @@ class WorkflowMap:
             "config": config_template,
             "position": position or {"x": 0, "y": 0},
             "bookmarked": False,
+            "breakpoint": False,
             "connections": {"inputs": [], "outputs": []},
         }
         self._mark_dirty()
@@ -272,6 +273,25 @@ class WorkflowMap:
         self._nodes[node_id]["bookmarked"] = bool(is_bookmarked)
         self._mark_dirty()
         return True
+
+    def set_breakpoint(self, node_id: str, enabled: bool) -> bool:
+        """Set whether a node should pause execution before running."""
+        if node_id not in self._nodes:
+            return False
+        self._nodes[node_id]["breakpoint"] = bool(enabled)
+        self._mark_dirty()
+        return True
+
+    def clear_all_breakpoints(self) -> int:
+        """Clear every node breakpoint and return how many were changed."""
+        cleared = 0
+        for node in self._nodes.values():
+            if node.get("breakpoint"):
+                node["breakpoint"] = False
+                cleared += 1
+        if cleared:
+            self._mark_dirty()
+        return cleared
 
     def get_nodes_by_filter(self, filter_name: str) -> Dict[str, Dict[str, Any]]:
         """Return nodes matching a navigation filter."""

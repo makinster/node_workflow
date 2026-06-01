@@ -843,6 +843,69 @@ async def _test_form_generator_mounts_tabbed_and_single_group_forms():
 
 
 # ---------------------------------------------------------------------------
+# 24. Breakpoints pause before node execution and resume cleanly
+# ---------------------------------------------------------------------------
+
+def test_workflow_map_breakpoint_flags_are_persisted_in_node_data():
+    _, wm, _, _ = _make_services()
+    wm.create_new("breakpoint_flags")
+    node_id = wm.add_node("logger_node")
+
+    node = wm.get_node_data(node_id)
+    assert node["breakpoint"] is False
+
+    assert wm.set_breakpoint(node_id, True)
+    assert wm.get_node_data(node_id)["breakpoint"] is True
+    saved = wm.get_workflow_data_for_save()
+    assert saved["nodes"][node_id]["breakpoint"] is True
+
+    assert wm.clear_all_breakpoints() == 1
+    assert wm.get_node_data(node_id)["breakpoint"] is False
+    print("test_workflow_map_breakpoint_flags_are_persisted_in_node_data PASSED")
+
+
+def test_breakpoint_pauses_before_node_execution_and_resumes():
+    asyncio.run(_test_breakpoint_pauses_before_node_execution_and_resumes())
+
+
+async def _test_breakpoint_pauses_before_node_execution_and_resumes():
+    from backend.events import BREAKPOINT_HIT
+
+    master, wm, mb, bus = _make_services()
+    hits = []
+    bus.subscribe(BREAKPOINT_HIT, hits.append)
+
+    wm.create_new("breakpoint_run")
+    start = wm.add_node("start_node")
+    logger_node = wm.add_node("logger_node")
+    end = wm.add_node("end_node")
+
+    wm.update_node_config(logger_node, {"label": "breakpoint_logger", "include_input": False})
+    wm.set_breakpoint(logger_node, True)
+    wm.connect(start, "default", logger_node, "input")
+    wm.connect(logger_node, "default", end, "input")
+
+    await master.start_workflow()
+    for _ in range(100):
+        if master.state.value == "PAUSED":
+            break
+        await asyncio.sleep(0.01)
+
+    assert master.state.value == "PAUSED"
+    assert hits and hits[-1]["node_id"] == logger_node
+    paused_log = [str(entry) for entry in mb.read_persistent("output_log", default=[])]
+    assert not any("breakpoint_logger" in entry for entry in paused_log), paused_log
+
+    master.resume()
+    await master.wait_for_completion()
+
+    assert master.state.value == "FINISHED"
+    final_log = [str(entry) for entry in mb.read_persistent("output_log", default=[])]
+    assert any("breakpoint_logger" in entry for entry in final_log), final_log
+    print("test_breakpoint_pauses_before_node_execution_and_resumes PASSED")
+
+
+# ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
 
@@ -871,6 +934,8 @@ if __name__ == "__main__":
         test_branch_node_default_labels_are_configurable,
         test_form_generator_groups_schema_for_tabs,
         test_form_generator_mounts_tabbed_and_single_group_forms,
+        test_workflow_map_breakpoint_flags_are_persisted_in_node_data,
+        test_breakpoint_pauses_before_node_execution_and_resumes,
     ]
     failed = []
     for t in tests:

@@ -158,8 +158,8 @@ Append a short entry to `docs/SESSION_LOG.md` for every phase or notable patch.
 | 4 | Delete + insert nodes | Done (`51f9a74`) |
 | 4.5 | Config modal and selector usability | Done (`0d53c04`) |
 | 5 | Config tabs | Done |
-| 6 | Breakpoints | Next, can float earlier |
-| 7 | Per-node execution timing | Open, can float earlier |
+| 6 | Breakpoints | Done |
+| 7 | Per-node execution timing | Next, can float earlier |
 | 8 | Completion registry + wait-until node | Open |
 | 9 | Merge dynamic list + lineage barrier | Open |
 | 10 | Documentation modernization | Open, docs-only project |
@@ -168,8 +168,8 @@ Append a short entry to `docs/SESSION_LOG.md` for every phase or notable patch.
 
 Sequencing:
 
-- Phases 6 and 7 depend only on the memory-leak cleanup and can be pulled
-  forward between heavier engine phases.
+- Phase 7 depends only on the memory-leak cleanup and can be pulled forward
+  before heavier engine phases.
 - Phase 8 depends on Phases 1 and 2.
 - Phase 9 depends on Phase 1 and should start by verifying master-state lineage
   support.
@@ -265,33 +265,22 @@ Example config:
 - Tests cover pure grouping behavior plus mounted Textual grouped and
   single-group forms.
 
+### Phase 6 — Breakpoints
+
+- Node data now has a persisted `breakpoint` boolean.
+- `WorkflowMap` can set one breakpoint or clear all breakpoints.
+- The editor toggles the selected node with `B` and clears all with `Ctrl+B`.
+- Node cards show a breakpoint marker on nodes with breakpoints.
+- Supervisors publish `BREAKPOINT_HIT` and pause before executing the marked
+  node.
+- `MasterState` handles breakpoint hits as a global freeze by reusing the
+  existing pause/resume machinery.
+- Tests cover breakpoint persistence, pause-before-execute behavior, and resume
+  through completion.
+
 ---
 
 ## 6. Remaining Implementation Plan
-
-### Phase 6 — Breakpoints
-
-**Files:** node record/save shape, `backend/supervisor.py`,
-`backend/master_state.py`, `frontend/screens/editor.py`.
-**Depends on:** Phase 0 only.
-**Decision:** global freeze for v1, reusing existing pause.
-
-Requirements:
-
-- Add `breakpoint: bool` to node data and persistence.
-- Editor toggles the selected node breakpoint with `b` using
-  `Binding(..., priority=True)`.
-- Add a clear-all-breakpoints action.
-- Supervisor checks breakpoint before node execution.
-- When hit, publish the node/branch that tripped it and request the existing
-  global pause.
-- Resume through the existing pause/resume path.
-
-Done when:
-
-- A workflow pauses before executing a breakpoint node.
-- Resume continues from that node.
-- Breakpoints survive save/load.
 
 ### Phase 7 — Per-Node Execution Timing
 

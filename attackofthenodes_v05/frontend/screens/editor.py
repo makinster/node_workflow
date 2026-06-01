@@ -32,6 +32,8 @@ class EditorScreen(Screen):
         Binding("a", "add_node", "Add node", priority=True),
         Binding("i", "insert_node", "Insert node", priority=True),
         Binding("v", "validate_workflow", "Validate", priority=True),
+        Binding("b", "toggle_breakpoint", "Breakpoint", priority=True),
+        Binding("ctrl+b", "clear_breakpoints", "Clear breakpoints", priority=True),
         Binding("backspace", "delete_selected", "Delete", priority=True),
         Binding("x", "delete_selected", "Delete", priority=True),
         Binding("l", "workflow_library", "Library", priority=True),
@@ -61,7 +63,7 @@ class EditorScreen(Screen):
                     yield Label("Details", classes="panel-title")
                     yield Static("", id="node-details")
             yield StatusBar(
-                "W/S move  ENTER/E edit  A add  I insert  V validate  X/⌫ delete  L library  Ctrl+S save  Ctrl+R run  ? help"
+                "W/S move  ENTER/E edit  A add  I insert  B breakpoint  V validate  X/⌫ delete  L library  Ctrl+S save  Ctrl+R run  ? help"
             )
 
     def on_mount(self) -> None:
@@ -156,6 +158,26 @@ class EditorScreen(Screen):
 
     def action_help(self) -> None:
         self.app.action_help()
+
+    def action_toggle_breakpoint(self) -> None:
+        if self.selected_node_id is None:
+            self.app.notify("No node selected")
+            return
+        node = self.workflow_map.get_node_data(self.selected_node_id)
+        if node is None:
+            self.app.notify("No node selected")
+            return
+        enabled = not bool(node.get("breakpoint"))
+        self.workflow_map.set_breakpoint(self.selected_node_id, enabled)
+        self.refresh_from_backend()
+        self.app.notify("Breakpoint set" if enabled else "Breakpoint cleared")
+
+    def action_clear_breakpoints(self) -> None:
+        cleared = self.workflow_map.clear_all_breakpoints()
+        self.refresh_from_backend()
+        self.app.notify(
+            f"Cleared {cleared} breakpoint{'s' if cleared != 1 else ''}"
+        )
 
     def action_edit_selected(self) -> None:
         if self.selected_row and self.selected_row["kind"] == "branch_select":
@@ -353,6 +375,7 @@ class EditorScreen(Screen):
         lines = [
             f"Selected: {node.get('alias') or node_id}",
             f"Type: {node.get('type', 'unknown')}",
+            f"Breakpoint: {'on' if node.get('breakpoint') else 'off'}",
         ]
         if metadata:
             lines.append(f"Description: {metadata.get('description', '')}")

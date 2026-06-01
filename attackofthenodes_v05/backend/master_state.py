@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Optional
 
 from .event_bus import EventBus
 from .events import (
+    BREAKPOINT_HIT,
     ERROR_OCCURRED,
     SUPERVISOR_ERROR,
     SUPERVISOR_REGISTER,
@@ -73,6 +74,7 @@ class MasterState:
             SUPERVISOR_STATE_UPDATE, self._on_supervisor_state_update
         )
         self._event_bus.subscribe(SUPERVISOR_ERROR, self._on_supervisor_error)
+        self._event_bus.subscribe(BREAKPOINT_HIT, self._on_breakpoint_hit)
         self._event_bus.subscribe(
             TERMINATE_WORKFLOW_REQUESTED, self._on_terminate_workflow_requested
         )
@@ -218,6 +220,11 @@ class MasterState:
         self._set_state(WorkflowState.ERROR)
         self._event_bus.publish(ERROR_OCCURRED, payload)
         self._record_run("ERROR")
+
+    def _on_breakpoint_hit(self, _payload: Dict[str, Any]) -> None:
+        for supervisor in self._supervisors.values():
+            supervisor.request_pause()
+        self._set_state(WorkflowState.PAUSED)
 
     def _on_terminate_workflow_requested(self, _payload: Dict[str, Any]) -> None:
         self.stop()

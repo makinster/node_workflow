@@ -38,7 +38,8 @@ class NodeCard(Static):
         alias = self.node_data.get("alias") or self.node_data.get("type", "node")
         node_type = self.node_data.get("type", "unknown")
         icon = STATUS_ICONS.get(self.status, STATUS_ICONS["idle"])
-        self.update(f"{icon} [{node_type}] {alias}")
+        breakpoint_marker = " ●" if self.node_data.get("breakpoint") else ""
+        self.update(f"{icon}{breakpoint_marker} [{node_type}] {alias}")
 
 
 class BranchSelectCard(Static):
