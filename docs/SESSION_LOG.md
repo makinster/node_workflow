@@ -1,5 +1,18 @@
 # AttackOfTheNodes Session Log
 
+## 2026-05-31 — Comprehensive Build Plan Merge
+
+- Rewrote `docs/MASTER_BUILD_PLAN.md` as the comprehensive current-state build
+  plan, merging the active phase plan, Textual TUI notes, agent working rules,
+  architecture model, UI testing feedback, and remaining roadmap.
+- Updated `docs/AGENT_HANDOFF.md` so future agents treat `MASTER_BUILD_PLAN.md`
+  as the source of truth and understand that older Chrome/tkinter language is
+  historical until Phase 10.
+- Updated `docs/PROJECT_BACKLOG.md` to clarify that docs modernization should
+  refresh older reference docs against the comprehensive plan.
+- Verification:
+  - `git diff --check`
+
 ## 2026-05-31 — Config Modal Usability Patch
 
 - Reordered node config modals so memory-bank reads are above core node

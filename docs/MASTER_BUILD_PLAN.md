@@ -1,288 +1,519 @@
-# Build Handoff — AttackOfTheNodes
+# AttackOfTheNodes Comprehensive Build Plan
 
-**State as of:** commit `dfafea1` (Phase 1 complete).
-**This document supersedes the earlier `MASTER_BUILD_PLAN.md`** — same phases,
-updated to mark completed work and fold in the pre-flight and sequencing notes.
+**Last updated:** 2026-05-31
+**Project root:** `attackofthenodes_v05/`
+**Runtime:** Python 3.14, Textual 8.2.7, asyncio, JSON persistence
+**Current branch context:** Textual TUI spinoff; tkinter frontend is obsolete.
 
-**Project root:** `node_workflow/attackofthenodes_v05/`
-**Runtime:** Ubuntu · Python 3.14 · Textual 8.2.7 · asyncio · JSON persistence
+This is the active build plan and handoff source for the project. It merges the
+current phase plan, the Textual TUI design notes, the agent working rules, and
+the older architecture docs into one current-state reference.
 
----
-
-## Pre-Flight — Do This First
-
-The test suite uses `@pytest.mark.asyncio`, but the venv currently has no
-pytest. Async assertions only run under `pytest-asyncio`, so install both inside
-the venv (no `--break-system-packages` needed in a venv):
-
-```bash
-pip install pytest pytest-asyncio
-```
-
-Add an asyncio mode line so the markers resolve — in `pytest.ini`:
-
-```ini
-[pytest]
-asyncio_mode = auto
-```
-
-After this, `python -m pytest tests/test_debug_nodes.py -v` is the real test
-signal for every phase below.
+Older docs in this folder remain useful as history, but several still describe
+the Chrome-extension or tkinter eras. When documents conflict, prefer this file,
+then `docs/AGENT_HANDOFF.md`, then `docs/SESSION_LOG.md`, then
+`docs/TUI_DESIGN.md`.
 
 ---
 
-## Standing Instructions (every session)
+## 1. Current Mental Model
 
-Before code:
-1. Read `docs/AGENT_HANDOFF.md`, then the docs relevant to your phase
-   (`TUI_DESIGN.md` for frontend; `PROJECT_KNOWLEDGE.md` + `SIGNAL_FLOW.md` for
-   the engine).
-2. If the phase creates or edits a known file type, read the matching skill first.
+Think of AttackOfTheNodes as a factory floor with a control room:
+
+- The backend is the factory floor. Nodes are machines arranged in directed
+  workflows, and supervisors walk execution paths through those nodes.
+- The frontend is the control room. It displays workflow structure, execution
+  state, memory, outputs, errors, settings, and editing surfaces.
+- A workflow is a recipe: nodes plus connections. Execution starts at a start
+  node, follows output connections, and can fork into multiple supervisors.
+- All supervisors in a run share one `MemoryBank` and report back through
+  `WorkflowMasterState` and the event bus.
+
+The active frontend is Textual. The old tkinter modules and any older
+browser/IndexedDB/HandleUI references are historical only.
+
+---
+
+## 2. Active Architecture
+
+### Backend
+
+- `backend/persistence.py`: local JSON persistence for workflows, settings,
+  run history, run outputs, and run errors.
+- `backend/configuration_manager.py`: settings cache and schema gatekeeper.
+- `backend/workflow_map.py`: live workflow cache, node CRUD, connection
+  operations, dirty tracking, traversal helpers, and save serialization.
+- `backend/node_factory.py`: executable node registry and config templates.
+- `backend/node_base.py`: `Node`, `NodeContext`, metadata validation, config
+  schema contract, and node category support.
+- `backend/memory_bank.py`: per-run persistent variables and transient port
+  data.
+- `backend/output_manager.py`: durable output collection and finalization.
+- `backend/supervisor.py`: one execution path through the graph.
+- `backend/master_state.py`: run coordinator, branch spawning, global pause,
+  user input routing, run completion, and run history recording.
+- `backend/save_manager.py`: assembles complete workflow save/export data.
+- `backend/validator.py`: preflight validation and derived input-source checks.
+- `backend/error_handler.py`: structured error logging and run cleanup.
+- `backend/field_types.py` and `backend/node_category.py`: shared schema and
+  node-classification constants.
+
+Backend code must stay UI-agnostic. Do not import from `frontend/`.
+
+### Frontend
+
+The live UI is a Textual app:
+
+```text
+frontend/
+  app.py
+  styles.tcss
+  ui_state.py
+  screens/
+    editor.py
+    execution.py
+    branch_selector.py
+    node_selector.py
+    node_config.py
+    confirm.py
+    workflow_library.py
+    user_input.py
+    memory_viewer.py
+    output_viewer.py
+    error_details.py
+    settings.py
+    help.py
+  widgets/
+    form_generator.py
+    node_list.py
+    node_card.py
+    status_bar.py
+```
+
+Frontend code adapts to backend services through screen-level adapters and
+widgets. UI convenience belongs in the frontend unless there is a genuine engine
+capability missing.
+
+### Execution Flow
+
+1. Load or create a workflow in `WorkflowMap`.
+2. Validate structure with `validator.py`.
+3. Start a run through `WorkflowMasterState`.
+4. Root `WorkflowSupervisor` starts at the start node.
+5. Supervisors prepare node inputs from transient memory and branch data.
+6. Nodes execute and signal completion, error, wait, or branches.
+7. Branching nodes request branch supervisors through master state.
+8. Nodes write transient data and optional memory-bank outputs.
+9. Output nodes and end nodes feed run output records.
+10. Master state finalizes output, errors, and run history when supervisors end.
+
+---
+
+## 3. Standing Instructions
+
+Before coding:
+
+1. Read `docs/AGENT_HANDOFF.md`.
+2. Read `docs/SESSION_LOG.md` for the latest completed phase.
+3. Read the phase-specific docs:
+   - Frontend work: `docs/TUI_DESIGN.md`.
+   - Engine work: this file plus the relevant backend modules.
+   - Docs modernization: `docs/PROJECT_BACKLOG.md`.
 
 While coding:
-- All new async code uses `try_catch`: `data, error = await try_catch(coro())`.
-- The backend never imports from `frontend/`. UI convenience goes in a frontend
-  adapter, never a new backend method.
-- Any `Screen`-level letter-key action that must fire while a list widget has
-  focus uses `Binding(..., priority=True)`. Navigation keys stay plain tuples.
-- Keep modules concise. The design value is simple-and-powerful with light
-  guardrails — validation is the safety net, not heavy runtime logic.
 
-After coding (from `attackofthenodes_v05/`, venv active):
+- Keep backend and frontend boundaries strict.
+- Use `backend.utils.try_catch.try_catch` for new async UI/event paths.
+- Textual screen-level letter actions that must fire while a list has focus use
+  `Binding(..., priority=True)`.
+- Text-heavy modals should avoid single-letter close/save bindings. Prefer
+  `Esc`, `Ctrl+S`, `Ctrl+Enter`, and visible buttons.
+- Do not dual-maintain derived graph metadata. Derive it from connections and
+  node config at save/validate time.
+- Keep modules concise. Validation is the safety net; avoid heavy runtime
+  coupling unless a phase explicitly calls for it.
+
+After coding, from `attackofthenodes_v05/` with the venv active:
+
 ```bash
 python -m compileall -q .
 python -m pytest tests/test_debug_nodes.py -v
 ```
-Add the phase's own tests, confirm green, and append a short entry to
-`docs/SESSION_LOG.md`.
+
+If normal pytest capture fails in this WSL/OneDrive workspace, keep
+`pytest.ini` configured with `addopts = -s`.
+
+Append a short entry to `docs/SESSION_LOG.md` for every phase or notable patch.
 
 ---
 
-## Status
+## 4. Current Status
 
 | Phase | Title | Status |
 |---|---|---|
-| 0 | Memory leak fixes | ✅ Done |
-| 1 | Forward-reachability helper | ✅ Done (`dfafea1`) |
-| 2 | Dependency list + validation | ✅ Done |
-| 3 | Membank I/O + registry + descriptions | ✅ Done |
-| 4 | Delete + insert nodes | ✅ Done |
-| 5 | Config tabs | ⏳ Next |
-| 6 | Breakpoints | ⏳ (floats — see notes) |
-| 7 | Per-node execution timing | ⏳ (floats — see notes) |
-| 8 | Completion registry + wait-until node | ⏳ |
-| 9 | Merge dynamic list + lineage barrier | ⏳ |
+| 0 | Memory leak fixes | Done |
+| 1 | Forward-reachability helper | Done (`dfafea1`) |
+| 2 | Dependency list + validation | Done (`38969a7`) |
+| 3 | Membank I/O + registry + descriptions | Done (`9fa1b2a`) |
+| 4 | Delete + insert nodes | Done (`51f9a74`) |
+| 4.5 | Config modal and selector usability | Done (`0d53c04`) |
+| 5 | Config tabs | Next |
+| 6 | Breakpoints | Open, can float earlier |
+| 7 | Per-node execution timing | Open, can float earlier |
+| 8 | Completion registry + wait-until node | Open |
+| 9 | Merge dynamic list + lineage barrier | Open |
+| 10 | Documentation modernization | Open, docs-only project |
+| 11 | Real AI node execution | Deferred |
+| 12 | Packaging and release hardening | Deferred |
 
-**Sequencing notes:**
-- **2 and 3 are coupled.** The membank half of Phase 2's derivation and
-  validation is inert until Phase 3 adds `membank_inputs`. The split is fine, but
-  if you'd rather not leave that half untested, do 2 and 3 in one session.
-- **6 and 7 float.** Both depend only on Phase 0, so pull them earlier for a
-  quick win between the heavier membank/merge work if convenient.
+Sequencing:
 
----
-
-## Completed Phases (reference)
-
-**Phase 0 — Memory leak fixes.** `output_manager.finalize_run()` now pops
-`_outputs_by_run`; `error_handler` gained `finalize_run(run_id)`;
-`master_state._record_run()` dropped the duplicated `"outputs"` key and calls
-`error_handler.finalize_run()`; `run_history` caps `_runs` at `_MAX_IN_MEMORY =
-500`. Four leak-regression tests added.
-
-**Phase 1 — Forward-reachability helper.** `WorkflowMap.nodes_reachable_from(
-node_id) -> set[str]` (branching/cycle-safe), covered by a regression test.
-Reused by Phases 3, 8, 9. Suite at 13 tests green.
-
-**Phase 2 — Dependency list + validation.** Save/export/duplicate paths now
-derive `input_sources` from incoming connections plus defensive
-`membank_inputs` config reads. Validation flags missing derived node sources and
-missing membank declarations. Suite at 16 tests green.
-
-**Phase 3 — Membank I/O + registry + descriptions.** The node config modal now
-manages memory-bank outputs/inputs separately from core schema config, derives
-the selectable input registry from declared `membank_outputs`, filters
-downstream-only writers via `nodes_reachable_from`, and leaves port-edge editing
-to editor path tools. Suite at 17 tests green.
-
-**Phase 4 — Delete + insert nodes.** Editor `I` now inserts immediately after
-the highlighted node or active branch row, while `A` keeps add-at-tail behavior.
-Insert rewires the old downstream edge through the new node. Delete no longer
-cascades branch subtrees; the tombstone remains as the visible replacement cue.
-Suite at 19 tests green.
+- Phase 5 depends on Phase 3.
+- Phases 6 and 7 depend only on the memory-leak cleanup and can be pulled
+  forward between heavier engine phases.
+- Phase 8 depends on Phases 1 and 2.
+- Phase 9 depends on Phase 1 and should start by verifying master-state lineage
+  support.
+- Phase 10 can happen any time, but it should not block engine/UI work unless
+  stale docs are actively confusing the implementation.
 
 ---
 
-## Remaining Phases
+## 5. Completed Work Reference
+
+### Phase 0 — Memory Leak Fixes
+
+- `output_manager.finalize_run()` clears per-run in-memory outputs.
+- `error_handler.finalize_run(run_id)` clears per-run error state.
+- `master_state._record_run()` no longer duplicates large output payloads in
+  run history and finalizes error state.
+- `run_history` caps in-memory runs at `_MAX_IN_MEMORY = 500`.
+- Four leak-regression tests were added.
+
+### Phase 1 — Forward Reachability
+
+- Added `WorkflowMap.nodes_reachable_from(node_id) -> set[str]`.
+- Traverses output connections forward.
+- Excludes the starting node.
+- Ignores missing targets; validation reports broken references separately.
+- Handles cycles and self-loops safely.
+- Covered by focused branching/cycle regression tests.
 
 ### Phase 2 — Dependency List + Validation
-**Files:** `backend/save_manager.py`, `backend/validator.py`. **Depends on:** 1.
 
-1. At save/validate, derive per node: one `input_sources` entry per incoming
-   connection, one per declared membank input. Bake into the saved node record.
-   Do not dual-maintain — connections + config remain the only truth.
-2. `validator.py`: light check — each `node` source must exist; each `membank`
-   source must be declared as a membank output somewhere. Missing → flag the
-   node with an input error.
+- Save/export/duplicate derive `input_sources` from incoming node connections
+  and defensive reads of `config["membank_inputs"]`.
+- `validator.py` flags missing derived node sources and undeclared membank
+  inputs.
+- Connections and config remain the source of truth.
+
+Example saved shape:
 
 ```python
 "input_sources": [
-    {"type": "node",    "source_id": "node_A", "port": "default"},
+    {"type": "node", "source_id": "node_A", "port": "default"},
     {"type": "membank", "source_id": "session_id"}
 ]
 ```
 
-Write the membank half defensively (read the field, default empty) — it stays
-inert until Phase 3. The node-connection half is what Phase 2's tests exercise.
-**Done when:** save files carry `input_sources` and validation flags missing node
-sources without heavier analysis. ✅ Done.
+### Phase 3 — Membank I/O + Registry
 
-### Phase 3 — Membank I/O + Registry + Descriptions
-**Files:** `frontend/screens/node_config.py`, `frontend/widgets/form_generator.py`,
-a frontend registry helper. **Depends on:** 1, 2.
+- `NodeConfigScreen` manages memory-bank outputs and inputs separately from core
+  schema config.
+- `membank_outputs` stores id plus description records.
+- `membank_inputs` stores selected ids.
+- Registry scans declared outputs across the workflow.
+- Input dropdown filters downstream-only writers with
+  `nodes_reachable_from(current_node)`.
+- Port-edge mutation moved out of config modal.
 
-1. Remove output-port connection editing from the config modal — ports are drawn
-   as edges in the editor.
-2. Membank-outputs section: checkbox "Writes to memory bank" → integer count →
-   per output a name + description. Store as `membank_outputs`.
-3. Membank-inputs section: checkbox "Read from memory bank" → dropdown from the
-   registry. Store ids as `membank_inputs`.
-4. Registry = scan all `membank_outputs` → `{id: description}`; dropdown shows id
-   + description.
-5. Filter the dropdown with `nodes_reachable_from(current_node)` — exclude ids
-   whose only writers are downstream. Invisible during left-to-right creation.
+Example config:
 
 ```python
 "membank_outputs": [{"id": "user_name", "description": "Name entered by user"}],
-"membank_inputs":  ["session_id"]
+"membank_inputs": ["session_id"]
 ```
-
-**Decision:** a downstream-writer membank selection is a **warning**, not a hard
-error. **Done when:** the modal manages only membank I/O + core config and the
-registry/filter work from structure with no stored duplication. ✅ Done.
 
 ### Phase 4 — Delete + Insert Nodes
-**Files:** `frontend/screens/editor.py` + WorkflowMap connect/disconnect.
-**Depends on:** 2.
 
-1. **Delete** = remove node + its in/out connections. No auto-rewire; orphaned
-   inputs surface at next validation. Keep the tombstone placeholder as the
-   visual "rewire me" cue.
-2. **Insert between A→B** = disconnect A→B, connect A→new, connect new→B. The new
-   node adopts B's `input_sources`; membank inputs (by id) are untouched.
-3. Bind insert to a key (e.g. `i`) with `priority=True`.
+- `A` adds at the visible tail or selected branch path.
+- `I` inserts immediately after the highlighted node or active branch row.
+- Insert rewires `source -> old_target` into `source -> new -> old_target`.
+- Delete no longer cascades branch subtrees.
+- Tombstones remain as the visual "rewire me" cue.
 
-**Done when:** both are pure edge ops and validation catches a delete's fallout.
-✅ Done.
+### Phase 4.5 — Config and Selector Usability
+
+- Node config modals put memory-bank reads at the top and writes at the bottom.
+- Core node settings render between reads and connections.
+- Text-heavy config windows no longer use `Q`, `E`, `W/S`, or `A/D` bindings.
+- Branch nodes have `path_a_label` and `path_b_label`; editor display uses those
+  labels instead of raw port ids.
+- Node selector highlights the top filtered result when tabbing into the list.
+- Arrow keys move the active highlight cleanly.
+- Variable write nodes can pass input through to output by default.
+
+---
+
+## 6. Remaining Implementation Plan
 
 ### Phase 5 — Config Tabs
-**Files:** `frontend/widgets/form_generator.py`. **Depends on:** 3.
 
-Render fields grouped by their existing `group` key as `TabPane`s inside Textual
-`TabbedContent`. No new schema concept — only the renderer changes. **Done when:**
-multi-group configs are tabbed and single-group configs render without an empty
-tab bar.
+**Files:** `frontend/widgets/form_generator.py`,
+`frontend/screens/node_config.py` if needed.
+**Depends on:** Phase 3.
 
-### Phase 6 — Breakpoints *(floats; after 0)*
-**Files:** node record, `backend/supervisor.py`, `backend/master_state.py`,
-`frontend/screens/editor.py`.
+Render schema fields grouped by existing `group` keys as Textual
+`TabbedContent` / `TabPane` sections.
 
-**Decision:** **global freeze** for v1, reusing the existing global pause.
+Requirements:
 
-1. Add `breakpoint: bool` to the node (editor-toggled, saved).
-2. Supervisor run loop: before executing a node, if its breakpoint is set,
-   request the existing global pause and publish which node/branch tripped it;
-   resume via the current path.
-3. Editor: toggle with `b` (`priority=True`); add "clear all breakpoints".
+- Do not add a new backend schema concept.
+- Single-group configs should render without an empty or decorative tab bar.
+- Multi-group configs should keep field order stable inside each group.
+- Numeric fields such as Sleep seconds must remain visible and editable.
+- Text-heavy config windows keep text-safe bindings only.
 
-**Done when:** breakpoints pause and resume through existing machinery with no
-new pause-state concept.
+Done when:
 
-### Phase 7 — Per-Node Execution Timing *(floats; after 0)*
+- Multi-group node settings are tabbed.
+- Single-group nodes render simply.
+- Sleep and utility nodes expose their core config reliably.
+- Tests cover at least one grouped schema and one single-group schema.
+
+### Phase 6 — Breakpoints
+
+**Files:** node record/save shape, `backend/supervisor.py`,
+`backend/master_state.py`, `frontend/screens/editor.py`.
+**Depends on:** Phase 0 only.
+**Decision:** global freeze for v1, reusing existing pause.
+
+Requirements:
+
+- Add `breakpoint: bool` to node data and persistence.
+- Editor toggles the selected node breakpoint with `b` using
+  `Binding(..., priority=True)`.
+- Add a clear-all-breakpoints action.
+- Supervisor checks breakpoint before node execution.
+- When hit, publish the node/branch that tripped it and request the existing
+  global pause.
+- Resume through the existing pause/resume path.
+
+Done when:
+
+- A workflow pauses before executing a breakpoint node.
+- Resume continues from that node.
+- Breakpoints survive save/load.
+
+### Phase 7 — Per-Node Execution Timing
+
 **Files:** `backend/supervisor.py`, `backend/master_state.py`,
 `frontend/screens/execution.py`, `frontend/screens/editor.py`.
+**Depends on:** Phase 0 only.
 
-1. Bracket `node.execute()` with `perf_counter()`; store the delta.
-2. Publish per-node timing live for the execution view.
-3. Write `node_timings: {node_id: seconds}` into the run record (tiny data — safe
-   post-leak-audit).
-4. Editor: average each node across the workflow's stored runs; display on node.
+Requirements:
 
-**Done when:** live timing shows during runs and rolling averages show in the
-editor.
+- Bracket `node.execute()` with `time.perf_counter()`.
+- Publish live node timing to the execution view.
+- Store `node_timings: {node_id: seconds}` in the run record.
+- Editor displays rolling average timing per node from stored runs.
+
+Done when:
+
+- Execution screen shows live timing.
+- Run history records per-node timings.
+- Editor shows averages without slowing normal navigation.
 
 ### Phase 8 — Completion Registry + Wait-Until Node
-**Files:** `backend/master_state.py`, `backend/nodes/wait_until_node.py` (new),
-`backend/nodes/__init__.py`, `frontend/screens/node_config.py`. **Depends on:** 1, 2.
 
-1. Registry on MasterState: `completed_nodes: set[str]` + an `asyncio.Condition`.
-   At the point the supervisor advances past a node, add its id and notify.
-2. `WaitUntilNode`: config holds target ids; `execute()` awaits until all targets
-   are in the set, then passes input through. Semantics: "completed at least
-   once" releases the gate.
-3. On insert, adopt the downstream node's `input_sources`.
-4. Target dropdown filtered by `nodes_reachable_from(self)` — a downstream
-   (deadlocking) target is never selectable.
-5. Timeout fallback via `node_timeout_seconds` so a never-satisfied wait errors
-   instead of hanging.
+**Files:** `backend/master_state.py`, new wait node,
+`backend/nodes/__init__.py`, `frontend/screens/node_config.py`.
+**Depends on:** Phases 1 and 2.
 
-**Done when:** cross-branch gating works deterministically with deadlock and
-timeout guards.
+Requirements:
 
-### Phase 9 — Merge Dynamic Branch List + Lineage Barrier
-**Files:** `frontend/screens/node_config.py` (or branch_selector path),
-`backend/master_state.py`, the merge node. **Depends on:** 1.
+- Master state owns `completed_nodes: set[str]` plus an `asyncio.Condition`.
+- When a supervisor advances past a node, add that node id and notify waiters.
+- Add `WaitUntilNode` with config target ids.
+- Node waits until all targets have completed at least once, then passes input
+  through.
+- Target selector filters out downstream nodes using
+  `nodes_reachable_from(self)` to avoid obvious deadlocks.
+- Use existing node timeout settings so unsatisfied waits error instead of
+  hanging.
 
-**Step 0 — verify the assumption:** confirm MasterState's lineage tracking can
-answer "are all descendants of branch point P accounted for?" (parent/child
-links + depth). If yes → lineage barrier. If not → **counter fallback**: branch
-points increment an expected-arrivals counter; arrivals/terminations drain it;
-merge proceeds at zero.
+Done when:
 
-1. Edit-time: derive the accessible-branch list from workflow structure on
-   config-open — every branch of lower depth that can reach it. Recompute each
-   open (like the membank registry). Nothing stored statically.
-2. Run-time (lineage): merge waits until every supervisor descended from the
-   branch point has reached the merge or terminated. Sub-branches are counted
-   automatically; speed is irrelevant.
-3. Run-time (counter fallback, if chosen): implement the increment/drain counter.
+- Cross-branch gating works deterministically.
+- Downstream targets are not selectable.
+- Timeout failure is reported as a normal node error.
 
-**Done when:** the list updates from structure at edit-time and the barrier is
-correct under uneven, dynamically-spawning branches.
+### Phase 9 — Merge Dynamic List + Lineage Barrier
 
----
+**Files:** `frontend/screens/node_config.py` or branch selector path,
+`backend/master_state.py`, merge node implementation.
+**Depends on:** Phase 1.
 
-## Dependency Graph
+Step 0: verify whether current master-state lineage can answer:
 
 ```text
-Phase 0  Memory leak fixes        ✅
-Phase 1  Reachability helper      ✅   → used by 3, 8, 9
-Phase 2  Dependency list + valid. ✅   (needs 1)        → used by 4, 8
-Phase 3  Membank I/O + registry   ✅   (needs 1, 2)
-Phase 4  Delete + insert          ✅   (needs 2)
-Phase 5  Config tabs                   (needs 3)
-Phase 6  Breakpoints                   (after 0; floats)
-Phase 7  Per-node timing               (after 0; floats)
-Phase 8  Wait-until node               (needs 1, 2)
-Phase 9  Merge dynamic + barrier       (needs 1)
+Are all supervisors descended from branch point P accounted for?
 ```
 
+If yes, implement a lineage barrier. If not, use the counter fallback:
+branch points increment expected-arrivals; arrivals and terminations drain the
+counter; merge proceeds when it reaches zero.
+
+Requirements:
+
+- Edit-time branch list derives from workflow structure whenever config opens.
+- Do not store static branch lists.
+- Merge waits for every relevant descendant branch to reach merge or terminate.
+- Uneven branch speeds and nested dynamic branches must not race the merge.
+
+Done when:
+
+- Merge config updates from current structure.
+- Runtime merge is correct under parallel branches, slow branches, and nested
+  branch spawning.
+
+### Phase 10 — Documentation Modernization
+
+**Files:** `docs/PROJECT_KNOWLEDGE.md`, `docs/ARCHITECTURE.md`,
+`docs/SIGNAL_FLOW.md`, `docs/FILE_TREE.md`, `docs/V05_BUILD_PLAN.md`.
+**Depends on:** none.
+
+Goal:
+
+Turn the docs folder into a reliable current-state reference by removing the
+split-brain Chrome-extension/tkinter language from active docs.
+
+Requirements:
+
+- Rewrite `PROJECT_KNOWLEDGE.md` around the Python/Textual implementation.
+- Rewrite `ARCHITECTURE.md` around local JSON persistence and current backend
+  classes, not IndexedDB/Dexie/JS classes.
+- Rewrite `SIGNAL_FLOW.md` around Textual screens, event bus, supervisor events,
+  memory/output/error flows, and modal routing.
+- Regenerate `FILE_TREE.md` from the current project while excluding caches,
+  logs, run artifacts, and venvs.
+- Mark `V05_BUILD_PLAN.md` as historical proof-of-concept history, or split its
+  current Textual notes into this plan and archive the rest.
+
+Done when:
+
+- A new agent can read the docs folder without being told which documents are
+  stale.
+- `AGENT_HANDOFF.md` points to this plan as the main source of truth.
+
+### Phase 11 — Real AI Node Execution
+
+**Files:** `backend/nodes/chat_completion_node.py`,
+`backend/nodes/image_generation_node.py`,
+`backend/nodes/embedding_node.py`, configuration/API helpers.
+
+Requirements:
+
+- Keep existing placeholder behavior available for offline/dev mode.
+- Add async HTTP execution with `httpx` or `aiohttp`.
+- API keys come from configuration/settings, not hardcoded values.
+- Surface provider errors through the normal node error path.
+- Add tests using mocked HTTP responses.
+
+Done when:
+
+- AI nodes can run against configured providers.
+- Offline placeholder mode remains usable.
+- Failures appear in the normal error UI.
+
+### Phase 12 — Packaging and Release Hardening
+
+Requirements:
+
+- Clean dependency files and environment setup.
+- Add CI test command documentation.
+- Decide how to handle generated run artifacts and logs.
+- Add packaging/run instructions for Windows and WSL.
+- Expand test coverage beyond `tests/test_debug_nodes.py`.
+
+Done when:
+
+- A fresh checkout can install, test, and launch from documented commands.
+- Runtime artifacts are excluded from normal commits.
+
 ---
 
-## Confirmed Decisions
+## 7. UI Rules Captured from Testing
 
-- **Dependency list** — derived at validate/save, not dual-maintained (P2).
-- **Downstream-writer membank input** — warning, not hard error (P3).
-- **Tombstones** — retained as the delete visual cue; delete stays a pure edge
-  operation regardless (P4).
-- **Breakpoint scope** — global freeze for v1, reusing existing pause (P6).
-- **Merge runtime** — lineage barrier preferred; counter fallback only if
-  MasterState lineage tracking can't answer the descendants question (P9, step 0).
+- Config windows with multiple text fields should not use single-letter quit or
+  save shortcuts.
+- Memory-bank reads belong above core settings; memory-bank writes belong at the
+  bottom.
+- Branch labels are user-facing names and should replace raw `path_a`/`path_b`
+  where the editor displays branch paths.
+- When filtering in add/insert selectors, tabbing into the list should highlight
+  the first visible item automatically.
+- Arrow keys should move the visible highlight whenever a highlighted list is on
+  screen.
+- Utility/write nodes that primarily update memory should support pass-through
+  so input can continue to downstream nodes.
+- Ports are graph edges. Edit them in the editor, not in the general config
+  form.
 
 ---
 
-## Repo Docs
+## 8. Parallel Branching Model
 
-In `docs/`: `MASTER_BUILD_PLAN.md` (this supersedes it), `SESSION_LOG.md`,
-`PROJECT_BACKLOG.md`, `AGENT_HANDOFF.md`. Keep `SESSION_LOG.md` current per phase
-so the next agent picks up from the repo without a manual paste.
+Branch nodes are intended to support parallel branch execution, not only manual
+single-path selection.
+
+- Runtime branching happens when a node signals multiple branches.
+- `WorkflowMasterState` spawns one supervisor per branch.
+- The editor's branch selector is only an editing/navigation view of one branch
+  path at a time.
+- Future merge/wait features must preserve true runtime parallelism and avoid
+  UI-only assumptions about a single selected branch.
+
+---
+
+## 9. Test Plan
+
+Use this baseline after every implementation phase:
+
+```bash
+cd attackofthenodes_v05
+python -m compileall -q .
+python -m pytest tests/test_debug_nodes.py -v
+```
+
+Expected latest known signal:
+
+- 21 tests passing after the config modal usability patch.
+
+For docs-only changes:
+
+```bash
+git diff --check
+```
+
+Manual TUI smoke tests to keep revisiting:
+
+- `python main.py` launches.
+- Node selector groups and search work.
+- Sleep node exposes editable duration.
+- Branch labels render in editor branch rows.
+- `A` adds and `I` inserts after the highlighted node.
+- Config text fields accept normal typing.
+- `Ctrl+R` starts a run; execution view updates live.
+- `Esc` from execution stops/returns cleanly.
+
+---
+
+## 10. Git Workflow
+
+- Work on the current branch unless the user requests otherwise.
+- The worktree may contain unrelated dirty/untracked migration files. Do not
+  revert them.
+- Stage only files touched for the current phase or docs update.
+- Commit with a focused message.
+- Keep `docs/SESSION_LOG.md` current.

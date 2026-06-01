@@ -6,6 +6,10 @@ The docs folder has split-brain history from the Chrome-extension concept,
 tkinter prototype, and current Textual TUI. Keep this as a later focused docs
 project, separate from the active master build plan.
 
+`MASTER_BUILD_PLAN.md` is now the current comprehensive source of truth. The
+remaining modernization task is to refresh the older reference docs so they stop
+contradicting it.
+
 Recommended cleanup:
 
 - Refresh `PROJECT_KNOWLEDGE.md` so it is again safe as the current-state
@@ -18,4 +22,3 @@ Recommended cleanup:
   standardization/debug-node files.
 - Keep historical tkinter roadmap material in `V05_BUILD_PLAN.md` clearly
   labeled as history, not current implementation guidance.
-

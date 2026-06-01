@@ -9,9 +9,11 @@ obsolete. Backend services remain UI-agnostic; frontend behavior lives under
 
 ## Active Build Plan
 
-Use `docs/MASTER_BUILD_PLAN.md` as the dependency-ordered plan. Phase 0 memory
-leak fixes are complete. The next unfinished phase after this handoff is Phase 5
-unless `docs/SESSION_LOG.md` says otherwise.
+Use `docs/MASTER_BUILD_PLAN.md` as the comprehensive source of truth. It merges
+the active dependency-ordered phase plan, the Textual TUI state, the working
+rules, and the current architecture model. Phase 0 memory leak fixes are
+complete. The next unfinished phase after this handoff is Phase 5 unless
+`docs/SESSION_LOG.md` says otherwise.
 
 Completed from the master plan:
 
@@ -34,9 +36,17 @@ Recent usability patch:
 - Node selector filtered lists highlight the first item when tabbing into the
   list.
 
+Recent docs pass:
+
+- `docs/MASTER_BUILD_PLAN.md` was rewritten as the comprehensive build plan.
+- Older docs that mention Chrome-extension, IndexedDB/Dexie, JavaScript
+  backends, or tkinter should be treated as historical until Phase 10 refreshes
+  them.
+
 ## Read First
 
-- `docs/MASTER_BUILD_PLAN.md` for implementation order and contracts.
+- `docs/MASTER_BUILD_PLAN.md` for current architecture, implementation order,
+  contracts, and testing rules.
 - `docs/SESSION_LOG.md` for completed phase notes.
 - `docs/TUI_DESIGN.md` for current Textual frontend conventions.
 - `docs/PROJECT_BACKLOG.md` for deferred cleanup work.
