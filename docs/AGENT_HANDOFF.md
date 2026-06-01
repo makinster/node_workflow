@@ -12,7 +12,7 @@ obsolete. Backend services remain UI-agnostic; frontend behavior lives under
 Use `docs/MASTER_BUILD_PLAN.md` as the comprehensive source of truth. It merges
 the active dependency-ordered phase plan, the Textual TUI state, the working
 rules, and the current architecture model. Phase 0 memory leak fixes are
-complete. The next unfinished phase after this handoff is Phase 5 unless
+complete. The next unfinished phase after this handoff is Phase 6 unless
 `docs/SESSION_LOG.md` says otherwise.
 
 Completed from the master plan:
@@ -24,6 +24,8 @@ Completed from the master plan:
 - Phase 3: membank output/input config sections and structure-derived registry.
 - Phase 4: insert-after-highlight editor behavior and no-cascade tombstone
   deletion.
+- Phase 5: grouped schema fields render as tabs when there is more than one
+  group; simple configs stay flat.
 
 Recent usability patch:
 
@@ -42,6 +44,11 @@ Recent docs pass:
 - Older docs that mention Chrome-extension, IndexedDB/Dexie, JavaScript
   backends, or tkinter should be treated as historical until Phase 10 refreshes
   them.
+
+Latest phase:
+
+- Phase 5 config tabs are complete. The next unfinished implementation phase is
+  Phase 6 breakpoints, though Phase 7 timing can still float earlier if desired.
 
 ## Read First
 

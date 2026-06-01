@@ -1,5 +1,19 @@
 # AttackOfTheNodes Session Log
 
+## 2026-05-31 — Phase 5 Config Tabs
+
+- Updated the schema form generator so fields sharing a single `group` render as
+  a simple flat form, while multi-group schemas render as Textual tabs.
+- Preserved field order within each group and kept the existing schema contract;
+  no new backend schema concept was added.
+- Fixed form rendering edge cases found during mounted Textual tests: numeric
+  zero values now display as `0`, and blank selects use Textual's `Select.NULL`
+  sentinel.
+- Added tests for grouping behavior and mounted tabbed/single-group forms.
+- Verification:
+  - `python -m compileall -q .`
+  - `python -m pytest tests/test_debug_nodes.py -v`
+
 ## 2026-05-31 — Comprehensive Build Plan Merge
 
 - Rewrote `docs/MASTER_BUILD_PLAN.md` as the comprehensive current-state build

@@ -157,8 +157,8 @@ Append a short entry to `docs/SESSION_LOG.md` for every phase or notable patch.
 | 3 | Membank I/O + registry + descriptions | Done (`9fa1b2a`) |
 | 4 | Delete + insert nodes | Done (`51f9a74`) |
 | 4.5 | Config modal and selector usability | Done (`0d53c04`) |
-| 5 | Config tabs | Next |
-| 6 | Breakpoints | Open, can float earlier |
+| 5 | Config tabs | Done |
+| 6 | Breakpoints | Next, can float earlier |
 | 7 | Per-node execution timing | Open, can float earlier |
 | 8 | Completion registry + wait-until node | Open |
 | 9 | Merge dynamic list + lineage barrier | Open |
@@ -168,7 +168,6 @@ Append a short entry to `docs/SESSION_LOG.md` for every phase or notable patch.
 
 Sequencing:
 
-- Phase 5 depends on Phase 3.
 - Phases 6 and 7 depend only on the memory-leak cleanup and can be pulled
   forward between heavier engine phases.
 - Phase 8 depends on Phases 1 and 2.
@@ -253,33 +252,22 @@ Example config:
 - Arrow keys move the active highlight cleanly.
 - Variable write nodes can pass input through to output by default.
 
+### Phase 5 — Config Tabs
+
+- `frontend/widgets/form_generator.py` groups schema fields by their existing
+  optional `group` key.
+- Multi-group schemas render as Textual `TabbedContent` / `TabPane` sections.
+- Single-group schemas stay flat so simple nodes do not get an empty or noisy
+  tab bar.
+- Numeric zero values now render as `"0"` instead of a blank field.
+- Blank `Select` fields now use Textual's `Select.NULL` sentinel instead of the
+  older falsey blank value.
+- Tests cover pure grouping behavior plus mounted Textual grouped and
+  single-group forms.
+
 ---
 
 ## 6. Remaining Implementation Plan
-
-### Phase 5 — Config Tabs
-
-**Files:** `frontend/widgets/form_generator.py`,
-`frontend/screens/node_config.py` if needed.
-**Depends on:** Phase 3.
-
-Render schema fields grouped by existing `group` keys as Textual
-`TabbedContent` / `TabPane` sections.
-
-Requirements:
-
-- Do not add a new backend schema concept.
-- Single-group configs should render without an empty or decorative tab bar.
-- Multi-group configs should keep field order stable inside each group.
-- Numeric fields such as Sleep seconds must remain visible and editable.
-- Text-heavy config windows keep text-safe bindings only.
-
-Done when:
-
-- Multi-group node settings are tabbed.
-- Single-group nodes render simply.
-- Sleep and utility nodes expose their core config reliably.
-- Tests cover at least one grouped schema and one single-group schema.
 
 ### Phase 6 — Breakpoints
 

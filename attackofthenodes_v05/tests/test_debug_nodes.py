@@ -768,6 +768,81 @@ def test_branch_node_default_labels_are_configurable():
 
 
 # ---------------------------------------------------------------------------
+# 22. Form generator groups config fields into tabs only when useful
+# ---------------------------------------------------------------------------
+
+def test_form_generator_groups_schema_for_tabs():
+    from frontend.widgets.form_generator import group_config_schema, schema_uses_tabs
+
+    single_group_schema = {
+        "duration": {"type": "float", "label": "Seconds", "group": "Timing"},
+        "jitter": {"type": "float", "label": "Jitter", "group": "Timing"},
+    }
+    grouped_schema = {
+        "duration": {"type": "float", "label": "Seconds", "group": "Timing"},
+        "mode": {"type": "select", "label": "Mode", "group": "Behavior"},
+        "notes": {"type": "string", "label": "Notes"},
+    }
+
+    assert not schema_uses_tabs(single_group_schema)
+    assert [name for name, _ in group_config_schema(single_group_schema)] == ["Timing"]
+
+    assert schema_uses_tabs(grouped_schema)
+    groups = group_config_schema(grouped_schema)
+    assert [name for name, _ in groups] == ["Timing", "Behavior", "Settings"]
+    assert list(groups[0][1]) == ["duration"]
+    assert list(groups[1][1]) == ["mode"]
+    assert list(groups[2][1]) == ["notes"]
+    print("test_form_generator_groups_schema_for_tabs PASSED")
+
+
+def test_form_generator_mounts_tabbed_and_single_group_forms():
+    asyncio.run(_test_form_generator_mounts_tabbed_and_single_group_forms())
+
+
+async def _test_form_generator_mounts_tabbed_and_single_group_forms():
+    from textual.app import App, ComposeResult
+    from textual.widgets import Input, TabbedContent
+
+    from frontend.widgets.form_generator import build_form
+
+    grouped_schema = {
+        "duration": {"type": "float", "label": "Seconds", "group": "Timing"},
+        "mode": {
+            "type": "select",
+            "label": "Mode",
+            "group": "Behavior",
+            "options": ["short", "long"],
+        },
+    }
+    single_group_schema = {
+        "duration": {"type": "float", "label": "Seconds", "group": "Timing"},
+    }
+
+    class GroupedFormApp(App):
+        def compose(self) -> ComposeResult:
+            form, _ = build_form(grouped_schema, {"duration": 0})
+            yield form
+
+    class SingleGroupFormApp(App):
+        def compose(self) -> ComposeResult:
+            form, _ = build_form(single_group_schema, {"duration": 0})
+            yield form
+
+    grouped_app = GroupedFormApp()
+    async with grouped_app.run_test():
+        assert grouped_app.query_one("#generated-form-tabs", TabbedContent)
+        assert grouped_app.query_one("#field-duration", Input).value == "0"
+
+    single_app = SingleGroupFormApp()
+    async with single_app.run_test():
+        assert not single_app.query("#generated-form-tabs")
+        assert single_app.query_one("#field-duration", Input).value == "0"
+
+    print("test_form_generator_mounts_tabbed_and_single_group_forms PASSED")
+
+
+# ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
 
@@ -794,6 +869,8 @@ if __name__ == "__main__":
         test_tombstone_delete_does_not_cascade_branch_nodes,
         test_set_variable_node_can_pass_input_through,
         test_branch_node_default_labels_are_configurable,
+        test_form_generator_groups_schema_for_tabs,
+        test_form_generator_mounts_tabbed_and_single_group_forms,
     ]
     failed = []
     for t in tests:
