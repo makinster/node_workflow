@@ -5,14 +5,14 @@ from __future__ import annotations
 from typing import Any, Dict, Optional
 
 from textual.app import ComposeResult
-from textual.containers import Horizontal, Vertical
+from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.screen import ModalScreen
 from textual.widgets import Button, Checkbox, Input, Label, SelectionList, Static
 
 from frontend.widgets.form_generator import WidgetGetter, build_form
 
 
-MAX_MEMBANK_OUTPUT_ROWS = 5
+MAX_MEMBANK_OUTPUT_ROWS = 20
 
 
 def normalize_membank_outputs(config: Dict[str, Any]) -> list[Dict[str, str]]:
@@ -135,6 +135,10 @@ class NodeConfigScreen(ModalScreen):
         self.node_id = node_id
         self.node_data = node_data
         self._get_form_values: Optional[WidgetGetter] = None
+        self._initial_membank_outputs = normalize_membank_outputs(
+            node_data.get("config") or {}
+        )
+        self._refreshing_membank_outputs = False
 
     def compose(self) -> ComposeResult:
         metadata = self._metadata_for_type(self.node_data.get("type", ""))
@@ -159,27 +163,38 @@ class NodeConfigScreen(ModalScreen):
         with Vertical(id="modal-card", classes="node-config-modal"):
             yield Label(f"Edit Node: {self.node_data.get('alias') or self.node_id}", classes="modal-title")
             yield Static("Ctrl+S save  Ctrl+Enter save  Esc close  Tab moves focus", classes="modal-help")
-            yield Label("Alias", classes="form-label")
-            yield Input(value=self.node_data.get("alias", ""), id="alias-input")
-            yield Static(self._format_metadata(metadata), id="node-config-summary")
-            yield Label("Memory Bank Inputs", classes="form-label")
-            yield from self._compose_membank_inputs(config)
-            if self.node_data.get("type") == "wait_until_node":
-                yield Label("Wait Targets", classes="form-label")
-                yield from self._compose_wait_targets(config)
-            yield Label("Node Settings", classes="form-label")
-            yield form
-            yield Label("Connections", classes="form-label")
-            yield Static("Connection editing lives in the editor path tools.", classes="form-description")
-            yield Static(self._format_connections(), id="connection-summary")
-            yield Label("Memory Bank Outputs", classes="form-label")
-            yield from self._compose_membank_outputs(config)
+            with VerticalScroll(id="node-config-scroll"):
+                yield Label("Alias", classes="form-label")
+                yield Input(value=self.node_data.get("alias", ""), id="alias-input")
+                yield Static(self._format_metadata(metadata), id="node-config-summary")
+                yield Label("Memory Bank Inputs", classes="form-label")
+                yield from self._compose_membank_inputs(config)
+                if self.node_data.get("type") == "wait_until_node":
+                    yield Label("Wait Targets", classes="form-label")
+                    yield from self._compose_wait_targets(config)
+                yield Label("Node Settings", classes="form-label")
+                yield form
+                yield Label("Connections", classes="form-label")
+                yield Static("Connection editing lives in the editor path tools.", classes="form-description")
+                yield Static(self._format_connections(), id="connection-summary")
+                yield Label("Memory Bank Outputs", classes="form-label")
+                yield from self._compose_membank_outputs(config)
             with Horizontal(classes="button-row"):
                 yield Button("Save", id="save-node-config", variant="primary")
                 yield Button("Cancel", id="cancel-node-config", variant="default")
 
     def on_mount(self) -> None:
         self.query_one("#alias-input", Input).focus()
+        self._sync_membank_output_controls()
+
+    async def on_checkbox_changed(self, event: Checkbox.Changed) -> None:
+        if event.checkbox.id == "membank-writes":
+            self._sync_membank_output_controls()
+            await self._refresh_membank_output_rows()
+
+    async def on_input_changed(self, event: Input.Changed) -> None:
+        if event.input.id == "membank-output-count":
+            await self._refresh_membank_output_rows()
 
     async def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "save-node-config":
@@ -257,20 +272,8 @@ class NodeConfigScreen(ModalScreen):
             type="integer",
             id="membank-output-count",
         )
-        for index in range(MAX_MEMBANK_OUTPUT_ROWS):
-            current = outputs[index] if index < len(outputs) else {}
-            yield Label(f"Output {index + 1}", classes="form-description")
-            with Horizontal(classes="connection-row"):
-                yield Input(
-                    value=current.get("id", ""),
-                    id=f"membank-output-id-{index}",
-                    placeholder="memory id",
-                )
-                yield Input(
-                    value=current.get("description", ""),
-                    id=f"membank-output-desc-{index}",
-                    placeholder="description",
-                )
+        with Vertical(id="membank-output-rows"):
+            yield from self._membank_output_row_widgets(outputs if enabled else [])
 
     def _compose_membank_inputs(self, config: Dict[str, Any]):
         selected = set(normalize_membank_inputs(config))
@@ -321,6 +324,80 @@ class NodeConfigScreen(ModalScreen):
             if selection_lists:
                 values["membank_inputs"] = list(selection_lists.first().selected)
         return values
+
+    def _sync_membank_output_controls(self) -> None:
+        writes_enabled = self.query_one("#membank-writes", Checkbox).value
+        count_input = self.query_one("#membank-output-count", Input)
+        count_input.disabled = not writes_enabled
+        if writes_enabled and self._membank_output_count() == 0:
+            count_input.value = "1"
+
+    async def _refresh_membank_output_rows(self) -> None:
+        if self._refreshing_membank_outputs:
+            return
+        self._refreshing_membank_outputs = True
+        try:
+            self._sync_membank_output_controls()
+            container = self.query_one("#membank-output-rows", Vertical)
+            values = self._current_membank_output_row_values()
+            count = self._membank_output_count()
+            writes_enabled = self.query_one("#membank-writes", Checkbox).value
+            if not writes_enabled:
+                count = 0
+            await container.remove_children()
+            await container.mount(*self._membank_output_row_widgets(values[:count]))
+        finally:
+            self._refreshing_membank_outputs = False
+
+    def _current_membank_output_row_values(self) -> list[Dict[str, str]]:
+        values: list[Dict[str, str]] = []
+        row_count = max(self._membank_output_count(), len(self._initial_membank_outputs))
+        for index in range(min(row_count, MAX_MEMBANK_OUTPUT_ROWS)):
+            id_query = self.query(f"#membank-output-id-{index}")
+            desc_query = self.query(f"#membank-output-desc-{index}")
+            if id_query and desc_query:
+                values.append(
+                    {
+                        "id": id_query.first().value,
+                        "description": desc_query.first().value,
+                    }
+                )
+            elif index < len(self._initial_membank_outputs):
+                values.append(dict(self._initial_membank_outputs[index]))
+            else:
+                values.append({"id": "", "description": ""})
+        return values
+
+    def _membank_output_count(self) -> int:
+        count_query = self.query("#membank-output-count")
+        if not count_query:
+            return 0
+        try:
+            count = int(count_query.first().value)
+        except ValueError:
+            count = 0
+        return max(0, min(count, MAX_MEMBANK_OUTPUT_ROWS))
+
+    def _membank_output_row_widgets(self, outputs: list[Dict[str, str]]) -> list[Any]:
+        widgets: list[Any] = []
+        for index, current in enumerate(outputs[:MAX_MEMBANK_OUTPUT_ROWS]):
+            widgets.append(Label(f"Output {index + 1}", classes="form-description"))
+            widgets.append(
+                Horizontal(
+                    Input(
+                        value=current.get("id", ""),
+                        id=f"membank-output-id-{index}",
+                        placeholder="memory id",
+                    ),
+                    Input(
+                        value=current.get("description", ""),
+                        id=f"membank-output-desc-{index}",
+                        placeholder="description",
+                    ),
+                    classes="connection-row",
+                )
+            )
+        return widgets
 
     def _wait_config_values(self) -> Dict[str, Any]:
         if self.node_data.get("type") != "wait_until_node":

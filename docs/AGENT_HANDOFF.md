@@ -57,6 +57,11 @@ Latest phase:
   unfinished implementation phase is Phase 9 merge dynamic list plus lineage
   barrier.
 
+Latest UX patch:
+
+- Node config modals now scroll and memory-bank output rows are dynamic: checking
+  writes and changing the count immediately adds/removes editable output rows.
+
 ## Read First
 
 - `docs/MASTER_BUILD_PLAN.md` for current architecture, implementation order,

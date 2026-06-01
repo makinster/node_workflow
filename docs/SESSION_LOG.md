@@ -1,5 +1,22 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-01 — Dynamic Node Config Output Rows
+
+- Made the node config modal body scrollable so longer config sections are
+  reachable inside the terminal viewport.
+- Reworked memory-bank output declarations to render dynamically from the
+  "Writes to memory bank" checkbox and output count instead of always showing a
+  fixed set of rows.
+- Preserved typed output ids/descriptions when the output count changes and
+  disabled the count field while writes are off.
+- Raised the supported memory-bank output row cap to 20 for richer node
+  configurations.
+- Added a mounted Textual regression test for toggling writes, growing/shrinking
+  output rows, and preserving entered output text.
+- Verification:
+  - `python -m compileall -q .`
+  - `python -m pytest tests/test_debug_nodes.py -v`
+
 ## 2026-05-31 — Phase 8 Completion Registry + Wait-Until Node
 
 - Added a per-run completion registry to `MasterState` with an

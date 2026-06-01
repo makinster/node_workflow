@@ -302,6 +302,15 @@ Example config:
   workflow structure, excluding self and downstream targets.
 - Tests cover cross-branch gating order and the wait-target filter.
 
+### UX Patch — Dynamic Config Sections
+
+- Node config modals now use a scrollable body so longer config surfaces remain
+  reachable in small terminal windows.
+- Memory-bank output rows are dynamically mounted from the write checkbox and
+  output count, preserving typed values as the count changes.
+- The same pattern should be reused for future optional config sections that are
+  enabled by checkboxes or numeric counts.
+
 ---
 
 ## 6. Remaining Implementation Plan

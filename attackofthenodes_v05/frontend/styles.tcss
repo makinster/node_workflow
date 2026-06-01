@@ -1,0 +1,130 @@
+Screen {
+    background: #101418;
+    color: #e6edf3;
+}
+
+#editor-root {
+    height: 100%;
+}
+
+#workflow-title {
+    height: 1;
+    padding: 0 1;
+    background: #18212b;
+    color: #e6edf3;
+}
+
+#editor-columns {
+    height: 1fr;
+}
+
+.panel {
+    border: solid #405061;
+    height: 100%;
+    padding: 0 1;
+}
+
+#nodes-panel {
+    width: 45%;
+}
+
+#details-panel {
+    width: 55%;
+}
+
+.panel-title {
+    height: 1;
+    color: #50c878;
+    text-style: bold;
+}
+
+#node-list {
+    height: 1fr;
+}
+
+.node-card {
+    height: 1;
+}
+
+.branch-select-card {
+    height: 1;
+    color: #ffa500;
+}
+
+.node-card.selected {
+    background: $accent;
+}
+
+#node-details {
+    height: 1fr;
+    overflow-y: auto;
+}
+
+#recent-output {
+    height: 1fr;
+}
+
+#modal-card {
+    width: 80%;
+    max-width: 100;
+    max-height: 90%;
+    margin: 2 4;
+    padding: 1 2;
+    border: heavy #50c878;
+    background: #101418;
+}
+
+#node-config-scroll {
+    height: 1fr;
+    overflow-y: auto;
+}
+
+.modal-title {
+    height: 1;
+    color: #50c878;
+    text-style: bold;
+}
+
+.form-label {
+    margin-top: 1;
+    color: #e6edf3;
+    text-style: bold;
+}
+
+.form-description {
+    color: #a9b8c6;
+}
+
+.button-row {
+    height: auto;
+    margin-top: 1;
+}
+
+StatusBar {
+    background: #18212b;
+    color: #a9b8c6;
+}
+
+.category-flow {
+    color: #4a90e2;
+}
+
+.category-data {
+    color: #7b68ee;
+}
+
+.category-io {
+    color: #50c878;
+}
+
+.category-debug {
+    color: #ffa500;
+}
+
+.category-ai {
+    color: #ff6b9d;
+}
+
+.category-utility {
+    color: #a9b8c6;
+}

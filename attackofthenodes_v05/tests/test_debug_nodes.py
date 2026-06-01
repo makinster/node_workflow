@@ -1019,6 +1019,62 @@ def test_wait_target_options_exclude_downstream_nodes():
     print("test_wait_target_options_exclude_downstream_nodes PASSED")
 
 
+def test_node_config_dynamic_membank_output_rows():
+    asyncio.run(_test_node_config_dynamic_membank_output_rows())
+
+
+async def _test_node_config_dynamic_membank_output_rows():
+    from textual.app import App, ComposeResult
+    from textual.widgets import Checkbox, Input
+
+    from frontend.screens.node_config import NodeConfigScreen
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("dynamic_membank_outputs")
+    node_id = wm.add_node("logger_node")
+    node_data = wm.get_node_data(node_id)
+
+    class ConfigApp(App):
+        def compose(self) -> ComposeResult:
+            yield NodeConfigScreen(wm._factory, wm, node_id, node_data)
+
+    app = ConfigApp()
+    async with app.run_test():
+        screen = app.query_one(NodeConfigScreen)
+        writes = app.query_one("#membank-writes", Checkbox)
+        count = app.query_one("#membank-output-count", Input)
+
+        assert count.disabled is True
+        assert not app.query("#membank-output-id-0")
+
+        writes.value = True
+        await screen._refresh_membank_output_rows()
+        assert count.disabled is False
+        assert count.value == "1"
+        assert app.query_one("#membank-output-id-0", Input)
+
+        app.query_one("#membank-output-id-0", Input).value = "first"
+        app.query_one("#membank-output-desc-0", Input).value = "First output"
+        count.value = "3"
+        await screen._refresh_membank_output_rows()
+
+        output_id_inputs = [
+            widget for widget in app.query(Input) if str(widget.id or "").startswith("membank-output-id-")
+        ]
+        assert len(output_id_inputs) == 3
+        assert app.query_one("#membank-output-id-0", Input).value == "first"
+        assert app.query_one("#membank-output-desc-0", Input).value == "First output"
+
+        count.value = "2"
+        await screen._refresh_membank_output_rows()
+        output_id_inputs = [
+            widget for widget in app.query(Input) if str(widget.id or "").startswith("membank-output-id-")
+        ]
+        assert len(output_id_inputs) == 2
+
+    print("test_node_config_dynamic_membank_output_rows PASSED")
+
+
 # ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
@@ -1053,6 +1109,7 @@ if __name__ == "__main__":
         test_node_timings_are_recorded_for_run_history,
         test_wait_until_node_gates_cross_branch_completion,
         test_wait_target_options_exclude_downstream_nodes,
+        test_node_config_dynamic_membank_output_rows,
     ]
     failed = []
     for t in tests:
