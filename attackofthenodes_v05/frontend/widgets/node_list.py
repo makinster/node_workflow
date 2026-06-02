@@ -90,3 +90,16 @@ class NodeList(ListView):
             if row["kind"] == "node" and row["node_id"] == node_id:
                 return index
         return None
+
+    def index_for_branch_select(
+        self, branch_node_id: str, active_port: str
+    ) -> Optional[int]:
+        """Return the row index for a branch selector row."""
+        for index, row in enumerate(self._rows):
+            if (
+                row["kind"] == "branch_select"
+                and row.get("branch_node_id") == branch_node_id
+                and row.get("active_port") == active_port
+            ):
+                return index
+        return None

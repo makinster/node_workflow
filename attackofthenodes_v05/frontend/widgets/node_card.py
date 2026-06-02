@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
+from textual import events
+from textual.message import Message
 from textual.widgets import Static
 
 
@@ -18,6 +20,14 @@ STATUS_ICONS = {
 
 class NodeCard(Static):
     """Render a workflow node as one terminal-friendly row."""
+
+    class Clicked(Message):
+        """Posted when a node row is clicked."""
+
+        def __init__(self, node_id: str, chain: int) -> None:
+            super().__init__()
+            self.node_id = node_id
+            self.chain = chain
 
     def __init__(
         self,
@@ -35,6 +45,10 @@ class NodeCard(Static):
     def on_mount(self) -> None:
         self.add_class("node-card")
         self.refresh_card()
+
+    def on_click(self, event: events.Click) -> None:
+        self.post_message(self.Clicked(self.node_id, event.chain))
+        event.stop()
 
     def refresh_card(self) -> None:
         alias = self.node_data.get("alias") or self.node_data.get("type", "node")
@@ -61,6 +75,15 @@ class NodeCard(Static):
 class BranchSelectCard(Static):
     """Render the editor branch selector row."""
 
+    class Clicked(Message):
+        """Posted when a branch selector row is clicked."""
+
+        def __init__(self, branch_node_id: str, active_port: str, chain: int) -> None:
+            super().__init__()
+            self.branch_node_id = branch_node_id
+            self.active_port = active_port
+            self.chain = chain
+
     def __init__(
         self, branch_node_id: str, active_port: str, active_label: str | None = None
     ) -> None:
@@ -72,3 +95,9 @@ class BranchSelectCard(Static):
     def on_mount(self) -> None:
         self.add_class("branch-select-card")
         self.update(f"  Branch Select: {self.active_label}")
+
+    def on_click(self, event: events.Click) -> None:
+        self.post_message(
+            self.Clicked(self.branch_node_id, self.active_port, event.chain)
+        )
+        event.stop()

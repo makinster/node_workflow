@@ -173,6 +173,15 @@ Shared behavior belongs in `frontend/widgets/command_navigation.py`,
 `command_input.py`, `list_navigation.py`, and `dynamic_sections.py`, not in
 per-screen one-off key handlers.
 
+Mouse behavior follows the same command-mode contract:
+
+- In the editor node list, one click highlights/selects a node or branch row.
+  Two clicks opens node config or the branch selector.
+- In command text fields, one click focuses/highlights the field. Two clicks
+  enters editing mode.
+- Prompt-style fields with `auto_edit_on_focus=True` still begin editing on
+  first focus/click.
+
 ## File Structure
 
 ```text

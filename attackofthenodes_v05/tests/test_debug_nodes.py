@@ -2108,6 +2108,105 @@ async def _test_prompt_modals_use_shared_command_activation():
     print("test_prompt_modals_use_shared_command_activation PASSED")
 
 
+def test_editor_click_selects_and_double_click_edits():
+    asyncio.run(_test_editor_click_selects_and_double_click_edits())
+
+
+async def _test_editor_click_selects_and_double_click_edits():
+    from textual.app import App, ComposeResult
+
+    from frontend.screens.editor import EditorScreen
+    from frontend.widgets.node_card import NodeCard
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("editor_clicks")
+    start = wm.add_node("start_node")
+    logger = wm.add_node("logger_node")
+    wm.connect(start, "default", logger, "input")
+
+    class EditorApp(App):
+        def compose(self) -> ComposeResult:
+            yield EditorScreen(wm._factory, wm)
+
+    app = EditorApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        screen = app.query_one(EditorScreen)
+        opened = []
+        screen.action_edit_selected = lambda: opened.append(screen.selected_node_id)
+
+        screen.on_node_card_clicked(NodeCard.Clicked(logger, 1))
+        assert screen.selected_node_id == logger
+        assert opened == []
+
+        screen.on_node_card_clicked(NodeCard.Clicked(logger, 2))
+        assert screen.selected_node_id == logger
+        assert opened == [logger]
+
+    print("test_editor_click_selects_and_double_click_edits PASSED")
+
+
+def test_command_text_click_selects_and_double_click_edits():
+    asyncio.run(_test_command_text_click_selects_and_double_click_edits())
+
+
+async def _test_command_text_click_selects_and_double_click_edits():
+    from textual import events
+    from textual.app import App, ComposeResult
+
+    from frontend.widgets.command_input import CommandInput, CommandTextArea
+
+    def click(widget, chain: int) -> events.Click:
+        return events.Click(
+            widget,
+            0,
+            0,
+            0,
+            0,
+            1,
+            False,
+            False,
+            False,
+            chain=chain,
+        )
+
+    class InputApp(App):
+        def compose(self) -> ComposeResult:
+            yield CommandInput(id="single-double-input")
+            yield CommandTextArea(id="single-double-textarea")
+            yield CommandInput(id="auto-click-input", auto_edit_on_focus=True)
+
+    app = InputApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        text_input = app.query_one("#single-double-input", CommandInput)
+        textarea = app.query_one("#single-double-textarea", CommandTextArea)
+        auto_input = app.query_one("#auto-click-input", CommandInput)
+
+        text_input.on_click(click(text_input, 1))
+        assert app.focused is text_input
+        assert text_input.editing is False
+
+        text_input.on_click(click(text_input, 2))
+        assert app.focused is text_input
+        assert text_input.editing is True
+
+        textarea.on_click(click(textarea, 1))
+        assert app.focused is textarea
+        assert text_input.editing is False
+        assert textarea.editing is False
+
+        textarea.on_click(click(textarea, 2))
+        assert app.focused is textarea
+        assert textarea.editing is True
+
+        auto_input.on_click(click(auto_input, 1))
+        assert app.focused is auto_input
+        assert auto_input.editing is True
+
+    print("test_command_text_click_selects_and_double_click_edits PASSED")
+
+
 # ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
@@ -2164,6 +2263,8 @@ if __name__ == "__main__":
         test_node_config_command_inputs_require_activation,
         test_simple_command_modals_use_shared_navigation_helpers,
         test_prompt_modals_use_shared_command_activation,
+        test_editor_click_selects_and_double_click_edits,
+        test_command_text_click_selects_and_double_click_edits,
     ]
     failed = []
     for t in tests:

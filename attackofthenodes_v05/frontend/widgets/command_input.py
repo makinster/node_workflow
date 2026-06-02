@@ -56,8 +56,16 @@ class CommandInput(Input):
     def on_blur(self) -> None:
         pass
 
-    def on_click(self, _event: events.Click) -> None:
-        self.begin_edit()
+    def on_click(self, event: events.Click) -> None:
+        if event.chain >= 2 or self.auto_edit_on_focus:
+            self.begin_edit()
+        else:
+            active_text = getattr(self.screen, "_active_command_text_widget", None)
+            if active_text is not self and hasattr(active_text, "end_edit"):
+                active_text.end_edit()
+            self.end_edit()
+            self.app.set_focus(self)
+        event.stop()
 
     async def _on_key(self, event: events.Key) -> None:
         if self.editing:
@@ -155,8 +163,16 @@ class CommandTextArea(TextArea):
     def on_blur(self) -> None:
         pass
 
-    def on_click(self, _event: events.Click) -> None:
-        self.begin_edit()
+    def on_click(self, event: events.Click) -> None:
+        if event.chain >= 2 or self.auto_edit_on_focus:
+            self.begin_edit()
+        else:
+            active_text = getattr(self.screen, "_active_command_text_widget", None)
+            if active_text is not self and hasattr(active_text, "end_edit"):
+                active_text.end_edit()
+            self.end_edit()
+            self.app.set_focus(self)
+        event.stop()
 
     async def _on_key(self, event: events.Key) -> None:
         if self.editing:

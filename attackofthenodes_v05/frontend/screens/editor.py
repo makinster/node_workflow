@@ -16,6 +16,7 @@ from frontend.screens.error_details import ErrorDetailsScreen
 from frontend.screens.node_config import NodeConfigScreen
 from frontend.screens.node_selector import NodeSelectorScreen
 from frontend import notifications
+from frontend.widgets.node_card import BranchSelectCard, NodeCard
 from frontend.widgets.node_list import NodeList
 from frontend.widgets.status_bar import StatusBar
 
@@ -133,6 +134,35 @@ class EditorScreen(Screen):
         node_list = self.query_one(NodeList)
         self._select_row(node_list.row_for_index(event.list_view.index))
         self._refresh_details()
+
+    def on_node_card_clicked(self, event: NodeCard.Clicked) -> None:
+        """Single click selects a node; double click opens its config."""
+        node_list = self.query_one(NodeList)
+        index = node_list.index_for_node_id(event.node_id)
+        if index is None:
+            return
+        node_list.index = index
+        node_list.focus()
+        self._select_row(node_list.row_for_index(index))
+        self._refresh_details()
+        if event.chain >= 2:
+            self.action_edit_selected()
+
+    def on_branch_select_card_clicked(self, event: BranchSelectCard.Clicked) -> None:
+        """Single click selects a branch row; double click opens branch selection."""
+        node_list = self.query_one(NodeList)
+        index = node_list.index_for_branch_select(
+            event.branch_node_id,
+            event.active_port,
+        )
+        if index is None:
+            return
+        node_list.index = index
+        node_list.focus()
+        self._select_row(node_list.row_for_index(index))
+        self._refresh_details()
+        if event.chain >= 2:
+            self.action_edit_selected()
 
     def action_add_node(self) -> None:
         self._pending_node_add_mode = "add"

@@ -1,5 +1,19 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-02 — Mouse Click Activation Contract
+
+- Updated editor node rows so one mouse click selects/highlights and two clicks
+  opens node config or branch selection.
+- Updated command text inputs/text areas so one click focuses/highlights and two
+  clicks enters editing mode, while prompt-style `auto_edit_on_focus` fields
+  still type on first focus/click.
+- Added regressions for editor single/double-click behavior and command text
+  single/double-click behavior.
+- Updated `TUI_DESIGN.md` with the mouse contract.
+- Verification:
+  - `python -m compileall -q .`
+  - `python -m pytest tests/test_debug_nodes.py -v`
+
 ## 2026-06-02 — FA-5 Notification Helper Completion
 
 - Migrated app-root and execution-screen notification calls to
