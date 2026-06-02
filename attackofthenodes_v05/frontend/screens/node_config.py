@@ -134,7 +134,7 @@ def wait_target_options(workflow_map, current_node_id: str) -> list[tuple[str, s
 
 
 def merge_input_options(workflow_map, current_node_id: str) -> list[Dict[str, str]]:
-    """Return branch paths that are open or already close into this merge."""
+    """Return open branch paths that this merge may close."""
     merge_input_ports = ["path_a", "path_b", "path_c", "path_d", "path_e"]
     options: list[Dict[str, str]] = []
     seen: set[tuple[str, str]] = set()
@@ -149,7 +149,7 @@ def merge_input_options(workflow_map, current_node_id: str) -> list[Dict[str, st
                 continue
             seen.add(key)
             trace = _trace_branch_path(workflow_map, branch_id, branch_port, current_node_id)
-            if trace["status"] not in {"open", "current_merge"}:
+            if trace["status"] != "open":
                 continue
             target_port = trace["target_port"] or _default_merge_input_port(
                 branch_port,
@@ -163,7 +163,6 @@ def merge_input_options(workflow_map, current_node_id: str) -> list[Dict[str, st
             output = _source_output_details(last_node, trace["last_port"])
             last_node_id = trace["last_node_id"] or branch_id
             last_name = last_node.get("alias") or last_node.get("type") or last_node_id
-            status_label = "closes at this merge" if trace["status"] == "current_merge" else "is open"
             options.append(
                 {
                     "id": f"merge-input-choice-{len(options)}",
@@ -175,7 +174,7 @@ def merge_input_options(workflow_map, current_node_id: str) -> list[Dict[str, st
                     "branch_end": f"{last_name} ({last_node_id})",
                     "last_node": f"{last_name} ({last_node_id})",
                     "source_port": trace["last_port"],
-                    "description": f"{branch_label} {status_label}",
+                    "description": f"{branch_label} is open",
                     "output_name": output["name"],
                     "output_description": output["description"],
                 }
@@ -590,9 +589,22 @@ class NodeConfigScreen(ModalScreen):
             move_select_overlay(expanded_select, 1)
             return
         if isinstance(focused, SelectionList):
-            focused.action_cursor_down()
+            if focused.id == "merge-branches-to-close" and self._selection_list_at_bottom(focused):
+                self._move_keyboard_focus(1)
+            else:
+                focused.action_cursor_down()
             return
         self._move_keyboard_focus(1)
+
+    def _selection_list_at_bottom(self, selection_list: SelectionList) -> bool:
+        highlighted = getattr(selection_list, "highlighted", None)
+        if highlighted is None:
+            return False
+        try:
+            option_count = len(selection_list._options)
+        except Exception:
+            option_count = 0
+        return option_count > 0 and highlighted >= option_count - 1
 
     def action_activate_focused(self) -> None:
         activate_command_widget(
@@ -861,7 +873,7 @@ class NodeConfigScreen(ModalScreen):
                     for option in options
                 ],
                 selected_values,
-                select_all_when_empty=True,
+                select_all_when_empty=False,
             ),
             id="merge-branches-to-close",
         )
@@ -888,12 +900,7 @@ class NodeConfigScreen(ModalScreen):
         legacy_branch = str(config.get("selected_branch_id") or "").strip()
         if legacy_branch in valid_values:
             return {legacy_branch}
-        legacy_port = str(config.get("selected_input_port") or "").strip()
-        if legacy_port:
-            for option in options:
-                if option["port"] == legacy_port:
-                    return {self._merge_option_value(option)}
-        return set(valid_values)
+        return set()
 
     def _merge_carry_forward_options(
         self, options: list[Dict[str, str]], selected_values: set[str]

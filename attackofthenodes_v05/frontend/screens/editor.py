@@ -96,7 +96,7 @@ class EditorScreen(Screen):
                     {
                         "kind": "node",
                         "node_id": self.selected_node_id,
-                        "node": node,
+                        "node": self._node_for_display(node),
                         "loose": True,
                     }
                 )
@@ -590,11 +590,7 @@ class EditorScreen(Screen):
             if node is None:
                 break
             visited.add(current_node_id)
-            if node.get("type") == "branch_end_node":
-                node = dict(node)
-                node["_branch_end_connected_to_merge"] = (
-                    self._branch_end_connected_to_merge(node)
-                )
+            node = self._node_for_display(node)
             rows.append({"kind": "node", "node_id": current_node_id, "node": node})
 
             metadata = self._metadata_for_type(node.get("type", ""))
@@ -655,6 +651,15 @@ class EditorScreen(Screen):
             if target_node and target_node.get("type") == "merge_node":
                 return True
         return False
+
+    def _node_for_display(self, node: Dict[str, Any]) -> Dict[str, Any]:
+        if node.get("type") != "branch_end_node":
+            return node
+        display_node = dict(node)
+        display_node["_branch_end_connected_to_merge"] = (
+            self._branch_end_connected_to_merge(node)
+        )
+        return display_node
 
     def _row_still_visible(
         self, selected_row: Dict[str, Any], rows: list[Dict[str, Any]]

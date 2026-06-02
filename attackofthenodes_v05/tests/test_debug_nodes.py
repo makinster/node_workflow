@@ -1320,6 +1320,136 @@ async def _test_merge_config_uses_multi_branch_selector_and_carry_forward_dropdo
     print("test_merge_config_uses_multi_branch_selector_and_carry_forward_dropdown PASSED")
 
 
+def test_merge_config_does_not_autocheck_open_branches():
+    asyncio.run(_test_merge_config_does_not_autocheck_open_branches())
+
+
+async def _test_merge_config_does_not_autocheck_open_branches():
+    from textual.app import App, ComposeResult
+    from textual.widgets import Select, SelectionList
+
+    from frontend.screens.node_config import NodeConfigScreen
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("merge_no_autocheck")
+    start = wm.add_node("start_node")
+    branch = wm.add_node("branch_node")
+    left = wm.add_node("logger_node")
+    right = wm.add_node("logger_node")
+    merge = wm.add_node("merge_node")
+    wm.connect(start, "default", branch, "input")
+    wm.connect(branch, "path_a", left, "input")
+    wm.connect(branch, "path_b", right, "input")
+    node_data = wm.get_node_data(merge)
+
+    class ConfigApp(App):
+        def compose(self) -> ComposeResult:
+            yield NodeConfigScreen(wm._factory, wm, merge, node_data)
+
+    app = ConfigApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        branch_selector = app.query_one("#merge-branches-to-close", SelectionList)
+        carry_selector = app.query_one("#merge-carry-forward-selector", Select)
+        assert list(branch_selector.selected) == []
+        assert carry_selector.disabled is True
+
+    print("test_merge_config_does_not_autocheck_open_branches PASSED")
+
+
+def test_merge_options_exclude_current_merge_path_and_branch_end_card_turns_green():
+    asyncio.run(_test_merge_options_exclude_current_merge_path_and_branch_end_card_turns_green())
+
+
+async def _test_merge_options_exclude_current_merge_path_and_branch_end_card_turns_green():
+    from textual.app import App, ComposeResult
+
+    from frontend.screens.editor import EditorScreen
+    from frontend.screens.node_config import merge_input_options
+    from frontend.widgets.node_card import NodeCard
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("merge_filter_branch_end")
+    start = wm.add_node("start_node")
+    branch = wm.add_node("branch_node")
+    branch_end = wm.add_node("branch_end_node")
+    sibling = wm.add_node("logger_node")
+    merge = wm.add_node("merge_node")
+    wm.update_node_config(
+        branch,
+        {"path_a_label": "Current Merge Path", "path_b_label": "Needs Merge"},
+    )
+    wm.connect(start, "default", branch, "input")
+    wm.connect(branch, "path_a", branch_end, "input")
+    wm.connect(branch_end, "default", merge, "path_a")
+    wm.connect(branch, "path_b", sibling, "input")
+
+    options = merge_input_options(wm, merge)
+    values = {f"{option['branch_id']}:{option['branch_port']}" for option in options}
+    assert values == {f"{branch}:path_b"}
+
+    class EditorApp(App):
+        def compose(self) -> ComposeResult:
+            yield EditorScreen(wm._factory, wm)
+
+    app = EditorApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        cards = [card for card in app.query(NodeCard) if card.node_id == branch_end]
+        assert len(cards) == 1
+        assert cards[0].has_class("branch-end-connected")
+        assert not cards[0].has_class("branch-end-open")
+
+    print("test_merge_options_exclude_current_merge_path_and_branch_end_card_turns_green PASSED")
+
+
+def test_merge_branch_selector_moves_focus_down_at_bottom():
+    asyncio.run(_test_merge_branch_selector_moves_focus_down_at_bottom())
+
+
+async def _test_merge_branch_selector_moves_focus_down_at_bottom():
+    from textual.app import App, ComposeResult
+    from textual.widgets import Select, SelectionList
+
+    from frontend.screens.node_config import NodeConfigScreen
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("merge_selector_exit")
+    start = wm.add_node("start_node")
+    branch = wm.add_node("branch_node")
+    left = wm.add_node("logger_node")
+    right = wm.add_node("logger_node")
+    merge = wm.add_node("merge_node")
+    wm.connect(start, "default", branch, "input")
+    wm.connect(branch, "path_a", left, "input")
+    wm.connect(branch, "path_b", right, "input")
+    wm.update_node_config(
+        merge,
+        {
+            "branches_to_close": [f"{branch}:path_a"],
+            "carry_forward_branch_id": f"{branch}:path_a",
+        },
+    )
+    node_data = wm.get_node_data(merge)
+
+    class ConfigApp(App):
+        def compose(self) -> ComposeResult:
+            yield NodeConfigScreen(wm._factory, wm, merge, node_data)
+
+    app = ConfigApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        screen = app.query_one(NodeConfigScreen)
+        branch_selector = app.query_one("#merge-branches-to-close", SelectionList)
+        carry_selector = app.query_one("#merge-carry-forward-selector", Select)
+        app.set_focus(branch_selector)
+        branch_selector.highlighted = len(branch_selector._options) - 1
+        screen.action_cursor_down()
+        assert app.focused is carry_selector
+
+    print("test_merge_branch_selector_moves_focus_down_at_bottom PASSED")
+
+
 def test_node_config_select_activates_from_keyboard():
     asyncio.run(_test_node_config_select_activates_from_keyboard())
 
@@ -2239,6 +2369,9 @@ if __name__ == "__main__":
         test_wait_target_options_exclude_downstream_nodes,
         test_merge_node_waits_and_forwards_selected_input,
         test_merge_config_uses_multi_branch_selector_and_carry_forward_dropdown,
+        test_merge_config_does_not_autocheck_open_branches,
+        test_merge_options_exclude_current_merge_path_and_branch_end_card_turns_green,
+        test_merge_branch_selector_moves_focus_down_at_bottom,
         test_node_config_select_activates_from_keyboard,
         test_dynamic_row_helper_preserves_visible_rows_only,
         test_dynamic_selection_helper_filters_stale_values,

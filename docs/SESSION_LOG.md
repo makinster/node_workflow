@@ -1,5 +1,22 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-02 — Merge Branch Selector Stabilization
+
+- Tightened merge config branch discovery so `Branches To Close` lists only
+  still-open branch paths, excluding paths that already lead into the current
+  merge node.
+- Removed automatic branch checks from the merge selector; explicit saved
+  selections still restore, but empty/default merge configs start unchecked.
+- Centralized editor display decoration for branch-end nodes so cards turn green
+  when their output connects directly to a merge node, including selected/loose
+  row render paths.
+- Added keyboard behavior for the merge branch selector: pressing down/S at the
+  bottom of the list moves focus to the next widget below.
+- Added focused Textual regressions for merge selector defaults, branch-end
+  connected styling, current-merge path filtering, and bottom-list navigation.
+- Verification:
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -q -k "merge_config or merge_options or merge_branch_selector"`
+
 ## 2026-06-02 — Textbox Single-Click Edit Tweak
 
 - Kept editor node-list mouse behavior as one click selects and two clicks opens.
