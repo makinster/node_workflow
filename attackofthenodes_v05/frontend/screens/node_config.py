@@ -18,7 +18,9 @@ from frontend.widgets.command_navigation import (
 from frontend.widgets.command_input import CommandInput, CommandTextArea
 from frontend.widgets.dynamic_sections import (
     clamp_dynamic_row_count,
+    dynamic_selection_rows,
     preserved_dynamic_rows,
+    selected_values_from_widget,
 )
 from frontend.widgets.form_generator import WidgetGetter, build_form
 
@@ -774,11 +776,10 @@ class NodeConfigScreen(ModalScreen):
         enabled = bool(selected)
         yield Checkbox("Read from memory bank", value=enabled, id="membank-reads")
         if options:
-            selection_options = [
-                (label, value, value in selected)
-                for label, value in options
-            ]
-            yield SelectionList(*selection_options, id="membank-inputs")
+            yield SelectionList(
+                *dynamic_selection_rows(options, selected),
+                id="membank-inputs",
+            )
         else:
             yield Static("No upstream memory-bank outputs are available.", classes="form-description")
 
@@ -786,11 +787,10 @@ class NodeConfigScreen(ModalScreen):
         selected = set(normalize_wait_target_ids(config))
         options = wait_target_options(self.workflow_map, self.node_id)
         if options:
-            selection_options = [
-                (label, value, value in selected)
-                for label, value in options
-            ]
-            yield SelectionList(*selection_options, id="wait-targets")
+            yield SelectionList(
+                *dynamic_selection_rows(options, selected),
+                id="wait-targets",
+            )
         else:
             yield Static("No non-downstream wait targets are available.", classes="form-description")
 
@@ -801,14 +801,14 @@ class NodeConfigScreen(ModalScreen):
             return
         selected_values = self._selected_merge_close_values(options, config)
         yield SelectionList(
-            *[
-                (
-                    option["description"],
-                    self._merge_option_value(option),
-                    self._merge_option_value(option) in selected_values,
-                )
-                for option in options
-            ],
+            *dynamic_selection_rows(
+                [
+                    (option["description"], self._merge_option_value(option))
+                    for option in options
+                ],
+                selected_values,
+                select_all_when_empty=True,
+            ),
             id="merge-branches-to-close",
         )
         yield Label("Carry Forward Output", classes="form-label nav-section")
@@ -878,7 +878,7 @@ class NodeConfigScreen(ModalScreen):
         selection_query = self.query("#merge-branches-to-close")
         if not selection_query:
             return set()
-        return {str(value) for value in selection_query.first().selected}
+        return selected_values_from_widget(selection_query.first())
 
     def _sync_merge_carry_forward_selector(self) -> None:
         selector_query = self.query("#merge-carry-forward-selector")

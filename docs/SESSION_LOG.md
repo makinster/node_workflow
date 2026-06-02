@@ -1,5 +1,23 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-02 — FA-4 Dynamic Selection Helper
+
+- Extended `frontend/widgets/dynamic_sections.py` with shared dynamic
+  selection-list helpers for stale-selection filtering, default-select-all
+  behavior, and selected-value normalization.
+- Migrated memory-bank input, wait target, and merge branch-close selectors in
+  `NodeConfigScreen` to use the shared selection helper.
+- Added a focused regression for stale dynamic selections and merge-style
+  default selection behavior.
+- Updated `FRONTEND_AUDIT_BUILD_PLAN.md` to mark FA-4 selection-list extraction
+  progress across memory inputs, wait targets, and merge branch closures.
+
+Verification:
+
+- `python -m compileall -q .`
+- `python -m pytest tests/test_debug_nodes.py -v`
+- Result: 45 passed.
+
 ## 2026-06-02 — FA-4 Dynamic Section Row Helper
 
 - Added `frontend/widgets/dynamic_sections.py` to centralize count clamping and

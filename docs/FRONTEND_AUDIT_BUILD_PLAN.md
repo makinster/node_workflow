@@ -269,16 +269,17 @@ Node-author checklist:
 **Status:** in progress. Initial helper extraction completed 2026-06-02:
 `frontend/widgets/dynamic_sections.py` now owns count clamping and visible-row
 value preservation for checkbox/count-driven sections. Memory-bank output rows
-use the helper.
+use the helper. Dynamic selection lists now share stale-selection filtering,
+default selection behavior, and selected-value normalization.
 
 Tasks:
 
 - Extract dynamic section patterns:
   - memory-bank outputs. Initial extraction done.
-  - memory-bank inputs
+  - memory-bank inputs. Selection-row helper applied.
   - previous-output preview
-  - wait targets
-  - merge branch selection
+  - wait targets. Selection-row helper applied.
+  - merge branch selection. Selection-row helper applied for branch closures.
 - Keep topology-derived sections as adapters, but make mount/preserve/scroll
   behavior shared.
 - Add tests for dynamic row value preservation and hidden-widget nav exclusion.

@@ -1371,6 +1371,29 @@ def test_dynamic_row_helper_preserves_visible_rows_only():
     print("test_dynamic_row_helper_preserves_visible_rows_only PASSED")
 
 
+def test_dynamic_selection_helper_filters_stale_values():
+    from frontend.widgets.dynamic_sections import (
+        dynamic_selection_rows,
+        selected_values_from_widget,
+    )
+
+    options = [("Alpha", "a"), ("Beta", "b")]
+    rows = dynamic_selection_rows(options, ["b", "missing"])
+
+    assert rows == [("Alpha", "a", False), ("Beta", "b", True)]
+    assert dynamic_selection_rows(
+        options,
+        [],
+        select_all_when_empty=True,
+    ) == [("Alpha", "a", True), ("Beta", "b", True)]
+
+    class FakeSelectionList:
+        selected = ["a", "b"]
+
+    assert selected_values_from_widget(FakeSelectionList()) == {"a", "b"}
+    print("test_dynamic_selection_helper_filters_stale_values PASSED")
+
+
 async def _test_node_config_dynamic_membank_output_rows():
     from textual.app import App, ComposeResult
     from textual.widgets import Checkbox, Input, TextArea
@@ -1810,6 +1833,7 @@ if __name__ == "__main__":
         test_merge_config_uses_multi_branch_selector_and_carry_forward_dropdown,
         test_node_config_select_activates_from_keyboard,
         test_dynamic_row_helper_preserves_visible_rows_only,
+        test_dynamic_selection_helper_filters_stale_values,
         test_node_config_dynamic_membank_output_rows,
         test_editor_hides_empty_start_until_first_node_added,
         test_node_config_previous_output_preview_reads_transient_source,
