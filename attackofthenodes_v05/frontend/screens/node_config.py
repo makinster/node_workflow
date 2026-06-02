@@ -7,6 +7,7 @@ from typing import Any, Dict, Optional
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical, VerticalScroll
+from textual.events import Key
 from textual.screen import ModalScreen
 from textual.widgets import Button, Checkbox, Input, Label, Select, SelectionList, Static, TabbedContent, TabPane, TextArea
 
@@ -511,6 +512,26 @@ class NodeConfigScreen(ModalScreen):
         elif event.button.id == "cancel-node-config":
             self.action_cancel()
 
+    def on_key(self, event: Key) -> None:
+        if self._expanded_select() is None:
+            return
+        if event.key in {"up", "w"}:
+            self.action_cursor_up()
+            event.stop()
+            event.prevent_default()
+        elif event.key in {"down", "s"}:
+            self.action_cursor_down()
+            event.stop()
+            event.prevent_default()
+        elif event.key in {"e", "enter"}:
+            self.action_activate_focused()
+            event.stop()
+            event.prevent_default()
+        elif event.key == "ctrl+q":
+            self._expanded_select().expanded = False
+            event.stop()
+            event.prevent_default()
+
     def action_save(self) -> None:
         alias_query = self.query("#alias-input")
         alias = alias_query.first().value if alias_query else self.node_data.get("alias", "")
@@ -531,8 +552,9 @@ class NodeConfigScreen(ModalScreen):
             return
         if is_editing_text(focused):
             return
-        if isinstance(focused, Select) and focused.expanded:
-            move_select_overlay(focused, -1)
+        expanded_select = self._expanded_select()
+        if expanded_select is not None:
+            move_select_overlay(expanded_select, -1)
             return
         if isinstance(focused, SelectionList):
             focused.action_cursor_up()
@@ -547,8 +569,9 @@ class NodeConfigScreen(ModalScreen):
             return
         if is_editing_text(focused):
             return
-        if isinstance(focused, Select) and focused.expanded:
-            move_select_overlay(focused, 1)
+        expanded_select = self._expanded_select()
+        if expanded_select is not None:
+            move_select_overlay(expanded_select, 1)
             return
         if isinstance(focused, SelectionList):
             focused.action_cursor_down()
@@ -556,7 +579,17 @@ class NodeConfigScreen(ModalScreen):
         self._move_keyboard_focus(1)
 
     def action_activate_focused(self) -> None:
-        activate_command_widget(self.app.focused)
+        activate_command_widget(
+            self._expanded_select()
+            or self.app.focused
+            or self._nav_widget
+        )
+
+    def _expanded_select(self) -> Select | None:
+        for select in self.query(Select):
+            if select.expanded:
+                return select
+        return None
 
     def _move_keyboard_focus(self, direction: int) -> None:
         widgets = self._keyboard_focus_widgets()

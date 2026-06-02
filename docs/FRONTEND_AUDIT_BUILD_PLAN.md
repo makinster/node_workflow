@@ -99,7 +99,8 @@ All keyboard-first modals should follow the same rules:
 - While a text field is active, arrow/navigation keys stay inside the text
   widget and must not trigger modal focus movement.
 - `Esc` exits active typing mode before closing a modal.
-- Select dropdowns open at the first real option every time.
+- Select dropdowns open at the first real option every time; while expanded,
+  their overlay owns `W`/`S`, arrows, `E`/Enter, `Esc`, and `Ctrl+Q`.
 - Selection lists toggle the highlighted item.
 - Focus changes scroll the target into view.
 
@@ -160,6 +161,8 @@ Done when:
 **Status:** in progress. Initial migration completed for `SettingsScreen`,
 `UserInputScreen`, and `PathPromptScreen` on 2026-06-02. Node config command
 text fields now retain focus while active arrow-key editing is in progress.
+Generated `Select` dropdowns now share command-mode overlay handling for
+`W`/`S`, arrows, `E`/Enter, and dismiss keys.
 
 Tasks:
 
@@ -172,7 +175,7 @@ Tasks:
 - Keep `NodeConfigScreen` as the reference implementation.
 - Add focused tests for:
   - text field activate/edit/escape
-  - select open/move/commit/reset
+  - select open/move/commit/reset. Done for generated config selects.
   - selection list highlight/toggle
   - focus scroll into view
 
@@ -416,8 +419,8 @@ Frontend audit phases should add focused tests before relying on manual smoke.
 For UI behavior that cannot be asserted cleanly, record the manual smoke steps
 in `docs/SESSION_LOG.md`.
 
-Latest known verification after FA-2 modal selector migration:
+Latest known verification after FA-5 notification helper + SelectOverlay keyboard fix:
 
 - `python -m compileall -q .`
 - `python -m pytest tests/test_debug_nodes.py -v`
-- Result: 42 passed.
+- Result: 46 passed.

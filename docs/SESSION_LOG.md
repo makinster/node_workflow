@@ -1,5 +1,36 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-02 — SelectOverlay Keyboard Navigation Fix
+
+- Resolved persistent dropdown navigation failures in branch node config and all
+  generated `Select` fields: `W`/`S` had no effect inside an open dropdown, the
+  up arrow closed the overlay and moved focus to the Save button, the down arrow
+  jumped focus to the alias field at the top, and `E`/Enter did not commit the
+  highlighted item.
+- Root cause: Textual's internal `SelectOverlay` owns focus while expanded and
+  has its own `_on_key` handler for type-to-search. Priority screen bindings and
+  `NodeConfigScreen.check_action` never reached the overlay because the overlay
+  consumed events first before they could bubble.
+- Fix: `_install_select_overlay_command_bindings()` in
+  `frontend/widgets/command_navigation.py` wraps `SelectOverlay._on_key` at
+  import time. The wrapper intercepts `W`/`S`/arrows (move highlight), `E`/Enter
+  (commit selection), and `Ctrl+Q` (dismiss) before falling through to
+  Textual's original type-to-search handler for other printable keys. A
+  `_command_navigation_key_patch` sentinel prevents double-patching.
+- Added `commit_highlighted_select(select)` helper that reads the highlighted
+  index, sets the value, focuses the parent `Select`, and closes the overlay —
+  avoiding any reliance on Textual's private overlay state.
+- The patch applies once at module import; all `Select` widgets in every screen
+  benefit automatically.
+- Regression test now uses real `pilot.press()` with the overlay focused to
+  cover W/S, arrows, E commit, Esc close, and Save-button activation via E.
+
+Verification:
+
+- `python -m compileall -q .`
+- `python -m pytest tests/test_debug_nodes.py -v`
+- Result: 46 passed.
+
 ## 2026-06-02 — Config Textbox Priority-Binding Follow-Up
 
 - Tightened `NodeConfigScreen.check_action()` so active command text editors

@@ -1294,7 +1294,7 @@ def test_node_config_select_activates_from_keyboard():
 
 async def _test_node_config_select_activates_from_keyboard():
     from textual.app import App, ComposeResult
-    from textual.widgets import Select
+    from textual.widgets import Button, Select
 
     from frontend.screens.node_config import NodeConfigScreen
     from frontend.widgets.command_navigation import select_overlay
@@ -1319,18 +1319,28 @@ async def _test_node_config_select_activates_from_keyboard():
         assert condition.expanded is True
         overlay = select_overlay(condition)
         assert overlay.highlighted == 0
-        screen.action_cursor_down()
+        app.set_focus(overlay)
+        await pilot.press("s")
         assert overlay.highlighted == 1
-        screen.action_cursor_up()
+        await pilot.press("w")
         assert overlay.highlighted == 0
-        screen.action_cursor_down()
-        screen.action_activate_focused()
+        await pilot.press("down")
+        assert overlay.highlighted == 1
+        await pilot.press("up")
+        assert overlay.highlighted == 0
+        await pilot.press("down")
+        await pilot.press("e")
         await pilot.pause()
         assert condition.value == "always_branch"
-        screen.action_activate_focused()
+
+        save_button = app.query_one("#save-node-config", Button)
+        saved_results = []
+        screen.dismiss = saved_results.append
+        app.set_focus(save_button)
+        await pilot.press("e")
         await pilot.pause()
-        assert condition.expanded is True
-        assert select_overlay(condition).highlighted == 0
+        assert saved_results
+        assert saved_results[-1]["config"]["condition"] == "always_branch"
 
     print("test_node_config_select_activates_from_keyboard PASSED")
 
