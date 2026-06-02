@@ -619,6 +619,10 @@ def test_membank_registry_filters_downstream_writers():
         sibling,
         {"membank_outputs": [{"output": "sibling_value", "description": "Sibling"}]},
     )
+    wm.update_node_config(
+        consumer,
+        {"membank_outputs": [{"id": "own_value", "description": "Own"}]},
+    )
     wm.connect(upstream, "default", consumer, "input")
     wm.connect(consumer, "default", downstream, "input")
 
@@ -636,6 +640,7 @@ def test_membank_registry_filters_downstream_writers():
     assert "session_id" in option_values
     assert "sibling_value" in option_values
     assert "future_value" not in option_values
+    assert "own_value" not in option_values
     assert any(
         label.startswith("Output Description: Session id | Output: session_id")
         for label, value in option_rows
@@ -721,6 +726,33 @@ def test_tombstone_delete_does_not_cascade_branch_nodes():
     assert left in all_nodes
     assert right in all_nodes
     print("test_tombstone_delete_does_not_cascade_branch_nodes PASSED")
+
+
+def test_tombstone_restore_preserves_original_and_swap_invalidates_timing():
+    _, wm, _, _ = _make_services()
+    wm.create_new("tombstone_restore")
+    node_id = wm.add_node("logger_node", alias="Original Logger")
+    wm.update_node_config(node_id, {"message": "original"})
+
+    assert wm.replace_with_tombstone(node_id)
+    tombstone = wm.get_node_data(node_id)
+    assert tombstone["type"] == "tombstone_node"
+    assert tombstone["config"]["original_alias"] == "Original Logger"
+    assert tombstone["config"]["original_config"] == {"message": "original"}
+
+    assert wm.replace_node_type(node_id, "logger_node")
+    restored = wm.get_node_data(node_id)
+    assert restored["type"] == "logger_node"
+    assert restored["alias"] == "Original Logger"
+    assert restored["config"] == {"message": "original"}
+    assert restored["_timing_invalidated"] is False
+
+    assert wm.replace_with_tombstone(node_id)
+    assert wm.replace_node_type(node_id, "sleep_node")
+    swapped = wm.get_node_data(node_id)
+    assert swapped["type"] == "sleep_node"
+    assert swapped["_timing_invalidated"] is True
+    print("test_tombstone_restore_preserves_original_and_swap_invalidates_timing PASSED")
 
 
 # ---------------------------------------------------------------------------
@@ -1371,6 +1403,44 @@ def test_node_config_dynamic_membank_output_rows():
     asyncio.run(_test_node_config_dynamic_membank_output_rows())
 
 
+def test_node_config_pass_through_disables_membank_outputs():
+    asyncio.run(_test_node_config_pass_through_disables_membank_outputs())
+
+
+async def _test_node_config_pass_through_disables_membank_outputs():
+    from textual.app import App, ComposeResult
+    from textual.widgets import Checkbox
+
+    from frontend.screens.node_config import NodeConfigScreen
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("pass_through_outputs")
+    node_id = wm.add_node("set_variable_node")
+    node_data = wm.get_node_data(node_id)
+    node_data["config"].update(
+        {
+            "pass_through": True,
+            "membank_outputs": [{"id": "stale_output", "description": "Stale"}],
+        }
+    )
+
+    class ConfigApp(App):
+        def compose(self) -> ComposeResult:
+            yield NodeConfigScreen(wm._factory, wm, node_id, node_data)
+
+    app = ConfigApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        pass_through = app.query_one("#field-pass_through", Checkbox)
+        writes = app.query_one("#membank-writes", Checkbox)
+        screen = app.query_one(NodeConfigScreen)
+        assert pass_through.value is True
+        assert writes.disabled is True
+        assert screen._membank_config_values()["membank_outputs"] == []
+
+    print("test_node_config_pass_through_disables_membank_outputs PASSED")
+
+
 def test_dynamic_row_helper_preserves_visible_rows_only():
     from frontend.widgets.dynamic_sections import (
         clamp_dynamic_row_count,
@@ -1740,6 +1810,47 @@ async def _test_workflow_library_uses_shared_list_navigation():
     print("test_workflow_library_uses_shared_list_navigation PASSED")
 
 
+def test_memory_viewer_uses_command_navigation():
+    asyncio.run(_test_memory_viewer_uses_command_navigation())
+
+
+async def _test_memory_viewer_uses_command_navigation():
+    from textual.app import App, ComposeResult
+    from textual.widgets import Button, DataTable
+
+    from backend.event_bus import EventBus
+    from backend.memory_bank import MemoryBank
+    from frontend.screens.memory_viewer import MemoryViewerScreen
+
+    memory_bank = MemoryBank(EventBus())
+    for index in range(8):
+        memory_bank.store_persistent(f"key_{index}", f"value_{index}")
+
+    class MemoryApp(App):
+        def compose(self) -> ComposeResult:
+            yield MemoryViewerScreen(memory_bank)
+
+    app = MemoryApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        table = app.query_one("#memory-table", DataTable)
+        close_button = app.query_one("#close-memory", Button)
+        assert app.focused is table
+        start_row = table.cursor_row
+        await pilot.press("s")
+        assert table.cursor_row >= start_row
+
+        closed = []
+        screen = app.query_one(MemoryViewerScreen)
+        screen.dismiss = closed.append
+        app.set_focus(close_button)
+        await pilot.press("e")
+        await pilot.pause()
+        assert closed == [None]
+
+    print("test_memory_viewer_uses_command_navigation PASSED")
+
+
 def test_command_input_auto_edit_on_focus_is_opt_in():
     asyncio.run(_test_command_input_auto_edit_on_focus_is_opt_in())
 
@@ -1859,6 +1970,13 @@ async def _test_node_config_command_inputs_require_activation():
         await pilot.press("escape")
         assert alias.editing is False
         assert app.focused is alias
+        assert alias.value == node_data.get("alias", "")
+        screen.action_activate_focused()
+        await pilot.press("y")
+        await pilot.press("enter")
+        assert alias.editing is False
+        assert alias.value != node_data.get("alias", "")
+        assert "y" in alias.value
         await pilot.press("s")
         assert not alias.value.endswith("xs")
         assert app.focused is not alias
@@ -1999,6 +2117,7 @@ if __name__ == "__main__":
         test_membank_registry_filters_downstream_writers,
         test_insert_between_rewires_below_source_node,
         test_tombstone_delete_does_not_cascade_branch_nodes,
+        test_tombstone_restore_preserves_original_and_swap_invalidates_timing,
         test_set_variable_node_can_pass_input_through,
         test_branch_node_default_labels_are_configurable,
         test_branch_config_uses_generated_labels_without_memory_outputs,
@@ -2018,11 +2137,13 @@ if __name__ == "__main__":
         test_dynamic_selection_helper_filters_stale_values,
         test_frontend_notification_helpers_standardize_copy_and_severity,
         test_node_config_dynamic_membank_output_rows,
+        test_node_config_pass_through_disables_membank_outputs,
         test_editor_hides_empty_start_until_first_node_added,
         test_node_config_previous_output_preview_reads_transient_source,
         test_node_selector_filter_auto_edits_when_focused,
         test_branch_selector_uses_shared_list_navigation,
         test_workflow_library_uses_shared_list_navigation,
+        test_memory_viewer_uses_command_navigation,
         test_command_input_auto_edit_on_focus_is_opt_in,
         test_node_config_command_inputs_require_activation,
         test_simple_command_modals_use_shared_navigation_helpers,

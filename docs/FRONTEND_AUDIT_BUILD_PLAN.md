@@ -100,7 +100,8 @@ All keyboard-first modals should follow the same rules:
   generated config fields remain command-first by default.
 - While a text field is active, arrow/navigation keys stay inside the text
   widget and must not trigger modal focus movement.
-- `Esc` exits active typing mode before closing a modal.
+- `Esc`/`Ctrl+Q` exits active typing mode and reverts to the value captured at
+  edit start; `Enter` commits small inputs and `Ctrl+Enter` commits text areas.
 - Select dropdowns open at the first real option every time; while expanded,
   their overlay owns `W`/`S`, arrows, `E`/Enter, `Esc`, and `Ctrl+Q`.
 - Cancel/back actions must dismiss an expanded dropdown before they dismiss the
@@ -387,7 +388,7 @@ mounted tests in `tests/test_debug_nodes.py`.
 | `settings.py` | command modal | `CommandInput`; `command_navigation` activation/blocking/focus movement | migrated; still lacks global mode indicator | Watch during FA-7 |
 | `user_input.py` | command modal | `CommandInput`; `command_navigation` activation/blocking | migrated; cancel semantics are sensitive because it can stop runs | Watch with focused regressions |
 | `confirm.py` | confirmation modal | simple `Y/N/Esc` bindings | likely okay; should become standard destructive-action confirm component | FA-5 copy/severity audit |
-| `memory_viewer.py` | read-only viewer | `DataTable` | stronger than initial plan assumed; still needs long-value smoke and keyboard close consistency | FA-6 viewer audit |
+| `memory_viewer.py` | read-only viewer | `DataTable`; command navigation for table/close button | long-value smoke remains; keyboard row navigation and E-close are covered | FA-6 long-value viewer audit |
 | `output_viewer.py` | read-only/filter viewer | `Select`; `Static` | uses raw `Select` outside `form_generator`; long output is plain `Static`; branch filter may inherit blank-select/default issues | FA-6 viewer audit, possibly command select helper |
 | `error_details.py` | read-only/action viewer | `Static`; `Button` | structured validation cards are still plain text/static; jump/action affordances need consistency | FA-6 viewer/action audit |
 | `help.py` | read-only modal | `Static` | help can drift from actual key grammar; should be generated/checked against command contract eventually | FA-7 help alignment |
@@ -409,8 +410,9 @@ mounted tests in `tests/test_debug_nodes.py`.
    named notification copy. `editor.py` is migrated; `app.py` and `execution.py`
    remain because their current file state is not safe to stage as a narrow
    change.
-4. **Viewer surfaces are mixed but not all bad.** `memory_viewer.py` already uses
-   `DataTable`, `execution.py` uses `RichLog`, but `output_viewer.py` and
+4. **Viewer surfaces are mixed but not all bad.** `memory_viewer.py` now uses
+   `DataTable` with command navigation, `execution.py` uses `RichLog`, but
+   `output_viewer.py` and
    `error_details.py` still rely heavily on `Static`.
 5. **Node UI standardization is mostly in place but needs schema expansion.**
    `form_generator.py` is the right path for ordinary nodes; upcoming work
@@ -431,8 +433,8 @@ Frontend audit phases should add focused tests before relying on manual smoke.
 For UI behavior that cannot be asserted cleanly, record the manual smoke steps
 in `docs/SESSION_LOG.md`.
 
-Latest known verification after FA-5 notification helper + SelectOverlay keyboard fix:
+Latest known verification after bug-first frontend stabilization slice:
 
 - `python -m compileall -q .`
 - `python -m pytest tests/test_debug_nodes.py -v`
-- Result: 46 passed.
+- Result: 50 passed.

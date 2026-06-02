@@ -445,6 +445,8 @@ class WorkflowMap:
         node["config"] = {
             "original_type": original_type,
             "original_display_name": original_display,
+            "original_alias": node.get("alias", ""),
+            "original_config": deepcopy(node.get("config") or {}),
             "original_input_ports": list(
                 {c.get("target_port", "") for c in node.get("connections", {}).get("inputs", [])}
             ),
@@ -460,9 +462,18 @@ class WorkflowMap:
         if node_id not in self._nodes:
             return False
         default_config = self._factory.create_config_template(new_type) or {}
-        self._nodes[node_id]["type"] = new_type
-        self._nodes[node_id]["config"] = default_config
-        self._nodes[node_id]["alias"] = ""
+        node = self._nodes[node_id]
+        tombstone_config = node.get("config") or {}
+        original_type = tombstone_config.get("original_type")
+        restoring_original = node.get("type") == "tombstone_node" and new_type == original_type
+        node["type"] = new_type
+        node["config"] = (
+            deepcopy(tombstone_config.get("original_config") or {})
+            if restoring_original
+            else default_config
+        )
+        node["alias"] = tombstone_config.get("original_alias", "") if restoring_original else ""
+        node["_timing_invalidated"] = not restoring_original
         self._mark_dirty()
         return True
 

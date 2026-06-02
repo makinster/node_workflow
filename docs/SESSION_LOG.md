@@ -1,5 +1,26 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-02 — Bug-First Frontend Stabilization Slice
+
+- Standardized command text edit sessions: `Esc`/`Ctrl+Q` now revert to the
+  value captured at edit start, while `Enter` commits small inputs and
+  `Ctrl+Enter` commits text areas. Non-editing command text widgets now consume
+  caret-navigation keys so arrows stay command navigation until editing starts.
+- Made Memory Viewer follow command-modal behavior: the table receives initial
+  focus, row navigation works with `W`/`S` and arrows, and `E` activates the
+  focused Close button.
+- Hardened tombstones: tombstones now preserve original alias/config, restoring
+  the original type brings those values back, swapping to a different type marks
+  prior timing invalid, and deleting a tombstone removes the stub.
+- Fixed memory-bank input options so nodes cannot select their own declared
+  memory-bank outputs as inputs.
+- Added a pass-through guard: when a node's `pass_through` field is selected,
+  memory-bank output declarations are disabled and do not save stale outputs.
+- Verification:
+  - `python -m compileall -q .`
+  - `python -m pytest tests/test_debug_nodes.py -v`
+  - Result: 50 passed.
+
 ## 2026-06-02 — Optional Auto-Edit Command Text Helper
 
 - Added `auto_edit_on_focus` to `CommandInput` and `CommandTextArea`. The

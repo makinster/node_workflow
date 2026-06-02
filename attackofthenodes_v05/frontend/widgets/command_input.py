@@ -30,17 +30,24 @@ class CommandInput(Input):
         super().__init__(*args, **kwargs)
         self.editing = False
         self.auto_edit_on_focus = auto_edit_on_focus
+        self._edit_start_value = self.value
         self.add_class("command-input")
         self.styles.height = 3
         self.styles.width = "100%"
 
     def begin_edit(self) -> None:
+        if not self.editing:
+            self._edit_start_value = self.value
         self.editing = True
         self.add_class("editing")
         setattr(self.screen, "_active_command_text_widget", self)
         self.app.set_focus(self)
 
-    def end_edit(self) -> None:
+    def end_edit(self, revert: bool = False) -> None:
+        if revert:
+            self.value = self._edit_start_value
+        else:
+            self._edit_start_value = self.value
         self.editing = False
         self.remove_class("editing")
         if getattr(self.screen, "_active_command_text_widget", None) is self:
@@ -55,7 +62,7 @@ class CommandInput(Input):
     async def _on_key(self, event: events.Key) -> None:
         if self.editing:
             if event.key in ("escape", "ctrl+q"):
-                self.end_edit()
+                self.end_edit(revert=True)
                 event.stop()
                 event.prevent_default()
                 return
@@ -91,6 +98,11 @@ class CommandInput(Input):
             event.prevent_default()
             return
 
+        if event.key in EDITING_NAV_KEYS:
+            event.stop()
+            event.prevent_default()
+            return
+
         if event.is_printable:
             event.stop()
             event.prevent_default()
@@ -114,16 +126,23 @@ class CommandTextArea(TextArea):
         super().__init__(*args, **kwargs)
         self.editing = False
         self.auto_edit_on_focus = auto_edit_on_focus
+        self._edit_start_text = self.text
         self.add_class("command-input")
 
     def begin_edit(self) -> None:
+        if not self.editing:
+            self._edit_start_text = self.text
         self.editing = True
         self.read_only = False
         self.add_class("editing")
         setattr(self.screen, "_active_command_text_widget", self)
         self.app.set_focus(self)
 
-    def end_edit(self) -> None:
+    def end_edit(self, revert: bool = False) -> None:
+        if revert:
+            self.text = self._edit_start_text
+        else:
+            self._edit_start_text = self.text
         self.editing = False
         self.read_only = True
         self.remove_class("editing")
@@ -142,6 +161,11 @@ class CommandTextArea(TextArea):
     async def _on_key(self, event: events.Key) -> None:
         if self.editing:
             if event.key in ("escape", "ctrl+q"):
+                self.end_edit(revert=True)
+                event.stop()
+                event.prevent_default()
+                return
+            if event.key == "ctrl+enter":
                 self.end_edit()
                 event.stop()
                 event.prevent_default()
@@ -165,6 +189,11 @@ class CommandTextArea(TextArea):
 
         if event.key in ("s", "down"):
             self._run_screen_action("cursor_down")
+            event.stop()
+            event.prevent_default()
+            return
+
+        if event.key in EDITING_NAV_KEYS:
             event.stop()
             event.prevent_default()
             return

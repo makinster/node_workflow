@@ -96,6 +96,9 @@ def membank_input_options(workflow_map, current_node_id: str) -> list[tuple[str,
     options: list[tuple[str, str]] = []
     for output_id, entry in sorted(build_membank_registry(workflow_map).items()):
         writers = set(entry.get("writers") or [])
+        writers.discard(current_node_id)
+        if not writers:
+            continue
         if writers and writers.issubset(downstream):
             continue
         description = entry.get("description") or "No description"
@@ -496,6 +499,8 @@ class NodeConfigScreen(ModalScreen):
             await self._refresh_membank_output_rows()
         elif event.checkbox.id == "show-previous-output":
             self._sync_previous_output_preview()
+        elif event.checkbox.id == "field-pass_through":
+            await self._refresh_membank_output_rows()
 
     async def on_input_changed(self, event: Input.Changed) -> None:
         if event.input.id == "membank-output-count":
@@ -989,6 +994,8 @@ class NodeConfigScreen(ModalScreen):
             return values
 
         writes_enabled = self.query_one("#membank-writes", Checkbox).value
+        if self._pass_through_selected():
+            writes_enabled = False
         if writes_enabled:
             for output in self._current_membank_output_row_values():
                 output_id = str(output.get("id") or "").strip()
@@ -1013,9 +1020,14 @@ class NodeConfigScreen(ModalScreen):
         if not self.query("#membank-writes"):
             return
         writes_enabled = self.query_one("#membank-writes", Checkbox).value
+        pass_through_selected = self._pass_through_selected()
+        if pass_through_selected:
+            writes_enabled = False
         count_query = self.query("#membank-output-count")
         if not count_query:
             return
+        writes_checkbox = self.query_one("#membank-writes", Checkbox)
+        writes_checkbox.disabled = pass_through_selected
         count_input = count_query.first()
         count_input.disabled = not writes_enabled
         if writes_enabled and self._membank_output_count() <= 0:
@@ -1031,6 +1043,8 @@ class NodeConfigScreen(ModalScreen):
             values = self._current_membank_output_row_values()
             count = self._membank_output_count()
             writes_enabled = self.query_one("#membank-writes", Checkbox).value
+            if self._pass_through_selected():
+                writes_enabled = False
             if not writes_enabled:
                 count = 0
             await container.remove_children()
@@ -1096,6 +1110,13 @@ class NodeConfigScreen(ModalScreen):
                 ]
             )
         return widgets
+
+    def _pass_through_selected(self) -> bool:
+        query = self.query("#field-pass_through")
+        if not query:
+            return False
+        widget = query.first()
+        return bool(getattr(widget, "value", False))
 
     def _text_widget_value(self, selector: str) -> str:
         return self._widget_text_value(self.query_one(selector))

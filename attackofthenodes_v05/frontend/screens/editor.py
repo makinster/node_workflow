@@ -218,11 +218,23 @@ class EditorScreen(Screen):
         if node.get("type") == "start_node":
             notifications.cannot_delete_start_node(self.app)
             return
+        if self._is_protected_structural_node(node):
+            notifications.cannot_delete_structural_node(self.app)
+            return
 
         self._do_delete(True)
 
     def _do_delete(self, confirmed: bool) -> None:
         if not confirmed or self.selected_node_id is None:
+            return
+        node = self.workflow_map.get_node_data(self.selected_node_id)
+        if node and node.get("type") == "tombstone_node":
+            removed = self.workflow_map.delete_node(self.selected_node_id)
+            if removed:
+                self.selected_node_id = None
+                self.selected_row = None
+                self.refresh_from_backend()
+                notifications.tombstone_removed(self.app)
             return
         self.workflow_map.replace_with_tombstone(self.selected_node_id)
         self.refresh_from_backend()
@@ -231,9 +243,23 @@ class EditorScreen(Screen):
     def _replace_tombstone_from_modal(self, node_type: str | None) -> None:
         if not node_type or self.selected_node_id is None:
             return
+        node = self.workflow_map.get_node_data(self.selected_node_id) or {}
+        original_type = (node.get("config") or {}).get("original_type")
         self.workflow_map.replace_node_type(self.selected_node_id, node_type)
+        if node_type != original_type:
+            self._clear_timing_for_node(self.selected_node_id)
         self.refresh_from_backend()
         notifications.node_replaced(self.app, node_type)
+
+    def _is_protected_structural_node(self, node: Dict[str, Any]) -> bool:
+        if node.get("type") not in {"branch_node", "merge_node"}:
+            return False
+        return bool(node.get("connections", {}).get("outputs"))
+
+    def _clear_timing_for_node(self, node_id: str) -> None:
+        timings = getattr(self.app, "node_timings", None)
+        if isinstance(timings, dict):
+            timings.pop(node_id, None)
 
     def action_cursor_up(self) -> None:
         self._move_selection(-1)
@@ -427,6 +453,9 @@ class EditorScreen(Screen):
             if not isinstance(timings, dict):
                 continue
             for node_id, seconds in timings.items():
+                node = self.workflow_map.get_node_data(node_id)
+                if node and node.get("_timing_invalidated"):
+                    continue
                 try:
                     value = float(seconds)
                 except (TypeError, ValueError):
