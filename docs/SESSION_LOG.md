@@ -7,9 +7,10 @@
 - Added a MasterState counter-style lineage fallback: branch groups track pending
   branch ids, arrivals at merge, and branch terminations. Nested branch spawns
   inherit the same group.
-- Merge config derives available inputs from current incoming connections. Each
-  displayed input description has a checkbox underneath it, and v1 enforces one
-  selected checkbox saved as `selected_input_port`.
+- Merge config derives a branch-close list from current incoming connections.
+  Each displayed branch description has a checkbox underneath it. The selected
+  branch shows the last upstream node plus output name and description, and v1
+  enforces one selected checkbox saved as `selected_input_port`.
 - Non-selected branch arrivals terminate at the merge after the barrier releases;
   only the branch carrying the selected input continues downstream.
 - Restored dynamic memory-bank output rows in node config and fixed command-mode

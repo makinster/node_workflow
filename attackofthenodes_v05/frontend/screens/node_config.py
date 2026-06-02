@@ -117,7 +117,7 @@ def wait_target_options(workflow_map, current_node_id: str) -> list[tuple[str, s
 
 
 def merge_input_options(workflow_map, current_node_id: str) -> list[Dict[str, str]]:
-    """Return current incoming merge inputs with human-readable descriptions."""
+    """Return merge branch-close options derived from incoming connections."""
     node = workflow_map.get_node_data(current_node_id) or {}
     options: list[Dict[str, str]] = []
     for index, conn in enumerate(node.get("connections", {}).get("inputs", [])):
@@ -126,16 +126,75 @@ def merge_input_options(workflow_map, current_node_id: str) -> list[Dict[str, st
         source_name = source_node.get("alias") or source_node.get("type") or source_id
         source_port = conn.get("source_port", "default")
         target_port = conn.get("target_port", "input")
+        output = _source_output_details(source_node, str(source_port))
+        branch_label = _upstream_branch_label(
+            workflow_map,
+            str(source_id),
+            current_node_id,
+            str(target_port),
+        )
         options.append(
             {
                 "id": f"merge-input-choice-{index}",
                 "port": str(target_port),
-                "description": (
-                    f"{source_name} ({source_id}).{source_port} -> {target_port}"
-                ),
+                "branch_label": branch_label,
+                "last_node": f"{source_name} ({source_id})",
+                "source_port": str(source_port),
+                "description": f"{branch_label} closes at merge input {target_port}",
+                "output_name": output["name"],
+                "output_description": output["description"],
             }
         )
     return options
+
+
+def _source_output_details(source_node: Dict[str, Any], source_port: str) -> Dict[str, str]:
+    outputs = normalize_membank_outputs(source_node.get("config") or {})
+    for output in outputs:
+        output_id = output.get("id") or output.get("output") or ""
+        if output_id == source_port:
+            return {
+                "name": output_id,
+                "description": output.get("description") or "No description",
+            }
+    if len(outputs) == 1:
+        output = outputs[0]
+        return {
+            "name": output.get("id") or output.get("output") or source_port,
+            "description": output.get("description") or "No description",
+        }
+    return {"name": source_port, "description": "No output description configured."}
+
+
+def _upstream_branch_label(
+    workflow_map,
+    source_node_id: str,
+    merge_node_id: str,
+    target_port: str,
+) -> str:
+    visited: set[str] = set()
+    stack = [source_node_id]
+    while stack:
+        node_id = stack.pop()
+        if node_id in visited:
+            continue
+        visited.add(node_id)
+        node = workflow_map.get_node_data(node_id) or {}
+        for input_conn in node.get("connections", {}).get("inputs", []):
+            upstream_id = input_conn.get("source_node_id")
+            upstream_node = workflow_map.get_node_data(upstream_id) if upstream_id else {}
+            upstream_outputs = upstream_node.get("connections", {}).get("outputs", []) if upstream_node else []
+            output_count = len(upstream_outputs)
+            source_port = str(input_conn.get("source_port", "default"))
+            if output_count > 1:
+                config = upstream_node.get("config") or {}
+                label = str(config.get(f"{source_port}_label") or "").strip()
+                if label:
+                    return label
+                return source_port.replace("_", " ").title()
+            if upstream_id:
+                stack.append(upstream_id)
+    return target_port.replace("_", " ").title()
 
 
 class NodeConfigScreen(ModalScreen):
@@ -261,6 +320,7 @@ class NodeConfigScreen(ModalScreen):
             self._sync_previous_output_preview()
         elif str(event.checkbox.id or "").startswith("merge-input-choice-"):
             self._sync_merge_input_choices(event.checkbox)
+            self._sync_merge_input_details()
 
     async def on_input_changed(self, event: Input.Changed) -> None:
         if event.input.id == "membank-output-count":
@@ -561,12 +621,24 @@ class NodeConfigScreen(ModalScreen):
         if not selected:
             selected = options[0]["port"]
         for option in options:
-            yield Static(option["description"], classes="form-description")
+            yield Static(option["description"], classes="form-description merge-branch-description")
             yield Checkbox(
-                "Use this input as merge output",
+                "Select this branch output",
                 value=option["port"] == selected,
                 id=option["id"],
             )
+            detail = (
+                f"Last node: {option['last_node']}\n"
+                f"Output: {option['output_name']}\n"
+                f"Output Description: {option['output_description']}"
+            )
+            detail_widget = Static(
+                detail,
+                id=f"{option['id']}-details",
+                classes="form-description merge-branch-output-details",
+            )
+            detail_widget.display = option["port"] == selected
+            yield detail_widget
 
     def _sync_merge_input_choices(self, changed: Checkbox) -> None:
         if not changed.value:
@@ -575,6 +647,13 @@ class NodeConfigScreen(ModalScreen):
             checkbox_id = str(checkbox.id or "")
             if checkbox_id.startswith("merge-input-choice-") and checkbox is not changed:
                 checkbox.value = False
+
+    def _sync_merge_input_details(self) -> None:
+        for option in merge_input_options(self.workflow_map, self.node_id):
+            checkbox_query = self.query(f"#{option['id']}")
+            detail_query = self.query(f"#{option['id']}-details")
+            if checkbox_query and detail_query:
+                detail_query.first().display = bool(checkbox_query.first().value)
 
     def _membank_config_values(self) -> Dict[str, Any]:
         values: Dict[str, Any] = {"membank_outputs": [], "membank_inputs": []}

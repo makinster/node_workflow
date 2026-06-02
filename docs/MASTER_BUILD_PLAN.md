@@ -349,10 +349,12 @@ Example config:
 - Merge arrivals store their available input values. Once the group is accounted
   for, only the branch carrying the selected input continues; sibling arrivals
   terminate at the merge.
-- Merge config derives its displayed inputs from current incoming connections on
-  every config open. It stores only `selected_input_port`.
-- The merge config UI renders each incoming input description with a checkbox
-  underneath it and enforces one selected checkbox for v1.
+- Merge config derives the branch-close list from current incoming connections
+  on every config open. It stores only `selected_input_port`.
+- The merge config UI renders each branch that still closes into the merge, with
+  a checkbox underneath the branch description. The selected branch shows the
+  last upstream node plus output name and description, and v1 enforces one
+  selected branch output.
 - Future merge versions may add multi-output/combine behavior, but v1 forwards
   one selected branch input to the next node.
 - Tests cover slow/fast parallel branch merging and the single-checkbox config

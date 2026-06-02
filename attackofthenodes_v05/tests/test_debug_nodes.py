@@ -1143,9 +1143,30 @@ async def _test_merge_config_uses_single_selected_input_checkbox():
 
     _, wm, _, _ = _make_services()
     wm.create_new("merge_config")
+    start = wm.add_node("start_node")
+    branch = wm.add_node("branch_node")
     left = wm.add_node("logger_node")
     right = wm.add_node("logger_node")
     merge = wm.add_node("merge_node")
+    wm.update_node_config(
+        branch,
+        {
+            "condition": "always_branch",
+            "path_a_label": "Approve Path",
+            "path_b_label": "Review Path",
+        },
+    )
+    wm.update_node_config(
+        left,
+        {"membank_outputs": [{"id": "approved_text", "description": "Approved output"}]},
+    )
+    wm.update_node_config(
+        right,
+        {"membank_outputs": [{"id": "review_text", "description": "Review output"}]},
+    )
+    wm.connect(start, "default", branch, "input")
+    wm.connect(branch, "path_a", left, "input")
+    wm.connect(branch, "path_b", right, "input")
     wm.connect(left, "default", merge, "path_a")
     wm.connect(right, "default", merge, "path_b")
     wm.update_node_config(merge, {"selected_input_port": "path_b"})
@@ -1153,6 +1174,10 @@ async def _test_merge_config_uses_single_selected_input_checkbox():
 
     options = merge_input_options(wm, merge)
     assert [option["port"] for option in options] == ["path_a", "path_b"]
+    assert options[0]["branch_label"] == "Approve Path"
+    assert options[0]["output_name"] == "approved_text"
+    assert options[0]["output_description"] == "Approved output"
+    assert options[1]["branch_label"] == "Review Path"
 
     class ConfigApp(App):
         def compose(self) -> ComposeResult:
@@ -1163,13 +1188,20 @@ async def _test_merge_config_uses_single_selected_input_checkbox():
         await pilot.pause(0.03)
         first = app.query_one("#merge-input-choice-0", Checkbox)
         second = app.query_one("#merge-input-choice-1", Checkbox)
+        first_details = app.query_one("#merge-input-choice-0-details")
+        second_details = app.query_one("#merge-input-choice-1-details")
         assert first.value is False
         assert second.value is True
+        assert first_details.display is False
+        assert second_details.display is True
+        assert options[1]["output_description"] == "Review output"
 
         first.value = True
         await pilot.pause()
         assert first.value is True
         assert second.value is False
+        assert first_details.display is True
+        assert second_details.display is False
         screen = app.query_one(NodeConfigScreen)
         assert screen._merge_config_values() == {"selected_input_port": "path_a"}
 
