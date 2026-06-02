@@ -16,6 +16,10 @@ from frontend.widgets.command_navigation import (
     move_select_overlay,
 )
 from frontend.widgets.command_input import CommandInput, CommandTextArea
+from frontend.widgets.dynamic_sections import (
+    clamp_dynamic_row_count,
+    preserved_dynamic_rows,
+)
 from frontend.widgets.form_generator import WidgetGetter, build_form
 
 
@@ -986,33 +990,32 @@ class NodeConfigScreen(ModalScreen):
             self._refreshing_membank_outputs = False
 
     def _current_membank_output_row_values(self) -> list[Dict[str, str]]:
-        values: list[Dict[str, str]] = []
-        row_count = max(self._membank_output_count(), len(self._initial_membank_outputs))
-        for index in range(min(row_count, MAX_MEMBANK_OUTPUT_ROWS)):
+        def read_row(index: int) -> Dict[str, str] | None:
             id_query = self.query(f"#membank-output-id-{index}")
             desc_query = self.query(f"#membank-output-desc-{index}")
             if id_query and desc_query:
-                values.append(
-                    {
-                        "id": self._widget_text_value(id_query.first()),
-                        "description": self._widget_text_value(desc_query.first()),
-                    }
-                )
-            elif index < len(self._initial_membank_outputs):
-                values.append(dict(self._initial_membank_outputs[index]))
-            else:
-                values.append({"id": "", "description": ""})
-        return values
+                return {
+                    "id": self._widget_text_value(id_query.first()),
+                    "description": self._widget_text_value(desc_query.first()),
+                }
+            return None
+
+        return preserved_dynamic_rows(
+            self._membank_output_count(),
+            MAX_MEMBANK_OUTPUT_ROWS,
+            read_row,
+            self._initial_membank_outputs,
+            {"id": "", "description": ""},
+        )
 
     def _membank_output_count(self) -> int:
         count_query = self.query("#membank-output-count")
         if not count_query:
             return 0
-        try:
-            count = int(count_query.first().value)
-        except ValueError:
-            count = 0
-        return max(0, min(count, MAX_MEMBANK_OUTPUT_ROWS))
+        return clamp_dynamic_row_count(
+            count_query.first().value,
+            MAX_MEMBANK_OUTPUT_ROWS,
+        )
 
     def _membank_output_row_widgets(self, outputs: list[Dict[str, str]]) -> list[Any]:
         widgets: list[Any] = []

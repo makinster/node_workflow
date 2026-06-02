@@ -1339,6 +1339,38 @@ def test_node_config_dynamic_membank_output_rows():
     asyncio.run(_test_node_config_dynamic_membank_output_rows())
 
 
+def test_dynamic_row_helper_preserves_visible_rows_only():
+    from frontend.widgets.dynamic_sections import (
+        clamp_dynamic_row_count,
+        preserved_dynamic_rows,
+    )
+
+    mounted_rows = {0: {"id": "edited", "description": "Edited"}}
+
+    def read_existing(index: int):
+        return mounted_rows.get(index)
+
+    rows = preserved_dynamic_rows(
+        3,
+        5,
+        read_existing,
+        [{"id": "initial-1"}, {"id": "initial-2"}],
+        {"id": "", "description": ""},
+    )
+
+    assert rows == [
+        {"id": "edited", "description": "Edited"},
+        {"id": "initial-2"},
+        {"id": "", "description": ""},
+    ]
+    assert preserved_dynamic_rows(1, 5, read_existing, [{"id": "hidden"}]) == [
+        {"id": "edited", "description": "Edited"}
+    ]
+    assert clamp_dynamic_row_count("99", 5) == 5
+    assert clamp_dynamic_row_count("bad", 5) == 0
+    print("test_dynamic_row_helper_preserves_visible_rows_only PASSED")
+
+
 async def _test_node_config_dynamic_membank_output_rows():
     from textual.app import App, ComposeResult
     from textual.widgets import Checkbox, Input, TextArea
@@ -1403,6 +1435,9 @@ async def _test_node_config_dynamic_membank_output_rows():
             widget for widget in app.query(TextArea) if str(widget.id or "").startswith("membank-output-id-")
         ]
         assert len(output_id_inputs) == 2
+        saved_values = screen._membank_config_values()["membank_outputs"]
+        assert len(saved_values) == 1
+        assert saved_values[0]["id"] == "first"
 
     print("test_node_config_dynamic_membank_output_rows PASSED")
 
@@ -1774,6 +1809,7 @@ if __name__ == "__main__":
         test_merge_node_waits_and_forwards_selected_input,
         test_merge_config_uses_multi_branch_selector_and_carry_forward_dropdown,
         test_node_config_select_activates_from_keyboard,
+        test_dynamic_row_helper_preserves_visible_rows_only,
         test_node_config_dynamic_membank_output_rows,
         test_editor_hides_empty_start_until_first_node_added,
         test_node_config_previous_output_preview_reads_transient_source,

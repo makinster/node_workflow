@@ -1,5 +1,24 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-02 — FA-4 Dynamic Section Row Helper
+
+- Added `frontend/widgets/dynamic_sections.py` to centralize count clamping and
+  visible-row value preservation for checkbox/count-driven config sections.
+- Migrated memory-bank output rows in `NodeConfigScreen` to use the helper.
+  The count input is now the source of truth for how many rows are preserved
+  and saved.
+- Added a direct helper regression and strengthened the mounted node-config
+  test so reducing the output count does not keep hidden/blank rows in saved
+  config.
+- Updated `FRONTEND_AUDIT_BUILD_PLAN.md` to mark FA-4 as started and record the
+  first extracted dynamic-section pattern.
+
+Verification:
+
+- `python -m compileall -q .`
+- `python -m pytest tests/test_debug_nodes.py -v`
+- Result: 44 passed.
+
 ## 2026-06-02 — FA-3 Schema Generator Hints
 
 - Expanded `frontend/widgets/form_generator.py` so ordinary node schemas can

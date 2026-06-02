@@ -266,10 +266,15 @@ Node-author checklist:
 
 **Files:** `node_config.py`, `form_generator.py`, possible new config helpers.
 
+**Status:** in progress. Initial helper extraction completed 2026-06-02:
+`frontend/widgets/dynamic_sections.py` now owns count clamping and visible-row
+value preservation for checkbox/count-driven sections. Memory-bank output rows
+use the helper.
+
 Tasks:
 
 - Extract dynamic section patterns:
-  - memory-bank outputs
+  - memory-bank outputs. Initial extraction done.
   - memory-bank inputs
   - previous-output preview
   - wait targets
