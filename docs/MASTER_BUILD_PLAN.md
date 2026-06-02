@@ -1,6 +1,6 @@
 # AttackOfTheNodes Comprehensive Build Plan
 
-**Last updated:** 2026-06-01
+**Last updated:** 2026-06-02
 **Project root:** `attackofthenodes_v05/`
 **Runtime:** Python 3.14, Textual 8.2.7, asyncio, JSON persistence
 **Current branch context:** Textual TUI spinoff; tkinter frontend is obsolete.
@@ -9,11 +9,13 @@ This is the active build plan and handoff source for the project. It merges the
 current phase plan, the Textual TUI design notes, the agent working rules, and
 the older architecture docs into one current-state reference.
 
-Older docs in this folder remain useful as history, but several still describe
-the Chrome-extension or tkinter eras. When documents conflict, prefer this file,
-then `docs/AGENT_HANDOFF.md`, then `docs/SESSION_LOG.md`, then
-`docs/TUI_DESIGN.md`. For frontend-specific audit and standardization work, also
-read `docs/FRONTEND_AUDIT_BUILD_PLAN.md`.
+Start with `docs/README.md` for the documentation map. Older docs in this folder
+remain useful as history, but several still describe the Chrome-extension or
+tkinter eras. When documents conflict, prefer this file, then
+`docs/AGENT_HANDOFF.md`, then `docs/SESSION_LOG.md`, then `docs/TUI_DESIGN.md`.
+For frontend-specific audit and standardization work, also read
+`docs/FRONTEND_AUDIT_BUILD_PLAN.md`. Before backend changes motivated by UI
+behavior, read `docs/BACKEND_FRONTEND_BOUNDARY.md`.
 
 ---
 
@@ -114,18 +116,24 @@ capability missing.
 
 Before coding:
 
-1. Read `docs/AGENT_HANDOFF.md`.
-2. Read `docs/SESSION_LOG.md` for the latest completed phase.
-3. Read the phase-specific docs:
+1. Read `docs/README.md`.
+2. Read `docs/AGENT_HANDOFF.md`.
+3. Read `docs/SESSION_LOG.md` for the latest completed phase.
+4. Read the phase-specific docs:
    - Frontend work: `docs/TUI_DESIGN.md`.
    - Frontend audit/standardization work:
      `docs/FRONTEND_AUDIT_BUILD_PLAN.md`.
+   - Backend/frontend boundary work:
+     `docs/BACKEND_FRONTEND_BOUNDARY.md`.
    - Engine work: this file plus the relevant backend modules.
    - Docs modernization: `docs/PROJECT_BACKLOG.md`.
 
 While coding:
 
 - Keep backend and frontend boundaries strict.
+- Do not add backend behavior purely for Textual editor convenience. Use
+  frontend adapters/helpers for visual placeholders, focus/navigation, list
+  compaction, notifications, and other presentation-only behavior.
 - Use `backend.utils.try_catch.try_catch` for new async UI/event paths.
 - Textual screen-level letter actions that must fire while a list has focus use
   `Binding(..., priority=True)`.
@@ -179,7 +187,8 @@ Append a short entry to `docs/SESSION_LOG.md` for every phase or notable patch.
 | FA-3 | Schema generator expansion | Done |
 | FA-4 | Dynamic config section helpers | Done |
 | FA-5 | Notification helper | Done (partial — editor migrated; app/execution pending file-state cleanup) |
-| 10 | Documentation modernization | Open, docs-only project |
+| 10 | Documentation modernization | In progress |
+| 10.5 | Backend/frontend boundary cleanup | Planned |
 | 11 | Real AI node execution | Deferred |
 | 12 | Packaging and release hardening | Deferred |
 | 13 | Cursor model foundation | Planned |
@@ -197,6 +206,8 @@ Sequencing:
   phase and is independent; it can start without Phase 10.
 - Phase 10 can happen any time, but it should not block engine/UI work unless
   stale docs are actively confusing the implementation.
+- Phase 10.5 should happen before further tombstone/editor deletion work. It
+  migrates editor-only tombstone behavior out of backend engine code.
 - Phase 14 depends on Phase 13. Phases 15 and 17 are parallelizable after 14.
   Phase 16 depends on 14 and 15. Phase 18 depends on 13–17. Phases 19–20
   depend on Phase 9 and each other.
@@ -557,6 +568,12 @@ Escalation rule:
 `docs/SIGNAL_FLOW.md`, `docs/FILE_TREE.md`, `docs/V05_BUILD_PLAN.md`.
 **Depends on:** none.
 
+Current status:
+
+- `docs/README.md` is the docs entry point and read-order guide.
+- `docs/BACKEND_FRONTEND_BOUNDARY.md` records the reusable-backend policy and
+  tombstone migration plan.
+
 Goal:
 
 Turn the docs folder into a reliable current-state reference by removing the
@@ -579,6 +596,38 @@ Done when:
 - A new agent can read the docs folder without being told which documents are
   stale.
 - `AGENT_HANDOFF.md` points to this plan as the main source of truth.
+
+### Phase 10.5 — Backend / Frontend Boundary Cleanup
+
+**Files:** `frontend/editor_workflow_adapter.py` or equivalent,
+`frontend/screens/editor.py`, `frontend/widgets/node_list.py`,
+`backend/workflow_map.py`, `backend/validator.py`,
+`backend/nodes/debug/tombstone_node.py`.
+**Depends on:** docs boundary plan and current tombstone tests.
+
+Goal:
+
+Keep the backend reusable across future frontends by moving editor-only visual
+behavior into frontend adapters.
+
+Read first: `docs/BACKEND_FRONTEND_BOUNDARY.md`.
+
+Scope:
+
+- Add a frontend-owned tombstone/editor placeholder adapter.
+- Keep backend deletion as pure graph mutation.
+- Move stale timing invalidation to frontend display logic.
+- Decommission backend `tombstone_node`, `replace_with_tombstone()`, and
+  tombstone-specific validator copy after adapter tests are green.
+- Decide whether `position` and `bookmarked` are portable workflow metadata or
+  editor-specific metadata.
+
+Done when:
+
+- Editor deletion/replacement still works with tests.
+- Backend no longer needs an executable tombstone node for Textual UX.
+- Documentation states which workflow fields are engine schema vs. editor
+  schema.
 
 ### Phase 11 — Real AI Node Execution
 

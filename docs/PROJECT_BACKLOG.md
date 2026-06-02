@@ -6,9 +6,9 @@ The docs folder has split-brain history from the Chrome-extension concept,
 tkinter prototype, and current Textual TUI. Keep this as a later focused docs
 project, separate from the active master build plan.
 
-`MASTER_BUILD_PLAN.md` is now the current comprehensive source of truth. The
-remaining modernization task is to refresh the older reference docs so they stop
-contradicting it.
+`docs/README.md` is now the entry point and `MASTER_BUILD_PLAN.md` is the
+current comprehensive source of truth. The remaining modernization task is to
+refresh the older reference docs so they stop contradicting it.
 
 Recommended cleanup:
 
@@ -22,6 +22,24 @@ Recommended cleanup:
   standardization/debug-node files.
 - Keep historical tkinter roadmap material in `V05_BUILD_PLAN.md` clearly
   labeled as history, not current implementation guidance.
+
+## Planned Project — Backend / Frontend Boundary Cleanup
+
+The backend should remain reusable for future CLI, web, or API frontends. The
+current Textual editor introduced tombstone behavior that is useful visually,
+but not inherently an execution-engine concept.
+
+Use `BACKEND_FRONTEND_BOUNDARY.md` as the plan.
+
+Recommended cleanup:
+
+- Move tombstone placeholders into a frontend editor adapter.
+- Keep backend `WorkflowMap.delete_node()` as a pure graph operation.
+- Remove or deprecate backend `replace_with_tombstone()` once the frontend
+  adapter is covered by tests.
+- Replace tombstone-specific backend validator copy with generic graph errors.
+- Decide whether layout metadata such as `position` and navigation metadata
+  such as `bookmarked` belong in portable workflow saves or editor sidecars.
 
 ## Later Project — Frontend Command UI Toolkit
 

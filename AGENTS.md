@@ -2,6 +2,13 @@
 
 This workspace contains AttackOfTheNodes, a Python workflow engine and Textual terminal UI for building, running, pausing, branching, and inspecting node-based pipelines.
 
+## Documentation Entry Point
+
+Start with `docs/README.md`. It gives the current read order and marks which
+older reference docs may still contain historical Chrome-extension or tkinter
+language. Before making backend changes for editor/UI behavior, read
+`docs/BACKEND_FRONTEND_BOUNDARY.md`.
+
 ## Mental Model
 
 Think of the project as a factory floor with a control room:
@@ -26,7 +33,7 @@ Think of the project as a factory floor with a control room:
 - `Supervisor`: stateful worker that executes one path through a workflow graph.
 - `MasterState`: conductor that starts runs, tracks supervisors, handles branching, pause/resume, breakpoints, node timing, WaitUntil coordination, and run completion.
 - `SaveManager`: assembles complete save/load payloads across WorkflowMap, MemoryBank, and persistence.
-- `Validator`: DFS preflight from start node; errors on invalid types/connections/tombstones, warns on loose nodes.
+- `Validator`: DFS preflight from start node; errors on invalid types/connections, warns on loose nodes.
 
 ## Core Frontend Components (Textual TUI)
 
@@ -62,7 +69,10 @@ Think of the project as a factory floor with a control room:
 | AI | `chat_completion_node`, `image_generation_node`, `embedding_node` |
 | Debug | `logger_node`, `sleep_node`, `counter_node`, `echo_node`, `probe_node`, `error_node`, `memory_snapshot_node`, `random_branch_node`, `deep_branch_node`, `no_op_node`, `repeat_counter_node`, `tombstone_node`, `variable_setter_node`, `variable_reader_node` |
 
-`tombstone_node` is a placeholder inserted when a node is deleted; it holds the position and connections until replaced.
+`tombstone_node` is currently registered as the visual placeholder inserted when
+a node is deleted. It is a known boundary-cleanup target: future work should move
+this editor-only placeholder behavior into frontend adapter state so the backend
+remains reusable by other frontends. See `docs/BACKEND_FRONTEND_BOUNDARY.md`.
 
 ## Key Events (EventBus)
 
@@ -79,5 +89,6 @@ pip install -e attackofthenodes_v05/
 aotn
 ```
 
-For architecture detail, see `docs/ARCHITECTURE.md`.
-For component responsibilities, data trades, signals, and scenario flows, see `docs/SIGNAL_FLOW.md`.
+For the current docs map, see `docs/README.md`.
+For the active build plan, see `docs/MASTER_BUILD_PLAN.md`.
+For backend/frontend separation rules, see `docs/BACKEND_FRONTEND_BOUNDARY.md`.

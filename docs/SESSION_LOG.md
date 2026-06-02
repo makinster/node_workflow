@@ -1,5 +1,21 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-02 — Docs Entry Point and Backend Boundary Plan
+
+- Added `docs/README.md` as the documentation entry point so new agents have a
+  clear read order.
+- Added `docs/BACKEND_FRONTEND_BOUNDARY.md` to define what belongs in the
+  reusable backend engine vs. frontend adapters.
+- Documented the backend audit: runtime capabilities such as reachability,
+  validation, breakpoints, timings, wait-until, and merge should stay backend;
+  tombstone/editor placeholder behavior should migrate to frontend-owned
+  adapter code.
+- Updated `AGENT_HANDOFF.md`, `MASTER_BUILD_PLAN.md`, and
+  `PROJECT_BACKLOG.md` so Phase 10 documentation modernization and Phase 10.5
+  backend/frontend boundary cleanup are visible in the normal handoff path.
+- Verification:
+  - `git diff --check`
+
 ## 2026-06-02 — Bug-First Frontend Stabilization Slice
 
 - Standardized command text edit sessions: `Esc`/`Ctrl+Q` now revert to the

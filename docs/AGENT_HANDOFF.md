@@ -7,6 +7,12 @@ execution TUI backed by an asyncio workflow engine. The tkinter frontend is
 obsolete. Backend services remain UI-agnostic; frontend behavior lives under
 `frontend/screens/`, `frontend/widgets/`, and `frontend/styles.tcss`.
 
+## Documentation Entry Point
+
+Start with `docs/README.md`. It explains which docs are current and which older
+architecture/reference files still contain historical Chrome-extension or
+tkinter-era language.
+
 ## Active Build Plan
 
 Use `docs/MASTER_BUILD_PLAN.md` as the comprehensive source of truth. It merges
@@ -128,6 +134,8 @@ Planned future phases (see Section 6 of MASTER_BUILD_PLAN.md for full specs):
 
 - `docs/MASTER_BUILD_PLAN.md` for current architecture, implementation order,
   contracts, and testing rules.
+- `docs/BACKEND_FRONTEND_BOUNDARY.md` before backend changes motivated by
+  editor/UI behavior.
 - `docs/FRONTEND_AUDIT_BUILD_PLAN.md` before frontend audit or UI
   standardization work.
 - `docs/SESSION_LOG.md` for completed phase notes.
