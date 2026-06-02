@@ -10,6 +10,7 @@ from textual.screen import Screen
 from textual.widgets import Header, Label, RichLog, Static
 from rich.text import Text
 
+from frontend import notifications
 from frontend.screens.error_details import ErrorDetailsScreen
 from frontend.screens.memory_viewer import MemoryViewerScreen
 from frontend.screens.output_viewer import OutputViewerScreen
@@ -93,7 +94,7 @@ class ExecutionScreen(Screen):
     def action_stop(self) -> None:
         self.master_state.stop()
         self.app.workflow_state = "IDLE"
-        self.app.notify("Workflow stopped")
+        notifications.workflow_stopped(self.app)
         self.refresh_from_backend()
 
     def action_memory(self) -> None:
@@ -108,7 +109,7 @@ class ExecutionScreen(Screen):
         if run_id:
             errors = self.master_state.error_handler.get_errors_for_run(run_id)
         if not errors:
-            self.app.notify("No errors for this run")
+            notifications.no_run_errors(self.app)
             return
         self.app.push_screen(ErrorDetailsScreen({"error": errors[-1], "options": []}))
 

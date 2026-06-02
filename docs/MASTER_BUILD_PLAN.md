@@ -186,7 +186,7 @@ Append a short entry to `docs/SESSION_LOG.md` for every phase or notable patch.
 | FA-2 | Selector list navigation standardization | Done |
 | FA-3 | Schema generator expansion | Done |
 | FA-4 | Dynamic config section helpers | Done |
-| FA-5 | Notification helper | Done (partial — editor migrated; app/execution pending file-state cleanup) |
+| FA-5 | Notification helper | Done |
 | 10 | Documentation modernization | In progress |
 | 10.5 | Backend/frontend boundary cleanup | Planned |
 | 11 | Real AI node execution | Deferred |
@@ -359,9 +359,8 @@ Example config:
 - Screens with keyboard-only workflows must call `scroll_to_widget` or an
   equivalent helper whenever focus moves to an off-screen widget.
 - Common notifications should use `frontend/notifications.py` helpers instead
-  of ad hoc `app.notify(...)` strings. `editor.py` is migrated; `app.py` and
-  `execution.py` remain direct until their pre-existing file state is safe to
-  stage as narrow changes.
+  of ad hoc `app.notify(...)` strings. Frontend source now routes common
+  notifications through that helper.
 
 ### Recurring Frontend Bug Patterns
 
@@ -392,9 +391,9 @@ These are the common/adjacent bugs seen repeatedly during recent UI work:
 - **Long text and terminal constraints.** Outputs, descriptions, prompts, and
   future AI fields may be long. Use bounded multiline widgets and scrollable
   sections instead of fixed compact rows.
-- **Notification copy fragmentation.** Many screens call `app.notify(...)`
-  directly with ad hoc text. A unified alert/toast helper should eventually own
-  severity, copy style, duration, and de-duplication.
+- **Notification copy fragmentation.** Frontend screens now route common
+  notifications through `frontend/notifications.py`. Future richer toast work
+  should build on that helper for duration and de-duplication.
 
 ### Node UI Standardization Contract
 
@@ -555,8 +554,9 @@ Escalation rule:
   inputs, wait targets, and merge branch-close selectors all use the helper.
 - **FA-5**: `frontend/notifications.py` added with named notification helpers
   for common workflow, editor, execution, settings, and import/export outcomes.
-  `editor.py` migrated. `app.py` and `execution.py` remain direct calls because
-  their pre-existing file state is not safe to stage as narrow changes yet.
+  `editor.py`, `app.py`, and `execution.py` now route common notifications
+  through the helper. A regression guards against direct `.notify(...)` calls in
+  frontend source outside `notifications.py`.
 
 ---
 

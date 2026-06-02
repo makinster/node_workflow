@@ -314,10 +314,10 @@ Done when:
 
 **Files:** new frontend alert helper, `app.py`, screens using `app.notify`.
 
-**Status:** partial. `frontend/notifications.py` owns named notification
-helpers, and `editor.py` uses them for editor outcomes. `app.py` and
-`execution.py` still call `notify(...)` directly and should migrate in the next
-notification cleanup.
+**Status:** complete. `frontend/notifications.py` owns named notification
+helpers. `editor.py`, `app.py`, and `execution.py` route common notifications
+through the helper, and a regression guards against direct `.notify(...)` calls
+in frontend source outside `notifications.py`.
 
 Tasks:
 
@@ -379,9 +379,9 @@ mounted tests in `tests/test_debug_nodes.py`.
 
 | Screen / Widget | Type | Current Helpers | Known Risks | Next Action |
 |---|---|---|---|---|
-| `app.py` | root app | App-level `check_action` blocks text-edit `"back"` | direct notifications remain; workflow callbacks mix persistence, confirmation, and routing | FA-5 migration |
+| `app.py` | root app | App-level `check_action`; `notifications.py` helpers | workflow callbacks mix persistence, confirmation, and routing | Phase 13/16 routing cleanup |
 | `editor.py` | main workflow screen | `NodeList`; priority bindings for editor actions; derived branch labels; `notifications.py` named helpers | cursor/nav model remains local; branch path display only shows one branch at a time | Phase 13 cursor audit, FA-7 visual/help alignment |
-| `execution.py` | main workflow screen/viewer | `RichLog`; `NodeList`; modal launch actions | direct notifications remain; long output mostly safe via `RichLog`, but branch/memory summary still `Static` | FA-5 migration, FA-6 viewer audit |
+| `execution.py` | main workflow screen/viewer | `RichLog`; `NodeList`; modal launch actions; `notifications.py` helpers | long output mostly safe via `RichLog`, but branch/memory summary still `Static` | FA-6 viewer audit |
 | `node_config.py` | command modal + topology adapters | `CommandInput`, `CommandTextArea`, `command_navigation`, `form_generator`, `VerticalScroll` with `can_focus=False` | largest mixed surface; dynamic sections and merge topology logic still local; reference behavior not yet reusable enough | FA-1 reference extraction, FA-4 dynamic sections |
 | `node_selector.py` | list selector with filter | `CommandInput`; `list_navigation` highlight/focus/move helper | filter/list grammar is now shared enough for modal selectors; local filter escape behavior remains intentional | Watch with FA-2 regressions |
 | `branch_selector.py` | list selector | `ListView`; `list_navigation`; priority `W/S/E` bindings | active branch remains the initial highlight by design, rather than always top row | Watch with FA-2 regressions |
@@ -408,8 +408,8 @@ mounted tests in `tests/test_debug_nodes.py`.
    `list_navigation.py` for highlight clamping, focus, scrolling, and movement.
    Keep future modal selectors on this helper.
 3. **Notifications now have a wrapper.** `frontend/notifications.py` centralizes
-   named notification copy. `editor.py` is migrated; `app.py` and
-   `execution.py` are the next cleanup targets.
+   named notification copy across frontend screens. Keep future notification
+   copy there rather than calling `notify(...)` directly from screens.
 4. **Viewer surfaces are mixed but not all bad.** `memory_viewer.py` now uses
    `DataTable` with command navigation, `execution.py` uses `RichLog`, but
    `output_viewer.py` and

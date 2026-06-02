@@ -1,5 +1,18 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-02 — FA-5 Notification Helper Completion
+
+- Migrated app-root and execution-screen notification calls to
+  `frontend/notifications.py`.
+- Added a regression that fails if frontend source outside `notifications.py`
+  calls `.notify(...)` directly.
+- Updated `MASTER_BUILD_PLAN.md`, `FRONTEND_AUDIT_BUILD_PLAN.md`, and
+  `PROJECT_BACKLOG.md` to mark FA-5 complete and leave FA-6/FA-7 as the next
+  frontend-audit work.
+- Verification:
+  - `python -m compileall -q .`
+  - `python -m pytest tests/test_debug_nodes.py -v`
+
 ## 2026-06-02 — Phase-Specific Frontend Docs Audit
 
 - Audited `TUI_DESIGN.md`, `FRONTEND_AUDIT_BUILD_PLAN.md`, and

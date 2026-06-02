@@ -1529,6 +1529,22 @@ def test_frontend_notification_helpers_standardize_copy_and_severity():
     print("test_frontend_notification_helpers_standardize_copy_and_severity PASSED")
 
 
+def test_frontend_notifications_are_routed_through_helper():
+    from pathlib import Path
+
+    frontend_dir = Path(__file__).resolve().parents[1] / "frontend"
+    direct_calls = []
+    for source_path in frontend_dir.rglob("*.py"):
+        if source_path.name == "notifications.py":
+            continue
+        source = source_path.read_text(encoding="utf-8")
+        if ".notify(" in source:
+            direct_calls.append(source_path.relative_to(frontend_dir).as_posix())
+
+    assert direct_calls == []
+    print("test_frontend_notifications_are_routed_through_helper PASSED")
+
+
 async def _test_node_config_dynamic_membank_output_rows():
     from textual.app import App, ComposeResult
     from textual.widgets import Checkbox, Input, TextArea

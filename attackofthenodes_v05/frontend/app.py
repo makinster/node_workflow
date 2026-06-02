@@ -23,6 +23,7 @@ from backend.events import (
     WORKFLOW_STATE_UPDATE,
 )
 
+from . import notifications
 from .screens.editor import EditorScreen
 from .screens.confirm import ConfirmScreen
 from .screens.error_details import ErrorDetailsScreen
@@ -285,12 +286,12 @@ class AttackOfTheNodesApp(TextualApp):
             self.save_manager.save_current_workflow()
         else:
             self.workflow_map.save()
-        self.notify("Workflow saved")
+        notifications.workflow_saved(self)
 
     def action_run_workflow(self) -> None:
         """Start workflow execution and show the execution screen."""
         if self.workflow_state in {"RUNNING", "PAUSED", "WAITING_FOR_INPUT"}:
-            self.notify("Workflow is already running")
+            notifications.workflow_already_running(self)
             return
         self._reset_run_display_state()
         self.switch_screen(
@@ -305,7 +306,7 @@ class AttackOfTheNodesApp(TextualApp):
     async def _start_workflow(self) -> None:
         started = await self.master_state.start_workflow()
         if not started:
-            self.notify("Workflow did not start", severity="error")
+            notifications.workflow_start_failed(self)
 
     def stop_active_workflow(self) -> None:
         """Stop a run when leaving execution-oriented screens."""
@@ -313,7 +314,7 @@ class AttackOfTheNodesApp(TextualApp):
             self.master_state.stop()
             self.workflow_state = "IDLE"
             self._reset_run_display_state()
-            self.notify("Workflow stopped")
+            notifications.workflow_stopped(self)
 
     def action_new_workflow(self) -> None:
         """Create a fresh starter workflow."""
@@ -336,7 +337,7 @@ class AttackOfTheNodesApp(TextualApp):
         self.workflow_map.create_new("Untitled Workflow")
         self.workflow_map.add_node("start_node", alias="Start")
         self._on_backend_event()
-        self.notify("New workflow created")
+        notifications.workflow_created(self)
 
     def action_workflow_library(self) -> None:
         """Open the workflow library modal."""
@@ -345,7 +346,7 @@ class AttackOfTheNodesApp(TextualApp):
     def action_settings(self) -> None:
         """Open settings modal."""
         if self.configuration_manager is None:
-            self.notify("Settings are unavailable", severity="error")
+            notifications.settings_unavailable(self)
             return
         self.push_screen(
             SettingsScreen(self.configuration_manager),
@@ -387,13 +388,13 @@ class AttackOfTheNodesApp(TextualApp):
             self._load_workflow_from_library(result)
         elif action == "duplicate":
             if self.save_manager is None:
-                self.notify("Duplicate requires SaveManager", severity="error")
+                notifications.missing_service(self, "Duplicate")
                 return
             new_id = self.save_manager.duplicate_workflow(workflow_id)
             if new_id:
                 self.save_manager.load_workflow(new_id)
                 self.show_editor_screen()
-                self.notify("Workflow duplicated")
+                notifications.workflow_duplicated(self)
         elif action == "delete":
             workflow_name = result.get("workflow_name", workflow_id)
             self.push_screen(
@@ -421,13 +422,13 @@ class AttackOfTheNodesApp(TextualApp):
         )
         if loaded:
             self.show_editor_screen()
-            self.notify(f"Loaded {result.get('workflow_name', workflow_id)}")
+            notifications.workflow_loaded(self, result.get("workflow_name", workflow_id))
         else:
-            self.notify("Workflow could not be loaded", severity="error")
+            notifications.workflow_load_failed(self)
 
     def _delete_workflow_from_library(self, result) -> None:
         if self.save_manager is None:
-            self.notify("Delete requires SaveManager", severity="error")
+            notifications.missing_service(self, "Delete")
             return
         workflow_id = result.get("workflow_id")
         if not workflow_id:
@@ -437,11 +438,11 @@ class AttackOfTheNodesApp(TextualApp):
             self.workflow_map.add_node("start_node", alias="Start")
         deleted = self.save_manager.delete_workflow(workflow_id)
         self.show_editor_screen()
-        self.notify("Workflow deleted" if deleted else "Workflow was not found")
+        notifications.workflow_deleted(self, deleted)
 
     def _prompt_export_workflow(self, result) -> None:
         if self.save_manager is None:
-            self.notify("Export requires SaveManager", severity="error")
+            notifications.missing_service(self, "Export")
             return
         workflow_id = result.get("workflow_id")
         if not workflow_id:
@@ -461,13 +462,13 @@ class AttackOfTheNodesApp(TextualApp):
         try:
             exported = self.save_manager.export_workflow(workflow_id, path)
         except OSError as exc:
-            self.notify(f"Export failed: {exc}", severity="error")
+            notifications.workflow_export_failed(self, exc)
             return
-        self.notify(f"Exported workflow to {path}" if exported else "Workflow could not be exported")
+        notifications.workflow_exported(self, path, exported)
 
     def _prompt_import_workflow(self) -> None:
         if self.save_manager is None:
-            self.notify("Import requires SaveManager", severity="error")
+            notifications.missing_service(self, "Import")
             return
         self.push_screen(
             PathPromptScreen("Import workflow JSON"),
@@ -480,10 +481,10 @@ class AttackOfTheNodesApp(TextualApp):
         try:
             workflow_id = self.save_manager.import_workflow(path)
         except (OSError, ValueError) as exc:
-            self.notify(f"Import failed: {exc}", severity="error")
+            notifications.workflow_import_failed(self, f"Import failed: {exc}")
             return
         if not workflow_id:
-            self.notify("Workflow could not be imported", severity="error")
+            notifications.workflow_import_failed(self)
             return
         result = {"workflow_id": workflow_id, "workflow_name": "Imported Workflow"}
         if self.workflow_map.is_dirty:
@@ -496,7 +497,7 @@ class AttackOfTheNodesApp(TextualApp):
                 ),
                 lambda confirmed: self._load_workflow_from_library(result)
                 if confirmed
-                else self.notify("Workflow imported"),
+                else notifications.workflow_imported(self),
             )
             return
         self._load_workflow_from_library(result)
@@ -508,7 +509,7 @@ class AttackOfTheNodesApp(TextualApp):
             return
         for key, value in result.get("settings", {}).items():
             self.configuration_manager.set(key, value)
-        self.notify("Settings saved")
+        notifications.settings_saved(self)
 
 
 App = AttackOfTheNodesApp

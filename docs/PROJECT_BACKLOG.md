@@ -54,8 +54,7 @@ Recommended cleanup:
 - Continue using shared command helpers for new modal screens. `SettingsScreen`,
   path prompts, user input, generated config fields, and modal selectors already
   have baseline helper coverage.
-- Finish migrating `app.py` and `execution.py` direct `notify(...)` calls to
-  `frontend/notifications.py`.
+- Keep future notification copy routed through `frontend/notifications.py`.
 - Keep schema-generated node config as the default path; extend field schemas or
   frontend render helpers before adding per-node custom modal logic.
 - Add a focused keyboard-only smoke suite for common modal flows: open, move,
@@ -83,9 +82,8 @@ Recommended cleanup:
 
 ## Later Project — Unified Toast / Alert System
 
-The project has `frontend/notifications.py`, but `app.py` and `execution.py`
-still call `notify(...)` directly. Finish the migration before adding richer
-toast behavior.
+The project has `frontend/notifications.py` and frontend screens route common
+notifications through it. Add richer toast behavior on top of that helper.
 
 Recommended cleanup:
 
