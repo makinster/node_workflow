@@ -4,6 +4,7 @@ import re
 from typing import Any, ClassVar, Dict, List
 
 from ..node_base import Node, NodeContext
+from ..node_category import NodeCategory
 
 
 class ConditionalNode(Node):
@@ -12,6 +13,7 @@ class ConditionalNode(Node):
     node_type: ClassVar[str] = "conditional_node"
     display_name: ClassVar[str] = "Conditional"
     description: ClassVar[str] = "Routes to one path based on a condition"
+    category: ClassVar[str] = NodeCategory.FLOW
     input_ports: ClassVar[List[str]] = ["input"]
     output_ports: ClassVar[List[str]] = ["true", "false"]
     default_config: ClassVar[Dict[str, Any]] = {

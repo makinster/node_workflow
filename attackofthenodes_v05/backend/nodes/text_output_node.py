@@ -3,6 +3,8 @@
 from typing import Any, ClassVar, Dict, List
 
 from ..node_base import Node, NodeContext
+from ..node_category import NodeCategory
+from ..output_entry import OutputLogEntry
 
 
 class TextOutputNode(Node):
@@ -11,6 +13,7 @@ class TextOutputNode(Node):
     node_type: ClassVar[str] = "text_output_node"
     display_name: ClassVar[str] = "Text Output"
     description: ClassVar[str] = "Formats input through a template and logs it"
+    category: ClassVar[str] = NodeCategory.IO
 
     input_ports: ClassVar[List[str]] = ["input"]
     output_ports: ClassVar[List[str]] = ["default"]
@@ -64,7 +67,13 @@ class TextOutputNode(Node):
 
         full_output = f"[{label}] {formatted}"
         log = list(context.memory_bank.read_persistent("output_log", default=[]))
-        log.append(full_output)
+        log.append(
+            OutputLogEntry(
+                full_output,
+                branch_id=context.branch_id,
+                node_id=context.node_id,
+            )
+        )
         context.memory_bank.store_persistent("output_log", log)
 
         context.signal_done({"data": {"default": full_output}, "next_node_id": None})

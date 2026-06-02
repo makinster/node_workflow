@@ -36,6 +36,7 @@ Completed from the master plan:
   gating with downstream target filtering in config.
 - Phase 9: `MergeNode` plus counter-style lineage barrier for branch
   recombination.
+- FA-0 through FA-5: frontend standardization audit and helper extraction.
 
 Recent usability patch (Phase 5.5 — keyboard nav hardening):
 
@@ -55,11 +56,24 @@ Recent usability patch (Phase 5.5 — keyboard nav hardening):
   instead of raw port ids.
 - `_ancestor_visible` filters `display=False` containers from nav list.
 - `scroll_to_widget` called directly on scroll container for reliable scrolling.
-- `frontend/widgets/command_navigation.py` is the new shared place for
-  command-mode activation and dropdown behavior. Do not duplicate Textual
-  `Select` overlay handling in individual screens.
+- `frontend/widgets/command_navigation.py` is the single place for command-mode
+  activation, dropdown behavior, and `SelectOverlay._on_key` patching. Do not
+  duplicate Textual overlay handling in individual screens.
+- `SelectOverlay` key patch: `_install_select_overlay_command_bindings()` wraps
+  `SelectOverlay._on_key` at import time so W/S/arrows/E/Ctrl+Q work inside any
+  expanded dropdown without per-screen handlers. Use `commit_highlighted_select`
+  to commit values from outside the overlay.
 - Schema-generated dropdowns should not include Textual's blank `Select` row
   unless a future schema explicitly requests an optional blank value.
+
+Frontend standardization FA phases (FA-0 through FA-5) completed 2026-06-02:
+
+- `frontend/widgets/command_navigation.py` — shared command modal toolkit
+- `frontend/widgets/list_navigation.py` — shared list selector helpers
+- `frontend/widgets/dynamic_sections.py` — checkbox/count-driven section helpers
+- `frontend/notifications.py` — named notification helpers
+- `frontend/widgets/form_generator.py` expanded with `placeholder`, validators,
+  `height`, `language`, and multiselect defaults
 
 Frontend standardization direction:
 

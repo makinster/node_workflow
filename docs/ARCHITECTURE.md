@@ -1,392 +1,265 @@
 # AttackOfTheNodes Architecture
 
-AttackOfTheNodes is a node-based workflow engine with a live frontend control surface. The guiding metaphor is a factory floor with a control room: backend services execute and coordinate node pipelines, while the frontend renders, edits, and observes them.
+AttackOfTheNodes is a Python workflow engine with a Textual terminal UI. The guiding metaphor is a factory floor with a control room: backend services execute and coordinate node pipelines, while the frontend renders, edits, and observes them in the terminal.
 
 ## Big Picture
 
-A workflow is a recipe made of connected nodes. When a run starts, a `WorkflowSupervisor` walks from the start node through the graph. If a node forks execution, `WorkflowMasterState` spawns one supervisor per branch. Supervisors share a per-run `MemoryBank`, collect durable outputs through `OutputManager`, and report lifecycle events back to `WorkflowMasterState`.
+A workflow is a recipe made of connected nodes. When a run starts, a `Supervisor` walks from the start node through the graph. If a node forks execution, `MasterState` spawns one supervisor per branch. Supervisors share a per-run `MemoryBank`, collect durable outputs through `OutputManager`, and report lifecycle events back to `MasterState` via `EventBus`.
 
 The execution pipeline is:
 
-1. Load workflow structure.
+1. Load workflow structure from disk.
 2. Validate reachable nodes and connections.
 3. Start root supervisor at the start node.
 4. Execute nodes sequentially along a path.
-5. Write transient data to `MemoryBank`.
-6. Spawn branch supervisors when requested.
+5. Write transient port data to `MemoryBank`.
+6. Spawn branch supervisors when a node signals branching.
 7. Pause for human input or recovery decisions when needed.
 8. Finalize outputs and run state when all supervisors terminate.
 
 ## Backend Components
 
-### `WorkflowPersistenceManager`
+### `persistence.py`
 
-The persistence manager is intentionally dumb. It wraps IndexedDB through Dexie.js and exposes six conceptual tables:
+Intentionally dumb flat-file I/O. All paths are anchored to the project root via `Path(__file__).resolve().parent.parent`. No schema interpretation or workflow logic lives here.
 
-- `workflows`: serialized workflow blueprints.
-- `settings`: global key/value configuration.
-- `apiKeys`: encrypted API credentials.
-- `runHistory`: summaries of past runs.
-- `runOutputs`: collected output data from completed runs.
-- `runErrors`: structured error logs per run.
+Data directories:
 
-Workflow nodes are stored as plain JSON objects. Conversion to live runtime `Map` objects happens above this layer.
-
-Workflow saves use two keys:
-
-- `workflow_{id}`: manual save.
-- `workflow_{id}_auto_save`: internal checkpoint written during a run.
-
-On startup, session recovery should check for an auto-save first, restore from it, and delete it afterward.
+- `workflows/` — serialized workflow blueprints, one JSON file per workflow.
+- `settings/` — global key/value configuration.
+- `run_history/` — summaries of completed or errored runs.
+- `run_outputs/` — collected output data from completed runs.
+- `run_errors/` — structured error logs per run.
 
 ### `ConfigurationManager`
 
-The settings board. It loads settings once, caches them in memory, and serves future reads from cache. `DEFAULT_SETTINGS` acts as both defaults and schema; only known setting keys can be set.
+The settings board. Loads settings from `settings/settings.json`, caches them in memory, and serves future reads from cache. `DEFAULT_SETTINGS` acts as both defaults and schema; only known keys can be set.
 
-Important settings:
+Key settings:
 
-- `maxBranchDepth`: hard ceiling for nested branch spawning.
-- `nodeTimeoutMs`: per-node execution timeout.
-- `autoSaveInterval`: internal checkpoint cadence.
+- `max_branch_depth`: hard ceiling for nested branch spawning.
+- `node_timeout_seconds`: per-node execution timeout passed to supervisors.
+
+### `EventBus`
+
+In-process pub/sub dispatcher. Components `subscribe(event_name, callback)` and `publish(event_name, payload)`. All inter-component signals travel through the event bus.
+
+Key events:
+
+- `WORKFLOW_STATE_UPDATE` — run state changed (IDLE / RUNNING / PAUSED / WAITING_FOR_INPUT / FINISHED / ERROR).
+- `WORKFLOW_DIRTY` — workflow structure was modified.
+- `SUPERVISOR_REGISTER` — a new supervisor started.
+- `SUPERVISOR_STATE_UPDATE` — a supervisor changed state.
+- `SUPERVISOR_REQUEST_BRANCH` — a node requested a branch spawn.
+- `SUPERVISOR_TERMINATING` — a supervisor finished.
+- `SUPERVISOR_ERROR` — a supervisor encountered an unrecoverable error.
+- `BREAKPOINT_HIT` — execution hit a node with its breakpoint flag set.
+- `NODE_TIMING_UPDATE` — a node finished executing; carries elapsed seconds.
+- `RECOVERY_OPTIONS_AVAILABLE` — a node errored; waiting for recovery decision.
+- `USER_INPUT_NEEDED` — a node is waiting for human input.
+- `MEMORY_UPDATE` — memory bank state changed.
+- `RUN_HISTORY_UPDATED` — a run was recorded.
 
 ### `WorkflowMap`
 
-The live blueprint manager. It caches workflows as `Map<workflowId, WorkflowCacheEntry>`.
+The live blueprint manager. Caches the active workflow in memory as a dict of node dicts. Exposes:
 
-Each cache entry contains:
-
-- `nodes: Map<nodeId, NodeDataObject>`
-- `isDirty: boolean`
-- `modifiedNodeIds: Set`
-- `isSubworkflow: boolean`
-
-Each node data object contains identity, type, alias, config, input/output connections, position, bookmark state, and subworkflow marker.
-
-Primary responsibilities:
-
-- Traversal: start-node discovery, adjacent-node lookup, and BFS windowing for the UI.
-- Node CRUD: add nodes from `NodeFactory` templates, delete nodes, and clean neighbor connections.
-- Dirty tracking: mutations set dirty state, saves clear it.
-- Loose node handling: disconnected nodes are retained and persisted, but ignored during execution unless reachable.
+- Traversal: start-node discovery, next-node lookup, input-source lookup, BFS reachability.
+- Node CRUD: add from `NodeFactory` templates, delete, update config and alias.
+- Connection management: connect/disconnect ports, tombstone swaps.
+- Dirty tracking: mutations set dirty state; saves clear it.
+- Persistence: reads/writes JSON through `persistence.py`.
 
 ### `NodeFactory`
 
-The parts catalog. It imports node classes from `/nodes/index.js` and builds a registry of node type to class, metadata, config schema, and form schema.
+The parts catalog. Imports node classes, builds a registry of type string → class, and exposes metadata for the UI and validator.
 
 Primary operations:
 
-- `createNodeInstance(nodeId, nodeType, config)`
-- `createNodeConfigTemplate(nodeType)`
-- `getNodeTypesMetadata()`
-- `getNodeConfigFormSchema(nodeType)`
-
-If a node does not define an explicit form schema, the form schema can be inferred from its JSON schema.
+- `create_node(node_type, node_id, config)` → `Node`
+- `create_config_template(node_type)` → `dict`
+- `get_node_types_metadata()` → `list[dict]`
+- `is_valid_node_type(node_type)` → `bool`
 
 ### Node Classes
 
-Each node lives under `/nodes/` and extends `NodeBase`. A node is intentionally graph-ignorant: it receives inputs, reads its config, and signals through context.
+Each node lives under `backend/nodes/` and extends `Node`. Nodes are intentionally graph-ignorant: they receive pre-resolved inputs, read their config, and signal through context.
 
 Each node defines:
 
-- `static nodeMetadata`
-- `static configSchema`
-- `async execute(inputs, context)`
+- Class-level metadata: `node_type`, `display_name`, `description`, `category`, `input_ports`, `output_ports`, `default_config`, `config_schema`, `ui_hints`.
+- `async execute(context: NodeContext) -> None`.
 
-The execution context includes signal methods, shared services, runtime identity, and helpers:
+Execution context:
 
-```javascript
-context = {
-  signalDone({ data, nextNodeId, branches }),
-  signalError(error),
-  signalProgress(data),
-  signalWaitingForInput(promptContext),
-  signalLongRunning(estimatedMs, checkpoint),
-  memoryBank,
-  apiManager,
-  callApi(apiId, params),
-  createSupervisor(ctx),
-  getNodeConfig(),
-  currentNodeId,
-  branchId,
-  runId
-};
+```python
+context = NodeContext(
+    node_id,
+    branch_id,
+    run_id,
+    inputs,                          # dict: port → upstream value
+    memory_bank,
+    signal_done(payload),            # advance; payload may carry data or branches
+    signal_error(error),             # trigger recovery flow
+    signal_waiting_for_input(prompt) -> Awaitable[str],
+    wait_for_nodes(node_ids, timeout) -> Awaitable[None],
+)
 ```
 
-Branching is requested through `signalDone`:
+Branching is requested through `signal_done`:
 
-```javascript
-context.signalDone({
-  data: { decision: "yes" },
-  branches: [
-    { outputSocketName: "yes_path", startNodeId: "node_a", initialData: {} },
-    { outputSocketName: "no_path", startNodeId: "node_b", initialData: {} }
-  ]
-});
+```python
+context.signal_done({
+    "data": {},
+    "branches": [
+        {"output_port": "path_a", "initial_data": {"input": value}},
+        {"output_port": "path_b", "initial_data": {"input": value}},
+    ],
+})
 ```
 
 Current node types:
 
-- `DataInputNode`
-- `DataOutputNode`
-- `LogicBranchNode`
-- `UserInputNode`
-- `TransformNode`
-- `MergeNode` deferred until cross-supervisor coordination is implemented.
+| Category | Nodes |
+|---|---|
+| Flow | StartNode, EndNode, BranchNode, ConditionalNode, WaitUntilNode |
+| Data | SetVariableNode, GetVariableNode, ConcatNode |
+| IO | TextOutputNode, UserTextInputNode, FileReaderNode |
+| AI | ChatCompletionNode, ImageGenerationNode, EmbeddingNode |
+| Debug | LoggerNode, SleepNode, CounterNode, EchoNode, ProbeNode, ErrorNode, MemorySnapshotNode, RandomBranchNode, DeepBranchNode, NoOpNode, RepeatCounterNode, TombstoneNode, VariableSetterNode, VariableReaderNode |
 
 ### `MemoryBank`
 
-The shared whiteboard for one run. It has two stores:
+The shared whiteboard for one run. Two stores:
 
-- Persistent store: named variables shared by all supervisors for the whole run.
-- Transient store: point-to-point data passing keyed like `sourceNodeId_portName`.
+- **Persistent store**: named variables shared by all supervisors for the whole run. Read/written by nodes through `context.memory_bank`.
+- **Transient store**: point-to-point data passing keyed as `(source_node_id, port_name)`. Written by the supervisor after each node; read by the supervisor when preparing inputs for the next node.
 
-Persistent memory changes broadcast `EVENT_MEMORY_UPDATE` so the frontend memory viewer can update live. Both stores are cleared on run start and are blank between runs.
+Both stores are cleared on run start and blank between runs. Persistent changes broadcast `MEMORY_UPDATE`.
 
 ### `OutputManager`
 
-The collection bin for durable workflow outputs. It accumulates `OutputItem` objects in memory by `runId`, then `finalizeRunOutputs` batch-saves them through persistence and clears the in-memory store.
-
-`MemoryBank` is ephemeral working memory. `OutputManager` is permanent run output history.
-
-### `WorkflowSupervisor`
-
-The line worker. It executes one path through the graph and owns branch-local state.
-
-Created with:
-
-- `runId`
-- `branchId`
-- `depth`
-- `startNodeId`
-- `parentInfo`
-- `initialContextData`
-- Injected services: `WorkflowMap`, `MemoryBank`, `MasterState`, `OutputManager`, and `ErrorHandler`.
-
-Run loop:
-
-1. Check terminate and pause flags.
-2. Fetch executable node instance from `WorkflowMap`.
-3. Prepare inputs from transient memory or branch initial data.
-4. Start heartbeat timeout.
-5. Await `node.execute(inputs, context)` and its signal result.
-6. Clear heartbeat.
-7. Write outputs to transient memory and output manager when relevant.
-8. Request branches from `MasterState` when signaled.
-9. Advance to explicit `nextNodeId` or default output connection.
-10. Terminate when no next node exists.
-
-For user input, the supervisor transitions to `WAITING_FOR_USER_INPUT`, stores a resolver, and waits for `MasterState` to route the frontend answer back.
-
-For recoverable errors, the supervisor logs, packages recovery options, waits for a human decision, and applies `RETRY`, `SKIP`, `RECONFIGURE`, `TERMINATE_BRANCH`, or `TERMINATE_WORKFLOW`.
-
-Supervisors must support `getSerializableState` and `restoreFromState` for session recovery.
-
-### `WorkflowMasterState`
-
-The floor manager. It does not execute nodes; it coordinates supervisors.
-
-Starting a run:
-
-1. Generate `runId`.
-2. Clear `MemoryBank` and `OutputManager`.
-3. Find the workflow start node.
-4. Create root supervisor through `SupervisorFactory`.
-5. Register supervisor metadata in `activeSupervisors`.
-6. Start the supervisor.
-7. Start checkpoint timer.
-8. Broadcast `EVENT_WORKFLOW_STATE_UPDATE`.
-
-Supervisor event routing handles:
-
-- `REGISTER`
-- `STATE_UPDATE`
-- `REQUEST_BRANCH`
-- `TERMINATING`
-- `SAFE_FOR_SAVE`
-- `NODE_ERROR`
-
-Run completion occurs when `activeSupervisors` is empty. Master state then finalizes outputs, updates state to `FINISHED`, stops the save timer, and broadcasts final state.
-
-Checkpointing pauses supervisors at safe points, waits for `SAFE_FOR_SAVE` from all active supervisors, serializes execution state, writes `_auto_save`, and resumes supervisors.
-
-### `SaveManager`
-
-The archivist. It assembles complete save objects.
-
-Save flow:
-
-1. Get structure from `WorkflowMap.getWorkflowDataForSave`.
-2. Include supervisor snapshots and memory snapshots when saving execution state.
-3. Stamp version and timestamp.
-4. Write to `workflow_{id}` or `workflow_{id}_auto_save`.
-5. Clear dirty state in `WorkflowMap`.
-
-Load flow:
-
-1. Fetch raw persisted data.
-2. Load workflow cache and convert nodes object back to `Map`.
-3. Restore memory and supervisors when execution state exists.
-4. Update last active workflow setting.
-
-Subworkflow preparation validates, marks workflow and nodes as subworkflow-safe, and saves.
-
-### `Validator`
-
-The inspector. It performs a DFS from the start node and checks:
-
-- Node type exists in `NodeFactory`.
-- Node config satisfies JSON schema.
-- Connection sources and targets exist.
-
-After traversal, any unvisited node is unreachable and reported as a warning. The return shape is:
-
-```javascript
-{
-  success: true,
-  errors: [],
-  warnings: []
-}
-```
-
-Each error or warning should include `nodeId` so the UI can highlight the affected node.
+The collection bin for durable workflow outputs. Accumulates output items in memory keyed by `run_id`, then `finalize_run()` batch-saves them to `run_outputs/` and evicts the in-memory list. `get_outputs_for_run()` lazy-loads from disk for historical views.
 
 ### `ErrorHandler`
 
-Central structured error logging. Errors include:
+Central structured error logger. `log_error()` appends an error record to an in-memory cache, persists it to `run_errors/`, and broadcasts `ERROR_LOGGED`. `finalize_run()` evicts the in-memory cache after a run is recorded. `get_errors_for_run()` lazy-loads from disk.
 
-- Unique ID.
-- Timestamp.
-- Category such as `NETWORK`, `VALIDATION`, `NODE_LOGIC`, or `UNKNOWN`.
-- Stack trace.
-- Context metadata including node, run, and supervisor.
+Each error record contains: unique ID, timestamp, category, message, type, traceback, and context (run/node/branch).
 
-Errors are persisted per run, cached in memory, and broadcast with `EVENT_ERROR_LOGGED`.
+### `RunHistory`
 
-### `ApiManager`
+Stores summaries of completed or errored runs. Capped at `_MAX_IN_MEMORY = 500` entries in memory; older records remain on disk. `list_runs()` returns the in-memory list newest-first.
 
-Handles encrypted external API credentials and runtime API dispatch. Encryption uses Web Crypto with PBKDF2-derived keys and AES-GCM. Decrypted credentials are cached only for the session.
+Run records contain: run_id, workflow_id, workflow_name, started_at, ended_at, final_state, error_count, output_count, node_timings.
 
-`callApi(apiId, params)` is the node-facing dispatch point. `getApiKeysStatus()` exposes configured/not-configured status without leaking values.
+### `Supervisor`
 
-### `HandleUI`
+The line worker. Executes one path through the graph and owns branch-local state.
 
-The backend facade. It maps frontend `REQ_*` and `CMD_*` messages to backend operations.
+Constructed with run_id, branch_id, depth, start_node_id, WorkflowMap, MemoryBank, EventBus, ErrorHandler, and callbacks for `mark_node_completed` and `wait_for_nodes`.
 
-Examples:
+Run loop:
 
-- `handleSaveWorkflow` delegates to `SaveManager`.
-- `handleGetInitialState` assembles workflow, config, API key status, and optional last session.
-- `handleSelectExecutionBranch` locates the supervisor current node and asks the frontend to focus it.
-- `handleRecoveryAction` routes a recovery choice back to `MasterState`.
+1. Check stop and pause flags.
+2. Check for a breakpoint on the current node; pause if set.
+3. Fetch node instance from WorkflowMap.
+4. Prepare inputs from transient memory or initial branch data.
+5. Execute node and capture result via `perf_counter`-wrapped `node.execute(context)`.
+6. Emit `NODE_TIMING_UPDATE` with elapsed seconds.
+7. If an error, publish recovery options and await a decision (RETRY / SKIP / TERMINATE_BRANCH / TERMINATE_WORKFLOW).
+8. On success, call `mark_node_completed(node_id)`.
+9. Write outputs to transient memory; spawn branches if signaled.
+10. Advance to next node or terminate.
 
-`_delegateCall` wraps service calls in uniform error handling through `ErrorHandler`.
+### `MasterState`
 
-## Frontend Components
+The floor manager. Does not execute nodes; it coordinates supervisors.
 
-### Layout
+Starting a run:
 
-The UI has a persistent top toolbar, a left work area, a right controls panel, and a modal layer. It has two modes:
+1. Generate `run_id`.
+2. Clear `MemoryBank`, `OutputManager`, supervisor tracking, `node_timings`, and `completed_nodes`.
+3. Find the workflow start node.
+4. Create and task root supervisor.
+5. Broadcast `WORKFLOW_STATE_UPDATE(RUNNING)`.
 
-- `editor`: edit workflow structure and node config.
-- `execution`: watch active supervisors and interact with live run state.
+Supervisor event routing handles:
 
-Mode is derived from workflow run state.
+- `SUPERVISOR_REGISTER` — track supervisor instance.
+- `SUPERVISOR_TERMINATING` — remove supervisor; check run completion.
+- `SUPERVISOR_REQUEST_BRANCH` — enforce `max_branch_depth`; create child supervisor.
+- `SUPERVISOR_STATE_UPDATE` — track waiting-for-input state.
+- `SUPERVISOR_ERROR` — transition to ERROR state; record run.
+- `BREAKPOINT_HIT` — pause all active supervisors.
+- `NODE_TIMING_UPDATE` — accumulate elapsed seconds per node into `node_timings`.
+- `TERMINATE_WORKFLOW_REQUESTED` — stop all supervisors; record run as ERROR.
 
-### `TopToolbar`
+WaitUntil coordination:
 
-Always visible. Contains workflow settings/name, run/stop, results, options, dirty indicator, and error count badge.
+- `mark_node_completed(node_id)` — adds node to `completed_nodes`, notifies all waiters via an `asyncio.Condition`.
+- `wait_until_nodes_completed(target_ids, timeout)` — awaits the condition until all targets are in `completed_nodes`.
 
-### `EditorPanel`
+Run completion occurs when `_supervisors` and `_supervisor_tasks` are both empty. MasterState then finalizes outputs, records the run, and broadcasts `WORKFLOW_STATE_UPDATE(FINISHED)`.
 
-The blueprint view. It renders a scrollable windowed slice of nearby nodes via `requestNodeWindow(centerNodeId, windowSize)`. The UI anchor is `editorCenterNodeId`.
+### `SaveManager`
 
-### `ExecutionPanel`
+The archivist. Assembles complete save objects combining WorkflowMap structure, MemoryBank state, and ConfigurationManager settings. Handles load/save/delete/duplicate/export/import of workflows.
 
-The live view. It uses the same windowing approach but highlights the selected supervisor's active node and follows it as execution advances.
+### `Validator`
 
-### `ControlsPanel`
+The inspector. Performs a DFS from the start node and checks:
 
-Editor mode:
+- Node type exists in `NodeFactory`.
+- Connection sources and targets exist.
+- Tombstone nodes (pending replacements) are flagged as errors.
 
-- Validate button and validation status.
-- Jump To controls for start, branches, bookmarks, and outputs.
+After traversal, any unvisited node is unreachable and reported as a warning. Return shape:
 
-Execution mode:
+```python
+{"errors": [...], "warnings": [...]}
+```
 
-- Pause/resume.
-- Execution status.
-- Pending inputs.
-- Supervisor selector.
-- Selected supervisor info.
-- Errors, memory, and outputs shortcuts.
+Each error and warning includes `node_id` so the UI can highlight the affected node.
 
-### `NodeCard`
+## Frontend Components (Textual TUI)
 
-Displays node alias/type, node type tag, status, edit action, and delete action. The active execution node is highlighted in execution mode.
+### `App` (`AttackOfTheNodesApp`)
 
-### Modal System
+Root Textual application. Created by `main.py` alongside all backend services. Subscribes to 10 backend events on startup (once, for the session lifetime). Manages the screen stack and routes user commands to backend services.
 
-`ModalContainer` reads `modalStack`; opening pushes and closing pops. Supported modals:
+### `EditorScreen`
 
-- `WorkflowSettingsModal`
-- `NodeSelectorModal`
-- `NodeConfigModal`
-- `DeleteNodeModal`
-- `UserInputModal`
-- `BranchViewerModal`
-- `MemoryViewerModal`
-- `OutputViewerModal`
-- `ResultsModal`
-- `ErrorDetailsModal`
-- `ApiKeyManagerModal`
-- `OptionsModal`
+The blueprint view. Shows a `NodeList` (left panel) and a details panel (right). Priority-bound keys: `A` add, `I` insert, `E`/`Enter` edit, `X`/`Backspace` delete, `V` validate, `L`/`O` library, `?` help. `Ctrl+S` save, `Ctrl+R` run at app level.
 
-### `BackendBridge`
+### `ExecutionScreen`
 
-The single frontend/backend communication channel. It sends typed message objects and resolves request promises. It also routes backend `EVENT_*` messages into UI store actions.
+Live run view showing node statuses (running / waiting / done / errored) during workflow execution.
 
-### `UIController`
+### Modals and Screens
 
-The Zustand source of truth for frontend state:
+- `NodeSelectorScreen` — pick a node type to add.
+- `NodeConfigScreen` — edit alias, config fields, memory bank inputs/outputs, wait targets, and view connections. Uses `CommandInput`/`CommandTextArea` for keyboard-first field editing.
+- `ConfirmScreen` — yes/no confirmation dialog.
+- `ErrorDetailsScreen` — displays structured errors; doubles as recovery decision dialog.
+- `BranchSelectorScreen` — choose which branch path to view in the editor.
+- `WorkflowLibraryScreen` — browse, load, duplicate, delete, export, and import workflows.
+- `SettingsScreen` — edit configuration key/value settings.
+- `UserInputScreen` — prompts for string input during a running workflow.
+- `HelpScreen` — key binding reference.
 
-- `mode`
-- `workflowRunState`
-- `currentWorkflowId`
-- `currentWorkflowName`
-- `isDirty`
-- `modalStack`
-- `activeSupervisors`
-- `selectedSupervisorId`
-- `pendingInputCount`
-- `errorCount`
-- `validationStatus`
-- `editorCenterNodeId`
-- `jumpToFilter`
-- `jumpToList`
+### `CommandInput` / `CommandTextArea`
 
-## User Flow
-
-1. App initializes `BackendBridge`.
-2. Frontend requests initial state.
-3. Backend loads last workflow/config.
-4. Editor fetches node window around the start node.
-5. User edits nodes, config, and saves.
-6. User validates.
-7. User starts execution.
-8. Master state creates root supervisor.
-9. Execution panel follows selected supervisor.
-10. User responds to input prompts or recovery decisions when needed.
-11. Branches spawn additional supervisors.
-12. Run finishes when all supervisors terminate.
-13. Outputs are finalized and results become available.
+Mode-switching form widgets. In command mode, `w`/`s` navigate fields, `e`/`Enter` begins editing, `Esc` ends editing. In edit mode, all keys go to the text input. Prevents accidental edits when navigating config forms.
 
 ## Implementation Invariants
 
-- Frontend code should communicate with backend only through `BackendBridge`.
-- Runtime node execution should not require nodes to know graph topology.
-- Persistence should remain schema-light and avoid interpreting workflow meaning.
+- Nodes are graph-ignorant: they receive pre-resolved inputs through `NodeContext`.
 - `WorkflowMap` owns live workflow shape and dirty state.
-- `SaveManager` is the only component that should assemble complete save payloads.
-- Session recovery should prefer `_auto_save`, then delete it after restoration.
-- Loose nodes round-trip through saves.
-- `MergeNode` should remain deferred until branch recombination semantics are explicit.
+- `SaveManager` is the only component that assembles complete save payloads.
+- `MemoryBank` is ephemeral per run; `OutputManager` is the durable output record.
+- `EventBus` is the only inter-component communication mechanism.
+- All data paths anchor to `Path(__file__).resolve().parent.parent` via `persistence.py`.
+- Per-run in-memory caches (`OutputManager._outputs_by_run`, `ErrorHandler._errors_by_run`) are evicted after a run is finalized.
+- `RunHistory._runs` is capped at 500 entries in memory; disk retains full history.
+- `MasterState` and `App` are created once per session; their bus subscriptions register once and remain for the session lifetime.

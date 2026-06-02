@@ -3,6 +3,7 @@
 from typing import Any, ClassVar, Dict, List
 
 from ..node_base import Node, NodeContext
+from ..node_category import NodeCategory
 
 
 class ChatCompletionNode(Node):
@@ -11,6 +12,7 @@ class ChatCompletionNode(Node):
     node_type: ClassVar[str] = "chat_completion_node"
     display_name: ClassVar[str] = "Chat Completion"
     description: ClassVar[str] = "Simulates an LLM chat response"
+    category: ClassVar[str] = NodeCategory.AI
     input_ports: ClassVar[List[str]] = ["input"]
     output_ports: ClassVar[List[str]] = ["default"]
     default_config: ClassVar[Dict[str, Any]] = {

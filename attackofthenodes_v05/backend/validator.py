@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Set
 from .node_factory import NodeFactory
 from .workflow_map import WorkflowMap
 
+
 def derive_input_sources(
     all_nodes: Dict[str, Dict[str, Any]]
 ) -> Dict[str, List[Dict[str, str]]]:
@@ -85,6 +86,57 @@ def validate_workflow(workflow_map: WorkflowMap, factory: NodeFactory) -> Dict[s
                     }
                 )
 
+    # Tombstone nodes (deleted-node stubs) are always errors
+    for node_id, data in all_nodes.items():
+        if data.get("type") == "tombstone_node":
+            cfg = data.get("config") or {}
+            original = cfg.get("original_display_name") or cfg.get("original_type") or "unknown"
+            errors.append(
+                {
+                    "node_id": node_id,
+                    "message": (
+                        f"Deleted node stub (was: {original}) — open it and choose a replacement"
+                    ),
+                }
+            )
+
+    # Port-name validity: every connection must reference a port the node type declares
+    _type_meta_cache: Dict[str, Any] = {}
+    for meta in factory.get_node_types_metadata():
+        _type_meta_cache[meta["type"]] = meta
+
+    for node_id, data in all_nodes.items():
+        node_type = data.get("type", "")
+        meta = _type_meta_cache.get(node_type)
+        if meta is None:
+            continue  # unknown type already flagged above
+        declared_out = set(meta.get("output_ports") or [])
+        declared_in = set(meta.get("input_ports") or [])
+        for conn in data.get("connections", {}).get("outputs", []):
+            port = conn.get("source_port", "default")
+            if port not in declared_out:
+                errors.append(
+                    {
+                        "node_id": node_id,
+                        "message": (
+                            f"Orphaned output connection on undeclared port '{port}' "
+                            f"(node type '{node_type}' has no such output)"
+                        ),
+                    }
+                )
+        for conn in data.get("connections", {}).get("inputs", []):
+            port = conn.get("target_port", "default")
+            if port not in declared_in:
+                errors.append(
+                    {
+                        "node_id": node_id,
+                        "message": (
+                            f"Orphaned input connection on undeclared port '{port}' "
+                            f"(node type '{node_type}' has no such input)"
+                        ),
+                    }
+                )
+
     declared_membank_outputs = _declared_membank_outputs(all_nodes)
     for node_id, sources in derive_input_sources(all_nodes).items():
         for source in sources:
@@ -134,6 +186,7 @@ def _dfs_reachable(
         target = conn.get("target_node_id")
         if target and target in all_nodes:
             _dfs_reachable(target, all_nodes, visited)
+
 
 def _declared_membank_outputs(all_nodes: Dict[str, Dict[str, Any]]) -> Set[str]:
     """Collect declared memory-bank output ids from node configs."""

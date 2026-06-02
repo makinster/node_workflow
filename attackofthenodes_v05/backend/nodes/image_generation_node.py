@@ -3,6 +3,7 @@
 from typing import Any, ClassVar, Dict, List
 
 from ..node_base import Node, NodeContext
+from ..node_category import NodeCategory
 
 
 class ImageGenerationNode(Node):
@@ -11,6 +12,7 @@ class ImageGenerationNode(Node):
     node_type: ClassVar[str] = "image_generation_node"
     display_name: ClassVar[str] = "Image Generation"
     description: ClassVar[str] = "Simulates an image generation request"
+    category: ClassVar[str] = NodeCategory.AI
     input_ports: ClassVar[List[str]] = ["input"]
     output_ports: ClassVar[List[str]] = ["default"]
     default_config: ClassVar[Dict[str, Any]] = {

@@ -67,6 +67,15 @@ class ErrorHandler:
         self._errors_by_run[run_id] = errors
         return list(errors)
 
+    def finalize_run(self, run_id: str) -> None:
+        """Evict in-memory errors for a completed run.
+
+        Call after get_errors_for_run() has already captured errors for the
+        history record. Subsequent calls to get_errors_for_run() lazy-load
+        from disk.
+        """
+        self._errors_by_run.pop(run_id, None)
+
     def clear_errors_for_run(self, run_id: str) -> None:
         """Clear cached/persisted errors for a run."""
         self._errors_by_run[run_id] = []

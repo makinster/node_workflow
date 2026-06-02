@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""AttackOfTheNodes v0.5 - Phase 3 tkinter application entry point."""
+"""AttackOfTheNodes v0.6 Textual TUI application entry point."""
 
 import logging
 from logging.handlers import TimedRotatingFileHandler
@@ -35,7 +35,7 @@ def configure_logging(configuration) -> None:
 
 
 def main() -> None:
-    """Launch the Phase 3 editor UI."""
+    """Launch the Textual terminal UI."""
     from backend.event_bus import EventBus
     from backend.configuration_manager import ConfigurationManager
     from backend.master_state import MasterState
@@ -63,7 +63,7 @@ def main() -> None:
     save_manager = SaveManager(workflow_map, memory_bank, configuration)
 
     app = App(bus, factory, workflow_map, memory_bank, master, save_manager)
-    app.mainloop()
+    app.run()
 
 
 if __name__ == "__main__":

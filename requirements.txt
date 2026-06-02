@@ -1,0 +1,8 @@
+# Canonical dependency spec is attackofthenodes_v05/pyproject.toml
+# Pinned lock file is attackofthenodes_v05/requirements.lock
+#
+# For a fresh install, use:
+#   pip install -r attackofthenodes_v05/requirements.lock
+#   pip install -e attackofthenodes_v05/
+textual>=8.2
+textual-dev>=1.8

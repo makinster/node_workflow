@@ -173,6 +173,12 @@ Append a short entry to `docs/SESSION_LOG.md` for every phase or notable patch.
 | 7 | Per-node execution timing | Done |
 | 8 | Completion registry + wait-until node | Done |
 | 9 | Merge dynamic list + lineage barrier | Done |
+| FA-0 | Frontend source audit + risk map | Done |
+| FA-1 | Shared command modal foundation | Done |
+| FA-2 | Selector list navigation standardization | Done |
+| FA-3 | Schema generator expansion | Done |
+| FA-4 | Dynamic config section helpers | Done |
+| FA-5 | Notification helper | Done (partial — editor migrated; app/execution pending file-state cleanup) |
 | 10 | Documentation modernization | Open, docs-only project |
 | 11 | Real AI node execution | Deferred |
 | 12 | Packaging and release hardening | Deferred |
@@ -330,11 +336,21 @@ Example config:
   in command mode.
 - Selects and selection lists use `command_navigation.py`; screens should not
   duplicate private Textual overlay handling.
+- `SelectOverlay` owns focus while a dropdown is expanded and has its own
+  `_on_key` for type-to-search. Priority screen bindings cannot reach it from
+  outside. The fix is `_install_select_overlay_command_bindings()` in
+  `command_navigation.py`, which wraps `SelectOverlay._on_key` at import time so
+  W/S/arrows/E/Enter/Ctrl+Q are handled before type-to-search. A
+  `_command_navigation_key_patch` sentinel prevents double-patching in tests.
+- To commit a `Select` value programmatically, use `commit_highlighted_select`
+  from `command_navigation.py`. Do not call `action_select()` from outside the
+  overlay; it does not close reliably from non-overlay context.
 - Screens with keyboard-only workflows must call `scroll_to_widget` or an
   equivalent helper whenever focus moves to an off-screen widget.
-- Use `app.notify(...)` for now, but future work should wrap it in a single
-  frontend alert/toast helper so copy, severity, duration, and placement are
-  consistent.
+- Common notifications should use `frontend/notifications.py` helpers instead
+  of ad hoc `app.notify(...)` strings. `editor.py` is migrated; `app.py` and
+  `execution.py` remain direct until their pre-existing file state is safe to
+  stage as narrow changes.
 
 ### Recurring Frontend Bug Patterns
 
@@ -501,6 +517,35 @@ Escalation rule:
   their outputs are graph branches, not value declarations.
 - The count-driven pattern should be reused for future optional config sections
   that are enabled by checkboxes or numeric counts.
+
+### Frontend Audit Phases FA-0 through FA-5
+
+- **FA-0**: Full source audit of `frontend/screens/` and `frontend/widgets/`.
+  Produced the screen matrix in `docs/FRONTEND_AUDIT_BUILD_PLAN.md` classifying
+  each surface by type, helpers used, known risks, and next action.
+- **FA-1**: `frontend/widgets/command_navigation.py` expanded into a reusable
+  command-mode toolkit: focus discovery, movement, activation, select/list
+  helpers, and edit-mode action blocking. `SettingsScreen`, `UserInputScreen`,
+  and `PathPromptScreen` migrated. `SelectOverlay._on_key` monkey-patched at
+  module import time so W/S/arrows/E/Ctrl+Q work correctly inside any expanded
+  `Select` dropdown without requiring per-screen handlers. `commit_highlighted_select`
+  commits the highlighted option deterministically and closes the overlay.
+- **FA-2**: `frontend/widgets/list_navigation.py` added for ListView highlight
+  clamping, focus, scroll-visible, and W/S/arrow movement. `NodeSelectorScreen`,
+  `BranchSelectorScreen`, and `WorkflowLibraryScreen` migrated.
+- **FA-3**: `frontend/widgets/form_generator.py` expanded with `placeholder`,
+  numeric `min`/`max`, string `min_length`/`max_length`, `height` for
+  multiline/code fields, `language` hints, and multiselect default selections.
+  New nodes can use richer fields without screen code changes.
+- **FA-4**: `frontend/widgets/dynamic_sections.py` added for count clamping and
+  visible-row value preservation for checkbox/count-driven config sections.
+  Shared dynamic selection helpers for stale-selection filtering, default
+  select-all, and selected-value normalization. Memory-bank outputs, memory-bank
+  inputs, wait targets, and merge branch-close selectors all use the helper.
+- **FA-5**: `frontend/notifications.py` added with named notification helpers
+  for common workflow, editor, execution, settings, and import/export outcomes.
+  `editor.py` migrated. `app.py` and `execution.py` remain direct calls because
+  their pre-existing file state is not safe to stage as narrow changes yet.
 
 ---
 
@@ -882,7 +927,7 @@ python -m pytest tests/test_debug_nodes.py -v
 
 Expected latest known signal:
 
-- 38 tests passing after Phase 9 merge/lineage barrier (cad1af4).
+- 46 tests passing after FA-5 notification helper + SelectOverlay keyboard fix.
   Test suite does not include Textual mounted-widget tests for nav highlight
   behavior; verify those manually with the TUI smoke test.
 

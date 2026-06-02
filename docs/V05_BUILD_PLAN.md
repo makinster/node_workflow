@@ -227,6 +227,47 @@ At this point v0.5 has all planned proof-of-concept phases:
 - Phase 4: execution UI wiring.
 - Phase 5: memory/output inspection.
 
+## Textual TUI Spinoff Status
+
+The project pivoted from the tkinter UI to a Textual terminal UI. The original
+backend phase work remains intact; the new frontend lives under
+`attackofthenodes_v05/frontend/screens/`, `frontend/widgets/`, and
+`frontend/styles.tcss`.
+
+Checked off:
+
+- Textual app shell launches from `main.py`.
+- Editor screen renders the active workflow path.
+- Node selector modal adds nodes.
+- Node config modal edits alias and schema-driven config fields.
+- Multi-output nodes render an editor-level `Branch Select` row.
+- Branch selector switches the visible branch path without deleting hidden
+  branch nodes.
+- Adding nodes keeps focus on the newly added node and inserts into the visible
+  path when needed.
+- Execution screen starts runs, displays status, and can stop/return to editor.
+- User input, memory, output, error recovery, workflow library, settings, and
+  help modal screens are wired.
+- Workflow library supports local load, new, duplicate, and delete.
+- Workflow delete, dirty workflow load, and dirty new-workflow actions now ask
+  for confirmation before discarding data.
+- Execution recent output now uses a `RichLog` scrollback widget with markup
+  disabled.
+- Node config now supports connection editing through remove controls and
+  input/output endpoint selectors.
+- Workflow library supports JSON import/export through path prompt modals.
+- Editor now exposes `I` as an explicit insert shortcut, using the same
+  downstream-preserving insertion behavior as the smart add path.
+- Editor validation is available with `V`; validation errors and warnings render
+  as structured cards with node id, issue type, description, and jump-to-node
+  actions.
+- Settings persist through `ConfigurationManager`.
+
+Still to add or harden:
+
+- Richer file-picker ergonomics for import/export paths if direct path entry
+  becomes too limiting.
+
 ## v0.6 Roadmap Alignment
 
 The v0.6 Basic UI Foundation roadmap has been formalized in code while

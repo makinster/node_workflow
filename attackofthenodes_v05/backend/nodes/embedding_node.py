@@ -3,6 +3,7 @@
 from typing import Any, ClassVar, Dict, List
 
 from ..node_base import Node, NodeContext
+from ..node_category import NodeCategory
 
 
 class EmbeddingNode(Node):
@@ -11,6 +12,7 @@ class EmbeddingNode(Node):
     node_type: ClassVar[str] = "embedding_node"
     display_name: ClassVar[str] = "Embedding"
     description: ClassVar[str] = "Simulates creating an embedding vector"
+    category: ClassVar[str] = NodeCategory.AI
     input_ports: ClassVar[List[str]] = ["input"]
     output_ports: ClassVar[List[str]] = ["default"]
     default_config: ClassVar[Dict[str, Any]] = {

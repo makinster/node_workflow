@@ -4,6 +4,7 @@ from collections import defaultdict
 from typing import Any, ClassVar, Dict, List
 
 from ..node_base import Node, NodeContext
+from ..node_category import NodeCategory
 
 
 class ConcatNode(Node):
@@ -12,6 +13,7 @@ class ConcatNode(Node):
     node_type: ClassVar[str] = "concat_node"
     display_name: ClassVar[str] = "Concat"
     description: ClassVar[str] = "Formats input and variables into text"
+    category: ClassVar[str] = NodeCategory.DATA
     input_ports: ClassVar[List[str]] = ["input"]
     output_ports: ClassVar[List[str]] = ["default"]
     default_config: ClassVar[Dict[str, Any]] = {

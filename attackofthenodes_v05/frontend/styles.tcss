@@ -91,25 +91,22 @@ Screen {
     height: auto;
 }
 
+.generated-form {
+    height: auto;
+}
+
+.generated-form-page {
+    height: auto;
+}
+
 .membank-output-field {
     width: 100%;
 }
 
-.compact-number-field {
-    width: 16;
-    height: 3;
-}
-
-.membank-output-description-field {
-    height: 3;
-}
-
-.membank-output-textarea {
-    height: 6;
-}
-
-.membank-output-spacer {
-    height: 1;
+.nav-highlight {
+    background: #1a3a5c;
+    color: #7ec8e3;
+    text-style: bold;
 }
 
 .modal-title {

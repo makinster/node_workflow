@@ -3,6 +3,7 @@
 from typing import Any, ClassVar, Dict, List
 
 from ..node_base import Node, NodeContext
+from ..node_category import NodeCategory
 
 
 class StartNode(Node):
@@ -11,6 +12,7 @@ class StartNode(Node):
     node_type: ClassVar[str] = "start_node"
     display_name: ClassVar[str] = "Start"
     description: ClassVar[str] = "Entry point for workflow execution"
+    category: ClassVar[str] = NodeCategory.FLOW
 
     input_ports: ClassVar[List[str]] = []
     output_ports: ClassVar[List[str]] = ["default"]

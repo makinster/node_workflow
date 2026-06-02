@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any, ClassVar, Dict, List
 
 from ..node_base import Node, NodeContext
+from ..node_category import NodeCategory
 
 
 class FileReaderNode(Node):
@@ -12,6 +13,7 @@ class FileReaderNode(Node):
     node_type: ClassVar[str] = "file_reader_node"
     display_name: ClassVar[str] = "File Reader"
     description: ClassVar[str] = "Reads text from a local file"
+    category: ClassVar[str] = NodeCategory.IO
     input_ports: ClassVar[List[str]] = ["input"]
     output_ports: ClassVar[List[str]] = ["default"]
     default_config: ClassVar[Dict[str, Any]] = {

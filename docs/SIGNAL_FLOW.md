@@ -1,520 +1,438 @@
 # Backend Responsibilities and Signal Flow
 
-This document captures the operational wiring for AttackOfTheNodes: who owns what, which components trade data, and which signals/events move through the system.
+This document captures the operational wiring for AttackOfTheNodes: who owns what, which components trade data, and which events move through the system.
 
 ## Component Responsibilities
 
-### `WorkflowPersistenceManager`
+### `persistence.py`
 
 Responsibilities:
 
-- Raw IndexedDB CRUD through Dexie.js.
-- Owns six tables: `workflows`, `settings`, `apiKeys`, `runHistory`, `runOutputs`, `runErrors`.
+- Raw JSON file I/O for five data directories: `workflows/`, `settings/`, `run_history/`, `run_outputs/`, `run_errors/`.
 - Does not interpret workflow schema or business meaning.
+- All paths anchored to project root via `Path(__file__).resolve().parent.parent`.
 
 Data trades:
 
-- Receives raw save objects from `WorkflowMap`, `MemoryBank`, `OutputManager`, `ErrorHandler`, and `ConfigurationManager`.
-- Sends raw persisted objects back to those requesters.
+- Called directly by `WorkflowMap`, `OutputManager`, `ErrorHandler`, `RunHistory`, and `ConfigurationManager`.
+- Returns raw dicts; callers own interpretation.
 
-Signals:
-
-- None. This layer is read/write/delete only.
+Signals: none.
 
 ### `ConfigurationManager`
 
 Responsibilities:
 
-- Load and cache global settings on first access.
+- Load and cache settings from `settings/settings.json` on first access.
 - Validate setting keys against `DEFAULT_SETTINGS`.
 - Serve repeated reads from memory.
 
 Data trades:
 
-- Provides `nodeTimeoutMs`, `maxBranchDepth`, `autoSaveInterval`, and last-active-workflow settings to execution and save services.
-- Persists updated settings through `WorkflowPersistenceManager`.
+- Provides `max_branch_depth`, `node_timeout_seconds`, `last_active_workflow_id` to execution and save services.
+- Persists updated settings through `persistence.py`.
 
-Signals:
+Signals: none.
 
-- None.
+### `EventBus`
+
+Responsibilities:
+
+- In-process pub/sub dispatch.
+- `subscribe(event_name, callback)`, `publish(event_name, payload)`, `unsubscribe(event_name, callback)`.
+
+Data trades:
+
+- Receives subscriptions from `MasterState` (8 events) and `App` (10 events) at startup.
+- Receives `publish` calls from `Supervisor`, `MasterState`, `MemoryBank`, `ErrorHandler`, `RunHistory`, and `WorkflowMap`.
+
+Signals: all events flow through `EventBus`.
 
 ### `WorkflowMap`
 
 Responsibilities:
 
-- Maintain workflow cache as `Map<workflowId, WorkflowCacheEntry>`.
-- Track dirty state and modified node IDs.
+- Maintain active workflow in memory as `dict[node_id, node_data]`.
+- Track dirty state; mutations set dirty, saves clear it.
 - Provide executable node instances through `NodeFactory`.
-- Provide UI node windows.
-- Handle node add, delete, and config updates.
-- Traverse graph for start node, adjacent nodes, and BFS windows.
-- Preserve loose nodes while reporting them through validation.
+- Handle node add, delete, config updates, tombstone swaps.
+- Traverse graph: start-node discovery, next-node lookup, input-source lookup, BFS reachability (`nodes_reachable_from`).
 
 Data trades:
 
 - Receives load/save instructions from `SaveManager`.
-- Uses raw workflow objects from `WorkflowPersistenceManager`.
+- Uses `persistence.py` for raw workflow JSON.
 - Uses node instances, config templates, and metadata from `NodeFactory`.
-- Sends node windows, node data, and dirty state to `HandleUI`.
+- Sends node instances and adjacency details to `Supervisor`.
 - Sends workflow structure to `Validator` and `SaveManager`.
-- Sends node instances and adjacency details to `WorkflowSupervisor`.
 
-Signals:
-
-- None. Returns data synchronously or through normal async calls.
+Signals: publishes `WORKFLOW_DIRTY` on mutations.
 
 ### `NodeFactory`
 
 Responsibilities:
 
-- Registry of available node types.
+- Registry from node type string to node class.
 - Create executable node instances.
 - Generate default node config templates.
-- Provide node metadata and socket definitions for UI.
-- Validate that node types are registered.
+- Provide node metadata and port definitions for UI.
 
 Data trades:
 
 - Receives requests from `WorkflowMap` and `Validator`.
-- Returns instances, config templates, metadata, schemas, and type existence checks.
+- Returns instances, config templates, metadata, and type existence checks.
 
-Signals:
+Signals: none.
 
-- None.
-
-### Individual Node Classes
+### Node Classes
 
 Responsibilities:
 
 - Execute node-specific work.
 - Accept inputs and runtime context from a supervisor.
-- Report done, error, progress, waiting, or long-running state through context signals.
-- Read/write shared memory as needed.
-- Call external APIs through `ApiManager` when needed.
+- Report done, error, waiting, or branching state through context signals.
+- Read/write shared memory through `context.memory_bank`.
 
 Data trades:
 
-- Receive inputs and context from `WorkflowSupervisor`.
-- Send execution outcomes back to the supervisor through `context.signal*()` methods.
-- Read/write `MemoryBank` through context.
-- Output-type nodes contribute to `OutputManager` through supervisor handling.
+- Receive `NodeContext` from `Supervisor`.
+- Send execution outcomes back through `context.signal_done`, `context.signal_error`, `context.signal_waiting_for_input`, or `context.wait_for_nodes`.
 
 Signals sent through context:
 
-- `signalDone({ data, nextNodeId, branches })`
-- `signalError(error)`
-- `signalProgress(data)`
-- `signalWaitingForInput(promptContext)`
-- `signalLongRunning(estimatedMs, checkpoint)`
+- `signal_done(payload)` — `payload` may carry `data` (port values) and/or `branches`.
+- `signal_error(error)` — triggers the supervisor recovery flow.
+- `signal_waiting_for_input(prompt)` → awaitable str — suspends supervisor until input arrives.
+- `wait_for_nodes(node_ids, timeout)` → awaitable — suspends until target nodes complete.
 
 ### `MemoryBank`
 
 Responsibilities:
 
-- Store persistent variables shared across one run.
-- Store transient port data keyed like `sourceNodeId_portName`.
-- Enforce write-depth protection for persistent variables.
-- Track modification timestamps.
-- Broadcast memory changes to frontend.
+- Persistent store: named variables shared across all supervisors for one run.
+- Transient store: port data keyed `(source_node_id, port_name)`, written by supervisor after node execution.
+- Both stores cleared on run start.
 
 Data trades:
 
-- Receives transient writes from `WorkflowSupervisor`.
-- Receives persistent reads/writes from nodes through context.
-- Provides snapshots to `SaveManager`.
-- Restores snapshots from `SaveManager`.
+- Receives transient writes from `Supervisor` after each node.
+- Receives persistent reads/writes from nodes through `context.memory_bank`.
+- Provides values to `Supervisor` when preparing inputs for the next node.
 
-Signals:
-
-- `EVENT_MEMORY_UPDATE` to frontend.
+Signals: publishes `MEMORY_UPDATE` on persistent store changes.
 
 ### `OutputManager`
 
 Responsibilities:
 
-- Collect output-node data during a run.
-- Accumulate outputs in memory by `runId`.
-- Persist outputs when a run finishes.
-- Serve historical outputs for results views.
+- Collect output-node data during a run, keyed by `run_id`.
+- `finalize_run(run_id)`: persist to `run_outputs/`, evict from memory, return values.
+- `get_outputs_for_run(run_id)`: lazy-load from disk for historical views.
 
 Data trades:
 
-- Receives output writes from `WorkflowSupervisor`.
-- Persists through `WorkflowPersistenceManager`.
-- Serves output history to frontend through `HandleUI`.
+- Receives output writes from `MasterState._check_run_completion`.
+- Persists through `persistence.py`.
 
-Signals:
-
-- `EVENT_RUN_OUTPUTS_UPDATED` after run output finalization.
-
-### `WorkflowSupervisor`
-
-Responsibilities:
-
-- Walk one execution path through the workflow.
-- Maintain branch-local execution state: current node, branch ID, depth, parent info, and flags.
-- Fetch nodes, prepare inputs, execute nodes, handle output, and advance.
-- Manage node heartbeat timeouts.
-- Pause for user input and long-running nodes.
-- Implement error recovery flow.
-- Serialize and restore full supervisor state.
-- Respond to pause, resume, stop, step, internal pause, and internal resume.
-
-Data trades:
-
-- Receives control signals from `WorkflowMasterState`.
-- Fetches node instances and adjacency from `WorkflowMap`.
-- Reads/writes data in `MemoryBank`.
-- Writes output-node results to `OutputManager`.
-- Logs errors through `ErrorHandler`.
-- Sends context to nodes.
-
-Signals sent to `WorkflowMasterState`:
-
-- `REGISTER`: emitted on construction.
-- `STATE_UPDATE`: emitted when state changes.
-- `REQUEST_BRANCH`: emitted when a node returns branches.
-- `TERMINATING`: emitted when the path ends or is stopped.
-- `SAFE_FOR_SAVE`: emitted after a safe point during internal checkpoint.
-- `NODE_ERROR`: emitted for node errors and recovery options.
-
-### `WorkflowMasterState`
-
-Responsibilities:
-
-- Manage all active supervisors.
-- Spawn branch supervisors and enforce `maxBranchDepth`.
-- Maintain run state machine: `IDLE`, `RUNNING`, `PAUSED`, `WAITING`, `FINISHED`, `TERMINATED`, `ERROR`.
-- Route user input and recovery decisions back to waiting supervisors.
-- Coordinate internal checkpointing.
-- Detect run completion.
-- Broadcast execution state to frontend.
-
-Data trades:
-
-- Receives run/control commands from `HandleUI`.
-- Receives supervisor events.
-- Reads branch-depth settings from `ConfigurationManager`.
-- Sends control signals to supervisors.
-- Sends finalization requests to `SaveManager`/`OutputManager`.
-- Broadcasts state through `BackendBridge`.
-
-Frontend events:
-
-- `EVENT_WORKFLOW_STATE_UPDATE`
-- `EVENT_WORKFLOW_RUNNING`
-- `EVENT_TRIGGER_USER_INPUT_MODAL`
-- `EVENT_SUPERVISOR_LIST_UPDATE`
-- `EVENT_RUN_COMPLETED`
-
-Supervisor control commands:
-
-- `PAUSE`
-- `RESUME`
-- `STOP`
-- `STEP`
-- `INTERNAL_PAUSE`
-- `INTERNAL_RESUME`
-
-### `Validator`
-
-Responsibilities:
-
-- Analyze workflow structure before execution or subworkflow save.
-- Verify node types are registered.
-- Validate node config against JSON schema.
-- Validate connection targets and sources.
-- Detect unreachable loose nodes.
-- Return blocking errors and advisory warnings.
-- Mark workflows as subworkflows when validation passes during subworkflow preparation.
-
-Data trades:
-
-- Receives validate requests from `HandleUI` and `SaveManager`.
-- Reads workflow structure from `WorkflowMap`.
-- Checks node registration through `NodeFactory`.
-- Writes subworkflow flags through `WorkflowMap` when preparing subworkflows.
-
-Signals:
-
-- None. Returns validation results.
+Signals: none directly (outputs visible via `MasterState.run_outputs` after finalization).
 
 ### `ErrorHandler`
 
 Responsibilities:
 
 - Centralized structured error logging.
-- Categorize errors as `NETWORK`, `VALIDATION`, `NODE_LOGIC`, or `UNKNOWN`.
-- Attach node, run, supervisor, stack trace, and metadata.
-- Persist errors.
-- Cache errors by run.
-- Broadcast error count changes.
+- `log_error()`: append to in-memory cache, persist to `run_errors/`, broadcast.
+- `finalize_run(run_id)`: evict in-memory cache after run is recorded.
+- `get_errors_for_run(run_id)`: lazy-load from disk.
 
 Data trades:
 
-- Receives errors from supervisors, master state, UI handlers, and any failing service.
-- Saves errors through `WorkflowPersistenceManager`.
-- Sends error events through `BackendBridge`.
+- Receives errors from `Supervisor._request_recovery`.
+- Saves errors through `persistence.py`.
 
-Signals:
+Signals: publishes `ERROR_LOGGED` on each error, `ERRORS_CLEARED` on clear.
 
-- `EVENT_ERROR_LOGGED`
-- `EVENT_ERRORS_CLEARED`
-
-### `ApiManager`
+### `RunHistory`
 
 Responsibilities:
 
-- Store encrypted API credentials.
-- Derive encryption keys from master password.
-- Cache decrypted keys for the session.
-- Dispatch external API calls.
-- Handle authentication flows.
+- Store run summaries in `run_history/` and maintain a capped in-memory list.
+- `_MAX_IN_MEMORY = 500`: in-memory list never exceeds this; disk retains full history.
+- Records include: run_id, workflow_id, workflow_name, started_at, ended_at, final_state, error_count, output_count, node_timings.
 
 Data trades:
 
-- Receives node API requests through context.
-- Receives key management requests from `HandleUI`.
-- Persists encrypted keys through `WorkflowPersistenceManager`.
-- Returns API responses to nodes.
+- Receives `record_run(summary)` calls from `MasterState._record_run`.
+- Persists through `persistence.py`.
 
-Signals:
+Signals: publishes `RUN_HISTORY_UPDATED` after each new record.
 
-- None.
+### `Supervisor`
+
+Responsibilities:
+
+- Walk one execution path through the workflow.
+- Maintain branch-local state: current node, state enum, stop/pause flags, pending futures.
+- Fetch nodes, prepare inputs, execute nodes, time execution, handle output, advance.
+- Manage breakpoints: pause before a node if `node_data["breakpoint"]` is set.
+- Pause for user input via `signal_waiting_for_input`.
+- Implement error recovery: log error, publish recovery options, await decision, apply RETRY / SKIP / TERMINATE_BRANCH / TERMINATE_WORKFLOW.
+- Call `mark_node_completed(node_id)` after each successful execution.
+
+Data trades:
+
+- Receives control signals (`request_pause`, `request_resume`, `request_stop`) from `MasterState`.
+- Fetches node instances and adjacency from `WorkflowMap`.
+- Reads/writes `MemoryBank`.
+- Reports errors through `ErrorHandler`.
+- Sends node execution context.
+
+Signals sent to `MasterState` via EventBus:
+
+- `SUPERVISOR_REGISTER` — emitted on `run()` start.
+- `SUPERVISOR_STATE_UPDATE` — emitted on state changes.
+- `SUPERVISOR_REQUEST_BRANCH` — emitted when a node signals branches.
+- `SUPERVISOR_TERMINATING` — emitted when the path ends or is stopped.
+- `BREAKPOINT_HIT` — emitted before executing a node with `breakpoint: True`.
+- `NODE_TIMING_UPDATE` — emitted after every node execution with elapsed seconds.
+- `RECOVERY_OPTIONS_AVAILABLE` — emitted when a node errors; carries recovery options.
+- `USER_INPUT_NEEDED` — emitted when `signal_waiting_for_input` is called.
+- `TERMINATE_WORKFLOW_REQUESTED` — emitted when TERMINATE_WORKFLOW recovery action is chosen.
+
+### `MasterState`
+
+Responsibilities:
+
+- Manage all active supervisors.
+- Spawn branch supervisors and enforce `max_branch_depth`.
+- Maintain run state machine: IDLE, RUNNING, PAUSED, WAITING_FOR_INPUT, FINISHED, ERROR.
+- Route user input and recovery decisions back to waiting supervisors.
+- Detect run completion (all supervisors gone).
+- Coordinate WaitUntil: track `completed_nodes` via `asyncio.Condition`.
+- Handle breakpoints: pause all supervisors when `BREAKPOINT_HIT` fires.
+- Accumulate per-node timing from `NODE_TIMING_UPDATE`.
+- Broadcast execution state through `EventBus`.
+
+Data trades:
+
+- Receives run/control commands from `App` actions.
+- Receives supervisor events from `EventBus`.
+- Reads branch-depth and timeout settings from `ConfigurationManager`.
+- Sends `mark_node_completed` and `wait_for_nodes` callbacks to supervisors on construction.
+- Calls `OutputManager.finalize_run`, `ErrorHandler.get_errors_for_run`, `RunHistory.record_run`, and `ErrorHandler.finalize_run` on run completion.
+
+Signals published:
+
+- `WORKFLOW_STATE_UPDATE` — on every state transition.
+
+### `Validator`
+
+Responsibilities:
+
+- DFS from start node; report blocking errors and advisory warnings.
+- Verify node type exists in `NodeFactory`.
+- Verify connection targets and sources exist.
+- Flag tombstone nodes as errors.
+- Report unreachable (loose) nodes as warnings.
+
+Data trades:
+
+- Receives validate requests from `EditorScreen.action_validate_workflow`.
+- Reads workflow structure from `WorkflowMap`.
+- Checks node registration through `NodeFactory`.
+
+Signals: none. Returns `{"errors": [...], "warnings": [...]}`.
 
 ### `SaveManager`
 
 Responsibilities:
 
-- Assemble full workflow save payloads.
-- Load workflows and distribute restored state.
-- Convert runtime `Map` structures to persisted plain objects and back.
-- Save and restore execution snapshots.
-- Manage manual save and auto-save keys.
-- Clear dirty flags only after successful persistence.
-- Validate and prepare subworkflows.
+- Orchestrate save/load/delete/duplicate/export/import of workflows.
+- Assemble complete save payloads from `WorkflowMap` and `MemoryBank`.
+- Update `last_active_workflow_id` in `ConfigurationManager` on load.
 
 Data trades:
 
-- Receives save/load requests from `HandleUI`.
-- Receives checkpoint requests from `WorkflowMasterState`.
+- Receives save/load requests from `App` actions.
 - Reads workflow structure from `WorkflowMap`.
-- Reads memory snapshots from `MemoryBank`.
-- Reads active supervisor state from `WorkflowMasterState`.
-- Reads collected outputs from `OutputManager`.
-- Persists through `WorkflowPersistenceManager`.
-- Updates last active workflow in `ConfigurationManager`.
+- Persists through `persistence.py`.
 
-Signals:
+Signals: none. Returns success/failure.
 
-- None. Returns save/load results.
-
-### `HandleUI`
+### `App` (`AttackOfTheNodesApp`)
 
 Responsibilities:
 
-- Receive frontend `REQ_*` and `CMD_*` messages.
-- Route requests to backend services.
-- Format responses for frontend consumption.
-- Coordinate multi-service operations.
-- Centralize UI request error handling.
+- Root Textual application; manages screen stack.
+- Subscribe to 10 backend events on startup.
+- Route backend events to the active screen (`refresh_from_backend`).
+- Route user key commands to backend services.
+- Open/close modals for user input, recovery, and settings.
 
-Key delegations:
+Signals consumed (subscribed once at startup):
 
-- `REQ_START_WORKFLOW` -> `WorkflowMasterState.handleStartWorkflow`
-- `REQ_SAVE_WORKFLOW` -> `SaveManager.saveCurrentWorkflow`
-- `REQ_LOAD_WORKFLOW` -> `SaveManager.loadWorkflowIntoApplication`
-- `REQ_VALIDATE_WORKFLOW` -> `Validator.validateWorkflow`
-- `REQ_ADD_NODE` -> `WorkflowMap.addNodeToWorkflow`
-- `REQ_NODE_WINDOW` -> `WorkflowMap.getNodeWindowForUI`
-- `REQ_PAUSE_WORKFLOW` -> `WorkflowMasterState.handleUICommand(CMD_PAUSE)`
-- `REQ_SUBMIT_USER_INPUT` -> `WorkflowMasterState.handleUserInputSubmission`
-
-Signals:
-
-- Writes request responses through `BackendBridge`.
-
-### `BackendBridge`
-
-Responsibilities:
-
-- Serialize and deserialize frontend/backend messages.
-- Send frontend requests to `HandleUI`.
-- Listen for backend event broadcasts.
-- Route events to `UIController`.
-- Provide a Promise-based frontend API.
-
-Event routing examples:
-
-- `EVENT_WORKFLOW_STATE_UPDATE` -> `uiController.setWorkflowRunState(state)`
-- `EVENT_SUPERVISOR_LIST_UPDATE` -> `uiController.setActiveSupervisors(list)`
-- `EVENT_MEMORY_UPDATE` -> `uiController.setMemoryState(memory)`
-- `EVENT_ERROR_LOGGED` -> `uiController.incrementErrorCount()`
-- `EVENT_TRIGGER_USER_INPUT_MODAL` -> `uiController.openModal("UserInput")`
+- `WORKFLOW_DIRTY` → refresh editor
+- `WORKFLOW_STATE_UPDATE` → update `workflow_state`, trigger resets
+- `SUPERVISOR_REGISTER` → track supervisor in `supervisors` dict
+- `SUPERVISOR_STATE_UPDATE` → update `node_statuses`
+- `SUPERVISOR_TERMINATING` → mark supervisor as done
+- `USER_INPUT_NEEDED` → open `UserInputScreen` modal
+- `ERROR_OCCURRED` → refresh
+- `ERROR_LOGGED` → refresh
+- `RECOVERY_OPTIONS_AVAILABLE` → open `ErrorDetailsScreen` modal
+- `MEMORY_UPDATE` → refresh
 
 ## Scenario Flows
 
-### User Starts A Workflow
+### User Starts a Workflow
 
-```text
-Frontend click Run
-  -> BackendBridge sends CMD_START
-  -> HandleUI.handleStartWorkflow()
-  -> WorkflowMasterState starts run
-     -> WorkflowMap.findStartNode()
-     -> MemoryBank clears run memory
-     -> SupervisorFactory creates root supervisor
-     -> Supervisor emits REGISTER
-     -> MasterState tracks supervisor and broadcasts supervisor list
-     -> supervisor.start()
-     -> MasterState broadcasts EVENT_WORKFLOW_STATE_UPDATE(RUNNING)
-  -> BackendBridge updates UIController
-  -> UI mode switches to execution
+```
+User presses Ctrl+R
+  -> App.action_run_workflow()
+  -> App switches to ExecutionScreen
+  -> App creates asyncio task for _start_workflow()
+  -> MasterState.start_workflow()
+     -> WorkflowMap.find_start_node_id()
+     -> MasterState clears MemoryBank, OutputManager, node_timings, completed_nodes
+     -> Supervisor created with mark_node_completed, wait_for_nodes, node_timeout_seconds
+     -> asyncio.create_task(supervisor.run())
+     -> SUPERVISOR_REGISTER fires -> MasterState tracks supervisor
+     -> WORKFLOW_STATE_UPDATE(RUNNING) fires -> App.workflow_state = "RUNNING"
 ```
 
-### Node Completes On A Simple Path
+### Node Completes on a Simple Path
 
-```text
-WorkflowSupervisor loop
-  -> WorkflowMap.getNodeInstance(nodeId)
-  -> Supervisor prepares inputs from MemoryBank transient store
-  -> node.execute(inputs, context)
-  -> node calls context.signalDone({ data, nextNodeId })
-  -> Supervisor writes transient output
-  -> Output node data is stored in OutputManager
-  -> Branch payloads become REQUEST_BRANCH events
-  -> Supervisor advances currentNodeId
+```
+Supervisor._run_loop iteration
+  -> WorkflowMap.get_node_instance(current_node_id)
+  -> Supervisor._prepare_inputs from MemoryBank transient store
+  -> node.execute(context) wrapped in perf_counter
+  -> node calls context.signal_done({"data": {"default": value}})
+  -> NODE_TIMING_UPDATE fires -> MasterState accumulates node_timings
+  -> MasterState.mark_node_completed(node_id) -> completed_nodes updated, Condition notified
+  -> Supervisor writes transient outputs to MemoryBank
+  -> Supervisor advances current_node_id via WorkflowMap.find_next_node_id
 ```
 
 ### Node Requests User Input
 
-```text
-node calls context.signalWaitingForInput(promptContext)
-  -> Supervisor stores resolver and enters WAITING_FOR_USER_INPUT
-  -> Supervisor emits STATE_UPDATE
-  -> MasterState stores waiting input and broadcasts EVENT_TRIGGER_USER_INPUT_MODAL
-  -> UI opens UserInputModal
-  -> User submits input through BackendBridge
-  -> HandleUI routes to MasterState
-  -> MasterState resolves the waiting supervisor promise
-  -> node.execute resumes
+```
+node calls context.signal_waiting_for_input(prompt) -> awaitable
+  -> Supervisor stores Future, sets state WAITING_FOR_INPUT
+  -> USER_INPUT_NEEDED fires -> App opens UserInputScreen modal
+  -> SUPERVISOR_STATE_UPDATE fires -> App.node_statuses updated
+  -> User submits input through UserInputScreen
+  -> App._submit_user_input_from_modal -> MasterState.submit_user_input(branch_id, value)
+  -> MasterState -> supervisor.submit_user_input(value)
+  -> Supervisor resolves pending Future; node.execute resumes
+  -> Supervisor state returns to RUNNING
 ```
 
-### Node Signals Error
+### Node Signals Error (Recovery Flow)
 
-```text
-node calls context.signalError(error)
-  -> Supervisor handles node error
-  -> ErrorHandler logs and broadcasts EVENT_ERROR_LOGGED
-  -> Supervisor enters WAITING_FOR_RECOVERY for recoverable errors
-  -> Supervisor emits NODE_ERROR with options
-  -> MasterState stores recovery request and opens error UI
-  -> User picks recovery action
-  -> HandleUI routes action to MasterState
-  -> MasterState resolves supervisor recovery promise
-  -> Supervisor executes RETRY, SKIP, RECONFIGURE, TERMINATE_BRANCH, or TERMINATE_WORKFLOW
+```
+node calls context.signal_error(error)
+  -> Supervisor._request_recovery(error, inputs)
+  -> ErrorHandler.log_error -> persists, broadcasts ERROR_LOGGED
+  -> Supervisor stores recovery Future, sets state AWAITING_RECOVERY
+  -> RECOVERY_OPTIONS_AVAILABLE fires -> App opens ErrorDetailsScreen modal
+  -> User picks action (RETRY / SKIP / TERMINATE_BRANCH / TERMINATE_WORKFLOW)
+  -> App._submit_recovery_from_modal -> MasterState.submit_recovery_action
+  -> MasterState -> supervisor.submit_recovery_action(action)
+  -> Supervisor resolves recovery Future; applies action
 ```
 
-### Node Branches
+### Node Requests Branching
 
-```text
-node calls context.signalDone({ data, branches })
-  -> Supervisor writes normal output to MemoryBank
-  -> Supervisor emits REQUEST_BRANCH for each branch
-  -> MasterState checks maxBranchDepth
-  -> SupervisorFactory creates child supervisors at depth + 1
-  -> Child supervisors emit REGISTER
-  -> MasterState broadcasts EVENT_SUPERVISOR_LIST_UPDATE
-  -> UI branch selector updates
-  -> Supervisors run independently
-  -> Each emits TERMINATING when done
-  -> Last termination triggers run completion
+```
+node calls context.signal_done({"data": {}, "branches": [...]})
+  -> Supervisor._spawn_branches for each branch
+  -> SUPERVISOR_REQUEST_BRANCH fires for each branch
+  -> MasterState._on_request_branch checks max_branch_depth
+  -> Child Supervisor created for each branch
+  -> asyncio.create_task(child.run()) for each
+  -> Each child emits SUPERVISOR_REGISTER
+  -> Children run independently; each emits SUPERVISOR_TERMINATING when done
+  -> Last SUPERVISOR_TERMINATING with empty supervisors triggers run completion
 ```
 
-### Internal Checkpoint During Execution
+### Breakpoint Hit
 
-```text
-autoSaveInterval fires
-  -> MasterState sends INTERNAL_PAUSE to active supervisors
-  -> Each supervisor finishes current node
-  -> Each emits SAFE_FOR_SAVE
-  -> MasterState waits until all are safe
-  -> SaveManager saves workflow with execution state
-     -> WorkflowMap contributes structure
-     -> MasterState contributes supervisor snapshots
-     -> MemoryBank contributes memory snapshot
-     -> OutputManager contributes current outputs
-     -> Persistence writes workflow_{id}_auto_save
-  -> MasterState sends INTERNAL_RESUME
-  -> Supervisors continue
+```
+Supervisor._pause_for_breakpoint_if_needed
+  -> WorkflowMap.get_node_data -> checks node_data["breakpoint"]
+  -> BREAKPOINT_HIT fires
+  -> MasterState._on_breakpoint_hit -> requests_pause on all active supervisors
+  -> MasterState sets PAUSED state -> WORKFLOW_STATE_UPDATE(PAUSED) fires
+  -> Supervisor pauses at resume_event
+  -> User resumes via App.master_state.resume()
+  -> Supervisors resume; skip_breakpoint_once_for prevents immediate re-pause
+```
+
+### WaitUntil Node
+
+```
+WaitUntilNode.execute
+  -> context.wait_for_nodes(target_ids, timeout) -> awaitable
+     -> Supervisor delegates to MasterState.wait_until_nodes_completed
+     -> Acquires asyncio.Condition, waits for all target_ids in completed_nodes
+  -> As other supervisors complete nodes, MasterState.mark_node_completed fires Condition
+  -> When all targets are present, wait_for_nodes returns
+  -> WaitUntilNode calls context.signal_done, supervisor continues
 ```
 
 ### Run Completion
 
-```text
-Supervisor reaches no next node
-  -> Supervisor emits TERMINATING
-  -> MasterState removes supervisor
-  -> If activeSupervisors is empty:
-     -> SaveManager/OutputManager finalize run outputs
-     -> Persistence saves run outputs
-     -> MasterState sets FINISHED
-     -> MasterState stops checkpoint timer
-     -> MasterState broadcasts EVENT_WORKFLOW_STATE_UPDATE(FINISHED)
-  -> UI returns to editor mode and results are available
+```
+Last SUPERVISOR_TERMINATING fires
+  -> MasterState._check_run_completion
+  -> _supervisors and _supervisor_tasks both empty
+  -> read output_log from MemoryBank persistent store
+  -> OutputManager.store_output_log -> finalize_run -> persists, evicts from memory
+  -> MasterState.run_outputs set to returned values
+  -> WORKFLOW_STATE_UPDATE(FINISHED) fires
+  -> MasterState._record_run("FINISHED")
+     -> ErrorHandler.get_errors_for_run -> captures error count
+     -> RunHistory.record_run (with node_timings, no raw outputs)
+     -> ErrorHandler.finalize_run -> evicts error cache
 ```
 
 ## Dependency Graph
 
-```text
-Frontend
-  -> BackendBridge
-  -> HandleUI
-     -> WorkflowMasterState
-        -> WorkflowSupervisor
-           -> WorkflowMap
-           -> MemoryBank
-           -> ErrorHandler
-           -> OutputManager
-        -> SupervisorFactory
-           -> ConfigurationManager
-        -> ErrorHandler
-        -> BackendBridge
-     -> SaveManager
-        -> WorkflowMap
-        -> WorkflowPersistenceManager
-        -> WorkflowMasterState
-        -> MemoryBank
-        -> OutputManager
-        -> Validator
-        -> ConfigurationManager
-     -> WorkflowMap
-        -> WorkflowPersistenceManager
-        -> NodeFactory
-        -> ErrorHandler
-     -> Validator
-        -> WorkflowMap
-        -> NodeFactory
-     -> ApiManager
-        -> WorkflowPersistenceManager
-     -> ConfigurationManager
-        -> WorkflowPersistenceManager
+```
+main.py
+  -> creates: EventBus, NodeFactory, WorkflowMap, MemoryBank,
+              ConfigurationManager, OutputManager, MasterState, SaveManager
+  -> creates: App(bus, factory, workflow_map, memory_bank, master, save_manager)
+
+App
+  -> subscribes to 10 EventBus events
+  -> owns screen stack: EditorScreen, ExecutionScreen, modals
+  -> delegates run/save/load commands to MasterState, SaveManager, WorkflowMap
+
+MasterState
+  -> subscribes to 8 EventBus events
+  -> creates Supervisors on run start and branch requests
+  -> calls into OutputManager, ErrorHandler, RunHistory on completion
+
+Supervisor
+  -> calls WorkflowMap (node instances, adjacency)
+  -> calls MemoryBank (transient reads/writes)
+  -> calls ErrorHandler (log_error)
+  -> publishes 8 event types to EventBus
+  -> calls MasterState callbacks (mark_node_completed, wait_for_nodes)
+
+WorkflowMap
+  -> calls persistence.py
+  -> calls NodeFactory (create_node, get_node_instance)
+
+SaveManager
+  -> calls WorkflowMap, MemoryBank, ConfigurationManager
+  -> calls persistence.py
+
+OutputManager, ErrorHandler, RunHistory
+  -> call persistence.py
 
 NodeFactory
-  -> node classes in /nodes/
-
-ErrorHandler
-  -> WorkflowPersistenceManager
-  -> BackendBridge
-
-MemoryBank
-  -> BackendBridge
-  -> SaveManager
-
-OutputManager
-  -> WorkflowPersistenceManager
-  -> SaveManager
-
-BackendBridge
-  -> frontend through chrome.runtime.sendMessage
+  -> imports node classes from backend/nodes/
 ```

@@ -1,6 +1,7 @@
 """Help modal."""
 
 from textual.app import ComposeResult
+from textual.binding import Binding
 from textual.containers import Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Button, Label, Static
@@ -9,7 +10,11 @@ from textual.widgets import Button, Label, Static
 class HelpScreen(ModalScreen):
     """Keyboard reference and short TUI usage guide."""
 
-    BINDINGS = [("escape", "close", "Close"), ("q", "close", "Close")]
+    BINDINGS = [
+        ("escape", "close", "Close"),
+        ("q", "close", "Close"),
+        Binding("ctrl+q", "close", "Close", priority=True),
+    ]
 
     def compose(self) -> ComposeResult:
         with Vertical(id="modal-card"):
@@ -24,7 +29,8 @@ class HelpScreen(ModalScreen):
                         "  Ctrl+O  Workflow library",
                         "  Ctrl+E  Settings",
                         "  ?       Help",
-                        "  Q       Back / quit",
+                        "  Q / Ctrl+Q  Back / close modal (works while typing)",
+                        "  Ctrl+C      Quit to terminal",
                         "",
                         "Editor",
                         "  W/S or arrows  Move selection",

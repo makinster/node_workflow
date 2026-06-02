@@ -35,8 +35,8 @@ class OutputManager:
         ]
 
     def finalize_run(self, run_id: str) -> List[Any]:
-        """Persist outputs and return their values."""
-        outputs = self._outputs_by_run.get(run_id, [])
+        """Persist outputs, evict from memory, and return their values."""
+        outputs = self._outputs_by_run.pop(run_id, [])
         save_json_record(RUN_OUTPUTS_DIR, run_id, {"run_id": run_id, "outputs": outputs})
         return [item["value"] for item in outputs]
 

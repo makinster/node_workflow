@@ -3,6 +3,7 @@
 from typing import Any, ClassVar, Dict, List
 
 from ..node_base import Node, NodeContext
+from ..node_category import NodeCategory
 
 
 class GetVariableNode(Node):
@@ -11,6 +12,7 @@ class GetVariableNode(Node):
     node_type: ClassVar[str] = "get_variable_node"
     display_name: ClassVar[str] = "Get Variable"
     description: ClassVar[str] = "Reads a value from persistent memory"
+    category: ClassVar[str] = NodeCategory.DATA
     input_ports: ClassVar[List[str]] = ["input"]
     output_ports: ClassVar[List[str]] = ["default"]
     default_config: ClassVar[Dict[str, Any]] = {

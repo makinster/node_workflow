@@ -3,6 +3,7 @@
 from typing import Any, ClassVar, Dict, List
 
 from ..node_base import Node, NodeContext
+from ..node_category import NodeCategory
 
 
 class UserTextInputNode(Node):
@@ -11,6 +12,7 @@ class UserTextInputNode(Node):
     node_type: ClassVar[str] = "user_text_input_node"
     display_name: ClassVar[str] = "User Text Input"
     description: ClassVar[str] = "Prompts the user for text during execution"
+    category: ClassVar[str] = NodeCategory.IO
     input_ports: ClassVar[List[str]] = ["input"]
     output_ports: ClassVar[List[str]] = ["default"]
     default_config: ClassVar[Dict[str, Any]] = {

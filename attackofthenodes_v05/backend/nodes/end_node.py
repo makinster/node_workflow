@@ -3,6 +3,8 @@
 from typing import Any, ClassVar, Dict, List
 
 from ..node_base import Node, NodeContext
+from ..node_category import NodeCategory
+from ..output_entry import OutputLogEntry
 
 
 class EndNode(Node):
@@ -11,6 +13,7 @@ class EndNode(Node):
     node_type: ClassVar[str] = "end_node"
     display_name: ClassVar[str] = "End"
     description: ClassVar[str] = "Terminates a workflow branch"
+    category: ClassVar[str] = NodeCategory.FLOW
 
     input_ports: ClassVar[List[str]] = ["input"]
     output_ports: ClassVar[List[str]] = []
@@ -34,7 +37,13 @@ class EndNode(Node):
             full = f"[END] {message}"
 
         log = list(context.memory_bank.read_persistent("output_log", default=[]))
-        log.append(full)
+        log.append(
+            OutputLogEntry(
+                full,
+                branch_id=context.branch_id,
+                node_id=context.node_id,
+            )
+        )
         context.memory_bank.store_persistent("output_log", log)
 
         context.signal_done({"data": {}, "next_node_id": None})
