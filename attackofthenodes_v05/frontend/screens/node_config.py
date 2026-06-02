@@ -13,6 +13,7 @@ from textual.widgets import Button, Checkbox, Input, Label, Select, SelectionLis
 from frontend.widgets.command_navigation import (
     activate_command_widget,
     blocks_command_action,
+    is_editing_text,
     move_select_overlay,
 )
 from frontend.widgets.command_input import CommandInput, CommandTextArea
@@ -521,6 +522,12 @@ class NodeConfigScreen(ModalScreen):
 
     def action_cursor_up(self) -> None:
         focused = self.app.focused
+        active_text = getattr(self, "_active_command_text_widget", None)
+        if is_editing_text(active_text):
+            self.app.set_focus(active_text)
+            return
+        if is_editing_text(focused):
+            return
         if isinstance(focused, Select) and focused.expanded:
             move_select_overlay(focused, -1)
             return
@@ -531,6 +538,12 @@ class NodeConfigScreen(ModalScreen):
 
     def action_cursor_down(self) -> None:
         focused = self.app.focused
+        active_text = getattr(self, "_active_command_text_widget", None)
+        if is_editing_text(active_text):
+            self.app.set_focus(active_text)
+            return
+        if is_editing_text(focused):
+            return
         if isinstance(focused, Select) and focused.expanded:
             move_select_overlay(focused, 1)
             return
@@ -561,7 +574,7 @@ class NodeConfigScreen(ModalScreen):
                 pass
             self._nav_widget = None
 
-        interactive = (CommandInput, CommandTextArea, Checkbox, SelectionList, Select, TextArea, Button)
+        interactive = (CommandInput, CommandTextArea, Checkbox, SelectionList, Select, Button)
         if isinstance(target, interactive):
             if isinstance(target, (CommandInput, CommandTextArea)):
                 target.end_edit()
@@ -582,7 +595,6 @@ class NodeConfigScreen(ModalScreen):
             Checkbox,
             SelectionList,
             Select,
-            TextArea,
             Button,
         )
         inactive_pane_ids: set[str] = {
@@ -759,8 +771,9 @@ class NodeConfigScreen(ModalScreen):
         outputs = normalize_membank_outputs(config)
         enabled = bool(outputs)
         count = len(outputs) if outputs else 0
-        count_input = Input(
+        count_input = CommandInput(
             value=str(count),
+            type="integer",
             id="membank-output-count",
             classes="compact-number-field",
         )

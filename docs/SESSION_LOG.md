@@ -1,5 +1,24 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-02 — Config Textbox Arrow-Key Fix
+
+- Fixed active command text editing in node config modals so arrow/navigation
+  keys no longer escape the active text field and jump back through the modal.
+- `CommandInput` and `CommandTextArea` now track the active command text widget
+  on the screen while editing, stop editing key events from bubbling into
+  command navigation, and keep `Esc` as the explicit keyboard exit.
+- Converted `membank-output-count` to `CommandInput` so memory-bank output
+  count editing follows the same command-mode contract as other config text
+  fields.
+- Added mounted regressions for alias input, memory-bank output count, and
+  multiline memory-bank output fields.
+
+Verification:
+
+- `python -m compileall -q .`
+- `python -m pytest tests/test_debug_nodes.py -v`
+- Result: 46 passed.
+
 ## 2026-06-02 — FA-5 Notification Helper
 
 - Added `frontend/notifications.py` with named helpers for common workflow,

@@ -1432,6 +1432,7 @@ async def _test_node_config_dynamic_membank_output_rows():
     from textual.widgets import Checkbox, Input, TextArea
 
     from frontend.screens.node_config import NodeConfigScreen
+    from frontend.widgets.command_input import CommandInput, CommandTextArea
 
     _, wm, _, _ = _make_services()
     wm.create_new("dynamic_membank_outputs")
@@ -1446,7 +1447,7 @@ async def _test_node_config_dynamic_membank_output_rows():
     async with app.run_test() as pilot:
         screen = app.query_one(NodeConfigScreen)
         writes = app.query_one("#membank-writes", Checkbox)
-        count = app.query_one("#membank-output-count", Input)
+        count = app.query_one("#membank-output-count", CommandInput)
 
         assert count.disabled is True
         assert count.has_class("compact-number-field")
@@ -1457,6 +1458,19 @@ async def _test_node_config_dynamic_membank_output_rows():
         await pilot.pause()
         assert count.disabled is False
         assert count.value == "1"
+        app.set_focus(count)
+        screen.action_activate_focused()
+        assert count.editing is True
+        for key in ("up", "down", "left", "right"):
+            await pilot.press(key)
+            assert app.focused is count
+            assert count.editing is True
+        await pilot.press("escape")
+        assert app.focused is count
+        assert count.editing is False
+        await pilot.press("s")
+        assert app.focused is not count
+
         first_output = app.query_one("#membank-output-id-0", TextArea)
         assert first_output
         assert first_output.has_class("membank-output-field")
@@ -1465,6 +1479,17 @@ async def _test_node_config_dynamic_membank_output_rows():
         first_desc = app.query_one("#membank-output-desc-0", Input)
         assert first_desc.has_class("membank-output-description-field")
         assert str(first_desc.styles.height) == "3"
+        output_textarea = app.query_one("#membank-output-id-0", CommandTextArea)
+        app.set_focus(output_textarea)
+        screen.action_activate_focused()
+        scroll = app.query_one("#node-config-scroll")
+        before_scroll_y = scroll.scroll_y
+        assert output_textarea.editing is True
+        for key in ("up", "down", "left", "right"):
+            await pilot.press(key)
+            assert app.focused is output_textarea
+            assert output_textarea.editing is True
+            assert scroll.scroll_y == before_scroll_y
 
         app.query_one("#membank-output-id-0", TextArea).text = "first"
         app.query_one("#membank-output-desc-0", Input).value = "First output"
@@ -1719,10 +1744,14 @@ async def _test_node_config_command_inputs_require_activation():
         assert alias.editing is True
         await alias._on_key(events.Key("x", "x"))
         assert alias.value.endswith("x")
-        await alias._on_key(events.Key("escape", None))
+        for key in ("up", "down", "left", "right"):
+            await pilot.press(key)
+            assert app.focused is alias
+            assert alias.editing is True
+        await pilot.press("escape")
         assert alias.editing is False
         assert app.focused is alias
-        await alias._on_key(events.Key("s", "s"))
+        await pilot.press("s")
         assert not alias.value.endswith("xs")
         assert app.focused is not alias
 

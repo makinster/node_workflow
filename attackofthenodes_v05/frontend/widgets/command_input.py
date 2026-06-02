@@ -6,6 +6,18 @@ from textual import events
 from textual.widgets import Input, TextArea
 
 
+EDITING_NAV_KEYS = {
+    "up",
+    "down",
+    "left",
+    "right",
+    "home",
+    "end",
+    "pageup",
+    "pagedown",
+}
+
+
 class CommandInput(Input):
     """Input that requires explicit activation before printable keys edit text."""
 
@@ -19,26 +31,40 @@ class CommandInput(Input):
     def begin_edit(self) -> None:
         self.editing = True
         self.add_class("editing")
+        setattr(self.screen, "_active_command_text_widget", self)
         self.app.set_focus(self)
 
     def end_edit(self) -> None:
         self.editing = False
         self.remove_class("editing")
+        if getattr(self.screen, "_active_command_text_widget", None) is self:
+            setattr(self.screen, "_active_command_text_widget", None)
 
     def on_blur(self) -> None:
-        self.end_edit()
+        pass
 
     def on_click(self, _event: events.Click) -> None:
         self.begin_edit()
 
     async def _on_key(self, event: events.Key) -> None:
         if self.editing:
-            if event.key == "escape":
+            if event.key in ("escape", "ctrl+q"):
                 self.end_edit()
                 event.stop()
                 event.prevent_default()
                 return
+            if event.key == "enter":
+                self.end_edit()
+                await super()._on_key(event)
+                event.stop()
+                return
+            if event.key in {"up", "down", "pageup", "pagedown"}:
+                event.stop()
+                event.prevent_default()
+                return
             await super()._on_key(event)
+            if event.key in EDITING_NAV_KEYS or event.is_printable:
+                event.stop()
             return
 
         if event.key in ("e", "enter"):
@@ -82,30 +108,35 @@ class CommandTextArea(TextArea):
         self.editing = True
         self.read_only = False
         self.add_class("editing")
+        setattr(self.screen, "_active_command_text_widget", self)
         self.app.set_focus(self)
 
     def end_edit(self) -> None:
         self.editing = False
         self.read_only = True
         self.remove_class("editing")
+        if getattr(self.screen, "_active_command_text_widget", None) is self:
+            setattr(self.screen, "_active_command_text_widget", None)
 
     def on_mount(self) -> None:
         self.read_only = True
 
     def on_blur(self) -> None:
-        self.end_edit()
+        pass
 
     def on_click(self, _event: events.Click) -> None:
         self.begin_edit()
 
     async def _on_key(self, event: events.Key) -> None:
         if self.editing:
-            if event.key == "escape":
+            if event.key in ("escape", "ctrl+q"):
                 self.end_edit()
                 event.stop()
                 event.prevent_default()
                 return
             await super()._on_key(event)
+            if event.key in EDITING_NAV_KEYS or event.is_printable or event.key == "enter":
+                event.stop()
             return
 
         if event.key in ("e", "enter"):

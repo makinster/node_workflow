@@ -96,6 +96,8 @@ All keyboard-first modals should follow the same rules:
 - `W`/`S` and arrows move focus/highlight in command mode.
 - `E`/Enter activates the focused control.
 - Text fields require activation before typing.
+- While a text field is active, arrow/navigation keys stay inside the text
+  widget and must not trigger modal focus movement.
 - `Esc` exits active typing mode before closing a modal.
 - Select dropdowns open at the first real option every time.
 - Selection lists toggle the highlighted item.
@@ -156,7 +158,8 @@ Done when:
 **Files:** `frontend/widgets/command_navigation.py`, command-oriented screens.
 
 **Status:** in progress. Initial migration completed for `SettingsScreen`,
-`UserInputScreen`, and `PathPromptScreen` on 2026-06-02.
+`UserInputScreen`, and `PathPromptScreen` on 2026-06-02. Node config command
+text fields now retain focus while active arrow-key editing is in progress.
 
 Tasks:
 
