@@ -1,5 +1,23 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-02 — FA-1 Command Modal Helper Migration
+
+- Expanded `frontend/widgets/command_navigation.py` into a small reusable
+  command-mode toolkit with focus discovery, focus movement, activation,
+  select/list support, and edit-mode action blocking.
+- Migrated `SettingsScreen`, `UserInputScreen`, and `PathPromptScreen` to shared
+  activation/blocking behavior. Settings also uses shared command focus movement.
+- Added mounted Textual regressions for Settings focus/toggle behavior and
+  prompt modal activation/blocking.
+- Updated `FRONTEND_AUDIT_BUILD_PLAN.md` to mark FA-1 as in progress and move
+  the next standardization focus to selector behavior.
+
+Verification:
+
+- `python -m compileall -q .`
+- `python -m pytest tests/test_debug_nodes.py -v`
+- Result: 40 passed.
+
 ## 2026-06-02 — Frontend Audit Build Plan
 
 - Added `docs/FRONTEND_AUDIT_BUILD_PLAN.md` as the dedicated plan for auditing

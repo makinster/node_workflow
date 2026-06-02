@@ -155,12 +155,17 @@ Done when:
 
 **Files:** `frontend/widgets/command_navigation.py`, command-oriented screens.
 
+**Status:** in progress. Initial migration completed for `SettingsScreen`,
+`UserInputScreen`, and `PathPromptScreen` on 2026-06-02.
+
 Tasks:
 
 - Expand `command_navigation.py` from helper functions into a small reusable
-  focus/navigation toolkit.
+  focus/navigation toolkit. Initial helpers now cover command focus discovery,
+  focus movement, activation, select movement, and edit-mode action blocking.
 - Migrate `SettingsScreen`, `PathPromptScreen`, `UserInputScreen`, and other
-  simple command modals to the helper.
+  simple command modals to the helper. The first three are migrated; remaining
+  candidates are selector/path variants and any future command modal.
 - Keep `NodeConfigScreen` as the reference implementation.
 - Add focused tests for:
   - text field activate/edit/escape
@@ -171,6 +176,8 @@ Tasks:
 Done when:
 
 - Simple modals no longer duplicate command input activation or edit blocking.
+  Current remaining duplication is mostly selector-specific and belongs to
+  FA-2.
 
 ### Phase FA-2 — Selector Standardization
 
@@ -305,9 +312,9 @@ mounted tests in `tests/test_debug_nodes.py`.
 | `node_config.py` | command modal + topology adapters | `CommandInput`, `CommandTextArea`, `command_navigation`, `form_generator`, `VerticalScroll` with `can_focus=False` | largest mixed surface; dynamic sections and merge topology logic still local; reference behavior not yet reusable enough | FA-1 reference extraction, FA-4 dynamic sections |
 | `node_selector.py` | list selector with filter | `CommandInput`; custom list focus methods | selector nav duplicated; `check_action` local; filter/list grammar is not shared with branch/workflow selectors | FA-2 selector helper |
 | `branch_selector.py` | list selector | `ListView`; simple arrow/enter bindings | different key grammar/help text than node selector; no shared selector helper; no command-mode `E` semantics | FA-2 selector helper |
-| `workflow_library.py` | list selector + path prompt | `ListView`; `CommandInput` in `PathPromptScreen` | selector actions are ad hoc; path prompt duplicates command edit blocking; no shared alert copy | FA-2 + FA-1 + FA-5 |
-| `settings.py` | command modal | `CommandInput`; local focus list | duplicates `check_action`, activation, movement, and scroll-visible behavior already solved in command helper | FA-1 command modal migration |
-| `user_input.py` | command modal | `CommandInput`; local edit blocking | duplicates command activation/edit blocking; cancel semantics are sensitive because it can stop runs | FA-1 migration with focused regression |
+| `workflow_library.py` | list selector + path prompt | `ListView`; `CommandInput` in `PathPromptScreen`; path prompt now uses `command_navigation` activation/blocking | selector actions are ad hoc; no shared alert copy | FA-2 + FA-5 |
+| `settings.py` | command modal | `CommandInput`; `command_navigation` activation/blocking/focus movement | migrated; still lacks global mode indicator | Watch during FA-7 |
+| `user_input.py` | command modal | `CommandInput`; `command_navigation` activation/blocking | migrated; cancel semantics are sensitive because it can stop runs | Watch with focused regressions |
 | `confirm.py` | confirmation modal | simple `Y/N/Esc` bindings | likely okay; should become standard destructive-action confirm component | FA-5 copy/severity audit |
 | `memory_viewer.py` | read-only viewer | `DataTable` | stronger than initial plan assumed; still needs long-value smoke and keyboard close consistency | FA-6 viewer audit |
 | `output_viewer.py` | read-only/filter viewer | `Select`; `Static` | uses raw `Select` outside `form_generator`; long output is plain `Static`; branch filter may inherit blank-select/default issues | FA-6 viewer audit, possibly command select helper |
@@ -319,10 +326,10 @@ mounted tests in `tests/test_debug_nodes.py`.
 
 ## 6. FA-0 Prioritized Findings
 
-1. **Command modal duplication is the highest-leverage cleanup.**
-   `SettingsScreen`, `UserInputScreen`, and `PathPromptScreen` each repeat a
-   smaller version of `NodeConfigScreen` behavior. Migrate them before adding
-   more config-heavy nodes.
+1. **Command modal duplication was the first cleanup.**
+   `SettingsScreen`, `UserInputScreen`, and `PathPromptScreen` now use shared
+   `command_navigation` helpers for activation/blocking, and Settings uses
+   shared command focus movement.
 2. **Selector behavior should be standardized next.** `NodeSelectorScreen`,
    `BranchSelectorScreen`, and `WorkflowLibraryScreen` are all list selectors
    with different key grammar, focus expectations, and help copy.
@@ -349,3 +356,9 @@ python -m pytest tests/test_debug_nodes.py -v
 Frontend audit phases should add focused tests before relying on manual smoke.
 For UI behavior that cannot be asserted cleanly, record the manual smoke steps
 in `docs/SESSION_LOG.md`.
+
+Latest known verification after FA-1 partial migration:
+
+- `python -m compileall -q .`
+- `python -m pytest tests/test_debug_nodes.py -v`
+- Result: 40 passed.

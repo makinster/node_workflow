@@ -1485,6 +1485,102 @@ async def _test_node_config_command_inputs_require_activation():
     print("test_node_config_command_inputs_require_activation PASSED")
 
 
+def test_simple_command_modals_use_shared_navigation_helpers():
+    asyncio.run(_test_simple_command_modals_use_shared_navigation_helpers())
+
+
+async def _test_simple_command_modals_use_shared_navigation_helpers():
+    from textual import events
+    from textual.app import App, ComposeResult
+    from textual.widgets import Checkbox
+
+    from backend.configuration_manager import DEFAULT_SETTINGS
+    from frontend.screens.settings import SettingsScreen
+    from frontend.widgets.command_input import CommandInput
+
+    class FakeConfigurationManager:
+        def get_all(self):
+            return dict(DEFAULT_SETTINGS)
+
+    class SettingsApp(App):
+        def compose(self) -> ComposeResult:
+            yield SettingsScreen(FakeConfigurationManager())
+
+    app = SettingsApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        screen = app.query_one(SettingsScreen)
+        max_depth = app.query_one("#setting-max_branch_depth", CommandInput)
+        timeout = app.query_one("#setting-node_timeout_seconds", CommandInput)
+        auto_save = app.query_one("#setting-auto_save_enabled", Checkbox)
+
+        assert app.focused is max_depth
+        assert max_depth.editing is False
+
+        screen.action_activate_focused()
+        assert max_depth.editing is True
+        assert screen.check_action("cancel", ()) is False
+
+        await max_depth._on_key(events.Key("escape", None))
+        assert max_depth.editing is False
+        screen.action_cursor_down()
+        assert app.focused is timeout
+        screen.action_cursor_down()
+        assert app.focused is auto_save
+
+        previous = auto_save.value
+        screen.action_activate_focused()
+        assert auto_save.value is (not previous)
+
+    print("test_simple_command_modals_use_shared_navigation_helpers PASSED")
+
+
+def test_prompt_modals_use_shared_command_activation():
+    asyncio.run(_test_prompt_modals_use_shared_command_activation())
+
+
+async def _test_prompt_modals_use_shared_command_activation():
+    from textual import events
+    from textual.app import App, ComposeResult
+
+    from frontend.screens.user_input import UserInputScreen
+    from frontend.screens.workflow_library import PathPromptScreen
+    from frontend.widgets.command_input import CommandInput
+
+    class PathApp(App):
+        def compose(self) -> ComposeResult:
+            yield PathPromptScreen("Export", "/tmp/workflow.json")
+
+    path_app = PathApp()
+    async with path_app.run_test() as pilot:
+        await pilot.pause(0.03)
+        screen = path_app.query_one(PathPromptScreen)
+        path_input = path_app.query_one("#path-input", CommandInput)
+        assert path_app.focused is path_input
+        assert path_input.editing is False
+        screen.action_activate_focused()
+        assert path_input.editing is True
+        assert screen.check_action("cancel", ()) is False
+        await path_input._on_key(events.Key("escape", None))
+        assert path_input.editing is False
+
+    class UserInputApp(App):
+        def compose(self) -> ComposeResult:
+            yield UserInputScreen("branch-1", "node-1", "Enter value")
+
+    user_app = UserInputApp()
+    async with user_app.run_test() as pilot:
+        await pilot.pause(0.03)
+        screen = user_app.query_one(UserInputScreen)
+        user_input = user_app.query_one("#user-input-value", CommandInput)
+        assert user_app.focused is user_input
+        screen.action_activate_focused()
+        assert user_input.editing is True
+        assert screen.check_action("cancel", ()) is False
+
+    print("test_prompt_modals_use_shared_command_activation PASSED")
+
+
 # ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
@@ -1529,6 +1625,8 @@ if __name__ == "__main__":
         test_node_config_previous_output_preview_reads_transient_source,
         test_node_selector_opens_on_list_and_activates_filter_with_e,
         test_node_config_command_inputs_require_activation,
+        test_simple_command_modals_use_shared_navigation_helpers,
+        test_prompt_modals_use_shared_command_activation,
     ]
     failed = []
     for t in tests:

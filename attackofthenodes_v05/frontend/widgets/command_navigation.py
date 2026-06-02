@@ -2,12 +2,22 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Iterable
 
 from textual.widgets import Button, Checkbox, Select, SelectionList
 from textual.widgets._select import SelectOverlay
 
 from frontend.widgets.command_input import CommandInput, CommandTextArea
+
+
+DEFAULT_COMMAND_FOCUS_TYPES = (
+    CommandInput,
+    CommandTextArea,
+    Checkbox,
+    SelectionList,
+    Select,
+    Button,
+)
 
 
 def is_editing_text(widget: Any) -> bool:
@@ -28,6 +38,46 @@ def blocks_command_action(widget: Any, action: str) -> bool:
         "focus_node_list",
         "cancel",
     }
+
+
+def command_focus_widgets(
+    root: Any,
+    focusable_types: Iterable[type] = DEFAULT_COMMAND_FOCUS_TYPES,
+) -> list[Any]:
+    """Return enabled command-mode widgets under a Textual root."""
+    focusable = tuple(focusable_types)
+    return [
+        widget
+        for widget in root.query("*")
+        if isinstance(widget, focusable) and not getattr(widget, "disabled", False)
+    ]
+
+
+def move_command_focus(
+    screen: Any,
+    direction: int,
+    widgets: list[Any] | None = None,
+    scroll_container: Any | None = None,
+) -> Any | None:
+    """Move focus through command-mode widgets and keep the target visible."""
+    widgets = widgets if widgets is not None else command_focus_widgets(screen)
+    if not widgets:
+        return None
+    current = screen.app.focused
+    try:
+        current_index = widgets.index(current)
+    except ValueError:
+        current_index = 0 if direction > 0 else len(widgets) - 1
+    next_index = max(0, min(len(widgets) - 1, current_index + direction))
+    target = widgets[next_index]
+    if isinstance(target, (CommandInput, CommandTextArea)):
+        target.end_edit()
+    screen.app.set_focus(target)
+    if scroll_container is not None:
+        scroll_container.scroll_to_widget(target, animate=False)
+    else:
+        target.scroll_visible(animate=False)
+    return target
 
 
 def open_select_at_top(select: Select) -> None:

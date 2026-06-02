@@ -8,6 +8,10 @@ from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Button, Input, Label, Static
 
+from frontend.widgets.command_navigation import (
+    activate_command_widget,
+    blocks_command_action,
+)
 from frontend.widgets.command_input import CommandInput
 
 
@@ -17,6 +21,7 @@ class UserInputScreen(ModalScreen):
     BINDINGS = [
         ("escape", "cancel", "Cancel"),
         ("ctrl+enter", "submit", "Submit"),
+        Binding("ctrl+q", "cancel", "Cancel", priority=True),
         Binding("e", "activate_focused", "Activate", priority=True),
         Binding("enter", "activate_focused", "Activate", priority=True),
     ]
@@ -42,10 +47,8 @@ class UserInputScreen(ModalScreen):
         self.app.set_focus(self.query_one("#user-input-value", CommandInput))
 
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
-        focused = self.app.focused
-        if isinstance(focused, CommandInput) and focused.editing:
-            if action == "activate_focused":
-                return False
+        if blocks_command_action(self.app.focused, action):
+            return False
         return True
 
     def on_input_submitted(self, _event: Input.Submitted) -> None:
@@ -62,9 +65,7 @@ class UserInputScreen(ModalScreen):
         self.dismiss({"branch_id": self.branch_id, "value": value})
 
     def action_activate_focused(self) -> None:
-        focused = self.app.focused
-        if isinstance(focused, CommandInput):
-            focused.begin_edit()
+        activate_command_widget(self.app.focused)
 
     def action_cancel(self) -> None:
         stop = getattr(self.app, "stop_active_workflow", None)

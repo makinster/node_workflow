@@ -11,6 +11,12 @@ from textual.screen import ModalScreen
 from textual.widgets import Button, Checkbox, Input, Label, Static
 
 from backend.configuration_manager import DEFAULT_SETTINGS
+from frontend.widgets.command_navigation import (
+    activate_command_widget,
+    blocks_command_action,
+    command_focus_widgets,
+    move_command_focus,
+)
 from frontend.widgets.command_input import CommandInput
 
 
@@ -20,6 +26,7 @@ class SettingsScreen(ModalScreen):
     BINDINGS = [
         ("escape", "cancel", "Cancel"),
         ("ctrl+s", "save", "Save"),
+        Binding("ctrl+q", "cancel", "Cancel", priority=True),
         Binding("up", "cursor_up", "Up", priority=True),
         Binding("down", "cursor_down", "Down", priority=True),
         Binding("w", "cursor_up", "Up", priority=True),
@@ -60,10 +67,8 @@ class SettingsScreen(ModalScreen):
             self.app.set_focus(widgets[0])
 
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
-        focused = self.app.focused
-        if isinstance(focused, CommandInput) and focused.editing:
-            if action in {"cursor_up", "cursor_down", "activate_focused"}:
-                return False
+        if blocks_command_action(self.app.focused, action):
+            return False
         return True
 
     def action_save(self) -> None:
@@ -91,34 +96,10 @@ class SettingsScreen(ModalScreen):
         self._move_keyboard_focus(1)
 
     def action_activate_focused(self) -> None:
-        focused = self.app.focused
-        if isinstance(focused, CommandInput):
-            focused.begin_edit()
-        elif isinstance(focused, Checkbox):
-            focused.value = not focused.value
-        elif isinstance(focused, Button):
-            focused.press()
+        activate_command_widget(self.app.focused)
 
     def _move_keyboard_focus(self, direction: int) -> None:
-        widgets = self._keyboard_focus_widgets()
-        if not widgets:
-            return
-        current = self.app.focused
-        try:
-            current_index = widgets.index(current)
-        except ValueError:
-            current_index = 0 if direction > 0 else len(widgets) - 1
-        next_index = max(0, min(len(widgets) - 1, current_index + direction))
-        focused = widgets[next_index]
-        if isinstance(focused, CommandInput):
-            focused.end_edit()
-        self.app.set_focus(focused)
-        focused.scroll_visible()
+        move_command_focus(self, direction, self._keyboard_focus_widgets())
 
     def _keyboard_focus_widgets(self) -> list[Any]:
-        focusable_types = (CommandInput, Checkbox, Button)
-        return [
-            widget
-            for widget in self.query("*")
-            if isinstance(widget, focusable_types) and not getattr(widget, "disabled", False)
-        ]
+        return command_focus_widgets(self, (CommandInput, Checkbox, Button))
