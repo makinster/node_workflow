@@ -79,6 +79,7 @@ class EditorScreen(Screen):
 
     def refresh_from_backend(self) -> None:
         """Reload screen widgets from backend state."""
+        self._sync_all_merge_branch_end_connections()
         title = self.workflow_map.workflow_name or "No workflow"
         dirty = " *" if self.workflow_map.is_dirty else ""
         state = "IDLE"
@@ -369,6 +370,47 @@ class EditorScreen(Screen):
                 target_port,
             )
 
+    def _sync_all_merge_branch_end_connections(self) -> None:
+        for node_id, node in self.workflow_map.get_all_node_data().items():
+            if node.get("type") != "merge_node":
+                continue
+            self._repair_merge_input_ports(node_id)
+            self._sync_merge_branch_end_connections(
+                node_id,
+                node.get("config") or {},
+            )
+
+    def _repair_merge_input_ports(self, merge_node_id: str) -> None:
+        merge_node = self.workflow_map.get_node_data(merge_node_id) or {}
+        metadata = self._metadata_for_type(merge_node.get("type", ""))
+        declared_inputs = list(metadata.get("input_ports") or []) if metadata else []
+        if not declared_inputs:
+            return
+        for conn in list(merge_node.get("connections", {}).get("inputs", [])):
+            current_port = str(conn.get("target_port") or "")
+            if current_port in declared_inputs:
+                continue
+            source_id = str(conn.get("source_node_id") or "")
+            source_port = str(conn.get("source_port", "default") or "default")
+            repaired_port = self._target_input_port_for_connection(
+                source_id,
+                source_port,
+                merge_node_id,
+                declared_inputs,
+            )
+            self.workflow_map.disconnect(
+                source_id,
+                source_port,
+                merge_node_id,
+                current_port,
+            )
+            self._replace_merge_input_connection(
+                source_id,
+                source_port,
+                merge_node_id,
+                repaired_port,
+            )
+
     def _replace_merge_input_connection(
         self,
         source_node_id: str,
@@ -378,6 +420,18 @@ class EditorScreen(Screen):
     ) -> None:
         source = self.workflow_map.get_node_data(source_node_id) or {}
         existing_output = self._connection_for_port(source, source_port)
+        if (
+            existing_output
+            and existing_output.get("target_node_id") == merge_node_id
+            and existing_output.get("target_port") == target_port
+            and self._merge_input_connection_exists(
+                source_node_id,
+                source_port,
+                merge_node_id,
+                target_port,
+            )
+        ):
+            return
         if existing_output:
             self.workflow_map.disconnect(
                 source_node_id,
@@ -398,6 +452,68 @@ class EditorScreen(Screen):
             )
 
         self.workflow_map.connect(source_node_id, source_port, merge_node_id, target_port)
+
+    def _merge_input_connection_exists(
+        self,
+        source_node_id: str,
+        source_port: str,
+        merge_node_id: str,
+        target_port: str,
+    ) -> bool:
+        merge_node = self.workflow_map.get_node_data(merge_node_id) or {}
+        for conn in merge_node.get("connections", {}).get("inputs", []):
+            if (
+                conn.get("source_node_id") == source_node_id
+                and conn.get("source_port", "default") == source_port
+                and conn.get("target_port") == target_port
+            ):
+                return True
+        return False
+
+    def _target_input_port_for_connection(
+        self,
+        source_node_id: str,
+        source_port: str,
+        target_node_id: str,
+        input_ports: list[str],
+    ) -> str:
+        target_node = self.workflow_map.get_node_data(target_node_id) or {}
+        if target_node.get("type") == "merge_node":
+            branch_port = self._upstream_branch_port(source_node_id, source_port)
+            if branch_port in input_ports:
+                return branch_port
+        return input_ports[0]
+
+    def _upstream_branch_port(self, source_node_id: str, source_port: str) -> str:
+        node = self.workflow_map.get_node_data(source_node_id) or {}
+        metadata = self._metadata_for_type(node.get("type", ""))
+        output_ports = list(metadata.get("output_ports") or []) if metadata else []
+        if len(output_ports) > 1 and source_port in output_ports:
+            return source_port
+
+        visited: set[str] = set()
+        stack = [source_node_id]
+        while stack:
+            node_id = stack.pop()
+            if node_id in visited:
+                continue
+            visited.add(node_id)
+            current = self.workflow_map.get_node_data(node_id) or {}
+            for input_conn in current.get("connections", {}).get("inputs", []):
+                upstream_id = str(input_conn.get("source_node_id") or "")
+                upstream_node = self.workflow_map.get_node_data(upstream_id) or {}
+                upstream_meta = self._metadata_for_type(upstream_node.get("type", ""))
+                upstream_outputs = (
+                    list(upstream_meta.get("output_ports") or [])
+                    if upstream_meta
+                    else []
+                )
+                upstream_port = str(input_conn.get("source_port", "default") or "default")
+                if len(upstream_outputs) > 1:
+                    return upstream_port
+                if upstream_id:
+                    stack.append(upstream_id)
+        return source_port
 
     def _open_branch_selector(self, row: Dict[str, Any]) -> None:
         branch_node_id = row["branch_node_id"]
@@ -445,6 +561,12 @@ class EditorScreen(Screen):
         input_ports = target_meta.get("input_ports") or []
         if not input_ports:
             return
+        target_port = self._target_input_port_for_connection(
+            source_node_id,
+            source_port,
+            target_node_id,
+            list(input_ports),
+        )
         existing_connection = self._connection_for_port(source, source_port)
         existing_target = (
             existing_connection.get("target_node_id") if existing_connection else None
@@ -460,7 +582,7 @@ class EditorScreen(Screen):
             source_node_id,
             source_port,
             target_node_id,
-            input_ports[0],
+            target_port,
         )
         if existing_target:
             target_output_ports = target_meta.get("output_ports") or []

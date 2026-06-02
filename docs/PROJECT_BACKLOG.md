@@ -61,6 +61,28 @@ Recommended cleanup:
   activate, type, escape typing mode, save/cancel, and scroll to off-screen
   fields.
 
+## Near-Term Project — Branch Health Visualization
+
+Goal: make branch validity visible while editing, before users need to run full
+validation.
+
+Recommended cleanup:
+
+- Derive branch health from workflow structure, not stored UI state.
+- Represent at least three branch states:
+  - valid branch ending: end/output node or connected Branch End node;
+  - branch ended but not merged: Branch End exists but is not connected to a
+    Merge node;
+  - floating branch: no valid output/end node and no Branch End.
+- Surface those states in the editor with clear but restrained color: green for
+  valid, yellow/orange for branch-ended-but-unmerged, and red/orange for
+  floating/incomplete branches.
+- Extend `NodeCard` or a future editor display adapter so branch-health color is
+  separate from execution status icons.
+- Fold this into the FA-7 visual pass: VS Code-like dark styling, readable node
+  type colors, type-specific brackets/icons, larger editor rows, and dimmer
+  command text fields when not editing.
+
 ## Later Project — Schema-Driven Node UI Expansion
 
 Goal: make adding a node feel like adding backend metadata, not hand-editing

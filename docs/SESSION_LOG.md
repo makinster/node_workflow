@@ -1,5 +1,19 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-02 — Merge Input Port Repair
+
+- Fixed editor add/insert wiring into Merge nodes so the target input port is
+  derived from the containing branch path instead of defaulting to `input`.
+- Added editor refresh repair for older save files that already contain invalid
+  `Merge.input` connections, remapping them to the upstream branch port.
+- Added regressions for branch-aware merge connection, legacy merge input repair,
+  and connected Branch End deletion to tombstone.
+- Added `PROJECT_BACKLOG.md` notes for future branch-health visualization:
+  valid branch endings, unmerged Branch End markers, and floating branches.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v`
+
 ## 2026-06-02 — Merge Branch End Connection Follow-Up
 
 - Fixed the merge config save path so checked Branch End closures are reconciled

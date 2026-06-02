@@ -1517,6 +1517,140 @@ async def _test_saving_merge_config_connects_selected_branch_end():
     print("test_saving_merge_config_connects_selected_branch_end PASSED")
 
 
+def test_connected_branch_end_deletes_to_tombstone():
+    asyncio.run(_test_connected_branch_end_deletes_to_tombstone())
+
+
+async def _test_connected_branch_end_deletes_to_tombstone():
+    from textual.app import App, ComposeResult
+
+    from frontend.screens.editor import EditorScreen
+    from frontend.widgets.node_card import NodeCard
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("connected_branch_end_tombstone")
+    start = wm.add_node("start_node")
+    branch = wm.add_node("branch_node")
+    branch_end = wm.add_node("branch_end_node")
+    merge = wm.add_node("merge_node")
+    wm.connect(start, "default", branch, "input")
+    wm.connect(branch, "path_a", branch_end, "input")
+    wm.connect(branch_end, "default", merge, "path_a")
+
+    class EditorApp(App):
+        def compose(self) -> ComposeResult:
+            yield EditorScreen(wm._factory, wm)
+
+    app = EditorApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        screen = app.query_one(EditorScreen)
+        screen.selected_node_id = branch_end
+        screen.selected_row = {"kind": "node", "node_id": branch_end}
+        screen.refresh_from_backend()
+        await pilot.pause(0.03)
+
+        before_cards = [card for card in app.query(NodeCard) if card.node_id == branch_end]
+        assert len(before_cards) == 1
+        assert before_cards[0].has_class("branch-end-connected")
+
+        screen.action_delete_selected()
+        await pilot.pause(0.03)
+
+        assert wm.get_node_data(branch_end)["type"] == "tombstone_node"
+        after_cards = [card for card in app.query(NodeCard) if card.node_id == branch_end]
+        assert len(after_cards) == 1
+        assert not after_cards[0].has_class("branch-end-open")
+        assert not after_cards[0].has_class("branch-end-connected")
+        assert after_cards[0].node_data["type"] == "tombstone_node"
+
+    print("test_connected_branch_end_deletes_to_tombstone PASSED")
+
+
+def test_editor_connects_merge_input_to_active_branch_port():
+    asyncio.run(_test_editor_connects_merge_input_to_active_branch_port())
+
+
+async def _test_editor_connects_merge_input_to_active_branch_port():
+    from textual.app import App, ComposeResult
+
+    from backend.validator import validate_workflow
+    from frontend.screens.editor import EditorScreen
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("merge_branch_port_connect")
+    start = wm.add_node("start_node")
+    branch = wm.add_node("branch_node")
+    source = wm.add_node("user_text_input_node")
+    merge = wm.add_node("merge_node")
+    wm.connect(start, "default", branch, "input")
+    wm.connect(branch, "path_b", source, "input")
+
+    class EditorApp(App):
+        def compose(self) -> ComposeResult:
+            yield EditorScreen(wm._factory, wm)
+
+    app = EditorApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        screen = app.query_one(EditorScreen)
+        screen._connect_new_node(source, "default", merge)
+        await pilot.pause(0.03)
+
+        merge_node = wm.get_node_data(merge)
+        assert {
+            "target_port": "path_b",
+            "source_node_id": source,
+            "source_port": "default",
+        } in merge_node.get("connections", {}).get("inputs", [])
+        assert validate_workflow(wm, wm._factory)["success"] is True
+
+    print("test_editor_connects_merge_input_to_active_branch_port PASSED")
+
+
+def test_editor_repairs_legacy_merge_input_port_on_refresh():
+    asyncio.run(_test_editor_repairs_legacy_merge_input_port_on_refresh())
+
+
+async def _test_editor_repairs_legacy_merge_input_port_on_refresh():
+    from textual.app import App, ComposeResult
+
+    from backend.validator import validate_workflow
+    from frontend.screens.editor import EditorScreen
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("merge_legacy_input_repair")
+    start = wm.add_node("start_node")
+    branch = wm.add_node("branch_node")
+    source = wm.add_node("user_text_input_node")
+    merge = wm.add_node("merge_node")
+    wm.connect(start, "default", branch, "input")
+    wm.connect(branch, "path_b", source, "input")
+    wm.connect(source, "default", merge, "input")
+    assert validate_workflow(wm, wm._factory)["success"] is False
+
+    class EditorApp(App):
+        def compose(self) -> ComposeResult:
+            yield EditorScreen(wm._factory, wm)
+
+    app = EditorApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        merge_node = wm.get_node_data(merge)
+        assert {
+            "target_port": "path_b",
+            "source_node_id": source,
+            "source_port": "default",
+        } in merge_node.get("connections", {}).get("inputs", [])
+        assert not any(
+            conn.get("target_port") == "input"
+            for conn in merge_node.get("connections", {}).get("inputs", [])
+        )
+        assert validate_workflow(wm, wm._factory)["success"] is True
+
+    print("test_editor_repairs_legacy_merge_input_port_on_refresh PASSED")
+
+
 def test_node_config_select_activates_from_keyboard():
     asyncio.run(_test_node_config_select_activates_from_keyboard())
 
@@ -2440,6 +2574,9 @@ if __name__ == "__main__":
         test_merge_options_exclude_current_merge_path_and_branch_end_card_turns_green,
         test_merge_branch_selector_moves_focus_down_at_bottom,
         test_saving_merge_config_connects_selected_branch_end,
+        test_connected_branch_end_deletes_to_tombstone,
+        test_editor_connects_merge_input_to_active_branch_port,
+        test_editor_repairs_legacy_merge_input_port_on_refresh,
         test_node_config_select_activates_from_keyboard,
         test_dynamic_row_helper_preserves_visible_rows_only,
         test_dynamic_selection_helper_filters_stale_values,
