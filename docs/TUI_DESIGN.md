@@ -2,10 +2,13 @@
 
 ## Pivot
 
-AttackOfTheNodes is moving from the planned tkinter desktop UI to a Textual TUI.
-The backend stays UI-agnostic and should remain untouched unless a genuine engine
-bug is found. The frontend should adapt to the backend through thin adapters, not
-by adding backend shortcuts for UI convenience.
+AttackOfTheNodes uses a Textual TUI as the active frontend. The old tkinter
+frontend is obsolete. The backend stays UI-agnostic and should remain reusable
+by future frontends. The Textual app adapts to backend services through
+frontend-owned screens, widgets, and adapters.
+
+Before adding backend behavior for UI convenience, read
+`docs/BACKEND_FRONTEND_BOUNDARY.md`.
 
 ## Framework
 
@@ -16,7 +19,8 @@ Install development dependencies with:
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-python -m pip install -r requirements.txt
+python -m pip install -r attackofthenodes_v05/requirements.lock
+python -m pip install -e attackofthenodes_v05/
 ```
 
 Textual is async-native, which matches the supervisor run loop, master state
@@ -98,7 +102,9 @@ for updated values.
 Use Textual `Screen` / `ModalScreen` classes:
 
 - `node_selector.py`: add-node modal grouped by category, searchable.
-- `node_config.py`: schema-generated edit form plus connections.
+- `node_config.py`: schema-generated edit form, memory-bank input/output
+  declarations, and topology-derived selectors such as wait/merge controls.
+  Port-edge mutation should stay in editor workflows, not generic config forms.
 - `branch_selector.py`: modal opened from the editor's `Branch Select` row.
   Multi-output nodes render a selectable row immediately below the node. The row
   shows the currently visible output port; pressing Enter opens the branch
@@ -120,17 +126,13 @@ Global bindings:
 ```text
 ctrl+s        Save current workflow
 ctrl+r        Run workflow
-ctrl+shift+r  Stop running workflow
 ctrl+n        New workflow
 ctrl+o        Open workflow library
-editor l/o    Open workflow library
 ctrl+e        Open settings
 ?             Open help
-q             Quit, prompting to save if dirty
 escape        Close topmost modal or cancel action
-q             Close topmost modal where supported
-tab           Move focus forward
-shift+tab     Move focus backward
+ctrl+q        Back / close, blocked while text editing
+ctrl+c        Quit to terminal
 ```
 
 Execution bindings:
@@ -146,6 +148,31 @@ escape  Stop the active run and return to the editor
 
 Every screen should keep a context-sensitive status bar visible at the bottom.
 
+## Command Navigation
+
+Keyboard-first modals use command mode by default:
+
+```text
+W/S or arrows  Move highlight/focus
+E or Enter     Activate highlighted control
+Esc/Ctrl+Q     Leave edit mode, close dropdown, or cancel/close modal
+Ctrl+S         Save where supported
+Ctrl+Enter     Save/submit multiline forms where supported
+```
+
+Text fields use `CommandInput` or `CommandTextArea`.
+
+- Long/config forms are command-first: focusing a text field does not type until
+  the user presses `E` or Enter.
+- Popup-style prompts and filters may opt into `auto_edit_on_focus=True`.
+- While editing, arrows move within the text widget and `W/S` type normally.
+- `Esc`/`Ctrl+Q` exits editing and reverts to the value captured at edit start.
+- Enter commits small text inputs. Text areas use `Ctrl+Enter` or modal Save.
+
+Shared behavior belongs in `frontend/widgets/command_navigation.py`,
+`command_input.py`, `list_navigation.py`, and `dynamic_sections.py`, not in
+per-screen one-off key handlers.
+
 ## File Structure
 
 ```text
@@ -155,23 +182,32 @@ frontend/
 ├── styles.tcss
 ├── screens/
 │   ├── __init__.py
+│   ├── branch_selector.py
+│   ├── confirm.py
 │   ├── editor.py
-│   ├── execution.py
-│   ├── node_selector.py
-│   ├── node_config.py
-│   ├── user_input.py
-│   ├── memory_viewer.py
-│   ├── output_viewer.py
 │   ├── error_details.py
-│   ├── workflow_library.py
+│   ├── execution.py
+│   ├── help.py
+│   ├── memory_viewer.py
+│   ├── node_config.py
+│   ├── node_selector.py
+│   ├── output_viewer.py
 │   ├── settings.py
-│   └── help.py
+│   ├── user_input.py
+│   ├── workflow_library.py
+│   └── ...
 ├── widgets/
 │   ├── __init__.py
-│   ├── node_list.py
-│   ├── node_card.py
+│   ├── command_input.py
+│   ├── command_navigation.py
+│   ├── dynamic_sections.py
 │   ├── form_generator.py
+│   ├── list_navigation.py
+│   ├── node_card.py
+│   ├── node_list.py
 │   └── status_bar.py
+├── notifications.py
+├── output_records.py
 └── ui_state.py
 ```
 
@@ -206,8 +242,10 @@ frontend/
   between the selected source and its previous downstream target.
 - Leaving the execution screen stops active running, paused, or waiting runs
   before returning to the editor, so the next `Ctrl+R` starts a fresh run.
-- The node configuration modal has top Save/Cancel buttons plus direct keyboard
-  exits: `E` saves, `Esc` or `Q` closes, and `W/S` or `A/D` move focus.
+- The node configuration modal is command-first. `W/S` or arrows move through
+  actionable controls, `E` activates the highlighted control, `Esc`/`Ctrl+Q`
+  exits active editing or cancels/closes, and text-heavy forms avoid plain
+  `Q` as a close binding.
 - Workflow library is wired to load, create, duplicate, and delete workflows
   through existing persistence and `SaveManager` services. It is available from
   the editor with `L`, `O`, or global `Ctrl+O`.
@@ -227,9 +265,9 @@ frontend/
   replacement, dirty workflow load, and workflow deletion.
 - The execution screen recent-output panel now uses `RichLog` with markup
   disabled, so output has scrollback and bracketed node labels render literally.
-- The node config modal now exposes connection editing: existing input/output
-  edges can be removed, and new input/output edges can be added through endpoint
-  selectors backed by `WorkflowMap.connect()` / `disconnect()`.
+- Port-edge mutation belongs in editor flows. Generic node config focuses on
+  core schema fields, memory-bank input/output declarations, pass-through
+  behavior, and topology-derived selectors such as wait/merge controls.
 - Workflow library now supports JSON export and import through path prompt
   modals wired to `SaveManager.export_workflow()` and `import_workflow()`.
 - Editor now exposes `I` as an explicit insert shortcut, using the same
@@ -315,8 +353,9 @@ scrollable modal with mixed interactive and non-interactive content.
 - The first `Log` widget attempt caused headless refresh hangs during tests.
   The execution screen now uses `RichLog` with markup disabled, which provides
   scrollback without treating node labels as markup.
-- Textual modal exit should be redundant: `Esc` and `Q` are both bound on the
-  new modals because fast keyboard escape matters in a TUI.
+- Textual modal exit should be redundant, but text-heavy forms must avoid plain
+  `Q` as a close binding. Prefer `Esc` and `Ctrl+Q`, and make App-level
+  `check_action` block close/back while command text widgets are editing.
 - Backend schemas use `type: string` with `options` in several nodes, so the
   form generator treats any non-boolean option list as a `Select`, even when the
   field type is not explicitly `select`.

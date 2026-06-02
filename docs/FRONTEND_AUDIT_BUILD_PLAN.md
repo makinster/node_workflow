@@ -165,17 +165,18 @@ Done when:
 
 **Files:** `frontend/widgets/command_navigation.py`, command-oriented screens.
 
-**Status:** in progress. Initial migration completed for `SettingsScreen`,
-`UserInputScreen`, and `PathPromptScreen` on 2026-06-02. Node config command
-text fields now retain focus while active arrow-key editing is in progress.
-Generated `Select` dropdowns now share command-mode overlay handling for
-`W`/`S`, arrows, `E`/Enter, and dismiss keys. `NodeConfigScreen` also treats an
-expanded select as an active child surface, so cancel/back closes the dropdown
-before closing the config modal. Node config keyboard focus now excludes
-read-only `Label`/`Static` rows so `W`/`S` movement keeps a real focused widget
-and `E` always activates the visible control. `CommandInput` and
-`CommandTextArea` now support opt-in `auto_edit_on_focus`, routed through
-`focus_command_widget()`, for popup/filter fields that should be ready to type.
+**Status:** baseline complete; continue opportunistic migrations. Initial
+migration completed for `SettingsScreen`, `UserInputScreen`, and
+`PathPromptScreen` on 2026-06-02. Node config command text fields retain focus
+while active arrow-key editing is in progress. Generated `Select` dropdowns
+share command-mode overlay handling for `W`/`S`, arrows, `E`/Enter, and dismiss
+keys. `NodeConfigScreen` treats an expanded select as an active child surface,
+so cancel/back closes the dropdown before closing the config modal. Node config
+keyboard focus excludes read-only `Label`/`Static` rows so `W`/`S` movement
+keeps a real focused widget and `E` activates the visible control.
+`CommandInput` and `CommandTextArea` support opt-in `auto_edit_on_focus`,
+routed through `focus_command_widget()`, for popup/filter fields that should be
+ready to type.
 
 Tasks:
 
@@ -194,9 +195,8 @@ Tasks:
 
 Done when:
 
-- Simple modals no longer duplicate command input activation or edit blocking.
-  Current remaining duplication is mostly selector-specific and belongs to
-  FA-2.
+- New command modals can be built without duplicating input activation, edit
+  blocking, select overlay behavior, or scroll-to-focus logic.
 
 ### Phase FA-2 — Selector Standardization
 
@@ -230,7 +230,8 @@ Done when:
 **Files:** `frontend/widgets/form_generator.py`,
 `backend/field_types.py` only if a new generic schema key requires validation.
 
-**Status:** in progress. Initial generator expansion completed 2026-06-02:
+**Status:** baseline complete; continue adding generic schema keys only when
+multiple nodes need them. Initial generator expansion completed 2026-06-02:
 placeholders, numeric `min`/`max` validators, multiline/code `height`,
 code-language hints, and multiselect default selections are supported without
 screen-specific code.
@@ -244,7 +245,7 @@ Tasks:
   - `allow_blank`
   - `height`
   - `visible_if`
-- Add tests for every supported key.
+- Add tests for every supported key. Baseline supported keys are listed below.
 - Document a node-author checklist.
 
 Done when:
@@ -285,7 +286,8 @@ Node-author checklist:
 
 **Files:** `node_config.py`, `form_generator.py`, possible new config helpers.
 
-**Status:** in progress. Initial helper extraction completed 2026-06-02:
+**Status:** baseline complete; continue extracting topology-specific adapters as
+they stabilize. Initial helper extraction completed 2026-06-02:
 `frontend/widgets/dynamic_sections.py` now owns count clamping and visible-row
 value preservation for checkbox/count-driven sections. Memory-bank output rows
 use the helper. Dynamic selection lists now share stale-selection filtering,
@@ -312,11 +314,10 @@ Done when:
 
 **Files:** new frontend alert helper, `app.py`, screens using `app.notify`.
 
-**Status:** in progress. `frontend/notifications.py` now owns named
-notification helpers, and `editor.py` uses them for editor outcomes. `app.py`
-and `execution.py` still have direct notifications in the current dirty
-worktree; migrate them only when their pre-existing Textual-pivot file state can
-be staged safely.
+**Status:** partial. `frontend/notifications.py` owns named notification
+helpers, and `editor.py` uses them for editor outcomes. `app.py` and
+`execution.py` still call `notify(...)` directly and should migrate in the next
+notification cleanup.
 
 Tasks:
 
@@ -378,9 +379,9 @@ mounted tests in `tests/test_debug_nodes.py`.
 
 | Screen / Widget | Type | Current Helpers | Known Risks | Next Action |
 |---|---|---|---|---|
-| `app.py` | root app | App-level `check_action` blocks text-edit `"back"` | direct notifications remain; workflow callbacks mix persistence, confirmation, and routing | FA-5 migration after file-state cleanup |
+| `app.py` | root app | App-level `check_action` blocks text-edit `"back"` | direct notifications remain; workflow callbacks mix persistence, confirmation, and routing | FA-5 migration |
 | `editor.py` | main workflow screen | `NodeList`; priority bindings for editor actions; derived branch labels; `notifications.py` named helpers | cursor/nav model remains local; branch path display only shows one branch at a time | Phase 13 cursor audit, FA-7 visual/help alignment |
-| `execution.py` | main workflow screen/viewer | `RichLog`; `NodeList`; modal launch actions | direct notifications remain; long output mostly safe via `RichLog`, but branch/memory summary still `Static` | FA-5 migration after file-state cleanup, FA-6 viewer audit |
+| `execution.py` | main workflow screen/viewer | `RichLog`; `NodeList`; modal launch actions | direct notifications remain; long output mostly safe via `RichLog`, but branch/memory summary still `Static` | FA-5 migration, FA-6 viewer audit |
 | `node_config.py` | command modal + topology adapters | `CommandInput`, `CommandTextArea`, `command_navigation`, `form_generator`, `VerticalScroll` with `can_focus=False` | largest mixed surface; dynamic sections and merge topology logic still local; reference behavior not yet reusable enough | FA-1 reference extraction, FA-4 dynamic sections |
 | `node_selector.py` | list selector with filter | `CommandInput`; `list_navigation` highlight/focus/move helper | filter/list grammar is now shared enough for modal selectors; local filter escape behavior remains intentional | Watch with FA-2 regressions |
 | `branch_selector.py` | list selector | `ListView`; `list_navigation`; priority `W/S/E` bindings | active branch remains the initial highlight by design, rather than always top row | Watch with FA-2 regressions |
@@ -392,7 +393,7 @@ mounted tests in `tests/test_debug_nodes.py`.
 | `output_viewer.py` | read-only/filter viewer | `Select`; `Static` | uses raw `Select` outside `form_generator`; long output is plain `Static`; branch filter may inherit blank-select/default issues | FA-6 viewer audit, possibly command select helper |
 | `error_details.py` | read-only/action viewer | `Static`; `Button` | structured validation cards are still plain text/static; jump/action affordances need consistency | FA-6 viewer/action audit |
 | `help.py` | read-only modal | `Static` | help can drift from actual key grammar; should be generated/checked against command contract eventually | FA-7 help alignment |
-| `form_generator.py` | schema renderer | `CommandInput`, `CommandTextArea`, `Select`, `SelectionList`, tabs | schema key coverage is thin; multiselect selected defaults need audit; optional blank/select behavior not schema-driven yet | FA-3 schema expansion |
+| `form_generator.py` | schema renderer | `CommandInput`, `CommandTextArea`, `Select`, `SelectionList`, tabs | optional blank/select behavior is not fully schema-driven; future keys should stay generic | FA-3 schema expansion as needed |
 | `command_navigation.py` | command helper | select/list/text/button activation; opt-in auto-edit focus helper | intentionally centralizes private Textual overlay access; keep future command focus behavior here | FA-1 migration and tests |
 | `command_input.py` | command text widgets | command-before-edit input/textarea with opt-in auto-edit | repeated `_run_screen_action` logic; App-level blocking still required for priority bindings | FA-1 helper consolidation |
 
@@ -407,9 +408,8 @@ mounted tests in `tests/test_debug_nodes.py`.
    `list_navigation.py` for highlight clamping, focus, scrolling, and movement.
    Keep future modal selectors on this helper.
 3. **Notifications now have a wrapper.** `frontend/notifications.py` centralizes
-   named notification copy. `editor.py` is migrated; `app.py` and `execution.py`
-   remain because their current file state is not safe to stage as a narrow
-   change.
+   named notification copy. `editor.py` is migrated; `app.py` and
+   `execution.py` are the next cleanup targets.
 4. **Viewer surfaces are mixed but not all bad.** `memory_viewer.py` now uses
    `DataTable` with command navigation, `execution.py` uses `RichLog`, but
    `output_viewer.py` and

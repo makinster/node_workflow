@@ -1,5 +1,22 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-02 — Phase-Specific Frontend Docs Audit
+
+- Audited `TUI_DESIGN.md`, `FRONTEND_AUDIT_BUILD_PLAN.md`, and
+  `PROJECT_BACKLOG.md` for stale frontend guidance and contradictions.
+- Updated `TUI_DESIGN.md` to describe the current Textual app as active rather
+  than transitional, point backend/UI boundary questions to
+  `BACKEND_FRONTEND_BOUNDARY.md`, document command-mode navigation, refresh the
+  frontend file tree, and remove stale node-config connection-editing guidance.
+- Updated `FRONTEND_AUDIT_BUILD_PLAN.md` so FA-1, FA-3, and FA-4 are baseline
+  complete rather than vaguely in progress, and clarified that FA-5 still needs
+  `app.py` and `execution.py` notification migration.
+- Updated `PROJECT_BACKLOG.md` so docs modernization is active, frontend command
+  toolkit work is near-term, and notification cleanup points at the existing
+  `frontend/notifications.py` helper.
+- Verification:
+  - `git diff --check`
+
 ## 2026-06-02 — Docs Entry Point and Backend Boundary Plan
 
 - Added `docs/README.md` as the documentation entry point so new agents have a

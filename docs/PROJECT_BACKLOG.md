@@ -1,10 +1,11 @@
 # AttackOfTheNodes Project Backlog
 
-## Later Project — Documentation Modernization
+## Active Project — Documentation Modernization
 
 The docs folder has split-brain history from the Chrome-extension concept,
-tkinter prototype, and current Textual TUI. Keep this as a later focused docs
-project, separate from the active master build plan.
+tkinter prototype, and current Textual TUI. This is the active docs cleanup
+thread. Keep `docs/README.md` as the entry point while older reference docs are
+refreshed.
 
 `docs/README.md` is now the entry point and `MASTER_BUILD_PLAN.md` is the
 current comprehensive source of truth. The remaining modernization task is to
@@ -41,7 +42,7 @@ Recommended cleanup:
 - Decide whether layout metadata such as `position` and navigation metadata
   such as `bookmarked` belong in portable workflow saves or editor sidecars.
 
-## Later Project — Frontend Command UI Toolkit
+## Near-Term Project — Frontend Command UI Toolkit
 
 Current config and modal UX should converge on small shared helpers instead of
 per-screen key handling. `frontend/widgets/command_navigation.py` is the first
@@ -50,10 +51,11 @@ step and currently supports `NodeConfigScreen`. Use
 
 Recommended cleanup:
 
-- Migrate settings, workflow path prompts, node selector, branch selector, and
-  other modal screens to the same command-navigation helper where practical.
-- Add a small wrapper around `app.notify(...)` for a unified toast/alert system
-  with consistent copy, severity, and duration.
+- Continue using shared command helpers for new modal screens. `SettingsScreen`,
+  path prompts, user input, generated config fields, and modal selectors already
+  have baseline helper coverage.
+- Finish migrating `app.py` and `execution.py` direct `notify(...)` calls to
+  `frontend/notifications.py`.
 - Keep schema-generated node config as the default path; extend field schemas or
   frontend render helpers before adding per-node custom modal logic.
 - Add a focused keyboard-only smoke suite for common modal flows: open, move,
@@ -81,8 +83,9 @@ Recommended cleanup:
 
 ## Later Project — Unified Toast / Alert System
 
-The app currently calls `app.notify(...)` directly from many screens. That is
-fine for now, but it is already producing inconsistent wording and severity.
+The project has `frontend/notifications.py`, but `app.py` and `execution.py`
+still call `notify(...)` directly. Finish the migration before adding richer
+toast behavior.
 
 Recommended cleanup:
 
