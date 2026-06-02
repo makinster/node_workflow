@@ -1,5 +1,16 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-02 — Textbox Single-Click Edit Tweak
+
+- Kept editor node-list mouse behavior as one click selects and two clicks opens.
+- Changed command text inputs and text areas back to single-click editing because
+  double-click felt too clunky for editable text fields.
+- Updated the mouse contract in `TUI_DESIGN.md` and adjusted the click
+  regression.
+- Verification:
+  - `python -m compileall -q .`
+  - `python -m pytest tests/test_debug_nodes.py -v`
+
 ## 2026-06-02 — Mouse Click Activation Contract
 
 - Updated editor node rows so one mouse click selects/highlights and two clicks

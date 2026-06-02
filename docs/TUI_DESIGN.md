@@ -177,10 +177,9 @@ Mouse behavior follows the same command-mode contract:
 
 - In the editor node list, one click highlights/selects a node or branch row.
   Two clicks opens node config or the branch selector.
-- In command text fields, one click focuses/highlights the field. Two clicks
-  enters editing mode.
-- Prompt-style fields with `auto_edit_on_focus=True` still begin editing on
-  first focus/click.
+- In command text fields, one click enters editing mode. Keyboard navigation
+  still remains command-first: moving to a field with W/S or arrows only
+  highlights it until `E` or Enter is pressed.
 
 ## File Structure
 

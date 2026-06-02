@@ -2146,11 +2146,11 @@ async def _test_editor_click_selects_and_double_click_edits():
     print("test_editor_click_selects_and_double_click_edits PASSED")
 
 
-def test_command_text_click_selects_and_double_click_edits():
-    asyncio.run(_test_command_text_click_selects_and_double_click_edits())
+def test_command_text_click_enters_editing_mode():
+    asyncio.run(_test_command_text_click_enters_editing_mode())
 
 
-async def _test_command_text_click_selects_and_double_click_edits():
+async def _test_command_text_click_enters_editing_mode():
     from textual import events
     from textual.app import App, ComposeResult
 
@@ -2172,39 +2172,31 @@ async def _test_command_text_click_selects_and_double_click_edits():
 
     class InputApp(App):
         def compose(self) -> ComposeResult:
-            yield CommandInput(id="single-double-input")
-            yield CommandTextArea(id="single-double-textarea")
+            yield CommandInput(id="click-input")
+            yield CommandTextArea(id="click-textarea")
             yield CommandInput(id="auto-click-input", auto_edit_on_focus=True)
 
     app = InputApp()
     async with app.run_test() as pilot:
         await pilot.pause(0.03)
-        text_input = app.query_one("#single-double-input", CommandInput)
-        textarea = app.query_one("#single-double-textarea", CommandTextArea)
+        text_input = app.query_one("#click-input", CommandInput)
+        textarea = app.query_one("#click-textarea", CommandTextArea)
         auto_input = app.query_one("#auto-click-input", CommandInput)
 
         text_input.on_click(click(text_input, 1))
-        assert app.focused is text_input
-        assert text_input.editing is False
-
-        text_input.on_click(click(text_input, 2))
         assert app.focused is text_input
         assert text_input.editing is True
 
         textarea.on_click(click(textarea, 1))
         assert app.focused is textarea
         assert text_input.editing is False
-        assert textarea.editing is False
-
-        textarea.on_click(click(textarea, 2))
-        assert app.focused is textarea
         assert textarea.editing is True
 
         auto_input.on_click(click(auto_input, 1))
         assert app.focused is auto_input
         assert auto_input.editing is True
 
-    print("test_command_text_click_selects_and_double_click_edits PASSED")
+    print("test_command_text_click_enters_editing_mode PASSED")
 
 
 # ---------------------------------------------------------------------------
@@ -2264,7 +2256,7 @@ if __name__ == "__main__":
         test_simple_command_modals_use_shared_navigation_helpers,
         test_prompt_modals_use_shared_command_activation,
         test_editor_click_selects_and_double_click_edits,
-        test_command_text_click_selects_and_double_click_edits,
+        test_command_text_click_enters_editing_mode,
     ]
     failed = []
     for t in tests:
