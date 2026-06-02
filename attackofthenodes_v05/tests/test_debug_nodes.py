@@ -1137,7 +1137,7 @@ def test_merge_config_uses_single_selected_input_checkbox():
 
 async def _test_merge_config_uses_single_selected_input_checkbox():
     from textual.app import App, ComposeResult
-    from textual.widgets import Checkbox
+    from textual.widgets import Select
 
     from frontend.screens.node_config import NodeConfigScreen, merge_input_options
 
@@ -1196,8 +1196,7 @@ async def _test_merge_config_uses_single_selected_input_checkbox():
     app = ConfigApp()
     async with app.run_test() as pilot:
         await pilot.pause(0.03)
-        first = app.query_one("#merge-input-choice-0", Checkbox)
-        second = app.query_one("#merge-input-choice-1", Checkbox)
+        selector = app.query_one("#merge-branch-selector", Select)
         details = app.query_one("#merge-selected-output-details")
         output_name = app.query_one("#merge-output-name")
         output_desc = app.query_one("#merge-output-description")
@@ -1205,17 +1204,14 @@ async def _test_merge_config_uses_single_selected_input_checkbox():
         assert not app.query("#membank-reads")
         assert not app.query("#membank-writes")
         assert not app.query("#field-timeout_seconds")
-        assert first.value is False
-        assert second.value is True
+        assert selector.value == f"{branch}:path_b"
         assert details.display is True
         assert options[1]["output_description"] == "Review output"
         assert output_name.value == "chosen_branch"
         assert output_desc.value == "Chosen branch output"
 
-        first.value = True
+        selector.value = f"{branch}:path_a"
         await pilot.pause()
-        assert first.value is True
-        assert second.value is False
         screen = app.query_one(NodeConfigScreen)
         assert screen._merge_config_values() == {
             "selected_branch_id": f"{branch}:path_a",
@@ -1223,6 +1219,10 @@ async def _test_merge_config_uses_single_selected_input_checkbox():
             "branch_output_name": "chosen_branch",
             "branch_output_description": "Chosen branch output",
         }
+        app.set_focus(selector)
+        screen.action_activate_focused()
+        await pilot.pause()
+        assert selector.expanded is True
 
     print("test_merge_config_uses_single_selected_input_checkbox PASSED")
 

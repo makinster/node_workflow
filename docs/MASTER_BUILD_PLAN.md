@@ -357,9 +357,10 @@ Example config:
   stores `selected_branch_id`, `selected_input_port`, `branch_output_name`, and
   `branch_output_description`.
 - The merge config UI is custom and minimal: no previous-output preview, no
-  memory-bank inputs/outputs, and no timeout field. It renders the branch list,
-  selected branch output details, and fields for naming/describing the branch
-  output from the merge node. v1 enforces one selected branch output.
+  memory-bank inputs/outputs, and no timeout field. It renders a real branch
+  dropdown selector, selected branch output details, and fields for
+  naming/describing the branch output from the merge node. v1 enforces one
+  selected branch output.
 - Future merge versions may add multi-output/combine behavior, but v1 forwards
   one selected branch input to the next node.
 - Tests cover slow/fast parallel branch merging and the single-checkbox config

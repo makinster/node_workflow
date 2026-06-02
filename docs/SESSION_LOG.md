@@ -14,6 +14,8 @@
   branch output details, and fields for `branch_output_name` /
   `branch_output_description`. It removes previous-output preview, memory-bank
   sections, and timeout from the Merge modal.
+- The branch selector is now a real dropdown populated from open workflow branch
+  paths, including paths not yet wired into the merge.
 - Branch-node dropdowns now open from keyboard activation (`E` / Enter) while
   using command-mode navigation.
 - Non-selected branch arrivals terminate at the merge after the barrier releases;

@@ -467,13 +467,14 @@ class NodeConfigScreen(ModalScreen):
             await self._refresh_membank_output_rows()
         elif event.checkbox.id == "show-previous-output":
             self._sync_previous_output_preview()
-        elif str(event.checkbox.id or "").startswith("merge-input-choice-"):
-            self._sync_merge_input_choices(event.checkbox)
-            self._sync_merge_input_details()
 
     async def on_input_changed(self, event: Input.Changed) -> None:
         if event.input.id == "membank-output-count":
             await self._refresh_membank_output_rows()
+
+    def on_select_changed(self, event: Select.Changed) -> None:
+        if event.select.id == "merge-branch-selector":
+            self._sync_merge_input_details()
 
     async def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "save-node-config":
@@ -767,7 +768,7 @@ class NodeConfigScreen(ModalScreen):
     def _compose_merge_inputs(self, config: Dict[str, Any]):
         options = merge_input_options(self.workflow_map, self.node_id)
         if not options:
-            yield Static("Connect Branch End nodes to this merge to close branches.", classes="form-description")
+            yield Static("No open branches are available to close.", classes="form-description")
             yield Label("Branch Output Name", classes="form-label nav-section")
             yield CommandInput(
                 value=str(config.get("branch_output_name") or ""),
@@ -782,26 +783,17 @@ class NodeConfigScreen(ModalScreen):
             )
             return
         selected_branch_id = str(config.get("selected_branch_id") or "").strip()
-        selected_branch_end = str(config.get("selected_branch_end_id") or "").strip()
         selected_port = str(config.get("selected_input_port") or "").strip()
-        if not selected_branch_id and selected_branch_end:
-            selected_branch_id = selected_branch_end
-        if not selected_branch_id and not selected_port:
-            selected_branch_id = f"{options[0]['branch_id']}:{options[0]['branch_port']}"
-        for option in options:
-            option_branch_id = f"{option['branch_id']}:{option['branch_port']}"
-            yield Static(option["description"], classes="form-description merge-branch-description")
-            yield Checkbox(
-                "Select this branch output",
-                value=(
-                    option_branch_id == selected_branch_id
-                    or (
-                        not selected_branch_id
-                        and option["port"] == selected_port
-                    )
-                ),
-                id=option["id"],
-            )
+        selected_value = self._selected_merge_option_value(
+            options,
+            selected_branch_id,
+            selected_port,
+        )
+        yield Select(
+            [(option["description"], self._merge_option_value(option)) for option in options],
+            value=selected_value,
+            id="merge-branch-selector",
+        )
         yield Static("", id="merge-selected-output-details", classes="form-description merge-branch-output-details")
         yield Label("Branch Output Name", classes="form-label nav-section")
         yield CommandInput(
@@ -816,22 +808,34 @@ class NodeConfigScreen(ModalScreen):
             placeholder="Output description",
         )
 
-    def _sync_merge_input_choices(self, changed: Checkbox) -> None:
-        if not changed.value:
-            return
-        for checkbox in self.query(Checkbox):
-            checkbox_id = str(checkbox.id or "")
-            if checkbox_id.startswith("merge-input-choice-") and checkbox is not changed:
-                checkbox.value = False
+    def _selected_merge_option_value(
+        self,
+        options: list[Dict[str, str]],
+        selected_branch_id: str,
+        selected_port: str,
+    ) -> str:
+        if selected_branch_id:
+            for option in options:
+                if self._merge_option_value(option) == selected_branch_id:
+                    return selected_branch_id
+        if selected_port:
+            for option in options:
+                if option["port"] == selected_port:
+                    return self._merge_option_value(option)
+        return self._merge_option_value(options[0])
+
+    def _merge_option_value(self, option: Dict[str, str]) -> str:
+        return f"{option['branch_id']}:{option['branch_port']}"
 
     def _sync_merge_input_details(self) -> None:
         detail_query = self.query("#merge-selected-output-details")
         if not detail_query:
             return
         detail = detail_query.first()
+        selector_query = self.query("#merge-branch-selector")
+        selected_value = selector_query.first().value if selector_query else ""
         for option in merge_input_options(self.workflow_map, self.node_id):
-            checkbox_query = self.query(f"#{option['id']}")
-            if checkbox_query and checkbox_query.first().value:
+            if self._merge_option_value(option) == selected_value:
                 detail.update(
                     "\n".join(
                         [
@@ -992,11 +996,14 @@ class NodeConfigScreen(ModalScreen):
         if self.node_data.get("type") != "merge_node":
             return {}
         options = merge_input_options(self.workflow_map, self.node_id)
+        selected_value = ""
+        selector_query = self.query("#merge-branch-selector")
+        if selector_query:
+            selected_value = str(selector_query.first().value or "")
         for option in options:
-            checkbox_query = self.query(f"#{option['id']}")
-            if checkbox_query and checkbox_query.first().value:
+            if self._merge_option_value(option) == selected_value:
                 return {
-                    "selected_branch_id": f"{option['branch_id']}:{option['branch_port']}",
+                    "selected_branch_id": selected_value,
                     "selected_input_port": option["port"],
                     "branch_output_name": self._text_widget_value("#merge-output-name")
                     if self.query("#merge-output-name")
