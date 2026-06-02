@@ -1099,6 +1099,8 @@ async def _test_merge_node_waits_and_forwards_selected_input():
     slow = wm.add_node("sleep_node")
     left = wm.add_node("echo_node")
     right = wm.add_node("echo_node")
+    left_end = wm.add_node("branch_end_node")
+    right_end = wm.add_node("branch_end_node")
     merge = wm.add_node("merge_node")
     after = wm.add_node("logger_node")
     end = wm.add_node("end_node")
@@ -1107,15 +1109,17 @@ async def _test_merge_node_waits_and_forwards_selected_input():
     wm.update_node_config(slow, {"duration": 0.05})
     wm.update_node_config(left, {"label": "left"})
     wm.update_node_config(right, {"label": "right"})
-    wm.update_node_config(merge, {"selected_input_port": "path_a", "timeout_seconds": 1.0})
+    wm.update_node_config(merge, {"selected_input_port": "path_a"})
     wm.update_node_config(after, {"label": "merged", "include_input": True})
 
     wm.connect(start, "default", branch, "input")
     wm.connect(branch, "path_a", slow, "input")
     wm.connect(slow, "default", left, "input")
-    wm.connect(left, "default", merge, "path_a")
+    wm.connect(left, "default", left_end, "input")
+    wm.connect(left_end, "default", merge, "path_a")
     wm.connect(branch, "path_b", right, "input")
-    wm.connect(right, "default", merge, "path_b")
+    wm.connect(right, "default", right_end, "input")
+    wm.connect(right_end, "default", merge, "path_b")
     wm.connect(merge, "default", after, "input")
     wm.connect(after, "default", end, "input")
 
@@ -1147,6 +1151,8 @@ async def _test_merge_config_uses_single_selected_input_checkbox():
     branch = wm.add_node("branch_node")
     left = wm.add_node("logger_node")
     right = wm.add_node("logger_node")
+    left_end = wm.add_node("branch_end_node")
+    right_end = wm.add_node("branch_end_node")
     merge = wm.add_node("merge_node")
     wm.update_node_config(
         branch,
@@ -1167,17 +1173,29 @@ async def _test_merge_config_uses_single_selected_input_checkbox():
     wm.connect(start, "default", branch, "input")
     wm.connect(branch, "path_a", left, "input")
     wm.connect(branch, "path_b", right, "input")
-    wm.connect(left, "default", merge, "path_a")
-    wm.connect(right, "default", merge, "path_b")
-    wm.update_node_config(merge, {"selected_input_port": "path_b"})
+    wm.connect(left, "default", left_end, "input")
+    wm.connect(right, "default", right_end, "input")
+    wm.connect(left_end, "default", merge, "path_a")
+    wm.connect(right_end, "default", merge, "path_b")
+    wm.update_node_config(
+        merge,
+        {
+            "selected_branch_end_id": right_end,
+            "selected_input_port": "path_b",
+            "branch_output_name": "chosen_branch",
+            "branch_output_description": "Chosen branch output",
+        },
+    )
     node_data = wm.get_node_data(merge)
 
     options = merge_input_options(wm, merge)
     assert [option["port"] for option in options] == ["path_a", "path_b"]
     assert options[0]["branch_label"] == "Approve Path"
+    assert options[0]["branch_end_id"] == left_end
     assert options[0]["output_name"] == "approved_text"
     assert options[0]["output_description"] == "Approved output"
     assert options[1]["branch_label"] == "Review Path"
+    assert options[1]["branch_end_id"] == right_end
 
     class ConfigApp(App):
         def compose(self) -> ComposeResult:
@@ -1188,22 +1206,31 @@ async def _test_merge_config_uses_single_selected_input_checkbox():
         await pilot.pause(0.03)
         first = app.query_one("#merge-input-choice-0", Checkbox)
         second = app.query_one("#merge-input-choice-1", Checkbox)
-        first_details = app.query_one("#merge-input-choice-0-details")
-        second_details = app.query_one("#merge-input-choice-1-details")
+        details = app.query_one("#merge-selected-output-details")
+        output_name = app.query_one("#merge-output-name")
+        output_desc = app.query_one("#merge-output-description")
+        assert not app.query("#show-previous-output")
+        assert not app.query("#membank-reads")
+        assert not app.query("#membank-writes")
+        assert not app.query("#field-timeout_seconds")
         assert first.value is False
         assert second.value is True
-        assert first_details.display is False
-        assert second_details.display is True
+        assert details.display is True
         assert options[1]["output_description"] == "Review output"
+        assert output_name.value == "chosen_branch"
+        assert output_desc.value == "Chosen branch output"
 
         first.value = True
         await pilot.pause()
         assert first.value is True
         assert second.value is False
-        assert first_details.display is True
-        assert second_details.display is False
         screen = app.query_one(NodeConfigScreen)
-        assert screen._merge_config_values() == {"selected_input_port": "path_a"}
+        assert screen._merge_config_values() == {
+            "selected_branch_end_id": left_end,
+            "selected_input_port": "path_a",
+            "branch_output_name": "chosen_branch",
+            "branch_output_description": "Chosen branch output",
+        }
 
     print("test_merge_config_uses_single_selected_input_checkbox PASSED")
 

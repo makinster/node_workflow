@@ -2,15 +2,17 @@
 
 ## 2026-06-01 — Phase 9 Merge Node and Branch Barrier
 
+- Added `BranchEndNode` as a no-config utility marker. Merge config lists only
+  branches that close through connected Branch End nodes.
 - Added `MergeNode` as a registered flow node. It waits for sibling branch
   arrivals and emits one selected input through its `default` output.
 - Added a MasterState counter-style lineage fallback: branch groups track pending
   branch ids, arrivals at merge, and branch terminations. Nested branch spawns
   inherit the same group.
-- Merge config derives a branch-close list from current incoming connections.
-  Each displayed branch description has a checkbox underneath it. The selected
-  branch shows the last upstream node plus output name and description, and v1
-  enforces one selected checkbox saved as `selected_input_port`.
+- Merge config now uses a custom minimal layout: branch selector, selected
+  branch output details, and fields for `branch_output_name` /
+  `branch_output_description`. It removes previous-output preview, memory-bank
+  sections, and timeout from the Merge modal.
 - Non-selected branch arrivals terminate at the merge after the barrier releases;
   only the branch carrying the selected input continues downstream.
 - Restored dynamic memory-bank output rows in node config and fixed command-mode

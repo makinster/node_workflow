@@ -2,6 +2,7 @@
 
 # ── Existing nodes ────────────────────────────────────────────────────────────
 from .branch_node import BranchNode
+from .branch_end_node import BranchEndNode
 from .chat_completion_node import ChatCompletionNode
 from .concat_node import ConcatNode
 from .conditional_node import ConditionalNode
@@ -39,6 +40,7 @@ ALL_NODE_CLASSES = [
     StartNode,
     EndNode,
     BranchNode,
+    BranchEndNode,
     ConditionalNode,
     MergeNode,
     WaitUntilNode,

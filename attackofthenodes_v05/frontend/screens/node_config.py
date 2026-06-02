@@ -117,16 +117,19 @@ def wait_target_options(workflow_map, current_node_id: str) -> list[tuple[str, s
 
 
 def merge_input_options(workflow_map, current_node_id: str) -> list[Dict[str, str]]:
-    """Return merge branch-close options derived from incoming connections."""
+    """Return merge branch-close options from connected Branch End nodes."""
     node = workflow_map.get_node_data(current_node_id) or {}
     options: list[Dict[str, str]] = []
     for index, conn in enumerate(node.get("connections", {}).get("inputs", [])):
         source_id = conn.get("source_node_id", "?")
         source_node = workflow_map.get_node_data(source_id) or {}
-        source_name = source_node.get("alias") or source_node.get("type") or source_id
+        if source_node.get("type") != "branch_end_node":
+            continue
+        branch_end_name = source_node.get("alias") or "Branch End"
         source_port = conn.get("source_port", "default")
         target_port = conn.get("target_port", "input")
-        output = _source_output_details(source_node, str(source_port))
+        upstream = _branch_end_upstream(workflow_map, str(source_id))
+        output = _source_output_details(upstream["node"], upstream["port"])
         branch_label = _upstream_branch_label(
             workflow_map,
             str(source_id),
@@ -137,15 +140,38 @@ def merge_input_options(workflow_map, current_node_id: str) -> list[Dict[str, st
             {
                 "id": f"merge-input-choice-{index}",
                 "port": str(target_port),
+                "branch_end_id": str(source_id),
                 "branch_label": branch_label,
-                "last_node": f"{source_name} ({source_id})",
+                "branch_end": f"{branch_end_name} ({source_id})",
+                "last_node": upstream["label"],
                 "source_port": str(source_port),
-                "description": f"{branch_label} closes at merge input {target_port}",
+                "description": f"{branch_label} closes at Branch End ({source_id})",
                 "output_name": output["name"],
                 "output_description": output["description"],
             }
         )
     return options
+
+
+def _branch_end_upstream(workflow_map, branch_end_id: str) -> Dict[str, Any]:
+    branch_end = workflow_map.get_node_data(branch_end_id) or {}
+    inputs = branch_end.get("connections", {}).get("inputs", [])
+    if not inputs:
+        return {
+            "node": {},
+            "port": "default",
+            "label": "No upstream node",
+        }
+    conn = inputs[0]
+    source_id = conn.get("source_node_id", "?")
+    source_node = workflow_map.get_node_data(source_id) or {}
+    source_name = source_node.get("alias") or source_node.get("type") or source_id
+    source_port = str(conn.get("source_port", "default"))
+    return {
+        "node": source_node,
+        "port": source_port,
+        "label": f"{source_name} ({source_id})",
+    }
 
 
 def _source_output_details(source_node: Dict[str, Any], source_port: str) -> Dict[str, str]:
@@ -261,50 +287,75 @@ class NodeConfigScreen(ModalScreen):
             yield Label(f"Edit Node: {self.node_data.get('alias') or self.node_id}", classes="modal-title")
             yield Static("w = up, s = down    e = edit/select    esc = cancel/close", classes="modal-help")
             with VerticalScroll(id="node-config-scroll"):
-                yield Label("Alias", classes="form-label nav-section")
-                yield CommandInput(value=self.node_data.get("alias", ""), id="alias-input")
-                yield Static(self._format_metadata(metadata), id="node-config-summary")
-                pass_through_note = self._pass_through_note(metadata)
-                if pass_through_note:
-                    yield Static(pass_through_note, classes="form-description pass-through-note")
-                yield Label("Previous Node Output", classes="form-label nav-section")
-                yield Checkbox(
-                    "Show previous node output",
-                    value=False,
-                    id="show-previous-output",
-                )
-                yield Static("", id="previous-output-preview", classes="form-description")
-                yield Label("Memory Bank Inputs", classes="form-label nav-section")
-                yield from self._compose_membank_inputs(config)
-                if self.node_data.get("type") == "wait_until_node":
-                    yield Label("Wait Targets", classes="form-label nav-section")
-                    yield from self._compose_wait_targets(config)
                 if self.node_data.get("type") == "merge_node":
-                    yield Label("Merge Output Input", classes="form-label nav-section")
+                    yield Label("Branches To Close", classes="form-label nav-section")
                     yield from self._compose_merge_inputs(config)
-                yield form
-                yield Label("Connections", classes="form-label nav-section")
-                yield Static("Connection editing lives in the editor path tools.", classes="form-description")
-                yield Static(self._format_connections(), id="connection-summary")
-                if self._supports_membank_outputs(metadata):
-                    yield Label("Memory Bank Outputs", classes="form-label nav-section")
-                    yield from self._compose_membank_outputs(config)
+                elif self.node_data.get("type") == "branch_end_node":
+                    yield Static(
+                        "Branch End has no configuration.",
+                        classes="form-description",
+                    )
+                else:
+                    yield Label("Alias", classes="form-label nav-section")
+                    yield CommandInput(value=self.node_data.get("alias", ""), id="alias-input")
+                    yield Static(self._format_metadata(metadata), id="node-config-summary")
+                    yield from self._compose_standard_config_body(
+                        metadata,
+                        config,
+                        form,
+                    )
             with Horizontal(classes="button-row"):
                 yield Button("Save", id="save-node-config", variant="primary")
                 yield Button("Cancel", id="cancel-node-config", variant="default")
 
+    def _compose_standard_config_body(
+        self,
+        metadata: Optional[Dict[str, Any]],
+        config: Dict[str, Any],
+        form,
+    ):
+        pass_through_note = self._pass_through_note(metadata)
+        if pass_through_note:
+            yield Static(pass_through_note, classes="form-description pass-through-note")
+        yield Label("Previous Node Output", classes="form-label nav-section")
+        yield Checkbox(
+            "Show previous node output",
+            value=False,
+            id="show-previous-output",
+        )
+        yield Static("", id="previous-output-preview", classes="form-description")
+        yield Label("Memory Bank Inputs", classes="form-label nav-section")
+        yield from self._compose_membank_inputs(config)
+        if self.node_data.get("type") == "wait_until_node":
+            yield Label("Wait Targets", classes="form-label nav-section")
+            yield from self._compose_wait_targets(config)
+        yield form
+        yield Label("Connections", classes="form-label nav-section")
+        yield Static("Connection editing lives in the editor path tools.", classes="form-description")
+        yield Static(self._format_connections(), id="connection-summary")
+        if self._supports_membank_outputs(metadata):
+            yield Label("Memory Bank Outputs", classes="form-label nav-section")
+            yield from self._compose_membank_outputs(config)
+
     def on_mount(self) -> None:
         self.query_one("#node-config-scroll").can_focus = False
-        self.app.set_focus(self.query_one("#alias-input", CommandInput))
+        self._sync_merge_input_details()
+        if self.query("#alias-input"):
+            self.app.set_focus(self.query_one("#alias-input", CommandInput))
+        else:
+            focusable = self._keyboard_focus_widgets()
+            if focusable:
+                self.app.set_focus(focusable[0])
         self._sync_membank_output_controls()
         self._sync_previous_output_preview()
-        self.call_after_refresh(
-            lambda: self.app.set_focus(self.query_one("#alias-input", CommandInput))
-        )
-        self.set_timer(
-            0.01,
-            lambda: self.app.set_focus(self.query_one("#alias-input", CommandInput)),
-        )
+        if self.query("#alias-input"):
+            self.call_after_refresh(
+                lambda: self.app.set_focus(self.query_one("#alias-input", CommandInput))
+            )
+            self.set_timer(
+                0.01,
+                lambda: self.app.set_focus(self.query_one("#alias-input", CommandInput)),
+            )
 
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
         focused = self.app.focused
@@ -333,7 +384,8 @@ class NodeConfigScreen(ModalScreen):
             self.action_cancel()
 
     def action_save(self) -> None:
-        alias = self.query_one("#alias-input", Input).value
+        alias_query = self.query("#alias-input")
+        alias = alias_query.first().value if alias_query else self.node_data.get("alias", "")
         config = self._get_form_values() if self._get_form_values else {}
         config.update(self._membank_config_values())
         config.update(self._wait_config_values())
@@ -613,32 +665,52 @@ class NodeConfigScreen(ModalScreen):
             yield Static("No non-downstream wait targets are available.", classes="form-description")
 
     def _compose_merge_inputs(self, config: Dict[str, Any]):
-        selected = str(config.get("selected_input_port") or "").strip()
         options = merge_input_options(self.workflow_map, self.node_id)
         if not options:
-            yield Static("No branch inputs are connected to this merge yet.", classes="form-description")
+            yield Static("Connect Branch End nodes to this merge to close branches.", classes="form-description")
+            yield Label("Branch Output Name", classes="form-label nav-section")
+            yield CommandInput(
+                value=str(config.get("branch_output_name") or ""),
+                id="merge-output-name",
+                placeholder="Output name",
+            )
+            yield Label("Branch Output Description", classes="form-label nav-section")
+            yield CommandInput(
+                value=str(config.get("branch_output_description") or ""),
+                id="merge-output-description",
+                placeholder="Output description",
+            )
             return
-        if not selected:
-            selected = options[0]["port"]
+        selected_branch_end = str(config.get("selected_branch_end_id") or "").strip()
+        selected_port = str(config.get("selected_input_port") or "").strip()
+        if not selected_branch_end and not selected_port:
+            selected_branch_end = options[0]["branch_end_id"]
         for option in options:
             yield Static(option["description"], classes="form-description merge-branch-description")
             yield Checkbox(
                 "Select this branch output",
-                value=option["port"] == selected,
+                value=(
+                    option["branch_end_id"] == selected_branch_end
+                    or (
+                        not selected_branch_end
+                        and option["port"] == selected_port
+                    )
+                ),
                 id=option["id"],
             )
-            detail = (
-                f"Last node: {option['last_node']}\n"
-                f"Output: {option['output_name']}\n"
-                f"Output Description: {option['output_description']}"
-            )
-            detail_widget = Static(
-                detail,
-                id=f"{option['id']}-details",
-                classes="form-description merge-branch-output-details",
-            )
-            detail_widget.display = option["port"] == selected
-            yield detail_widget
+        yield Static("", id="merge-selected-output-details", classes="form-description merge-branch-output-details")
+        yield Label("Branch Output Name", classes="form-label nav-section")
+        yield CommandInput(
+            value=str(config.get("branch_output_name") or ""),
+            id="merge-output-name",
+            placeholder="Output name",
+        )
+        yield Label("Branch Output Description", classes="form-label nav-section")
+        yield CommandInput(
+            value=str(config.get("branch_output_description") or ""),
+            id="merge-output-description",
+            placeholder="Output description",
+        )
 
     def _sync_merge_input_choices(self, changed: Checkbox) -> None:
         if not changed.value:
@@ -649,17 +721,36 @@ class NodeConfigScreen(ModalScreen):
                 checkbox.value = False
 
     def _sync_merge_input_details(self) -> None:
+        detail_query = self.query("#merge-selected-output-details")
+        if not detail_query:
+            return
+        detail = detail_query.first()
         for option in merge_input_options(self.workflow_map, self.node_id):
             checkbox_query = self.query(f"#{option['id']}")
-            detail_query = self.query(f"#{option['id']}-details")
-            if checkbox_query and detail_query:
-                detail_query.first().display = bool(checkbox_query.first().value)
+            if checkbox_query and checkbox_query.first().value:
+                detail.update(
+                    "\n".join(
+                        [
+                            f"Selected branch: {option['branch_label']}",
+                            f"Branch end: {option['branch_end']}",
+                            f"Last node: {option['last_node']}",
+                            f"Output: {option['output_name']}",
+                            f"Output Description: {option['output_description']}",
+                        ]
+                    )
+                )
+                detail.display = True
+                return
+        detail.update("No branch selected.")
+        detail.display = True
 
     def _membank_config_values(self) -> Dict[str, Any]:
         values: Dict[str, Any] = {"membank_outputs": [], "membank_inputs": []}
 
         writes_query = self.query("#membank-writes")
         if not writes_query:
+            if not self.query("#membank-reads"):
+                return values
             reads_enabled = self.query_one("#membank-reads", Checkbox).value
             if reads_enabled:
                 selection_lists = self.query("#membank-inputs")
@@ -800,8 +891,26 @@ class NodeConfigScreen(ModalScreen):
         for option in options:
             checkbox_query = self.query(f"#{option['id']}")
             if checkbox_query and checkbox_query.first().value:
-                return {"selected_input_port": option["port"]}
-        return {"selected_input_port": ""}
+                return {
+                    "selected_branch_end_id": option["branch_end_id"],
+                    "selected_input_port": option["port"],
+                    "branch_output_name": self._text_widget_value("#merge-output-name")
+                    if self.query("#merge-output-name")
+                    else "",
+                    "branch_output_description": self._text_widget_value("#merge-output-description")
+                    if self.query("#merge-output-description")
+                    else "",
+                }
+        return {
+            "selected_branch_end_id": "",
+            "selected_input_port": "",
+            "branch_output_name": self._text_widget_value("#merge-output-name")
+            if self.query("#merge-output-name")
+            else "",
+            "branch_output_description": self._text_widget_value("#merge-output-description")
+            if self.query("#merge-output-description")
+            else "",
+        }
 
     def _node_label(self, node_id: str, node: Dict[str, Any]) -> str:
         name = node.get("alias") or node.get("type") or node_id
