@@ -105,6 +105,8 @@ All keyboard-first modals should follow the same rules:
   surrounding modal.
 - Selection lists toggle the highlighted item.
 - Focus changes scroll the target into view.
+- Command navigation stops only on actionable controls. Read-only labels,
+  summaries, and section text are not focus targets.
 
 Shared helpers should live in `frontend/widgets/`, not in individual screens.
 
@@ -166,7 +168,9 @@ text fields now retain focus while active arrow-key editing is in progress.
 Generated `Select` dropdowns now share command-mode overlay handling for
 `W`/`S`, arrows, `E`/Enter, and dismiss keys. `NodeConfigScreen` also treats an
 expanded select as an active child surface, so cancel/back closes the dropdown
-before closing the config modal.
+before closing the config modal. Node config keyboard focus now excludes
+read-only `Label`/`Static` rows so `W`/`S` movement keeps a real focused widget
+and `E` always activates the visible control.
 
 Tasks:
 

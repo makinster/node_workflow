@@ -620,15 +620,9 @@ class NodeConfigScreen(ModalScreen):
                 pass
             self._nav_widget = None
 
-        interactive = (CommandInput, CommandTextArea, Checkbox, SelectionList, Select, Button)
-        if isinstance(target, interactive):
-            if isinstance(target, (CommandInput, CommandTextArea)):
-                target.end_edit()
-            self.app.set_focus(target)
-        else:
-            self._nav_widget = target
-            target.add_class("nav-highlight")
-            self.app.set_focus(None)
+        if isinstance(target, (CommandInput, CommandTextArea)):
+            target.end_edit()
+        self.app.set_focus(target)
         try:
             self.query_one("#node-config-scroll").scroll_to_widget(target, animate=False)
         except Exception:
@@ -658,12 +652,6 @@ class NodeConfigScreen(ModalScreen):
             if not self._ancestor_visible(widget):
                 continue
             if isinstance(widget, interactive):
-                result.append(widget)
-            elif isinstance(widget, Label) and "nav-section" in widget.classes:
-                result.append(widget)
-            elif isinstance(widget, Static) and widget.id in {
-                "node-config-summary", "connection-summary"
-            }:
                 result.append(widget)
         return result
 

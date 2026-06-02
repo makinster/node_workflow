@@ -30,6 +30,15 @@
   the command contract for `Ctrl+Q`/cancel while a dropdown is open.
 - Regression coverage now includes W/S, arrows, E commit, dropdown cancel, and
   Save-button activation via E.
+- Second follow-up found the remaining real-user path: command navigation could
+  stop on read-only `Label`/`Static` rows such as the node summary. Those rows
+  set `app.focused` to `None`, so later `W`/`S`/`E` bindings could stop reaching
+  the intended control. `NodeConfigScreen._keyboard_focus_widgets()` now returns
+  only actionable controls.
+- The strengthened branch config regression starts at the alias field, uses
+  `S` to reach the condition select, opens it with `E`, changes the value to
+  `path_a_only` with dropdown navigation, then reaches Save by keyboard and
+  saves with `E`.
 
 Verification:
 

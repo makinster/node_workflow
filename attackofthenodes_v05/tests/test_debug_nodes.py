@@ -1303,6 +1303,7 @@ async def _test_node_config_select_activates_from_keyboard():
     wm.create_new("branch_select_keyboard")
     branch = wm.add_node("branch_node")
     node_data = wm.get_node_data(branch)
+    node_data["config"]["condition"] = "string_match"
 
     class ConfigApp(App):
         def compose(self) -> ComposeResult:
@@ -1312,9 +1313,15 @@ async def _test_node_config_select_activates_from_keyboard():
     async with app.run_test() as pilot:
         await pilot.pause(0.03)
         condition = app.query_one("#field-condition", Select)
-        app.set_focus(condition)
         screen = app.query_one(NodeConfigScreen)
-        screen.action_activate_focused()
+        assert getattr(app.focused, "id", None) == "alias-input"
+        await pilot.press("s")
+        assert getattr(app.focused, "id", None) == "show-previous-output"
+        await pilot.press("s")
+        assert getattr(app.focused, "id", None) == "membank-reads"
+        await pilot.press("s")
+        assert app.focused is condition
+        await pilot.press("e")
         await pilot.pause()
         assert condition.expanded is True
         overlay = select_overlay(condition)
@@ -1337,18 +1344,25 @@ async def _test_node_config_select_activates_from_keyboard():
         overlay = select_overlay(condition)
         assert overlay.highlighted == 0
         await pilot.press("down")
+        assert overlay.highlighted == 1
+        await pilot.press("down")
+        assert overlay.highlighted == 2
         await pilot.press("e")
         await pilot.pause()
-        assert condition.value == "always_branch"
+        assert condition.value == "path_a_only"
 
         save_button = app.query_one("#save-node-config", Button)
         saved_results = []
         screen.dismiss = saved_results.append
-        app.set_focus(save_button)
+        for _ in range(20):
+            if app.focused is save_button:
+                break
+            await pilot.press("s")
+        assert app.focused is save_button
         await pilot.press("e")
         await pilot.pause()
         assert saved_results
-        assert saved_results[-1]["config"]["condition"] == "always_branch"
+        assert saved_results[-1]["config"]["condition"] == "path_a_only"
 
     print("test_node_config_select_activates_from_keyboard PASSED")
 
