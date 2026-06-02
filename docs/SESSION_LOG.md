@@ -8,12 +8,18 @@
 - The plan defines the audit thesis, current frontend surfaces, standardization
   targets, phased work from inventory through alert/viewer/help cleanup, and an
   initial screen matrix.
+- Completed the initial FA-0 source audit pass. The matrix now classifies each
+  current screen/widget by type, helper usage, known risks, and next
+  standardization action.
+- Prioritized the first cleanup sequence: shared command modal migration,
+  selector standardization, alert helper, viewer surfaces, then schema
+  expansion.
 - Linked the new plan from `MASTER_BUILD_PLAN.md`, `PROJECT_BACKLOG.md`, and
   `AGENT_HANDOFF.md`.
 
 Verification:
 
-- Docs-only pass; no code tests run.
+- Docs/source-audit pass; no code tests run.
 
 ## 2026-06-02 — Frontend Standardization Review
 

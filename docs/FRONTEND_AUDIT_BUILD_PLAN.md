@@ -293,28 +293,51 @@ Done when:
 
 ## 5. Audit Screen Matrix
 
-Fill this table during Phase FA-0.
+**FA-0 audit status:** initial source audit completed 2026-06-02 from direct
+inspection of `frontend/screens/`, `frontend/widgets/`, `frontend/app.py`, and
+mounted tests in `tests/test_debug_nodes.py`.
 
 | Screen / Widget | Type | Current Helpers | Known Risks | Next Action |
 |---|---|---|---|---|
-| `app.py` | root app | App-level `check_action` | direct `notify`, many workflow callbacks | Alert helper audit |
-| `editor.py` | main screen | `NodeList`, priority bindings | branch path visibility, tombstone/merge visual states | Cursor model audit |
-| `execution.py` | main screen | `RichLog`, `NodeList` | long output, run stop semantics | Viewer audit |
-| `node_config.py` | command modal/topology adapters | `CommandInput`, `CommandTextArea`, `command_navigation`, `form_generator` | largest surface, dynamic sections | Reference implementation |
-| `node_selector.py` | list selector | `CommandInput` | duplicated selector nav | Migrate to selector helper |
-| `branch_selector.py` | list selector | `ListView` | different key grammar from node selector | Migrate to selector helper |
-| `workflow_library.py` | list selector + path prompts | `CommandInput` | direct nav/copy, path prompt duplicate logic | Selector + command helper |
-| `settings.py` | command modal | `CommandInput` | duplicate command nav | Migrate to command helper |
-| `user_input.py` | command modal | `CommandInput` | duplicate edit blocking | Migrate to command helper |
-| `memory_viewer.py` | read-only viewer | `Static` | long values, scrollability | Viewer audit |
-| `output_viewer.py` | read-only/filter viewer | `Select`, `Static` | blank select defaults, long output | Viewer audit |
-| `error_details.py` | read-only/action viewer | `Static`, `Button` | structured error actions | Viewer audit |
-| `form_generator.py` | schema renderer | command widgets | schema key coverage | Schema expansion |
-| `command_navigation.py` | command helper | select/list/text activation | private Textual overlay access | Centralize tests |
+| `app.py` | root app | App-level `check_action` blocks text-edit `"back"` | 20+ direct `notify` calls; workflow callbacks mix persistence, confirmation, and copy | FA-5 alert helper; later split action adapters |
+| `editor.py` | main workflow screen | `NodeList`; priority bindings for editor actions; derived branch labels | many direct `notify` calls; cursor/nav model remains local; branch path display only shows one branch at a time | Phase 13 cursor audit, FA-5 alert helper |
+| `execution.py` | main workflow screen/viewer | `RichLog`; `NodeList`; modal launch actions | direct `notify`; long output mostly safe via `RichLog`, but branch/memory summary still `Static` | FA-6 viewer audit |
+| `node_config.py` | command modal + topology adapters | `CommandInput`, `CommandTextArea`, `command_navigation`, `form_generator`, `VerticalScroll` with `can_focus=False` | largest mixed surface; dynamic sections and merge topology logic still local; reference behavior not yet reusable enough | FA-1 reference extraction, FA-4 dynamic sections |
+| `node_selector.py` | list selector with filter | `CommandInput`; custom list focus methods | selector nav duplicated; `check_action` local; filter/list grammar is not shared with branch/workflow selectors | FA-2 selector helper |
+| `branch_selector.py` | list selector | `ListView`; simple arrow/enter bindings | different key grammar/help text than node selector; no shared selector helper; no command-mode `E` semantics | FA-2 selector helper |
+| `workflow_library.py` | list selector + path prompt | `ListView`; `CommandInput` in `PathPromptScreen` | selector actions are ad hoc; path prompt duplicates command edit blocking; no shared alert copy | FA-2 + FA-1 + FA-5 |
+| `settings.py` | command modal | `CommandInput`; local focus list | duplicates `check_action`, activation, movement, and scroll-visible behavior already solved in command helper | FA-1 command modal migration |
+| `user_input.py` | command modal | `CommandInput`; local edit blocking | duplicates command activation/edit blocking; cancel semantics are sensitive because it can stop runs | FA-1 migration with focused regression |
+| `confirm.py` | confirmation modal | simple `Y/N/Esc` bindings | likely okay; should become standard destructive-action confirm component | FA-5 copy/severity audit |
+| `memory_viewer.py` | read-only viewer | `DataTable` | stronger than initial plan assumed; still needs long-value smoke and keyboard close consistency | FA-6 viewer audit |
+| `output_viewer.py` | read-only/filter viewer | `Select`; `Static` | uses raw `Select` outside `form_generator`; long output is plain `Static`; branch filter may inherit blank-select/default issues | FA-6 viewer audit, possibly command select helper |
+| `error_details.py` | read-only/action viewer | `Static`; `Button` | structured validation cards are still plain text/static; jump/action affordances need consistency | FA-6 viewer/action audit |
+| `help.py` | read-only modal | `Static` | help can drift from actual key grammar; should be generated/checked against command contract eventually | FA-7 help alignment |
+| `form_generator.py` | schema renderer | `CommandInput`, `CommandTextArea`, `Select`, `SelectionList`, tabs | schema key coverage is thin; multiselect selected defaults need audit; optional blank/select behavior not schema-driven yet | FA-3 schema expansion |
+| `command_navigation.py` | command helper | select/list/text/button activation | intentionally centralizes private Textual overlay access; not yet used by simple modals/selectors | FA-1 migration and tests |
+| `command_input.py` | command text widgets | command-before-edit input/textarea | repeated `_run_screen_action` logic; App-level blocking still required for priority bindings | FA-1 helper consolidation |
+
+## 6. FA-0 Prioritized Findings
+
+1. **Command modal duplication is the highest-leverage cleanup.**
+   `SettingsScreen`, `UserInputScreen`, and `PathPromptScreen` each repeat a
+   smaller version of `NodeConfigScreen` behavior. Migrate them before adding
+   more config-heavy nodes.
+2. **Selector behavior should be standardized next.** `NodeSelectorScreen`,
+   `BranchSelectorScreen`, and `WorkflowLibraryScreen` are all list selectors
+   with different key grammar, focus expectations, and help copy.
+3. **Notifications need a wrapper.** Direct `notify` calls are concentrated in
+   `app.py`, `editor.py`, and `execution.py`; this is a bounded FA-5 pass.
+4. **Viewer surfaces are mixed but not all bad.** `memory_viewer.py` already uses
+   `DataTable`, `execution.py` uses `RichLog`, but `output_viewer.py` and
+   `error_details.py` still rely heavily on `Static`.
+5. **Node UI standardization is mostly in place but needs schema expansion.**
+   `form_generator.py` is the right path for ordinary nodes; upcoming work
+   should add generic schema keys and tests rather than special screens.
 
 ---
 
-## 6. Verification Baseline
+## 7. Verification Baseline
 
 Run from `attackofthenodes_v05/`:
 
