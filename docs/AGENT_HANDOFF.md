@@ -11,9 +11,9 @@ obsolete. Backend services remain UI-agnostic; frontend behavior lives under
 
 Use `docs/MASTER_BUILD_PLAN.md` as the comprehensive source of truth. It merges
 the active dependency-ordered phase plan, the Textual TUI state, the working
-rules, and the current architecture model. Phase 0 memory leak fixes are
-complete. The next unfinished phase after this handoff is Phase 6 unless
-`docs/SESSION_LOG.md` says otherwise.
+rules, and the current architecture model. Phases 0 through 8 plus the Phase 5.5
+keyboard/config hardening pass are complete. The next unfinished implementation
+phase is Phase 9 unless `docs/SESSION_LOG.md` says otherwise.
 
 Completed from the master plan:
 
@@ -24,8 +24,9 @@ Completed from the master plan:
 - Phase 3: membank output/input config sections and structure-derived registry.
 - Phase 4: insert-after-highlight editor behavior and no-cascade tombstone
   deletion.
-- Phase 5: grouped schema fields render as tabs when there is more than one
-  group; simple configs stay flat.
+- Phase 5: grouped schema fields render as tabs when more than one group exists;
+  simple configs stay flat.
+- Phase 5.5: keyboard navigation hardening and config modal UX (see below).
 - Phase 6: node breakpoints pause globally before execution and resume through
   the existing pause path.
 - Phase 7: per-node execution timings publish live, render in the TUI, and
@@ -33,16 +34,24 @@ Completed from the master plan:
 - Phase 8: completion registry and `WaitUntilNode` support cross-branch
   gating with downstream target filtering in config.
 
-Recent usability patch:
+Recent usability patch (Phase 5.5 — keyboard nav hardening):
 
-- Node config modals use text-field-safe bindings only: `Esc`, `Ctrl+S`,
-  `Ctrl+Enter`, and buttons.
-- Memory-bank reads render above core node settings; memory-bank writes render
-  at the bottom.
-- Branch nodes have configurable `path_a_label` and `path_b_label` display
-  names.
-- Node selector filtered lists highlight the first item when tabbing into the
-  list.
+- `Ctrl+Q`/`Esc` inside a text field exits edit mode instead of closing the
+  modal. `AttackOfTheNodesApp.check_action` blocks `"back"` while editing.
+- `#node-config-scroll` has `can_focus = False` to prevent focus stealing on
+  click.
+- Memory-bank outputs are count-driven declarations. Each row renders a compact
+  `Output Description:` field plus a bounded multiline `Output:` field for long
+  values.
+- Nav section headers use `nav-section` CSS class; `_nav_widget` tracks the
+  highlighted non-interactive stop; `.nav-highlight` makes it visible.
+- `.generated-form { height: auto; }` — critical CSS fix; `Vertical` collapses
+  to zero height inside `VerticalScroll` without this.
+- Branch/router nodes generate label fields from `output_ports` and hide
+  memory-bank output controls; editor branch rows use the configured labels
+  instead of raw port ids.
+- `_ancestor_visible` filters `display=False` containers from nav list.
+- `scroll_to_widget` called directly on scroll container for reliable scrolling.
 
 Recent docs pass:
 
@@ -53,14 +62,29 @@ Recent docs pass:
 
 Latest phase:
 
-- Phase 8 completion registry plus wait-until node is complete. The next
-  unfinished implementation phase is Phase 9 merge dynamic list plus lineage
-  barrier.
+- Phase 8 (completion registry + wait-until node) is complete.
+- Phase 5.5 (keyboard nav hardening) is complete.
+- The next unfinished implementation phase is Phase 9 merge dynamic list plus
+  lineage barrier.
 
-Latest UX patch:
+Planned future phases (see Section 6 of MASTER_BUILD_PLAN.md for full specs):
 
-- Node config modals now scroll and memory-bank output rows are dynamic: checking
-  writes and changing the count immediately adds/removes editable output rows.
+- Phase 13: Cursor model foundation — app-owned CursorState, WASD/arrow movement,
+  no silent keypresses, [NAV]/[EDIT] status indicator.
+- Phase 14: Key binding remap — final grammar (E/I/X/+/F/Ctrl+X), retires A and
+  L/O standalone bindings.
+- Phase 15: Editor rework — Quick View right panel, human-readable-name-first,
+  editable branch names, top-bar/bottom-bar split.
+- Phase 16: File modal + node config tabs — consolidated File modal, fixed
+  CORE/PARAMETERS/ADVANCED/CONNECTIONS tabs, tabbed settings with API keys.
+- Phase 17: Node visual identity — per-category colors, per-type glyphs,
+  size-by-category.
+- Phase 18: Acceleration + help rewrite — hold-to-accelerate, context-organized
+  help, regression sweep for nav stops.
+- Phase 19: Nested workflows (built-in) — SubworkflowNode spawning a child
+  supervisor, reusing Phase 9 lineage barrier.
+- Phase 20: Nested workflows (user-created) — dynamic subworkflow registry,
+  publish-workflow-as-node, export dependency policy.
 
 ## Read First
 

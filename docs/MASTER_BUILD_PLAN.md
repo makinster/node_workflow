@@ -1,6 +1,6 @@
 # AttackOfTheNodes Comprehensive Build Plan
 
-**Last updated:** 2026-05-31
+**Last updated:** 2026-06-01
 **Project root:** `attackofthenodes_v05/`
 **Runtime:** Python 3.14, Textual 8.2.7, asyncio, JSON persistence
 **Current branch context:** Textual TUI spinoff; tkinter frontend is obsolete.
@@ -158,6 +158,7 @@ Append a short entry to `docs/SESSION_LOG.md` for every phase or notable patch.
 | 4 | Delete + insert nodes | Done (`51f9a74`) |
 | 4.5 | Config modal and selector usability | Done (`0d53c04`) |
 | 5 | Config tabs | Done |
+| 5.5 | Keyboard nav hardening + config modal UX | Done |
 | 6 | Breakpoints | Done |
 | 7 | Per-node execution timing | Done |
 | 8 | Completion registry + wait-until node | Done |
@@ -165,6 +166,14 @@ Append a short entry to `docs/SESSION_LOG.md` for every phase or notable patch.
 | 10 | Documentation modernization | Open, docs-only project |
 | 11 | Real AI node execution | Deferred |
 | 12 | Packaging and release hardening | Deferred |
+| 13 | Cursor model foundation | Planned |
+| 14 | Key binding remap | Planned |
+| 15 | Editor rework | Planned |
+| 16 | File modal + node config tabs | Planned |
+| 17 | Node visual identity | Planned |
+| 18 | Acceleration + help rewrite | Planned |
+| 19 | Nested workflows: built-in subworkflow node | Planned |
+| 20 | Nested workflows: user-created subworkflows | Planned |
 
 Sequencing:
 
@@ -242,9 +251,11 @@ Example config:
 
 - Node config modals put memory-bank reads at the top and writes at the bottom.
 - Core node settings render between reads and connections.
-- Text-heavy config windows no longer use `Q`, `E`, `W/S`, or `A/D` bindings.
-- Branch nodes have `path_a_label` and `path_b_label`; editor display uses those
-  labels instead of raw port ids.
+- Text-heavy config windows avoid single-letter quit/save. `W`/`S` navigate,
+  `E` activates the highlighted field for typing, and `Esc` exits edit mode or
+  closes/cancels when already in navigation mode.
+- Branch/router nodes generate `<port>_label` fields from `output_ports`; editor
+  display uses those labels instead of raw port ids.
 - Node selector highlights the top filtered result when tabbing into the list.
 - Arrow keys move the active highlight cleanly.
 - Variable write nodes can pass input through to output by default.
@@ -261,6 +272,33 @@ Example config:
   older falsey blank value.
 - Tests cover pure grouping behavior plus mounted Textual grouped and
   single-group forms.
+
+### Phase 5.5 — Keyboard Navigation Hardening and Config Modal UX
+
+- `Ctrl+Q` now exits text-field edit mode instead of closing the whole app.
+  `AttackOfTheNodesApp.check_action` blocks the App-level `"back"` action when a
+  `CommandInput` or `CommandTextArea` is in edit mode.
+- `#node-config-scroll` (`VerticalScroll`) has `can_focus = False` so clicking
+  labels inside the scrollable area does not steal keyboard focus.
+- Memory-bank outputs are count-driven declarations. Each declaration renders a
+  compact `Output Description:` `CommandInput` plus a bounded multiline `Output:`
+  `CommandTextArea` so long values wrap safely without breaking the modal.
+- Branch/router nodes hide memory-bank output controls because their outputs are
+  graph branches, not value declarations.
+- Navigation section headers have a dedicated `nav-section` CSS class. When
+  keyboard navigation lands on a non-interactive header it gets the
+  `nav-highlight` CSS class (blue highlight + scroll). The `_nav_widget`
+  instance variable tracks which non-interactive widget is currently highlighted.
+- `.generated-form { height: auto; }` and `.generated-form-page { height: auto; }`
+  added to `styles.tcss`. This is the critical fix: `Vertical` defaults to
+  `height: 1fr` which collapses to zero inside `VerticalScroll`.
+- `_schema_with_generated_branch_labels` generates label fields from node
+  `output_ports` so future router ports such as `path_c` work without custom UI
+  code.
+- `_ancestor_visible(widget)` helper filters out widgets inside `display=False`
+  containers from the keyboard nav list.
+- `scroll_to_widget` called directly on `#node-config-scroll` instead of
+  `widget.scroll_visible()` for reliable nested-widget scrolling.
 
 ### Phase 6 — Breakpoints
 
@@ -410,6 +448,200 @@ Done when:
 
 ---
 
+### Phase 13 — Cursor Model Foundation
+
+**Files:** `frontend/app.py`, `frontend/widgets/` (new cursor mixin),
+`frontend/styles.tcss`, all screens incrementally.
+**Depends on:** none (foundational).
+
+Replace Tab-focus traversal with an app-owned `CursorState`. The navigable set
+contains only interactive widgets — static text, labels, and containers are
+skipped, which is the direct fix for the silent no-move keypresses seen in
+Phase 5.5. WASD is primary movement, arrows as backup, E to edit, Esc to exit
+edit mode. Status bar shows `[NAV]` / `[EDIT]` mode indicator.
+
+Generalizes the ad-hoc W/S, A/D, E handling already in `NodeConfigScreen`
+(Phase 5.5) into a shared base mixin every screen inherits. Nothing in the
+existing plan covers a navigation model; this is net-new and foundational.
+
+Done when:
+
+- The cursor lands only on editable widgets on every screen.
+- No silent keypresses: every WASD / arrow press either moves the cursor or is
+  visibly blocked.
+- WASD and arrows both work identically.
+
+---
+
+### Phase 14 — Key Binding Remap
+
+**Files:** `frontend/app.py`, `frontend/screens/editor.py`,
+`frontend/screens/execution.py`, `frontend/screens/help.py`.
+**Depends on:** Phase 13.
+
+Establishes the final key grammar: E to select/edit, I to insert-after, Shift+I
+to insert at branch bottom, X to delete, + to add, F to open File modal,
+Ctrl+X to stop run. Retires A as add; folds L / O into the File modal.
+
+Supersedes the binding table in `TUI_DESIGN.md`. Keeps Phase 4/4.5
+insert-rewiring behavior; only the keys change. No single-letter binding may
+collide with WASD navigation.
+
+Done when:
+
+- Bindings are consistent across all screens.
+- No single-letter collision with WASD.
+- Help screen reflects the final map.
+
+---
+
+### Phase 15 — Editor Rework
+
+**Files:** `frontend/screens/editor.py`, `frontend/widgets/node_card.py`,
+`frontend/widgets/node_list.py`, `frontend/widgets/status_bar.py`,
+`backend/workflow_map.py` (branch name field).
+**Depends on:** Phase 14.
+
+Top-bar split: File/Run/Validate actions on the right; editor-specific hints on
+the bottom bar. Right panel becomes a Quick View summary instead of full config
+(E opens full config modal). Human-readable-name-first display convention with
+generated id trailing in parentheses. Editable branch names default to "Branch N"
+and round-trip through save.
+
+Branch naming is a small backend touch: one optional string per branch edge in
+`workflow_map`, extending the Phase 4.5 `path_a_label` work into user-editable
+names.
+
+Done when:
+
+- Quick View shows an at-a-glance summary without opening config.
+- Branch names are editable and persist across save/load.
+- Node names display as "Alias (id)" everywhere.
+
+---
+
+### Phase 16 — File Modal + Node Config Tabs
+
+**Files:** new `frontend/screens/file_modal.py`, `frontend/screens/node_config.py`,
+`frontend/widgets/form_generator.py`, `frontend/screens/settings.py`.
+**Depends on:** Phases 14, 15.
+
+File modal consolidates New/Open/Save/Save As/Export/Import plus Run/Validate
+as secondary actions. Node config gains fixed tabs (CORE / PARAMETERS /
+ADVANCED / CONNECTIONS, optional LAST RUN via `RichLog`), Space to enable
+optional fields, and A/D to move between parallel fields. Settings becomes
+tabbed and absorbs an API-key manager.
+
+Builds directly on Phase 5 (group→tabs already exists in `form_generator`) and
+the existing connection editor. Consolidates the scattered standalone modals into
+tabbed containers.
+
+Done when:
+
+- File modal replaces the toolbar L/O bindings.
+- An LLM-style node with many optional fields stays fully keyboard-navigable.
+- Settings tabs include an API keys section.
+
+---
+
+### Phase 17 — Node Visual Identity
+
+**Files:** `frontend/widgets/node_card.py`, `frontend/styles.tcss`,
+`backend/node_category.py` (or a frontend symbol registry).
+**Depends on:** Phase 13.
+
+Per-category colors, a per-type glyph, size-by-category (utility compact,
+complex expanded), and category border weight. Variable row heights feed back
+into the Phase 13 cursor scroll math.
+
+Extends `node_card` and its existing validation color states. Category metadata
+already exists in the backend; no backend logic changes required. Independent
+of key-binding work — parallelizable with Phase 15.
+
+Done when:
+
+- Categories are distinguishable at a glance.
+- Utility nodes are visibly smaller than complex ones.
+- The Phase 13 cursor handles variable row heights correctly.
+
+---
+
+### Phase 18 — Acceleration + Help Rewrite
+
+**Files:** `frontend/widgets/` (cursor mixin), `frontend/styles.tcss`,
+`frontend/screens/help.py`, `frontend/screens/settings.py` (toggle).
+**Depends on:** Phases 13–17.
+
+Hold-to-accelerate ramp on repeated W/S navigation, a dim trail at peak speed,
+a settings toggle to disable acceleration, a full help screen rewrite organized
+by screen context, and a regression sweep for stray non-interactive nav stops.
+
+Finishing layer. The help screen becomes the source of truth for bindings,
+replacing the `TUI_DESIGN.md` key list.
+
+Done when:
+
+- Long lists scroll fast under hold-to-accelerate.
+- Help matches the shipped bindings exactly.
+- No uneditable nav stops remain anywhere in the app.
+
+---
+
+### Phase 19 — Nested Workflows: Built-in Subworkflow Node
+
+**Files:** new `backend/nodes/subworkflow_node.py`, `backend/supervisor.py`,
+`backend/master_state.py`, `backend/validator.py`, `backend/workflow_map.py`,
+`backend/save_manager.py`, `frontend/screens/node_config.py`.
+**Depends on:** Phase 9 (lineage/parent-child coordination). Soft dependency on
+Phase 16 for the config UI.
+
+A `SubworkflowNode` loads a workflow by id, spawns a child supervisor, and
+pauses the parent supervisor until the child completes — reusing the Phase 9
+lineage barrier rather than inventing a parallel wait path. Maps the embedded
+workflow's start/end nodes to the node's own I/O ports. Includes a cycle check
+and depth limit.
+
+Extends the existing branch-spawn + `max_branch_depth` machinery in
+`master_state` / `supervisor`. Net-new pieces: `is_subworkflow` flag, a
+`validate_and_prepare_subworkflow` path, and a node-facing way to spawn a child
+supervisor. Sits after Phase 9 because it reuses that coordination; it formalizes
+the "nested branch spawning" that `max_branch_depth` already anticipates.
+
+Done when:
+
+- A node runs an embedded workflow as a single step, visible as a nested
+  supervisor on the execution screen.
+- Cycles are rejected at validation time.
+- Depth stays within the configured bound.
+
+---
+
+### Phase 20 — Nested Workflows: User-Created Subworkflows
+
+**Files:** `backend/node_factory.py`, `backend/save_manager.py`,
+`backend/validator.py`, `backend/persistence.py`,
+`frontend/screens/node_selector.py`, `frontend/screens/workflow_library.py`.
+**Depends on:** Phase 19.
+
+A dynamic subworkflow registry alongside `NodeFactory`, a publish-workflow-as-node
+flow, an export/import dependency policy (bundle the dependency vs. require it
+present), and re-validation of parent workflows when an embedded subworkflow is
+edited.
+
+Extends `NodeFactory`'s static registry with a dynamic layer and `SaveManager`'s
+export/import. The dependency-bundling and version-drift decisions are the gating
+design calls and must be settled before any implementation begins.
+
+Done when:
+
+- A saved workflow appears as a node in the node selector.
+- Embedding works end to end.
+- The export dependency policy is implemented.
+- Editing a subworkflow flags its dependent parent workflows as needing
+  re-validation.
+
+---
+
 ## 7. UI Rules Captured from Testing
 
 - Config windows with multiple text fields should not use single-letter quit or
@@ -457,6 +689,39 @@ Done when:
   config semantics.
 - Ports are graph edges. Edit them in the editor, not in the general config
   form.
+- `Ctrl+Q` / `Esc` inside an active text field must exit editing mode first, not
+  dismiss the modal. Implement this at the App level with `check_action` blocking
+  `"back"` when a `CommandInput` or `CommandTextArea` is in edit mode. Screen-level
+  `check_action` alone is insufficient because returning `False` does not stop
+  propagation to App-level priority bindings.
+- `VerticalScroll` containers that act as scroll viewports should have
+  `can_focus = False`. If a scroll container is focusable, clicking labels or
+  statics inside it can grab focus silently, breaking keyboard navigation.
+- `Vertical` inside `VerticalScroll` defaults to `height: 1fr`, which collapses
+  to zero. Dynamic form containers must use `height: auto` in CSS. Apply
+  `.generated-form { height: auto; }` for any form-builder output container.
+- Keyboard navigation section headers should use a dedicated CSS class (e.g.
+  `nav-section`) distinct from per-field labels. Use this class to identify
+  nav-stop headers reliably without relying on position or parent hierarchy.
+- When navigation lands on a non-interactive widget (section header, static text),
+  apply a visible highlight CSS class instead of silently moving through it. Track
+  the highlighted non-interactive widget in an instance variable so nav knows its
+  current position.
+- Call `scroll_to_widget(target, animate=False)` directly on the scroll container
+  widget rather than `target.scroll_visible()`. The latter traverses ancestors
+  and fails when the target is nested inside a non-scrollable `Vertical` inside
+  a `VerticalScroll`.
+- When a schema has a multi-group structure that would normally trigger
+  `TabbedContent`, check whether tabs are appropriate for the context. Branch
+  and router labels are generated from `output_ports`; keep that generation
+  generic so future ports do not require custom frontend screens.
+- Filter hidden widgets from keyboard nav lists using an `_ancestor_visible`
+  check that walks the parent chain looking for `display=False` containers.
+  Widgets inside collapsed sections appear in the DOM query results but should
+  not receive keyboard focus or nav highlight.
+- Memory-bank output declarations for typical nodes are count-driven rows with
+  `Output Description:` and `Output:`. Keep descriptions compact; render outputs
+  as bounded multiline fields because real workflow values can be long.
 
 ---
 
@@ -486,7 +751,9 @@ python -m pytest tests/test_debug_nodes.py -v
 
 Expected latest known signal:
 
-- 33 tests passing after the keyboard-first text-field navigation patch.
+- 35 tests passing after the schema-driven config UX patch.
+  Test suite does not include Textual mounted-widget tests for nav highlight
+  behavior; verify those manually with the TUI smoke test.
 
 For docs-only changes:
 
@@ -504,6 +771,13 @@ Manual TUI smoke tests to keep revisiting:
 - Config text fields accept normal typing.
 - `Ctrl+R` starts a run; execution view updates live.
 - `Esc` from execution stops/returns cleanly.
+- Opening any node config: `W`/`S` navigates all fields; section headers highlight
+  in blue with no invisible stops between sections.
+- `E` activates a text field; `Ctrl+Q`/`Esc` exits editing without closing modal.
+- Checking "Writes to memory bank" and changing `Number of outputs` immediately
+  adds/removes visible `Output Description:` and `Output:` fields.
+- Branch/router node config hides memory-bank output controls and branch label
+  fields are accessible via keyboard nav.
 
 ---
 
