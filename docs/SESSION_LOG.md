@@ -1,5 +1,25 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-02 — Optional Auto-Edit Command Text Helper
+
+- Added `auto_edit_on_focus` to `CommandInput` and `CommandTextArea`. The
+  default remains `False`, so generated node config fields and settings fields
+  still require `E`/Enter before typing.
+- Added `focus_command_widget()` in `frontend/widgets/command_navigation.py`.
+  It centralizes focus, scroll-to-visible behavior, active editor cleanup, and
+  opt-in auto-edit for prompt-style text fields.
+- Opted in popup-style fields that should be ready to type: import/export path
+  prompts, user-input prompts, and the node selector filter when focus is moved
+  to it intentionally.
+- Strengthened mounted regressions for prompt typing, `Ctrl+Enter` submit,
+  node selector filter auto-edit, and the guard that node config fields remain
+  command-first.
+
+Verification:
+
+- `python -m compileall -q .`
+- Focused pytest selection for auto-edit/prompt/config command tests passed.
+
 ## 2026-06-02 — SelectOverlay Keyboard Navigation Fix
 
 - Resolved persistent dropdown navigation failures in branch node config and all

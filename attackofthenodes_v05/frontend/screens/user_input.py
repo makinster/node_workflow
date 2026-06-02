@@ -11,6 +11,7 @@ from textual.widgets import Button, Input, Label, Static
 from frontend.widgets.command_navigation import (
     activate_command_widget,
     blocks_command_action,
+    focus_command_widget,
 )
 from frontend.widgets.command_input import CommandInput
 
@@ -36,15 +37,15 @@ class UserInputScreen(ModalScreen):
         with Vertical(id="modal-card"):
             yield Label("User Input Needed", classes="modal-title")
             yield Static(f"Node: {self.node_id}\nBranch: {self.branch_id}")
-            yield Static("E edit  Ctrl+Enter submit  Esc cancels and stops the run.", classes="modal-help")
+            yield Static("Type response  Ctrl+Enter submit  Esc leaves edit/cancels", classes="modal-help")
             yield Label(self.prompt, classes="form-label")
-            yield CommandInput(id="user-input-value")
+            yield CommandInput(id="user-input-value", auto_edit_on_focus=True)
             with Horizontal(classes="button-row"):
                 yield Button("Submit", id="submit-user-input", variant="primary")
                 yield Button("Cancel", id="cancel-user-input", variant="default")
 
     def on_mount(self) -> None:
-        self.app.set_focus(self.query_one("#user-input-value", CommandInput))
+        focus_command_widget(self, self.query_one("#user-input-value", CommandInput))
 
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
         if blocks_command_action(self.app.focused, action):

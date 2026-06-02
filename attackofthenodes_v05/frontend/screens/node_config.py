@@ -14,6 +14,7 @@ from textual.widgets import Button, Checkbox, Input, Label, Select, SelectionLis
 from frontend.widgets.command_navigation import (
     activate_command_widget,
     blocks_command_action,
+    focus_command_widget,
     is_editing_text,
     move_select_overlay,
 )
@@ -620,13 +621,14 @@ class NodeConfigScreen(ModalScreen):
                 pass
             self._nav_widget = None
 
-        if isinstance(target, (CommandInput, CommandTextArea)):
-            target.end_edit()
-        self.app.set_focus(target)
         try:
-            self.query_one("#node-config-scroll").scroll_to_widget(target, animate=False)
+            focus_command_widget(
+                self,
+                target,
+                self.query_one("#node-config-scroll"),
+            )
         except Exception:
-            target.scroll_visible(animate=False)
+            focus_command_widget(self, target)
 
     def _keyboard_focus_widgets(self) -> list[Any]:
         interactive = (

@@ -96,6 +96,8 @@ All keyboard-first modals should follow the same rules:
 - `W`/`S` and arrows move focus/highlight in command mode.
 - `E`/Enter activates the focused control.
 - Text fields require activation before typing.
+- Prompt-style text fields may opt into `auto_edit_on_focus`; long forms and
+  generated config fields remain command-first by default.
 - While a text field is active, arrow/navigation keys stay inside the text
   widget and must not trigger modal focus movement.
 - `Esc` exits active typing mode before closing a modal.
@@ -170,7 +172,9 @@ Generated `Select` dropdowns now share command-mode overlay handling for
 expanded select as an active child surface, so cancel/back closes the dropdown
 before closing the config modal. Node config keyboard focus now excludes
 read-only `Label`/`Static` rows so `W`/`S` movement keeps a real focused widget
-and `E` always activates the visible control.
+and `E` always activates the visible control. `CommandInput` and
+`CommandTextArea` now support opt-in `auto_edit_on_focus`, routed through
+`focus_command_widget()`, for popup/filter fields that should be ready to type.
 
 Tasks:
 
@@ -388,8 +392,8 @@ mounted tests in `tests/test_debug_nodes.py`.
 | `error_details.py` | read-only/action viewer | `Static`; `Button` | structured validation cards are still plain text/static; jump/action affordances need consistency | FA-6 viewer/action audit |
 | `help.py` | read-only modal | `Static` | help can drift from actual key grammar; should be generated/checked against command contract eventually | FA-7 help alignment |
 | `form_generator.py` | schema renderer | `CommandInput`, `CommandTextArea`, `Select`, `SelectionList`, tabs | schema key coverage is thin; multiselect selected defaults need audit; optional blank/select behavior not schema-driven yet | FA-3 schema expansion |
-| `command_navigation.py` | command helper | select/list/text/button activation | intentionally centralizes private Textual overlay access; not yet used by simple modals/selectors | FA-1 migration and tests |
-| `command_input.py` | command text widgets | command-before-edit input/textarea | repeated `_run_screen_action` logic; App-level blocking still required for priority bindings | FA-1 helper consolidation |
+| `command_navigation.py` | command helper | select/list/text/button activation; opt-in auto-edit focus helper | intentionally centralizes private Textual overlay access; keep future command focus behavior here | FA-1 migration and tests |
+| `command_input.py` | command text widgets | command-before-edit input/textarea with opt-in auto-edit | repeated `_run_screen_action` logic; App-level blocking still required for priority bindings | FA-1 helper consolidation |
 
 ## 6. FA-0 Prioritized Findings
 

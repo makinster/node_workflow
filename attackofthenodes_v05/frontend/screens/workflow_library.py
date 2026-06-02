@@ -14,6 +14,7 @@ from backend.persistence import list_workflows
 from frontend.widgets.command_navigation import (
     activate_command_widget,
     blocks_command_action,
+    focus_command_widget,
 )
 from frontend.widgets.command_input import CommandInput
 from frontend.widgets.list_navigation import focus_list, move_list_highlight
@@ -169,14 +170,18 @@ class PathPromptScreen(ModalScreen):
     def compose(self) -> ComposeResult:
         with Vertical(id="modal-card", classes="path-prompt-modal"):
             yield Label(self.title_text, classes="modal-title")
-            yield CommandInput(value=self.default_path, id="path-input")
-            yield Static("E edit  Ctrl+Enter confirm  Esc cancel", classes="modal-help")
+            yield CommandInput(
+                value=self.default_path,
+                id="path-input",
+                auto_edit_on_focus=True,
+            )
+            yield Static("Type path  Ctrl+Enter confirm  Esc leaves edit/cancels", classes="modal-help")
             with Horizontal(classes="button-row"):
                 yield Button("Confirm", id="confirm-path", variant="primary")
                 yield Button("Cancel", id="cancel-path", variant="default")
 
     def on_mount(self) -> None:
-        self.app.set_focus(self.query_one("#path-input", CommandInput))
+        focus_command_widget(self, self.query_one("#path-input", CommandInput))
 
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
         if blocks_command_action(self.app.focused, action):

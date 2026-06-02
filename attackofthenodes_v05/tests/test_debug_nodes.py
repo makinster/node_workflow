@@ -1600,11 +1600,11 @@ def test_node_config_previous_output_preview_reads_transient_source():
     print("test_node_config_previous_output_preview_reads_transient_source PASSED")
 
 
-def test_node_selector_opens_on_list_and_activates_filter_with_e():
-    asyncio.run(_test_node_selector_opens_on_list_and_activates_filter_with_e())
+def test_node_selector_filter_auto_edits_when_focused():
+    asyncio.run(_test_node_selector_filter_auto_edits_when_focused())
 
 
-async def _test_node_selector_opens_on_list_and_activates_filter_with_e():
+async def _test_node_selector_filter_auto_edits_when_focused():
     from textual.app import App, ComposeResult
     from textual.widgets import ListView
 
@@ -1630,20 +1630,25 @@ async def _test_node_selector_opens_on_list_and_activates_filter_with_e():
 
         screen.action_cursor_up()
         assert app.focused is filter_input
-        assert filter_input.editing is False
-        assert filter_input.value == ""
-
-        screen.action_choose()
         assert filter_input.editing is True
+        assert filter_input.value == ""
 
         await pilot.press("s")
         assert filter_input.value == "s"
-        filter_input.end_edit()
+        await pilot.press("escape")
+        assert filter_input.editing is False
+        await pilot.press("tab")
+        assert app.focused is node_list
+        assert node_list.index == 0
+        screen.action_focus_filter()
+        assert app.focused is filter_input
+        assert filter_input.editing is True
+        await pilot.press("escape")
         screen.action_cursor_down()
         assert app.focused is node_list
         assert node_list.index == 0
 
-    print("test_node_selector_opens_on_list_and_activates_filter_with_e PASSED")
+    print("test_node_selector_filter_auto_edits_when_focused PASSED")
 
 
 def test_branch_selector_uses_shared_list_navigation():
@@ -1733,6 +1738,73 @@ async def _test_workflow_library_uses_shared_list_navigation():
         workflow_library_module.list_workflows = original_list_workflows
 
     print("test_workflow_library_uses_shared_list_navigation PASSED")
+
+
+def test_command_input_auto_edit_on_focus_is_opt_in():
+    asyncio.run(_test_command_input_auto_edit_on_focus_is_opt_in())
+
+
+async def _test_command_input_auto_edit_on_focus_is_opt_in():
+    from textual.app import App, ComposeResult
+    from textual.binding import Binding
+    from textual.containers import Vertical
+    from textual.screen import ModalScreen
+    from textual.widgets import Button
+
+    from frontend.widgets.command_input import CommandInput
+    from frontend.widgets.command_navigation import move_command_focus
+
+    class AutoEditScreen(ModalScreen):
+        BINDINGS = [
+            Binding("s", "cursor_down", "Down", priority=True),
+        ]
+
+        def compose(self) -> ComposeResult:
+            with Vertical():
+                yield CommandInput(id="manual-input")
+                yield CommandInput(id="auto-input", auto_edit_on_focus=True)
+                yield Button("Done", id="done-button")
+
+        def on_mount(self) -> None:
+            self.app.set_focus(self.query_one("#manual-input", CommandInput))
+
+        def action_cursor_down(self) -> None:
+            move_command_focus(self, 1, self._keyboard_focus_widgets())
+
+        def _keyboard_focus_widgets(self):
+            return [
+                self.query_one("#manual-input", CommandInput),
+                self.query_one("#auto-input", CommandInput),
+                self.query_one("#done-button", Button),
+            ]
+
+    class AutoEditApp(App):
+        def compose(self) -> ComposeResult:
+            yield AutoEditScreen()
+
+    app = AutoEditApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        manual_input = app.query_one("#manual-input", CommandInput)
+        auto_input = app.query_one("#auto-input", CommandInput)
+        done_button = app.query_one("#done-button", Button)
+
+        assert app.focused is manual_input
+        assert manual_input.editing is False
+        assert auto_input.editing is False
+
+        await pilot.press("s")
+        assert app.focused is auto_input
+        assert auto_input.editing is True
+        await pilot.press("x")
+        assert auto_input.value == "x"
+        await pilot.press("escape")
+        assert app.focused is auto_input
+        assert auto_input.editing is False
+        await pilot.press("s")
+        assert app.focused is done_button
+
+    print("test_command_input_auto_edit_on_focus_is_opt_in PASSED")
 
 
 def test_node_config_command_inputs_require_activation():
@@ -1866,10 +1938,16 @@ async def _test_prompt_modals_use_shared_command_activation():
         screen = path_app.query_one(PathPromptScreen)
         path_input = path_app.query_one("#path-input", CommandInput)
         assert path_app.focused is path_input
-        assert path_input.editing is False
-        screen.action_activate_focused()
         assert path_input.editing is True
+        path_input.value = ""
+        await pilot.press("a", "b", "c")
+        assert path_input.value == "abc"
         assert screen.check_action("cancel", ()) is False
+        submitted_paths = []
+        screen.dismiss = submitted_paths.append
+        await pilot.press("ctrl+enter")
+        await pilot.pause()
+        assert submitted_paths == ["abc"]
         await path_input._on_key(events.Key("escape", None))
         assert path_input.editing is False
 
@@ -1883,9 +1961,15 @@ async def _test_prompt_modals_use_shared_command_activation():
         screen = user_app.query_one(UserInputScreen)
         user_input = user_app.query_one("#user-input-value", CommandInput)
         assert user_app.focused is user_input
-        screen.action_activate_focused()
         assert user_input.editing is True
+        await pilot.press("o", "k")
+        assert user_input.value == "ok"
         assert screen.check_action("cancel", ()) is False
+        submitted_values = []
+        screen.dismiss = submitted_values.append
+        await pilot.press("ctrl+enter")
+        await pilot.pause()
+        assert submitted_values == [{"branch_id": "branch-1", "value": "ok"}]
 
     print("test_prompt_modals_use_shared_command_activation PASSED")
 
@@ -1936,9 +2020,10 @@ if __name__ == "__main__":
         test_node_config_dynamic_membank_output_rows,
         test_editor_hides_empty_start_until_first_node_added,
         test_node_config_previous_output_preview_reads_transient_source,
-        test_node_selector_opens_on_list_and_activates_filter_with_e,
+        test_node_selector_filter_auto_edits_when_focused,
         test_branch_selector_uses_shared_list_navigation,
         test_workflow_library_uses_shared_list_navigation,
+        test_command_input_auto_edit_on_focus_is_opt_in,
         test_node_config_command_inputs_require_activation,
         test_simple_command_modals_use_shared_navigation_helpers,
         test_prompt_modals_use_shared_command_activation,

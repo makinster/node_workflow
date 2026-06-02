@@ -21,9 +21,15 @@ EDITING_NAV_KEYS = {
 class CommandInput(Input):
     """Input that requires explicit activation before printable keys edit text."""
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(
+        self,
+        *args,
+        auto_edit_on_focus: bool = False,
+        **kwargs,
+    ) -> None:
         super().__init__(*args, **kwargs)
         self.editing = False
+        self.auto_edit_on_focus = auto_edit_on_focus
         self.add_class("command-input")
         self.styles.height = 3
         self.styles.width = "100%"
@@ -99,9 +105,15 @@ class CommandInput(Input):
 class CommandTextArea(TextArea):
     """Text area with the same command-before-edit behavior as CommandInput."""
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(
+        self,
+        *args,
+        auto_edit_on_focus: bool = False,
+        **kwargs,
+    ) -> None:
         super().__init__(*args, **kwargs)
         self.editing = False
+        self.auto_edit_on_focus = auto_edit_on_focus
         self.add_class("command-input")
 
     def begin_edit(self) -> None:

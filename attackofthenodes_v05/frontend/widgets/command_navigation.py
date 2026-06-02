@@ -124,9 +124,28 @@ def move_command_focus(
         current_index = 0 if direction > 0 else len(widgets) - 1
     next_index = max(0, min(len(widgets) - 1, current_index + direction))
     target = widgets[next_index]
+    focus_command_widget(screen, target, scroll_container)
+    return target
+
+
+def focus_command_widget(
+    screen: Any,
+    widget: Any,
+    scroll_container: Any | None = None,
+) -> Any:
+    """Focus a command widget and optionally begin editing text prompts."""
+    target = widget
+    active_text = getattr(screen, "_active_command_text_widget", None)
+    if active_text is not target and isinstance(active_text, (CommandInput, CommandTextArea)):
+        active_text.end_edit()
     if isinstance(target, (CommandInput, CommandTextArea)):
-        target.end_edit()
-    screen.app.set_focus(target)
+        if getattr(target, "auto_edit_on_focus", False):
+            target.begin_edit()
+        else:
+            target.end_edit()
+            screen.app.set_focus(target)
+    else:
+        screen.app.set_focus(target)
     if scroll_container is not None:
         scroll_container.scroll_to_widget(target, animate=False)
     else:

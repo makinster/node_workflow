@@ -11,6 +11,7 @@ from textual.screen import ModalScreen
 from textual.widgets import Button, Label, ListItem, ListView, Static
 
 from frontend.widgets.command_input import CommandInput
+from frontend.widgets.command_navigation import focus_command_widget
 from frontend.widgets.list_navigation import (
     ensure_list_highlight,
     focus_list,
@@ -44,7 +45,11 @@ class NodeSelectorScreen(ModalScreen):
     def compose(self) -> ComposeResult:
         with Vertical(id="modal-card"):
             yield Label("Add Node", classes="modal-title")
-            yield CommandInput(placeholder="Filter nodes", id="node-filter")
+            yield CommandInput(
+                placeholder="Filter nodes",
+                id="node-filter",
+                auto_edit_on_focus=True,
+            )
             yield ListView(id="node-type-list")
             yield Static("W/S navigate  E activate/add  / filter  ESC close", classes="modal-help")
             yield Button("Cancel", id="cancel-node-select", variant="default")
@@ -80,7 +85,7 @@ class NodeSelectorScreen(ModalScreen):
             self.dismiss(None)
 
     def action_focus_filter(self) -> None:
-        self.app.set_focus(self.query_one("#node-filter", CommandInput))
+        focus_command_widget(self, self.query_one("#node-filter", CommandInput))
 
     def action_focus_node_list(self) -> None:
         self._focus_node_list()
