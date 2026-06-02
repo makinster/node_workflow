@@ -12,7 +12,8 @@ the older architecture docs into one current-state reference.
 Older docs in this folder remain useful as history, but several still describe
 the Chrome-extension or tkinter eras. When documents conflict, prefer this file,
 then `docs/AGENT_HANDOFF.md`, then `docs/SESSION_LOG.md`, then
-`docs/TUI_DESIGN.md`.
+`docs/TUI_DESIGN.md`. For frontend-specific audit and standardization work, also
+read `docs/FRONTEND_AUDIT_BUILD_PLAN.md`.
 
 ---
 
@@ -117,6 +118,8 @@ Before coding:
 2. Read `docs/SESSION_LOG.md` for the latest completed phase.
 3. Read the phase-specific docs:
    - Frontend work: `docs/TUI_DESIGN.md`.
+   - Frontend audit/standardization work:
+     `docs/FRONTEND_AUDIT_BUILD_PLAN.md`.
    - Engine work: this file plus the relevant backend modules.
    - Docs modernization: `docs/PROJECT_BACKLOG.md`.
 

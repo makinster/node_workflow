@@ -114,6 +114,8 @@ Planned future phases (see Section 6 of MASTER_BUILD_PLAN.md for full specs):
 
 - `docs/MASTER_BUILD_PLAN.md` for current architecture, implementation order,
   contracts, and testing rules.
+- `docs/FRONTEND_AUDIT_BUILD_PLAN.md` before frontend audit or UI
+  standardization work.
 - `docs/SESSION_LOG.md` for completed phase notes.
 - `docs/TUI_DESIGN.md` for current Textual frontend conventions.
 - `docs/PROJECT_BACKLOG.md` for deferred cleanup work.

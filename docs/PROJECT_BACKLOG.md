@@ -27,7 +27,8 @@ Recommended cleanup:
 
 Current config and modal UX should converge on small shared helpers instead of
 per-screen key handling. `frontend/widgets/command_navigation.py` is the first
-step and currently supports `NodeConfigScreen`.
+step and currently supports `NodeConfigScreen`. Use
+`FRONTEND_AUDIT_BUILD_PLAN.md` as the implementation sequence for this work.
 
 Recommended cleanup:
 

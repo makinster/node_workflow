@@ -1,5 +1,20 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-02 — Frontend Audit Build Plan
+
+- Added `docs/FRONTEND_AUDIT_BUILD_PLAN.md` as the dedicated plan for auditing
+  the current Textual frontend and standardizing UI behavior as issues are
+  found.
+- The plan defines the audit thesis, current frontend surfaces, standardization
+  targets, phased work from inventory through alert/viewer/help cleanup, and an
+  initial screen matrix.
+- Linked the new plan from `MASTER_BUILD_PLAN.md`, `PROJECT_BACKLOG.md`, and
+  `AGENT_HANDOFF.md`.
+
+Verification:
+
+- Docs-only pass; no code tests run.
+
 ## 2026-06-02 — Frontend Standardization Review
 
 - Reviewed recent frontend bugs strategically. The shared pattern is not one
