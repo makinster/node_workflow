@@ -66,6 +66,10 @@ Recent docs pass:
 Latest phase:
 
 - Phase 9 (merge dynamic list + lineage barrier) is complete.
+- Merge config uses a multi-select branches-to-close list plus a carry-forward
+  dropdown. Merge output naming/description fields were intentionally removed.
+- Branch End is no-config; editor rows are red while open and green when wired
+  to a Merge node.
 - Phase 5.5 (keyboard nav hardening) is complete.
 - The next unfinished project phase is Phase 10 documentation modernization.
   For more implementation work, Phase 13 cursor model foundation is the next

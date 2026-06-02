@@ -10,14 +10,20 @@
 - Added a MasterState counter-style lineage fallback: branch groups track pending
   branch ids, arrivals at merge, and branch terminations. Nested branch spawns
   inherit the same group.
-- Merge config now uses a custom minimal layout: branch selector, selected
-  branch output details, and fields for `branch_output_name` /
-  `branch_output_description`. It removes previous-output preview, memory-bank
-  sections, and timeout from the Merge modal.
-- The branch selector is now a real dropdown populated from open workflow branch
-  paths, including paths not yet wired into the merge.
+- Merge config now uses a custom minimal layout: multi-select branches-to-close
+  list, carry-forward dropdown, and selected output details. It removes
+  previous-output preview, memory-bank sections, timeout, and merge output
+  name/description fields.
+- The branch selector is populated from open workflow branch paths, including
+  paths not yet wired into the merge. The carry-forward dropdown is populated
+  from the selected close-list branches and v1 still forwards one selected
+  input.
+- Branch End rows render red while open and green when their output is connected
+  to a Merge node. Opening Branch End config shows the connected merge/branch
+  status and no editable fields.
 - Branch-node dropdowns now open from keyboard activation (`E` / Enter) while
-  using command-mode navigation.
+  using command-mode navigation, and `w/s` or arrows move within expanded
+  dropdowns before returning to screen-level focus movement.
 - Non-selected branch arrivals terminate at the merge after the barrier releases;
   only the branch carrying the selected input continues downstream.
 - Restored dynamic memory-bank output rows in node config and fixed command-mode

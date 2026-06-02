@@ -9,6 +9,7 @@ from textual.binding import Binding
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.screen import ModalScreen
 from textual.widgets import Button, Checkbox, Input, Label, Select, SelectionList, Static, TabbedContent, TabPane, TextArea
+from textual.widgets._select import SelectOverlay
 
 from frontend.widgets.command_input import CommandInput, CommandTextArea
 from frontend.widgets.form_generator import WidgetGetter, build_form
@@ -367,7 +368,16 @@ class NodeConfigScreen(ModalScreen):
         if self.node_data.get("type") == "wait_until_node":
             excluded_config_keys.add("target_node_ids")
         if self.node_data.get("type") == "merge_node":
-            excluded_config_keys.add("selected_input_port")
+            excluded_config_keys.update(
+                {
+                    "branches_to_close",
+                    "carry_forward_branch_id",
+                    "selected_branch_id",
+                    "selected_input_port",
+                    "branch_output_name",
+                    "branch_output_description",
+                }
+            )
         schema = {
             key: value
             for key, value in schema.items()
@@ -390,7 +400,7 @@ class NodeConfigScreen(ModalScreen):
                     yield from self._compose_merge_inputs(config)
                 elif self.node_data.get("type") == "branch_end_node":
                     yield Static(
-                        "Branch End has no configuration.",
+                        self._branch_end_status_text(),
                         classes="form-description",
                     )
                 else:
@@ -473,7 +483,14 @@ class NodeConfigScreen(ModalScreen):
             await self._refresh_membank_output_rows()
 
     def on_select_changed(self, event: Select.Changed) -> None:
-        if event.select.id == "merge-branch-selector":
+        if event.select.id == "merge-carry-forward-selector":
+            self._sync_merge_input_details()
+
+    def on_selection_list_selected_changed(
+        self, event: SelectionList.SelectedChanged
+    ) -> None:
+        if event.selection_list.id == "merge-branches-to-close":
+            self._sync_merge_carry_forward_selector()
             self._sync_merge_input_details()
 
     async def on_button_pressed(self, event: Button.Pressed) -> None:
@@ -495,9 +512,23 @@ class NodeConfigScreen(ModalScreen):
         self.dismiss(None)
 
     def action_cursor_up(self) -> None:
+        focused = self.app.focused
+        if isinstance(focused, Select) and focused.expanded:
+            self._select_overlay(focused).action_cursor_up()
+            return
+        if isinstance(focused, SelectionList):
+            focused.action_cursor_up()
+            return
         self._move_keyboard_focus(-1)
 
     def action_cursor_down(self) -> None:
+        focused = self.app.focused
+        if isinstance(focused, Select) and focused.expanded:
+            self._select_overlay(focused).action_cursor_down()
+            return
+        if isinstance(focused, SelectionList):
+            focused.action_cursor_down()
+            return
         self._move_keyboard_focus(1)
 
     def action_activate_focused(self) -> None:
@@ -506,10 +537,18 @@ class NodeConfigScreen(ModalScreen):
             focused.begin_edit()
         elif isinstance(focused, Checkbox):
             focused.value = not focused.value
+        elif isinstance(focused, SelectionList):
+            focused.action_toggle()
         elif isinstance(focused, Select):
-            focused.action_show_overlay()
+            if focused.expanded:
+                self._select_overlay(focused).action_select()
+            else:
+                focused.action_show_overlay()
         elif isinstance(focused, Button):
             focused.press()
+
+    def _select_overlay(self, select: Select) -> SelectOverlay:
+        return select.query_one(SelectOverlay)
 
     def _move_keyboard_focus(self, direction: int) -> None:
         widgets = self._keyboard_focus_widgets()
@@ -769,86 +808,130 @@ class NodeConfigScreen(ModalScreen):
         options = merge_input_options(self.workflow_map, self.node_id)
         if not options:
             yield Static("No open branches are available to close.", classes="form-description")
-            yield Label("Branch Output Name", classes="form-label nav-section")
-            yield CommandInput(
-                value=str(config.get("branch_output_name") or ""),
-                id="merge-output-name",
-                placeholder="Output name",
-            )
-            yield Label("Branch Output Description", classes="form-label nav-section")
-            yield CommandInput(
-                value=str(config.get("branch_output_description") or ""),
-                id="merge-output-description",
-                placeholder="Output description",
-            )
             return
-        selected_branch_id = str(config.get("selected_branch_id") or "").strip()
-        selected_port = str(config.get("selected_input_port") or "").strip()
-        selected_value = self._selected_merge_option_value(
-            options,
-            selected_branch_id,
-            selected_port,
+        selected_values = self._selected_merge_close_values(options, config)
+        yield SelectionList(
+            *[
+                (
+                    option["description"],
+                    self._merge_option_value(option),
+                    self._merge_option_value(option) in selected_values,
+                )
+                for option in options
+            ],
+            id="merge-branches-to-close",
         )
+        yield Label("Carry Forward Output", classes="form-label nav-section")
+        carry_options = self._merge_carry_forward_options(options, selected_values)
+        carry_value = self._selected_merge_carry_value(carry_options, config)
         yield Select(
-            [(option["description"], self._merge_option_value(option)) for option in options],
-            value=selected_value,
-            id="merge-branch-selector",
+            carry_options or [("Select branches to close first", "")],
+            value=carry_value if carry_options else "",
+            id="merge-carry-forward-selector",
+            disabled=not bool(carry_options),
         )
         yield Static("", id="merge-selected-output-details", classes="form-description merge-branch-output-details")
-        yield Label("Branch Output Name", classes="form-label nav-section")
-        yield CommandInput(
-            value=str(config.get("branch_output_name") or ""),
-            id="merge-output-name",
-            placeholder="Output name",
-        )
-        yield Label("Branch Output Description", classes="form-label nav-section")
-        yield CommandInput(
-            value=str(config.get("branch_output_description") or ""),
-            id="merge-output-description",
-            placeholder="Output description",
-        )
 
-    def _selected_merge_option_value(
-        self,
-        options: list[Dict[str, str]],
-        selected_branch_id: str,
-        selected_port: str,
+    def _selected_merge_close_values(
+        self, options: list[Dict[str, str]], config: Dict[str, Any]
+    ) -> set[str]:
+        valid_values = {self._merge_option_value(option) for option in options}
+        configured = config.get("branches_to_close")
+        if isinstance(configured, list):
+            values = {str(value) for value in configured if str(value) in valid_values}
+            if values:
+                return values
+        legacy_branch = str(config.get("selected_branch_id") or "").strip()
+        if legacy_branch in valid_values:
+            return {legacy_branch}
+        legacy_port = str(config.get("selected_input_port") or "").strip()
+        if legacy_port:
+            for option in options:
+                if option["port"] == legacy_port:
+                    return {self._merge_option_value(option)}
+        return set(valid_values)
+
+    def _merge_carry_forward_options(
+        self, options: list[Dict[str, str]], selected_values: set[str]
+    ) -> list[tuple[str, str]]:
+        return [
+            (
+                f"{option['branch_label']} | Output: {option['output_name']}",
+                self._merge_option_value(option),
+            )
+            for option in options
+            if self._merge_option_value(option) in selected_values
+        ]
+
+    def _selected_merge_carry_value(
+        self, carry_options: list[tuple[str, str]], config: Dict[str, Any]
     ) -> str:
-        if selected_branch_id:
-            for option in options:
-                if self._merge_option_value(option) == selected_branch_id:
-                    return selected_branch_id
-        if selected_port:
-            for option in options:
-                if option["port"] == selected_port:
-                    return self._merge_option_value(option)
-        return self._merge_option_value(options[0])
+        valid_values = {value for _, value in carry_options}
+        for key in ("carry_forward_branch_id", "selected_branch_id"):
+            value = str(config.get(key) or "").strip()
+            if value in valid_values:
+                return value
+        if carry_options:
+            return carry_options[0][1]
+        return ""
 
     def _merge_option_value(self, option: Dict[str, str]) -> str:
         return f"{option['branch_id']}:{option['branch_port']}"
+
+    def _merge_option_by_value(self, value: str) -> Optional[Dict[str, str]]:
+        for option in merge_input_options(self.workflow_map, self.node_id):
+            if self._merge_option_value(option) == value:
+                return option
+        return None
+
+    def _selected_merge_close_values_from_widget(self) -> set[str]:
+        selection_query = self.query("#merge-branches-to-close")
+        if not selection_query:
+            return set()
+        return {str(value) for value in selection_query.first().selected}
+
+    def _sync_merge_carry_forward_selector(self) -> None:
+        selector_query = self.query("#merge-carry-forward-selector")
+        if not selector_query:
+            return
+        selector = selector_query.first()
+        options = merge_input_options(self.workflow_map, self.node_id)
+        selected_values = self._selected_merge_close_values_from_widget()
+        carry_options = self._merge_carry_forward_options(options, selected_values)
+        previous_value = str(selector.value or "")
+        selector.set_options(carry_options or [("Select branches to close first", "")])
+        selector.disabled = not bool(carry_options)
+        valid_values = {value for _, value in carry_options}
+        selector.value = (
+            previous_value
+            if previous_value in valid_values
+            else (carry_options[0][1] if carry_options else "")
+        )
 
     def _sync_merge_input_details(self) -> None:
         detail_query = self.query("#merge-selected-output-details")
         if not detail_query:
             return
         detail = detail_query.first()
-        selector_query = self.query("#merge-branch-selector")
+        selector_query = self.query("#merge-carry-forward-selector")
         selected_value = selector_query.first().value if selector_query else ""
-        for option in merge_input_options(self.workflow_map, self.node_id):
-            if self._merge_option_value(option) == selected_value:
-                detail.update(
-                    "\n".join(
-                        [
-                            f"Selected branch: {option['branch_label']}",
-                            f"Branch path: {option['branch_id']}.{option['branch_port']}",
-                            f"Last node: {option['last_node']}",
-                            f"Output: {option['output_name']}",
-                            f"Output Description: {option['output_description']}",
-                        ]
-                    )
+        selected_closures = self._selected_merge_close_values_from_widget()
+        option = self._merge_option_by_value(str(selected_value or ""))
+        if option is not None:
+            detail.update(
+                "\n".join(
+                    [
+                        f"Branches selected: {len(selected_closures)}",
+                        f"Carry forward: {option['branch_label']}",
+                        f"Branch path: {option['branch_id']}.{option['branch_port']}",
+                        f"Last node: {option['last_node']}",
+                        f"Output: {option['output_name']}",
+                        f"Output Description: {option['output_description']}",
+                    ]
                 )
-                detail.display = True
-                return
+            )
+            detail.display = True
+            return
         detail.update("No branch selected.")
         detail.display = True
 
@@ -996,32 +1079,49 @@ class NodeConfigScreen(ModalScreen):
         if self.node_data.get("type") != "merge_node":
             return {}
         options = merge_input_options(self.workflow_map, self.node_id)
-        selected_value = ""
-        selector_query = self.query("#merge-branch-selector")
+        branches_to_close = sorted(self._selected_merge_close_values_from_widget())
+        carry_value = ""
+        selector_query = self.query("#merge-carry-forward-selector")
         if selector_query:
-            selected_value = str(selector_query.first().value or "")
+            carry_value = str(selector_query.first().value or "")
         for option in options:
-            if self._merge_option_value(option) == selected_value:
+            if self._merge_option_value(option) == carry_value:
                 return {
-                    "selected_branch_id": selected_value,
+                    "branches_to_close": branches_to_close,
+                    "carry_forward_branch_id": carry_value,
+                    "selected_branch_id": carry_value,
                     "selected_input_port": option["port"],
-                    "branch_output_name": self._text_widget_value("#merge-output-name")
-                    if self.query("#merge-output-name")
-                    else "",
-                    "branch_output_description": self._text_widget_value("#merge-output-description")
-                    if self.query("#merge-output-description")
-                    else "",
                 }
         return {
+            "branches_to_close": branches_to_close,
+            "carry_forward_branch_id": "",
             "selected_branch_id": "",
             "selected_input_port": "",
-            "branch_output_name": self._text_widget_value("#merge-output-name")
-            if self.query("#merge-output-name")
-            else "",
-            "branch_output_description": self._text_widget_value("#merge-output-description")
-            if self.query("#merge-output-description")
-            else "",
         }
+
+    def _branch_end_status_text(self) -> str:
+        self._refresh_node_data()
+        outputs = self.node_data.get("connections", {}).get("outputs", [])
+        for conn in outputs:
+            target_id = str(conn.get("target_node_id") or "")
+            target_node = self.workflow_map.get_node_data(target_id) or {}
+            if target_node.get("type") != "merge_node":
+                continue
+            target_port = str(conn.get("target_port") or "default")
+            branch_label = _upstream_branch_label(
+                self.workflow_map,
+                self.node_id,
+                target_id,
+                target_port,
+            )
+            return "\n".join(
+                [
+                    "Branch End has no editable fields.",
+                    f"Connected merge: {self._node_label(target_id, target_node)}.{target_port}",
+                    f"Branch: {branch_label}",
+                ]
+            )
+        return "Branch End has no editable fields.\nStatus: open until connected to a Merge node."
 
     def _node_label(self, node_id: str, node: Dict[str, Any]) -> str:
         name = node.get("alias") or node.get("type") or node_id

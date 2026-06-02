@@ -1131,13 +1131,13 @@ async def _test_merge_node_waits_and_forwards_selected_input():
     print("test_merge_node_waits_and_forwards_selected_input PASSED")
 
 
-def test_merge_config_uses_single_selected_input_checkbox():
-    asyncio.run(_test_merge_config_uses_single_selected_input_checkbox())
+def test_merge_config_uses_multi_branch_selector_and_carry_forward_dropdown():
+    asyncio.run(_test_merge_config_uses_multi_branch_selector_and_carry_forward_dropdown())
 
 
-async def _test_merge_config_uses_single_selected_input_checkbox():
+async def _test_merge_config_uses_multi_branch_selector_and_carry_forward_dropdown():
     from textual.app import App, ComposeResult
-    from textual.widgets import Select
+    from textual.widgets import Select, SelectionList
 
     from frontend.screens.node_config import NodeConfigScreen, merge_input_options
 
@@ -1171,9 +1171,9 @@ async def _test_merge_config_uses_single_selected_input_checkbox():
         merge,
         {
             "selected_branch_id": f"{branch}:path_b",
+            "branches_to_close": [f"{branch}:path_a", f"{branch}:path_b"],
+            "carry_forward_branch_id": f"{branch}:path_b",
             "selected_input_port": "path_b",
-            "branch_output_name": "chosen_branch",
-            "branch_output_description": "Chosen branch output",
         },
     )
     node_data = wm.get_node_data(merge)
@@ -1196,35 +1196,36 @@ async def _test_merge_config_uses_single_selected_input_checkbox():
     app = ConfigApp()
     async with app.run_test() as pilot:
         await pilot.pause(0.03)
-        selector = app.query_one("#merge-branch-selector", Select)
+        branch_selector = app.query_one("#merge-branches-to-close", SelectionList)
+        carry_selector = app.query_one("#merge-carry-forward-selector", Select)
         details = app.query_one("#merge-selected-output-details")
-        output_name = app.query_one("#merge-output-name")
-        output_desc = app.query_one("#merge-output-description")
         assert not app.query("#show-previous-output")
         assert not app.query("#membank-reads")
         assert not app.query("#membank-writes")
         assert not app.query("#field-timeout_seconds")
-        assert selector.value == f"{branch}:path_b"
+        assert not app.query("#merge-output-name")
+        assert not app.query("#merge-output-description")
+        assert set(branch_selector.selected) == {f"{branch}:path_a", f"{branch}:path_b"}
+        assert carry_selector.value == f"{branch}:path_b"
         assert details.display is True
         assert options[1]["output_description"] == "Review output"
-        assert output_name.value == "chosen_branch"
-        assert output_desc.value == "Chosen branch output"
 
-        selector.value = f"{branch}:path_a"
+        branch_selector.deselect(f"{branch}:path_b")
         await pilot.pause()
         screen = app.query_one(NodeConfigScreen)
+        assert carry_selector.value == f"{branch}:path_a"
         assert screen._merge_config_values() == {
+            "branches_to_close": [f"{branch}:path_a"],
+            "carry_forward_branch_id": f"{branch}:path_a",
             "selected_branch_id": f"{branch}:path_a",
             "selected_input_port": "path_a",
-            "branch_output_name": "chosen_branch",
-            "branch_output_description": "Chosen branch output",
         }
-        app.set_focus(selector)
+        app.set_focus(carry_selector)
         screen.action_activate_focused()
         await pilot.pause()
-        assert selector.expanded is True
+        assert carry_selector.expanded is True
 
-    print("test_merge_config_uses_single_selected_input_checkbox PASSED")
+    print("test_merge_config_uses_multi_branch_selector_and_carry_forward_dropdown PASSED")
 
 
 def test_node_config_select_activates_from_keyboard():
@@ -1255,6 +1256,10 @@ async def _test_node_config_select_activates_from_keyboard():
         screen.action_activate_focused()
         await pilot.pause()
         assert condition.expanded is True
+        screen.action_cursor_down()
+        screen.action_activate_focused()
+        await pilot.pause()
+        assert condition.value != "string_match"
 
     print("test_node_config_select_activates_from_keyboard PASSED")
 
@@ -1506,7 +1511,7 @@ if __name__ == "__main__":
         test_wait_until_node_gates_cross_branch_completion,
         test_wait_target_options_exclude_downstream_nodes,
         test_merge_node_waits_and_forwards_selected_input,
-        test_merge_config_uses_single_selected_input_checkbox,
+        test_merge_config_uses_multi_branch_selector_and_carry_forward_dropdown,
         test_node_config_select_activates_from_keyboard,
         test_node_config_dynamic_membank_output_rows,
         test_editor_hides_empty_start_until_first_node_added,

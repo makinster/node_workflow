@@ -354,17 +354,21 @@ Example config:
 - Merge config derives the branch-close list from workflow structure on every
   config open. Open branch paths appear even before they are wired to the merge;
   paths ending at an output/end node or another merge are treated as closed. It
-  stores `selected_branch_id`, `selected_input_port`, `branch_output_name`, and
-  `branch_output_description`.
+  stores `branches_to_close`, `carry_forward_branch_id`, `selected_branch_id`,
+  and `selected_input_port`. The last two fields remain for backend compatibility
+  with the current single-forward runtime.
 - The merge config UI is custom and minimal: no previous-output preview, no
-  memory-bank inputs/outputs, and no timeout field. It renders a real branch
-  dropdown selector, selected branch output details, and fields for
-  naming/describing the branch output from the merge node. v1 enforces one
-  selected branch output.
+  memory-bank inputs/outputs, no timeout field, and no merge output
+  name/description fields. It renders a multi-select branches-to-close list, a
+  carry-forward dropdown populated from the selected branches, and selected
+  branch output details. v1 enforces one selected branch output.
+- Branch End is a no-config utility marker. It appears red while open and green
+  when connected to a Merge node; opening config shows the connected merge and
+  branch status only.
 - Future merge versions may add multi-output/combine behavior, but v1 forwards
   one selected branch input to the next node.
-- Tests cover slow/fast parallel branch merging and the single-checkbox config
-  behavior.
+- Tests cover slow/fast parallel branch merging, multi-close merge config, and
+  keyboard navigation inside branch config dropdowns.
 
 ### UX Patch — Dynamic Config Sections
 

@@ -39,6 +39,12 @@ class NodeCard(Static):
     def refresh_card(self) -> None:
         alias = self.node_data.get("alias") or self.node_data.get("type", "node")
         node_type = self.node_data.get("type", "unknown")
+        if node_type == "branch_end_node":
+            self.remove_class("branch-end-open", "branch-end-connected")
+            if self.node_data.get("_branch_end_connected_to_merge"):
+                self.add_class("branch-end-connected")
+            else:
+                self.add_class("branch-end-open")
         icon = STATUS_ICONS.get(self.status, STATUS_ICONS["idle"])
         breakpoint_marker = " ●" if self.node_data.get("breakpoint") else ""
         timing = f" ({self._format_timing(self.timing_seconds)})" if self.timing_seconds else ""

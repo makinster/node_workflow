@@ -46,6 +46,14 @@ Screen {
     height: 1;
 }
 
+.branch-end-open {
+    color: #ff5c5c;
+}
+
+.branch-end-connected {
+    color: #50c878;
+}
+
 .branch-select-card {
     height: 1;
     color: #ffa500;

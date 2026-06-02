@@ -532,6 +532,11 @@ class EditorScreen(Screen):
             if node is None:
                 break
             visited.add(current_node_id)
+            if node.get("type") == "branch_end_node":
+                node = dict(node)
+                node["_branch_end_connected_to_merge"] = (
+                    self._branch_end_connected_to_merge(node)
+                )
             rows.append({"kind": "node", "node_id": current_node_id, "node": node})
 
             metadata = self._metadata_for_type(node.get("type", ""))
@@ -584,6 +589,14 @@ class EditorScreen(Screen):
             if conn.get("source_port", "default") == source_port:
                 return conn
         return None
+
+    def _branch_end_connected_to_merge(self, node: Dict[str, Any]) -> bool:
+        for conn in node.get("connections", {}).get("outputs", []):
+            target_id = conn.get("target_node_id")
+            target_node = self.workflow_map.get_node_data(target_id) if target_id else None
+            if target_node and target_node.get("type") == "merge_node":
+                return True
+        return False
 
     def _row_still_visible(
         self, selected_row: Dict[str, Any], rows: list[Dict[str, Any]]
