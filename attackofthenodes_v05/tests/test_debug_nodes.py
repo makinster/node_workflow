@@ -1237,6 +1237,7 @@ async def _test_node_config_select_activates_from_keyboard():
     from textual.widgets import Select
 
     from frontend.screens.node_config import NodeConfigScreen
+    from frontend.widgets.command_navigation import select_overlay
 
     _, wm, _, _ = _make_services()
     wm.create_new("branch_select_keyboard")
@@ -1256,10 +1257,20 @@ async def _test_node_config_select_activates_from_keyboard():
         screen.action_activate_focused()
         await pilot.pause()
         assert condition.expanded is True
+        overlay = select_overlay(condition)
+        assert overlay.highlighted == 0
+        screen.action_cursor_down()
+        assert overlay.highlighted == 1
+        screen.action_cursor_up()
+        assert overlay.highlighted == 0
         screen.action_cursor_down()
         screen.action_activate_focused()
         await pilot.pause()
-        assert condition.value != "string_match"
+        assert condition.value == "always_branch"
+        screen.action_activate_focused()
+        await pilot.pause()
+        assert condition.expanded is True
+        assert select_overlay(condition).highlighted == 0
 
     print("test_node_config_select_activates_from_keyboard PASSED")
 

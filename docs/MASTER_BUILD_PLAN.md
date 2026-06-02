@@ -177,10 +177,13 @@ Append a short entry to `docs/SESSION_LOG.md` for every phase or notable patch.
 
 Sequencing:
 
-- Phase 9 depends on Phase 1 and should start by verifying master-state lineage
-  support.
+- Phase 9 is complete. Phase 13 is the next planned UI-heavy implementation
+  phase and is independent; it can start without Phase 10.
 - Phase 10 can happen any time, but it should not block engine/UI work unless
   stale docs are actively confusing the implementation.
+- Phase 14 depends on Phase 13. Phases 15 and 17 are parallelizable after 14.
+  Phase 16 depends on 14 and 15. Phase 18 depends on 13–17. Phases 19–20
+  depend on Phase 9 and each other.
 
 ---
 
@@ -299,6 +302,29 @@ Example config:
   containers from the keyboard nav list.
 - `scroll_to_widget` called directly on `#node-config-scroll` instead of
   `widget.scroll_visible()` for reliable nested-widget scrolling.
+- `frontend/widgets/command_navigation.py` owns command-mode activation for
+  generated/config widgets: text fields require `E` before editing, dropdowns
+  open with their first real option highlighted, `W`/`S` and arrows move inside
+  expanded dropdowns, and `E`/Enter commits the highlighted option.
+- Schema-generated `Select` fields use `allow_blank=False` unless a future
+  schema explicitly models blank/optional selection. This prevents the injected
+  "Select" row from stealing highlight/navigation.
+
+### Frontend Command UI Contract
+
+- Prefer schema-generated fields from backend node metadata. If a node needs
+  custom UI, first ask whether a field schema extension or frontend helper would
+  make it generic.
+- Text entry uses `CommandInput` / `CommandTextArea`: focus highlights the field,
+  `E` enters typing mode, `Esc` exits typing mode, and `W`/`S` remain navigation
+  in command mode.
+- Selects and selection lists use `command_navigation.py`; screens should not
+  duplicate private Textual overlay handling.
+- Screens with keyboard-only workflows must call `scroll_to_widget` or an
+  equivalent helper whenever focus moves to an off-screen widget.
+- Use `app.notify(...)` for now, but future work should wrap it in a single
+  frontend alert/toast helper so copy, severity, duration, and placement are
+  consistent.
 
 ### Phase 6 — Breakpoints
 
@@ -372,12 +398,16 @@ Example config:
 
 ### UX Patch — Dynamic Config Sections
 
-- Node config modals now use a scrollable body so longer config surfaces remain
-  reachable in small terminal windows.
-- Memory-bank output rows are dynamically mounted from the write checkbox and
-  output count, preserving typed values as the count changes.
-- The same pattern should be reused for future optional config sections that are
-  enabled by checkboxes or numeric counts.
+- Node config modals use a scrollable body (`#node-config-scroll` VerticalScroll)
+  so longer config surfaces remain reachable in small terminal windows.
+- Memory-bank output rows are count-driven: the "Number of outputs" counter
+  immediately adds/removes visible rows. Each row renders a compact
+  `Output Description:` `CommandInput` plus a bounded multiline `Output:`
+  `CommandTextArea` for long values.
+- Branch/router nodes suppress the memory-bank output section entirely because
+  their outputs are graph branches, not value declarations.
+- The count-driven pattern should be reused for future optional config sections
+  that are enabled by checkboxes or numeric counts.
 
 ---
 
@@ -752,7 +782,7 @@ python -m pytest tests/test_debug_nodes.py -v
 
 Expected latest known signal:
 
-- 35 tests passing after the schema-driven config UX patch.
+- 38 tests passing after Phase 9 merge/lineage barrier (cad1af4).
   Test suite does not include Textual mounted-widget tests for nav highlight
   behavior; verify those manually with the TUI smoke test.
 

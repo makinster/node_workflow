@@ -9,8 +9,12 @@ from textual.binding import Binding
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.screen import ModalScreen
 from textual.widgets import Button, Checkbox, Input, Label, Select, SelectionList, Static, TabbedContent, TabPane, TextArea
-from textual.widgets._select import SelectOverlay
 
+from frontend.widgets.command_navigation import (
+    activate_command_widget,
+    blocks_command_action,
+    move_select_overlay,
+)
 from frontend.widgets.command_input import CommandInput, CommandTextArea
 from frontend.widgets.form_generator import WidgetGetter, build_form
 
@@ -466,10 +470,8 @@ class NodeConfigScreen(ModalScreen):
             )
 
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
-        focused = self.app.focused
-        if isinstance(focused, (CommandInput, CommandTextArea)) and focused.editing:
-            if action in {"cursor_up", "cursor_down", "activate_focused", "cancel"}:
-                return False
+        if blocks_command_action(self.app.focused, action):
+            return False
         return True
 
     async def on_checkbox_changed(self, event: Checkbox.Changed) -> None:
@@ -514,7 +516,7 @@ class NodeConfigScreen(ModalScreen):
     def action_cursor_up(self) -> None:
         focused = self.app.focused
         if isinstance(focused, Select) and focused.expanded:
-            self._select_overlay(focused).action_cursor_up()
+            move_select_overlay(focused, -1)
             return
         if isinstance(focused, SelectionList):
             focused.action_cursor_up()
@@ -524,7 +526,7 @@ class NodeConfigScreen(ModalScreen):
     def action_cursor_down(self) -> None:
         focused = self.app.focused
         if isinstance(focused, Select) and focused.expanded:
-            self._select_overlay(focused).action_cursor_down()
+            move_select_overlay(focused, 1)
             return
         if isinstance(focused, SelectionList):
             focused.action_cursor_down()
@@ -532,23 +534,7 @@ class NodeConfigScreen(ModalScreen):
         self._move_keyboard_focus(1)
 
     def action_activate_focused(self) -> None:
-        focused = self.app.focused
-        if isinstance(focused, (CommandInput, CommandTextArea)):
-            focused.begin_edit()
-        elif isinstance(focused, Checkbox):
-            focused.value = not focused.value
-        elif isinstance(focused, SelectionList):
-            focused.action_toggle()
-        elif isinstance(focused, Select):
-            if focused.expanded:
-                self._select_overlay(focused).action_select()
-            else:
-                focused.action_show_overlay()
-        elif isinstance(focused, Button):
-            focused.press()
-
-    def _select_overlay(self, select: Select) -> SelectOverlay:
-        return select.query_one(SelectOverlay)
+        activate_command_widget(self.app.focused)
 
     def _move_keyboard_focus(self, direction: int) -> None:
         widgets = self._keyboard_focus_widgets()

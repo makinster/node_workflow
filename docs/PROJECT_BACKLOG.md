@@ -22,3 +22,21 @@ Recommended cleanup:
   standardization/debug-node files.
 - Keep historical tkinter roadmap material in `V05_BUILD_PLAN.md` clearly
   labeled as history, not current implementation guidance.
+
+## Later Project — Frontend Command UI Toolkit
+
+Current config and modal UX should converge on small shared helpers instead of
+per-screen key handling. `frontend/widgets/command_navigation.py` is the first
+step and currently supports `NodeConfigScreen`.
+
+Recommended cleanup:
+
+- Migrate settings, workflow path prompts, node selector, branch selector, and
+  other modal screens to the same command-navigation helper where practical.
+- Add a small wrapper around `app.notify(...)` for a unified toast/alert system
+  with consistent copy, severity, and duration.
+- Keep schema-generated node config as the default path; extend field schemas or
+  frontend render helpers before adding per-node custom modal logic.
+- Add a focused keyboard-only smoke suite for common modal flows: open, move,
+  activate, type, escape typing mode, save/cancel, and scroll to off-screen
+  fields.

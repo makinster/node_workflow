@@ -1,5 +1,28 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-01 — Dropdown Navigation Polish and Command UI Helper
+
+- Fixed generated node config dropdowns so option-backed fields do not include
+  Textual's blank `Select` row. Branch dropdowns now open with the first real
+  option highlighted.
+- Added `frontend/widgets/command_navigation.py` as the shared command-mode
+  helper for dropdown opening, dropdown movement, deterministic select commit,
+  checkbox/list activation, and text-field edit blocking.
+- Migrated `NodeConfigScreen` select activation/navigation to the shared helper.
+  `W`/`S` and arrows now move inside an expanded dropdown; `E`/Enter commits the
+  highlighted option without leaving the dropdown stuck.
+- Strengthened the branch dropdown regression test to assert top-row highlight,
+  up/down movement, deterministic selection, and top-row reset on reopen.
+- Added frontend style guidance to `MASTER_BUILD_PLAN.md` and backlog notes for
+  broader helper migration plus a unified toast/alert wrapper.
+
+Verification:
+
+- `python -m pytest tests/test_debug_nodes.py::test_node_config_select_activates_from_keyboard -v`
+- `python -m compileall -q .`
+- `python -m pytest tests/test_debug_nodes.py -v`
+- Result: 38 passed.
+
 ## 2026-06-01 — Phase 9 Merge Node and Branch Barrier
 
 - Added `BranchEndNode` as an optional no-config utility marker. Merge config now

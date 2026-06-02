@@ -125,6 +125,7 @@ def _widget_for_field(
             _select_options(field_schema.get("options", [])),
             value=value if value not in (None, "") else Select.NULL,
             id=f"field-{field_name}",
+            allow_blank=False,
         )
     if field_type in {"multiline", "code"}:
         return CommandTextArea("" if value is None else str(value), id=f"field-{field_name}")
@@ -135,6 +136,7 @@ def _widget_for_field(
             _select_options(field_schema.get("options", [])),
             value=value if value not in (None, "") else Select.NULL,
             id=f"field-{field_name}",
+            allow_blank=False,
         )
     if field_type == "multiselect":
         options = [(str(option), option) for option in field_schema.get("options", [])]
