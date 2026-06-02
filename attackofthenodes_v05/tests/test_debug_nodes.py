@@ -1430,8 +1430,101 @@ async def _test_node_selector_opens_on_list_and_activates_filter_with_e():
 
         await pilot.press("s")
         assert filter_input.value == "s"
+        filter_input.end_edit()
+        screen.action_cursor_down()
+        assert app.focused is node_list
+        assert node_list.index == 0
 
     print("test_node_selector_opens_on_list_and_activates_filter_with_e PASSED")
+
+
+def test_branch_selector_uses_shared_list_navigation():
+    asyncio.run(_test_branch_selector_uses_shared_list_navigation())
+
+
+async def _test_branch_selector_uses_shared_list_navigation():
+    from textual.app import App, ComposeResult
+    from textual.widgets import ListView
+
+    from frontend.screens.branch_selector import BranchSelectorScreen
+
+    class BranchApp(App):
+        def compose(self) -> ComposeResult:
+            yield BranchSelectorScreen(
+                "branch-1",
+                "Branch",
+                ["path_a", "path_b", "path_c"],
+                "path_b",
+                {
+                    "path_a": "North",
+                    "path_b": "Middle",
+                    "path_c": "South",
+                },
+            )
+
+    app = BranchApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        screen = app.query_one(BranchSelectorScreen)
+        branch_list = app.query_one("#branch-port-list", ListView)
+
+        assert app.focused is branch_list
+        assert branch_list.index == 1
+
+        screen.action_cursor_up()
+        assert app.focused is branch_list
+        assert branch_list.index == 0
+
+        screen.action_cursor_up()
+        assert branch_list.index == 0
+
+        screen.action_cursor_down()
+        assert branch_list.index == 1
+
+    print("test_branch_selector_uses_shared_list_navigation PASSED")
+
+
+def test_workflow_library_uses_shared_list_navigation():
+    asyncio.run(_test_workflow_library_uses_shared_list_navigation())
+
+
+async def _test_workflow_library_uses_shared_list_navigation():
+    from textual.app import App, ComposeResult
+    from textual.widgets import ListView
+
+    import frontend.screens.workflow_library as workflow_library_module
+    from frontend.screens.workflow_library import WorkflowLibraryScreen
+
+    original_list_workflows = workflow_library_module.list_workflows
+    workflow_library_module.list_workflows = lambda: [
+        {"id": "wf-1", "name": "First"},
+        {"id": "wf-2", "name": "Second"},
+    ]
+
+    class LibraryApp(App):
+        def compose(self) -> ComposeResult:
+            yield WorkflowLibraryScreen()
+
+    try:
+        app = LibraryApp()
+        async with app.run_test() as pilot:
+            await pilot.pause(0.03)
+            screen = app.query_one(WorkflowLibraryScreen)
+            workflow_list = app.query_one("#workflow-list", ListView)
+
+            assert app.focused is workflow_list
+            assert workflow_list.index == 0
+
+            screen.action_cursor_down()
+            assert workflow_list.index == 1
+            screen.action_cursor_down()
+            assert workflow_list.index == 1
+            screen.action_cursor_up()
+            assert workflow_list.index == 0
+    finally:
+        workflow_library_module.list_workflows = original_list_workflows
+
+    print("test_workflow_library_uses_shared_list_navigation PASSED")
 
 
 def test_node_config_command_inputs_require_activation():
@@ -1624,6 +1717,8 @@ if __name__ == "__main__":
         test_editor_hides_empty_start_until_first_node_added,
         test_node_config_previous_output_preview_reads_transient_source,
         test_node_selector_opens_on_list_and_activates_filter_with_e,
+        test_branch_selector_uses_shared_list_navigation,
+        test_workflow_library_uses_shared_list_navigation,
         test_node_config_command_inputs_require_activation,
         test_simple_command_modals_use_shared_navigation_helpers,
         test_prompt_modals_use_shared_command_activation,

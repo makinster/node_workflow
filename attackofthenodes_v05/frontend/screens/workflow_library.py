@@ -16,6 +16,7 @@ from frontend.widgets.command_navigation import (
     blocks_command_action,
 )
 from frontend.widgets.command_input import CommandInput
+from frontend.widgets.list_navigation import focus_list, move_list_highlight
 
 
 class WorkflowLibraryScreen(ModalScreen):
@@ -25,6 +26,10 @@ class WorkflowLibraryScreen(ModalScreen):
         ("escape", "cancel", "Cancel"),
         ("q", "cancel", "Cancel"),
         Binding("ctrl+q", "cancel", "Cancel", priority=True),
+        Binding("up", "cursor_up", "Up", priority=True),
+        Binding("down", "cursor_down", "Down", priority=True),
+        Binding("w", "cursor_up", "Up", priority=True),
+        Binding("s", "cursor_down", "Down", priority=True),
         ("enter", "load_selected", "Load"),
         ("n", "new_workflow", "New"),
         ("d", "duplicate_selected", "Duplicate"),
@@ -56,7 +61,7 @@ class WorkflowLibraryScreen(ModalScreen):
 
     def on_mount(self) -> None:
         self._refresh_workflows()
-        self.query_one("#workflow-list", ListView).focus()
+        self._focus_workflow_list()
 
     def on_list_view_selected(self, event: ListView.Selected) -> None:
         self._dismiss_action("load", event.list_view.index)
@@ -100,6 +105,12 @@ class WorkflowLibraryScreen(ModalScreen):
         index = self.query_one("#workflow-list", ListView).index
         self._dismiss_action("delete", index)
 
+    def action_cursor_up(self) -> None:
+        self._move_selection(-1)
+
+    def action_cursor_down(self) -> None:
+        self._move_selection(1)
+
     def action_cancel(self) -> None:
         self.dismiss(None)
 
@@ -113,6 +124,16 @@ class WorkflowLibraryScreen(ModalScreen):
             )
         if not self.workflows:
             list_view.append(ListItem(Static("No saved workflows")))
+        else:
+            list_view.index = 0
+
+    def _focus_workflow_list(self) -> None:
+        list_view = self.query_one("#workflow-list", ListView)
+        focus_list(self.app, list_view, len(self.workflows))
+
+    def _move_selection(self, delta: int) -> None:
+        list_view = self.query_one("#workflow-list", ListView)
+        move_list_highlight(self.app, list_view, len(self.workflows), delta)
 
     def _dismiss_action(self, action: str, index: Optional[int]) -> None:
         if index is None or index < 0 or index >= len(self.workflows):

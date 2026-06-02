@@ -184,6 +184,11 @@ Done when:
 **Files:** `node_selector.py`, `branch_selector.py`, `workflow_library.py`,
 `node_list.py`.
 
+**Status:** initial migration completed 2026-06-02 for modal list selectors.
+`frontend/widgets/list_navigation.py` now centralizes ListView highlight
+clamping, focusing, scrolling, and movement. `NodeSelectorScreen`,
+`BranchSelectorScreen`, and `WorkflowLibraryScreen` use it.
+
 Tasks:
 
 - Standardize list selector behavior:
@@ -193,8 +198,9 @@ Tasks:
   - arrows and `W/S` always move visible highlight
   - `E`/Enter selects highlighted item
 - Add a shared selector helper if more than one screen needs the same behavior.
+  Done for modal selectors.
 - Add tests for node selector, branch selector, and workflow library selector
-  navigation.
+  navigation. Done.
 
 Done when:
 
@@ -310,9 +316,9 @@ mounted tests in `tests/test_debug_nodes.py`.
 | `editor.py` | main workflow screen | `NodeList`; priority bindings for editor actions; derived branch labels | many direct `notify` calls; cursor/nav model remains local; branch path display only shows one branch at a time | Phase 13 cursor audit, FA-5 alert helper |
 | `execution.py` | main workflow screen/viewer | `RichLog`; `NodeList`; modal launch actions | direct `notify`; long output mostly safe via `RichLog`, but branch/memory summary still `Static` | FA-6 viewer audit |
 | `node_config.py` | command modal + topology adapters | `CommandInput`, `CommandTextArea`, `command_navigation`, `form_generator`, `VerticalScroll` with `can_focus=False` | largest mixed surface; dynamic sections and merge topology logic still local; reference behavior not yet reusable enough | FA-1 reference extraction, FA-4 dynamic sections |
-| `node_selector.py` | list selector with filter | `CommandInput`; custom list focus methods | selector nav duplicated; `check_action` local; filter/list grammar is not shared with branch/workflow selectors | FA-2 selector helper |
-| `branch_selector.py` | list selector | `ListView`; simple arrow/enter bindings | different key grammar/help text than node selector; no shared selector helper; no command-mode `E` semantics | FA-2 selector helper |
-| `workflow_library.py` | list selector + path prompt | `ListView`; `CommandInput` in `PathPromptScreen`; path prompt now uses `command_navigation` activation/blocking | selector actions are ad hoc; no shared alert copy | FA-2 + FA-5 |
+| `node_selector.py` | list selector with filter | `CommandInput`; `list_navigation` highlight/focus/move helper | filter/list grammar is now shared enough for modal selectors; local filter escape behavior remains intentional | Watch with FA-2 regressions |
+| `branch_selector.py` | list selector | `ListView`; `list_navigation`; priority `W/S/E` bindings | active branch remains the initial highlight by design, rather than always top row | Watch with FA-2 regressions |
+| `workflow_library.py` | list selector + path prompt | `ListView`; `list_navigation`; `CommandInput` in `PathPromptScreen`; path prompt uses `command_navigation` activation/blocking | selector keyboard movement is standardized; action/copy notifications remain ad hoc | FA-5 alert helper |
 | `settings.py` | command modal | `CommandInput`; `command_navigation` activation/blocking/focus movement | migrated; still lacks global mode indicator | Watch during FA-7 |
 | `user_input.py` | command modal | `CommandInput`; `command_navigation` activation/blocking | migrated; cancel semantics are sensitive because it can stop runs | Watch with focused regressions |
 | `confirm.py` | confirmation modal | simple `Y/N/Esc` bindings | likely okay; should become standard destructive-action confirm component | FA-5 copy/severity audit |
@@ -330,9 +336,10 @@ mounted tests in `tests/test_debug_nodes.py`.
    `SettingsScreen`, `UserInputScreen`, and `PathPromptScreen` now use shared
    `command_navigation` helpers for activation/blocking, and Settings uses
    shared command focus movement.
-2. **Selector behavior should be standardized next.** `NodeSelectorScreen`,
-   `BranchSelectorScreen`, and `WorkflowLibraryScreen` are all list selectors
-   with different key grammar, focus expectations, and help copy.
+2. **Selector behavior now has a shared helper.** `NodeSelectorScreen`,
+   `BranchSelectorScreen`, and `WorkflowLibraryScreen` use
+   `list_navigation.py` for highlight clamping, focus, scrolling, and movement.
+   Keep future modal selectors on this helper.
 3. **Notifications need a wrapper.** Direct `notify` calls are concentrated in
    `app.py`, `editor.py`, and `execution.py`; this is a bounded FA-5 pass.
 4. **Viewer surfaces are mixed but not all bad.** `memory_viewer.py` already uses
@@ -357,8 +364,8 @@ Frontend audit phases should add focused tests before relying on manual smoke.
 For UI behavior that cannot be asserted cleanly, record the manual smoke steps
 in `docs/SESSION_LOG.md`.
 
-Latest known verification after FA-1 partial migration:
+Latest known verification after FA-2 modal selector migration:
 
 - `python -m compileall -q .`
 - `python -m pytest tests/test_debug_nodes.py -v`
-- Result: 40 passed.
+- Result: 42 passed.

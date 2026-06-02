@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 from textual.app import ComposeResult
+from textual.binding import Binding
 from textual.containers import Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Button, Label, ListItem, ListView, Static
+
+from frontend.widgets.list_navigation import focus_list, move_list_highlight
 
 
 class BranchSelectorScreen(ModalScreen):
@@ -13,11 +16,13 @@ class BranchSelectorScreen(ModalScreen):
 
     BINDINGS = [
         ("escape", "cancel", "Cancel"),
-        ("q", "cancel", "Cancel"),
-        ("w", "cursor_up", "Up"),
-        ("s", "cursor_down", "Down"),
+        Binding("ctrl+q", "cancel", "Cancel", priority=True),
+        Binding("up", "cursor_up", "Up", priority=True),
+        Binding("down", "cursor_down", "Down", priority=True),
+        Binding("w", "cursor_up", "Up", priority=True),
+        Binding("s", "cursor_down", "Down", priority=True),
         ("enter", "choose", "Choose"),
-        ("e", "choose", "Choose"),
+        Binding("e", "choose", "Choose", priority=True),
         ("d", "choose", "Choose"),
     ]
 
@@ -51,7 +56,7 @@ class BranchSelectorScreen(ModalScreen):
             list_view.append(ListItem(Static(f"{marker} {label}")))
         if self.active_port in self.output_ports:
             list_view.index = self.output_ports.index(self.active_port)
-        list_view.focus()
+        focus_list(self.app, list_view, len(self.output_ports))
 
     def on_list_view_selected(self, event: ListView.Selected) -> None:
         self._dismiss_selected(event.list_view.index)
@@ -84,9 +89,5 @@ class BranchSelectorScreen(ModalScreen):
         )
 
     def _move_selection(self, delta: int) -> None:
-        if not self.output_ports:
-            return
         list_view = self.query_one("#branch-port-list", ListView)
-        current = list_view.index if list_view.index is not None else 0
-        list_view.index = max(0, min(len(self.output_ports) - 1, current + delta))
-        list_view.focus()
+        move_list_highlight(self.app, list_view, len(self.output_ports), delta)

@@ -11,6 +11,11 @@ from textual.screen import ModalScreen
 from textual.widgets import Button, Label, ListItem, ListView, Static
 
 from frontend.widgets.command_input import CommandInput
+from frontend.widgets.list_navigation import (
+    ensure_list_highlight,
+    focus_list,
+    move_list_highlight,
+)
 
 
 class NodeSelectorScreen(ModalScreen):
@@ -18,6 +23,7 @@ class NodeSelectorScreen(ModalScreen):
 
     BINDINGS = [
         ("escape", "cancel", "Cancel"),
+        Binding("ctrl+q", "cancel", "Cancel", priority=True),
         ("/", "focus_filter", "Filter"),
         Binding("tab", "focus_node_list", "List", priority=True),
         Binding("up", "cursor_up", "Up", priority=True),
@@ -53,7 +59,7 @@ class NodeSelectorScreen(ModalScreen):
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
         focused = self.focused
         if isinstance(focused, CommandInput) and focused.editing:
-            if action in {"cursor_up", "cursor_down", "choose", "focus_filter", "focus_node_list"}:
+            if action in {"cursor_up", "cursor_down", "choose", "focus_filter", "focus_node_list", "cancel"}:
                 return False
         return True
 
@@ -129,11 +135,7 @@ class NodeSelectorScreen(ModalScreen):
 
     def _focus_node_list(self) -> None:
         list_view = self.query_one("#node-type-list", ListView)
-        if self._visible_nodes and list_view.index is None:
-            list_view.index = 0
-        elif self._visible_nodes:
-            list_view.index = max(0, min(list_view.index or 0, len(self._visible_nodes) - 1))
-        self.app.set_focus(list_view)
+        focus_list(self.app, list_view, len(self._visible_nodes))
 
     def _dismiss_selected(self, index: Optional[int]) -> None:
         if index is None or index < 0 or index >= len(self._visible_nodes):
@@ -144,11 +146,9 @@ class NodeSelectorScreen(ModalScreen):
         if not self._visible_nodes:
             return
         list_view = self.query_one("#node-type-list", ListView)
+        ensure_list_highlight(list_view, len(self._visible_nodes))
         current = list_view.index if list_view.index is not None else 0
-        next_index = max(0, min(len(self._visible_nodes) - 1, current + delta))
         if delta < 0 and current == 0:
             self.action_focus_filter()
             return
-        list_view.index = next_index
-        self.app.set_focus(list_view)
-        list_view.scroll_visible()
+        move_list_highlight(self.app, list_view, len(self._visible_nodes), delta)

@@ -1,5 +1,27 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-02 — FA-2 Selector List Navigation
+
+- Added `frontend/widgets/list_navigation.py` for shared ListView highlight
+  clamping, focus, scroll-visible behavior, and W/S/arrow movement.
+- Migrated `NodeSelectorScreen`, `BranchSelectorScreen`, and
+  `WorkflowLibraryScreen` to use the shared list helper instead of each screen
+  carrying its own clamp/focus logic.
+- Standardized branch and workflow selector bindings so `W/S` and arrows move
+  the visible highlight, and `E`/Enter selects the highlighted row where
+  applicable.
+- Added mounted Textual regressions for branch selector navigation, workflow
+  library navigation, and node selector filter-to-list movement.
+- Updated `FRONTEND_AUDIT_BUILD_PLAN.md` to mark FA-2 modal selector
+  standardization complete and point the next frontend audit work toward alert,
+  schema, dynamic-section, and viewer passes.
+
+Verification:
+
+- `python -m compileall -q .`
+- `python -m pytest tests/test_debug_nodes.py -v`
+- Result: 42 passed.
+
 ## 2026-06-02 — FA-1 Command Modal Helper Migration
 
 - Expanded `frontend/widgets/command_navigation.py` into a small reusable
