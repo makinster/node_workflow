@@ -65,6 +65,9 @@ class MasterState:
         self.node_timings: Dict[str, float] = {}
         self.completed_nodes: set[str] = set()
         self._completion_condition = asyncio.Condition()
+        self._merge_condition = asyncio.Condition()
+        self._branch_groups: Dict[str, str] = {}
+        self._merge_groups: Dict[str, Dict[str, Any]] = {}
 
         self._supervisors: Dict[str, Supervisor] = {}
         self._supervisor_tasks: Dict[str, asyncio.Task] = {}
@@ -100,6 +103,8 @@ class MasterState:
         self.run_outputs = []
         self.node_timings = {}
         self.completed_nodes = set()
+        self._branch_groups.clear()
+        self._merge_groups.clear()
         self._output_manager.clear_run(self.current_run_id)
         self._memory_bank.clear()
         self._supervisors.clear()
@@ -117,6 +122,7 @@ class MasterState:
             error_handler=self._error_handler,
             mark_node_completed=self.mark_node_completed,
             wait_for_nodes=self.wait_until_nodes_completed,
+            wait_for_merge=self.wait_for_merge_arrival,
             node_timeout_seconds=float(
                 self._configuration_manager.get("node_timeout_seconds")
             ),
@@ -188,6 +194,7 @@ class MasterState:
         branch_id = payload["branch_id"]
         self._supervisors.pop(branch_id, None)
         self._supervisor_tasks.pop(branch_id, None)
+        self._account_for_branch_termination(branch_id)
         logger.debug(
             "Supervisor %s terminated (final state: %s)",
             branch_id,
@@ -206,9 +213,12 @@ class MasterState:
             )
             return
 
+        child_branch_id = f"branch_{uuid.uuid4().hex[:6]}"
+        self._register_branch_group(payload["parent_branch_id"], child_branch_id)
+
         child = Supervisor(
             run_id=payload["run_id"],
-            branch_id=f"branch_{uuid.uuid4().hex[:6]}",
+            branch_id=child_branch_id,
             depth=new_depth,
             start_node_id=payload["start_node_id"],
             workflow_map=self._workflow_map,
@@ -219,6 +229,7 @@ class MasterState:
             parent_branch_id=payload["parent_branch_id"],
             mark_node_completed=self.mark_node_completed,
             wait_for_nodes=self.wait_until_nodes_completed,
+            wait_for_merge=self.wait_for_merge_arrival,
             node_timeout_seconds=float(
                 self._configuration_manager.get("node_timeout_seconds")
             ),
@@ -249,6 +260,98 @@ class MasterState:
             await wait_for_targets()
             return
         await asyncio.wait_for(wait_for_targets(), timeout=timeout_seconds)
+
+    async def wait_for_merge_arrival(
+        self,
+        merge_node_id: str,
+        branch_id: str,
+        selected_input_port: str,
+        inputs: Dict[str, Any],
+        timeout_seconds: Optional[float] = None,
+    ) -> Dict[str, Any]:
+        """Wait for sibling branches to reach/leave a merge, then elect one output."""
+        group_id = self._branch_groups.get(branch_id)
+        if group_id is None:
+            return {
+                "continue": True,
+                "value": inputs.get(selected_input_port, next(iter(inputs.values()), "")),
+            }
+
+        async def wait_for_group() -> Dict[str, Any]:
+            async with self._merge_condition:
+                group = self._merge_groups.setdefault(
+                    group_id,
+                    {
+                        "pending": set(),
+                        "arrivals": {},
+                        "merge_node_id": merge_node_id,
+                        "selected_input_port": selected_input_port,
+                    },
+                )
+                group["merge_node_id"] = merge_node_id
+                group["selected_input_port"] = selected_input_port
+                group.setdefault("arrivals", {})[branch_id] = dict(inputs)
+                group.setdefault("pending", set()).discard(branch_id)
+                self._merge_condition.notify_all()
+                await self._merge_condition.wait_for(
+                    lambda: not group.get("pending")
+                )
+                winner_branch = self._merge_winner_branch(group)
+                value = self._merge_selected_value(group, selected_input_port)
+                return {"continue": branch_id == winner_branch, "value": value}
+
+        if timeout_seconds is None or timeout_seconds <= 0:
+            return await wait_for_group()
+        return await asyncio.wait_for(wait_for_group(), timeout=timeout_seconds)
+
+    def _register_branch_group(self, parent_branch_id: str, child_branch_id: str) -> None:
+        group_id = self._branch_groups.get(parent_branch_id, parent_branch_id)
+        self._branch_groups[child_branch_id] = group_id
+        group = self._merge_groups.setdefault(
+            group_id,
+            {
+                "pending": set(),
+                "arrivals": {},
+                "merge_node_id": None,
+                "selected_input_port": "",
+            },
+        )
+        group.setdefault("pending", set()).add(child_branch_id)
+
+    def _account_for_branch_termination(self, branch_id: str) -> None:
+        group_id = self._branch_groups.get(branch_id)
+        if group_id is None:
+            return
+        group = self._merge_groups.get(group_id)
+        if group is None:
+            return
+        group.setdefault("pending", set()).discard(branch_id)
+        asyncio.create_task(self._notify_merge_waiters())
+
+    async def _notify_merge_waiters(self) -> None:
+        async with self._merge_condition:
+            self._merge_condition.notify_all()
+
+    def _merge_winner_branch(self, group: Dict[str, Any]) -> Optional[str]:
+        selected_port = str(group.get("selected_input_port") or "")
+        arrivals = group.get("arrivals") or {}
+        for branch_id, inputs in arrivals.items():
+            if inputs.get(selected_port) is not None:
+                return branch_id
+        return next(iter(arrivals.keys()), None)
+
+    def _merge_selected_value(
+        self, group: Dict[str, Any], selected_input_port: str
+    ) -> Any:
+        arrivals = group.get("arrivals") or {}
+        for inputs in arrivals.values():
+            if inputs.get(selected_input_port) is not None:
+                return inputs[selected_input_port]
+        for inputs in arrivals.values():
+            for value in inputs.values():
+                if value is not None:
+                    return value
+        return ""
 
     def _on_supervisor_state_update(self, payload: Dict[str, Any]) -> None:
         if payload["state"] == "WAITING_FOR_INPUT":

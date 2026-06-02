@@ -1,5 +1,28 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-01 — Phase 9 Merge Node and Branch Barrier
+
+- Added `MergeNode` as a registered flow node. It waits for sibling branch
+  arrivals and emits one selected input through its `default` output.
+- Added a MasterState counter-style lineage fallback: branch groups track pending
+  branch ids, arrivals at merge, and branch terminations. Nested branch spawns
+  inherit the same group.
+- Merge config derives available inputs from current incoming connections. Each
+  displayed input description has a checkbox underneath it, and v1 enforces one
+  selected checkbox saved as `selected_input_port`.
+- Non-selected branch arrivals terminate at the merge after the barrier releases;
+  only the branch carrying the selected input continues downstream.
+- Restored dynamic memory-bank output rows in node config and fixed command-mode
+  navigation so non-interactive section highlights clear stale text-field focus.
+- Future merge work may support combining or forwarding multiple outputs, but
+  this phase intentionally keeps the runtime output to one selected input.
+
+Verification:
+
+- `python -m compileall -q .`
+- `python -m pytest tests/test_debug_nodes.py -v`
+- Result: 37 passed.
+
 ## 2026-06-01 — Keyboard Navigation and Config Modal UX Hardening
 
 ### Ctrl+Q closes whole app while editing a text field

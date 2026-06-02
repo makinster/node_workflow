@@ -8,13 +8,13 @@ from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.screen import ModalScreen
-from textual.widgets import Button, Checkbox, Input, Label, Select, SelectionList, Static, TextArea
+from textual.widgets import Button, Checkbox, Input, Label, Select, SelectionList, Static, TabbedContent, TabPane, TextArea
 
 from frontend.widgets.command_input import CommandInput, CommandTextArea
 from frontend.widgets.form_generator import WidgetGetter, build_form
 
 
-MAX_MEMBANK_OUTPUT_ROWS = 20
+MAX_MEMBANK_OUTPUT_ROWS = 5
 
 
 def normalize_membank_outputs(config: Dict[str, Any]) -> list[Dict[str, str]]:
@@ -116,6 +116,28 @@ def wait_target_options(workflow_map, current_node_id: str) -> list[tuple[str, s
     return options
 
 
+def merge_input_options(workflow_map, current_node_id: str) -> list[Dict[str, str]]:
+    """Return current incoming merge inputs with human-readable descriptions."""
+    node = workflow_map.get_node_data(current_node_id) or {}
+    options: list[Dict[str, str]] = []
+    for index, conn in enumerate(node.get("connections", {}).get("inputs", [])):
+        source_id = conn.get("source_node_id", "?")
+        source_node = workflow_map.get_node_data(source_id) or {}
+        source_name = source_node.get("alias") or source_node.get("type") or source_id
+        source_port = conn.get("source_port", "default")
+        target_port = conn.get("target_port", "input")
+        options.append(
+            {
+                "id": f"merge-input-choice-{index}",
+                "port": str(target_port),
+                "description": (
+                    f"{source_name} ({source_id}).{source_port} -> {target_port}"
+                ),
+            }
+        )
+    return options
+
+
 class NodeConfigScreen(ModalScreen):
     """Edit-node modal powered by the schema form generator."""
 
@@ -123,6 +145,7 @@ class NodeConfigScreen(ModalScreen):
         ("escape", "cancel", "Cancel"),
         ("ctrl+s", "save", "Save"),
         ("ctrl+enter", "save", "Save"),
+        Binding("ctrl+q", "cancel", "Cancel", priority=True),
         Binding("up", "cursor_up", "Up", priority=True),
         Binding("down", "cursor_down", "Down", priority=True),
         Binding("w", "cursor_up", "Up", priority=True),
@@ -146,6 +169,7 @@ class NodeConfigScreen(ModalScreen):
         self.node_data = node_data
         self.memory_bank = memory_bank
         self._get_form_values: Optional[WidgetGetter] = None
+        self._nav_widget: Any = None
         self._initial_membank_outputs = normalize_membank_outputs(
             node_data.get("config") or {}
         )
@@ -159,6 +183,8 @@ class NodeConfigScreen(ModalScreen):
         excluded_config_keys = {"membank_outputs", "membank_inputs"}
         if self.node_data.get("type") == "wait_until_node":
             excluded_config_keys.add("target_node_ids")
+        if self.node_data.get("type") == "merge_node":
+            excluded_config_keys.add("selected_input_port")
         schema = {
             key: value
             for key, value in schema.items()
@@ -176,37 +202,40 @@ class NodeConfigScreen(ModalScreen):
             yield Label(f"Edit Node: {self.node_data.get('alias') or self.node_id}", classes="modal-title")
             yield Static("w = up, s = down    e = edit/select    esc = cancel/close", classes="modal-help")
             with VerticalScroll(id="node-config-scroll"):
-                yield Label("Alias", classes="form-label")
+                yield Label("Alias", classes="form-label nav-section")
                 yield CommandInput(value=self.node_data.get("alias", ""), id="alias-input")
                 yield Static(self._format_metadata(metadata), id="node-config-summary")
                 pass_through_note = self._pass_through_note(metadata)
                 if pass_through_note:
                     yield Static(pass_through_note, classes="form-description pass-through-note")
-                yield Label("Previous Node Output", classes="form-label")
+                yield Label("Previous Node Output", classes="form-label nav-section")
                 yield Checkbox(
                     "Show previous node output",
                     value=False,
                     id="show-previous-output",
                 )
                 yield Static("", id="previous-output-preview", classes="form-description")
-                yield Label("Memory Bank Inputs", classes="form-label")
+                yield Label("Memory Bank Inputs", classes="form-label nav-section")
                 yield from self._compose_membank_inputs(config)
                 if self.node_data.get("type") == "wait_until_node":
-                    yield Label("Wait Targets", classes="form-label")
+                    yield Label("Wait Targets", classes="form-label nav-section")
                     yield from self._compose_wait_targets(config)
-                yield Label("Node Settings", classes="form-label")
+                if self.node_data.get("type") == "merge_node":
+                    yield Label("Merge Output Input", classes="form-label nav-section")
+                    yield from self._compose_merge_inputs(config)
                 yield form
-                yield Label("Connections", classes="form-label")
+                yield Label("Connections", classes="form-label nav-section")
                 yield Static("Connection editing lives in the editor path tools.", classes="form-description")
                 yield Static(self._format_connections(), id="connection-summary")
                 if self._supports_membank_outputs(metadata):
-                    yield Label("Memory Bank Outputs", classes="form-label")
+                    yield Label("Memory Bank Outputs", classes="form-label nav-section")
                     yield from self._compose_membank_outputs(config)
             with Horizontal(classes="button-row"):
                 yield Button("Save", id="save-node-config", variant="primary")
                 yield Button("Cancel", id="cancel-node-config", variant="default")
 
     def on_mount(self) -> None:
+        self.query_one("#node-config-scroll").can_focus = False
         self.app.set_focus(self.query_one("#alias-input", CommandInput))
         self._sync_membank_output_controls()
         self._sync_previous_output_preview()
@@ -221,16 +250,17 @@ class NodeConfigScreen(ModalScreen):
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
         focused = self.app.focused
         if isinstance(focused, (CommandInput, CommandTextArea)) and focused.editing:
-            if action in {"cursor_up", "cursor_down", "activate_focused"}:
+            if action in {"cursor_up", "cursor_down", "activate_focused", "cancel"}:
                 return False
         return True
 
     async def on_checkbox_changed(self, event: Checkbox.Changed) -> None:
         if event.checkbox.id == "membank-writes":
-            self._sync_membank_output_controls()
             await self._refresh_membank_output_rows()
         elif event.checkbox.id == "show-previous-output":
             self._sync_previous_output_preview()
+        elif str(event.checkbox.id or "").startswith("merge-input-choice-"):
+            self._sync_merge_input_choices(event.checkbox)
 
     async def on_input_changed(self, event: Input.Changed) -> None:
         if event.input.id == "membank-output-count":
@@ -247,6 +277,7 @@ class NodeConfigScreen(ModalScreen):
         config = self._get_form_values() if self._get_form_values else {}
         config.update(self._membank_config_values())
         config.update(self._wait_config_values())
+        config.update(self._merge_config_values())
         self.dismiss({"alias": alias, "config": config})
 
     def action_cancel(self) -> None:
@@ -271,20 +302,37 @@ class NodeConfigScreen(ModalScreen):
         widgets = self._keyboard_focus_widgets()
         if not widgets:
             return
-        current = self.app.focused
+        current = self._nav_widget if self._nav_widget is not None else self.app.focused
         try:
             current_index = widgets.index(current)
         except ValueError:
             current_index = 0 if direction > 0 else len(widgets) - 1
         next_index = max(0, min(len(widgets) - 1, current_index + direction))
-        focused = widgets[next_index]
-        if isinstance(focused, (CommandInput, CommandTextArea)):
-            focused.end_edit()
-        self.app.set_focus(focused)
-        focused.scroll_visible()
+        target = widgets[next_index]
+
+        if self._nav_widget is not None:
+            try:
+                self._nav_widget.remove_class("nav-highlight")
+            except Exception:
+                pass
+            self._nav_widget = None
+
+        interactive = (CommandInput, CommandTextArea, Checkbox, SelectionList, Select, TextArea, Button)
+        if isinstance(target, interactive):
+            if isinstance(target, (CommandInput, CommandTextArea)):
+                target.end_edit()
+            self.app.set_focus(target)
+        else:
+            self._nav_widget = target
+            target.add_class("nav-highlight")
+            self.app.set_focus(None)
+        try:
+            self.query_one("#node-config-scroll").scroll_to_widget(target, animate=False)
+        except Exception:
+            target.scroll_visible(animate=False)
 
     def _keyboard_focus_widgets(self) -> list[Any]:
-        focusable_types = (
+        interactive = (
             CommandInput,
             CommandTextArea,
             Checkbox,
@@ -293,11 +341,48 @@ class NodeConfigScreen(ModalScreen):
             TextArea,
             Button,
         )
-        return [
-            widget
-            for widget in self.query("*")
-            if isinstance(widget, focusable_types) and not getattr(widget, "disabled", False)
-        ]
+        inactive_pane_ids: set[str] = {
+            pane.id
+            for tc in self.query(TabbedContent)
+            for pane in tc.query(TabPane)
+            if pane.id and pane.id != tc.active
+        }
+        result = []
+        for widget in self.query("*"):
+            if self._in_inactive_tab(widget, inactive_pane_ids):
+                continue
+            if getattr(widget, "disabled", False):
+                continue
+            if not self._ancestor_visible(widget):
+                continue
+            if isinstance(widget, interactive):
+                result.append(widget)
+            elif isinstance(widget, Label) and "nav-section" in widget.classes:
+                result.append(widget)
+            elif isinstance(widget, Static) and widget.id in {
+                "node-config-summary", "connection-summary"
+            }:
+                result.append(widget)
+        return result
+
+    def _in_inactive_tab(self, widget, inactive_pane_ids: set[str]) -> bool:
+        if not inactive_pane_ids:
+            return False
+        node = widget.parent
+        while node is not None and node is not self:
+            if isinstance(node, TabPane) and node.id in inactive_pane_ids:
+                return True
+            node = node.parent
+        return False
+
+    def _ancestor_visible(self, widget) -> bool:
+        """Return False if any ancestor up to self has display=False."""
+        node = widget.parent
+        while node is not None and node is not self:
+            if not getattr(node, "display", True):
+                return False
+            node = node.parent
+        return True
 
     def _metadata_for_type(self, node_type: str) -> Optional[Dict[str, Any]]:
         for item in self.factory.get_node_types_metadata():
@@ -316,7 +401,12 @@ class NodeConfigScreen(ModalScreen):
         if len(output_ports) <= 1:
             return dict(schema)
 
-        enhanced = dict(schema)
+        # Strip any "Branch Names" group so all fields land in the default group
+        # and no TabbedContent is created.
+        enhanced = {
+            key: ({k: v for k, v in field.items() if k != "group"} if field.get("group") == "Branch Names" else field)
+            for key, field in schema.items()
+        }
         for port in output_ports:
             key = f"{port}_label"
             enhanced.setdefault(
@@ -326,7 +416,6 @@ class NodeConfigScreen(ModalScreen):
                     "label": f"{port} branch name",
                     "description": f"Editor display name for {port}",
                     "required": False,
-                    "group": "Branch Names",
                 },
             )
         return enhanced
@@ -425,16 +514,17 @@ class NodeConfigScreen(ModalScreen):
     def _compose_membank_outputs(self, config: Dict[str, Any]):
         outputs = normalize_membank_outputs(config)
         enabled = bool(outputs)
-        yield Checkbox("Writes to memory bank", value=enabled, id="membank-writes")
-        yield Label("Number of outputs", classes="form-description")
-        yield CommandInput(
-            value=str(len(outputs) if outputs else 0),
-            type="integer",
+        count = len(outputs) if outputs else 0
+        count_input = Input(
+            value=str(count),
             id="membank-output-count",
             classes="compact-number-field",
         )
-        with Vertical(id="membank-output-rows"):
-            yield from self._membank_output_row_widgets(outputs if enabled else [])
+        count_input.disabled = not enabled
+        yield Checkbox("Writes to memory bank", value=enabled, id="membank-writes")
+        yield Label("Number of outputs", classes="form-description")
+        yield count_input
+        yield Vertical(id="membank-output-rows")
 
     def _compose_membank_inputs(self, config: Dict[str, Any]):
         selected = set(normalize_membank_inputs(config))
@@ -462,6 +552,30 @@ class NodeConfigScreen(ModalScreen):
         else:
             yield Static("No non-downstream wait targets are available.", classes="form-description")
 
+    def _compose_merge_inputs(self, config: Dict[str, Any]):
+        selected = str(config.get("selected_input_port") or "").strip()
+        options = merge_input_options(self.workflow_map, self.node_id)
+        if not options:
+            yield Static("No branch inputs are connected to this merge yet.", classes="form-description")
+            return
+        if not selected:
+            selected = options[0]["port"]
+        for option in options:
+            yield Static(option["description"], classes="form-description")
+            yield Checkbox(
+                "Use this input as merge output",
+                value=option["port"] == selected,
+                id=option["id"],
+            )
+
+    def _sync_merge_input_choices(self, changed: Checkbox) -> None:
+        if not changed.value:
+            return
+        for checkbox in self.query(Checkbox):
+            checkbox_id = str(checkbox.id or "")
+            if checkbox_id.startswith("merge-input-choice-") and checkbox is not changed:
+                checkbox.value = False
+
     def _membank_config_values(self) -> Dict[str, Any]:
         values: Dict[str, Any] = {"membank_outputs": [], "membank_inputs": []}
 
@@ -475,22 +589,18 @@ class NodeConfigScreen(ModalScreen):
             return values
 
         writes_enabled = self.query_one("#membank-writes", Checkbox).value
-        try:
-            count = int(self.query_one("#membank-output-count", Input).value)
-        except ValueError:
-            count = 0
-        if writes_enabled and count > 0:
-            for index in range(min(count, MAX_MEMBANK_OUTPUT_ROWS)):
-                output_id = self._text_widget_value(f"#membank-output-id-{index}")
-                description = self._text_widget_value(f"#membank-output-desc-{index}")
-                if output_id:
-                    values["membank_outputs"].append(
-                        {
-                            "id": output_id,
-                            "output": output_id,
-                            "description": description,
-                        }
-                    )
+        if writes_enabled:
+            for output in self._current_membank_output_row_values():
+                output_id = str(output.get("id") or "").strip()
+                if not output_id:
+                    continue
+                values["membank_outputs"].append(
+                    {
+                        "id": output_id,
+                        "output": output_id,
+                        "description": str(output.get("description") or "").strip(),
+                    }
+                )
 
         reads_enabled = self.query_one("#membank-reads", Checkbox).value
         if reads_enabled:
@@ -503,13 +613,16 @@ class NodeConfigScreen(ModalScreen):
         if not self.query("#membank-writes"):
             return
         writes_enabled = self.query_one("#membank-writes", Checkbox).value
-        count_input = self.query_one("#membank-output-count", Input)
+        count_query = self.query("#membank-output-count")
+        if not count_query:
+            return
+        count_input = count_query.first()
         count_input.disabled = not writes_enabled
-        if writes_enabled and self._membank_output_count() == 0:
+        if writes_enabled and self._membank_output_count() <= 0:
             count_input.value = "1"
 
     async def _refresh_membank_output_rows(self) -> None:
-        if self._refreshing_membank_outputs:
+        if self._refreshing_membank_outputs or not self.query("#membank-output-rows"):
             return
         self._refreshing_membank_outputs = True
         try:
@@ -561,25 +674,25 @@ class NodeConfigScreen(ModalScreen):
             desc_input = CommandInput(
                 value=current.get("description", ""),
                 id=f"membank-output-desc-{index}",
-                classes="membank-output-field membank-output-description-field",
+                placeholder="Describe what this output contains",
+                classes="membank-output-description-field",
             )
-            id_input = CommandTextArea(
+            output_input = CommandTextArea(
                 current.get("id", ""),
                 id=f"membank-output-id-{index}",
                 classes="membank-output-field membank-output-textarea",
             )
-            desc_input.placeholder = "Describe what this output contains"
-            id_input.placeholder = "Memory-bank output key or output value"
+            output_input.placeholder = "Memory-bank output key or output value"
             desc_input.styles.height = 3
             desc_input.styles.width = "100%"
-            id_input.styles.height = 6
-            id_input.styles.width = "100%"
+            output_input.styles.height = 6
+            output_input.styles.width = "100%"
             widgets.extend(
                 [
                     Label(f"Output {output_number} Description:", classes="form-description"),
                     desc_input,
                     Label(f"Output {output_number}:", classes="form-description"),
-                    id_input,
+                    output_input,
                     Static("", classes="membank-output-spacer"),
                 ]
             )
@@ -600,6 +713,16 @@ class NodeConfigScreen(ModalScreen):
         if not selection_lists:
             return {"target_node_ids": []}
         return {"target_node_ids": list(selection_lists.first().selected)}
+
+    def _merge_config_values(self) -> Dict[str, Any]:
+        if self.node_data.get("type") != "merge_node":
+            return {}
+        options = merge_input_options(self.workflow_map, self.node_id)
+        for option in options:
+            checkbox_query = self.query(f"#{option['id']}")
+            if checkbox_query and checkbox_query.first().value:
+                return {"selected_input_port": option["port"]}
+        return {"selected_input_port": ""}
 
     def _node_label(self, node_id: str, node: Dict[str, Any]) -> str:
         name = node.get("alias") or node.get("type") or node_id

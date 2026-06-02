@@ -18,6 +18,8 @@ from typing import (
     Optional,
 )
 
+from .field_types import validate_config_schema
+
 
 if TYPE_CHECKING:
     from .memory_bank import MemoryBank
@@ -43,6 +45,10 @@ class NodeContext:
     signal_error: Callable[[Exception], None]
     signal_waiting_for_input: Callable[[str], Awaitable[str]]
     wait_for_nodes: Callable[[List[str], Optional[float]], Awaitable[None]]
+    wait_for_merge: Callable[
+        [str, str, str, Dict[str, Any], Optional[float]],
+        Awaitable[Dict[str, Any]],
+    ]
 
 
 class Node(ABC):
@@ -51,12 +57,28 @@ class Node(ABC):
     node_type: ClassVar[str] = ""
     display_name: ClassVar[str] = ""
     description: ClassVar[str] = ""
+    category: ClassVar[str] = ""
 
     input_ports: ClassVar[List[str]] = []
     output_ports: ClassVar[List[str]] = ["default"]
 
     default_config: ClassVar[Dict[str, Any]] = {}
     config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {}
+
+    # Optional metadata
+    icon_name: ClassVar[str] = ""
+    tags: ClassVar[List[str]] = []
+    color_hint: ClassVar[str] = ""
+    examples: ClassVar[List[Dict[str, Any]]] = []
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        super().__init_subclass__(**kwargs)
+        if cls.config_schema:
+            errors = validate_config_schema(cls.config_schema)
+            if errors:
+                raise ValueError(
+                    f"Invalid config_schema in {cls.__name__}: {errors}"
+                )
 
     def __init__(self, node_id: str, config: Optional[Dict[str, Any]] = None) -> None:
         self.node_id = node_id

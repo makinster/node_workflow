@@ -62,6 +62,9 @@ class Supervisor:
         wait_for_nodes: Optional[
             Callable[[List[str], Optional[float]], Awaitable[None]]
         ] = None,
+        wait_for_merge: Optional[
+            Callable[[str, str, str, Dict[str, Any], Optional[float]], Awaitable[Dict[str, Any]]]
+        ] = None,
         node_timeout_seconds: float = 30.0,
     ) -> None:
         self.run_id = run_id
@@ -88,6 +91,7 @@ class Supervisor:
         self._skip_breakpoint_once_for: Optional[str] = None
         self._mark_node_completed = mark_node_completed
         self._wait_for_nodes = wait_for_nodes
+        self._wait_for_merge = wait_for_merge
         self._node_timeout_seconds = float(node_timeout_seconds)
 
     async def run(self) -> None:
@@ -292,6 +296,28 @@ class Supervisor:
             )
             await self._wait_for_nodes(target_node_ids, timeout)
 
+        async def wait_for_merge(
+            merge_node_id: str,
+            branch_id: str,
+            selected_input_port: str,
+            inputs: Dict[str, Any],
+            timeout_seconds: Optional[float] = None,
+        ) -> Dict[str, Any]:
+            if self._wait_for_merge is None:
+                raise RuntimeError("Merge barrier is not available")
+            timeout = (
+                self._node_timeout_seconds
+                if timeout_seconds is None
+                else timeout_seconds
+            )
+            return await self._wait_for_merge(
+                merge_node_id,
+                branch_id,
+                selected_input_port,
+                inputs,
+                timeout,
+            )
+
         context = NodeContext(
             node_id=self.current_node_id or "",
             branch_id=self.branch_id,
@@ -302,6 +328,7 @@ class Supervisor:
             signal_error=signal_error,
             signal_waiting_for_input=signal_waiting_for_input,
             wait_for_nodes=wait_for_nodes,
+            wait_for_merge=wait_for_merge,
         )
 
         started_at = perf_counter()
@@ -368,6 +395,8 @@ class Supervisor:
     def _handle_payload(self, payload: Dict[str, Any]) -> Optional[str]:
         """Write outputs, spawn branches, and determine next node."""
         data = payload.get("data", {})
+        if payload.get("terminate_branch"):
+            return None
         if data:
             for port_name, value in data.items():
                 self._memory_bank.store_transient(

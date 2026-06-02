@@ -11,9 +11,10 @@ obsolete. Backend services remain UI-agnostic; frontend behavior lives under
 
 Use `docs/MASTER_BUILD_PLAN.md` as the comprehensive source of truth. It merges
 the active dependency-ordered phase plan, the Textual TUI state, the working
-rules, and the current architecture model. Phases 0 through 8 plus the Phase 5.5
-keyboard/config hardening pass are complete. The next unfinished implementation
-phase is Phase 9 unless `docs/SESSION_LOG.md` says otherwise.
+rules, and the current architecture model. Phases 0 through 9 plus the Phase 5.5
+keyboard/config hardening pass are complete. The next unfinished project phase
+is Phase 10 documentation modernization unless `docs/SESSION_LOG.md` says
+otherwise.
 
 Completed from the master plan:
 
@@ -33,6 +34,8 @@ Completed from the master plan:
   persist into run history.
 - Phase 8: completion registry and `WaitUntilNode` support cross-branch
   gating with downstream target filtering in config.
+- Phase 9: `MergeNode` plus counter-style lineage barrier for branch
+  recombination.
 
 Recent usability patch (Phase 5.5 — keyboard nav hardening):
 
@@ -62,10 +65,11 @@ Recent docs pass:
 
 Latest phase:
 
-- Phase 8 (completion registry + wait-until node) is complete.
+- Phase 9 (merge dynamic list + lineage barrier) is complete.
 - Phase 5.5 (keyboard nav hardening) is complete.
-- The next unfinished implementation phase is Phase 9 merge dynamic list plus
-  lineage barrier.
+- The next unfinished project phase is Phase 10 documentation modernization.
+  For more implementation work, Phase 13 cursor model foundation is the next
+  planned UI-heavy phase.
 
 Planned future phases (see Section 6 of MASTER_BUILD_PLAN.md for full specs):
 

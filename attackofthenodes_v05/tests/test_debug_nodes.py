@@ -1087,6 +1087,95 @@ def test_wait_target_options_exclude_downstream_nodes():
     print("test_wait_target_options_exclude_downstream_nodes PASSED")
 
 
+def test_merge_node_waits_and_forwards_selected_input():
+    asyncio.run(_test_merge_node_waits_and_forwards_selected_input())
+
+
+async def _test_merge_node_waits_and_forwards_selected_input():
+    master, wm, mb, _ = _make_services()
+    wm.create_new("merge_selected_input")
+    start = wm.add_node("start_node")
+    branch = wm.add_node("branch_node")
+    slow = wm.add_node("sleep_node")
+    left = wm.add_node("echo_node")
+    right = wm.add_node("echo_node")
+    merge = wm.add_node("merge_node")
+    after = wm.add_node("logger_node")
+    end = wm.add_node("end_node")
+
+    wm.update_node_config(branch, {"condition": "always_branch"})
+    wm.update_node_config(slow, {"duration": 0.05})
+    wm.update_node_config(left, {"label": "left"})
+    wm.update_node_config(right, {"label": "right"})
+    wm.update_node_config(merge, {"selected_input_port": "path_a", "timeout_seconds": 1.0})
+    wm.update_node_config(after, {"label": "merged", "include_input": True})
+
+    wm.connect(start, "default", branch, "input")
+    wm.connect(branch, "path_a", slow, "input")
+    wm.connect(slow, "default", left, "input")
+    wm.connect(left, "default", merge, "path_a")
+    wm.connect(branch, "path_b", right, "input")
+    wm.connect(right, "default", merge, "path_b")
+    wm.connect(merge, "default", after, "input")
+    wm.connect(after, "default", end, "input")
+
+    await master.start_workflow()
+    await master.wait_for_completion()
+
+    assert master.state.value == "FINISHED"
+    log = [str(entry) for entry in mb.read_persistent("output_log", default=[])]
+    merged_entries = [entry for entry in log if "[merged]" in entry]
+    assert len(merged_entries) == 1, log
+    assert "[left]" in merged_entries[0], merged_entries
+    assert "[right]" not in merged_entries[0], merged_entries
+    print("test_merge_node_waits_and_forwards_selected_input PASSED")
+
+
+def test_merge_config_uses_single_selected_input_checkbox():
+    asyncio.run(_test_merge_config_uses_single_selected_input_checkbox())
+
+
+async def _test_merge_config_uses_single_selected_input_checkbox():
+    from textual.app import App, ComposeResult
+    from textual.widgets import Checkbox
+
+    from frontend.screens.node_config import NodeConfigScreen, merge_input_options
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("merge_config")
+    left = wm.add_node("logger_node")
+    right = wm.add_node("logger_node")
+    merge = wm.add_node("merge_node")
+    wm.connect(left, "default", merge, "path_a")
+    wm.connect(right, "default", merge, "path_b")
+    wm.update_node_config(merge, {"selected_input_port": "path_b"})
+    node_data = wm.get_node_data(merge)
+
+    options = merge_input_options(wm, merge)
+    assert [option["port"] for option in options] == ["path_a", "path_b"]
+
+    class ConfigApp(App):
+        def compose(self) -> ComposeResult:
+            yield NodeConfigScreen(wm._factory, wm, merge, node_data)
+
+    app = ConfigApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        first = app.query_one("#merge-input-choice-0", Checkbox)
+        second = app.query_one("#merge-input-choice-1", Checkbox)
+        assert first.value is False
+        assert second.value is True
+
+        first.value = True
+        await pilot.pause()
+        assert first.value is True
+        assert second.value is False
+        screen = app.query_one(NodeConfigScreen)
+        assert screen._merge_config_values() == {"selected_input_port": "path_a"}
+
+    print("test_merge_config_uses_single_selected_input_checkbox PASSED")
+
+
 def test_node_config_dynamic_membank_output_rows():
     asyncio.run(_test_node_config_dynamic_membank_output_rows())
 
@@ -1333,6 +1422,8 @@ if __name__ == "__main__":
         test_node_timings_are_recorded_for_run_history,
         test_wait_until_node_gates_cross_branch_completion,
         test_wait_target_options_exclude_downstream_nodes,
+        test_merge_node_waits_and_forwards_selected_input,
+        test_merge_config_uses_single_selected_input_checkbox,
         test_node_config_dynamic_membank_output_rows,
         test_editor_hides_empty_start_until_first_node_added,
         test_node_config_previous_output_preview_reads_transient_source,

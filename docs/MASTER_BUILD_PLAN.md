@@ -162,7 +162,7 @@ Append a short entry to `docs/SESSION_LOG.md` for every phase or notable patch.
 | 6 | Breakpoints | Done |
 | 7 | Per-node execution timing | Done |
 | 8 | Completion registry + wait-until node | Done |
-| 9 | Merge dynamic list + lineage barrier | Next |
+| 9 | Merge dynamic list + lineage barrier | Done |
 | 10 | Documentation modernization | Open, docs-only project |
 | 11 | Real AI node execution | Deferred |
 | 12 | Packaging and release hardening | Deferred |
@@ -340,6 +340,24 @@ Example config:
   workflow structure, excluding self and downstream targets.
 - Tests cover cross-branch gating order and the wait-target filter.
 
+### Phase 9 — Merge Dynamic List + Lineage Barrier
+
+- Added `MergeNode` as a flow node with `path_a` through `path_e` inputs and one
+  `default` output.
+- MasterState now tracks branch groups with a counter-style lineage fallback:
+  spawned branches are pending until they arrive at a merge or terminate.
+- Merge arrivals store their available input values. Once the group is accounted
+  for, only the branch carrying the selected input continues; sibling arrivals
+  terminate at the merge.
+- Merge config derives its displayed inputs from current incoming connections on
+  every config open. It stores only `selected_input_port`.
+- The merge config UI renders each incoming input description with a checkbox
+  underneath it and enforces one selected checkbox for v1.
+- Future merge versions may add multi-output/combine behavior, but v1 forwards
+  one selected branch input to the next node.
+- Tests cover slow/fast parallel branch merging and the single-checkbox config
+  behavior.
+
 ### UX Patch — Dynamic Config Sections
 
 - Node config modals now use a scrollable body so longer config surfaces remain
@@ -352,35 +370,6 @@ Example config:
 ---
 
 ## 6. Remaining Implementation Plan
-
-### Phase 9 — Merge Dynamic List + Lineage Barrier
-
-**Files:** `frontend/screens/node_config.py` or branch selector path,
-`backend/master_state.py`, merge node implementation.
-**Depends on:** Phase 1.
-
-Step 0: verify whether current master-state lineage can answer:
-
-```text
-Are all supervisors descended from branch point P accounted for?
-```
-
-If yes, implement a lineage barrier. If not, use the counter fallback:
-branch points increment expected-arrivals; arrivals and terminations drain the
-counter; merge proceeds when it reaches zero.
-
-Requirements:
-
-- Edit-time branch list derives from workflow structure whenever config opens.
-- Do not store static branch lists.
-- Merge waits for every relevant descendant branch to reach merge or terminate.
-- Uneven branch speeds and nested dynamic branches must not race the merge.
-
-Done when:
-
-- Merge config updates from current structure.
-- Runtime merge is correct under parallel branches, slow branches, and nested
-  branch spawning.
 
 ### Phase 10 — Documentation Modernization
 
