@@ -1,5 +1,25 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-02 — Frontend Standardization Review
+
+- Reviewed recent frontend bugs strategically. The shared pattern is not one
+  dropdown bug; it is repeated drift around focus state, command-mode key
+  handling, Textual widget defaults, dynamic config sections, and custom UI
+  escaping the schema generator.
+- Expanded `MASTER_BUILD_PLAN.md` with recurring frontend bug patterns and a
+  Node UI Standardization Contract. The contract makes the intended path clear:
+  normal nodes should be supported by metadata (`config_schema`, ports,
+  category, defaults, and optional `ui_hints`) without frontend file edits.
+- Added backlog projects for schema-driven node UI expansion and a unified
+  toast/alert helper.
+- Updated `AGENT_HANDOFF.md` so future work keeps using
+  `command_navigation.py`, avoids blank `Select` rows by default, and adds
+  generic helpers before custom node-specific config screens.
+
+Verification:
+
+- Docs-only pass; no code tests run.
+
 ## 2026-06-01 — Dropdown Navigation Polish and Command UI Helper
 
 - Fixed generated node config dropdowns so option-backed fields do not include

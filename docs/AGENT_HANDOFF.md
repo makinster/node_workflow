@@ -55,6 +55,22 @@ Recent usability patch (Phase 5.5 — keyboard nav hardening):
   instead of raw port ids.
 - `_ancestor_visible` filters `display=False` containers from nav list.
 - `scroll_to_widget` called directly on scroll container for reliable scrolling.
+- `frontend/widgets/command_navigation.py` is the new shared place for
+  command-mode activation and dropdown behavior. Do not duplicate Textual
+  `Select` overlay handling in individual screens.
+- Schema-generated dropdowns should not include Textual's blank `Select` row
+  unless a future schema explicitly requests an optional blank value.
+
+Frontend standardization direction:
+
+- Normal new nodes should be UI-supported through node metadata:
+  `display_name`, `description`, `category`, ports, `default_config`,
+  `config_schema`, and optional `ui_hints`.
+- Use generic schema/helper extensions before adding custom node-specific config
+  screens.
+- Known recurring UI bug classes are focus drift, hidden widgets in nav lists,
+  scroll containers taking focus, dynamic config rows not remounting, dropdown
+  overlay state persistence, and direct ad hoc `app.notify(...)` copy.
 
 Recent docs pass:
 

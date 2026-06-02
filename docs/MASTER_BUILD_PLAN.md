@@ -128,6 +128,13 @@ While coding:
   `Binding(..., priority=True)`.
 - Text-heavy modals should avoid single-letter close/save bindings. Prefer
   `Esc`, `Ctrl+S`, `Ctrl+Enter`, and visible buttons.
+- New node UI must start from the node class metadata: `input_ports`,
+  `output_ports`, `default_config`, `config_schema`, optional `ui_hints`, and
+  optional `category`. Add a frontend helper/schema extension before writing a
+  one-off node config screen.
+- Command-mode modals should use shared widgets/helpers (`CommandInput`,
+  `CommandTextArea`, `command_navigation.py`, `form_generator.py`) instead of
+  duplicating focus, dropdown, and activation logic.
 - Do not dual-maintain derived graph metadata. Derive it from connections and
   node config at save/validate time.
 - Keep modules concise. Validation is the safety net; avoid heavy runtime
@@ -271,8 +278,8 @@ Example config:
 - Single-group schemas stay flat so simple nodes do not get an empty or noisy
   tab bar.
 - Numeric zero values now render as `"0"` instead of a blank field.
-- Blank `Select` fields now use Textual's `Select.NULL` sentinel instead of the
-  older falsey blank value.
+- Schema-generated `Select` fields now use `allow_blank=False` by default so
+  Textual does not inject a blank "Select" row ahead of real node options.
 - Tests cover pure grouping behavior plus mounted Textual grouped and
   single-group forms.
 
@@ -325,6 +332,89 @@ Example config:
 - Use `app.notify(...)` for now, but future work should wrap it in a single
   frontend alert/toast helper so copy, severity, duration, and placement are
   consistent.
+
+### Recurring Frontend Bug Patterns
+
+These are the common/adjacent bugs seen repeatedly during recent UI work:
+
+- **Widget defaults leaking through.** Textual controls have useful defaults that
+  can be wrong for command-mode workflows: blank `Select` rows, focusable scroll
+  containers, `Vertical` height defaults inside `VerticalScroll`, and overlay
+  highlight persistence. Wrap or normalize these in helpers.
+- **Per-screen key handling drift.** Similar modals implemented `W/S`, arrows,
+  `E`, `Esc`, and text-field editing differently. New screens should reuse
+  command-navigation helpers first.
+- **Invisible or stale focus.** Keyboard navigation can land on hidden widgets,
+  labels without a selected state, or widgets below the viewport. Always filter
+  hidden ancestors, show a visible highlight for non-interactive stops, and
+  scroll the active target into view.
+- **Dynamic config sections not remounting predictably.** Checkbox/count-driven
+  sections must preserve typed values, mount/remove rows immediately, and use
+  stable ids/classes so tests and keyboard nav can find them.
+- **Custom node config leakage.** Special cases such as branch labels, merge
+  branch selection, previous-output preview, and memory-bank declarations should
+  become generic schema helpers or well-named frontend adapters, not scattered
+  per-node screens.
+- **Graph edges mixed with value config.** Ports and branch paths are editor
+  structure; memory-bank output declarations are values. Keep the UI separation
+  strict or users see irrelevant fields like memory outputs on branch/merge
+  router nodes.
+- **Long text and terminal constraints.** Outputs, descriptions, prompts, and
+  future AI fields may be long. Use bounded multiline widgets and scrollable
+  sections instead of fixed compact rows.
+- **Notification copy fragmentation.** Many screens call `app.notify(...)`
+  directly with ad hoc text. A unified alert/toast helper should eventually own
+  severity, copy style, duration, and de-duplication.
+
+### Node UI Standardization Contract
+
+Adding a normal node should not require frontend file edits. The node class
+should provide enough metadata for the UI to render, validate, and explain it.
+
+Required node metadata:
+
+- `node_type`: stable saved identifier.
+- `display_name`: human-facing selector/editor name.
+- `description`: concise behavior description.
+- `category`: selector grouping and future visual identity.
+- `input_ports` / `output_ports`: graph structure. Multi-output ports are branch
+  paths and get generated `<port>_label` fields.
+- `default_config`: complete defaults, including false/zero values.
+- `config_schema`: field-level UI contract for generated config.
+
+Supported schema keys today:
+
+- `type`: one of `string`, `integer`, `float`, `number`, `boolean`, `select`,
+  `multiselect`, `multiline`, or `code`.
+- `label`: user-facing field label. Defaults to the field name.
+- `description`: compact help text shown near the field.
+- `required`: validation/display hint.
+- `options`: required for `select` and `multiselect`.
+- `group`: optional tab/section grouping.
+
+Optional UI metadata:
+
+- `ui_hints.pass_through`: display-only hint that the node forwards upstream
+  input to its output.
+- Future hints should be generic, documented here, and rendered in
+  `form_generator.py` or a shared config helper.
+
+Frontend defaults:
+
+- `string` / `integer` / `float` / `number` -> `CommandInput`.
+- `multiline` / `code` -> `CommandTextArea`.
+- `boolean` -> `Checkbox`.
+- `select` or any field with `options` -> `Select` with no blank injected row.
+- `multiselect` -> `SelectionList`.
+- Multiple schema `group`s -> tabs; one group -> flat form.
+
+Escalation rule:
+
+- If a new node needs a UI that cannot be represented by this contract, add the
+  smallest generic schema key or frontend helper that would help the next
+  similar node too. Only use node-specific config screens for structural graph
+  tools such as merge branch selection where the UI derives from workflow
+  topology rather than node-local config alone.
 
 ### Phase 6 — Breakpoints
 
@@ -753,6 +843,13 @@ Done when:
 - Memory-bank output declarations for typical nodes are count-driven rows with
   `Output Description:` and `Output:`. Keep descriptions compact; render outputs
   as bounded multiline fields because real workflow values can be long.
+- Dropdowns should open with the first real option highlighted every time. Do
+  not rely on Textual overlay persistence.
+- Selection lists should toggle the highlighted item, not the first item or the
+  whole list.
+- Every new keyboard-friendly modal should have at least one regression or smoke
+  test covering open, move, activate, edit/select, escape edit mode, and save or
+  cancel.
 
 ---
 
