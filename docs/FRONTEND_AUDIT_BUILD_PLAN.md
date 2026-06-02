@@ -293,6 +293,12 @@ Done when:
 
 **Files:** new frontend alert helper, `app.py`, screens using `app.notify`.
 
+**Status:** in progress. `frontend/notifications.py` now owns named
+notification helpers, and `editor.py` uses them for editor outcomes. `app.py`
+and `execution.py` still have direct notifications in the current dirty
+worktree; migrate them only when their pre-existing Textual-pivot file state can
+be staged safely.
+
 Tasks:
 
 - Create named notification helpers for common outcomes:
@@ -353,13 +359,13 @@ mounted tests in `tests/test_debug_nodes.py`.
 
 | Screen / Widget | Type | Current Helpers | Known Risks | Next Action |
 |---|---|---|---|---|
-| `app.py` | root app | App-level `check_action` blocks text-edit `"back"` | 20+ direct `notify` calls; workflow callbacks mix persistence, confirmation, and copy | FA-5 alert helper; later split action adapters |
-| `editor.py` | main workflow screen | `NodeList`; priority bindings for editor actions; derived branch labels | many direct `notify` calls; cursor/nav model remains local; branch path display only shows one branch at a time | Phase 13 cursor audit, FA-5 alert helper |
-| `execution.py` | main workflow screen/viewer | `RichLog`; `NodeList`; modal launch actions | direct `notify`; long output mostly safe via `RichLog`, but branch/memory summary still `Static` | FA-6 viewer audit |
+| `app.py` | root app | App-level `check_action` blocks text-edit `"back"` | direct notifications remain; workflow callbacks mix persistence, confirmation, and routing | FA-5 migration after file-state cleanup |
+| `editor.py` | main workflow screen | `NodeList`; priority bindings for editor actions; derived branch labels; `notifications.py` named helpers | cursor/nav model remains local; branch path display only shows one branch at a time | Phase 13 cursor audit, FA-7 visual/help alignment |
+| `execution.py` | main workflow screen/viewer | `RichLog`; `NodeList`; modal launch actions | direct notifications remain; long output mostly safe via `RichLog`, but branch/memory summary still `Static` | FA-5 migration after file-state cleanup, FA-6 viewer audit |
 | `node_config.py` | command modal + topology adapters | `CommandInput`, `CommandTextArea`, `command_navigation`, `form_generator`, `VerticalScroll` with `can_focus=False` | largest mixed surface; dynamic sections and merge topology logic still local; reference behavior not yet reusable enough | FA-1 reference extraction, FA-4 dynamic sections |
 | `node_selector.py` | list selector with filter | `CommandInput`; `list_navigation` highlight/focus/move helper | filter/list grammar is now shared enough for modal selectors; local filter escape behavior remains intentional | Watch with FA-2 regressions |
 | `branch_selector.py` | list selector | `ListView`; `list_navigation`; priority `W/S/E` bindings | active branch remains the initial highlight by design, rather than always top row | Watch with FA-2 regressions |
-| `workflow_library.py` | list selector + path prompt | `ListView`; `list_navigation`; `CommandInput` in `PathPromptScreen`; path prompt uses `command_navigation` activation/blocking | selector keyboard movement is standardized; action/copy notifications remain ad hoc | FA-5 alert helper |
+| `workflow_library.py` | list selector + path prompt | `ListView`; `list_navigation`; `CommandInput` in `PathPromptScreen`; path prompt uses `command_navigation` activation/blocking | selector keyboard movement is standardized; workflow action notifications now come from app helper callbacks | Watch with library regressions |
 | `settings.py` | command modal | `CommandInput`; `command_navigation` activation/blocking/focus movement | migrated; still lacks global mode indicator | Watch during FA-7 |
 | `user_input.py` | command modal | `CommandInput`; `command_navigation` activation/blocking | migrated; cancel semantics are sensitive because it can stop runs | Watch with focused regressions |
 | `confirm.py` | confirmation modal | simple `Y/N/Esc` bindings | likely okay; should become standard destructive-action confirm component | FA-5 copy/severity audit |
@@ -381,8 +387,10 @@ mounted tests in `tests/test_debug_nodes.py`.
    `BranchSelectorScreen`, and `WorkflowLibraryScreen` use
    `list_navigation.py` for highlight clamping, focus, scrolling, and movement.
    Keep future modal selectors on this helper.
-3. **Notifications need a wrapper.** Direct `notify` calls are concentrated in
-   `app.py`, `editor.py`, and `execution.py`; this is a bounded FA-5 pass.
+3. **Notifications now have a wrapper.** `frontend/notifications.py` centralizes
+   named notification copy. `editor.py` is migrated; `app.py` and `execution.py`
+   remain because their current file state is not safe to stage as a narrow
+   change.
 4. **Viewer surfaces are mixed but not all bad.** `memory_viewer.py` already uses
    `DataTable`, `execution.py` uses `RichLog`, but `output_viewer.py` and
    `error_details.py` still rely heavily on `Static`.

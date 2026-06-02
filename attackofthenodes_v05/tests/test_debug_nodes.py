@@ -1394,6 +1394,39 @@ def test_dynamic_selection_helper_filters_stale_values():
     print("test_dynamic_selection_helper_filters_stale_values PASSED")
 
 
+def test_frontend_notification_helpers_standardize_copy_and_severity():
+    from frontend import notifications
+
+    class FakeApp:
+        def __init__(self) -> None:
+            self.calls = []
+
+        def notify(self, message, **kwargs):
+            self.calls.append((message, kwargs))
+
+    app = FakeApp()
+    notifications.workflow_saved(app)
+    notifications.workflow_start_failed(app)
+    notifications.missing_service(app, "Export")
+    notifications.workflow_exported(app, "/tmp/workflow.json", True)
+    notifications.workflow_deleted(app, False)
+    notifications.cannot_delete_start_node(app)
+    notifications.node_added(app, inserted=True)
+    notifications.no_run_errors(app)
+
+    assert app.calls == [
+        ("Workflow saved", {}),
+        ("Workflow did not start", {"severity": "error"}),
+        ("Export requires SaveManager", {"severity": "error"}),
+        ("Exported workflow to /tmp/workflow.json", {}),
+        ("Workflow was not found", {}),
+        ("Cannot delete the Start node", {"severity": "error"}),
+        ("Node inserted", {}),
+        ("No errors for this run", {}),
+    ]
+    print("test_frontend_notification_helpers_standardize_copy_and_severity PASSED")
+
+
 async def _test_node_config_dynamic_membank_output_rows():
     from textual.app import App, ComposeResult
     from textual.widgets import Checkbox, Input, TextArea
@@ -1834,6 +1867,7 @@ if __name__ == "__main__":
         test_node_config_select_activates_from_keyboard,
         test_dynamic_row_helper_preserves_visible_rows_only,
         test_dynamic_selection_helper_filters_stale_values,
+        test_frontend_notification_helpers_standardize_copy_and_severity,
         test_node_config_dynamic_membank_output_rows,
         test_editor_hides_empty_start_until_first_node_added,
         test_node_config_previous_output_preview_reads_transient_source,

@@ -1,5 +1,24 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-02 — FA-5 Notification Helper
+
+- Added `frontend/notifications.py` with named helpers for common workflow,
+  editor, execution, settings, import/export, and missing-service outcomes.
+- Migrated editor-screen `.notify(...)` calls to the shared helper. App-root
+  and execution-screen notifications remain direct for now because those files
+  are part of the pre-existing dirty/untracked Textual-pivot worktree state and
+  cannot be staged as narrow changes safely.
+- Added a focused regression that pins notification copy and severity for both
+  app-level and screen-level outcomes.
+- Updated `FRONTEND_AUDIT_BUILD_PLAN.md` to mark FA-5 in progress and to direct
+  future notification copy through the helper.
+
+Verification:
+
+- `python -m compileall -q .`
+- `python -m pytest tests/test_debug_nodes.py -v`
+- Result: 46 passed.
+
 ## 2026-06-02 — FA-4 Dynamic Selection Helper
 
 - Extended `frontend/widgets/dynamic_sections.py` with shared dynamic

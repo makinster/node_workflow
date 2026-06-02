@@ -15,6 +15,7 @@ from frontend.screens.branch_selector import BranchSelectorScreen
 from frontend.screens.error_details import ErrorDetailsScreen
 from frontend.screens.node_config import NodeConfigScreen
 from frontend.screens.node_selector import NodeSelectorScreen
+from frontend import notifications
 from frontend.widgets.node_list import NodeList
 from frontend.widgets.status_bar import StatusBar
 
@@ -146,7 +147,7 @@ class EditorScreen(Screen):
         errors = result.get("errors", [])
         warnings = result.get("warnings", [])
         if not errors and not warnings:
-            self.app.notify("Workflow is valid")
+            notifications.workflow_valid(self.app)
             return
         self.app.push_screen(
             ErrorDetailsScreen({"validation": result}),
@@ -161,34 +162,32 @@ class EditorScreen(Screen):
 
     def action_toggle_breakpoint(self) -> None:
         if self.selected_node_id is None:
-            self.app.notify("No node selected")
+            notifications.no_node_selected(self.app)
             return
         node = self.workflow_map.get_node_data(self.selected_node_id)
         if node is None:
-            self.app.notify("No node selected")
+            notifications.no_node_selected(self.app)
             return
         enabled = not bool(node.get("breakpoint"))
         self.workflow_map.set_breakpoint(self.selected_node_id, enabled)
         self.refresh_from_backend()
-        self.app.notify("Breakpoint set" if enabled else "Breakpoint cleared")
+        notifications.breakpoint_toggled(self.app, enabled)
 
     def action_clear_breakpoints(self) -> None:
         cleared = self.workflow_map.clear_all_breakpoints()
         self.refresh_from_backend()
-        self.app.notify(
-            f"Cleared {cleared} breakpoint{'s' if cleared != 1 else ''}"
-        )
+        notifications.breakpoints_cleared(self.app, cleared)
 
     def action_edit_selected(self) -> None:
         if self.selected_row and self.selected_row["kind"] == "branch_select":
             self._open_branch_selector(self.selected_row)
             return
         if self.selected_node_id is None:
-            self.app.notify("No node selected")
+            notifications.no_node_selected(self.app)
             return
         node = self.workflow_map.get_node_data(self.selected_node_id)
         if node is None:
-            self.app.notify("No node selected")
+            notifications.no_node_selected(self.app)
             return
         # Tombstone nodes open the NodeSelector to pick a replacement
         if node.get("type") == "tombstone_node":
@@ -210,14 +209,14 @@ class EditorScreen(Screen):
 
     def action_delete_selected(self) -> None:
         if self.selected_node_id is None:
-            self.app.notify("No node selected")
+            notifications.no_node_selected(self.app)
             return
         node = self.workflow_map.get_node_data(self.selected_node_id)
         if node is None:
-            self.app.notify("No node selected")
+            notifications.no_node_selected(self.app)
             return
         if node.get("type") == "start_node":
-            self.app.notify("Cannot delete the Start node", severity="error")
+            notifications.cannot_delete_start_node(self.app)
             return
 
         self._do_delete(True)
@@ -227,14 +226,14 @@ class EditorScreen(Screen):
             return
         self.workflow_map.replace_with_tombstone(self.selected_node_id)
         self.refresh_from_backend()
-        self.app.notify("Node deleted — open the stub to choose a replacement")
+        notifications.node_deleted(self.app)
 
     def _replace_tombstone_from_modal(self, node_type: str | None) -> None:
         if not node_type or self.selected_node_id is None:
             return
         self.workflow_map.replace_node_type(self.selected_node_id, node_type)
         self.refresh_from_backend()
-        self.app.notify(f"Node replaced with {node_type}")
+        notifications.node_replaced(self.app, node_type)
 
     def action_cursor_up(self) -> None:
         self._move_selection(-1)
@@ -254,14 +253,14 @@ class EditorScreen(Screen):
         )
         node_id = self.workflow_map.add_node(node_type)
         if node_id is None:
-            self.app.notify(f"Unknown node type: {node_type}", severity="error")
+            notifications.unknown_node_type(self.app, node_type)
             return
         if source is not None:
             self._connect_new_node(source["node_id"], source["port"], node_id)
         self.selected_node_id = node_id
         self.selected_row = {"kind": "node", "node_id": node_id}
         self.refresh_from_backend()
-        self.app.notify("Node inserted" if insert_mode else "Node added")
+        notifications.node_added(self.app, inserted=insert_mode)
 
     def _save_node_config_from_modal(self, result: Dict[str, Any] | None) -> None:
         if not result or self.selected_node_id is None:
@@ -271,7 +270,7 @@ class EditorScreen(Screen):
         self.workflow_map.update_node_alias(self.selected_node_id, alias)
         self.workflow_map.update_node_config(self.selected_node_id, config)
         self.refresh_from_backend()
-        self.app.notify("Node updated")
+        notifications.node_updated(self.app)
 
     def _handle_validation_details_result(self, result: Dict[str, Any] | None) -> None:
         if not result or result.get("action") != "jump":
@@ -282,7 +281,7 @@ class EditorScreen(Screen):
         self.selected_node_id = node_id
         self.selected_row = {"kind": "node", "node_id": node_id}
         self.refresh_from_backend()
-        self.app.notify(f"Jumped to {node_id}")
+        notifications.jumped_to_node(self.app, node_id)
 
     def _open_branch_selector(self, row: Dict[str, Any]) -> None:
         branch_node_id = row["branch_node_id"]
@@ -316,7 +315,7 @@ class EditorScreen(Screen):
         self.refresh_from_backend()
         branch_node = self.workflow_map.get_node_data(branch_node_id) or {}
         branch_label = self._branch_port_labels(branch_node).get(branch_port, branch_port)
-        self.app.notify(f"Viewing branch: {branch_label}")
+        notifications.viewing_branch(self.app, branch_label)
 
     def _connect_new_node(self, source_node_id: str, source_port: str, target_node_id: str) -> None:
         source = self.workflow_map.get_node_data(source_node_id)
