@@ -101,6 +101,8 @@ All keyboard-first modals should follow the same rules:
 - `Esc` exits active typing mode before closing a modal.
 - Select dropdowns open at the first real option every time; while expanded,
   their overlay owns `W`/`S`, arrows, `E`/Enter, `Esc`, and `Ctrl+Q`.
+- Cancel/back actions must dismiss an expanded dropdown before they dismiss the
+  surrounding modal.
 - Selection lists toggle the highlighted item.
 - Focus changes scroll the target into view.
 
@@ -162,7 +164,9 @@ Done when:
 `UserInputScreen`, and `PathPromptScreen` on 2026-06-02. Node config command
 text fields now retain focus while active arrow-key editing is in progress.
 Generated `Select` dropdowns now share command-mode overlay handling for
-`W`/`S`, arrows, `E`/Enter, and dismiss keys.
+`W`/`S`, arrows, `E`/Enter, and dismiss keys. `NodeConfigScreen` also treats an
+expanded select as an active child surface, so cancel/back closes the dropdown
+before closing the config modal.
 
 Tasks:
 

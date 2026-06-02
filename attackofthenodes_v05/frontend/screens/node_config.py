@@ -478,6 +478,11 @@ class NodeConfigScreen(ModalScreen):
             )
 
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
+        expanded_select = self._expanded_select()
+        if expanded_select is not None and action in {"back", "cancel"}:
+            expanded_select.expanded = False
+            expanded_select.focus()
+            return False
         active_text = getattr(self, "_active_command_text_widget", None)
         if blocks_command_action(active_text, action):
             return False
@@ -542,6 +547,11 @@ class NodeConfigScreen(ModalScreen):
         self.dismiss({"alias": alias, "config": config})
 
     def action_cancel(self) -> None:
+        expanded_select = self._expanded_select()
+        if expanded_select is not None:
+            expanded_select.expanded = False
+            expanded_select.focus()
+            return
         self.dismiss(None)
 
     def action_cursor_up(self) -> None:

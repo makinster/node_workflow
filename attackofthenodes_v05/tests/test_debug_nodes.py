@@ -1319,7 +1319,6 @@ async def _test_node_config_select_activates_from_keyboard():
         assert condition.expanded is True
         overlay = select_overlay(condition)
         assert overlay.highlighted == 0
-        app.set_focus(overlay)
         await pilot.press("s")
         assert overlay.highlighted == 1
         await pilot.press("w")
@@ -1327,6 +1326,15 @@ async def _test_node_config_select_activates_from_keyboard():
         await pilot.press("down")
         assert overlay.highlighted == 1
         await pilot.press("up")
+        assert overlay.highlighted == 0
+        screen.action_cancel()
+        await pilot.pause()
+        assert condition.expanded is False
+        assert app.focused is condition
+        await pilot.press("e")
+        await pilot.pause()
+        assert condition.expanded is True
+        overlay = select_overlay(condition)
         assert overlay.highlighted == 0
         await pilot.press("down")
         await pilot.press("e")

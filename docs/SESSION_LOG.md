@@ -22,8 +22,14 @@
   avoiding any reliance on Textual's private overlay state.
 - The patch applies once at module import; all `Select` widgets in every screen
   benefit automatically.
-- Regression test now uses real `pilot.press()` with the overlay focused to
-  cover W/S, arrows, E commit, Esc close, and Save-button activation via E.
+- Follow-up hardening moved the mounted regression to the real user path:
+  focus the generated `Select`, press `E` to open it, then use `W`/`S`, arrows,
+  and `E` without manually focusing the private overlay.
+- `NodeConfigScreen.action_cancel()` now closes an expanded dropdown and keeps
+  focus on the select before it can close the whole config modal. This preserves
+  the command contract for `Ctrl+Q`/cancel while a dropdown is open.
+- Regression coverage now includes W/S, arrows, E commit, dropdown cancel, and
+  Save-button activation via E.
 
 Verification:
 
