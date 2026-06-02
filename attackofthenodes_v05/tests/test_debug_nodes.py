@@ -910,6 +910,66 @@ async def _test_form_generator_mounts_tabbed_and_single_group_forms():
     print("test_form_generator_mounts_tabbed_and_single_group_forms PASSED")
 
 
+def test_form_generator_honors_generic_schema_hints():
+    asyncio.run(_test_form_generator_honors_generic_schema_hints())
+
+
+async def _test_form_generator_honors_generic_schema_hints():
+    from textual.app import App, ComposeResult
+    from textual.validation import Number
+    from textual.widgets import Input, SelectionList, TextArea
+
+    from frontend.widgets.form_generator import build_form
+
+    schema = {
+        "duration": {
+            "type": "float",
+            "label": "Duration",
+            "placeholder": "0.25",
+            "min": 0.0,
+            "max": 60.0,
+        },
+        "notes": {
+            "type": "multiline",
+            "label": "Notes",
+            "placeholder": "Optional long text",
+            "height": 6,
+        },
+        "modes": {
+            "type": "multiselect",
+            "label": "Modes",
+            "options": ["fast", "safe", "verbose"],
+        },
+    }
+
+    getter_holder = {}
+
+    class HintFormApp(App):
+        def compose(self) -> ComposeResult:
+            form, getter = build_form(
+                schema,
+                {"duration": 0, "notes": "", "modes": ["safe", "verbose"]},
+            )
+            getter_holder["get_values"] = getter
+            yield form
+
+    app = HintFormApp()
+    async with app.run_test():
+        duration = app.query_one("#field-duration", Input)
+        notes = app.query_one("#field-notes", TextArea)
+        modes = app.query_one("#field-modes", SelectionList)
+
+        assert duration.value == "0"
+        assert duration.placeholder == "0.25"
+        assert any(isinstance(validator, Number) for validator in duration.validators)
+        assert notes.placeholder == "Optional long text"
+        assert notes.styles.height.value == 6
+        assert set(modes.selected) == {"safe", "verbose"}
+        assert getter_holder["get_values"]()["modes"] == ["safe", "verbose"]
+
+    print("test_form_generator_honors_generic_schema_hints PASSED")
+
+
 # ---------------------------------------------------------------------------
 # 24. Breakpoints pause before node execution and resume cleanly
 # ---------------------------------------------------------------------------
@@ -1705,6 +1765,7 @@ if __name__ == "__main__":
         test_sleep_config_shows_pass_through_hint,
         test_form_generator_groups_schema_for_tabs,
         test_form_generator_mounts_tabbed_and_single_group_forms,
+        test_form_generator_honors_generic_schema_hints,
         test_workflow_map_breakpoint_flags_are_persisted_in_node_data,
         test_breakpoint_pauses_before_node_execution_and_resumes,
         test_node_timings_are_recorded_for_run_history,

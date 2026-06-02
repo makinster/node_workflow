@@ -211,12 +211,17 @@ Done when:
 **Files:** `frontend/widgets/form_generator.py`,
 `backend/field_types.py` only if a new generic schema key requires validation.
 
+**Status:** in progress. Initial generator expansion completed 2026-06-02:
+placeholders, numeric `min`/`max` validators, multiline/code `height`,
+code-language hints, and multiselect default selections are supported without
+screen-specific code.
+
 Tasks:
 
 - Audit current node schemas and generated widgets.
 - Add generic schema keys only where they help many nodes:
   - `placeholder`
-  - `min`, `max`, `step`
+  - `min`, `max`
   - `allow_blank`
   - `height`
   - `visible_if`
@@ -226,6 +231,36 @@ Tasks:
 Done when:
 
 - New ordinary nodes can add richer fields without touching screen code.
+
+Current supported schema keys:
+
+| Key | Applies To | Effect |
+|---|---|---|
+| `type` | all fields | Chooses Textual widget: text/number/checkbox/select/selection list/text area |
+| `label` | all fields | Visible field label |
+| `description` | all fields | Small explanatory text below the label |
+| `required` | all fields | Adds `*` to the label; backend validation remains node/schema responsibility |
+| `default` | all fields | Used when current config lacks a value |
+| `group` | all fields | Groups fields; multiple groups render as tabs |
+| `options` | select/multiselect | Populates dropdown or selection list |
+| `placeholder` | string/integer/float/number/multiline/code | Placeholder text before editing |
+| `min`, `max` | integer/float/number | Textual validators on generated numeric inputs |
+| `min_length`, `max_length` | string | Textual length validators on generated text inputs |
+| `height` | multiline/code | Stable text-area height for long-value-safe rendering |
+| `language` | code | TextArea language hint |
+
+Node-author checklist:
+
+- Define ordinary config fields in `config_schema`; avoid frontend screen edits
+  unless the UI depends on workflow topology.
+- Prefer generic `type`, `label`, `description`, `required`, `default`,
+  `options`, and `group` before inventing a new key.
+- Use `placeholder`, `min`, `max`, `min_length`, `max_length`, and `height`
+  when the field needs stronger visual or validation hints.
+- Use `ui_hints` for behavior copy such as pass-through notes that is not an
+  editable config value.
+- Keep topology-derived config, such as merge branch selection, in
+  `NodeConfigScreen` adapters until FA-4 extracts a dynamic-section helper.
 
 ### Phase FA-4 — Dynamic Config Sections
 

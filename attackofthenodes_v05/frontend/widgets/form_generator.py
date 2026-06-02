@@ -7,6 +7,7 @@ import re
 from typing import Any, Callable, Dict, Iterable, List, Tuple
 
 from textual.containers import Vertical
+from textual.validation import Integer, Length, Number, Validator
 from textual.widgets import (
     Checkbox,
     Input,
@@ -120,6 +121,7 @@ def _widget_for_field(
     field_schema: Dict[str, Any],
     value: Any,
 ):
+    placeholder = str(field_schema.get("placeholder", ""))
     if field_schema.get("options") and field_type not in {"multiselect", "boolean"}:
         return Select(
             _select_options(field_schema.get("options", [])),
@@ -128,7 +130,19 @@ def _widget_for_field(
             allow_blank=False,
         )
     if field_type in {"multiline", "code"}:
-        return CommandTextArea("" if value is None else str(value), id=f"field-{field_name}")
+        widget = CommandTextArea(
+            "" if value is None else str(value),
+            id=f"field-{field_name}",
+            placeholder=placeholder,
+            language=field_schema.get("language") if field_type == "code" else None,
+        )
+        height = field_schema.get("height")
+        if height is not None:
+            try:
+                widget.styles.height = max(1, int(height))
+            except (TypeError, ValueError):
+                pass
+        return widget
     if field_type == "boolean":
         return Checkbox(value=bool(value), id=f"field-{field_name}")
     if field_type == "select":
@@ -139,7 +153,11 @@ def _widget_for_field(
             allow_blank=False,
         )
     if field_type == "multiselect":
-        options = [(str(option), option) for option in field_schema.get("options", [])]
+        selected_values = _selected_values(value)
+        options = [
+            (str(option), option, option in selected_values)
+            for option in field_schema.get("options", [])
+        ]
         return SelectionList(*options, id=f"field-{field_name}")
     input_type = "text"
     if field_type == "integer":
@@ -147,11 +165,46 @@ def _widget_for_field(
     elif field_type in {"float", "number"}:
         input_type = "number"
     text_value = "" if value is None else str(value)
-    return CommandInput(value=text_value, type=input_type, id=f"field-{field_name}")
+    return CommandInput(
+        value=text_value,
+        placeholder=placeholder,
+        type=input_type,
+        id=f"field-{field_name}",
+        validators=_validators_for_field(field_type, field_schema),
+    )
 
 
 def _select_options(options: Iterable[Any]) -> list[tuple[str, Any]]:
     return [(str(option), option) for option in options]
+
+
+def _selected_values(value: Any) -> set[Any]:
+    if value is None:
+        return set()
+    if isinstance(value, (list, tuple, set)):
+        return set(value)
+    return {value}
+
+
+def _validators_for_field(
+    field_type: str,
+    field_schema: Dict[str, Any],
+) -> list[Validator]:
+    validators: list[Validator] = []
+    minimum = field_schema.get("min")
+    maximum = field_schema.get("max")
+    if field_type == "integer" and (minimum is not None or maximum is not None):
+        validators.append(Integer(minimum=minimum, maximum=maximum))
+    elif field_type in {"float", "number"} and (
+        minimum is not None or maximum is not None
+    ):
+        validators.append(Number(minimum=minimum, maximum=maximum))
+
+    min_length = field_schema.get("min_length")
+    max_length = field_schema.get("max_length")
+    if field_type == "string" and (min_length is not None or max_length is not None):
+        validators.append(Length(minimum=min_length, maximum=max_length))
+    return validators
 
 
 def _slug_id(value: str, index: int) -> str:

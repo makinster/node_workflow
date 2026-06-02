@@ -1,5 +1,23 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-02 — FA-3 Schema Generator Hints
+
+- Expanded `frontend/widgets/form_generator.py` so ordinary node schemas can
+  drive more of the config UI without screen-specific edits.
+- Added support for `placeholder`, numeric `min`/`max` validators, string
+  `min_length`/`max_length` validators, multiline/code `height`, code
+  `language`, and multiselect default selections.
+- Added a mounted Textual regression covering numeric hints, long-text sizing,
+  placeholder rendering, and multiselect selected defaults.
+- Updated `FRONTEND_AUDIT_BUILD_PLAN.md` with the current supported schema-key
+  contract and a node-author checklist.
+
+Verification:
+
+- `python -m compileall -q .`
+- `python -m pytest tests/test_debug_nodes.py -v`
+- Result: 43 passed.
+
 ## 2026-06-02 — FA-2 Selector List Navigation
 
 - Added `frontend/widgets/list_navigation.py` for shared ListView highlight
