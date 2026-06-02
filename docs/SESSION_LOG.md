@@ -2,8 +2,9 @@
 
 ## 2026-06-01 — Phase 9 Merge Node and Branch Barrier
 
-- Added `BranchEndNode` as a no-config utility marker. Merge config lists only
-  branches that close through connected Branch End nodes.
+- Added `BranchEndNode` as an optional no-config utility marker. Merge config now
+  derives open branch paths directly from workflow structure, so Branch End is
+  not required for the list to populate.
 - Added `MergeNode` as a registered flow node. It waits for sibling branch
   arrivals and emits one selected input through its `default` output.
 - Added a MasterState counter-style lineage fallback: branch groups track pending
@@ -13,6 +14,8 @@
   branch output details, and fields for `branch_output_name` /
   `branch_output_description`. It removes previous-output preview, memory-bank
   sections, and timeout from the Merge modal.
+- Branch-node dropdowns now open from keyboard activation (`E` / Enter) while
+  using command-mode navigation.
 - Non-selected branch arrivals terminate at the merge after the barrier releases;
   only the branch carrying the selected input continues downstream.
 - Restored dynamic memory-bank output rows in node config and fixed command-mode
@@ -24,7 +27,7 @@ Verification:
 
 - `python -m compileall -q .`
 - `python -m pytest tests/test_debug_nodes.py -v`
-- Result: 37 passed.
+- Result: 38 passed.
 
 ## 2026-06-01 — Keyboard Navigation and Config Modal UX Hardening
 

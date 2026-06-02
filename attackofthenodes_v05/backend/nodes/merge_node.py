@@ -16,7 +16,7 @@ class MergeNode(Node):
     input_ports: ClassVar[List[str]] = ["path_a", "path_b", "path_c", "path_d", "path_e"]
     output_ports: ClassVar[List[str]] = ["default"]
     default_config: ClassVar[Dict[str, Any]] = {
-        "selected_branch_end_id": "",
+        "selected_branch_id": "",
         "selected_input_port": "path_a",
         "branch_output_name": "",
         "branch_output_description": "",

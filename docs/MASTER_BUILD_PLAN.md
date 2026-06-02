@@ -342,8 +342,8 @@ Example config:
 
 ### Phase 9 — Merge Dynamic List + Lineage Barrier
 
-- Added `BranchEndNode` as a no-config utility marker. A branch appears in Merge
-  config only after a Branch End node on that branch is connected to the merge.
+- Added `BranchEndNode` as an optional no-config utility marker. Merge no longer
+  requires it for branch discovery.
 - Added `MergeNode` as a flow node with `path_a` through `path_e` inputs and one
   `default` output.
 - MasterState now tracks branch groups with a counter-style lineage fallback:
@@ -351,9 +351,11 @@ Example config:
 - Merge arrivals store their available input values. Once the group is accounted
   for, only the branch carrying the selected input continues; sibling arrivals
   terminate at the merge.
-- Merge config derives the branch-close list from connected Branch End nodes on
-  every config open. It stores `selected_branch_end_id`, `selected_input_port`,
-  `branch_output_name`, and `branch_output_description`.
+- Merge config derives the branch-close list from workflow structure on every
+  config open. Open branch paths appear even before they are wired to the merge;
+  paths ending at an output/end node or another merge are treated as closed. It
+  stores `selected_branch_id`, `selected_input_port`, `branch_output_name`, and
+  `branch_output_description`.
 - The merge config UI is custom and minimal: no previous-output preview, no
   memory-bank inputs/outputs, and no timeout field. It renders the branch list,
   selected branch output details, and fields for naming/describing the branch

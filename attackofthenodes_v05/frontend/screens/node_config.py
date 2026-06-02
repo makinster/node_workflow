@@ -117,61 +117,159 @@ def wait_target_options(workflow_map, current_node_id: str) -> list[tuple[str, s
 
 
 def merge_input_options(workflow_map, current_node_id: str) -> list[Dict[str, str]]:
-    """Return merge branch-close options from connected Branch End nodes."""
-    node = workflow_map.get_node_data(current_node_id) or {}
+    """Return branch paths that are open or already close into this merge."""
+    merge_input_ports = ["path_a", "path_b", "path_c", "path_d", "path_e"]
     options: list[Dict[str, str]] = []
-    for index, conn in enumerate(node.get("connections", {}).get("inputs", [])):
-        source_id = conn.get("source_node_id", "?")
-        source_node = workflow_map.get_node_data(source_id) or {}
-        if source_node.get("type") != "branch_end_node":
+    seen: set[tuple[str, str]] = set()
+    for branch_id, branch_node in sorted(workflow_map.get_all_node_data().items()):
+        branch_ports = _node_output_ports(workflow_map, branch_node)
+        if len(branch_ports) <= 1:
             continue
-        branch_end_name = source_node.get("alias") or "Branch End"
-        source_port = conn.get("source_port", "default")
-        target_port = conn.get("target_port", "input")
-        upstream = _branch_end_upstream(workflow_map, str(source_id))
-        output = _source_output_details(upstream["node"], upstream["port"])
-        branch_label = _upstream_branch_label(
-            workflow_map,
-            str(source_id),
-            current_node_id,
-            str(target_port),
-        )
-        options.append(
-            {
-                "id": f"merge-input-choice-{index}",
-                "port": str(target_port),
-                "branch_end_id": str(source_id),
-                "branch_label": branch_label,
-                "branch_end": f"{branch_end_name} ({source_id})",
-                "last_node": upstream["label"],
-                "source_port": str(source_port),
-                "description": f"{branch_label} closes at Branch End ({source_id})",
-                "output_name": output["name"],
-                "output_description": output["description"],
-            }
-        )
+        branch_config = branch_node.get("config") or {}
+        for branch_port in branch_ports:
+            key = (branch_id, branch_port)
+            if key in seen:
+                continue
+            seen.add(key)
+            trace = _trace_branch_path(workflow_map, branch_id, branch_port, current_node_id)
+            if trace["status"] not in {"open", "current_merge"}:
+                continue
+            target_port = trace["target_port"] or _default_merge_input_port(
+                branch_port,
+                len(options),
+                merge_input_ports,
+            )
+            branch_label = str(branch_config.get(f"{branch_port}_label") or "").strip()
+            if not branch_label:
+                branch_label = branch_port.replace("_", " ").title()
+            last_node = trace["last_node"]
+            output = _source_output_details(last_node, trace["last_port"])
+            last_node_id = trace["last_node_id"] or branch_id
+            last_name = last_node.get("alias") or last_node.get("type") or last_node_id
+            status_label = "closes at this merge" if trace["status"] == "current_merge" else "is open"
+            options.append(
+                {
+                    "id": f"merge-input-choice-{len(options)}",
+                    "port": str(target_port),
+                    "branch_id": branch_id,
+                    "branch_port": branch_port,
+                    "branch_label": branch_label,
+                    "branch_end_id": trace["last_node_id"] or "",
+                    "branch_end": f"{last_name} ({last_node_id})",
+                    "last_node": f"{last_name} ({last_node_id})",
+                    "source_port": trace["last_port"],
+                    "description": f"{branch_label} {status_label}",
+                    "output_name": output["name"],
+                    "output_description": output["description"],
+                }
+            )
     return options
 
 
-def _branch_end_upstream(workflow_map, branch_end_id: str) -> Dict[str, Any]:
-    branch_end = workflow_map.get_node_data(branch_end_id) or {}
-    inputs = branch_end.get("connections", {}).get("inputs", [])
-    if not inputs:
-        return {
-            "node": {},
-            "port": "default",
-            "label": "No upstream node",
-        }
-    conn = inputs[0]
-    source_id = conn.get("source_node_id", "?")
-    source_node = workflow_map.get_node_data(source_id) or {}
-    source_name = source_node.get("alias") or source_node.get("type") or source_id
-    source_port = str(conn.get("source_port", "default"))
-    return {
-        "node": source_node,
-        "port": source_port,
-        "label": f"{source_name} ({source_id})",
-    }
+def _node_output_ports(workflow_map, node: Dict[str, Any]) -> list[str]:
+    factory = getattr(workflow_map, "_factory", None)
+    node_type = node.get("type")
+    if factory is not None:
+        for metadata in factory.get_node_types_metadata():
+            if metadata.get("type") == node_type:
+                return [str(port) for port in metadata.get("output_ports") or []]
+    outputs = node.get("connections", {}).get("outputs", [])
+    return sorted({str(conn.get("source_port", "default")) for conn in outputs})
+
+
+def _trace_branch_path(
+    workflow_map,
+    branch_id: str,
+    branch_port: str,
+    current_merge_id: str,
+) -> Dict[str, Any]:
+    node = workflow_map.get_node_data(branch_id) or {}
+    current_id = branch_id
+    current_port = branch_port
+    last_node_id = branch_id
+    last_node = node
+    last_port = branch_port
+    seen: set[str] = set()
+
+    while True:
+        if current_id in seen:
+            return {
+                "status": "open",
+                "target_port": "",
+                "last_node_id": last_node_id,
+                "last_node": last_node,
+                "last_port": last_port,
+            }
+        seen.add(current_id)
+        current_node = workflow_map.get_node_data(current_id) or {}
+        outputs = current_node.get("connections", {}).get("outputs", [])
+        next_conn = next(
+            (
+                conn
+                for conn in outputs
+                if str(conn.get("source_port", "default")) == current_port
+            ),
+            None,
+        )
+        if next_conn is None and current_port != "default":
+            next_conn = next(
+                (
+                    conn
+                    for conn in outputs
+                    if str(conn.get("source_port", "default")) == "default"
+                ),
+                None,
+            )
+        if next_conn is None:
+            status = "closed" if _node_closes_branch(current_node) else "open"
+            return {
+                "status": status,
+                "target_port": "",
+                "last_node_id": current_id,
+                "last_node": current_node,
+                "last_port": current_port,
+            }
+        target_id = str(next_conn.get("target_node_id") or "")
+        target_port = str(next_conn.get("target_port") or "")
+        source_port = str(next_conn.get("source_port", "default"))
+        target_node = workflow_map.get_node_data(target_id) or {}
+        if target_id == current_merge_id:
+            return {
+                "status": "current_merge",
+                "target_port": target_port,
+                "last_node_id": current_id,
+                "last_node": current_node,
+                "last_port": source_port,
+            }
+        if target_node.get("type") == "merge_node":
+            return {
+                "status": "closed",
+                "target_port": target_port,
+                "last_node_id": current_id,
+                "last_node": current_node,
+                "last_port": source_port,
+            }
+        current_id = target_id
+        current_port = "default"
+        last_node_id = current_id
+        last_node = target_node
+        last_port = source_port
+
+
+def _node_closes_branch(node: Dict[str, Any]) -> bool:
+    return node.get("type") in {"end_node", "text_output_node"}
+
+
+def _default_merge_input_port(
+    branch_port: str,
+    option_index: int,
+    merge_input_ports: list[str],
+) -> str:
+    if branch_port in merge_input_ports:
+        return branch_port
+    if option_index < len(merge_input_ports):
+        return merge_input_ports[option_index]
+    return merge_input_ports[-1]
 
 
 def _source_output_details(source_node: Dict[str, Any], source_port: str) -> Dict[str, str]:
@@ -407,6 +505,8 @@ class NodeConfigScreen(ModalScreen):
             focused.begin_edit()
         elif isinstance(focused, Checkbox):
             focused.value = not focused.value
+        elif isinstance(focused, Select):
+            focused.action_show_overlay()
         elif isinstance(focused, Button):
             focused.press()
 
@@ -681,18 +781,22 @@ class NodeConfigScreen(ModalScreen):
                 placeholder="Output description",
             )
             return
+        selected_branch_id = str(config.get("selected_branch_id") or "").strip()
         selected_branch_end = str(config.get("selected_branch_end_id") or "").strip()
         selected_port = str(config.get("selected_input_port") or "").strip()
-        if not selected_branch_end and not selected_port:
-            selected_branch_end = options[0]["branch_end_id"]
+        if not selected_branch_id and selected_branch_end:
+            selected_branch_id = selected_branch_end
+        if not selected_branch_id and not selected_port:
+            selected_branch_id = f"{options[0]['branch_id']}:{options[0]['branch_port']}"
         for option in options:
+            option_branch_id = f"{option['branch_id']}:{option['branch_port']}"
             yield Static(option["description"], classes="form-description merge-branch-description")
             yield Checkbox(
                 "Select this branch output",
                 value=(
-                    option["branch_end_id"] == selected_branch_end
+                    option_branch_id == selected_branch_id
                     or (
-                        not selected_branch_end
+                        not selected_branch_id
                         and option["port"] == selected_port
                     )
                 ),
@@ -732,7 +836,7 @@ class NodeConfigScreen(ModalScreen):
                     "\n".join(
                         [
                             f"Selected branch: {option['branch_label']}",
-                            f"Branch end: {option['branch_end']}",
+                            f"Branch path: {option['branch_id']}.{option['branch_port']}",
                             f"Last node: {option['last_node']}",
                             f"Output: {option['output_name']}",
                             f"Output Description: {option['output_description']}",
@@ -892,7 +996,7 @@ class NodeConfigScreen(ModalScreen):
             checkbox_query = self.query(f"#{option['id']}")
             if checkbox_query and checkbox_query.first().value:
                 return {
-                    "selected_branch_end_id": option["branch_end_id"],
+                    "selected_branch_id": f"{option['branch_id']}:{option['branch_port']}",
                     "selected_input_port": option["port"],
                     "branch_output_name": self._text_widget_value("#merge-output-name")
                     if self.query("#merge-output-name")
@@ -902,7 +1006,7 @@ class NodeConfigScreen(ModalScreen):
                     else "",
                 }
         return {
-            "selected_branch_end_id": "",
+            "selected_branch_id": "",
             "selected_input_port": "",
             "branch_output_name": self._text_widget_value("#merge-output-name")
             if self.query("#merge-output-name")

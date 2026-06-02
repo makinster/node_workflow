@@ -1099,8 +1099,6 @@ async def _test_merge_node_waits_and_forwards_selected_input():
     slow = wm.add_node("sleep_node")
     left = wm.add_node("echo_node")
     right = wm.add_node("echo_node")
-    left_end = wm.add_node("branch_end_node")
-    right_end = wm.add_node("branch_end_node")
     merge = wm.add_node("merge_node")
     after = wm.add_node("logger_node")
     end = wm.add_node("end_node")
@@ -1115,11 +1113,9 @@ async def _test_merge_node_waits_and_forwards_selected_input():
     wm.connect(start, "default", branch, "input")
     wm.connect(branch, "path_a", slow, "input")
     wm.connect(slow, "default", left, "input")
-    wm.connect(left, "default", left_end, "input")
-    wm.connect(left_end, "default", merge, "path_a")
+    wm.connect(left, "default", merge, "path_a")
     wm.connect(branch, "path_b", right, "input")
-    wm.connect(right, "default", right_end, "input")
-    wm.connect(right_end, "default", merge, "path_b")
+    wm.connect(right, "default", merge, "path_b")
     wm.connect(merge, "default", after, "input")
     wm.connect(after, "default", end, "input")
 
@@ -1151,8 +1147,6 @@ async def _test_merge_config_uses_single_selected_input_checkbox():
     branch = wm.add_node("branch_node")
     left = wm.add_node("logger_node")
     right = wm.add_node("logger_node")
-    left_end = wm.add_node("branch_end_node")
-    right_end = wm.add_node("branch_end_node")
     merge = wm.add_node("merge_node")
     wm.update_node_config(
         branch,
@@ -1173,14 +1167,10 @@ async def _test_merge_config_uses_single_selected_input_checkbox():
     wm.connect(start, "default", branch, "input")
     wm.connect(branch, "path_a", left, "input")
     wm.connect(branch, "path_b", right, "input")
-    wm.connect(left, "default", left_end, "input")
-    wm.connect(right, "default", right_end, "input")
-    wm.connect(left_end, "default", merge, "path_a")
-    wm.connect(right_end, "default", merge, "path_b")
     wm.update_node_config(
         merge,
         {
-            "selected_branch_end_id": right_end,
+            "selected_branch_id": f"{branch}:path_b",
             "selected_input_port": "path_b",
             "branch_output_name": "chosen_branch",
             "branch_output_description": "Chosen branch output",
@@ -1191,11 +1181,13 @@ async def _test_merge_config_uses_single_selected_input_checkbox():
     options = merge_input_options(wm, merge)
     assert [option["port"] for option in options] == ["path_a", "path_b"]
     assert options[0]["branch_label"] == "Approve Path"
-    assert options[0]["branch_end_id"] == left_end
+    assert options[0]["branch_id"] == branch
+    assert options[0]["branch_port"] == "path_a"
     assert options[0]["output_name"] == "approved_text"
     assert options[0]["output_description"] == "Approved output"
     assert options[1]["branch_label"] == "Review Path"
-    assert options[1]["branch_end_id"] == right_end
+    assert options[1]["branch_id"] == branch
+    assert options[1]["branch_port"] == "path_b"
 
     class ConfigApp(App):
         def compose(self) -> ComposeResult:
@@ -1226,13 +1218,45 @@ async def _test_merge_config_uses_single_selected_input_checkbox():
         assert second.value is False
         screen = app.query_one(NodeConfigScreen)
         assert screen._merge_config_values() == {
-            "selected_branch_end_id": left_end,
+            "selected_branch_id": f"{branch}:path_a",
             "selected_input_port": "path_a",
             "branch_output_name": "chosen_branch",
             "branch_output_description": "Chosen branch output",
         }
 
     print("test_merge_config_uses_single_selected_input_checkbox PASSED")
+
+
+def test_node_config_select_activates_from_keyboard():
+    asyncio.run(_test_node_config_select_activates_from_keyboard())
+
+
+async def _test_node_config_select_activates_from_keyboard():
+    from textual.app import App, ComposeResult
+    from textual.widgets import Select
+
+    from frontend.screens.node_config import NodeConfigScreen
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("branch_select_keyboard")
+    branch = wm.add_node("branch_node")
+    node_data = wm.get_node_data(branch)
+
+    class ConfigApp(App):
+        def compose(self) -> ComposeResult:
+            yield NodeConfigScreen(wm._factory, wm, branch, node_data)
+
+    app = ConfigApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        condition = app.query_one("#field-condition", Select)
+        app.set_focus(condition)
+        screen = app.query_one(NodeConfigScreen)
+        screen.action_activate_focused()
+        await pilot.pause()
+        assert condition.expanded is True
+
+    print("test_node_config_select_activates_from_keyboard PASSED")
 
 
 def test_node_config_dynamic_membank_output_rows():
@@ -1483,6 +1507,7 @@ if __name__ == "__main__":
         test_wait_target_options_exclude_downstream_nodes,
         test_merge_node_waits_and_forwards_selected_input,
         test_merge_config_uses_single_selected_input_checkbox,
+        test_node_config_select_activates_from_keyboard,
         test_node_config_dynamic_membank_output_rows,
         test_editor_hides_empty_start_until_first_node_added,
         test_node_config_previous_output_preview_reads_transient_source,
