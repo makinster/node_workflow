@@ -13,7 +13,7 @@ from textual.widgets import Header, Label, Static
 from backend.validator import validate_workflow
 from frontend.screens.branch_selector import BranchSelectorScreen
 from frontend.screens.error_details import ErrorDetailsScreen
-from frontend.screens.node_config import NodeConfigScreen
+from frontend.screens.node_config import NodeConfigScreen, merge_input_options
 from frontend.screens.node_selector import NodeSelectorScreen
 from frontend import notifications
 from frontend.widgets.node_card import BranchSelectCard, NodeCard
@@ -325,6 +325,9 @@ class EditorScreen(Screen):
         config = result.get("config", {})
         self.workflow_map.update_node_alias(self.selected_node_id, alias)
         self.workflow_map.update_node_config(self.selected_node_id, config)
+        node = self.workflow_map.get_node_data(self.selected_node_id) or {}
+        if node.get("type") == "merge_node":
+            self._sync_merge_branch_end_connections(self.selected_node_id, config)
         self.refresh_from_backend()
         notifications.node_updated(self.app)
 
@@ -338,6 +341,63 @@ class EditorScreen(Screen):
         self.selected_row = {"kind": "node", "node_id": node_id}
         self.refresh_from_backend()
         notifications.jumped_to_node(self.app, node_id)
+
+    def _sync_merge_branch_end_connections(
+        self, merge_node_id: str, config: Dict[str, Any]
+    ) -> None:
+        selected = {
+            str(value)
+            for value in config.get("branches_to_close", [])
+            if str(value)
+        }
+        if not selected:
+            return
+        for option in merge_input_options(self.workflow_map, merge_node_id):
+            option_value = f"{option['branch_id']}:{option['branch_port']}"
+            if option_value not in selected:
+                continue
+            source_id = option.get("branch_end_id", "")
+            source_node = self.workflow_map.get_node_data(source_id) if source_id else None
+            if not source_node or source_node.get("type") != "branch_end_node":
+                continue
+            source_port = option.get("source_port") or "default"
+            target_port = option.get("port") or "path_a"
+            self._replace_merge_input_connection(
+                source_id,
+                source_port,
+                merge_node_id,
+                target_port,
+            )
+
+    def _replace_merge_input_connection(
+        self,
+        source_node_id: str,
+        source_port: str,
+        merge_node_id: str,
+        target_port: str,
+    ) -> None:
+        source = self.workflow_map.get_node_data(source_node_id) or {}
+        existing_output = self._connection_for_port(source, source_port)
+        if existing_output:
+            self.workflow_map.disconnect(
+                source_node_id,
+                source_port,
+                existing_output.get("target_node_id", ""),
+                existing_output.get("target_port", "input"),
+            )
+
+        merge_node = self.workflow_map.get_node_data(merge_node_id) or {}
+        for conn in list(merge_node.get("connections", {}).get("inputs", [])):
+            if conn.get("target_port") != target_port:
+                continue
+            self.workflow_map.disconnect(
+                conn.get("source_node_id", ""),
+                conn.get("source_port", "default"),
+                merge_node_id,
+                target_port,
+            )
+
+        self.workflow_map.connect(source_node_id, source_port, merge_node_id, target_port)
 
     def _open_branch_selector(self, row: Dict[str, Any]) -> None:
         branch_node_id = row["branch_node_id"]

@@ -1450,6 +1450,73 @@ async def _test_merge_branch_selector_moves_focus_down_at_bottom():
     print("test_merge_branch_selector_moves_focus_down_at_bottom PASSED")
 
 
+def test_saving_merge_config_connects_selected_branch_end():
+    asyncio.run(_test_saving_merge_config_connects_selected_branch_end())
+
+
+async def _test_saving_merge_config_connects_selected_branch_end():
+    from textual.app import App, ComposeResult
+
+    from backend.validator import validate_workflow
+    from frontend.screens.editor import EditorScreen
+    from frontend.widgets.node_card import NodeCard
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("merge_save_connects_branch_end")
+    start = wm.add_node("start_node")
+    branch = wm.add_node("branch_node")
+    branch_end = wm.add_node("branch_end_node")
+    sibling = wm.add_node("logger_node")
+    merge = wm.add_node("merge_node")
+    wm.connect(start, "default", branch, "input")
+    wm.connect(branch, "path_a", branch_end, "input")
+    wm.connect(branch, "path_b", sibling, "input")
+
+    class EditorApp(App):
+        def compose(self) -> ComposeResult:
+            yield EditorScreen(wm._factory, wm)
+
+    app = EditorApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        screen = app.query_one(EditorScreen)
+        screen.selected_node_id = merge
+        screen.selected_row = {"kind": "node", "node_id": merge}
+        merge_choice = f"{branch}:path_a"
+        screen._save_node_config_from_modal(
+            {
+                "alias": "",
+                "config": {
+                    "branches_to_close": [merge_choice],
+                    "carry_forward_branch_id": merge_choice,
+                    "selected_branch_id": merge_choice,
+                    "selected_input_port": "path_a",
+                },
+            }
+        )
+        await pilot.pause(0.03)
+
+        branch_end_node = wm.get_node_data(branch_end)
+        merge_node = wm.get_node_data(merge)
+        assert {
+            "source_port": "default",
+            "target_node_id": merge,
+            "target_port": "path_a",
+        } in branch_end_node.get("connections", {}).get("outputs", [])
+        assert {
+            "target_port": "path_a",
+            "source_node_id": branch_end,
+            "source_port": "default",
+        } in merge_node.get("connections", {}).get("inputs", [])
+        assert validate_workflow(wm, wm._factory)["success"] is True
+
+        cards = [card for card in app.query(NodeCard) if card.node_id == branch_end]
+        assert len(cards) == 1
+        assert cards[0].has_class("branch-end-connected")
+
+    print("test_saving_merge_config_connects_selected_branch_end PASSED")
+
+
 def test_node_config_select_activates_from_keyboard():
     asyncio.run(_test_node_config_select_activates_from_keyboard())
 
@@ -2372,6 +2439,7 @@ if __name__ == "__main__":
         test_merge_config_does_not_autocheck_open_branches,
         test_merge_options_exclude_current_merge_path_and_branch_end_card_turns_green,
         test_merge_branch_selector_moves_focus_down_at_bottom,
+        test_saving_merge_config_connects_selected_branch_end,
         test_node_config_select_activates_from_keyboard,
         test_dynamic_row_helper_preserves_visible_rows_only,
         test_dynamic_selection_helper_filters_stale_values,

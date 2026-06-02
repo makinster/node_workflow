@@ -1,5 +1,17 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-02 — Merge Branch End Connection Follow-Up
+
+- Fixed the merge config save path so checked Branch End closures are reconciled
+  into real graph edges: `BranchEnd.default -> Merge.path_*`.
+- Kept the fix in the Textual editor adapter instead of adding backend-only UI
+  convenience behavior.
+- Added a mounted regression proving save creates the merge input connection,
+  validation succeeds, and the Branch End card turns green after refresh.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v`
+
 ## 2026-06-02 — Merge Branch Selector Stabilization
 
 - Tightened merge config branch discovery so `Branches To Close` lists only
