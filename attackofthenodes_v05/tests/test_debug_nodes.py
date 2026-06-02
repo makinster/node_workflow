@@ -1742,8 +1742,12 @@ async def _test_node_config_command_inputs_require_activation():
 
         screen.action_activate_focused()
         assert alias.editing is True
-        await alias._on_key(events.Key("x", "x"))
+        await pilot.press("x")
         assert alias.value.endswith("x")
+        await pilot.press("w", "s")
+        assert app.focused is alias
+        assert alias.editing is True
+        assert alias.value.endswith("xws")
         for key in ("up", "down", "left", "right"):
             await pilot.press(key)
             assert app.focused is alias

@@ -1,5 +1,21 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-02 — Config Textbox Priority-Binding Follow-Up
+
+- Tightened `NodeConfigScreen.check_action()` so active command text editors
+  block priority modal navigation before it can steal arrow or `W/S` keypresses.
+- Strengthened the mounted regression to use real `pilot.press()` typing for
+  `W/S`, confirming they become text while editing and return to navigation only
+  after `Esc`.
+- This follow-up addresses the real UI path where priority screen bindings
+  fired before the focused text widget could consume the key.
+
+Verification:
+
+- `python -m compileall -q .`
+- `python -m pytest tests/test_debug_nodes.py -v`
+- Result: 46 passed.
+
 ## 2026-06-02 — Config Textbox Arrow-Key Fix
 
 - Fixed active command text editing in node config modals so arrow/navigation

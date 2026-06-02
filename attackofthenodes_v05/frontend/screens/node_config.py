@@ -477,6 +477,9 @@ class NodeConfigScreen(ModalScreen):
             )
 
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
+        active_text = getattr(self, "_active_command_text_widget", None)
+        if blocks_command_action(active_text, action):
+            return False
         if blocks_command_action(self.app.focused, action):
             return False
         return True
