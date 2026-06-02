@@ -9,18 +9,17 @@ obsolete. Backend services remain UI-agnostic; frontend behavior lives under
 
 ## Documentation Entry Point
 
-Start with `docs/README.md`. It explains which docs are current and which older
-architecture/reference files still contain historical Chrome-extension or
-tkinter-era language.
+Start with `docs/README.md`. It separates current reference docs from
+historical proof-of-concept material.
 
 ## Active Build Plan
 
 Use `docs/MASTER_BUILD_PLAN.md` as the comprehensive source of truth. It merges
 the active dependency-ordered phase plan, the Textual TUI state, the working
-rules, and the current architecture model. Phases 0 through 9 plus the Phase 5.5
-keyboard/config hardening pass are complete. The next unfinished project phase
-is Phase 10 documentation modernization unless `docs/SESSION_LOG.md` says
-otherwise.
+rules, and the current architecture model. Phases 0 through 10 plus the Phase
+5.5 keyboard/config hardening pass are complete. The next planned boundary
+phase is Phase 10.5. For UI-heavy implementation, Phase 13 cursor model
+foundation is the next planned phase.
 
 Completed from the master plan:
 
@@ -42,6 +41,7 @@ Completed from the master plan:
   gating with downstream target filtering in config.
 - Phase 9: `MergeNode` plus counter-style lineage barrier for branch
   recombination.
+- Phase 10: documentation modernization for current Python/Textual references.
 - FA-0 through FA-5: frontend standardization audit and helper extraction.
 
 Recent usability patch (Phase 5.5 — keyboard nav hardening):
@@ -94,10 +94,11 @@ Frontend standardization direction:
 
 Recent docs pass:
 
-- `docs/MASTER_BUILD_PLAN.md` was rewritten as the comprehensive build plan.
-- Older docs that mention Chrome-extension, IndexedDB/Dexie, JavaScript
-  backends, or tkinter should be treated as historical until Phase 10 refreshes
-  them.
+- `docs/README.md` is the docs entry point.
+- `docs/MASTER_BUILD_PLAN.md` is the comprehensive build plan.
+- `docs/PROJECT_KNOWLEDGE.md`, `ARCHITECTURE.md`, `SIGNAL_FLOW.md`, and
+  `FILE_TREE.md` have been refreshed for the current Python/Textual build.
+- `docs/V05_BUILD_PLAN.md` is labeled as historical proof-of-concept history.
 
 Latest phase:
 
@@ -107,7 +108,7 @@ Latest phase:
 - Branch End is no-config; editor rows are red while open and green when wired
   to a Merge node.
 - Phase 5.5 (keyboard nav hardening) is complete.
-- The next unfinished project phase is Phase 10 documentation modernization.
+- The next boundary project is Phase 10.5 backend/frontend boundary cleanup.
   For more implementation work, Phase 13 cursor model foundation is the next
   planned UI-heavy phase.
 

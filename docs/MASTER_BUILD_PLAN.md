@@ -9,10 +9,11 @@ This is the active build plan and handoff source for the project. It merges the
 current phase plan, the Textual TUI design notes, the agent working rules, and
 the older architecture docs into one current-state reference.
 
-Start with `docs/README.md` for the documentation map. Older docs in this folder
-remain useful as history, but several still describe the Chrome-extension or
-tkinter eras. When documents conflict, prefer this file, then
-`docs/AGENT_HANDOFF.md`, then `docs/SESSION_LOG.md`, then `docs/TUI_DESIGN.md`.
+Start with `docs/README.md` for the documentation map. The current reference
+docs have been refreshed for the Python/Textual build; `V05_BUILD_PLAN.md`
+remains historical proof-of-concept history. When documents conflict, prefer
+this file, then `docs/AGENT_HANDOFF.md`, then `docs/SESSION_LOG.md`, then
+`docs/TUI_DESIGN.md`.
 For frontend-specific audit and standardization work, also read
 `docs/FRONTEND_AUDIT_BUILD_PLAN.md`. Before backend changes motivated by UI
 behavior, read `docs/BACKEND_FRONTEND_BOUNDARY.md`.
@@ -187,7 +188,7 @@ Append a short entry to `docs/SESSION_LOG.md` for every phase or notable patch.
 | FA-3 | Schema generator expansion | Done |
 | FA-4 | Dynamic config section helpers | Done |
 | FA-5 | Notification helper | Done |
-| 10 | Documentation modernization | In progress |
+| 10 | Documentation modernization | Done |
 | 10.5 | Backend/frontend boundary cleanup | Planned |
 | 11 | Real AI node execution | Deferred |
 | 12 | Packaging and release hardening | Deferred |
@@ -202,10 +203,8 @@ Append a short entry to `docs/SESSION_LOG.md` for every phase or notable patch.
 
 Sequencing:
 
-- Phase 9 is complete. Phase 13 is the next planned UI-heavy implementation
-  phase and is independent; it can start without Phase 10.
-- Phase 10 can happen any time, but it should not block engine/UI work unless
-  stale docs are actively confusing the implementation.
+- Phase 10 is complete. Phase 13 is the next planned UI-heavy implementation
+  phase and is independent.
 - Phase 10.5 should happen before further tombstone/editor deletion work. It
   migrates editor-only tombstone behavior out of backend engine code.
 - Phase 14 depends on Phase 13. Phases 15 and 17 are parallelizable after 14.
@@ -573,6 +572,9 @@ Current status:
 - `docs/README.md` is the docs entry point and read-order guide.
 - `docs/BACKEND_FRONTEND_BOUNDARY.md` records the reusable-backend policy and
   tombstone migration plan.
+- `docs/PROJECT_KNOWLEDGE.md`, `ARCHITECTURE.md`, `SIGNAL_FLOW.md`, and
+  `FILE_TREE.md` have been refreshed for the Python/Textual implementation.
+- `docs/V05_BUILD_PLAN.md` is labeled historical.
 
 Goal:
 
@@ -596,6 +598,8 @@ Done when:
 - A new agent can read the docs folder without being told which documents are
   stale.
 - `AGENT_HANDOFF.md` points to this plan as the main source of truth.
+
+Status: complete.
 
 ### Phase 10.5 — Backend / Frontend Boundary Cleanup
 

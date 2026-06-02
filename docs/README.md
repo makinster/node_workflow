@@ -1,8 +1,8 @@
 # AttackOfTheNodes Docs Index
 
-Start here when entering the project. Some older files still contain useful
-history, but the current Textual/Python build has moved quickly, so read in
-this order.
+Start here when entering the project. The current active app is the
+Python/Textual build under `attackofthenodes_v05/`; older Chrome-extension and
+tkinter material is historical unless explicitly labeled current.
 
 ## Read First
 
@@ -32,17 +32,21 @@ this order.
 - `PROJECT_BACKLOG.md`
   - Deferred cleanup projects, including docs modernization and UI toolkit work.
 
-## Reference Docs To Treat Carefully
+## Current Reference Docs
 
-These are useful, but may still contain historical language from the
-Chrome-extension or tkinter eras. Prefer `MASTER_BUILD_PLAN.md` when they
-conflict.
+These are current-state references refreshed during Phase 10:
 
 - `ARCHITECTURE.md`
 - `SIGNAL_FLOW.md`
 - `PROJECT_KNOWLEDGE.md`
-- `V05_BUILD_PLAN.md`
 - `FILE_TREE.md`
+
+## Historical Docs
+
+- `V05_BUILD_PLAN.md`
+  - Historical Python proof-of-concept build plan.
+  - Useful for understanding how the project evolved, but not authoritative for
+    current Textual UI implementation details.
 
 ## Documentation Rule
 

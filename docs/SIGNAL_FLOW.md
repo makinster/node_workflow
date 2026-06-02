@@ -232,7 +232,9 @@ Responsibilities:
 - DFS from start node; report blocking errors and advisory warnings.
 - Verify node type exists in `NodeFactory`.
 - Verify connection targets and sources exist.
+- Verify each connection uses declared source and target ports.
 - Flag tombstone nodes as errors.
+- Validate derived node and memory-bank input sources.
 - Report unreachable (loose) nodes as warnings.
 
 Data trades:
@@ -241,7 +243,7 @@ Data trades:
 - Reads workflow structure from `WorkflowMap`.
 - Checks node registration through `NodeFactory`.
 
-Signals: none. Returns `{"errors": [...], "warnings": [...]}`.
+Signals: none. Returns `{"success": bool, "errors": [...], "warnings": [...]}`.
 
 ### `SaveManager`
 
@@ -264,7 +266,7 @@ Signals: none. Returns success/failure.
 Responsibilities:
 
 - Root Textual application; manages screen stack.
-- Subscribe to 10 backend events on startup.
+- Subscribe to backend events on startup.
 - Route backend events to the active screen (`refresh_from_backend`).
 - Route user key commands to backend services.
 - Open/close modals for user input, recovery, and settings.
@@ -273,6 +275,7 @@ Signals consumed (subscribed once at startup):
 
 - `WORKFLOW_DIRTY` → refresh editor
 - `WORKFLOW_STATE_UPDATE` → update `workflow_state`, trigger resets
+- `NODE_TIMING_UPDATE` → update live node timings
 - `SUPERVISOR_REGISTER` → track supervisor in `supervisors` dict
 - `SUPERVISOR_STATE_UPDATE` → update `node_statuses`
 - `SUPERVISOR_TERMINATING` → mark supervisor as done
@@ -354,6 +357,34 @@ node calls context.signal_done({"data": {}, "branches": [...]})
   -> Each child emits SUPERVISOR_REGISTER
   -> Children run independently; each emits SUPERVISOR_TERMINATING when done
   -> Last SUPERVISOR_TERMINATING with empty supervisors triggers run completion
+```
+
+### Editor Connects Or Repairs Merge Inputs
+
+```
+User inserts/adds a node that targets a Merge node
+  -> EditorScreen._connect_new_node()
+  -> Editor derives containing upstream branch port
+  -> WorkflowMap.connect(source.default, merge.path_*)
+  -> Validator sees declared merge input port
+
+Older save contains source.default -> merge.input
+  -> EditorScreen.refresh_from_backend()
+  -> _repair_merge_input_ports()
+  -> disconnect merge.input
+  -> reconnect source.default -> merge.path_* based on upstream branch
+```
+
+### Merge Config Closes A Branch End
+
+```
+User checks a Branch End path in Merge config
+  -> NodeConfigScreen returns branches_to_close + carry_forward_branch_id
+  -> EditorScreen saves merge config
+  -> _sync_merge_branch_end_connections()
+  -> WorkflowMap.connect(branch_end.default, merge.path_*)
+  -> Editor refresh rebuilds rows
+  -> NodeCard sees _branch_end_connected_to_merge and renders connected styling
 ```
 
 ### Breakpoint Hit

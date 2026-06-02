@@ -1,5 +1,22 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-02 — Phase 10 Documentation Modernization
+
+- Started from `docs/README.md` and refreshed the workspace-level `docs/`
+  references.
+- Rewrote `PROJECT_KNOWLEDGE.md` around the current Python/Textual build.
+- Updated `ARCHITECTURE.md` and `SIGNAL_FLOW.md` for current validator,
+  merge/branch-end, event, and editor-adapter behavior.
+- Regenerated `FILE_TREE.md` as a source-focused tree excluding runtime data,
+  caches, venvs, logs, and scratch files.
+- Labeled `V05_BUILD_PLAN.md` as historical proof-of-concept history.
+- Updated `README.md`, `AGENT_HANDOFF.md`, `MASTER_BUILD_PLAN.md`, and
+  `PROJECT_BACKLOG.md` so Phase 10 is marked complete and future agents can
+  distinguish current docs from historical context.
+- Verification:
+  - `git diff --check`
+  - `rg -n "tkinter|Chrome|IndexedDB|Dexie|JavaScript|historical|stale|obsolete" docs`
+
 ## 2026-06-02 — Merge Input Port Repair
 
 - Fixed editor add/insert wiring into Merge nodes so the target input port is

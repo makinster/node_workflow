@@ -1,5 +1,11 @@
 # AttackOfTheNodes v0.5 Python Proof Of Concept Build Plan
 
+> Historical note: this file records the original Python/tkinter proof-of-
+> concept plan. It is useful project history, but it is not the authoritative
+> implementation guide for the current Python/Textual build. For current work,
+> start with `README.md`, `AGENT_HANDOFF.md`, `MASTER_BUILD_PLAN.md`, and
+> `PROJECT_KNOWLEDGE.md`.
+
 This document is the implementation reference for the Python proof of concept. The goal is a minimal but architecturally faithful workflow engine that can build, save, load, and execute connected offline nodes.
 
 ## Philosophy

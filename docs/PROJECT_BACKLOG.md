@@ -1,28 +1,30 @@
 # AttackOfTheNodes Project Backlog
 
-## Active Project — Documentation Modernization
+## Completed Project — Documentation Modernization
 
-The docs folder has split-brain history from the Chrome-extension concept,
-tkinter prototype, and current Textual TUI. This is the active docs cleanup
-thread. Keep `docs/README.md` as the entry point while older reference docs are
-refreshed.
+The docs folder previously had split-brain history from the Chrome-extension
+concept, tkinter prototype, and current Textual TUI. Phase 10 refreshed the
+active reference docs and labeled the remaining historical proof-of-concept
+material.
 
 `docs/README.md` is now the entry point and `MASTER_BUILD_PLAN.md` is the
-current comprehensive source of truth. The remaining modernization task is to
-refresh the older reference docs so they stop contradicting it.
+current comprehensive source of truth.
 
-Recommended cleanup:
+Completed cleanup:
 
-- Refresh `PROJECT_KNOWLEDGE.md` so it is again safe as the current-state
+- Refreshed `PROJECT_KNOWLEDGE.md` so it is again safe as the current-state
   single-source overview.
-- Rewrite `ARCHITECTURE.md` around the Python/Textual implementation instead of
+- Rewrote `ARCHITECTURE.md` around the Python/Textual implementation instead of
   the older IndexedDB/Dexie/BackendBridge architecture.
-- Rewrite `SIGNAL_FLOW.md` around local backend services, Textual screens, and
+- Rewrote `SIGNAL_FLOW.md` around local backend services, Textual screens, and
   the current event bus.
-- Regenerate `FILE_TREE.md` from the current workspace and include the
+- Regenerated `FILE_TREE.md` from the current workspace and included the
   standardization/debug-node files.
-- Keep historical tkinter roadmap material in `V05_BUILD_PLAN.md` clearly
+- Labeled historical tkinter roadmap material in `V05_BUILD_PLAN.md` clearly
   labeled as history, not current implementation guidance.
+
+Ongoing rule: implementation phases should keep `SESSION_LOG.md` current and
+update `MASTER_BUILD_PLAN.md` or `AGENT_HANDOFF.md` when roadmap status changes.
 
 ## Planned Project — Backend / Frontend Boundary Cleanup
 

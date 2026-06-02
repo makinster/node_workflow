@@ -122,11 +122,11 @@ Current node types:
 
 | Category | Nodes |
 |---|---|
-| Flow | StartNode, EndNode, BranchNode, ConditionalNode, WaitUntilNode |
+| Flow | StartNode, EndNode, BranchNode, BranchEndNode, ConditionalNode, MergeNode, WaitUntilNode |
 | Data | SetVariableNode, GetVariableNode, ConcatNode |
 | IO | TextOutputNode, UserTextInputNode, FileReaderNode |
 | AI | ChatCompletionNode, ImageGenerationNode, EmbeddingNode |
-| Debug | LoggerNode, SleepNode, CounterNode, EchoNode, ProbeNode, ErrorNode, MemorySnapshotNode, RandomBranchNode, DeepBranchNode, NoOpNode, RepeatCounterNode, TombstoneNode, VariableSetterNode, VariableReaderNode |
+| Debug / Utility | LoggerNode, SleepNode, CounterNode, EchoNode, ProbeNode, ErrorNode, MemorySnapshotNode, RandomBranchNode, DeepBranchNode, NoOpNode, RepeatCounterNode, TombstoneNode, VariableSetterNode, VariableReaderNode |
 
 ### `MemoryBank`
 
@@ -212,7 +212,10 @@ The inspector. Performs a DFS from the start node and checks:
 
 - Node type exists in `NodeFactory`.
 - Connection sources and targets exist.
+- Connection ports are declared by source and target node metadata.
 - Tombstone nodes (pending replacements) are flagged as errors.
+- Derived `input_sources` reference existing node ids.
+- Memory-bank input keys are declared by some node's `membank_outputs`.
 
 After traversal, any unvisited node is unreachable and reported as a warning. Return shape:
 
@@ -226,11 +229,22 @@ Each error and warning includes `node_id` so the UI can highlight the affected n
 
 ### `App` (`AttackOfTheNodesApp`)
 
-Root Textual application. Created by `main.py` alongside all backend services. Subscribes to 10 backend events on startup (once, for the session lifetime). Manages the screen stack and routes user commands to backend services.
+Root Textual application. Created by `main.py` alongside all backend services. Subscribes to backend events on startup (once, for the session lifetime). Manages the screen stack and routes user commands to backend services.
 
 ### `EditorScreen`
 
 The blueprint view. Shows a `NodeList` (left panel) and a details panel (right). Priority-bound keys: `A` add, `I` insert, `E`/`Enter` edit, `X`/`Backspace` delete, `V` validate, `L`/`O` library, `?` help. `Ctrl+S` save, `Ctrl+R` run at app level.
+
+Editor-specific topology adapters live here, not in backend nodes. Current
+adapter behavior includes:
+
+- Hiding an empty Start node until the first real node is added.
+- Tombstoning deleted nodes as visual replacement placeholders.
+- Repairing older save files that stored invalid `Merge.input` connections by
+  mapping them to the upstream branch port.
+- Reconciling checked merge branch closures into real
+  `BranchEnd.default -> Merge.path_*` graph edges.
+- Rendering Branch End rows red while open and green when connected to a Merge.
 
 ### `ExecutionScreen`
 
