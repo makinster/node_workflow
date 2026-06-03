@@ -425,58 +425,6 @@ class WorkflowMap:
             return True
         return False
 
-    # ------------------------------------------------------------------
-    # Tombstone / delete helpers
-    # ------------------------------------------------------------------
-
-    def replace_with_tombstone(self, node_id: str) -> bool:
-        """Swap a node in-place with a TombstoneNode, preserving all connections."""
-        node = self._nodes.get(node_id)
-        if node is None:
-            return False
-        original_type = node.get("type", "")
-        # Resolve display name from factory metadata
-        original_display = original_type
-        for meta in self._factory.get_node_types_metadata():
-            if meta["type"] == original_type:
-                original_display = meta.get("display_name", original_type)
-                break
-        node["type"] = "tombstone_node"
-        node["config"] = {
-            "original_type": original_type,
-            "original_display_name": original_display,
-            "original_alias": node.get("alias", ""),
-            "original_config": deepcopy(node.get("config") or {}),
-            "original_input_ports": list(
-                {c.get("target_port", "") for c in node.get("connections", {}).get("inputs", [])}
-            ),
-            "original_output_ports": list(
-                {c.get("source_port", "") for c in node.get("connections", {}).get("outputs", [])}
-            ),
-        }
-        self._mark_dirty()
-        return True
-
-    def replace_node_type(self, node_id: str, new_type: str) -> bool:
-        """Replace a node's type (typically swapping a tombstone for a real node)."""
-        if node_id not in self._nodes:
-            return False
-        default_config = self._factory.create_config_template(new_type) or {}
-        node = self._nodes[node_id]
-        tombstone_config = node.get("config") or {}
-        original_type = tombstone_config.get("original_type")
-        restoring_original = node.get("type") == "tombstone_node" and new_type == original_type
-        node["type"] = new_type
-        node["config"] = (
-            deepcopy(tombstone_config.get("original_config") or {})
-            if restoring_original
-            else default_config
-        )
-        node["alias"] = tombstone_config.get("original_alias", "") if restoring_original else ""
-        node["_timing_invalidated"] = not restoring_original
-        self._mark_dirty()
-        return True
-
     def collect_downstream_subtree(self, node_id: str) -> List[str]:
         """Return all node IDs reachable from node_id's output connections (DFS).
 

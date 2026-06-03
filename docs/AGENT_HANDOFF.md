@@ -42,6 +42,8 @@ Completed from the master plan:
 - Phase 9: `MergeNode` plus counter-style lineage barrier for branch
   recombination.
 - Phase 10: documentation modernization for current Python/Textual references.
+- Phase 10.5: backend/frontend boundary cleanup — removed unused backend tombstone
+  methods, updated validator message, documented portable workflow fields.
 - FA-0 through FA-5: frontend standardization audit and helper extraction.
 
 Recent usability patch (Phase 5.5 — keyboard nav hardening):
@@ -102,15 +104,15 @@ Recent docs pass:
 
 Latest phase:
 
-- Phase 9 (merge dynamic list + lineage barrier) is complete.
-- Merge config uses a multi-select branches-to-close list plus a carry-forward
-  dropdown. Merge output naming/description fields were intentionally removed.
-- Branch End is no-config; editor rows are red while open and green when wired
-  to a Merge node.
-- Phase 5.5 (keyboard nav hardening) is complete.
-- The next boundary project is Phase 10.5 backend/frontend boundary cleanup.
-  For more implementation work, Phase 13 cursor model foundation is the next
-  planned UI-heavy phase.
+- Phase 10.5 (backend/frontend boundary cleanup) is complete.
+  - `WorkflowMap.replace_with_tombstone()` and `replace_node_type()` removed —
+    the frontend `EditorWorkflowAdapter` owns all tombstone logic.
+  - `_timing_invalidated` write path removed from backend; adapter already pops
+    it on replacement.
+  - Validator tombstone message is now frontend-neutral.
+  - `position` and `bookmarked` are intentionally portable workflow metadata.
+- 60 tests passing.
+- The next planned phase is Phase 13 (cursor model foundation).
 
 Planned future phases (see Section 6 of MASTER_BUILD_PLAN.md for full specs):
 

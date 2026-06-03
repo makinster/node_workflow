@@ -1,5 +1,29 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-02 — Phase 10.5 Backend / Frontend Boundary Cleanup
+
+- Removed `WorkflowMap.replace_with_tombstone()` and `WorkflowMap.replace_node_type()`
+  from `backend/workflow_map.py`. Both methods were unused; the frontend
+  `EditorWorkflowAdapter` in `frontend/editor_workflow_adapter.py` covers the
+  same behavior with explicit frontend ownership.
+- The removed `replace_node_type()` was the only writer of `_timing_invalidated`
+  into persisted node data. The adapter's `replace_placeholder()` already pops
+  the field on replacement.
+- Updated the tombstone-specific validator error in `backend/validator.py` to
+  remove editor-specific language ("open it and choose a replacement" → "replace
+  with a valid node type"). The validator reports the placeholder type; the
+  frontend is responsible for surfacing the resolution UX.
+- `position` and `bookmarked` remain as portable workflow metadata: `position`
+  is useful for any future canvas-style frontend; `bookmarked` is useful for any
+  frontend with quick navigation. They are intentionally in the backend schema.
+- `TombstoneNode` stays registered in `ALL_NODE_CLASSES` so the executor can
+  signal a clean error when a placeholder accidentally reaches runtime. Future
+  Boundary Phase B work can deregister it once a non-type-string placeholder
+  mechanism is in place.
+- Verification:
+  - `python -m compileall -q .` — clean
+  - `python -m pytest tests/test_debug_nodes.py -v` — 60 passed.
+
 ## 2026-06-02 — Phase 10 Documentation Modernization
 
 - Started from `docs/README.md` and refreshed the workspace-level `docs/`

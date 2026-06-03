@@ -708,6 +708,8 @@ def test_insert_between_rewires_below_source_node():
 # ---------------------------------------------------------------------------
 
 def test_tombstone_delete_does_not_cascade_branch_nodes():
+    from frontend.editor_workflow_adapter import EditorWorkflowAdapter
+
     _, wm, _, _ = _make_services()
     wm.create_new("delete_no_cascade")
     start = wm.add_node("start_node")
@@ -719,7 +721,8 @@ def test_tombstone_delete_does_not_cascade_branch_nodes():
     wm.connect(branch, "path_a", left, "input")
     wm.connect(branch, "path_b", right, "input")
 
-    assert wm.replace_with_tombstone(branch)
+    adapter = EditorWorkflowAdapter(wm, wm._factory)
+    assert adapter.replace_with_placeholder(branch)
     all_nodes = wm.get_all_node_data()
     assert branch in all_nodes
     assert all_nodes[branch]["type"] == "tombstone_node"
@@ -729,29 +732,36 @@ def test_tombstone_delete_does_not_cascade_branch_nodes():
 
 
 def test_tombstone_restore_preserves_original_and_swap_invalidates_timing():
+    from frontend.editor_workflow_adapter import EditorWorkflowAdapter
+
     _, wm, _, _ = _make_services()
     wm.create_new("tombstone_restore")
     node_id = wm.add_node("logger_node", alias="Original Logger")
     wm.update_node_config(node_id, {"message": "original"})
+    adapter = EditorWorkflowAdapter(wm, wm._factory)
 
-    assert wm.replace_with_tombstone(node_id)
+    assert adapter.replace_with_placeholder(node_id)
     tombstone = wm.get_node_data(node_id)
     assert tombstone["type"] == "tombstone_node"
     assert tombstone["config"]["original_alias"] == "Original Logger"
     assert tombstone["config"]["original_config"] == {"message": "original"}
 
-    assert wm.replace_node_type(node_id, "logger_node")
+    result = adapter.replace_placeholder(node_id, "logger_node")
+    assert result["replaced"] is True
+    assert result["restored_original"] is True
     restored = wm.get_node_data(node_id)
     assert restored["type"] == "logger_node"
     assert restored["alias"] == "Original Logger"
     assert restored["config"] == {"message": "original"}
-    assert restored["_timing_invalidated"] is False
+    assert "_timing_invalidated" not in restored
 
-    assert wm.replace_with_tombstone(node_id)
-    assert wm.replace_node_type(node_id, "sleep_node")
+    assert adapter.replace_with_placeholder(node_id)
+    result = adapter.replace_placeholder(node_id, "sleep_node")
+    assert result["replaced"] is True
+    assert result["restored_original"] is False
     swapped = wm.get_node_data(node_id)
     assert swapped["type"] == "sleep_node"
-    assert swapped["_timing_invalidated"] is True
+    assert "_timing_invalidated" not in swapped
     print("test_tombstone_restore_preserves_original_and_swap_invalidates_timing PASSED")
 
 

@@ -16,6 +16,7 @@ from frontend.screens.error_details import ErrorDetailsScreen
 from frontend.screens.node_config import NodeConfigScreen, merge_input_options
 from frontend.screens.node_selector import NodeSelectorScreen
 from frontend import notifications
+from frontend.editor_workflow_adapter import EditorWorkflowAdapter
 from frontend.widgets.node_card import BranchSelectCard, NodeCard
 from frontend.widgets.node_list import NodeList
 from frontend.widgets.status_bar import StatusBar
@@ -52,6 +53,7 @@ class EditorScreen(Screen):
         self.selected_row: Optional[Dict[str, Any]] = None
         self.active_branch_ports: Dict[str, str] = {}
         self._pending_node_add_mode = "add"
+        self.workflow_adapter = EditorWorkflowAdapter(workflow_map, factory)
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
@@ -221,7 +223,7 @@ class EditorScreen(Screen):
             notifications.no_node_selected(self.app)
             return
         # Tombstone nodes open the NodeSelector to pick a replacement
-        if node.get("type") == "tombstone_node":
+        if self.workflow_adapter.is_placeholder(self.selected_node_id):
             self.app.push_screen(
                 NodeSelectorScreen(self.factory),
                 self._replace_tombstone_from_modal,
@@ -259,25 +261,28 @@ class EditorScreen(Screen):
         if not confirmed or self.selected_node_id is None:
             return
         node = self.workflow_map.get_node_data(self.selected_node_id)
-        if node and node.get("type") == "tombstone_node":
-            removed = self.workflow_map.delete_node(self.selected_node_id)
+        if node and self.workflow_adapter.is_placeholder(self.selected_node_id):
+            removed = self.workflow_adapter.remove_placeholder(self.selected_node_id)
             if removed:
                 self.selected_node_id = None
                 self.selected_row = None
                 self.refresh_from_backend()
                 notifications.tombstone_removed(self.app)
             return
-        self.workflow_map.replace_with_tombstone(self.selected_node_id)
+        self.workflow_adapter.replace_with_placeholder(self.selected_node_id)
         self.refresh_from_backend()
         notifications.node_deleted(self.app)
 
     def _replace_tombstone_from_modal(self, node_type: str | None) -> None:
         if not node_type or self.selected_node_id is None:
             return
-        node = self.workflow_map.get_node_data(self.selected_node_id) or {}
-        original_type = (node.get("config") or {}).get("original_type")
-        self.workflow_map.replace_node_type(self.selected_node_id, node_type)
-        if node_type != original_type:
+        result = self.workflow_adapter.replace_placeholder(
+            self.selected_node_id,
+            node_type,
+        )
+        if not result.get("replaced"):
+            return
+        if not result.get("restored_original"):
             self._clear_timing_for_node(self.selected_node_id)
         self.refresh_from_backend()
         notifications.node_replaced(self.app, node_type)
@@ -665,9 +670,6 @@ class EditorScreen(Screen):
             if not isinstance(timings, dict):
                 continue
             for node_id, seconds in timings.items():
-                node = self.workflow_map.get_node_data(node_id)
-                if node and node.get("_timing_invalidated"):
-                    continue
                 try:
                     value = float(seconds)
                 except (TypeError, ValueError):

@@ -95,7 +95,7 @@ def validate_workflow(workflow_map: WorkflowMap, factory: NodeFactory) -> Dict[s
                 {
                     "node_id": node_id,
                     "message": (
-                        f"Deleted node stub (was: {original}) — open it and choose a replacement"
+                        f"Deleted node stub (was: {original}) — replace with a valid node type"
                     ),
                 }
             )

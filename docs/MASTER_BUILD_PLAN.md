@@ -189,7 +189,7 @@ Append a short entry to `docs/SESSION_LOG.md` for every phase or notable patch.
 | FA-4 | Dynamic config section helpers | Done |
 | FA-5 | Notification helper | Done |
 | 10 | Documentation modernization | Done |
-| 10.5 | Backend/frontend boundary cleanup | Planned |
+| 10.5 | Backend/frontend boundary cleanup | Done |
 | 11 | Real AI node execution | Deferred |
 | 12 | Packaging and release hardening | Deferred |
 | 13 | Cursor model foundation | Planned |
@@ -203,10 +203,8 @@ Append a short entry to `docs/SESSION_LOG.md` for every phase or notable patch.
 
 Sequencing:
 
-- Phase 10 is complete. Phase 13 is the next planned UI-heavy implementation
+- Phases 10 and 10.5 are complete. Phase 13 is the next planned implementation
   phase and is independent.
-- Phase 10.5 should happen before further tombstone/editor deletion work. It
-  migrates editor-only tombstone behavior out of backend engine code.
 - Phase 14 depends on Phase 13. Phases 15 and 17 are parallelizable after 14.
   Phase 16 depends on 14 and 15. Phase 18 depends on 13–17. Phases 19–20
   depend on Phase 9 and each other.
