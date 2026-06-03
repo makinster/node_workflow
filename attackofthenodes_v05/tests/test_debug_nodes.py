@@ -824,6 +824,7 @@ def test_branch_config_uses_generated_labels_without_memory_outputs():
 async def _test_branch_config_uses_generated_labels_without_memory_outputs():
     from textual.app import App, ComposeResult
 
+    from frontend.screens.editor import EditorScreen
     from frontend.screens.node_config import NodeConfigScreen
     from frontend.screens.editor import EditorScreen
     from frontend.widgets.command_input import CommandInput
@@ -1604,6 +1605,7 @@ def test_branch_end_config_shows_merge_branch_identity():
 async def _test_branch_end_config_shows_merge_branch_identity():
     from textual.app import App, ComposeResult
 
+    from frontend.screens.editor import EditorScreen
     from frontend.screens.node_config import NodeConfigScreen
 
     _, wm, _, _ = _make_services()
@@ -1628,6 +1630,21 @@ async def _test_branch_end_config_shows_merge_branch_identity():
         text = screen._branch_end_status_text()
         assert f"Merges To Branch: Approve ({branch}:path_a)" in text
         assert f"Merge Node: merge_node ({merge})" in text
+
+    class EditorApp(App):
+        def compose(self) -> ComposeResult:
+            yield EditorScreen(wm._factory, wm)
+
+    editor_app = EditorApp()
+    async with editor_app.run_test() as pilot:
+        await pilot.pause(0.03)
+        screen = editor_app.query_one(EditorScreen)
+        screen.selected_node_id = branch_end
+        screen.selected_row = {"kind": "node", "node_id": branch_end}
+        screen.refresh_from_backend()
+        details = screen.query_one("#node-details").display_text
+        assert f"Merges To Branch: Approve ({branch}:path_a)" in details
+        assert f"Merge Node: merge_node ({merge})" in details
 
     print("test_branch_end_config_shows_merge_branch_identity PASSED")
 
@@ -1909,7 +1926,7 @@ async def _test_editor_depth_counter_tracks_visible_branch_distance():
         start_card = next(card for card in app.query(NodeCard) if card.node_id == start)
         branch_row = app.query_one(BranchSelectCard)
         assert start_card.display_text.startswith(" 0 ")
-        assert branch_row.display_text == "   ☛ Path A"
+        assert branch_row.display_text == "  ☛ Path A"
 
         await pilot.press("d")
         await pilot.pause(0.03)

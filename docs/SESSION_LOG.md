@@ -9,10 +9,12 @@
 - Displayed the counter in the node list row prefix and in the right-side
   details panel as `Depth from Start`.
 - Adjusted branch selector rows to omit the depth number while preserving the
-  depth gutter, so the `☛` icon lines up with node icons and branch names line
-  up with node names.
+  depth gutter, so the `☛` icon visually lines up with node icons and branch
+  names line up with node names.
 - Branch End config now reports `Merges To Branch: <branch name> (<branch id>)`
   when connected to a Merge node.
+- The editor right-side details panel now shows the same Branch End merge
+  destination and merge node identity directly on the selected Branch End node.
 - Merge config now keeps already-connected Branch End paths visible for the
   current merge and lets users uncheck them. Saving an unchecked path disconnects
   the Branch End, and the editor refresh marks it open/red again.

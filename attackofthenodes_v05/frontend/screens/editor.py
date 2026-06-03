@@ -13,7 +13,11 @@ from textual.widgets import Header, Label, Static
 from backend.validator import validate_workflow
 from frontend.screens.branch_selector import BranchSelectorScreen
 from frontend.screens.error_details import ErrorDetailsScreen
-from frontend.screens.node_config import NodeConfigScreen, merge_input_options
+from frontend.screens.node_config import (
+    NodeConfigScreen,
+    merge_input_options,
+    upstream_branch_info,
+)
 from frontend.screens.node_selector import NodeSelectorScreen
 from frontend import notifications
 from frontend.editor_workflow_adapter import EditorWorkflowAdapter
@@ -863,6 +867,8 @@ class EditorScreen(Screen):
             f"Depth from Start: {self._selected_depth_text()}",
             f"Breakpoint: {'on' if node.get('breakpoint') else 'off'}",
         ]
+        if node.get("type") == "branch_end_node":
+            lines.extend(self._branch_end_merge_detail_lines(node_id, node))
         if metadata:
             lines.append(f"Description: {metadata.get('description', '')}")
             lines.append("")
@@ -895,6 +901,27 @@ class EditorScreen(Screen):
         else:
             lines.append("  outputs: -")
         return "\n".join(lines)
+
+    def _branch_end_merge_detail_lines(
+        self, node_id: str, node: Dict[str, Any]
+    ) -> list[str]:
+        for conn in node.get("connections", {}).get("outputs", []):
+            target_id = str(conn.get("target_node_id") or "")
+            target_node = self.workflow_map.get_node_data(target_id) or {}
+            if target_node.get("type") != "merge_node":
+                continue
+            target_port = str(conn.get("target_port") or "default")
+            branch_label, branch_id = upstream_branch_info(
+                self.workflow_map,
+                node_id,
+                target_id,
+                target_port,
+            )
+            return [
+                f"Merges To Branch: {branch_label} ({branch_id})",
+                f"Merge Node: {self._node_label(target_id, target_node)}",
+            ]
+        return ["Merges To Branch: -", "Merge Node: -"]
 
     def _selected_depth_text(self) -> str:
         if self.selected_row and self.selected_row.get("depth") is not None:

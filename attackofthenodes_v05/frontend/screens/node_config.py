@@ -317,7 +317,7 @@ def _upstream_branch_label(
     merge_node_id: str,
     target_port: str,
 ) -> str:
-    label, _ = _upstream_branch_info(
+    label, _ = upstream_branch_info(
         workflow_map,
         source_node_id,
         merge_node_id,
@@ -326,7 +326,7 @@ def _upstream_branch_label(
     return label
 
 
-def _upstream_branch_info(
+def upstream_branch_info(
     workflow_map,
     source_node_id: str,
     merge_node_id: str,
@@ -1198,7 +1198,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             if target_node.get("type") != "merge_node":
                 continue
             target_port = str(conn.get("target_port") or "default")
-            branch_label, branch_id = _upstream_branch_info(
+            branch_label, branch_id = upstream_branch_info(
                 self.workflow_map,
                 self.node_id,
                 target_id,
