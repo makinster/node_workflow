@@ -2541,6 +2541,222 @@ async def _test_command_text_click_enters_editing_mode():
 
 
 # ---------------------------------------------------------------------------
+# 63. Phase 13 — cursor model foundation
+# ---------------------------------------------------------------------------
+
+
+def test_command_screen_mixin_class_hierarchy():
+    from frontend.widgets.command_screen_mixin import CommandScreenMixin
+    from frontend.screens.settings import SettingsScreen
+    from frontend.screens.user_input import UserInputScreen
+    from frontend.screens.workflow_library import PathPromptScreen
+    from frontend.screens.node_config import NodeConfigScreen
+
+    for cls in (SettingsScreen, UserInputScreen, PathPromptScreen, NodeConfigScreen):
+        assert issubclass(cls, CommandScreenMixin), f"{cls.__name__} should inherit CommandScreenMixin"
+    print("test_command_screen_mixin_class_hierarchy PASSED")
+
+
+def test_status_bar_mode_indicator():
+    from frontend.widgets.status_bar import StatusBar
+
+    bar = StatusBar("W/S move")
+    assert "[NAV]" in bar._formatted()
+    assert "W/S move" in bar._formatted()
+
+    bar.set_mode("edit")
+    assert "[EDIT]" in bar._formatted()
+    assert "[NAV]" not in bar._formatted()
+
+    bar.set_mode("nav")
+    assert "[NAV]" in bar._formatted()
+    print("test_status_bar_mode_indicator PASSED")
+
+
+def test_cursor_state_tracks_mode():
+    from frontend.widgets.cursor_state import CursorState
+
+    state = CursorState()
+    assert state.mode == "nav"
+    state.set_edit()
+    assert state.mode == "edit"
+    state.set_nav()
+    assert state.mode == "nav"
+    print("test_cursor_state_tracks_mode PASSED")
+
+
+def test_command_screen_mixin_navigates_widgets():
+    asyncio.run(_test_command_screen_mixin_navigates_widgets())
+
+
+async def _test_command_screen_mixin_navigates_widgets():
+    from textual.app import App, ComposeResult
+    from textual.screen import Screen
+    from textual.widgets import Button
+
+    from frontend.widgets.command_screen_mixin import CommandScreenMixin
+    from frontend.widgets.command_input import CommandInput
+
+    class NavScreen(CommandScreenMixin, Screen):
+        def compose(self) -> ComposeResult:
+            yield CommandInput(id="first")
+            yield CommandInput(id="second")
+            yield Button("ok", id="btn")
+
+        def on_mount(self) -> None:
+            self._focus_first()
+
+    class NavApp(App):
+        def on_mount(self) -> None:
+            self.push_screen(NavScreen())
+
+    app = NavApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.05)
+        assert app.focused.id == "first"
+
+        await pilot.press("s")
+        await pilot.pause(0.02)
+        assert app.focused.id == "second"
+
+        await pilot.press("s")
+        await pilot.pause(0.02)
+        assert app.focused.id == "btn"
+
+        await pilot.press("w")
+        await pilot.pause(0.02)
+        assert app.focused.id == "second"
+
+    print("test_command_screen_mixin_navigates_widgets PASSED")
+
+
+def test_command_screen_mixin_boundary_stays_put():
+    asyncio.run(_test_command_screen_mixin_boundary_stays_put())
+
+
+async def _test_command_screen_mixin_boundary_stays_put():
+    from textual.app import App, ComposeResult
+    from textual.screen import Screen
+
+    from frontend.widgets.command_screen_mixin import CommandScreenMixin
+    from frontend.widgets.command_input import CommandInput
+
+    class BoundScreen(CommandScreenMixin, Screen):
+        def compose(self) -> ComposeResult:
+            yield CommandInput(id="only")
+
+        def on_mount(self) -> None:
+            self._focus_first()
+
+    class BoundApp(App):
+        def on_mount(self) -> None:
+            self.push_screen(BoundScreen())
+
+    app = BoundApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.05)
+        assert app.focused.id == "only"
+        # pressing W at top should stay on same widget (boundary clamped)
+        await pilot.press("w")
+        await pilot.pause(0.02)
+        assert app.focused.id == "only"
+        # pressing S at bottom should also stay
+        await pilot.press("s")
+        await pilot.pause(0.02)
+        assert app.focused.id == "only"
+
+    print("test_command_screen_mixin_boundary_stays_put PASSED")
+
+
+def test_command_screen_mixin_blocks_nav_when_editing():
+    asyncio.run(_test_command_screen_mixin_blocks_nav_when_editing())
+
+
+async def _test_command_screen_mixin_blocks_nav_when_editing():
+    from textual.app import App, ComposeResult
+    from textual.screen import Screen
+
+    from frontend.widgets.command_screen_mixin import CommandScreenMixin
+    from frontend.widgets.command_input import CommandInput
+
+    class EditScreen(CommandScreenMixin, Screen):
+        def compose(self) -> ComposeResult:
+            yield CommandInput(id="field-a")
+            yield CommandInput(id="field-b")
+
+        def on_mount(self) -> None:
+            self._focus_first()
+
+    class EditApp(App):
+        def on_mount(self) -> None:
+            self.push_screen(EditScreen())
+
+    app = EditApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.05)
+        assert app.focused.id == "field-a"
+
+        # enter edit mode on field-a
+        await pilot.press("e")
+        await pilot.pause(0.02)
+        assert app.focused.editing is True
+
+        # W/S should not move focus while editing
+        await pilot.press("s")
+        await pilot.pause(0.02)
+        assert app.focused.id == "field-a", "S should not move focus while editing"
+
+    print("test_command_screen_mixin_blocks_nav_when_editing PASSED")
+
+
+def test_cursor_state_syncs_with_mixin():
+    asyncio.run(_test_cursor_state_syncs_with_mixin())
+
+
+async def _test_cursor_state_syncs_with_mixin():
+    from textual.app import App, ComposeResult
+    from textual.screen import Screen
+
+    from frontend.widgets.command_screen_mixin import CommandScreenMixin
+    from frontend.widgets.cursor_state import CursorState
+    from frontend.widgets.command_input import CommandInput
+
+    class SyncScreen(CommandScreenMixin, Screen):
+        def compose(self) -> ComposeResult:
+            yield CommandInput(id="inp-a")
+            yield CommandInput(id="inp-b")
+
+        def on_mount(self) -> None:
+            self._focus_first()
+
+    class SyncApp(App):
+        def __init__(self):
+            super().__init__()
+            self.cursor_state = CursorState()
+
+        def on_mount(self) -> None:
+            self.push_screen(SyncScreen())
+
+    app = SyncApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.05)
+        assert app.cursor_state.mode == "nav"
+
+        await pilot.press("e")
+        await pilot.pause(0.02)
+        assert app.cursor_state.mode == "edit"
+
+        await pilot.press("escape")
+        await pilot.pause(0.02)
+        # After leaving edit mode, next nav action should set mode back to nav
+        await pilot.press("s")
+        await pilot.pause(0.02)
+        assert app.cursor_state.mode == "nav"
+
+    print("test_cursor_state_syncs_with_mixin PASSED")
+
+
+# ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
 
@@ -2605,6 +2821,13 @@ if __name__ == "__main__":
         test_prompt_modals_use_shared_command_activation,
         test_editor_click_selects_and_double_click_edits,
         test_command_text_click_enters_editing_mode,
+        test_command_screen_mixin_class_hierarchy,
+        test_status_bar_mode_indicator,
+        test_cursor_state_tracks_mode,
+        test_command_screen_mixin_navigates_widgets,
+        test_command_screen_mixin_boundary_stays_put,
+        test_command_screen_mixin_blocks_nav_when_editing,
+        test_cursor_state_syncs_with_mixin,
     ]
     failed = []
     for t in tests:

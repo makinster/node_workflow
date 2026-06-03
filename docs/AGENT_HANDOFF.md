@@ -16,9 +16,8 @@ historical proof-of-concept material.
 
 Use `docs/MASTER_BUILD_PLAN.md` as the comprehensive source of truth. It merges
 the active dependency-ordered phase plan, the Textual TUI state, the working
-rules, and the current architecture model. Phases 0 through 10 plus the Phase
-5.5 keyboard/config hardening pass are complete. The next planned boundary
-phase is Phase 10.5. For UI-heavy implementation, Phase 13 cursor model
+rules, and the current architecture model. Phases 0 through 10.5 plus the Phase
+5.5 keyboard/config hardening pass are complete. Phase 13 cursor model
 foundation is the next planned phase.
 
 Completed from the master plan:
@@ -104,20 +103,29 @@ Recent docs pass:
 
 Latest phase:
 
-- Phase 10.5 (backend/frontend boundary cleanup) is complete.
-  - `WorkflowMap.replace_with_tombstone()` and `replace_node_type()` removed —
-    the frontend `EditorWorkflowAdapter` owns all tombstone logic.
-  - `_timing_invalidated` write path removed from backend; adapter already pops
-    it on replacement.
-  - Validator tombstone message is now frontend-neutral.
-  - `position` and `bookmarked` are intentionally portable workflow metadata.
-- 60 tests passing.
-- The next planned phase is Phase 13 (cursor model foundation).
+- Phase 13 (cursor model foundation) is complete.
+  - `frontend/widgets/cursor_state.py` — lightweight `CursorState` with
+    `mode` ("nav"/"edit"), `set_nav()`, `set_edit()`.
+  - `frontend/widgets/command_screen_mixin.py` — `CommandScreenMixin` with W/S/
+    up/down/E/Enter priority bindings injected via `__init_subclass__` so
+    `DOMNode._merge_bindings` picks them up. Includes `check_action` guard
+    that blocks nav while a text widget is editing, and `_sync_cursor_mode`
+    that updates `app.cursor_state` and the `StatusBar` mode indicator.
+  - `frontend/widgets/status_bar.py` — `set_mode(mode)` method added.
+  - `frontend/app.py` — `cursor_state: CursorState` attribute added.
+  - `SettingsScreen`, `UserInputScreen`, `PathPromptScreen`, `NodeConfigScreen`
+    migrated to inherit `CommandScreenMixin`.
+  - `CommandInput._on_key` calls `_sync_cursor_mode()` on screen after entering
+    edit mode so cursor state stays in sync.
+  - Key Textual constraint discovered: `CommandScreenMixin.BINDINGS` are skipped
+    by `_merge_bindings` (plain Python class, not DOMNode). Fixed by injecting
+    the nav bindings into the concrete subclass's `BINDINGS` in
+    `__init_subclass__`, before `super().__init_subclass__()` calls
+    `DOMNode._merge_bindings()`.
+- 67 tests passing.
+- The next planned phase is Phase 14 (key binding remap).
 
 Planned future phases (see Section 6 of MASTER_BUILD_PLAN.md for full specs):
-
-- Phase 13: Cursor model foundation — app-owned CursorState, WASD/arrow movement,
-  no silent keypresses, [NAV]/[EDIT] status indicator.
 - Phase 14: Key binding remap — final grammar (E/I/X/+/F/Ctrl+X), retires A and
   L/O standalone bindings.
 - Phase 15: Editor rework — Quick View right panel, human-readable-name-first,

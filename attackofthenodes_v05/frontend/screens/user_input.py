@@ -8,23 +8,17 @@ from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Button, Input, Label, Static
 
-from frontend.widgets.command_navigation import (
-    activate_command_widget,
-    blocks_command_action,
-    focus_command_widget,
-)
+from frontend.widgets.command_screen_mixin import CommandScreenMixin
 from frontend.widgets.command_input import CommandInput
 
 
-class UserInputScreen(ModalScreen):
+class UserInputScreen(CommandScreenMixin, ModalScreen):
     """Prompt shown when a user-input node suspends a supervisor."""
 
     BINDINGS = [
         ("escape", "cancel", "Cancel"),
         ("ctrl+enter", "submit", "Submit"),
         Binding("ctrl+q", "cancel", "Cancel", priority=True),
-        Binding("e", "activate_focused", "Activate", priority=True),
-        Binding("enter", "activate_focused", "Activate", priority=True),
     ]
 
     def __init__(self, branch_id: str, node_id: str, prompt: str) -> None:
@@ -45,12 +39,7 @@ class UserInputScreen(ModalScreen):
                 yield Button("Cancel", id="cancel-user-input", variant="default")
 
     def on_mount(self) -> None:
-        focus_command_widget(self, self.query_one("#user-input-value", CommandInput))
-
-    def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
-        if blocks_command_action(self.app.focused, action):
-            return False
-        return True
+        self._focus_first()
 
     def on_input_submitted(self, _event: Input.Submitted) -> None:
         self.action_submit()
@@ -64,9 +53,6 @@ class UserInputScreen(ModalScreen):
     def action_submit(self) -> None:
         value = self.query_one("#user-input-value", Input).value
         self.dismiss({"branch_id": self.branch_id, "value": value})
-
-    def action_activate_focused(self) -> None:
-        activate_command_widget(self.app.focused)
 
     def action_cancel(self) -> None:
         stop = getattr(self.app, "stop_active_workflow", None)

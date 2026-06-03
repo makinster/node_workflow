@@ -192,7 +192,7 @@ Append a short entry to `docs/SESSION_LOG.md` for every phase or notable patch.
 | 10.5 | Backend/frontend boundary cleanup | Done |
 | 11 | Real AI node execution | Deferred |
 | 12 | Packaging and release hardening | Deferred |
-| 13 | Cursor model foundation | Planned |
+| 13 | Cursor model foundation | Done |
 | 14 | Key binding remap | Planned |
 | 15 | Editor rework | Planned |
 | 16 | File modal + node config tabs | Planned |
@@ -203,8 +203,8 @@ Append a short entry to `docs/SESSION_LOG.md` for every phase or notable patch.
 
 Sequencing:
 
-- Phases 10 and 10.5 are complete. Phase 13 is the next planned implementation
-  phase and is independent.
+- Phases 10, 10.5, and 13 are complete. Phase 14 is the next planned
+  implementation phase.
 - Phase 14 depends on Phase 13. Phases 15 and 17 are parallelizable after 14.
   Phase 16 depends on 14 and 15. Phase 18 depends on 13–17. Phases 19–20
   depend on Phase 9 and each other.

@@ -19,6 +19,7 @@ from frontend.widgets.command_navigation import (
     move_select_overlay,
 )
 from frontend.widgets.command_input import CommandInput, CommandTextArea
+from frontend.widgets.command_screen_mixin import CommandScreenMixin
 from frontend.widgets.dynamic_sections import (
     clamp_dynamic_row_count,
     dynamic_selection_rows,
@@ -337,7 +338,7 @@ def _upstream_branch_label(
     return target_port.replace("_", " ").title()
 
 
-class NodeConfigScreen(ModalScreen):
+class NodeConfigScreen(CommandScreenMixin, ModalScreen):
     """Edit-node modal powered by the schema form generator."""
 
     BINDINGS = [
@@ -345,12 +346,6 @@ class NodeConfigScreen(ModalScreen):
         ("ctrl+s", "save", "Save"),
         ("ctrl+enter", "save", "Save"),
         Binding("ctrl+q", "cancel", "Cancel", priority=True),
-        Binding("up", "cursor_up", "Up", priority=True),
-        Binding("down", "cursor_down", "Down", priority=True),
-        Binding("w", "cursor_up", "Up", priority=True),
-        Binding("s", "cursor_down", "Down", priority=True),
-        Binding("e", "activate_focused", "Activate", priority=True),
-        Binding("enter", "activate_focused", "Activate", priority=True),
     ]
 
     def __init__(
@@ -573,8 +568,10 @@ class NodeConfigScreen(ModalScreen):
             return
         if isinstance(focused, SelectionList):
             focused.action_cursor_up()
+            self._sync_cursor_mode()
             return
         self._move_keyboard_focus(-1)
+        self._sync_cursor_mode()
 
     def action_cursor_down(self) -> None:
         focused = self.app.focused
@@ -593,8 +590,10 @@ class NodeConfigScreen(ModalScreen):
                 self._move_keyboard_focus(1)
             else:
                 focused.action_cursor_down()
+            self._sync_cursor_mode()
             return
         self._move_keyboard_focus(1)
+        self._sync_cursor_mode()
 
     def _selection_list_at_bottom(self, selection_list: SelectionList) -> bool:
         highlighted = getattr(selection_list, "highlighted", None)
@@ -612,6 +611,7 @@ class NodeConfigScreen(ModalScreen):
             or self.app.focused
             or self._nav_widget
         )
+        self._sync_cursor_mode()
 
     def _expanded_select(self) -> Select | None:
         for select in self.query(Select):
@@ -646,6 +646,15 @@ class NodeConfigScreen(ModalScreen):
             )
         except Exception:
             focus_command_widget(self, target)
+
+    def _nav_widgets(self) -> list[Any]:
+        return self._keyboard_focus_widgets()
+
+    def _scroll_container(self):
+        try:
+            return self.query_one("#node-config-scroll")
+        except Exception:
+            return None
 
     def _keyboard_focus_widgets(self) -> list[Any]:
         interactive = (

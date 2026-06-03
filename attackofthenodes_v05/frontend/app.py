@@ -24,6 +24,7 @@ from backend.events import (
 )
 
 from . import notifications
+from .widgets.cursor_state import CursorState
 from .screens.editor import EditorScreen
 from .screens.confirm import ConfirmScreen
 from .screens.error_details import ErrorDetailsScreen
@@ -85,6 +86,7 @@ class AttackOfTheNodesApp(TextualApp):
         self._branch_current_nodes = {}
         self._user_input_modal_open = False
         self._error_modal_open = False
+        self.cursor_state = CursorState()
         self._subscribe_to_backend_events()
 
     async def on_mount(self) -> None:

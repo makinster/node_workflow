@@ -1,5 +1,31 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-02 — Phase 13 Cursor Model Foundation
+
+- Added `frontend/widgets/cursor_state.py` — lightweight `CursorState` dataclass
+  with `mode` ("nav"/"edit"), `set_nav()`, `set_edit()`.
+- Added `frontend/widgets/command_screen_mixin.py` — `CommandScreenMixin` plain
+  Python mixin providing standard W/S/up/down/E/Enter priority navigation bindings,
+  `check_action` guard (blocks nav while a text widget is editing), action handlers
+  `action_cursor_up/down/activate_focused`, and `_sync_cursor_mode` that updates
+  both `app.cursor_state` and the screen's `StatusBar` mode indicator.
+- Extended `frontend/widgets/status_bar.py` with `set_mode(mode)`.
+- Added `cursor_state: CursorState` to `AttackOfTheNodesApp` in `frontend/app.py`.
+- Migrated `SettingsScreen`, `UserInputScreen`, `PathPromptScreen` to inherit
+  `CommandScreenMixin`; migrated `NodeConfigScreen` with its existing action overrides.
+- Extended `CommandInput._on_key` to call `_sync_cursor_mode()` on the screen
+  immediately after entering edit mode so cursor state stays current.
+- Key Textual constraint: `CommandScreenMixin.BINDINGS` are skipped by
+  `DOMNode._merge_bindings` because the mixin is not a `DOMNode` subclass. Fixed via
+  `__init_subclass__`: the nav bindings are injected into the concrete screen class's
+  own `BINDINGS` before `super().__init_subclass__()` calls `_merge_bindings()`.
+  The `super()` call is intentionally placed after the injection.
+- Added reentrancy guard `_cursor_moving` in `_move_cursor` to prevent double-fire
+  when a key event is re-dispatched after focus changes during handler execution.
+- Verification:
+  - `python -m compileall -q .` — clean
+  - `python -m pytest tests/test_debug_nodes.py -v` — 67 passed.
+
 ## 2026-06-02 — Phase 10.5 Backend / Frontend Boundary Cleanup
 
 - Removed `WorkflowMap.replace_with_tombstone()` and `WorkflowMap.replace_node_type()`

@@ -11,12 +11,8 @@ from textual.screen import ModalScreen
 from textual.widgets import Button, Input, Label, ListItem, ListView, Static
 
 from backend.persistence import list_workflows
-from frontend.widgets.command_navigation import (
-    activate_command_widget,
-    blocks_command_action,
-    focus_command_widget,
-)
 from frontend.widgets.command_input import CommandInput
+from frontend.widgets.command_screen_mixin import CommandScreenMixin
 from frontend.widgets.list_navigation import focus_list, move_list_highlight
 
 
@@ -151,15 +147,13 @@ class WorkflowLibraryScreen(ModalScreen):
         )
 
 
-class PathPromptScreen(ModalScreen):
+class PathPromptScreen(CommandScreenMixin, ModalScreen):
     """Ask for an import/export filesystem path."""
 
     BINDINGS = [
         ("escape", "cancel", "Cancel"),
         ("ctrl+enter", "submit", "Submit"),
         Binding("ctrl+q", "cancel", "Cancel", priority=True),
-        Binding("e", "activate_focused", "Activate", priority=True),
-        Binding("enter", "activate_focused", "Activate", priority=True),
     ]
 
     def __init__(self, title: str, default_path: str = "") -> None:
@@ -181,12 +175,7 @@ class PathPromptScreen(ModalScreen):
                 yield Button("Cancel", id="cancel-path", variant="default")
 
     def on_mount(self) -> None:
-        focus_command_widget(self, self.query_one("#path-input", CommandInput))
-
-    def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
-        if blocks_command_action(self.app.focused, action):
-            return False
-        return True
+        self._focus_first()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "confirm-path":
@@ -197,9 +186,6 @@ class PathPromptScreen(ModalScreen):
     def action_submit(self) -> None:
         path = self.query_one("#path-input", Input).value.strip()
         self.dismiss(path or None)
-
-    def action_activate_focused(self) -> None:
-        activate_command_widget(self.app.focused)
 
     def action_cancel(self) -> None:
         self.dismiss(None)

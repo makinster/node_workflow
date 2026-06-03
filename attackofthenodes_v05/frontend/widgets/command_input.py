@@ -86,6 +86,9 @@ class CommandInput(Input):
 
         if event.key in ("e", "enter"):
             self.begin_edit()
+            sync = getattr(self.screen, "_sync_cursor_mode", None)
+            if sync is not None:
+                sync()
             event.stop()
             event.prevent_default()
             return
@@ -185,6 +188,9 @@ class CommandTextArea(TextArea):
 
         if event.key in ("e", "enter"):
             self.begin_edit()
+            sync = getattr(self.screen, "_sync_cursor_mode", None)
+            if sync is not None:
+                sync()
             event.stop()
             event.prevent_default()
             return

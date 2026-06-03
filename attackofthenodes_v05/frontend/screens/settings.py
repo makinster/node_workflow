@@ -8,31 +8,21 @@ from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
-from textual.widgets import Button, Checkbox, Input, Label, Static
+from textual.widgets import Button, Checkbox, Label, Static
 
 from backend.configuration_manager import DEFAULT_SETTINGS
-from frontend.widgets.command_navigation import (
-    activate_command_widget,
-    blocks_command_action,
-    command_focus_widgets,
-    move_command_focus,
-)
+from frontend.widgets.command_navigation import command_focus_widgets
 from frontend.widgets.command_input import CommandInput
+from frontend.widgets.command_screen_mixin import CommandScreenMixin
 
 
-class SettingsScreen(ModalScreen):
+class SettingsScreen(CommandScreenMixin, ModalScreen):
     """Configuration form generated from configuration metadata."""
 
     BINDINGS = [
         ("escape", "cancel", "Cancel"),
         ("ctrl+s", "save", "Save"),
         Binding("ctrl+q", "cancel", "Cancel", priority=True),
-        Binding("up", "cursor_up", "Up", priority=True),
-        Binding("down", "cursor_down", "Down", priority=True),
-        Binding("w", "cursor_up", "Up", priority=True),
-        Binding("s", "cursor_down", "Down", priority=True),
-        Binding("e", "activate_focused", "Activate", priority=True),
-        Binding("enter", "activate_focused", "Activate", priority=True),
     ]
 
     def __init__(self, configuration_manager) -> None:
@@ -62,14 +52,10 @@ class SettingsScreen(ModalScreen):
             self.action_cancel()
 
     def on_mount(self) -> None:
-        widgets = self._keyboard_focus_widgets()
-        if widgets:
-            self.app.set_focus(widgets[0])
+        self._focus_first()
 
-    def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
-        if blocks_command_action(self.app.focused, action):
-            return False
-        return True
+    def _nav_widgets(self) -> list[Any]:
+        return command_focus_widgets(self, (CommandInput, Checkbox, Button))
 
     def action_save(self) -> None:
         values: Dict[str, Any] = {}
@@ -88,18 +74,3 @@ class SettingsScreen(ModalScreen):
 
     def action_cancel(self) -> None:
         self.dismiss(None)
-
-    def action_cursor_up(self) -> None:
-        self._move_keyboard_focus(-1)
-
-    def action_cursor_down(self) -> None:
-        self._move_keyboard_focus(1)
-
-    def action_activate_focused(self) -> None:
-        activate_command_widget(self.app.focused)
-
-    def _move_keyboard_focus(self, direction: int) -> None:
-        move_command_focus(self, direction, self._keyboard_focus_widgets())
-
-    def _keyboard_focus_widgets(self) -> list[Any]:
-        return command_focus_widgets(self, (CommandInput, Checkbox, Button))
