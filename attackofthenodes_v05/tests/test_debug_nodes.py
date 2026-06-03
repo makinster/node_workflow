@@ -2756,6 +2756,198 @@ async def _test_cursor_state_syncs_with_mixin():
     print("test_cursor_state_syncs_with_mixin PASSED")
 
 
+def test_auto_edit_prompt_syncs_cursor_and_status_bar():
+    asyncio.run(_test_auto_edit_prompt_syncs_cursor_and_status_bar())
+
+
+async def _test_auto_edit_prompt_syncs_cursor_and_status_bar():
+    from textual.app import App, ComposeResult
+
+    from frontend.screens.user_input import UserInputScreen
+    from frontend.widgets.command_input import CommandInput
+    from frontend.widgets.cursor_state import CursorState
+    from frontend.widgets.status_bar import StatusBar
+
+    class PromptApp(App):
+        def __init__(self):
+            super().__init__()
+            self.cursor_state = CursorState()
+
+        def compose(self) -> ComposeResult:
+            yield UserInputScreen("branch", "node", "Prompt")
+
+    app = PromptApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.05)
+        field = app.query_one("#user-input-value", CommandInput)
+        status = app.query_one(StatusBar)
+        assert app.focused is field
+        assert field.editing is True
+        assert app.cursor_state.mode == "edit"
+        assert "[EDIT]" in status._formatted()
+
+        await pilot.press("escape")
+        await pilot.pause(0.02)
+        assert field.editing is False
+        assert app.cursor_state.mode == "nav"
+        assert "[NAV]" in status._formatted()
+
+    print("test_auto_edit_prompt_syncs_cursor_and_status_bar PASSED")
+
+
+def test_click_edit_and_textarea_commit_sync_cursor_mode():
+    asyncio.run(_test_click_edit_and_textarea_commit_sync_cursor_mode())
+
+
+async def _test_click_edit_and_textarea_commit_sync_cursor_mode():
+    from textual import events
+    from textual.app import App, ComposeResult
+    from textual.screen import Screen
+
+    from frontend.widgets.command_input import CommandInput, CommandTextArea
+    from frontend.widgets.command_screen_mixin import CommandScreenMixin
+    from frontend.widgets.cursor_state import CursorState
+    from frontend.widgets.status_bar import StatusBar
+
+    def click(widget, chain: int = 1) -> events.Click:
+        return events.Click(widget, 0, 0, 0, 0, 1, False, False, False, chain=chain)
+
+    class EditScreen(CommandScreenMixin, Screen):
+        def compose(self) -> ComposeResult:
+            yield CommandInput(id="input")
+            yield CommandTextArea(id="textarea")
+            yield StatusBar("test")
+
+        def on_mount(self) -> None:
+            self._focus_first()
+
+    class EditApp(App):
+        def __init__(self):
+            super().__init__()
+            self.cursor_state = CursorState()
+
+        def compose(self) -> ComposeResult:
+            yield EditScreen()
+
+    app = EditApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.05)
+        text_input = app.query_one("#input", CommandInput)
+        textarea = app.query_one("#textarea", CommandTextArea)
+        status = app.query_one(StatusBar)
+
+        text_input.on_click(click(text_input))
+        assert app.cursor_state.mode == "edit"
+        assert "[EDIT]" in status._formatted()
+
+        await pilot.press("escape")
+        await pilot.pause(0.02)
+        assert app.cursor_state.mode == "nav"
+        assert "[NAV]" in status._formatted()
+
+        textarea.on_click(click(textarea))
+        assert app.cursor_state.mode == "edit"
+        await pilot.press("ctrl+enter")
+        await pilot.pause(0.02)
+        assert app.cursor_state.mode == "nav"
+        assert "[NAV]" in status._formatted()
+
+    print("test_click_edit_and_textarea_commit_sync_cursor_mode PASSED")
+
+
+def test_mixin_blocks_nav_when_active_text_not_focused():
+    asyncio.run(_test_mixin_blocks_nav_when_active_text_not_focused())
+
+
+async def _test_mixin_blocks_nav_when_active_text_not_focused():
+    from textual.app import App, ComposeResult
+    from textual.screen import Screen
+    from textual.widgets import Button
+
+    from frontend.widgets.command_input import CommandInput
+    from frontend.widgets.command_screen_mixin import CommandScreenMixin
+    from frontend.widgets.cursor_state import CursorState
+    from frontend.widgets.status_bar import StatusBar
+
+    class GuardScreen(CommandScreenMixin, Screen):
+        def compose(self) -> ComposeResult:
+            yield CommandInput(id="field")
+            yield Button("Next", id="next")
+            yield StatusBar("test")
+
+        def on_mount(self) -> None:
+            self._focus_first()
+
+    class GuardApp(App):
+        def __init__(self):
+            super().__init__()
+            self.cursor_state = CursorState()
+
+        def compose(self) -> ComposeResult:
+            yield GuardScreen()
+
+    app = GuardApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.05)
+        field = app.query_one("#field", CommandInput)
+        button = app.query_one("#next", Button)
+        field.begin_edit()
+        app.set_focus(button)
+        assert field.editing is True
+        assert app.cursor_state.mode == "edit"
+
+        await pilot.press("s")
+        await pilot.pause(0.02)
+        assert app.focused is button
+        assert field.editing is True
+        assert app.cursor_state.mode == "edit"
+
+    print("test_mixin_blocks_nav_when_active_text_not_focused PASSED")
+
+
+def test_migrated_command_screens_render_status_bar():
+    asyncio.run(_test_migrated_command_screens_render_status_bar())
+
+
+async def _test_migrated_command_screens_render_status_bar():
+    from textual.app import App, ComposeResult
+
+    from backend.configuration_manager import DEFAULT_SETTINGS
+    from frontend.screens.node_config import NodeConfigScreen
+    from frontend.screens.settings import SettingsScreen
+    from frontend.screens.user_input import UserInputScreen
+    from frontend.screens.workflow_library import PathPromptScreen
+    from frontend.widgets.status_bar import StatusBar
+
+    class FakeConfigurationManager:
+        def get_all(self):
+            return dict(DEFAULT_SETTINGS)
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("status_bar_node_config")
+    node_id = wm.add_node("logger_node")
+    node_data = wm.get_node_data(node_id)
+
+    screens = [
+        SettingsScreen(FakeConfigurationManager()),
+        UserInputScreen("branch", "node", "Prompt"),
+        PathPromptScreen("Path"),
+        NodeConfigScreen(wm._factory, wm, node_id, node_data),
+    ]
+
+    for screen in screens:
+        class ScreenApp(App):
+            def compose(self) -> ComposeResult:
+                yield screen
+
+        app = ScreenApp()
+        async with app.run_test() as pilot:
+            await pilot.pause(0.05)
+            assert app.query(StatusBar), f"{type(screen).__name__} should render StatusBar"
+
+    print("test_migrated_command_screens_render_status_bar PASSED")
+
+
 # ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
@@ -2828,6 +3020,10 @@ if __name__ == "__main__":
         test_command_screen_mixin_boundary_stays_put,
         test_command_screen_mixin_blocks_nav_when_editing,
         test_cursor_state_syncs_with_mixin,
+        test_auto_edit_prompt_syncs_cursor_and_status_bar,
+        test_click_edit_and_textarea_commit_sync_cursor_mode,
+        test_mixin_blocks_nav_when_active_text_not_focused,
+        test_migrated_command_screens_render_status_bar,
     ]
     failed = []
     for t in tests:

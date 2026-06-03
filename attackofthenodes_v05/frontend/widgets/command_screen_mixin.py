@@ -82,6 +82,9 @@ class CommandScreenMixin:
             focus_command_widget(self, widgets[0], self._scroll_container())
 
     def check_action(self, action: str, parameters: tuple) -> bool | None:
+        active_text = getattr(self, "_active_command_text_widget", None)
+        if blocks_command_action(active_text, action):
+            return False
         if blocks_command_action(self.app.focused, action):
             return False
         return True
@@ -129,7 +132,8 @@ class CommandScreenMixin:
 
     def _sync_cursor_mode(self) -> None:
         """Update app.cursor_state and the screen's StatusBar mode indicator."""
-        editing = is_editing_text(self.app.focused)
+        active_text = getattr(self, "_active_command_text_widget", None)
+        editing = is_editing_text(active_text) or is_editing_text(self.app.focused)
         mode = "edit" if editing else "nav"
         cursor_state = getattr(self.app, "cursor_state", None)
         if cursor_state is not None:

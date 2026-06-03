@@ -14,6 +14,7 @@ from backend.configuration_manager import DEFAULT_SETTINGS
 from frontend.widgets.command_navigation import command_focus_widgets
 from frontend.widgets.command_input import CommandInput
 from frontend.widgets.command_screen_mixin import CommandScreenMixin
+from frontend.widgets.status_bar import StatusBar
 
 
 class SettingsScreen(CommandScreenMixin, ModalScreen):
@@ -44,6 +45,7 @@ class SettingsScreen(CommandScreenMixin, ModalScreen):
             with Horizontal(classes="button-row"):
                 yield Button("Save", id="save-settings", variant="primary")
                 yield Button("Cancel", id="cancel-settings", variant="default")
+            yield StatusBar("W/S move  E edit/toggle  Ctrl+S save  Esc close")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "save-settings":

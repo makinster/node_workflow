@@ -1,5 +1,26 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-03 — Phase 13 Cursor Mode Reliability Follow-Up
+
+- Added visible `StatusBar` mode indicators to command-mode modal screens that
+  were missing them: Settings, User Input, Path Prompt, and Node Config.
+- Centralized cursor-mode syncing in `CommandInput` and `CommandTextArea` so
+  auto-edit, click-edit, `Esc`/`Ctrl+Q`, `Enter`, and `Ctrl+Enter` update
+  `app.cursor_state.mode` and visible `[NAV]` / `[EDIT]` immediately.
+- Strengthened `CommandScreenMixin.check_action()` and `_sync_cursor_mode()` to
+  consult both the active command text widget and the currently focused widget,
+  so command navigation remains blocked even if focus changes while a field is
+  still editing.
+- Preserved the existing `CommandInput._run_screen_action()` fallback for
+  command widgets on screens that are not yet fully migrated to priority
+  bindings.
+- Added mounted regressions for prompt auto-edit mode visibility, click-edit
+  sync, textarea commit sync, active-editing guard behavior, and status bars on
+  migrated command screens.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v`
+
 ## 2026-06-02 — Phase 13 Cursor Model Foundation
 
 - Added `frontend/widgets/cursor_state.py` — lightweight `CursorState` dataclass

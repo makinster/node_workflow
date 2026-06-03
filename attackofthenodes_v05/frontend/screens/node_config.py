@@ -13,7 +13,6 @@ from textual.widgets import Button, Checkbox, Input, Label, Select, SelectionLis
 
 from frontend.widgets.command_navigation import (
     activate_command_widget,
-    blocks_command_action,
     focus_command_widget,
     is_editing_text,
     move_select_overlay,
@@ -27,6 +26,7 @@ from frontend.widgets.dynamic_sections import (
     selected_values_from_widget,
 )
 from frontend.widgets.form_generator import WidgetGetter, build_form
+from frontend.widgets.status_bar import StatusBar
 
 
 MAX_MEMBANK_OUTPUT_ROWS = 5
@@ -425,6 +425,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             with Horizontal(classes="button-row"):
                 yield Button("Save", id="save-node-config", variant="primary")
                 yield Button("Cancel", id="cancel-node-config", variant="default")
+            yield StatusBar("w = up, s = down    e = edit/select    esc = cancel/close")
 
     def _compose_standard_config_body(
         self,
@@ -481,12 +482,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             expanded_select.expanded = False
             expanded_select.focus()
             return False
-        active_text = getattr(self, "_active_command_text_widget", None)
-        if blocks_command_action(active_text, action):
-            return False
-        if blocks_command_action(self.app.focused, action):
-            return False
-        return True
+        return super().check_action(action, parameters)
 
     async def on_checkbox_changed(self, event: Checkbox.Changed) -> None:
         if event.checkbox.id == "membank-writes":

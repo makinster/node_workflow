@@ -18,6 +18,15 @@ EDITING_NAV_KEYS = {
 }
 
 
+def _sync_screen_cursor_mode(widget) -> None:
+    try:
+        sync = getattr(widget.screen, "_sync_cursor_mode", None)
+    except Exception:
+        return
+    if sync is not None:
+        sync()
+
+
 class CommandInput(Input):
     """Input that requires explicit activation before printable keys edit text."""
 
@@ -45,6 +54,7 @@ class CommandInput(Input):
         self.add_class("editing")
         setattr(self.screen, "_active_command_text_widget", self)
         self.app.set_focus(self)
+        _sync_screen_cursor_mode(self)
 
     def end_edit(self, revert: bool = False) -> None:
         if revert:
@@ -55,6 +65,7 @@ class CommandInput(Input):
         self.remove_class("editing")
         if getattr(self.screen, "_active_command_text_widget", None) is self:
             setattr(self.screen, "_active_command_text_widget", None)
+        _sync_screen_cursor_mode(self)
 
     def on_blur(self) -> None:
         pass
@@ -86,9 +97,6 @@ class CommandInput(Input):
 
         if event.key in ("e", "enter"):
             self.begin_edit()
-            sync = getattr(self.screen, "_sync_cursor_mode", None)
-            if sync is not None:
-                sync()
             event.stop()
             event.prevent_default()
             return
@@ -147,6 +155,7 @@ class CommandTextArea(TextArea):
         self.add_class("editing")
         setattr(self.screen, "_active_command_text_widget", self)
         self.app.set_focus(self)
+        _sync_screen_cursor_mode(self)
 
     def end_edit(self, revert: bool = False) -> None:
         if revert:
@@ -158,6 +167,7 @@ class CommandTextArea(TextArea):
         self.remove_class("editing")
         if getattr(self.screen, "_active_command_text_widget", None) is self:
             setattr(self.screen, "_active_command_text_widget", None)
+        _sync_screen_cursor_mode(self)
 
     def on_mount(self) -> None:
         self.read_only = True
@@ -188,9 +198,6 @@ class CommandTextArea(TextArea):
 
         if event.key in ("e", "enter"):
             self.begin_edit()
-            sync = getattr(self.screen, "_sync_cursor_mode", None)
-            if sync is not None:
-                sync()
             event.stop()
             event.prevent_default()
             return

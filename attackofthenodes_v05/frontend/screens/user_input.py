@@ -10,6 +10,7 @@ from textual.widgets import Button, Input, Label, Static
 
 from frontend.widgets.command_screen_mixin import CommandScreenMixin
 from frontend.widgets.command_input import CommandInput
+from frontend.widgets.status_bar import StatusBar
 
 
 class UserInputScreen(CommandScreenMixin, ModalScreen):
@@ -37,6 +38,7 @@ class UserInputScreen(CommandScreenMixin, ModalScreen):
             with Horizontal(classes="button-row"):
                 yield Button("Submit", id="submit-user-input", variant="primary")
                 yield Button("Cancel", id="cancel-user-input", variant="default")
+            yield StatusBar("Type response  Ctrl+Enter submit  Esc leaves edit/cancels")
 
     def on_mount(self) -> None:
         self._focus_first()

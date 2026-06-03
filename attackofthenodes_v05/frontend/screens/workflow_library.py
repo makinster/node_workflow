@@ -14,6 +14,7 @@ from backend.persistence import list_workflows
 from frontend.widgets.command_input import CommandInput
 from frontend.widgets.command_screen_mixin import CommandScreenMixin
 from frontend.widgets.list_navigation import focus_list, move_list_highlight
+from frontend.widgets.status_bar import StatusBar
 
 
 class WorkflowLibraryScreen(ModalScreen):
@@ -173,6 +174,7 @@ class PathPromptScreen(CommandScreenMixin, ModalScreen):
             with Horizontal(classes="button-row"):
                 yield Button("Confirm", id="confirm-path", variant="primary")
                 yield Button("Cancel", id="cancel-path", variant="default")
+            yield StatusBar("Type path  Ctrl+Enter confirm  Esc leaves edit/cancels")
 
     def on_mount(self) -> None:
         self._focus_first()
