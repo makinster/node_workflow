@@ -66,6 +66,7 @@ class NodeList(ListView):
                     row["branch_node_id"],
                     row["active_port"],
                     row.get("active_label"),
+                    row.get("depth"),
                 )
             self.append(ListItem(card))
         if not rows:

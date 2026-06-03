@@ -41,6 +41,7 @@ class NodeCard(Static):
         self.node_data = node_data
         self.status = status
         self.timing_seconds = timing_seconds
+        self.display_text = ""
 
     def on_mount(self) -> None:
         self.add_class("node-card")
@@ -62,7 +63,10 @@ class NodeCard(Static):
         icon = STATUS_ICONS.get(self.status, STATUS_ICONS["idle"])
         breakpoint_marker = " ●" if self.node_data.get("breakpoint") else ""
         timing = f" ({self._format_timing(self.timing_seconds)})" if self.timing_seconds else ""
-        self.update(f"{icon}{breakpoint_marker} [{node_type}] {alias}{timing}")
+        depth = self.node_data.get("_editor_depth")
+        depth_text = f"{int(depth):>2} " if isinstance(depth, int) else ""
+        self.display_text = f"{depth_text}{icon}{breakpoint_marker} [{node_type}] {alias}{timing}"
+        self.update(self.display_text)
 
     def _format_timing(self, seconds: float | None) -> str:
         if seconds is None:
@@ -85,16 +89,24 @@ class BranchSelectCard(Static):
             self.chain = chain
 
     def __init__(
-        self, branch_node_id: str, active_port: str, active_label: str | None = None
+        self,
+        branch_node_id: str,
+        active_port: str,
+        active_label: str | None = None,
+        depth: int | None = None,
     ) -> None:
         super().__init__()
         self.branch_node_id = branch_node_id
         self.active_port = active_port
         self.active_label = active_label or active_port
+        self.depth = depth
+        self.display_text = ""
 
     def on_mount(self) -> None:
         self.add_class("branch-select-card")
-        self.update(f"  Branch Select: {self.active_label}")
+        depth_text = f"{self.depth:>2} " if self.depth is not None else "  "
+        self.display_text = f"{depth_text}Branch Select: {self.active_label}"
+        self.update(self.display_text)
 
     def on_click(self, event: events.Click) -> None:
         self.post_message(

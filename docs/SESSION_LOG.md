@@ -1,5 +1,19 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-03 — Editor Depth Counter
+
+- Added a frontend-only editor depth counter for visible workflow rows. The
+  Start node renders as `0`; each visible node below increments by one.
+- Branch paths inherit the branch node's current depth, so switching between
+  branches preserves a quick sense of vertical distance from Start.
+- Displayed the counter in the node list row prefix and in the right-side
+  details panel as `Depth from Start`.
+- Added a regression covering linear depth, branch-selector inherited depth,
+  branch switch depth, row rendering, and details-panel display.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v`
+
 ## 2026-06-03 — Phase 14 Editor Branch-Key Remap
 
 - Retired `A` as the editor add-node shortcut. `A/D` and left/right now cycle

@@ -819,22 +819,31 @@ class EditorScreen(Screen):
     def _refresh_details(self) -> None:
         detail = self.query_one("#node-details", Static)
         if self.selected_row and self.selected_row["kind"] == "branch_select":
-            detail.update(self._format_branch_selector_details(self.selected_row))
+            text = self._format_branch_selector_details(self.selected_row)
+            setattr(detail, "display_text", text)
+            detail.update(text)
             return
         if self.selected_node_id is None:
-            detail.update("No node selected")
+            text = "No node selected"
+            setattr(detail, "display_text", text)
+            detail.update(text)
             return
         node = self.workflow_map.get_node_data(self.selected_node_id)
         if node is None:
-            detail.update("No node selected")
+            text = "No node selected"
+            setattr(detail, "display_text", text)
+            detail.update(text)
             return
-        detail.update(self._format_node_details(self.selected_node_id, node))
+        text = self._format_node_details(self.selected_node_id, node)
+        setattr(detail, "display_text", text)
+        detail.update(text)
 
     def _format_node_details(self, node_id: str, node: Dict[str, Any]) -> str:
         metadata = self._metadata_for_type(node.get("type", ""))
         lines = [
             f"Selected: {node.get('alias') or node_id}",
             f"Type: {node.get('type', 'unknown')}",
+            f"Depth from Start: {self._selected_depth_text()}",
             f"Breakpoint: {'on' if node.get('breakpoint') else 'off'}",
         ]
         if metadata:
@@ -869,6 +878,16 @@ class EditorScreen(Screen):
         else:
             lines.append("  outputs: -")
         return "\n".join(lines)
+
+    def _selected_depth_text(self) -> str:
+        if self.selected_row and self.selected_row.get("depth") is not None:
+            return str(self.selected_row["depth"])
+        if self.selected_node_id:
+            for row in self.query_one(NodeList)._rows:
+                if row["kind"] == "node" and row.get("node_id") == self.selected_node_id:
+                    depth = row.get("depth")
+                    return str(depth) if depth is not None else "-"
+        return "-"
 
     def _average_node_timings(self) -> Dict[str, float]:
         master_state = getattr(self.app, "master_state", None)
@@ -982,6 +1001,7 @@ class EditorScreen(Screen):
         rows: list[Dict[str, Any]] = []
         visited: set[str] = set()
         current_node_id = start_node_id
+        depth = 0
 
         while current_node_id and current_node_id not in visited:
             node = nodes.get(current_node_id)
@@ -989,7 +1009,16 @@ class EditorScreen(Screen):
                 break
             visited.add(current_node_id)
             node = self._node_for_display(node)
-            rows.append({"kind": "node", "node_id": current_node_id, "node": node})
+            node = dict(node)
+            node["_editor_depth"] = depth
+            rows.append(
+                {
+                    "kind": "node",
+                    "node_id": current_node_id,
+                    "node": node,
+                    "depth": depth,
+                }
+            )
 
             metadata = self._metadata_for_type(node.get("type", ""))
             output_ports = list(metadata.get("output_ports") or []) if metadata else []
@@ -1007,15 +1036,18 @@ class EditorScreen(Screen):
                         "active_label": port_labels.get(active_port, active_port),
                         "output_ports": output_ports,
                         "port_labels": port_labels,
+                        "depth": depth,
                     }
                 )
                 current_node_id = self._target_for_port(node, active_port)
+                depth += 1
                 continue
 
             next_port = "default"
             if output_ports:
                 next_port = output_ports[0]
             current_node_id = self._target_for_port(node, next_port)
+            depth += 1
         return rows
 
     def _hidden_empty_start_node_id(
@@ -1219,6 +1251,7 @@ class EditorScreen(Screen):
             "Branch Select",
             f"Branch node: {branch_node.get('alias') or row['branch_node_id']}",
             f"Selected branch: {branch_label}",
+            f"Depth from Start: {row.get('depth', '-')}",
             f"Target: {target_id or '-'}",
             "",
             "Press ENTER to choose another branch.",

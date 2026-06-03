@@ -1759,6 +1759,64 @@ async def _test_editor_ctrl_i_source_uses_branch_tail_not_highlighted_node():
     print("test_editor_ctrl_i_source_uses_branch_tail_not_highlighted_node PASSED")
 
 
+def test_editor_depth_counter_tracks_visible_branch_distance():
+    asyncio.run(_test_editor_depth_counter_tracks_visible_branch_distance())
+
+
+async def _test_editor_depth_counter_tracks_visible_branch_distance():
+    from textual.app import App, ComposeResult
+
+    from frontend.screens.editor import EditorScreen
+    from frontend.widgets.node_card import BranchSelectCard, NodeCard
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("editor_depth_counter")
+    start = wm.add_node("start_node")
+    branch = wm.add_node("branch_node")
+    path_a_node = wm.add_node("sleep_node")
+    path_b_first = wm.add_node("logger_node")
+    path_b_second = wm.add_node("text_output_node")
+    wm.connect(start, "default", branch, "input")
+    wm.connect(branch, "path_a", path_a_node, "input")
+    wm.connect(branch, "path_b", path_b_first, "input")
+    wm.connect(path_b_first, "default", path_b_second, "input")
+
+    class EditorApp(App):
+        def compose(self) -> ComposeResult:
+            yield EditorScreen(wm._factory, wm)
+
+    app = EditorApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        screen = app.query_one(EditorScreen)
+        node_list = screen.query_one("#node-list")
+
+        rows = node_list._rows
+        assert rows[0]["node_id"] == start
+        assert rows[0]["depth"] == 0
+        assert rows[1]["node_id"] == branch
+        assert rows[1]["depth"] == 1
+        assert rows[2]["kind"] == "branch_select"
+        assert rows[2]["depth"] == 1
+        assert rows[3]["node_id"] == path_a_node
+        assert rows[3]["depth"] == 2
+
+        start_card = next(card for card in app.query(NodeCard) if card.node_id == start)
+        branch_row = app.query_one(BranchSelectCard)
+        assert start_card.display_text.startswith(" 0 ")
+        assert branch_row.display_text.startswith(" 1 ")
+
+        await pilot.press("d")
+        await pilot.pause(0.03)
+        rows = node_list._rows
+        assert [row.get("depth") for row in rows if row["kind"] == "node"] == [0, 1, 2, 3]
+        assert screen.selected_node_id == path_b_second
+        details = screen.query_one("#node-details").display_text
+        assert "Depth from Start: 3" in details
+
+    print("test_editor_depth_counter_tracks_visible_branch_distance PASSED")
+
+
 def test_node_config_select_activates_from_keyboard():
     asyncio.run(_test_node_config_select_activates_from_keyboard())
 
@@ -3095,6 +3153,7 @@ if __name__ == "__main__":
         test_editor_repairs_legacy_merge_input_port_on_refresh,
         test_editor_branch_cycle_keys_switch_open_and_closed_branch_views,
         test_editor_ctrl_i_source_uses_branch_tail_not_highlighted_node,
+        test_editor_depth_counter_tracks_visible_branch_distance,
         test_node_config_select_activates_from_keyboard,
         test_dynamic_row_helper_preserves_visible_rows_only,
         test_dynamic_selection_helper_filters_stale_values,

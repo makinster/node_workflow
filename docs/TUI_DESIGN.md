@@ -168,6 +168,11 @@ V                     Validate workflow
 When cycling back to a branch, the editor restores the last highlighted node in
 that branch when possible; otherwise it highlights the branch tail.
 
+The editor node list shows a small depth counter at the left of each node row.
+Start is `0`; each visible node below increments by one. When a branch is
+selected, the branch path continues from the branch node's depth so switching
+branches preserves vertical orientation.
+
 ## Command Navigation
 
 Keyboard-first modals use command mode by default:
