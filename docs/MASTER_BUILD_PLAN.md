@@ -699,9 +699,11 @@ Done when:
 `frontend/screens/execution.py`, `frontend/screens/help.py`.
 **Depends on:** Phase 13.
 
-Establishes the final key grammar: E to select/edit, I to insert-after, Shift+I
-to insert at branch bottom, X to delete, + to add, F to open File modal,
-Ctrl+X to stop run. Retires A as add; folds L / O into the File modal.
+Establishes the current editor key grammar: E to select/edit, I to insert-after,
+Ctrl+I to add at the highlighted branch bottom, X/backspace to delete, and A/D
+as left/right branch-view navigation. Up/down arrows mirror W/S. Left/right
+arrows mirror A/D. Ctrl+left/Ctrl+right mirror Ctrl+A/Ctrl+D for cycling branch
+views that already contain a Branch End. Retires A as add.
 
 Supersedes the binding table in `TUI_DESIGN.md`. Keeps Phase 4/4.5
 insert-rewiring behavior; only the keys change. No single-letter binding may
@@ -710,7 +712,8 @@ collide with WASD navigation.
 Done when:
 
 - Bindings are consistent across all screens.
-- No single-letter collision with WASD.
+- No single-letter collision with the WASD model: W/S are vertical movement,
+  A/D are horizontal branch movement.
 - Help screen reflects the final map.
 
 ---

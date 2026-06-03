@@ -1661,6 +1661,104 @@ async def _test_editor_repairs_legacy_merge_input_port_on_refresh():
     print("test_editor_repairs_legacy_merge_input_port_on_refresh PASSED")
 
 
+def test_editor_branch_cycle_keys_switch_open_and_closed_branch_views():
+    asyncio.run(_test_editor_branch_cycle_keys_switch_open_and_closed_branch_views())
+
+
+async def _test_editor_branch_cycle_keys_switch_open_and_closed_branch_views():
+    from textual.app import App, ComposeResult
+
+    from frontend.screens.editor import EditorScreen
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("editor_branch_cycle")
+    start = wm.add_node("start_node")
+    branch = wm.add_node("branch_node")
+    closed_sleep = wm.add_node("sleep_node")
+    branch_end = wm.add_node("branch_end_node")
+    open_sleep = wm.add_node("sleep_node")
+    open_tail = wm.add_node("logger_node")
+    wm.connect(start, "default", branch, "input")
+    wm.connect(branch, "path_a", closed_sleep, "input")
+    wm.connect(closed_sleep, "default", branch_end, "input")
+    wm.connect(branch, "path_b", open_sleep, "input")
+    wm.connect(open_sleep, "default", open_tail, "input")
+
+    class EditorApp(App):
+        def compose(self) -> ComposeResult:
+            yield EditorScreen(wm._factory, wm)
+
+    app = EditorApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        screen = app.query_one(EditorScreen)
+
+        await pilot.press("d")
+        await pilot.pause(0.03)
+        assert screen.active_branch_ports[branch] == "path_b"
+        assert screen.selected_node_id == open_tail
+
+        screen._select_row({"kind": "node", "node_id": open_sleep})
+        screen.refresh_from_backend()
+
+        await pilot.press("ctrl+d")
+        await pilot.pause(0.03)
+        assert screen.active_branch_ports[branch] == "path_a"
+        assert screen.selected_node_id == branch_end
+
+        await pilot.press("right")
+        await pilot.pause(0.03)
+        assert screen.active_branch_ports[branch] == "path_b"
+        assert screen.selected_node_id == open_sleep
+
+        await pilot.press("ctrl+left")
+        await pilot.pause(0.03)
+        assert screen.active_branch_ports[branch] == "path_a"
+        assert screen.selected_node_id == branch_end
+
+    print("test_editor_branch_cycle_keys_switch_open_and_closed_branch_views PASSED")
+
+
+def test_editor_ctrl_i_source_uses_branch_tail_not_highlighted_node():
+    asyncio.run(_test_editor_ctrl_i_source_uses_branch_tail_not_highlighted_node())
+
+
+async def _test_editor_ctrl_i_source_uses_branch_tail_not_highlighted_node():
+    from textual.app import App, ComposeResult
+
+    from frontend.screens.editor import EditorScreen
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("editor_ctrl_i_branch_tail")
+    start = wm.add_node("start_node")
+    branch = wm.add_node("branch_node")
+    first = wm.add_node("sleep_node")
+    tail = wm.add_node("logger_node")
+    wm.connect(start, "default", branch, "input")
+    wm.connect(branch, "path_b", first, "input")
+    wm.connect(first, "default", tail, "input")
+
+    class EditorApp(App):
+        def compose(self) -> ComposeResult:
+            yield EditorScreen(wm._factory, wm)
+
+    app = EditorApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        screen = app.query_one(EditorScreen)
+        screen.active_branch_ports[branch] = "path_b"
+        screen.selected_node_id = first
+        screen.selected_row = {"kind": "node", "node_id": first}
+        screen.refresh_from_backend()
+
+        insert_source = screen._source_for_insert_node()
+        branch_end_source = screen._source_for_branch_end_add()
+        assert insert_source == {"node_id": first, "port": "default"}
+        assert branch_end_source == {"node_id": tail, "port": "default"}
+
+    print("test_editor_ctrl_i_source_uses_branch_tail_not_highlighted_node PASSED")
+
+
 def test_node_config_select_activates_from_keyboard():
     asyncio.run(_test_node_config_select_activates_from_keyboard())
 
@@ -2995,6 +3093,8 @@ if __name__ == "__main__":
         test_connected_branch_end_deletes_to_tombstone,
         test_editor_connects_merge_input_to_active_branch_port,
         test_editor_repairs_legacy_merge_input_port_on_refresh,
+        test_editor_branch_cycle_keys_switch_open_and_closed_branch_views,
+        test_editor_ctrl_i_source_uses_branch_tail_not_highlighted_node,
         test_node_config_select_activates_from_keyboard,
         test_dynamic_row_helper_preserves_visible_rows_only,
         test_dynamic_selection_helper_filters_stale_values,

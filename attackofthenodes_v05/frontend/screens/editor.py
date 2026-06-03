@@ -30,10 +30,18 @@ class EditorScreen(Screen):
         ("shift+tab", "focus_previous", "Previous panel"),
         ("w", "cursor_up", "Up"),
         ("s", "cursor_down", "Down"),
+        Binding("left", "cycle_open_branch_prev", "Previous open branch", priority=True),
+        Binding("right", "cycle_open_branch_next", "Next open branch", priority=True),
         ("enter", "edit_selected", "Edit"),
         Binding("e", "edit_selected", "Edit", priority=True),
-        Binding("a", "add_node", "Add node", priority=True),
+        Binding("a", "cycle_open_branch_prev", "Previous open branch", priority=True),
+        Binding("d", "cycle_open_branch_next", "Next open branch", priority=True),
+        Binding("ctrl+a", "cycle_closed_branch_prev", "Previous closed branch", priority=True),
+        Binding("ctrl+d", "cycle_closed_branch_next", "Next closed branch", priority=True),
+        Binding("ctrl+left", "cycle_closed_branch_prev", "Previous closed branch", priority=True),
+        Binding("ctrl+right", "cycle_closed_branch_next", "Next closed branch", priority=True),
         Binding("i", "insert_node", "Insert node", priority=True),
+        Binding("ctrl+i", "add_node_to_branch_end", "Add to branch end", priority=True),
         Binding("v", "validate_workflow", "Validate", priority=True),
         Binding("b", "toggle_breakpoint", "Breakpoint", priority=True),
         Binding("ctrl+b", "clear_breakpoints", "Clear breakpoints", priority=True),
@@ -52,6 +60,7 @@ class EditorScreen(Screen):
         self.selected_node_id: Optional[str] = None
         self.selected_row: Optional[Dict[str, Any]] = None
         self.active_branch_ports: Dict[str, str] = {}
+        self.last_branch_selection: Dict[str, str] = {}
         self._pending_node_add_mode = "add"
         self.workflow_adapter = EditorWorkflowAdapter(workflow_map, factory)
 
@@ -67,7 +76,7 @@ class EditorScreen(Screen):
                     yield Label("Details", classes="panel-title")
                     yield Static("", id="node-details")
             yield StatusBar(
-                "W/S move  ENTER/E edit  A add  I insert  B breakpoint  V validate  X/⌫ delete  L library  Ctrl+S save  Ctrl+R run  ? help"
+                "W/S move  A/D branches  E edit  I insert  Ctrl+I add at branch end  B breakpoint  V validate  X/⌫ delete"
             )
 
     def on_mount(self) -> None:
@@ -174,6 +183,22 @@ class EditorScreen(Screen):
     def action_insert_node(self) -> None:
         self._pending_node_add_mode = "insert"
         self.app.push_screen(NodeSelectorScreen(self.factory), self._add_node_from_modal)
+
+    def action_add_node_to_branch_end(self) -> None:
+        self._pending_node_add_mode = "branch_end"
+        self.app.push_screen(NodeSelectorScreen(self.factory), self._add_node_from_modal)
+
+    def action_cycle_open_branch_prev(self) -> None:
+        self._cycle_branch_view(closed=False, direction=-1)
+
+    def action_cycle_open_branch_next(self) -> None:
+        self._cycle_branch_view(closed=False, direction=1)
+
+    def action_cycle_closed_branch_prev(self) -> None:
+        self._cycle_branch_view(closed=True, direction=-1)
+
+    def action_cycle_closed_branch_next(self) -> None:
+        self._cycle_branch_view(closed=True, direction=1)
 
     def action_validate_workflow(self) -> None:
         result = validate_workflow(self.workflow_map, self.factory)
@@ -305,14 +330,16 @@ class EditorScreen(Screen):
 
     def _add_node_from_modal(self, node_type: str | None) -> None:
         insert_mode = self._pending_node_add_mode == "insert"
+        branch_end_mode = self._pending_node_add_mode == "branch_end"
         self._pending_node_add_mode = "add"
         if not node_type:
             return
-        source = (
-            self._source_for_insert_node()
-            if insert_mode
-            else self._source_for_new_node()
-        )
+        if insert_mode:
+            source = self._source_for_insert_node()
+        elif branch_end_mode:
+            source = self._source_for_branch_end_add()
+        else:
+            source = self._source_for_new_node()
         node_id = self.workflow_map.add_node(node_type)
         if node_id is None:
             notifications.unknown_node_type(self.app, node_type)
@@ -554,6 +581,191 @@ class EditorScreen(Screen):
         branch_label = self._branch_port_labels(branch_node).get(branch_port, branch_port)
         notifications.viewing_branch(self.app, branch_label)
 
+    def _cycle_branch_view(self, closed: bool, direction: int) -> None:
+        candidates = [
+            candidate
+            for candidate in self._branch_view_candidates()
+            if candidate["closed"] is closed
+        ]
+        if not candidates:
+            notifications.notify_info(
+                self.app,
+                "No closed branches" if closed else "No open branches",
+            )
+            return
+        current_index = self._current_branch_candidate_index(candidates)
+        next_index = (current_index + direction) % len(candidates)
+        candidate = candidates[next_index]
+        self._show_branch_candidate(candidate)
+        notifications.viewing_branch(self.app, candidate["label"])
+
+    def _branch_view_candidates(self) -> list[Dict[str, Any]]:
+        candidates: list[Dict[str, Any]] = []
+        nodes = self.workflow_map.get_all_node_data()
+        for node_id, node in nodes.items():
+            metadata = self._metadata_for_type(node.get("type", ""))
+            output_ports = list(metadata.get("output_ports") or []) if metadata else []
+            if len(output_ports) <= 1:
+                continue
+            port_labels = self._branch_port_labels(node)
+            for port in output_ports:
+                tail_id, closed = self._branch_tail_and_closed_state(node_id, port)
+                candidates.append(
+                    {
+                        "branch_node_id": node_id,
+                        "port": port,
+                        "label": port_labels.get(port, port),
+                        "tail_id": tail_id,
+                        "closed": closed,
+                    }
+                )
+        return candidates
+
+    def _branch_tail_and_closed_state(
+        self, branch_node_id: str, branch_port: str
+    ) -> tuple[str, bool]:
+        nodes = self.workflow_map.get_all_node_data()
+        current_node_id = self._target_for_port(nodes.get(branch_node_id, {}), branch_port)
+        if current_node_id is None:
+            return branch_node_id, False
+        visited = {branch_node_id}
+        tail_id = current_node_id
+        closed = False
+        while current_node_id and current_node_id not in visited:
+            visited.add(current_node_id)
+            tail_id = current_node_id
+            node = nodes.get(current_node_id)
+            if node is None:
+                break
+            if node.get("type") == "branch_end_node":
+                closed = True
+                break
+            metadata = self._metadata_for_type(node.get("type", ""))
+            ports = metadata.get("output_ports") if metadata else []
+            if len(ports or []) != 1:
+                break
+            current_node_id = self._target_for_port(node, ports[0])
+        return tail_id, closed
+
+    def _current_branch_candidate_index(self, candidates: list[Dict[str, Any]]) -> int:
+        if self.selected_row and self.selected_row["kind"] == "branch_select":
+            for index, candidate in enumerate(candidates):
+                if (
+                    candidate["branch_node_id"] == self.selected_row.get("branch_node_id")
+                    and candidate["port"] == self.selected_row.get("active_port")
+                ):
+                    return index
+        if self.selected_node_id:
+            for index, candidate in enumerate(candidates):
+                if self._branch_path_contains(
+                    candidate["branch_node_id"],
+                    candidate["port"],
+                    self.selected_node_id,
+                ):
+                    return index
+        for index, candidate in enumerate(candidates):
+            if self.active_branch_ports.get(candidate["branch_node_id"]) == candidate["port"]:
+                return index
+        return -1
+
+    def _branch_path_contains(
+        self,
+        branch_node_id: str,
+        branch_port: str,
+        target_node_id: str,
+    ) -> bool:
+        nodes = self.workflow_map.get_all_node_data()
+        current_node_id = self._target_for_port(nodes.get(branch_node_id, {}), branch_port)
+        visited = {branch_node_id}
+        while current_node_id and current_node_id not in visited:
+            if current_node_id == target_node_id:
+                return True
+            visited.add(current_node_id)
+            node = nodes.get(current_node_id)
+            if node is None:
+                return False
+            metadata = self._metadata_for_type(node.get("type", ""))
+            ports = metadata.get("output_ports") if metadata else []
+            if len(ports or []) != 1:
+                return False
+            current_node_id = self._target_for_port(node, ports[0])
+        return False
+
+    def _show_branch_candidate(self, candidate: Dict[str, Any]) -> None:
+        branch_node_id = candidate["branch_node_id"]
+        branch_port = candidate["port"]
+        for ancestor_id, ancestor_port in self._branch_choices_to_node(branch_node_id):
+            self.active_branch_ports[ancestor_id] = ancestor_port
+        self.active_branch_ports[branch_node_id] = branch_port
+
+        tail_id = candidate["tail_id"]
+        branch_key = self._branch_candidate_key(candidate)
+        remembered_id = self.last_branch_selection.get(branch_key)
+        if remembered_id and self._branch_path_contains(
+            branch_node_id,
+            branch_port,
+            remembered_id,
+        ):
+            tail_id = remembered_id
+        if tail_id == branch_node_id:
+            self.selected_node_id = None
+            self.selected_row = {
+                "kind": "branch_select",
+                "branch_node_id": branch_node_id,
+                "active_port": branch_port,
+            }
+        else:
+            self.selected_node_id = tail_id
+            self.selected_row = {"kind": "node", "node_id": tail_id}
+        self.refresh_from_backend()
+
+    def _branch_choices_to_node(self, target_node_id: str) -> list[tuple[str, str]]:
+        start_node_id = self.workflow_map.find_start_node_id()
+        if not start_node_id or start_node_id == target_node_id:
+            return []
+        visited: set[str] = set()
+        result = self._find_branch_choices_to_node(
+            start_node_id,
+            target_node_id,
+            [],
+            visited,
+        )
+        return result or []
+
+    def _find_branch_choices_to_node(
+        self,
+        current_node_id: str,
+        target_node_id: str,
+        choices: list[tuple[str, str]],
+        visited: set[str],
+    ) -> Optional[list[tuple[str, str]]]:
+        if current_node_id == target_node_id:
+            return list(choices)
+        if current_node_id in visited:
+            return None
+        visited.add(current_node_id)
+        node = self.workflow_map.get_node_data(current_node_id)
+        if node is None:
+            return None
+        metadata = self._metadata_for_type(node.get("type", ""))
+        output_ports = list(metadata.get("output_ports") or []) if metadata else []
+        for port in output_ports:
+            target = self._target_for_port(node, port)
+            if not target:
+                continue
+            next_choices = list(choices)
+            if len(output_ports) > 1:
+                next_choices.append((current_node_id, port))
+            result = self._find_branch_choices_to_node(
+                target,
+                target_node_id,
+                next_choices,
+                set(visited),
+            )
+            if result is not None:
+                return result
+        return None
+
     def _connect_new_node(self, source_node_id: str, source_port: str, target_node_id: str) -> None:
         source = self.workflow_map.get_node_data(source_node_id)
         target = self.workflow_map.get_node_data(target_node_id)
@@ -748,6 +960,8 @@ class EditorScreen(Screen):
         self.selected_node_id = (
             row.get("node_id") if row and row["kind"] == "node" else None
         )
+        if self.selected_node_id:
+            self._remember_branch_selection(self.selected_node_id)
 
     def _move_selection(self, delta: int) -> None:
         node_list = self.query_one(NodeList)
@@ -931,6 +1145,52 @@ class EditorScreen(Screen):
             return {"node_id": self.selected_node_id, "port": (ports or ["default"])[0]}
         return None
 
+    def _source_for_branch_end_add(self) -> Optional[Dict[str, str]]:
+        """Return the tail source for the currently highlighted branch path."""
+        hidden_start_id = self._hidden_empty_start_node_id()
+        if hidden_start_id:
+            return {"node_id": hidden_start_id, "port": "default"}
+        if self.selected_row and self.selected_row["kind"] == "branch_select":
+            branch_node_id = self.selected_row["branch_node_id"]
+            active_port = self.active_branch_ports.get(
+                branch_node_id,
+                self.selected_row["active_port"],
+            )
+            return self._source_for_branch_tail(branch_node_id, active_port)
+        if self.selected_node_id:
+            candidates = self._branch_view_candidates()
+            index = self._current_branch_candidate_index(candidates)
+            if index >= 0:
+                candidate = candidates[index]
+                return self._source_for_branch_tail(
+                    candidate["branch_node_id"],
+                    candidate["port"],
+                )
+        return self._source_for_new_node()
+
+    def _source_for_branch_tail(
+        self, branch_node_id: str, branch_port: str
+    ) -> Dict[str, str]:
+        tail_id = self._tail_for_branch(branch_node_id, branch_port)
+        if tail_id == branch_node_id:
+            return {"node_id": branch_node_id, "port": branch_port}
+        tail = self.workflow_map.get_node_data(tail_id)
+        tail_meta = self._metadata_for_type(tail.get("type", "")) if tail else None
+        tail_ports = tail_meta.get("output_ports") if tail_meta else None
+        return {"node_id": tail_id, "port": (tail_ports or ["default"])[0]}
+
+    def _branch_candidate_key(self, candidate: Dict[str, Any]) -> str:
+        return f"{candidate['branch_node_id']}:{candidate['port']}"
+
+    def _remember_branch_selection(self, node_id: str) -> None:
+        for candidate in self._branch_view_candidates():
+            if self._branch_path_contains(
+                candidate["branch_node_id"],
+                candidate["port"],
+                node_id,
+            ):
+                self.last_branch_selection[self._branch_candidate_key(candidate)] = node_id
+
     def _tail_for_branch(self, branch_node_id: str, branch_port: str) -> str:
         nodes = self.workflow_map.get_all_node_data()
         current_node_id = self._target_for_port(nodes.get(branch_node_id, {}), branch_port)
@@ -962,7 +1222,7 @@ class EditorScreen(Screen):
             f"Target: {target_id or '-'}",
             "",
             "Press ENTER to choose another branch.",
-            "Press A to add a node to this branch.",
-            "Press I to insert a node into this branch.",
+            "Press I to insert after the highlighted row.",
+            "Press Ctrl+I to add at the end of this branch.",
         ]
         return "\n".join(lines)

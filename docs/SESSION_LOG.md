@@ -1,5 +1,26 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-03 — Phase 14 Editor Branch-Key Remap
+
+- Retired `A` as the editor add-node shortcut. `A/D` and left/right now cycle
+  visible branch paths that do not yet contain a Branch End.
+- Added closed-branch cycling with `Ctrl+A` / `Ctrl+D` and
+  `Ctrl+left` / `Ctrl+right` for branch paths that already contain a Branch End.
+- Kept `I` as insert-after-highlight and added `Ctrl+I` as add-at-branch-tail.
+  The branch-tail action appends after the active branch tail even when a middle
+  node is highlighted.
+- Branch cycling restores the last highlighted node per branch path when
+  possible, falling back to the branch tail when the branch has no remembered
+  highlight.
+- Updated editor status text, Help, `TUI_DESIGN.md`, `MASTER_BUILD_PLAN.md`, and
+  `AGENT_HANDOFF.md` so the branch navigation grammar is the documented source
+  of truth.
+- Added regressions for open/closed branch cycling and branch-tail source
+  selection.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v`
+
 ## 2026-06-03 — Phase 13 Cursor Mode Reliability Follow-Up
 
 - Added visible `StatusBar` mode indicators to command-mode modal screens that

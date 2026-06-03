@@ -148,6 +148,26 @@ escape  Stop the active run and return to the editor
 
 Every screen should keep a context-sensitive status bar visible at the bottom.
 
+Editor bindings:
+
+```text
+W/S or up/down         Move selection vertically
+A/D or left/right     Cycle between branch views that do not yet contain a Branch End
+Ctrl+A/Ctrl+D         Cycle between branch views that contain a Branch End
+Ctrl+left/Ctrl+right  Same as Ctrl+A/Ctrl+D
+E or Enter            Edit selected node or open the highlighted branch selector
+I                     Insert after the highlighted node
+Ctrl+I                Add to the end of the highlighted branch
+X or Backspace        Delete selected node or tombstone
+B / Ctrl+B            Toggle selected breakpoint / clear all breakpoints
+V                     Validate workflow
+```
+
+`A` is not an add-node shortcut. The editor treats WASD as left-hand arrows:
+`W/S` move vertically and `A/D` move horizontally through branch views.
+When cycling back to a branch, the editor restores the last highlighted node in
+that branch when possible; otherwise it highlights the branch tail.
+
 ## Command Navigation
 
 Keyboard-first modals use command mode by default:

@@ -126,8 +126,10 @@ Latest phase:
 - The next planned phase is Phase 14 (key binding remap).
 
 Planned future phases (see Section 6 of MASTER_BUILD_PLAN.md for full specs):
-- Phase 14: Key binding remap — final grammar (E/I/X/+/F/Ctrl+X), retires A and
-  L/O standalone bindings.
+- Phase 14: Key binding remap — editor grammar uses W/S or up/down for vertical
+  movement, A/D or left/right for open branch-view cycling, Ctrl+A/Ctrl+D or
+  Ctrl+left/Ctrl+right for Branch End branch cycling, E to edit, I to insert
+  after the highlight, Ctrl+I to add at branch end, and X/backspace to delete.
 - Phase 15: Editor rework — Quick View right panel, human-readable-name-first,
   editable branch names, top-bar/bottom-bar split.
 - Phase 16: File modal + node config tabs — consolidated File modal, fixed
