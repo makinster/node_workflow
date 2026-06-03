@@ -360,7 +360,11 @@ class EditorScreen(Screen):
         self.workflow_map.update_node_config(self.selected_node_id, config)
         node = self.workflow_map.get_node_data(self.selected_node_id) or {}
         if node.get("type") == "merge_node":
-            self._sync_merge_branch_end_connections(self.selected_node_id, config)
+            self._sync_merge_branch_end_connections(
+                self.selected_node_id,
+                config,
+                reconcile_unselected=True,
+            )
         self.refresh_from_backend()
         notifications.node_updated(self.app)
 
@@ -376,25 +380,38 @@ class EditorScreen(Screen):
         notifications.jumped_to_node(self.app, node_id)
 
     def _sync_merge_branch_end_connections(
-        self, merge_node_id: str, config: Dict[str, Any]
+        self,
+        merge_node_id: str,
+        config: Dict[str, Any],
+        reconcile_unselected: bool = False,
     ) -> None:
         selected = {
             str(value)
             for value in config.get("branches_to_close", [])
             if str(value)
         }
-        if not selected:
-            return
         for option in merge_input_options(self.workflow_map, merge_node_id):
             option_value = f"{option['branch_id']}:{option['branch_port']}"
-            if option_value not in selected:
-                continue
             source_id = option.get("branch_end_id", "")
             source_node = self.workflow_map.get_node_data(source_id) if source_id else None
             if not source_node or source_node.get("type") != "branch_end_node":
                 continue
             source_port = option.get("source_port") or "default"
             target_port = option.get("port") or "path_a"
+            if option_value not in selected:
+                if reconcile_unselected and self._merge_input_connection_exists(
+                    source_id,
+                    source_port,
+                    merge_node_id,
+                    target_port,
+                ):
+                    self.workflow_map.disconnect(
+                        source_id,
+                        source_port,
+                        merge_node_id,
+                        target_port,
+                    )
+                continue
             self._replace_merge_input_connection(
                 source_id,
                 source_port,

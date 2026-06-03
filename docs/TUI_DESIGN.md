@@ -172,6 +172,9 @@ The editor node list shows a small depth counter at the left of each node row.
 Start is `0`; each visible node below increments by one. When a branch is
 selected, the branch path continues from the branch node's depth so switching
 branches preserves vertical orientation.
+Branch selector rows do not show a depth number; they reserve the same left
+gutter so their `☛` icon lines up with node status icons and the branch name
+lines up with node names.
 
 ## Command Navigation
 

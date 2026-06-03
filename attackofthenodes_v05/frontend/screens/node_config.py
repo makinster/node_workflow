@@ -150,7 +150,7 @@ def merge_input_options(workflow_map, current_node_id: str) -> list[Dict[str, st
                 continue
             seen.add(key)
             trace = _trace_branch_path(workflow_map, branch_id, branch_port, current_node_id)
-            if trace["status"] != "open":
+            if trace["status"] not in {"open", "current_merge"}:
                 continue
             target_port = trace["target_port"] or _default_merge_input_port(
                 branch_port,
@@ -175,7 +175,11 @@ def merge_input_options(workflow_map, current_node_id: str) -> list[Dict[str, st
                     "branch_end": f"{last_name} ({last_node_id})",
                     "last_node": f"{last_name} ({last_node_id})",
                     "source_port": trace["last_port"],
-                    "description": f"{branch_label} is open",
+                    "description": (
+                        f"{branch_label} is connected"
+                        if trace["status"] == "current_merge"
+                        else f"{branch_label} is open"
+                    ),
                     "output_name": output["name"],
                     "output_description": output["description"],
                 }
@@ -313,6 +317,21 @@ def _upstream_branch_label(
     merge_node_id: str,
     target_port: str,
 ) -> str:
+    label, _ = _upstream_branch_info(
+        workflow_map,
+        source_node_id,
+        merge_node_id,
+        target_port,
+    )
+    return label
+
+
+def _upstream_branch_info(
+    workflow_map,
+    source_node_id: str,
+    merge_node_id: str,
+    target_port: str,
+) -> tuple[str, str]:
     visited: set[str] = set()
     stack = [source_node_id]
     while stack:
@@ -324,18 +343,18 @@ def _upstream_branch_label(
         for input_conn in node.get("connections", {}).get("inputs", []):
             upstream_id = input_conn.get("source_node_id")
             upstream_node = workflow_map.get_node_data(upstream_id) if upstream_id else {}
-            upstream_outputs = upstream_node.get("connections", {}).get("outputs", []) if upstream_node else []
+            upstream_outputs = _node_output_ports(workflow_map, upstream_node) if upstream_node else []
             output_count = len(upstream_outputs)
             source_port = str(input_conn.get("source_port", "default"))
             if output_count > 1:
                 config = upstream_node.get("config") or {}
                 label = str(config.get(f"{source_port}_label") or "").strip()
                 if label:
-                    return label
-                return source_port.replace("_", " ").title()
+                    return label, f"{upstream_id}:{source_port}"
+                return source_port.replace("_", " ").title(), f"{upstream_id}:{source_port}"
             if upstream_id:
                 stack.append(upstream_id)
-    return target_port.replace("_", " ").title()
+    return target_port.replace("_", " ").title(), target_port
 
 
 class NodeConfigScreen(CommandScreenMixin, ModalScreen):
@@ -1179,7 +1198,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             if target_node.get("type") != "merge_node":
                 continue
             target_port = str(conn.get("target_port") or "default")
-            branch_label = _upstream_branch_label(
+            branch_label, branch_id = _upstream_branch_info(
                 self.workflow_map,
                 self.node_id,
                 target_id,
@@ -1188,8 +1207,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             return "\n".join(
                 [
                     "Branch End has no editable fields.",
-                    f"Connected merge: {self._node_label(target_id, target_node)}.{target_port}",
-                    f"Branch: {branch_label}",
+                    f"Merges To Branch: {branch_label} ({branch_id})",
+                    f"Merge Node: {self._node_label(target_id, target_node)}",
                 ]
             )
         return "Branch End has no editable fields.\nStatus: open until connected to a Merge node."

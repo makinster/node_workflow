@@ -8,8 +8,17 @@
   branches preserves a quick sense of vertical distance from Start.
 - Displayed the counter in the node list row prefix and in the right-side
   details panel as `Depth from Start`.
+- Adjusted branch selector rows to omit the depth number while preserving the
+  depth gutter, so the `☛` icon lines up with node icons and branch names line
+  up with node names.
+- Branch End config now reports `Merges To Branch: <branch name> (<branch id>)`
+  when connected to a Merge node.
+- Merge config now keeps already-connected Branch End paths visible for the
+  current merge and lets users uncheck them. Saving an unchecked path disconnects
+  the Branch End, and the editor refresh marks it open/red again.
 - Added a regression covering linear depth, branch-selector inherited depth,
-  branch switch depth, row rendering, and details-panel display.
+  branch switch depth, row rendering, details-panel display, Branch End merge
+  identity, and merge uncheck/disconnect behavior.
 - Verification:
   - `../.venv/bin/python -m compileall -q .`
   - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v`

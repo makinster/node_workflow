@@ -104,8 +104,7 @@ class BranchSelectCard(Static):
 
     def on_mount(self) -> None:
         self.add_class("branch-select-card")
-        depth_text = f"{self.depth:>2} " if self.depth is not None else "  "
-        self.display_text = f"{depth_text}Branch Select: {self.active_label}"
+        self.display_text = f"   ☛ {self.active_label}"
         self.update(self.display_text)
 
     def on_click(self, event: events.Click) -> None:

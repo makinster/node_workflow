@@ -1396,7 +1396,7 @@ async def _test_merge_options_exclude_current_merge_path_and_branch_end_card_tur
 
     options = merge_input_options(wm, merge)
     values = {f"{option['branch_id']}:{option['branch_port']}" for option in options}
-    assert values == {f"{branch}:path_b"}
+    assert values == {f"{branch}:path_a", f"{branch}:path_b"}
 
     class EditorApp(App):
         def compose(self) -> ComposeResult:
@@ -1525,6 +1525,111 @@ async def _test_saving_merge_config_connects_selected_branch_end():
         assert cards[0].has_class("branch-end-connected")
 
     print("test_saving_merge_config_connects_selected_branch_end PASSED")
+
+
+def test_saving_merge_config_unchecked_branch_disconnects_branch_end():
+    asyncio.run(_test_saving_merge_config_unchecked_branch_disconnects_branch_end())
+
+
+async def _test_saving_merge_config_unchecked_branch_disconnects_branch_end():
+    from textual.app import App, ComposeResult
+
+    from frontend.screens.editor import EditorScreen
+    from frontend.screens.node_config import merge_input_options
+    from frontend.widgets.node_card import NodeCard
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("merge_save_disconnects_branch_end")
+    start = wm.add_node("start_node")
+    branch = wm.add_node("branch_node")
+    branch_end = wm.add_node("branch_end_node")
+    merge = wm.add_node("merge_node")
+    wm.connect(start, "default", branch, "input")
+    wm.connect(branch, "path_a", branch_end, "input")
+    wm.connect(branch_end, "default", merge, "path_a")
+    wm.update_node_config(
+        merge,
+        {
+            "branches_to_close": [f"{branch}:path_a"],
+            "carry_forward_branch_id": f"{branch}:path_a",
+            "selected_branch_id": f"{branch}:path_a",
+            "selected_input_port": "path_a",
+        },
+    )
+    option_values = {
+        f"{option['branch_id']}:{option['branch_port']}"
+        for option in merge_input_options(wm, merge)
+    }
+    assert f"{branch}:path_a" in option_values
+
+    class EditorApp(App):
+        def compose(self) -> ComposeResult:
+            yield EditorScreen(wm._factory, wm)
+
+    app = EditorApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        screen = app.query_one(EditorScreen)
+        screen.selected_node_id = merge
+        screen.selected_row = {"kind": "node", "node_id": merge}
+        screen._save_node_config_from_modal(
+            {
+                "alias": "",
+                "config": {
+                    "branches_to_close": [],
+                    "carry_forward_branch_id": "",
+                    "selected_branch_id": "",
+                    "selected_input_port": "",
+                },
+            }
+        )
+        await pilot.pause(0.03)
+
+        branch_end_node = wm.get_node_data(branch_end)
+        merge_node = wm.get_node_data(merge)
+        assert branch_end_node.get("connections", {}).get("outputs", []) == []
+        assert merge_node.get("connections", {}).get("inputs", []) == []
+        cards = [card for card in app.query(NodeCard) if card.node_id == branch_end]
+        assert len(cards) == 1
+        assert cards[0].has_class("branch-end-open")
+        assert not cards[0].has_class("branch-end-connected")
+
+    print("test_saving_merge_config_unchecked_branch_disconnects_branch_end PASSED")
+
+
+def test_branch_end_config_shows_merge_branch_identity():
+    asyncio.run(_test_branch_end_config_shows_merge_branch_identity())
+
+
+async def _test_branch_end_config_shows_merge_branch_identity():
+    from textual.app import App, ComposeResult
+
+    from frontend.screens.node_config import NodeConfigScreen
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("branch_end_status")
+    start = wm.add_node("start_node")
+    branch = wm.add_node("branch_node")
+    branch_end = wm.add_node("branch_end_node")
+    merge = wm.add_node("merge_node")
+    wm.update_node_config(branch, {"path_a_label": "Approve"})
+    wm.connect(start, "default", branch, "input")
+    wm.connect(branch, "path_a", branch_end, "input")
+    wm.connect(branch_end, "default", merge, "path_a")
+
+    class ConfigApp(App):
+        def compose(self) -> ComposeResult:
+            yield NodeConfigScreen(wm._factory, wm, branch_end, wm.get_node_data(branch_end))
+
+    app = ConfigApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        screen = app.query_one(NodeConfigScreen)
+        text = screen._branch_end_status_text()
+        assert f"Merges To Branch: Approve ({branch}:path_a)" in text
+        assert f"Merge Node: merge_node ({merge})" in text
+
+    print("test_branch_end_config_shows_merge_branch_identity PASSED")
 
 
 def test_connected_branch_end_deletes_to_tombstone():
@@ -1804,7 +1909,7 @@ async def _test_editor_depth_counter_tracks_visible_branch_distance():
         start_card = next(card for card in app.query(NodeCard) if card.node_id == start)
         branch_row = app.query_one(BranchSelectCard)
         assert start_card.display_text.startswith(" 0 ")
-        assert branch_row.display_text.startswith(" 1 ")
+        assert branch_row.display_text == "   ☛ Path A"
 
         await pilot.press("d")
         await pilot.pause(0.03)
@@ -3148,6 +3253,8 @@ if __name__ == "__main__":
         test_merge_options_exclude_current_merge_path_and_branch_end_card_turns_green,
         test_merge_branch_selector_moves_focus_down_at_bottom,
         test_saving_merge_config_connects_selected_branch_end,
+        test_saving_merge_config_unchecked_branch_disconnects_branch_end,
+        test_branch_end_config_shows_merge_branch_identity,
         test_connected_branch_end_deletes_to_tombstone,
         test_editor_connects_merge_input_to_active_branch_port,
         test_editor_repairs_legacy_merge_input_port_on_refresh,
