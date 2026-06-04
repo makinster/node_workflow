@@ -17,7 +17,9 @@ STATUS_ICONS = {
     "waiting": "⏸",
 }
 
-NODE_ROW_WIDTH = 38
+DEPTH_WIDTH = 3
+DEPTH_SPACING = "   "
+DEPTH_GUTTER = " " * (DEPTH_WIDTH + len(DEPTH_SPACING))
 
 
 class NodeCard(Static):
@@ -68,9 +70,9 @@ class NodeCard(Static):
         depth = self.node_data.get("_editor_depth")
         main_text = f"{icon}{breakpoint_marker} [{node_type}] {alias}{timing}"
         if isinstance(depth, int):
-            self.display_text = f"{main_text:<{NODE_ROW_WIDTH}}{depth:>2}"
+            self.display_text = f"{depth:>{DEPTH_WIDTH}}{DEPTH_SPACING}{main_text}"
         else:
-            self.display_text = main_text
+            self.display_text = f"{DEPTH_GUTTER}{main_text}"
         self.update(self.display_text)
 
     def _format_timing(self, seconds: float | None) -> str:
@@ -109,7 +111,7 @@ class BranchSelectCard(Static):
 
     def on_mount(self) -> None:
         self.add_class("branch-select-card")
-        self.display_text = f"☛  {self.active_label}"
+        self.display_text = f"{DEPTH_GUTTER}☛ {self.active_label}"
         self.update(self.display_text)
 
     def on_click(self, event: events.Click) -> None:

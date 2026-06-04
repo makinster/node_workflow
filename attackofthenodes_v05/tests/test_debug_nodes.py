@@ -2054,9 +2054,8 @@ async def _test_editor_depth_counter_tracks_visible_branch_distance():
 
         start_card = next(card for card in app.query(NodeCard) if card.node_id == start)
         branch_row = app.query_one(BranchSelectCard)
-        assert start_card.display_text.startswith("◌ [start_node] start_node")
-        assert start_card.display_text.endswith(" 0")
-        assert branch_row.display_text == "☛  Path A"
+        assert start_card.display_text.startswith("  0   ◌ [start_node] start_node")
+        assert branch_row.display_text == "      ☛ Path A"
 
         await pilot.press("d")
         await pilot.pause(0.03)

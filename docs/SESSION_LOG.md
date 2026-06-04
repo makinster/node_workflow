@@ -2,8 +2,8 @@
 
 ## 2026-06-03 — Editor Highlight Persistence Polish
 
-- Moved editor depth counters from the left prefix to a right-aligned suffix so
-  branch selector rows can align directly with node icon/name columns.
+- Restored editor depth counters to the left side with a wider fixed gutter so
+  node icons/text and branch selector icons/text align cleanly.
 - Changed branch cycling fallback behavior: remembered branch selections still
   win, but a branch with no remembered node now highlights the first visible
   node in that branch path instead of the tail.
@@ -16,7 +16,7 @@
 - Updated the empty node-list placeholder so it no longer advertises `A` as an
   add-node shortcut.
 - Added regressions for notification focus restoration, single-highlight branch
-  cycling, first-node branch fallback, and right-side depth rendering.
+  cycling, first-node branch fallback, and depth-gutter rendering.
 - Verification:
   - `../.venv/bin/python -m compileall -q .`
   - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -q -k "editor_branch_cycle_keys or editor_depth_counter or editor_notification_restores"`
