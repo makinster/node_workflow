@@ -640,6 +640,7 @@ class EditorScreen(Screen):
                         "branch_node_id": node_id,
                         "port": port,
                         "label": port_labels.get(port, port),
+                        "head_id": self._branch_head_for_branch(node_id, port),
                         "tail_id": tail_id,
                         "closed": closed,
                     }
@@ -716,6 +717,14 @@ class EditorScreen(Screen):
             current_node_id = self._target_for_port(node, ports[0])
         return False
 
+    def _branch_head_for_branch(
+        self,
+        branch_node_id: str,
+        branch_port: str,
+    ) -> str:
+        nodes = self.workflow_map.get_all_node_data()
+        return self._target_for_port(nodes.get(branch_node_id, {}), branch_port) or branch_node_id
+
     def _show_branch_candidate(self, candidate: Dict[str, Any]) -> None:
         branch_node_id = candidate["branch_node_id"]
         branch_port = candidate["port"]
@@ -723,7 +732,7 @@ class EditorScreen(Screen):
             self.active_branch_ports[ancestor_id] = ancestor_port
         self.active_branch_ports[branch_node_id] = branch_port
 
-        tail_id = candidate["tail_id"]
+        target_id = candidate.get("head_id") or candidate["tail_id"]
         branch_key = self._branch_candidate_key(candidate)
         remembered_id = self.last_branch_selection.get(branch_key)
         if remembered_id and self._branch_path_contains(
@@ -731,8 +740,8 @@ class EditorScreen(Screen):
             branch_port,
             remembered_id,
         ):
-            tail_id = remembered_id
-        if tail_id == branch_node_id:
+            target_id = remembered_id
+        if target_id == branch_node_id:
             self.selected_node_id = None
             self.selected_row = {
                 "kind": "branch_select",
@@ -740,8 +749,8 @@ class EditorScreen(Screen):
                 "active_port": branch_port,
             }
         else:
-            self.selected_node_id = tail_id
-            self.selected_row = {"kind": "node", "node_id": tail_id}
+            self.selected_node_id = target_id
+            self.selected_row = {"kind": "node", "node_id": target_id}
         self._persist_editor_state()
         self.refresh_from_backend()
 
@@ -1040,7 +1049,8 @@ class EditorScreen(Screen):
             self._select_row(node_list.row_for_index(index))
         if index is not None:
             node_list.index = index
-        node_list.focus()
+        node_list.normalize_highlight()
+        self.app.set_focus(node_list)
 
     def _persist_editor_state(self) -> None:
         try:

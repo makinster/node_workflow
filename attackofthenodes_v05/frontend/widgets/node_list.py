@@ -39,7 +39,7 @@ class NodeList(ListView):
             )
             self.append(ListItem(card))
         if not nodes:
-            self.append(ListItem(Label("No nodes. Press A to add a node.")))
+            self.append(ListItem(Label("No nodes. Press Ctrl+I to add a node.")))
 
     def refresh_rows(
         self,
@@ -70,7 +70,8 @@ class NodeList(ListView):
                 )
             self.append(ListItem(card))
         if not rows:
-            self.append(ListItem(Label("No nodes. Press A to add a node.")))
+            self.append(ListItem(Label("No nodes. Press Ctrl+I to add a node.")))
+        self.normalize_highlight()
 
     def node_id_for_index(self, index: int | None) -> Optional[str]:
         """Return the node id matching a ListView index."""
@@ -104,3 +105,9 @@ class NodeList(ListView):
             ):
                 return index
         return None
+
+    def normalize_highlight(self) -> None:
+        """Ensure only the current ListView index renders as highlighted."""
+        for index, item in enumerate(self.children):
+            if isinstance(item, ListItem):
+                item.highlighted = index == self.index

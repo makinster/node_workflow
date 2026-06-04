@@ -17,6 +17,8 @@ STATUS_ICONS = {
     "waiting": "⏸",
 }
 
+NODE_ROW_WIDTH = 38
+
 
 class NodeCard(Static):
     """Render a workflow node as one terminal-friendly row."""
@@ -64,8 +66,11 @@ class NodeCard(Static):
         breakpoint_marker = " ●" if self.node_data.get("breakpoint") else ""
         timing = f" ({self._format_timing(self.timing_seconds)})" if self.timing_seconds else ""
         depth = self.node_data.get("_editor_depth")
-        depth_text = f"{int(depth):>2} " if isinstance(depth, int) else ""
-        self.display_text = f"{depth_text}{icon}{breakpoint_marker} [{node_type}] {alias}{timing}"
+        main_text = f"{icon}{breakpoint_marker} [{node_type}] {alias}{timing}"
+        if isinstance(depth, int):
+            self.display_text = f"{main_text:<{NODE_ROW_WIDTH}}{depth:>2}"
+        else:
+            self.display_text = main_text
         self.update(self.display_text)
 
     def _format_timing(self, seconds: float | None) -> str:
@@ -104,7 +109,7 @@ class BranchSelectCard(Static):
 
     def on_mount(self) -> None:
         self.add_class("branch-select-card")
-        self.display_text = f"\u00a0\u00a0☛ {self.active_label}"
+        self.display_text = f"☛  {self.active_label}"
         self.update(self.display_text)
 
     def on_click(self, event: events.Click) -> None:

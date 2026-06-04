@@ -193,7 +193,7 @@ Append a short entry to `docs/SESSION_LOG.md` for every phase or notable patch.
 | 11 | Real AI node execution | Deferred |
 | 12 | Packaging and release hardening | Deferred |
 | 13 | Cursor model foundation | Done |
-| 14 | Key binding remap | Planned |
+| 14 | Key binding remap | Done |
 | 15 | Editor rework | Planned |
 | 16 | File modal + node config tabs | Planned |
 | 17 | Node visual identity | Planned |
@@ -203,9 +203,9 @@ Append a short entry to `docs/SESSION_LOG.md` for every phase or notable patch.
 
 Sequencing:
 
-- Phases 10, 10.5, and 13 are complete. Phase 14 is the next planned
+- Phases 10, 10.5, 13, and 14 are complete. Phase 15 is the next planned
   implementation phase.
-- Phase 14 depends on Phase 13. Phases 15 and 17 are parallelizable after 14.
+- Phases 15 and 17 are parallelizable after 14.
   Phase 16 depends on 14 and 15. Phase 18 depends on 13–17. Phases 19–20
   depend on Phase 9 and each other.
 
@@ -552,8 +552,9 @@ Escalation rule:
 - **FA-5**: `frontend/notifications.py` added with named notification helpers
   for common workflow, editor, execution, settings, and import/export outcomes.
   `editor.py`, `app.py`, and `execution.py` now route common notifications
-  through the helper. A regression guards against direct `.notify(...)` calls in
-  frontend source outside `notifications.py`.
+  through the helper. Editor notifications restore node-list focus and the last
+  highlighted row after transient toasts. A regression guards against direct
+  `.notify(...)` calls in frontend source outside `notifications.py`.
 
 ---
 

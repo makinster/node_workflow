@@ -104,6 +104,7 @@ Recent docs pass:
 Latest phase:
 
 - Phase 13 (cursor model foundation) is complete.
+- Phase 14 (editor key binding remap) is complete.
   - `frontend/widgets/cursor_state.py` — lightweight `CursorState` with
     `mode` ("nav"/"edit"), `set_nav()`, `set_edit()`.
   - `frontend/widgets/command_screen_mixin.py` — `CommandScreenMixin` with W/S/
@@ -122,14 +123,16 @@ Latest phase:
     the nav bindings into the concrete subclass's `BINDINGS` in
     `__init_subclass__`, before `super().__init_subclass__()` calls
     `DOMNode._merge_bindings()`.
-- 67 tests passing.
-- The next planned phase is Phase 14 (key binding remap).
+- 79 tests passing after the editor highlight persistence polish.
+- The next planned phase is Phase 15 (editor rework).
 
-Planned future phases (see Section 6 of MASTER_BUILD_PLAN.md for full specs):
+Recently completed:
 - Phase 14: Key binding remap — editor grammar uses W/S or up/down for vertical
   movement, A/D or left/right for open branch-view cycling, Ctrl+A/Ctrl+D or
   Ctrl+left/Ctrl+right for Branch End branch cycling, E to edit, I to insert
   after the highlight, Ctrl+I to add at branch end, and X/backspace to delete.
+
+Planned future phases (see Section 6 of MASTER_BUILD_PLAN.md for full specs):
 - Phase 15: Editor rework — Quick View right panel, human-readable-name-first,
   editable branch names, top-bar/bottom-bar split.
 - Phase 16: File modal + node config tabs — consolidated File modal, fixed

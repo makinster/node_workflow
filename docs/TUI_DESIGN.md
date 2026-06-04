@@ -166,20 +166,22 @@ V                     Validate workflow
 `A` is not an add-node shortcut. The editor treats WASD as left-hand arrows:
 `W/S` move vertically and `A/D` move horizontally through branch views.
 When cycling back to a branch, the editor restores the last highlighted node in
-that branch when possible; otherwise it highlights the branch tail.
+that branch when possible; otherwise it highlights the first visible node in
+that branch path.
 
-The editor node list shows a small depth counter at the left of each node row.
+The editor node list shows a small depth counter at the right of each node row.
 Start is `0`; each visible node below increments by one. When a branch is
 selected, the branch path continues from the branch node's depth so switching
 branches preserves vertical orientation.
-Branch selector rows do not show a depth number; they reserve the left gutter
-with nonbreaking spacing and shift the `☛` row so the icon visually lines up
-with node status icons and the branch name lines up with node names in the
-editor font.
+Branch selector rows do not show a depth number; the `☛` icon starts in the
+same visual column as node status icons and the branch name starts in the same
+visual column as node names.
 
 The editor persists selected node/branch state on the app shell. Returning from
-execution or closing secondary menus should restore the last highlighted editor
-row and focus the node list.
+execution, closing secondary menus, or showing transient notifications should
+restore the last highlighted editor row and focus the node list. The node list
+normalizes Textual row highlight state after refreshes so only one row renders
+as selected.
 
 ## Command Navigation
 

@@ -316,8 +316,10 @@ Done when:
 
 **Status:** complete. `frontend/notifications.py` owns named notification
 helpers. `editor.py`, `app.py`, and `execution.py` route common notifications
-through the helper, and a regression guards against direct `.notify(...)` calls
-in frontend source outside `notifications.py`.
+through the helper. Editor notifications restore node-list focus and the last
+highlighted row after transient toasts. Regressions guard editor focus
+restoration and direct `.notify(...)` calls in frontend source outside
+`notifications.py`.
 
 Tasks:
 

@@ -1852,31 +1852,36 @@ async def _test_editor_branch_cycle_keys_switch_open_and_closed_branch_views():
         await pilot.press("d")
         await pilot.pause(0.03)
         assert screen.active_branch_ports[branch] == "path_b"
-        assert screen.selected_node_id == open_tail
+        assert screen.selected_node_id == open_sleep
         node_list = screen.query_one("#node-list")
-        assert node_list.index == node_list.index_for_node_id(open_tail)
+        assert node_list.index == node_list.index_for_node_id(open_sleep)
+        assert sum(1 for item in node_list.children if getattr(item, "highlighted", False)) == 1
 
         screen._select_row({"kind": "node", "node_id": open_sleep})
         screen.refresh_from_backend()
         assert node_list.index == node_list.index_for_node_id(open_sleep)
+        assert sum(1 for item in node_list.children if getattr(item, "highlighted", False)) == 1
 
         await pilot.press("ctrl+d")
         await pilot.pause(0.03)
         assert screen.active_branch_ports[branch] == "path_a"
-        assert screen.selected_node_id == branch_end
-        assert node_list.index == node_list.index_for_node_id(branch_end)
+        assert screen.selected_node_id == closed_sleep
+        assert node_list.index == node_list.index_for_node_id(closed_sleep)
+        assert sum(1 for item in node_list.children if getattr(item, "highlighted", False)) == 1
 
         await pilot.press("right")
         await pilot.pause(0.03)
         assert screen.active_branch_ports[branch] == "path_b"
         assert screen.selected_node_id == open_sleep
         assert node_list.index == node_list.index_for_node_id(open_sleep)
+        assert sum(1 for item in node_list.children if getattr(item, "highlighted", False)) == 1
 
         await pilot.press("ctrl+left")
         await pilot.pause(0.03)
         assert screen.active_branch_ports[branch] == "path_a"
-        assert screen.selected_node_id == branch_end
-        assert node_list.index == node_list.index_for_node_id(branch_end)
+        assert screen.selected_node_id == closed_sleep
+        assert node_list.index == node_list.index_for_node_id(closed_sleep)
+        assert sum(1 for item in node_list.children if getattr(item, "highlighted", False)) == 1
 
     print("test_editor_branch_cycle_keys_switch_open_and_closed_branch_views PASSED")
 
@@ -1966,6 +1971,45 @@ async def _test_editor_restores_persisted_focus_highlight_on_mount():
     print("test_editor_restores_persisted_focus_highlight_on_mount PASSED")
 
 
+def test_editor_notification_restores_node_list_focus():
+    asyncio.run(_test_editor_notification_restores_node_list_focus())
+
+
+async def _test_editor_notification_restores_node_list_focus():
+    from textual.app import App, ComposeResult
+
+    from frontend import notifications
+    from frontend.screens.editor import EditorScreen
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("editor_notification_focus")
+    start = wm.add_node("start_node")
+    node = wm.add_node("logger_node")
+    wm.connect(start, "default", node, "input")
+
+    class EditorApp(App):
+        def compose(self) -> ComposeResult:
+            yield EditorScreen(wm._factory, wm)
+
+    app = EditorApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        screen = app.query_one(EditorScreen)
+        node_list = screen.query_one("#node-list")
+        screen.selected_node_id = node
+        screen.selected_row = {"kind": "node", "node_id": node}
+        screen.refresh_from_backend()
+        app.set_focus(None)
+
+        notifications.node_updated(app)
+        await pilot.pause(0.03)
+
+        assert app.focused is node_list
+        assert node_list.index == node_list.index_for_node_id(node)
+
+    print("test_editor_notification_restores_node_list_focus PASSED")
+
+
 def test_editor_depth_counter_tracks_visible_branch_distance():
     asyncio.run(_test_editor_depth_counter_tracks_visible_branch_distance())
 
@@ -2010,16 +2054,17 @@ async def _test_editor_depth_counter_tracks_visible_branch_distance():
 
         start_card = next(card for card in app.query(NodeCard) if card.node_id == start)
         branch_row = app.query_one(BranchSelectCard)
-        assert start_card.display_text.startswith(" 0 ")
-        assert branch_row.display_text == "\u00a0\u00a0☛ Path A"
+        assert start_card.display_text.startswith("◌ [start_node] start_node")
+        assert start_card.display_text.endswith(" 0")
+        assert branch_row.display_text == "☛  Path A"
 
         await pilot.press("d")
         await pilot.pause(0.03)
         rows = node_list._rows
         assert [row.get("depth") for row in rows if row["kind"] == "node"] == [0, 1, 2, 3]
-        assert screen.selected_node_id == path_b_second
+        assert screen.selected_node_id == path_b_first
         details = screen.query_one("#node-details").display_text
-        assert "Depth from Start: 3" in details
+        assert "Depth from Start: 2" in details
 
     print("test_editor_depth_counter_tracks_visible_branch_distance PASSED")
 
@@ -3364,6 +3409,7 @@ if __name__ == "__main__":
         test_editor_branch_cycle_keys_switch_open_and_closed_branch_views,
         test_editor_ctrl_i_source_uses_branch_tail_not_highlighted_node,
         test_editor_restores_persisted_focus_highlight_on_mount,
+        test_editor_notification_restores_node_list_focus,
         test_editor_depth_counter_tracks_visible_branch_distance,
         test_node_config_select_activates_from_keyboard,
         test_dynamic_row_helper_preserves_visible_rows_only,

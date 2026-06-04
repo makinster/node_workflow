@@ -1,22 +1,43 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-03 — Editor Highlight Persistence Polish
+
+- Moved editor depth counters from the left prefix to a right-aligned suffix so
+  branch selector rows can align directly with node icon/name columns.
+- Changed branch cycling fallback behavior: remembered branch selections still
+  win, but a branch with no remembered node now highlights the first visible
+  node in that branch path instead of the tail.
+- Normalized node-list highlight state after row refresh and focus restoration
+  so branch cycling cannot leave Start and the remembered node highlighted at
+  the same time.
+- Transient notifications now restore editor node-list focus after the toast
+  posts, preserving the last highlighted row instead of clearing the visual
+  selection.
+- Updated the empty node-list placeholder so it no longer advertises `A` as an
+  add-node shortcut.
+- Added regressions for notification focus restoration, single-highlight branch
+  cycling, first-node branch fallback, and right-side depth rendering.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -q -k "editor_branch_cycle_keys or editor_depth_counter or editor_notification_restores"`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v`
+
 ## 2026-06-03 — Editor Depth Counter
 
 - Added a frontend-only editor depth counter for visible workflow rows. The
   Start node renders as `0`; each visible node below increments by one.
 - Branch paths inherit the branch node's current depth, so switching between
   branches preserves a quick sense of vertical distance from Start.
-- Displayed the counter in the node list row prefix and in the right-side
+- Displayed the counter in the node list row and in the right-side
   details panel as `Depth from Start`.
-- Adjusted branch selector rows to omit the depth number while preserving the
-  depth gutter, so the `☛` icon visually lines up with node icons and branch
-  names line up with node names.
+- Adjusted branch selector rows to omit the depth number so the `☛` icon
+  visually lines up with node icons and branch names line up with node names.
 - Branch End config now reports `Merges To Branch: <branch name> (<branch id>)`
   when connected to a Merge node.
 - The editor right-side details panel now shows the same Branch End merge
   destination and merge node identity directly on the selected Branch End node.
-- Branch selector rows now use nonbreaking gutter spacing so the `☛` row keeps
-  alignment with node icon/name columns in Textual rendering.
+- Branch selector rows align directly to the node icon/name columns; depth
+  numbers are reserved for node rows only.
 - Merge config excludes the branch path that contains the current Merge node
   unless that path is an explicit Branch End closure connected to the merge.
 - Editor selection state now persists through branch cycling, execution returns,
@@ -42,8 +63,8 @@
   The branch-tail action appends after the active branch tail even when a middle
   node is highlighted.
 - Branch cycling restores the last highlighted node per branch path when
-  possible, falling back to the branch tail when the branch has no remembered
-  highlight.
+  possible. A later polish pass changed the no-memory fallback to the first
+  visible node in that branch path.
 - Updated editor status text, Help, `TUI_DESIGN.md`, `MASTER_BUILD_PLAN.md`, and
   `AGENT_HANDOFF.md` so the branch navigation grammar is the documented source
   of truth.

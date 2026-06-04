@@ -8,11 +8,47 @@ from typing import Any
 def notify_info(app: Any, message: str) -> None:
     """Show a standard informational notification."""
     app.notify(message)
+    restore_editor_focus(app)
 
 
 def notify_error(app: Any, message: str) -> None:
     """Show a standard error notification."""
     app.notify(message, severity="error")
+    restore_editor_focus(app)
+
+
+def restore_editor_focus(app: Any) -> None:
+    """Restore editor list focus after transient notifications."""
+    def restore() -> None:
+        try:
+            from frontend.screens.editor import EditorScreen
+
+            candidates = [app.screen]
+            try:
+                candidates.append(app.query_one(EditorScreen))
+            except Exception:
+                pass
+            for candidate in candidates:
+                restore_focus = getattr(candidate, "_restore_node_list_focus", None)
+                if restore_focus is not None:
+                    restore_focus()
+                    break
+        except Exception:
+            return
+
+    restore()
+    try:
+        app.call_after_refresh(restore)
+    except Exception:
+        pass
+    try:
+        app.call_later(restore)
+    except Exception:
+        pass
+    try:
+        app.set_timer(0.01, restore)
+    except Exception:
+        pass
 
 
 def workflow_saved(app: Any) -> None:
