@@ -84,13 +84,19 @@ class EditorScreen(Screen):
             )
 
     def on_mount(self) -> None:
+        self._restore_editor_state_from_app()
         self.refresh_from_backend()
         node_list = self.query_one(NodeList)
-        if node_list._rows:
+        if node_list._rows and self.selected_row is None:
             node_list.index = 0
             self._select_row(node_list.row_for_index(0))
-        node_list.focus()
+        self._restore_node_list_focus()
         self._refresh_details()
+
+    def on_show(self) -> None:
+        self._restore_editor_state_from_app()
+        if self.is_mounted:
+            self.refresh_from_backend()
 
     def refresh_from_backend(self) -> None:
         """Reload screen widgets from backend state."""
@@ -134,11 +140,9 @@ class EditorScreen(Screen):
             )
         elif self.selected_row is None and rows:
             self._select_row(rows[0])
-        index = self._index_for_selected_row(node_list)
-        if index is not None:
-            node_list.index = index
-        node_list.focus()
+        self._restore_node_list_focus()
         self._refresh_details()
+        self._persist_editor_state()
 
     def on_list_view_selected(self, event) -> None:
         node_list = self.query_one(NodeList)
@@ -738,6 +742,7 @@ class EditorScreen(Screen):
         else:
             self.selected_node_id = tail_id
             self.selected_row = {"kind": "node", "node_id": tail_id}
+        self._persist_editor_state()
         self.refresh_from_backend()
 
     def _branch_choices_to_node(self, target_node_id: str) -> list[tuple[str, str]]:
@@ -1025,6 +1030,57 @@ class EditorScreen(Screen):
         )
         if self.selected_node_id:
             self._remember_branch_selection(self.selected_node_id)
+        self._persist_editor_state()
+
+    def _restore_node_list_focus(self) -> None:
+        node_list = self.query_one(NodeList)
+        index = self._index_for_selected_row(node_list)
+        if index is None and node_list._rows and self.selected_row is None:
+            index = 0
+            self._select_row(node_list.row_for_index(index))
+        if index is not None:
+            node_list.index = index
+        node_list.focus()
+
+    def _persist_editor_state(self) -> None:
+        try:
+            app = self.app
+        except Exception:
+            return
+        selected_row = dict(self.selected_row) if self.selected_row else None
+        setattr(
+            app,
+            "_editor_selection_state",
+            {
+                "selected_node_id": self.selected_node_id,
+                "selected_row": selected_row,
+                "active_branch_ports": dict(self.active_branch_ports),
+                "last_branch_selection": dict(self.last_branch_selection),
+            },
+        )
+
+    def _restore_editor_state_from_app(self) -> None:
+        try:
+            state = getattr(self.app, "_editor_selection_state", None)
+        except Exception:
+            return
+        if not isinstance(state, dict):
+            return
+        active_branch_ports = state.get("active_branch_ports")
+        if isinstance(active_branch_ports, dict):
+            self.active_branch_ports.update(
+                {str(key): str(value) for key, value in active_branch_ports.items()}
+            )
+        last_branch_selection = state.get("last_branch_selection")
+        if isinstance(last_branch_selection, dict):
+            self.last_branch_selection.update(
+                {str(key): str(value) for key, value in last_branch_selection.items()}
+            )
+        selected_row = state.get("selected_row")
+        if isinstance(selected_row, dict):
+            self.selected_row = dict(selected_row)
+        selected_node_id = state.get("selected_node_id")
+        self.selected_node_id = str(selected_node_id) if selected_node_id else None
 
     def _move_selection(self, delta: int) -> None:
         node_list = self.query_one(NodeList)

@@ -15,6 +15,13 @@
   when connected to a Merge node.
 - The editor right-side details panel now shows the same Branch End merge
   destination and merge node identity directly on the selected Branch End node.
+- Branch selector rows now use nonbreaking gutter spacing so the `☛` row keeps
+  alignment with node icon/name columns in Textual rendering.
+- Merge config excludes the branch path that contains the current Merge node
+  unless that path is an explicit Branch End closure connected to the merge.
+- Editor selection state now persists through branch cycling, execution returns,
+  and secondary menu closes so the node list focus returns to the last
+  highlighted editor row.
 - Merge config now keeps already-connected Branch End paths visible for the
   current merge and lets users uncheck them. Saving an unchecked path disconnects
   the Branch End, and the editor refresh marks it open/red again.

@@ -173,8 +173,13 @@ Start is `0`; each visible node below increments by one. When a branch is
 selected, the branch path continues from the branch node's depth so switching
 branches preserves vertical orientation.
 Branch selector rows do not show a depth number; they reserve the left gutter
-and shift the `☛` row so the icon visually lines up with node status icons and
-the branch name lines up with node names in the editor font.
+with nonbreaking spacing and shift the `☛` row so the icon visually lines up
+with node status icons and the branch name lines up with node names in the
+editor font.
+
+The editor persists selected node/branch state on the app shell. Returning from
+execution or closing secondary menus should restore the last highlighted editor
+row and focus the node list.
 
 ## Command Navigation
 

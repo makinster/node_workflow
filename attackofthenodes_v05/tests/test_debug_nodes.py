@@ -1414,6 +1414,40 @@ async def _test_merge_options_exclude_current_merge_path_and_branch_end_card_tur
     print("test_merge_options_exclude_current_merge_path_and_branch_end_card_turns_green PASSED")
 
 
+def test_merge_options_exclude_branch_containing_current_merge():
+    asyncio.run(_test_merge_options_exclude_branch_containing_current_merge())
+
+
+async def _test_merge_options_exclude_branch_containing_current_merge():
+    from frontend.screens.node_config import merge_input_options
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("merge_excludes_own_branch")
+    start = wm.add_node("start_node")
+    branch = wm.add_node("branch_node")
+    merge_path_node = wm.add_node("sleep_node")
+    merge = wm.add_node("merge_node")
+    sibling = wm.add_node("logger_node")
+    wm.update_node_config(
+        branch,
+        {"path_a_label": "deez", "path_b_label": "branch name here"},
+    )
+    wm.connect(start, "default", branch, "input")
+    wm.connect(branch, "path_a", merge_path_node, "input")
+    wm.connect(merge_path_node, "default", merge, "path_a")
+    wm.connect(branch, "path_b", sibling, "input")
+
+    options = merge_input_options(wm, merge)
+    descriptions = {option["description"] for option in options}
+    values = {f"{option['branch_id']}:{option['branch_port']}" for option in options}
+    assert f"{branch}:path_a" not in values
+    assert f"{branch}:path_b" in values
+    assert "deez is connected" not in descriptions
+    assert "branch name here is open" in descriptions
+
+    print("test_merge_options_exclude_branch_containing_current_merge PASSED")
+
+
 def test_merge_branch_selector_moves_focus_down_at_bottom():
     asyncio.run(_test_merge_branch_selector_moves_focus_down_at_bottom())
 
@@ -1819,24 +1853,30 @@ async def _test_editor_branch_cycle_keys_switch_open_and_closed_branch_views():
         await pilot.pause(0.03)
         assert screen.active_branch_ports[branch] == "path_b"
         assert screen.selected_node_id == open_tail
+        node_list = screen.query_one("#node-list")
+        assert node_list.index == node_list.index_for_node_id(open_tail)
 
         screen._select_row({"kind": "node", "node_id": open_sleep})
         screen.refresh_from_backend()
+        assert node_list.index == node_list.index_for_node_id(open_sleep)
 
         await pilot.press("ctrl+d")
         await pilot.pause(0.03)
         assert screen.active_branch_ports[branch] == "path_a"
         assert screen.selected_node_id == branch_end
+        assert node_list.index == node_list.index_for_node_id(branch_end)
 
         await pilot.press("right")
         await pilot.pause(0.03)
         assert screen.active_branch_ports[branch] == "path_b"
         assert screen.selected_node_id == open_sleep
+        assert node_list.index == node_list.index_for_node_id(open_sleep)
 
         await pilot.press("ctrl+left")
         await pilot.pause(0.03)
         assert screen.active_branch_ports[branch] == "path_a"
         assert screen.selected_node_id == branch_end
+        assert node_list.index == node_list.index_for_node_id(branch_end)
 
     print("test_editor_branch_cycle_keys_switch_open_and_closed_branch_views PASSED")
 
@@ -1879,6 +1919,51 @@ async def _test_editor_ctrl_i_source_uses_branch_tail_not_highlighted_node():
         assert branch_end_source == {"node_id": tail, "port": "default"}
 
     print("test_editor_ctrl_i_source_uses_branch_tail_not_highlighted_node PASSED")
+
+
+def test_editor_restores_persisted_focus_highlight_on_mount():
+    asyncio.run(_test_editor_restores_persisted_focus_highlight_on_mount())
+
+
+async def _test_editor_restores_persisted_focus_highlight_on_mount():
+    from textual.app import App, ComposeResult
+
+    from frontend.screens.editor import EditorScreen
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("editor_restore_highlight")
+    start = wm.add_node("start_node")
+    branch = wm.add_node("branch_node")
+    first = wm.add_node("sleep_node")
+    tail = wm.add_node("logger_node")
+    wm.connect(start, "default", branch, "input")
+    wm.connect(branch, "path_b", first, "input")
+    wm.connect(first, "default", tail, "input")
+
+    class EditorApp(App):
+        def __init__(self):
+            super().__init__()
+            self._editor_selection_state = {
+                "selected_node_id": first,
+                "selected_row": {"kind": "node", "node_id": first},
+                "active_branch_ports": {branch: "path_b"},
+                "last_branch_selection": {f"{branch}:path_b": first},
+            }
+
+        def compose(self) -> ComposeResult:
+            yield EditorScreen(wm._factory, wm)
+
+    app = EditorApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        screen = app.query_one(EditorScreen)
+        node_list = screen.query_one("#node-list")
+        assert screen.selected_node_id == first
+        assert screen.active_branch_ports[branch] == "path_b"
+        assert node_list.index == node_list.index_for_node_id(first)
+        assert app.focused is node_list
+
+    print("test_editor_restores_persisted_focus_highlight_on_mount PASSED")
 
 
 def test_editor_depth_counter_tracks_visible_branch_distance():
@@ -1926,7 +2011,7 @@ async def _test_editor_depth_counter_tracks_visible_branch_distance():
         start_card = next(card for card in app.query(NodeCard) if card.node_id == start)
         branch_row = app.query_one(BranchSelectCard)
         assert start_card.display_text.startswith(" 0 ")
-        assert branch_row.display_text == "  ☛ Path A"
+        assert branch_row.display_text == "\u00a0\u00a0☛ Path A"
 
         await pilot.press("d")
         await pilot.pause(0.03)
@@ -3268,6 +3353,7 @@ if __name__ == "__main__":
         test_merge_config_uses_multi_branch_selector_and_carry_forward_dropdown,
         test_merge_config_does_not_autocheck_open_branches,
         test_merge_options_exclude_current_merge_path_and_branch_end_card_turns_green,
+        test_merge_options_exclude_branch_containing_current_merge,
         test_merge_branch_selector_moves_focus_down_at_bottom,
         test_saving_merge_config_connects_selected_branch_end,
         test_saving_merge_config_unchecked_branch_disconnects_branch_end,
@@ -3277,6 +3363,7 @@ if __name__ == "__main__":
         test_editor_repairs_legacy_merge_input_port_on_refresh,
         test_editor_branch_cycle_keys_switch_open_and_closed_branch_views,
         test_editor_ctrl_i_source_uses_branch_tail_not_highlighted_node,
+        test_editor_restores_persisted_focus_highlight_on_mount,
         test_editor_depth_counter_tracks_visible_branch_distance,
         test_node_config_select_activates_from_keyboard,
         test_dynamic_row_helper_preserves_visible_rows_only,

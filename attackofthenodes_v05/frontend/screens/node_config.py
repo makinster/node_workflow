@@ -152,6 +152,11 @@ def merge_input_options(workflow_map, current_node_id: str) -> list[Dict[str, st
             trace = _trace_branch_path(workflow_map, branch_id, branch_port, current_node_id)
             if trace["status"] not in {"open", "current_merge"}:
                 continue
+            if (
+                trace["status"] == "current_merge"
+                and trace["last_node"].get("type") != "branch_end_node"
+            ):
+                continue
             target_port = trace["target_port"] or _default_merge_input_port(
                 branch_port,
                 len(options),

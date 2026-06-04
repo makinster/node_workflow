@@ -104,7 +104,7 @@ class BranchSelectCard(Static):
 
     def on_mount(self) -> None:
         self.add_class("branch-select-card")
-        self.display_text = f"  ☛ {self.active_label}"
+        self.display_text = f"\u00a0\u00a0☛ {self.active_label}"
         self.update(self.display_text)
 
     def on_click(self, event: events.Click) -> None:
