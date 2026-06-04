@@ -701,10 +701,10 @@ Done when:
 **Depends on:** Phase 13.
 
 Establishes the current editor key grammar: E to select/edit, I to insert-after,
-Ctrl+I to add at the highlighted branch bottom, X/backspace to delete, and A/D
-as left/right branch-view navigation. Up/down arrows mirror W/S. Left/right
-arrows mirror A/D. Ctrl+left/Ctrl+right mirror Ctrl+A/Ctrl+D for cycling branch
-views that already contain a Branch End. Retires A as add.
+X/backspace to delete, and A/D as left/right branch-view navigation. Up/down
+arrows mirror W/S. Left/right arrows mirror A/D. Ctrl+left/Ctrl+right mirror
+Ctrl+A/Ctrl+D for cycling branch views that already contain a Branch End.
+Retires A as add and removes Ctrl+I add-at-branch-end.
 
 Supersedes the binding table in `TUI_DESIGN.md`. Keeps Phase 4/4.5
 insert-rewiring behavior; only the keys change. No single-letter binding may

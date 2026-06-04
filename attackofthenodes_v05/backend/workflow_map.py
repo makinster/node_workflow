@@ -254,9 +254,10 @@ class WorkflowMap:
             return None
         node_id = f"node_{uuid.uuid4().hex[:8]}"
         config_template = self._factory.create_config_template(node_type) or {}
+        default_alias = self._factory.get_default_alias(node_type) or node_type
         self._nodes[node_id] = {
             "type": node_type,
-            "alias": alias or node_type,
+            "alias": alias or default_alias,
             "config": config_template,
             "position": position or {"x": 0, "y": 0},
             "bookmarked": False,

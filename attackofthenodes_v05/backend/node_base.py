@@ -56,6 +56,7 @@ class Node(ABC):
 
     node_type: ClassVar[str] = ""
     display_name: ClassVar[str] = ""
+    default_alias: ClassVar[str] = ""
     description: ClassVar[str] = ""
     category: ClassVar[str] = ""
 
@@ -73,6 +74,8 @@ class Node(ABC):
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
+        if not cls.default_alias:
+            cls.default_alias = cls.display_name
         if cls.config_schema:
             errors = validate_config_schema(cls.config_schema)
             if errors:

@@ -157,7 +157,6 @@ Ctrl+A/Ctrl+D         Cycle between branch views that contain a Branch End
 Ctrl+left/Ctrl+right  Same as Ctrl+A/Ctrl+D
 E or Enter            Edit selected node or open the highlighted branch selector
 I                     Insert after the highlighted node
-Ctrl+I                Add to the end of the highlighted branch
 X or Backspace        Delete selected node or tombstone
 B / Ctrl+B            Toggle selected breakpoint / clear all breakpoints
 V                     Validate workflow

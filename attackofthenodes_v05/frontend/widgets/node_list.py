@@ -39,7 +39,7 @@ class NodeList(ListView):
             )
             self.append(ListItem(card))
         if not nodes:
-            self.append(ListItem(Label("No nodes. Press Ctrl+I to add a node.")))
+            self.append(ListItem(Label("No nodes. Press I to add a node.")))
 
     def refresh_rows(
         self,
@@ -70,7 +70,7 @@ class NodeList(ListView):
                 )
             self.append(ListItem(card))
         if not rows:
-            self.append(ListItem(Label("No nodes. Press Ctrl+I to add a node.")))
+            self.append(ListItem(Label("No nodes. Press I to add a node.")))
         self.normalize_highlight()
 
     def node_id_for_index(self, index: int | None) -> Optional[str]:

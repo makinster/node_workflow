@@ -54,6 +54,13 @@ class NodeFactory:
             return None
         return dict(node_class.default_config)
 
+    def get_default_alias(self, node_type: str) -> Optional[str]:
+        """Return the default user-facing alias for a node type."""
+        node_class = self._node_registry.get(node_type)
+        if node_class is None:
+            return None
+        return node_class.default_alias or node_class.display_name or node_type
+
     def get_node_types_metadata(self) -> List[Dict[str, Any]]:
         """Return UI-ready metadata for every registered node type."""
         metadata: List[Dict[str, Any]] = []
@@ -62,6 +69,7 @@ class NodeFactory:
                 {
                     "type": node_type,
                     "display_name": node_class.display_name,
+                    "default_alias": node_class.default_alias,
                     "description": node_class.description,
                     "input_ports": list(node_class.input_ports),
                     "output_ports": list(node_class.output_ports),

@@ -2,6 +2,14 @@
 
 ## 2026-06-03 — Editor Highlight Persistence Polish
 
+- Added backend `default_alias` node metadata. New workflow nodes now initialize
+  their editable alias from the node's user-facing display name instead of the
+  raw system type, while explicit aliases still win.
+- Updated the editor details panel to show a short vertical command list before
+  node/branch details: `E Select`, `V Validate Workflow`,
+  `Ctrl+R Run Workflow`, and `O Options`.
+- Reworded the editor bottom bar around the current keyboard grammar and
+  removed the Ctrl+I add-at-branch-end shortcut.
 - Restored editor depth counters to the left side with a wider fixed gutter so
   node icons/text and branch selector icons/text align cleanly.
 - Changed branch cycling fallback behavior: remembered branch selections still
@@ -59,9 +67,8 @@
   visible branch paths that do not yet contain a Branch End.
 - Added closed-branch cycling with `Ctrl+A` / `Ctrl+D` and
   `Ctrl+left` / `Ctrl+right` for branch paths that already contain a Branch End.
-- Kept `I` as insert-after-highlight and added `Ctrl+I` as add-at-branch-tail.
-  The branch-tail action appends after the active branch tail even when a middle
-  node is highlighted.
+- Kept `I` as insert-after-highlight and initially added `Ctrl+I` as
+  add-at-branch-tail. A later review removed the Ctrl+I shortcut.
 - Branch cycling restores the last highlighted node per branch path when
   possible. A later polish pass changed the no-memory fallback to the first
   visible node in that branch path.

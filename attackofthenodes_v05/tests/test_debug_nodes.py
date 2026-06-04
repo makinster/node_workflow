@@ -487,6 +487,26 @@ def test_nodes_reachable_from_branching_graph():
     print("test_nodes_reachable_from_branching_graph PASSED")
 
 
+def test_new_nodes_use_default_display_alias():
+    _, wm, _, _ = _make_services()
+    wm.create_new("default_alias")
+
+    node_id = wm.add_node("logger_node")
+    node = wm.get_node_data(node_id)
+
+    metadata = wm._factory.get_node_types_metadata()
+    logger_meta = next(item for item in metadata if item["type"] == "logger_node")
+    assert logger_meta["default_alias"] == "Logger"
+    assert wm._factory.get_default_alias("logger_node") == "Logger"
+    assert node["alias"] == "Logger"
+
+    custom_id = wm.add_node("logger_node", alias="Custom Log")
+    custom = wm.get_node_data(custom_id)
+    assert custom["alias"] == "Custom Log"
+
+    print("test_new_nodes_use_default_display_alias PASSED")
+
+
 # ---------------------------------------------------------------------------
 # 14. SaveManager writes derived input_sources
 # ---------------------------------------------------------------------------
@@ -1886,46 +1906,6 @@ async def _test_editor_branch_cycle_keys_switch_open_and_closed_branch_views():
     print("test_editor_branch_cycle_keys_switch_open_and_closed_branch_views PASSED")
 
 
-def test_editor_ctrl_i_source_uses_branch_tail_not_highlighted_node():
-    asyncio.run(_test_editor_ctrl_i_source_uses_branch_tail_not_highlighted_node())
-
-
-async def _test_editor_ctrl_i_source_uses_branch_tail_not_highlighted_node():
-    from textual.app import App, ComposeResult
-
-    from frontend.screens.editor import EditorScreen
-
-    _, wm, _, _ = _make_services()
-    wm.create_new("editor_ctrl_i_branch_tail")
-    start = wm.add_node("start_node")
-    branch = wm.add_node("branch_node")
-    first = wm.add_node("sleep_node")
-    tail = wm.add_node("logger_node")
-    wm.connect(start, "default", branch, "input")
-    wm.connect(branch, "path_b", first, "input")
-    wm.connect(first, "default", tail, "input")
-
-    class EditorApp(App):
-        def compose(self) -> ComposeResult:
-            yield EditorScreen(wm._factory, wm)
-
-    app = EditorApp()
-    async with app.run_test() as pilot:
-        await pilot.pause(0.03)
-        screen = app.query_one(EditorScreen)
-        screen.active_branch_ports[branch] = "path_b"
-        screen.selected_node_id = first
-        screen.selected_row = {"kind": "node", "node_id": first}
-        screen.refresh_from_backend()
-
-        insert_source = screen._source_for_insert_node()
-        branch_end_source = screen._source_for_branch_end_add()
-        assert insert_source == {"node_id": first, "port": "default"}
-        assert branch_end_source == {"node_id": tail, "port": "default"}
-
-    print("test_editor_ctrl_i_source_uses_branch_tail_not_highlighted_node PASSED")
-
-
 def test_editor_restores_persisted_focus_highlight_on_mount():
     asyncio.run(_test_editor_restores_persisted_focus_highlight_on_mount())
 
@@ -2019,6 +1999,7 @@ async def _test_editor_depth_counter_tracks_visible_branch_distance():
 
     from frontend.screens.editor import EditorScreen
     from frontend.widgets.node_card import BranchSelectCard, NodeCard
+    from frontend.widgets.status_bar import StatusBar
 
     _, wm, _, _ = _make_services()
     wm.create_new("editor_depth_counter")
@@ -2054,8 +2035,11 @@ async def _test_editor_depth_counter_tracks_visible_branch_distance():
 
         start_card = next(card for card in app.query(NodeCard) if card.node_id == start)
         branch_row = app.query_one(BranchSelectCard)
-        assert start_card.display_text.startswith("  0   ◌ [start_node] start_node")
+        status = app.query_one(StatusBar)
+        assert start_card.display_text.startswith("  0   ◌ [start_node] Start")
         assert branch_row.display_text == "      ☛  Path A"
+        assert "↑↓/W S Vertical Movement" in status._formatted()
+        assert "Ctrl+I" not in status._formatted()
 
         await pilot.press("d")
         await pilot.pause(0.03)
@@ -2063,6 +2047,7 @@ async def _test_editor_depth_counter_tracks_visible_branch_distance():
         assert [row.get("depth") for row in rows if row["kind"] == "node"] == [0, 1, 2, 3]
         assert screen.selected_node_id == path_b_first
         details = screen.query_one("#node-details").display_text
+        assert details.startswith("E Select\nV Validate Workflow\nCtrl+R Run Workflow\nO Options")
         assert "Depth from Start: 2" in details
 
     print("test_editor_depth_counter_tracks_visible_branch_distance PASSED")
@@ -3374,6 +3359,7 @@ if __name__ == "__main__":
         test_run_history_respects_memory_cap,
         test_run_history_record_has_no_embedded_outputs,
         test_nodes_reachable_from_branching_graph,
+        test_new_nodes_use_default_display_alias,
         test_save_manager_writes_input_sources,
         test_validator_flags_missing_input_sources,
         test_validator_flags_missing_membank_input_sources,
@@ -3406,7 +3392,6 @@ if __name__ == "__main__":
         test_editor_connects_merge_input_to_active_branch_port,
         test_editor_repairs_legacy_merge_input_port_on_refresh,
         test_editor_branch_cycle_keys_switch_open_and_closed_branch_views,
-        test_editor_ctrl_i_source_uses_branch_tail_not_highlighted_node,
         test_editor_restores_persisted_focus_highlight_on_mount,
         test_editor_notification_restores_node_list_focus,
         test_editor_depth_counter_tracks_visible_branch_distance,
