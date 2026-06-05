@@ -10,7 +10,9 @@
   `e = select highlighted item`, `i = insert node after highlighted item`,
   `v = validate workflow`, and `ctrl+r = execute workflow`.
 - Simplified the editor bottom bar to movement only:
-  `w/s/⇕ node traversal | a/d/⇔ cycle through incomplete branches | ctrl+ a/d/⇔ cycle through complete branches`.
+  `w/s/^/v node traversal | a/d/</> cycle through incomplete branches | ctrl+a/d/</> cycle through complete branches`.
+- Removed the generic `Details` right-panel header. `Workflow Key-bindings:`
+  and `Selected Node:` are now the green section headers.
 - Removed the Ctrl+I add-at-branch-end shortcut.
 - Restored editor depth counters to the left side with a wider fixed gutter so
   node icons/text and branch selector icons/text align cleanly.

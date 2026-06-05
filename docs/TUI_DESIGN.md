@@ -171,7 +171,7 @@ that branch when possible; otherwise it highlights the first visible node in
 that branch path.
 
 The editor bottom bar should stay movement-only:
-`w/s/⇕ node traversal | a/d/⇔ cycle through incomplete branches | ctrl+ a/d/⇔ cycle through complete branches`.
+`w/s/^/v node traversal | a/d/</> cycle through incomplete branches | ctrl+a/d/</> cycle through complete branches`.
 Workflow actions belong in the right details panel under `Workflow Key-bindings`
 so the bottom line does not become visually noisy.
 

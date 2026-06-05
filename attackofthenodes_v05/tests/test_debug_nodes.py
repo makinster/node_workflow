@@ -2038,8 +2038,12 @@ async def _test_editor_depth_counter_tracks_visible_branch_distance():
         status = app.query_one(StatusBar)
         assert start_card.display_text.startswith("  0   ◌ [start_node] Start")
         assert branch_row.display_text == "      ☛  Path A"
-        assert "w/s/⇕ node traversal" in status._formatted()
+        assert "w/s/^/v node traversal" in status._formatted()
         assert "Ctrl+I" not in status._formatted()
+        titles = [str(label.content) for label in app.query(".panel-title")]
+        assert "Details" not in titles
+        assert "Workflow Key-bindings:" in titles
+        assert "Selected Node:" in titles
 
         await pilot.press("d")
         await pilot.pause(0.03)
@@ -2047,16 +2051,9 @@ async def _test_editor_depth_counter_tracks_visible_branch_distance():
         assert [row.get("depth") for row in rows if row["kind"] == "node"] == [0, 1, 2, 3]
         assert screen.selected_node_id == path_b_first
         details = screen.query_one("#node-details").display_text
-        assert details.startswith(
-            "Workflow Key-bindings:\n"
-            "f = file\n"
-            "o = options\n"
-            "e = select highlighted item\n"
-            "i = insert node after highlighted item\n"
-            "v = validate workflow\n"
-            "ctrl+r = execute workflow\n\n"
-            "Selected Node:"
-        )
+        keybindings = str(screen.query_one("#workflow-keybindings").content)
+        assert keybindings.startswith("f = file\no = options")
+        assert details.startswith("Selected: Logger")
         assert "Depth from Start: 2" in details
 
     print("test_editor_depth_counter_tracks_visible_branch_distance PASSED")

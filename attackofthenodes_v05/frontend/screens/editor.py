@@ -76,10 +76,12 @@ class EditorScreen(Screen):
                     yield Label("Nodes", classes="panel-title")
                     yield NodeList()
                 with Vertical(id="details-panel", classes="panel"):
-                    yield Label("Details", classes="panel-title")
+                    yield Label("Workflow Key-bindings:", classes="panel-title")
+                    yield Static(self._format_workflow_keybindings(), id="workflow-keybindings")
+                    yield Label("Selected Node:", classes="panel-title")
                     yield Static("", id="node-details")
             yield StatusBar(
-                "w/s/⇕ node traversal | a/d/⇔ cycle through incomplete branches | ctrl+ a/d/⇔ cycle through complete branches"
+                "w/s/^/v node traversal | a/d/</> cycle through incomplete branches | ctrl+a/d/</> cycle through complete branches"
             )
 
     def on_mount(self) -> None:
@@ -870,13 +872,12 @@ class EditorScreen(Screen):
 
     def _format_node_details(self, node_id: str, node: Dict[str, Any]) -> str:
         metadata = self._metadata_for_type(node.get("type", ""))
-        lines = self._editor_quick_command_lines()
-        lines.extend([
+        lines = [
             f"Selected: {node.get('alias') or node_id}",
             f"Type: {node.get('type', 'unknown')}",
             f"Depth from Start: {self._selected_depth_text()}",
             f"Breakpoint: {'on' if node.get('breakpoint') else 'off'}",
-        ])
+        ]
         if node.get("type") == "branch_end_node":
             lines.extend(self._branch_end_merge_detail_lines(node_id, node))
         if metadata:
@@ -1319,8 +1320,7 @@ class EditorScreen(Screen):
         branch_node = self.workflow_map.get_node_data(row["branch_node_id"]) or {}
         target_id = self._target_for_port(branch_node, row["active_port"])
         branch_label = row.get("active_label") or row["active_port"]
-        lines = self._editor_quick_command_lines()
-        lines.extend([
+        lines = [
             "Branch Select",
             f"Branch node: {branch_node.get('alias') or row['branch_node_id']}",
             f"Selected branch: {branch_label}",
@@ -1329,19 +1329,17 @@ class EditorScreen(Screen):
             "",
             "Press ENTER to choose another branch.",
             "Press I to insert after the highlighted row.",
-        ])
+        ]
         return "\n".join(lines)
 
-    def _editor_quick_command_lines(self) -> list[str]:
-        return [
-            "Workflow Key-bindings:",
-            "f = file",
-            "o = options",
-            "e = select highlighted item",
-            "i = insert node after highlighted item",
-            "v = validate workflow",
-            "ctrl+r = execute workflow",
-            "",
-            "Selected Node:",
-            "",
-        ]
+    def _format_workflow_keybindings(self) -> str:
+        return "\n".join(
+            [
+                "f = file",
+                "o = options",
+                "e = select highlighted item",
+                "i = insert node after highlighted item",
+                "v = validate workflow",
+                "ctrl+r = execute workflow",
+            ]
+        )
