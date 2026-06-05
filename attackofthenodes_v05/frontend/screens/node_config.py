@@ -11,6 +11,7 @@ from textual.events import Key
 from textual.screen import ModalScreen
 from textual.widgets import Button, Checkbox, Input, Label, Select, SelectionList, Static, TabbedContent, TabPane, TextArea
 
+from frontend.node_io_display import trace_transient_producer
 from frontend.widgets.command_navigation import (
     activate_command_widget,
     focus_command_widget,
@@ -827,9 +828,22 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         connection = inputs[0]
         source_id = connection.get("source_node_id")
         source_port = connection.get("source_port", "default")
-        source_node = self.workflow_map.get_node_data(source_id) if source_id else {}
-        source_label = self._node_label(source_id or "?", source_node or {})
-        prefix = f"Source: {source_label}.{source_port}"
+        producer = trace_transient_producer(
+            self.workflow_map,
+            self.factory,
+            str(source_id or ""),
+            str(source_port or "default"),
+        )
+        producer_id = producer.get("node_id") or source_id or "?"
+        producer_node = producer.get("node") or {}
+        source_label = self._node_label(str(producer_id), producer_node)
+        prefix = "\n".join(
+            [
+                f"Source: {source_label}",
+                f"Output: {producer.get('name', source_port)}",
+                f"Output Description: {producer.get('description', '')}",
+            ]
+        )
         if self.memory_bank is None:
             return f"{prefix}\nNo captured run output is available yet."
         value = self.memory_bank.read_transient(source_id, source_port, default=None)

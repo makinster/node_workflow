@@ -734,7 +734,12 @@ and round-trip through save.
 Current progress:
 
 - Quick View has been simplified to short `Name`, `Kind`, `Step`, `Breakpoint`,
-  `About`, and `Next` lines instead of full config/connection dumps.
+  and `About` lines instead of full config/connection dumps.
+- Quick View now lists configured node I/O as `Inputs` and `Outputs`, each split
+  into `Transient` graph-port data and `Memory` named memory-bank data. Empty
+  categories render as `none`.
+- Pass-through nodes such as Sleep display the upstream node that originally
+  produced the transient data, not the passive pass-through step.
 - Editor rows, selected-node names, and node config titles use
   `Alias (node_id)`.
 - Branch node defaults are `Branch 1` / `Branch 2`, editable through branch node
@@ -749,6 +754,8 @@ names.
 Done when:
 
 - Quick View shows an at-a-glance summary without opening config.
+- Quick View uses friendly configured/default data names for transient and
+  memory inputs/outputs.
 - Branch names are editable and persist across save/load.
 - Node names display as "Alias (id)" everywhere.
 

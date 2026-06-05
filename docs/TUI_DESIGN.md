@@ -186,6 +186,12 @@ Node rows should show the editable, user-facing alias first and the generated id
 in parentheses, for example `Logger (node_a1b2c3d4)`. Keep system type names in
 secondary detail fields such as `Kind`. Node config titles should use the same
 `Alias (node_id)` convention.
+The editor Quick View should summarize configured data flow without raw graph
+noise. Show `Inputs` and `Outputs`, and split each into `Transient` graph-port
+data and `Memory` named memory-bank data. Use user-provided names/descriptions
+when available, friendly defaults such as `Input` and `Output` otherwise, and
+render empty categories as `none`. For pass-through utility nodes, trace display
+back to the upstream node that actually created the transient data.
 Node rows use a fixed-width depth gutter with extra padding before the status
 icon. Branch selector rows reserve the same gutter without showing a number, so
 the `☛` icon starts in the same visual column as node status icons and the

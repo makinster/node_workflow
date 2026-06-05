@@ -1,5 +1,22 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-05 — Phase 15 Quick View I/O Summary
+
+- Added frontend-only I/O display helpers for friendly transient and memory
+  input/output names.
+- Updated editor Quick View to show `Inputs` and `Outputs`, each split into
+  `Transient` and `Memory`, with empty categories rendered as `none`.
+- Replaced the old `Next` connection list with data-focused summaries using
+  configured branch/output labels and memory-bank descriptions.
+- Added pass-through provenance display so passive utility nodes such as Sleep
+  trace visible data ownership back to the node that originally produced it.
+- Updated previous-output config preview to use the same pass-through provenance
+  rule while still reading the immediate upstream runtime value.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v`
+    - 84 passed.
+
 ## 2026-06-03 — Editor Highlight Persistence Polish
 
 - Added backend `default_alias` node metadata. New workflow nodes now initialize

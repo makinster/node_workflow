@@ -21,6 +21,17 @@ from frontend.screens.node_config import (
 from frontend.screens.node_selector import NodeSelectorScreen
 from frontend import notifications
 from frontend.editor_workflow_adapter import EditorWorkflowAdapter
+from frontend.node_io_display import (
+    input_display_name,
+    memory_display_text,
+    memory_registry,
+    node_display_name,
+    node_label,
+    normalize_membank_inputs,
+    normalize_membank_outputs,
+    output_display_name,
+    trace_transient_producer,
+)
 from frontend.widgets.node_card import BranchSelectCard, NodeCard
 from frontend.widgets.node_list import NodeList
 from frontend.widgets.status_bar import StatusBar
@@ -885,18 +896,81 @@ class EditorScreen(Screen):
         average_timing = self._average_node_timings().get(node_id)
         if average_timing is not None:
             lines.append(f"Avg time: {self._format_timing(average_timing)}")
-        outputs = node.get("connections", {}).get("outputs", [])
-        if outputs:
-            lines.append("")
-            lines.append("Next:")
-            for conn in outputs:
-                target = conn.get("target_node_id", "?")
-                target_node = self.workflow_map.get_node_data(target) or {}
-                source_port = conn.get("source_port", "default")
-                lines.append(
-                    f"  {source_port} -> {self._node_label(target, target_node)}"
-                )
+        lines.extend(self._format_io_summary(node_id, node, metadata))
         return "\n".join(lines)
+
+    def _format_io_summary(
+        self,
+        node_id: str,
+        node: Dict[str, Any],
+        metadata: Optional[Dict[str, Any]],
+    ) -> list[str]:
+        return [
+            "",
+            "Inputs:",
+            f"  Transient: {self._format_transient_inputs(node)}",
+            f"  Memory: {self._format_memory_inputs(node)}",
+            "",
+            "Outputs:",
+            f"  Transient: {self._format_transient_outputs(node, metadata)}",
+            f"  Memory: {self._format_memory_outputs(node)}",
+        ]
+
+    def _format_transient_inputs(self, node: Dict[str, Any]) -> str:
+        inputs = node.get("connections", {}).get("inputs", [])
+        if not inputs:
+            return "none"
+        pieces: list[str] = []
+        for conn in inputs:
+            source_id = str(conn.get("source_node_id") or "")
+            source_port = str(conn.get("source_port") or "default")
+            target_port = str(conn.get("target_port") or "input")
+            producer = trace_transient_producer(
+                self.workflow_map,
+                self.factory,
+                source_id,
+                source_port,
+            )
+            producer_node = producer.get("node") or {}
+            producer_id = producer.get("node_id") or source_id or "?"
+            pieces.append(
+                f"{input_display_name(target_port)} <- {producer['name']} from "
+                f"{node_display_name(producer_id, producer_node)}"
+            )
+        return "; ".join(pieces)
+
+    def _format_transient_outputs(
+        self,
+        node: Dict[str, Any],
+        metadata: Optional[Dict[str, Any]],
+    ) -> str:
+        ports = list(metadata.get("output_ports") or []) if metadata else []
+        if not ports:
+            return "none"
+        return "; ".join(
+            output_display_name(self.factory, node, str(port))
+            for port in ports
+        )
+
+    def _format_memory_inputs(self, node: Dict[str, Any]) -> str:
+        selected = normalize_membank_inputs(node.get("config") or {})
+        if not selected:
+            return "none"
+        registry = memory_registry(self.workflow_map)
+        pieces = []
+        for output_id in selected:
+            entry = registry.get(output_id) or {}
+            pieces.append(memory_display_text(output_id, entry.get("description", "")))
+        return "; ".join(pieces)
+
+    def _format_memory_outputs(self, node: Dict[str, Any]) -> str:
+        outputs = normalize_membank_outputs(node.get("config") or {})
+        if not outputs:
+            return "none"
+        return "; ".join(
+            memory_display_text(output["id"], output.get("description", ""))
+            for output in outputs
+        )
 
     def _branch_end_merge_detail_lines(
         self, node_id: str, node: Dict[str, Any]
@@ -930,7 +1004,10 @@ class EditorScreen(Screen):
         return "-"
 
     def _average_node_timings(self) -> Dict[str, float]:
-        master_state = getattr(self.app, "master_state", None)
+        try:
+            master_state = getattr(self.app, "master_state", None)
+        except Exception:
+            return {}
         run_history = getattr(master_state, "run_history", None)
         if run_history is None:
             return {}
@@ -965,8 +1042,7 @@ class EditorScreen(Screen):
         return None
 
     def _node_label(self, node_id: str, node: Dict[str, Any]) -> str:
-        name = node.get("alias") or node.get("type") or node_id
-        return f"{name} ({node_id})"
+        return node_label(node_id, node)
 
     def _format_input_ports(self, node_id: str, metadata: Dict[str, Any]) -> str:
         ports = metadata.get("input_ports") or []
@@ -1010,8 +1086,7 @@ class EditorScreen(Screen):
         metadata = self._metadata_for_type(node.get("type", ""))
         labels: Dict[str, str] = {}
         for port in (metadata.get("output_ports") if metadata else []) or []:
-            label = str(config.get(f"{port}_label") or "").strip()
-            labels[port] = label or port.replace("_", " ").title()
+            labels[port] = output_display_name(self.factory, node, str(port))
         return labels
 
     def _select_row(self, row: Optional[Dict[str, Any]]) -> None:

@@ -1683,7 +1683,7 @@ async def _test_branch_end_config_shows_merge_branch_identity():
         screen = app.query_one(NodeConfigScreen)
         text = screen._branch_end_status_text()
         assert f"Merges To Branch: Approve ({branch}:path_a)" in text
-        assert f"Merge Node: merge_node ({merge})" in text
+        assert f"Merge Node: Merge ({merge})" in text
 
     class EditorApp(App):
         def compose(self) -> ComposeResult:
@@ -1698,7 +1698,7 @@ async def _test_branch_end_config_shows_merge_branch_identity():
         screen.refresh_from_backend()
         details = screen.query_one("#node-details").display_text
         assert f"Merges To Branch: Approve ({branch}:path_a)" in details
-        assert f"Merge Node: merge_node ({merge})" in details
+        assert f"Merge Node: Merge ({merge})" in details
 
     print("test_branch_end_config_shows_merge_branch_identity PASSED")
 
@@ -2452,6 +2452,131 @@ def test_node_config_previous_output_preview_reads_transient_source():
     assert source in text
     assert "hello" in text
     print("test_node_config_previous_output_preview_reads_transient_source PASSED")
+
+
+def test_editor_quick_view_lists_transient_and_memory_io():
+    from frontend.screens.editor import EditorScreen
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("quick_view_io")
+    source = wm.add_node("logger_node")
+    consumer = wm.add_node("logger_node")
+    memory_writer = wm.add_node("logger_node")
+
+    wm.update_node_alias(source, "Producer")
+    wm.update_node_alias(consumer, "Consumer")
+    wm.update_node_config(
+        source,
+        {"membank_outputs": [{"id": "produced_text", "description": "Created text"}]},
+    )
+    wm.update_node_config(
+        memory_writer,
+        {"membank_outputs": [{"id": "session_id", "description": "Session id"}]},
+    )
+    wm.update_node_config(
+        consumer,
+        {
+            "membank_inputs": ["session_id"],
+            "membank_outputs": [{"id": "final_text", "description": "Final text"}],
+        },
+    )
+    wm.connect(source, "default", consumer, "input")
+
+    screen = EditorScreen(wm._factory, wm)
+    text = screen._format_node_details(consumer, wm.get_node_data(consumer))
+
+    assert "Inputs:" in text
+    assert "Transient: Input <- produced_text from Producer" in text
+    assert "Memory: session_id - Session id" in text
+    assert "Outputs:" in text
+    assert "Transient: Output" in text
+    assert "Memory: final_text - Final text" in text
+    assert "Next:" not in text
+    print("test_editor_quick_view_lists_transient_and_memory_io PASSED")
+
+
+def test_editor_quick_view_shows_branch_output_names_and_empty_memory():
+    from frontend.screens.editor import EditorScreen
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("quick_view_branch_names")
+    branch = wm.add_node("branch_node")
+    wm.update_node_config(
+        branch,
+        {"path_a_label": "Approve", "path_b_label": "Reject"},
+    )
+
+    screen = EditorScreen(wm._factory, wm)
+    text = screen._format_node_details(branch, wm.get_node_data(branch))
+
+    assert "Inputs:" in text
+    assert "Transient: none" in text
+    assert "Memory: none" in text
+    assert "Outputs:" in text
+    assert "Transient: Approve; Reject" in text
+    print("test_editor_quick_view_shows_branch_output_names_and_empty_memory PASSED")
+
+
+def test_editor_quick_view_traces_pass_through_producer():
+    from frontend.screens.editor import EditorScreen
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("quick_view_pass_through")
+    source = wm.add_node("logger_node")
+    sleeper = wm.add_node("sleep_node")
+    target = wm.add_node("logger_node")
+
+    wm.update_node_alias(source, "Producer")
+    wm.update_node_alias(sleeper, "Pause")
+    wm.update_node_config(
+        source,
+        {"membank_outputs": [{"id": "created_payload", "description": "Original data"}]},
+    )
+    wm.connect(source, "default", sleeper, "input")
+    wm.connect(sleeper, "default", target, "input")
+
+    screen = EditorScreen(wm._factory, wm)
+    text = screen._format_node_details(target, wm.get_node_data(target))
+
+    assert "Transient: Input <- created_payload from Producer" in text
+    assert "Pause" not in text
+    print("test_editor_quick_view_traces_pass_through_producer PASSED")
+
+
+def test_node_config_previous_output_preview_traces_pass_through_source():
+    from frontend.screens.node_config import NodeConfigScreen
+
+    _, wm, mb, _ = _make_services()
+    wm.create_new("previous_output_pass_through")
+    source = wm.add_node("logger_node")
+    sleeper = wm.add_node("sleep_node")
+    target = wm.add_node("logger_node")
+
+    wm.update_node_alias(source, "Producer")
+    wm.update_node_alias(sleeper, "Pause")
+    wm.update_node_config(
+        source,
+        {"membank_outputs": [{"id": "created_payload", "description": "Original data"}]},
+    )
+    wm.connect(source, "default", sleeper, "input")
+    wm.connect(sleeper, "default", target, "input")
+    mb.store_transient(sleeper, "default", {"message": "after pause"})
+
+    screen = NodeConfigScreen(
+        wm._factory,
+        wm,
+        target,
+        wm.get_node_data(target),
+        memory_bank=mb,
+    )
+    text = screen._previous_output_text()
+
+    assert "Source: Producer" in text
+    assert "Output: created_payload" in text
+    assert "Output Description: Original data" in text
+    assert "after pause" in text
+    assert "Pause" not in text
+    print("test_node_config_previous_output_preview_traces_pass_through_source PASSED")
 
 
 def test_node_selector_filter_auto_edits_when_focused():
@@ -3441,6 +3566,10 @@ if __name__ == "__main__":
         test_node_config_pass_through_disables_membank_outputs,
         test_editor_hides_empty_start_until_first_node_added,
         test_node_config_previous_output_preview_reads_transient_source,
+        test_editor_quick_view_lists_transient_and_memory_io,
+        test_editor_quick_view_shows_branch_output_names_and_empty_memory,
+        test_editor_quick_view_traces_pass_through_producer,
+        test_node_config_previous_output_preview_traces_pass_through_source,
         test_node_selector_filter_auto_edits_when_focused,
         test_branch_selector_uses_shared_list_navigation,
         test_workflow_library_uses_shared_list_navigation,
