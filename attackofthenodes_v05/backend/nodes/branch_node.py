@@ -24,8 +24,8 @@ class BranchNode(Node):
         "case_sensitive": False,
         "on_match": "path_a",
         "on_no_match": "path_b",
-        "path_a_label": "Path A",
-        "path_b_label": "Path B",
+        "path_a_label": "Branch 1",
+        "path_b_label": "Branch 2",
     }
     config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {
         "condition": {
@@ -64,14 +64,14 @@ class BranchNode(Node):
         },
         "path_a_label": {
             "type": "string",
-            "label": "Path A branch name",
+            "label": "Branch 1 name",
             "description": "Editor display name for path_a",
             "required": False,
             "group": "Branch Names",
         },
         "path_b_label": {
             "type": "string",
-            "label": "Path B branch name",
+            "label": "Branch 2 name",
             "description": "Editor display name for path_b",
             "required": False,
             "group": "Branch Names",

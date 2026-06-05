@@ -828,11 +828,11 @@ async def _test_set_variable_node_can_pass_input_through():
 def test_branch_node_default_labels_are_configurable():
     from backend.nodes.branch_node import BranchNode
 
-    assert BranchNode.default_config["path_a_label"] == "Path A"
-    assert BranchNode.default_config["path_b_label"] == "Path B"
+    assert BranchNode.default_config["path_a_label"] == "Branch 1"
+    assert BranchNode.default_config["path_b_label"] == "Branch 2"
     assert "path_a_label" in BranchNode.config_schema
     assert "path_b_label" in BranchNode.config_schema
-    assert BranchNode.config_schema["path_a_label"]["label"] == "Path A branch name"
+    assert BranchNode.config_schema["path_a_label"]["label"] == "Branch 1 name"
     assert BranchNode.config_schema["path_a_label"]["group"] == "Branch Names"
     print("test_branch_node_default_labels_are_configurable PASSED")
 
@@ -2037,7 +2037,7 @@ async def _test_editor_depth_counter_tracks_visible_branch_distance():
         branch_row = app.query_one(BranchSelectCard)
         status = app.query_one(StatusBar)
         assert start_card.display_text.startswith(f"  0   ◌ Start ({start})")
-        assert branch_row.display_text == "      ☛  Path A"
+        assert branch_row.display_text == "      ☛  Branch 1"
         assert "f file | o options | h help" in status._formatted()
         assert "Ctrl+I" not in status._formatted()
         titles = [str(label.content) for label in app.query(".panel-title")]

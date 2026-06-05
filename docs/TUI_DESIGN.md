@@ -189,6 +189,8 @@ Node rows use a fixed-width depth gutter with extra padding before the status
 icon. Branch selector rows reserve the same gutter without showing a number, so
 the `☛` icon starts in the same visual column as node status icons and the
 branch name starts in the same visual column as node names.
+Branch output labels should default to `Branch 1`, `Branch 2`, and so on, while
+remaining editable in the branch node config.
 
 The editor persists selected node/branch state on the app shell. Returning from
 execution, closing secondary menus, or showing transient notifications should
