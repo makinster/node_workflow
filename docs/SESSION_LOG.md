@@ -12,6 +12,7 @@
   `Next`.
 - Advanced the Phase 15 human-readable display rule: editor rows and selected
   node names now show `Alias (node_id)` instead of leading with raw system types.
+  Node config titles now follow the same convention.
 - Updated branch node defaults to `Branch 1` and `Branch 2`, keeping the labels
   editable through branch node config.
 - Made Help context-aware so it shows a short binding list for the screen it was

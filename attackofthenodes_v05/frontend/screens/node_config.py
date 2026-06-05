@@ -426,7 +426,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         self._get_form_values = getter
 
         with Vertical(id="modal-card", classes="node-config-modal"):
-            yield Label(f"Edit Node: {self.node_data.get('alias') or self.node_id}", classes="modal-title")
+            title = f"{self.node_data.get('alias') or self.node_id} ({self.node_id})"
+            yield Label(f"Edit Node: {title}", classes="modal-title")
             yield Static("w = up, s = down    e = edit/select    esc = cancel/close", classes="modal-help")
             with VerticalScroll(id="node-config-scroll"):
                 if self.node_data.get("type") == "merge_node":

@@ -2727,6 +2727,8 @@ async def _test_node_config_command_inputs_require_activation():
         await pilot.pause(0.03)
         screen = app.query_one(NodeConfigScreen)
         alias = app.query_one("#alias-input", CommandInput)
+        title = str(app.query_one(".modal-title").content)
+        assert title == f"Edit Node: Logger ({node_id})"
         app.set_focus(alias)
         assert app.focused is alias
         assert alias.editing is False
