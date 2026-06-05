@@ -159,6 +159,7 @@ E or Enter            Edit selected node or open the highlighted branch selector
 I                     Insert after the highlighted node
 F                     File / workflow library
 O                     Options
+H                     Help
 X or Backspace        Delete selected node or tombstone
 B / Ctrl+B            Toggle selected breakpoint / clear all breakpoints
 V                     Validate workflow
@@ -170,10 +171,9 @@ When cycling back to a branch, the editor restores the last highlighted node in
 that branch when possible; otherwise it highlights the first visible node in
 that branch path.
 
-The editor bottom bar should stay movement-only:
-`w/s/^/v node traversal | a/d/</> cycle through incomplete branches | ctrl+a/d/</> cycle through complete branches`.
-Workflow actions belong in the right details panel under `Workflow Key-bindings`
-so the bottom line does not become visually noisy.
+The editor bottom bar should stay very short: `f file | o options | h help`.
+Navigation details belong in Help, not the main editor chrome. Do not duplicate
+these key hints in the right panel; that panel should start with `Selected Node:`.
 
 The editor node list shows a small depth counter at the left of each node row.
 Start is `0`; each visible node below increments by one. When a branch is

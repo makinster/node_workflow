@@ -52,6 +52,7 @@ class EditorScreen(Screen):
         Binding("x", "delete_selected", "Delete", priority=True),
         Binding("f", "workflow_library", "File", priority=True),
         Binding("o", "options", "Options", priority=True),
+        Binding("h", "help", "Help", priority=True),
         Binding("?", "help", "Help", priority=True),
     ]
 
@@ -76,13 +77,9 @@ class EditorScreen(Screen):
                     yield Label("Nodes", classes="panel-title")
                     yield NodeList()
                 with Vertical(id="details-panel", classes="panel"):
-                    yield Label("Workflow Key-bindings:", classes="panel-title")
-                    yield Static(self._format_workflow_keybindings(), id="workflow-keybindings")
                     yield Label("Selected Node:", classes="panel-title")
                     yield Static("", id="node-details")
-            yield StatusBar(
-                "w/s/^/v node traversal | a/d/</> cycle through incomplete branches | ctrl+a/d/</> cycle through complete branches"
-            )
+            yield StatusBar("f file | o options | h help")
 
     def on_mount(self) -> None:
         self._restore_editor_state_from_app()
@@ -872,36 +869,26 @@ class EditorScreen(Screen):
 
     def _format_node_details(self, node_id: str, node: Dict[str, Any]) -> str:
         metadata = self._metadata_for_type(node.get("type", ""))
+        kind = metadata.get("display_name") if metadata else node.get("type", "unknown")
         lines = [
-            f"Selected: {node.get('alias') or node_id}",
-            f"Type: {node.get('type', 'unknown')}",
-            f"Depth from Start: {self._selected_depth_text()}",
+            f"Name: {node.get('alias') or node_id}",
+            f"Kind: {kind}",
+            f"Step: {self._selected_depth_text()}",
             f"Breakpoint: {'on' if node.get('breakpoint') else 'off'}",
         ]
         if node.get("type") == "branch_end_node":
             lines.extend(self._branch_end_merge_detail_lines(node_id, node))
         if metadata:
-            lines.append(f"Description: {metadata.get('description', '')}")
-            lines.append("")
-            lines.append("Ports:")
-            lines.append(f"  inputs: {self._format_input_ports(node_id, metadata)}")
-            lines.append(f"  outputs: {self._format_output_ports(node, metadata)}")
-        lines.append("")
+            description = str(metadata.get("description", "")).strip()
+            if description:
+                lines.append(f"About: {description}")
         average_timing = self._average_node_timings().get(node_id)
         if average_timing is not None:
-            lines.append(f"Average time: {self._format_timing(average_timing)}")
-            lines.append("")
-        lines.append("Configuration:")
-        config = node.get("config") or {}
-        if config:
-            for key, value in config.items():
-                lines.append(f"  {key}: {value}")
-        else:
-            lines.append("  -")
-        lines.append("")
-        lines.append("Connections:")
+            lines.append(f"Avg time: {self._format_timing(average_timing)}")
         outputs = node.get("connections", {}).get("outputs", [])
         if outputs:
+            lines.append("")
+            lines.append("Next:")
             for conn in outputs:
                 target = conn.get("target_node_id", "?")
                 target_node = self.workflow_map.get_node_data(target) or {}
@@ -909,8 +896,6 @@ class EditorScreen(Screen):
                 lines.append(
                     f"  {source_port} -> {self._node_label(target, target_node)}"
                 )
-        else:
-            lines.append("  outputs: -")
         return "\n".join(lines)
 
     def _branch_end_merge_detail_lines(
@@ -1321,25 +1306,12 @@ class EditorScreen(Screen):
         target_id = self._target_for_port(branch_node, row["active_port"])
         branch_label = row.get("active_label") or row["active_port"]
         lines = [
-            "Branch Select",
-            f"Branch node: {branch_node.get('alias') or row['branch_node_id']}",
-            f"Selected branch: {branch_label}",
-            f"Depth from Start: {row.get('depth', '-')}",
-            f"Target: {target_id or '-'}",
+            f"Branch: {branch_label}",
+            f"From: {branch_node.get('alias') or row['branch_node_id']}",
+            f"Step: {row.get('depth', '-')}",
+            f"Next: {target_id or '-'}",
             "",
-            "Press ENTER to choose another branch.",
-            "Press I to insert after the highlighted row.",
+            "E: choose branch",
+            "I: insert here",
         ]
         return "\n".join(lines)
-
-    def _format_workflow_keybindings(self) -> str:
-        return "\n".join(
-            [
-                "f = file",
-                "o = options",
-                "e = select highlighted item",
-                "i = insert node after highlighted item",
-                "v = validate workflow",
-                "ctrl+r = execute workflow",
-            ]
-        )
