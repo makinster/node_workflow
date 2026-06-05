@@ -123,8 +123,10 @@ Latest phase:
     the nav bindings into the concrete subclass's `BINDINGS` in
     `__init_subclass__`, before `super().__init_subclass__()` calls
     `DOMNode._merge_bindings()`.
-- 79 tests passing after the editor highlight persistence polish.
-- The next planned phase is Phase 15 (editor rework).
+- Phase 15 (editor rework) is in progress. Landed pieces include simplified
+  Quick View text, context-aware Help, `Alias (node_id)` display in editor rows
+  and node config titles, numbered default branch labels, and sparse editor
+  chrome (`f file | o options | h help`).
 
 Recently completed:
 - Phase 14: Key binding remap — editor grammar uses W/S or up/down for vertical
@@ -134,8 +136,8 @@ Recently completed:
   removed after review.
 
 Planned future phases (see Section 6 of MASTER_BUILD_PLAN.md for full specs):
-- Phase 15: Editor rework — Quick View right panel, human-readable-name-first,
-  editable branch names, top-bar/bottom-bar split.
+- Continue Phase 15: Editor rework — finish any remaining top-bar/file/action
+  placement decisions and verify branch-label save/load behavior.
 - Phase 16: File modal + node config tabs — consolidated File modal, fixed
   CORE/PARAMETERS/ADVANCED/CONNECTIONS tabs, tabbed settings with API keys.
 - Phase 17: Node visual identity — per-category colors, per-type glyphs,

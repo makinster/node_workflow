@@ -194,7 +194,7 @@ Append a short entry to `docs/SESSION_LOG.md` for every phase or notable patch.
 | 12 | Packaging and release hardening | Deferred |
 | 13 | Cursor model foundation | Done |
 | 14 | Key binding remap | Done |
-| 15 | Editor rework | Planned |
+| 15 | Editor rework | In Progress |
 | 16 | File modal + node config tabs | Planned |
 | 17 | Node visual identity | Planned |
 | 18 | Acceleration + help rewrite | Planned |
@@ -203,8 +203,7 @@ Append a short entry to `docs/SESSION_LOG.md` for every phase or notable patch.
 
 Sequencing:
 
-- Phases 10, 10.5, 13, and 14 are complete. Phase 15 is the next planned
-  implementation phase.
+- Phases 10, 10.5, 13, and 14 are complete. Phase 15 is in progress.
 - Phases 15 and 17 are parallelizable after 14.
   Phase 16 depends on 14 and 15. Phase 18 depends on 13–17. Phases 19–20
   depend on Phase 9 and each other.
@@ -731,6 +730,17 @@ the bottom bar. Right panel becomes a Quick View summary instead of full config
 (E opens full config modal). Human-readable-name-first display convention with
 generated id trailing in parentheses. Editable branch names default to "Branch N"
 and round-trip through save.
+
+Current progress:
+
+- Quick View has been simplified to short `Name`, `Kind`, `Step`, `Breakpoint`,
+  `About`, and `Next` lines instead of full config/connection dumps.
+- Editor rows, selected-node names, and node config titles use
+  `Alias (node_id)`.
+- Branch node defaults are `Branch 1` / `Branch 2`, editable through branch node
+  config.
+- Main editor chrome is intentionally sparse: `f file | o options | h help`,
+  with detailed navigation in context-aware Help.
 
 Branch naming is a small backend touch: one optional string per branch edge in
 `workflow_map`, extending the Phase 4.5 `path_a_label` work into user-editable
