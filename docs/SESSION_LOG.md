@@ -5,11 +5,13 @@
 - Added backend `default_alias` node metadata. New workflow nodes now initialize
   their editable alias from the node's user-facing display name instead of the
   raw system type, while explicit aliases still win.
-- Updated the editor details panel to show a short vertical command list before
-  node/branch details: `E Select`, `V Validate Workflow`,
-  `Ctrl+R Run Workflow`, and `O Options`.
-- Reworded the editor bottom bar around the current keyboard grammar and
-  removed the Ctrl+I add-at-branch-end shortcut.
+- Updated the editor details panel to show `Workflow Key-bindings` before the
+  selected node glance: `f = file`, `o = options`,
+  `e = select highlighted item`, `i = insert node after highlighted item`,
+  `v = validate workflow`, and `ctrl+r = execute workflow`.
+- Simplified the editor bottom bar to movement only:
+  `w/s/⇕ node traversal | a/d/⇔ cycle through incomplete branches | ctrl+ a/d/⇔ cycle through complete branches`.
+- Removed the Ctrl+I add-at-branch-end shortcut.
 - Restored editor depth counters to the left side with a wider fixed gutter so
   node icons/text and branch selector icons/text align cleanly.
 - Changed branch cycling fallback behavior: remembered branch selections still

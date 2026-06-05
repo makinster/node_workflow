@@ -38,6 +38,8 @@ class HelpScreen(ModalScreen):
                         "  Ctrl+←→ or Ctrl+A/D  Complete branches",
                         "  Enter or E           Select/edit highlighted row",
                         "  I                    Insert after highlighted node",
+                        "  F                    File / workflow library",
+                        "  O                    Options",
                         "  B                    Toggle breakpoint",
                         "  Ctrl+B               Clear all breakpoints",
                         "  V                    Validate workflow",

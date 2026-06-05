@@ -2038,7 +2038,7 @@ async def _test_editor_depth_counter_tracks_visible_branch_distance():
         status = app.query_one(StatusBar)
         assert start_card.display_text.startswith("  0   ◌ [start_node] Start")
         assert branch_row.display_text == "      ☛  Path A"
-        assert "↑↓/W S Vertical Movement" in status._formatted()
+        assert "w/s/⇕ node traversal" in status._formatted()
         assert "Ctrl+I" not in status._formatted()
 
         await pilot.press("d")
@@ -2047,7 +2047,16 @@ async def _test_editor_depth_counter_tracks_visible_branch_distance():
         assert [row.get("depth") for row in rows if row["kind"] == "node"] == [0, 1, 2, 3]
         assert screen.selected_node_id == path_b_first
         details = screen.query_one("#node-details").display_text
-        assert details.startswith("E Select\nV Validate Workflow\nCtrl+R Run Workflow\nO Options")
+        assert details.startswith(
+            "Workflow Key-bindings:\n"
+            "f = file\n"
+            "o = options\n"
+            "e = select highlighted item\n"
+            "i = insert node after highlighted item\n"
+            "v = validate workflow\n"
+            "ctrl+r = execute workflow\n\n"
+            "Selected Node:"
+        )
         assert "Depth from Start: 2" in details
 
     print("test_editor_depth_counter_tracks_visible_branch_distance PASSED")

@@ -50,8 +50,8 @@ class EditorScreen(Screen):
         Binding("ctrl+b", "clear_breakpoints", "Clear breakpoints", priority=True),
         Binding("backspace", "delete_selected", "Delete", priority=True),
         Binding("x", "delete_selected", "Delete", priority=True),
-        Binding("l", "workflow_library", "Library", priority=True),
-        Binding("o", "workflow_library", "Library", priority=True),
+        Binding("f", "workflow_library", "File", priority=True),
+        Binding("o", "options", "Options", priority=True),
         Binding("?", "help", "Help", priority=True),
     ]
 
@@ -79,7 +79,7 @@ class EditorScreen(Screen):
                     yield Label("Details", classes="panel-title")
                     yield Static("", id="node-details")
             yield StatusBar(
-                "↑↓/W S Vertical Movement  ←→/A D Branches in Progress  Ctrl+←→/Ctrl+A D Complete Branches  E Select  I Insert  V Validate"
+                "w/s/⇕ node traversal | a/d/⇔ cycle through incomplete branches | ctrl+ a/d/⇔ cycle through complete branches"
             )
 
     def on_mount(self) -> None:
@@ -217,6 +217,9 @@ class EditorScreen(Screen):
 
     def action_workflow_library(self) -> None:
         self.app.action_workflow_library()
+
+    def action_options(self) -> None:
+        self.app.action_settings()
 
     def action_help(self) -> None:
         self.app.action_help()
@@ -1331,9 +1334,14 @@ class EditorScreen(Screen):
 
     def _editor_quick_command_lines(self) -> list[str]:
         return [
-            "E Select",
-            "V Validate Workflow",
-            "Ctrl+R Run Workflow",
-            "O Options",
+            "Workflow Key-bindings:",
+            "f = file",
+            "o = options",
+            "e = select highlighted item",
+            "i = insert node after highlighted item",
+            "v = validate workflow",
+            "ctrl+r = execute workflow",
+            "",
+            "Selected Node:",
             "",
         ]
