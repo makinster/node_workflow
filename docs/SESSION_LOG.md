@@ -1,5 +1,18 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-05 — Editor Row Gutter Cleanup
+
+- Removed the separate idle/status symbol column from editor node rows and
+  hid generated node ids in the editor list.
+- Kept execution list status symbols intact by making node-row status/id display
+  configurable.
+- Moved the branch selector pointing hand into the fixed depth-number gutter.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -q -k "editor_depth_counter_tracks_visible_branch_distance"`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v`
+    - 84 passed.
+
 ## 2026-06-05 — Phase 15 Quick View I/O Summary
 
 - Added frontend-only I/O display helpers for friendly transient and memory

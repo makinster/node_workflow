@@ -2036,8 +2036,8 @@ async def _test_editor_depth_counter_tracks_visible_branch_distance():
         start_card = next(card for card in app.query(NodeCard) if card.node_id == start)
         branch_row = app.query_one(BranchSelectCard)
         status = app.query_one(StatusBar)
-        assert start_card.display_text.startswith(f"  0   ◌ Start ({start})")
-        assert branch_row.display_text == "      ☛  Branch 1"
+        assert start_card.display_text == "  0   Start"
+        assert branch_row.display_text == "  ☛   Branch 1"
         assert "f file | o options | h help" in status._formatted()
         assert "Ctrl+I" not in status._formatted()
         titles = [str(label.content) for label in app.query(".panel-title")]

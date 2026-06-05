@@ -60,6 +60,8 @@ class NodeList(ListView):
                     row["node"],
                     statuses.get(node_id, "idle"),
                     timings.get(node_id),
+                    show_status=False,
+                    show_id=False,
                 )
             else:
                 card = BranchSelectCard(

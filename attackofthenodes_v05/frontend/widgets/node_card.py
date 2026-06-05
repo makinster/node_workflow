@@ -39,12 +39,16 @@ class NodeCard(Static):
         node_data: Dict[str, Any],
         status: str = "idle",
         timing_seconds: float | None = None,
+        show_status: bool = True,
+        show_id: bool = True,
     ) -> None:
         super().__init__()
         self.node_id = node_id
         self.node_data = node_data
         self.status = status
         self.timing_seconds = timing_seconds
+        self.show_status = show_status
+        self.show_id = show_id
         self.display_text = ""
 
     def on_mount(self) -> None:
@@ -64,11 +68,13 @@ class NodeCard(Static):
                 self.add_class("branch-end-connected")
             else:
                 self.add_class("branch-end-open")
-        icon = STATUS_ICONS.get(self.status, STATUS_ICONS["idle"])
-        breakpoint_marker = " ●" if self.node_data.get("breakpoint") else ""
+        icon = STATUS_ICONS.get(self.status, STATUS_ICONS["idle"]) if self.show_status else ""
+        breakpoint_marker = "● " if self.node_data.get("breakpoint") else ""
         timing = f" ({self._format_timing(self.timing_seconds)})" if self.timing_seconds else ""
         depth = self.node_data.get("_editor_depth")
-        main_text = f"{icon}{breakpoint_marker} {alias} ({self.node_id}){timing}"
+        id_text = f" ({self.node_id})" if self.show_id else ""
+        prefix = f"{icon} " if icon else ""
+        main_text = f"{prefix}{breakpoint_marker}{alias}{id_text}{timing}"
         if isinstance(depth, int):
             self.display_text = f"{depth:>{DEPTH_WIDTH}}{DEPTH_SPACING}{main_text}"
         else:
@@ -111,7 +117,7 @@ class BranchSelectCard(Static):
 
     def on_mount(self) -> None:
         self.add_class("branch-select-card")
-        self.display_text = f"{DEPTH_GUTTER}☛  {self.active_label}"
+        self.display_text = f"{'☛':>{DEPTH_WIDTH}}{DEPTH_SPACING}{self.active_label}"
         self.update(self.display_text)
 
     def on_click(self, event: events.Click) -> None:
