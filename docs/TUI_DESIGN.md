@@ -117,7 +117,8 @@ Use Textual `Screen` / `ModalScreen` classes:
 - `error_details.py`: structured error details and recovery options.
 - `workflow_library.py`: load, duplicate, export, and delete workflows.
 - `settings.py`: configuration form.
-- `help.py`: key binding reference.
+- `help.py`: context-specific key reference. Screens should pass enough context
+  for Help to show only the relevant bindings and keep the main UI copy short.
 
 ## Key Bindings
 
@@ -174,6 +175,8 @@ that branch path.
 The editor bottom bar should stay very short: `f file | o options | h help`.
 Navigation details belong in Help, not the main editor chrome. Do not duplicate
 these key hints in the right panel; that panel should start with `Selected Node:`.
+Help modals should have one navigable control at the bottom: a focused
+`Cancel` button.
 
 The editor node list shows a small depth counter at the left of each node row.
 Start is `0`; each visible node below increments by one. When a branch is

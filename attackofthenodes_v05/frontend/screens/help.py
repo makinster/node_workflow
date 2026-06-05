@@ -6,8 +6,66 @@ from textual.containers import Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Button, Label, Static
 
+from frontend.widgets.command_screen_mixin import CommandScreenMixin
 
-class HelpScreen(ModalScreen):
+
+HELP_TEXT = {
+    "editor": [
+        "Editor",
+        "  W/S or ^/v           Move through nodes",
+        "  A/D or </>           Switch open branches",
+        "  Ctrl+A/D or Ctrl+</> Switch closed branches",
+        "  E                    Select / edit",
+        "  I                    Insert after selection",
+        "  V                    Check workflow",
+        "  B                    Toggle breakpoint",
+        "  F                    File",
+        "  O                    Options",
+    ],
+    "execution": [
+        "Execution",
+        "  P       pause / resume",
+        "  S       stop",
+        "  M       memory",
+        "  O       output",
+        "  E       errors",
+        "  Esc     stop and return to editor",
+    ],
+    "node_config": [
+        "Node Config",
+        "  W/S or ^/v  move through fields",
+        "  E           edit / choose",
+        "  Esc         leave field or cancel",
+        "  Ctrl+S      save",
+        "  Ctrl+Enter  save multiline text",
+    ],
+    "workflow_library": [
+        "File",
+        "  W/S or ^/v  move through workflows",
+        "  E / Enter   choose highlighted item",
+        "  Esc         cancel",
+    ],
+    "settings": [
+        "Options",
+        "  W/S or ^/v  move through settings",
+        "  E           edit / toggle",
+        "  Ctrl+S      save",
+        "  Esc         cancel",
+    ],
+    "general": [
+        "General",
+        "  Ctrl+S  save workflow",
+        "  Ctrl+R  run workflow",
+        "  Ctrl+N  new workflow",
+        "  Ctrl+O  file",
+        "  Ctrl+E  options",
+        "  H / ?   help",
+        "  Ctrl+C  quit",
+    ],
+}
+
+
+class HelpScreen(CommandScreenMixin, ModalScreen):
     """Keyboard reference and short TUI usage guide."""
 
     BINDINGS = [
@@ -16,57 +74,21 @@ class HelpScreen(ModalScreen):
         Binding("ctrl+q", "close", "Close", priority=True),
     ]
 
+    def __init__(self, context: str = "general") -> None:
+        super().__init__()
+        self.context = context if context in HELP_TEXT else "general"
+
     def compose(self) -> ComposeResult:
         with Vertical(id="modal-card"):
             yield Label("Help", classes="modal-title")
             yield Static(
-                "\n".join(
-                    [
-                        "Global",
-                        "  Ctrl+S  Save workflow",
-                        "  Ctrl+R  Run workflow",
-                        "  Ctrl+N  New workflow",
-                        "  Ctrl+O  Workflow library",
-                        "  Ctrl+E  Settings",
-                        "  H / ?   Help",
-                        "  Q / Ctrl+Q  Back / close modal (works while typing)",
-                        "  Ctrl+C      Quit to terminal",
-                        "",
-                        "Editor",
-                        "  W/S or ^/v           Move through nodes",
-                        "  A/D or </>           Cycle incomplete branches",
-                        "  Ctrl+A/D or Ctrl+</> Cycle complete branches",
-                        "  E                    Select highlighted item",
-                        "  I                    Insert after highlighted item",
-                        "  F                    File",
-                        "  O                    Options",
-                        "  H                    Help",
-                        "  B                    Toggle breakpoint",
-                        "  Ctrl+B               Clear all breakpoints",
-                        "  V                    Validate workflow",
-                        "",
-                        "Branch Editing",
-                        "  Select the Branch Select row under a branch node.",
-                        "  Enter opens the branch chooser.",
-                        "  A/D cycles branches that do not yet have a Branch End.",
-                        "  Ctrl+A/D cycles branches that already have a Branch End.",
-                        "  I inserts after the highlighted node.",
-                        "",
-                        "Node Config",
-                        "  Ctrl+S or Ctrl+Enter  Save",
-                        "  Esc                  Cancel",
-                        "  Tab / Shift+Tab      Move focus",
-                        "",
-                        "Execution",
-                        "  P       Pause/resume",
-                        "  S       Stop",
-                        "  M/O/E   Memory, output, errors",
-                        "  Esc/Q   Stop active run and return to editor",
-                    ]
-                ),
+                "\n".join(HELP_TEXT[self.context]),
                 id="help-text",
             )
-            yield Button("Close", id="close-help", variant="default")
+            yield Button("Cancel", id="close-help", variant="default")
+
+    def on_mount(self) -> None:
+        self._focus_first()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "close-help":

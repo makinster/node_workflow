@@ -2058,6 +2058,36 @@ async def _test_editor_depth_counter_tracks_visible_branch_distance():
     print("test_editor_depth_counter_tracks_visible_branch_distance PASSED")
 
 
+def test_help_screen_is_contextual_and_focuses_cancel():
+    asyncio.run(_test_help_screen_is_contextual_and_focuses_cancel())
+
+
+async def _test_help_screen_is_contextual_and_focuses_cancel():
+    from textual.app import App, ComposeResult
+    from textual.widgets import Button
+
+    from frontend.screens.help import HelpScreen
+
+    class HelpApp(App):
+        def compose(self) -> ComposeResult:
+            yield HelpScreen("editor")
+
+    app = HelpApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        help_text = str(app.query_one("#help-text").content)
+        buttons = list(app.query(Button))
+
+        assert "Editor" in help_text
+        assert "Move through nodes" in help_text
+        assert "Execution" not in help_text
+        assert len(buttons) == 1
+        assert buttons[0].label == "Cancel"
+        assert app.focused is buttons[0]
+
+    print("test_help_screen_is_contextual_and_focuses_cancel PASSED")
+
+
 def test_node_config_select_activates_from_keyboard():
     asyncio.run(_test_node_config_select_activates_from_keyboard())
 
@@ -3400,6 +3430,7 @@ if __name__ == "__main__":
         test_editor_restores_persisted_focus_highlight_on_mount,
         test_editor_notification_restores_node_list_focus,
         test_editor_depth_counter_tracks_visible_branch_distance,
+        test_help_screen_is_contextual_and_focuses_cancel,
         test_node_config_select_activates_from_keyboard,
         test_dynamic_row_helper_preserves_visible_rows_only,
         test_dynamic_selection_helper_filters_stale_values,

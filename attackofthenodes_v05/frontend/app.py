@@ -52,6 +52,7 @@ class AttackOfTheNodesApp(TextualApp):
         ("ctrl+n", "new_workflow", "New"),
         ("ctrl+o", "workflow_library", "Open"),
         ("ctrl+e", "settings", "Settings"),
+        ("h", "help", "Help"),
         ("?", "help", "Help"),
         ("q", "back", "Back"),
         Binding("ctrl+q", "back", "Back", priority=True),
@@ -357,7 +358,22 @@ class AttackOfTheNodesApp(TextualApp):
 
     def action_help(self) -> None:
         """Open help modal."""
-        self.push_screen(HelpScreen())
+        self.push_screen(HelpScreen(self._help_context_for_screen()))
+
+    def _help_context_for_screen(self) -> str:
+        """Return the help topic for the currently active screen."""
+        screen_name = type(self.screen).__name__
+        if screen_name == "EditorScreen":
+            return "editor"
+        if screen_name == "ExecutionScreen":
+            return "execution"
+        if screen_name == "NodeConfigScreen":
+            return "node_config"
+        if screen_name in {"WorkflowLibraryScreen", "PathPromptScreen"}:
+            return "workflow_library"
+        if screen_name == "SettingsScreen":
+            return "settings"
+        return "general"
 
     def _handle_workflow_library_action(self, result) -> None:
         if not result:

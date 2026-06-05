@@ -10,6 +10,9 @@
 - Removed duplicate key hints from the right panel. The right panel now starts
   with `Selected Node:` and uses plain labels like `Name`, `Kind`, `Step`, and
   `Next`.
+- Made Help context-aware so it shows a short binding list for the screen it was
+  launched from. The Help modal has one navigable control: a focused `Cancel`
+  button.
 - Removed the Ctrl+I add-at-branch-end shortcut.
 - Restored editor depth counters to the left side with a wider fixed gutter so
   node icons/text and branch selector icons/text align cleanly.
