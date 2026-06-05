@@ -182,6 +182,9 @@ The editor node list shows a small depth counter at the left of each node row.
 Start is `0`; each visible node below increments by one. When a branch is
 selected, the branch path continues from the branch node's depth so switching
 branches preserves vertical orientation.
+Node rows should show the editable, user-facing alias first and the generated id
+in parentheses, for example `Logger (node_a1b2c3d4)`. Keep system type names in
+secondary detail fields such as `Kind`.
 Node rows use a fixed-width depth gutter with extra padding before the status
 icon. Branch selector rows reserve the same gutter without showing a number, so
 the `☛` icon starts in the same visual column as node status icons and the

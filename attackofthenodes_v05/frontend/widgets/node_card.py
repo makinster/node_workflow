@@ -68,7 +68,7 @@ class NodeCard(Static):
         breakpoint_marker = " ●" if self.node_data.get("breakpoint") else ""
         timing = f" ({self._format_timing(self.timing_seconds)})" if self.timing_seconds else ""
         depth = self.node_data.get("_editor_depth")
-        main_text = f"{icon}{breakpoint_marker} [{node_type}] {alias}{timing}"
+        main_text = f"{icon}{breakpoint_marker} {alias} ({self.node_id}){timing}"
         if isinstance(depth, int):
             self.display_text = f"{depth:>{DEPTH_WIDTH}}{DEPTH_SPACING}{main_text}"
         else:

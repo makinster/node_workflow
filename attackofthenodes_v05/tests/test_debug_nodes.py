@@ -2036,7 +2036,7 @@ async def _test_editor_depth_counter_tracks_visible_branch_distance():
         start_card = next(card for card in app.query(NodeCard) if card.node_id == start)
         branch_row = app.query_one(BranchSelectCard)
         status = app.query_one(StatusBar)
-        assert start_card.display_text.startswith("  0   ◌ [start_node] Start")
+        assert start_card.display_text.startswith(f"  0   ◌ Start ({start})")
         assert branch_row.display_text == "      ☛  Path A"
         assert "f file | o options | h help" in status._formatted()
         assert "Ctrl+I" not in status._formatted()
@@ -2051,7 +2051,7 @@ async def _test_editor_depth_counter_tracks_visible_branch_distance():
         assert [row.get("depth") for row in rows if row["kind"] == "node"] == [0, 1, 2, 3]
         assert screen.selected_node_id == path_b_first
         details = screen.query_one("#node-details").display_text
-        assert details.startswith("Name: Logger")
+        assert details.startswith(f"Name: Logger ({path_b_first})")
         assert "Kind: Logger" in details
         assert "Step: 2" in details
 

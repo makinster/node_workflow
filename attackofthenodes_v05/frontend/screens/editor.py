@@ -871,7 +871,7 @@ class EditorScreen(Screen):
         metadata = self._metadata_for_type(node.get("type", ""))
         kind = metadata.get("display_name") if metadata else node.get("type", "unknown")
         lines = [
-            f"Name: {node.get('alias') or node_id}",
+            f"Name: {self._node_label(node_id, node)}",
             f"Kind: {kind}",
             f"Step: {self._selected_depth_text()}",
             f"Breakpoint: {'on' if node.get('breakpoint') else 'off'}",

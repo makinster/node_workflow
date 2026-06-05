@@ -10,6 +10,8 @@
 - Removed duplicate key hints from the right panel. The right panel now starts
   with `Selected Node:` and uses plain labels like `Name`, `Kind`, `Step`, and
   `Next`.
+- Advanced the Phase 15 human-readable display rule: editor rows and selected
+  node names now show `Alias (node_id)` instead of leading with raw system types.
 - Made Help context-aware so it shows a short binding list for the screen it was
   launched from. The Help modal has one navigable control: a focused `Cancel`
   button.
