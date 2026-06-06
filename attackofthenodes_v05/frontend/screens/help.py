@@ -13,8 +13,8 @@ HELP_TEXT = {
     "editor": [
         "Editor",
         "  W/S or ^/v           Move through nodes",
-        "  A/D or </>           Switch open branches",
-        "  Ctrl+A/D or Ctrl+</> Switch closed branches",
+        "  A/D or </>           Switch branches",
+        "  Ctrl+A/D or Ctrl+</> Switch incomplete branches",
         "  E                    Select / edit",
         "  I                    Insert after selection",
         "  V                    Check workflow",
@@ -60,7 +60,8 @@ HELP_TEXT = {
         "  Ctrl+O  file",
         "  Ctrl+E  options",
         "  H / ?   help",
-        "  Ctrl+C  quit",
+        "  Ctrl+C  copy selected text",
+        "  Ctrl+Q  quit from editor",
     ],
 }
 

@@ -1857,11 +1857,11 @@ async def _test_editor_repairs_legacy_merge_input_port_on_refresh():
     print("test_editor_repairs_legacy_merge_input_port_on_refresh PASSED")
 
 
-def test_editor_branch_cycle_keys_switch_open_and_closed_branch_views():
-    asyncio.run(_test_editor_branch_cycle_keys_switch_open_and_closed_branch_views())
+def test_editor_branch_cycle_keys_switch_all_and_incomplete_branch_views():
+    asyncio.run(_test_editor_branch_cycle_keys_switch_all_and_incomplete_branch_views())
 
 
-async def _test_editor_branch_cycle_keys_switch_open_and_closed_branch_views():
+async def _test_editor_branch_cycle_keys_switch_all_and_incomplete_branch_views():
     from textual.app import App, ComposeResult
 
     from frontend.screens.editor import EditorScreen
@@ -1869,16 +1869,18 @@ async def _test_editor_branch_cycle_keys_switch_open_and_closed_branch_views():
     _, wm, _, _ = _make_services()
     wm.create_new("editor_branch_cycle")
     start = wm.add_node("start_node")
-    branch = wm.add_node("branch_node")
-    closed_sleep = wm.add_node("sleep_node")
+    branch_one = wm.add_node("branch_node")
+    branch_two = wm.add_node("branch_node")
+    closed_end = wm.add_node("end_node")
+    first_open = wm.add_node("sleep_node")
+    second_open = wm.add_node("logger_node")
     branch_end = wm.add_node("branch_end_node")
-    open_sleep = wm.add_node("sleep_node")
-    open_tail = wm.add_node("logger_node")
-    wm.connect(start, "default", branch, "input")
-    wm.connect(branch, "path_a", closed_sleep, "input")
-    wm.connect(closed_sleep, "default", branch_end, "input")
-    wm.connect(branch, "path_b", open_sleep, "input")
-    wm.connect(open_sleep, "default", open_tail, "input")
+    wm.connect(start, "default", branch_one, "input")
+    wm.connect(branch_one, "path_a", closed_end, "input")
+    wm.connect(branch_one, "path_b", branch_two, "input")
+    wm.connect(branch_two, "path_a", first_open, "input")
+    wm.connect(branch_two, "path_b", second_open, "input")
+    wm.connect(second_open, "default", branch_end, "input")
 
     class EditorApp(App):
         def compose(self) -> ComposeResult:
@@ -1891,39 +1893,65 @@ async def _test_editor_branch_cycle_keys_switch_open_and_closed_branch_views():
 
         await pilot.press("d")
         await pilot.pause(0.03)
-        assert screen.active_branch_ports[branch] == "path_b"
-        assert screen.selected_node_id == open_sleep
+        assert screen.active_branch_ports[branch_one] == "path_b"
+        assert screen.selected_node_id == branch_two
         node_list = screen.query_one("#node-list")
-        assert node_list.index == node_list.index_for_node_id(open_sleep)
+        assert node_list.index == node_list.index_for_node_id(branch_two)
         assert sum(1 for item in node_list.children if getattr(item, "highlighted", False)) == 1
 
-        screen._select_row({"kind": "node", "node_id": open_sleep})
+        screen._select_row({"kind": "node", "node_id": branch_two})
         screen.refresh_from_backend()
-        assert node_list.index == node_list.index_for_node_id(open_sleep)
+        assert node_list.index == node_list.index_for_node_id(branch_two)
         assert sum(1 for item in node_list.children if getattr(item, "highlighted", False)) == 1
 
-        await pilot.press("ctrl+d")
+        await pilot.press("d")
         await pilot.pause(0.03)
-        assert screen.active_branch_ports[branch] == "path_a"
-        assert screen.selected_node_id == closed_sleep
-        assert node_list.index == node_list.index_for_node_id(closed_sleep)
+        assert screen.active_branch_ports[branch_one] == "path_b"
+        assert screen.active_branch_ports[branch_two] == "path_a"
+        assert screen.selected_node_id == first_open
+        assert node_list.index == node_list.index_for_node_id(first_open)
         assert sum(1 for item in node_list.children if getattr(item, "highlighted", False)) == 1
 
         await pilot.press("right")
         await pilot.pause(0.03)
-        assert screen.active_branch_ports[branch] == "path_b"
-        assert screen.selected_node_id == open_sleep
-        assert node_list.index == node_list.index_for_node_id(open_sleep)
+        assert screen.active_branch_ports[branch_one] == "path_b"
+        assert screen.active_branch_ports[branch_two] == "path_b"
+        assert screen.selected_node_id == second_open
+        assert node_list.index == node_list.index_for_node_id(second_open)
         assert sum(1 for item in node_list.children if getattr(item, "highlighted", False)) == 1
 
-        await pilot.press("ctrl+left")
+        await pilot.press("d")
         await pilot.pause(0.03)
-        assert screen.active_branch_ports[branch] == "path_a"
-        assert screen.selected_node_id == closed_sleep
-        assert node_list.index == node_list.index_for_node_id(closed_sleep)
+        assert screen.active_branch_ports[branch_one] == "path_a"
+        assert screen.selected_node_id == closed_end
+        assert node_list.index == node_list.index_for_node_id(closed_end)
         assert sum(1 for item in node_list.children if getattr(item, "highlighted", False)) == 1
 
-    print("test_editor_branch_cycle_keys_switch_open_and_closed_branch_views PASSED")
+        await pilot.press("ctrl+d")
+        await pilot.pause(0.03)
+        assert screen.active_branch_ports[branch_one] == "path_b"
+        assert screen.selected_node_id == branch_two
+        assert node_list.index == node_list.index_for_node_id(branch_two)
+
+        await pilot.press("ctrl+d")
+        await pilot.pause(0.03)
+        assert screen.active_branch_ports[branch_two] == "path_a"
+        assert screen.selected_node_id == first_open
+        assert node_list.index == node_list.index_for_node_id(first_open)
+
+        await pilot.press("ctrl+d")
+        await pilot.pause(0.03)
+        assert screen.active_branch_ports[branch_two] == "path_b"
+        assert screen.selected_node_id == second_open
+        assert node_list.index == node_list.index_for_node_id(second_open)
+
+        await pilot.press("ctrl+d")
+        await pilot.pause(0.03)
+        assert screen.active_branch_ports[branch_one] == "path_b"
+        assert screen.selected_node_id == branch_two
+        assert node_list.index == node_list.index_for_node_id(branch_two)
+
+    print("test_editor_branch_cycle_keys_switch_all_and_incomplete_branch_views PASSED")
 
 
 def test_editor_restores_persisted_focus_highlight_on_mount():
@@ -2901,6 +2929,37 @@ def test_command_input_auto_edit_on_focus_is_opt_in():
     asyncio.run(_test_command_input_auto_edit_on_focus_is_opt_in())
 
 
+def test_ctrl_c_uses_screen_copy_and_ctrl_q_stays_contextual():
+    from textual.screen import Screen
+
+    from frontend.app import AttackOfTheNodesApp
+
+    def binding_key(binding):
+        return binding.key if hasattr(binding, "key") else binding[0]
+
+    def binding_action(binding):
+        return binding.action if hasattr(binding, "action") else binding[1]
+
+    app_bindings = list(AttackOfTheNodesApp.BINDINGS)
+    assert not any(
+        "ctrl+c" in binding_key(binding)
+        and binding_action(binding) == "quit"
+        for binding in app_bindings
+    )
+    assert any(
+        "ctrl+q" in binding_key(binding)
+        and binding_action(binding) == "back"
+        for binding in app_bindings
+    )
+    assert any(
+        "ctrl+c" in binding_key(binding)
+        and binding_action(binding) == "screen.copy_text"
+        for binding in Screen.BINDINGS
+    )
+
+    print("test_ctrl_c_uses_screen_copy_and_ctrl_q_stays_contextual PASSED")
+
+
 async def _test_command_input_auto_edit_on_focus_is_opt_in():
     from textual.app import App, ComposeResult
     from textual.binding import Binding
@@ -3736,7 +3795,7 @@ if __name__ == "__main__":
         test_connected_branch_end_deletes_to_tombstone,
         test_editor_connects_merge_input_to_active_branch_port,
         test_editor_repairs_legacy_merge_input_port_on_refresh,
-        test_editor_branch_cycle_keys_switch_open_and_closed_branch_views,
+        test_editor_branch_cycle_keys_switch_all_and_incomplete_branch_views,
         test_editor_restores_persisted_focus_highlight_on_mount,
         test_editor_notification_restores_node_list_focus,
         test_editor_depth_counter_tracks_visible_branch_distance,
@@ -3761,6 +3820,7 @@ if __name__ == "__main__":
         test_export_cancel_returns_to_file_menu,
         test_memory_viewer_uses_command_navigation,
         test_command_input_auto_edit_on_focus_is_opt_in,
+        test_ctrl_c_uses_screen_copy_and_ctrl_q_stays_contextual,
         test_node_config_command_inputs_require_activation,
         test_simple_command_modals_use_shared_navigation_helpers,
         test_prompt_modals_use_shared_command_activation,

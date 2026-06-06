@@ -132,8 +132,8 @@ ctrl+o        Open workflow library
 ctrl+e        Open settings
 ?             Open help
 escape        Close topmost modal or cancel action
-ctrl+q        Back / close, blocked while text editing
-ctrl+c        Quit to terminal
+ctrl+q        Back / close; quits only from editor; blocked while text editing
+ctrl+c        Copy mouse-selected screen text through Textual selection copy
 ```
 
 Execution bindings:
@@ -153,8 +153,8 @@ Editor bindings:
 
 ```text
 W/S or up/down         Move selection vertically
-A/D or left/right     Cycle between branch views that do not yet contain a Branch End
-Ctrl+A/Ctrl+D         Cycle between branch views that contain a Branch End
+A/D or left/right     Cycle all branch views, grouped by branch node creation order
+Ctrl+A/Ctrl+D         Cycle incomplete branch views only
 Ctrl+left/Ctrl+right  Same as Ctrl+A/Ctrl+D
 E or Enter            Edit selected node or open the highlighted branch selector
 I                     Insert after the highlighted node
@@ -168,6 +168,11 @@ V                     Validate workflow
 
 `A` is not an add-node shortcut. The editor treats WASD as left-hand arrows:
 `W/S` move vertically and `A/D` move horizontally through branch views.
+Plain `A/D` rolls through every branch path, showing all ports from one branch
+node before moving to the next branch node in creation order. `Ctrl+A/D` uses
+the same ordering but filters to incomplete branch paths. End nodes, output
+nodes, merge nodes, and Branch End nodes connected to a Merge count as complete;
+an unconnected Branch End remains incomplete so it stays easy to find.
 When cycling back to a branch, the editor restores the last highlighted node in
 that branch when possible; otherwise it highlights the first visible node in
 that branch path.

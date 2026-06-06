@@ -130,8 +130,8 @@ Latest phase:
 
 Recently completed:
 - Phase 14: Key binding remap — editor grammar uses W/S or up/down for vertical
-  movement, A/D or left/right for open branch-view cycling, Ctrl+A/Ctrl+D or
-  Ctrl+left/Ctrl+right for Branch End branch cycling, E to edit, I to insert
+  movement, A/D or left/right for all branch-view cycling, Ctrl+A/Ctrl+D or
+  Ctrl+left/Ctrl+right for incomplete branch cycling, E to edit, I to insert
   after the highlight, and X/backspace to delete. Ctrl+I add-at-branch-end was
   removed after review.
 

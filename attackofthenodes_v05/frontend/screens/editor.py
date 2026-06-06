@@ -44,16 +44,16 @@ class EditorScreen(Screen):
         ("shift+tab", "focus_previous", "Previous panel"),
         ("w", "cursor_up", "Up"),
         ("s", "cursor_down", "Down"),
-        Binding("left", "cycle_open_branch_prev", "Previous open branch", priority=True),
-        Binding("right", "cycle_open_branch_next", "Next open branch", priority=True),
+        Binding("left", "cycle_branch_prev", "Previous branch", priority=True),
+        Binding("right", "cycle_branch_next", "Next branch", priority=True),
         ("enter", "edit_selected", "Edit"),
         Binding("e", "edit_selected", "Edit", priority=True),
-        Binding("a", "cycle_open_branch_prev", "Previous open branch", priority=True),
-        Binding("d", "cycle_open_branch_next", "Next open branch", priority=True),
-        Binding("ctrl+a", "cycle_closed_branch_prev", "Previous closed branch", priority=True),
-        Binding("ctrl+d", "cycle_closed_branch_next", "Next closed branch", priority=True),
-        Binding("ctrl+left", "cycle_closed_branch_prev", "Previous closed branch", priority=True),
-        Binding("ctrl+right", "cycle_closed_branch_next", "Next closed branch", priority=True),
+        Binding("a", "cycle_branch_prev", "Previous branch", priority=True),
+        Binding("d", "cycle_branch_next", "Next branch", priority=True),
+        Binding("ctrl+a", "cycle_incomplete_branch_prev", "Previous incomplete branch", priority=True),
+        Binding("ctrl+d", "cycle_incomplete_branch_next", "Next incomplete branch", priority=True),
+        Binding("ctrl+left", "cycle_incomplete_branch_prev", "Previous incomplete branch", priority=True),
+        Binding("ctrl+right", "cycle_incomplete_branch_next", "Next incomplete branch", priority=True),
         Binding("i", "insert_node", "Insert node", priority=True),
         Binding("v", "validate_workflow", "Validate", priority=True),
         Binding("b", "toggle_breakpoint", "Breakpoint", priority=True),
@@ -201,17 +201,17 @@ class EditorScreen(Screen):
         self._pending_node_add_mode = "insert"
         self.app.push_screen(NodeSelectorScreen(self.factory), self._add_node_from_modal)
 
-    def action_cycle_open_branch_prev(self) -> None:
-        self._cycle_branch_view(closed=False, direction=-1)
+    def action_cycle_branch_prev(self) -> None:
+        self._cycle_branch_view(incomplete_only=False, direction=-1)
 
-    def action_cycle_open_branch_next(self) -> None:
-        self._cycle_branch_view(closed=False, direction=1)
+    def action_cycle_branch_next(self) -> None:
+        self._cycle_branch_view(incomplete_only=False, direction=1)
 
-    def action_cycle_closed_branch_prev(self) -> None:
-        self._cycle_branch_view(closed=True, direction=-1)
+    def action_cycle_incomplete_branch_prev(self) -> None:
+        self._cycle_branch_view(incomplete_only=True, direction=-1)
 
-    def action_cycle_closed_branch_next(self) -> None:
-        self._cycle_branch_view(closed=True, direction=1)
+    def action_cycle_incomplete_branch_next(self) -> None:
+        self._cycle_branch_view(incomplete_only=True, direction=1)
 
     def action_validate_workflow(self) -> None:
         result = validate_workflow(self.workflow_map, self.factory)
@@ -614,16 +614,18 @@ class EditorScreen(Screen):
         branch_label = self._branch_port_labels(branch_node).get(branch_port, branch_port)
         notifications.viewing_branch(self.app, branch_label)
 
-    def _cycle_branch_view(self, closed: bool, direction: int) -> None:
-        candidates = [
-            candidate
-            for candidate in self._branch_view_candidates()
-            if candidate["closed"] is closed
-        ]
+    def _cycle_branch_view(self, incomplete_only: bool, direction: int) -> None:
+        candidates = self._branch_view_candidates()
+        if incomplete_only:
+            candidates = [
+                candidate
+                for candidate in candidates
+                if not candidate["closed"]
+            ]
         if not candidates:
             notifications.notify_info(
                 self.app,
-                "No closed branches" if closed else "No open branches",
+                "No incomplete branches" if incomplete_only else "No branches",
             )
             return
         current_index = self._current_branch_candidate_index(candidates)
@@ -671,8 +673,12 @@ class EditorScreen(Screen):
             node = nodes.get(current_node_id)
             if node is None:
                 break
-            if node.get("type") == "branch_end_node":
-                closed = True
+            node_type = node.get("type")
+            if self._is_branch_terminal_node(node_type):
+                closed = (
+                    node_type != "branch_end_node"
+                    or self._branch_end_connected_to_merge(node)
+                )
                 break
             metadata = self._metadata_for_type(node.get("type", ""))
             ports = metadata.get("output_ports") if metadata else []
@@ -680,6 +686,14 @@ class EditorScreen(Screen):
                 break
             current_node_id = self._target_for_port(node, ports[0])
         return tail_id, closed
+
+    def _is_branch_terminal_node(self, node_type: str | None) -> bool:
+        return node_type in {
+            "branch_end_node",
+            "end_node",
+            "text_output_node",
+            "merge_node",
+        }
 
     def _current_branch_candidate_index(self, candidates: list[Dict[str, Any]]) -> int:
         if self.selected_row and self.selected_row["kind"] == "branch_select":

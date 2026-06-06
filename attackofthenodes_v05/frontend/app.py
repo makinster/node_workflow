@@ -56,7 +56,6 @@ class AttackOfTheNodesApp(TextualApp):
         ("?", "help", "Help"),
         ("q", "back", "Back"),
         Binding("ctrl+q", "back", "Back", priority=True),
-        Binding("ctrl+c", "quit", "Quit", priority=True, show=False),
     ]
 
     def __init__(

@@ -1,5 +1,26 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-06 — Branch Cycling And Copy Shortcut Polish
+
+- Changed editor branch cycling so `A/D` and left/right roll through every
+  branch path, grouped by the branch node that spawned them and ordered by
+  branch-node creation.
+- Changed `Ctrl+A/D` and `Ctrl+left/right` to roll through incomplete branch
+  paths only.
+- Updated branch completion detection for cycling: End nodes, output nodes,
+  Merge nodes, and Branch End nodes connected to a Merge count as complete;
+  unconnected Branch End nodes remain incomplete.
+- Removed the app-level `Ctrl+C` quit binding so Textual's built-in
+  mouse-selected text copy can work across screens. `Ctrl+Q` remains the
+  context-aware back/quit binding and only exits the app from the editor.
+- Updated Help, `TUI_DESIGN.md`, and `AGENT_HANDOFF.md` with the new keyboard
+  contract.
+- Verification:
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -q -k "branch_cycle or ctrl_c_uses"`
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v`
+    - 90 passed.
+
 ## 2026-06-06 — Future Agent Start Guide
 
 - Added `docs/AGENT_START_GUIDE.md` as a concise task checklist for common
