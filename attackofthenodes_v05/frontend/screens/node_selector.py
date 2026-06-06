@@ -64,7 +64,7 @@ class NodeSelectorScreen(ModalScreen):
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
         focused = self.focused
         if isinstance(focused, CommandInput) and focused.editing:
-            if action in {"cursor_up", "cursor_down", "choose", "focus_filter", "focus_node_list", "cancel"}:
+            if action in {"cursor_up", "cursor_down", "choose", "focus_filter", "cancel"}:
                 return False
         return True
 
@@ -88,6 +88,9 @@ class NodeSelectorScreen(ModalScreen):
         focus_command_widget(self, self.query_one("#node-filter", CommandInput))
 
     def action_focus_node_list(self) -> None:
+        focused = self.app.focused
+        if isinstance(focused, CommandInput) and focused.editing:
+            focused.end_edit()
         self._focus_node_list()
 
     def action_choose(self) -> None:

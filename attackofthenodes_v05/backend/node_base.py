@@ -62,6 +62,8 @@ class Node(ABC):
 
     input_ports: ClassVar[List[str]] = []
     output_ports: ClassVar[List[str]] = ["default"]
+    input_port_metadata: ClassVar[Dict[str, Dict[str, str]]] = {}
+    output_port_metadata: ClassVar[Dict[str, Dict[str, str]]] = {}
 
     default_config: ClassVar[Dict[str, Any]] = {}
     config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {}

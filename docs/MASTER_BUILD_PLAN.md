@@ -746,6 +746,10 @@ Current progress:
   config.
 - Main editor chrome is intentionally sparse: `f file | o options | h help`,
   with detailed navigation in context-aware Help.
+- Editor rows hide generated ids and status icons. Tombstones render as
+  `Deleted: <original node name>`.
+- Editor Quick View I/O uses `Transient Source`, output-name/description lines,
+  and matching Memory name/description lines.
 
 Branch naming is a small backend touch: one optional string per branch edge in
 `workflow_map`, extending the Phase 4.5 `path_a_label` work into user-editable
@@ -757,7 +761,8 @@ Done when:
 - Quick View uses friendly configured/default data names for transient and
   memory inputs/outputs.
 - Branch names are editable and persist across save/load.
-- Node names display as "Alias (id)" everywhere.
+- Editor rows show only the node name; config/detail titles may still include
+  generated ids for disambiguation.
 
 ---
 
@@ -768,10 +773,17 @@ Done when:
 **Depends on:** Phases 14, 15.
 
 File modal consolidates New/Open/Save/Save As/Export/Import plus Run/Validate
-as secondary actions. Node config gains fixed tabs (CORE / PARAMETERS /
-ADVANCED / CONNECTIONS, optional LAST RUN via `RichLog`), Space to enable
-optional fields, and A/D to move between parallel fields. Settings becomes
-tabbed and absorbs an API-key manager.
+as secondary actions. The first pass keeps the existing Workflow Library screen
+but removes visible workflow ids, marks the loaded workflow, de-duplicates names
+as `Name (2)`, keeps only a bottom Cancel button, and makes list-bottom W/S
+movement cycle cleanly to and from Cancel. Export/import path prompts return to
+the File menu when canceled.
+
+Node config gains transient output name/description overrides from node port
+metadata, with buttons stacked vertically for W/S navigation. Future passes add
+fixed tabs (CORE / PARAMETERS / ADVANCED / CONNECTIONS, optional LAST RUN via
+`RichLog`), Space to enable optional fields, and A/D to move between parallel
+fields. Settings gains an API Keys placeholder menu before real secret storage.
 
 Builds directly on Phase 5 (group→tabs already exists in `form_generator`) and
 the existing connection editor. Consolidates the scattered standalone modals into
@@ -780,6 +792,8 @@ tabbed containers.
 Done when:
 
 - File modal replaces the toolbar L/O bindings.
+- Workflow lists are name-first, id-free, keyboard navigable, and cancel-safe.
+- Node config can override transient output names/descriptions.
 - An LLM-style node with many optional fields stays fully keyboard-navigable.
 - Settings tabs include an API keys section.
 

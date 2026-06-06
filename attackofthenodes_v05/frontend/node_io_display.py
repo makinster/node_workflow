@@ -61,22 +61,81 @@ def node_label(node_id: str, node: Dict[str, Any]) -> str:
 
 def node_display_name(node_id: str, node: Dict[str, Any]) -> str:
     """Return the friendly node name without generated ids."""
+    if node.get("type") == "tombstone_node":
+        config = node.get("config") or {}
+        original = (
+            config.get("original_alias")
+            or config.get("original_display_name")
+            or config.get("original_type")
+            or "node"
+        )
+        return f"Deleted: {original}"
     return str(node.get("alias") or node.get("type") or node_id)
+
+
+def _port_metadata(
+    factory,
+    node: Dict[str, Any],
+    port: str,
+    direction: str,
+) -> Dict[str, str]:
+    metadata = metadata_for_type(factory, node.get("type", ""))
+    if not metadata:
+        return {}
+    key = "output_port_metadata" if direction == "output" else "input_port_metadata"
+    value = (metadata.get(key) or {}).get(port) or {}
+    return value if isinstance(value, dict) else {}
+
+
+def normalize_transient_outputs(config: Dict[str, Any]) -> Dict[str, Dict[str, str]]:
+    """Return transient output display overrides keyed by port."""
+    outputs = config.get("transient_outputs") or {}
+    normalized: Dict[str, Dict[str, str]] = {}
+    if isinstance(outputs, dict):
+        iterable = [
+            {"port": port, **value} if isinstance(value, dict) else {"port": port, "name": value}
+            for port, value in outputs.items()
+        ]
+    elif isinstance(outputs, list):
+        iterable = outputs
+    else:
+        iterable = []
+    for entry in iterable:
+        if not isinstance(entry, dict):
+            continue
+        port = str(entry.get("port") or "").strip()
+        if not port:
+            continue
+        normalized[port] = {
+            "port": port,
+            "name": str(entry.get("name") or "").strip(),
+            "description": str(entry.get("description") or "").strip(),
+        }
+    return normalized
 
 
 def output_display_name(factory, node: Dict[str, Any], port: str) -> str:
     """Return a friendly name for a node output port."""
     config = node.get("config") or {}
+    override = normalize_transient_outputs(config).get(port) or {}
+    if override.get("name"):
+        return override["name"]
     configured = str(config.get(f"{port}_label") or "").strip()
     if configured:
         return configured
+    metadata = _port_metadata(factory, node, port, "output")
+    if metadata.get("name"):
+        return str(metadata["name"])
     if port == "default":
         return "Output"
     return port.replace("_", " ").title()
 
 
-def input_display_name(port: str) -> str:
+def input_display_name(factory, node: Dict[str, Any], port: str) -> str:
     """Return a friendly name for an input port."""
+    metadata = _port_metadata(factory, node, port, "input")
+    if metadata.get("name"):
+        return str(metadata["name"])
     if port == "input":
         return "Input"
     if port == "default":
@@ -91,6 +150,17 @@ def memory_display_text(output_id: str, description: str = "") -> str:
     if output_id and description:
         return f"{output_id} - {description}"
     return output_id or "unnamed"
+
+
+def output_display_description(factory, node: Dict[str, Any], port: str) -> str:
+    """Return friendly output description for a node output port."""
+    override = normalize_transient_outputs(node.get("config") or {}).get(port) or {}
+    if override.get("description"):
+        return override["description"]
+    metadata = _port_metadata(factory, node, port, "output")
+    if metadata.get("description"):
+        return str(metadata["description"])
+    return "No output description configured."
 
 
 def memory_registry(workflow_map) -> Dict[str, Dict[str, Any]]:
@@ -143,7 +213,7 @@ def transient_output_details(
         }
     return {
         "name": output_display_name(factory, node, port),
-        "description": "No output description configured.",
+        "description": output_display_description(factory, node, port),
     }
 
 

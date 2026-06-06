@@ -344,7 +344,10 @@ class AttackOfTheNodesApp(TextualApp):
 
     def action_workflow_library(self) -> None:
         """Open the workflow library modal."""
-        self.push_screen(WorkflowLibraryScreen(), self._handle_workflow_library_action)
+        self.push_screen(
+            WorkflowLibraryScreen(self.workflow_map.workflow_id),
+            self._handle_workflow_library_action,
+        )
 
     def action_settings(self) -> None:
         """Open settings modal."""
@@ -473,6 +476,8 @@ class AttackOfTheNodesApp(TextualApp):
 
     def _export_workflow_to_path(self, result, path: str | None) -> None:
         if not path or self.save_manager is None:
+            if not path:
+                self.action_workflow_library()
             return
         workflow_id = result.get("workflow_id")
         if not workflow_id:
@@ -495,6 +500,8 @@ class AttackOfTheNodesApp(TextualApp):
 
     def _import_workflow_from_path(self, path: str | None) -> None:
         if not path or self.save_manager is None:
+            if not path:
+                self.action_workflow_library()
             return
         try:
             workflow_id = self.save_manager.import_workflow(path)

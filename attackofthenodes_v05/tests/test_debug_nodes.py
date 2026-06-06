@@ -785,6 +785,26 @@ def test_tombstone_restore_preserves_original_and_swap_invalidates_timing():
     print("test_tombstone_restore_preserves_original_and_swap_invalidates_timing PASSED")
 
 
+def test_editor_deleted_node_row_renders_as_deleted():
+    from frontend.editor_workflow_adapter import EditorWorkflowAdapter
+    from frontend.widgets.node_card import NodeCard
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("tombstone_row_display")
+    node_id = wm.add_node("logger_node")
+    wm.update_node_alias(node_id, "Useful Logger")
+
+    adapter = EditorWorkflowAdapter(wm, wm._factory)
+    assert adapter.replace_with_placeholder(node_id)
+    tombstone = wm.get_node_data(node_id)
+    tombstone["_editor_depth"] = 1
+    card = NodeCard(node_id, tombstone, show_status=False, show_id=False)
+    card.refresh_card()
+
+    assert card.display_text == "  1   Deleted: Useful Logger"
+    print("test_editor_deleted_node_row_renders_as_deleted PASSED")
+
+
 # ---------------------------------------------------------------------------
 # 20. Utility memory writers can pass input through
 # ---------------------------------------------------------------------------
@@ -2209,6 +2229,55 @@ async def _test_node_config_pass_through_disables_membank_outputs():
     print("test_node_config_pass_through_disables_membank_outputs PASSED")
 
 
+def test_node_config_saves_transient_output_overrides_and_vertical_buttons():
+    asyncio.run(_test_node_config_saves_transient_output_overrides_and_vertical_buttons())
+
+
+async def _test_node_config_saves_transient_output_overrides_and_vertical_buttons():
+    from textual.app import App, ComposeResult
+    from textual.widgets import Button
+
+    from frontend.screens.node_config import NodeConfigScreen
+    from frontend.widgets.command_input import CommandInput
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("transient_output_config")
+    node = wm.add_node("logger_node")
+
+    class ConfigApp(App):
+        def compose(self) -> ComposeResult:
+            yield NodeConfigScreen(wm._factory, wm, node, wm.get_node_data(node))
+
+    app = ConfigApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        screen = app.query_one(NodeConfigScreen)
+        name_input = app.query_one("#transient-output-name-default", CommandInput)
+        desc_input = app.query_one("#transient-output-desc-default", CommandInput)
+        save_button = app.query_one("#save-node-config", Button)
+        cancel_button = app.query_one("#cancel-node-config", Button)
+
+        name_input.value = "approved_text"
+        desc_input.value = "Approved output"
+        widgets = screen._keyboard_focus_widgets()
+        assert widgets.index(save_button) < widgets.index(cancel_button)
+
+        results = []
+        screen.dismiss = results.append
+        await pilot.press("ctrl+s")
+        await pilot.pause()
+
+    outputs = results[-1]["config"]["transient_outputs"]
+    assert outputs == [
+        {
+            "port": "default",
+            "name": "approved_text",
+            "description": "Approved output",
+        }
+    ]
+    print("test_node_config_saves_transient_output_overrides_and_vertical_buttons PASSED")
+
+
 def test_dynamic_row_helper_preserves_visible_rows_only():
     from frontend.widgets.dynamic_sections import (
         clamp_dynamic_row_count,
@@ -2486,11 +2555,13 @@ def test_editor_quick_view_lists_transient_and_memory_io():
     text = screen._format_node_details(consumer, wm.get_node_data(consumer))
 
     assert "Inputs:" in text
-    assert "Transient: Input <- produced_text from Producer" in text
-    assert "Memory: session_id - Session id" in text
+    assert "Transient Source: Producer" in text
+    assert "produced_text: Created text" in text
+    assert "Memory" in text
+    assert "session_id: Session id" in text
     assert "Outputs:" in text
-    assert "Transient: Output" in text
-    assert "Memory: final_text - Final text" in text
+    assert "Output: No output description configured." in text
+    assert "final_text: Final text" in text
     assert "Next:" not in text
     print("test_editor_quick_view_lists_transient_and_memory_io PASSED")
 
@@ -2510,10 +2581,11 @@ def test_editor_quick_view_shows_branch_output_names_and_empty_memory():
     text = screen._format_node_details(branch, wm.get_node_data(branch))
 
     assert "Inputs:" in text
-    assert "Transient: none" in text
-    assert "Memory: none" in text
+    assert "Transient Source: none" in text
+    assert "    none" in text
     assert "Outputs:" in text
-    assert "Transient: Approve; Reject" in text
+    assert "Approve: No output description configured." in text
+    assert "Reject: No output description configured." in text
     print("test_editor_quick_view_shows_branch_output_names_and_empty_memory PASSED")
 
 
@@ -2538,9 +2610,36 @@ def test_editor_quick_view_traces_pass_through_producer():
     screen = EditorScreen(wm._factory, wm)
     text = screen._format_node_details(target, wm.get_node_data(target))
 
-    assert "Transient: Input <- created_payload from Producer" in text
+    assert "Transient Source: Producer" in text
+    assert "created_payload: Original data" in text
     assert "Pause" not in text
     print("test_editor_quick_view_traces_pass_through_producer PASSED")
+
+
+def test_editor_quick_view_uses_transient_output_overrides():
+    from frontend.screens.editor import EditorScreen
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("quick_view_transient_override")
+    source = wm.add_node("logger_node")
+    wm.update_node_config(
+        source,
+        {
+            "transient_outputs": [
+                {
+                    "port": "default",
+                    "name": "approved_text",
+                    "description": "Text approved for downstream use",
+                }
+            ]
+        },
+    )
+
+    screen = EditorScreen(wm._factory, wm)
+    text = screen._format_node_details(source, wm.get_node_data(source))
+
+    assert "approved_text: Text approved for downstream use" in text
+    print("test_editor_quick_view_uses_transient_output_overrides PASSED")
 
 
 def test_node_config_previous_output_preview_traces_pass_through_source():
@@ -2682,20 +2781,21 @@ def test_workflow_library_uses_shared_list_navigation():
 
 async def _test_workflow_library_uses_shared_list_navigation():
     from textual.app import App, ComposeResult
-    from textual.widgets import ListView
+    from textual.widgets import Button, ListView, Static
 
     import frontend.screens.workflow_library as workflow_library_module
     from frontend.screens.workflow_library import WorkflowLibraryScreen
 
     original_list_workflows = workflow_library_module.list_workflows
     workflow_library_module.list_workflows = lambda: [
-        {"id": "wf-1", "name": "First"},
+        {"id": "wf-1", "name": "Duplicate"},
         {"id": "wf-2", "name": "Second"},
+        {"id": "wf-3", "name": "Duplicate"},
     ]
 
     class LibraryApp(App):
         def compose(self) -> ComposeResult:
-            yield WorkflowLibraryScreen()
+            yield WorkflowLibraryScreen("wf-2")
 
     try:
         app = LibraryApp()
@@ -2703,20 +2803,57 @@ async def _test_workflow_library_uses_shared_list_navigation():
             await pilot.pause(0.03)
             screen = app.query_one(WorkflowLibraryScreen)
             workflow_list = app.query_one("#workflow-list", ListView)
+            cancel = app.query_one("#cancel-workflow-library", Button)
 
             assert app.focused is workflow_list
             assert workflow_list.index == 0
+            row_texts = [
+                item.query_one(Static).display_text
+                for item in workflow_list.children
+            ]
+            assert row_texts == [
+                "Duplicate",
+                "Second <-- Loaded Workflow",
+                "Duplicate (2)",
+            ]
+            assert "wf-" not in "\n".join(row_texts)
+            button_ids = [button.id for button in app.query(Button)]
+            assert button_ids == ["cancel-workflow-library"]
 
             screen.action_cursor_down()
             assert workflow_list.index == 1
             screen.action_cursor_down()
-            assert workflow_list.index == 1
+            assert workflow_list.index == 2
+            screen.action_cursor_down()
+            assert app.focused is cancel
             screen.action_cursor_up()
-            assert workflow_list.index == 0
+            assert app.focused is workflow_list
+            assert workflow_list.index == 2
     finally:
         workflow_library_module.list_workflows = original_list_workflows
 
     print("test_workflow_library_uses_shared_list_navigation PASSED")
+
+
+def test_export_cancel_returns_to_file_menu():
+    asyncio.run(_test_export_cancel_returns_to_file_menu())
+
+
+async def _test_export_cancel_returns_to_file_menu():
+    from frontend.app import AttackOfTheNodesApp
+    from frontend.screens.workflow_library import WorkflowLibraryScreen
+
+    master, wm, mb, bus = _make_services()
+    wm.create_new("export_cancel")
+
+    app = AttackOfTheNodesApp(bus, wm._factory, wm, mb, master)
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        app._export_workflow_to_path({"workflow_id": "wf-1"}, None)
+        await pilot.pause(0.03)
+        assert isinstance(app.screen, WorkflowLibraryScreen)
+
+    print("test_export_cancel_returns_to_file_menu PASSED")
 
 
 def test_memory_viewer_uses_command_navigation():
@@ -2902,10 +3039,10 @@ def test_simple_command_modals_use_shared_navigation_helpers():
 async def _test_simple_command_modals_use_shared_navigation_helpers():
     from textual import events
     from textual.app import App, ComposeResult
-    from textual.widgets import Checkbox
+    from textual.widgets import Button, Checkbox
 
     from backend.configuration_manager import DEFAULT_SETTINGS
-    from frontend.screens.settings import SettingsScreen
+    from frontend.screens.settings import ApiKeysPlaceholderScreen, SettingsScreen
     from frontend.widgets.command_input import CommandInput
 
     class FakeConfigurationManager:
@@ -2923,6 +3060,9 @@ async def _test_simple_command_modals_use_shared_navigation_helpers():
         max_depth = app.query_one("#setting-max_branch_depth", CommandInput)
         timeout = app.query_one("#setting-node_timeout_seconds", CommandInput)
         auto_save = app.query_one("#setting-auto_save_enabled", Checkbox)
+        api_keys = app.query_one("#api-keys-settings", Button)
+        save_button = app.query_one("#save-settings", Button)
+        cancel_button = app.query_one("#cancel-settings", Button)
 
         assert app.focused is max_depth
         assert max_depth.editing is False
@@ -2941,6 +3081,11 @@ async def _test_simple_command_modals_use_shared_navigation_helpers():
         previous = auto_save.value
         screen.action_activate_focused()
         assert auto_save.value is (not previous)
+        widgets = screen._nav_widgets()
+        assert widgets.index(api_keys) < widgets.index(save_button) < widgets.index(cancel_button)
+        await pilot.press("k")
+        await pilot.pause()
+        assert isinstance(app.screen, ApiKeysPlaceholderScreen)
 
     print("test_simple_command_modals_use_shared_navigation_helpers PASSED")
 
@@ -2952,6 +3097,7 @@ def test_prompt_modals_use_shared_command_activation():
 async def _test_prompt_modals_use_shared_command_activation():
     from textual import events
     from textual.app import App, ComposeResult
+    from textual.widgets import Button
 
     from frontend.screens.user_input import UserInputScreen
     from frontend.screens.workflow_library import PathPromptScreen
@@ -2972,6 +3118,11 @@ async def _test_prompt_modals_use_shared_command_activation():
         await pilot.press("a", "b", "c")
         assert path_input.value == "abc"
         assert screen.check_action("cancel", ()) is False
+        await pilot.press("tab")
+        await pilot.pause()
+        assert path_input.editing is False
+        assert path_app.focused is path_app.query_one("#confirm-path", Button)
+        path_input.begin_edit()
         submitted_paths = []
         screen.dismiss = submitted_paths.append
         await pilot.press("ctrl+enter")
@@ -3039,6 +3190,37 @@ async def _test_editor_click_selects_and_double_click_edits():
         assert opened == [logger]
 
     print("test_editor_click_selects_and_double_click_edits PASSED")
+
+
+def test_editor_ctrl_s_quick_saves():
+    asyncio.run(_test_editor_ctrl_s_quick_saves())
+
+
+async def _test_editor_ctrl_s_quick_saves():
+    from textual.app import App, ComposeResult
+
+    from frontend.screens.editor import EditorScreen
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("editor_quick_save")
+    wm.add_node("start_node")
+    saves = []
+
+    class SaveApp(App):
+        def compose(self) -> ComposeResult:
+            yield EditorScreen(wm._factory, wm)
+
+        def action_save_workflow(self) -> None:
+            saves.append("saved")
+
+    app = SaveApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        await pilot.press("ctrl+s")
+        await pilot.pause()
+
+    assert saves == ["saved"]
+    print("test_editor_ctrl_s_quick_saves PASSED")
 
 
 def test_command_text_click_enters_editing_mode():
@@ -3529,6 +3711,7 @@ if __name__ == "__main__":
         test_insert_between_rewires_below_source_node,
         test_tombstone_delete_does_not_cascade_branch_nodes,
         test_tombstone_restore_preserves_original_and_swap_invalidates_timing,
+        test_editor_deleted_node_row_renders_as_deleted,
         test_set_variable_node_can_pass_input_through,
         test_branch_node_default_labels_are_configurable,
         test_branch_config_uses_generated_labels_without_memory_outputs,
@@ -3564,21 +3747,25 @@ if __name__ == "__main__":
         test_frontend_notification_helpers_standardize_copy_and_severity,
         test_node_config_dynamic_membank_output_rows,
         test_node_config_pass_through_disables_membank_outputs,
+        test_node_config_saves_transient_output_overrides_and_vertical_buttons,
         test_editor_hides_empty_start_until_first_node_added,
         test_node_config_previous_output_preview_reads_transient_source,
         test_editor_quick_view_lists_transient_and_memory_io,
         test_editor_quick_view_shows_branch_output_names_and_empty_memory,
+        test_editor_quick_view_uses_transient_output_overrides,
         test_editor_quick_view_traces_pass_through_producer,
         test_node_config_previous_output_preview_traces_pass_through_source,
         test_node_selector_filter_auto_edits_when_focused,
         test_branch_selector_uses_shared_list_navigation,
         test_workflow_library_uses_shared_list_navigation,
+        test_export_cancel_returns_to_file_menu,
         test_memory_viewer_uses_command_navigation,
         test_command_input_auto_edit_on_focus_is_opt_in,
         test_node_config_command_inputs_require_activation,
         test_simple_command_modals_use_shared_navigation_helpers,
         test_prompt_modals_use_shared_command_activation,
         test_editor_click_selects_and_double_click_edits,
+        test_editor_ctrl_s_quick_saves,
         test_command_text_click_enters_editing_mode,
         test_command_screen_mixin_class_hierarchy,
         test_status_bar_mode_indicator,

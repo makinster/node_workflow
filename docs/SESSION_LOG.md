@@ -1,5 +1,25 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-05 — Phase 16 Frontend Usability Slice
+
+- Made editor tombstones render visibly as `Deleted: <original node name>` in
+  the node list.
+- Added editor `Ctrl+S` quick save.
+- Reworked selected-node I/O copy to use `Transient Source`, output
+  name/description lines, and matching Memory name/description lines.
+- Added semantic port metadata to node metadata output and config-level
+  `transient_outputs` overrides for output names/descriptions.
+- Cleaned up File menu rows: no visible ids, duplicate-name suffixes,
+  `<-- Loaded Workflow` marker, action keys instead of action buttons, and
+  bottom Cancel focus behavior.
+- Made export/import path prompt cancel return to File, stacked path prompt and
+  node config buttons vertically, and added Tab-out behavior for path editing.
+- Added Settings API Keys placeholder behind `K`.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v`
+    - 89 passed.
+
 ## 2026-06-05 — Editor Row Gutter Cleanup
 
 - Removed the separate idle/status symbol column from editor node rows and

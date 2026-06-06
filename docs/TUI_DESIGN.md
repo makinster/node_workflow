@@ -182,22 +182,33 @@ The editor node list shows a small depth counter at the left of each node row.
 Start is `0`; each visible node below increments by one. When a branch is
 selected, the branch path continues from the branch node's depth so switching
 branches preserves vertical orientation.
-Node rows should show the editable, user-facing alias first and the generated id
-in parentheses, for example `Logger (node_a1b2c3d4)`. Keep system type names in
-secondary detail fields such as `Kind`. Node config titles should use the same
-`Alias (node_id)` convention.
+Node rows should show the editable, user-facing alias only. Generated ids stay
+out of the editor list and appear only in detail/config contexts where
+disambiguation matters. Tombstones render as `Deleted: <original node name>`.
 The editor Quick View should summarize configured data flow without raw graph
-noise. Show `Inputs` and `Outputs`, and split each into `Transient` graph-port
-data and `Memory` named memory-bank data. Use user-provided names/descriptions
-when available, friendly defaults such as `Input` and `Output` otherwise, and
-render empty categories as `none`. For pass-through utility nodes, trace display
+noise. Show `Inputs` and `Outputs`. Under inputs, show `Transient Source:
+<source node name>` and then `<output name>: <description>`, followed by Memory
+entries in the same name/description format. Outputs use matching Transient and
+Memory name/description lines. For pass-through utility nodes, trace display
 back to the upstream node that actually created the transient data.
-Node rows use a fixed-width depth gutter with extra padding before the status
-icon. Branch selector rows reserve the same gutter without showing a number, so
-the `☛` icon starts in the same visual column as node status icons and the
-branch name starts in the same visual column as node names.
+Node rows use a fixed-width depth gutter with extra padding before the node
+name. Branch selector rows place the `☛` icon in the same gutter.
 Branch output labels should default to `Branch 1`, `Branch 2`, and so on, while
 remaining editable in the branch node config.
+
+The File menu should show workflow names without ids. Duplicate names are
+displayed as `Name`, `Name (2)`, `Name (3)`, and the currently loaded workflow
+is marked with `<-- Loaded Workflow`. Workflow actions are keyboard bindings;
+the only bottom widget is `Cancel`. Moving down from the last workflow focuses
+Cancel, and moving up from Cancel returns to the last workflow. Export/import
+path prompts return to File when canceled.
+
+Node config buttons are stacked vertically for W/S navigation. `Ctrl+S` saves
+and closes. Config may expose transient output name/description overrides based
+on node port metadata, stored in `transient_outputs`.
+
+Settings includes a visible Cancel control and reserves `K` for an API Keys
+submenu. The current API Keys screen is a placeholder only.
 
 The editor persists selected node/branch state on the app shell. Returning from
 execution, closing secondary menus, or showing transient notifications should

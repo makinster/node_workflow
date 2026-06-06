@@ -6,12 +6,17 @@ from typing import Any, Dict, Optional
 
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Horizontal, Vertical, VerticalScroll
+from textual.containers import Vertical, VerticalScroll
 from textual.events import Key
 from textual.screen import ModalScreen
 from textual.widgets import Button, Checkbox, Input, Label, Select, SelectionList, Static, TabbedContent, TabPane, TextArea
 
-from frontend.node_io_display import trace_transient_producer
+from frontend.node_io_display import (
+    normalize_transient_outputs,
+    output_display_description,
+    output_display_name,
+    trace_transient_producer,
+)
 from frontend.widgets.command_navigation import (
     activate_command_widget,
     focus_command_widget,
@@ -392,6 +397,9 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         self._initial_membank_outputs = normalize_membank_outputs(
             node_data.get("config") or {}
         )
+        self._initial_transient_outputs = normalize_transient_outputs(
+            node_data.get("config") or {}
+        )
         self._refreshing_membank_outputs = False
 
     def compose(self) -> ComposeResult:
@@ -399,7 +407,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         schema = metadata.get("config_schema", {}) if metadata else {}
         schema = self._schema_with_generated_branch_labels(metadata, schema)
         config = self.node_data.get("config") or {}
-        excluded_config_keys = {"membank_outputs", "membank_inputs"}
+        excluded_config_keys = {"membank_outputs", "membank_inputs", "transient_outputs"}
         if self.node_data.get("type") == "wait_until_node":
             excluded_config_keys.add("target_node_ids")
         if self.node_data.get("type") == "merge_node":
@@ -448,7 +456,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                         config,
                         form,
                     )
-            with Horizontal(classes="button-row"):
+            with Vertical(classes="button-row"):
                 yield Button("Save", id="save-node-config", variant="primary")
                 yield Button("Cancel", id="cancel-node-config", variant="default")
             yield StatusBar("w = up, s = down    e = edit/select    esc = cancel/close")
@@ -475,6 +483,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             yield Label("Wait Targets", classes="form-label nav-section")
             yield from self._compose_wait_targets(config)
         yield form
+        yield Label("Transient Outputs", classes="form-label nav-section")
+        yield from self._compose_transient_outputs(metadata, config)
         yield Label("Connections", classes="form-label nav-section")
         yield Static("Connection editing lives in the editor path tools.", classes="form-description")
         yield Static(self._format_connections(), id="connection-summary")
@@ -563,6 +573,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         alias_query = self.query("#alias-input")
         alias = alias_query.first().value if alias_query else self.node_data.get("alias", "")
         config = self._get_form_values() if self._get_form_values else {}
+        config.update(self._transient_config_values())
         config.update(self._membank_config_values())
         config.update(self._wait_config_values())
         config.update(self._merge_config_values())
@@ -893,6 +904,31 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         else:
             yield Static("No upstream memory-bank outputs are available.", classes="form-description")
 
+    def _compose_transient_outputs(
+        self,
+        metadata: Optional[Dict[str, Any]],
+        config: Dict[str, Any],
+    ):
+        ports = list(metadata.get("output_ports") or []) if metadata else []
+        if not ports:
+            yield Static("No transient outputs.", classes="form-description")
+            return
+        for port in ports:
+            port = str(port)
+            yield Label(port.replace("_", " ").title(), classes="form-description")
+            name = output_display_name(self.factory, self.node_data, port)
+            description = output_display_description(self.factory, self.node_data, port)
+            yield CommandInput(
+                value=name,
+                id=f"transient-output-name-{port}",
+                placeholder="Output name",
+            )
+            yield CommandInput(
+                value="" if description == "No output description configured." else description,
+                id=f"transient-output-desc-{port}",
+                placeholder="Output description",
+            )
+
     def _compose_wait_targets(self, config: Dict[str, Any]):
         selected = set(normalize_wait_target_ids(config))
         options = wait_target_options(self.workflow_map, self.node_id)
@@ -1066,6 +1102,30 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             if selection_lists:
                 values["membank_inputs"] = list(selection_lists.first().selected)
         return values
+
+    def _transient_config_values(self) -> Dict[str, Any]:
+        metadata = self._metadata_for_type(self.node_data.get("type", ""))
+        ports = list(metadata.get("output_ports") or []) if metadata else []
+        outputs = []
+        for port in ports:
+            port = str(port)
+            name_query = self.query(f"#transient-output-name-{port}")
+            desc_query = self.query(f"#transient-output-desc-{port}")
+            if not name_query and not desc_query:
+                continue
+            name = self._widget_text_value(name_query.first()) if name_query else ""
+            description = (
+                self._widget_text_value(desc_query.first()) if desc_query else ""
+            )
+            if name or description:
+                outputs.append(
+                    {
+                        "port": port,
+                        "name": name,
+                        "description": description,
+                    }
+                )
+        return {"transient_outputs": outputs}
 
     def _sync_membank_output_controls(self) -> None:
         if not self.query("#membank-writes"):

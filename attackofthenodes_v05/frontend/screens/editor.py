@@ -22,13 +22,12 @@ from frontend.screens.node_selector import NodeSelectorScreen
 from frontend import notifications
 from frontend.editor_workflow_adapter import EditorWorkflowAdapter
 from frontend.node_io_display import (
-    input_display_name,
-    memory_display_text,
     memory_registry,
     node_display_name,
     node_label,
     normalize_membank_inputs,
     normalize_membank_outputs,
+    output_display_description,
     output_display_name,
     trace_transient_producer,
 )
@@ -65,6 +64,7 @@ class EditorScreen(Screen):
         Binding("o", "options", "Options", priority=True),
         Binding("h", "help", "Help", priority=True),
         Binding("?", "help", "Help", priority=True),
+        Binding("ctrl+s", "save_workflow", "Save", priority=True),
     ]
 
     def __init__(self, factory, workflow_map, save_manager=None) -> None:
@@ -233,6 +233,9 @@ class EditorScreen(Screen):
 
     def action_help(self) -> None:
         self.app.action_help()
+
+    def action_save_workflow(self) -> None:
+        self.app.action_save_workflow()
 
     def action_toggle_breakpoint(self) -> None:
         if self.selected_node_id is None:
@@ -908,23 +911,25 @@ class EditorScreen(Screen):
         return [
             "",
             "Inputs:",
-            f"  Transient: {self._format_transient_inputs(node)}",
-            f"  Memory: {self._format_memory_inputs(node)}",
+            *self._format_transient_input_lines(node),
+            "  Memory",
+            *self._format_memory_lines(node, "inputs"),
             "",
             "Outputs:",
-            f"  Transient: {self._format_transient_outputs(node, metadata)}",
-            f"  Memory: {self._format_memory_outputs(node)}",
+            "  Transient",
+            *self._format_transient_output_lines(node, metadata),
+            "  Memory",
+            *self._format_memory_lines(node, "outputs"),
         ]
 
-    def _format_transient_inputs(self, node: Dict[str, Any]) -> str:
+    def _format_transient_input_lines(self, node: Dict[str, Any]) -> list[str]:
         inputs = node.get("connections", {}).get("inputs", [])
         if not inputs:
-            return "none"
-        pieces: list[str] = []
+            return ["  Transient Source: none"]
+        lines: list[str] = []
         for conn in inputs:
             source_id = str(conn.get("source_node_id") or "")
             source_port = str(conn.get("source_port") or "default")
-            target_port = str(conn.get("target_port") or "input")
             producer = trace_transient_producer(
                 self.workflow_map,
                 self.factory,
@@ -933,44 +938,50 @@ class EditorScreen(Screen):
             )
             producer_node = producer.get("node") or {}
             producer_id = producer.get("node_id") or source_id or "?"
-            pieces.append(
-                f"{input_display_name(target_port)} <- {producer['name']} from "
-                f"{node_display_name(producer_id, producer_node)}"
+            lines.append(
+                f"  Transient Source: {node_display_name(producer_id, producer_node)}"
             )
-        return "; ".join(pieces)
+            lines.append(
+                f"    {producer['name']}: {producer.get('description') or ''}"
+            )
+        return lines
 
-    def _format_transient_outputs(
+    def _format_transient_output_lines(
         self,
         node: Dict[str, Any],
         metadata: Optional[Dict[str, Any]],
-    ) -> str:
+    ) -> list[str]:
         ports = list(metadata.get("output_ports") or []) if metadata else []
         if not ports:
-            return "none"
-        return "; ".join(
-            output_display_name(self.factory, node, str(port))
-            for port in ports
-        )
+            return ["    none"]
+        lines: list[str] = []
+        for port in ports:
+            description = output_display_description(self.factory, node, str(port))
+            lines.append(
+                f"    {output_display_name(self.factory, node, str(port))}: {description}"
+            )
+        return lines
 
-    def _format_memory_inputs(self, node: Dict[str, Any]) -> str:
-        selected = normalize_membank_inputs(node.get("config") or {})
-        if not selected:
-            return "none"
-        registry = memory_registry(self.workflow_map)
-        pieces = []
-        for output_id in selected:
-            entry = registry.get(output_id) or {}
-            pieces.append(memory_display_text(output_id, entry.get("description", "")))
-        return "; ".join(pieces)
+    def _format_memory_lines(self, node: Dict[str, Any], direction: str) -> list[str]:
+        def line(name: str, description: str = "") -> str:
+            return f"    {name}: {description}" if description else f"    {name}:"
 
-    def _format_memory_outputs(self, node: Dict[str, Any]) -> str:
+        if direction == "inputs":
+            selected = normalize_membank_inputs(node.get("config") or {})
+            if not selected:
+                return ["    none"]
+            registry = memory_registry(self.workflow_map)
+            return [
+                line(output_id, (registry.get(output_id) or {}).get("description", ""))
+                for output_id in selected
+            ]
         outputs = normalize_membank_outputs(node.get("config") or {})
         if not outputs:
-            return "none"
-        return "; ".join(
-            memory_display_text(output["id"], output.get("description", ""))
+            return ["    none"]
+        return [
+            line(output["id"], output.get("description", ""))
             for output in outputs
-        )
+        ]
 
     def _branch_end_merge_detail_lines(
         self, node_id: str, node: Dict[str, Any]

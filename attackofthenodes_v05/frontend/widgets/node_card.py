@@ -8,6 +8,8 @@ from textual import events
 from textual.message import Message
 from textual.widgets import Static
 
+from frontend.node_io_display import node_display_name
+
 
 STATUS_ICONS = {
     "idle": "◌",
@@ -60,7 +62,7 @@ class NodeCard(Static):
         event.stop()
 
     def refresh_card(self) -> None:
-        alias = self.node_data.get("alias") or self.node_data.get("type", "node")
+        alias = node_display_name(self.node_id, self.node_data)
         node_type = self.node_data.get("type", "unknown")
         if node_type == "branch_end_node":
             self.remove_class("branch-end-open", "branch-end-connected")

@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional
 
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Horizontal, Vertical
+from textual.containers import Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Button, Input, Label, ListItem, ListView, Static
 
@@ -36,26 +36,20 @@ class WorkflowLibraryScreen(ModalScreen):
         ("x", "delete_selected", "Delete"),
     ]
 
-    def __init__(self) -> None:
+    def __init__(self, current_workflow_id: str | None = None) -> None:
         super().__init__()
         self.workflows: list[Dict[str, Any]] = []
+        self.current_workflow_id = current_workflow_id
 
     def compose(self) -> ComposeResult:
         with Vertical(id="modal-card"):
             yield Label("Workflow Library", classes="modal-title")
             yield ListView(id="workflow-list")
             yield Static(
-                "ENTER load  N new  D duplicate  E export  I import  X delete  ESC close",
+                "Enter load | N new | D duplicate | X delete\nE export | I import | Esc cancel",
                 classes="modal-help",
             )
-            with Horizontal(classes="button-row"):
-                yield Button("Load", id="load-workflow", variant="primary")
-                yield Button("New", id="new-workflow", variant="default")
-                yield Button("Duplicate", id="duplicate-workflow", variant="default")
-                yield Button("Export", id="export-workflow", variant="default")
-                yield Button("Import", id="import-workflow", variant="default")
-                yield Button("Delete", id="delete-workflow", variant="error")
-                yield Button("Cancel", id="cancel-workflow-library", variant="default")
+            yield Button("Cancel", id="cancel-workflow-library", variant="default")
 
     def on_mount(self) -> None:
         self._refresh_workflows()
@@ -66,19 +60,7 @@ class WorkflowLibraryScreen(ModalScreen):
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         button_id = event.button.id
-        if button_id == "load-workflow":
-            self.action_load_selected()
-        elif button_id == "new-workflow":
-            self.action_new_workflow()
-        elif button_id == "duplicate-workflow":
-            self.action_duplicate_selected()
-        elif button_id == "export-workflow":
-            self.action_export_selected()
-        elif button_id == "import-workflow":
-            self.action_import_workflow()
-        elif button_id == "delete-workflow":
-            self.action_delete_selected()
-        elif button_id == "cancel-workflow-library":
+        if button_id == "cancel-workflow-library":
             self.action_cancel()
 
     def action_load_selected(self) -> None:
@@ -116,10 +98,17 @@ class WorkflowLibraryScreen(ModalScreen):
         self.workflows = list_workflows()
         list_view = self.query_one("#workflow-list", ListView)
         list_view.clear()
-        for workflow in self.workflows:
-            list_view.append(
-                ListItem(Static(f"{workflow['name']}  ({workflow['id']})"))
+        display_names = self._display_names(self.workflows)
+        for workflow, display_name in zip(self.workflows, display_names):
+            loaded = (
+                " <-- Loaded Workflow"
+                if workflow.get("id") == self.current_workflow_id
+                else ""
             )
+            text = f"{display_name}{loaded}"
+            row = Static(text)
+            setattr(row, "display_text", text)
+            list_view.append(ListItem(row))
         if not self.workflows:
             list_view.append(ListItem(Static("No saved workflows")))
         else:
@@ -131,7 +120,34 @@ class WorkflowLibraryScreen(ModalScreen):
 
     def _move_selection(self, delta: int) -> None:
         list_view = self.query_one("#workflow-list", ListView)
+        cancel = self.query_one("#cancel-workflow-library", Button)
+        if self.app.focused is cancel and delta < 0:
+            if self.workflows:
+                list_view.index = len(self.workflows) - 1
+                focus_list(self.app, list_view, len(self.workflows))
+            return
+        if self.app.focused is list_view:
+            current = list_view.index if list_view.index is not None else 0
+            if delta > 0 and current >= len(self.workflows) - 1:
+                self.app.set_focus(cancel)
+                return
+        if not self.workflows and delta > 0:
+            self.app.set_focus(cancel)
+            return
         move_list_highlight(self.app, list_view, len(self.workflows), delta)
+
+    def _display_names(self, workflows: list[Dict[str, Any]]) -> list[str]:
+        totals: Dict[str, int] = {}
+        seen: Dict[str, int] = {}
+        for workflow in workflows:
+            name = str(workflow.get("name") or "Untitled Workflow")
+            totals[name] = totals.get(name, 0) + 1
+        names = []
+        for workflow in workflows:
+            name = str(workflow.get("name") or "Untitled Workflow")
+            seen[name] = seen.get(name, 0) + 1
+            names.append(name if seen[name] == 1 else f"{name} ({seen[name]})")
+        return names
 
     def _dismiss_action(self, action: str, index: Optional[int]) -> None:
         if index is None or index < 0 or index >= len(self.workflows):
@@ -154,6 +170,7 @@ class PathPromptScreen(CommandScreenMixin, ModalScreen):
     BINDINGS = [
         ("escape", "cancel", "Cancel"),
         ("ctrl+enter", "submit", "Submit"),
+        Binding("tab", "tab_out", "Next", priority=True),
         Binding("ctrl+q", "cancel", "Cancel", priority=True),
     ]
 
@@ -170,11 +187,11 @@ class PathPromptScreen(CommandScreenMixin, ModalScreen):
                 id="path-input",
                 auto_edit_on_focus=True,
             )
-            yield Static("Type path  Ctrl+Enter confirm  Esc leaves edit/cancels", classes="modal-help")
-            with Horizontal(classes="button-row"):
+            yield Static("E edit path | Tab next | Ctrl+Enter confirm | Esc cancel", classes="modal-help")
+            with Vertical(classes="button-row"):
                 yield Button("Confirm", id="confirm-path", variant="primary")
                 yield Button("Cancel", id="cancel-path", variant="default")
-            yield StatusBar("Type path  Ctrl+Enter confirm  Esc leaves edit/cancels")
+            yield StatusBar("E edit path | Tab next | Ctrl+Enter confirm | Esc cancel")
 
     def on_mount(self) -> None:
         self._focus_first()
@@ -191,3 +208,9 @@ class PathPromptScreen(CommandScreenMixin, ModalScreen):
 
     def action_cancel(self) -> None:
         self.dismiss(None)
+
+    def action_tab_out(self) -> None:
+        focused = self.app.focused
+        if isinstance(focused, CommandInput) and focused.editing:
+            focused.end_edit()
+        self._move_cursor(1)

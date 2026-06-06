@@ -6,7 +6,7 @@ from typing import Any, Dict
 
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Horizontal, Vertical
+from textual.containers import Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Button, Checkbox, Label, Static
 
@@ -23,6 +23,7 @@ class SettingsScreen(CommandScreenMixin, ModalScreen):
     BINDINGS = [
         ("escape", "cancel", "Cancel"),
         ("ctrl+s", "save", "Save"),
+        Binding("k", "api_keys", "API Keys", priority=True),
         Binding("ctrl+q", "cancel", "Cancel", priority=True),
     ]
 
@@ -34,7 +35,7 @@ class SettingsScreen(CommandScreenMixin, ModalScreen):
         values = self.configuration_manager.get_all()
         with Vertical(id="modal-card"):
             yield Label("Settings", classes="modal-title")
-            yield Static("W/S move  E edit/toggle  Ctrl+S save  Esc close", classes="modal-help")
+            yield Static("W/S move | E edit/toggle | K API keys | Ctrl+S save", classes="modal-help")
             for key, default in DEFAULT_SETTINGS.items():
                 yield Label(key, classes="form-label")
                 value = values.get(key, default)
@@ -42,16 +43,19 @@ class SettingsScreen(CommandScreenMixin, ModalScreen):
                     yield Checkbox(value=bool(value), id=f"setting-{key}")
                 else:
                     yield CommandInput(value=str(value), id=f"setting-{key}")
-            with Horizontal(classes="button-row"):
+            with Vertical(classes="button-row"):
+                yield Button("API Keys", id="api-keys-settings", variant="default")
                 yield Button("Save", id="save-settings", variant="primary")
                 yield Button("Cancel", id="cancel-settings", variant="default")
-            yield StatusBar("W/S move  E edit/toggle  Ctrl+S save  Esc close")
+            yield StatusBar("W/S move | E edit/toggle | K API keys | Ctrl+S save")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "save-settings":
             self.action_save()
         elif event.button.id == "cancel-settings":
             self.action_cancel()
+        elif event.button.id == "api-keys-settings":
+            self.action_api_keys()
 
     def on_mount(self) -> None:
         self._focus_first()
@@ -73,6 +77,34 @@ class SettingsScreen(CommandScreenMixin, ModalScreen):
             else:
                 values[key] = str(widget.value)
         self.dismiss({"action": "save", "settings": values})
+
+    def action_cancel(self) -> None:
+        self.dismiss(None)
+
+    def action_api_keys(self) -> None:
+        self.app.push_screen(ApiKeysPlaceholderScreen())
+
+
+class ApiKeysPlaceholderScreen(CommandScreenMixin, ModalScreen):
+    """Placeholder for future API key management."""
+
+    BINDINGS = [
+        ("escape", "cancel", "Cancel"),
+        Binding("ctrl+q", "cancel", "Cancel", priority=True),
+    ]
+
+    def compose(self) -> ComposeResult:
+        with Vertical(id="modal-card"):
+            yield Label("API Keys", classes="modal-title")
+            yield Static("API key settings will live here.", classes="form-description")
+            yield Button("Cancel", id="cancel-api-keys", variant="default")
+
+    def on_mount(self) -> None:
+        self._focus_first()
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "cancel-api-keys":
+            self.action_cancel()
 
     def action_cancel(self) -> None:
         self.dismiss(None)
