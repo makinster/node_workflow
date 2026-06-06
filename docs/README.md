@@ -6,18 +6,22 @@ tkinter material is historical unless explicitly labeled current.
 
 ## Read First
 
-1. `AGENT_HANDOFF.md`
+1. `AGENT_START_GUIDE.md`
+   - Fast task checklist for adding nodes, screens, config fields, keybindings,
+     tests, and docs updates.
+
+2. `AGENT_HANDOFF.md`
    - Fast current-state summary.
    - Tells you what phase is next and which docs are authoritative.
 
-2. `MASTER_BUILD_PLAN.md`
+3. `MASTER_BUILD_PLAN.md`
    - Current source of truth for architecture, completed phases, remaining
      roadmap, and test rules.
 
-3. `SESSION_LOG.md`
+4. `SESSION_LOG.md`
    - Chronological record of what was actually changed and verified.
 
-4. `BACKEND_FRONTEND_BOUNDARY.md`
+5. `BACKEND_FRONTEND_BOUNDARY.md`
    - Rules for keeping backend engine code reusable across future frontends.
    - Read before moving UI behavior into backend services.
 

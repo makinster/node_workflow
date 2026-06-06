@@ -1,5 +1,20 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-06 — Future Agent Start Guide
+
+- Added `docs/AGENT_START_GUIDE.md` as a concise task checklist for common
+  project changes.
+- Linked the guide from `docs/README.md` as the first read for fast
+  implementation work.
+- Covered node registration, config schema fields, generated frontend widgets,
+  I/O display metadata, command-mode keyboard rules, shared frontend helpers,
+  tests, and docs update expectations.
+- Verification:
+  - `test -f docs/AGENT_START_GUIDE.md`
+  - `rg -n "AGENT_START_GUIDE.md" docs/README.md`
+  - `rg -n "Add A New Node|Make Node Config Render Correctly|Make Inputs And Outputs Display Correctly|Keyboard And Modal Rules|Tests To Add" docs/AGENT_START_GUIDE.md`
+  - `git diff --check`
+
 ## 2026-06-05 — Phase 16 Frontend Usability Slice
 
 - Made editor tombstones render visibly as `Deleted: <original node name>` in
