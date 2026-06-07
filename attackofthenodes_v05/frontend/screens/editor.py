@@ -42,8 +42,8 @@ class EditorScreen(Screen):
     BINDINGS = [
         ("tab", "focus_next", "Next panel"),
         ("shift+tab", "focus_previous", "Previous panel"),
-        ("w", "cursor_up", "Up"),
-        ("s", "cursor_down", "Down"),
+        Binding("w", "cursor_up", "Up", priority=True),
+        Binding("s", "cursor_down", "Down", priority=True),
         Binding("left", "cycle_branch_prev", "Previous branch", priority=True),
         Binding("right", "cycle_branch_next", "Next branch", priority=True),
         ("enter", "edit_selected", "Edit"),
@@ -76,6 +76,7 @@ class EditorScreen(Screen):
         self.selected_row: Optional[Dict[str, Any]] = None
         self.active_branch_ports: Dict[str, str] = {}
         self.last_branch_selection: Dict[str, str] = {}
+        self._branch_cycle_anchor: Optional[str] = None
         self._pending_node_add_mode = "add"
         self.workflow_adapter = EditorWorkflowAdapter(workflow_map, factory)
 
@@ -166,12 +167,13 @@ class EditorScreen(Screen):
 
     def on_node_card_clicked(self, event: NodeCard.Clicked) -> None:
         """Single click selects a node; double click opens its config."""
+        self._branch_cycle_anchor = None
         node_list = self.query_one(NodeList)
         index = node_list.index_for_node_id(event.node_id)
         if index is None:
             return
         node_list.index = index
-        node_list.focus()
+        self.app.set_focus(node_list)
         self._select_row(node_list.row_for_index(index))
         self._refresh_details()
         if event.chain >= 2:
@@ -179,6 +181,7 @@ class EditorScreen(Screen):
 
     def on_branch_select_card_clicked(self, event: BranchSelectCard.Clicked) -> None:
         """Single click selects a branch row; double click opens branch selection."""
+        self._branch_cycle_anchor = f"{event.branch_node_id}:{event.active_port}"
         node_list = self.query_one(NodeList)
         index = node_list.index_for_branch_select(
             event.branch_node_id,
@@ -187,7 +190,7 @@ class EditorScreen(Screen):
         if index is None:
             return
         node_list.index = index
-        node_list.focus()
+        self.app.set_focus(node_list)
         self._select_row(node_list.row_for_index(index))
         self._refresh_details()
         if event.chain >= 2:
@@ -202,15 +205,19 @@ class EditorScreen(Screen):
         self.app.push_screen(NodeSelectorScreen(self.factory), self._add_node_from_modal)
 
     def action_cycle_branch_prev(self) -> None:
+        self._restore_node_list_focus()
         self._cycle_branch_view(incomplete_only=False, direction=-1)
 
     def action_cycle_branch_next(self) -> None:
+        self._restore_node_list_focus()
         self._cycle_branch_view(incomplete_only=False, direction=1)
 
     def action_cycle_incomplete_branch_prev(self) -> None:
+        self._restore_node_list_focus()
         self._cycle_branch_view(incomplete_only=True, direction=-1)
 
     def action_cycle_incomplete_branch_next(self) -> None:
+        self._restore_node_list_focus()
         self._cycle_branch_view(incomplete_only=True, direction=1)
 
     def action_validate_workflow(self) -> None:
@@ -256,6 +263,7 @@ class EditorScreen(Screen):
         notifications.breakpoints_cleared(self.app, cleared)
 
     def action_edit_selected(self) -> None:
+        self._restore_node_list_focus()
         if self.selected_row and self.selected_row["kind"] == "branch_select":
             self._open_branch_selector(self.selected_row)
             return
@@ -342,9 +350,11 @@ class EditorScreen(Screen):
             timings.pop(node_id, None)
 
     def action_cursor_up(self) -> None:
+        self._branch_cycle_anchor = None
         self._move_selection(-1)
 
     def action_cursor_down(self) -> None:
+        self._branch_cycle_anchor = None
         self._move_selection(1)
 
     def _add_node_from_modal(self, node_type: str | None) -> None:
@@ -696,6 +706,10 @@ class EditorScreen(Screen):
         }
 
     def _current_branch_candidate_index(self, candidates: list[Dict[str, Any]]) -> int:
+        if self._branch_cycle_anchor:
+            for index, candidate in enumerate(candidates):
+                if self._branch_candidate_key(candidate) == self._branch_cycle_anchor:
+                    return index
         if self.selected_row and self.selected_row["kind"] == "branch_select":
             for index, candidate in enumerate(candidates):
                 if (
@@ -750,6 +764,7 @@ class EditorScreen(Screen):
     def _show_branch_candidate(self, candidate: Dict[str, Any]) -> None:
         branch_node_id = candidate["branch_node_id"]
         branch_port = candidate["port"]
+        self._branch_cycle_anchor = self._branch_candidate_key(candidate)
         for ancestor_id, ancestor_port in self._branch_choices_to_node(branch_node_id):
             self.active_branch_ports[ancestor_id] = ancestor_port
         self.active_branch_ports[branch_node_id] = branch_port
@@ -1126,8 +1141,12 @@ class EditorScreen(Screen):
     def _restore_node_list_focus(self) -> None:
         node_list = self.query_one(NodeList)
         index = self._index_for_selected_row(node_list)
-        if index is None and node_list._rows and self.selected_row is None:
-            index = 0
+        if index is None and node_list._rows:
+            index = (
+                node_list.index
+                if node_list.index is not None and 0 <= node_list.index < len(node_list._rows)
+                else 0
+            )
             self._select_row(node_list.row_for_index(index))
         if index is not None:
             node_list.index = index
@@ -1175,6 +1194,7 @@ class EditorScreen(Screen):
         self.selected_node_id = str(selected_node_id) if selected_node_id else None
 
     def _move_selection(self, delta: int) -> None:
+        self._restore_node_list_focus()
         node_list = self.query_one(NodeList)
         if not node_list._rows:
             return
@@ -1183,7 +1203,8 @@ class EditorScreen(Screen):
         node_list.index = next_index
         self._select_row(node_list.row_for_index(next_index))
         self._refresh_details()
-        node_list.focus()
+        node_list.normalize_highlight()
+        self.app.set_focus(node_list)
 
     def _build_visible_rows(self) -> list[Dict[str, Any]]:
         nodes = self.workflow_map.get_all_node_data()

@@ -1861,6 +1861,10 @@ def test_editor_branch_cycle_keys_switch_all_and_incomplete_branch_views():
     asyncio.run(_test_editor_branch_cycle_keys_switch_all_and_incomplete_branch_views())
 
 
+def test_editor_command_keys_restore_lost_highlight_after_mouse_focus():
+    asyncio.run(_test_editor_command_keys_restore_lost_highlight_after_mouse_focus())
+
+
 async def _test_editor_branch_cycle_keys_switch_all_and_incomplete_branch_views():
     from textual.app import App, ComposeResult
 
@@ -1952,6 +1956,76 @@ async def _test_editor_branch_cycle_keys_switch_all_and_incomplete_branch_views(
         assert node_list.index == node_list.index_for_node_id(branch_two)
 
     print("test_editor_branch_cycle_keys_switch_all_and_incomplete_branch_views PASSED")
+
+
+async def _test_editor_command_keys_restore_lost_highlight_after_mouse_focus():
+    from textual.app import App, ComposeResult
+
+    from frontend.screens.editor import EditorScreen
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("editor_restore_command_keys")
+    start = wm.add_node("start_node")
+    branch = wm.add_node("branch_node")
+    first = wm.add_node("sleep_node")
+    second = wm.add_node("logger_node")
+    wm.connect(start, "default", branch, "input")
+    wm.connect(branch, "path_a", first, "input")
+    wm.connect(branch, "path_b", second, "input")
+
+    class EditorApp(App):
+        def compose(self) -> ComposeResult:
+            yield EditorScreen(wm._factory, wm)
+
+    app = EditorApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        screen = app.query_one(EditorScreen)
+        node_list = screen.query_one("#node-list")
+        details = screen.query_one("#node-details")
+
+        node_list.index = None
+        node_list.normalize_highlight()
+        app.set_focus(details)
+        assert not any(
+            getattr(item, "highlighted", False)
+            for item in node_list.children
+        )
+
+        await pilot.press("d")
+        await pilot.pause(0.03)
+        assert app.focused is node_list
+        assert screen.active_branch_ports[branch] == "path_b"
+        assert screen.selected_node_id == second
+        assert node_list.index == node_list.index_for_node_id(second)
+        assert sum(1 for item in node_list.children if getattr(item, "highlighted", False)) == 1
+
+        app.set_focus(details)
+        node_list.index = None
+        node_list.normalize_highlight()
+        await pilot.press("s")
+        await pilot.pause(0.03)
+        assert app.focused is node_list
+        assert node_list.index is not None
+        assert sum(1 for item in node_list.children if getattr(item, "highlighted", False)) == 1
+
+        opened = []
+        original_push_screen = app.push_screen
+
+        def capture_push_screen(screen_to_push, *args, **kwargs):
+            opened.append(type(screen_to_push).__name__)
+            return None
+
+        app.push_screen = capture_push_screen
+        try:
+            app.set_focus(details)
+            await pilot.press("e")
+            await pilot.pause(0.03)
+        finally:
+            app.push_screen = original_push_screen
+        assert opened
+
+    print("test_editor_command_keys_restore_lost_highlight_after_mouse_focus PASSED")
 
 
 def test_editor_restores_persisted_focus_highlight_on_mount():
@@ -3796,6 +3870,7 @@ if __name__ == "__main__":
         test_editor_connects_merge_input_to_active_branch_port,
         test_editor_repairs_legacy_merge_input_port_on_refresh,
         test_editor_branch_cycle_keys_switch_all_and_incomplete_branch_views,
+        test_editor_command_keys_restore_lost_highlight_after_mouse_focus,
         test_editor_restores_persisted_focus_highlight_on_mount,
         test_editor_notification_restores_node_list_focus,
         test_editor_depth_counter_tracks_visible_branch_distance,

@@ -1,5 +1,22 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-07 — Editor Highlight Recovery Fix
+
+- Hardened editor command keys after mixed mouse/keyboard interaction.
+- Made editor `W/S` priority bindings, matching the other command letters.
+- Re-anchored node-list focus and restored a visible highlighted row before
+  editor movement, edit, and branch-cycle actions.
+- Added an explicit branch-cycle anchor so repeated `A/D` cycling continues
+  from the last branch candidate even when the highlighted row moves inside the
+  branch.
+- Added a regression for the lost-highlight case where focus leaves the node
+  list and WASD/E must recover visibly.
+- Verification:
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -q -k "branch_cycle or restore_lost_highlight or ctrl_c_uses"`
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v`
+    - 91 passed.
+
 ## 2026-06-06 — Branch Cycling And Copy Shortcut Polish
 
 - Changed editor branch cycling so `A/D` and left/right roll through every
