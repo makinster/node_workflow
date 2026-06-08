@@ -72,10 +72,10 @@ Recommended cleanup:
 
 - Derive branch health from workflow structure, not stored UI state.
 - Represent at least three branch states:
-  - valid branch ending: end/output node or connected Branch End node;
-  - branch ended but not merged: Branch End exists but is not connected to a
+  - valid branch ending: end/output node or connected Merge Beacon node;
+  - branch ended but not merged: Merge Beacon exists but is not connected to a
     Merge node;
-  - floating branch: no valid output/end node and no Branch End.
+  - floating branch: no valid output/end node and no Merge Beacon.
 - Surface those states in the editor with clear but restrained color: green for
   valid, yellow/orange for branch-ended-but-unmerged, and red/orange for
   floating/incomplete branches.
@@ -92,12 +92,19 @@ frontend menus.
 
 Recommended cleanup:
 
+- Redesign the node library into clearer categories and subcategories. Flow
+  should eventually distinguish always-parallel branch nodes, conditional branch
+  nodes, merge/wait nodes, and utility markers instead of forcing all branching
+  behavior through one generic node.
 - Extend config schema only with generic keys: placeholder text, min/max/step for
   numeric fields, optional blank-select behavior, multiline height hints, and
   section visibility conditions.
 - Add tests for every schema key in `frontend/widgets/form_generator.py`.
 - Move branch-label generation and pass-through notes toward documented generic
   `ui_hints` where possible.
+- Simplify generated config surfaces: ordinary nodes should show only the fields
+  they declare, semantic transient input/output metadata, memory-bank sections
+  when enabled, and generic topology selectors when required.
 - Create a "node author checklist" in docs: metadata, schema, ports, categories,
   pass-through behavior, memory-bank declarations, and expected generated UI.
 - Add a validation test that every registered node can mount its generated config

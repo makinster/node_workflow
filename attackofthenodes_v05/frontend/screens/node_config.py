@@ -141,61 +141,152 @@ def wait_target_options(workflow_map, current_node_id: str) -> list[tuple[str, s
 
 
 def merge_input_options(workflow_map, current_node_id: str) -> list[Dict[str, str]]:
-    """Return open branch paths that this merge may close."""
+    """Return Merge Beacon branches that this merge may close."""
     merge_input_ports = ["path_a", "path_b", "path_c", "path_d", "path_e"]
     options: list[Dict[str, str]] = []
-    seen: set[tuple[str, str]] = set()
-    for branch_id, branch_node in sorted(workflow_map.get_all_node_data().items()):
-        branch_ports = _node_output_ports(workflow_map, branch_node)
-        if len(branch_ports) <= 1:
+    branch_contexts = _branch_contexts_by_node(workflow_map)
+    merge_branch_keys = {
+        (context["branch_id"], context["branch_port"])
+        for context in branch_contexts.get(current_node_id, [])
+    }
+    used_merge_ports = _reserved_merge_input_ports(workflow_map, current_node_id)
+    seen_beacons: set[str] = set()
+
+    for beacon_id, beacon_node in workflow_map.get_all_node_data().items():
+        if beacon_node.get("type") != "branch_end_node" or beacon_id in seen_beacons:
             continue
-        branch_config = branch_node.get("config") or {}
-        for branch_port in branch_ports:
-            key = (branch_id, branch_port)
-            if key in seen:
-                continue
-            seen.add(key)
-            trace = _trace_branch_path(workflow_map, branch_id, branch_port, current_node_id)
-            if trace["status"] not in {"open", "current_merge"}:
-                continue
-            if (
-                trace["status"] == "current_merge"
-                and trace["last_node"].get("type") != "branch_end_node"
-            ):
-                continue
-            target_port = trace["target_port"] or _default_merge_input_port(
+        context = _select_beacon_branch_context(
+            branch_contexts.get(beacon_id, []),
+            merge_branch_keys,
+        )
+        if context is None:
+            continue
+        seen_beacons.add(beacon_id)
+        branch_id = context["branch_id"]
+        branch_port = context["branch_port"]
+        target_port = _connected_merge_target_port(beacon_node, current_node_id)
+        if not target_port:
+            target_port = _available_merge_input_port(
                 branch_port,
                 len(options),
                 merge_input_ports,
+                used_merge_ports,
             )
-            branch_label = str(branch_config.get(f"{branch_port}_label") or "").strip()
-            if not branch_label:
-                branch_label = branch_port.replace("_", " ").title()
-            last_node = trace["last_node"]
-            output = _source_output_details(last_node, trace["last_port"])
-            last_node_id = trace["last_node_id"] or branch_id
-            last_name = last_node.get("alias") or last_node.get("type") or last_node_id
-            options.append(
-                {
-                    "id": f"merge-input-choice-{len(options)}",
-                    "port": str(target_port),
-                    "branch_id": branch_id,
-                    "branch_port": branch_port,
-                    "branch_label": branch_label,
-                    "branch_end_id": trace["last_node_id"] or "",
-                    "branch_end": f"{last_name} ({last_node_id})",
-                    "last_node": f"{last_name} ({last_node_id})",
-                    "source_port": trace["last_port"],
-                    "description": (
-                        f"{branch_label} is connected"
-                        if trace["status"] == "current_merge"
-                        else f"{branch_label} is open"
-                    ),
-                    "output_name": output["name"],
-                    "output_description": output["description"],
-                }
-            )
+        used_merge_ports.add(str(target_port))
+        output = _beacon_output_details(workflow_map, beacon_node)
+        beacon_name = beacon_node.get("alias") or "Merge Beacon"
+        branch_label = context["branch_label"]
+        options.append(
+            {
+                "id": f"merge-input-choice-{len(options)}",
+                "port": str(target_port),
+                "branch_id": branch_id,
+                "branch_port": branch_port,
+                "branch_label": branch_label,
+                "branch_end_id": beacon_id,
+                "branch_end": f"{beacon_name} ({beacon_id})",
+                "last_node": f"{beacon_name} ({beacon_id})",
+                "source_port": "default",
+                "description": f"Branch: {branch_label}",
+                "output_name": output["name"],
+                "output_description": output["description"],
+            }
+        )
     return options
+
+
+def _branch_contexts_by_node(workflow_map) -> Dict[str, list[Dict[str, str]]]:
+    """Map nodes to the branch path contexts that can reach them."""
+    contexts: Dict[str, list[Dict[str, str]]] = {}
+    start_id = workflow_map.find_start_node_id()
+    if not start_id:
+        return contexts
+
+    def add_context(node_id: str, context: Optional[Dict[str, str]]) -> None:
+        if not context:
+            return
+        existing = contexts.setdefault(node_id, [])
+        key = (context["branch_id"], context["branch_port"])
+        if all((item["branch_id"], item["branch_port"]) != key for item in existing):
+            existing.append(context)
+
+    def follow(node_id: str, context: Optional[Dict[str, str]], seen: set[tuple[str, str, str]]) -> None:
+        node = workflow_map.get_node_data(node_id) or {}
+        if not node:
+            return
+        state = (
+            node_id,
+            context["branch_id"] if context else "",
+            context["branch_port"] if context else "",
+        )
+        if state in seen:
+            return
+        seen.add(state)
+        add_context(node_id, context)
+        if node.get("type") == "branch_end_node":
+            return
+        output_ports = _node_output_ports(workflow_map, node)
+        outputs = node.get("connections", {}).get("outputs", [])
+        if len(output_ports) > 1:
+            for output_port in output_ports:
+                target_id = _target_for_output(node, output_port)
+                if not target_id:
+                    continue
+                next_context = {
+                    "branch_id": node_id,
+                    "branch_port": output_port,
+                    "branch_label": _branch_label(node, output_port),
+                }
+                follow(target_id, next_context, set(seen))
+            return
+        for conn in outputs:
+            target_id = str(conn.get("target_node_id") or "")
+            if target_id:
+                follow(target_id, context, set(seen))
+
+    follow(start_id, None, set())
+    return contexts
+
+
+def _select_beacon_branch_context(
+    contexts: list[Dict[str, str]],
+    merge_branch_keys: set[tuple[str, str]],
+) -> Optional[Dict[str, str]]:
+    for context in reversed(contexts):
+        if (context["branch_id"], context["branch_port"]) not in merge_branch_keys:
+            return context
+    return None
+
+
+def _branch_label(branch_node: Dict[str, Any], branch_port: str) -> str:
+    config = branch_node.get("config") or {}
+    label = str(config.get(f"{branch_port}_label") or "").strip()
+    return label or branch_port.replace("_", " ").title()
+
+
+def _target_for_output(node: Dict[str, Any], source_port: str) -> str:
+    for conn in node.get("connections", {}).get("outputs", []):
+        if str(conn.get("source_port", "default")) == source_port:
+            return str(conn.get("target_node_id") or "")
+    return ""
+
+
+def _connected_merge_target_port(beacon_node: Dict[str, Any], merge_node_id: str) -> str:
+    for conn in beacon_node.get("connections", {}).get("outputs", []):
+        if str(conn.get("target_node_id") or "") == merge_node_id:
+            return str(conn.get("target_port") or "")
+    return ""
+
+
+def _beacon_output_details(workflow_map, beacon_node: Dict[str, Any]) -> Dict[str, str]:
+    inputs = beacon_node.get("connections", {}).get("inputs", [])
+    if inputs:
+        source_id = str(inputs[0].get("source_node_id") or "")
+        source_port = str(inputs[0].get("source_port") or "default")
+        source_node = workflow_map.get_node_data(source_id) or {}
+        if source_node:
+            return _source_output_details(source_node, source_port)
+    return _source_output_details(beacon_node, "default")
 
 
 def _node_output_ports(workflow_map, node: Dict[str, Any]) -> list[str]:
@@ -302,6 +393,35 @@ def _default_merge_input_port(
     if option_index < len(merge_input_ports):
         return merge_input_ports[option_index]
     return merge_input_ports[-1]
+
+
+def _available_merge_input_port(
+    branch_port: str,
+    option_index: int,
+    merge_input_ports: list[str],
+    used_ports: set[str],
+) -> str:
+    preferred = _default_merge_input_port(branch_port, option_index, merge_input_ports)
+    if preferred not in used_ports:
+        return preferred
+    for port in merge_input_ports:
+        if port not in used_ports:
+            return port
+    return preferred
+
+
+def _reserved_merge_input_ports(workflow_map, merge_node_id: str) -> set[str]:
+    merge_node = workflow_map.get_node_data(merge_node_id) or {}
+    reserved: set[str] = set()
+    for conn in merge_node.get("connections", {}).get("inputs", []):
+        source_id = str(conn.get("source_node_id") or "")
+        source_node = workflow_map.get_node_data(source_id) or {}
+        if source_node.get("type") == "branch_end_node":
+            continue
+        target_port = str(conn.get("target_port") or "")
+        if target_port:
+            reserved.add(target_port)
+    return reserved
 
 
 def _source_output_details(source_node: Dict[str, Any], source_port: str) -> Dict[str, str]:

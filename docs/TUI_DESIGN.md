@@ -105,6 +105,10 @@ Use Textual `Screen` / `ModalScreen` classes:
 - `node_config.py`: schema-generated edit form, memory-bank input/output
   declarations, and topology-derived selectors such as wait/merge controls.
   Port-edge mutation should stay in editor workflows, not generic config forms.
+  Merge config lists current Merge Beacons from anywhere in the workflow,
+  including nested branch trees, while excluding beacons on the merge node's own
+  branch path. The list refreshes on config open and is tolerant of incomplete
+  workflows; validation remains the authority for runnable correctness.
 - `branch_selector.py`: modal opened from the editor's `Branch Select` row.
   Multi-output nodes render a selectable row immediately below the node. The row
   shows the currently visible output port; pressing Enter opens the branch

@@ -78,6 +78,7 @@ class EditorScreen(Screen):
         self.active_branch_ports: Dict[str, str] = {}
         self.last_branch_selection: Dict[str, str] = {}
         self._branch_cycle_anchor: Optional[str] = None
+        self._refreshing_from_backend = False
         self._pending_node_add_mode = "add"
         self.workflow_adapter = EditorWorkflowAdapter(workflow_map, factory)
 
@@ -111,49 +112,54 @@ class EditorScreen(Screen):
 
     def refresh_from_backend(self) -> None:
         """Reload screen widgets from backend state."""
-        self._sync_all_merge_branch_end_connections()
-        title = self.workflow_map.workflow_name or "No workflow"
-        dirty = " *" if self.workflow_map.is_dirty else ""
-        state = "IDLE"
-        self.query_one("#workflow-title", Label).update(
-            f"Workflow: {title}{dirty} [{state}]"
-        )
-        rows = self._build_visible_rows()
-        if self.selected_node_id and not any(
-            row["kind"] == "node" and row.get("node_id") == self.selected_node_id
-            for row in rows
-        ):
-            node = self.workflow_map.get_node_data(self.selected_node_id)
-            if node is not None:
-                rows.append(
-                    {
-                        "kind": "node",
-                        "node_id": self.selected_node_id,
-                        "node": self._node_for_display(node),
-                        "loose": True,
-                    }
+        if self._refreshing_from_backend:
+            return
+        self._refreshing_from_backend = True
+        try:
+            title = self.workflow_map.workflow_name or "No workflow"
+            dirty = " *" if self.workflow_map.is_dirty else ""
+            state = "IDLE"
+            self.query_one("#workflow-title", Label).update(
+                f"Workflow: {title}{dirty} [{state}]"
+            )
+            rows = self._build_visible_rows()
+            if self.selected_node_id and not any(
+                row["kind"] == "node" and row.get("node_id") == self.selected_node_id
+                for row in rows
+            ):
+                node = self.workflow_map.get_node_data(self.selected_node_id)
+                if node is not None:
+                    rows.append(
+                        {
+                            "kind": "node",
+                            "node_id": self.selected_node_id,
+                            "node": self._node_for_display(node),
+                            "loose": True,
+                        }
+                    )
+            node_list = self.query_one(NodeList)
+            node_list.refresh_rows(rows, timings=self._average_node_timings())
+            if self.selected_row and not self._row_still_visible(self.selected_row, rows):
+                self.selected_row = rows[0] if rows else None
+                self.selected_node_id = (
+                    self.selected_row.get("node_id")
+                    if self.selected_row and self.selected_row["kind"] == "node"
+                    else None
                 )
-        node_list = self.query_one(NodeList)
-        node_list.refresh_rows(rows, timings=self._average_node_timings())
-        if self.selected_row and not self._row_still_visible(self.selected_row, rows):
-            self.selected_row = rows[0] if rows else None
-            self.selected_node_id = (
-                self.selected_row.get("node_id")
-                if self.selected_row and self.selected_row["kind"] == "node"
-                else None
-            )
-        elif self.selected_row is not None:
-            self.selected_row = self._matching_visible_row(self.selected_row, rows)
-            self.selected_node_id = (
-                self.selected_row.get("node_id")
-                if self.selected_row and self.selected_row["kind"] == "node"
-                else None
-            )
-        elif self.selected_row is None and rows:
-            self._select_row(rows[0])
-        self._restore_node_list_focus()
-        self._refresh_details()
-        self._persist_editor_state()
+            elif self.selected_row is not None:
+                self.selected_row = self._matching_visible_row(self.selected_row, rows)
+                self.selected_node_id = (
+                    self.selected_row.get("node_id")
+                    if self.selected_row and self.selected_row["kind"] == "node"
+                    else None
+                )
+            elif self.selected_row is None and rows:
+                self._select_row(rows[0])
+            self._restore_node_list_focus()
+            self._refresh_details()
+            self._persist_editor_state()
+        finally:
+            self._refreshing_from_backend = False
 
     def on_list_view_selected(self, event) -> None:
         node_list = self.query_one(NodeList)
@@ -340,6 +346,8 @@ class EditorScreen(Screen):
                 self.refresh_from_backend()
                 notifications.tombstone_removed(self.app)
             return
+        if node and node.get("type") == "branch_end_node":
+            self._prune_merge_config_for_beacon(self.selected_node_id)
         self.workflow_adapter.replace_with_placeholder(self.selected_node_id)
         self.refresh_from_backend()
         notifications.node_deleted(self.app)
@@ -353,10 +361,66 @@ class EditorScreen(Screen):
         )
         if not result.get("replaced"):
             return
+        if result.get("original_type") == "branch_end_node" and node_type != "branch_end_node":
+            self._prune_merge_config_for_beacon(self.selected_node_id)
         if not result.get("restored_original"):
             self._clear_timing_for_node(self.selected_node_id)
         self.refresh_from_backend()
         notifications.node_replaced(self.app, node_type)
+
+    def _prune_merge_config_for_beacon(self, beacon_node_id: str) -> None:
+        stale_keys = self._branch_keys_for_beacon(beacon_node_id)
+        self._disconnect_beacon_merge_outputs(beacon_node_id)
+        if not stale_keys:
+            return
+        for merge_id, merge_node in self.workflow_map.get_all_node_data().items():
+            if merge_node.get("type") != "merge_node":
+                continue
+            config = dict(merge_node.get("config") or {})
+            branches = [
+                str(value)
+                for value in config.get("branches_to_close", [])
+                if str(value) and str(value) not in stale_keys
+            ]
+            changed = branches != [
+                str(value)
+                for value in config.get("branches_to_close", [])
+                if str(value)
+            ]
+            for key in ("carry_forward_branch_id", "selected_branch_id"):
+                if str(config.get(key) or "") in stale_keys:
+                    config[key] = ""
+                    changed = True
+            if str(config.get("selected_input_port") or "") and changed:
+                config["selected_input_port"] = ""
+            if changed:
+                config["branches_to_close"] = branches
+                self.workflow_map.update_node_config(merge_id, config)
+
+    def _disconnect_beacon_merge_outputs(self, beacon_node_id: str) -> None:
+        beacon_node = self.workflow_map.get_node_data(beacon_node_id) or {}
+        for conn in list(beacon_node.get("connections", {}).get("outputs", [])):
+            target_id = str(conn.get("target_node_id") or "")
+            target_node = self.workflow_map.get_node_data(target_id) or {}
+            if target_node.get("type") != "merge_node":
+                continue
+            self.workflow_map.disconnect(
+                beacon_node_id,
+                str(conn.get("source_port", "default") or "default"),
+                target_id,
+                str(conn.get("target_port") or "path_a"),
+            )
+
+    def _branch_keys_for_beacon(self, beacon_node_id: str) -> set[str]:
+        keys: set[str] = set()
+        for candidate in self._branch_view_candidates():
+            if self._branch_path_contains(
+                candidate["branch_node_id"],
+                candidate["port"],
+                beacon_node_id,
+            ):
+                keys.add(self._branch_candidate_key(candidate))
+        return keys
 
     def _is_protected_structural_node(self, node: Dict[str, Any]) -> bool:
         if node.get("type") not in {"branch_node", "merge_node"}:
@@ -665,8 +729,19 @@ class EditorScreen(Screen):
         if not merge_node_id or self.workflow_map.get_node_data(merge_node_id) is None:
             notifications.notify_info(self.app, "Merge node is not available")
             return
-        for ancestor_id, ancestor_port in self._branch_choices_to_node(merge_node_id):
+        branch_choices = self._branch_choices_to_node(merge_node_id)
+        if not branch_choices:
+            notifications.notify_info(self.app, "Merge node is not on another branch")
+            return
+        for ancestor_id, ancestor_port in branch_choices:
             self.active_branch_ports[ancestor_id] = ancestor_port
+        visible_rows = self._build_visible_rows()
+        if not any(
+            row["kind"] == "node" and row.get("node_id") == merge_node_id
+            for row in visible_rows
+        ):
+            notifications.notify_info(self.app, "Merge branch is not visible")
+            return
         self.selected_node_id = merge_node_id
         self.selected_row = {"kind": "node", "node_id": merge_node_id}
         self.refresh_from_backend()
@@ -819,27 +894,52 @@ class EditorScreen(Screen):
             self.active_branch_ports[ancestor_id] = ancestor_port
         self.active_branch_ports[branch_node_id] = branch_port
 
-        target_id = candidate.get("head_id") or candidate["tail_id"]
         branch_key = self._branch_candidate_key(candidate)
         remembered_id = self.last_branch_selection.get(branch_key)
-        if remembered_id and self._branch_path_contains(
+        visible_rows = self._build_visible_rows()
+        selected_row = self._row_for_branch_switch(
+            visible_rows,
             branch_node_id,
             branch_port,
             remembered_id,
-        ):
-            target_id = remembered_id
-        if target_id == branch_node_id:
-            self.selected_node_id = None
-            self.selected_row = {
-                "kind": "branch_select",
-                "branch_node_id": branch_node_id,
-                "active_port": branch_port,
-            }
-        else:
-            self.selected_node_id = target_id
-            self.selected_row = {"kind": "node", "node_id": target_id}
+            candidate.get("head_id"),
+        )
+        self.selected_row = selected_row
+        self.selected_node_id = (
+            selected_row.get("node_id")
+            if selected_row and selected_row["kind"] == "node"
+            else None
+        )
         self._persist_editor_state()
         self.refresh_from_backend()
+
+    def _row_for_branch_switch(
+        self,
+        rows: list[Dict[str, Any]],
+        branch_node_id: str,
+        branch_port: str,
+        remembered_id: Optional[str],
+        head_id: Optional[str],
+    ) -> Optional[Dict[str, Any]]:
+        if remembered_id:
+            for row in rows:
+                if row["kind"] == "node" and row.get("node_id") == remembered_id:
+                    return row
+        if head_id:
+            for row in rows:
+                if row["kind"] == "node" and row.get("node_id") == head_id:
+                    return row
+        for row in rows:
+            if (
+                row["kind"] == "branch_select"
+                and row.get("branch_node_id") == branch_node_id
+                and row.get("active_port") == branch_port
+            ):
+                return row
+        for row in rows:
+            if row["kind"] == "node" and row.get("node_id") == branch_node_id:
+                return row
+        return rows[0] if rows else None
 
     def _branch_choices_to_node(self, target_node_id: str) -> list[tuple[str, str]]:
         start_node_id = self.workflow_map.find_start_node_id()
@@ -1388,6 +1488,8 @@ class EditorScreen(Screen):
         nodes = self.workflow_map.get_all_node_data()
         for merge_node_id, merge_node in nodes.items():
             if merge_node.get("type") != "merge_node":
+                continue
+            if not self._branch_choices_to_node(merge_node_id):
                 continue
             if self._merge_on_current_beacon_branch(beacon_node_id, merge_node_id):
                 continue

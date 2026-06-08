@@ -483,8 +483,9 @@ Escalation rule:
 
 ### Phase 9 — Merge Dynamic List + Lineage Barrier
 
-- Added `BranchEndNode` as an optional no-config utility marker. Merge no longer
-  requires it for branch discovery.
+- Added `BranchEndNode` as the saved/backend type for the user-facing **Merge
+  Beacon** marker. The saved `node_type` remains `branch_end_node` for
+  compatibility.
 - Added `MergeNode` as a flow node with `path_a` through `path_e` inputs and one
   `default` output.
 - MasterState now tracks branch groups with a counter-style lineage fallback:
@@ -492,12 +493,14 @@ Escalation rule:
 - Merge arrivals store their available input values. Once the group is accounted
   for, only the branch carrying the selected input continues; sibling arrivals
   terminate at the merge.
-- Merge config derives the branch-close list from workflow structure on every
-  config open. Open branch paths appear even before they are wired to the merge;
-  paths ending at an output/end node or another merge are treated as closed. It
-  stores `branches_to_close`, `carry_forward_branch_id`, `selected_branch_id`,
-  and `selected_input_port`. The last two fields remain for backend compatibility
-  with the current single-forward runtime.
+- Merge config derives the branch-close list from current workflow structure on
+  every config open. It lists Merge Beacons that exist anywhere in the workflow,
+  including nested branch trees, except beacons on the same branch path as the
+  merge node. Rows are labeled `Branch: <branch alias>`. The UI is intentionally
+  tolerant of incomplete workflows and does not require validation to refresh.
+- Merge config stores `branches_to_close`, `carry_forward_branch_id`,
+  `selected_branch_id`, and `selected_input_port`. The last two fields remain
+  for backend compatibility with the current single-forward runtime.
 - The merge config UI is custom and minimal: no previous-output preview, no
   memory-bank inputs/outputs, no timeout field, and no merge output
   name/description fields. It renders a multi-select branches-to-close list, a
@@ -508,6 +511,10 @@ Escalation rule:
   branch status only.
 - Future merge versions may add multi-output/combine behavior, but v1 forwards
   one selected branch input to the next node.
+- Future merge runtime work should support complicated multi-depth branch trees
+  and long waits for selected Merge Beacons. Add a per-merge timeout override
+  when the engine phase revisits merge waiting; this belongs in runtime config,
+  not the editor-only list builder.
 - Tests cover slow/fast parallel branch merging, multi-close merge config, and
   keyboard navigation inside branch config dropdowns.
 

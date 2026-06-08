@@ -1,5 +1,33 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-08 — Merge Config Beacon List
+
+- Changed Merge node config to populate its branch-close list from live Merge
+  Beacons anywhere in the workflow, including nested branch trees, instead of
+  older open-branch tracing.
+- Excluded Merge Beacons on the merge node's own branch path and labeled rows as
+  `Branch: <branch alias>`.
+- Kept the derivation frontend-only and tolerant of incomplete workflows; users
+  do not need to run validation before the merge list refreshes.
+- Documented future node taxonomy/form-generator cleanup and future merge
+  runtime support for complex multi-depth waits with configurable timeout
+  overrides.
+- Made editor refresh read-only and guarded against reentrant refreshes so merge
+  save/connection changes cannot trap Textual in repeated style updates.
+- Tightened Merge Beacon selector navigation so it only jumps to merge nodes that
+  can be made visible by switching branch view; it no longer makes a merge appear
+  downstream of the beacon.
+- Reserved the merge node's existing non-beacon input ports when assigning Merge
+  Beacon closure ports, so saving a closure cannot steal the merge node's home
+  branch connection.
+- Pruned stale merge config branch selections and disconnected old beacon-to-merge
+  closure edges when a connected Merge Beacon is deleted, so replacing the beacon
+  requires the user to explicitly reselect it in Merge config.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -q -k "deleting_merge_beacon or saving_merge_config or merge_beacon_selector or merge_config or merge_options"`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v` (96 passed)
+
 ## 2026-06-08 — Merge Beacon Selector
 
 - Renamed Branch End user-facing copy to Merge Beacon while keeping the saved

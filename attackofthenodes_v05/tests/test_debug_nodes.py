@@ -1289,7 +1289,9 @@ async def _test_merge_config_uses_multi_branch_selector_and_carry_forward_dropdo
     start = wm.add_node("start_node")
     branch = wm.add_node("branch_node")
     left = wm.add_node("logger_node")
+    left_beacon = wm.add_node("branch_end_node")
     right = wm.add_node("logger_node")
+    right_beacon = wm.add_node("branch_end_node")
     merge = wm.add_node("merge_node")
     wm.update_node_config(
         branch,
@@ -1309,7 +1311,9 @@ async def _test_merge_config_uses_multi_branch_selector_and_carry_forward_dropdo
     )
     wm.connect(start, "default", branch, "input")
     wm.connect(branch, "path_a", left, "input")
+    wm.connect(left, "default", left_beacon, "input")
     wm.connect(branch, "path_b", right, "input")
+    wm.connect(right, "default", right_beacon, "input")
     wm.update_node_config(
         merge,
         {
@@ -1400,10 +1404,8 @@ async def _test_merge_config_does_not_autocheck_open_branches():
     app = ConfigApp()
     async with app.run_test() as pilot:
         await pilot.pause(0.03)
-        branch_selector = app.query_one("#merge-branches-to-close", SelectionList)
-        carry_selector = app.query_one("#merge-carry-forward-selector", Select)
-        assert list(branch_selector.selected) == []
-        assert carry_selector.disabled is True
+        assert not app.query("#merge-branches-to-close")
+        assert not app.query("#merge-carry-forward-selector")
 
     print("test_merge_config_does_not_autocheck_open_branches PASSED")
 
@@ -1425,6 +1427,7 @@ async def _test_merge_options_exclude_current_merge_path_and_branch_end_card_tur
     branch = wm.add_node("branch_node")
     branch_end = wm.add_node("branch_end_node")
     sibling = wm.add_node("logger_node")
+    sibling_beacon = wm.add_node("branch_end_node")
     merge = wm.add_node("merge_node")
     wm.update_node_config(
         branch,
@@ -1434,10 +1437,15 @@ async def _test_merge_options_exclude_current_merge_path_and_branch_end_card_tur
     wm.connect(branch, "path_a", branch_end, "input")
     wm.connect(branch_end, "default", merge, "path_a")
     wm.connect(branch, "path_b", sibling, "input")
+    wm.connect(sibling, "default", sibling_beacon, "input")
 
     options = merge_input_options(wm, merge)
     values = {f"{option['branch_id']}:{option['branch_port']}" for option in options}
     assert values == {f"{branch}:path_a", f"{branch}:path_b"}
+    assert {option["description"] for option in options} == {
+        "Branch: Current Merge Path",
+        "Branch: Needs Merge",
+    }
 
     class EditorApp(App):
         def compose(self) -> ComposeResult:
@@ -1468,6 +1476,7 @@ async def _test_merge_options_exclude_branch_containing_current_merge():
     merge_path_node = wm.add_node("sleep_node")
     merge = wm.add_node("merge_node")
     sibling = wm.add_node("logger_node")
+    sibling_beacon = wm.add_node("branch_end_node")
     wm.update_node_config(
         branch,
         {"path_a_label": "deez", "path_b_label": "branch name here"},
@@ -1476,16 +1485,63 @@ async def _test_merge_options_exclude_branch_containing_current_merge():
     wm.connect(branch, "path_a", merge_path_node, "input")
     wm.connect(merge_path_node, "default", merge, "path_a")
     wm.connect(branch, "path_b", sibling, "input")
+    wm.connect(sibling, "default", sibling_beacon, "input")
 
     options = merge_input_options(wm, merge)
     descriptions = {option["description"] for option in options}
     values = {f"{option['branch_id']}:{option['branch_port']}" for option in options}
     assert f"{branch}:path_a" not in values
     assert f"{branch}:path_b" in values
-    assert "deez is connected" not in descriptions
-    assert "branch name here is open" in descriptions
+    assert "Branch: deez" not in descriptions
+    assert "Branch: branch name here" in descriptions
 
     print("test_merge_options_exclude_branch_containing_current_merge PASSED")
+
+
+def test_merge_options_include_nested_merge_beacons():
+    asyncio.run(_test_merge_options_include_nested_merge_beacons())
+
+
+async def _test_merge_options_include_nested_merge_beacons():
+    from frontend.screens.node_config import merge_input_options
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("merge_nested_beacons")
+    start = wm.add_node("start_node")
+    outer_branch = wm.add_node("branch_node")
+    inner_branch = wm.add_node("branch_node")
+    nested_work = wm.add_node("logger_node")
+    nested_beacon = wm.add_node("branch_end_node")
+    outer_beacon = wm.add_node("branch_end_node")
+    merge_path = wm.add_node("sleep_node")
+    merge = wm.add_node("merge_node")
+    wm.update_node_config(
+        outer_branch,
+        {"path_a_label": "Outer Work", "path_b_label": "Merge Home"},
+    )
+    wm.update_node_config(
+        inner_branch,
+        {"path_a_label": "Nested Left", "path_b_label": "Nested Right"},
+    )
+
+    wm.connect(start, "default", outer_branch, "input")
+    wm.connect(outer_branch, "path_a", inner_branch, "input")
+    wm.connect(inner_branch, "path_a", nested_work, "input")
+    wm.connect(nested_work, "default", nested_beacon, "input")
+    wm.connect(inner_branch, "path_b", outer_beacon, "input")
+    wm.connect(outer_branch, "path_b", merge_path, "input")
+    wm.connect(merge_path, "default", merge, "path_a")
+
+    options = merge_input_options(wm, merge)
+    values = {f"{option['branch_id']}:{option['branch_port']}" for option in options}
+    descriptions = {option["description"] for option in options}
+    assert values == {
+        f"{inner_branch}:path_a",
+        f"{inner_branch}:path_b",
+    }
+    assert descriptions == {"Branch: Nested Left", "Branch: Nested Right"}
+
+    print("test_merge_options_include_nested_merge_beacons PASSED")
 
 
 def test_merge_branch_selector_moves_focus_down_at_bottom():
@@ -1503,11 +1559,15 @@ async def _test_merge_branch_selector_moves_focus_down_at_bottom():
     start = wm.add_node("start_node")
     branch = wm.add_node("branch_node")
     left = wm.add_node("logger_node")
+    left_beacon = wm.add_node("branch_end_node")
     right = wm.add_node("logger_node")
+    right_beacon = wm.add_node("branch_end_node")
     merge = wm.add_node("merge_node")
     wm.connect(start, "default", branch, "input")
     wm.connect(branch, "path_a", left, "input")
+    wm.connect(left, "default", left_beacon, "input")
     wm.connect(branch, "path_b", right, "input")
+    wm.connect(right, "default", right_beacon, "input")
     wm.update_node_config(
         merge,
         {
@@ -1606,6 +1666,14 @@ def test_saving_merge_config_unchecked_branch_disconnects_branch_end():
     asyncio.run(_test_saving_merge_config_unchecked_branch_disconnects_branch_end())
 
 
+def test_saving_merge_config_preserves_merge_home_branch_input():
+    asyncio.run(_test_saving_merge_config_preserves_merge_home_branch_input())
+
+
+def test_deleting_merge_beacon_prunes_merge_config_selection():
+    asyncio.run(_test_deleting_merge_beacon_prunes_merge_config_selection())
+
+
 async def _test_saving_merge_config_unchecked_branch_disconnects_branch_end():
     from textual.app import App, ComposeResult
 
@@ -1672,12 +1740,148 @@ async def _test_saving_merge_config_unchecked_branch_disconnects_branch_end():
     print("test_saving_merge_config_unchecked_branch_disconnects_branch_end PASSED")
 
 
+async def _test_saving_merge_config_preserves_merge_home_branch_input():
+    from textual.app import App, ComposeResult
+
+    from frontend.screens.editor import EditorScreen
+    from frontend.screens.node_config import merge_input_options
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("merge_preserves_home_branch")
+    start = wm.add_node("start_node")
+    outer_branch = wm.add_node("branch_node")
+    merge = wm.add_node("merge_node")
+    nested_branch = wm.add_node("branch_node")
+    beacon = wm.add_node("branch_end_node")
+    wm.connect(start, "default", outer_branch, "input")
+    wm.connect(outer_branch, "path_a", merge, "path_a")
+    wm.connect(outer_branch, "path_b", nested_branch, "input")
+    wm.connect(nested_branch, "path_a", beacon, "input")
+
+    options = merge_input_options(wm, merge)
+    beacon_option = next(option for option in options if option["branch_end_id"] == beacon)
+    merge_choice = f"{beacon_option['branch_id']}:{beacon_option['branch_port']}"
+    assert beacon_option["port"] == "path_b"
+
+    class EditorApp(App):
+        def compose(self) -> ComposeResult:
+            yield EditorScreen(wm._factory, wm)
+
+    app = EditorApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        screen = app.query_one(EditorScreen)
+        screen.selected_node_id = merge
+        screen.selected_row = {"kind": "node", "node_id": merge}
+        screen._save_node_config_from_modal(
+            {
+                "alias": "",
+                "config": {
+                    "branches_to_close": [merge_choice],
+                    "carry_forward_branch_id": merge_choice,
+                    "selected_branch_id": merge_choice,
+                    "selected_input_port": beacon_option["port"],
+                },
+            }
+        )
+        await pilot.pause(0.03)
+        merge_inputs = wm.get_node_data(merge).get("connections", {}).get("inputs", [])
+        assert {
+            "target_port": "path_a",
+            "source_node_id": outer_branch,
+            "source_port": "path_a",
+        } in merge_inputs
+        assert {
+            "target_port": "path_b",
+            "source_node_id": beacon,
+            "source_port": "default",
+        } in merge_inputs
+        assert screen._branch_choices_to_node(merge) == [(outer_branch, "path_a")]
+        assert [option["merge_node_id"] for option in screen._merge_beacon_options(beacon)] == [merge]
+
+    print("test_saving_merge_config_preserves_merge_home_branch_input PASSED")
+
+
+async def _test_deleting_merge_beacon_prunes_merge_config_selection():
+    from textual.app import App, ComposeResult
+
+    from frontend.screens.editor import EditorScreen
+    from frontend.screens.node_config import NodeConfigScreen, merge_input_options
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("merge_beacon_delete_prunes_config")
+    start = wm.add_node("start_node")
+    branch = wm.add_node("branch_node")
+    beacon = wm.add_node("branch_end_node")
+    merge = wm.add_node("merge_node")
+    wm.connect(start, "default", branch, "input")
+    wm.connect(branch, "path_a", beacon, "input")
+    wm.connect(beacon, "default", merge, "path_a")
+    wm.update_node_config(
+        merge,
+        {
+            "branches_to_close": [f"{branch}:path_a"],
+            "carry_forward_branch_id": f"{branch}:path_a",
+            "selected_branch_id": f"{branch}:path_a",
+            "selected_input_port": "path_a",
+        },
+    )
+
+    class EditorApp(App):
+        def compose(self) -> ComposeResult:
+            yield EditorScreen(wm._factory, wm)
+
+    app = EditorApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        screen = app.query_one(EditorScreen)
+        screen.selected_node_id = beacon
+        screen.selected_row = {"kind": "node", "node_id": beacon}
+        screen.action_delete_selected()
+        await pilot.pause(0.03)
+
+        merge_config = wm.get_node_data(merge).get("config", {})
+        assert merge_config.get("branches_to_close") == []
+        assert merge_config.get("carry_forward_branch_id") == ""
+        assert merge_config.get("selected_branch_id") == ""
+        assert wm.get_node_data(beacon).get("connections", {}).get("outputs", []) == []
+
+        screen._replace_tombstone_from_modal("branch_end_node")
+        await pilot.pause(0.03)
+        assert wm.get_node_data(beacon)["type"] == "branch_end_node"
+        assert wm.get_node_data(beacon).get("connections", {}).get("outputs", []) == []
+        options = merge_input_options(wm, merge)
+        assert [f"{option['branch_id']}:{option['branch_port']}" for option in options] == [
+            f"{branch}:path_a"
+        ]
+
+    class ConfigApp(App):
+        def compose(self) -> ComposeResult:
+            yield NodeConfigScreen(wm._factory, wm, merge, wm.get_node_data(merge))
+
+    config_app = ConfigApp()
+    async with config_app.run_test() as pilot:
+        await pilot.pause(0.03)
+        merge_screen = config_app.query_one(NodeConfigScreen)
+        options = merge_input_options(wm, merge_screen.node_id)
+        assert merge_screen._selected_merge_close_values(
+            options,
+            wm.get_node_data(merge).get("config", {}),
+        ) == set()
+
+    print("test_deleting_merge_beacon_prunes_merge_config_selection PASSED")
+
+
 def test_branch_end_config_shows_merge_branch_identity():
     asyncio.run(_test_branch_end_config_shows_merge_branch_identity())
 
 
 def test_merge_beacon_selector_row_jumps_without_rewiring():
     asyncio.run(_test_merge_beacon_selector_row_jumps_without_rewiring())
+
+
+def test_merge_beacon_selector_excludes_merge_reachable_only_through_beacon():
+    asyncio.run(_test_merge_beacon_selector_excludes_merge_reachable_only_through_beacon())
 
 
 async def _test_branch_end_config_shows_merge_branch_identity():
@@ -1805,6 +2009,38 @@ async def _test_merge_beacon_selector_row_jumps_without_rewiring():
     print("test_merge_beacon_selector_row_jumps_without_rewiring PASSED")
 
 
+async def _test_merge_beacon_selector_excludes_merge_reachable_only_through_beacon():
+    from textual.app import App, ComposeResult
+
+    from frontend.screens.editor import EditorScreen
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("merge_beacon_reachable_only_through_beacon")
+    start = wm.add_node("start_node")
+    branch = wm.add_node("branch_node")
+    beacon = wm.add_node("branch_end_node")
+    loose_merge = wm.add_node("merge_node")
+    wm.connect(start, "default", branch, "input")
+    wm.connect(branch, "path_a", beacon, "input")
+    wm.connect(beacon, "default", loose_merge, "path_a")
+
+    class EditorApp(App):
+        def compose(self) -> ComposeResult:
+            yield EditorScreen(wm._factory, wm)
+
+    app = EditorApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        screen = app.query_one(EditorScreen)
+        assert screen._merge_beacon_options(beacon) == []
+        screen._select_merge_from_beacon_modal({"merge_node_id": loose_merge})
+        await pilot.pause(0.03)
+        node_list = screen.query_one("#node-list")
+        assert loose_merge not in [row.get("node_id") for row in node_list._rows]
+
+    print("test_merge_beacon_selector_excludes_merge_reachable_only_through_beacon PASSED")
+
+
 def test_connected_branch_end_deletes_to_tombstone():
     asyncio.run(_test_connected_branch_end_deletes_to_tombstone())
 
@@ -1896,11 +2132,11 @@ async def _test_editor_connects_merge_input_to_active_branch_port():
     print("test_editor_connects_merge_input_to_active_branch_port PASSED")
 
 
-def test_editor_repairs_legacy_merge_input_port_on_refresh():
-    asyncio.run(_test_editor_repairs_legacy_merge_input_port_on_refresh())
+def test_editor_refresh_does_not_repair_legacy_merge_input_port():
+    asyncio.run(_test_editor_refresh_does_not_repair_legacy_merge_input_port())
 
 
-async def _test_editor_repairs_legacy_merge_input_port_on_refresh():
+async def _test_editor_refresh_does_not_repair_legacy_merge_input_port():
     from textual.app import App, ComposeResult
 
     from backend.validator import validate_workflow
@@ -1926,17 +2162,13 @@ async def _test_editor_repairs_legacy_merge_input_port_on_refresh():
         await pilot.pause(0.03)
         merge_node = wm.get_node_data(merge)
         assert {
-            "target_port": "path_b",
+            "target_port": "input",
             "source_node_id": source,
             "source_port": "default",
         } in merge_node.get("connections", {}).get("inputs", [])
-        assert not any(
-            conn.get("target_port") == "input"
-            for conn in merge_node.get("connections", {}).get("inputs", [])
-        )
-        assert validate_workflow(wm, wm._factory)["success"] is True
+        assert validate_workflow(wm, wm._factory)["success"] is False
 
-    print("test_editor_repairs_legacy_merge_input_port_on_refresh PASSED")
+    print("test_editor_refresh_does_not_repair_legacy_merge_input_port PASSED")
 
 
 def test_editor_branch_cycle_keys_switch_all_and_incomplete_branch_views():
@@ -3944,14 +4176,18 @@ if __name__ == "__main__":
         test_merge_config_does_not_autocheck_open_branches,
         test_merge_options_exclude_current_merge_path_and_branch_end_card_turns_green,
         test_merge_options_exclude_branch_containing_current_merge,
+        test_merge_options_include_nested_merge_beacons,
         test_merge_branch_selector_moves_focus_down_at_bottom,
         test_saving_merge_config_connects_selected_branch_end,
         test_saving_merge_config_unchecked_branch_disconnects_branch_end,
+        test_saving_merge_config_preserves_merge_home_branch_input,
+        test_deleting_merge_beacon_prunes_merge_config_selection,
         test_branch_end_config_shows_merge_branch_identity,
         test_merge_beacon_selector_row_jumps_without_rewiring,
+        test_merge_beacon_selector_excludes_merge_reachable_only_through_beacon,
         test_connected_branch_end_deletes_to_tombstone,
         test_editor_connects_merge_input_to_active_branch_port,
-        test_editor_repairs_legacy_merge_input_port_on_refresh,
+        test_editor_refresh_does_not_repair_legacy_merge_input_port,
         test_editor_branch_cycle_keys_switch_all_and_incomplete_branch_views,
         test_editor_command_keys_restore_lost_highlight_after_mouse_focus,
         test_editor_restores_persisted_focus_highlight_on_mount,
