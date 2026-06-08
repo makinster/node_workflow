@@ -1,4 +1,4 @@
-"""Branch End node: marks a branch as closed before a merge."""
+"""Merge Beacon node: marks a branch as closed before a merge."""
 
 from typing import Any, ClassVar, Dict, List
 
@@ -10,7 +10,7 @@ class BranchEndNode(Node):
     """Utility marker that passes input through and exposes a branch to Merge."""
 
     node_type: ClassVar[str] = "branch_end_node"
-    display_name: ClassVar[str] = "Branch End"
+    display_name: ClassVar[str] = "Merge Beacon"
     description: ClassVar[str] = "Marks a branch as complete before merge"
     category: ClassVar[str] = NodeCategory.UTILITY
     input_ports: ClassVar[List[str]] = ["input"]

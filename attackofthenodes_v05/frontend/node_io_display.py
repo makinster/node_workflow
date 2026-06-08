@@ -55,12 +55,17 @@ def metadata_for_type(factory, node_type: str) -> Optional[Dict[str, Any]]:
 
 def node_label(node_id: str, node: Dict[str, Any]) -> str:
     """Return the editor-facing node label."""
-    name = node.get("alias") or node.get("type") or node_id
+    name = node_display_name(node_id, node)
     return f"{name} ({node_id})"
 
 
 def node_display_name(node_id: str, node: Dict[str, Any]) -> str:
     """Return the friendly node name without generated ids."""
+    if node.get("type") == "branch_end_node":
+        alias = str(node.get("alias") or "").strip()
+        if not alias or alias in {"Branch End", "branch_end_node"}:
+            return "Merge Beacon"
+        return alias
     if node.get("type") == "tombstone_node":
         config = node.get("config") or {}
         original = (

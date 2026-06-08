@@ -1676,6 +1676,10 @@ def test_branch_end_config_shows_merge_branch_identity():
     asyncio.run(_test_branch_end_config_shows_merge_branch_identity())
 
 
+def test_merge_beacon_selector_row_jumps_without_rewiring():
+    asyncio.run(_test_merge_beacon_selector_row_jumps_without_rewiring())
+
+
 async def _test_branch_end_config_shows_merge_branch_identity():
     from textual.app import App, ComposeResult
 
@@ -1721,6 +1725,84 @@ async def _test_branch_end_config_shows_merge_branch_identity():
         assert f"Merge Node: Merge ({merge})" in details
 
     print("test_branch_end_config_shows_merge_branch_identity PASSED")
+
+
+async def _test_merge_beacon_selector_row_jumps_without_rewiring():
+    from textual.app import App, ComposeResult
+
+    from frontend.screens.editor import EditorScreen
+    from frontend.screens.merge_beacon_selector import MergeBeaconSelectorScreen
+    from frontend.widgets.node_card import MergeBeaconSelectCard, NodeCard
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("merge_beacon_selector")
+    start = wm.add_node("start_node")
+    branch = wm.add_node("branch_node")
+    current_merge = wm.add_node("merge_node")
+    beacon = wm.add_node("branch_end_node")
+    target_merge = wm.add_node("merge_node")
+    after_merge = wm.add_node("logger_node")
+    wm.update_node_config(branch, {"path_a_label": "Closed", "path_b_label": "Merge Path"})
+    wm.connect(start, "default", branch, "input")
+    wm.connect(branch, "path_a", current_merge, "path_a")
+    wm.connect(current_merge, "default", beacon, "input")
+    wm.connect(branch, "path_b", target_merge, "path_a")
+    wm.connect(target_merge, "default", after_merge, "input")
+    wm.connect(beacon, "default", target_merge, "path_b")
+
+    class EditorApp(App):
+        def compose(self) -> ComposeResult:
+            yield EditorScreen(wm._factory, wm)
+
+    app = EditorApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        screen = app.query_one(EditorScreen)
+        node_list = screen.query_one("#node-list")
+
+        rows = node_list._rows
+        assert [row["kind"] for row in rows] == [
+            "node",
+            "node",
+            "branch_select",
+            "node",
+            "node",
+            "merge_beacon_select",
+        ]
+        assert target_merge not in [row.get("node_id") for row in rows]
+        beacon_cards = [card for card in app.query(NodeCard) if card.node_id == beacon]
+        assert beacon_cards[0].display_text.endswith("Merge Beacon")
+        selector_card = app.query_one(MergeBeaconSelectCard)
+        assert selector_card.active_label == "Merge"
+
+        options = screen._merge_beacon_options(beacon)
+        assert [option["merge_node_id"] for option in options] == [target_merge]
+
+        before_outputs = list(wm.get_node_data(beacon).get("connections", {}).get("outputs", []))
+        before_inputs = list(wm.get_node_data(target_merge).get("connections", {}).get("inputs", []))
+        selector_index = node_list.index_for_merge_beacon_select(beacon)
+        assert selector_index is not None
+        node_list.index = selector_index
+        screen._select_row(node_list.row_for_index(selector_index))
+        screen._refresh_details()
+        app.set_focus(node_list)
+
+        await pilot.press("e")
+        await pilot.pause()
+        modal = app.screen_stack[-1]
+        assert isinstance(modal, MergeBeaconSelectorScreen)
+        modal_list = modal.query_one("#merge-beacon-list")
+        assert modal_list.index == 0
+
+        await pilot.press("e")
+        await pilot.pause()
+        assert screen.selected_node_id == target_merge
+        assert screen.active_branch_ports[branch] == "path_b"
+        assert node_list.index == node_list.index_for_node_id(target_merge)
+        assert wm.get_node_data(beacon).get("connections", {}).get("outputs", []) == before_outputs
+        assert wm.get_node_data(target_merge).get("connections", {}).get("inputs", []) == before_inputs
+
+    print("test_merge_beacon_selector_row_jumps_without_rewiring PASSED")
 
 
 def test_connected_branch_end_deletes_to_tombstone():
@@ -3866,6 +3948,7 @@ if __name__ == "__main__":
         test_saving_merge_config_connects_selected_branch_end,
         test_saving_merge_config_unchecked_branch_disconnects_branch_end,
         test_branch_end_config_shows_merge_branch_identity,
+        test_merge_beacon_selector_row_jumps_without_rewiring,
         test_connected_branch_end_deletes_to_tombstone,
         test_editor_connects_merge_input_to_active_branch_port,
         test_editor_repairs_legacy_merge_input_port_on_refresh,

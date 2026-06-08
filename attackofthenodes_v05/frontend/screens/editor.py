@@ -13,6 +13,7 @@ from textual.widgets import Header, Label, Static
 from backend.validator import validate_workflow
 from frontend.screens.branch_selector import BranchSelectorScreen
 from frontend.screens.error_details import ErrorDetailsScreen
+from frontend.screens.merge_beacon_selector import MergeBeaconSelectorScreen
 from frontend.screens.node_config import (
     NodeConfigScreen,
     merge_input_options,
@@ -31,7 +32,7 @@ from frontend.node_io_display import (
     output_display_name,
     trace_transient_producer,
 )
-from frontend.widgets.node_card import BranchSelectCard, NodeCard
+from frontend.widgets.node_card import BranchSelectCard, MergeBeaconSelectCard, NodeCard
 from frontend.widgets.node_list import NodeList
 from frontend.widgets.status_bar import StatusBar
 
@@ -196,6 +197,21 @@ class EditorScreen(Screen):
         if event.chain >= 2:
             self.action_edit_selected()
 
+    def on_merge_beacon_select_card_clicked(
+        self, event: MergeBeaconSelectCard.Clicked
+    ) -> None:
+        """Single click selects a Merge Beacon row; double click opens selector."""
+        node_list = self.query_one(NodeList)
+        index = node_list.index_for_merge_beacon_select(event.beacon_node_id)
+        if index is None:
+            return
+        node_list.index = index
+        self.app.set_focus(node_list)
+        self._select_row(node_list.row_for_index(index))
+        self._refresh_details()
+        if event.chain >= 2:
+            self.action_edit_selected()
+
     def action_add_node(self) -> None:
         self._pending_node_add_mode = "add"
         self.app.push_screen(NodeSelectorScreen(self.factory), self._add_node_from_modal)
@@ -264,6 +280,9 @@ class EditorScreen(Screen):
 
     def action_edit_selected(self) -> None:
         self._restore_node_list_focus()
+        if self.selected_row and self.selected_row["kind"] == "merge_beacon_select":
+            self._open_merge_beacon_selector(self.selected_row)
+            return
         if self.selected_row and self.selected_row["kind"] == "branch_select":
             self._open_branch_selector(self.selected_row)
             return
@@ -624,6 +643,35 @@ class EditorScreen(Screen):
         branch_label = self._branch_port_labels(branch_node).get(branch_port, branch_port)
         notifications.viewing_branch(self.app, branch_label)
 
+    def _open_merge_beacon_selector(self, row: Dict[str, Any]) -> None:
+        beacon_node_id = row["beacon_node_id"]
+        options = self._merge_beacon_options(beacon_node_id)
+        if not options:
+            notifications.notify_info(self.app, "No other merge nodes available")
+            return
+        self.app.push_screen(
+            MergeBeaconSelectorScreen(
+                beacon_node_id=beacon_node_id,
+                options=options,
+                active_merge_id=self._merge_beacon_connected_merge_id(beacon_node_id),
+            ),
+            self._select_merge_from_beacon_modal,
+        )
+
+    def _select_merge_from_beacon_modal(self, result: Dict[str, str] | None) -> None:
+        if not result:
+            return
+        merge_node_id = result.get("merge_node_id")
+        if not merge_node_id or self.workflow_map.get_node_data(merge_node_id) is None:
+            notifications.notify_info(self.app, "Merge node is not available")
+            return
+        for ancestor_id, ancestor_port in self._branch_choices_to_node(merge_node_id):
+            self.active_branch_ports[ancestor_id] = ancestor_port
+        self.selected_node_id = merge_node_id
+        self.selected_row = {"kind": "node", "node_id": merge_node_id}
+        self.refresh_from_backend()
+        notifications.jumped_to_node(self.app, merge_node_id)
+
     def _cycle_branch_view(self, incomplete_only: bool, direction: int) -> None:
         candidates = self._branch_view_candidates()
         if incomplete_only:
@@ -746,6 +794,8 @@ class EditorScreen(Screen):
             node = nodes.get(current_node_id)
             if node is None:
                 return False
+            if node.get("type") == "branch_end_node":
+                return False
             metadata = self._metadata_for_type(node.get("type", ""))
             ports = metadata.get("output_ports") if metadata else []
             if len(ports or []) != 1:
@@ -818,6 +868,8 @@ class EditorScreen(Screen):
         visited.add(current_node_id)
         node = self.workflow_map.get_node_data(current_node_id)
         if node is None:
+            return None
+        if node.get("type") == "branch_end_node":
             return None
         metadata = self._metadata_for_type(node.get("type", ""))
         output_ports = list(metadata.get("output_ports") or []) if metadata else []
@@ -892,6 +944,11 @@ class EditorScreen(Screen):
         detail = self.query_one("#node-details", Static)
         if self.selected_row and self.selected_row["kind"] == "branch_select":
             text = self._format_branch_selector_details(self.selected_row)
+            setattr(detail, "display_text", text)
+            detail.update(text)
+            return
+        if self.selected_row and self.selected_row["kind"] == "merge_beacon_select":
+            text = self._format_merge_beacon_selector_details(self.selected_row)
             setattr(detail, "display_text", text)
             detail.update(text)
             return
@@ -1233,6 +1290,10 @@ class EditorScreen(Screen):
                 }
             )
 
+            if node.get("type") == "branch_end_node":
+                rows.append(self._merge_beacon_select_row(current_node_id, depth))
+                break
+
             metadata = self._metadata_for_type(node.get("type", ""))
             output_ports = list(metadata.get("output_ports") or []) if metadata else []
             if len(output_ports) > 1:
@@ -1295,6 +1356,96 @@ class EditorScreen(Screen):
                 return True
         return False
 
+    def _merge_beacon_connected_merge_id(self, beacon_node_id: str) -> str:
+        beacon = self.workflow_map.get_node_data(beacon_node_id) or {}
+        for conn in beacon.get("connections", {}).get("outputs", []):
+            target_id = str(conn.get("target_node_id") or "")
+            target_node = self.workflow_map.get_node_data(target_id) or {}
+            if target_node.get("type") == "merge_node":
+                return target_id
+        return ""
+
+    def _merge_beacon_select_row(
+        self,
+        beacon_node_id: str,
+        depth: int,
+    ) -> Dict[str, Any]:
+        connected_merge_id = self._merge_beacon_connected_merge_id(beacon_node_id)
+        label = "Choose merge"
+        if connected_merge_id:
+            merge_node = self.workflow_map.get_node_data(connected_merge_id) or {}
+            label = node_display_name(connected_merge_id, merge_node)
+        return {
+            "kind": "merge_beacon_select",
+            "beacon_node_id": beacon_node_id,
+            "active_merge_id": connected_merge_id,
+            "active_label": label,
+            "depth": depth,
+        }
+
+    def _merge_beacon_options(self, beacon_node_id: str) -> list[Dict[str, str]]:
+        options: list[Dict[str, str]] = []
+        nodes = self.workflow_map.get_all_node_data()
+        for merge_node_id, merge_node in nodes.items():
+            if merge_node.get("type") != "merge_node":
+                continue
+            if self._merge_on_current_beacon_branch(beacon_node_id, merge_node_id):
+                continue
+            options.append(
+                {
+                    "merge_node_id": merge_node_id,
+                    "label": self._node_label(merge_node_id, merge_node),
+                }
+            )
+        return options
+
+    def _merge_on_current_beacon_branch(
+        self,
+        beacon_node_id: str,
+        merge_node_id: str,
+    ) -> bool:
+        for candidate in self._branch_view_candidates():
+            if not self._branch_path_contains(
+                candidate["branch_node_id"],
+                candidate["port"],
+                beacon_node_id,
+            ):
+                continue
+            if self._branch_path_contains_before_stop(
+                candidate["branch_node_id"],
+                candidate["port"],
+                merge_node_id,
+                beacon_node_id,
+            ):
+                return True
+        return False
+
+    def _branch_path_contains_before_stop(
+        self,
+        branch_node_id: str,
+        branch_port: str,
+        target_node_id: str,
+        stop_node_id: str,
+    ) -> bool:
+        nodes = self.workflow_map.get_all_node_data()
+        current_node_id = self._target_for_port(nodes.get(branch_node_id, {}), branch_port)
+        visited = {branch_node_id}
+        while current_node_id and current_node_id not in visited:
+            if current_node_id == stop_node_id:
+                return False
+            if current_node_id == target_node_id:
+                return True
+            visited.add(current_node_id)
+            node = nodes.get(current_node_id)
+            if node is None:
+                return False
+            metadata = self._metadata_for_type(node.get("type", ""))
+            ports = metadata.get("output_ports") if metadata else []
+            if len(ports or []) != 1:
+                return False
+            current_node_id = self._target_for_port(node, ports[0])
+        return False
+
     def _node_for_display(self, node: Dict[str, Any]) -> Dict[str, Any]:
         if node.get("type") != "branch_end_node":
             return node
@@ -1317,6 +1468,11 @@ class EditorScreen(Screen):
                 and row.get("branch_node_id") == selected_row.get("branch_node_id")
             ):
                 return True
+            if (
+                row["kind"] == "merge_beacon_select"
+                and row.get("beacon_node_id") == selected_row.get("beacon_node_id")
+            ):
+                return True
         return False
 
     def _matching_visible_row(
@@ -1330,6 +1486,11 @@ class EditorScreen(Screen):
             if (
                 row["kind"] == "branch_select"
                 and row.get("branch_node_id") == selected_row.get("branch_node_id")
+            ):
+                return row
+            if (
+                row["kind"] == "merge_beacon_select"
+                and row.get("beacon_node_id") == selected_row.get("beacon_node_id")
             ):
                 return row
         return None
@@ -1347,12 +1508,19 @@ class EditorScreen(Screen):
                 and row.get("branch_node_id") == self.selected_row.get("branch_node_id")
             ):
                 return index
+            if (
+                row["kind"] == "merge_beacon_select"
+                and row.get("beacon_node_id") == self.selected_row.get("beacon_node_id")
+            ):
+                return index
         return None
 
     def _source_for_new_node(self) -> Optional[Dict[str, str]]:
         hidden_start_id = self._hidden_empty_start_node_id()
         if hidden_start_id:
             return {"node_id": hidden_start_id, "port": "default"}
+        if self.selected_row and self.selected_row["kind"] == "merge_beacon_select":
+            return {"node_id": self.selected_row["beacon_node_id"], "port": "default"}
         if self.selected_row and self.selected_row["kind"] == "branch_select":
             branch_node_id = self.selected_row["branch_node_id"]
             active_port = self.active_branch_ports.get(
@@ -1377,6 +1545,8 @@ class EditorScreen(Screen):
         hidden_start_id = self._hidden_empty_start_node_id()
         if hidden_start_id:
             return {"node_id": hidden_start_id, "port": "default"}
+        if self.selected_row and self.selected_row["kind"] == "merge_beacon_select":
+            return {"node_id": self.selected_row["beacon_node_id"], "port": "default"}
         if self.selected_row and self.selected_row["kind"] == "branch_select":
             branch_node_id = self.selected_row["branch_node_id"]
             active_port = self.active_branch_ports.get(
@@ -1415,6 +1585,8 @@ class EditorScreen(Screen):
             node = nodes.get(current_node_id)
             if node is None:
                 break
+            if node.get("type") == "branch_end_node":
+                break
             metadata = self._metadata_for_type(node.get("type", ""))
             ports = metadata.get("output_ports") if metadata else []
             if len(ports or []) != 1:
@@ -1435,4 +1607,18 @@ class EditorScreen(Screen):
             "E: choose branch",
             "I: insert here",
         ]
+        return "\n".join(lines)
+
+    def _format_merge_beacon_selector_details(self, row: Dict[str, Any]) -> str:
+        beacon_node = self.workflow_map.get_node_data(row["beacon_node_id"]) or {}
+        merge_id = row.get("active_merge_id") or ""
+        lines = [
+            f"Merge Beacon: {node_display_name(row['beacon_node_id'], beacon_node)}",
+            f"Connected Merge: {row.get('active_label') or '-'}",
+            f"Step: {row.get('depth', '-')}",
+            "",
+            "E: choose merge to jump to",
+        ]
+        if merge_id:
+            lines.append(f"Current target: {merge_id}")
         return "\n".join(lines)

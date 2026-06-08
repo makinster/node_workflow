@@ -1286,12 +1286,12 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             )
             return "\n".join(
                 [
-                    "Branch End has no editable fields.",
+                    "Merge Beacon has no editable fields.",
                     f"Merges To Branch: {branch_label} ({branch_id})",
                     f"Merge Node: {self._node_label(target_id, target_node)}",
                 ]
             )
-        return "Branch End has no editable fields.\nStatus: open until connected to a Merge node."
+        return "Merge Beacon has no editable fields.\nStatus: open until connected to a Merge node."
 
     def _node_label(self, node_id: str, node: Dict[str, Any]) -> str:
         name = node.get("alias") or node.get("type") or node_id

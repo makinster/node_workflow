@@ -105,12 +105,12 @@ Tasks:
 
 - Derive branch health from workflow topology, not stored state.
 - Represent three branch states:
-  - valid: output/end node or Branch End connected to a Merge;
-  - ended but unmerged: Branch End exists but is not connected to a Merge;
-  - floating: no valid terminal and no Branch End.
+  - valid: output/end node or Merge Beacon connected to a Merge;
+  - ended but unmerged: Merge Beacon exists but is not connected to a Merge;
+  - floating: no valid terminal and no Merge Beacon.
 - Show branch health with restrained color in editor rows.
 - Keep branch health separate from execution status.
-- Make Branch End color update after load, save, connect, disconnect, and merge
+- Make Merge Beacon color update after load, save, connect, disconnect, and merge
   config changes.
 
 Done when:

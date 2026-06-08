@@ -244,7 +244,7 @@ adapter behavior includes:
   mapping them to the upstream branch port.
 - Reconciling checked merge branch closures into real
   `BranchEnd.default -> Merge.path_*` graph edges.
-- Rendering Branch End rows red while open and green when connected to a Merge.
+- Rendering Merge Beacon rows red while open and green when connected to a Merge.
 
 ### `ExecutionScreen`
 

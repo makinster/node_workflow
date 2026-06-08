@@ -40,7 +40,7 @@ Merge behavior is editor-assisted and runtime-coordinated:
 
 - Branch nodes expose branch paths such as `path_a`, `path_b`, etc.
 - Branch labels are user-configurable and displayed in the editor.
-- Branch End nodes mark branch completion points. They show red while open and
+- Merge Beacon nodes mark branch completion points. They show red while open and
   green when their `default` output connects to a Merge node.
 - Merge config chooses branches to close and one selected branch output to carry
   forward.
@@ -136,7 +136,7 @@ tabs, and branch-label fields for multi-output nodes.
 
 ## Registered Node Families
 
-- Flow: Start, End, Branch, Branch End, Conditional, Merge, Wait Until.
+- Flow: Start, End, Branch, Merge Beacon, Conditional, Merge, Wait Until.
 - Data: Set Variable, Get Variable, Concat, debug variable setter/reader.
 - IO: Text Output, User Text Input, File Reader.
 - AI placeholders: Chat Completion, Image Generation, Embedding.
@@ -179,6 +179,6 @@ These are operational data folders, not source architecture.
 - Frontend audit phases FA-6/FA-7: viewer long-content safety and visual/help
   alignment.
 - Branch health visualization: distinguish valid branch endings, unmerged
-  Branch End markers, and floating branches.
+  Merge Beacon markers, and floating branches.
 - Later UI phases: cursor model, key remap, editor rework, file modal/config
   tabs, visual identity, acceleration/help rewrite.

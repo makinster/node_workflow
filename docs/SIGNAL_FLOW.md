@@ -375,10 +375,10 @@ Older save contains source.default -> merge.input
   -> reconnect source.default -> merge.path_* based on upstream branch
 ```
 
-### Merge Config Closes A Branch End
+### Merge Config Closes A Merge Beacon
 
 ```
-User checks a Branch End path in Merge config
+User checks a Merge Beacon path in Merge config
   -> NodeConfigScreen returns branches_to_close + carry_forward_branch_id
   -> EditorScreen saves merge config
   -> _sync_merge_branch_end_connections()

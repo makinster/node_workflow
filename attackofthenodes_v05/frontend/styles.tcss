@@ -59,6 +59,11 @@ Screen {
     color: #ffa500;
 }
 
+.merge-beacon-select-card {
+    height: 1;
+    color: #c586c0;
+}
+
 .node-card.selected {
     background: $accent;
 }

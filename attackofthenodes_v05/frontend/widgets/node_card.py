@@ -127,3 +127,36 @@ class BranchSelectCard(Static):
             self.Clicked(self.branch_node_id, self.active_port, event.chain)
         )
         event.stop()
+
+
+class MergeBeaconSelectCard(Static):
+    """Render the editor merge-beacon selector row."""
+
+    class Clicked(Message):
+        """Posted when a merge-beacon selector row is clicked."""
+
+        def __init__(self, beacon_node_id: str, chain: int) -> None:
+            super().__init__()
+            self.beacon_node_id = beacon_node_id
+            self.chain = chain
+
+    def __init__(
+        self,
+        beacon_node_id: str,
+        active_label: str | None = None,
+        depth: int | None = None,
+    ) -> None:
+        super().__init__()
+        self.beacon_node_id = beacon_node_id
+        self.active_label = active_label or "Choose merge"
+        self.depth = depth
+        self.display_text = ""
+
+    def on_mount(self) -> None:
+        self.add_class("merge-beacon-select-card")
+        self.display_text = f"{'☛':>{DEPTH_WIDTH}}{DEPTH_SPACING}{self.active_label}"
+        self.update(self.display_text)
+
+    def on_click(self, event: events.Click) -> None:
+        self.post_message(self.Clicked(self.beacon_node_id, event.chain))
+        event.stop()

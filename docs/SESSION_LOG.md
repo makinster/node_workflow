@@ -1,5 +1,23 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-08 — Merge Beacon Selector
+
+- Renamed Branch End user-facing copy to Merge Beacon while keeping the saved
+  backend node type as `branch_end_node`.
+- Added a Merge Beacon selector row under visible Merge Beacon nodes. The row
+  opens a merge selector and pre-highlights the connected merge when one exists.
+- Made the selector navigation-only: choosing a merge jumps to that merge's
+  branch and highlights the merge node without changing connections.
+- Stopped editor visible traversal at Merge Beacon nodes so connected merge
+  branch nodes no longer appear under the beacon's branch.
+- Updated current docs to use Merge Beacon terminology and cleared existing
+  workflow save JSONs from `attackofthenodes_v05/workflows/` for a fresh start.
+- Verification:
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -q -k "merge_beacon or branch_end_config or connected_branch_end or merge_options_exclude_current_merge_path"`
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v`
+    - 92 passed.
+
 ## 2026-06-07 — User-Friendly Polish Build Plan
 
 - Added `docs/USER_FRIENDLY_POLISH_BUILD_PLAN.md` to collect the scattered

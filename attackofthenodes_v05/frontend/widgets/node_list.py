@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional
 
 from textual.widgets import Label, ListItem, ListView
 
-from .node_card import BranchSelectCard, NodeCard
+from .node_card import BranchSelectCard, MergeBeaconSelectCard, NodeCard
 
 
 class NodeList(ListView):
@@ -63,10 +63,16 @@ class NodeList(ListView):
                     show_status=False,
                     show_id=False,
                 )
-            else:
+            elif row["kind"] == "branch_select":
                 card = BranchSelectCard(
                     row["branch_node_id"],
                     row["active_port"],
+                    row.get("active_label"),
+                    row.get("depth"),
+                )
+            else:
+                card = MergeBeaconSelectCard(
+                    row["beacon_node_id"],
                     row.get("active_label"),
                     row.get("depth"),
                 )
@@ -104,6 +110,16 @@ class NodeList(ListView):
                 row["kind"] == "branch_select"
                 and row.get("branch_node_id") == branch_node_id
                 and row.get("active_port") == active_port
+            ):
+                return index
+        return None
+
+    def index_for_merge_beacon_select(self, beacon_node_id: str) -> Optional[int]:
+        """Return the row index for a merge-beacon selector row."""
+        for index, row in enumerate(self._rows):
+            if (
+                row["kind"] == "merge_beacon_select"
+                and row.get("beacon_node_id") == beacon_node_id
             ):
                 return index
         return None

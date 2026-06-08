@@ -503,7 +503,7 @@ Escalation rule:
   name/description fields. It renders a multi-select branches-to-close list, a
   carry-forward dropdown populated from the selected branches, and selected
   branch output details. v1 enforces one selected branch output.
-- Branch End is a no-config utility marker. It appears red while open and green
+- Merge Beacon is a no-config utility marker. It appears red while open and green
   when connected to a Merge node; opening config shows the connected merge and
   branch status only.
 - Future merge versions may add multi-output/combine behavior, but v1 forwards
@@ -702,7 +702,7 @@ Done when:
 Establishes the current editor key grammar: E to select/edit, I to insert-after,
 X/backspace to delete, and A/D as left/right branch-view navigation. Up/down
 arrows mirror W/S. Left/right arrows mirror A/D. Ctrl+left/Ctrl+right mirror
-Ctrl+A/Ctrl+D for cycling branch views that already contain a Branch End.
+Ctrl+A/Ctrl+D for cycling incomplete branch views.
 Retires A as add and removes Ctrl+I add-at-branch-end.
 
 Supersedes the binding table in `TUI_DESIGN.md`. Keeps Phase 4/4.5

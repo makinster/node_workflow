@@ -171,8 +171,8 @@ V                     Validate workflow
 Plain `A/D` rolls through every branch path, showing all ports from one branch
 node before moving to the next branch node in creation order. `Ctrl+A/D` uses
 the same ordering but filters to incomplete branch paths. End nodes, output
-nodes, merge nodes, and Branch End nodes connected to a Merge count as complete;
-an unconnected Branch End remains incomplete so it stays easy to find.
+nodes, merge nodes, and Merge Beacons connected to a Merge count as complete;
+an unconnected Merge Beacon remains incomplete so it stays easy to find.
 When cycling back to a branch, the editor restores the last highlighted node in
 that branch when possible; otherwise it highlights the first visible node in
 that branch path.
