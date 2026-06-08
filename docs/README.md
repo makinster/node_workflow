@@ -33,6 +33,10 @@ tkinter material is historical unless explicitly labeled current.
 - `FRONTEND_AUDIT_BUILD_PLAN.md`
   - Frontend standardization and keyboard/navigation audit plan.
 
+- `USER_FRIENDLY_POLISH_BUILD_PLAN.md`
+  - User-facing polish sequence for copy, focus reliability, branch health,
+    visual identity, config readability, help, and accessibility smoke checks.
+
 - `PROJECT_BACKLOG.md`
   - Deferred cleanup projects, including docs modernization and UI toolkit work.
 

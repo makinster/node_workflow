@@ -1,5 +1,21 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-07 — User-Friendly Polish Build Plan
+
+- Added `docs/USER_FRIENDLY_POLISH_BUILD_PLAN.md` to collect the scattered
+  polish, visual identity, help, accessibility, branch-health, and config
+  readability work into one user-facing implementation sequence.
+- Linked the plan from `docs/README.md` under phase-specific docs.
+- The plan recommends fixing focus/highlight reliability before visual styling,
+  then progressing through copy cleanup, branch health, config readability,
+  file/settings/help polish, visual identity, acceleration, and manual smoke
+  checklists.
+- Verification:
+  - `test -f docs/USER_FRIENDLY_POLISH_BUILD_PLAN.md`
+  - `rg -n "USER_FRIENDLY_POLISH_BUILD_PLAN.md" docs/README.md`
+  - `rg -n "Focus And Highlight Reliability|Branch Health And Editor Signals|Node Visual Identity|Config Form Readability|Navigation Acceleration" docs/USER_FRIENDLY_POLISH_BUILD_PLAN.md`
+  - `git diff --check`
+
 ## 2026-06-07 — Editor Highlight Recovery Fix
 
 - Hardened editor command keys after mixed mouse/keyboard interaction.
