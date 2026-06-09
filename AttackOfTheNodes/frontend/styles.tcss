@@ -96,6 +96,15 @@ Screen {
     height: auto;
 }
 
+#branch-payload-rows {
+    height: auto;
+}
+
+.branch-payload-row {
+    height: auto;
+    margin-bottom: 1;
+}
+
 .generated-form {
     height: auto;
 }

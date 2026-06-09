@@ -183,9 +183,10 @@ When cycling back to a branch, the editor restores the last highlighted node in
 that branch when possible; otherwise it highlights the first visible node in
 that branch path.
 
-The editor bottom bar should stay very short: `f file | o options | h help`.
-Navigation details belong in Help, not the main editor chrome. Do not duplicate
-these key hints in the right panel; that panel should start with `Selected Node:`.
+The editor bottom bar should stay very short:
+`f file | o options | h help | ctrl+q quit`. Navigation details belong in Help,
+not the main editor chrome. Do not duplicate these key hints in the right panel;
+that panel should start with `Selected Node:`.
 Help modals should have one navigable control at the bottom: a focused
 `Cancel` button.
 
@@ -208,6 +209,10 @@ Branch output labels should default to `Branch 1`, `Branch 2`, and so on, while
 remaining editable in the branch node config. Current Branch v1 is an
 always-parallel spawner: users choose `2` to `5` spawn points, name each spawn
 point, and choose which upstream dead-drop/Vault payload seeds each branch.
+Downstream nodes should see the chosen branch seed as their previous dead-drop
+payload. Config previews show the source chain as
+`origin node -> (...) -> Branch`, then the payload name/type and a safe printable
+preview when a prior run captured one.
 Conditional branch fields are hidden until a later dedicated conditional-branch
 pass.
 
@@ -231,8 +236,10 @@ vertically inside the active tab and then to Save/Cancel; it does not move into
 the tab header and does not switch tabs. A/D and left/right switch tabs and move
 focus to the first control in the new tab. While a command text field is actively
 editing, A/D and left/right remain cursor-movement keys. Small text fields exit
-editing on Tab; large `CommandTextArea` fields keep Tab inside the text area for
-content/indentation editing and use Esc or Ctrl+Enter to leave edit mode.
+editing on Esc, Enter, or Tab and keep the typed value for the modal-level Save.
+`Ctrl+Q` while editing is the explicit revert-to-edit-start command. Large
+`CommandTextArea` fields keep Tab inside the text area for content/indentation
+editing and use Esc or Ctrl+Enter to leave edit mode while preserving text.
 
 Settings includes a visible Cancel control and reserves `K` for an API Keys
 submenu. The current API Keys screen is a placeholder only.
@@ -261,8 +268,15 @@ Text fields use `CommandInput` or `CommandTextArea`.
   the user presses `E` or Enter.
 - Popup-style prompts and filters may opt into `auto_edit_on_focus=True`.
 - While editing, arrows move within the text widget and `W/S` type normally.
-- `Esc`/`Ctrl+Q` exits editing and reverts to the value captured at edit start.
-- Enter commits small text inputs. Text areas use `Ctrl+Enter` or modal Save.
+- `Esc`, Enter, and Tab exit small text input editing while preserving typed
+  text for the modal-level Save.
+- `Ctrl+Q` while editing reverts that field to the value captured at edit start.
+- Text areas use Esc or `Ctrl+Enter` to leave editing while preserving text;
+  Tab remains text input for indentation/content editing.
+- Selection-list widgets, including Vault and merge-branch lists, must not trap
+  keyboard movement. W/S and up/down move through list options, then move to the
+  previous/next command widget when the highlight is already at the top/bottom.
+  Tab/Shift+Tab may also move focus, but they cannot be the only escape path.
 
 Shared behavior belongs in `frontend/widgets/command_navigation.py`,
 `command_input.py`, `list_navigation.py`, and `dynamic_sections.py`, not in

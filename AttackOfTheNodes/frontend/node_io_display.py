@@ -229,25 +229,60 @@ def trace_transient_producer(
     source_port: str,
 ) -> Dict[str, Any]:
     """Trace pass-through outputs back to the node that produced the data."""
+    return _trace_transient_producer(
+        workflow_map,
+        factory,
+        source_node_id,
+        source_port,
+        set(),
+    )
+
+
+def _trace_transient_producer(
+    workflow_map,
+    factory,
+    source_node_id: str,
+    source_port: str,
+    visited: set[tuple[str, str]],
+) -> Dict[str, Any]:
     current_id = source_node_id
     current_port = source_port or "default"
-    visited: set[str] = set()
 
-    while current_id and current_id not in visited:
-        visited.add(current_id)
+    while current_id and (current_id, current_port) not in visited:
+        visited.add((current_id, current_port))
         node = workflow_map.get_node_data(current_id) or {}
+        if node.get("type") == "branch_node" and current_port != "input":
+            branch_result = _trace_branch_payload_producer(
+                workflow_map,
+                factory,
+                current_id,
+                node,
+                current_port,
+                visited,
+            )
+            if branch_result:
+                return branch_result
         if not node or not is_pass_through_node(factory, node):
             break
-        inputs = node.get("connections", {}).get("inputs", [])
-        if not inputs:
+        upstream = _first_input_connection(node)
+        if not upstream:
             break
-        upstream = inputs[0]
         next_id = str(upstream.get("source_node_id") or "")
         next_port = str(upstream.get("source_port") or "default")
         if not next_id:
             break
-        current_id = next_id
-        current_port = next_port
+        upstream_result = _trace_transient_producer(
+            workflow_map,
+            factory,
+            next_id,
+            next_port,
+            visited,
+        )
+        upstream_result["chain_node_ids"] = _append_chain_node(
+            upstream_result.get("chain_node_ids"),
+            current_id,
+        )
+        return upstream_result
 
     node = workflow_map.get_node_data(current_id) or {}
     details = transient_output_details(factory, node, current_port)
@@ -257,4 +292,95 @@ def trace_transient_producer(
         "port": current_port,
         "name": details["name"],
         "description": details["description"],
+        "chain_node_ids": [current_id] if current_id else [],
     }
+
+
+def _trace_branch_payload_producer(
+    workflow_map,
+    factory,
+    branch_node_id: str,
+    branch_node: Dict[str, Any],
+    branch_port: str,
+    visited: set[tuple[str, str]],
+) -> Optional[Dict[str, Any]]:
+    """Trace the selected seed payload for a branch output port."""
+    config = branch_node.get("config") or {}
+    sources = config.get("branch_payload_sources") or {}
+    source = ""
+    if isinstance(sources, dict):
+        source = str(sources.get(branch_port) or "").strip()
+
+    if source.startswith("vault:"):
+        vault_key = source.removeprefix("vault:").strip()
+        if not vault_key:
+            return None
+        registry = memory_registry(workflow_map)
+        entry = registry.get(vault_key) or {}
+        writer_id = next(
+            (
+                str(writer)
+                for writer in entry.get("writers", [])
+                if str(writer) and str(writer) != branch_node_id
+            ),
+            "",
+        )
+        writer_node = workflow_map.get_node_data(writer_id) or {}
+        chain = [writer_id, branch_node_id] if writer_id else [branch_node_id]
+        return {
+            "node_id": writer_id or branch_node_id,
+            "node": writer_node or branch_node,
+            "port": vault_key,
+            "name": vault_key,
+            "description": str(entry.get("description") or "").strip()
+            or "No output description configured.",
+            "chain_node_ids": chain,
+        }
+
+    upstream = _first_input_connection(branch_node, "input") or _first_input_connection(branch_node)
+    if not upstream:
+        details = transient_output_details(factory, branch_node, branch_port)
+        return {
+            "node_id": branch_node_id,
+            "node": branch_node,
+            "port": branch_port,
+            "name": details["name"],
+            "description": details["description"],
+            "chain_node_ids": [branch_node_id],
+        }
+
+    upstream_id = str(upstream.get("source_node_id") or "")
+    upstream_port = str(upstream.get("source_port") or "default")
+    if not upstream_id:
+        return None
+    upstream_result = _trace_transient_producer(
+        workflow_map,
+        factory,
+        upstream_id,
+        upstream_port,
+        visited,
+    )
+    upstream_result["chain_node_ids"] = _append_chain_node(
+        upstream_result.get("chain_node_ids"),
+        branch_node_id,
+    )
+    return upstream_result
+
+
+def _first_input_connection(
+    node: Dict[str, Any],
+    target_port: str | None = None,
+) -> Optional[Dict[str, Any]]:
+    inputs = node.get("connections", {}).get("inputs", [])
+    if target_port is not None:
+        for conn in inputs:
+            if str(conn.get("target_port") or "") == target_port:
+                return conn
+    return inputs[0] if inputs else None
+
+
+def _append_chain_node(chain: Any, node_id: str) -> list[str]:
+    node_ids = [str(item) for item in chain or [] if str(item)]
+    if node_id and (not node_ids or node_ids[-1] != node_id):
+        node_ids.append(node_id)
+    return node_ids

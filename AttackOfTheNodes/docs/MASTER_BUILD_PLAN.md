@@ -1,6 +1,6 @@
 # AttackOfTheNodes Comprehensive Build Plan
 
-**Last updated:** 2026-06-08
+**Last updated:** 2026-06-09
 **Project root:** `AttackOfTheNodes/`
 **Runtime:** Python 3.14, Textual 8.2.7, asyncio, JSON persistence
 **Current branch context:** Textual TUI spinoff; tkinter frontend is obsolete.
@@ -800,7 +800,9 @@ configs render in fixed tabs: Source, Parameters, Payloads, and Connections. W/S
 stays vertical inside the active tab and then moves to Save/Cancel, while A/D or
 left/right explicitly switch tabs and focus the new tab's first control. Active
 small text fields keep A/D and left/right for caret movement and exit edit mode
-on Tab; large text areas keep Tab inside the text area.
+on Esc, Enter, or Tab while preserving typed text for the modal-level Save.
+`Ctrl+Q` while editing is the explicit field revert command. Large text areas
+keep Tab inside the text area.
 Settings gains an API Keys placeholder menu before real secret storage.
 
 Current progress:
@@ -822,6 +824,13 @@ Current progress:
   upstream dead-drop payload or selected Vault payload as its seed. Legacy
   conditional Branch config keys remain preserved for compatibility but are
   hidden from the current UI pending a future dedicated conditional-branch pass.
+- Branch seed display now treats the selected dead-drop/Vault source as the
+  branch output's visible payload. Downstream config previews and editor Quick
+  View trace to the original producer while keeping the Branch node in the source
+  chain for user orientation.
+- Branch config copy/scroll polish is landed: empty Vault copy says `The vault
+  is empty`, no-run payload previews stay quiet, and 4-5 branch payload rows
+  remain reachable with W/S.
 - Node config Save/Cancel and path-prompt Confirm/Cancel controls are stacked
   vertically for W/S movement.
 - Settings includes an API Keys placeholder behind `K`.

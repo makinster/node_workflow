@@ -93,6 +93,9 @@ the links in `docs/README.md`.
 - Branch config stores:
   - `<port>_label` for each spawn point name.
   - `branch_payload_sources` such as `dead_drop:input` or `vault:<key>`.
+- Downstream display treats the selected branch seed as that branch port's
+  dead-drop payload. Config previews and editor Quick View should trace to the
+  original source while keeping the Branch node in the source chain.
 - When changing Branch behavior, update editor active-port traversal so only the
   first `branch_count` ports are shown in branch cycling and branch selector rows.
 
@@ -152,6 +155,9 @@ the links in `docs/README.md`.
 - `Esc` and `Ctrl+Q` exit edit mode before closing a modal.
 - `Ctrl+S` saves where supported.
 - List screens should use `frontend/widgets/list_navigation.py`.
+- Inline `SelectionList` controls such as Vault or merge branch choices must not
+  trap keyboard movement. W/S and up/down should move through options, then move
+  to the previous/next command widget when already at the top/bottom.
 - Popup filters and prompts that should accept typing immediately should opt
   into `auto_edit_on_focus=True`.
 

@@ -915,7 +915,7 @@ def test_branch_config_uses_parallel_payload_ui():
 
 async def _test_branch_config_uses_parallel_payload_ui():
     from textual.app import App, ComposeResult
-    from textual.widgets import Select
+    from textual.widgets import Checkbox, Select, SelectionList, TabbedContent
 
     from frontend.screens.node_config import NodeConfigScreen
     from frontend.widgets.command_input import CommandInput
@@ -931,12 +931,14 @@ async def _test_branch_config_uses_parallel_payload_ui():
     wm.update_node_config(
         branch,
         {
-            "branch_count": 3,
+            "branch_count": 5,
             "membank_inputs": ["session_id"],
             "condition": "string_match",
             "path_a_label": "Alpha",
             "path_b_label": "Beta",
             "path_c_label": "Gamma",
+            "path_d_label": "Delta",
+            "path_e_label": "Epsilon",
             "branch_payload_sources": {"path_b": "vault:session_id"},
         },
     )
@@ -950,22 +952,70 @@ async def _test_branch_config_uses_parallel_payload_ui():
     async with app.run_test() as pilot:
         await pilot.pause(0.05)
         screen = app.query_one(NodeConfigScreen)
+        summary = str(app.query_one("#node-config-summary").content)
+        help_text = str(app.query_one(".modal-help").content)
+        assert summary == "\n".join(
+            [
+                "Node type: Branch",
+                "- This node spawns branching paths.",
+                "- Parallel paths enabled",
+                "- Conditional branching hidden for a later node pass",
+            ]
+        )
+        assert "ctrl+q revert" in help_text
         assert not app.query("#field-condition")
-        assert app.query_one("#branch-count", CommandInput).value == "3"
+        assert not [
+            label for label in app.query(".form-label") if str(label.content) == "Vault"
+        ]
+        assert app.query_one("#branch-count", CommandInput).value == "5"
         assert app.query_one("#branch-label-path_a", CommandInput).value == "Alpha"
         assert app.query_one("#branch-payload-row-path_c").display is True
-        assert app.query_one("#branch-payload-row-path_d").display is False
+        assert app.query_one("#branch-payload-row-path_e").display is True
 
         path_b_source = app.query_one("#branch-payload-source-path_b", Select)
         assert path_b_source.value == "vault:session_id"
         option_values = {value for _, value in path_b_source._options}
         assert {"dead_drop:input", "vault:session_id"}.issubset(option_values)
 
+        vault_list = app.query_one("#membank-inputs", SelectionList)
+        vault_checkbox = app.query_one("#membank-reads", Checkbox)
+        assert vault_list.disabled is False
+        vault_checkbox.value = False
+        screen._sync_membank_input_controls()
+        screen._sync_branch_payload_rows()
+        assert vault_list.disabled is True
+        option_values = {
+            value for _, value in app.query_one("#branch-payload-source-path_b", Select)._options
+        }
+        assert "vault:session_id" not in option_values
+        vault_checkbox.value = True
+        screen._sync_membank_input_controls()
+        screen._sync_branch_payload_rows()
+        option_values = {
+            value for _, value in app.query_one("#branch-payload-source-path_b", Select)._options
+        }
+        assert "vault:session_id" in option_values
+
+        tabs = app.query_one("#node-config-tabs", TabbedContent)
+        tabs.active = "node-config-tab-outputs"
+        screen._focus_first_config_tab_widget("node-config-tab-outputs")
+        await pilot.pause(0.03)
+        visited: list[str] = []
+        for _ in range(10):
+            focused_id = str(getattr(app.focused, "id", ""))
+            if focused_id:
+                visited.append(focused_id)
+            await pilot.press("s")
+            await pilot.pause(0.01)
+        assert "branch-label-path_e" in visited
+        assert "branch-payload-source-path_e" in visited
+        assert all(visited)
+
         app.query_one("#branch-label-path_c", CommandInput).value = "Review"
         app.query_one("#branch-payload-source-path_a", Select).value = "vault:session_id"
         app.query_one("#branch-payload-source-path_b", Select).value = "vault:session_id"
         values = screen._branch_config_values()
-        assert values["branch_count"] == 3
+        assert values["branch_count"] == 5
         assert values["path_c_label"] == "Review"
         assert values["branch_payload_sources"]["path_a"] == "vault:session_id"
         assert values["branch_payload_sources"]["path_b"] == "vault:session_id"
@@ -976,6 +1026,81 @@ async def _test_branch_config_uses_parallel_payload_ui():
 
 def test_branch_node_parallel_count_and_payload_sources():
     asyncio.run(_test_branch_node_parallel_count_and_payload_sources())
+
+
+def test_node_config_empty_vault_copy_is_short():
+    asyncio.run(_test_node_config_empty_vault_copy_is_short())
+
+
+async def _test_node_config_empty_vault_copy_is_short():
+    from textual.app import App, ComposeResult
+
+    from frontend.screens.node_config import NodeConfigScreen
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("empty_vault_copy")
+    branch = wm.add_node("branch_node")
+    node_data = wm.get_node_data(branch)
+
+    class ConfigApp(App):
+        def compose(self) -> ComposeResult:
+            yield NodeConfigScreen(wm._factory, wm, branch, node_data)
+
+    app = ConfigApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        assert any(
+            str(getattr(static, "renderable", getattr(static, "content", ""))) == "The vault is empty"
+            for static in app.query("Static")
+        )
+
+    print("test_node_config_empty_vault_copy_is_short PASSED")
+
+
+def test_node_config_selection_lists_exit_at_edges():
+    asyncio.run(_test_node_config_selection_lists_exit_at_edges())
+
+
+async def _test_node_config_selection_lists_exit_at_edges():
+    from textual.app import App, ComposeResult
+    from textual.widgets import Checkbox, SelectionList
+
+    from frontend.screens.node_config import NodeConfigScreen
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("selection_list_edges")
+    writer = wm.add_node("logger_node")
+    target = wm.add_node("logger_node")
+    wm.update_node_config(
+        writer,
+        {"membank_outputs": [{"id": "session_id", "description": "Session id"}]},
+    )
+    wm.update_node_config(target, {"membank_inputs": ["session_id"]})
+    node_data = wm.get_node_data(target)
+
+    class ConfigApp(App):
+        def compose(self) -> ComposeResult:
+            yield NodeConfigScreen(wm._factory, wm, target, node_data)
+
+    app = ConfigApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.05)
+        vault = app.query_one("#membank-inputs", SelectionList)
+        vault_checkbox = app.query_one("#membank-reads", Checkbox)
+        app.set_focus(vault)
+        vault.highlighted = 0
+
+        await pilot.press("w")
+        await pilot.pause(0.02)
+        assert app.focused is vault_checkbox
+
+        app.set_focus(vault)
+        vault.highlighted = len(vault._options) - 1
+        await pilot.press("s")
+        await pilot.pause(0.02)
+        assert getattr(app.focused, "id", "") == "save-node-config"
+
+    print("test_node_config_selection_lists_exit_at_edges PASSED")
 
 
 async def _test_branch_node_parallel_count_and_payload_sources():
@@ -3252,7 +3377,19 @@ def test_node_config_previous_output_preview_reads_transient_source():
     assert "Source:" in text
     assert "Logger" in text
     assert "Payload:" in text
-    assert "Payload value: dict (1 items)" in text
+    assert "Payload Description:" not in text
+    assert "Payload: Output (dict, 1 items)" in text
+
+    no_run_screen = NodeConfigScreen(
+        wm._factory,
+        wm,
+        target,
+        wm.get_node_data(target),
+    )
+    no_run_text = no_run_screen._previous_output_text()
+    assert "No captured" not in no_run_text
+    assert "Run the workflow" not in no_run_text
+    assert "Payload Description:" not in no_run_text
     print("test_node_config_previous_output_preview_reads_transient_source PASSED")
 
 
@@ -3404,10 +3541,107 @@ def test_node_config_previous_output_preview_traces_pass_through_source():
     text = screen._previous_output_text()
 
     assert "Source: Producer -> Pause" in text
-    assert "Payload: created_payload" in text
+    assert "Payload: created_payload (dict, 1 items)" in text
     assert "Payload Description: Original data" in text
-    assert "Payload value: dict (1 items)" in text
     print("test_node_config_previous_output_preview_traces_pass_through_source PASSED")
+
+
+def test_branch_payload_preview_traces_selected_dead_drop_source():
+    from frontend.screens.editor import EditorScreen
+    from frontend.screens.node_config import NodeConfigScreen
+
+    _, wm, mb, _ = _make_services()
+    wm.create_new("branch_payload_dead_drop_preview")
+    source = wm.add_node("logger_node")
+    branch = wm.add_node("branch_node")
+    target = wm.add_node("logger_node")
+
+    wm.update_node_alias(source, "Seed Source")
+    wm.update_node_alias(branch, "Branch Hub")
+    wm.update_node_config(
+        source,
+        {
+            "transient_outputs": [
+                {
+                    "port": "default",
+                    "name": "Seed Payload",
+                    "description": "Prepared upstream text",
+                }
+            ]
+        },
+    )
+    wm.update_node_config(
+        branch,
+        {
+            "branch_count": 2,
+            "branch_payload_sources": {"path_a": "dead_drop:input"},
+            "path_a_label": "Alpha",
+            "path_b_label": "Beta",
+        },
+    )
+    wm.connect(source, "default", branch, "input")
+    wm.connect(branch, "path_a", target, "input")
+    mb.store_transient(branch, "path_a", "seeded text")
+
+    config_screen = NodeConfigScreen(
+        wm._factory,
+        wm,
+        target,
+        wm.get_node_data(target),
+        memory_bank=mb,
+    )
+    preview = config_screen._previous_output_text()
+    assert "Source: Seed Source -> Branch Hub" in preview
+    assert "Payload: Seed Payload (str): seeded text" in preview
+    assert "Payload Description: Prepared upstream text" in preview
+
+    editor_screen = EditorScreen(wm._factory, wm)
+    quick_view = editor_screen._format_node_details(target, wm.get_node_data(target))
+    assert "Transient Source: Seed Source" in quick_view
+    assert "Seed Payload: Prepared upstream text" in quick_view
+    print("test_branch_payload_preview_traces_selected_dead_drop_source PASSED")
+
+
+def test_branch_payload_preview_traces_selected_vault_source():
+    from frontend.screens.node_config import NodeConfigScreen
+
+    _, wm, mb, _ = _make_services()
+    wm.create_new("branch_payload_vault_preview")
+    writer = wm.add_node("logger_node")
+    branch = wm.add_node("branch_node")
+    target = wm.add_node("logger_node")
+
+    wm.update_node_alias(writer, "Vault Writer")
+    wm.update_node_alias(branch, "Branch Hub")
+    wm.update_node_config(
+        writer,
+        {"membank_outputs": [{"id": "session_id", "description": "Session id"}]},
+    )
+    wm.update_node_config(
+        branch,
+        {
+            "branch_count": 2,
+            "membank_inputs": ["session_id"],
+            "branch_payload_sources": {"path_b": "vault:session_id"},
+            "path_a_label": "Alpha",
+            "path_b_label": "Beta",
+        },
+    )
+    wm.connect(branch, "path_b", target, "input")
+    mb.store_transient(branch, "path_b", "vault-value")
+
+    screen = NodeConfigScreen(
+        wm._factory,
+        wm,
+        target,
+        wm.get_node_data(target),
+        memory_bank=mb,
+    )
+    preview = screen._previous_output_text()
+    assert "Source: Vault Writer -> Branch Hub" in preview
+    assert "Payload: session_id (str): vault-value" in preview
+    assert "Payload Description: Session id" in preview
+    print("test_branch_payload_preview_traces_selected_vault_source PASSED")
 
 
 def test_node_selector_filter_auto_edits_when_focused():
@@ -3948,7 +4182,13 @@ async def _test_node_config_command_inputs_require_activation():
         await pilot.press("escape")
         assert alias.editing is False
         assert app.focused is alias
-        assert alias.value == node_data.get("alias", "")
+        assert alias.value.endswith("xws")
+        preserved_value = alias.value
+        screen.action_activate_focused()
+        await pilot.press("y")
+        await pilot.press("ctrl+q")
+        assert alias.editing is False
+        assert alias.value == preserved_value
         screen.action_activate_focused()
         await pilot.press("y")
         await pilot.press("enter")
@@ -4167,6 +4407,7 @@ async def _test_editor_ctrl_s_quick_saves():
     from textual.app import App, ComposeResult
 
     from frontend.screens.editor import EditorScreen
+    from frontend.widgets.status_bar import StatusBar
 
     _, wm, _, _ = _make_services()
     wm.create_new("editor_quick_save")
@@ -4183,6 +4424,7 @@ async def _test_editor_ctrl_s_quick_saves():
     app = SaveApp()
     async with app.run_test() as pilot:
         await pilot.pause(0.03)
+        assert "ctrl+q quit" in app.query_one(StatusBar)._formatted()
         await pilot.press("ctrl+s")
         await pilot.pause()
 
@@ -4579,11 +4821,25 @@ async def _test_click_edit_and_textarea_commit_sync_cursor_mode():
         await pilot.press("left")
         await pilot.pause(0.02)
         assert textarea.selection.end == (1, 4)
+        await pilot.press("x")
+        assert "worlxd" in textarea.text
+        await pilot.press("escape")
+        await pilot.pause(0.02)
+        assert textarea.editing is False
+        assert "worlxd" in textarea.text
         textarea.begin_edit()
         await pilot.press("tab")
         await pilot.pause(0.02)
         assert textarea.editing is True
         assert app.cursor_state.mode == "edit"
+        before_revert = textarea.text
+        await pilot.press("z")
+        assert textarea.text != before_revert
+        await pilot.press("ctrl+q")
+        await pilot.pause(0.02)
+        assert textarea.editing is False
+        assert textarea.text == before_revert
+        assert "worlxd" in textarea.text
         textarea.begin_edit()
         await pilot.press("ctrl+enter")
         await pilot.pause(0.02)
@@ -4771,6 +5027,8 @@ if __name__ == "__main__":
         test_branch_config_uses_generated_labels_without_memory_outputs,
         test_branch_config_uses_parallel_payload_ui,
         test_branch_node_parallel_count_and_payload_sources,
+        test_node_config_empty_vault_copy_is_short,
+        test_node_config_selection_lists_exit_at_edges,
         test_sleep_config_shows_pass_through_hint,
         test_form_generator_groups_schema_for_tabs,
         test_form_generator_mounts_tabbed_and_single_group_forms,
@@ -4819,6 +5077,8 @@ if __name__ == "__main__":
         test_editor_quick_view_uses_transient_output_overrides,
         test_editor_quick_view_traces_pass_through_producer,
         test_node_config_previous_output_preview_traces_pass_through_source,
+        test_branch_payload_preview_traces_selected_dead_drop_source,
+        test_branch_payload_preview_traces_selected_vault_source,
         test_node_selector_filter_auto_edits_when_focused,
         test_branch_selector_uses_shared_list_navigation,
         test_workflow_library_uses_shared_list_navigation,

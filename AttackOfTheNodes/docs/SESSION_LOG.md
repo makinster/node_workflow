@@ -1,5 +1,30 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-09 — Node Config Copy, Scroll, And Payload Polish
+
+- Polished Branch config copy: empty Vault state now says `The vault is empty`,
+  the Branch Source summary is compact bullet text, and empty/default upstream
+  payload descriptions/no-run filler text are omitted.
+- Updated command text editing semantics: Esc, Enter, and small-field Tab leave
+  edit mode while preserving typed text for modal Save; Ctrl+Q is now the
+  explicit field-level revert command.
+- Improved Branch Payloads navigation and scrolling so 4-5 branch rows remain
+  reachable and visible with W/S movement.
+- Vault-dependent branch seed choices are disabled/removed while the Vault
+  checkbox is off.
+- Inline selection lists such as Vault now exit at top/bottom with W/S or
+  up/down instead of trapping keyboard navigation until Tab.
+- Branch seed display now treats the selected upstream dead-drop or Vault value
+  as the branch port's visible payload. Downstream config previews and editor
+  Quick View trace to the original producer while keeping the Branch node in the
+  source chain.
+- Updated `AGENT_START_GUIDE.md`, `TUI_DESIGN.md`, and `MASTER_BUILD_PLAN.md`
+  with the current config/navigation conventions.
+- Verification:
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "selection_lists_exit or previous_output_preview or quick_view or branch_payload_preview or branch_config_uses_parallel or command_inputs_require_activation or click_edit_and_textarea or editor_ctrl_s"` (13 passed)
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v` (108 passed)
+
 ## 2026-06-09 — Branch Config Payload Polish
 
 - Shifted `branch_node` to the current Branch v1 UI: always-parallel branch

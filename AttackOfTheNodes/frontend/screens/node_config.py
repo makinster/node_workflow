@@ -605,8 +605,9 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         with Vertical(id="modal-card", classes="node-config-modal"):
             title = f"{self.node_data.get('alias') or self.node_id} ({self.node_id})"
             yield Label(f"Edit Node: {title}", classes="modal-title")
+            help_text = "w/s move | a/d tabs | e interact | ctrl+s save | esc cancel | ctrl+q revert"
             yield Static(
-                "w/s move | a/d tabs | e edit/select | ctrl+s save | esc cancel",
+                help_text,
                 classes="modal-help",
             )
             with VerticalScroll(id="node-config-scroll"):
@@ -629,7 +630,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             with Vertical(classes="button-row"):
                 yield Button("Save", id="save-node-config", variant="primary")
                 yield Button("Cancel", id="cancel-node-config", variant="default")
-            yield StatusBar("w/s move | a/d tabs | e edit/select | ctrl+s save | esc cancel")
+            yield StatusBar(help_text)
 
     def _compose_standard_config_tabs(
         self,
@@ -652,7 +653,6 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                     id="show-previous-output",
                 )
                 yield Static("", id="previous-output-preview", classes="form-description")
-                yield Label("Vault", classes="form-label nav-section")
                 yield from self._compose_membank_inputs(config)
                 if self.node_data.get("type") == "wait_until_node":
                     yield Label("Wait Targets", classes="form-label nav-section")
@@ -694,10 +694,9 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                     "\n".join(
                         [
                             "Node type: Branch",
-                            "This node spawns branching paths.",
-                            "",
-                            "Parallel paths enabled",
-                            "Conditional branching hidden for a later node pass",
+                            "- This node spawns branching paths.",
+                            "- Parallel paths enabled",
+                            "- Conditional branching hidden for a later node pass",
                         ]
                     ),
                     id="node-config-summary",
@@ -709,7 +708,6 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                     id="show-previous-output",
                 )
                 yield Static("", id="previous-output-preview", classes="form-description")
-                yield Label("Vault", classes="form-label nav-section")
                 yield from self._compose_membank_inputs(config)
 
             with TabPane("Parameters", id="node-config-tab-parameters"):
@@ -797,8 +795,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                     id=f"branch-payload-source-{port}",
                     allow_blank=False,
                 ),
-                Static("", classes="membank-output-spacer"),
                 id=f"branch-payload-row-{port}",
+                classes="branch-payload-row",
             )
             row.display = index < branch_count
             widgets.append(row)
@@ -814,6 +812,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             if focusable:
                 self.app.set_focus(focusable[0])
         self._sync_membank_output_controls()
+        self._sync_membank_input_controls()
         self._sync_branch_payload_rows()
         self._sync_previous_output_preview()
         if self.query("#alias-input"):
@@ -841,6 +840,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         if event.checkbox.id == "membank-writes":
             await self._refresh_membank_output_rows()
         elif event.checkbox.id == "membank-reads":
+            self._sync_membank_input_controls()
             self._sync_branch_payload_rows()
         elif event.checkbox.id == "show-previous-output":
             self._sync_previous_output_preview()
@@ -930,7 +930,10 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             move_select_overlay(expanded_select, -1)
             return
         if isinstance(focused, SelectionList):
-            focused.action_cursor_up()
+            if self._selection_list_at_top(focused):
+                self._move_keyboard_focus(-1)
+            else:
+                focused.action_cursor_up()
             self._sync_cursor_mode()
             return
         self._move_keyboard_focus(-1)
@@ -949,7 +952,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             move_select_overlay(expanded_select, 1)
             return
         if isinstance(focused, SelectionList):
-            if focused.id == "merge-branches-to-close" and self._selection_list_at_bottom(focused):
+            if self._selection_list_at_bottom(focused):
                 self._move_keyboard_focus(1)
             else:
                 focused.action_cursor_down()
@@ -967,6 +970,16 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         except Exception:
             option_count = 0
         return option_count > 0 and highlighted >= option_count - 1
+
+    def _selection_list_at_top(self, selection_list: SelectionList) -> bool:
+        highlighted = getattr(selection_list, "highlighted", None)
+        if highlighted is None:
+            return False
+        try:
+            option_count = len(selection_list._options)
+        except Exception:
+            option_count = 0
+        return option_count > 0 and highlighted <= 0
 
     def action_activate_focused(self) -> None:
         activate_command_widget(
@@ -1083,8 +1096,16 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 target,
                 self.query_one("#node-config-scroll"),
             )
+            self.call_after_refresh(lambda target=target: self._scroll_config_widget_into_view(target))
         except Exception:
             focus_command_widget(self, target)
+
+    def _scroll_config_widget_into_view(self, target: Any) -> None:
+        try:
+            self.query_one("#node-config-scroll").scroll_to_widget(target, animate=False)
+            target.scroll_visible(animate=False)
+        except Exception:
+            pass
 
     def _nav_widgets(self) -> list[Any]:
         return self._keyboard_focus_widgets()
@@ -1249,27 +1270,39 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             str(source_port or "default"),
         )
         producer_id = producer.get("node_id") or source_id or "?"
-        producer_node = producer.get("node") or {}
-        source_label = self._dead_drop_chain_text(
-            str(source_id or ""),
-            str(producer_id),
+        chain_node_ids = producer.get("chain_node_ids") or []
+        source_label = (
+            self._dead_drop_chain_text_from_ids(chain_node_ids)
+            if chain_node_ids
+            else self._dead_drop_chain_text(str(source_id or ""), str(producer_id))
         )
-        prefix = "\n".join(
-            [
-                f"Source: {source_label}",
-                f"Payload: {producer.get('name', source_port)}",
-                f"Payload Description: {producer.get('description', '')}",
-            ]
-        )
+        payload_name = str(producer.get("name") or source_port)
+        lines = [f"Source: {source_label}"]
+        description = str(producer.get("description") or "").strip()
+        if description and description != "No output description configured.":
+            lines.append(f"Payload Description: {description}")
         if self.memory_bank is None:
-            return f"{prefix}\nNo captured run payload is available yet."
+            lines.insert(1, f"Payload: {payload_name}")
+            return "\n".join(lines)
         value = self.memory_bank.read_transient(source_id, source_port, default=None)
         if value is None:
-            return f"{prefix}\nNo captured payload yet. Run the workflow to populate it."
-        rendered = self._payload_value_preview(value)
+            lines.insert(1, f"Payload: {payload_name}")
+            return "\n".join(lines)
+        rendered = self._payload_value_preview(payload_name, value)
         if len(rendered) > 800:
             rendered = f"{rendered[:797]}..."
-        return f"{prefix}\n{rendered}"
+        lines.insert(1, rendered)
+        return "\n".join(lines)
+
+    def _dead_drop_chain_text_from_ids(self, node_ids: list[str]) -> str:
+        chain = [
+            self._node_display_name(node_id, self.workflow_map.get_node_data(node_id) or {})
+            for node_id in node_ids
+            if node_id
+        ]
+        if len(chain) > 4:
+            chain = [chain[0], "(...)", chain[-1]]
+        return " -> ".join(chain) if chain else "-"
 
     def _dead_drop_chain_text(self, source_id: str, producer_id: str) -> str:
         chain: list[str] = []
@@ -1295,12 +1328,12 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             chain = [chain[0], "(...)", chain[-1]]
         return " -> ".join(chain)
 
-    def _payload_value_preview(self, value: Any) -> str:
+    def _payload_value_preview(self, payload_name: str, value: Any) -> str:
         if isinstance(value, (str, int, float, bool)) or value is None:
-            return f"Preview: {value!r}"
+            return f"Payload: {payload_name} ({type(value).__name__}): {value}"
         if isinstance(value, (list, tuple, set, dict)):
-            return f"Payload value: {type(value).__name__} ({len(value)} items)"
-        return f"Payload value: {type(value).__name__}"
+            return f"Payload: {payload_name} ({type(value).__name__}, {len(value)} items)"
+        return f"Payload: {payload_name} ({type(value).__name__})"
 
     def _sync_previous_output_preview(self) -> None:
         checkbox_query = self.query("#show-previous-output")
@@ -1334,12 +1367,14 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         enabled = bool(selected)
         yield Checkbox("Vault", value=enabled, id="membank-reads")
         if options:
-            yield SelectionList(
+            selection_list = SelectionList(
                 *dynamic_selection_rows(options, selected),
                 id="membank-inputs",
             )
+            selection_list.disabled = not enabled
+            yield selection_list
         else:
-            yield Static("No upstream Vault payloads are available.", classes="form-description")
+            yield Static("The vault is empty", classes="form-description")
 
     def _compose_transient_outputs(
         self,
@@ -1611,6 +1646,15 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 current_value = str(selector.value or "dead_drop:input")
                 selector.set_options(source_options)
                 selector.value = current_value if current_value in valid_values else "dead_drop:input"
+
+    def _sync_membank_input_controls(self) -> None:
+        reads_query = self.query("#membank-reads")
+        if not reads_query:
+            return
+        reads_enabled = bool(reads_query.first().value)
+        selection_query = self.query("#membank-inputs")
+        if selection_query:
+            selection_query.first().disabled = not reads_enabled
 
     def _sync_membank_output_controls(self) -> None:
         if not self.query("#membank-writes"):

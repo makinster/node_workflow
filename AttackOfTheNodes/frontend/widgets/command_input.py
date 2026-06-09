@@ -146,9 +146,24 @@ class CommandInput(Input):
     def on_click(self, event: events.Click) -> None:
         self.begin_edit(place_cursor_at_end=False)
 
+    def check_consume_key(self, key: str, character: str | None) -> bool:
+        return self.editing and key in {
+            "escape",
+            "ctrl+q",
+            "tab",
+            "shift+tab",
+            "enter",
+            *EDITING_NAV_KEYS,
+        }
+
     async def _on_key(self, event: events.Key) -> None:
         if self.editing:
-            if event.key in ("escape", "ctrl+q"):
+            if event.key == "escape":
+                self.end_edit()
+                event.stop()
+                event.prevent_default()
+                return
+            if event.key == "ctrl+q":
                 self.end_edit(revert=True)
                 event.stop()
                 event.prevent_default()
@@ -272,9 +287,25 @@ class CommandTextArea(TextArea):
     def on_click(self, event: events.Click) -> None:
         self.begin_edit(place_cursor_at_end=False)
 
+    def check_consume_key(self, key: str, character: str | None) -> bool:
+        return self.editing and key in {
+            "escape",
+            "ctrl+q",
+            "ctrl+enter",
+            "tab",
+            "shift+tab",
+            "enter",
+            *EDITING_NAV_KEYS,
+        }
+
     async def _on_key(self, event: events.Key) -> None:
         if self.editing:
-            if event.key in ("escape", "ctrl+q"):
+            if event.key == "escape":
+                self.end_edit()
+                event.stop()
+                event.prevent_default()
+                return
+            if event.key == "ctrl+q":
                 self.end_edit(revert=True)
                 event.stop()
                 event.prevent_default()

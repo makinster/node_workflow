@@ -93,7 +93,7 @@ class EditorScreen(Screen):
                 with Vertical(id="details-panel", classes="panel"):
                     yield Label("Selected Node:", classes="panel-title")
                     yield Static("", id="node-details")
-            yield StatusBar("f file | o options | h help")
+            yield StatusBar("f file | o options | h help | ctrl+q quit")
 
     def on_mount(self) -> None:
         self._restore_editor_state_from_app()
