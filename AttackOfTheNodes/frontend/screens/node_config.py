@@ -36,6 +36,25 @@ from frontend.widgets.status_bar import StatusBar
 
 
 MAX_MEMBANK_OUTPUT_ROWS = 5
+BRANCH_PORTS = ["path_a", "path_b", "path_c", "path_d", "path_e"]
+MIN_BRANCH_COUNT = 2
+MAX_BRANCH_COUNT = 5
+LEGACY_BRANCH_CONFIG_KEYS = {
+    "condition",
+    "match_value",
+    "match_mode",
+    "case_sensitive",
+    "on_match",
+    "on_no_match",
+}
+
+
+def _branch_count_from_config(config: Dict[str, Any]) -> int:
+    try:
+        count = int(config.get("branch_count", MIN_BRANCH_COUNT))
+    except (TypeError, ValueError):
+        count = MIN_BRANCH_COUNT
+    return max(MIN_BRANCH_COUNT, min(MAX_BRANCH_COUNT, count))
 
 
 def normalize_membank_outputs(config: Dict[str, Any]) -> list[Dict[str, str]]:
@@ -109,7 +128,7 @@ def membank_input_options(workflow_map, current_node_id: str) -> list[tuple[str,
         if writers and writers.issubset(downstream):
             continue
         description = entry.get("description") or "No description"
-        options.append((f"Output Description: {description} | Output: {output_id}", output_id))
+        options.append((f"Vault: {output_id} - {description}", output_id))
     return options
 
 
@@ -307,7 +326,10 @@ def _node_output_ports(workflow_map, node: Dict[str, Any]) -> list[str]:
     if factory is not None:
         for metadata in factory.get_node_types_metadata():
             if metadata.get("type") == node_type:
-                return [str(port) for port in metadata.get("output_ports") or []]
+                ports = [str(port) for port in metadata.get("output_ports") or []]
+                if node_type == "branch_node":
+                    return ports[: _branch_count_from_config(node.get("config") or {})]
+                return ports
     outputs = node.get("connections", {}).get("outputs", [])
     return sorted({str(conn.get("source_port", "default")) for conn in outputs})
 
@@ -541,9 +563,19 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
     def compose(self) -> ComposeResult:
         metadata = self._metadata_for_type(self.node_data.get("type", ""))
         schema = metadata.get("config_schema", {}) if metadata else {}
-        schema = self._schema_with_generated_branch_labels(metadata, schema)
+        if self.node_data.get("type") != "branch_node":
+            schema = self._schema_with_generated_branch_labels(metadata, schema)
         config = self.node_data.get("config") or {}
         excluded_config_keys = {"membank_outputs", "membank_inputs", "transient_outputs"}
+        if self.node_data.get("type") == "branch_node":
+            excluded_config_keys.update(
+                {
+                    "branch_count",
+                    "branch_payload_sources",
+                    *LEGACY_BRANCH_CONFIG_KEYS,
+                    *(f"{port}_label" for port in BRANCH_PORTS),
+                }
+            )
         if self.node_data.get("type") == "wait_until_node":
             excluded_config_keys.add("target_node_ids")
         if self.node_data.get("type") == "merge_node":
@@ -586,6 +618,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                         self._branch_end_status_text(),
                         classes="form-description",
                     )
+                elif self.node_data.get("type") == "branch_node":
+                    yield from self._compose_branch_config_tabs(metadata, config)
                 else:
                     yield from self._compose_standard_config_tabs(
                         metadata,
@@ -604,21 +638,21 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         form,
     ):
         with TabbedContent(id="node-config-tabs", classes="node-config-tabs"):
-            with TabPane("Core", id="node-config-tab-core"):
+            with TabPane("Source", id="node-config-tab-core"):
                 yield Label("Alias", classes="form-label nav-section")
                 yield CommandInput(value=self.node_data.get("alias", ""), id="alias-input")
                 yield Static(self._format_metadata(metadata), id="node-config-summary")
                 pass_through_note = self._pass_through_note(metadata)
                 if pass_through_note:
                     yield Static(pass_through_note, classes="form-description pass-through-note")
-                yield Label("Previous Node Output", classes="form-label nav-section")
+                yield Label("Upstream Payload", classes="form-label nav-section")
                 yield Checkbox(
-                    "Show previous node output",
+                    "Reveal upstream payload",
                     value=False,
                     id="show-previous-output",
                 )
                 yield Static("", id="previous-output-preview", classes="form-description")
-                yield Label("Memory Bank Inputs", classes="form-label nav-section")
+                yield Label("Vault", classes="form-label nav-section")
                 yield from self._compose_membank_inputs(config)
                 if self.node_data.get("type") == "wait_until_node":
                     yield Label("Wait Targets", classes="form-label nav-section")
@@ -627,11 +661,11 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             with TabPane("Parameters", id="node-config-tab-parameters"):
                 yield form
 
-            with TabPane("Outputs", id="node-config-tab-outputs"):
-                yield Label("Transient Outputs", classes="form-label nav-section")
+            with TabPane("Payloads", id="node-config-tab-outputs"):
+                yield Label("Dead Drop Payloads", classes="form-label nav-section")
                 yield from self._compose_transient_outputs(metadata, config)
                 if self._supports_membank_outputs(metadata):
-                    yield Label("Memory Bank Outputs", classes="form-label nav-section")
+                    yield Label("Vault Payloads", classes="form-label nav-section")
                     yield from self._compose_membank_outputs(config)
 
             with TabPane("Connections", id="node-config-tab-connections"):
@@ -641,6 +675,134 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                     classes="form-description",
                 )
                 yield Static(self._format_connections(), id="connection-summary")
+
+    def _compose_branch_config_tabs(
+        self,
+        metadata: Optional[Dict[str, Any]],
+        config: Dict[str, Any],
+    ):
+        branch_count = _branch_count_from_config(config)
+        source_options = self._branch_payload_source_options(config)
+        payload_sources = config.get("branch_payload_sources") or {}
+        if not isinstance(payload_sources, dict):
+            payload_sources = {}
+        with TabbedContent(id="node-config-tabs", classes="node-config-tabs"):
+            with TabPane("Source", id="node-config-tab-core"):
+                yield Label("Alias", classes="form-label nav-section")
+                yield CommandInput(value=self.node_data.get("alias", ""), id="alias-input")
+                yield Static(
+                    "\n".join(
+                        [
+                            "Node type: Branch",
+                            "This node spawns branching paths.",
+                            "",
+                            "Parallel paths enabled",
+                            "Conditional branching hidden for a later node pass",
+                        ]
+                    ),
+                    id="node-config-summary",
+                    classes="form-description",
+                )
+                yield Checkbox(
+                    "Reveal upstream payload",
+                    value=False,
+                    id="show-previous-output",
+                )
+                yield Static("", id="previous-output-preview", classes="form-description")
+                yield Label("Vault", classes="form-label nav-section")
+                yield from self._compose_membank_inputs(config)
+
+            with TabPane("Parameters", id="node-config-tab-parameters"):
+                yield Label("Branches", classes="form-label nav-section")
+                yield CommandInput(
+                    value=str(branch_count),
+                    type="integer",
+                    id="branch-count",
+                    classes="compact-number-field",
+                )
+                yield Static("Choose 2 to 5 spawn points.", classes="form-description")
+
+            with TabPane("Payloads", id="node-config-tab-outputs"):
+                yield Vertical(
+                    *self._branch_payload_row_widgets(
+                        branch_count,
+                        source_options,
+                        payload_sources,
+                        config,
+                    ),
+                    id="branch-payload-rows",
+                )
+
+            with TabPane("Connections", id="node-config-tab-connections"):
+                yield Label("Connections", classes="form-label nav-section")
+                yield Static(
+                    "Edit connections from the editor.",
+                    classes="form-description",
+                )
+                yield Static(self._format_connections(), id="connection-summary")
+
+    def _branch_payload_source_options(
+        self,
+        config: Optional[Dict[str, Any]] = None,
+    ) -> list[tuple[str, str]]:
+        options: list[tuple[str, str]] = [("Upstream payload", "dead_drop:input")]
+        selected_vault = self._selected_vault_inputs(config)
+        registry = build_membank_registry(self.workflow_map)
+        for output_id in selected_vault:
+            description = str((registry.get(output_id) or {}).get("description") or "").strip()
+            label = f"Vault: {output_id}"
+            if description:
+                label = f"{label} - {description}"
+            options.append((label, f"vault:{output_id}"))
+        return options
+
+    def _selected_vault_inputs(self, config: Optional[Dict[str, Any]] = None) -> list[str]:
+        if config is not None:
+            return normalize_membank_inputs(config)
+        reads_query = self.query("#membank-reads")
+        if reads_query and not reads_query.first().value:
+            return []
+        selection_query = self.query("#membank-inputs")
+        if selection_query:
+            return list(selected_values_from_widget(selection_query.first()))
+        return normalize_membank_inputs(config or self.node_data.get("config") or {})
+
+    def _branch_payload_row_widgets(
+        self,
+        branch_count: int,
+        source_options: list[tuple[str, str]],
+        payload_sources: Dict[str, Any],
+        config: Dict[str, Any],
+    ) -> list[Any]:
+        widgets: list[Any] = []
+        for index, port in enumerate(BRANCH_PORTS):
+            label = str(
+                config.get(f"{port}_label") or f"Branch {index + 1}"
+            )
+            selected_source = str(payload_sources.get(port) or "dead_drop:input")
+            valid_values = {value for _, value in source_options}
+            if selected_source not in valid_values:
+                selected_source = "dead_drop:input"
+            row = Vertical(
+                Label("Spawn Point:", classes="form-description"),
+                CommandInput(
+                    value=label,
+                    id=f"branch-label-{port}",
+                    placeholder=f"Branch {index + 1}",
+                ),
+                Label("Start with:", classes="form-description"),
+                Select(
+                    source_options,
+                    value=selected_source,
+                    id=f"branch-payload-source-{port}",
+                    allow_blank=False,
+                ),
+                Static("", classes="membank-output-spacer"),
+                id=f"branch-payload-row-{port}",
+            )
+            row.display = index < branch_count
+            widgets.append(row)
+        return widgets
 
     def on_mount(self) -> None:
         self.query_one("#node-config-scroll").can_focus = False
@@ -652,6 +814,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             if focusable:
                 self.app.set_focus(focusable[0])
         self._sync_membank_output_controls()
+        self._sync_branch_payload_rows()
         self._sync_previous_output_preview()
         if self.query("#alias-input"):
             self.call_after_refresh(
@@ -677,6 +840,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
     async def on_checkbox_changed(self, event: Checkbox.Changed) -> None:
         if event.checkbox.id == "membank-writes":
             await self._refresh_membank_output_rows()
+        elif event.checkbox.id == "membank-reads":
+            self._sync_branch_payload_rows()
         elif event.checkbox.id == "show-previous-output":
             self._sync_previous_output_preview()
         elif event.checkbox.id == "field-pass_through":
@@ -685,6 +850,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
     async def on_input_changed(self, event: Input.Changed) -> None:
         if event.input.id == "membank-output-count":
             await self._refresh_membank_output_rows()
+        elif event.input.id == "branch-count":
+            self._sync_branch_payload_rows()
 
     def on_select_changed(self, event: Select.Changed) -> None:
         if event.select.id == "merge-carry-forward-selector":
@@ -696,6 +863,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         if event.selection_list.id == "merge-branches-to-close":
             self._sync_merge_carry_forward_selector()
             self._sync_merge_input_details()
+        elif event.selection_list.id == "membank-inputs":
+            self._sync_branch_payload_rows()
 
     async def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "save-node-config":
@@ -736,6 +905,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         config.update(self._transient_config_values())
         config.update(self._membank_config_values())
         config.update(self._wait_config_values())
+        config.update(self._branch_config_values())
         config.update(self._merge_config_values())
         self.dismiss({"alias": alias, "config": config})
 
@@ -1017,23 +1187,20 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             return ""
         hint = (metadata.get("ui_hints") or {}).get("pass_through")
         if hint:
-            return f"Pass-through: {hint}"
+            return f"Dead drop payload: {hint}"
         description = str(metadata.get("description") or "").lower()
         if "passes input through" in description or "passes it through" in description:
-            return "Pass-through: forwards the previous node output to its own output."
+            return "Dead drop payload: forwards the upstream payload unchanged."
         return ""
 
     def _format_metadata(self, metadata: Optional[Dict[str, Any]]) -> str:
         if metadata is None:
             return "Unknown node type"
-        inputs = ", ".join(metadata.get("input_ports") or []) or "-"
-        outputs = ", ".join(metadata.get("output_ports") or []) or "-"
+        display_name = str(metadata.get("display_name") or metadata.get("type") or "Node")
         return "\n".join(
             [
-                f"Type: {metadata['type']}",
-                f"Description: {metadata.get('description', '')}",
-                f"Inputs: {inputs}",
-                f"Outputs: {outputs}",
+                f"Node type: {display_name}",
+                str(metadata.get("description", "")),
             ]
         )
 
@@ -1083,23 +1250,57 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         )
         producer_id = producer.get("node_id") or source_id or "?"
         producer_node = producer.get("node") or {}
-        source_label = self._node_label(str(producer_id), producer_node)
+        source_label = self._dead_drop_chain_text(
+            str(source_id or ""),
+            str(producer_id),
+        )
         prefix = "\n".join(
             [
                 f"Source: {source_label}",
-                f"Output: {producer.get('name', source_port)}",
-                f"Output Description: {producer.get('description', '')}",
+                f"Payload: {producer.get('name', source_port)}",
+                f"Payload Description: {producer.get('description', '')}",
             ]
         )
         if self.memory_bank is None:
-            return f"{prefix}\nNo captured run output is available yet."
+            return f"{prefix}\nNo captured run payload is available yet."
         value = self.memory_bank.read_transient(source_id, source_port, default=None)
         if value is None:
-            return f"{prefix}\nNo captured output yet. Run the workflow to populate it."
-        rendered = repr(value)
+            return f"{prefix}\nNo captured payload yet. Run the workflow to populate it."
+        rendered = self._payload_value_preview(value)
         if len(rendered) > 800:
             rendered = f"{rendered[:797]}..."
         return f"{prefix}\n{rendered}"
+
+    def _dead_drop_chain_text(self, source_id: str, producer_id: str) -> str:
+        chain: list[str] = []
+        current_id = source_id
+        visited: set[str] = set()
+        while current_id and current_id not in visited:
+            visited.add(current_id)
+            node = self.workflow_map.get_node_data(current_id) or {}
+            if not node:
+                break
+            chain.append(self._node_display_name(current_id, node))
+            if current_id == producer_id:
+                break
+            inputs = node.get("connections", {}).get("inputs", [])
+            if not inputs:
+                break
+            current_id = str(inputs[0].get("source_node_id") or "")
+        chain.reverse()
+        if not chain:
+            node = self.workflow_map.get_node_data(producer_id) or {}
+            return self._node_display_name(producer_id, node)
+        if len(chain) > 4:
+            chain = [chain[0], "(...)", chain[-1]]
+        return " -> ".join(chain)
+
+    def _payload_value_preview(self, value: Any) -> str:
+        if isinstance(value, (str, int, float, bool)) or value is None:
+            return f"Preview: {value!r}"
+        if isinstance(value, (list, tuple, set, dict)):
+            return f"Payload value: {type(value).__name__} ({len(value)} items)"
+        return f"Payload value: {type(value).__name__}"
 
     def _sync_previous_output_preview(self) -> None:
         checkbox_query = self.query("#show-previous-output")
@@ -1122,8 +1323,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             classes="compact-number-field",
         )
         count_input.disabled = not enabled
-        yield Checkbox("Writes to memory bank", value=enabled, id="membank-writes")
-        yield Label("Number of outputs", classes="form-description")
+        yield Checkbox("Write to Vault", value=enabled, id="membank-writes")
+        yield Label("Payload count", classes="form-description")
         yield count_input
         yield Vertical(id="membank-output-rows")
 
@@ -1131,14 +1332,14 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         selected = set(normalize_membank_inputs(config))
         options = membank_input_options(self.workflow_map, self.node_id)
         enabled = bool(selected)
-        yield Checkbox("Read from memory bank", value=enabled, id="membank-reads")
+        yield Checkbox("Vault", value=enabled, id="membank-reads")
         if options:
             yield SelectionList(
                 *dynamic_selection_rows(options, selected),
                 id="membank-inputs",
             )
         else:
-            yield Static("No upstream memory-bank outputs are available.", classes="form-description")
+            yield Static("No upstream Vault payloads are available.", classes="form-description")
 
     def _compose_transient_outputs(
         self,
@@ -1147,7 +1348,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
     ):
         ports = list(metadata.get("output_ports") or []) if metadata else []
         if not ports:
-            yield Static("No transient outputs.", classes="form-description")
+            yield Static("No dead drop payloads.", classes="form-description")
             return
         for port in ports:
             port = str(port)
@@ -1157,12 +1358,12 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             yield CommandInput(
                 value=name,
                 id=f"transient-output-name-{port}",
-                placeholder="Output name",
+                placeholder="Payload name",
             )
             yield CommandInput(
                 value="" if description == "No output description configured." else description,
                 id=f"transient-output-desc-{port}",
-                placeholder="Output description",
+                placeholder="Payload description",
             )
 
     def _compose_wait_targets(self, config: Dict[str, Any]):
@@ -1363,6 +1564,54 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 )
         return {"transient_outputs": outputs}
 
+    def _branch_config_values(self) -> Dict[str, Any]:
+        if self.node_data.get("type") != "branch_node":
+            return {}
+        existing_config = self.node_data.get("config") or {}
+        branch_count = self._branch_count_value()
+        values: Dict[str, Any] = {
+            "branch_count": branch_count,
+            "branch_payload_sources": {},
+        }
+        for key in LEGACY_BRANCH_CONFIG_KEYS:
+            if key in existing_config:
+                values[key] = existing_config[key]
+        for index, port in enumerate(BRANCH_PORTS):
+            label_query = self.query(f"#branch-label-{port}")
+            if label_query:
+                label = self._widget_text_value(label_query.first())
+            else:
+                label = str(existing_config.get(f"{port}_label") or f"Branch {index + 1}")
+            values[f"{port}_label"] = label or f"Branch {index + 1}"
+            source_query = self.query(f"#branch-payload-source-{port}")
+            if index < branch_count and source_query:
+                source = str(source_query.first().value or "dead_drop:input")
+                values["branch_payload_sources"][port] = source
+        return values
+
+    def _branch_count_value(self) -> int:
+        count_query = self.query("#branch-count")
+        if not count_query:
+            return _branch_count_from_config(self.node_data.get("config") or {})
+        return _branch_count_from_config({"branch_count": count_query.first().value})
+
+    def _sync_branch_payload_rows(self) -> None:
+        if self.node_data.get("type") != "branch_node" or not self.query("#branch-payload-rows"):
+            return
+        branch_count = self._branch_count_value()
+        source_options = self._branch_payload_source_options()
+        valid_values = {value for _, value in source_options}
+        for index, port in enumerate(BRANCH_PORTS):
+            row_query = self.query(f"#branch-payload-row-{port}")
+            if row_query:
+                row_query.first().display = index < branch_count
+            select_query = self.query(f"#branch-payload-source-{port}")
+            if select_query:
+                selector = select_query.first()
+                current_value = str(selector.value or "dead_drop:input")
+                selector.set_options(source_options)
+                selector.value = current_value if current_value in valid_values else "dead_drop:input"
+
     def _sync_membank_output_controls(self) -> None:
         if not self.query("#membank-writes"):
             return
@@ -1434,7 +1683,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             desc_input = CommandInput(
                 value=current.get("description", ""),
                 id=f"membank-output-desc-{index}",
-                placeholder="Describe what this output contains",
+                placeholder="Describe this Vault payload",
                 classes="membank-output-description-field",
             )
             output_input = CommandTextArea(
@@ -1442,16 +1691,16 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 id=f"membank-output-id-{index}",
                 classes="membank-output-field membank-output-textarea",
             )
-            output_input.placeholder = "Memory-bank output key or output value"
+            output_input.placeholder = "Vault payload key or value"
             desc_input.styles.height = 3
             desc_input.styles.width = "100%"
             output_input.styles.height = 6
             output_input.styles.width = "100%"
             widgets.extend(
                 [
-                    Label(f"Output {output_number} Description:", classes="form-description"),
+                    Label(f"Vault Payload {output_number} Description:", classes="form-description"),
                     desc_input,
-                    Label(f"Output {output_number}:", classes="form-description"),
+                    Label(f"Vault Payload {output_number}:", classes="form-description"),
                     output_input,
                     Static("", classes="membank-output-spacer"),
                 ]
@@ -1532,6 +1781,9 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
     def _node_label(self, node_id: str, node: Dict[str, Any]) -> str:
         name = node.get("alias") or node.get("type") or node_id
         return f"{name} ({node_id})"
+
+    def _node_display_name(self, node_id: str, node: Dict[str, Any]) -> str:
+        return str(node.get("alias") or node.get("type") or node_id)
 
     def _refresh_node_data(self) -> None:
         self.node_data = self.workflow_map.get_node_data(self.node_id) or self.node_data

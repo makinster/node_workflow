@@ -1,5 +1,27 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-09 — Branch Config Payload Polish
+
+- Shifted `branch_node` to the current Branch v1 UI: always-parallel branch
+  spawning, `2` to `5` active spawn points, and per-branch payload seed
+  selection from upstream dead-drop payloads or selected Vault values.
+- Kept legacy conditional Branch config keys readable/preserved for old saves
+  but hidden from the current Branch config UI pending a future dedicated
+  conditional-branch pass.
+- Updated config-screen language toward the project style guide: dead-drop
+  payloads, Vault values, and `Dead drop payload` forwarding.
+- Standard config tabs now use `Source`, `Parameters`, `Payloads`, and
+  `Connections`; large text areas keep Tab inside the editor while small text
+  fields still Tab out cleanly.
+- Editor branch traversal now respects `branch_count`, so inactive `path_c`
+  through `path_e` ports do not appear until enabled.
+- Updated `AGENT_START_GUIDE.md`, `TUI_DESIGN.md`, and `MASTER_BUILD_PLAN.md`
+  with the new Branch/config conventions.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "membank_registry or select_activates or previous_output_preview or click_edit_and_textarea or branch_config_uses_parallel or branch_node_parallel"` (7 passed)
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v` (104 passed)
+
 ## 2026-06-09 — Phase 16 Node Config Tabs
 
 - Completed the remaining Phase 16 config layout work.

@@ -75,6 +75,26 @@ the links in `docs/README.md`.
 - Generated schema fields land in the Node Config `Parameters` tab. If a schema
   itself has multiple `group` values, those fields render as nested generated
   tabs inside `Parameters`; single-group configs stay flat.
+- Standard Node Config tabs are `Source`, `Parameters`, `Payloads`, and
+  `Connections`. Keep ordinary node fields schema-driven; custom config screens
+  are reserved for topology-derived UI such as Branch, Merge, and Wait targets.
+- Config-screen copy currently uses the project vocabulary: graph-passed data is
+  a dead-drop payload, named memory is the Vault, and pass-through forwarding is
+  labeled `Dead drop payload`.
+
+## Branch Node V1
+
+- `branch_node` is currently exposed as an always-parallel branch spawner.
+- It supports fixed ports `path_a` through `path_e`, with `branch_count` clamped
+  from `2` to `5`.
+- The config UI hides legacy conditional fields. Keep legacy config keys readable
+  for old saves, but do not add new conditional UI to `branch_node`; use a future
+  dedicated conditional-branch node/pass instead.
+- Branch config stores:
+  - `<port>_label` for each spawn point name.
+  - `branch_payload_sources` such as `dead_drop:input` or `vault:<key>`.
+- When changing Branch behavior, update editor active-port traversal so only the
+  first `branch_count` ports are shown in branch cycling and branch selector rows.
 
 ## Make Inputs And Outputs Display Correctly
 

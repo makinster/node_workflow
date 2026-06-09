@@ -794,12 +794,13 @@ as `Name (2)`, keeps only a bottom Cancel button, and makes list-bottom W/S
 movement cycle cleanly to and from Cancel. Export/import path prompts return to
 the File menu when canceled.
 
-Node config gains transient output name/description overrides from node port
+Node config gains dead-drop payload name/description overrides from node port
 metadata, with buttons stacked vertically for W/S navigation. Standard node
-configs render in fixed tabs: Core, Parameters, Outputs, and Connections. W/S
+configs render in fixed tabs: Source, Parameters, Payloads, and Connections. W/S
 stays vertical inside the active tab and then moves to Save/Cancel, while A/D or
 left/right explicitly switch tabs and focus the new tab's first control. Active
-command text fields keep A/D and left/right for caret movement.
+small text fields keep A/D and left/right for caret movement and exit edit mode
+on Tab; large text areas keep Tab inside the text area.
 Settings gains an API Keys placeholder menu before real secret storage.
 
 Current progress:
@@ -812,10 +813,15 @@ Current progress:
   future output/asset convenience.
 - Typed path fallback prompts include a Browse action when picker metadata is
   available, so users can explicitly reopen the OS picker from the prompt.
-- Node config can override transient output names/descriptions from node port
+- Node config can override dead-drop payload names/descriptions from node port
   metadata.
-- Standard Node Config screens now use fixed Core / Parameters / Outputs /
+- Standard Node Config screens now use fixed Source / Parameters / Payloads /
   Connections tabs with keyboard traversal between tabs.
+- Branch config is now a custom always-parallel v1 surface: Branches clamps to
+  2-5, payload rows are named Spawn Points, and each active branch can choose an
+  upstream dead-drop payload or selected Vault payload as its seed. Legacy
+  conditional Branch config keys remain preserved for compatibility but are
+  hidden from the current UI pending a future dedicated conditional-branch pass.
 - Node config Save/Cancel and path-prompt Confirm/Cancel controls are stacked
   vertically for W/S movement.
 - Settings includes an API Keys placeholder behind `K`.

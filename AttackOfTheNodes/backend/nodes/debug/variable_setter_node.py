@@ -29,7 +29,7 @@ class VariableSetterNode(Node):
         },
         "pass_through": {
             "type": "boolean",
-            "label": "Pass input through",
+            "label": "Dead drop payload",
             "required": False,
         },
     }

@@ -205,7 +205,11 @@ back to the upstream node that actually created the transient data.
 Node rows use a fixed-width depth gutter with extra padding before the node
 name. Branch selector rows place the `☛` icon in the same gutter.
 Branch output labels should default to `Branch 1`, `Branch 2`, and so on, while
-remaining editable in the branch node config.
+remaining editable in the branch node config. Current Branch v1 is an
+always-parallel spawner: users choose `2` to `5` spawn points, name each spawn
+point, and choose which upstream dead-drop/Vault payload seeds each branch.
+Conditional branch fields are hidden until a later dedicated conditional-branch
+pass.
 
 The File menu should show workflow names without ids. Duplicate names are
 displayed as `Name`, `Name (2)`, `Name (3)`, and the currently loaded workflow
@@ -220,13 +224,15 @@ Opening/revealing a folder in Explorer/Finder/xdg-open is a separate convenience
 helper and must not be used as a substitute for choosing import/export paths.
 
 Node config buttons are stacked vertically for W/S navigation. `Ctrl+S` saves
-and closes. Config may expose transient output name/description overrides based
+and closes. Config may expose dead-drop payload name/description overrides based
 on node port metadata, stored in `transient_outputs`. Standard node configs use
-fixed `Core`, `Parameters`, `Outputs`, and `Connections` tabs. W/S moves
+fixed `Source`, `Parameters`, `Payloads`, and `Connections` tabs. W/S moves
 vertically inside the active tab and then to Save/Cancel; it does not move into
 the tab header and does not switch tabs. A/D and left/right switch tabs and move
 focus to the first control in the new tab. While a command text field is actively
-editing, A/D and left/right remain cursor-movement keys.
+editing, A/D and left/right remain cursor-movement keys. Small text fields exit
+editing on Tab; large `CommandTextArea` fields keep Tab inside the text area for
+content/indentation editing and use Esc or Ctrl+Enter to leave edit mode.
 
 Settings includes a visible Cancel control and reserves `K` for an API Keys
 submenu. The current API Keys screen is a placeholder only.

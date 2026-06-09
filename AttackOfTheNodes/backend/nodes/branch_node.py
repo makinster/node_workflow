@@ -1,4 +1,4 @@
-"""Branch Node: conditionally spawns execution paths."""
+"""Branch node: spawns parallel execution paths."""
 
 from typing import Any, ClassVar, Dict, List
 
@@ -7,18 +7,20 @@ from ..node_category import NodeCategory
 
 
 class BranchNode(Node):
-    """Routes execution based on a string comparison against its input."""
+    """Spawns parallel execution paths seeded from selected payloads."""
 
     node_type: ClassVar[str] = "branch_node"
     display_name: ClassVar[str] = "Branch"
-    description: ClassVar[str] = "Routes execution based on string matching"
+    description: ClassVar[str] = "Spawns branching paths"
     category: ClassVar[str] = NodeCategory.FLOW
 
     input_ports: ClassVar[List[str]] = ["input"]
-    output_ports: ClassVar[List[str]] = ["path_a", "path_b"]
+    output_ports: ClassVar[List[str]] = ["path_a", "path_b", "path_c", "path_d", "path_e"]
 
     default_config: ClassVar[Dict[str, Any]] = {
-        "condition": "string_match",
+        "branch_count": 2,
+        "branch_payload_sources": {},
+        "condition": "always_branch",
         "match_value": "yes",
         "match_mode": "equals",
         "case_sensitive": False,
@@ -26,8 +28,19 @@ class BranchNode(Node):
         "on_no_match": "path_b",
         "path_a_label": "Branch 1",
         "path_b_label": "Branch 2",
+        "path_c_label": "Branch 3",
+        "path_d_label": "Branch 4",
+        "path_e_label": "Branch 5",
     }
     config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {
+        "branch_count": {
+            "type": "integer",
+            "label": "Branches",
+            "description": "Number of parallel branch paths to spawn",
+            "required": False,
+            "min": 2,
+            "max": 5,
+        },
         "condition": {
             "type": "string",
             "description": "always_branch | path_a_only | path_b_only | string_match",
@@ -76,29 +89,77 @@ class BranchNode(Node):
             "required": False,
             "group": "Branch Names",
         },
+        "path_c_label": {
+            "type": "string",
+            "label": "Branch 3 name",
+            "description": "Editor display name for path_c",
+            "required": False,
+            "group": "Branch Names",
+        },
+        "path_d_label": {
+            "type": "string",
+            "label": "Branch 4 name",
+            "description": "Editor display name for path_d",
+            "required": False,
+            "group": "Branch Names",
+        },
+        "path_e_label": {
+            "type": "string",
+            "label": "Branch 5 name",
+            "description": "Editor display name for path_e",
+            "required": False,
+            "group": "Branch Names",
+        },
     }
 
     async def execute(self, context: NodeContext) -> None:
         condition = self.config.get("condition", "always_branch")
         input_value = context.inputs.get("input", "")
 
-        if condition == "path_a_only":
+        if condition == "path_a_only" and "branch_count" not in self.config:
             ports = ["path_a"]
-        elif condition == "path_b_only":
+        elif condition == "path_b_only" and "branch_count" not in self.config:
             ports = ["path_b"]
-        elif condition == "string_match":
+        elif condition == "string_match" and "branch_count" not in self.config:
             ports = [self._choose_string_match_port(input_value)]
         else:
-            ports = ["path_a", "path_b"]
+            ports = self.output_ports[: self._branch_count()]
 
+        seeded_values: Dict[str, Any] = {}
         for port in ports:
-            context.memory_bank.store_transient(context.node_id, port, input_value)
+            value = self._seed_value_for_port(port, input_value, context)
+            seeded_values[port] = value
+            context.memory_bank.store_transient(context.node_id, port, value)
 
         branches = [
-            {"output_port": port, "initial_data": {"input": input_value}}
+            {
+                "output_port": port,
+                "initial_data": {"input": seeded_values[port]},
+            }
             for port in ports
         ]
         context.signal_done({"data": {}, "branches": branches})
+
+    def _branch_count(self) -> int:
+        try:
+            count = int(self.config.get("branch_count", 2))
+        except (TypeError, ValueError):
+            count = 2
+        return max(2, min(5, count))
+
+    def _seed_value_for_port(
+        self,
+        port: str,
+        input_value: Any,
+        context: NodeContext,
+    ) -> Any:
+        sources = self.config.get("branch_payload_sources") or {}
+        source = ""
+        if isinstance(sources, dict):
+            source = str(sources.get(port) or "").strip()
+        if source.startswith("vault:"):
+            return context.memory_bank.read_persistent(source.removeprefix("vault:"), input_value)
+        return input_value
 
     def _choose_string_match_port(self, input_value: Any) -> str:
         """Return on_match or on_no_match based on input string comparison."""

@@ -656,7 +656,7 @@ class EditorScreen(Screen):
     def _upstream_branch_port(self, source_node_id: str, source_port: str) -> str:
         node = self.workflow_map.get_node_data(source_node_id) or {}
         metadata = self._metadata_for_type(node.get("type", ""))
-        output_ports = list(metadata.get("output_ports") or []) if metadata else []
+        output_ports = self._output_ports_for_node(node, metadata)
         if len(output_ports) > 1 and source_port in output_ports:
             return source_port
 
@@ -672,11 +672,7 @@ class EditorScreen(Screen):
                 upstream_id = str(input_conn.get("source_node_id") or "")
                 upstream_node = self.workflow_map.get_node_data(upstream_id) or {}
                 upstream_meta = self._metadata_for_type(upstream_node.get("type", ""))
-                upstream_outputs = (
-                    list(upstream_meta.get("output_ports") or [])
-                    if upstream_meta
-                    else []
-                )
+                upstream_outputs = self._output_ports_for_node(upstream_node, upstream_meta)
                 upstream_port = str(input_conn.get("source_port", "default") or "default")
                 if len(upstream_outputs) > 1:
                     return upstream_port
@@ -783,7 +779,7 @@ class EditorScreen(Screen):
         nodes = self.workflow_map.get_all_node_data()
         for node_id, node in nodes.items():
             metadata = self._metadata_for_type(node.get("type", ""))
-            output_ports = list(metadata.get("output_ports") or []) if metadata else []
+            output_ports = self._output_ports_for_node(node, metadata)
             if len(output_ports) <= 1:
                 continue
             port_labels = self._branch_port_labels(node)
@@ -825,7 +821,7 @@ class EditorScreen(Screen):
                 )
                 break
             metadata = self._metadata_for_type(node.get("type", ""))
-            ports = metadata.get("output_ports") if metadata else []
+            ports = self._output_ports_for_node(node, metadata)
             if len(ports or []) != 1:
                 break
             current_node_id = self._target_for_port(node, ports[0])
@@ -883,7 +879,7 @@ class EditorScreen(Screen):
             if node.get("type") == "branch_end_node":
                 return False
             metadata = self._metadata_for_type(node.get("type", ""))
-            ports = metadata.get("output_ports") if metadata else []
+            ports = self._output_ports_for_node(node, metadata)
             if len(ports or []) != 1:
                 return False
             current_node_id = self._target_for_port(node, ports[0])
@@ -983,7 +979,7 @@ class EditorScreen(Screen):
         if node.get("type") == "branch_end_node":
             return None
         metadata = self._metadata_for_type(node.get("type", ""))
-        output_ports = list(metadata.get("output_ports") or []) if metadata else []
+        output_ports = self._output_ports_for_node(node, metadata)
         for port in output_ports:
             target = self._target_for_port(node, port)
             if not target:
@@ -1148,7 +1144,7 @@ class EditorScreen(Screen):
         node: Dict[str, Any],
         metadata: Optional[Dict[str, Any]],
     ) -> list[str]:
-        ports = list(metadata.get("output_ports") or []) if metadata else []
+        ports = self._output_ports_for_node(node, metadata)
         if not ports:
             return ["    none"]
         lines: list[str] = []
@@ -1249,6 +1245,22 @@ class EditorScreen(Screen):
                 return item
         return None
 
+    def _output_ports_for_node(
+        self,
+        node: Dict[str, Any],
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> list[str]:
+        metadata = metadata or self._metadata_for_type(node.get("type", ""))
+        ports = [str(port) for port in (metadata.get("output_ports") if metadata else []) or []]
+        if node.get("type") == "branch_node":
+            config = node.get("config") or {}
+            try:
+                count = int(config.get("branch_count", 2))
+            except (TypeError, ValueError):
+                count = 2
+            return ports[: max(2, min(5, count))]
+        return ports
+
     def _node_label(self, node_id: str, node: Dict[str, Any]) -> str:
         return node_label(node_id, node)
 
@@ -1271,7 +1283,7 @@ class EditorScreen(Screen):
         return "; ".join(pieces)
 
     def _format_output_ports(self, node: Dict[str, Any], metadata: Dict[str, Any]) -> str:
-        ports = metadata.get("output_ports") or []
+        ports = self._output_ports_for_node(node, metadata)
         if not ports:
             return "-"
         pieces = []
@@ -1293,7 +1305,7 @@ class EditorScreen(Screen):
         config = node.get("config") or {}
         metadata = self._metadata_for_type(node.get("type", ""))
         labels: Dict[str, str] = {}
-        for port in (metadata.get("output_ports") if metadata else []) or []:
+        for port in self._output_ports_for_node(node, metadata):
             labels[port] = output_display_name(self.factory, node, str(port))
         return labels
 
@@ -1406,7 +1418,7 @@ class EditorScreen(Screen):
                 break
 
             metadata = self._metadata_for_type(node.get("type", ""))
-            output_ports = list(metadata.get("output_ports") or []) if metadata else []
+            output_ports = self._output_ports_for_node(node, metadata)
             if len(output_ports) > 1:
                 active_port = self.active_branch_ports.get(current_node_id, output_ports[0])
                 if active_port not in output_ports:
@@ -1553,7 +1565,7 @@ class EditorScreen(Screen):
             if node is None:
                 return False
             metadata = self._metadata_for_type(node.get("type", ""))
-            ports = metadata.get("output_ports") if metadata else []
+            ports = self._output_ports_for_node(node, metadata)
             if len(ports or []) != 1:
                 return False
             current_node_id = self._target_for_port(node, ports[0])
@@ -1643,7 +1655,7 @@ class EditorScreen(Screen):
             if tail_id != branch_node_id:
                 tail = self.workflow_map.get_node_data(tail_id)
                 tail_meta = self._metadata_for_type(tail.get("type", "")) if tail else None
-                tail_ports = tail_meta.get("output_ports") if tail_meta else None
+                tail_ports = self._output_ports_for_node(tail, tail_meta) if tail else []
                 return {"node_id": tail_id, "port": (tail_ports or ["default"])[0]}
             return {"node_id": branch_node_id, "port": active_port}
         if self.selected_node_id:
@@ -1651,7 +1663,7 @@ class EditorScreen(Screen):
             if node and node.get("type") == "branch_end_node":
                 return None
             metadata = self._metadata_for_type(node.get("type", "")) if node else None
-            ports = metadata.get("output_ports") if metadata else None
+            ports = self._output_ports_for_node(node, metadata) if node else []
             return {"node_id": self.selected_node_id, "port": (ports or ["default"])[0]}
         return None
 
@@ -1671,7 +1683,7 @@ class EditorScreen(Screen):
         if self.selected_node_id:
             node = self.workflow_map.get_node_data(self.selected_node_id)
             metadata = self._metadata_for_type(node.get("type", "")) if node else None
-            ports = metadata.get("output_ports") if metadata else None
+            ports = self._output_ports_for_node(node, metadata) if node else []
             return {"node_id": self.selected_node_id, "port": (ports or ["default"])[0]}
         return None
 
@@ -1703,7 +1715,7 @@ class EditorScreen(Screen):
             if node.get("type") == "branch_end_node":
                 break
             metadata = self._metadata_for_type(node.get("type", ""))
-            ports = metadata.get("output_ports") if metadata else []
+            ports = self._output_ports_for_node(node, metadata)
             if len(ports or []) != 1:
                 break
             current_node_id = self._target_for_port(node, ports[0])

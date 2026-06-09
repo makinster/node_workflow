@@ -27,7 +27,8 @@ class SetVariableNode(Node):
         "value": {"type": "string", "required": False},
         "pass_through": {
             "type": "boolean",
-            "description": "Output the original input after writing memory",
+            "label": "Dead drop payload",
+            "description": "Forward the upstream payload after writing to memory",
             "required": False,
         },
     }

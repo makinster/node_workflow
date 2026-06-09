@@ -662,7 +662,7 @@ def test_membank_registry_filters_downstream_writers():
     assert "future_value" not in option_values
     assert "own_value" not in option_values
     assert any(
-        label.startswith("Output Description: Session id | Output: session_id")
+        label.startswith("Vault: session_id - Session id")
         for label, value in option_rows
         if value == "session_id"
     )
@@ -850,8 +850,13 @@ def test_branch_node_default_labels_are_configurable():
 
     assert BranchNode.default_config["path_a_label"] == "Branch 1"
     assert BranchNode.default_config["path_b_label"] == "Branch 2"
+    assert BranchNode.default_config["path_e_label"] == "Branch 5"
+    assert BranchNode.default_config["branch_count"] == 2
+    assert BranchNode.output_ports == ["path_a", "path_b", "path_c", "path_d", "path_e"]
     assert "path_a_label" in BranchNode.config_schema
     assert "path_b_label" in BranchNode.config_schema
+    assert BranchNode.config_schema["branch_count"]["min"] == 2
+    assert BranchNode.config_schema["branch_count"]["max"] == 5
     assert BranchNode.config_schema["path_a_label"]["label"] == "Branch 1 name"
     assert BranchNode.config_schema["path_a_label"]["group"] == "Branch Names"
     print("test_branch_node_default_labels_are_configurable PASSED")
@@ -902,6 +907,143 @@ async def _test_branch_config_uses_generated_labels_without_memory_outputs():
     assert labels["path_a"] == "Approve"
     assert labels["path_b"] == "Reject"
     print("test_branch_config_uses_generated_labels_without_memory_outputs PASSED")
+
+
+def test_branch_config_uses_parallel_payload_ui():
+    asyncio.run(_test_branch_config_uses_parallel_payload_ui())
+
+
+async def _test_branch_config_uses_parallel_payload_ui():
+    from textual.app import App, ComposeResult
+    from textual.widgets import Select
+
+    from frontend.screens.node_config import NodeConfigScreen
+    from frontend.widgets.command_input import CommandInput
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("branch_parallel_payload_ui")
+    writer = wm.add_node("logger_node")
+    branch = wm.add_node("branch_node")
+    wm.update_node_config(
+        writer,
+        {"membank_outputs": [{"id": "session_id", "description": "Session id"}]},
+    )
+    wm.update_node_config(
+        branch,
+        {
+            "branch_count": 3,
+            "membank_inputs": ["session_id"],
+            "condition": "string_match",
+            "path_a_label": "Alpha",
+            "path_b_label": "Beta",
+            "path_c_label": "Gamma",
+            "branch_payload_sources": {"path_b": "vault:session_id"},
+        },
+    )
+    node_data = wm.get_node_data(branch)
+
+    class ConfigApp(App):
+        def compose(self) -> ComposeResult:
+            yield NodeConfigScreen(wm._factory, wm, branch, node_data)
+
+    app = ConfigApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.05)
+        screen = app.query_one(NodeConfigScreen)
+        assert not app.query("#field-condition")
+        assert app.query_one("#branch-count", CommandInput).value == "3"
+        assert app.query_one("#branch-label-path_a", CommandInput).value == "Alpha"
+        assert app.query_one("#branch-payload-row-path_c").display is True
+        assert app.query_one("#branch-payload-row-path_d").display is False
+
+        path_b_source = app.query_one("#branch-payload-source-path_b", Select)
+        assert path_b_source.value == "vault:session_id"
+        option_values = {value for _, value in path_b_source._options}
+        assert {"dead_drop:input", "vault:session_id"}.issubset(option_values)
+
+        app.query_one("#branch-label-path_c", CommandInput).value = "Review"
+        app.query_one("#branch-payload-source-path_a", Select).value = "vault:session_id"
+        app.query_one("#branch-payload-source-path_b", Select).value = "vault:session_id"
+        values = screen._branch_config_values()
+        assert values["branch_count"] == 3
+        assert values["path_c_label"] == "Review"
+        assert values["branch_payload_sources"]["path_a"] == "vault:session_id"
+        assert values["branch_payload_sources"]["path_b"] == "vault:session_id"
+        assert values["condition"] == "string_match"
+
+    print("test_branch_config_uses_parallel_payload_ui PASSED")
+
+
+def test_branch_node_parallel_count_and_payload_sources():
+    asyncio.run(_test_branch_node_parallel_count_and_payload_sources())
+
+
+async def _test_branch_node_parallel_count_and_payload_sources():
+    from backend.event_bus import EventBus
+    from backend.memory_bank import MemoryBank
+    from backend.node_base import NodeContext
+    from backend.nodes.branch_node import BranchNode
+
+    async def no_user_input(prompt: str) -> str:
+        return ""
+
+    async def no_wait_for_nodes(node_ids, timeout):
+        return None
+
+    async def no_wait_for_merge(*args, **kwargs):
+        return {}
+
+    done_payloads = []
+    errors = []
+    memory_bank = MemoryBank(EventBus())
+    memory_bank.store_persistent("session_id", "vault-seed")
+
+    node = BranchNode(
+        "branch",
+        {
+            "branch_count": 3,
+            "branch_payload_sources": {"path_b": "vault:session_id"},
+        },
+    )
+    context = NodeContext(
+        node_id="branch",
+        branch_id="root",
+        run_id="run",
+        inputs={"input": "upstream-seed"},
+        memory_bank=memory_bank,
+        signal_done=done_payloads.append,
+        signal_error=errors.append,
+        signal_waiting_for_input=no_user_input,
+        wait_for_nodes=no_wait_for_nodes,
+        wait_for_merge=no_wait_for_merge,
+    )
+    await node.execute(context)
+
+    assert not errors
+    branches = done_payloads[-1]["branches"]
+    assert [branch["output_port"] for branch in branches] == ["path_a", "path_b", "path_c"]
+    assert branches[0]["initial_data"]["input"] == "upstream-seed"
+    assert branches[1]["initial_data"]["input"] == "vault-seed"
+    assert memory_bank.read_transient("branch", "path_b") == "vault-seed"
+
+    legacy_payloads = []
+    legacy = BranchNode("legacy", {"condition": "path_a_only"})
+    legacy_context = NodeContext(
+        node_id="legacy",
+        branch_id="root",
+        run_id="run",
+        inputs={"input": "legacy-input"},
+        memory_bank=memory_bank,
+        signal_done=legacy_payloads.append,
+        signal_error=errors.append,
+        signal_waiting_for_input=no_user_input,
+        wait_for_nodes=no_wait_for_nodes,
+        wait_for_merge=no_wait_for_merge,
+    )
+    await legacy.execute(legacy_context)
+    assert [branch["output_port"] for branch in legacy_payloads[-1]["branches"]] == ["path_a"]
+
+    print("test_branch_node_parallel_count_and_payload_sources PASSED")
 
 
 def test_sleep_config_shows_pass_through_hint():
@@ -2611,32 +2753,29 @@ async def _test_node_config_select_activates_from_keyboard():
     from frontend.widgets.command_navigation import select_overlay
 
     _, wm, _, _ = _make_services()
-    wm.create_new("branch_select_keyboard")
-    branch = wm.add_node("branch_node")
-    node_data = wm.get_node_data(branch)
-    node_data["config"]["condition"] = "string_match"
+    wm.create_new("select_keyboard")
+    node_id = wm.add_node("error_node")
+    node_data = wm.get_node_data(node_id)
 
     class ConfigApp(App):
         def compose(self) -> ComposeResult:
-            yield NodeConfigScreen(wm._factory, wm, branch, node_data)
+            yield NodeConfigScreen(wm._factory, wm, node_id, node_data)
 
     app = ConfigApp()
     async with app.run_test() as pilot:
         await pilot.pause(0.03)
-        condition = app.query_one("#field-condition", Select)
+        error_mode = app.query_one("#field-error_mode", Select)
         screen = app.query_one(NodeConfigScreen)
         assert getattr(app.focused, "id", None) == "alias-input"
-        await pilot.press("s")
-        assert getattr(app.focused, "id", None) == "show-previous-output"
-        await pilot.press("s")
-        assert getattr(app.focused, "id", None) == "membank-reads"
         await pilot.press("d")
         await pilot.pause(0.03)
-        assert app.focused is condition
+        assert getattr(app.focused, "id", None) == "field-message"
+        await pilot.press("s")
+        assert app.focused is error_mode
         await pilot.press("e")
         await pilot.pause()
-        assert condition.expanded is True
-        overlay = select_overlay(condition)
+        assert error_mode.expanded is True
+        overlay = select_overlay(error_mode)
         assert overlay.highlighted == 0
         await pilot.press("s")
         assert overlay.highlighted == 1
@@ -2648,20 +2787,18 @@ async def _test_node_config_select_activates_from_keyboard():
         assert overlay.highlighted == 0
         screen.action_cancel()
         await pilot.pause()
-        assert condition.expanded is False
-        assert app.focused is condition
+        assert error_mode.expanded is False
+        assert app.focused is error_mode
         await pilot.press("e")
         await pilot.pause()
-        assert condition.expanded is True
-        overlay = select_overlay(condition)
+        assert error_mode.expanded is True
+        overlay = select_overlay(error_mode)
         assert overlay.highlighted == 0
         await pilot.press("down")
         assert overlay.highlighted == 1
-        await pilot.press("down")
-        assert overlay.highlighted == 2
         await pilot.press("e")
         await pilot.pause()
-        assert condition.value == "path_a_only"
+        assert error_mode.value == "warn"
 
         save_button = app.query_one("#save-node-config", Button)
         saved_results = []
@@ -2674,7 +2811,7 @@ async def _test_node_config_select_activates_from_keyboard():
         await pilot.press("e")
         await pilot.pause()
         assert saved_results
-        assert saved_results[-1]["config"]["condition"] == "path_a_only"
+        assert saved_results[-1]["config"]["error_mode"] == "warn"
 
     print("test_node_config_select_activates_from_keyboard PASSED")
 
@@ -3113,8 +3250,9 @@ def test_node_config_previous_output_preview_reads_transient_source():
     text = screen._previous_output_text()
 
     assert "Source:" in text
-    assert source in text
-    assert "hello" in text
+    assert "Logger" in text
+    assert "Payload:" in text
+    assert "Payload value: dict (1 items)" in text
     print("test_node_config_previous_output_preview_reads_transient_source PASSED")
 
 
@@ -3265,11 +3403,10 @@ def test_node_config_previous_output_preview_traces_pass_through_source():
     )
     text = screen._previous_output_text()
 
-    assert "Source: Producer" in text
-    assert "Output: created_payload" in text
-    assert "Output Description: Original data" in text
-    assert "after pause" in text
-    assert "Pause" not in text
+    assert "Source: Producer -> Pause" in text
+    assert "Payload: created_payload" in text
+    assert "Payload Description: Original data" in text
+    assert "Payload value: dict (1 items)" in text
     print("test_node_config_previous_output_preview_traces_pass_through_source PASSED")
 
 
@@ -4445,8 +4582,8 @@ async def _test_click_edit_and_textarea_commit_sync_cursor_mode():
         textarea.begin_edit()
         await pilot.press("tab")
         await pilot.pause(0.02)
-        assert textarea.editing is False
-        assert app.cursor_state.mode == "nav"
+        assert textarea.editing is True
+        assert app.cursor_state.mode == "edit"
         textarea.begin_edit()
         await pilot.press("ctrl+enter")
         await pilot.pause(0.02)
@@ -4632,6 +4769,8 @@ if __name__ == "__main__":
         test_set_variable_node_can_pass_input_through,
         test_branch_node_default_labels_are_configurable,
         test_branch_config_uses_generated_labels_without_memory_outputs,
+        test_branch_config_uses_parallel_payload_ui,
+        test_branch_node_parallel_count_and_payload_sources,
         test_sleep_config_shows_pass_through_hint,
         test_form_generator_groups_schema_for_tabs,
         test_form_generator_mounts_tabbed_and_single_group_forms,

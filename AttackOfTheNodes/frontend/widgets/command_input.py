@@ -279,14 +279,6 @@ class CommandTextArea(TextArea):
                 event.stop()
                 event.prevent_default()
                 return
-            if event.key in ("tab", "shift+tab"):
-                self.end_edit()
-                self._run_screen_action(
-                    "cursor_up" if event.key == "shift+tab" else "cursor_down"
-                )
-                event.stop()
-                event.prevent_default()
-                return
             if event.key == "ctrl+enter":
                 self.end_edit()
                 event.stop()
