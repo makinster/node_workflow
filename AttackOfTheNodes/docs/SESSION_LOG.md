@@ -1,5 +1,21 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-08 — Docs Audit After Layout Move
+
+- Regenerated `docs/FILE_TREE.md` from the current tracked source layout so it
+  reflects `AttackOfTheNodes/docs/`, the Windows launcher, Merge Beacon selector
+  screen, frontend display helpers, and command/cursor widgets.
+- Updated `docs/MASTER_BUILD_PLAN.md` phase status: Phase 15 is complete and
+  Phase 16 is in progress with its first File/config usability slice landed.
+- Updated `docs/AGENT_HANDOFF.md` so future agents start from the current
+  Phase 16 state instead of the older Phase 13 handoff.
+- Cleaned current reference wording around Merge Beacon display state.
+- Verification:
+  - `rg -n "attackofthenodes_v05" AttackOfTheNodes/docs AGENTS.md`
+    - only the intentional "renamed from" session-log line remains.
+  - `rg -n "\\| 15 \\||\\| 16 \\|" docs/MASTER_BUILD_PLAN.md`
+  - `git diff --check`
+
 ## 2026-06-08 — Project Folder Simplification
 
 - Renamed the active app folder from `attackofthenodes_v05/` to

@@ -16,9 +16,8 @@ historical proof-of-concept material.
 
 Use `docs/MASTER_BUILD_PLAN.md` as the comprehensive source of truth. It merges
 the active dependency-ordered phase plan, the Textual TUI state, the working
-rules, and the current architecture model. Phases 0 through 10.5 plus the Phase
-5.5 keyboard/config hardening pass are complete. Phase 13 cursor model
-foundation is the next planned phase.
+rules, and the current architecture model. Phases 0 through 15 are complete,
+including frontend audit phases FA-0 through FA-5. Phase 16 is in progress.
 
 Completed from the master plan:
 
@@ -44,6 +43,9 @@ Completed from the master plan:
 - Phase 10.5: backend/frontend boundary cleanup — removed unused backend tombstone
   methods, updated validator message, documented portable workflow fields.
 - FA-0 through FA-5: frontend standardization audit and helper extraction.
+- Phase 13: cursor model foundation and shared command-mode screen mixin.
+- Phase 14: editor key binding remap.
+- Phase 15: editor rework and Quick View I/O summary.
 
 Recent usability patch (Phase 5.5 — keyboard nav hardening):
 
@@ -101,7 +103,7 @@ Recent docs pass:
   `FILE_TREE.md` have been refreshed for the current Python/Textual build.
 - `docs/V05_BUILD_PLAN.md` is labeled as historical proof-of-concept history.
 
-Latest phase:
+Recent completed/in-progress phases:
 
 - Phase 13 (cursor model foundation) is complete.
 - Phase 14 (editor key binding remap) is complete.
@@ -123,10 +125,20 @@ Latest phase:
     the nav bindings into the concrete subclass's `BINDINGS` in
     `__init_subclass__`, before `super().__init_subclass__()` calls
     `DOMNode._merge_bindings()`.
-- Phase 15 (editor rework) is in progress. Landed pieces include simplified
+- Phase 15 (editor rework) is complete. Landed pieces include simplified
   Quick View text, context-aware Help, `Alias (node_id)` display in editor rows
   and node config titles, numbered default branch labels, and sparse editor
   chrome (`f file | o options | h help`).
+- Phase 16 is in progress. Landed pieces include File menu name-first workflow
+  rows, loaded-workflow marker, duplicate-name suffixes, export/import cancel
+  returning to File, vertical config/path-prompt buttons, transient output
+  override fields, and the Settings API Keys placeholder.
+- Merge Beacon work is current: `branch_end_node` remains the persisted node
+  type, but the UI calls it Merge Beacon. Beacons render selector rows for
+  jumping to merge branches, stop branch traversal, and Merge config derives
+  branch-close options from live Merge Beacons across nested branch trees.
+- Project layout is current: the active app and docs live under
+  `AttackOfTheNodes/`; docs start at `AttackOfTheNodes/docs/README.md`.
 
 Recently completed:
 - Phase 14: Key binding remap — editor grammar uses W/S or up/down for vertical
@@ -136,10 +148,8 @@ Recently completed:
   removed after review.
 
 Planned future phases (see Section 6 of MASTER_BUILD_PLAN.md for full specs):
-- Continue Phase 15: Editor rework — finish any remaining top-bar/file/action
-  placement decisions and verify branch-label save/load behavior.
-- Phase 16: File modal + node config tabs — consolidated File modal, fixed
-  CORE/PARAMETERS/ADVANCED/CONNECTIONS tabs, tabbed settings with API keys.
+- Continue Phase 16: finish the broader fixed tab layout and any deeper File
+  modal consolidation beyond the current File/Workflow Library usability slice.
 - Phase 17: Node visual identity — per-category colors, per-type glyphs,
   size-by-category.
 - Phase 18: Acceleration + help rewrite — hold-to-accelerate, context-organized

@@ -87,7 +87,7 @@ Merge behavior is editor-assisted and runtime-coordinated:
   commands, workflow file actions, run routing, and modal orchestration.
 - `frontend/screens/editor.py`: workflow editor, branch path display, node
   add/insert/delete/config, validation, tombstone replacement, breakpoint
-  toggles, merge connection repair, and branch-end display state.
+  toggles, merge connection repair, and Merge Beacon display state.
 - `frontend/screens/execution.py`: live run view, run state indicator, node
   statuses/timings, memory/output/error/user-input modals, and recent output
   scrollback.

@@ -1,6 +1,6 @@
 # AttackOfTheNodes Comprehensive Build Plan
 
-**Last updated:** 2026-06-02
+**Last updated:** 2026-06-08
 **Project root:** `AttackOfTheNodes/`
 **Runtime:** Python 3.14, Textual 8.2.7, asyncio, JSON persistence
 **Current branch context:** Textual TUI spinoff; tkinter frontend is obsolete.
@@ -194,8 +194,8 @@ Append a short entry to `docs/SESSION_LOG.md` for every phase or notable patch.
 | 12 | Packaging and release hardening | Deferred |
 | 13 | Cursor model foundation | Done |
 | 14 | Key binding remap | Done |
-| 15 | Editor rework | In Progress |
-| 16 | File modal + node config tabs | Planned |
+| 15 | Editor rework | Done |
+| 16 | File modal + node config tabs | In Progress |
 | 17 | Node visual identity | Planned |
 | 18 | Acceleration + help rewrite | Planned |
 | 19 | Nested workflows: built-in subworkflow node | Planned |
@@ -203,9 +203,9 @@ Append a short entry to `docs/SESSION_LOG.md` for every phase or notable patch.
 
 Sequencing:
 
-- Phases 10, 10.5, 13, and 14 are complete. Phase 15 is in progress.
-- Phases 15 and 17 are parallelizable after 14.
-  Phase 16 depends on 14 and 15. Phase 18 depends on 13–17. Phases 19–20
+- Phases 10, 10.5, 13, 14, and 15 are complete. Phase 16 is in progress.
+- Phase 17 can proceed after 14/15.
+  Phase 18 depends on 13–17. Phases 19–20
   depend on Phase 9 and each other.
 
 ---
@@ -757,6 +757,12 @@ Current progress:
   `Deleted: <original node name>`.
 - Editor Quick View I/O uses `Transient Source`, output-name/description lines,
   and matching Memory name/description lines.
+- Help is context-aware and the main editor chrome stays short.
+- `A/D` cycles all branch views in branch-node creation order; `Ctrl+A/D`
+  cycles incomplete branch views only. Both roll over.
+- Merge Beacon rows stop branch traversal, expose a selector row for jumping to
+  merge branches, and do not visually show downstream merge-branch nodes under
+  the beacon branch.
 
 Branch naming is a small backend touch: one optional string per branch edge in
 `workflow_map`, extending the Phase 4.5 `path_a_label` work into user-editable
@@ -770,6 +776,8 @@ Done when:
 - Branch names are editable and persist across save/load.
 - Editor rows show only the node name; config/detail titles may still include
   generated ids for disambiguation.
+
+Status: complete.
 
 ---
 
@@ -792,6 +800,19 @@ fixed tabs (CORE / PARAMETERS / ADVANCED / CONNECTIONS, optional LAST RUN via
 `RichLog`), Space to enable optional fields, and A/D to move between parallel
 fields. Settings gains an API Keys placeholder menu before real secret storage.
 
+Current progress:
+
+- First File menu usability slice is landed: visible workflow ids removed,
+  duplicate names disambiguated, loaded workflow marked, bottom Cancel retained,
+  and import/export prompt cancel returns to File.
+- Node config can override transient output names/descriptions from node port
+  metadata.
+- Node config Save/Cancel and path-prompt Confirm/Cancel controls are stacked
+  vertically for W/S movement.
+- Settings includes an API Keys placeholder behind `K`.
+- Remaining Phase 16 work is the broader fixed tab layout and any deeper file
+  modal consolidation beyond the current Workflow Library/File screen.
+
 Builds directly on Phase 5 (group→tabs already exists in `form_generator`) and
 the existing connection editor. Consolidates the scattered standalone modals into
 tabbed containers.
@@ -803,6 +824,8 @@ Done when:
 - Node config can override transient output names/descriptions.
 - An LLM-style node with many optional fields stays fully keyboard-navigable.
 - Settings tabs include an API keys section.
+
+Status: in progress.
 
 ---
 
