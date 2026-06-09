@@ -79,6 +79,24 @@ def _sync_screen_cursor_mode(widget) -> None:
         sync()
 
 
+def _run_screen_tab_action(widget, key: str) -> bool:
+    action_name = None
+    if key in {"a", "left"}:
+        action_name = "previous_config_tab"
+    elif key in {"d", "right"}:
+        action_name = "next_config_tab"
+    if action_name is None:
+        return False
+    try:
+        action = getattr(widget.screen, f"action_{action_name}", None)
+    except Exception:
+        return False
+    if action is None:
+        return False
+    action()
+    return True
+
+
 class CommandInput(Input):
     """Input that requires explicit activation before printable keys edit text."""
 
@@ -171,6 +189,11 @@ class CommandInput(Input):
 
         if event.key in ("s", "down"):
             self._run_screen_action("cursor_down")
+            event.stop()
+            event.prevent_default()
+            return
+
+        if _run_screen_tab_action(self, event.key):
             event.stop()
             event.prevent_default()
             return
@@ -292,6 +315,11 @@ class CommandTextArea(TextArea):
 
         if event.key in ("s", "down"):
             self._run_screen_action("cursor_down")
+            event.stop()
+            event.prevent_default()
+            return
+
+        if _run_screen_tab_action(self, event.key):
             event.stop()
             event.prevent_default()
             return

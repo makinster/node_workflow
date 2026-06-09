@@ -797,8 +797,9 @@ the File menu when canceled.
 Node config gains transient output name/description overrides from node port
 metadata, with buttons stacked vertically for W/S navigation. Standard node
 configs render in fixed tabs: Core, Parameters, Outputs, and Connections. W/S
-crosses tab boundaries, while A/D or left/right switch tabs from non-text
-controls; command text fields keep A/D and left/right for caret movement.
+stays vertical inside the active tab and then moves to Save/Cancel, while A/D or
+left/right explicitly switch tabs and focus the new tab's first control. Active
+command text fields keep A/D and left/right for caret movement.
 Settings gains an API Keys placeholder menu before real secret storage.
 
 Current progress:

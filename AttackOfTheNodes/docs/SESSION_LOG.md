@@ -20,6 +20,20 @@
   - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "node_config_fixed_tabs_are_keyboard_navigable"` (1 passed)
   - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v` (102 passed)
 
+## 2026-06-09 — Node Config Tab Navigation Polish
+
+- Adjusted Node Config tab behavior after manual review.
+- A/D and left/right now explicitly switch config tabs and focus the first
+  control in the new tab, even when a command text field is focused but not
+  editing.
+- W/S stays vertical and no longer switches tabs from the top or bottom of a
+  tab; moving down from the last active-tab control proceeds to Save/Cancel.
+- Active text editing still owns A/D and left/right for cursor movement.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "node_config_fixed_tabs_are_keyboard_navigable or node_config_select_activates_from_keyboard or node_config_command_inputs_require_activation or command_text_nav_mode_ad_positions_caret_before_edit"` (4 passed)
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v` (102 passed)
+
 ## 2026-06-09 — File Picker Browse Control
 
 - Added a user-facing Browse button/key to import/export typed path fallback

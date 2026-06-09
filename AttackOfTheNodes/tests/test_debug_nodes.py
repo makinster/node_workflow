@@ -2630,7 +2630,8 @@ async def _test_node_config_select_activates_from_keyboard():
         assert getattr(app.focused, "id", None) == "show-previous-output"
         await pilot.press("s")
         assert getattr(app.focused, "id", None) == "membank-reads"
-        await pilot.press("s")
+        await pilot.press("d")
+        await pilot.pause(0.03)
         assert app.focused is condition
         await pilot.press("e")
         await pilot.pause()
@@ -2684,7 +2685,7 @@ def test_node_config_fixed_tabs_are_keyboard_navigable():
 
 async def _test_node_config_fixed_tabs_are_keyboard_navigable():
     from textual.app import App, ComposeResult
-    from textual.widgets import Checkbox, TabbedContent
+    from textual.widgets import Button, Checkbox, TabbedContent
 
     from frontend.screens.node_config import NodeConfigScreen
     from frontend.widgets.command_input import CommandInput
@@ -2706,39 +2707,57 @@ async def _test_node_config_fixed_tabs_are_keyboard_navigable():
         previous_output = app.query_one("#show-previous-output", Checkbox)
         parameter_field = app.query_one("#field-label", CommandInput)
         output_name = app.query_one("#transient-output-name-default", CommandInput)
+        save_button = app.query_one("#save-node-config", Button)
 
+        assert tabs.active == "node-config-tab-core"
+        assert app.focused is alias
+
+        await pilot.press("w")
+        await pilot.pause(0.03)
         assert tabs.active == "node-config-tab-core"
         assert app.focused is alias
 
         alias.cursor_position = 0
         await pilot.press("d")
-        await pilot.pause(0.03)
-        assert tabs.active == "node-config-tab-core"
-        assert alias.cursor_position == 1
-
-        await pilot.press("s")
-        await pilot.pause(0.03)
-        assert app.focused is previous_output
-        await pilot.press("d")
         await pilot.pause(0.1)
         assert tabs.active == "node-config-tab-parameters"
         assert app.focused is parameter_field
 
-        for _ in range(5):
-            if tabs.active == "node-config-tab-outputs":
-                break
-            await pilot.press("s")
-            await pilot.pause(0.05)
+        parameter_field.value = "abc"
+        parameter_field.begin_edit()
+        parameter_field.cursor_position = 0
+        await pilot.press("right")
+        await pilot.pause(0.03)
+        assert tabs.active == "node-config-tab-parameters"
+        assert parameter_field.cursor_position == 1
+        parameter_field.end_edit()
+
+        await pilot.press("d")
+        await pilot.pause(0.1)
         assert tabs.active == "node-config-tab-outputs"
         assert app.focused is output_name
 
         for _ in range(5):
-            if tabs.active == "node-config-tab-parameters":
+            if app.focused is save_button:
                 break
-            await pilot.press("w")
+            await pilot.press("s")
             await pilot.pause(0.05)
+        assert tabs.active == "node-config-tab-outputs"
+        assert app.focused is save_button
+
+        await pilot.press("a")
+        await pilot.pause(0.1)
         assert tabs.active == "node-config-tab-parameters"
         assert app.focused is parameter_field
+
+        await pilot.press("a")
+        await pilot.pause(0.1)
+        assert tabs.active == "node-config-tab-core"
+        assert app.focused is alias
+
+        await pilot.press("s")
+        await pilot.pause(0.03)
+        assert app.focused is previous_output
 
     print("test_node_config_fixed_tabs_are_keyboard_navigable PASSED")
 
@@ -3707,6 +3726,7 @@ def test_node_config_command_inputs_require_activation():
 async def _test_node_config_command_inputs_require_activation():
     from textual import events
     from textual.app import App, ComposeResult
+    from textual.widgets import TabbedContent
 
     from frontend.screens.node_config import NodeConfigScreen
     from frontend.widgets.command_input import CommandInput
@@ -3725,6 +3745,7 @@ async def _test_node_config_command_inputs_require_activation():
         await pilot.pause(0.03)
         screen = app.query_one(NodeConfigScreen)
         alias = app.query_one("#alias-input", CommandInput)
+        tabs = app.query_one("#node-config-tabs", TabbedContent)
         title = str(app.query_one(".modal-title").content)
         assert title == f"Edit Node: Logger ({node_id})"
         app.set_focus(alias)
@@ -3742,8 +3763,10 @@ async def _test_node_config_command_inputs_require_activation():
         previous_value = alias.value
         await pilot.press("a")
         assert alias.value == previous_value
-        assert alias.cursor_position == max(0, len(previous_value) - 1)
+        assert tabs.active == "node-config-tab-connections"
         await pilot.press("d")
+        assert tabs.active == "node-config-tab-core"
+        assert app.focused is alias
         assert alias.cursor_position == len(previous_value)
 
         screen.action_activate_focused()

@@ -668,9 +668,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             expanded_select.expanded = False
             expanded_select.focus()
             return False
-        if action in {"previous_config_tab", "next_config_tab"} and isinstance(
-            self.app.focused,
-            (CommandInput, CommandTextArea),
+        if action in {"previous_config_tab", "next_config_tab"} and is_editing_text(
+            self.app.focused
         ):
             return False
         return super().check_action(action, parameters)
@@ -706,9 +705,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
 
     def on_key(self, event: Key) -> None:
         if self._expanded_select() is None:
-            if event.key in {"a", "left", "d", "right"} and not isinstance(
-                self.app.focused,
-                (CommandInput, CommandTextArea),
+            if event.key in {"a", "left", "d", "right"} and not is_editing_text(
+                self.app.focused
             ):
                 self._move_config_tab(-1 if event.key in {"a", "left"} else 1)
                 event.stop()
@@ -867,8 +865,6 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         if not widgets:
             return
         current = self._nav_widget if self._nav_widget is not None else self.app.focused
-        if self._move_between_config_tabs_at_boundary(current, direction):
-            return
         try:
             current_index = widgets.index(current)
         except ValueError:
@@ -891,47 +887,6 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             )
         except Exception:
             focus_command_widget(self, target)
-
-    def _move_between_config_tabs_at_boundary(
-        self,
-        current: Any,
-        direction: int,
-    ) -> bool:
-        if direction == 0:
-            return False
-        tab_widgets = self._active_config_tab_widgets()
-        if current not in tab_widgets:
-            return False
-        at_start = direction < 0 and current is tab_widgets[0]
-        at_end = direction > 0 and current is tab_widgets[-1]
-        if not at_start and not at_end:
-            return False
-        return self._move_config_tab(direction, wrap=False)
-
-    def _active_config_tab_widgets(self) -> list[Any]:
-        tabbed_query = self.query("#node-config-tabs")
-        if not tabbed_query:
-            return []
-        active = tabbed_query.first().active
-        if active is None:
-            return []
-        try:
-            active_pane = self.query_one(f"#{active}", TabPane)
-        except Exception:
-            return []
-        return [
-            widget
-            for widget in self._keyboard_focus_widgets()
-            if self._is_descendant_of(widget, active_pane)
-        ]
-
-    def _is_descendant_of(self, widget: Any, ancestor: Any) -> bool:
-        node = widget
-        while node is not None and node is not self:
-            if node is ancestor:
-                return True
-            node = getattr(node, "parent", None)
-        return False
 
     def _nav_widgets(self) -> list[Any]:
         return self._keyboard_focus_widgets()
