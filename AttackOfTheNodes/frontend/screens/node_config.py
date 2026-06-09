@@ -832,12 +832,32 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             next_index %= len(panes)
         elif next_index < 0 or next_index >= len(panes):
             return False
-        tabs.active = str(panes[next_index].id)
-        self.call_after_refresh(self._focus_first_active_tab_widget)
+        target_tab_id = str(panes[next_index].id)
+        tabs.active = target_tab_id
+        self.call_after_refresh(
+            lambda tab_id=target_tab_id: self._focus_first_config_tab_widget(tab_id)
+        )
+        self.set_timer(
+            0.01,
+            lambda tab_id=target_tab_id: self._focus_first_config_tab_widget(tab_id),
+        )
         return True
 
-    def _focus_first_active_tab_widget(self) -> None:
-        widgets = self._keyboard_focus_widgets()
+    def _focus_first_config_tab_widget(self, tab_id: str) -> None:
+        tabbed_query = self.query("#node-config-tabs")
+        if tabbed_query:
+            tabs = tabbed_query.first()
+            if tabs.active != tab_id:
+                tabs.active = tab_id
+        try:
+            active_pane = self.query_one(f"#{tab_id}", TabPane)
+            widgets = [
+                widget
+                for widget in self._keyboard_focus_widgets()
+                if self._is_descendant_of(widget, active_pane)
+            ]
+        except Exception:
+            widgets = []
         if widgets:
             try:
                 focus_command_widget(
@@ -853,6 +873,14 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         if save_query:
             self.app.set_focus(save_query.first())
             self._sync_cursor_mode()
+
+    def _is_descendant_of(self, widget: Any, ancestor: Any) -> bool:
+        node = widget
+        while node is not None and node is not self:
+            if node is ancestor:
+                return True
+            node = getattr(node, "parent", None)
+        return False
 
     def _expanded_select(self) -> Select | None:
         for select in self.query(Select):

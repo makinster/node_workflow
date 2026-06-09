@@ -2737,6 +2737,26 @@ async def _test_node_config_fixed_tabs_are_keyboard_navigable():
         assert tabs.active == "node-config-tab-outputs"
         assert app.focused is output_name
 
+        await pilot.press("d")
+        await pilot.pause(0.1)
+        assert tabs.active == "node-config-tab-connections"
+        assert app.focused is save_button
+
+        await pilot.press("d")
+        await pilot.pause(0.1)
+        assert tabs.active == "node-config-tab-core"
+        assert app.focused is alias
+
+        await pilot.press("d")
+        await pilot.pause(0.1)
+        assert tabs.active == "node-config-tab-parameters"
+        assert app.focused is parameter_field
+
+        await pilot.press("d")
+        await pilot.pause(0.1)
+        assert tabs.active == "node-config-tab-outputs"
+        assert app.focused is output_name
+
         for _ in range(5):
             if app.focused is save_button:
                 break

@@ -34,6 +34,20 @@
   - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "node_config_fixed_tabs_are_keyboard_navigable or node_config_select_activates_from_keyboard or node_config_command_inputs_require_activation or command_text_nav_mode_ad_positions_caret_before_edit"` (4 passed)
   - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v` (102 passed)
 
+## 2026-06-09 — Node Config Tab Snapback Fix
+
+- Fixed a tab-switch focus race where moving from `Outputs` to `Connections`
+  could momentarily switch tabs and then snap back.
+- Node Config now remembers the intended target tab id, reasserts it after the
+  Textual refresh, and focuses the first control inside that tab. If the tab has
+  no controls, focus falls to `Save` without changing the active tab.
+- Extended the tab navigation regression to cover `Outputs` -> `Connections`
+  and rollover back to `Core`.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "node_config_fixed_tabs_are_keyboard_navigable"` (1 passed)
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v` (102 passed)
+
 ## 2026-06-09 — File Picker Browse Control
 
 - Added a user-facing Browse button/key to import/export typed path fallback
