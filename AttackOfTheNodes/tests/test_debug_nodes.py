@@ -1,6 +1,6 @@
 """Acceptance tests for the debug node library.
 
-Run from attackofthenodes_v05/:
+Run from AttackOfTheNodes/:
     python -m pytest tests/test_debug_nodes.py -v
 or standalone:
     python tests/test_debug_nodes.py
@@ -11,8 +11,8 @@ import sys
 import time
 from pathlib import Path
 
-# Allow running as `python3 attackofthenodes_v05/tests/test_debug_nodes.py`
-# or `python -m pytest tests/test_debug_nodes.py` from attackofthenodes_v05/
+# Allow running as `python3 AttackOfTheNodes/tests/test_debug_nodes.py`
+# or `python -m pytest tests/test_debug_nodes.py` from AttackOfTheNodes/
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 

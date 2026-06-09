@@ -1,7 +1,7 @@
 # AttackOfTheNodes Comprehensive Build Plan
 
 **Last updated:** 2026-06-02
-**Project root:** `attackofthenodes_v05/`
+**Project root:** `AttackOfTheNodes/`
 **Runtime:** Python 3.14, Textual 8.2.7, asyncio, JSON persistence
 **Current branch context:** Textual TUI spinoff; tkinter frontend is obsolete.
 
@@ -152,7 +152,7 @@ While coding:
 - Keep modules concise. Validation is the safety net; avoid heavy runtime
   coupling unless a phase explicitly calls for it.
 
-After coding, from `attackofthenodes_v05/` with the venv active:
+After coding, from `AttackOfTheNodes/` with the venv active:
 
 ```bash
 python -m compileall -q .
@@ -1013,7 +1013,7 @@ single-path selection.
 Use this baseline after every implementation phase:
 
 ```bash
-cd attackofthenodes_v05
+cd AttackOfTheNodes
 python -m compileall -q .
 python -m pytest tests/test_debug_nodes.py -v
 ```

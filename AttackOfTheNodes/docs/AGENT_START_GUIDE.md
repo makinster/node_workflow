@@ -16,8 +16,8 @@ the links in `docs/README.md`.
 
 ## Add A New Node
 
-- Create `attackofthenodes_v05/backend/nodes/<category>/<name>_node.py`.
-- Add the class to `attackofthenodes_v05/backend/nodes/__init__.py` and
+- Create `AttackOfTheNodes/backend/nodes/<category>/<name>_node.py`.
+- Add the class to `AttackOfTheNodes/backend/nodes/__init__.py` and
   `ALL_NODE_CLASSES`.
 - Required class metadata:
   - `node_type`
@@ -93,12 +93,12 @@ the links in `docs/README.md`.
 - Add frontend logic for structural UI that derives from workflow topology,
   such as merge branch selection or editor-only placeholders.
 - Shared frontend helper locations:
-  - `attackofthenodes_v05/frontend/widgets/form_generator.py`
-  - `attackofthenodes_v05/frontend/widgets/command_navigation.py`
-  - `attackofthenodes_v05/frontend/widgets/list_navigation.py`
-  - `attackofthenodes_v05/frontend/widgets/dynamic_sections.py`
-  - `attackofthenodes_v05/frontend/node_io_display.py`
-  - `attackofthenodes_v05/frontend/notifications.py`
+  - `AttackOfTheNodes/frontend/widgets/form_generator.py`
+  - `AttackOfTheNodes/frontend/widgets/command_navigation.py`
+  - `AttackOfTheNodes/frontend/widgets/list_navigation.py`
+  - `AttackOfTheNodes/frontend/widgets/dynamic_sections.py`
+  - `AttackOfTheNodes/frontend/node_io_display.py`
+  - `AttackOfTheNodes/frontend/notifications.py`
 
 ## Keyboard And Modal Rules
 
@@ -122,12 +122,12 @@ the links in `docs/README.md`.
 
 ## Tests To Add
 
-- Node execution tests go in `attackofthenodes_v05/tests/test_debug_nodes.py`.
+- Node execution tests go in `AttackOfTheNodes/tests/test_debug_nodes.py`.
 - Add a metadata or registration test when adding a node.
 - Add a config rendering test when adding schema behavior.
 - Add an editor Quick View test when changing port or memory display behavior.
 - Add a command-navigation test when changing modal focus behavior.
-- Run from `attackofthenodes_v05/`:
+- Run from `AttackOfTheNodes/`:
   - `../.venv/bin/python -m compileall -q .`
   - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v`
 

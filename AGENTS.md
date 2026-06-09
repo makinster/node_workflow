@@ -4,10 +4,10 @@ This workspace contains AttackOfTheNodes, a Python workflow engine and Textual t
 
 ## Documentation Entry Point
 
-Start with `docs/README.md`. It gives the current read order and marks which
-older reference docs may still contain historical Chrome-extension or tkinter
-language. Before making backend changes for editor/UI behavior, read
-`docs/BACKEND_FRONTEND_BOUNDARY.md`.
+Start with `AttackOfTheNodes/docs/README.md`. It gives the current read order
+and marks which older reference docs may still contain historical
+Chrome-extension or tkinter language. Before making backend changes for
+editor/UI behavior, read `AttackOfTheNodes/docs/BACKEND_FRONTEND_BOUNDARY.md`.
 
 ## Mental Model
 
@@ -63,7 +63,7 @@ Think of the project as a factory floor with a control room:
 
 | Category | Types |
 |---|---|
-| Flow | `start_node`, `end_node`, `branch_node`, `conditional_node`, `wait_until_node` |
+| Flow | `start_node`, `end_node`, `branch_node`, `conditional_node`, `merge_node`, `branch_end_node`, `wait_until_node` |
 | Data | `set_variable_node`, `get_variable_node`, `concat_node` |
 | IO | `text_output_node`, `user_text_input_node`, `file_reader_node` |
 | AI | `chat_completion_node`, `image_generation_node`, `embedding_node` |
@@ -72,7 +72,8 @@ Think of the project as a factory floor with a control room:
 `tombstone_node` is currently registered as the visual placeholder inserted when
 a node is deleted. It is a known boundary-cleanup target: future work should move
 this editor-only placeholder behavior into frontend adapter state so the backend
-remains reusable by other frontends. See `docs/BACKEND_FRONTEND_BOUNDARY.md`.
+remains reusable by other frontends. See
+`AttackOfTheNodes/docs/BACKEND_FRONTEND_BOUNDARY.md`.
 
 ## Key Events (EventBus)
 
@@ -82,13 +83,14 @@ remains reusable by other frontends. See `docs/BACKEND_FRONTEND_BOUNDARY.md`.
 
 ```bash
 # Install
-pip install -r attackofthenodes_v05/requirements.lock
-pip install -e attackofthenodes_v05/
+pip install -r AttackOfTheNodes/requirements.lock
+pip install -e AttackOfTheNodes/
 
 # Run
 aotn
 ```
 
-For the current docs map, see `docs/README.md`.
-For the active build plan, see `docs/MASTER_BUILD_PLAN.md`.
-For backend/frontend separation rules, see `docs/BACKEND_FRONTEND_BOUNDARY.md`.
+For the current docs map, see `AttackOfTheNodes/docs/README.md`.
+For the active build plan, see `AttackOfTheNodes/docs/MASTER_BUILD_PLAN.md`.
+For backend/frontend separation rules, see
+`AttackOfTheNodes/docs/BACKEND_FRONTEND_BOUNDARY.md`.

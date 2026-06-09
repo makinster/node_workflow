@@ -1,9 +1,9 @@
 [build-system]
 requires = ["setuptools>=68"]
-build-backend = "setuptools.backends.legacy:build"
+build-backend = "setuptools.build_meta"
 
 [project]
-name = "attackofthenodes"
+name = "AttackOfTheNodes"
 version = "0.6.0"
 requires-python = ">=3.12"
 dependencies = [
@@ -13,6 +13,9 @@ dependencies = [
 
 [project.scripts]
 aotn = "main:main"
+
+[tool.setuptools]
+py-modules = ["main"]
 
 [tool.setuptools.packages.find]
 where = ["."]

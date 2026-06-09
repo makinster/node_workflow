@@ -7,7 +7,7 @@ For latest completed work, prefer `SESSION_LOG.md`.
 ## Current State
 
 AttackOfTheNodes is a Python workflow engine with a Textual terminal UI. The
-active app lives in `attackofthenodes_v05/`. The older Chrome-extension,
+active app lives in `AttackOfTheNodes/`. The older Chrome-extension,
 JavaScript, and tkinter designs are historical only.
 
 The backend is a reusable workflow engine. It owns workflow structure,
@@ -23,8 +23,8 @@ UI-specific adapter behavior.
 - Python: 3.12+ (`pyproject.toml`), currently exercised on Python 3.14.
 - UI: Textual 8.2.x.
 - Execution: asyncio supervisors and in-process event bus.
-- Persistence: local JSON folders under `attackofthenodes_v05/`.
-- Start app: from `attackofthenodes_v05/`, run `../.venv/bin/python main.py`
+- Persistence: local JSON folders under `AttackOfTheNodes/`.
+- Start app: from `AttackOfTheNodes/`, run `../.venv/bin/python main.py`
   or activate the venv and run `python main.py`.
 - Main tests: `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v`.
 

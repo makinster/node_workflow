@@ -2,7 +2,7 @@
 
 ## Current State
 
-The active app is `attackofthenodes_v05/`, a Python/Textual workflow editor and
+The active app is `AttackOfTheNodes/`, a Python/Textual workflow editor and
 execution TUI backed by an asyncio workflow engine. The tkinter frontend is
 obsolete. Backend services remain UI-agnostic; frontend behavior lives under
 `frontend/screens/`, `frontend/widgets/`, and `frontend/styles.tcss`.
@@ -167,7 +167,7 @@ Planned future phases (see Section 6 of MASTER_BUILD_PLAN.md for full specs):
 - Backend code must not import from `frontend`.
 - Textual screen-level letter actions that must fire while a list has focus
   should use `Binding(..., priority=True)`.
-- Run verification from `attackofthenodes_v05/`:
+- Run verification from `AttackOfTheNodes/`:
 
 ```bash
 python -m compileall -q .

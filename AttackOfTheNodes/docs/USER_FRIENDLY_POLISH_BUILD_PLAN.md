@@ -27,12 +27,12 @@ It expands the Phase 17 and Phase 18 roadmap items in `docs/MASTER_BUILD_PLAN.md
 
 Files:
 
-- `attackofthenodes_v05/frontend/screens/editor.py`
-- `attackofthenodes_v05/frontend/screens/help.py`
-- `attackofthenodes_v05/frontend/screens/node_config.py`
-- `attackofthenodes_v05/frontend/screens/workflow_library.py`
-- `attackofthenodes_v05/frontend/notifications.py`
-- node metadata under `attackofthenodes_v05/backend/nodes/`
+- `AttackOfTheNodes/frontend/screens/editor.py`
+- `AttackOfTheNodes/frontend/screens/help.py`
+- `AttackOfTheNodes/frontend/screens/node_config.py`
+- `AttackOfTheNodes/frontend/screens/workflow_library.py`
+- `AttackOfTheNodes/frontend/notifications.py`
+- node metadata under `AttackOfTheNodes/backend/nodes/`
 
 Tasks:
 
@@ -63,11 +63,11 @@ mouse use, alerts, scrolling, or screen transitions.
 
 Files:
 
-- `attackofthenodes_v05/frontend/screens/editor.py`
-- `attackofthenodes_v05/frontend/widgets/command_screen_mixin.py`
-- `attackofthenodes_v05/frontend/widgets/command_navigation.py`
-- `attackofthenodes_v05/frontend/widgets/list_navigation.py`
-- `attackofthenodes_v05/frontend/widgets/node_list.py`
+- `AttackOfTheNodes/frontend/screens/editor.py`
+- `AttackOfTheNodes/frontend/widgets/command_screen_mixin.py`
+- `AttackOfTheNodes/frontend/widgets/command_navigation.py`
+- `AttackOfTheNodes/frontend/widgets/list_navigation.py`
+- `AttackOfTheNodes/frontend/widgets/node_list.py`
 
 Tasks:
 
@@ -96,10 +96,10 @@ Tests:
 
 Files:
 
-- `attackofthenodes_v05/frontend/screens/editor.py`
-- `attackofthenodes_v05/frontend/widgets/node_card.py`
-- `attackofthenodes_v05/frontend/styles.tcss`
-- optional frontend helper: `attackofthenodes_v05/frontend/branch_health.py`
+- `AttackOfTheNodes/frontend/screens/editor.py`
+- `AttackOfTheNodes/frontend/widgets/node_card.py`
+- `AttackOfTheNodes/frontend/styles.tcss`
+- optional frontend helper: `AttackOfTheNodes/frontend/branch_health.py`
 
 Tasks:
 
@@ -129,10 +129,10 @@ Tests:
 
 Files:
 
-- `attackofthenodes_v05/frontend/widgets/node_card.py`
-- `attackofthenodes_v05/frontend/styles.tcss`
-- `attackofthenodes_v05/backend/node_category.py`
-- optional frontend helper: `attackofthenodes_v05/frontend/node_visuals.py`
+- `AttackOfTheNodes/frontend/widgets/node_card.py`
+- `AttackOfTheNodes/frontend/styles.tcss`
+- `AttackOfTheNodes/backend/node_category.py`
+- optional frontend helper: `AttackOfTheNodes/frontend/node_visuals.py`
 
 Tasks:
 
@@ -166,10 +166,10 @@ Tests:
 
 Files:
 
-- `attackofthenodes_v05/frontend/screens/node_config.py`
-- `attackofthenodes_v05/frontend/widgets/form_generator.py`
-- `attackofthenodes_v05/frontend/widgets/dynamic_sections.py`
-- node metadata under `attackofthenodes_v05/backend/nodes/`
+- `AttackOfTheNodes/frontend/screens/node_config.py`
+- `AttackOfTheNodes/frontend/widgets/form_generator.py`
+- `AttackOfTheNodes/frontend/widgets/dynamic_sections.py`
+- node metadata under `AttackOfTheNodes/backend/nodes/`
 
 Tasks:
 
@@ -203,10 +203,10 @@ Tests:
 
 Files:
 
-- `attackofthenodes_v05/frontend/screens/workflow_library.py`
-- `attackofthenodes_v05/frontend/screens/settings.py`
-- `attackofthenodes_v05/frontend/screens/help.py`
-- `attackofthenodes_v05/frontend/widgets/list_navigation.py`
+- `AttackOfTheNodes/frontend/screens/workflow_library.py`
+- `AttackOfTheNodes/frontend/screens/settings.py`
+- `AttackOfTheNodes/frontend/screens/help.py`
+- `AttackOfTheNodes/frontend/widgets/list_navigation.py`
 
 Tasks:
 
@@ -234,10 +234,10 @@ Tests:
 
 Files:
 
-- `attackofthenodes_v05/frontend/widgets/command_screen_mixin.py`
-- `attackofthenodes_v05/frontend/widgets/list_navigation.py`
-- `attackofthenodes_v05/frontend/screens/settings.py`
-- `attackofthenodes_v05/frontend/styles.tcss`
+- `AttackOfTheNodes/frontend/widgets/command_screen_mixin.py`
+- `AttackOfTheNodes/frontend/widgets/list_navigation.py`
+- `AttackOfTheNodes/frontend/screens/settings.py`
+- `AttackOfTheNodes/frontend/styles.tcss`
 
 Tasks:
 
@@ -297,7 +297,7 @@ behavior bugs.
 For each pass:
 
 ```bash
-cd attackofthenodes_v05
+cd AttackOfTheNodes
 ../.venv/bin/python -m compileall -q .
 ../.venv/bin/python -m pytest tests/test_debug_nodes.py -v
 ```

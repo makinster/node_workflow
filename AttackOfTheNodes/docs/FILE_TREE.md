@@ -22,7 +22,7 @@ node_workflow/
 │   ├── SIGNAL_FLOW.md
 │   ├── TUI_DESIGN.md
 │   └── V05_BUILD_PLAN.md
-└── attackofthenodes_v05/
+└── AttackOfTheNodes/
     ├── __init__.py
     ├── demo_execution.py
     ├── main.py
@@ -134,13 +134,13 @@ node_workflow/
 - `.claude/`
 - `__pycache__/`
 - `.pytest_cache/`
-- `attackofthenodes_v05/logs/`
-- `attackofthenodes_v05/settings/`
-- `attackofthenodes_v05/workflows/`
-- `attackofthenodes_v05/run_history/`
-- `attackofthenodes_v05/run_outputs/`
-- `attackofthenodes_v05/run_errors/`
-- local scratch files such as `attackofthenodes_v05/read_test.txt`
+- `AttackOfTheNodes/logs/`
+- `AttackOfTheNodes/settings/`
+- `AttackOfTheNodes/workflows/`
+- `AttackOfTheNodes/run_history/`
+- `AttackOfTheNodes/run_outputs/`
+- `AttackOfTheNodes/run_errors/`
+- local scratch files such as `AttackOfTheNodes/read_test.txt`
 
 ## Notes
 

@@ -1,5 +1,21 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-08 — Project Folder Simplification
+
+- Renamed the active app folder from `attackofthenodes_v05/` to
+  `AttackOfTheNodes/`.
+- Moved the docs folder into the project root at `AttackOfTheNodes/docs/`.
+- Updated current project docs and test comments to use the simplified project
+  folder name.
+- Added `run_windows.cmd`, a Windows Command Prompt launcher that creates a
+  local `.venv-win`, checks/imports dependencies, installs from
+  `requirements.lock` when needed, and launches `main.py`.
+- Updated `pyproject.toml` package display name to `AttackOfTheNodes` and kept
+  the short `aotn` console command.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v` (98 passed)
+
 ## 2026-06-08 — Merge Config Beacon List
 
 - Changed Merge node config to populate its branch-close list from live Merge
@@ -53,7 +69,7 @@
 - Stopped editor visible traversal at Merge Beacon nodes so connected merge
   branch nodes no longer appear under the beacon's branch.
 - Updated current docs to use Merge Beacon terminology and cleared existing
-  workflow save JSONs from `attackofthenodes_v05/workflows/` for a fresh start.
+  workflow save JSONs from `AttackOfTheNodes/workflows/` for a fresh start.
 - Verification:
   - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -q -k "merge_beacon or branch_end_config or connected_branch_end or merge_options_exclude_current_merge_path"`
   - `../.venv/bin/python -m compileall -q .`

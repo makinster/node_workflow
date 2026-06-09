@@ -1,7 +1,7 @@
 # Frontend Audit and Standardization Build Plan
 
 **Created:** 2026-06-02
-**Scope:** `attackofthenodes_v05/frontend/`
+**Scope:** `AttackOfTheNodes/frontend/`
 **Goal:** audit the current Textual frontend, fix recurring UI bug classes, and
 standardize the path from backend node metadata to usable UI.
 
@@ -424,7 +424,7 @@ mounted tests in `tests/test_debug_nodes.py`.
 
 ## 7. Verification Baseline
 
-Run from `attackofthenodes_v05/`:
+Run from `AttackOfTheNodes/`:
 
 ```bash
 python -m compileall -q .

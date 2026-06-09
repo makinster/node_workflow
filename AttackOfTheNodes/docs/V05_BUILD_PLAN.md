@@ -55,7 +55,7 @@ Simplified or deferred:
 ## Target File Structure
 
 ```text
-attackofthenodes_v05/
+AttackOfTheNodes/
   main.py
   backend/
     __init__.py
@@ -102,9 +102,9 @@ Phase 1 establishes the foundation:
 
 ## Acceptance Notes
 
-At the end of phase 1, running `attackofthenodes_v05/main.py` should:
+At the end of phase 1, running `AttackOfTheNodes/main.py` should:
 
-- Create `attackofthenodes_v05/workflows/` if absent.
+- Create `AttackOfTheNodes/workflows/` if absent.
 - Save and load a test workflow.
 - List available workflows.
 - Publish and receive a test event.
@@ -128,9 +128,9 @@ Phase 2 adds the execution layer:
 Phase 2 has been validated with:
 
 ```powershell
-C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe attackofthenodes_v05\main.py
-C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe attackofthenodes_v05\test_execution.py
-C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m compileall -q attackofthenodes_v05
+C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe AttackOfTheNodes\main.py
+C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe AttackOfTheNodes\test_execution.py
+C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m compileall -q AttackOfTheNodes
 ```
 
 ## Phase 3 Scope
@@ -161,15 +161,15 @@ Phase 3 has been validated without launching a GUI display by compiling the pack
 and re-running backend execution checks:
 
 ```powershell
-C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m compileall -q attackofthenodes_v05
-C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe attackofthenodes_v05\demo_execution.py
-C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe attackofthenodes_v05\test_execution.py
+C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m compileall -q AttackOfTheNodes
+C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe AttackOfTheNodes\demo_execution.py
+C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe AttackOfTheNodes\test_execution.py
 ```
 
 To launch the UI locally:
 
 ```powershell
-C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe attackofthenodes_v05\main.py
+C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe AttackOfTheNodes\main.py
 ```
 
 ## Phase 4 Scope
@@ -200,9 +200,9 @@ Phase 4 connects the tkinter UI to the async execution layer:
 Phase 4 has been validated with:
 
 ```powershell
-C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m compileall -q attackofthenodes_v05
-C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe attackofthenodes_v05\test_execution.py
-C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -c "import sys; sys.path.insert(0, 'attackofthenodes_v05'); import frontend.app, frontend.execution_panel, frontend.controls_panel, frontend.modals; print('frontend imports ok')"
+C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m compileall -q AttackOfTheNodes
+C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe AttackOfTheNodes\test_execution.py
+C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -c "import sys; sys.path.insert(0, 'AttackOfTheNodes'); import frontend.app, frontend.execution_panel, frontend.controls_panel, frontend.modals; print('frontend imports ok')"
 ```
 
 ## Phase 5 Scope
@@ -219,10 +219,10 @@ Phase 5 completes the v0.5 proof of concept inspection layer:
 Phase 5 has been validated with:
 
 ```powershell
-C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m compileall -q attackofthenodes_v05
-C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe attackofthenodes_v05\test_execution.py
-C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe attackofthenodes_v05\demo_execution.py
-C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -c "import sys; sys.path.insert(0, 'attackofthenodes_v05'); import frontend.app, frontend.modals, frontend.controls_panel; print('frontend imports ok')"
+C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m compileall -q AttackOfTheNodes
+C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe AttackOfTheNodes\test_execution.py
+C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe AttackOfTheNodes\demo_execution.py
+C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -c "import sys; sys.path.insert(0, 'AttackOfTheNodes'); import frontend.app, frontend.modals, frontend.controls_panel; print('frontend imports ok')"
 ```
 
 At this point v0.5 has all planned proof-of-concept phases:
@@ -237,7 +237,7 @@ At this point v0.5 has all planned proof-of-concept phases:
 
 The project pivoted from the tkinter UI to a Textual terminal UI. The original
 backend phase work remains intact; the new frontend lives under
-`attackofthenodes_v05/frontend/screens/`, `frontend/widgets/`, and
+`AttackOfTheNodes/frontend/screens/`, `frontend/widgets/`, and
 `frontend/styles.tcss`.
 
 Checked off:
@@ -299,10 +299,10 @@ preserving later prototype features already present:
 Validated with:
 
 ```powershell
-C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m compileall -q attackofthenodes_v05
-C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -c "import sys; sys.path.insert(0, 'attackofthenodes_v05'); import frontend.app, frontend.async_tk, frontend.toolbar; from frontend.modals import NodeConfigModal, WorkflowLibraryModal; print('v0.6 imports ok')"
-C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe attackofthenodes_v05\test_execution.py
-C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe attackofthenodes_v05\demo_execution.py
+C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m compileall -q AttackOfTheNodes
+C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -c "import sys; sys.path.insert(0, 'AttackOfTheNodes'); import frontend.app, frontend.async_tk, frontend.toolbar; from frontend.modals import NodeConfigModal, WorkflowLibraryModal; print('v0.6 imports ok')"
+C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe AttackOfTheNodes\test_execution.py
+C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe AttackOfTheNodes\demo_execution.py
 ```
 
 ## v0.7 Roadmap Alignment
@@ -326,9 +326,9 @@ The v0.7 Execution UI roadmap has been aligned with the current prototype:
 Validated with:
 
 ```powershell
-C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m compileall -q attackofthenodes_v05
-C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -c "import sys; sys.path.insert(0, 'attackofthenodes_v05'); import frontend.app, frontend.execution_panel, frontend.controls_panel; print('v0.7 imports ok')"
-C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe attackofthenodes_v05\test_execution.py
+C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m compileall -q AttackOfTheNodes
+C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -c "import sys; sys.path.insert(0, 'AttackOfTheNodes'); import frontend.app, frontend.execution_panel, frontend.controls_panel; print('v0.7 imports ok')"
+C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe AttackOfTheNodes\test_execution.py
 ```
 
 ## v0.8 Roadmap Alignment
@@ -368,10 +368,10 @@ recovery path is implemented:
 Validated with:
 
 ```powershell
-C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m compileall -q attackofthenodes_v05
-C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe attackofthenodes_v05\test_execution.py
-C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe attackofthenodes_v05\test_error_recovery.py
-C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -c "import sys; sys.path.insert(0, 'attackofthenodes_v05'); import frontend.app; from frontend.modals import ErrorDetailsModal, RunHistoryModal; print('v0.8 imports ok')"
+C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m compileall -q AttackOfTheNodes
+C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe AttackOfTheNodes\test_execution.py
+C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe AttackOfTheNodes\test_error_recovery.py
+C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -c "import sys; sys.path.insert(0, 'AttackOfTheNodes'); import frontend.app; from frontend.modals import ErrorDetailsModal, RunHistoryModal; print('v0.8 imports ok')"
 ```
 
 ## Conditional Branching Update
@@ -446,11 +446,11 @@ The v0.9 service extraction and workflow management slice is complete:
 Validated with:
 
 ```powershell
-C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m compileall -q attackofthenodes_v05
-C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe attackofthenodes_v05\test_execution.py
-C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe attackofthenodes_v05\test_error_recovery.py
-C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe attackofthenodes_v05\test_v09_managers.py
-C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -c "import sys; sys.path.insert(0, 'attackofthenodes_v05'); from backend.configuration_manager import ConfigurationManager; from backend.output_manager import OutputManager; from backend.save_manager import SaveManager; import frontend.app; print('v0.9 manager imports ok')"
+C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m compileall -q AttackOfTheNodes
+C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe AttackOfTheNodes\test_execution.py
+C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe AttackOfTheNodes\test_error_recovery.py
+C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe AttackOfTheNodes\test_v09_managers.py
+C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -c "import sys; sys.path.insert(0, 'AttackOfTheNodes'); from backend.configuration_manager import ConfigurationManager; from backend.output_manager import OutputManager; from backend.save_manager import SaveManager; import frontend.app; print('v0.9 manager imports ok')"
 ```
 
 ## v0.95 Extended Node Library And Editor Enhancements
@@ -482,7 +482,7 @@ The v0.95 feature slice is implemented in proof-of-concept form:
 Validated with:
 
 ```powershell
-C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe attackofthenodes_v05\test_v095_nodes.py
+C:\Users\makin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe AttackOfTheNodes\test_v095_nodes.py
 ```
 
 Notes:

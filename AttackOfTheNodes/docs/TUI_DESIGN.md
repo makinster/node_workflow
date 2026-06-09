@@ -19,8 +19,8 @@ Install development dependencies with:
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-python -m pip install -r attackofthenodes_v05/requirements.lock
-python -m pip install -e attackofthenodes_v05/
+python -m pip install -r AttackOfTheNodes/requirements.lock
+python -m pip install -e AttackOfTheNodes/
 ```
 
 Textual is async-native, which matches the supervisor run loop, master state

@@ -1,7 +1,7 @@
 # AttackOfTheNodes Docs Index
 
 Start here when entering the project. The current active app is the
-Python/Textual build under `attackofthenodes_v05/`; older Chrome-extension and
+Python/Textual build under `AttackOfTheNodes/`; older Chrome-extension and
 tkinter material is historical unless explicitly labeled current.
 
 ## Read First
