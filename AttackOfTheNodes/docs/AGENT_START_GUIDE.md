@@ -104,6 +104,9 @@ the links in `docs/README.md`.
 
 - Workflow import/export should try the OS file picker first and fall back to a
   typed path prompt when the picker is canceled, unavailable, or errors.
+- Typed path fallback prompts should expose a `Browse` button/key when picker
+  metadata is available, so users can retry the OS file picker without backing
+  out to the File menu.
 - Keep picker code frontend-only. Backend save/import/export services should
   accept paths and should not know how the user selected them.
 - Use `AttackOfTheNodes/frontend/file_io.py` for:

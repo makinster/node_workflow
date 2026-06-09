@@ -91,6 +91,7 @@ def blocks_command_action(widget: Any, action: str) -> bool:
         "focus_filter",
         "focus_node_list",
         "cancel",
+        "browse",
     }
 
 

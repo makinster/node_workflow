@@ -492,7 +492,12 @@ class AttackOfTheNodesApp(TextualApp):
         workflow_id = result.get("workflow_id")
         default_path = str(Path.cwd() / f"{workflow_id}.json")
         self.push_screen(
-            PathPromptScreen("Export workflow JSON path", default_path),
+            PathPromptScreen(
+                "Export workflow JSON path",
+                default_path,
+                picker_mode="save",
+                default_name=f"{workflow_id}.json",
+            ),
             lambda path: self._export_workflow_to_path(result, path),
         )
 
@@ -534,7 +539,7 @@ class AttackOfTheNodesApp(TextualApp):
 
     def _prompt_import_workflow_path(self) -> None:
         self.push_screen(
-            PathPromptScreen("Import workflow JSON path"),
+            PathPromptScreen("Import workflow JSON path", picker_mode="open"),
             self._import_workflow_from_path,
         )
 

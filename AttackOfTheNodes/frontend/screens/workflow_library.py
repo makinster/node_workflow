@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+from pathlib import Path
 from typing import Any, Dict, Optional
 
 from textual.app import ComposeResult
@@ -11,6 +13,7 @@ from textual.screen import ModalScreen
 from textual.widgets import Button, Input, Label, ListItem, ListView, Static
 
 from backend.persistence import list_workflows
+from frontend import file_io, notifications
 from frontend.widgets.command_input import CommandInput
 from frontend.widgets.command_screen_mixin import CommandScreenMixin
 from frontend.widgets.list_navigation import focus_list, move_list_highlight
@@ -170,14 +173,24 @@ class PathPromptScreen(CommandScreenMixin, ModalScreen):
     BINDINGS = [
         ("escape", "cancel", "Cancel"),
         ("ctrl+enter", "submit", "Submit"),
+        Binding("b", "browse", "Browse", priority=True),
         Binding("tab", "tab_out", "Next", priority=True),
         Binding("ctrl+q", "cancel", "Cancel", priority=True),
     ]
 
-    def __init__(self, title: str, default_path: str = "") -> None:
+    def __init__(
+        self,
+        title: str,
+        default_path: str = "",
+        *,
+        picker_mode: str | None = None,
+        default_name: str = "",
+    ) -> None:
         super().__init__()
         self.title_text = title
         self.default_path = default_path
+        self.picker_mode = picker_mode
+        self.default_name = default_name or Path(default_path).name
 
     def compose(self) -> ComposeResult:
         with Vertical(id="modal-card", classes="path-prompt-modal"):
@@ -187,11 +200,14 @@ class PathPromptScreen(CommandScreenMixin, ModalScreen):
                 id="path-input",
                 auto_edit_on_focus=True,
             )
-            yield Static("E edit path | Tab next | Ctrl+Enter confirm | Esc cancel", classes="modal-help")
+            help_text = "B browse | E edit path | Tab next | Ctrl+Enter confirm | Esc cancel"
+            yield Static(help_text, classes="modal-help")
             with Vertical(classes="button-row"):
+                if self.picker_mode:
+                    yield Button("Browse", id="browse-path", variant="default")
                 yield Button("Confirm", id="confirm-path", variant="primary")
                 yield Button("Cancel", id="cancel-path", variant="default")
-            yield StatusBar("E edit path | Tab next | Ctrl+Enter confirm | Esc cancel")
+            yield StatusBar(help_text)
 
     def on_mount(self) -> None:
         self._focus_first()
@@ -201,6 +217,8 @@ class PathPromptScreen(CommandScreenMixin, ModalScreen):
             self.action_submit()
         elif event.button.id == "cancel-path":
             self.action_cancel()
+        elif event.button.id == "browse-path":
+            self.action_browse()
 
     def action_submit(self) -> None:
         path = self.query_one("#path-input", Input).value.strip()
@@ -208,6 +226,37 @@ class PathPromptScreen(CommandScreenMixin, ModalScreen):
 
     def action_cancel(self) -> None:
         self.dismiss(None)
+
+    def action_browse(self) -> None:
+        if not self.picker_mode:
+            return
+        asyncio.create_task(self._browse_path())
+
+    async def _browse_path(self) -> None:
+        try:
+            if self.picker_mode == "save":
+                path = await asyncio.to_thread(
+                    file_io.pick_save_file,
+                    self.title_text,
+                    self.default_name,
+                    file_io.JSON_FILE_TYPES,
+                )
+            else:
+                path = await asyncio.to_thread(
+                    file_io.pick_open_file,
+                    self.title_text,
+                    file_io.JSON_FILE_TYPES,
+                )
+        except file_io.FilePickerUnavailable:
+            notifications.notify_info(self.app, "File picker unavailable; type the path")
+            return
+        if not path:
+            return
+        path_input = self.query_one("#path-input", CommandInput)
+        if path_input.editing:
+            path_input.end_edit()
+        path_input.value = path
+        self.app.set_focus(self.query_one("#confirm-path", Button))
 
     def action_tab_out(self) -> None:
         focused = self.app.focused

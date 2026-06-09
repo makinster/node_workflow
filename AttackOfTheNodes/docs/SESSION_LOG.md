@@ -1,5 +1,18 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-09 — File Picker Browse Control
+
+- Added a user-facing Browse button/key to import/export typed path fallback
+  prompts, letting users retry the OS file picker from inside the prompt.
+- Kept `B` blocked while a path text field is actively editing so users can type
+  paths normally.
+- Updated Phase 16 docs to make the picker-first plus Browse-enabled fallback
+  rule explicit.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "prompt_modals_use_shared_command_activation or file_picker or export_cancel_returns_to_file_menu"` (4 passed)
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v` (101 passed)
+
 ## 2026-06-09 — Phase 16 File Picker Slice
 
 - Added a frontend-only file I/O helper for OS path pickers and file-manager

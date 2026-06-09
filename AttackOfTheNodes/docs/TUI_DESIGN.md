@@ -213,7 +213,9 @@ is marked with `<-- Loaded Workflow`. Workflow actions are keyboard bindings;
 the only bottom widget is `Cancel`. Moving down from the last workflow focuses
 Cancel, and moving up from Cancel returns to the last workflow. Export/import
 tries an OS file picker first, then falls back to a typed path prompt when the
-picker is unavailable or errors. Canceling either path returns to File.
+picker is unavailable or errors. The fallback prompt includes a Browse control
+when possible so users can retry the OS picker from inside the prompt. Canceling
+either path returns to File.
 Opening/revealing a folder in Explorer/Finder/xdg-open is a separate convenience
 helper and must not be used as a substitute for choosing import/export paths.
 

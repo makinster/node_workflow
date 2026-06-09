@@ -808,6 +808,8 @@ Current progress:
 - Workflow import/export now tries a frontend OS file picker first, then falls
   back to typed path entry. A separate file-manager reveal helper exists for
   future output/asset convenience.
+- Typed path fallback prompts include a Browse action when picker metadata is
+  available, so users can explicitly reopen the OS picker from the prompt.
 - Node config can override transient output names/descriptions from node port
   metadata.
 - Node config Save/Cancel and path-prompt Confirm/Cancel controls are stacked

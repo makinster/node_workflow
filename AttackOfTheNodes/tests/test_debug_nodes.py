@@ -3792,6 +3792,7 @@ async def _test_prompt_modals_use_shared_command_activation():
     from textual.app import App, ComposeResult
     from textual.widgets import Button
 
+    import frontend.file_io as file_io
     from frontend.screens.user_input import UserInputScreen
     from frontend.screens.workflow_library import PathPromptScreen
     from frontend.widgets.command_input import CommandInput
@@ -3823,6 +3824,34 @@ async def _test_prompt_modals_use_shared_command_activation():
         assert submitted_paths == ["abc"]
         await path_input._on_key(events.Key("escape", None))
         assert path_input.editing is False
+
+    original_open = file_io.pick_open_file
+    try:
+        file_io.pick_open_file = lambda *args, **kwargs: "/tmp/from-browser.json"
+
+        class BrowsePathApp(App):
+            def compose(self) -> ComposeResult:
+                yield PathPromptScreen("Import", picker_mode="open")
+
+        browse_app = BrowsePathApp()
+        async with browse_app.run_test() as pilot:
+            await pilot.pause(0.03)
+            browse_input = browse_app.query_one("#path-input", CommandInput)
+            browse_button = browse_app.query_one("#browse-path", Button)
+            confirm_button = browse_app.query_one("#confirm-path", Button)
+            assert browse_button.label.plain == "Browse"
+            browse_input.value = ""
+            await pilot.press("b")
+            await pilot.pause(0.1)
+            assert browse_input.value == "b"
+            browse_input.end_edit()
+            browse_app.set_focus(browse_button)
+            await pilot.press("e")
+            await pilot.pause(0.1)
+            assert browse_input.value == "/tmp/from-browser.json"
+            assert browse_app.focused is confirm_button
+    finally:
+        file_io.pick_open_file = original_open
 
     class UserInputApp(App):
         def compose(self) -> ComposeResult:
