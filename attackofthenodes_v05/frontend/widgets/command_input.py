@@ -18,6 +18,58 @@ EDITING_NAV_KEYS = {
 }
 
 
+def _move_input_cursor_to_end(widget: Input) -> None:
+    try:
+        widget.cursor_position = len(widget.value)
+    except Exception:
+        pass
+
+
+def _move_text_area_cursor_to_end(widget: TextArea) -> None:
+    try:
+        lines = widget.text.splitlines()
+        if not lines:
+            widget.move_cursor((0, 0))
+            return
+        widget.move_cursor((len(lines) - 1, len(lines[-1])))
+    except Exception:
+        pass
+
+
+def _move_command_input_cursor(widget: Input, key: str) -> bool:
+    if key in {"a", "left"}:
+        widget.cursor_position = max(0, widget.cursor_position - 1)
+    elif key in {"d", "right"}:
+        widget.cursor_position = min(len(widget.value), widget.cursor_position + 1)
+    elif key == "home":
+        widget.cursor_position = 0
+    elif key == "end":
+        widget.cursor_position = len(widget.value)
+    else:
+        return False
+    return True
+
+
+def _move_command_text_area_cursor(widget: TextArea, key: str) -> bool:
+    actions = {
+        "a": widget.action_cursor_left,
+        "d": widget.action_cursor_right,
+        "left": widget.action_cursor_left,
+        "right": widget.action_cursor_right,
+        "up": widget.action_cursor_up,
+        "down": widget.action_cursor_down,
+        "home": widget.action_cursor_line_start,
+        "end": widget.action_cursor_line_end,
+        "pageup": widget.action_cursor_page_up,
+        "pagedown": widget.action_cursor_page_down,
+    }
+    action = actions.get(key)
+    if action is None:
+        return False
+    action()
+    return True
+
+
 def _sync_screen_cursor_mode(widget) -> None:
     try:
         sync = getattr(widget.screen, "_sync_cursor_mode", None)
@@ -44,7 +96,7 @@ class CommandInput(Input):
         self.styles.height = 3
         self.styles.width = "100%"
 
-    def begin_edit(self) -> None:
+    def begin_edit(self, place_cursor_at_end: bool = True) -> None:
         active_text = getattr(self.screen, "_active_command_text_widget", None)
         if active_text is not self and hasattr(active_text, "end_edit"):
             active_text.end_edit()
@@ -54,6 +106,9 @@ class CommandInput(Input):
         self.add_class("editing")
         setattr(self.screen, "_active_command_text_widget", self)
         self.app.set_focus(self)
+        if place_cursor_at_end and not getattr(self, "_nav_cursor_positioned", False):
+            _move_input_cursor_to_end(self)
+        self._nav_cursor_positioned = False
         _sync_screen_cursor_mode(self)
 
     def end_edit(self, revert: bool = False) -> None:
@@ -71,8 +126,7 @@ class CommandInput(Input):
         pass
 
     def on_click(self, event: events.Click) -> None:
-        self.begin_edit()
-        event.stop()
+        self.begin_edit(place_cursor_at_end=False)
 
     async def _on_key(self, event: events.Key) -> None:
         if self.editing:
@@ -81,12 +135,20 @@ class CommandInput(Input):
                 event.stop()
                 event.prevent_default()
                 return
+            if event.key in ("tab", "shift+tab"):
+                self.end_edit()
+                self._run_screen_action(
+                    "cursor_up" if event.key == "shift+tab" else "cursor_down"
+                )
+                event.stop()
+                event.prevent_default()
+                return
             if event.key == "enter":
                 self.end_edit()
                 await super()._on_key(event)
                 event.stop()
                 return
-            if event.key in {"up", "down", "pageup", "pagedown"}:
+            if event.key in EDITING_NAV_KEYS and _move_command_input_cursor(self, event.key):
                 event.stop()
                 event.prevent_default()
                 return
@@ -118,6 +180,12 @@ class CommandInput(Input):
             event.prevent_default()
             return
 
+        if _move_command_input_cursor(self, event.key):
+            self._nav_cursor_positioned = True
+            event.stop()
+            event.prevent_default()
+            return
+
         if event.is_printable:
             event.stop()
             event.prevent_default()
@@ -144,7 +212,7 @@ class CommandTextArea(TextArea):
         self._edit_start_text = self.text
         self.add_class("command-input")
 
-    def begin_edit(self) -> None:
+    def begin_edit(self, place_cursor_at_end: bool = True) -> None:
         active_text = getattr(self.screen, "_active_command_text_widget", None)
         if active_text is not self and hasattr(active_text, "end_edit"):
             active_text.end_edit()
@@ -155,6 +223,9 @@ class CommandTextArea(TextArea):
         self.add_class("editing")
         setattr(self.screen, "_active_command_text_widget", self)
         self.app.set_focus(self)
+        if place_cursor_at_end and not getattr(self, "_nav_cursor_positioned", False):
+            _move_text_area_cursor_to_end(self)
+        self._nav_cursor_positioned = False
         _sync_screen_cursor_mode(self)
 
     def end_edit(self, revert: bool = False) -> None:
@@ -176,8 +247,7 @@ class CommandTextArea(TextArea):
         pass
 
     def on_click(self, event: events.Click) -> None:
-        self.begin_edit()
-        event.stop()
+        self.begin_edit(place_cursor_at_end=False)
 
     async def _on_key(self, event: events.Key) -> None:
         if self.editing:
@@ -186,8 +256,20 @@ class CommandTextArea(TextArea):
                 event.stop()
                 event.prevent_default()
                 return
+            if event.key in ("tab", "shift+tab"):
+                self.end_edit()
+                self._run_screen_action(
+                    "cursor_up" if event.key == "shift+tab" else "cursor_down"
+                )
+                event.stop()
+                event.prevent_default()
+                return
             if event.key == "ctrl+enter":
                 self.end_edit()
+                event.stop()
+                event.prevent_default()
+                return
+            if event.key in EDITING_NAV_KEYS and _move_command_text_area_cursor(self, event.key):
                 event.stop()
                 event.prevent_default()
                 return
@@ -215,6 +297,12 @@ class CommandTextArea(TextArea):
             return
 
         if event.key in EDITING_NAV_KEYS:
+            event.stop()
+            event.prevent_default()
+            return
+
+        if _move_command_text_area_cursor(self, event.key):
+            self._nav_cursor_positioned = True
             event.stop()
             event.prevent_default()
             return

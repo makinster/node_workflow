@@ -108,7 +108,9 @@ Use Textual `Screen` / `ModalScreen` classes:
   Merge config lists current Merge Beacons from anywhere in the workflow,
   including nested branch trees, while excluding beacons on the merge node's own
   branch path. The list refreshes on config open and is tolerant of incomplete
-  workflows; validation remains the authority for runnable correctness.
+  workflows; validation remains the authority for runnable correctness. Nested
+  options show branch breadcrumbs (`Outer -> Inner`) so users can tell which
+  branch path they are closing.
 - `branch_selector.py`: modal opened from the editor's `Branch Select` row.
   Multi-output nodes render a selectable row immediately below the node. The row
   shows the currently visible output port; pressing Enter opens the branch

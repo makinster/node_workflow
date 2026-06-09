@@ -176,6 +176,7 @@ def merge_input_options(workflow_map, current_node_id: str) -> list[Dict[str, st
         output = _beacon_output_details(workflow_map, beacon_node)
         beacon_name = beacon_node.get("alias") or "Merge Beacon"
         branch_label = context["branch_label"]
+        branch_path = context.get("branch_path") or branch_label
         options.append(
             {
                 "id": f"merge-input-choice-{len(options)}",
@@ -183,11 +184,12 @@ def merge_input_options(workflow_map, current_node_id: str) -> list[Dict[str, st
                 "branch_id": branch_id,
                 "branch_port": branch_port,
                 "branch_label": branch_label,
+                "branch_path": branch_path,
                 "branch_end_id": beacon_id,
                 "branch_end": f"{beacon_name} ({beacon_id})",
                 "last_node": f"{beacon_name} ({beacon_id})",
                 "source_port": "default",
-                "description": f"Branch: {branch_label}",
+                "description": f"Branch: {branch_path}",
                 "output_name": output["name"],
                 "output_description": output["description"],
             }
@@ -237,6 +239,10 @@ def _branch_contexts_by_node(workflow_map) -> Dict[str, list[Dict[str, str]]]:
                     "branch_port": output_port,
                     "branch_label": _branch_label(node, output_port),
                 }
+                next_context["branch_path"] = _branch_path_label(
+                    context,
+                    next_context["branch_label"],
+                )
                 follow(target_id, next_context, set(seen))
             return
         for conn in outputs:
@@ -262,6 +268,12 @@ def _branch_label(branch_node: Dict[str, Any], branch_port: str) -> str:
     config = branch_node.get("config") or {}
     label = str(config.get(f"{branch_port}_label") or "").strip()
     return label or branch_port.replace("_", " ").title()
+
+
+def _branch_path_label(context: Optional[Dict[str, str]], branch_label: str) -> str:
+    if context and context.get("branch_path"):
+        return f"{context['branch_path']} -> {branch_label}"
+    return branch_label
 
 
 def _target_for_output(node: Dict[str, Any], source_port: str) -> str:
@@ -1174,7 +1186,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                     [
                         f"Branches selected: {len(selected_closures)}",
                         f"Carry forward: {option['branch_label']}",
-                        f"Branch path: {option['branch_id']}.{option['branch_port']}",
+                        f"Branch path: {option.get('branch_path') or option['branch_label']}",
                         f"Last node: {option['last_node']}",
                         f"Output: {option['output_name']}",
                         f"Output Description: {option['output_description']}",

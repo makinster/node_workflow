@@ -1503,6 +1503,9 @@ def test_merge_options_include_nested_merge_beacons():
 
 
 async def _test_merge_options_include_nested_merge_beacons():
+    from textual.app import App, ComposeResult
+
+    from frontend.screens.node_config import NodeConfigScreen
     from frontend.screens.node_config import merge_input_options
 
     _, wm, _, _ = _make_services()
@@ -1539,7 +1542,34 @@ async def _test_merge_options_include_nested_merge_beacons():
         f"{inner_branch}:path_a",
         f"{inner_branch}:path_b",
     }
-    assert descriptions == {"Branch: Nested Left", "Branch: Nested Right"}
+    assert descriptions == {
+        "Branch: Outer Work -> Nested Left",
+        "Branch: Outer Work -> Nested Right",
+    }
+    assert {option["branch_path"] for option in options} == {
+        "Outer Work -> Nested Left",
+        "Outer Work -> Nested Right",
+    }
+
+    wm.update_node_config(
+        merge,
+        {
+            "branches_to_close": [f"{inner_branch}:path_a"],
+            "carry_forward_branch_id": f"{inner_branch}:path_a",
+            "selected_branch_id": f"{inner_branch}:path_a",
+            "selected_input_port": "path_a",
+        },
+    )
+
+    class ConfigApp(App):
+        def compose(self) -> ComposeResult:
+            yield NodeConfigScreen(wm._factory, wm, merge, wm.get_node_data(merge))
+
+    app = ConfigApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        details = app.query_one("#merge-selected-output-details")
+        assert "Branch path: Outer Work -> Nested Left" in str(details.content)
 
     print("test_merge_options_include_nested_merge_beacons PASSED")
 
@@ -1672,6 +1702,10 @@ def test_saving_merge_config_preserves_merge_home_branch_input():
 
 def test_deleting_merge_beacon_prunes_merge_config_selection():
     asyncio.run(_test_deleting_merge_beacon_prunes_merge_config_selection())
+
+
+def test_editor_blocks_insert_after_merge_beacon():
+    asyncio.run(_test_editor_blocks_insert_after_merge_beacon())
 
 
 async def _test_saving_merge_config_unchecked_branch_disconnects_branch_end():
@@ -1870,6 +1904,47 @@ async def _test_deleting_merge_beacon_prunes_merge_config_selection():
         ) == set()
 
     print("test_deleting_merge_beacon_prunes_merge_config_selection PASSED")
+
+
+async def _test_editor_blocks_insert_after_merge_beacon():
+    from textual.app import App, ComposeResult
+
+    from frontend.screens.editor import EditorScreen
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("block_insert_after_merge_beacon")
+    start = wm.add_node("start_node")
+    branch = wm.add_node("branch_node")
+    beacon = wm.add_node("branch_end_node")
+    wm.connect(start, "default", branch, "input")
+    wm.connect(branch, "path_a", beacon, "input")
+
+    class EditorApp(App):
+        def compose(self) -> ComposeResult:
+            yield EditorScreen(wm._factory, wm)
+
+    app = EditorApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        screen = app.query_one(EditorScreen)
+        node_count = len(wm.get_all_node_data())
+        stack_count = len(app.screen_stack)
+
+        screen.selected_node_id = beacon
+        screen.selected_row = {"kind": "node", "node_id": beacon}
+        screen.action_insert_node()
+        await pilot.pause(0.03)
+        assert len(wm.get_all_node_data()) == node_count
+        assert len(app.screen_stack) == stack_count
+
+        screen.selected_node_id = None
+        screen.selected_row = {"kind": "merge_beacon_select", "beacon_node_id": beacon}
+        screen.action_insert_node()
+        await pilot.pause(0.03)
+        assert len(wm.get_all_node_data()) == node_count
+        assert len(app.screen_stack) == stack_count
+
+    print("test_editor_blocks_insert_after_merge_beacon PASSED")
 
 
 def test_branch_end_config_shows_merge_branch_identity():
@@ -3449,16 +3524,30 @@ async def _test_node_config_command_inputs_require_activation():
         screen.action_cursor_up()
         assert app.focused is alias
         assert alias.editing is False
+        alias.cursor_position = len(alias.value)
+        previous_value = alias.value
+        await pilot.press("a")
+        assert alias.value == previous_value
+        assert alias.cursor_position == max(0, len(previous_value) - 1)
+        await pilot.press("d")
+        assert alias.cursor_position == len(previous_value)
 
         screen.action_activate_focused()
         assert alias.editing is True
+        assert alias.cursor_position == len(alias.value)
         await pilot.press("x")
         assert alias.value.endswith("x")
         await pilot.press("w", "s")
         assert app.focused is alias
         assert alias.editing is True
         assert alias.value.endswith("xws")
-        for key in ("up", "down", "left", "right"):
+        await pilot.press("left")
+        assert app.focused is alias
+        assert alias.editing is True
+        assert alias.cursor_position == len(alias.value) - 1
+        await pilot.press("right")
+        assert alias.cursor_position == len(alias.value)
+        for key in ("up", "down"):
             await pilot.press(key)
             assert app.focused is alias
             assert alias.editing is True
@@ -3475,6 +3564,14 @@ async def _test_node_config_command_inputs_require_activation():
         await pilot.press("s")
         assert not alias.value.endswith("xs")
         assert app.focused is not alias
+        screen.action_cursor_up()
+        assert app.focused is alias
+        screen.action_activate_focused()
+        await pilot.press("tab")
+        assert alias.editing is False
+        assert app.focused is not alias
+        await pilot.press("w")
+        assert app.focused is alias
 
     print("test_node_config_command_inputs_require_activation PASSED")
 
@@ -3982,10 +4079,15 @@ def test_click_edit_and_textarea_commit_sync_cursor_mode():
     asyncio.run(_test_click_edit_and_textarea_commit_sync_cursor_mode())
 
 
+def test_command_text_nav_mode_ad_positions_caret_before_edit():
+    asyncio.run(_test_command_text_nav_mode_ad_positions_caret_before_edit())
+
+
 async def _test_click_edit_and_textarea_commit_sync_cursor_mode():
     from textual import events
     from textual.app import App, ComposeResult
     from textual.screen import Screen
+    from textual.widgets._input import Selection
 
     from frontend.widgets.command_input import CommandInput, CommandTextArea
     from frontend.widgets.command_screen_mixin import CommandScreenMixin
@@ -3997,8 +4099,8 @@ async def _test_click_edit_and_textarea_commit_sync_cursor_mode():
 
     class EditScreen(CommandScreenMixin, Screen):
         def compose(self) -> ComposeResult:
-            yield CommandInput(id="input")
-            yield CommandTextArea(id="textarea")
+            yield CommandInput(value="sample", id="input")
+            yield CommandTextArea("hello\nworld", id="textarea")
             yield StatusBar("test")
 
         def on_mount(self) -> None:
@@ -4019,23 +4121,105 @@ async def _test_click_edit_and_textarea_commit_sync_cursor_mode():
         textarea = app.query_one("#textarea", CommandTextArea)
         status = app.query_one(StatusBar)
 
+        text_input.cursor_position = 2
         text_input.on_click(click(text_input))
         assert app.cursor_state.mode == "edit"
         assert "[EDIT]" in status._formatted()
+        assert text_input.cursor_position == 2
+        text_input.end_edit()
+
+        text_input.selection = Selection(1, 4)
+        text_input.on_click(click(text_input))
+        assert text_input.editing is True
+        assert text_input.selection == Selection(1, 4)
 
         await pilot.press("escape")
         await pilot.pause(0.02)
         assert app.cursor_state.mode == "nav"
         assert "[NAV]" in status._formatted()
 
+        text_input.selection = Selection(0, len(text_input.value))
+        await pilot.press("e")
+        await pilot.pause(0.02)
+        assert text_input.editing is True
+        assert text_input.selection == Selection.cursor(len(text_input.value))
+        await pilot.press("escape")
+        await pilot.pause(0.02)
+
+        textarea.move_cursor((1, 2))
         textarea.on_click(click(textarea))
         assert app.cursor_state.mode == "edit"
+        assert textarea.selection.end == (1, 2)
+        textarea.end_edit()
+        textarea.begin_edit()
+        assert textarea.selection.end == (1, 5)
+        await pilot.press("left")
+        await pilot.pause(0.02)
+        assert textarea.selection.end == (1, 4)
+        textarea.begin_edit()
+        await pilot.press("tab")
+        await pilot.pause(0.02)
+        assert textarea.editing is False
+        assert app.cursor_state.mode == "nav"
+        textarea.begin_edit()
         await pilot.press("ctrl+enter")
         await pilot.pause(0.02)
         assert app.cursor_state.mode == "nav"
         assert "[NAV]" in status._formatted()
 
     print("test_click_edit_and_textarea_commit_sync_cursor_mode PASSED")
+
+
+async def _test_command_text_nav_mode_ad_positions_caret_before_edit():
+    from textual.app import App, ComposeResult
+    from textual.screen import Screen
+
+    from frontend.widgets.command_input import CommandInput, CommandTextArea
+    from frontend.widgets.command_screen_mixin import CommandScreenMixin
+
+    class EditScreen(CommandScreenMixin, Screen):
+        def compose(self) -> ComposeResult:
+            yield CommandInput(value="abcd", id="input")
+            yield CommandTextArea("one\ntwo", id="textarea")
+
+        def on_mount(self) -> None:
+            self._focus_first()
+
+    class EditApp(App):
+        def compose(self) -> ComposeResult:
+            yield EditScreen()
+
+    app = EditApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.05)
+        text_input = app.query_one("#input", CommandInput)
+        textarea = app.query_one("#textarea", CommandTextArea)
+
+        text_input.cursor_position = len(text_input.value)
+        await pilot.press("a")
+        assert text_input.editing is False
+        assert text_input.value == "abcd"
+        assert text_input.cursor_position == 3
+        await pilot.press("e")
+        assert text_input.editing is True
+        assert text_input.cursor_position == 3
+        await pilot.press("d")
+        assert text_input.value == "abcdd"
+        await pilot.press("escape")
+
+        app.set_focus(textarea)
+        textarea.end_edit()
+        textarea.move_cursor((1, 3))
+        await pilot.press("a")
+        assert textarea.editing is False
+        assert textarea.selection.end == (1, 2)
+        await pilot.press("e")
+        assert textarea.editing is True
+        assert textarea.selection.end == (1, 2)
+        await pilot.press("d")
+        assert textarea.text == "one\ntwdo"
+
+    print("test_command_text_nav_mode_ad_positions_caret_before_edit PASSED")
 
 
 def test_mixin_blocks_nav_when_active_text_not_focused():
@@ -4182,6 +4366,7 @@ if __name__ == "__main__":
         test_saving_merge_config_unchecked_branch_disconnects_branch_end,
         test_saving_merge_config_preserves_merge_home_branch_input,
         test_deleting_merge_beacon_prunes_merge_config_selection,
+        test_editor_blocks_insert_after_merge_beacon,
         test_branch_end_config_shows_merge_branch_identity,
         test_merge_beacon_selector_row_jumps_without_rewiring,
         test_merge_beacon_selector_excludes_merge_reachable_only_through_beacon,
@@ -4230,6 +4415,7 @@ if __name__ == "__main__":
         test_cursor_state_syncs_with_mixin,
         test_auto_edit_prompt_syncs_cursor_and_status_bar,
         test_click_edit_and_textarea_commit_sync_cursor_mode,
+        test_command_text_nav_mode_ad_positions_caret_before_edit,
         test_mixin_blocks_nav_when_active_text_not_focused,
         test_migrated_command_screens_render_status_bar,
     ]

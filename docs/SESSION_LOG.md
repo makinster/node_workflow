@@ -23,10 +23,24 @@
 - Pruned stale merge config branch selections and disconnected old beacon-to-merge
   closure edges when a connected Merge Beacon is deleted, so replacing the beacon
   requires the user to explicitly reselect it in Merge config.
+- Merge config now shows nested branch breadcrumbs such as
+  `Outer Work -> Nested Left` when selecting branches, making multi-depth branch
+  choices clearer.
+- Insert-after is blocked on Merge Beacon nodes and Merge Beacon selector rows
+  because beacons are terminal markers for their branch.
+- Command text fields now move the caret with arrow keys while editing. In nav
+  mode, focused text fields also allow `A`/`D` to preview caret position before
+  entering edit mode; `E`/Enter starts editing at that position. Tab exits edit
+  mode cleanly and resumes command navigation.
+- Mouse-entering a text field no longer forces the caret to the end; this keeps
+  user mouse selection/copy behavior intact while keyboard edit activation still
+  avoids selecting the entire field.
 - Verification:
   - `../.venv/bin/python -m compileall -q .`
   - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -q -k "deleting_merge_beacon or saving_merge_config or merge_beacon_selector or merge_config or merge_options"`
-  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v` (96 passed)
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -q -k "merge_options_include_nested_merge_beacons or editor_blocks_insert_after_merge_beacon or deleting_merge_beacon"`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -q -k "command_text_nav_mode_ad or node_config_command_inputs_require_activation or click_edit_and_textarea_commit_sync_cursor_mode or node_selector_filter_auto_edits_when_focused or editor_blocks_insert_after_merge_beacon or merge_options_include_nested"`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v` (98 passed)
 
 ## 2026-06-08 — Merge Beacon Selector
 

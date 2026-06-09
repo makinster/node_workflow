@@ -223,8 +223,19 @@ class EditorScreen(Screen):
         self.app.push_screen(NodeSelectorScreen(self.factory), self._add_node_from_modal)
 
     def action_insert_node(self) -> None:
+        if self._selected_insert_target_is_merge_beacon():
+            notifications.notify_info(self.app, "Merge Beacon is the end of this branch")
+            return
         self._pending_node_add_mode = "insert"
         self.app.push_screen(NodeSelectorScreen(self.factory), self._add_node_from_modal)
+
+    def _selected_insert_target_is_merge_beacon(self) -> bool:
+        if self.selected_row and self.selected_row["kind"] == "merge_beacon_select":
+            return True
+        if not self.selected_node_id:
+            return False
+        node = self.workflow_map.get_node_data(self.selected_node_id) or {}
+        return node.get("type") == "branch_end_node"
 
     def action_cycle_branch_prev(self) -> None:
         self._restore_node_list_focus()
@@ -1622,7 +1633,7 @@ class EditorScreen(Screen):
         if hidden_start_id:
             return {"node_id": hidden_start_id, "port": "default"}
         if self.selected_row and self.selected_row["kind"] == "merge_beacon_select":
-            return {"node_id": self.selected_row["beacon_node_id"], "port": "default"}
+            return None
         if self.selected_row and self.selected_row["kind"] == "branch_select":
             branch_node_id = self.selected_row["branch_node_id"]
             active_port = self.active_branch_ports.get(
@@ -1637,6 +1648,8 @@ class EditorScreen(Screen):
             return {"node_id": branch_node_id, "port": active_port}
         if self.selected_node_id:
             node = self.workflow_map.get_node_data(self.selected_node_id)
+            if node and node.get("type") == "branch_end_node":
+                return None
             metadata = self._metadata_for_type(node.get("type", "")) if node else None
             ports = metadata.get("output_ports") if metadata else None
             return {"node_id": self.selected_node_id, "port": (ports or ["default"])[0]}
