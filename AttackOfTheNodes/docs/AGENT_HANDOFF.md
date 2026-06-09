@@ -16,8 +16,8 @@ historical proof-of-concept material.
 
 Use `docs/MASTER_BUILD_PLAN.md` as the comprehensive source of truth. It merges
 the active dependency-ordered phase plan, the Textual TUI state, the working
-rules, and the current architecture model. Phases 0 through 15 are complete,
-including frontend audit phases FA-0 through FA-5. Phase 16 is in progress.
+rules, and the current architecture model. Phases 0 through 16 are complete,
+including frontend audit phases FA-0 through FA-5. Phase 17 is next.
 
 Completed from the master plan:
 
@@ -129,10 +129,11 @@ Recent completed/in-progress phases:
   Quick View text, context-aware Help, `Alias (node_id)` display in editor rows
   and node config titles, numbered default branch labels, and sparse editor
   chrome (`f file | o options | h help`).
-- Phase 16 is in progress. Landed pieces include File menu name-first workflow
-  rows, loaded-workflow marker, duplicate-name suffixes, export/import cancel
-  returning to File, vertical config/path-prompt buttons, transient output
-  override fields, and the Settings API Keys placeholder.
+- Phase 16 is complete. Landed pieces include File menu name-first workflow
+  rows, loaded-workflow marker, duplicate-name suffixes, picker-first
+  import/export with typed-path Browse fallback, export/import cancel returning
+  to File, vertical config/path-prompt buttons, transient output override
+  fields, fixed Node Config tabs, and the Settings API Keys placeholder.
 - Merge Beacon work is current: `branch_end_node` remains the persisted node
   type, but the UI calls it Merge Beacon. Beacons render selector rows for
   jumping to merge branches, stop branch traversal, and Merge config derives
@@ -148,8 +149,6 @@ Recently completed:
   removed after review.
 
 Planned future phases (see Section 6 of MASTER_BUILD_PLAN.md for full specs):
-- Continue Phase 16: finish the broader fixed tab layout and any deeper File
-  modal consolidation beyond the current File/Workflow Library usability slice.
 - Phase 17: Node visual identity — per-category colors, per-type glyphs,
   size-by-category.
 - Phase 18: Acceleration + help rewrite — hold-to-accelerate, context-organized

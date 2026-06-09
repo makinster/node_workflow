@@ -195,7 +195,7 @@ Append a short entry to `docs/SESSION_LOG.md` for every phase or notable patch.
 | 13 | Cursor model foundation | Done |
 | 14 | Key binding remap | Done |
 | 15 | Editor rework | Done |
-| 16 | File modal + node config tabs | In Progress |
+| 16 | File modal + node config tabs | Done |
 | 17 | Node visual identity | Planned |
 | 18 | Acceleration + help rewrite | Planned |
 | 19 | Nested workflows: built-in subworkflow node | Planned |
@@ -203,7 +203,7 @@ Append a short entry to `docs/SESSION_LOG.md` for every phase or notable patch.
 
 Sequencing:
 
-- Phases 10, 10.5, 13, 14, and 15 are complete. Phase 16 is in progress.
+- Phases 10, 10.5, and 13 through 16 are complete.
 - Phase 17 can proceed after 14/15.
   Phase 18 depends on 13–17. Phases 19–20
   depend on Phase 9 and each other.
@@ -795,10 +795,11 @@ movement cycle cleanly to and from Cancel. Export/import path prompts return to
 the File menu when canceled.
 
 Node config gains transient output name/description overrides from node port
-metadata, with buttons stacked vertically for W/S navigation. Future passes add
-fixed tabs (CORE / PARAMETERS / ADVANCED / CONNECTIONS, optional LAST RUN via
-`RichLog`), Space to enable optional fields, and A/D to move between parallel
-fields. Settings gains an API Keys placeholder menu before real secret storage.
+metadata, with buttons stacked vertically for W/S navigation. Standard node
+configs render in fixed tabs: Core, Parameters, Outputs, and Connections. W/S
+crosses tab boundaries, while A/D or left/right switch tabs from non-text
+controls; command text fields keep A/D and left/right for caret movement.
+Settings gains an API Keys placeholder menu before real secret storage.
 
 Current progress:
 
@@ -812,11 +813,14 @@ Current progress:
   available, so users can explicitly reopen the OS picker from the prompt.
 - Node config can override transient output names/descriptions from node port
   metadata.
+- Standard Node Config screens now use fixed Core / Parameters / Outputs /
+  Connections tabs with keyboard traversal between tabs.
 - Node config Save/Cancel and path-prompt Confirm/Cancel controls are stacked
   vertically for W/S movement.
 - Settings includes an API Keys placeholder behind `K`.
-- Remaining Phase 16 work is the broader fixed tab layout and any deeper file
-  modal consolidation beyond the current Workflow Library/File screen.
+- Deeper File modal consolidation can happen later if the Workflow Library/File
+  screen grows again, but the Phase 16 user-facing File and config goals are
+  complete.
 
 Builds directly on Phase 5 (group→tabs already exists in `form_generator`) and
 the existing connection editor. Consolidates the scattered standalone modals into
@@ -828,9 +832,10 @@ Done when:
 - Workflow lists are name-first, id-free, keyboard navigable, and cancel-safe.
 - Node config can override transient output names/descriptions.
 - An LLM-style node with many optional fields stays fully keyboard-navigable.
-- Settings tabs include an API keys section.
+- Settings exposes an API Keys placeholder entry for the future secret-storage
+  phase.
 
-Status: in progress.
+Status: complete.
 
 ---
 

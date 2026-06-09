@@ -221,7 +221,11 @@ helper and must not be used as a substitute for choosing import/export paths.
 
 Node config buttons are stacked vertically for W/S navigation. `Ctrl+S` saves
 and closes. Config may expose transient output name/description overrides based
-on node port metadata, stored in `transient_outputs`.
+on node port metadata, stored in `transient_outputs`. Standard node configs use
+fixed `Core`, `Parameters`, `Outputs`, and `Connections` tabs. W/S crosses tab
+boundaries at the top or bottom of a tab. A/D and left/right switch tabs when a
+non-text control is focused; command text fields keep those keys for cursor
+movement until editing starts.
 
 Settings includes a visible Cancel control and reserves `K` for an API Keys
 submenu. The current API Keys screen is a placeholder only.

@@ -2678,6 +2678,71 @@ async def _test_node_config_select_activates_from_keyboard():
     print("test_node_config_select_activates_from_keyboard PASSED")
 
 
+def test_node_config_fixed_tabs_are_keyboard_navigable():
+    asyncio.run(_test_node_config_fixed_tabs_are_keyboard_navigable())
+
+
+async def _test_node_config_fixed_tabs_are_keyboard_navigable():
+    from textual.app import App, ComposeResult
+    from textual.widgets import Checkbox, TabbedContent
+
+    from frontend.screens.node_config import NodeConfigScreen
+    from frontend.widgets.command_input import CommandInput
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("node_config_fixed_tabs")
+    node = wm.add_node("logger_node")
+    node_data = wm.get_node_data(node)
+
+    class ConfigApp(App):
+        def compose(self) -> ComposeResult:
+            yield NodeConfigScreen(wm._factory, wm, node, node_data)
+
+    app = ConfigApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        tabs = app.query_one("#node-config-tabs", TabbedContent)
+        alias = app.query_one("#alias-input", CommandInput)
+        previous_output = app.query_one("#show-previous-output", Checkbox)
+        parameter_field = app.query_one("#field-label", CommandInput)
+        output_name = app.query_one("#transient-output-name-default", CommandInput)
+
+        assert tabs.active == "node-config-tab-core"
+        assert app.focused is alias
+
+        alias.cursor_position = 0
+        await pilot.press("d")
+        await pilot.pause(0.03)
+        assert tabs.active == "node-config-tab-core"
+        assert alias.cursor_position == 1
+
+        await pilot.press("s")
+        await pilot.pause(0.03)
+        assert app.focused is previous_output
+        await pilot.press("d")
+        await pilot.pause(0.1)
+        assert tabs.active == "node-config-tab-parameters"
+        assert app.focused is parameter_field
+
+        for _ in range(5):
+            if tabs.active == "node-config-tab-outputs":
+                break
+            await pilot.press("s")
+            await pilot.pause(0.05)
+        assert tabs.active == "node-config-tab-outputs"
+        assert app.focused is output_name
+
+        for _ in range(5):
+            if tabs.active == "node-config-tab-parameters":
+                break
+            await pilot.press("w")
+            await pilot.pause(0.05)
+        assert tabs.active == "node-config-tab-parameters"
+        assert app.focused is parameter_field
+
+    print("test_node_config_fixed_tabs_are_keyboard_navigable PASSED")
+
+
 def test_node_config_dynamic_membank_output_rows():
     asyncio.run(_test_node_config_dynamic_membank_output_rows())
 
@@ -4558,6 +4623,7 @@ if __name__ == "__main__":
         test_editor_depth_counter_tracks_visible_branch_distance,
         test_help_screen_is_contextual_and_focuses_cancel,
         test_node_config_select_activates_from_keyboard,
+        test_node_config_fixed_tabs_are_keyboard_navigable,
         test_dynamic_row_helper_preserves_visible_rows_only,
         test_dynamic_selection_helper_filters_stale_values,
         test_frontend_notification_helpers_standardize_copy_and_severity,

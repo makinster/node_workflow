@@ -72,8 +72,9 @@ the links in `docs/README.md`.
   - boolean fields render as checkbox controls
   - select fields render as `Select`
   - multiselect fields render as `SelectionList`
-- Grouped fields render as tabs only when multiple groups exist. Single-group
-  configs stay flat.
+- Generated schema fields land in the Node Config `Parameters` tab. If a schema
+  itself has multiple `group` values, those fields render as nested generated
+  tabs inside `Parameters`; single-group configs stay flat.
 
 ## Make Inputs And Outputs Display Correctly
 

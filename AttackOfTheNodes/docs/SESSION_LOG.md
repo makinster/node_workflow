@@ -1,5 +1,25 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-09 — Phase 16 Node Config Tabs
+
+- Completed the remaining Phase 16 config layout work.
+- Standard node config screens now render fixed `Core`, `Parameters`,
+  `Outputs`, and `Connections` tabs while keeping generated schema fields
+  metadata-driven.
+- Added keyboard tab traversal: W/S crosses tab boundaries, while A/D or
+  left/right switch tabs from non-text controls. Command text fields retain
+  A/D and left/right as caret movement.
+- Removed the obsolete one-long-form standard config helper so future config
+  changes have one layout path.
+- Updated `MASTER_BUILD_PLAN.md`, `TUI_DESIGN.md`, and `AGENT_HANDOFF.md` to
+  mark Phase 16 complete and Phase 17 next.
+- Added backlog notes for future runtime resource sessions, file/path field
+  picker affordances, and hidden helper/mux nodes for the planned node overhaul.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "node_config_fixed_tabs_are_keyboard_navigable"` (1 passed)
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v` (102 passed)
+
 ## 2026-06-09 — File Picker Browse Control
 
 - Added a user-facing Browse button/key to import/export typed path fallback

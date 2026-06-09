@@ -111,6 +111,45 @@ Recommended cleanup:
   without frontend custom code unless it is explicitly listed as a structural
   topology editor.
 
+## Later Project — Runtime Resources And Hidden Helper Nodes
+
+Goal: support richer node behavior without making the editor visually noisy.
+Visible nodes should stay user-friendly, while reusable utility behavior can be
+attached behind the scenes when a node needs it.
+
+Design notes:
+
+- Add a lightweight per-run execution session object for runtime resources.
+  It should let backend execution keep handles open for files, streams, or
+  listeners during one workflow run, then close them predictably at run end.
+- Keep the resource session backend-generic. It should not know about Textual,
+  OS dialogs, or editor UI. Frontends choose files; nodes receive portable file
+  references or session-managed handles through execution context.
+- Treat files as a first-class input family during the node overhaul. Nodes can
+  accept a selected file path/resource and perform validation before execution.
+- Consider long-lived listening resources later: keyboard triggers, folders,
+  sockets, or other automation inputs. Keep this opt-in and lightweight so idle
+  workflows do not hold unnecessary resources.
+- Add path-field affordances in config UI: when focus is on a schema field that
+  declares a file/path picker hint, show a short placeholder such as
+  `choose file` until the user overrides it. The exact key is not final; avoid
+  committing to `I` or `X` until the key map is reviewed.
+- Introduce hidden helper nodes only as portable workflow structure, not
+  frontend-only magic. A visible node may own an internal input-configuration
+  helper such as a memory-bank mux, but save files and validation must make the
+  helper relationship inspectable and deterministic.
+- Support at least two input mux styles:
+  - non-gating mux: gathers configured memory/transient inputs when available;
+  - gating mux: waits until all configured inputs have updated before allowing
+    the visible node to run.
+- Let visible nodes expose simple options that configure helper behavior, such
+  as `wait for all inputs before running`, while the detailed helper UI can open
+  as an "Input Configuration" view.
+- Validation must understand hidden helpers so errors point back to the visible
+  node and the specific helper setting that caused the problem.
+- Execution views should be able to reveal hidden helper activity when debugging,
+  but the editor should default to the simpler visible node graph.
+
 ## Later Project — Unified Toast / Alert System
 
 The project has `frontend/notifications.py` and frontend screens route common

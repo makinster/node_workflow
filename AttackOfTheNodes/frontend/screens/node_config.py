@@ -507,6 +507,10 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         ("escape", "cancel", "Cancel"),
         ("ctrl+s", "save", "Save"),
         ("ctrl+enter", "save", "Save"),
+        Binding("a", "previous_config_tab", "Previous tab", priority=True),
+        Binding("d", "next_config_tab", "Next tab", priority=True),
+        Binding("left", "previous_config_tab", "Previous tab", priority=True),
+        Binding("right", "next_config_tab", "Next tab", priority=True),
         Binding("ctrl+q", "cancel", "Cancel", priority=True),
     ]
 
@@ -569,7 +573,10 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         with Vertical(id="modal-card", classes="node-config-modal"):
             title = f"{self.node_data.get('alias') or self.node_id} ({self.node_id})"
             yield Label(f"Edit Node: {title}", classes="modal-title")
-            yield Static("w = up, s = down    e = edit/select    esc = cancel/close", classes="modal-help")
+            yield Static(
+                "w/s move | a/d tabs | e edit/select | ctrl+s save | esc cancel",
+                classes="modal-help",
+            )
             with VerticalScroll(id="node-config-scroll"):
                 if self.node_data.get("type") == "merge_node":
                     yield Label("Branches To Close", classes="form-label nav-section")
@@ -580,10 +587,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                         classes="form-description",
                     )
                 else:
-                    yield Label("Alias", classes="form-label nav-section")
-                    yield CommandInput(value=self.node_data.get("alias", ""), id="alias-input")
-                    yield Static(self._format_metadata(metadata), id="node-config-summary")
-                    yield from self._compose_standard_config_body(
+                    yield from self._compose_standard_config_tabs(
                         metadata,
                         config,
                         form,
@@ -591,38 +595,52 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             with Vertical(classes="button-row"):
                 yield Button("Save", id="save-node-config", variant="primary")
                 yield Button("Cancel", id="cancel-node-config", variant="default")
-            yield StatusBar("w = up, s = down    e = edit/select    esc = cancel/close")
+            yield StatusBar("w/s move | a/d tabs | e edit/select | ctrl+s save | esc cancel")
 
-    def _compose_standard_config_body(
+    def _compose_standard_config_tabs(
         self,
         metadata: Optional[Dict[str, Any]],
         config: Dict[str, Any],
         form,
     ):
-        pass_through_note = self._pass_through_note(metadata)
-        if pass_through_note:
-            yield Static(pass_through_note, classes="form-description pass-through-note")
-        yield Label("Previous Node Output", classes="form-label nav-section")
-        yield Checkbox(
-            "Show previous node output",
-            value=False,
-            id="show-previous-output",
-        )
-        yield Static("", id="previous-output-preview", classes="form-description")
-        yield Label("Memory Bank Inputs", classes="form-label nav-section")
-        yield from self._compose_membank_inputs(config)
-        if self.node_data.get("type") == "wait_until_node":
-            yield Label("Wait Targets", classes="form-label nav-section")
-            yield from self._compose_wait_targets(config)
-        yield form
-        yield Label("Transient Outputs", classes="form-label nav-section")
-        yield from self._compose_transient_outputs(metadata, config)
-        yield Label("Connections", classes="form-label nav-section")
-        yield Static("Connection editing lives in the editor path tools.", classes="form-description")
-        yield Static(self._format_connections(), id="connection-summary")
-        if self._supports_membank_outputs(metadata):
-            yield Label("Memory Bank Outputs", classes="form-label nav-section")
-            yield from self._compose_membank_outputs(config)
+        with TabbedContent(id="node-config-tabs", classes="node-config-tabs"):
+            with TabPane("Core", id="node-config-tab-core"):
+                yield Label("Alias", classes="form-label nav-section")
+                yield CommandInput(value=self.node_data.get("alias", ""), id="alias-input")
+                yield Static(self._format_metadata(metadata), id="node-config-summary")
+                pass_through_note = self._pass_through_note(metadata)
+                if pass_through_note:
+                    yield Static(pass_through_note, classes="form-description pass-through-note")
+                yield Label("Previous Node Output", classes="form-label nav-section")
+                yield Checkbox(
+                    "Show previous node output",
+                    value=False,
+                    id="show-previous-output",
+                )
+                yield Static("", id="previous-output-preview", classes="form-description")
+                yield Label("Memory Bank Inputs", classes="form-label nav-section")
+                yield from self._compose_membank_inputs(config)
+                if self.node_data.get("type") == "wait_until_node":
+                    yield Label("Wait Targets", classes="form-label nav-section")
+                    yield from self._compose_wait_targets(config)
+
+            with TabPane("Parameters", id="node-config-tab-parameters"):
+                yield form
+
+            with TabPane("Outputs", id="node-config-tab-outputs"):
+                yield Label("Transient Outputs", classes="form-label nav-section")
+                yield from self._compose_transient_outputs(metadata, config)
+                if self._supports_membank_outputs(metadata):
+                    yield Label("Memory Bank Outputs", classes="form-label nav-section")
+                    yield from self._compose_membank_outputs(config)
+
+            with TabPane("Connections", id="node-config-tab-connections"):
+                yield Label("Connections", classes="form-label nav-section")
+                yield Static(
+                    "Edit connections from the editor.",
+                    classes="form-description",
+                )
+                yield Static(self._format_connections(), id="connection-summary")
 
     def on_mount(self) -> None:
         self.query_one("#node-config-scroll").can_focus = False
@@ -649,6 +667,11 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         if expanded_select is not None and action in {"back", "cancel"}:
             expanded_select.expanded = False
             expanded_select.focus()
+            return False
+        if action in {"previous_config_tab", "next_config_tab"} and isinstance(
+            self.app.focused,
+            (CommandInput, CommandTextArea),
+        ):
             return False
         return super().check_action(action, parameters)
 
@@ -683,6 +706,13 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
 
     def on_key(self, event: Key) -> None:
         if self._expanded_select() is None:
+            if event.key in {"a", "left", "d", "right"} and not isinstance(
+                self.app.focused,
+                (CommandInput, CommandTextArea),
+            ):
+                self._move_config_tab(-1 if event.key in {"a", "left"} else 1)
+                event.stop()
+                event.prevent_default()
             return
         if event.key in {"up", "w"}:
             self.action_cursor_up()
@@ -778,6 +808,54 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         )
         self._sync_cursor_mode()
 
+    def action_previous_config_tab(self) -> None:
+        self._move_config_tab(-1)
+
+    def action_next_config_tab(self) -> None:
+        self._move_config_tab(1)
+
+    def _move_config_tab(self, direction: int, *, wrap: bool = True) -> bool:
+        tabbed_query = self.query("#node-config-tabs")
+        if not tabbed_query:
+            return False
+        tabs = tabbed_query.first()
+        panes = [pane for pane in tabs.query(TabPane) if pane.id]
+        if len(panes) <= 1:
+            return False
+        active = tabs.active
+        try:
+            current_index = next(
+                index for index, pane in enumerate(panes) if pane.id == active
+            )
+        except StopIteration:
+            current_index = 0
+        next_index = current_index + direction
+        if wrap:
+            next_index %= len(panes)
+        elif next_index < 0 or next_index >= len(panes):
+            return False
+        tabs.active = str(panes[next_index].id)
+        self.call_after_refresh(self._focus_first_active_tab_widget)
+        return True
+
+    def _focus_first_active_tab_widget(self) -> None:
+        widgets = self._keyboard_focus_widgets()
+        if widgets:
+            try:
+                focus_command_widget(
+                    self,
+                    widgets[0],
+                    self.query_one("#node-config-scroll"),
+                )
+                self._sync_cursor_mode()
+                return
+            except Exception:
+                pass
+        save_query = self.query("#save-node-config")
+        if save_query:
+            self.app.set_focus(save_query.first())
+            self._sync_cursor_mode()
+
     def _expanded_select(self) -> Select | None:
         for select in self.query(Select):
             if select.expanded:
@@ -789,6 +867,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         if not widgets:
             return
         current = self._nav_widget if self._nav_widget is not None else self.app.focused
+        if self._move_between_config_tabs_at_boundary(current, direction):
+            return
         try:
             current_index = widgets.index(current)
         except ValueError:
@@ -811,6 +891,47 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             )
         except Exception:
             focus_command_widget(self, target)
+
+    def _move_between_config_tabs_at_boundary(
+        self,
+        current: Any,
+        direction: int,
+    ) -> bool:
+        if direction == 0:
+            return False
+        tab_widgets = self._active_config_tab_widgets()
+        if current not in tab_widgets:
+            return False
+        at_start = direction < 0 and current is tab_widgets[0]
+        at_end = direction > 0 and current is tab_widgets[-1]
+        if not at_start and not at_end:
+            return False
+        return self._move_config_tab(direction, wrap=False)
+
+    def _active_config_tab_widgets(self) -> list[Any]:
+        tabbed_query = self.query("#node-config-tabs")
+        if not tabbed_query:
+            return []
+        active = tabbed_query.first().active
+        if active is None:
+            return []
+        try:
+            active_pane = self.query_one(f"#{active}", TabPane)
+        except Exception:
+            return []
+        return [
+            widget
+            for widget in self._keyboard_focus_widgets()
+            if self._is_descendant_of(widget, active_pane)
+        ]
+
+    def _is_descendant_of(self, widget: Any, ancestor: Any) -> bool:
+        node = widget
+        while node is not None and node is not self:
+            if node is ancestor:
+                return True
+            node = getattr(node, "parent", None)
+        return False
 
     def _nav_widgets(self) -> list[Any]:
         return self._keyboard_focus_widgets()
