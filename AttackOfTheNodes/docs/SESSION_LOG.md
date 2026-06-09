@@ -1,5 +1,19 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-09 — Phase 16 File Picker Slice
+
+- Added a frontend-only file I/O helper for OS path pickers and file-manager
+  reveal/open-folder commands.
+- Wired workflow import/export to try the OS picker first and fall back to the
+  typed path prompt when unavailable or errored.
+- Kept picker/reveal behavior out of backend save/import/export services.
+- Updated the agent start guide and Textual design docs with the picker-first,
+  typed-path-fallback pattern.
+- Verification:
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "file_picker or file_manager_reveal or export_cancel_returns_to_file_menu"` (4 passed)
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v` (101 passed)
+
 ## 2026-06-08 — Docs Audit After Layout Move
 
 - Regenerated `docs/FILE_TREE.md` from the current tracked source layout so it

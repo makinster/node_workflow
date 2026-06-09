@@ -112,6 +112,7 @@ node_workflow/
 │   │   ├── __init__.py
 │   │   ├── app.py
 │   │   ├── editor_workflow_adapter.py
+│   │   ├── file_io.py
 │   │   ├── node_io_display.py
 │   │   ├── notifications.py
 │   │   ├── output_records.py

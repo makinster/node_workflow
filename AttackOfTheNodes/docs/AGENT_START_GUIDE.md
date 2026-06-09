@@ -100,6 +100,25 @@ the links in `docs/README.md`.
   - `AttackOfTheNodes/frontend/node_io_display.py`
   - `AttackOfTheNodes/frontend/notifications.py`
 
+## File I/O UI Pattern
+
+- Workflow import/export should try the OS file picker first and fall back to a
+  typed path prompt when the picker is canceled, unavailable, or errors.
+- Keep picker code frontend-only. Backend save/import/export services should
+  accept paths and should not know how the user selected them.
+- Use `AttackOfTheNodes/frontend/file_io.py` for:
+  - `pick_open_file(...)`
+  - `pick_save_file(...)`
+  - `reveal_path(...)`
+- Do not confuse file picking with file-manager reveal:
+  - pickers return a selected path for import/export;
+  - reveal/open-folder helpers only open Explorer/Finder/xdg-open and cannot
+    choose a path for the app.
+- Keep the typed path prompt as the reliable fallback for WSL, SSH, headless,
+  container, or other no-GUI sessions.
+- Future `FILE_PATH` schema fields should reuse the same helper rather than
+  adding node-specific picker logic.
+
 ## Keyboard And Modal Rules
 
 - Command-mode screens should inherit `CommandScreenMixin`.

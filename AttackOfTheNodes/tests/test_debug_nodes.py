@@ -3330,6 +3330,56 @@ def test_export_cancel_returns_to_file_menu():
     asyncio.run(_test_export_cancel_returns_to_file_menu())
 
 
+def test_file_picker_export_and_import_paths():
+    asyncio.run(_test_file_picker_export_and_import_paths())
+
+
+def test_file_picker_cancel_and_fallback_paths():
+    asyncio.run(_test_file_picker_cancel_and_fallback_paths())
+
+
+def test_file_manager_reveal_commands_are_platform_specific():
+    from pathlib import Path
+
+    import frontend.file_io as file_io
+
+    original_is_wsl = file_io._is_wsl
+    original_system = file_io.platform.system
+    original_which = file_io.shutil.which
+    original_env = dict(file_io.os.environ)
+    try:
+        file_io._is_wsl = lambda: False
+        file_io.platform.system = lambda: "Windows"
+        assert file_io._reveal_command(Path("C:/tmp/demo.json"), True) == [
+            "explorer",
+            "/select,C:/tmp/demo.json",
+        ]
+
+        file_io.platform.system = lambda: "Darwin"
+        assert file_io._reveal_command(Path("/tmp/demo.json"), True) == [
+            "open",
+            "-R",
+            "/tmp/demo.json",
+        ]
+
+        file_io.platform.system = lambda: "Linux"
+        file_io.os.environ.clear()
+        file_io.os.environ["DISPLAY"] = ":0"
+        file_io.shutil.which = lambda name: "/usr/bin/xdg-open" if name == "xdg-open" else None
+        assert file_io._reveal_command(Path("/tmp/demo.json"), True) == [
+            "/usr/bin/xdg-open",
+            "/tmp",
+        ]
+    finally:
+        file_io._is_wsl = original_is_wsl
+        file_io.platform.system = original_system
+        file_io.shutil.which = original_which
+        file_io.os.environ.clear()
+        file_io.os.environ.update(original_env)
+
+    print("test_file_manager_reveal_commands_are_platform_specific PASSED")
+
+
 async def _test_export_cancel_returns_to_file_menu():
     from frontend.app import AttackOfTheNodesApp
     from frontend.screens.workflow_library import WorkflowLibraryScreen
@@ -3345,6 +3395,105 @@ async def _test_export_cancel_returns_to_file_menu():
         assert isinstance(app.screen, WorkflowLibraryScreen)
 
     print("test_export_cancel_returns_to_file_menu PASSED")
+
+
+async def _test_file_picker_export_and_import_paths():
+    import frontend.file_io as file_io
+    from frontend.app import AttackOfTheNodesApp
+
+    class FakeSaveManager:
+        configuration_manager = None
+
+        def __init__(self):
+            self.exported = []
+            self.imported = []
+            self.loaded = []
+
+        def export_workflow(self, workflow_id, path):
+            self.exported.append((workflow_id, path))
+            return True
+
+        def import_workflow(self, path):
+            self.imported.append(path)
+            return "wf-imported"
+
+        def load_workflow(self, workflow_id):
+            self.loaded.append(workflow_id)
+            return True
+
+    original_save = file_io.pick_save_file
+    original_open = file_io.pick_open_file
+    try:
+        fake_save = FakeSaveManager()
+        file_io.pick_save_file = lambda *args, **kwargs: "/tmp/exported.json"
+        master, wm, mb, bus = _make_services()
+        wm.create_new("picker_export")
+        app = AttackOfTheNodesApp(bus, wm._factory, wm, mb, master, fake_save)
+        async with app.run_test() as pilot:
+            await pilot.pause(0.03)
+            app._prompt_export_workflow({"workflow_id": "wf-export"})
+            await pilot.pause(0.1)
+            assert fake_save.exported == [("wf-export", "/tmp/exported.json")]
+
+        fake_import = FakeSaveManager()
+        file_io.pick_open_file = lambda *args, **kwargs: "/tmp/imported.json"
+        master, wm, mb, bus = _make_services()
+        wm.create_new("picker_import")
+        app = AttackOfTheNodesApp(bus, wm._factory, wm, mb, master, fake_import)
+        async with app.run_test() as pilot:
+            await pilot.pause(0.03)
+            wm.mark_saved()
+            app._prompt_import_workflow()
+            await pilot.pause(0.1)
+            assert fake_import.imported == ["/tmp/imported.json"]
+            assert fake_import.loaded == ["wf-imported"]
+    finally:
+        file_io.pick_save_file = original_save
+        file_io.pick_open_file = original_open
+
+    print("test_file_picker_export_and_import_paths PASSED")
+
+
+async def _test_file_picker_cancel_and_fallback_paths():
+    import frontend.file_io as file_io
+    from frontend.app import AttackOfTheNodesApp
+    from frontend.screens.workflow_library import PathPromptScreen, WorkflowLibraryScreen
+
+    class FakeSaveManager:
+        configuration_manager = None
+
+    original_save = file_io.pick_save_file
+    original_open = file_io.pick_open_file
+    try:
+        master, wm, mb, bus = _make_services()
+        wm.create_new("picker_cancel")
+        app = AttackOfTheNodesApp(bus, wm._factory, wm, mb, master, FakeSaveManager())
+        file_io.pick_save_file = lambda *args, **kwargs: None
+        async with app.run_test() as pilot:
+            await pilot.pause(0.03)
+            app._prompt_export_workflow({"workflow_id": "wf-cancel"})
+            await pilot.pause(0.1)
+            assert isinstance(app.screen, WorkflowLibraryScreen)
+
+        master, wm, mb, bus = _make_services()
+        wm.create_new("picker_fallback")
+        app = AttackOfTheNodesApp(bus, wm._factory, wm, mb, master, FakeSaveManager())
+
+        def unavailable(*args, **kwargs):
+            raise file_io.FilePickerUnavailable("no picker")
+
+        file_io.pick_open_file = unavailable
+        async with app.run_test() as pilot:
+            await pilot.pause(0.03)
+            app._prompt_import_workflow()
+            await pilot.pause(0.1)
+            assert isinstance(app.screen, PathPromptScreen)
+            assert "path" in app.screen.title_text.lower()
+    finally:
+        file_io.pick_save_file = original_save
+        file_io.pick_open_file = original_open
+
+    print("test_file_picker_cancel_and_fallback_paths PASSED")
 
 
 def test_memory_viewer_uses_command_navigation():
@@ -4397,6 +4546,9 @@ if __name__ == "__main__":
         test_branch_selector_uses_shared_list_navigation,
         test_workflow_library_uses_shared_list_navigation,
         test_export_cancel_returns_to_file_menu,
+        test_file_picker_export_and_import_paths,
+        test_file_picker_cancel_and_fallback_paths,
+        test_file_manager_reveal_commands_are_platform_specific,
         test_memory_viewer_uses_command_navigation,
         test_command_input_auto_edit_on_focus_is_opt_in,
         test_ctrl_c_uses_screen_copy_and_ctrl_q_stays_contextual,

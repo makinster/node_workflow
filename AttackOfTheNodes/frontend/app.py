@@ -23,6 +23,7 @@ from backend.events import (
     WORKFLOW_STATE_UPDATE,
 )
 
+from . import file_io
 from . import notifications
 from .widgets.cursor_state import CursorState
 from .screens.editor import EditorScreen
@@ -467,9 +468,31 @@ class AttackOfTheNodesApp(TextualApp):
         workflow_id = result.get("workflow_id")
         if not workflow_id:
             return
+        asyncio.create_task(self._prompt_export_workflow_with_picker(result))
+
+    async def _prompt_export_workflow_with_picker(self, result) -> None:
+        workflow_id = result.get("workflow_id")
+        default_name = f"{workflow_id}.json"
+        try:
+            path = await asyncio.to_thread(
+                file_io.pick_save_file,
+                "Export workflow JSON",
+                default_name,
+                file_io.JSON_FILE_TYPES,
+            )
+        except file_io.FilePickerUnavailable:
+            self._prompt_export_workflow_path(result)
+            return
+        if path:
+            self._export_workflow_to_path(result, path)
+        else:
+            self.action_workflow_library()
+
+    def _prompt_export_workflow_path(self, result) -> None:
+        workflow_id = result.get("workflow_id")
         default_path = str(Path.cwd() / f"{workflow_id}.json")
         self.push_screen(
-            PathPromptScreen("Export workflow JSON", default_path),
+            PathPromptScreen("Export workflow JSON path", default_path),
             lambda path: self._export_workflow_to_path(result, path),
         )
 
@@ -492,8 +515,26 @@ class AttackOfTheNodesApp(TextualApp):
         if self.save_manager is None:
             notifications.missing_service(self, "Import")
             return
+        asyncio.create_task(self._prompt_import_workflow_with_picker())
+
+    async def _prompt_import_workflow_with_picker(self) -> None:
+        try:
+            path = await asyncio.to_thread(
+                file_io.pick_open_file,
+                "Import workflow JSON",
+                file_io.JSON_FILE_TYPES,
+            )
+        except file_io.FilePickerUnavailable:
+            self._prompt_import_workflow_path()
+            return
+        if path:
+            self._import_workflow_from_path(path)
+        else:
+            self.action_workflow_library()
+
+    def _prompt_import_workflow_path(self) -> None:
         self.push_screen(
-            PathPromptScreen("Import workflow JSON"),
+            PathPromptScreen("Import workflow JSON path"),
             self._import_workflow_from_path,
         )
 

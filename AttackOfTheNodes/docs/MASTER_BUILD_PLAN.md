@@ -805,6 +805,9 @@ Current progress:
 - First File menu usability slice is landed: visible workflow ids removed,
   duplicate names disambiguated, loaded workflow marked, bottom Cancel retained,
   and import/export prompt cancel returns to File.
+- Workflow import/export now tries a frontend OS file picker first, then falls
+  back to typed path entry. A separate file-manager reveal helper exists for
+  future output/asset convenience.
 - Node config can override transient output names/descriptions from node port
   metadata.
 - Node config Save/Cancel and path-prompt Confirm/Cancel controls are stacked

@@ -212,7 +212,10 @@ displayed as `Name`, `Name (2)`, `Name (3)`, and the currently loaded workflow
 is marked with `<-- Loaded Workflow`. Workflow actions are keyboard bindings;
 the only bottom widget is `Cancel`. Moving down from the last workflow focuses
 Cancel, and moving up from Cancel returns to the last workflow. Export/import
-path prompts return to File when canceled.
+tries an OS file picker first, then falls back to a typed path prompt when the
+picker is unavailable or errors. Canceling either path returns to File.
+Opening/revealing a folder in Explorer/Finder/xdg-open is a separate convenience
+helper and must not be used as a substitute for choosing import/export paths.
 
 Node config buttons are stacked vertically for W/S navigation. `Ctrl+S` saves
 and closes. Config may expose transient output name/description overrides based
@@ -355,8 +358,9 @@ frontend/
 - Port-edge mutation belongs in editor flows. Generic node config focuses on
   core schema fields, memory-bank input/output declarations, pass-through
   behavior, and topology-derived selectors such as wait/merge controls.
-- Workflow library now supports JSON export and import through path prompt
-  modals wired to `SaveManager.export_workflow()` and `import_workflow()`.
+- Workflow library now supports JSON export and import through OS picker first,
+  then path prompt fallback, wired to `SaveManager.export_workflow()` and
+  `import_workflow()`.
 - Editor now exposes `I` as an explicit insert shortcut, using the same
   downstream-preserving insertion behavior as the smart add path.
 - Editor validation is available with `V`; validation errors and warnings render
@@ -365,8 +369,8 @@ frontend/
 
 ## Remaining Work
 
-- Add richer file-picker ergonomics for import/export paths if the terminal UI
-  grows beyond direct path entry.
+- Extend the shared file picker helper to schema-generated `FILE_PATH` fields
+  when nodes need user-selected filesystem paths.
 
 ## Keyboard Navigation Rules
 
