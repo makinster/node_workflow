@@ -1,5 +1,25 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-09 — Node Helper Generator And Focused Checks
+
+- Added standalone developer tooling at `../aotn_node_helper/` for generating
+  ordinary metadata-driven node files from JSON/YAML specs.
+- Helper specs now support `config_tabs`, matching the planned workflow where a
+  node is described first and then fields are listed under tab headers such as
+  `Source`, `Parameters`, and `Payloads`.
+- Generated nodes update backend registration, create a node-specific focused
+  test under `tests/generated/`, and can be checked with
+  `../aotn_node_helper/check_node.py <node_type>`.
+- Node Config now honors schema `tab` hints, so generated fields can land in
+  the fixed Source / Parameters / Payloads tabs without per-node frontend code.
+- Updated `AGENT_START_GUIDE.md`, `README.md`, and `MASTER_BUILD_PLAN.md` with
+  the helper-first node authoring flow and focused-test convention.
+- Verification:
+  - `../.venv/bin/python -m pytest tests/test_node_helper.py -v` (3 passed)
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "schema_tab_hints"` (1 passed, 109 deselected)
+  - `../.venv/bin/python -m compileall -q .`
+  - `./.venv/bin/python -m compileall -q aotn_node_helper`
+
 ## 2026-06-09 — Payload Reveal Consistency
 
 - Added opt-in `Reveal upstream payload` controls to the Payloads tab so users

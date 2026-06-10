@@ -3060,6 +3060,94 @@ async def _test_node_config_fixed_tabs_are_keyboard_navigable():
     print("test_node_config_fixed_tabs_are_keyboard_navigable PASSED")
 
 
+def test_node_config_schema_tab_hints_place_fields_in_top_level_tabs():
+    asyncio.run(_test_node_config_schema_tab_hints_place_fields_in_top_level_tabs())
+
+
+async def _test_node_config_schema_tab_hints_place_fields_in_top_level_tabs():
+    from textual.app import App, ComposeResult
+    from textual.widgets import TabPane
+
+    from frontend.screens.node_config import NodeConfigScreen
+    from frontend.widgets.command_input import CommandInput
+
+    node_data = {
+        "type": "generated_layout_node",
+        "alias": "Generated Layout",
+        "config": {
+            "source_note": "source",
+            "label": "params",
+            "payload_note": "payload",
+        },
+        "connections": {"inputs": [], "outputs": []},
+    }
+    metadata = {
+        "type": "generated_layout_node",
+        "display_name": "Generated Layout",
+        "description": "Generated node with top-level tab hints",
+        "input_ports": ["input"],
+        "output_ports": ["default"],
+        "input_port_metadata": {},
+        "output_port_metadata": {},
+        "default_config": {},
+        "ui_hints": {},
+        "config_schema": {
+            "source_note": {"type": "string", "label": "Source note", "tab": "Source"},
+            "label": {"type": "string", "label": "Label", "tab": "Parameters"},
+            "payload_note": {"type": "string", "label": "Payload note", "tab": "Payloads"},
+        },
+    }
+
+    class FakeFactory:
+        def get_node_types_metadata(self):
+            return [metadata]
+
+    class FakeWorkflowMap:
+        def get_all_node_data(self):
+            return {"node": node_data}
+
+        def get_node_data(self, node_id):
+            return node_data if node_id == "node" else None
+
+        def nodes_reachable_from(self, node_id):
+            return set()
+
+    def has_ancestor(widget, ancestor_id: str) -> bool:
+        node = widget
+        while node is not None:
+            if getattr(node, "id", None) == ancestor_id:
+                return True
+            node = getattr(node, "parent", None)
+        return False
+
+    class ConfigApp(App):
+        def compose(self) -> ComposeResult:
+            yield NodeConfigScreen(FakeFactory(), FakeWorkflowMap(), "node", node_data)
+
+    app = ConfigApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.05)
+        source = app.query_one("#field-source_note", CommandInput)
+        params = app.query_one("#field-label", CommandInput)
+        payload = app.query_one("#field-payload_note", CommandInput)
+        assert has_ancestor(source, "node-config-tab-core")
+        assert has_ancestor(params, "node-config-tab-parameters")
+        assert has_ancestor(payload, "node-config-tab-outputs")
+        assert app.query(TabPane)
+
+        source.value = "updated source"
+        params.value = "updated params"
+        payload.value = "updated payload"
+        values = app.query_one(NodeConfigScreen)._get_form_values()
+        assert values == {
+            "source_note": "updated source",
+            "label": "updated params",
+            "payload_note": "updated payload",
+        }
+
+    print("test_node_config_schema_tab_hints_place_fields_in_top_level_tabs PASSED")
+
+
 def test_node_config_dynamic_membank_output_rows():
     asyncio.run(_test_node_config_dynamic_membank_output_rows())
 
@@ -5158,6 +5246,7 @@ if __name__ == "__main__":
         test_help_screen_is_contextual_and_focuses_cancel,
         test_node_config_select_activates_from_keyboard,
         test_node_config_fixed_tabs_are_keyboard_navigable,
+        test_node_config_schema_tab_hints_place_fields_in_top_level_tabs,
         test_dynamic_row_helper_preserves_visible_rows_only,
         test_dynamic_selection_helper_filters_stale_values,
         test_frontend_notification_helpers_standardize_copy_and_severity,

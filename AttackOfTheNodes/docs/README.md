@@ -7,8 +7,9 @@ tkinter material is historical unless explicitly labeled current.
 ## Read First
 
 1. `AGENT_START_GUIDE.md`
-   - Fast task checklist for adding nodes, screens, config fields, keybindings,
-     tests, and docs updates.
+   - Fast task checklist for adding nodes, using the node helper generator,
+     adding screens/config fields/keybindings, choosing focused tests, and
+     updating docs.
 
 2. `AGENT_HANDOFF.md`
    - Fast current-state summary.

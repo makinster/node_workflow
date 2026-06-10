@@ -834,6 +834,18 @@ Current progress:
 - Source and Payloads tabs expose opt-in incoming-data previews for upstream
   dead-drop and Vault payloads. Long config tabs scroll back high enough to show
   the tab header whenever their first control is focused.
+- A standalone node helper now lives at `../aotn_node_helper/`. It generates
+  ordinary metadata-driven node files, registration entries, focused generated
+  tests, and optional UI follow-up notes from a spec.
+- Helper specs support the preferred future node-authoring flow: describe the
+  node, then provide config tab headers such as `Source`, `Parameters`, and
+  `Payloads` with bullet-field definitions under each tab.
+- Node Config honors schema `tab` hints from generated specs, placing ordinary
+  fields in the fixed Source / Parameters / Payloads tabs without custom
+  frontend edits.
+- Focused test workflow is now preferred for small node work and bug fixes:
+  generated nodes use `../aotn_node_helper/check_node.py <node_type>`, while the
+  full cumulative suite remains the milestone/integration signal.
 - Node config Save/Cancel and path-prompt Confirm/Cancel controls are stacked
   vertically for W/S movement.
 - Settings includes an API Keys placeholder behind `K`.

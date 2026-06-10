@@ -16,6 +16,46 @@ the links in `docs/README.md`.
 
 ## Add A New Node
 
+- Prefer the helper-first flow for ordinary nodes:
+  - Write a spec in `aotn_node_helper/specs/<node_type>.yaml`.
+  - Run `../.venv/bin/python ../aotn_node_helper/create_node.py ../aotn_node_helper/specs/<node_type>.yaml`
+    from `AttackOfTheNodes/`, or run the same script from the workspace root.
+  - Run `../.venv/bin/python ../aotn_node_helper/check_node.py <node_type>`
+    for the focused compile/registration/execution check.
+- The intended human-to-helper workflow is:
+  - Describe what the node does and anything unique about it.
+  - Provide config tab headers such as `Source`, `Parameters`, and `Payloads`.
+  - Under each tab header, list the fields as bullets.
+  - Translate those bullets into `config_tabs` in the helper spec.
+- Example `config_tabs` shape:
+
+```yaml
+config_tabs:
+  Source:
+    prompt_source:
+      type: select
+      label: Prompt source
+      options: ["Upstream payload", "Vault value"]
+      default: Upstream payload
+  Parameters:
+    temperature:
+      type: float
+      label: Temperature
+      default: 0.7
+      min: 0
+      max: 2
+  Payloads:
+    payload_note:
+      type: string
+      label: Payload note
+      default: ""
+      required: false
+```
+
+- Helper specs create the node file, update registration, and generate a
+  node-specific focused test under `AttackOfTheNodes/tests/generated/`.
+- If the helper spec requests structural UI, the helper emits a TODO note
+  instead of patching frontend screens. Treat that as a deliberate guardrail.
 - Create `AttackOfTheNodes/backend/nodes/<category>/<name>_node.py`.
 - Add the class to `AttackOfTheNodes/backend/nodes/__init__.py` and
   `ALL_NODE_CLASSES`.
@@ -72,9 +112,11 @@ the links in `docs/README.md`.
   - boolean fields render as checkbox controls
   - select fields render as `Select`
   - multiselect fields render as `SelectionList`
-- Generated schema fields land in the Node Config `Parameters` tab. If a schema
-  itself has multiple `group` values, those fields render as nested generated
-  tabs inside `Parameters`; single-group configs stay flat.
+- Generated schema fields land in the Node Config `Parameters` tab by default.
+  Add a schema `tab` key or use helper `config_tabs` to place ordinary fields in
+  `Source`, `Parameters`, or `Payloads`.
+- If a schema itself has multiple `group` values, those fields render as nested
+  generated tabs inside their top-level tab; single-group configs stay flat.
 - Standard Node Config tabs are `Source`, `Parameters`, `Payloads`, and
   `Connections`. Keep ordinary node fields schema-driven; custom config screens
   are reserved for topology-derived UI such as Branch, Merge, and Wait targets.
@@ -179,12 +221,18 @@ the links in `docs/README.md`.
 
 ## Tests To Add
 
-- Node execution tests go in `AttackOfTheNodes/tests/test_debug_nodes.py`.
+- For generated nodes, prefer focused tests under
+  `AttackOfTheNodes/tests/generated/test_<node_type>.py` and run:
+  - `../.venv/bin/python ../aotn_node_helper/check_node.py <node_type>`
+- Node execution tests that cover shared engine behavior still go in
+  `AttackOfTheNodes/tests/test_debug_nodes.py`.
 - Add a metadata or registration test when adding a node.
 - Add a config rendering test when adding schema behavior.
 - Add an editor Quick View test when changing port or memory display behavior.
 - Add a command-navigation test when changing modal focus behavior.
-- Run from `AttackOfTheNodes/`:
+- For small bug fixes, run the narrow `pytest -k` slice that covers the changed
+  behavior before reaching for the full cumulative suite.
+- Run from `AttackOfTheNodes/` before shared/runtime commits:
   - `../.venv/bin/python -m compileall -q .`
   - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v`
 

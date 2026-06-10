@@ -1,0 +1,28 @@
+node_type: helper_example_node
+class_name: HelperExampleNode
+category: debug
+display_name: Helper Example
+default_alias: Helper Example
+description: Example generated pass-through node
+input_ports: ["input"]
+output_ports: ["default"]
+output_port_metadata:
+  default:
+    name: Example Payload
+    description: Payload forwarded by the helper example
+config_tabs:
+  Source:
+    label:
+      type: string
+      label: Label
+      default: Example
+      required: false
+  Payloads:
+    payload_note:
+      type: string
+      label: Payload note
+      default: Forwarded unchanged
+      required: false
+ui_hints:
+  pass_through: Forwards the previous payload unchanged.
+execution_template: pass_through

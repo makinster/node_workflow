@@ -608,7 +608,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             for key, value in config.items()
             if key not in excluded_config_keys
         }
-        form, getter = build_form(schema, core_config)
+        forms, getter = self._build_standard_config_forms(schema, core_config)
         self._get_form_values = getter
 
         with Vertical(id="modal-card", classes="node-config-modal"):
@@ -634,7 +634,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                     yield from self._compose_standard_config_tabs(
                         metadata,
                         config,
-                        form,
+                        forms,
                     )
             with Vertical(classes="button-row"):
                 yield Button("Save", id="save-node-config", variant="primary")
@@ -645,13 +645,15 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         self,
         metadata: Optional[Dict[str, Any]],
         config: Dict[str, Any],
-        form,
+        forms: Dict[str, Any],
     ):
         with TabbedContent(id="node-config-tabs", classes="node-config-tabs"):
             with TabPane("Source", id="node-config-tab-core"):
                 yield Label("Alias", classes="form-label nav-section")
                 yield CommandInput(value=self.node_data.get("alias", ""), id="alias-input")
                 yield Static(self._format_metadata(metadata), id="node-config-summary")
+                if forms.get("source") is not None:
+                    yield forms["source"]
                 pass_through_note = self._pass_through_note(metadata)
                 if pass_through_note:
                     yield Static(pass_through_note, classes="form-description pass-through-note")
@@ -669,7 +671,10 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                     yield from self._compose_wait_targets(config)
 
             with TabPane("Parameters", id="node-config-tab-parameters"):
-                yield form
+                if forms.get("parameters") is not None:
+                    yield forms["parameters"]
+                else:
+                    yield Static("No parameters.", classes="form-description")
 
             with TabPane("Payloads", id="node-config-tab-outputs"):
                 yield Label("Incoming Payloads", classes="form-label nav-section")
@@ -680,6 +685,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 )
                 yield PayloadPreview("", id="payload-upstream-payload-preview", classes="form-description")
                 yield from self._compose_vault_payload_preview("payload")
+                if forms.get("payloads") is not None:
+                    yield forms["payloads"]
                 yield Label("Dead Drop Payloads", classes="form-label nav-section")
                 yield from self._compose_transient_outputs(metadata, config)
                 if self._supports_membank_outputs(metadata):
@@ -765,6 +772,52 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                     classes="form-description",
                 )
                 yield Static(self._format_connections(), id="connection-summary")
+
+    def _build_standard_config_forms(
+        self,
+        schema: Dict[str, Dict[str, Any]],
+        values: Dict[str, Any],
+    ) -> tuple[Dict[str, Any], WidgetGetter]:
+        schemas = self._schema_by_top_level_config_tab(schema)
+        forms: Dict[str, Any] = {}
+        getters: list[WidgetGetter] = []
+        for tab_name, tab_schema in schemas.items():
+            if not tab_schema:
+                forms[tab_name] = None
+                continue
+            form, getter = build_form(tab_schema, values)
+            forms[tab_name] = form
+            getters.append(getter)
+
+        def get_values() -> Dict[str, Any]:
+            merged: Dict[str, Any] = {}
+            for getter in getters:
+                merged.update(getter())
+            return merged
+
+        return forms, get_values
+
+    def _schema_by_top_level_config_tab(
+        self,
+        schema: Dict[str, Dict[str, Any]],
+    ) -> Dict[str, Dict[str, Dict[str, Any]]]:
+        tabs: Dict[str, Dict[str, Dict[str, Any]]] = {
+            "source": {},
+            "parameters": {},
+            "payloads": {},
+        }
+        for field_name, field_schema in schema.items():
+            tab_name = self._normalize_config_tab_name(field_schema.get("tab"))
+            tabs[tab_name][field_name] = field_schema
+        return tabs
+
+    def _normalize_config_tab_name(self, tab_name: Any) -> str:
+        value = str(tab_name or "parameters").strip().lower()
+        if value in {"source", "core"}:
+            return "source"
+        if value in {"payload", "payloads", "output", "outputs"}:
+            return "payloads"
+        return "parameters"
 
     def _branch_payload_source_options(
         self,
