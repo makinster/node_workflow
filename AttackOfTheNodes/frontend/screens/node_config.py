@@ -49,6 +49,15 @@ LEGACY_BRANCH_CONFIG_KEYS = {
 }
 
 
+class PayloadPreview(Static):
+    """Read-only payload preview that participates in command navigation."""
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.can_focus = True
+        self.add_class("payload-preview")
+
+
 def _branch_count_from_config(config: Dict[str, Any]) -> int:
     try:
         count = int(config.get("branch_count", MIN_BRANCH_COUNT))
@@ -652,7 +661,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                     value=False,
                     id="show-previous-output",
                 )
-                yield Static("", id="previous-output-preview", classes="form-description")
+                yield PayloadPreview("", id="previous-output-preview", classes="form-description")
                 yield from self._compose_membank_inputs(config)
                 yield from self._compose_vault_payload_preview("source")
                 if self.node_data.get("type") == "wait_until_node":
@@ -669,7 +678,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                     value=False,
                     id="show-payload-upstream-payload",
                 )
-                yield Static("", id="payload-upstream-payload-preview", classes="form-description")
+                yield PayloadPreview("", id="payload-upstream-payload-preview", classes="form-description")
                 yield from self._compose_vault_payload_preview("payload")
                 yield Label("Dead Drop Payloads", classes="form-label nav-section")
                 yield from self._compose_transient_outputs(metadata, config)
@@ -716,7 +725,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                     value=False,
                     id="show-previous-output",
                 )
-                yield Static("", id="previous-output-preview", classes="form-description")
+                yield PayloadPreview("", id="previous-output-preview", classes="form-description")
                 yield from self._compose_membank_inputs(config)
                 yield from self._compose_vault_payload_preview("source")
 
@@ -737,7 +746,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                     value=False,
                     id="show-payload-upstream-payload",
                 )
-                yield Static("", id="payload-upstream-payload-preview", classes="form-description")
+                yield PayloadPreview("", id="payload-upstream-payload-preview", classes="form-description")
                 yield from self._compose_vault_payload_preview("payload")
                 yield Vertical(
                     *self._branch_payload_row_widgets(
@@ -1168,6 +1177,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         interactive = (
             CommandInput,
             CommandTextArea,
+            PayloadPreview,
             Checkbox,
             SelectionList,
             Select,
@@ -1407,7 +1417,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             value=False,
             id=f"show-{location}-vault-payload",
         )
-        yield Static(
+        yield PayloadPreview(
             "",
             id=f"{location}-vault-payload-preview",
             classes="form-description",

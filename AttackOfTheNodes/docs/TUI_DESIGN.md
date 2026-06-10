@@ -248,7 +248,9 @@ Payload previews are opt-in. Source and Payloads tabs may include `Reveal
 upstream payload` and `Reveal Vault payload` checkboxes. Revealed previews use a
 consistent shape: `Source: <node chain>`, then `Payload: <name> (<type>): <value>`
 when a captured printable value exists, and `Description: <user/node
-description>` only when a meaningful description exists. This keeps ordinary
+description>` only when a meaningful description exists. Revealed preview blocks
+are read-only command stops: W/S or arrows should be able to highlight them,
+scroll them into view, and then continue to the next widget. This keeps ordinary
 nodes quiet while making complex workflows inspectable.
 
 Settings includes a visible Cancel control and reserves `K` for an API Keys

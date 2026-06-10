@@ -7,6 +7,8 @@
   ordinary node config noisy by default.
 - Added matching `Reveal Vault payload` previews for selected Vault inputs on
   Source and Payloads tabs.
+- Made revealed payload previews read-only command stops so W/S and arrows can
+  highlight the displayed payload text and then continue to the next widget.
 - Standardized reveal copy as source chain, payload name/type/value when
   captured, and optional description only when meaningful.
 - Updated Node Config scrolling so focusing the first control in a tab scrolls

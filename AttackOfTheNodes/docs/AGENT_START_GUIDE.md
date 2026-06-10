@@ -84,7 +84,8 @@ the links in `docs/README.md`.
 - Source and Payloads tabs may reveal incoming data with `Reveal upstream
   payload` or `Reveal Vault payload`. Keep these previews opt-in and formatted
   as source chain, payload name/type/value when available, and optional
-  description.
+  description. Revealed preview blocks should be read-only command stops so W/S
+  and arrows can highlight them and then continue moving.
 
 ## Branch Node V1
 

@@ -3035,7 +3035,7 @@ async def _test_node_config_fixed_tabs_are_keyboard_navigable():
         assert tabs.active == "node-config-tab-outputs"
         assert app.focused is payload_reveal
 
-        for _ in range(5):
+        for _ in range(10):
             if app.focused is save_button:
                 break
             await pilot.press("s")
@@ -3708,12 +3708,22 @@ async def _test_node_config_payloads_tab_reveals_upstream_and_vault_payloads():
     async with app.run_test() as pilot:
         await pilot.pause(0.05)
         tabs = app.query_one("#node-config-tabs", TabbedContent)
+        source_vault_reveal = app.query_one("#show-source-vault-payload", Checkbox)
+        source_vault_preview = app.query_one("#source-vault-payload-preview", Static)
+        source_vault_reveal.value = True
+        screen = app.query_one(NodeConfigScreen)
+        screen._sync_payload_previews()
+        app.set_focus(source_vault_reveal)
+        await pilot.press("s")
+        await pilot.pause(0.02)
+        assert app.focused is source_vault_preview
+        assert source_vault_preview.has_class("payload-preview")
+
         tabs.active = "node-config-tab-outputs"
         upstream = app.query_one("#show-payload-upstream-payload", Checkbox)
         vault = app.query_one("#show-payload-vault-payload", Checkbox)
         upstream.value = True
         vault.value = True
-        screen = app.query_one(NodeConfigScreen)
         screen._sync_payload_previews()
 
         upstream_text = str(app.query_one("#payload-upstream-payload-preview", Static).content)

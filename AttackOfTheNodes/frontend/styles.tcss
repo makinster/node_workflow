@@ -139,6 +139,12 @@ Screen {
     color: #a9b8c6;
 }
 
+.payload-preview:focus {
+    background: #1a3a5c;
+    color: #d7eef7;
+    text-style: bold;
+}
+
 .command-input:focus {
     border: tall #d6b85a;
     background: #171f29;
