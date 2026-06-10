@@ -1,5 +1,24 @@
 # AttackOfTheNodes Session Log
 
+## 2026-06-09 — Payload Reveal Consistency
+
+- Added opt-in `Reveal upstream payload` controls to the Payloads tab so users
+  can inspect what dead-drop payload is being carried forward without making
+  ordinary node config noisy by default.
+- Added matching `Reveal Vault payload` previews for selected Vault inputs on
+  Source and Payloads tabs.
+- Standardized reveal copy as source chain, payload name/type/value when
+  captured, and optional description only when meaningful.
+- Updated Node Config scrolling so focusing the first control in a tab scrolls
+  high enough to show the tab header again, keeping long Payloads tabs
+  navigable.
+- Updated `AGENT_START_GUIDE.md`, `TUI_DESIGN.md`, and `MASTER_BUILD_PLAN.md`
+  with the reveal-preview and long-tab scroll rules.
+- Verification:
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "payloads_tab_reveals or fixed_tabs_are_keyboard or branch_config_uses_parallel or previous_output_preview or branch_payload_preview or selection_lists_exit"` (8 passed)
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v` (109 passed)
+
 ## 2026-06-09 — Node Config Copy, Scroll, And Payload Polish
 
 - Polished Branch config copy: empty Vault state now says `The vault is empty`,

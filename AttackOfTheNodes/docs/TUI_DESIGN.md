@@ -234,12 +234,22 @@ on node port metadata, stored in `transient_outputs`. Standard node configs use
 fixed `Source`, `Parameters`, `Payloads`, and `Connections` tabs. W/S moves
 vertically inside the active tab and then to Save/Cancel; it does not move into
 the tab header and does not switch tabs. A/D and left/right switch tabs and move
-focus to the first control in the new tab. While a command text field is actively
-editing, A/D and left/right remain cursor-movement keys. Small text fields exit
-editing on Esc, Enter, or Tab and keep the typed value for the modal-level Save.
-`Ctrl+Q` while editing is the explicit revert-to-edit-start command. Large
-`CommandTextArea` fields keep Tab inside the text area for content/indentation
-editing and use Esc or Ctrl+Enter to leave edit mode while preserving text.
+focus to the first control in the new tab. When the first control in a tab is
+focused, the scroll container should snap high enough that the tab header is
+visible again; users should never lose the tab row behind a long Payloads
+screen. While a command text field is actively editing, A/D and left/right
+remain cursor-movement keys. Small text fields exit editing on Esc, Enter, or
+Tab and keep the typed value for the modal-level Save. `Ctrl+Q` while editing is
+the explicit revert-to-edit-start command. Large `CommandTextArea` fields keep
+Tab inside the text area for content/indentation editing and use Esc or
+Ctrl+Enter to leave edit mode while preserving text.
+
+Payload previews are opt-in. Source and Payloads tabs may include `Reveal
+upstream payload` and `Reveal Vault payload` checkboxes. Revealed previews use a
+consistent shape: `Source: <node chain>`, then `Payload: <name> (<type>): <value>`
+when a captured printable value exists, and `Description: <user/node
+description>` only when a meaningful description exists. This keeps ordinary
+nodes quiet while making complex workflows inspectable.
 
 Settings includes a visible Cancel control and reserves `K` for an API Keys
 submenu. The current API Keys screen is a placeholder only.

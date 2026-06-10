@@ -1001,12 +1001,14 @@ async def _test_branch_config_uses_parallel_payload_ui():
         screen._focus_first_config_tab_widget("node-config-tab-outputs")
         await pilot.pause(0.03)
         visited: list[str] = []
-        for _ in range(10):
+        for _ in range(14):
             focused_id = str(getattr(app.focused, "id", ""))
             if focused_id:
                 visited.append(focused_id)
             await pilot.press("s")
             await pilot.pause(0.01)
+        assert "show-payload-upstream-payload" in visited
+        assert "show-payload-vault-payload" in visited
         assert "branch-label-path_e" in visited
         assert "branch-payload-source-path_e" in visited
         assert all(visited)
@@ -1098,7 +1100,7 @@ async def _test_node_config_selection_lists_exit_at_edges():
         vault.highlighted = len(vault._options) - 1
         await pilot.press("s")
         await pilot.pause(0.02)
-        assert getattr(app.focused, "id", "") == "save-node-config"
+        assert getattr(app.focused, "id", "") == "show-source-vault-payload"
 
     print("test_node_config_selection_lists_exit_at_edges PASSED")
 
@@ -2968,6 +2970,7 @@ async def _test_node_config_fixed_tabs_are_keyboard_navigable():
         alias = app.query_one("#alias-input", CommandInput)
         previous_output = app.query_one("#show-previous-output", Checkbox)
         parameter_field = app.query_one("#field-label", CommandInput)
+        payload_reveal = app.query_one("#show-payload-upstream-payload", Checkbox)
         output_name = app.query_one("#transient-output-name-default", CommandInput)
         save_button = app.query_one("#save-node-config", Button)
 
@@ -2997,6 +3000,19 @@ async def _test_node_config_fixed_tabs_are_keyboard_navigable():
         await pilot.press("d")
         await pilot.pause(0.1)
         assert tabs.active == "node-config-tab-outputs"
+        assert app.focused is payload_reveal
+        scroll = app.query_one("#node-config-scroll")
+        scroll.scroll_to(y=100, animate=False)
+        screen = app.query_one(NodeConfigScreen)
+        screen._scroll_config_widget_into_view(payload_reveal)
+        await pilot.pause(0.03)
+        assert scroll.scroll_y < 100
+
+        for _ in range(5):
+            if app.focused is output_name:
+                break
+            await pilot.press("s")
+            await pilot.pause(0.02)
         assert app.focused is output_name
 
         await pilot.press("d")
@@ -3017,7 +3033,7 @@ async def _test_node_config_fixed_tabs_are_keyboard_navigable():
         await pilot.press("d")
         await pilot.pause(0.1)
         assert tabs.active == "node-config-tab-outputs"
-        assert app.focused is output_name
+        assert app.focused is payload_reveal
 
         for _ in range(5):
             if app.focused is save_button:
@@ -3542,7 +3558,7 @@ def test_node_config_previous_output_preview_traces_pass_through_source():
 
     assert "Source: Producer -> Pause" in text
     assert "Payload: created_payload (dict, 1 items)" in text
-    assert "Payload Description: Original data" in text
+    assert "Description: Original data" in text
     print("test_node_config_previous_output_preview_traces_pass_through_source PASSED")
 
 
@@ -3593,7 +3609,7 @@ def test_branch_payload_preview_traces_selected_dead_drop_source():
     preview = config_screen._previous_output_text()
     assert "Source: Seed Source -> Branch Hub" in preview
     assert "Payload: Seed Payload (str): seeded text" in preview
-    assert "Payload Description: Prepared upstream text" in preview
+    assert "Description: Prepared upstream text" in preview
 
     editor_screen = EditorScreen(wm._factory, wm)
     quick_view = editor_screen._format_node_details(target, wm.get_node_data(target))
@@ -3640,8 +3656,76 @@ def test_branch_payload_preview_traces_selected_vault_source():
     preview = screen._previous_output_text()
     assert "Source: Vault Writer -> Branch Hub" in preview
     assert "Payload: session_id (str): vault-value" in preview
-    assert "Payload Description: Session id" in preview
+    assert "Description: Session id" in preview
     print("test_branch_payload_preview_traces_selected_vault_source PASSED")
+
+
+def test_node_config_payloads_tab_reveals_upstream_and_vault_payloads():
+    asyncio.run(_test_node_config_payloads_tab_reveals_upstream_and_vault_payloads())
+
+
+async def _test_node_config_payloads_tab_reveals_upstream_and_vault_payloads():
+    from textual.app import App, ComposeResult
+    from textual.widgets import Checkbox, Static, TabbedContent
+
+    from frontend.screens.node_config import NodeConfigScreen
+
+    _, wm, mb, _ = _make_services()
+    wm.create_new("payload_tab_reveal")
+    producer = wm.add_node("logger_node")
+    vault_writer = wm.add_node("logger_node")
+    target = wm.add_node("logger_node")
+
+    wm.update_node_alias(producer, "Producer")
+    wm.update_node_alias(vault_writer, "Vault Writer")
+    wm.update_node_config(
+        producer,
+        {
+            "transient_outputs": [
+                {
+                    "port": "default",
+                    "name": "Draft Text",
+                    "description": "Text for the next node",
+                }
+            ]
+        },
+    )
+    wm.update_node_config(
+        vault_writer,
+        {"membank_outputs": [{"id": "session_id", "description": "Session id"}]},
+    )
+    wm.update_node_config(target, {"membank_inputs": ["session_id"]})
+    wm.connect(producer, "default", target, "input")
+    mb.store_transient(producer, "default", "hello")
+    mb.store_persistent("session_id", "abc-123")
+    node_data = wm.get_node_data(target)
+
+    class ConfigApp(App):
+        def compose(self) -> ComposeResult:
+            yield NodeConfigScreen(wm._factory, wm, target, node_data, memory_bank=mb)
+
+    app = ConfigApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.05)
+        tabs = app.query_one("#node-config-tabs", TabbedContent)
+        tabs.active = "node-config-tab-outputs"
+        upstream = app.query_one("#show-payload-upstream-payload", Checkbox)
+        vault = app.query_one("#show-payload-vault-payload", Checkbox)
+        upstream.value = True
+        vault.value = True
+        screen = app.query_one(NodeConfigScreen)
+        screen._sync_payload_previews()
+
+        upstream_text = str(app.query_one("#payload-upstream-payload-preview", Static).content)
+        vault_text = str(app.query_one("#payload-vault-payload-preview", Static).content)
+        assert "Source: Producer" in upstream_text
+        assert "Payload: Draft Text (str): hello" in upstream_text
+        assert "Description: Text for the next node" in upstream_text
+        assert "Source: Vault Writer" in vault_text
+        assert "Payload: session_id (str): abc-123" in vault_text
+        assert "Description: Session id" in vault_text
+
+    print("test_node_config_payloads_tab_reveals_upstream_and_vault_payloads PASSED")
 
 
 def test_node_selector_filter_auto_edits_when_focused():
@@ -5079,6 +5163,7 @@ if __name__ == "__main__":
         test_node_config_previous_output_preview_traces_pass_through_source,
         test_branch_payload_preview_traces_selected_dead_drop_source,
         test_branch_payload_preview_traces_selected_vault_source,
+        test_node_config_payloads_tab_reveals_upstream_and_vault_payloads,
         test_node_selector_filter_auto_edits_when_focused,
         test_branch_selector_uses_shared_list_navigation,
         test_workflow_library_uses_shared_list_navigation,

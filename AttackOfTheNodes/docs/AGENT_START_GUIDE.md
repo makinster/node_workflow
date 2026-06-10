@@ -81,6 +81,10 @@ the links in `docs/README.md`.
 - Config-screen copy currently uses the project vocabulary: graph-passed data is
   a dead-drop payload, named memory is the Vault, and pass-through forwarding is
   labeled `Dead drop payload`.
+- Source and Payloads tabs may reveal incoming data with `Reveal upstream
+  payload` or `Reveal Vault payload`. Keep these previews opt-in and formatted
+  as source chain, payload name/type/value when available, and optional
+  description.
 
 ## Branch Node V1
 
@@ -158,6 +162,9 @@ the links in `docs/README.md`.
 - Inline `SelectionList` controls such as Vault or merge branch choices must not
   trap keyboard movement. W/S and up/down should move through options, then move
   to the previous/next command widget when already at the top/bottom.
+- In tabbed config screens, focusing the first control in a tab should scroll
+  high enough to show the tab header again. This keeps long Payloads tabs
+  navigable after users scroll through many generated controls.
 - Popup filters and prompts that should accept typing immediately should opt
   into `auto_edit_on_focus=True`.
 

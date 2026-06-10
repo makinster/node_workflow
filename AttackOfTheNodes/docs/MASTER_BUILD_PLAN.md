@@ -831,6 +831,9 @@ Current progress:
 - Branch config copy/scroll polish is landed: empty Vault copy says `The vault
   is empty`, no-run payload previews stay quiet, and 4-5 branch payload rows
   remain reachable with W/S.
+- Source and Payloads tabs expose opt-in incoming-data previews for upstream
+  dead-drop and Vault payloads. Long config tabs scroll back high enough to show
+  the tab header whenever their first control is focused.
 - Node config Save/Cancel and path-prompt Confirm/Cancel controls are stacked
   vertically for W/S movement.
 - Settings includes an API Keys placeholder behind `K`.

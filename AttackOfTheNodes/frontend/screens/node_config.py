@@ -654,6 +654,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 )
                 yield Static("", id="previous-output-preview", classes="form-description")
                 yield from self._compose_membank_inputs(config)
+                yield from self._compose_vault_payload_preview("source")
                 if self.node_data.get("type") == "wait_until_node":
                     yield Label("Wait Targets", classes="form-label nav-section")
                     yield from self._compose_wait_targets(config)
@@ -662,6 +663,14 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 yield form
 
             with TabPane("Payloads", id="node-config-tab-outputs"):
+                yield Label("Incoming Payloads", classes="form-label nav-section")
+                yield Checkbox(
+                    "Reveal upstream payload",
+                    value=False,
+                    id="show-payload-upstream-payload",
+                )
+                yield Static("", id="payload-upstream-payload-preview", classes="form-description")
+                yield from self._compose_vault_payload_preview("payload")
                 yield Label("Dead Drop Payloads", classes="form-label nav-section")
                 yield from self._compose_transient_outputs(metadata, config)
                 if self._supports_membank_outputs(metadata):
@@ -709,6 +718,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 )
                 yield Static("", id="previous-output-preview", classes="form-description")
                 yield from self._compose_membank_inputs(config)
+                yield from self._compose_vault_payload_preview("source")
 
             with TabPane("Parameters", id="node-config-tab-parameters"):
                 yield Label("Branches", classes="form-label nav-section")
@@ -721,6 +731,14 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 yield Static("Choose 2 to 5 spawn points.", classes="form-description")
 
             with TabPane("Payloads", id="node-config-tab-outputs"):
+                yield Label("Incoming Payloads", classes="form-label nav-section")
+                yield Checkbox(
+                    "Reveal upstream payload",
+                    value=False,
+                    id="show-payload-upstream-payload",
+                )
+                yield Static("", id="payload-upstream-payload-preview", classes="form-description")
+                yield from self._compose_vault_payload_preview("payload")
                 yield Vertical(
                     *self._branch_payload_row_widgets(
                         branch_count,
@@ -814,7 +832,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         self._sync_membank_output_controls()
         self._sync_membank_input_controls()
         self._sync_branch_payload_rows()
-        self._sync_previous_output_preview()
+        self._sync_payload_previews()
         if self.query("#alias-input"):
             self.call_after_refresh(
                 lambda: self.app.set_focus(self.query_one("#alias-input", CommandInput))
@@ -842,8 +860,14 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         elif event.checkbox.id == "membank-reads":
             self._sync_membank_input_controls()
             self._sync_branch_payload_rows()
-        elif event.checkbox.id == "show-previous-output":
-            self._sync_previous_output_preview()
+            self._sync_payload_previews()
+        elif event.checkbox.id in {
+            "show-previous-output",
+            "show-payload-upstream-payload",
+            "show-source-vault-payload",
+            "show-payload-vault-payload",
+        }:
+            self._sync_payload_previews()
         elif event.checkbox.id == "field-pass_through":
             await self._refresh_membank_output_rows()
 
@@ -865,6 +889,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             self._sync_merge_input_details()
         elif event.selection_list.id == "membank-inputs":
             self._sync_branch_payload_rows()
+            self._sync_payload_previews()
 
     async def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "save-node-config":
@@ -1048,6 +1073,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                     widgets[0],
                     self.query_one("#node-config-scroll"),
                 )
+                self.call_after_refresh(lambda target=widgets[0]: self._scroll_config_widget_into_view(target))
                 self._sync_cursor_mode()
                 return
             except Exception:
@@ -1102,10 +1128,32 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
 
     def _scroll_config_widget_into_view(self, target: Any) -> None:
         try:
-            self.query_one("#node-config-scroll").scroll_to_widget(target, animate=False)
+            scroll = self.query_one("#node-config-scroll")
+            if self._is_first_active_tab_widget(target):
+                tabbed_query = self.query("#node-config-tabs")
+                if tabbed_query:
+                    scroll.scroll_to_widget(tabbed_query.first(), animate=False)
+                    return
+            scroll.scroll_to_widget(target, animate=False)
             target.scroll_visible(animate=False)
         except Exception:
             pass
+
+    def _is_first_active_tab_widget(self, target: Any) -> bool:
+        tabbed_query = self.query("#node-config-tabs")
+        if not tabbed_query:
+            return False
+        tabs = tabbed_query.first()
+        try:
+            active_pane = self.query_one(f"#{tabs.active}", TabPane)
+        except Exception:
+            return False
+        widgets = [
+            widget
+            for widget in self._keyboard_focus_widgets()
+            if self._is_descendant_of(widget, active_pane)
+        ]
+        return bool(widgets and widgets[0] is target)
 
     def _nav_widgets(self) -> list[Any]:
         return self._keyboard_focus_widgets()
@@ -1277,22 +1325,113 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             else self._dead_drop_chain_text(str(source_id or ""), str(producer_id))
         )
         payload_name = str(producer.get("name") or source_port)
-        lines = [f"Source: {source_label}"]
         description = str(producer.get("description") or "").strip()
-        if description and description != "No output description configured.":
-            lines.append(f"Payload Description: {description}")
-        if self.memory_bank is None:
-            lines.insert(1, f"Payload: {payload_name}")
-            return "\n".join(lines)
-        value = self.memory_bank.read_transient(source_id, source_port, default=None)
-        if value is None:
-            lines.insert(1, f"Payload: {payload_name}")
-            return "\n".join(lines)
-        rendered = self._payload_value_preview(payload_name, value)
-        if len(rendered) > 800:
-            rendered = f"{rendered[:797]}..."
-        lines.insert(1, rendered)
+        value = None
+        has_value = False
+        if self.memory_bank is not None:
+            value = self.memory_bank.read_transient(source_id, source_port, default=None)
+            has_value = value is not None
+        return self._payload_preview_text(
+            source_label,
+            payload_name,
+            description,
+            value,
+            has_value=has_value,
+        )
+
+    def _vault_payload_text(self) -> str:
+        selected = self._selected_vault_inputs()
+        if not selected:
+            return "No Vault payload selected."
+        registry = build_membank_registry(self.workflow_map)
+        lines: list[str] = []
+        for output_id in selected:
+            entry = registry.get(output_id) or {}
+            writer_id = next(
+                (
+                    str(writer)
+                    for writer in entry.get("writers", [])
+                    if str(writer) and str(writer) != self.node_id
+                ),
+                "",
+            )
+            writer_node = self.workflow_map.get_node_data(writer_id) or {}
+            source_label = (
+                self._node_display_name(writer_id, writer_node)
+                if writer_id
+                else "Vault"
+            )
+            value = None
+            has_value = False
+            if self.memory_bank is not None:
+                value = self.memory_bank.read_persistent(output_id, default=None)
+                has_value = value is not None
+            if lines:
+                lines.append("")
+            lines.append(
+                self._payload_preview_text(
+                    source_label,
+                    output_id,
+                    str(entry.get("description") or "").strip(),
+                    value,
+                    has_value=has_value,
+                )
+            )
         return "\n".join(lines)
+
+    def _payload_preview_text(
+        self,
+        source_label: str,
+        payload_name: str,
+        description: str,
+        value: Any,
+        *,
+        has_value: bool,
+    ) -> str:
+        lines = [f"Source: {source_label}"]
+        if has_value:
+            rendered = self._payload_value_preview(payload_name, value)
+            if len(rendered) > 800:
+                rendered = f"{rendered[:797]}..."
+            lines.append(rendered)
+        else:
+            lines.append(f"Payload: {payload_name}")
+        description = str(description or "").strip()
+        if description and description != "No output description configured.":
+            lines.append(f"Description: {description}")
+        return "\n".join(lines)
+
+    def _compose_vault_payload_preview(self, location: str):
+        yield Checkbox(
+            "Reveal Vault payload",
+            value=False,
+            id=f"show-{location}-vault-payload",
+        )
+        yield Static(
+            "",
+            id=f"{location}-vault-payload-preview",
+            classes="form-description",
+        )
+
+    def _sync_payload_previews(self) -> None:
+        self._sync_previous_output_preview()
+        for location in ("source", "payload"):
+            checkbox_query = self.query(f"#show-{location}-vault-payload")
+            preview_query = self.query(f"#{location}-vault-payload-preview")
+            if not checkbox_query or not preview_query:
+                continue
+            enabled = checkbox_query.first().value
+            preview = preview_query.first()
+            preview.display = enabled
+            preview.update(self._vault_payload_text() if enabled else "")
+
+        checkbox_query = self.query("#show-payload-upstream-payload")
+        preview_query = self.query("#payload-upstream-payload-preview")
+        if checkbox_query and preview_query:
+            enabled = checkbox_query.first().value
+            preview = preview_query.first()
+            preview.display = enabled
+            preview.update(self._previous_output_text() if enabled else "")
 
     def _dead_drop_chain_text_from_ids(self, node_ids: list[str]) -> str:
         chain = [
