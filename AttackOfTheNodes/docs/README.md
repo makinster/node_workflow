@@ -1,67 +1,61 @@
-# AttackOfTheNodes Docs Index
+# AttackOfTheNodes Docs
 
-Start here when entering the project. The current active app is the
-Python/Textual build under `AttackOfTheNodes/`; older Chrome-extension and
-tkinter material is historical unless explicitly labeled current.
+Start here. This docs folder is organized so agents can read the minimum
+context needed for the task at hand, then open deeper references only when
+needed.
 
-## Read First
+The active project is the Python/Textual app in `AttackOfTheNodes/`. Historical
+tkinter/proof-of-concept material lives under `docs/archive/`.
 
-1. `AGENT_START_GUIDE.md`
-   - Fast task checklist for adding nodes, using the node helper generator,
-     adding screens/config fields/keybindings, choosing focused tests, and
-     updating docs.
+## Choose Your Task
 
-2. `AGENT_HANDOFF.md`
-   - Fast current-state summary.
-   - Tells you what phase is next and which docs are authoritative.
+| If you need to... | Read first | Then read if needed |
+|---|---|---|
+| Add or change a node | `AGENT_START_GUIDE.md`, `TASK_INDEX.md` | `PROJECT_KNOWLEDGE.md`, `ARCHITECTURE.md` |
+| Fix frontend/UI behavior | `TASK_INDEX.md`, `TUI_DESIGN.md` | `BACKEND_FRONTEND_BOUNDARY.md`, `PROJECT_BACKLOG.md` |
+| Change backend/runtime behavior | `TASK_INDEX.md`, `ARCHITECTURE.md`, `SIGNAL_FLOW.md` | `PROJECT_KNOWLEDGE.md`, `BACKEND_FRONTEND_BOUNDARY.md` |
+| Continue the roadmap | `AGENT_HANDOFF.md`, `MASTER_BUILD_PLAN.md` | `archive/BUILD_PLAN_HISTORY.md`, `SESSION_LOG.md` |
+| Update docs | `README.md`, `TASK_INDEX.md`, `DOCS_MIGRATION_NOTES.md` | `archive/SESSION_LOG_HISTORY.md` |
+| Check what changed recently | `SESSION_LOG.md` | `archive/SESSION_LOG_HISTORY.md` |
 
-3. `MASTER_BUILD_PLAN.md`
-   - Current source of truth for architecture, completed phases, remaining
-     roadmap, and test rules.
+## Read-First Files
 
-4. `SESSION_LOG.md`
-   - Chronological record of what was actually changed and verified.
+- `TASK_INDEX.md` — compact task router with likely code areas and focused
+  checks.
+- `AGENT_START_GUIDE.md` — practical checklist for common changes, especially
+  node creation and config UI.
+- `AGENT_HANDOFF.md` — current project state and next likely direction.
+- `MASTER_BUILD_PLAN.md` — concise active roadmap and status.
+- `SESSION_LOG.md` — recent session log. Older entries are archived.
+- `BACKEND_FRONTEND_BOUNDARY.md` — read before moving UI behavior into backend
+  services.
 
-5. `BACKEND_FRONTEND_BOUNDARY.md`
-   - Rules for keeping backend engine code reusable across future frontends.
-   - Read before moving UI behavior into backend services.
+## Reference Files
 
-## Phase-Specific Docs
+- `ARCHITECTURE.md` — component responsibilities and invariants.
+- `SIGNAL_FLOW.md` — runtime/event flow through backend and frontend.
+- `PROJECT_KNOWLEDGE.md` — compact current-state project knowledge.
+- `TUI_DESIGN.md` — current Textual UI conventions.
+- `FILE_TREE.md` — current tracked project file map.
+- `PROJECT_BACKLOG.md` — deferred cleanup and future project ideas.
 
-- `TUI_DESIGN.md`
-  - Current Textual UI conventions, screen structure, and keyboard behavior.
+## Archive
 
-- `FRONTEND_AUDIT_BUILD_PLAN.md`
-  - Frontend standardization and keyboard/navigation audit plan.
+- `archive/BUILD_PLAN_HISTORY.md` — full pre-overhaul build plan and completed
+  phase details.
+- `archive/SESSION_LOG_HISTORY.md` — full pre-overhaul session log.
+- `archive/V05_BUILD_PLAN.md` — historical Python/tkinter proof-of-concept
+  plan.
+- `archive/plans/` — completed or lower-priority planning docs removed from
+  the default read path.
 
-- `USER_FRIENDLY_POLISH_BUILD_PLAN.md`
-  - User-facing polish sequence for copy, focus reliability, branch health,
-    visual identity, config readability, help, and accessibility smoke checks.
+## Documentation Rules
 
-- `PROJECT_BACKLOG.md`
-  - Deferred cleanup projects, including docs modernization and UI toolkit work.
-
-## Current Reference Docs
-
-These are current-state references refreshed during Phase 10:
-
-- `ARCHITECTURE.md`
-- `SIGNAL_FLOW.md`
-- `PROJECT_KNOWLEDGE.md`
-- `FILE_TREE.md`
-
-## Historical Docs
-
-- `V05_BUILD_PLAN.md`
-  - Historical Python proof-of-concept build plan.
-  - Useful for understanding how the project evolved, but not authoritative for
-    current Textual UI implementation details.
-
-## Documentation Rule
-
-Every implementation phase should update:
-
-- `SESSION_LOG.md` with what changed and how it was verified.
-- `AGENT_HANDOFF.md` if the next-agent starting point changes.
-- `MASTER_BUILD_PLAN.md` if roadmap status, boundaries, or phase ordering
-  changes.
+- Keep the default path small. Summarize in active docs and link to archives for
+  deep history.
+- Update `SESSION_LOG.md` after every completed change.
+- Update `MASTER_BUILD_PLAN.md` when roadmap status or phase order changes.
+- Update `TASK_INDEX.md` when task routes, helper commands, or focused checks
+  change.
+- Add an entry to `DOCS_MIGRATION_NOTES.md` when moving, collapsing, archiving,
+  or deleting docs.

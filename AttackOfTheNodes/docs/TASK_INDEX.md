@@ -1,0 +1,162 @@
+# Task Index
+
+Use this file to choose the smallest useful reading set and the focused checks
+for a task.
+
+## Add Or Change A Node
+
+Read:
+
+- `AGENT_START_GUIDE.md`
+- `PROJECT_KNOWLEDGE.md` sections: Node Metadata Contract, Registered Node
+  Families
+
+Likely files:
+
+- `../aotn_node_helper/specs/<node_type>.yaml`
+- `backend/nodes/<category>/<name>_node.py`
+- `backend/nodes/__init__.py`
+- `tests/generated/test_<node_type>.py`
+
+Preferred path:
+
+```bash
+../.venv/bin/python ../aotn_node_helper/create_node.py ../aotn_node_helper/specs/<node_type>.yaml
+../.venv/bin/python ../aotn_node_helper/check_node.py <node_type>
+```
+
+Use frontend edits only when the node needs structural UI derived from workflow
+topology. Ordinary node fields should render from metadata and `config_schema`.
+
+## Fix Frontend Or UI Behavior
+
+Read:
+
+- `TUI_DESIGN.md`
+- `AGENT_START_GUIDE.md` sections: Keyboard And Modal Rules, When Frontend Edits
+  Are Needed
+- `BACKEND_FRONTEND_BOUNDARY.md` if the fix is tempting you toward backend code
+
+Likely files:
+
+- `frontend/screens/`
+- `frontend/widgets/`
+- `frontend/styles.tcss`
+- `frontend/node_io_display.py`
+- `tests/test_debug_nodes.py`
+
+Focused checks:
+
+```bash
+../.venv/bin/python -m compileall -q .
+../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "<focused_behavior_name>"
+```
+
+Use shared helpers before per-screen code: command navigation, list navigation,
+dynamic sections, notifications, and form generation.
+
+## Change Backend Or Runtime Behavior
+
+Read:
+
+- `ARCHITECTURE.md`
+- `SIGNAL_FLOW.md`
+- `PROJECT_KNOWLEDGE.md`
+- `BACKEND_FRONTEND_BOUNDARY.md` when the change is requested by the UI
+
+Likely files:
+
+- `backend/workflow_map.py`
+- `backend/master_state.py`
+- `backend/supervisor.py`
+- `backend/memory_bank.py`
+- `backend/validator.py`
+- `backend/save_manager.py`
+- `tests/test_debug_nodes.py`
+
+Focused checks:
+
+```bash
+../.venv/bin/python -m compileall -q .
+../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "<runtime_behavior_name>"
+```
+
+Before committing broad runtime changes, run the full debug suite.
+
+## Change File I/O Or Workflow Persistence
+
+Read:
+
+- `AGENT_START_GUIDE.md` section: File I/O UI Pattern
+- `ARCHITECTURE.md` sections: persistence, SaveManager, WorkflowMap
+- `BACKEND_FRONTEND_BOUNDARY.md`
+
+Likely files:
+
+- `frontend/file_io.py`
+- `frontend/screens/workflow_library.py`
+- `frontend/screens/user_input.py`
+- `backend/save_manager.py`
+- `backend/persistence.py`
+
+Rule: path picking belongs in the frontend; backend services accept paths.
+
+## Update Config UI Or Form Generation
+
+Read:
+
+- `AGENT_START_GUIDE.md` sections: Make Node Config Render Correctly, Keyboard
+  And Modal Rules
+- `TUI_DESIGN.md` sections: Field Type Mapping, Command Navigation
+
+Likely files:
+
+- `frontend/screens/node_config.py`
+- `frontend/widgets/form_generator.py`
+- `frontend/widgets/command_input.py`
+- `frontend/widgets/command_navigation.py`
+- `tests/test_debug_nodes.py`
+
+Focused checks:
+
+```bash
+../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "node_config or command_input or selection"
+```
+
+## Continue The Roadmap
+
+Read:
+
+- `AGENT_HANDOFF.md`
+- `MASTER_BUILD_PLAN.md`
+- `SESSION_LOG.md`
+
+Optional deep history:
+
+- `archive/BUILD_PLAN_HISTORY.md`
+- `archive/SESSION_LOG_HISTORY.md`
+
+Update `MASTER_BUILD_PLAN.md` and `SESSION_LOG.md` when a phase starts or
+finishes.
+
+## Update Documentation
+
+Read:
+
+- `README.md`
+- `TASK_INDEX.md`
+- `DOCS_MIGRATION_NOTES.md`
+
+Likely files:
+
+- `docs/*.md`
+- `docs/archive/*.md`
+- `docs/archive/plans/*.md`
+
+Verification:
+
+```bash
+git diff --check
+rg -n "<stale-folder-or-phase-pattern>" AttackOfTheNodes/docs AGENTS.md
+find AttackOfTheNodes/docs -type f -name '*.md' | sort
+```

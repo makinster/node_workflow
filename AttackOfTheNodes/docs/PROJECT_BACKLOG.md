@@ -7,8 +7,8 @@ concept, tkinter prototype, and current Textual TUI. Phase 10 refreshed the
 active reference docs and labeled the remaining historical proof-of-concept
 material.
 
-`docs/README.md` is now the entry point and `MASTER_BUILD_PLAN.md` is the
-current comprehensive source of truth.
+`docs/README.md` is now the entry point, `TASK_INDEX.md` is the task router,
+and `MASTER_BUILD_PLAN.md` is the concise roadmap.
 
 Completed cleanup:
 
@@ -20,11 +20,12 @@ Completed cleanup:
   the current event bus.
 - Regenerated `FILE_TREE.md` from the current workspace and included the
   standardization/debug-node files.
-- Labeled historical tkinter roadmap material in `V05_BUILD_PLAN.md` clearly
-  labeled as history, not current implementation guidance.
+- Archived historical tkinter roadmap material in `archive/V05_BUILD_PLAN.md`
+  so it is available as history without sitting in the default read path.
 
 Ongoing rule: implementation phases should keep `SESSION_LOG.md` current and
-update `MASTER_BUILD_PLAN.md` or `AGENT_HANDOFF.md` when roadmap status changes.
+update `MASTER_BUILD_PLAN.md`, `TASK_INDEX.md`, or `AGENT_HANDOFF.md` when
+roadmap status or task routes change.
 
 ## Planned Project — Backend / Frontend Boundary Cleanup
 
@@ -48,8 +49,9 @@ Recommended cleanup:
 
 Current config and modal UX should converge on small shared helpers instead of
 per-screen key handling. `frontend/widgets/command_navigation.py` is the first
-step and currently supports `NodeConfigScreen`. Use
-`FRONTEND_AUDIT_BUILD_PLAN.md` as the implementation sequence for this work.
+step and currently supports command-mode screens. The completed frontend audit
+plan is archived at `archive/plans/FRONTEND_AUDIT_BUILD_PLAN.md`; active rules
+live in `AGENT_START_GUIDE.md`, `TASK_INDEX.md`, and `TUI_DESIGN.md`.
 
 Recommended cleanup:
 

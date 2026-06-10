@@ -3,182 +3,81 @@
 ## Current State
 
 The active app is `AttackOfTheNodes/`, a Python/Textual workflow editor and
-execution TUI backed by an asyncio workflow engine. The tkinter frontend is
-obsolete. Backend services remain UI-agnostic; frontend behavior lives under
-`frontend/screens/`, `frontend/widgets/`, and `frontend/styles.tcss`.
+execution TUI backed by an asyncio workflow engine. Backend services stay
+UI-agnostic; frontend behavior lives under `frontend/`.
 
-## Documentation Entry Point
+The current active work is a documentation overhaul: keep the default docs path
+short, task-first, accurate to the current project, and linked to archived deep
+history when needed.
 
-Start with `docs/README.md`. It separates current reference docs from
-historical proof-of-concept material.
+## Start Here
 
-## Active Build Plan
+1. `docs/README.md` — task router.
+2. `docs/TASK_INDEX.md` — minimum docs, likely files, focused checks.
+3. `docs/SESSION_LOG.md` — recent changes.
+4. `docs/MASTER_BUILD_PLAN.md` — concise roadmap/status.
+5. `docs/BACKEND_FRONTEND_BOUNDARY.md` — required before backend changes
+   motivated by UI behavior.
 
-Use `docs/MASTER_BUILD_PLAN.md` as the comprehensive source of truth. It merges
-the active dependency-ordered phase plan, the Textual TUI state, the working
-rules, and the current architecture model. Phases 0 through 16 are complete,
-including frontend audit phases FA-0 through FA-5. Phase 17 is next.
+## Current Documentation Shape
 
-Completed from the master plan:
+- Active docs are concise and current-state oriented.
+- Full completed build-plan detail is archived in
+  `docs/archive/BUILD_PLAN_HISTORY.md`.
+- Full older session history is archived in
+  `docs/archive/SESSION_LOG_HISTORY.md`.
+- Historical tkinter/proof-of-concept planning is archived in
+  `docs/archive/V05_BUILD_PLAN.md`.
+- Completed/lower-priority planning docs are under `docs/archive/plans/`.
+- `docs/DOCS_MIGRATION_NOTES.md` records why docs were moved or collapsed.
 
-- Phase 0: Memory leak fixes.
-- Phase 1: `WorkflowMap.nodes_reachable_from(node_id)`.
-- Phase 2: derived `input_sources` at save/export/duplicate and input-source
-  validation.
-- Phase 3: membank output/input config sections and structure-derived registry.
-- Phase 4: insert-after-highlight editor behavior and no-cascade tombstone
-  deletion.
-- Phase 5: grouped schema fields render as tabs when more than one group exists;
-  simple configs stay flat.
-- Phase 5.5: keyboard navigation hardening and config modal UX (see below).
-- Phase 6: node breakpoints pause globally before execution and resume through
-  the existing pause path.
-- Phase 7: per-node execution timings publish live, render in the TUI, and
-  persist into run history.
-- Phase 8: completion registry and `WaitUntilNode` support cross-branch
-  gating with downstream target filtering in config.
-- Phase 9: `MergeNode` plus counter-style lineage barrier for branch
-  recombination.
-- Phase 10: documentation modernization for current Python/Textual references.
-- Phase 10.5: backend/frontend boundary cleanup — removed unused backend tombstone
-  methods, updated validator message, documented portable workflow fields.
-- FA-0 through FA-5: frontend standardization audit and helper extraction.
-- Phase 13: cursor model foundation and shared command-mode screen mixin.
-- Phase 14: editor key binding remap.
-- Phase 15: editor rework and Quick View I/O summary.
+## Project Status
 
-Recent usability patch (Phase 5.5 — keyboard nav hardening):
+Completed major phases:
 
-- `Ctrl+Q`/`Esc` inside a text field exits edit mode instead of closing the
-  modal. `AttackOfTheNodesApp.check_action` blocks `"back"` while editing.
-- `#node-config-scroll` has `can_focus = False` to prevent focus stealing on
-  click.
-- Memory-bank outputs are count-driven declarations. Each row renders a compact
-  `Output Description:` field plus a bounded multiline `Output:` field for long
-  values.
-- Nav section headers use `nav-section` CSS class; `_nav_widget` tracks the
-  highlighted non-interactive stop; `.nav-highlight` makes it visible.
-- `.generated-form { height: auto; }` — critical CSS fix; `Vertical` collapses
-  to zero height inside `VerticalScroll` without this.
-- Branch/router nodes generate label fields from `output_ports` and hide
-  memory-bank output controls; editor branch rows use the configured labels
-  instead of raw port ids.
-- `_ancestor_visible` filters `display=False` containers from nav list.
-- `scroll_to_widget` called directly on scroll container for reliable scrolling.
-- `frontend/widgets/command_navigation.py` is the single place for command-mode
-  activation, dropdown behavior, and `SelectOverlay._on_key` patching. Do not
-  duplicate Textual overlay handling in individual screens.
-- `SelectOverlay` key patch: `_install_select_overlay_command_bindings()` wraps
-  `SelectOverlay._on_key` at import time so W/S/arrows/E/Ctrl+Q work inside any
-  expanded dropdown without per-screen handlers. Use `commit_highlighted_select`
-  to commit values from outside the overlay.
-- Schema-generated dropdowns should not include Textual's blank `Select` row
-  unless a future schema explicitly requests an optional blank value.
+- Runtime phases 0 through 9.
+- Frontend audit/helper phases FA-0 through FA-5.
+- Documentation modernization and backend/frontend boundary cleanup.
+- Cursor model foundation, key binding remap, editor rework, and File/config
+  polish through Phase 16.
+- Node helper generator and focused generated-node test workflow.
 
-Frontend standardization FA phases (FA-0 through FA-5) completed 2026-06-02:
+Next planned product phase after docs cleanup:
 
-- `frontend/widgets/command_navigation.py` — shared command modal toolkit
-- `frontend/widgets/list_navigation.py` — shared list selector helpers
-- `frontend/widgets/dynamic_sections.py` — checkbox/count-driven section helpers
-- `frontend/notifications.py` — named notification helpers
-- `frontend/widgets/form_generator.py` expanded with `placeholder`, validators,
-  `height`, `language`, and multiselect defaults
+- Phase 17: Node visual identity.
 
-Frontend standardization direction:
+Deferred:
 
-- Normal new nodes should be UI-supported through node metadata:
-  `display_name`, `description`, `category`, ports, `default_config`,
-  `config_schema`, and optional `ui_hints`.
-- Use generic schema/helper extensions before adding custom node-specific config
-  screens.
-- Known recurring UI bug classes are focus drift, hidden widgets in nav lists,
-  scroll containers taking focus, dynamic config rows not remounting, dropdown
-  overlay state persistence, and direct ad hoc `app.notify(...)` copy.
-
-Recent docs pass:
-
-- `docs/README.md` is the docs entry point.
-- `docs/MASTER_BUILD_PLAN.md` is the comprehensive build plan.
-- `docs/PROJECT_KNOWLEDGE.md`, `ARCHITECTURE.md`, `SIGNAL_FLOW.md`, and
-  `FILE_TREE.md` have been refreshed for the current Python/Textual build.
-- `docs/V05_BUILD_PLAN.md` is labeled as historical proof-of-concept history.
-
-Recent completed/in-progress phases:
-
-- Phase 13 (cursor model foundation) is complete.
-- Phase 14 (editor key binding remap) is complete.
-  - `frontend/widgets/cursor_state.py` — lightweight `CursorState` with
-    `mode` ("nav"/"edit"), `set_nav()`, `set_edit()`.
-  - `frontend/widgets/command_screen_mixin.py` — `CommandScreenMixin` with W/S/
-    up/down/E/Enter priority bindings injected via `__init_subclass__` so
-    `DOMNode._merge_bindings` picks them up. Includes `check_action` guard
-    that blocks nav while a text widget is editing, and `_sync_cursor_mode`
-    that updates `app.cursor_state` and the `StatusBar` mode indicator.
-  - `frontend/widgets/status_bar.py` — `set_mode(mode)` method added.
-  - `frontend/app.py` — `cursor_state: CursorState` attribute added.
-  - `SettingsScreen`, `UserInputScreen`, `PathPromptScreen`, `NodeConfigScreen`
-    migrated to inherit `CommandScreenMixin`.
-  - `CommandInput._on_key` calls `_sync_cursor_mode()` on screen after entering
-    edit mode so cursor state stays in sync.
-  - Key Textual constraint discovered: `CommandScreenMixin.BINDINGS` are skipped
-    by `_merge_bindings` (plain Python class, not DOMNode). Fixed by injecting
-    the nav bindings into the concrete subclass's `BINDINGS` in
-    `__init_subclass__`, before `super().__init_subclass__()` calls
-    `DOMNode._merge_bindings()`.
-- Phase 15 (editor rework) is complete. Landed pieces include simplified
-  Quick View text, context-aware Help, `Alias (node_id)` display in editor rows
-  and node config titles, numbered default branch labels, and sparse editor
-  chrome (`f file | o options | h help`).
-- Phase 16 is complete. Landed pieces include File menu name-first workflow
-  rows, loaded-workflow marker, duplicate-name suffixes, picker-first
-  import/export with typed-path Browse fallback, export/import cancel returning
-  to File, vertical config/path-prompt buttons, transient output override
-  fields, fixed Node Config tabs, and the Settings API Keys placeholder.
-- Merge Beacon work is current: `branch_end_node` remains the persisted node
-  type, but the UI calls it Merge Beacon. Beacons render selector rows for
-  jumping to merge branches, stop branch traversal, and Merge config derives
-  branch-close options from live Merge Beacons across nested branch trees.
-- Project layout is current: the active app and docs live under
-  `AttackOfTheNodes/`; docs start at `AttackOfTheNodes/docs/README.md`.
-
-Recently completed:
-- Phase 14: Key binding remap — editor grammar uses W/S or up/down for vertical
-  movement, A/D or left/right for all branch-view cycling, Ctrl+A/Ctrl+D or
-  Ctrl+left/Ctrl+right for incomplete branch cycling, E to edit, I to insert
-  after the highlight, and X/backspace to delete. Ctrl+I add-at-branch-end was
-  removed after review.
-
-Planned future phases (see Section 6 of MASTER_BUILD_PLAN.md for full specs):
-- Phase 17: Node visual identity — per-category colors, per-type glyphs,
-  size-by-category.
-- Phase 18: Acceleration + help rewrite — hold-to-accelerate, context-organized
-  help, regression sweep for nav stops.
-- Phase 19: Nested workflows (built-in) — SubworkflowNode spawning a child
-  supervisor, reusing Phase 9 lineage barrier.
-- Phase 20: Nested workflows (user-created) — dynamic subworkflow registry,
-  publish-workflow-as-node, export dependency policy.
-
-## Read First
-
-- `docs/MASTER_BUILD_PLAN.md` for current architecture, implementation order,
-  contracts, and testing rules.
-- `docs/BACKEND_FRONTEND_BOUNDARY.md` before backend changes motivated by
-  editor/UI behavior.
-- `docs/FRONTEND_AUDIT_BUILD_PLAN.md` before frontend audit or UI
-  standardization work.
-- `docs/SESSION_LOG.md` for completed phase notes.
-- `docs/TUI_DESIGN.md` for current Textual frontend conventions.
-- `docs/PROJECT_BACKLOG.md` for deferred cleanup work.
+- Real AI node execution.
+- Packaging/release hardening.
+- Nested workflow phases 19 and 20.
 
 ## Working Rules
 
-- All new async code should use `backend.utils.try_catch.try_catch`.
+- Do not revert unrelated dirty/untracked files.
+- Use `TASK_INDEX.md` to choose the smallest useful reading set.
+- Ordinary nodes should be metadata-driven and generated through
+  `../aotn_node_helper/` when practical.
 - Backend code must not import from `frontend`.
-- Textual screen-level letter actions that must fire while a list has focus
-  should use `Binding(..., priority=True)`.
-- Run verification from `AttackOfTheNodes/`:
+- Before UI-motivated backend changes, read `BACKEND_FRONTEND_BOUNDARY.md`.
+- Use focused `pytest -k` checks for small fixes; run the full relevant suite
+  before broad runtime/shared UI commits.
+- Update `SESSION_LOG.md` and, for doc moves/collapses,
+  `DOCS_MIGRATION_NOTES.md`.
+
+## Verification Pattern
+
+From `AttackOfTheNodes/`:
 
 ```bash
-python -m compileall -q .
-python tests/test_debug_nodes.py
+../.venv/bin/python -m compileall -q .
+../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "<focused_behavior>"
+```
+
+For docs-only work from the workspace root:
+
+```bash
+git diff --check
+rg -n "<stale-folder-or-phase-pattern>" AttackOfTheNodes/docs AGENTS.md
+find AttackOfTheNodes/docs -type f -name '*.md' | sort
 ```
