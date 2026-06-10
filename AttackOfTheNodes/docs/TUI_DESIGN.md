@@ -363,9 +363,9 @@ frontend/
   statuses, branch summaries, memory summaries, and recent outputs.
 - User input and recovery events now open modal screens and submit back through
   `MasterState.submit_user_input` and `MasterState.submit_recovery_action`.
-- Branch editing now has an editor navigation path: open a multi-output node,
-  arrow down to the `Branch Select` row, press Enter, and choose the output port.
-  Pressing `A` while the selector row is active adds a node to that branch.
+- Branch editing now has an editor navigation path: highlight a multi-output
+  node's selector row, press `E`/Enter, and choose the visible output port.
+  Insert/add flows use the highlighted row as their placement context.
 - Adding a node now keeps editor focus on the node list and selects the newly
   added node. When adding into an existing visible path, the new node is inserted
   between the selected source and its previous downstream target.
@@ -375,9 +375,9 @@ frontend/
   actionable controls, `E` activates the highlighted control, `Esc`/`Ctrl+Q`
   exits active editing or cancels/closes, and text-heavy forms avoid plain
   `Q` as a close binding.
-- Workflow library is wired to load, create, duplicate, and delete workflows
-  through existing persistence and `SaveManager` services. It is available from
-  the editor with `L`, `O`, or global `Ctrl+O`.
+- Workflow library/File behavior is wired to load, create, duplicate, import,
+  export, and delete workflows through existing persistence and `SaveManager`
+  services. It is available from the editor with `F`; settings/options use `O`.
 - Settings are editable from the TUI and persisted through `ConfigurationManager`.
 - Help is available in-app with the current keyboard model.
 - The add-node modal preselects the first visible node type so keyboard focus has

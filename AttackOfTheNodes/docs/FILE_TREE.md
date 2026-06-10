@@ -116,6 +116,7 @@ AttackOfTheNodes/
     SESSION_LOG.md
     SIGNAL_FLOW.md
     TUI_DESIGN.md
+    UI_QUICK_REFERENCE.md
     archive/
       BUILD_PLAN_HISTORY.md
       SESSION_LOG_HISTORY.md

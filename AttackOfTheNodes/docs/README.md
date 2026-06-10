@@ -12,7 +12,7 @@ tkinter/proof-of-concept material lives under `docs/archive/`.
 | If you need to... | Read first | Then read if needed |
 |---|---|---|
 | Add or change a node | `AGENT_START_GUIDE.md`, `TASK_INDEX.md` | `PROJECT_KNOWLEDGE.md`, `ARCHITECTURE.md` |
-| Fix frontend/UI behavior | `TASK_INDEX.md`, `TUI_DESIGN.md` | `BACKEND_FRONTEND_BOUNDARY.md`, `PROJECT_BACKLOG.md` |
+| Fix frontend/UI behavior | `TASK_INDEX.md`, `UI_QUICK_REFERENCE.md` | `TUI_DESIGN.md`, `BACKEND_FRONTEND_BOUNDARY.md`, `PROJECT_BACKLOG.md` |
 | Change backend/runtime behavior | `TASK_INDEX.md`, `ARCHITECTURE.md`, `SIGNAL_FLOW.md` | `PROJECT_KNOWLEDGE.md`, `BACKEND_FRONTEND_BOUNDARY.md` |
 | Continue the roadmap | `AGENT_HANDOFF.md`, `MASTER_BUILD_PLAN.md` | `archive/BUILD_PLAN_HISTORY.md`, `SESSION_LOG.md` |
 | Update docs | `README.md`, `TASK_INDEX.md`, `DOCS_MIGRATION_NOTES.md` | `archive/SESSION_LOG_HISTORY.md` |
@@ -35,6 +35,7 @@ tkinter/proof-of-concept material lives under `docs/archive/`.
 - `ARCHITECTURE.md` — component responsibilities and invariants.
 - `SIGNAL_FLOW.md` — runtime/event flow through backend and frontend.
 - `PROJECT_KNOWLEDGE.md` — compact current-state project knowledge.
+- `UI_QUICK_REFERENCE.md` — short current UI keys and command-mode rules.
 - `TUI_DESIGN.md` — current Textual UI conventions.
 - `FILE_TREE.md` — current tracked project file map.
 - `PROJECT_BACKLOG.md` — deferred cleanup and future project ideas.

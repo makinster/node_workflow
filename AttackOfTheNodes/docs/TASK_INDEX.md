@@ -32,7 +32,7 @@ topology. Ordinary node fields should render from metadata and `config_schema`.
 
 Read:
 
-- `TUI_DESIGN.md`
+- `UI_QUICK_REFERENCE.md`
 - `AGENT_START_GUIDE.md` sections: Keyboard And Modal Rules, When Frontend Edits
   Are Needed
 - `BACKEND_FRONTEND_BOUNDARY.md` if the fix is tempting you toward backend code
@@ -54,6 +54,9 @@ Focused checks:
 
 Use shared helpers before per-screen code: command navigation, list navigation,
 dynamic sections, notifications, and form generation.
+
+Open `TUI_DESIGN.md` only when you need full screen details, Textual detours, or
+layout-level conventions.
 
 ## Change Backend Or Runtime Behavior
 
@@ -107,7 +110,9 @@ Read:
 
 - `AGENT_START_GUIDE.md` sections: Make Node Config Render Correctly, Keyboard
   And Modal Rules
-- `TUI_DESIGN.md` sections: Field Type Mapping, Command Navigation
+- `UI_QUICK_REFERENCE.md`
+- `TUI_DESIGN.md` sections: Field Type Mapping, Command Navigation, only when
+  changing detailed renderer behavior
 
 Likely files:
 

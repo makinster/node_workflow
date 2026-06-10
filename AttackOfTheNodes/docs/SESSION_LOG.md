@@ -12,11 +12,16 @@ overhaul.
   `docs/archive/`.
 - Moved historical proof-of-concept and completed planning docs out of the
   default read path.
+- Added `UI_QUICK_REFERENCE.md` as the short current UI/keybinding summary for
+  routine frontend work, leaving `TUI_DESIGN.md` as the detailed reference.
+- Corrected stale active-doc keybinding references and updated `AGENTS.md` to
+  point agents at the task router.
 - Added `DOCS_MIGRATION_NOTES.md` to explain moved/collapsed docs and archive
   decisions.
 - Verification:
   - `git diff --check`
   - stale-reference `rg` scan from the implementation plan (no matches)
+  - active-doc stale keybinding scan for old add/library shortcuts (no matches)
   - `find AttackOfTheNodes/docs -type f -name '*.md' | sort`
   - `wc -l AttackOfTheNodes/docs/*.md AttackOfTheNodes/docs/archive/*.md AttackOfTheNodes/docs/archive/plans/*.md`
 

@@ -233,7 +233,12 @@ Root Textual application. Created by `main.py` alongside all backend services. S
 
 ### `EditorScreen`
 
-The blueprint view. Shows a `NodeList` (left panel) and a details panel (right). Priority-bound keys: `A` add, `I` insert, `E`/`Enter` edit, `X`/`Backspace` delete, `V` validate, `L`/`O` library, `?` help. `Ctrl+S` save, `Ctrl+R` run at app level.
+The blueprint view. Shows a `NodeList` (left panel) and a details panel
+(right). Priority-bound keys include `W/S` for row movement, `A/D` for branch
+view cycling, `E`/`Enter` to edit or activate selector rows, `I` to insert
+after the highlighted row, `X`/`Backspace` to delete or tombstone, `F` for the
+File/workflow menu, `O` for options, `H` for help, and `V` for validation.
+`Ctrl+S` saves and `Ctrl+R` runs at app level.
 
 Editor-specific topology adapters live here, not in backend nodes. Current
 adapter behavior includes:

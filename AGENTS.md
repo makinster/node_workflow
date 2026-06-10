@@ -4,10 +4,12 @@ This workspace contains AttackOfTheNodes, a Python workflow engine and Textual t
 
 ## Documentation Entry Point
 
-Start with `AttackOfTheNodes/docs/README.md`. It gives the current read order
-and marks which older reference docs may still contain historical
-Chrome-extension or tkinter language. Before making backend changes for
-editor/UI behavior, read `AttackOfTheNodes/docs/BACKEND_FRONTEND_BOUNDARY.md`.
+Start with `AttackOfTheNodes/docs/README.md`, then use
+`AttackOfTheNodes/docs/TASK_INDEX.md` to choose the minimum docs and likely
+files for the current task. Historical Chrome-extension and tkinter material is
+archived under `AttackOfTheNodes/docs/archive/`. Before making backend changes
+for editor/UI behavior, read
+`AttackOfTheNodes/docs/BACKEND_FRONTEND_BOUNDARY.md`.
 
 ## Mental Model
 

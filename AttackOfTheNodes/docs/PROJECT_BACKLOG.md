@@ -4,8 +4,8 @@
 
 The docs folder previously had split-brain history from the Chrome-extension
 concept, tkinter prototype, and current Textual TUI. Phase 10 refreshed the
-active reference docs and labeled the remaining historical proof-of-concept
-material.
+active reference docs; the 2026-06-09 documentation overhaul then made the docs
+task-first and archived deep history.
 
 `docs/README.md` is now the entry point, `TASK_INDEX.md` is the task router,
 and `MASTER_BUILD_PLAN.md` is the concise roadmap.
@@ -22,6 +22,8 @@ Completed cleanup:
   standardization/debug-node files.
 - Archived historical tkinter roadmap material in `archive/V05_BUILD_PLAN.md`
   so it is available as history without sitting in the default read path.
+- Added `UI_QUICK_REFERENCE.md` so routine frontend fixes can start from a
+  short current keybinding/config summary instead of the full TUI design file.
 
 Ongoing rule: implementation phases should keep `SESSION_LOG.md` current and
 update `MASTER_BUILD_PLAN.md`, `TASK_INDEX.md`, or `AGENT_HANDOFF.md` when

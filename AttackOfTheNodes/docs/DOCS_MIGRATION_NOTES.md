@@ -9,6 +9,7 @@ future agents understand why the docs tree changed.
 |---|---|---|---|
 | `README.md` | `README.md` | Rewritten | Make the docs entry point a task router instead of a flat file list. |
 | n/a | `TASK_INDEX.md` | Added | Provide task type -> minimum docs -> likely files -> focused checks. |
+| n/a | `UI_QUICK_REFERENCE.md` | Added | Summarize current UI keys and command-mode rules so agents do not need the full 500-line TUI design doc for routine UI fixes. |
 | `MASTER_BUILD_PLAN.md` | `archive/BUILD_PLAN_HISTORY.md` | Full copy archived | Keep completed phase detail available without forcing agents to read 1000+ lines by default. |
 | `MASTER_BUILD_PLAN.md` | `MASTER_BUILD_PLAN.md` | Collapsed | Active file now contains current status, next roadmap, and links to history. |
 | `SESSION_LOG.md` | `archive/SESSION_LOG_HISTORY.md` | Full copy archived | Preserve detailed historical session notes while keeping active log small. |
