@@ -4,6 +4,35 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-11 — Node Standards Corrections: MemoryBank Model, Mutual Exclusion, JSON Payloads
+
+- Corrected NODE_STANDARDS.md and PROJECT_KNOWLEDGE.md on three points:
+  1. MemoryBank is always the underlying store for both transient and vault
+     data. Transient uses ephemeral `(source_node_id, port_name)` keys; vault
+     uses stable user-defined keys. The distinction is addressing scope, not
+     separate storage systems.
+  2. Transient output and vault write are not mutually exclusive. A node can
+     write the same result to both simultaneously. The only mutual exclusion is
+     "send my result as transient" vs "forward incoming transient unchanged
+     (dead-drop passthrough)" — only one can occupy the transient port.
+  3. Transient payloads are JSON and can carry any serializable value including
+     large strings and LLM responses. The constraint is scope (path-scoped,
+     not cross-branch), not size. Mentioned incremental document modification
+     as a valid transient use case for LLM output.
+- Clarified that active file I/O sessions are managed by the backend RunSession;
+  files can serve as both inputs and outputs.
+- Added "Later Project — Backend LLM Chat Session Persistence" to
+  PROJECT_BACKLOG.md: session handles in RunSession, opt-in via session_key,
+  shared history across nodes with the same key, validator warning if session
+  not available.
+- Updated docs: NODE_STANDARDS.md (input model note, output model mutual
+  exclusion, data type scope, payloads tab diagram, LLM example notes,
+  authoring checklist), PROJECT_KNOWLEDGE.md (Data Flow Patterns rewrite),
+  PROJECT_BACKLOG.md (new LLM chat session backlog entry).
+- No code changes — documentation only.
+- Verification:
+  - `git diff --check`
+
 ## 2026-06-11 — Node Design Standards Document
 
 - Created `NODE_STANDARDS.md` as the authoritative reference for node I/O

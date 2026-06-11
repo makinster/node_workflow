@@ -270,3 +270,33 @@ Recommended cleanup:
 - Add de-duplication for repeated keyboard mistakes such as "No node selected".
 - Keep the helper frontend-only; backend services should continue publishing
   structured events, not UI copy.
+
+## Later Project — Backend LLM Chat Session Persistence
+
+Goal: allow a workflow to maintain an active LLM chat session across multiple
+node visits, preserving message history so the model retains context between
+calls within a run.
+
+Use case: workflows that make several incremental calls to the same LLM for
+iterative tasks — refining a document, multi-step reasoning, or accumulating
+a conversation — benefit from the model seeing prior turns rather than treating
+each node call as a fresh prompt.
+
+Design direction:
+
+- Session handles should live in `RunSession` alongside file handles. A chat
+  session is a per-run resource: created on first use, reused by later nodes
+  in the same run, and released on run completion.
+- Nodes opt into session reuse via a config flag (e.g., `use_chat_session: true`
+  and a `session_key` that names the session within the run). Nodes without
+  this flag behave as stateless single-call LLM nodes.
+- Message history is stored in the session object in `RunSession`, not in
+  `MemoryBank`. `MemoryBank` holds the final outputs; the chat session holds the
+  intermediate turn history that the LLM provider needs.
+- Multiple nodes using the same `session_key` in a run share one history.
+  Nodes with different keys maintain independent sessions.
+- The validator should warn if a node declares `use_chat_session: true` but
+  `RunSession` is not available in the execution context.
+- Keep the LLM provider client backend-only. Frontend nodes declare the session
+  intent through metadata; the backend resolves the provider and manages
+  the connection.

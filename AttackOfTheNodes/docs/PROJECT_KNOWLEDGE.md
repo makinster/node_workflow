@@ -173,45 +173,42 @@ metadata without changing runtime semantics.
 Understanding when each data path is used is important for reasoning about
 node deletions and workflow integrity.
 
-**Transient payloads (dead-drop):**
+**MemoryBank is the single store for all runtime data.** Both transient and
+vault data live in the same `MemoryBank`. The distinction is addressing scheme,
+not separate storage.
 
-Transient payloads are the data passed directly from one node to the next along
-an execution path. They are stored in `MemoryBank` keyed as
-`(source_node_id, port_name)` and are consumed by the immediately downstream
-node's input resolution. Transient payloads are primarily used for conditional
-logic: booleans, counters, branch-decision flags, and other small values that
-flow along a single execution path. They are scoped to a single path and are
-not shared across branches.
+**Transient data** is keyed by `(source_node_id, port_name)`. It is written by
+a node after execution and consumed by the immediately downstream node's input
+resolution. The key is path-scoped: a parallel branch running concurrently
+cannot look up another branch's transient key, and timing must be correct (the
+write must have occurred before the read). Transient payloads are JSON, so they
+can carry any serializable value — booleans, numbers, strings, LLM responses,
+structured objects. The practical constraint is scope, not size.
 
-The "dead-drop" option lets a branch-spawning or conditional node write a small
-payload that a specific downstream node can pick up without requiring a live
-connection through every intermediate node. This is the primary way conditional
-data is passed to a node deeper in a branch that needs it.
+The dead-drop option lets a node pass its transient payload through to the next
+node unchanged (forwarding without modifying), or lets a branch-origin node
+seed a downstream node with a specific value without requiring a live transient
+connection through every intermediate node.
 
-**Vault (MemoryBank persistent store):**
+**Vault data** uses stable, user-defined string keys declared through
+`membank_outputs` / `membank_inputs`. Any node in the run that knows the key
+can read it, including nodes in other branches or much further downstream. Vault
+is preferred for data that must cross branch boundaries, be accumulated over
+time, or be accessed by nodes that are not adjacent in the execution chain.
 
-Large strings, file contents, AI responses, accumulated data, and any value
-that needs to be shared across branches or accumulated over time go through the
-vault. The vault is the per-run shared whiteboard — all supervisors read and
-write it under named variable keys declared through `membank_outputs` /
-`membank_inputs`. File I/O nodes and AI nodes primarily interact with the vault.
+Transient and vault are not mutually exclusive as outputs. A node can write the
+same result to both a transient port (for the immediately next node) and a vault
+key (for other branches or later nodes) at the same time.
 
 **Implication for node deletions:**
 
-Because most heavyweight data travels through the vault rather than transient
-payloads, deleting a single node is a lower-severity operation than it might
-appear. Many downstream nodes will continue to read from the vault normally
-regardless of the deleted node's transient connections. The tombstone sits in
-the execution path, blocking that path from running, but the vault state that
-surrounding nodes depend on is often independent of the deleted node's transient
-output.
-
-This also means restore-validation connection failures on transient ports are
-frequently non-critical: the downstream node may not have been using that
-transient payload at all, or may be reading the same data from the vault anyway.
-The frontend alert should surface the information but not alarm the user — a
-restored node with some transient connections missing is usually a minor repair,
-not a broken workflow.
+Many downstream nodes read from the vault directly and are unaffected by
+losing a transient connection. Deleting a single node is a lower-severity
+operation than it might appear. The tombstone blocks the execution path at that
+point, but vault state that surrounding nodes depend on is often independent of
+the deleted node's transient output. Restore-validation failures on transient
+ports are frequently non-critical and should be surfaced as informative alerts,
+not blockers.
 
 **Single-node delete rule:**
 
