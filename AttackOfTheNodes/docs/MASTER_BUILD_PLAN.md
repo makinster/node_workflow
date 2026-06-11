@@ -1,6 +1,6 @@
 # AttackOfTheNodes Master Build Plan
 
-**Last updated:** 2026-06-10
+**Last updated:** 2026-06-11
 **Project root:** `AttackOfTheNodes/`
 **Runtime:** Python 3.14, Textual 8.2.7, asyncio, JSON persistence
 
@@ -184,8 +184,17 @@ Focused checks:
   supervisor from one node.
 - **Phase 20 — User-created subworkflow nodes.** Publish workflows as reusable
   nodes with dependency/export policy.
+- **Typed vault entries and AI session handles.** Add `type` field to
+  `MemoryBank` vault entries (`string`, `number`, `boolean`, `file`,
+  `ai_session`). Add `get_resource(key)` to `RunSession`. Add config-driven
+  "keep active AI session" output to LLM nodes (no separate Chat Session Node).
+  Extend input source dropdowns to type-filter by declared input type. Extend
+  the validator with the error/warning split for typed vault reference ordering.
+  Architecture finalized 2026-06-11; see `PROJECT_BACKLOG.md` and
+  `NODE_STANDARDS.md` for the full design.
 - **Deferred AI integration.** Implement real AI node execution once UI and
-  node authoring conventions stabilize.
+  node authoring conventions stabilize. Typed vault entry support is a
+  prerequisite for AI session continuation.
 
 ## Standing Implementation Rules
 

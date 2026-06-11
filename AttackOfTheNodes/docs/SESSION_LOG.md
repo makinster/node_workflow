@@ -4,6 +4,41 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-11 — Typed Vault Entries and AI Session Architecture
+
+Architecture design session only. No runtime, frontend, or test changes.
+
+- **Typed vault entries.** Decided that `MemoryBank` vault entries will carry
+  a `type` field alongside their value. Types: `string`, `number`, `boolean`,
+  `file`, `ai_session`. Simple types remain pure JSON. `file` and `ai_session`
+  entries store a type tag and a string reference key; the actual Python handle
+  lives in `RunSession` and is retrieved via `context.run_session.get_resource
+  (ref_key)`.
+- **RunSession as handle owner.** File handles and AI session objects are not
+  JSON-serializable and must live in `RunSession`, not `MemoryBank`. `RunSession`
+  already exists; the only addition needed is `get_resource(key)` to complement
+  `register_resource(key, handle)`.
+- **AI session as config-driven LLM node output.** No separate Chat Session
+  Node. Any LLM node can opt into session persistence via a "keep active AI
+  session" checkbox and a user-supplied session key. The first node with a given
+  key starts the session and writes `(type: ai_session, ref_key)` to the vault;
+  downstream nodes that select the same vault key continue the session. Message
+  history stays in the session object in `RunSession`.
+- **Input dropdown type filtering.** Config dropdowns that select a vault source
+  filter by declared input type. Only `file` entries appear for file inputs;
+  only `ai_session` entries appear for LLM continuation inputs.
+- **Validator error/warning split for vault key ordering.** Error when no node
+  in the workflow declares the key at all. Warning when the key is declared on
+  a parallel branch with unguaranteed execution order. The validator must not
+  infer timing from node count, type, or branch depth. Applies uniformly across
+  all vault types.
+- **Docs updated:** `PROJECT_BACKLOG.md` (new Near-Term section, extended
+  RunSession remaining notes), `PROJECT_KNOWLEDGE.md` (RunSession backend
+  component entry, new Data Flow Patterns section), `NODE_STANDARDS.md`
+  (created; typed vault outputs, AI session config-driven pattern, validator
+  rules), `MASTER_BUILD_PLAN.md` (new Later Roadmap bullet), `ARCHITECTURE.md`
+  (RunSession subsection).
+
 ## 2026-06-10 — Two-Line Selector Rows, Editor Selector Spacing
 
 - Node selector rows are now two lines: line one is the display name plus the
