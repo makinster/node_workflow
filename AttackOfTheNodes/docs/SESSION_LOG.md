@@ -4,6 +4,42 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-11 — Tombstone Design Decision: Backend Type Stays
+
+- Reviewed the Phase B tombstone decommission plan and decided to reverse it.
+  `tombstone_node` will remain an intentional registered backend type, not a
+  cleanup target.
+- **What we had:** Phase A (done) moved frontend deletes to a visual-overlay
+  model where saves materialized deleted nodes into `branch_end_node` records
+  with a `_system_role: "deleted_node_branch_end"` marker. This worked with
+  zero backend changes but had a key limitation: it is session-scoped. Saving
+  after a delete, closing, and reopening loses undo context. The
+  `branch_end_node` port shape also limits how much original connection data
+  the validator can surface.
+- **Why we switched:** The save file is the only persistence layer. Keeping
+  full original node data (type, alias, config, input connections, output
+  connections) in a `tombstone_node` record gives: (1) undo that survives
+  save/reload, (2) validator errors that name the original node and describe
+  its original connections as a repair guide, (3) meaningful port-validity
+  errors from the stored original port shape.
+- **New contract:** tombstone config stores `original_type`, `original_alias`,
+  `original_config`, `original_inputs`, `original_outputs`. The validator
+  tombstone error block should be extended to surface the original connection
+  context. The node selector already excludes tombstone. Execution is already
+  blocked on workflows containing tombstones.
+- **Phase B redefined:** instead of decommissioning tombstone, Phase B now
+  updates `editor_workflow_adapter.py` to write `tombstone_node` on save
+  (not `branch_end_node`), migrates existing `_system_role` marked records on
+  load, extends the validator error block, and confirms `editor_only` flagging
+  in `node_identity.py`.
+- Updated docs: `BACKEND_FRONTEND_BOUNDARY.md` (major rewrite of Phase B and
+  Deleted-Node Save Contract sections), `PROJECT_BACKLOG.md` (Phase B
+  redefined), `MASTER_BUILD_PLAN.md` (added Phase 10.6), `ARCHITECTURE.md`
+  (tombstone table row and description), `AGENTS.md` (tombstone footnote).
+- No code changes in this session — documentation only.
+- Verification:
+  - `git diff --check`
+
 ## 2026-06-10 — Two-Line Selector Rows, Editor Selector Spacing
 
 - Node selector rows are now two lines: line one is the display name plus the

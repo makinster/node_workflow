@@ -31,27 +31,35 @@ roadmap status or task routes change.
 
 ## Planned Project — Backend / Frontend Boundary Cleanup
 
-The backend should remain reusable for future CLI, web, or API frontends. The
-current Textual editor introduced tombstone behavior that is useful visually,
-but not inherently an execution-engine concept.
+The backend should remain reusable for future CLI, web, or API frontends.
 
 Use `BACKEND_FRONTEND_BOUNDARY.md` as the plan. Audit refreshed 2026-06-10:
 Phase A (frontend tombstone adapter) is done, and `replace_with_tombstone()`,
 tombstone-specific `replace_node_type()`, and backend-written
-`_timing_invalidated` are already gone. New frontend deletes are soft editor
-overlays that materialize to marked `branch_end_node` records on save.
+`_timing_invalidated` are already gone.
 
-Remaining cleanup (Phase B — gated until Phase 17 selector/editor work
-settles; see the coordination gate in `BACKEND_FRONTEND_BOUNDARY.md`):
+**Tombstone design decision (2026-06-11):** `tombstone_node` was previously
+targeted for Phase B decommission (remove from backend, replace with generic
+unknown-type error). That plan has been reversed. `tombstone_node` is now an
+intentional backend type — the save-persistent deleted-node record. Saves write
+a tombstone with full original node data (type, alias, config, connections)
+instead of materializing to a `branch_end_node` with a `_system_role` marker.
+This gives undo-after-reload, richer validator error messages, and meaningful
+port-validity errors from the original port shape. Phase B decommission is
+cancelled. See `BACKEND_FRONTEND_BOUNDARY.md` for the full rationale and
+tombstone config contract.
 
-- Deregister `tombstone_node` from `backend/nodes/__init__.py` and delete the
-  class, once old-save handling for legacy `tombstone_node` records is
-  decided.
-- Replace tombstone-specific backend validator copy with the generic
-  unknown-type error.
-- Remove the `tombstone_node` entry from `backend/node_identity.py`.
-- Decide how old saves containing `tombstone_node` load (adapter migration
-  vs. unknown-type placeholder rendering).
+Remaining Phase B work (redefined — frontend migration):
+
+- Update `editor_workflow_adapter.py` to write `tombstone_node` (with full
+  original-data config) on save instead of `branch_end_node` with
+  `_system_role` marker.
+- Migrate any existing saves with `_system_role: "deleted_node_branch_end"`
+  `branch_end_node` records to `tombstone_node` format on load.
+- Extend the validator's tombstone error block to surface original input and
+  output connection context from the tombstone config.
+- Confirm `node_identity.py` marks tombstone with `editor_only: True` so
+  non-editor frontends can filter it.
 - Decide whether layout metadata such as `position` and navigation metadata
   such as `bookmarked` belong in portable workflow saves or editor sidecars
   (Phase C).

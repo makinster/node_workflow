@@ -1,6 +1,6 @@
 # AttackOfTheNodes Master Build Plan
 
-**Last updated:** 2026-06-10
+**Last updated:** 2026-06-11
 **Project root:** `AttackOfTheNodes/`
 **Runtime:** Python 3.14, Textual 8.2.7, asyncio, JSON persistence
 
@@ -82,7 +82,8 @@ or node metadata changes for this phase.
 | 9 | Merge dynamic list + lineage barrier | Done |
 | FA-0..FA-5 | Frontend standardization helpers | Done |
 | 10 | Documentation modernization | Done |
-| 10.5 | Backend/frontend boundary cleanup | Done |
+| 10.5 | Backend/frontend boundary cleanup (Phase A) | Done |
+| 10.6 | Tombstone design decision + Phase B migration | Planned |
 | 11 | Real AI node execution | Deferred |
 | 12 | Packaging and release hardening | Deferred |
 | 13 | Cursor model foundation | Done |

@@ -43,12 +43,10 @@ Backend changes that should stay:
   execution semantics, not UI behavior.
 - Node metadata/category/schema validation: frontend-neutral node contract.
 
-Backend changes to migrate or quarantine:
+Backend changes that stay (design decision 2026-06-11):
 
-- `tombstone_node` as an executable registered backend node (still
-  registered; see Phase B status below).
-- Validator messages that talk about opening a tombstone in the editor
-  (`backend/validator.py`, tombstone-stub error block).
+- `tombstone_node` remains a registered backend type by design. See the
+  Tombstone Node section below for the rationale and new contract.
 
 Already migrated (audit refreshed 2026-06-10):
 
@@ -76,39 +74,75 @@ For new editor deletes, the adapter no longer writes
 `tombstone_node` registration remains only as a compatibility/decommission
 target until old-save loading behavior is decided.
 
-### Boundary Phase B — Backend Tombstone Decommission (remaining)
+### Tombstone Node — Intentional Backend Type (design decision 2026-06-11)
 
-Remaining backend tombstone footprint:
+`tombstone_node` was previously targeted for Phase B decommission. After design
+review, that plan was reversed. The tombstone is now an intentional registered
+backend type, not a cleanup target.
 
-- `backend/nodes/debug/tombstone_node.py` — the executable class.
-- `backend/nodes/__init__.py` — import and `ALL_NODE_CLASSES` registration.
-- `backend/validator.py` — tombstone-specific error block ("Deleted node
-  stub (was: ...) — replace with a valid node type").
-- `backend/node_identity.py` — Phase 17 identity entry for
-  `tombstone_node`.
+**What we had and why we're switching:**
 
-Decommission steps, in order:
+Phase A (done) established a visual-delete model where saves materialized
+deleted nodes into `branch_end_node` records with a `_system_role:
+"deleted_node_branch_end"` marker. This works for session-scoped undo and
+requires zero backend changes. The limitation is that the save file is the only
+persistence layer in this project. If a user saves after a delete, closes, and
+reopens, the frontend undo context is gone. The materialized `branch_end_node`
+can carry restore data, but the connection-level context and the ability to
+surface meaningful validator errors are limited by the `branch_end_node` port
+shape.
 
-1. Preserve or migrate old save files containing `tombstone_node`, either by
-   converting them to frontend deleted-node overlays on load or by rendering
-   unknown types as replaceable placeholders.
-2. Remove `TombstoneNode` from `backend/nodes/__init__.py` registration and
-   delete `backend/nodes/debug/tombstone_node.py`.
-3. Replace the validator's tombstone-specific block with the generic
-   unknown-node-type error (already produced by the existing type check);
-   the frontend can map that generic error back to placeholder UI copy.
-4. Remove the `tombstone_node` entry from `backend/node_identity.py`.
+**The tombstone contract going forward:**
 
-Coordination gate: do not start Phase B while Phase 17 selector/editor work
-is in flight. The decommission touches `node_identity.py` (Phase 17 metadata),
-changes which types appear in `NodeFactory.get_node_types_metadata()` (the
-selector's data source), and changes editor placeholder rendering inputs.
-There are ~26 tombstone references in `tests/test_debug_nodes.py` that will
-need a coordinated sweep.
+`tombstone_node` is the save-persistent record of a deleted node. When a node
+is deleted and the workflow is saved, the tombstone stores the complete original
+node data in its config so that:
 
-Known wart until Phase B lands: because `tombstone_node` is registered, it
-still appears in node-type metadata, though the selector now filters it from
-the user-facing add list.
+1. **Undo survives save/reload.** Restoring a tombstone swaps it back to the
+   original type with original alias, config, input connections, and output
+   connections fully intact. The user can reload a workflow and still undo a
+   delete from a previous session.
+2. **The validator surfaces connection context.** Rather than a generic
+   unknown-type error, the tombstone error block reports the original node name,
+   its original inputs, and its original output targets — giving users a repair
+   guide, not just an identifier.
+3. **Dangling connections remain meaningful.** Because the tombstone holds the
+   original port declarations, port-validity checks can describe exactly which
+   connections broke and why.
+
+**Tombstone config shape:**
+
+```json
+{
+  "original_type": "logger_node",
+  "original_display_name": "Trace",
+  "original_alias": "Trace",
+  "original_config": { "...full config dict..." },
+  "original_inputs": [ "...connection records..." ],
+  "original_outputs": [ "...connection records..." ]
+}
+```
+
+**Boundary rules for tombstone:**
+
+- `tombstone_node` is execution-blocked. The validator must always flag it as
+  an error. `MasterState` / `Supervisor` must refuse to run a workflow
+  containing tombstones (this is already enforced).
+- The backend may register this type because it is part of the portable
+  save-file format, not Textual-specific behavior. A CLI runner or API frontend
+  consuming save files encounters the same tombstone records and can handle
+  them with the same generic error path.
+- `node_identity.py` should mark tombstone with `editor_only: True` (or an
+  equivalent flag) so non-editor frontends can filter it from their node lists.
+- The node selector must always exclude tombstone from the user-facing add list
+  (this is already enforced in `NodeSelectorScreen`).
+
+**Validator follow-up work:**
+
+The current tombstone error in `validator.py` reports `original_display_name`
+and `original_type`. It should be extended to surface the original input
+sources and output targets from the tombstone config so the validator output
+reads as a full repair guide.
 
 ### Boundary Phase C — Editor Metadata Policy
 
@@ -126,68 +160,42 @@ Candidates for editor-only metadata:
 - Possibly `position` and `bookmarked`, unless they are intentionally part of
   the portable workflow format.
 
-## Deleted-Node Save Contract (audited 2026-06-10)
+## Deleted-Node Save Contract (revised 2026-06-11)
 
-The visual-deleted-node model: deleting is frontend-only while editing (the
-original node data stays in memory under a frontend overlay). On save, the
-frontend materializes each deleted visual row into an ordinary
-`branch_end_node` record whose config carries a marker:
+Deleting a node in the editor is visual-only while editing — the original node
+data stays live in `WorkflowMap` under a frontend overlay. On save, the
+frontend materializes each deleted visual row into a `tombstone_node` record
+whose config stores the full original node data (see tombstone config shape
+above).
 
-```json
-{
-  "_system_role": "deleted_node_branch_end",
-  "deleted_node": { "...original type/alias/config/ports..." }
-}
-```
+After load, the frontend detects `tombstone_node` records and renders them as
+deleted-node rows with restore/replace/permanent-delete actions.
 
-After load, the frontend renders marked nodes as
-`Deleted node: <alias> (<node type>)` with delete/undo/new-node actions,
-hiding undo when `deleted_node` restore data is missing.
+**Why tombstone_node instead of branch_end_node:**
 
-Audit result: **this works today with zero backend changes.** Findings:
+The previous plan (2026-06-10 audit) used `branch_end_node` with a
+`_system_role` marker because it required zero backend changes. That approach
+has been superseded by the design decision to keep `tombstone_node` as an
+intentional backend type. The tombstone format is cleaner: it is self-describing
+(the type itself signals "deleted node"), it carries the original port shape so
+port-validity errors remain meaningful, it supports undo-after-reload natively,
+and the validator can surface richer repair context from the stored original
+connection data.
 
-- **SaveManager preserves arbitrary config.** Save, export, and duplicate
-  all pass node config through `deepcopy` and a JSON round-trip with no
-  schema filtering. Import rewrites only top-level `id`/`name`. Any
-  JSON-serializable config keys survive.
-- **WorkflowMap preserves the marker.** `load_data` deepcopies nodes,
-  `save`/`get_workflow_data_for_save` write `_nodes` through unmodified, and
-  `update_node_config` stores the dict as given. `persistence.py` is raw
-  JSON. No new persistence code needed.
-- **Config must carry the marker — not a top-level save key.** Both
-  `WorkflowMap.save` and `get_workflow_data_for_save()` emit only
-  `id`/`name`/`nodes`, so any extra top-level key (e.g. `editor_state`)
-  is silently dropped on the next save. The node-config marker is the
-  correct vehicle.
-- **Validator accepts extra config keys.** `validate_workflow` never
-  diffs config against `config_schema` and `branch_end_node` declares an
-  empty schema, so `_system_role`/`deleted_node` are ignored. Caveat: keep
-  the original node's `membank_inputs`/`membank_outputs` nested inside
-  `deleted_node`, not at the top level of the materialized config —
-  top-level membank keys are validated and would produce spurious errors.
-- **Execution stops safely with no outgoing connection.** `BranchEndNode`
-  signals plain data; the supervisor then resolves the next node via the
-  `default` port, gets `None`, and terminates the branch cleanly. Merge
-  barriers do not deadlock: `MasterState._account_for_branch_termination`
-  removes terminated branches from pending merge groups. Materialization
-  MUST drop the node's outgoing connections — if one is left in place,
-  execution continues downstream silently.
-- **Port-shape caveat.** `branch_end_node` declares exactly `input` /
-  `default`. Surviving connections that reference any other port name
-  (e.g. a deleted Branch node's `path_a`, or inbound `path_1` on a deleted
-  Merge) fail the validator's port-validity check as errors, making the
-  workflow unrunnable until resolved. Materialization should rewrite or
-  drop non-matching connections, or accept that multi-port deletions
-  produce blocking validation errors rather than quiet stops.
-- **Downstream nodes become unreachable warnings.** Dropping the outgoing
-  connections leaves the formerly-downstream section flagged by the
-  existing loose-node warning — useful signal, not a blocker.
+The `branch_end_node` materialization path and the `_system_role:
+"deleted_node_branch_end"` convention are superseded. Any existing saves that
+contain marked `branch_end_node` records should be migrated to `tombstone_node`
+on next load.
 
-Future (optional, not required for the frontend plan): a validator warning
-for marked nodes is an ~8-line block — when `type == "branch_end_node"` and
-`config._system_role == "deleted_node_branch_end"`, append a warning such as
-"Deleted node placeholder will stop this branch during execution," and
-optionally a second check that `deleted_node` restore data is present.
+**Frontend implementation notes:**
+
+- The frontend adapter (`editor_workflow_adapter.py`) should write
+  `type: "tombstone_node"` with the full original-data config on save, not
+  `branch_end_node`.
+- The node selector already filters tombstone from the user-facing add list.
+- The validator's tombstone error block should be extended to report original
+  input and output connection context from the stored config.
+- Execution is already blocked on workflows containing tombstones.
 
 ## Review Checklist
 
