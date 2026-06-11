@@ -16,6 +16,10 @@ the links in `docs/README.md`.
 
 ## Add A New Node
 
+- Read `NODE_STANDARDS.md` first. It defines the standard input source model
+  (Upstream / Vault / Configured), output routing model (Transient / Dead-drop /
+  Vault write), dynamic form rules, data type scope, and includes reference
+  examples for a File instance node and a Basic LLM node.
 - Prefer the helper-first flow for ordinary nodes:
   - Write a spec in `aotn_node_helper/specs/<node_type>.yaml`.
   - Run `../.venv/bin/python ../aotn_node_helper/create_node.py ../aotn_node_helper/specs/<node_type>.yaml`

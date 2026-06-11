@@ -4,6 +4,42 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-11 — Node Design Standards Document
+
+- Created `NODE_STANDARDS.md` as the authoritative reference for node I/O
+  design before authoring any new node type.
+- Documents the standard input source model: three mutually exclusive options
+  per input (Upstream/transient, Vault, Configured). Selecting one greys out
+  the other two in the form. Configured activates the matching Parameters tab
+  field; Upstream or Vault selection greys that field out.
+- Documents the standard output routing model: Transient output (send result
+  downstream), Dead-drop passthrough (forward incoming payload unchanged,
+  default for most nodes), and Vault write (save result under a named key,
+  independent of transient/dead-drop choice). Transient and dead-drop are
+  mutually exclusive per port; Vault write is independent.
+- Documents data type scope: transient payloads carry only lightweight
+  conditional data (bools, counters, flags); large strings, document text, and
+  AI responses travel through the Vault or file I/O.
+- Documents the standard Source / Parameters / Payloads / Connections tab
+  structure with UI behavior rules for conditional field greying.
+- Includes two reference examples:
+  - File instance node: file path from upstream/vault/configured (mutually
+    exclusive); bool transient output (success/failure); optional Vault write
+    for error messages.
+  - Basic LLM node: prompt from upstream/vault/configured (mutually exclusive);
+    document/context from upstream or vault only (no configured option);
+    dead-drop passthrough on by default; Vault write on by default and cannot
+    be disabled unless transient output is active.
+- Includes an authoring checklist: inputs, outputs, conditional fields, data
+  types, mutual-exclusion rules, required vs optional Vault writes, and
+  expected downstream pattern.
+- Wired into `README.md` (task table and Read-First Files), `TASK_INDEX.md`
+  (Add Or Change A Node route), and `AGENT_START_GUIDE.md` (Add A New Node
+  section).
+- No code changes — documentation only.
+- Verification:
+  - `git diff --check`
+
 ## 2026-06-11 — Tombstone Delete Semantics And Payload Design Context
 
 - Clarified that node deletion is always single-node and non-cascading.
