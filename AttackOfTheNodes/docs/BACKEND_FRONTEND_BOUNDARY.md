@@ -144,6 +144,61 @@ and `original_type`. It should be extended to surface the original input
 sources and output targets from the tombstone config so the validator output
 reads as a full repair guide.
 
+**Tombstone restore — connection validation and partial restore:**
+
+Restoring a tombstone is not a simple type-swap. Between the time a node was
+deleted and the time a user triggers restore, the surrounding workflow may have
+drifted. Three categories of drift can make stored connections invalid:
+
+1. **Upstream output drift.** The node that originally fed into the deleted
+   node may have had its output port removed, renamed, or its dead-drop payload
+   type changed. The stored `original_inputs` connection records the source node
+   id and port name. If the source node no longer exists, or no longer declares
+   that output port, the connection cannot be safely restored.
+
+2. **Downstream input drift.** The node that originally received output from
+   the deleted node may have changed its expected input port, or the port may
+   now be occupied by a different source. The stored `original_outputs`
+   connection records the target node id and port name. If the target node no
+   longer exists, no longer declares that input port, or that input port already
+   has a connection from another node, the connection cannot be safely restored.
+
+3. **Memory bank drift.** The deleted node may have declared `membank_inputs`
+   (variables it read). If no remaining node in the workflow now declares those
+   same variable names in `membank_outputs`, the membank input is broken. The
+   deleted node's own `membank_outputs` are less risky — restoring re-establishes
+   them — but downstream nodes that depended on those outputs should be checked
+   for continued validity.
+
+**Restore procedure (frontend adapter):**
+
+1. Always restore the node type, alias, and config from tombstone data. The node
+   itself is never blocked by connection drift.
+2. For each stored input connection (`original_inputs`): verify the source node
+   exists in the current workflow AND still declares the referenced output port.
+   If both checks pass, reconnect. If either fails, leave the input port
+   unconnected and record the failure.
+3. For each stored output connection (`original_outputs`): verify the target
+   node exists AND still declares the referenced input port AND that port is not
+   already occupied by another source connection. If all checks pass, reconnect.
+   If any check fails, leave the output port unconnected and record the failure.
+4. For each stored `membank_inputs` entry: check whether any surviving node
+   declares that variable in `membank_outputs`. If not, restore the declaration
+   anyway (the user can repair it) but include it in the alert.
+5. After restore, if any connections could not be re-established, surface a
+   frontend alert with two sections:
+   - **Input connection errors:** list each failed input by original source node
+     alias/id and port name, with the reason (source gone / port gone).
+   - **Output connection errors:** list each failed output by original target
+     node alias/id and port name, with the reason (target gone / port gone /
+     port already occupied).
+   - **Memory input warnings:** list any membank input variables whose declared
+     source is no longer present in the workflow.
+6. Partial restores are valid. A node restored with some connections missing is
+   better than a tombstone — the user can see what is wired and what is not, and
+   the validator will flag the unresolved inputs as loose ends rather than a
+   tombstone error.
+
 ### Boundary Phase C — Editor Metadata Policy
 
 Decide how editor-only fields are stored:

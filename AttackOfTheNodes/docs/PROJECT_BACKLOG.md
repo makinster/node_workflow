@@ -60,9 +60,46 @@ Remaining Phase B work (redefined — frontend migration):
   output connection context from the tombstone config.
 - Confirm `node_identity.py` marks tombstone with `editor_only: True` so
   non-editor frontends can filter it.
+- Implement tombstone restore with connection validation and partial restore
+  (see below).
 - Decide whether layout metadata such as `position` and navigation metadata
   such as `bookmarked` belong in portable workflow saves or editor sidecars
   (Phase C).
+
+**Tombstone restore — connection validation (design spec 2026-06-11):**
+
+Before reconnecting a restored tombstone's stored connections, the frontend
+adapter must validate each one because the workflow may have drifted since the
+node was deleted. Three drift categories:
+
+- **Upstream output drift:** the source node that fed into the deleted node may
+  have removed or renamed its output port, or changed the dead-drop payload type.
+- **Downstream input drift:** the target node that received from the deleted node
+  may have removed or renamed its input port, or that port may now be occupied
+  by a different source.
+- **Memory bank drift:** `membank_inputs` the deleted node read may no longer be
+  declared by any surviving node's `membank_outputs`.
+
+Restore procedure:
+1. Always restore node type, alias, and config — never blocked by connection drift.
+2. Per stored input connection: verify source node exists AND declares the
+   referenced output port → reconnect if yes, leave unconnected if no.
+3. Per stored output connection: verify target node exists AND declares the
+   referenced input port AND that port is not already occupied → reconnect if
+   all pass, leave unconnected if any fail.
+4. Per stored membank input: check if any surviving node declares the variable
+   in `membank_outputs` → restore the declaration regardless, but flag if the
+   source is missing.
+5. Surface a frontend alert after restore if any connections could not be
+   re-established, with two named sections:
+   - **Input connection errors** — original source node alias + port + reason
+     (source gone / port gone).
+   - **Output connection errors** — original target node alias + port + reason
+     (target gone / port gone / port already occupied).
+   - **Memory input warnings** — membank variable names whose declared source is
+     no longer present.
+6. A partial restore (node back, some connections missing) is always preferred
+   over leaving a tombstone. The validator will surface remaining loose ends.
 
 ## Near-Term Project — Frontend Command UI Toolkit
 

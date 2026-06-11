@@ -4,6 +4,33 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-11 — Tombstone Restore Edge Cases And Connection Validation
+
+- Specified tombstone restore validation rules for three categories of workflow
+  drift that can occur between a node being deleted and a user triggering restore:
+  (1) upstream output drift — source node removed or output port renamed/removed;
+  (2) downstream input drift — target node removed, input port renamed/removed,
+  or port now occupied by a different source; (3) memory bank drift — membank
+  variables the deleted node depended on (`membank_inputs`) may no longer be
+  declared by any surviving node.
+- Restore procedure: always restore node type, alias, and config (never blocked).
+  Validate each stored input connection and output connection before re-wiring.
+  Leave failed connections unconnected. Surface a frontend alert after restore
+  with named sections for input connection errors, output connection errors, and
+  memory input warnings — each naming the original peer node alias, port, and
+  failure reason. A partial restore is always preferred over leaving a tombstone.
+- Edge case called out: branch-start nodes are particularly sensitive because the
+  upstream branch node holds the dead-drop payload that seeds the branch. If the
+  branch node's output port was renamed or its payload type changed since the
+  delete, the connection will fail validation and the branch effectively remains
+  broken until the user rewires it — the alert makes this visible.
+- Updated `BACKEND_FRONTEND_BOUNDARY.md` (added "Tombstone restore — connection
+  validation and partial restore" subsection) and `PROJECT_BACKLOG.md` (added
+  restore validation spec to Phase B work items).
+- No code changes — documentation only.
+- Verification:
+  - `git diff --check`
+
 ## 2026-06-11 — Tombstone Design Decision: Backend Type Stays
 
 - Reviewed the Phase B tombstone decommission plan and decided to reverse it.
