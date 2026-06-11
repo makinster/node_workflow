@@ -28,6 +28,7 @@ from .events import (
 from .error_handler import ErrorHandler
 from .memory_bank import MemoryBank
 from .node_base import Node, NodeContext
+from .run_session import RunSession
 from .workflow_map import WorkflowMap
 
 
@@ -66,6 +67,7 @@ class Supervisor:
             Callable[[str, str, str, Dict[str, Any], Optional[float]], Awaitable[Dict[str, Any]]]
         ] = None,
         node_timeout_seconds: float = 30.0,
+        run_session: Optional[RunSession] = None,
     ) -> None:
         self.run_id = run_id
         self.branch_id = branch_id
@@ -93,6 +95,7 @@ class Supervisor:
         self._wait_for_nodes = wait_for_nodes
         self._wait_for_merge = wait_for_merge
         self._node_timeout_seconds = float(node_timeout_seconds)
+        self._run_session = run_session
 
     async def run(self) -> None:
         """Run this supervisor until its path ends or errors."""
@@ -329,6 +332,7 @@ class Supervisor:
             signal_waiting_for_input=signal_waiting_for_input,
             wait_for_nodes=wait_for_nodes,
             wait_for_merge=wait_for_merge,
+            run_session=self._run_session,
         )
 
         started_at = perf_counter()

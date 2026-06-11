@@ -23,6 +23,7 @@ from .field_types import validate_config_schema
 
 if TYPE_CHECKING:
     from .memory_bank import MemoryBank
+    from .run_session import RunSession
 
 
 @dataclass
@@ -49,6 +50,7 @@ class NodeContext:
         [str, str, str, Dict[str, Any], Optional[float]],
         Awaitable[Dict[str, Any]],
     ]
+    run_session: Optional["RunSession"] = None
 
 
 class Node(ABC):
@@ -59,6 +61,7 @@ class Node(ABC):
     default_alias: ClassVar[str] = ""
     description: ClassVar[str] = ""
     category: ClassVar[str] = ""
+    primary_family: ClassVar[str] = ""
 
     input_ports: ClassVar[List[str]] = []
     output_ports: ClassVar[List[str]] = ["default"]

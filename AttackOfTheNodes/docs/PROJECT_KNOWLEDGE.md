@@ -129,10 +129,17 @@ logic is added:
 - `default_config`
 - `config_schema`
 - optional `ui_hints`
+- Phase 17 planned identity metadata: primary family, subcategory tags,
+  `icon_name`, and `color_hint`
 
 The form generator supports text, number, boolean, select, multiselect,
 multiline, code-like fields, placeholders, validators, height hints, grouped
 tabs, and branch-label fields for multi-output nodes.
+
+Current implementation note: `Node` defines optional `icon_name`, `tags`, and
+`color_hint`, but `NodeFactory.get_node_types_metadata()` does not yet expose
+category/tag/icon/color fields. Phase 17 should expose portable identity
+metadata before the frontend selector depends on it.
 
 ## Registered Node Families
 
@@ -142,6 +149,24 @@ tabs, and branch-label fields for multi-output nodes.
 - AI placeholders: Chat Completion, Image Generation, Embedding.
 - Debug/utility: Tombstone, Echo, Logger, Sleep, Counter, Memory Snapshot,
   Probe, Error, Random Branch, Deep Branch, No Op, Repeat Counter.
+
+## Planned Node Taxonomy
+
+Phase 17 introduces user-facing primary families for the upcoming node overhaul:
+
+- Inputs: external-source inputs such as text in, file read, web scrape, and
+  user text input.
+- Flow Control: branch, conditional branch, merge, wait, loop, and branch-shape
+  nodes.
+- Outputs: user-facing or durable workflow outputs, including branch-ending
+  outputs.
+- Complex: nested workflows and unique nodes that do not fit the other
+  families cleanly.
+
+Nodes can also carry multiple subcategories such as Triggered, File I/O,
+Internet, AI, Passive Output, Active Output, Parallel, Conditional, Runtime
+Resource, and Utility. Selector filters and editor row identity should use this
+metadata without changing runtime semantics.
 
 ## Current UI Rules
 
@@ -180,5 +205,5 @@ These are operational data folders, not source architecture.
   alignment.
 - Branch health visualization: distinguish valid branch endings, unmerged
   Merge Beacon markers, and floating branches.
-- Later UI phases: cursor model, key remap, editor rework, file modal/config
-  tabs, visual identity, acceleration/help rewrite.
+- Phase 17: node visual identity and selector taxonomy.
+- Later UI phases: acceleration/help rewrite.

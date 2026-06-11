@@ -30,6 +30,7 @@ from .memory_bank import MemoryBank
 from .configuration_manager import ConfigurationManager
 from .output_manager import OutputManager
 from .run_history import RunHistory
+from .run_session import RunSession
 from .supervisor import Supervisor
 from .workflow_map import WorkflowMap
 
@@ -71,6 +72,7 @@ class MasterState:
 
         self._supervisors: Dict[str, Supervisor] = {}
         self._supervisor_tasks: Dict[str, asyncio.Task] = {}
+        self._run_session: Optional[RunSession] = None
 
         self._event_bus.subscribe(SUPERVISOR_REGISTER, self._on_supervisor_register)
         self._event_bus.subscribe(
@@ -109,6 +111,9 @@ class MasterState:
         self._memory_bank.clear()
         self._supervisors.clear()
         self._supervisor_tasks.clear()
+        if self._run_session is not None:
+            self._run_session.close_all()
+        self._run_session = RunSession(self.current_run_id)
         self._set_state(WorkflowState.RUNNING)
 
         root = Supervisor(
@@ -126,6 +131,7 @@ class MasterState:
             node_timeout_seconds=float(
                 self._configuration_manager.get("node_timeout_seconds")
             ),
+            run_session=self._run_session,
         )
         self._supervisor_tasks[root.branch_id] = asyncio.create_task(root.run())
         return True
@@ -233,6 +239,7 @@ class MasterState:
             node_timeout_seconds=float(
                 self._configuration_manager.get("node_timeout_seconds")
             ),
+            run_session=self._run_session,
         )
         self._supervisor_tasks[child.branch_id] = asyncio.create_task(child.run())
 
@@ -410,6 +417,9 @@ class MasterState:
     def _record_run(self, final_state: str) -> None:
         if not self.current_run_id:
             return
+        # Run is over on every path that records it; release runtime resources.
+        if self._run_session is not None:
+            self._run_session.close_all()
         errors = self._error_handler.get_errors_for_run(self.current_run_id)
         self._run_history.record_run(
             {

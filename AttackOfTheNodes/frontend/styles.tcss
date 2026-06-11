@@ -46,6 +46,35 @@ Screen {
     height: 1;
 }
 
+.node-card-identity {
+    height: 2;
+}
+
+/* Spacer line after editor node rows; selector/beacon rows stay single-line */
+.node-row-spaced {
+    margin-bottom: 1;
+}
+
+.node-family-inputs {
+    color: #7ee787;
+}
+
+.node-family-flow-control {
+    color: #8ab4f8;
+}
+
+.node-family-outputs {
+    color: #f2cc60;
+}
+
+.node-family-complex {
+    color: #c586c0;
+}
+
+.node-utility {
+    color: #9aa7b3;
+}
+
 .branch-end-open {
     color: #ff5c5c;
 }
@@ -90,6 +119,35 @@ Screen {
 #node-config-scroll {
     height: 1fr;
     overflow-y: auto;
+}
+
+/* Node selector layout: keep tabs/filter/checkboxes compact (containers
+   default to height 1fr and would otherwise stretch and leave dead space),
+   and let the node list absorb the remaining height. */
+#node-family-tabs {
+    height: auto;
+}
+
+#node-filter {
+    height: auto;
+}
+
+#node-subcategory-filters {
+    height: auto;
+}
+
+#node-type-list {
+    height: 1fr;
+    min-height: 4;
+}
+
+/* Two-line selector rows: name/identity then an indented description. */
+#node-type-list ListItem {
+    height: auto;
+}
+
+.node-select-row {
+    height: 2;
 }
 
 #membank-output-rows {

@@ -33,6 +33,7 @@ from .debug.repeat_node import RepeatCounterNode
 from .debug.sleep_node import SleepNode
 from .debug.variable_reader_node import VariableReaderNode
 from .debug.variable_setter_node import VariableSetterNode
+from ..node_identity import apply_transitional_node_identity
 
 
 ALL_NODE_CLASSES = [
@@ -72,3 +73,5 @@ ALL_NODE_CLASSES = [
     NoOpNode,
     RepeatCounterNode,
 ]
+
+apply_transitional_node_identity(ALL_NODE_CLASSES)

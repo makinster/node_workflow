@@ -20,13 +20,18 @@ class FileReaderNode(Node):
         "file_path": "",
     }
     config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {
-        "file_path": {"type": "string", "required": True},
+        "file_path": {"type": "string", "required": True, "path_hint": "file"},
     }
 
     async def execute(self, context: NodeContext) -> None:
-        path = Path(str(self.config.get("file_path", ""))).expanduser()
+        path = str(self.config.get("file_path", ""))
         try:
-            contents = path.read_text(encoding="utf-8")
+            if context.run_session is not None:
+                handle = context.run_session.open_file(path, mode="r")
+                handle.seek(0)
+                contents = handle.read()
+            else:
+                contents = Path(path).expanduser().read_text(encoding="utf-8")
         except OSError as exc:
             context.signal_error(exc)
             return

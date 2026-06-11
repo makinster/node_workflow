@@ -718,9 +718,9 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 yield Static(
                     "\n".join(
                         [
-                            "Node type: Branch",
-                            "- This node spawns branching paths.",
-                            "- Parallel paths enabled",
+                            "Node type: Parallel Branch",
+                            "- Duplicates the incoming payload across branch paths.",
+                            "- Parallel paths run independently",
                             "- Conditional branching hidden for a later node pass",
                         ]
                     ),
@@ -1247,6 +1247,11 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             if self._in_inactive_tab(widget, inactive_pane_ids):
                 continue
             if getattr(widget, "disabled", False):
+                continue
+            # Skip widgets hidden on their own (e.g. collapsed payload
+            # previews). A hidden widget shows no highlight, so focusing it
+            # looks like the cursor vanished and needs a second key press.
+            if not getattr(widget, "display", True):
                 continue
             if not self._ancestor_visible(widget):
                 continue

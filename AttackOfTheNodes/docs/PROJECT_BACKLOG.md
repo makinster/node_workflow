@@ -35,17 +35,26 @@ The backend should remain reusable for future CLI, web, or API frontends. The
 current Textual editor introduced tombstone behavior that is useful visually,
 but not inherently an execution-engine concept.
 
-Use `BACKEND_FRONTEND_BOUNDARY.md` as the plan.
+Use `BACKEND_FRONTEND_BOUNDARY.md` as the plan. Audit refreshed 2026-06-10:
+Phase A (frontend tombstone adapter) is done, and `replace_with_tombstone()`,
+tombstone-specific `replace_node_type()`, and backend-written
+`_timing_invalidated` are already gone. New frontend deletes are soft editor
+overlays that materialize to marked `branch_end_node` records on save.
 
-Recommended cleanup:
+Remaining cleanup (Phase B — gated until Phase 17 selector/editor work
+settles; see the coordination gate in `BACKEND_FRONTEND_BOUNDARY.md`):
 
-- Move tombstone placeholders into a frontend editor adapter.
-- Keep backend `WorkflowMap.delete_node()` as a pure graph operation.
-- Remove or deprecate backend `replace_with_tombstone()` once the frontend
-  adapter is covered by tests.
-- Replace tombstone-specific backend validator copy with generic graph errors.
+- Deregister `tombstone_node` from `backend/nodes/__init__.py` and delete the
+  class, once old-save handling for legacy `tombstone_node` records is
+  decided.
+- Replace tombstone-specific backend validator copy with the generic
+  unknown-type error.
+- Remove the `tombstone_node` entry from `backend/node_identity.py`.
+- Decide how old saves containing `tombstone_node` load (adapter migration
+  vs. unknown-type placeholder rendering).
 - Decide whether layout metadata such as `position` and navigation metadata
-  such as `bookmarked` belong in portable workflow saves or editor sidecars.
+  such as `bookmarked` belong in portable workflow saves or editor sidecars
+  (Phase C).
 
 ## Near-Term Project — Frontend Command UI Toolkit
 
@@ -53,7 +62,8 @@ Current config and modal UX should converge on small shared helpers instead of
 per-screen key handling. `frontend/widgets/command_navigation.py` is the first
 step and currently supports command-mode screens. The completed frontend audit
 plan is archived at `archive/plans/FRONTEND_AUDIT_BUILD_PLAN.md`; active rules
-live in `AGENT_START_GUIDE.md`, `TASK_INDEX.md`, and `TUI_DESIGN.md`.
+live in `AGENT_START_GUIDE.md`, `NODE_HELPER.md`, `TASK_INDEX.md`, and
+`TUI_DESIGN.md`.
 
 Recommended cleanup:
 
@@ -66,6 +76,36 @@ Recommended cleanup:
 - Add a focused keyboard-only smoke suite for common modal flows: open, move,
   activate, type, escape typing mode, save/cancel, and scroll to off-screen
   fields.
+
+## Near-Term Project — Helper-Backed UI Standardization
+
+Goal: evolve `aotn_node_helper` from a backend node generator into a guardrail
+for repeatable Textual UI work. The recurring failure modes are keyboard
+navigation, autoscroll, widget sizing, and dynamic UI that changes after a
+checkbox/select/input changes.
+
+Recommended cleanup:
+
+- Add `aotn_node_helper/check_ui.py <node_type>` that mounts
+  `NodeConfigScreen`, checks top-level tab placement for schema fields, and
+  verifies all generated controls are reachable with command navigation.
+- Generate a UI smoke test when a node spec uses `config_tabs`: switch tabs with
+  A/D, move through fields with W/S, activate with E/Enter, exit edit mode, and
+  reach Save/Cancel.
+- Introduce generic schema keys for dynamic sections, for example
+  `visible_when`, `enabled_when`, or `repeats_from`, then test them in
+  `form_generator.py` before using them in node specs.
+- Add a screen scaffold command for non-node screens. The scaffold should create
+  a `CommandScreenMixin` screen with a status bar, visible Cancel control,
+  vertical button order, and a generated keyboard-navigation test.
+- Add a small UI manifest format for screens and generated config surfaces:
+  first focus target, last focus target, scroll container, dynamic controls,
+  selection lists, and expected Save/Cancel behavior.
+- Make widget sizing testable with mounted-screen assertions: long labels do not
+  overflow command controls, dynamic rows do not resize the whole layout, and
+  scroll-to-focus keeps the active control visible.
+- Keep generated UI support frontend-only. The helper may inspect node metadata
+  and generate frontend tests, but backend nodes should not depend on Textual.
 
 ## Near-Term Project — Branch Health Visualization
 
@@ -96,10 +136,15 @@ frontend menus.
 
 Recommended cleanup:
 
-- Redesign the node library into clearer categories and subcategories. Flow
-  should eventually distinguish always-parallel branch nodes, conditional branch
-  nodes, merge/wait nodes, and utility markers instead of forcing all branching
-  behavior through one generic node.
+- Continue the Phase 17 taxonomy work from
+  `PHASE_17_NODE_VISUAL_IDENTITY.md`. The user-facing selector families are
+  Inputs, Flow Control, Outputs, and Complex; reusable subcategories should
+  carry capabilities such as Triggered, File I/O, Internet, AI, Passive Output,
+  Active Output, Parallel, Conditional, Runtime Resource, and Utility.
+- Redesign the node library around that taxonomy. Flow Control should
+  eventually distinguish always-parallel branch nodes, conditional branch nodes,
+  merge/wait nodes, loop nodes, and utility markers instead of forcing all
+  branching behavior through one generic node.
 - Extend config schema only with generic keys: placeholder text, min/max/step for
   numeric fields, optional blank-select behavior, multiline height hints, and
   section visibility conditions.
@@ -121,16 +166,27 @@ Goal: support richer node behavior without making the editor visually noisy.
 Visible nodes should stay user-friendly, while reusable utility behavior can be
 attached behind the scenes when a node needs it.
 
-Design notes:
+Full design note: `archive/plans/RUNTIME_RESOURCE_SESSION.md`
 
-- Add a lightweight per-run execution session object for runtime resources.
-  It should let backend execution keep handles open for files, streams, or
-  listeners during one workflow run, then close them predictably at run end.
+Done — the core `RunSession` is implemented:
+
+- `backend/run_session.py` holds per-run handles (`open_file`,
+  `register_resource`, `validate_path`, `close_all`).
+- `MasterState` creates the session at run start, passes it to all
+  supervisors, and closes it in `_record_run` on every terminal path.
+- Nodes reach it through `context.run_session`; `FileReaderNode` is the
+  first consumer. The validator checks schema fields hinted with
+  `path_hint: "file"` (empty required path = error, missing on disk =
+  warning). Coverage lives in `tests/test_run_session.py`.
+
+Remaining design notes:
 - Keep the resource session backend-generic. It should not know about Textual,
   OS dialogs, or editor UI. Frontends choose files; nodes receive portable file
   references or session-managed handles through execution context.
 - Treat files as a first-class input family during the node overhaul. Nodes can
   accept a selected file path/resource and perform validation before execution.
+  Users should see files by their normal names/paths in config; actual open
+  handles and access continuity are runtime concerns.
 - Consider long-lived listening resources later: keyboard triggers, folders,
   sockets, or other automation inputs. Keep this opt-in and lightweight so idle
   workflows do not hold unnecessary resources.

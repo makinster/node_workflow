@@ -8,6 +8,7 @@ for a task.
 Read:
 
 - `AGENT_START_GUIDE.md`
+- `NODE_HELPER.md` for helper spec details and generated-file behavior
 - `PROJECT_KNOWLEDGE.md` sections: Node Metadata Contract, Registered Node
   Families
 
@@ -57,6 +58,45 @@ dynamic sections, notifications, and form generation.
 
 Open `TUI_DESIGN.md` only when you need full screen details, Textual detours, or
 layout-level conventions.
+
+## Continue Phase 17 Node Visual Identity
+
+Read:
+
+- `PHASE_17_NODE_VISUAL_IDENTITY.md`
+- `UI_QUICK_REFERENCE.md`
+- `TUI_DESIGN.md` sections: Modal Screens, Editor bindings/node rows, Command
+  Navigation
+- `BACKEND_FRONTEND_BOUNDARY.md` before changing backend metadata shape for UI
+  needs
+
+Likely files:
+
+- `backend/node_base.py`
+- `backend/node_factory.py`
+- `frontend/screens/node_selector.py`
+- `frontend/widgets/node_card.py`
+- `frontend/widgets/node_list.py`
+- `frontend/styles.tcss`
+- `frontend/screens/editor.py`
+- `tests/test_debug_nodes.py`
+
+Focused checks:
+
+```bash
+../.venv/bin/python -m compileall -q .
+../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "node_selector or node_card or editor_depth or branch_end"
+```
+
+Implementation direction:
+
+- Use primary families `Inputs`, `Flow Control`, `Outputs`, and `Complex` for
+  selector tabs.
+- Use metadata subcategories for filters; nodes may have multiple.
+- Keep selector filters and editor row identity frontend-owned, but expose
+  portable family/tag/icon/color metadata through `NodeFactory`.
+- Preserve keyboard-first focus, autoscroll, cursor/highlight stability,
+  validation colors, and Merge Beacon health colors.
 
 ## Change Backend Or Runtime Behavior
 
@@ -111,6 +151,8 @@ Read:
 - `AGENT_START_GUIDE.md` sections: Make Node Config Render Correctly, Keyboard
   And Modal Rules
 - `UI_QUICK_REFERENCE.md`
+- `NODE_HELPER.md` section: Direction: UI Standardization Helper, when adding
+  helper support for config UI tests or screen scaffolds
 - `TUI_DESIGN.md` sections: Field Type Mapping, Command Navigation, only when
   changing detailed renderer behavior
 

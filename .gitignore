@@ -3,8 +3,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 .venv/
+.venv-win/
 venv/
 env/
+*.egg-info/
 
 # OS/editor
 .DS_Store
@@ -18,6 +20,13 @@ Thumbs.db
 tmp/
 
 # AttackOfTheNodes runtime data
+AttackOfTheNodes/logs/
+AttackOfTheNodes/settings/*.json
+AttackOfTheNodes/run_errors/*.json
+AttackOfTheNodes/run_history/*.json
+AttackOfTheNodes/run_outputs/*.json
+AttackOfTheNodes/workflows/*.json
+!AttackOfTheNodes/workflows/.gitkeep
 attackofthenodes_v05/logs/
 attackofthenodes_v05/settings/*.json
 attackofthenodes_v05/run_errors/*.json
