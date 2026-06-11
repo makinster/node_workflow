@@ -4,6 +4,31 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-11 — Tombstone Delete Semantics And Payload Design Context
+
+- Clarified that node deletion is always single-node and non-cascading.
+  Downstream nodes are never automatically deleted or modified. The tombstone
+  sits in place as a swap-out and insert-staging placeholder; the graph beyond
+  it remains intact. This is an editor-adapter invariant.
+- Documented the transient payload vs vault (MemoryBank) design intent:
+  transient payloads are primarily for conditional logic (booleans, counters,
+  branch-decision flags); large strings, file contents, and shared data travel
+  through the vault or file I/O. Many nodes consume from the vault directly and
+  do not depend on the immediately upstream node's transient output.
+- Added dead-drop context: the dead-drop option lets a node write a small
+  conditional payload that a downstream node picks up without requiring a live
+  transient connection through every intermediate node.
+- Added restore severity context: because most data travels through the vault,
+  tombstone restore-validation failures on transient ports are usually minor
+  repairs, not broken workflows. The frontend alert should be informative but
+  not alarming.
+- Updated `PROJECT_KNOWLEDGE.md` (new "Data Flow Patterns" section, corrected
+  Open Cleanup Areas entry) and `BACKEND_FRONTEND_BOUNDARY.md` (single-node
+  delete rule and restore severity context added before the restore procedure).
+- No code changes — documentation only.
+- Verification:
+  - `git diff --check`
+
 ## 2026-06-11 — Tombstone Restore Edge Cases And Connection Validation
 
 - Specified tombstone restore validation rules for three categories of workflow

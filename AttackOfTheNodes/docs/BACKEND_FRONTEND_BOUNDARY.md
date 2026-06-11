@@ -144,6 +144,32 @@ and `original_type`. It should be extended to surface the original input
 sources and output targets from the tombstone config so the validator output
 reads as a full repair guide.
 
+**Single-node delete rule:**
+
+Deleting a node removes only that one node. Downstream nodes are never
+automatically deleted or modified. The tombstone occupies the deleted node's
+position as a swap-out and insert-staging placeholder. The graph beyond the
+tombstone remains intact. This is an editor invariant that the frontend adapter
+must enforce — no cascading deletes, no automatic downstream rewiring.
+
+**Restore severity context:**
+
+Most heavyweight data in a workflow travels through the vault (MemoryBank
+persistent store) rather than transient payloads. Transient payloads are
+primarily used for conditional logic — booleans, counters, branch-decision
+flags — not large strings or file contents. Many nodes read from the vault
+directly and do not depend on the immediately previous node's transient output
+at all. This means:
+
+- A tombstone blocks the execution path at that point, but vault state that
+  surrounding nodes read is usually unaffected.
+- Restore-validation failures on transient ports are often non-critical.
+  The downstream node may not have been consuming that transient payload, or
+  may be reading the equivalent data from the vault via a dead-drop key.
+- The frontend alert should surface connection failures clearly but without
+  alarming the user. A partially-restored node with missing transient
+  connections is a minor repair in most workflows, not a broken graph.
+
 **Tombstone restore — connection validation and partial restore:**
 
 Restoring a tombstone is not a simple type-swap. Between the time a node was

@@ -168,7 +168,61 @@ Internet, AI, Passive Output, Active Output, Parallel, Conditional, Runtime
 Resource, and Utility. Selector filters and editor row identity should use this
 metadata without changing runtime semantics.
 
-## Current UI Rules
+## Data Flow Patterns — Transient Payloads vs Vault
+
+Understanding when each data path is used is important for reasoning about
+node deletions and workflow integrity.
+
+**Transient payloads (dead-drop):**
+
+Transient payloads are the data passed directly from one node to the next along
+an execution path. They are stored in `MemoryBank` keyed as
+`(source_node_id, port_name)` and are consumed by the immediately downstream
+node's input resolution. Transient payloads are primarily used for conditional
+logic: booleans, counters, branch-decision flags, and other small values that
+flow along a single execution path. They are scoped to a single path and are
+not shared across branches.
+
+The "dead-drop" option lets a branch-spawning or conditional node write a small
+payload that a specific downstream node can pick up without requiring a live
+connection through every intermediate node. This is the primary way conditional
+data is passed to a node deeper in a branch that needs it.
+
+**Vault (MemoryBank persistent store):**
+
+Large strings, file contents, AI responses, accumulated data, and any value
+that needs to be shared across branches or accumulated over time go through the
+vault. The vault is the per-run shared whiteboard — all supervisors read and
+write it under named variable keys declared through `membank_outputs` /
+`membank_inputs`. File I/O nodes and AI nodes primarily interact with the vault.
+
+**Implication for node deletions:**
+
+Because most heavyweight data travels through the vault rather than transient
+payloads, deleting a single node is a lower-severity operation than it might
+appear. Many downstream nodes will continue to read from the vault normally
+regardless of the deleted node's transient connections. The tombstone sits in
+the execution path, blocking that path from running, but the vault state that
+surrounding nodes depend on is often independent of the deleted node's transient
+output.
+
+This also means restore-validation connection failures on transient ports are
+frequently non-critical: the downstream node may not have been using that
+transient payload at all, or may be reading the same data from the vault anyway.
+The frontend alert should surface the information but not alarm the user — a
+restored node with some transient connections missing is usually a minor repair,
+not a broken workflow.
+
+**Single-node delete rule:**
+
+Deleting a node removes only that node. Downstream nodes are never automatically
+deleted or modified. The tombstone occupies the deleted node's position as a
+swap-out placeholder. The user can insert new nodes before or after the
+tombstone, restore the original node (with connection validation), or permanently
+remove the tombstone and manually reconnect the gap. The workflow graph beyond
+the tombstone remains intact.
+
+
 
 - Command-mode modals use `W/S` and arrows for navigation, `E`/Enter to
   activate, and `Esc`/`Ctrl+Q` to leave edit/dropdown mode before closing.
@@ -199,8 +253,10 @@ These are operational data folders, not source architecture.
 
 ## Open Cleanup Areas
 
-- Phase 10.5 backend/frontend boundary cleanup: migrate editor tombstones away
-  from backend execution concepts.
+- Phase 10.5 (done) / Phase 10.6 (planned): tombstone stays as an intentional
+  backend type; Phase 10.6 migrates the save path from `branch_end_node` marker
+  to `tombstone_node` with full original data, extends validator error output,
+  and implements restore connection validation. See `BACKEND_FRONTEND_BOUNDARY.md`.
 - Frontend audit phases FA-6/FA-7: viewer long-content safety and visual/help
   alignment.
 - Branch health visualization: distinguish valid branch endings, unmerged
