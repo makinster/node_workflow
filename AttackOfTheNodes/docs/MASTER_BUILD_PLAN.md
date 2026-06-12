@@ -58,6 +58,14 @@ Remaining Phase 17 work:
 - Manually verify the editor view in the running app at several terminal
   widths: two-line rows, aligned frames, identity line visible, selection
   highlight, and branch selector rows.
+- Implement the two-level group picker: group entries with member counts in
+  the main selector; a generic Group Picker second modal for groups with 2+
+  members; single-member groups auto-promote to direct-add entries; `ESC` in
+  picker returns to main selector; group counts reflect active subcategory
+  filters; groups with a filtered count of 0 are hidden; string filter
+  dissolves groups and shows node types directly.
+- Add `group: str | None` to node class metadata and expose it through
+  `NodeFactory.get_node_types_metadata()`.
 - Keep future runtime-resource expansion and node-library redesign work
   separate from the Phase 17 visual identity foundation.
 
@@ -146,6 +154,17 @@ Done:
 - The details panel shows full primary family and all subcategories.
 - Utility/debug/pass-through nodes render more quietly, while validation,
   breakpoint, execution, and Merge Beacon health states retain priority.
+- Core Simplification Rule documented: when to group vs separate types vs
+  mode-select vs direct-add. See `PHASE_17_NODE_VISUAL_IDENTITY.md` and
+  `NODE_STANDARDS.md`.
+- Full expanded taxonomy documented: INPUTS (Text Input, File Reader, Data
+  Source, Trigger), FLOW CONTROL (Branch, Merge, Wait/Timer, Loop Utility,
+  Merge Beacon, Start/End), OUTPUTS (Text Output, File Write, Send/Notify,
+  User-Facing Prompt), COMPLEX (AI Processing, Subworkflow, Data Transform,
+  Script Runner).
+- Two-level group picker design documented: main selector with group counts,
+  generic Group Picker second modal, auto-promotion rule, `ESC` behavior,
+  search-dissolves-groups behavior, keyboard flows.
 
 Remaining:
 

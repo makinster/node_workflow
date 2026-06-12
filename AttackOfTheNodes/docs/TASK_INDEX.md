@@ -1,7 +1,30 @@
 # Task Index
 
-Use this file to choose the smallest useful reading set and the focused checks
-for a task.
+`README.md` routes you to this file. This file gives the minimum reading set,
+likely code files, and the focused `pytest -k` or helper commands for each task
+type. Open the docs listed here, then open deeper references only if those docs
+point you further.
+
+## Design Or Update Node Taxonomy
+
+Read:
+
+- `PHASE_17_NODE_VISUAL_IDENTITY.md` — Core Simplification Rule, full expanded
+  taxonomy, group picker UI design, keyboard flows, metadata conventions
+- `NODE_STANDARDS.md` — Node Type Classification rule (when to group vs
+  separate vs mode-select)
+- `BACKEND_FRONTEND_BOUNDARY.md` — the `group` field is a frontend-only
+  navigation concept; no backend component should branch on it
+
+Likely files:
+
+- `backend/node_identity.py`
+- `backend/node_factory.py`
+- `frontend/screens/node_selector.py`
+
+Note: adding a node to an existing group requires only declaring the `group`
+field on the node class. No selector code changes are needed. Single-member
+groups auto-promote to direct-add entries.
 
 ## Add Or Change A Node
 

@@ -4,6 +4,58 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-12 — Docs: README Document Directory Overhaul
+
+- Rewrote `README.md` to give every document a clear "what it contains" and
+  "when to open it" entry in a structured Document Directory table. Replaced
+  the previous flat Read-First / Reference lists (which had overlapping entries
+  and imprecise descriptions) with four organized sections: Roadmap and Session
+  State, Node Authoring, Architecture and Boundaries, Frontend Reference, and
+  Planning and Backlog.
+- Archive section now explains when to open each archived file rather than just
+  listing them.
+- Documentation Rules in README now includes "add a row to the Document
+  Directory when a new active doc is created."
+- Added orienting intro to `TASK_INDEX.md` clarifying its role relative to
+  README (README routes; TASK_INDEX gives the minimum reading set, likely files,
+  and focused test commands).
+
+## 2026-06-12 — Node Taxonomy: Core Simplification Rule, Full Expanded Taxonomy, Group Picker Design
+
+- Documented the Core Simplification Rule for deciding node placement: variants
+  with different port shapes → separate types; same ports + very different config
+  → group with picker; minor config differences, same ports → one node + mode
+  select; unique standalone node → direct-add. Rule is in both
+  `PHASE_17_NODE_VISUAL_IDENTITY.md` and `NODE_STANDARDS.md`.
+- Added Full Expanded Taxonomy to `PHASE_17_NODE_VISUAL_IDENTITY.md`:
+  - INPUTS: Text Input group, File Reader group, Data Source group, Trigger group
+    (with architecture note: triggers need a persistent listener process outside
+    the supervisor model; config-only for now).
+  - FLOW CONTROL: Branch group (separate types because port shapes differ),
+    Merge group, Wait/Timer group, Loop Utility group, Merge Beacon (direct-add),
+    Start/End (direct-add).
+  - OUTPUTS: Text Output group, File Write group (File Write is one node with
+    mode select — not separate Overwrite/Append types), Send/Notify group,
+    User-Facing Prompt group.
+  - COMPLEX: AI Processing group, Subworkflow group (reserved, phases 19/20),
+    Data Transform group, Script Runner group (deferred; security gate required).
+- Documented two-level group picker design in `PHASE_17_NODE_VISUAL_IDENTITY.md`:
+  - Main selector shows group entries with member counts; counts reflect active
+    subcategory filters; groups with filtered count 0 are hidden.
+  - Group Picker second modal: generic/reusable, `ESC` returns to main selector,
+    `E` adds and closes both modals, no filter input in the picker.
+  - Auto-promotion: single-member groups become direct-add entries, no picker.
+  - Search behavior: string filter dissolves groups; individual node types appear
+    directly; groups re-form when filter is cleared.
+- Added Keyboard Flows section: group-add flow, direct-add flow, search-first flow.
+- Added Problems and Solutions Summary table.
+- Added What Doesn't Need to Exist section.
+- Added `group: str | None` metadata field design to Metadata Direction.
+- Updated Completion Shape to include group picker criteria.
+- Added "Design Or Update Node Taxonomy" task route to `TASK_INDEX.md`.
+- Added taxonomy task row to `README.md` Choose Your Task table.
+- Updated `MASTER_BUILD_PLAN.md` Phase 17 Done and Remaining sections.
+
 ## 2026-06-12 — Node Helper: Dynamic Forms, Standard Model Expansion, Config-UI Checks
 
 - Implemented the dynamic-form schema keys planned in the Helper-Backed UI

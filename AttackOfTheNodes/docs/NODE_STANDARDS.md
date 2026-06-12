@@ -5,6 +5,31 @@ This document captures the intended scope, input/output patterns, and UI
 behavior rules for AttackOfTheNodes nodes. It is the authoritative reference
 before authoring a new node type or changing an existing one's I/O model.
 
+## Node Type Classification
+
+Before defining a new node type, decide how it fits in the taxonomy:
+
+| Situation | Solution |
+|---|---|
+| Variants have different port shapes | Must be separate node types regardless |
+| Variants have same ports, very different config | Group with picker |
+| Variants are minor config differences with same ports | One node + mode select field |
+| Standalone, unique node | Direct-add, no group |
+
+**Examples:**
+- File Write overwrite vs append → same ports, one config field → single node
+  with a mode select. No separate type needed.
+- Branch variants → different port shapes (2 ports vs N ports vs loop shape) →
+  must be separate types.
+- Email vs Webhook vs OS notification → same ports, radically different config →
+  group with picker.
+
+Apply this rule before touching the taxonomy in
+`PHASE_17_NODE_VISUAL_IDENTITY.md`. Groups are a frontend-only navigation
+concept — the backend never knows a group exists.
+
+---
+
 ## Core Principle
 
 Nodes have predetermined input and output configurations with limited, known
