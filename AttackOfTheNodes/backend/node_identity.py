@@ -126,6 +126,7 @@ TRANSITIONAL_NODE_IDENTITY: Dict[str, Dict[str, Any]] = {
         "primary_family": COMPLEX,
         "tags": [UTILITY],
         "icon_name": "file-x",
+        "editor_only": True,
     },
     "echo_node": {
         "primary_family": COMPLEX,
@@ -182,6 +183,26 @@ TRANSITIONAL_NODE_IDENTITY: Dict[str, Dict[str, Any]] = {
         "tags": [CONDITIONAL, UTILITY],
         "icon_name": "refresh-cw",
     },
+    "text_transform_node": {
+        "primary_family": COMPLEX,
+        "tags": [UTILITY],
+        "icon_name": "case-sensitive",
+    },
+    "json_path_node": {
+        "primary_family": COMPLEX,
+        "tags": [UTILITY],
+        "icon_name": "braces",
+    },
+    "random_number_node": {
+        "primary_family": COMPLEX,
+        "tags": [UTILITY],
+        "icon_name": "dice-3",
+    },
+    "http_request_node": {
+        "primary_family": INPUTS,
+        "tags": [INTERNET],
+        "icon_name": "globe",
+    },
 }
 
 
@@ -198,3 +219,4 @@ def apply_transitional_node_identity(node_classes: Iterable[Type[Node]]) -> None
         node_class.color_hint = str(
             identity.get("color_hint") or FAMILY_COLOR_HINTS.get(primary_family, "")
         )
+        node_class.editor_only = bool(identity.get("editor_only", False))

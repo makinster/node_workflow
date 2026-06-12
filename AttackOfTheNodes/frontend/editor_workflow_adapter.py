@@ -9,6 +9,37 @@ from typing import Any, Dict, Optional
 DELETED_NODE_SYSTEM_ROLE = "deleted_node_branch_end"
 DELETED_NODE_ALIAS = "Deleted node"
 DELETED_NODE_STATE_ATTR = "_editor_deleted_nodes"
+TOMBSTONE_NODE_TYPE = "tombstone_node"
+
+
+def migrate_legacy_deleted_node(node: Dict[str, Any]) -> Dict[str, Any]:
+    """Convert a legacy branch_end_node+_system_role record to tombstone_node in-place.
+
+    Old saves write a deleted node as branch_end_node with:
+        config._system_role == DELETED_NODE_SYSTEM_ROLE
+        config.deleted_node == {original_type, original_display_name, ...}
+
+    New tombstone_node stores those fields at the config top level.
+    Non-matching nodes are returned unchanged.
+    """
+    config = node.get("config") or {}
+    if not (
+        node.get("type") == "branch_end_node"
+        and config.get("_system_role") == DELETED_NODE_SYSTEM_ROLE
+    ):
+        return node
+    metadata = config.get("deleted_node") or {}
+    if not isinstance(metadata, dict):
+        metadata = {}
+    node["type"] = TOMBSTONE_NODE_TYPE
+    node["alias"] = DELETED_NODE_ALIAS
+    node["config"] = {
+        "original_type": str(metadata.get("original_type") or ""),
+        "original_display_name": str(metadata.get("original_display_name") or ""),
+        "original_input_ports": list(metadata.get("original_input_ports") or []),
+        "original_output_ports": list(metadata.get("original_output_ports") or []),
+    }
+    return node
 
 
 class EditorWorkflowAdapter:
@@ -215,6 +246,24 @@ class EditorWorkflowAdapter:
             "restored_original": restored_original,
             "original_type": original_type,
         }
+
+    def migrate_workflow_on_load(self, all_nodes: Dict[str, Dict[str, Any]]) -> int:
+        """Migrate legacy deleted-node records to tombstone_node format in-place.
+
+        Returns the count of nodes migrated. Call this after loading a workflow
+        and before the editor renders the node list. The actual call-site wiring
+        in app.py is deferred (UI concern); this method is testable standalone.
+        """
+        count = 0
+        for node in all_nodes.values():
+            config = node.get("config") or {}
+            if (
+                node.get("type") == "branch_end_node"
+                and config.get("_system_role") == DELETED_NODE_SYSTEM_ROLE
+            ):
+                migrate_legacy_deleted_node(node)
+                count += 1
+        return count
 
     def _display_name_for_type(self, node_type: str) -> str:
         for metadata in self.factory.get_node_types_metadata():

@@ -1,0 +1,34 @@
+node_type: random_number_node
+class_name: RandomNumberNode
+category: data
+primary_family: Complex
+tags: ["Utility"]
+icon_name: dice-3
+display_name: Random Number
+default_alias: Random Number
+description: Produce a random integer or float within a configured range
+input_ports: ["input"]
+output_ports: ["default"]
+config_tabs:
+  Parameters:
+    mode:
+      type: select
+      label: Mode
+      options: ["integer", "float"]
+      default: integer
+    min_value:
+      type: float
+      label: Minimum value
+      default: 0
+      required: false
+    max_value:
+      type: float
+      label: Maximum value
+      default: 100
+      required: false
+    seed:
+      type: string
+      label: "Random seed (blank = unseeded)"
+      default: ""
+      required: false
+execution_template: producer

@@ -4573,6 +4573,7 @@ async def _test_node_selector_uses_family_tabs_and_subcategory_filters():
             "example_file_instance_node",
             "file_reader_node",
             "user_text_input_node",
+            "http_request_node",
         }
 
         screen.action_choose()

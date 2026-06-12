@@ -101,6 +101,7 @@ class NodeFactory:
                     "config_schema": dict(node_class.config_schema),
                     "default_config": dict(node_class.default_config),
                     "ui_hints": dict(getattr(node_class, "ui_hints", {})),
+                    "editor_only": bool(getattr(node_class, "editor_only", False)),
                 }
             )
         return sorted(metadata, key=lambda item: item["display_name"])
