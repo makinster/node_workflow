@@ -6,10 +6,13 @@ informational, such as loose nodes unreachable from the start node.
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
 
 from .node_factory import NodeFactory
 from .workflow_map import WorkflowMap
+
+if TYPE_CHECKING:
+    from .secrets_manager import SecretsManager
 
 
 def derive_input_sources(
@@ -41,7 +44,11 @@ def derive_input_sources(
     return input_sources
 
 
-def validate_workflow(workflow_map: WorkflowMap, factory: NodeFactory) -> Dict[str, Any]:
+def validate_workflow(
+    workflow_map: WorkflowMap,
+    factory: NodeFactory,
+    secrets_manager: Optional["SecretsManager"] = None,
+) -> Dict[str, Any]:
     """Validate the loaded workflow structure."""
     errors: List[Dict[str, str]] = []
     warnings: List[Dict[str, str]] = []
@@ -177,6 +184,41 @@ def validate_workflow(workflow_map: WorkflowMap, factory: NodeFactory) -> Dict[s
                         "message": (
                             f"File for field '{field_name}' was not found at "
                             f"validation time: {raw_path}"
+                        ),
+                    }
+                )
+
+    # Secret-ref fields: schema fields annotated with "secret": True.
+    # An empty required key is an error; a configured key absent from the store
+    # is a warning (key might be added before the run).
+    # When secrets_manager is None the existence check is skipped.
+    for node_id, data in all_nodes.items():
+        meta = _type_meta_cache.get(data.get("type", ""))
+        if meta is None:
+            continue
+        config = data.get("config") or {}
+        for field_name, field_info in (meta.get("config_schema") or {}).items():
+            if not field_info.get("secret"):
+                continue
+            key_name = str(config.get(field_name, "") or "").strip()
+            if not key_name:
+                if field_info.get("required", False):
+                    errors.append(
+                        {
+                            "node_id": node_id,
+                            "message": (
+                                f"Secret key for field '{field_name}' is required but not configured"
+                            ),
+                        }
+                    )
+                continue
+            if secrets_manager is not None and not secrets_manager.has_key(key_name):
+                warnings.append(
+                    {
+                        "node_id": node_id,
+                        "message": (
+                            f"Secret key '{key_name}' (field '{field_name}') "
+                            f"is not present in the secrets store"
                         ),
                     }
                 )
