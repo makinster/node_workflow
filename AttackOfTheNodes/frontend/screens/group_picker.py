@@ -54,7 +54,7 @@ class GroupPickerScreen(ModalScreen):
                 description = f"{description[:75]}…"
             list_view.append(
                 ListItem(
-                    Static(f"[ {display} ]\n- {description}", classes="group-member-row")
+                    Static(f"\\[ {display} ]\n- {description}", classes="group-member-row")
                 )
             )
         if self.members:

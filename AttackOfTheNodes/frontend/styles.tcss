@@ -107,12 +107,11 @@ Screen {
 }
 
 #modal-card {
-    width: 80%;
-    max-width: 100;
+    width: 90%;
     max-height: 90%;
     margin: 2 4;
     padding: 1 2;
-    border: heavy #50c878;
+    border: solid #405061;
     background: #101418;
 }
 
@@ -131,7 +130,7 @@ Screen {
 /* I/O tab Input/Output switch row (hidden on other tabs). */
 #io-direction-row {
     height: auto;
-    align: center middle;
+    align: left middle;
 }
 
 #io-direction-row Label {

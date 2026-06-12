@@ -3723,8 +3723,8 @@ async def _test_node_selector_rows_are_two_lines_with_indented_description():
         lines = screen._node_row_text(node).split("\n")
         assert len(lines) == 2, f"Expected a two-line row, got {lines!r}"
         # First line: [ display_name ]  Second line: - description
-        assert lines[0] == f"[ {node['display_name']} ]", (
-            f"Expected '[ {node['display_name']} ]', got {lines[0]!r}"
+        assert lines[0] == f"\\[ {node['display_name']} ]", (
+            f"Expected '\\[ {node['display_name']} ]', got {lines[0]!r}"
         )
         assert lines[1].startswith("- "), (
             f"Expected '- ...' description, got {lines[1]!r}"
