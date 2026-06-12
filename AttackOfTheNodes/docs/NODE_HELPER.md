@@ -211,15 +211,29 @@ Categories:
 Phase 17 identity (required since 2026-06-12; keep in sync with
 `backend/node_identity.py`):
 
-- `primary_family` (required): `Inputs`, `Flow Control`, `Outputs`, or
-  `Complex`. This is the user-facing selector family; `category` remains the
-  legacy backend grouping.
+- `primary_family` (required): `Inputs`, `Outputs`, `Flow Control`, `Utility`,
+  or `Complex`. This is the user-facing selector family; `category` remains
+  the legacy backend grouping. `Inputs` and `Outputs` share the selector's
+  `I/O` tab behind an Input/Output switch — that mapping is frontend-only.
 - `tags` (optional): any of `Triggered`, `File I/O`, `Internet`, `AI`,
   `Passive Output`, `Active Output`, `Parallel`, `Conditional`,
-  `Runtime Resource`, `Utility`. Selector subcategory filters use these.
+  `Runtime Resource`, `Utility`. Filter checkboxes (I/O and Complex tabs) and
+  string search use these.
+- `group` (optional): frontend navigation group name (e.g. `Send / Notify`).
+  Nodes sharing a group appear behind one Group Picker entry in the selector.
+  See `PHASE_17_NODE_VISUAL_IDENTITY.md` and `NODE_CATALOG.md` for the group
+  layout.
+- `selector_section` (optional): section header the entry renders under in
+  the selector list (e.g. `Transform`). All members of one `group` must
+  declare the same section; the generator validates this.
 - `icon_name` (optional): icon hint string.
 - `color_hint` (optional): defaults from the family color map
-  (Inputs green, Flow Control blue, Outputs amber, Complex violet).
+  (Inputs green, Outputs amber, Flow Control blue, Utility grey,
+  Complex violet).
+
+The generator validates the five families, requires `selector_section`
+whenever `group` is set (except on the flat-rendered Outputs side), and emits
+`group` / `selector_section` as class metadata on generated nodes.
 
 Execution templates:
 

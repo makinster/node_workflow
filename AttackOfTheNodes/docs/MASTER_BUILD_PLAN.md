@@ -48,24 +48,28 @@ Completed in Phase 17 so far:
 - Focused tests cover metadata exposure, selector filtering, row rendering,
   details-panel identity, truncation, and keyboard/selection stability.
 
+Taxonomy revision (2026-06-12): five backend families (`Inputs`, `Outputs`,
+`Flow Control`, `Utility`, `Complex`) mapped onto four selector tabs — `I/O`
+(Input/Output switch), `Flow Control`, `Utility`, `Complex`. AI became a
+subcategory, not a family. Filters reduced to I/O (`File I/O`/`Internet`/`AI`)
+and Complex (`AI`). In-list section headers organize tabs; keyboard nav skips
+them. Start/End removed from the user-facing taxonomy (terminate-branch
+config on outputs + End Branch node). Full inventory in `NODE_CATALOG.md`.
+
+Implemented for the revision (2026-06-12): `group` / `selector_section`
+metadata exposure, five-family remap with `Utility` editor styling, the
+four-tab selector with I/O switch, section headers, reduced filters, the
+generic Group Picker modal with auto-promotion and ESC-returns-to-selector,
+selector hiding of `start_node`/`end_node`, and node helper validation for
+the new families and fields.
+
 Remaining Phase 17 work:
 
-- Fix live-TUI rendering bugs found after the implementation pass. First bug
-  (fixed): identity rows padded text to a fixed 48-char width, so narrower
-  node-list panels soft-wrapped the closing frame onto its own line and pushed
-  the family/subcategory line out of the two-line row; rows now re-fit to the
-  rendered panel width on resize.
-- Manually verify the editor view in the running app at several terminal
-  widths: two-line rows, aligned frames, identity line visible, selection
-  highlight, and branch selector rows.
-- Implement the two-level group picker: group entries with member counts in
-  the main selector; a generic Group Picker second modal for groups with 2+
-  members; single-member groups auto-promote to direct-add entries; `ESC` in
-  picker returns to main selector; group counts reflect active subcategory
-  filters; groups with a filtered count of 0 are hidden; string filter
-  dissolves groups and shows node types directly.
-- Add `group: str | None` to node class metadata and expose it through
-  `NodeFactory.get_node_types_metadata()`.
+- Manually verify the selector (tabs, switch, headers, picker) and the
+  editor view in the running app at several terminal widths: two-line rows,
+  aligned frames, identity line visible, selection highlight, and branch
+  selector rows. (First rendering bug already fixed: identity rows now
+  re-fit to the rendered panel width on resize.)
 - Keep future runtime-resource expansion and node-library redesign work
   separate from the Phase 17 visual identity foundation.
 
@@ -157,33 +161,26 @@ Done:
 - Core Simplification Rule documented: when to group vs separate types vs
   mode-select vs direct-add. See `PHASE_17_NODE_VISUAL_IDENTITY.md` and
   `NODE_STANDARDS.md`.
-- Full expanded taxonomy documented: INPUTS (Text Input, File Reader, Data
-  Source, Trigger), FLOW CONTROL (Branch, Merge, Wait/Timer, Loop Utility,
-  Merge Beacon, Start/End), OUTPUTS (Text Output, File Write, Send/Notify,
-  User-Facing Prompt), COMPLEX (AI Processing, Subworkflow, Data Transform,
-  Script Runner).
+- Taxonomy revised (2026-06-12): five families / four tabs with I/O switch,
+  AI as subcategory, section headers, reduced filters, Start/End removal,
+  AI Input node design, curated AI supported-model approach. Full node
+  inventory (Live/Planned/Deferred/Concept) created in `NODE_CATALOG.md`.
 - Two-level group picker design documented: main selector with group counts,
   generic Group Picker second modal, auto-promotion rule, `ESC` behavior,
   search-dissolves-groups behavior, keyboard flows.
 
 Remaining:
 
-- Live-TUI verification and bug fixing. The implementation pass looked done in
-  tests, but running the app surfaced rendering bugs (fixed so far: identity
-  rows wrapped their closing frame and lost the identity line in panels
-  narrower than the old fixed 48-char text width).
-
-Current todo:
-
-- Manually verify editor rows in the running app at several terminal widths
-  before closing the phase: two-line rows, aligned frames, visible identity
-  line, selection highlight, and branch selector rows.
+- Live-TUI verification of the restructured selector (tabs, I/O switch,
+  headers, group picker) and editor rows at several terminal widths before
+  closing the phase (first rendering bug already fixed: rows re-fit to
+  panel width).
 - Begin Phase 18 only after the live editor view is verified clean.
-- Keep future runtime-resource expansion separate from Phase 17 visual work.
 
 Planning reference:
 
 - `PHASE_17_NODE_VISUAL_IDENTITY.md`
+- `NODE_CATALOG.md`
 
 Likely files:
 

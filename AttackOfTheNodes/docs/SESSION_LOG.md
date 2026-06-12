@@ -4,6 +4,112 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-12 — Taxonomy Revision Implementation: Selector Restructure, Group Picker, Metadata
+
+Code session implementing the taxonomy revision documented below.
+
+- `Node` base: new frontend-only ClassVars `group: Optional[str]` and
+  `selector_section: Optional[str]`; `NodeFactory.get_node_types_metadata()`
+  exposes both (None when unset).
+- `node_identity.py`: five-family remap. Debug/data nodes moved to the new
+  `Utility` family (Transform / Debug / Loop Helpers sections); Flow Control
+  entries gained Branch/Merge/Wait-Timer groups under Branching/Timing
+  sections; I/O-side and Complex entries gained their groups and sections per
+  `NODE_CATALOG.md`. `FAMILY_COLOR_HINTS` gained `Utility: grey`.
+- `node_card.py`: `Utility` family frame (`|`/`|`) and row background
+  (the existing quiet `#9aa7b3`).
+- `NodeSelectorScreen` restructured to the four-tab design:
+  - Tabs `I/O`, `Flow Control`, `Utility`, `Complex`; the I/O tab has a
+    Textual `Switch` row (Input/Output) above the filter that selects which
+    family fills the list. Filters checked on one side no longer constrain
+    the other side.
+  - Filter checkboxes reduced to I/O (`File I/O`/`Internet`/`AI`) and
+    Complex (`AI`); shown only when the active side actually has the tag.
+  - The list renders three entry kinds: non-selectable section headers
+    (skipped by W/S navigation, hidden while searching), single-line group
+    entries with member counts, and two-line node rows. Single-member groups
+    auto-promote to direct node rows.
+  - `start_node` and `end_node` are hidden from the selector alongside
+    `tombstone_node`.
+  - String search dissolves groups and headers; matching node types render
+    directly and the grouped view returns when the filter clears.
+- New `frontend/screens/group_picker.py`: generic `GroupPickerScreen` modal
+  parameterized by group name and member metadata; one node per line with the
+  highlighted member's description below; `E`/Enter dismisses with the chosen
+  type (selector then dismisses too), `ESC` pops only the picker.
+- `aotn_node_helper/generator.py`: validates the five families, accepts
+  `group` / `selector_section` spec fields (requiring a section when a group
+  is declared, except on the flat Outputs side), and emits both as class
+  metadata on generated nodes.
+- `styles.tcss`: `#io-direction-row`, `.node-select-header`,
+  `.node-select-group`, and group-picker styles.
+- Tests: rewrote the selector taxonomy test for the new structure; added
+  `test_node_selector_group_picker_flow` (open picker, ESC back, choose
+  member closes both) and
+  `test_node_selector_navigation_skips_section_headers`; updated the layout
+  test for the switch row and family expectations in editor identity tests.
+- Verification:
+  - `python3 -m compileall -q . ../aotn_node_helper`
+  - `python3 -m pytest tests/ -q` (147 passed; 1 pre-existing
+    environment-only failure: generated example UI smoke test requires
+    pytest-asyncio, absent in this container)
+  - `../aotn_node_helper/check_ui.py echo_node` OK
+- Remaining before Phase 17 close: live-TUI manual verification of the new
+  selector and editor rows at several terminal widths.
+
+## 2026-06-12 — Taxonomy Revision: Five Families, I/O Switch, Section Headers, Node Catalog
+
+Design + documentation session (code implemented the same day — see the
+entry above).
+
+- Revised the Phase 17 taxonomy to five backend families — `Inputs`,
+  `Outputs`, `Flow Control`, `Utility`, `Complex` — mapped onto four selector
+  tabs. `Inputs`/`Outputs` share one `I/O` tab behind a Textual `Switch`
+  (Input on one side, Output on the other) above the list; the switch is
+  frontend-only presentation, so backend family metadata stays semantic.
+- `Utility` is the new action-node family: UI Automation group (click, type,
+  key press; screen-read variants deferred), Script Runner group (deferred,
+  security gated — hidden from list and search until an explicit "allow
+  script execution" setting is on), Data Transform group (set/get variable,
+  concat, text ops, JSON, math, format text), Debug direct-adds (echo, probe,
+  logger, sleep), and Loop Helper direct-adds (counter, accumulator, repeat
+  limiter).
+- AI became a subcategory tag, not a family. AI-flavored variants live in
+  their natural groups (AI Conditional Branch under Flow Control → Branch,
+  AI-Guided Read under File Reader); dedicated AI tools stay in Complex →
+  AI Processing where the `AI` filter surfaces them.
+- Filter checkboxes reduced to two tabs: I/O (`File I/O`/`Internet`/`AI`)
+  and Complex (`AI`). Groups and in-list section headers do the organizing
+  elsewhere. Headers are non-selectable rows keyboard navigation skips,
+  hidden while a string filter is active or when empty.
+- Removed Start/End from the user-facing taxonomy: Start is auto-generated;
+  branches end through outputs (new standard "Terminate branch after
+  completion" config option in `NODE_STANDARDS.md`), through merges, or
+  through a new silent **End Branch** direct-add node in Flow Control.
+- Designed the **AI Input** node (I/O Input side): seeds a chat session under
+  a vault session key before the response is needed; default dead-drop
+  passthrough with optional "Output AI response"; prompt can be customized
+  mid-workflow before being passed in. Pattern documented in
+  `NODE_STANDARDS.md`.
+- Documented the AI model approach: capability-based AI nodes with curated
+  supported-model lists (strictest for structured-output nodes such as AI
+  Conditional Branch); a future fork point to per-model groups if supported
+  models diverge.
+- Added `selector_section: str | None` to the metadata direction alongside
+  `group` — both frontend-only, exposed through `NodeFactory`.
+- Created `NODE_CATALOG.md`: complete node inventory (Live / Planned /
+  Deferred / Concept) with mappings from currently registered types, so no
+  node idea is lost while non-critical nodes are deferred.
+- Updated: `PHASE_17_NODE_VISUAL_IDENTITY.md` (rewritten for the revision),
+  `NODE_STANDARDS.md` (terminate-branch standard, AI Input pattern),
+  `NODE_HELPER.md` (five families, `group`/`selector_section` spec fields),
+  `MASTER_BUILD_PLAN.md` (Phase 17 remaining work), `AGENT_HANDOFF.md`
+  (direction summary), `README.md` (catalog directory row + task table).
+- Verification:
+  - `git diff --check`
+  - `python3 -m pytest tests/ -q` (145 passed + 1 pre-existing generated-node
+    flake, unchanged from before the docs edit)
+
 ## 2026-06-12 — Docs: README Document Directory Overhaul
 
 - Rewrote `README.md` to give every document a clear "what it contains" and

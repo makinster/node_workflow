@@ -17,7 +17,7 @@ tkinter/proof-of-concept material lives under `docs/archive/`.
 | Add or change a node | `NODE_STANDARDS.md`, `AGENT_START_GUIDE.md` | `NODE_HELPER.md`, `PROJECT_KNOWLEDGE.md`, `ARCHITECTURE.md` |
 | Fix frontend/UI behavior | `UI_QUICK_REFERENCE.md`, `AGENT_START_GUIDE.md` | `TUI_DESIGN.md`, `BACKEND_FRONTEND_BOUNDARY.md` |
 | Change backend/runtime behavior | `ARCHITECTURE.md`, `SIGNAL_FLOW.md` | `PROJECT_KNOWLEDGE.md`, `BACKEND_FRONTEND_BOUNDARY.md` |
-| Design or update node taxonomy | `PHASE_17_NODE_VISUAL_IDENTITY.md`, `NODE_STANDARDS.md` | `TASK_INDEX.md`, `BACKEND_FRONTEND_BOUNDARY.md` |
+| Design or update node taxonomy | `PHASE_17_NODE_VISUAL_IDENTITY.md`, `NODE_CATALOG.md`, `NODE_STANDARDS.md` | `TASK_INDEX.md`, `BACKEND_FRONTEND_BOUNDARY.md` |
 | Continue Phase 17 node identity | `PHASE_17_NODE_VISUAL_IDENTITY.md`, `TASK_INDEX.md` | `UI_QUICK_REFERENCE.md`, `TUI_DESIGN.md`, `BACKEND_FRONTEND_BOUNDARY.md` |
 | Continue the roadmap | `AGENT_HANDOFF.md`, `MASTER_BUILD_PLAN.md` | `SESSION_LOG.md`, `PROJECT_BACKLOG.md` |
 | Update docs | `README.md`, `TASK_INDEX.md`, `DOCS_MIGRATION_NOTES.md` | — |
@@ -51,7 +51,8 @@ Read these before adding, changing, or designing nodes.
 | `NODE_STANDARDS.md` | Node classification rule (group/separate/mode-select/direct-add), I/O source and routing model, config tab layout, authoring checklist | Before defining any new node type or changing an existing node's I/O |
 | `AGENT_START_GUIDE.md` | Step-by-step checklists for adding nodes, making config render correctly, keyboard/modal rules, file I/O patterns | When adding a node or fixing config UI and you want the quickest correct path |
 | `NODE_HELPER.md` | YAML spec format, `create_node.py` / `check_node.py` / `check_ui.py` commands, and what the generator produces | When using `aotn_node_helper` to generate a node, or adding a new spec section |
-| `PHASE_17_NODE_VISUAL_IDENTITY.md` | Core simplification rule, full expanded node taxonomy (INPUTS/FLOW CONTROL/OUTPUTS/COMPLEX), two-level group picker design, keyboard flows, `group` metadata field, problems/solutions | Designing where a node lives in the taxonomy, implementing the group picker, or adding Phase 17 identity metadata |
+| `NODE_CATALOG.md` | Complete node inventory — every implemented, planned, deferred, and concept node with status, group, and mapping from current registered types | Checking whether a node idea already exists, recording a new node idea, or planning overhaul scope |
+| `PHASE_17_NODE_VISUAL_IDENTITY.md` | Core simplification rule, five-family taxonomy with I/O switch and section headers, two-level group picker design, keyboard flows, `group`/`selector_section` metadata fields, AI model approach | Designing where a node lives in the taxonomy, implementing the selector restructure or group picker, or adding Phase 17 identity metadata |
 
 ### Architecture and Boundaries
 

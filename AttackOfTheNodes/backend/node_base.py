@@ -77,6 +77,13 @@ class Node(ABC):
     color_hint: ClassVar[str] = ""
     examples: ClassVar[List[Dict[str, Any]]] = []
 
+    # Frontend-only navigation metadata (Phase 17). The backend exposes these
+    # through NodeFactory but never branches on them. Nodes sharing a group
+    # appear behind one Group Picker entry; selector_section names the header
+    # an entry renders under. Group members must share one selector_section.
+    group: ClassVar[Optional[str]] = None
+    selector_section: ClassVar[Optional[str]] = None
+
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
         if not cls.default_alias:
