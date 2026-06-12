@@ -462,6 +462,10 @@ class NodeSelectorScreen(ModalScreen):
         list_view = self.query_one("#node-type-list", ListView)
         self.app.set_focus(list_view)
         self._ensure_selectable_highlight(list_view)
+        # Re-assert the highlight after the next render cycle so it sticks
+        # even when the list was just repopulated. Only touches index, never
+        # focus, so it cannot interfere with subsequent user key presses.
+        self.call_after_refresh(lambda: self._ensure_selectable_highlight(list_view))
         list_view.scroll_visible(animate=False)
 
     def _ensure_selectable_highlight(self, list_view: ListView) -> None:
