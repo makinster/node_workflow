@@ -179,6 +179,11 @@ Done — the core `RunSession` is implemented:
   `path_hint: "file"` (empty required path = error, missing on disk =
   warning). Coverage lives in `tests/test_run_session.py`.
 
+`get_resource(key)` is already implemented — retrieves a previously registered
+handle by key (see `tests/test_run_session.py::test_register_and_get_resource`).
+Nodes that receive a typed vault reference key will call
+`context.run_session.get_resource(ref_key)` to resolve the actual Python handle.
+
 Remaining design notes:
 - Keep the resource session backend-generic. It should not know about Textual,
   OS dialogs, or editor UI. Frontends choose files; nodes receive portable file
@@ -209,6 +214,61 @@ Remaining design notes:
   node and the specific helper setting that caused the problem.
 - Execution views should be able to reveal hidden helper activity when debugging,
   but the editor should default to the simpler visible node graph.
+
+## Near-Term Project — Typed Vault Entries and AI Session Handles
+
+Architecture finalized 2026-06-11. No implementation has landed yet.
+
+**Typed vault entries.** `MemoryBank` (the Vault) gains a `type` field on
+every entry. Types at minimum: `string`, `number`, `boolean`, `file`,
+`ai_session`. Existing `string`/`number`/`boolean` entries remain pure JSON
+values — behavior unchanged. `file` and `ai_session` entries store the type
+tag plus a string reference key; the actual Python handle (file object or AI
+provider session) lives in `RunSession` and is retrieved by calling
+`context.run_session.get_resource(ref_key)`.
+
+From the user's perspective the type is invisible; they see `filename (file)`
+or `chat_name (ai_session)` in the Vault dropdown.
+
+**Input dropdown type filtering.** Config dropdowns that select a Vault source
+filter by declared input type. An input that accepts `file` shows only `file`
+entries; an LLM continuation input shows only `ai_session` entries. This
+prevents type mismatches and keeps the Vault navigable as it grows.
+
+**AI session as config-driven output on LLM nodes.** There is no separate Chat
+Session Node. Any LLM node can opt into session persistence via a config
+checkbox ("keep active AI session") and a user-supplied session key. When
+checked and the node executes:
+- A `(type: ai_session, ref_key: <session_key>)` entry is written to the Vault.
+- The session handle (provider client + message history) is registered in
+  `RunSession` under that key.
+
+Downstream LLM nodes that select the same Vault key append their turn to the
+existing history. The first node with a given key starts the session; all
+subsequent nodes continue it. Message history lives in the session object in
+`RunSession`, not in `MemoryBank`. `MemoryBank` holds only the type tag and
+reference key.
+
+**Validator error/warning split.** Applies uniformly to all typed vault
+references (string, number, file, ai_session):
+- Error: no node in the workflow declares the vault key at all. Structurally
+  impossible at runtime. Blocks the workflow.
+- Warning: a node declares the key but lives on a parallel branch where
+  execution order cannot be guaranteed. Recommend a Wait Until node or branch
+  merge before the key is read or written.
+
+The validator must not infer timing from node count, node type, or branch
+depth. Static analysis cannot know which branch is slower. Warning plus
+Wait Until guidance is the correct ceiling.
+
+**Work items:**
+- Add `type` field to `MemoryBank` vault entries.
+- Add `get_resource(key)` to `RunSession`.
+- Add "keep active AI session" checkbox and session key field to LLM node
+  config.
+- Add Vault write path for `ai_session`-typed entries on LLM node execute.
+- Extend input source dropdowns to filter by declared input type.
+- Extend validator to cover typed vault reference ordering (error/warning split).
 
 ## Later Project — Unified Toast / Alert System
 
