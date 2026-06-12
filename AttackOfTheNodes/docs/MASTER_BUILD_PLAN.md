@@ -56,28 +56,20 @@ and Complex (`AI`). In-list section headers organize tabs; keyboard nav skips
 them. Start/End removed from the user-facing taxonomy (terminate-branch
 config on outputs + End Branch node). Full inventory in `NODE_CATALOG.md`.
 
+Implemented for the revision (2026-06-12): `group` / `selector_section`
+metadata exposure, five-family remap with `Utility` editor styling, the
+four-tab selector with I/O switch, section headers, reduced filters, the
+generic Group Picker modal with auto-promotion and ESC-returns-to-selector,
+selector hiding of `start_node`/`end_node`, and node helper validation for
+the new families and fields.
+
 Remaining Phase 17 work:
 
-- Add `group: str | None` and `selector_section: str | None` to node class
-  metadata and expose both through `NodeFactory.get_node_types_metadata()`.
-- Remap registered nodes to the five-family scheme (debug/data nodes move to
-  `Utility`; update `node_identity.py`, selector taxonomy tests, and the
-  editor family color map with a `Utility` entry).
-- Restructure `NodeSelectorScreen`: four tabs with the I/O Input/Output
-  switch; reduced filter set; section headers as non-selectable rows skipped
-  by keyboard nav and hidden when empty or while searching.
-- Implement the two-level group picker: group entries with member counts in
-  the main selector; a generic Group Picker second modal for groups with 2+
-  members; single-member groups auto-promote to direct-add entries; `ESC` in
-  picker returns to main selector; group counts reflect active filters;
-  groups with a filtered count of 0 are hidden; string filter dissolves
-  groups and headers and shows node types directly.
-- Update the node helper: validate five families, accept `group` /
-  `selector_section` spec fields, validate group/section consistency.
-- Manually verify the editor view in the running app at several terminal
-  widths: two-line rows, aligned frames, identity line visible, selection
-  highlight, and branch selector rows. (First rendering bug already fixed:
-  identity rows now re-fit to the rendered panel width on resize.)
+- Manually verify the selector (tabs, switch, headers, picker) and the
+  editor view in the running app at several terminal widths: two-line rows,
+  aligned frames, identity line visible, selection highlight, and branch
+  selector rows. (First rendering bug already fixed: identity rows now
+  re-fit to the rendered panel width on resize.)
 - Keep future runtime-resource expansion and node-library redesign work
   separate from the Phase 17 visual identity foundation.
 
@@ -177,16 +169,12 @@ Done:
   generic Group Picker second modal, auto-promotion rule, `ESC` behavior,
   search-dissolves-groups behavior, keyboard flows.
 
-Remaining (code work for the revised design):
+Remaining:
 
-- `group` / `selector_section` metadata exposure through `NodeFactory`.
-- Five-family remap of registered nodes (`Utility` family for debug/data
-  nodes) with test and color-map updates.
-- Selector restructure: four tabs, I/O switch, section headers, reduced
-  filters, two-level group picker.
-- Node helper updates for the new families and fields.
-- Live-TUI verification at several terminal widths before closing the phase
-  (first rendering bug already fixed: rows re-fit to panel width).
+- Live-TUI verification of the restructured selector (tabs, I/O switch,
+  headers, group picker) and editor rows at several terminal widths before
+  closing the phase (first rendering bug already fixed: rows re-fit to
+  panel width).
 - Begin Phase 18 only after the live editor view is verified clean.
 
 Planning reference:

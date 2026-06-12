@@ -231,11 +231,9 @@ Phase 17 identity (required since 2026-06-12; keep in sync with
   (Inputs green, Outputs amber, Flow Control blue, Utility grey,
   Complex violet).
 
-Note: the five-family scheme and the `group` / `selector_section` fields are
-the Phase 17 taxonomy-revision contract (2026-06-12). Until the matching
-generator/selector code change lands, the generator still validates the older
-four-family values — check `MASTER_BUILD_PLAN.md` Phase 17 status if a spec
-is rejected.
+The generator validates the five families, requires `selector_section`
+whenever `group` is set (except on the flat-rendered Outputs side), and emits
+`group` / `selector_section` as class metadata on generated nodes.
 
 Execution templates:
 

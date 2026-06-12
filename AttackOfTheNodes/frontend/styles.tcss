@@ -128,6 +128,16 @@ Screen {
     height: auto;
 }
 
+/* I/O tab Input/Output switch row (hidden on other tabs). */
+#io-direction-row {
+    height: auto;
+    align: center middle;
+}
+
+#io-direction-row Label {
+    margin: 1 1 0 1;
+}
+
 #node-filter {
     height: auto;
 }
@@ -148,6 +158,34 @@ Screen {
 
 .node-select-row {
     height: 2;
+}
+
+/* Section headers inside the selector list: non-selectable dividers that
+   keyboard navigation skips. */
+.node-select-header {
+    height: 1;
+    color: #8b949e;
+}
+
+/* Single-line group entries that open the Group Picker. */
+.node-select-group {
+    height: 1;
+}
+
+.group-member-row {
+    height: 1;
+}
+
+#group-member-list {
+    height: 1fr;
+    min-height: 4;
+}
+
+#group-member-description {
+    height: auto;
+    min-height: 2;
+    margin: 1 0 0 0;
+    color: #8b949e;
 }
 
 #membank-output-rows {
