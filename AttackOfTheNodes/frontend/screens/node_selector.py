@@ -42,12 +42,21 @@ HIDDEN_NODE_TYPES = {"tombstone_node", "start_node", "end_node"}
 # Filter checkboxes are deliberately sparse: groups and section headers do
 # most of the organizing. Only these tabs surface filters.
 TAB_FILTER_TAGS: Dict[str, List[str]] = {
-    "I/O": ["File I/O", "Internet", "AI"],
+    "I/O": ["Internet", "AI"],
     "Flow Control": [],
     "Utility": [],
     "Complex": ["AI"],
 }
-ALL_FILTER_TAGS = ["File I/O", "Internet", "AI"]
+ALL_FILTER_TAGS = ["Internet", "AI"]
+
+# Short descriptions shown on group entries in the selector and picker.
+# Fallback: first member's description.
+GROUP_DESCRIPTIONS: Dict[str, str] = {
+    "Branch": "Splits execution flow into configurable parallel branches",
+    "Merge": "Waits for all parallel branches to complete and collects outputs",
+    "Data Transform": "Transforms data between formats and structures",
+    "AI Processing": "Sends prompts to an AI model and returns the response",
+}
 
 # Frontend-owned section ordering per family. Entries without a
 # selector_section render before the first header.
@@ -108,15 +117,15 @@ class NodeSelectorScreen(ModalScreen):
                         id=f"node-family-{self._slug(tab)}",
                         variant="primary" if tab == self._active_tab else "default",
                     )
-            with Horizontal(id="io-direction-row"):
-                yield Label("Input", id="io-direction-label-input")
-                yield Switch(value=False, id="io-direction-switch")
-                yield Label("Output", id="io-direction-label-output")
             yield CommandInput(
                 placeholder="Filter nodes",
                 id="node-filter",
                 auto_edit_on_focus=False,
             )
+            with Horizontal(id="io-direction-row"):
+                yield Label("Input", id="io-direction-label-input")
+                yield Switch(value=False, id="io-direction-switch")
+                yield Label("Output", id="io-direction-label-output")
             with Vertical(id="node-subcategory-filters"):
                 for tag in ALL_FILTER_TAGS:
                     yield Checkbox(tag, value=False, id=self._tag_checkbox_ids[tag])
@@ -223,9 +232,19 @@ class NodeSelectorScreen(ModalScreen):
         self.dismiss(None)
 
     def action_previous_tab(self) -> None:
+        focused = self.app.focused
+        if isinstance(focused, Switch) and focused.id == "io-direction-switch":
+            if focused.value:
+                focused.value = False
+            return
         self._cycle_tab(-1)
 
     def action_next_tab(self) -> None:
+        focused = self.app.focused
+        if isinstance(focused, Switch) and focused.id == "io-direction-switch":
+            if not focused.value:
+                focused.value = True
+            return
         self._cycle_tab(1)
 
     def action_cursor_up(self) -> None:
@@ -398,23 +417,22 @@ class NodeSelectorScreen(ModalScreen):
         return f"── {name} ".ljust(HEADER_RULE_WIDTH, "─")
 
     def _group_row_text(self, entry: Dict[str, Any]) -> str:
-        return f"► {entry['name']}  ({len(entry['members'])}) ▸"
+        name = entry["name"]
+        count = len(entry["members"])
+        desc = GROUP_DESCRIPTIONS.get(name, "")
+        if not desc:
+            first = entry["members"][0]
+            desc = str(first.get("description") or "").strip() or "No description"
+        if len(desc) > 76:
+            desc = f"{desc[:75]}…"
+        return f"{{ {name} }} ({count})\n- {desc}"
 
     def _node_row_text(self, node: Dict[str, Any]) -> str:
-        """Two-line selector row: name + subcategories, then description.
-
-        The family is omitted because it is redundant with the active tab;
-        only the subcategory tags add information here.
-        """
         display = node["display_name"]
-        tags = node.get("tags") or []
-        tag_text = "".join(f"({tag})" for tag in tags)
-        line_one = f"{display} - {tag_text}" if tags else display
         description = str(node.get("description") or "").strip() or "No description"
         if len(description) > 76:
             description = f"{description[:75]}…"
-        line_two = f"    {description}"
-        return f"{line_one}\n{line_two}"
+        return f"\\[ {display} ]\n- {description}"
 
     # ------------------------------------------------------------------
     # Selection and activation
@@ -521,8 +539,8 @@ class NodeSelectorScreen(ModalScreen):
         checkboxes = self._visible_subcategory_checkboxes()
         if checkboxes:
             focus_command_widget(self, checkboxes[0])
-            return
-        self._focus_node_list()
+        else:
+            focus_command_widget(self, self.query_one("#node-filter", CommandInput))
 
     def _focus_widget(self, widget: Any) -> None:
         if isinstance(widget, ListView):
@@ -534,9 +552,9 @@ class NodeSelectorScreen(ModalScreen):
         widgets: list[Any] = [
             self.query_one(f"#node-family-{self._slug(self._active_tab)}", Button),
         ]
+        widgets.append(self.query_one("#node-filter", CommandInput))
         if self._active_tab == IO_TAB:
             widgets.append(self.query_one("#io-direction-switch", Switch))
-        widgets.append(self.query_one("#node-filter", CommandInput))
         widgets.extend(self._visible_subcategory_checkboxes())
         widgets.append(self.query_one("#node-type-list", ListView))
         widgets.append(self.query_one("#cancel-node-select", Button))

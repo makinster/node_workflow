@@ -3656,23 +3656,30 @@ async def _test_node_selector_layout_is_compact_and_checkboxes_fit():
             subs = screen.query_one("#node-subcategory-filters")
             io_row = screen.query_one("#io-direction-row")
 
-            # No dead space between the tab row and the filter bar. On the
-            # I/O tab the Input/Output switch row sits between them, so the
-            # only allowed gap is that row's own height.
-            switch_height = io_row.region.height if io_row.display else 0
+            # Filter is directly below the tab row — no dead space.
             gap = filt.region.y - (tabs.region.y + tabs.region.height)
-            assert gap == switch_height, (
-                f"tabs->filter gap {gap} != switch row {switch_height}"
-                f" at height {height}"
+            assert gap == 0, (
+                f"tabs->filter gap {gap} != 0 at height {height}"
             )
 
-            # The subcategory block fits its checkboxes instead of stretching.
+            # On the I/O tab the switch sits below the filter.
+            filt_bottom = filt.region.y + filt.region.height
+            assert io_row.display, "Switch row should be visible on I/O tab"
+            assert io_row.region.y >= filt_bottom, (
+                f"Switch row top {io_row.region.y} should be >= filter bottom"
+                f" {filt_bottom} at height {height}"
+            )
+
+            # Check checkboxes on Complex tab (which has the AI filter).
+            screen._set_active_tab("Complex")
+            await pilot.pause(0.05)
+            subs = screen.query_one("#node-subcategory-filters")
             visible = [
                 cb
                 for cb in screen.query("#node-subcategory-filters Checkbox")
                 if cb.display
             ]
-            assert visible, "Expected visible subcategory checkboxes"
+            assert visible, "Expected visible subcategory checkboxes on Complex tab"
             for cb in visible:
                 bottom = cb.region.y + cb.region.height
                 subs_bottom = subs.region.y + subs.region.height
@@ -3715,18 +3722,16 @@ async def _test_node_selector_rows_are_two_lines_with_indented_description():
         )
         lines = screen._node_row_text(node).split("\n")
         assert len(lines) == 2, f"Expected a two-line row, got {lines!r}"
-        # First line carries the display name; second line is the indented
-        # description for visual separation between nodes.
-        assert node["display_name"] in lines[0]
-        assert lines[1].startswith("    ")
+        # First line: [ display_name ]  Second line: - description
+        assert lines[0] == f"\\[ {node['display_name']} ]", (
+            f"Expected '\\[ {node['display_name']} ]', got {lines[0]!r}"
+        )
+        assert lines[1].startswith("- "), (
+            f"Expected '- ...' description, got {lines[1]!r}"
+        )
         expected_desc = (str(node.get("description") or "").strip() or "No description")
         assert expected_desc[:20] in lines[1]
-
-        # Each subcategory appears in its own parentheses after "name - ";
-        # the family (redundant with the active tab) must not appear.
-        if node.get("tags"):
-            expected_tags = "".join(f"({tag})" for tag in node["tags"])
-            assert f"{node['display_name']} - {expected_tags}" == lines[0]
+        # Family must not appear; subcategory tags are not shown in rows.
         family = screen._node_family(node)
         assert family and family not in lines[0], (
             f"Family {family!r} should not appear in row {lines[0]!r}"
@@ -3765,6 +3770,11 @@ async def _test_node_selector_down_from_last_checkbox_highlights_first_node():
         screen = app.query_one(NodeSelectorScreen)
         list_view = app.query_one("#node-type-list", ListView)
 
+        # The Complex tab has the AI checkbox — use it so we always have a
+        # visible checkbox to navigate from (I/O Input side has none currently).
+        screen._set_active_tab("Complex")
+        await pilot.pause(0.03)
+
         # Focus the last visible subcategory checkbox.
         visible_checkboxes = screen._visible_subcategory_checkboxes()
         assert visible_checkboxes
@@ -3777,7 +3787,8 @@ async def _test_node_selector_down_from_last_checkbox_highlights_first_node():
         await pilot.press("s")
         await pilot.pause(0.03)
         assert app.focused is list_view
-        assert list_view.index == 0
+        first_selectable = screen._selectable_indices()[0]
+        assert list_view.index == first_selectable
         assert list_view.highlighted_child is not None
         assert list_view.highlighted_child.highlighted is True
 
@@ -4591,7 +4602,6 @@ async def _test_node_selector_uses_family_tabs_and_subcategory_filters():
         node_list = app.query_one("#node-type-list", ListView)
         filter_input = app.query_one("#node-filter", CommandInput)
         io_switch = app.query_one("#io-direction-switch", Switch)
-        file_filter = app.query_one("#node-subcategory-file-io", Checkbox)
         ai_filter = app.query_one("#node-subcategory-ai", Checkbox)
 
         # Hidden node types never reach the selector.
@@ -4600,12 +4610,14 @@ async def _test_node_selector_uses_family_tabs_and_subcategory_filters():
         assert "start_node" not in all_types
         assert "end_node" not in all_types
 
-        # Default: I/O tab, Input side, File I/O filter focused.
+        # Default: I/O tab, Input side. No Internet/AI-tagged input nodes yet,
+        # so no checkboxes are visible; focus lands on the filter so the first
+        # down press enters the list at item 1 rather than moving from 1 to 2.
         assert screen._active_tab == "I/O"
         assert screen._active_family() == "Inputs"
         assert io_switch.value is False
-        assert app.focused is file_filter
-        assert file_filter.display is True
+        assert screen._visible_subcategory_checkboxes() == []
+        assert app.focused is filter_input
         assert ai_filter.display is False  # no AI-tagged input nodes yet
         assert filter_input.editing is False
         assert {node["type"] for node in screen._visible_nodes} == {
@@ -4618,16 +4630,7 @@ async def _test_node_selector_uses_family_tabs_and_subcategory_filters():
         assert group_entries(screen) == {}
         assert header_names(screen) == ["Text & Data", "Files"]
 
-        # AND-filter on File I/O narrows to the file nodes.
-        screen.action_choose()
-        assert file_filter.value is True
-        assert {node["type"] for node in screen._visible_nodes} == {
-            "example_file_instance_node",
-            "file_reader_node",
-        }
-
-        # Flip the switch to the Output side: the checked input-side filter
-        # must not constrain the output list.
+        # Flip the switch to the Output side.
         io_switch.value = True
         await pilot.pause(0.03)
         assert screen._active_family() == "Outputs"
