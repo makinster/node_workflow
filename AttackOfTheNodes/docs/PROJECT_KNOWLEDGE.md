@@ -142,10 +142,11 @@ its partners). Rules work across config tabs. The node helper expands the
 NODE_STANDARDS input source and output routing models into these fields via
 `input_sources` / `output_routing` spec sections.
 
-Current implementation note: `Node` defines optional `icon_name`, `tags`, and
-`color_hint`, but `NodeFactory.get_node_types_metadata()` does not yet expose
-category/tag/icon/color fields. Phase 17 should expose portable identity
-metadata before the frontend selector depends on it.
+Current implementation note: `NodeFactory.get_node_types_metadata()` exposes
+`primary_family`, `tags`, `icon_name`, and `color_hint`. Existing nodes get
+identity from the transitional table in `backend/node_identity.py`; new
+helper-generated nodes declare identity directly as class metadata
+(`primary_family` is required in helper specs since 2026-06-12).
 
 ## Registered Node Families
 

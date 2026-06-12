@@ -5,6 +5,9 @@
 node_type: example_file_instance_node
 class_name: ExampleFileInstanceNode
 category: io
+primary_family: Inputs
+tags: ["File I/O", "Runtime Resource"]
+icon_name: file-input
 display_name: File Instance
 default_alias: File Instance
 description: Opens a file at a configured or supplied path and reports success

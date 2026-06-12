@@ -75,12 +75,16 @@ config_tabs:
   - `display_name`
   - `description`
   - `category`
+  - `primary_family` (Phase 17: `Inputs`, `Flow Control`, `Outputs`, or
+    `Complex` — required for the selector family tabs)
   - `input_ports`
   - `output_ports`
   - `default_config`
   - `config_schema`
 - Optional class metadata:
   - `default_alias`
+  - `tags` (Phase 17 subcategory filters such as `File I/O`, `AI`, `Parallel`)
+  - `icon_name` and `color_hint` (Phase 17 visual identity)
   - `input_port_metadata`
   - `output_port_metadata`
   - `ui_hints = {"pass_through": True}`

@@ -33,6 +33,9 @@ def _spec_file(tmp_path: Path) -> Path:
 node_type: helper_passthrough_node
 class_name: HelperPassthroughNode
 category: debug
+primary_family: Complex
+tags: ["Utility"]
+icon_name: repeat
 display_name: Helper Passthrough
 default_alias: Helper Passthrough
 description: Generated helper pass-through node
@@ -85,6 +88,11 @@ def test_node_helper_generates_node_registration_and_focused_test(tmp_path: Path
     assert "node_type: ClassVar[str] = 'helper_passthrough_node'" in node_text
     assert "'name': 'Helper Payload'" in node_text
     assert "'pass_through': 'Forwards the previous payload unchanged.'" in node_text
+    assert "primary_family: ClassVar[str] = 'Complex'" in node_text
+    assert "tags: ClassVar[List[str]] = ['Utility']" in node_text
+    assert "icon_name: ClassVar[str] = 'repeat'" in node_text
+    # color_hint defaults from the family map when not declared.
+    assert "color_hint: ClassVar[str] = 'violet'" in node_text
     assert "'tab': 'Source'" in node_text
     assert "'tab': 'Payloads'" in node_text
     assert "context.signal_done" in node_text
@@ -129,6 +137,8 @@ def _standard_model_spec() -> dict:
         "node_type": "helper_standard_node",
         "class_name": "HelperStandardNode",
         "category": "debug",
+        "primary_family": "Inputs",
+        "tags": ["File I/O"],
         "display_name": "Helper Standard",
         "description": "Standard input/output model example",
         "input_ports": ["input"],
@@ -230,6 +240,25 @@ def test_node_helper_validates_standard_sections(tmp_path: Path):
         generate_from_spec(spec, project_root=project_root)
 
 
+def test_node_helper_requires_phase_17_identity(tmp_path: Path):
+    project_root = _project_skeleton(tmp_path)
+
+    spec = _standard_model_spec()
+    del spec["primary_family"]
+    with pytest.raises(ValueError, match="primary_family is required"):
+        generate_from_spec(spec, project_root=project_root)
+
+    spec = _standard_model_spec()
+    spec["primary_family"] = "Gadgets"
+    with pytest.raises(ValueError, match="primary_family must be one of"):
+        generate_from_spec(spec, project_root=project_root)
+
+    spec = _standard_model_spec()
+    spec["tags"] = ["File I/O", "Time Travel"]
+    with pytest.raises(ValueError, match="unknown entries"):
+        generate_from_spec(spec, project_root=project_root)
+
+
 def test_node_helper_validates_rule_keys(tmp_path: Path):
     project_root = _project_skeleton(tmp_path)
 
@@ -237,6 +266,7 @@ def test_node_helper_validates_rule_keys(tmp_path: Path):
         "node_type": "helper_rules_node",
         "class_name": "HelperRulesNode",
         "category": "debug",
+        "primary_family": "Complex",
         "display_name": "Helper Rules",
         "description": "Rule validation example",
         "input_ports": ["input"],

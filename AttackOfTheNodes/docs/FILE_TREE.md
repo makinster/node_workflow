@@ -49,6 +49,8 @@ AttackOfTheNodes/
       text_output_node.py
       user_text_input_node.py
       wait_until_node.py
+      io/
+        example_file_instance_node.py
       debug/
         counter_node.py
         deep_branch_node.py

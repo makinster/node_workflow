@@ -46,7 +46,18 @@ overhaul.
 - Added `aotn_node_helper/specs/example_file_instance_node.yaml` — the
   NODE_STANDARDS File Instance reference example expressed as a helper spec.
   Verified end-to-end: generated, check_node + check_ui + generated UI test
-  all green, then reverted the scratch node (spec kept as documentation).
+  all green. The generated node is REGISTERED in the project
+  (`backend/nodes/io/example_file_instance_node.py`) for a live TUI pass of
+  the dynamic config forms; remove it after the UI review if not kept.
+- Registering the node surfaced a helper gap: generated nodes lacked Phase 17
+  identity metadata, failing `test_node_factory_exposes_phase_17_identity_metadata`.
+  Helper specs now require `primary_family` (Inputs / Flow Control / Outputs /
+  Complex) and accept optional `tags` (validated against the Phase 17
+  subcategory taxonomy), `icon_name`, and `color_hint` (defaults from the
+  family color map). Generated nodes emit these as class metadata directly —
+  no entry in the transitional `node_identity.py` table needed.
+- Updated the node selector taxonomy test to include the registered example
+  node in the Inputs family and File I/O filter expectations.
 - Tests: new `tests/test_form_rules.py` (rule helpers + mounted
   NodeConfigScreen integration covering greying, visibility, and mutual
   exclusion both directions); extended `tests/test_node_helper.py` with

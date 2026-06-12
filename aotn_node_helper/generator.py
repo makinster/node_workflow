@@ -33,6 +33,26 @@ VALID_TEMPLATES = {
     "error_stub",
 }
 VALID_CATEGORIES = {"flow", "io", "data", "ai", "debug", "utility"}
+# Phase 17 identity taxonomy; keep in sync with backend/node_identity.py.
+VALID_FAMILIES = {"Inputs", "Flow Control", "Outputs", "Complex"}
+VALID_TAGS = {
+    "Triggered",
+    "File I/O",
+    "Internet",
+    "AI",
+    "Passive Output",
+    "Active Output",
+    "Parallel",
+    "Conditional",
+    "Runtime Resource",
+    "Utility",
+}
+FAMILY_COLOR_HINTS = {
+    "Inputs": "green",
+    "Flow Control": "blue",
+    "Outputs": "amber",
+    "Complex": "violet",
+}
 FIELD_RULE_KEYS = {"enabled_when", "visible_when", "mutually_exclusive_with"}
 SOURCE_OPTION_LABELS = {
     "upstream": "Upstream payload",
@@ -117,6 +137,26 @@ def normalize_spec(spec: dict[str, Any]) -> dict[str, Any]:
     if template not in VALID_TEMPLATES:
         raise ValueError(f"execution_template must be one of {sorted(VALID_TEMPLATES)}")
 
+    primary_family = str(spec.get("primary_family") or "").strip()
+    if not primary_family:
+        raise ValueError(
+            "primary_family is required (Phase 17 node identity); "
+            f"choose one of {sorted(VALID_FAMILIES)}"
+        )
+    if primary_family not in VALID_FAMILIES:
+        raise ValueError(f"primary_family must be one of {sorted(VALID_FAMILIES)}")
+    tags = [str(item).strip() for item in spec.get("tags") or []]
+    unknown_tags = [item for item in tags if item not in VALID_TAGS]
+    if unknown_tags:
+        raise ValueError(
+            f"tags contains unknown entries {unknown_tags}; "
+            f"valid tags are {sorted(VALID_TAGS)}"
+        )
+    icon_name = str(spec.get("icon_name") or "").strip()
+    color_hint = str(
+        spec.get("color_hint") or FAMILY_COLOR_HINTS[primary_family]
+    ).strip()
+
     input_ports = _string_list(spec.get("input_ports", ["input"]), "input_ports")
     output_ports = _string_list(spec.get("output_ports", ["default"]), "output_ports")
     config_fields = _config_fields_from_spec(spec)
@@ -187,6 +227,10 @@ def normalize_spec(spec: dict[str, Any]) -> dict[str, Any]:
         "module_name": module_name,
         "category": category,
         "category_constant": category.upper(),
+        "primary_family": primary_family,
+        "tags": tags,
+        "icon_name": icon_name,
+        "color_hint": color_hint,
         "display_name": str(spec.get("display_name") or _title_case(node_type)),
         "default_alias": str(spec.get("default_alias") or spec.get("display_name") or _title_case(node_type)),
         "description": str(spec.get("description") or ""),
@@ -438,6 +482,10 @@ class {spec["class_name"]}(Node):
     default_alias: ClassVar[str] = {spec["default_alias"]!r}
     description: ClassVar[str] = {spec["description"]!r}
     category: ClassVar[str] = NodeCategory.{spec["category_constant"]}
+    primary_family: ClassVar[str] = {spec["primary_family"]!r}
+    tags: ClassVar[List[str]] = {_pretty(spec["tags"])}
+    icon_name: ClassVar[str] = {spec["icon_name"]!r}
+    color_hint: ClassVar[str] = {spec["color_hint"]!r}
     input_ports: ClassVar[List[str]] = {_pretty(spec["input_ports"])}
     output_ports: ClassVar[List[str]] = {_pretty(spec["output_ports"])}
     input_port_metadata: ClassVar[Dict[str, Dict[str, str]]] = {_pretty(spec["input_port_metadata"])}

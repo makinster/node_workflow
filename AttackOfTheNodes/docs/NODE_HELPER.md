@@ -61,6 +61,9 @@ places ordinary fields into the fixed Node Config tabs without frontend edits.
 node_type: example_formatter_node
 class_name: ExampleFormatterNode
 category: data
+primary_family: Complex
+tags: ["Utility"]
+icon_name: combine
 display_name: Example Formatter
 default_alias: Format Text
 description: Formats an incoming payload for display
@@ -204,6 +207,19 @@ Categories:
 - `ai`
 - `debug`
 - `utility`
+
+Phase 17 identity (required since 2026-06-12; keep in sync with
+`backend/node_identity.py`):
+
+- `primary_family` (required): `Inputs`, `Flow Control`, `Outputs`, or
+  `Complex`. This is the user-facing selector family; `category` remains the
+  legacy backend grouping.
+- `tags` (optional): any of `Triggered`, `File I/O`, `Internet`, `AI`,
+  `Passive Output`, `Active Output`, `Parallel`, `Conditional`,
+  `Runtime Resource`, `Utility`. Selector subcategory filters use these.
+- `icon_name` (optional): icon hint string.
+- `color_hint` (optional): defaults from the family color map
+  (Inputs green, Flow Control blue, Outputs amber, Complex violet).
 
 Execution templates:
 

@@ -35,8 +35,10 @@ from .debug.variable_reader_node import VariableReaderNode
 from .debug.variable_setter_node import VariableSetterNode
 from ..node_identity import apply_transitional_node_identity
 
+from .io.example_file_instance_node import ExampleFileInstanceNode
 
 ALL_NODE_CLASSES = [
+    ExampleFileInstanceNode,
     # Flow
     StartNode,
     EndNode,
