@@ -40,7 +40,6 @@ class GroupPickerScreen(ModalScreen):
         with Vertical(id="modal-card"):
             yield Label(self.group_name, classes="modal-title")
             yield ListView(id="group-member-list")
-            yield Static("", id="group-member-description")
             yield Static(
                 "W/S navigate  E add  ESC back to selector",
                 classes="modal-help",
@@ -49,19 +48,18 @@ class GroupPickerScreen(ModalScreen):
     def on_mount(self) -> None:
         list_view = self.query_one("#group-member-list", ListView)
         for member in self.members:
+            display = member["display_name"]
+            description = str(member.get("description") or "").strip() or "No description"
+            if len(description) > 76:
+                description = f"{description[:75]}…"
             list_view.append(
                 ListItem(
-                    Static(member["display_name"], classes="group-member-row")
+                    Static(f"[ {display} ]\n- {description}", classes="group-member-row")
                 )
             )
         if self.members:
             list_view.index = 0
-            self._show_description(0)
         self.app.set_focus(list_view)
-
-    def on_list_view_highlighted(self, event: ListView.Highlighted) -> None:
-        if event.list_view.id == "group-member-list":
-            self._show_description(event.list_view.index)
 
     def on_list_view_selected(self, event: ListView.Selected) -> None:
         if event.list_view.id == "group-member-list":
@@ -91,12 +89,3 @@ class GroupPickerScreen(ModalScreen):
         if index is None or index < 0 or index >= len(self.members):
             return
         self.dismiss(self.members[index]["type"])
-
-    def _show_description(self, index: Optional[int]) -> None:
-        description = ""
-        if index is not None and 0 <= index < len(self.members):
-            member = self.members[index]
-            description = str(member.get("description") or "").strip()
-            if not description:
-                description = "No description"
-        self.query_one("#group-member-description", Static).update(description)

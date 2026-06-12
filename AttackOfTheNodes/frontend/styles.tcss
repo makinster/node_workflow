@@ -167,25 +167,19 @@ Screen {
     color: #8b949e;
 }
 
-/* Single-line group entries that open the Group Picker. */
+/* Two-line group entries: { name } (count) then description. */
 .node-select-group {
-    height: 1;
+    height: 2;
 }
 
+/* Two-line member rows inside the Group Picker. */
 .group-member-row {
-    height: 1;
+    height: 2;
 }
 
 #group-member-list {
     height: 1fr;
     min-height: 4;
-}
-
-#group-member-description {
-    height: auto;
-    min-height: 2;
-    margin: 1 0 0 0;
-    color: #8b949e;
 }
 
 #membank-output-rows {
