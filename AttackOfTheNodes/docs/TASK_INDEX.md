@@ -1,7 +1,9 @@
 # Task Index
 
-Use this file to choose the smallest useful reading set and the focused checks
-for a task.
+`README.md` routes you to this file. This file gives the minimum reading set,
+likely code files, and the focused `pytest -k` or helper commands for each task
+type. Open the docs listed here, then open deeper references only if those docs
+point you further.
 
 ## Design Or Update Node Taxonomy
 

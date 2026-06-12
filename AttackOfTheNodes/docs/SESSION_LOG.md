@@ -4,6 +4,22 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-12 — Docs: README Document Directory Overhaul
+
+- Rewrote `README.md` to give every document a clear "what it contains" and
+  "when to open it" entry in a structured Document Directory table. Replaced
+  the previous flat Read-First / Reference lists (which had overlapping entries
+  and imprecise descriptions) with four organized sections: Roadmap and Session
+  State, Node Authoring, Architecture and Boundaries, Frontend Reference, and
+  Planning and Backlog.
+- Archive section now explains when to open each archived file rather than just
+  listing them.
+- Documentation Rules in README now includes "add a row to the Document
+  Directory when a new active doc is created."
+- Added orienting intro to `TASK_INDEX.md` clarifying its role relative to
+  README (README routes; TASK_INDEX gives the minimum reading set, likely files,
+  and focused test commands).
+
 ## 2026-06-12 — Node Taxonomy: Core Simplification Rule, Full Expanded Taxonomy, Group Picker Design
 
 - Documented the Core Simplification Rule for deciding node placement: variants
