@@ -539,8 +539,8 @@ class NodeSelectorScreen(ModalScreen):
         checkboxes = self._visible_subcategory_checkboxes()
         if checkboxes:
             focus_command_widget(self, checkboxes[0])
-            return
-        self._focus_node_list()
+        else:
+            focus_command_widget(self, self.query_one("#node-filter", CommandInput))
 
     def _focus_widget(self, widget: Any) -> None:
         if isinstance(widget, ListView):
