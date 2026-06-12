@@ -514,7 +514,7 @@ def test_node_factory_exposes_phase_17_identity_metadata():
         item["type"]: item
         for item in wm._factory.get_node_types_metadata()
     }
-    expected_families = {"Inputs", "Flow Control", "Outputs", "Complex"}
+    expected_families = {"Inputs", "Outputs", "Flow Control", "Utility", "Complex"}
 
     for node_type, item in metadata.items():
         assert item["category"] in expected_families, node_type
@@ -524,6 +524,14 @@ def test_node_factory_exposes_phase_17_identity_metadata():
         assert all(isinstance(tag, str) for tag in item["tags"])
         assert item["icon_name"]
         assert item["color_hint"]
+        assert "group" in item
+        assert item["group"] is None or (
+            isinstance(item["group"], str) and item["group"]
+        )
+        assert "selector_section" in item
+        assert item["selector_section"] is None or (
+            isinstance(item["selector_section"], str) and item["selector_section"]
+        )
 
     assert metadata["file_reader_node"]["category"] == "Inputs"
     assert "File I/O" in metadata["file_reader_node"]["tags"]
@@ -3134,7 +3142,7 @@ async def _test_editor_depth_counter_tracks_visible_branch_distance():
         details = screen.query_one("#node-details").display_text
         assert details.startswith(f"Name: Logger ({path_b_first})")
         assert "Kind: Logger" in details
-        assert "Family: Outputs" in details
+        assert "Family: Utility" in details
         assert "Subcategories: Passive Output, Utility" in details
         assert "Step: 2" in details
 
@@ -3192,7 +3200,7 @@ async def _test_editor_identity_rows_keep_keyboard_selection_stable():
         assert node_list.index == 12
         assert screen.selected_node_id == expected_id
         selected_card = next(card for card in app.query(NodeCard) if card.node_id == expected_id)
-        assert "Outputs - Passive Output" in selected_card.display_text
+        assert "Utility - Passive Output" in selected_card.display_text
 
     print("test_editor_identity_rows_keep_keyboard_selection_stable PASSED")
 
