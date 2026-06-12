@@ -4,6 +4,79 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-12 — Node Helper: Dynamic Forms, Standard Model Expansion, Config-UI Checks
+
+- Implemented the dynamic-form schema keys planned in the Helper-Backed UI
+  Standardization backlog:
+  - `enabled_when`: field greys out unless a condition on other field values
+    holds (mapping of field name to expected value; AND across entries, list
+    values match any).
+  - `visible_when`: hides the field, its label, and its description unless the
+    condition holds.
+  - `mutually_exclusive_with`: checking one boolean unchecks its declared
+    partners; declarations are symmetric.
+  - Implemented in `frontend/widgets/form_generator.py`
+    (`evaluate_field_condition`, `apply_field_rules`,
+    `mutual_exclusion_targets`, `schema_has_field_rules`); generated field
+    labels/descriptions now carry `field-label-<name>` / `field-desc-<name>`
+    ids so visibility rules can hide the whole block.
+  - `NodeConfigScreen` applies rules at mount and on every generated-field
+    change. Rules work across tabs: a Source tab selector can grey out a
+    Parameters tab field, matching the NODE_STANDARDS greying behavior.
+- Expanded `aotn_node_helper` with standard-model spec sections:
+  - `input_sources`: expands each input into a `<name>_source` selector
+    (Upstream payload / Vault / Configured), a gated `<name>_vault_key` field,
+    and a gated Configured parameter field in the Parameters tab.
+  - `output_routing`: expands into the mutually exclusive
+    `transient_output` / `dead_drop_passthrough` pair plus optional
+    `vault_write` / `vault_write_key` fields. Vault modes: `optional`,
+    `default_on`, and `required_unless_transient` (locked on until transient
+    output is checked — the Basic LLM node pattern).
+  - Spec-time validation for rule keys: referenced fields must exist,
+    mutual-exclusion participants must be booleans, standard fields must not
+    collide with hand-written ones.
+- Added `aotn_node_helper/check_ui.py <node_type>` and shared
+  `aotn_node_helper/ui_checks.py`: mounts `NodeConfigScreen` and verifies
+  every schema field renders, lands in its declared tab, participates in
+  keyboard focus, and has correct rule state at mount. Structural nodes
+  (branch/merge/branch-end) are rejected with a clear message.
+- `create_node.py` now also emits `tests/generated/test_<node_type>_ui.py`
+  (config-UI smoke test backed by `ui_checks`) when a spec uses `config_tabs`,
+  `input_sources`, or `output_routing`.
+- Added `aotn_node_helper/specs/example_file_instance_node.yaml` — the
+  NODE_STANDARDS File Instance reference example expressed as a helper spec.
+  Verified end-to-end: generated, check_node + check_ui + generated UI test
+  all green. The generated node is REGISTERED in the project
+  (`backend/nodes/io/example_file_instance_node.py`) for a live TUI pass of
+  the dynamic config forms; remove it after the UI review if not kept.
+- Registering the node surfaced a helper gap: generated nodes lacked Phase 17
+  identity metadata, failing `test_node_factory_exposes_phase_17_identity_metadata`.
+  Helper specs now require `primary_family` (Inputs / Flow Control / Outputs /
+  Complex) and accept optional `tags` (validated against the Phase 17
+  subcategory taxonomy), `icon_name`, and `color_hint` (defaults from the
+  family color map). Generated nodes emit these as class metadata directly —
+  no entry in the transitional `node_identity.py` table needed.
+- Updated the node selector taxonomy test to include the registered example
+  node in the Inputs family and File I/O filter expectations.
+- Tests: new `tests/test_form_rules.py` (rule helpers + mounted
+  NodeConfigScreen integration covering greying, visibility, and mutual
+  exclusion both directions); extended `tests/test_node_helper.py` with
+  standard-model expansion and validation cases. 11 focused tests pass.
+- Known pre-existing flake (not from this change):
+  `test_file_picker_export_and_import_paths` fails in a full-suite run but
+  passes in isolation; reproduced identically on the clean tree.
+- Docs updated: NODE_HELPER.md (standard sections, rule keys, check_ui,
+  limitations/direction refresh), AGENT_START_GUIDE.md, NODE_STANDARDS.md
+  (helper support note), PROJECT_BACKLOG.md (marked done items),
+  PROJECT_KNOWLEDGE.md (form generator capabilities), FILE_TREE.md.
+- Verification:
+  - `../.venv/bin/python -m pytest tests/test_node_helper.py tests/test_form_rules.py -v`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py` (121 passed +
+    1 pre-existing flake)
+  - `../.venv/bin/python -m compileall -q . ../aotn_node_helper`
+  - `../aotn_node_helper/check_ui.py echo_node` / `logger_node` OK;
+    `branch_node` correctly rejected as structural.
+
 ## 2026-06-11 — Node Standards Corrections: MemoryBank Model, Mutual Exclusion, JSON Payloads
 
 - Corrected NODE_STANDARDS.md and PROJECT_KNOWLEDGE.md on three points:
