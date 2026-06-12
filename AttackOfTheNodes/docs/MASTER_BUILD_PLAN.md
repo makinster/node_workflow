@@ -1,6 +1,6 @@
 # AttackOfTheNodes Master Build Plan
 
-**Last updated:** 2026-06-11
+**Last updated:** 2026-06-12
 **Project root:** `AttackOfTheNodes/`
 **Runtime:** Python 3.14, Textual 8.2.7, asyncio, JSON persistence
 
@@ -82,7 +82,8 @@ or node metadata changes for this phase.
 | 9 | Merge dynamic list + lineage barrier | Done |
 | FA-0..FA-5 | Frontend standardization helpers | Done |
 | 10 | Documentation modernization | Done |
-| 10.5 | Backend/frontend boundary cleanup | Done |
+| 10.5 | Backend/frontend boundary cleanup (Phase A) | Done |
+| 10.6 | Tombstone design decision + Phase B migration | Planned |
 | 11 | Real AI node execution | Deferred |
 | 12 | Packaging and release hardening | Deferred |
 | 13 | Cursor model foundation | Done |
@@ -103,6 +104,12 @@ or node metadata changes for this phase.
 - Generated node specs support `config_tabs` for Source / Parameters / Payloads.
 - `NodeConfigScreen` honors schema `tab` hints.
 - Focused generated-node tests live under `tests/generated/`.
+- Dynamic-form schema keys `enabled_when`, `visible_when`, and
+  `mutually_exclusive_with` are implemented in the form generator and applied
+  live by `NodeConfigScreen`, including across tabs (2026-06-12).
+- Helper specs expand the NODE_STANDARDS input/output model via
+  `input_sources` / `output_routing`; `check_ui.py` and generated config-UI
+  smoke tests verify tab placement, focus, and rule state (2026-06-12).
 - Branch config v1 supports 2-5 always-parallel spawn points and per-branch
   seed payloads.
 - Merge Beacon is the user-facing name for persisted `branch_end_node`.

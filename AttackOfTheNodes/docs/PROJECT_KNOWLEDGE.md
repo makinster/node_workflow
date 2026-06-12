@@ -170,12 +170,19 @@ logic is added:
 
 The form generator supports text, number, boolean, select, multiselect,
 multiline, code-like fields, placeholders, validators, height hints, grouped
-tabs, and branch-label fields for multi-output nodes.
+tabs, and branch-label fields for multi-output nodes. It also supports dynamic
+rule keys applied live by `NodeConfigScreen`: `enabled_when` (grey out unless
+a condition on other field values holds), `visible_when` (hide field, label,
+and description), and `mutually_exclusive_with` (checking one boolean unchecks
+its partners). Rules work across config tabs. The node helper expands the
+NODE_STANDARDS input source and output routing models into these fields via
+`input_sources` / `output_routing` spec sections.
 
-Current implementation note: `Node` defines optional `icon_name`, `tags`, and
-`color_hint`, but `NodeFactory.get_node_types_metadata()` does not yet expose
-category/tag/icon/color fields. Phase 17 should expose portable identity
-metadata before the frontend selector depends on it.
+Current implementation note: `NodeFactory.get_node_types_metadata()` exposes
+`primary_family`, `tags`, `icon_name`, and `color_hint`. Existing nodes get
+identity from the transitional table in `backend/node_identity.py`; new
+helper-generated nodes declare identity directly as class metadata
+(`primary_family` is required in helper specs since 2026-06-12).
 
 ## Registered Node Families
 
@@ -204,7 +211,58 @@ Internet, AI, Passive Output, Active Output, Parallel, Conditional, Runtime
 Resource, and Utility. Selector filters and editor row identity should use this
 metadata without changing runtime semantics.
 
-## Current UI Rules
+## Data Flow Patterns — Transient Payloads vs Vault
+
+Understanding when each data path is used is important for reasoning about
+node deletions and workflow integrity.
+
+**MemoryBank is the single store for all runtime data.** Both transient and
+vault data live in the same `MemoryBank`. The distinction is addressing scheme,
+not separate storage.
+
+**Transient data** is keyed by `(source_node_id, port_name)`. It is written by
+a node after execution and consumed by the immediately downstream node's input
+resolution. The key is path-scoped: a parallel branch running concurrently
+cannot look up another branch's transient key, and timing must be correct (the
+write must have occurred before the read). Transient payloads are JSON, so they
+can carry any serializable value — booleans, numbers, strings, LLM responses,
+structured objects. The practical constraint is scope, not size.
+
+The dead-drop option lets a node pass its transient payload through to the next
+node unchanged (forwarding without modifying), or lets a branch-origin node
+seed a downstream node with a specific value without requiring a live transient
+connection through every intermediate node.
+
+**Vault data** uses stable, user-defined string keys declared through
+`membank_outputs` / `membank_inputs`. Any node in the run that knows the key
+can read it, including nodes in other branches or much further downstream. Vault
+is preferred for data that must cross branch boundaries, be accumulated over
+time, or be accessed by nodes that are not adjacent in the execution chain.
+
+Transient and vault are not mutually exclusive as outputs. A node can write the
+same result to both a transient port (for the immediately next node) and a vault
+key (for other branches or later nodes) at the same time.
+
+**Implication for node deletions:**
+
+Many downstream nodes read from the vault directly and are unaffected by
+losing a transient connection. Deleting a single node is a lower-severity
+operation than it might appear. The tombstone blocks the execution path at that
+point, but vault state that surrounding nodes depend on is often independent of
+the deleted node's transient output. Restore-validation failures on transient
+ports are frequently non-critical and should be surfaced as informative alerts,
+not blockers.
+
+**Single-node delete rule:**
+
+Deleting a node removes only that node. Downstream nodes are never automatically
+deleted or modified. The tombstone occupies the deleted node's position as a
+swap-out placeholder. The user can insert new nodes before or after the
+tombstone, restore the original node (with connection validation), or permanently
+remove the tombstone and manually reconnect the gap. The workflow graph beyond
+the tombstone remains intact.
+
+
 
 - Command-mode modals use `W/S` and arrows for navigation, `E`/Enter to
   activate, and `Esc`/`Ctrl+Q` to leave edit/dropdown mode before closing.
@@ -235,8 +293,10 @@ These are operational data folders, not source architecture.
 
 ## Open Cleanup Areas
 
-- Phase 10.5 backend/frontend boundary cleanup: migrate editor tombstones away
-  from backend execution concepts.
+- Phase 10.5 (done) / Phase 10.6 (planned): tombstone stays as an intentional
+  backend type; Phase 10.6 migrates the save path from `branch_end_node` marker
+  to `tombstone_node` with full original data, extends validator error output,
+  and implements restore connection validation. See `BACKEND_FRONTEND_BOUNDARY.md`.
 - Frontend audit phases FA-6/FA-7: viewer long-content safety and visual/help
   alignment.
 - Branch health visualization: distinguish valid branch endings, unmerged

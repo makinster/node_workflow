@@ -31,30 +31,75 @@ roadmap status or task routes change.
 
 ## Planned Project — Backend / Frontend Boundary Cleanup
 
-The backend should remain reusable for future CLI, web, or API frontends. The
-current Textual editor introduced tombstone behavior that is useful visually,
-but not inherently an execution-engine concept.
+The backend should remain reusable for future CLI, web, or API frontends.
 
 Use `BACKEND_FRONTEND_BOUNDARY.md` as the plan. Audit refreshed 2026-06-10:
 Phase A (frontend tombstone adapter) is done, and `replace_with_tombstone()`,
 tombstone-specific `replace_node_type()`, and backend-written
-`_timing_invalidated` are already gone. New frontend deletes are soft editor
-overlays that materialize to marked `branch_end_node` records on save.
+`_timing_invalidated` are already gone.
 
-Remaining cleanup (Phase B — gated until Phase 17 selector/editor work
-settles; see the coordination gate in `BACKEND_FRONTEND_BOUNDARY.md`):
+**Tombstone design decision (2026-06-11):** `tombstone_node` was previously
+targeted for Phase B decommission (remove from backend, replace with generic
+unknown-type error). That plan has been reversed. `tombstone_node` is now an
+intentional backend type — the save-persistent deleted-node record. Saves write
+a tombstone with full original node data (type, alias, config, connections)
+instead of materializing to a `branch_end_node` with a `_system_role` marker.
+This gives undo-after-reload, richer validator error messages, and meaningful
+port-validity errors from the original port shape. Phase B decommission is
+cancelled. See `BACKEND_FRONTEND_BOUNDARY.md` for the full rationale and
+tombstone config contract.
 
-- Deregister `tombstone_node` from `backend/nodes/__init__.py` and delete the
-  class, once old-save handling for legacy `tombstone_node` records is
-  decided.
-- Replace tombstone-specific backend validator copy with the generic
-  unknown-type error.
-- Remove the `tombstone_node` entry from `backend/node_identity.py`.
-- Decide how old saves containing `tombstone_node` load (adapter migration
-  vs. unknown-type placeholder rendering).
+Remaining Phase B work (redefined — frontend migration):
+
+- Update `editor_workflow_adapter.py` to write `tombstone_node` (with full
+  original-data config) on save instead of `branch_end_node` with
+  `_system_role` marker.
+- Migrate any existing saves with `_system_role: "deleted_node_branch_end"`
+  `branch_end_node` records to `tombstone_node` format on load.
+- Extend the validator's tombstone error block to surface original input and
+  output connection context from the tombstone config.
+- Confirm `node_identity.py` marks tombstone with `editor_only: True` so
+  non-editor frontends can filter it.
+- Implement tombstone restore with connection validation and partial restore
+  (see below).
 - Decide whether layout metadata such as `position` and navigation metadata
   such as `bookmarked` belong in portable workflow saves or editor sidecars
   (Phase C).
+
+**Tombstone restore — connection validation (design spec 2026-06-11):**
+
+Before reconnecting a restored tombstone's stored connections, the frontend
+adapter must validate each one because the workflow may have drifted since the
+node was deleted. Three drift categories:
+
+- **Upstream output drift:** the source node that fed into the deleted node may
+  have removed or renamed its output port, or changed the dead-drop payload type.
+- **Downstream input drift:** the target node that received from the deleted node
+  may have removed or renamed its input port, or that port may now be occupied
+  by a different source.
+- **Memory bank drift:** `membank_inputs` the deleted node read may no longer be
+  declared by any surviving node's `membank_outputs`.
+
+Restore procedure:
+1. Always restore node type, alias, and config — never blocked by connection drift.
+2. Per stored input connection: verify source node exists AND declares the
+   referenced output port → reconnect if yes, leave unconnected if no.
+3. Per stored output connection: verify target node exists AND declares the
+   referenced input port AND that port is not already occupied → reconnect if
+   all pass, leave unconnected if any fail.
+4. Per stored membank input: check if any surviving node declares the variable
+   in `membank_outputs` → restore the declaration regardless, but flag if the
+   source is missing.
+5. Surface a frontend alert after restore if any connections could not be
+   re-established, with two named sections:
+   - **Input connection errors** — original source node alias + port + reason
+     (source gone / port gone).
+   - **Output connection errors** — original target node alias + port + reason
+     (target gone / port gone / port already occupied).
+   - **Memory input warnings** — membank variable names whose declared source is
+     no longer present.
+6. A partial restore (node back, some connections missing) is always preferred
+   over leaving a tombstone. The validator will surface remaining loose ends.
 
 ## Near-Term Project — Frontend Command UI Toolkit
 
@@ -84,17 +129,29 @@ for repeatable Textual UI work. The recurring failure modes are keyboard
 navigation, autoscroll, widget sizing, and dynamic UI that changes after a
 checkbox/select/input changes.
 
+Done (2026-06-12):
+
+- `aotn_node_helper/check_ui.py <node_type>` mounts `NodeConfigScreen`, checks
+  top-level tab placement for schema fields, verifies generated controls
+  participate in keyboard focus, and validates dynamic rule state at mount.
+- Generic dynamic-form schema keys `enabled_when`, `visible_when`, and
+  `mutually_exclusive_with` are implemented in `form_generator.py`, applied
+  live by `NodeConfigScreen` (across tabs), and covered by
+  `tests/test_form_rules.py`.
+- Helper specs expand the NODE_STANDARDS standard model through
+  `input_sources` and `output_routing` sections.
+- A config-UI smoke test (`test_<node_type>_ui.py`) is generated for specs
+  that use `config_tabs` or the standard sections.
+
 Recommended cleanup:
 
-- Add `aotn_node_helper/check_ui.py <node_type>` that mounts
-  `NodeConfigScreen`, checks top-level tab placement for schema fields, and
-  verifies all generated controls are reachable with command navigation.
-- Generate a UI smoke test when a node spec uses `config_tabs`: switch tabs with
-  A/D, move through fields with W/S, activate with E/Enter, exit edit mode, and
-  reach Save/Cancel.
-- Introduce generic schema keys for dynamic sections, for example
-  `visible_when`, `enabled_when`, or `repeats_from`, then test them in
-  `form_generator.py` before using them in node specs.
+- Extend the generated UI smoke test to full keyboard simulation: switch tabs
+  with A/D, move through fields with W/S, activate with E/Enter, exit edit
+  mode, and reach Save/Cancel.
+- Consider a `repeats_from` schema key for counted dynamic rows, complementing
+  `visible_when`/`enabled_when`.
+- Add label/value pairs for select options in `form_generator.py` so backend
+  reads stable machine values instead of display strings.
 - Add a screen scaffold command for non-node screens. The scaffold should create
   a `CommandScreenMixin` screen with a status bar, visible Cancel control,
   vertical button order, and a generated keyboard-navigation test.
@@ -146,16 +203,18 @@ Recommended cleanup:
   merge/wait nodes, loop nodes, and utility markers instead of forcing all
   branching behavior through one generic node.
 - Extend config schema only with generic keys: placeholder text, min/max/step for
-  numeric fields, optional blank-select behavior, multiline height hints, and
-  section visibility conditions.
+  numeric fields, optional blank-select behavior, and multiline height hints.
+  Visibility/enablement conditions and mutual exclusion are done (2026-06-12):
+  `enabled_when`, `visible_when`, `mutually_exclusive_with`.
 - Add tests for every schema key in `frontend/widgets/form_generator.py`.
 - Move branch-label generation and pass-through notes toward documented generic
   `ui_hints` where possible.
 - Simplify generated config surfaces: ordinary nodes should show only the fields
   they declare, semantic transient input/output metadata, memory-bank sections
   when enabled, and generic topology selectors when required.
-- Create a "node author checklist" in docs: metadata, schema, ports, categories,
-  pass-through behavior, memory-bank declarations, and expected generated UI.
+- Node author checklist exists in `NODE_STANDARDS.md` (Authoring Checklist
+  section); extend it with categories/pass-through/memory-bank specifics as the
+  node overhaul progresses.
 - Add a validation test that every registered node can mount its generated config
   without frontend custom code unless it is explicitly listed as a structural
   topology editor.
@@ -285,3 +344,33 @@ Recommended cleanup:
 - Add de-duplication for repeated keyboard mistakes such as "No node selected".
 - Keep the helper frontend-only; backend services should continue publishing
   structured events, not UI copy.
+
+## Later Project — Backend LLM Chat Session Persistence
+
+Goal: allow a workflow to maintain an active LLM chat session across multiple
+node visits, preserving message history so the model retains context between
+calls within a run.
+
+Use case: workflows that make several incremental calls to the same LLM for
+iterative tasks — refining a document, multi-step reasoning, or accumulating
+a conversation — benefit from the model seeing prior turns rather than treating
+each node call as a fresh prompt.
+
+Design direction:
+
+- Session handles should live in `RunSession` alongside file handles. A chat
+  session is a per-run resource: created on first use, reused by later nodes
+  in the same run, and released on run completion.
+- Nodes opt into session reuse via a config flag (e.g., `use_chat_session: true`
+  and a `session_key` that names the session within the run). Nodes without
+  this flag behave as stateless single-call LLM nodes.
+- Message history is stored in the session object in `RunSession`, not in
+  `MemoryBank`. `MemoryBank` holds the final outputs; the chat session holds the
+  intermediate turn history that the LLM provider needs.
+- Multiple nodes using the same `session_key` in a run share one history.
+  Nodes with different keys maintain independent sessions.
+- The validator should warn if a node declares `use_chat_session: true` but
+  `RunSession` is not available in the execution context.
+- Keep the LLM provider client backend-only. Frontend nodes declare the session
+  intent through metadata; the backend resolves the provider and manages
+  the connection.

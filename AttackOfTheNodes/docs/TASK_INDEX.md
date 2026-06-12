@@ -7,10 +7,12 @@ for a task.
 
 Read:
 
+- `NODE_STANDARDS.md` — input source model, output routing model, dynamic form
+  rules, and reference examples. Read this first before defining any new node.
 - `AGENT_START_GUIDE.md`
 - `NODE_HELPER.md` for helper spec details and generated-file behavior
-- `PROJECT_KNOWLEDGE.md` sections: Node Metadata Contract, Registered Node
-  Families
+- `PROJECT_KNOWLEDGE.md` sections: Node Metadata Contract, Data Flow Patterns,
+  Registered Node Families
 
 Likely files:
 

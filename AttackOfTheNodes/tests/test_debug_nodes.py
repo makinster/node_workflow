@@ -4570,13 +4570,17 @@ async def _test_node_selector_uses_family_tabs_and_subcategory_filters():
         assert parallel_filter.display is False
         assert filter_input.editing is False
         assert {node["type"] for node in screen._visible_nodes} == {
+            "example_file_instance_node",
             "file_reader_node",
             "user_text_input_node",
         }
 
         screen.action_choose()
         assert file_filter.value is True
-        assert {node["type"] for node in screen._visible_nodes} == {"file_reader_node"}
+        assert {node["type"] for node in screen._visible_nodes} == {
+            "example_file_instance_node",
+            "file_reader_node",
+        }
 
         app.set_focus(active_output_filter)
         screen.action_choose()

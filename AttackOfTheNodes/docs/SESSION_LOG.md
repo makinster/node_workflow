@@ -4,6 +4,232 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-12 — Node Helper: Dynamic Forms, Standard Model Expansion, Config-UI Checks
+
+- Implemented the dynamic-form schema keys planned in the Helper-Backed UI
+  Standardization backlog:
+  - `enabled_when`: field greys out unless a condition on other field values
+    holds (mapping of field name to expected value; AND across entries, list
+    values match any).
+  - `visible_when`: hides the field, its label, and its description unless the
+    condition holds.
+  - `mutually_exclusive_with`: checking one boolean unchecks its declared
+    partners; declarations are symmetric.
+  - Implemented in `frontend/widgets/form_generator.py`
+    (`evaluate_field_condition`, `apply_field_rules`,
+    `mutual_exclusion_targets`, `schema_has_field_rules`); generated field
+    labels/descriptions now carry `field-label-<name>` / `field-desc-<name>`
+    ids so visibility rules can hide the whole block.
+  - `NodeConfigScreen` applies rules at mount and on every generated-field
+    change. Rules work across tabs: a Source tab selector can grey out a
+    Parameters tab field, matching the NODE_STANDARDS greying behavior.
+- Expanded `aotn_node_helper` with standard-model spec sections:
+  - `input_sources`: expands each input into a `<name>_source` selector
+    (Upstream payload / Vault / Configured), a gated `<name>_vault_key` field,
+    and a gated Configured parameter field in the Parameters tab.
+  - `output_routing`: expands into the mutually exclusive
+    `transient_output` / `dead_drop_passthrough` pair plus optional
+    `vault_write` / `vault_write_key` fields. Vault modes: `optional`,
+    `default_on`, and `required_unless_transient` (locked on until transient
+    output is checked — the Basic LLM node pattern).
+  - Spec-time validation for rule keys: referenced fields must exist,
+    mutual-exclusion participants must be booleans, standard fields must not
+    collide with hand-written ones.
+- Added `aotn_node_helper/check_ui.py <node_type>` and shared
+  `aotn_node_helper/ui_checks.py`: mounts `NodeConfigScreen` and verifies
+  every schema field renders, lands in its declared tab, participates in
+  keyboard focus, and has correct rule state at mount. Structural nodes
+  (branch/merge/branch-end) are rejected with a clear message.
+- `create_node.py` now also emits `tests/generated/test_<node_type>_ui.py`
+  (config-UI smoke test backed by `ui_checks`) when a spec uses `config_tabs`,
+  `input_sources`, or `output_routing`.
+- Added `aotn_node_helper/specs/example_file_instance_node.yaml` — the
+  NODE_STANDARDS File Instance reference example expressed as a helper spec.
+  Verified end-to-end: generated, check_node + check_ui + generated UI test
+  all green. The generated node is REGISTERED in the project
+  (`backend/nodes/io/example_file_instance_node.py`) for a live TUI pass of
+  the dynamic config forms; remove it after the UI review if not kept.
+- Registering the node surfaced a helper gap: generated nodes lacked Phase 17
+  identity metadata, failing `test_node_factory_exposes_phase_17_identity_metadata`.
+  Helper specs now require `primary_family` (Inputs / Flow Control / Outputs /
+  Complex) and accept optional `tags` (validated against the Phase 17
+  subcategory taxonomy), `icon_name`, and `color_hint` (defaults from the
+  family color map). Generated nodes emit these as class metadata directly —
+  no entry in the transitional `node_identity.py` table needed.
+- Updated the node selector taxonomy test to include the registered example
+  node in the Inputs family and File I/O filter expectations.
+- Tests: new `tests/test_form_rules.py` (rule helpers + mounted
+  NodeConfigScreen integration covering greying, visibility, and mutual
+  exclusion both directions); extended `tests/test_node_helper.py` with
+  standard-model expansion and validation cases. 11 focused tests pass.
+- Known pre-existing flake (not from this change):
+  `test_file_picker_export_and_import_paths` fails in a full-suite run but
+  passes in isolation; reproduced identically on the clean tree.
+- Docs updated: NODE_HELPER.md (standard sections, rule keys, check_ui,
+  limitations/direction refresh), AGENT_START_GUIDE.md, NODE_STANDARDS.md
+  (helper support note), PROJECT_BACKLOG.md (marked done items),
+  PROJECT_KNOWLEDGE.md (form generator capabilities), FILE_TREE.md.
+- Verification:
+  - `../.venv/bin/python -m pytest tests/test_node_helper.py tests/test_form_rules.py -v`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py` (121 passed +
+    1 pre-existing flake)
+  - `../.venv/bin/python -m compileall -q . ../aotn_node_helper`
+  - `../aotn_node_helper/check_ui.py echo_node` / `logger_node` OK;
+    `branch_node` correctly rejected as structural.
+
+## 2026-06-11 — Node Standards Corrections: MemoryBank Model, Mutual Exclusion, JSON Payloads
+
+- Corrected NODE_STANDARDS.md and PROJECT_KNOWLEDGE.md on three points:
+  1. MemoryBank is always the underlying store for both transient and vault
+     data. Transient uses ephemeral `(source_node_id, port_name)` keys; vault
+     uses stable user-defined keys. The distinction is addressing scope, not
+     separate storage systems.
+  2. Transient output and vault write are not mutually exclusive. A node can
+     write the same result to both simultaneously. The only mutual exclusion is
+     "send my result as transient" vs "forward incoming transient unchanged
+     (dead-drop passthrough)" — only one can occupy the transient port.
+  3. Transient payloads are JSON and can carry any serializable value including
+     large strings and LLM responses. The constraint is scope (path-scoped,
+     not cross-branch), not size. Mentioned incremental document modification
+     as a valid transient use case for LLM output.
+- Clarified that active file I/O sessions are managed by the backend RunSession;
+  files can serve as both inputs and outputs.
+- Added "Later Project — Backend LLM Chat Session Persistence" to
+  PROJECT_BACKLOG.md: session handles in RunSession, opt-in via session_key,
+  shared history across nodes with the same key, validator warning if session
+  not available.
+- Updated docs: NODE_STANDARDS.md (input model note, output model mutual
+  exclusion, data type scope, payloads tab diagram, LLM example notes,
+  authoring checklist), PROJECT_KNOWLEDGE.md (Data Flow Patterns rewrite),
+  PROJECT_BACKLOG.md (new LLM chat session backlog entry).
+- No code changes — documentation only.
+- Verification:
+  - `git diff --check`
+
+## 2026-06-11 — Node Design Standards Document
+
+- Created `NODE_STANDARDS.md` as the authoritative reference for node I/O
+  design before authoring any new node type.
+- Documents the standard input source model: three mutually exclusive options
+  per input (Upstream/transient, Vault, Configured). Selecting one greys out
+  the other two in the form. Configured activates the matching Parameters tab
+  field; Upstream or Vault selection greys that field out.
+- Documents the standard output routing model: Transient output (send result
+  downstream), Dead-drop passthrough (forward incoming payload unchanged,
+  default for most nodes), and Vault write (save result under a named key,
+  independent of transient/dead-drop choice). Transient and dead-drop are
+  mutually exclusive per port; Vault write is independent.
+- Documents data type scope: transient payloads carry only lightweight
+  conditional data (bools, counters, flags); large strings, document text, and
+  AI responses travel through the Vault or file I/O.
+- Documents the standard Source / Parameters / Payloads / Connections tab
+  structure with UI behavior rules for conditional field greying.
+- Includes two reference examples:
+  - File instance node: file path from upstream/vault/configured (mutually
+    exclusive); bool transient output (success/failure); optional Vault write
+    for error messages.
+  - Basic LLM node: prompt from upstream/vault/configured (mutually exclusive);
+    document/context from upstream or vault only (no configured option);
+    dead-drop passthrough on by default; Vault write on by default and cannot
+    be disabled unless transient output is active.
+- Includes an authoring checklist: inputs, outputs, conditional fields, data
+  types, mutual-exclusion rules, required vs optional Vault writes, and
+  expected downstream pattern.
+- Wired into `README.md` (task table and Read-First Files), `TASK_INDEX.md`
+  (Add Or Change A Node route), and `AGENT_START_GUIDE.md` (Add A New Node
+  section).
+- No code changes — documentation only.
+- Verification:
+  - `git diff --check`
+
+## 2026-06-11 — Tombstone Delete Semantics And Payload Design Context
+
+- Clarified that node deletion is always single-node and non-cascading.
+  Downstream nodes are never automatically deleted or modified. The tombstone
+  sits in place as a swap-out and insert-staging placeholder; the graph beyond
+  it remains intact. This is an editor-adapter invariant.
+- Documented the transient payload vs vault (MemoryBank) design intent:
+  transient payloads are primarily for conditional logic (booleans, counters,
+  branch-decision flags); large strings, file contents, and shared data travel
+  through the vault or file I/O. Many nodes consume from the vault directly and
+  do not depend on the immediately upstream node's transient output.
+- Added dead-drop context: the dead-drop option lets a node write a small
+  conditional payload that a downstream node picks up without requiring a live
+  transient connection through every intermediate node.
+- Added restore severity context: because most data travels through the vault,
+  tombstone restore-validation failures on transient ports are usually minor
+  repairs, not broken workflows. The frontend alert should be informative but
+  not alarming.
+- Updated `PROJECT_KNOWLEDGE.md` (new "Data Flow Patterns" section, corrected
+  Open Cleanup Areas entry) and `BACKEND_FRONTEND_BOUNDARY.md` (single-node
+  delete rule and restore severity context added before the restore procedure).
+- No code changes — documentation only.
+- Verification:
+  - `git diff --check`
+
+## 2026-06-11 — Tombstone Restore Edge Cases And Connection Validation
+
+- Specified tombstone restore validation rules for three categories of workflow
+  drift that can occur between a node being deleted and a user triggering restore:
+  (1) upstream output drift — source node removed or output port renamed/removed;
+  (2) downstream input drift — target node removed, input port renamed/removed,
+  or port now occupied by a different source; (3) memory bank drift — membank
+  variables the deleted node depended on (`membank_inputs`) may no longer be
+  declared by any surviving node.
+- Restore procedure: always restore node type, alias, and config (never blocked).
+  Validate each stored input connection and output connection before re-wiring.
+  Leave failed connections unconnected. Surface a frontend alert after restore
+  with named sections for input connection errors, output connection errors, and
+  memory input warnings — each naming the original peer node alias, port, and
+  failure reason. A partial restore is always preferred over leaving a tombstone.
+- Edge case called out: branch-start nodes are particularly sensitive because the
+  upstream branch node holds the dead-drop payload that seeds the branch. If the
+  branch node's output port was renamed or its payload type changed since the
+  delete, the connection will fail validation and the branch effectively remains
+  broken until the user rewires it — the alert makes this visible.
+- Updated `BACKEND_FRONTEND_BOUNDARY.md` (added "Tombstone restore — connection
+  validation and partial restore" subsection) and `PROJECT_BACKLOG.md` (added
+  restore validation spec to Phase B work items).
+- No code changes — documentation only.
+- Verification:
+  - `git diff --check`
+
+## 2026-06-11 — Tombstone Design Decision: Backend Type Stays
+
+- Reviewed the Phase B tombstone decommission plan and decided to reverse it.
+  `tombstone_node` will remain an intentional registered backend type, not a
+  cleanup target.
+- **What we had:** Phase A (done) moved frontend deletes to a visual-overlay
+  model where saves materialized deleted nodes into `branch_end_node` records
+  with a `_system_role: "deleted_node_branch_end"` marker. This worked with
+  zero backend changes but had a key limitation: it is session-scoped. Saving
+  after a delete, closing, and reopening loses undo context. The
+  `branch_end_node` port shape also limits how much original connection data
+  the validator can surface.
+- **Why we switched:** The save file is the only persistence layer. Keeping
+  full original node data (type, alias, config, input connections, output
+  connections) in a `tombstone_node` record gives: (1) undo that survives
+  save/reload, (2) validator errors that name the original node and describe
+  its original connections as a repair guide, (3) meaningful port-validity
+  errors from the stored original port shape.
+- **New contract:** tombstone config stores `original_type`, `original_alias`,
+  `original_config`, `original_inputs`, `original_outputs`. The validator
+  tombstone error block should be extended to surface the original connection
+  context. The node selector already excludes tombstone. Execution is already
+  blocked on workflows containing tombstones.
+- **Phase B redefined:** instead of decommissioning tombstone, Phase B now
+  updates `editor_workflow_adapter.py` to write `tombstone_node` on save
+  (not `branch_end_node`), migrates existing `_system_role` marked records on
+  load, extends the validator error block, and confirms `editor_only` flagging
+  in `node_identity.py`.
+- Updated docs: `BACKEND_FRONTEND_BOUNDARY.md` (major rewrite of Phase B and
+  Deleted-Node Save Contract sections), `PROJECT_BACKLOG.md` (Phase B
+  redefined), `MASTER_BUILD_PLAN.md` (added Phase 10.6), `ARCHITECTURE.md`
+  (tombstone table row and description), `AGENTS.md` (tombstone footnote).
+- No code changes in this session — documentation only.
+- Verification:
+  - `git diff --check`
+
 ## 2026-06-11 — Typed Vault Entries and AI Session Architecture
 
 Architecture design session only. No runtime, frontend, or test changes.

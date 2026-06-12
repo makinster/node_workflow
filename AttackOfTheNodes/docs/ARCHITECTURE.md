@@ -127,7 +127,8 @@ Current node types:
 | Data | SetVariableNode, GetVariableNode, ConcatNode |
 | IO | TextOutputNode, UserTextInputNode, FileReaderNode |
 | AI | ChatCompletionNode, ImageGenerationNode, EmbeddingNode |
-| Debug / Utility | LoggerNode, SleepNode, CounterNode, EchoNode, ProbeNode, ErrorNode, MemorySnapshotNode, RandomBranchNode, DeepBranchNode, NoOpNode, RepeatCounterNode, TombstoneNode, VariableSetterNode, VariableReaderNode |
+| Debug / Utility | LoggerNode, SleepNode, CounterNode, EchoNode, ProbeNode, ErrorNode, MemorySnapshotNode, RandomBranchNode, DeepBranchNode, NoOpNode, RepeatCounterNode, VariableSetterNode, VariableReaderNode |
+| Editor (save-only) | TombstoneNode — save-persistent deleted-node record; always a validation error; never executable |
 
 ### `RunSession`
 
@@ -253,7 +254,7 @@ The inspector. Performs a DFS from the start node and checks:
 - Node type exists in `NodeFactory`.
 - Connection sources and targets exist.
 - Connection ports are declared by source and target node metadata.
-- Tombstone nodes (pending replacements) are flagged as errors.
+- Tombstone nodes are flagged as errors with original node name and connection context from stored config.
 - Derived `input_sources` reference existing node ids.
 - Memory-bank input keys are declared by some node's `membank_outputs`.
 - Schema fields hinted with `path_hint: "file"`: empty required path is an
@@ -289,7 +290,9 @@ Editor-specific topology adapters live here, not in backend nodes. Current
 adapter behavior includes:
 
 - Hiding an empty Start node until the first real node is added.
-- Tombstoning deleted nodes as visual replacement placeholders.
+- Soft-deleting nodes visually while editing; saving materializes each deletion
+  as a `tombstone_node` with the original type, alias, config, and connections
+  stored in config for undo-after-reload and validator repair context.
 - Repairing older save files that stored invalid `Merge.input` connections by
   mapping them to the upstream branch port.
 - Reconciling checked merge branch closures into real

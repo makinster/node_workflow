@@ -31,7 +31,13 @@ from frontend.widgets.dynamic_sections import (
     preserved_dynamic_rows,
     selected_values_from_widget,
 )
-from frontend.widgets.form_generator import WidgetGetter, build_form
+from frontend.widgets.form_generator import (
+    WidgetGetter,
+    apply_field_rules,
+    build_form,
+    mutual_exclusion_targets,
+    schema_has_field_rules,
+)
 from frontend.widgets.status_bar import StatusBar
 
 
@@ -568,6 +574,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             node_data.get("config") or {}
         )
         self._refreshing_membank_outputs = False
+        self._rule_schema: Dict[str, Dict[str, Any]] = {}
 
     def compose(self) -> ComposeResult:
         metadata = self._metadata_for_type(self.node_data.get("type", ""))
@@ -610,6 +617,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         }
         forms, getter = self._build_standard_config_forms(schema, core_config)
         self._get_form_values = getter
+        self._rule_schema = schema if schema_has_field_rules(schema) else {}
 
         with Vertical(id="modal-card", classes="node-config-modal"):
             title = f"{self.node_data.get('alias') or self.node_id} ({self.node_id})"
@@ -895,6 +903,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         self._sync_membank_input_controls()
         self._sync_branch_payload_rows()
         self._sync_payload_previews()
+        self._apply_generated_field_rules()
         if self.query("#alias-input"):
             self.call_after_refresh(
                 lambda: self.app.set_focus(self.query_one("#alias-input", CommandInput))
@@ -932,16 +941,39 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             self._sync_payload_previews()
         elif event.checkbox.id == "field-pass_through":
             await self._refresh_membank_output_rows()
+        if event.checkbox.id and event.checkbox.id.startswith("field-"):
+            if event.value:
+                self._uncheck_mutually_exclusive_fields(
+                    event.checkbox.id.removeprefix("field-")
+                )
+            self._apply_generated_field_rules()
 
     async def on_input_changed(self, event: Input.Changed) -> None:
         if event.input.id == "membank-output-count":
             await self._refresh_membank_output_rows()
         elif event.input.id == "branch-count":
             self._sync_branch_payload_rows()
+        elif event.input.id and event.input.id.startswith("field-"):
+            self._apply_generated_field_rules()
 
     def on_select_changed(self, event: Select.Changed) -> None:
         if event.select.id == "merge-carry-forward-selector":
             self._sync_merge_input_details()
+        elif event.select.id and event.select.id.startswith("field-"):
+            self._apply_generated_field_rules()
+
+    def _apply_generated_field_rules(self) -> None:
+        if not self._rule_schema or self._get_form_values is None:
+            return
+        apply_field_rules(self, self._rule_schema, self._get_form_values())
+
+    def _uncheck_mutually_exclusive_fields(self, field_name: str) -> None:
+        if not self._rule_schema:
+            return
+        for partner in mutual_exclusion_targets(field_name, self._rule_schema):
+            for widget in self.query(f"#field-{partner}"):
+                if isinstance(widget, Checkbox) and widget.value:
+                    widget.value = False
 
     def on_selection_list_selected_changed(
         self, event: SelectionList.SelectedChanged

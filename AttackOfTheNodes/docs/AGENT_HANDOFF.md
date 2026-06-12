@@ -11,6 +11,12 @@ taxonomy. The phase should align editor row identity, selector tabs,
 subcategory filters, and node metadata before the planned node-library
 overhaul.
 
+A design decision on 2026-06-11 reversed the Phase B tombstone decommission
+plan: `tombstone_node` stays as an intentional backend type — the
+save-persistent deleted-node record. Phase B is now a frontend migration task
+(update save path from `branch_end_node` marker to `tombstone_node` with full
+original data, extend validator errors). See `BACKEND_FRONTEND_BOUNDARY.md`.
+
 ## Start Here
 
 1. `docs/README.md` — task router.

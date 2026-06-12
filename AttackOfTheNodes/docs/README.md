@@ -11,7 +11,7 @@ tkinter/proof-of-concept material lives under `docs/archive/`.
 
 | If you need to... | Read first | Then read if needed |
 |---|---|---|
-| Add or change a node | `AGENT_START_GUIDE.md`, `TASK_INDEX.md` | `NODE_STANDARDS.md`, `PROJECT_KNOWLEDGE.md`, `ARCHITECTURE.md` |
+| Add or change a node | `NODE_STANDARDS.md`, `AGENT_START_GUIDE.md`, `TASK_INDEX.md` | `PROJECT_KNOWLEDGE.md`, `ARCHITECTURE.md` |
 | Fix frontend/UI behavior | `TASK_INDEX.md`, `UI_QUICK_REFERENCE.md` | `TUI_DESIGN.md`, `BACKEND_FRONTEND_BOUNDARY.md`, `PROJECT_BACKLOG.md` |
 | Change backend/runtime behavior | `TASK_INDEX.md`, `ARCHITECTURE.md`, `SIGNAL_FLOW.md` | `PROJECT_KNOWLEDGE.md`, `BACKEND_FRONTEND_BOUNDARY.md` |
 | Continue the roadmap | `AGENT_HANDOFF.md`, `MASTER_BUILD_PLAN.md` | `archive/BUILD_PLAN_HISTORY.md`, `SESSION_LOG.md` |
@@ -23,6 +23,9 @@ tkinter/proof-of-concept material lives under `docs/archive/`.
 
 - `TASK_INDEX.md` — compact task router with likely code areas and focused
   checks.
+- `NODE_STANDARDS.md` — node I/O design standards: input source model, output
+  routing model, dynamic form rules, data type scope, and reference examples.
+  Read before authoring any new node type.
 - `AGENT_START_GUIDE.md` — practical checklist for common changes, especially
   node creation and config UI.
 - `NODE_HELPER.md` — detailed `aotn_node_helper` usage, spec format, and

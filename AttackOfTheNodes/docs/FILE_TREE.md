@@ -49,6 +49,8 @@ AttackOfTheNodes/
       text_output_node.py
       user_text_input_node.py
       wait_until_node.py
+      io/
+        example_file_instance_node.py
       debug/
         counter_node.py
         deep_branch_node.py
@@ -129,7 +131,10 @@ AttackOfTheNodes/
 
   tests/
     test_debug_nodes.py
+    test_form_rules.py
     test_node_helper.py
+    test_run_session.py
+    generated/
 
   workflows/
     .gitkeep
@@ -141,9 +146,12 @@ Workspace-level developer tooling:
 aotn_node_helper/
   create_node.py
   check_node.py
+  check_ui.py
   generator.py
+  ui_checks.py
   specs/
     example_pass_through_node.yaml
+    example_file_instance_node.yaml
 ```
 
 ## Omitted Paths
