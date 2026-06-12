@@ -432,7 +432,7 @@ class NodeSelectorScreen(ModalScreen):
         description = str(node.get("description") or "").strip() or "No description"
         if len(description) > 76:
             description = f"{description[:75]}…"
-        return f"[ {display} ]\n- {description}"
+        return f"\\[ {display} ]\n- {description}"
 
     # ------------------------------------------------------------------
     # Selection and activation
