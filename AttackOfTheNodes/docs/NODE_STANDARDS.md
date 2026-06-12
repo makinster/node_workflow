@@ -26,7 +26,8 @@ Before defining a new node type, decide how it fits in the taxonomy:
 
 Apply this rule before touching the taxonomy in
 `PHASE_17_NODE_VISUAL_IDENTITY.md`. Groups are a frontend-only navigation
-concept — the backend never knows a group exists.
+concept — the backend never knows a group exists. Record every new node idea
+in `NODE_CATALOG.md`, even concept-only ones.
 
 ---
 
@@ -110,6 +111,23 @@ operation result or error message to a Vault key for error-reporting purposes.
 
 Vault writes are optional unless the node type requires durable output (e.g.,
 an LLM node where losing the result on session close is unacceptable).
+
+### Branch Termination (output nodes)
+
+Every output node carries a standard config option:
+
+```
+[ ] Terminate branch after completion
+```
+
+Default off. When enabled, the branch ends after the node completes — no
+downstream connection is expected and the supervisor treats the path as
+finished. This replaces the legacy standalone End node: branches end through
+outputs (with this option), through merges, or through the silent **End
+Branch** flow-control node for paths that intentionally discard a route.
+
+Node authors: include this option on every Outputs-family node. It belongs in
+the Payloads tab below the routing controls.
 
 ### Emitting Output in Code
 
@@ -227,6 +245,28 @@ Downstream LLM nodes that want to continue a session:
 - See `chat_name (ai_session)` in the type-filtered dropdown.
 - Retrieve the session via `context.run_session.get_resource(session_key)`,
   append their turn, and re-register the handle.
+
+### AI Input Pattern (session seeding)
+
+The planned **AI Input** node (I/O Input side, see `NODE_CATALOG.md`) is the
+standard way to seed a chat session with context before the response is
+needed:
+
+- Prompt source: Upstream / Vault / Configured (standard input model). Useful
+  when the prompt is customized during workflow execution before being passed
+  to the AI.
+- Executes the turn under a session key and writes
+  `{"type": "ai_session", "ref_key": <session_key>}` to the vault — downstream
+  nodes pick the session up by key.
+- **Default output routing is dead-drop passthrough** — the AI call is a side
+  effect; the incoming payload forwards unchanged.
+- Optional "Output AI response" flips transient output to the response text
+  (standard transient/dead-drop mutual exclusion applies).
+
+AI nodes declare a curated supported-model list, not an open-ended model
+field. Structured-decision AI nodes (AI Conditional Branch, AI Tool Call)
+require models with dependable structured output and carry stricter lists.
+See the AI Model Approach section of `PHASE_17_NODE_VISUAL_IDENTITY.md`.
 
 ## Validator Rules for Typed Vault References
 

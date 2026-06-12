@@ -4,6 +4,60 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-12 — Taxonomy Revision: Five Families, I/O Switch, Section Headers, Node Catalog
+
+Design + documentation session. No code changes yet — the matching selector,
+metadata, and helper code work is listed as Phase 17 remaining in
+`MASTER_BUILD_PLAN.md`.
+
+- Revised the Phase 17 taxonomy to five backend families — `Inputs`,
+  `Outputs`, `Flow Control`, `Utility`, `Complex` — mapped onto four selector
+  tabs. `Inputs`/`Outputs` share one `I/O` tab behind a Textual `Switch`
+  (Input on one side, Output on the other) above the list; the switch is
+  frontend-only presentation, so backend family metadata stays semantic.
+- `Utility` is the new action-node family: UI Automation group (click, type,
+  key press; screen-read variants deferred), Script Runner group (deferred,
+  security gated — hidden from list and search until an explicit "allow
+  script execution" setting is on), Data Transform group (set/get variable,
+  concat, text ops, JSON, math, format text), Debug direct-adds (echo, probe,
+  logger, sleep), and Loop Helper direct-adds (counter, accumulator, repeat
+  limiter).
+- AI became a subcategory tag, not a family. AI-flavored variants live in
+  their natural groups (AI Conditional Branch under Flow Control → Branch,
+  AI-Guided Read under File Reader); dedicated AI tools stay in Complex →
+  AI Processing where the `AI` filter surfaces them.
+- Filter checkboxes reduced to two tabs: I/O (`File I/O`/`Internet`/`AI`)
+  and Complex (`AI`). Groups and in-list section headers do the organizing
+  elsewhere. Headers are non-selectable rows keyboard navigation skips,
+  hidden while a string filter is active or when empty.
+- Removed Start/End from the user-facing taxonomy: Start is auto-generated;
+  branches end through outputs (new standard "Terminate branch after
+  completion" config option in `NODE_STANDARDS.md`), through merges, or
+  through a new silent **End Branch** direct-add node in Flow Control.
+- Designed the **AI Input** node (I/O Input side): seeds a chat session under
+  a vault session key before the response is needed; default dead-drop
+  passthrough with optional "Output AI response"; prompt can be customized
+  mid-workflow before being passed in. Pattern documented in
+  `NODE_STANDARDS.md`.
+- Documented the AI model approach: capability-based AI nodes with curated
+  supported-model lists (strictest for structured-output nodes such as AI
+  Conditional Branch); a future fork point to per-model groups if supported
+  models diverge.
+- Added `selector_section: str | None` to the metadata direction alongside
+  `group` — both frontend-only, exposed through `NodeFactory`.
+- Created `NODE_CATALOG.md`: complete node inventory (Live / Planned /
+  Deferred / Concept) with mappings from currently registered types, so no
+  node idea is lost while non-critical nodes are deferred.
+- Updated: `PHASE_17_NODE_VISUAL_IDENTITY.md` (rewritten for the revision),
+  `NODE_STANDARDS.md` (terminate-branch standard, AI Input pattern),
+  `NODE_HELPER.md` (five families, `group`/`selector_section` spec fields),
+  `MASTER_BUILD_PLAN.md` (Phase 17 remaining work), `AGENT_HANDOFF.md`
+  (direction summary), `README.md` (catalog directory row + task table).
+- Verification:
+  - `git diff --check`
+  - `python3 -m pytest tests/ -q` (145 passed + 1 pre-existing generated-node
+    flake, unchanged from before the docs edit)
+
 ## 2026-06-12 — Docs: README Document Directory Overhaul
 
 - Rewrote `README.md` to give every document a clear "what it contains" and
