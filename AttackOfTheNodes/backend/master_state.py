@@ -31,6 +31,7 @@ from .configuration_manager import ConfigurationManager
 from .output_manager import OutputManager
 from .run_history import RunHistory
 from .run_session import RunSession
+from .secrets_manager import SecretsManager
 from .supervisor import Supervisor
 from .workflow_map import WorkflowMap
 
@@ -50,6 +51,7 @@ class MasterState:
         run_history: Optional[RunHistory] = None,
         output_manager: Optional[OutputManager] = None,
         configuration_manager: Optional[ConfigurationManager] = None,
+        secrets_manager: Optional[SecretsManager] = None,
     ) -> None:
         self._workflow_map = workflow_map
         self._memory_bank = memory_bank
@@ -58,6 +60,7 @@ class MasterState:
         self._run_history = run_history or RunHistory(event_bus)
         self._output_manager = output_manager or OutputManager()
         self._configuration_manager = configuration_manager or ConfigurationManager()
+        self._secrets_manager: Optional[SecretsManager] = secrets_manager
 
         self.state = WorkflowState.IDLE
         self.current_run_id: Optional[str] = None
@@ -132,6 +135,7 @@ class MasterState:
                 self._configuration_manager.get("node_timeout_seconds")
             ),
             run_session=self._run_session,
+            secrets_manager=self._secrets_manager,
         )
         self._supervisor_tasks[root.branch_id] = asyncio.create_task(root.run())
         return True
@@ -240,6 +244,7 @@ class MasterState:
                 self._configuration_manager.get("node_timeout_seconds")
             ),
             run_session=self._run_session,
+            secrets_manager=self._secrets_manager,
         )
         self._supervisor_tasks[child.branch_id] = asyncio.create_task(child.run())
 

@@ -26,7 +26,9 @@ AttackOfTheNodes/
     output_manager.py
     persistence.py
     run_history.py
+    run_session.py
     save_manager.py
+    secrets_manager.py
     supervisor.py
     validator.py
     workflow_map.py
@@ -51,6 +53,11 @@ AttackOfTheNodes/
       wait_until_node.py
       io/
         example_file_instance_node.py
+        http_request_node.py
+      data/
+        json_path_node.py
+        random_number_node.py
+        text_transform_node.py
       debug/
         counter_node.py
         deep_branch_node.py
@@ -129,11 +136,19 @@ AttackOfTheNodes/
         FRONTEND_AUDIT_BUILD_PLAN.md
         USER_FRIENDLY_POLISH_BUILD_PLAN.md
 
+  secrets/
+    .gitkeep
+
   tests/
     test_debug_nodes.py
     test_form_rules.py
     test_node_helper.py
     test_run_session.py
+    test_secrets_manager.py
+    test_tombstone_migration.py
+    test_tombstone_phase_b.py
+    test_typed_vault.py
+    test_validator_race_warnings.py
     generated/
 
   workflows/
@@ -152,6 +167,10 @@ aotn_node_helper/
   specs/
     example_pass_through_node.yaml
     example_file_instance_node.yaml
+    http_request_node.yaml
+    json_path_node.yaml
+    random_number_node.yaml
+    text_transform_node.yaml
 ```
 
 ## Omitted Paths

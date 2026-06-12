@@ -35,5 +35,8 @@ attackofthenodes_v05/run_outputs/*.json
 attackofthenodes_v05/workflows/*.json
 !attackofthenodes_v05/workflows/.gitkeep
 
+# Secrets (never commit actual secrets)
+AttackOfTheNodes/secrets/secrets.json
+
 # Local workflow import/export scratch files
 attackofthenodes_v05/_*_test.json

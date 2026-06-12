@@ -24,6 +24,7 @@ from .field_types import validate_config_schema
 if TYPE_CHECKING:
     from .memory_bank import MemoryBank
     from .run_session import RunSession
+    from .secrets_manager import SecretsManager
 
 
 @dataclass
@@ -51,6 +52,13 @@ class NodeContext:
         Awaitable[Dict[str, Any]],
     ]
     run_session: Optional["RunSession"] = None
+    secrets_manager: Optional["SecretsManager"] = None
+
+    def get_secret(self, key: str) -> Optional[str]:
+        """Return the secret value for key, or None if the manager is not wired in."""
+        if self.secrets_manager is None:
+            return None
+        return self.secrets_manager.get_secret(key)
 
 
 class Node(ABC):

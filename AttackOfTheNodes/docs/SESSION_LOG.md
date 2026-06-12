@@ -4,6 +4,74 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-12 — SecretsManager + Backend Build Plan (Phases 1–6)
+
+### SecretsManager module
+
+- Added `backend/secrets_manager.py`: plain-text JSON store at
+  `secrets/secrets.json` (gitignored). Public API: `get_secret`, `set_secret`,
+  `delete_secret`, `list_keys`, `has_key`, `reload`. Lazy-load with single
+  trust boundary — only this module changes when encryption is added.
+- Extended `NodeContext` in `node_base.py` with `secrets_manager` field and
+  `context.get_secret(key)` convenience wrapper (returns `None` when no manager
+  wired in).
+- Wired `SecretsManager` through `MasterState.__init__` → both `Supervisor`
+  creation sites → `NodeContext` kwargs. Nodes never call the manager directly;
+  they call `context.get_secret(key_name)`.
+- Created `secrets/` directory with `.gitkeep`; added
+  `AttackOfTheNodes/secrets/secrets.json` to `.gitignore`.
+- 18 tests in `tests/test_secrets_manager.py` (CRUD, persistence, lazy-load,
+  reload, invalid-JSON fallback, NodeContext integration).
+
+### Backend Build Plan Phases 1–6
+
+**Phase 1 — Tombstone `editor_only` + validator port context**
+- `node_identity.py`: added `"editor_only": True` to tombstone entry;
+  `apply_transitional_node_identity` copies flag onto node class.
+- `node_factory.py`: `get_node_types_metadata` exposes `editor_only` key.
+- `validator.py`: tombstone error message appends
+  `"(orphaned inputs: X; outputs: Y)"` when port config is present.
+- Tests: `tests/test_tombstone_phase_b.py` (4 tests).
+
+**Phase 2 — Legacy save migration**
+- `frontend/editor_workflow_adapter.py`: added `migrate_legacy_deleted_node()`
+  (pure function) and `EditorWorkflowAdapter.migrate_workflow_on_load()`.
+  Converts `branch_end_node + _system_role: deleted_node_branch_end` to
+  `tombstone_node` in-place without touching plain Merge Beacons.
+- Tests: `tests/test_tombstone_migration.py` (7 tests).
+
+**Phase 3 — Typed vault entries**
+- `memory_bank.py`: `store_persistent` accepts `type_tag=None`;
+  `read_persistent_by_type(type_tag)` added; state snapshot includes
+  `persistent_type_tags`; backward compatible with old snapshots.
+- `validator.py`: `_declared_membank_outputs` returns `Dict[str, Optional[str]]`
+  (key → type_tag); warns on ai_session type mismatch.
+- Tests: `tests/test_typed_vault.py` (9 tests).
+
+**Phase 4 — LLM chat session in RunSession**
+- `run_session.py`: `get_or_create_chat_session`, `append_chat_message`,
+  `get_chat_history` (deep copy), `close_all` clears sessions.
+- `validator.py`: warns when `use_chat_session: True` but `session_key` absent.
+- Tests: appended to `tests/test_run_session.py` (8 new tests).
+
+**Phase 5 — Parallel-branch vault race warnings**
+- `validator.py`: added `_build_reverse_adjacency` and `_build_ancestor_set`
+  (backward BFS). When all writers of a vault key are on parallel branches
+  (none is an ancestor of the reader), emits a warning — not an error — to
+  recommend a Wait Until node.
+- Tests: `tests/test_validator_race_warnings.py` (6 tests).
+
+**Phase 6 — Four utility nodes via aotn_node_helper**
+- `backend/nodes/data/text_transform_node.py`: uppercase/lowercase/strip/title/reverse.
+- `backend/nodes/data/json_path_node.py`: dot-path JSON extraction, `error` port.
+- `backend/nodes/data/random_number_node.py`: integer/float in range, optional seed.
+- `backend/nodes/io/http_request_node.py`: GET/POST via stdlib `urllib`, `error` port.
+- Spec YAML files added to `aotn_node_helper/specs/`.
+- `node_identity.py` extended with entries for all four nodes.
+- Tests: `tests/generated/` (4 generated suites, mocked network for HTTP node).
+
+---
+
 ## 2026-06-12 — Node Helper: Dynamic Forms, Standard Model Expansion, Config-UI Checks
 
 - Implemented the dynamic-form schema keys planned in the Helper-Backed UI
