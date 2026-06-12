@@ -11,7 +11,9 @@ The helper lives at the workspace root:
 aotn_node_helper/
 ├── create_node.py
 ├── check_node.py
+├── check_ui.py
 ├── generator.py
+├── ui_checks.py
 └── specs/
 ```
 
@@ -20,6 +22,7 @@ Run helper commands from `AttackOfTheNodes/` with the workspace venv:
 ```bash
 ../.venv/bin/python ../aotn_node_helper/create_node.py ../aotn_node_helper/specs/<node_type>.yaml
 ../.venv/bin/python ../aotn_node_helper/check_node.py <node_type>
+../.venv/bin/python ../aotn_node_helper/check_ui.py <node_type>
 ```
 
 Or run them from the workspace root by passing the same script paths.
@@ -31,11 +34,23 @@ From one JSON/YAML spec, `create_node.py` generates:
 - `AttackOfTheNodes/backend/nodes/<category>/<node_type>.py`
 - registration updates in `AttackOfTheNodes/backend/nodes/__init__.py`
 - `AttackOfTheNodes/tests/generated/test_<node_type>.py`
+- `AttackOfTheNodes/tests/generated/test_<node_type>_ui.py` — a config-UI
+  smoke test, emitted when the spec uses `config_tabs`, `input_sources`, or
+  `output_routing` (override with `generate_ui_test: false`)
 - optional UI follow-up notes under `aotn_node_helper/generated_notes/` when
   the spec marks `structural_ui: true`
 
 `check_node.py <node_type>` runs a focused compile plus the generated test for
 that node.
+
+`check_ui.py <node_type>` mounts `NodeConfigScreen` for the node and verifies
+the schema-driven UI contract: every schema field renders a widget, each widget
+lands in its declared top-level tab, each widget participates in keyboard
+focus, and `enabled_when`/`visible_when` rule state matches the mounted
+defaults. Structural nodes (`branch_node`, `merge_node`, `branch_end_node`)
+are rejected with a clear message — they use custom topology UI. The same
+checks run from the generated `test_<node_type>_ui.py`, so CI covers them
+without invoking the CLI.
 
 ## Spec Shape
 
@@ -86,6 +101,99 @@ hint. `NodeConfigScreen` reads that hint and renders the field in `Source`,
 Use `config_fields` only when tab placement does not matter. Untabbed fields
 land in `Parameters`.
 
+## Standard Model Sections
+
+Two top-level spec sections expand into the standard node I/O model from
+`NODE_STANDARDS.md` so ordinary nodes do not hand-write the pattern.
+
+### input_sources
+
+Declares where each input can come from. Each entry expands into a
+`<name>_source` selector in the Source tab, a `<name>_vault_key` field gated
+on the Vault source, and (when the Configured source is allowed) a `<name>`
+parameter field in the Parameters tab gated on the Configured source.
+
+```yaml
+input_sources:
+  file_path:
+    label: File path
+    sources: ["upstream", "vault", "configured"]
+    default: configured
+    parameter:
+      type: string
+      label: File path
+      placeholder: /path/to/file
+```
+
+Rules:
+
+- `sources` must list at least two of `upstream`, `vault`, `configured`.
+  Single-source inputs do not need a selector — declare a plain field instead.
+- `default` must be one of the listed sources (defaults to the first).
+- `parameter` is required when `configured` is allowed and rejected when it is
+  not.
+- Selector option values are the display strings `Upstream payload`, `Vault`,
+  and `Configured`. Backend `execute()` reads them as such, e.g.
+  `self.config.get("file_path_source") == "Vault"`.
+
+### output_routing
+
+Declares how the node's result leaves. Expands into the Payloads tab fields
+`transient_output` and `dead_drop_passthrough` (mutually exclusive, per
+`NODE_STANDARDS.md`) plus optional `vault_write` / `vault_write_key` fields
+gated on the vault checkbox.
+
+```yaml
+output_routing:
+  default: transient            # or dead_drop
+  transient_label: Send bool result to next node
+  dead_drop_label: Forward incoming payload unchanged
+  vault:
+    mode: optional              # optional | default_on | required_unless_transient
+    label: Save error message to Vault
+    key_label: Error log Vault key
+```
+
+Vault modes:
+
+- `optional`: unchecked by default, freely toggled.
+- `default_on`: checked by default, freely toggled.
+- `required_unless_transient`: checked by default and locked (greyed out)
+  until `transient_output` is checked, so the result is never silently
+  discarded. This is the Basic LLM node pattern from `NODE_STANDARDS.md`.
+
+Set `dead_drop: false` to omit the passthrough option for nodes that always
+produce a fresh output.
+
+## Dynamic Form Rule Keys
+
+Any config field (hand-written or expanded) may declare these schema keys.
+`NodeConfigScreen` applies them live as the user changes controls, including
+across tabs (a Source tab selector can grey out a Parameters tab field):
+
+- `enabled_when`: mapping of field name to expected value. The field greys out
+  when the condition does not hold. All entries must match (AND); a list value
+  matches any listed entry (OR within one field).
+
+  ```yaml
+  enabled_when:
+    file_path_source: Configured
+  ```
+
+- `visible_when`: same condition shape; hides the field, its label, and its
+  description when the condition does not hold.
+- `mutually_exclusive_with`: list of boolean fields. Checking this field
+  unchecks the listed partners. Declarations are symmetric — declaring on one
+  side is enough. Only valid on `boolean` fields.
+
+The generator validates rule keys at spec time: referenced fields must exist
+and mutual-exclusion participants must be booleans. With the helper's built-in
+simple-YAML fallback parser, write conditions as nested mappings (as above)
+rather than inline `{key: value}` braces; inline form requires PyYAML.
+
+See `specs/example_file_instance_node.yaml` for a complete spec using
+`input_sources`, `output_routing`, and the expanded rule keys.
+
 ## Supported Values
 
 Categories:
@@ -120,16 +228,19 @@ Config field types:
 
 Common schema keys include `label`, `description`, `required`, `options`,
 `placeholder`, `group`, `min`, `max`, `min_length`, `max_length`, `height`, and
-`language`.
+`language`. Dynamic rule keys are `enabled_when`, `visible_when`, and
+`mutually_exclusive_with` (see Dynamic Form Rule Keys above).
 
 ## Helper-First Node Workflow
 
 1. Write a spec in `aotn_node_helper/specs/<node_type>.yaml`.
-2. Prefer `config_tabs` with `Source`, `Parameters`, and `Payloads`.
+2. Use `input_sources` and `output_routing` for the standard I/O model from
+   `NODE_STANDARDS.md`; use `config_tabs` with `Source`, `Parameters`, and
+   `Payloads` for node-specific fields.
 3. Run `create_node.py`.
 4. Open the generated node file and replace template execution logic when
    needed.
-5. Run `check_node.py <node_type>`.
+5. Run `check_node.py <node_type>` and `check_ui.py <node_type>`.
 6. Add broader tests only when the node changes shared runtime behavior,
    editor display, command navigation, or workflow validation.
 
@@ -141,8 +252,9 @@ or the shared command widgets before adding node-specific UI.
 
 Set `structural_ui: true` only when the node needs config UI derived from live
 workflow topology or editor state, such as branch paths, merge targets, wait
-targets, file picker behavior, or dynamic sections that depend on checked
-options.
+targets, or file picker behavior. Conditional field state no longer requires
+structural UI — use `enabled_when`, `visible_when`, and
+`mutually_exclusive_with` instead.
 
 The helper deliberately does not patch frontend screens for these cases. It
 emits a UI follow-up note instead. That pause is useful: custom UI is where
@@ -162,27 +274,36 @@ Before implementing structural UI:
 ## Current Limitations
 
 - Generated execution templates are starter bodies, not final business logic.
-- The helper does not validate that generated config fields mount successfully
-  in Textual.
-- The helper does not yet create UI navigation tests.
+  Standard-model specs still need their `execute()` written to read
+  `<name>_source` and route output per the routing checkboxes.
+- Selector option values are display strings, not separate machine values.
+  A future label/value pair in the form generator would decouple backend
+  reads from UI copy.
+- The generated UI smoke test checks mount-time contract state; it does not
+  yet simulate keyboard navigation through every control.
 - The helper does not scaffold general-purpose screens or modal flows.
-- `config_schema` supports only the currently documented generic keys; dynamic
-  visibility and conditional sections are still hand-managed by frontend code.
+- The simple-YAML fallback parser does not support inline `{key: value}`
+  mappings; use nested mappings or install PyYAML.
 
 ## Direction: UI Standardization Helper
 
-The next useful evolution is to make the helper verify UI contracts, not just
-node contracts.
+Done so far:
 
-Recommended additions:
+- `check_ui.py <node_type>` mounts `NodeConfigScreen` and asserts tab
+  placement, focus participation, and dynamic rule state (2026-06-12).
+- Generic dynamic-form schema keys `enabled_when`, `visible_when`, and
+  `mutually_exclusive_with` are implemented in `form_generator.py` and applied
+  live by `NodeConfigScreen` (2026-06-12).
+- Standard-model spec sections `input_sources` and `output_routing` expand the
+  `NODE_STANDARDS.md` patterns automatically (2026-06-12).
+- A generated config-UI smoke test is emitted for specs that use tabs or the
+  standard sections (2026-06-12).
 
-- `check_ui.py <node_type>`: mount `NodeConfigScreen` for the generated node and
-  assert every schema field appears in the intended top-level tab.
+Remaining:
+
 - A generated keyboard smoke test for node config: tab switching, W/S movement,
   E/Enter activation, edit-mode exit, Save/Cancel reachability, and no trapped
   selection lists.
-- A generated dynamic-section smoke test for fields that declare visibility
-  conditions, once a generic `visible_when` schema key exists.
 - A screen scaffold command for new Textual screens that defaults to
   `CommandScreenMixin`, a visible Cancel control, vertical button order, a
   `StatusBar`, and a matching keyboard-navigation test.

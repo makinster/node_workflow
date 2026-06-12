@@ -129,17 +129,29 @@ for repeatable Textual UI work. The recurring failure modes are keyboard
 navigation, autoscroll, widget sizing, and dynamic UI that changes after a
 checkbox/select/input changes.
 
+Done (2026-06-12):
+
+- `aotn_node_helper/check_ui.py <node_type>` mounts `NodeConfigScreen`, checks
+  top-level tab placement for schema fields, verifies generated controls
+  participate in keyboard focus, and validates dynamic rule state at mount.
+- Generic dynamic-form schema keys `enabled_when`, `visible_when`, and
+  `mutually_exclusive_with` are implemented in `form_generator.py`, applied
+  live by `NodeConfigScreen` (across tabs), and covered by
+  `tests/test_form_rules.py`.
+- Helper specs expand the NODE_STANDARDS standard model through
+  `input_sources` and `output_routing` sections.
+- A config-UI smoke test (`test_<node_type>_ui.py`) is generated for specs
+  that use `config_tabs` or the standard sections.
+
 Recommended cleanup:
 
-- Add `aotn_node_helper/check_ui.py <node_type>` that mounts
-  `NodeConfigScreen`, checks top-level tab placement for schema fields, and
-  verifies all generated controls are reachable with command navigation.
-- Generate a UI smoke test when a node spec uses `config_tabs`: switch tabs with
-  A/D, move through fields with W/S, activate with E/Enter, exit edit mode, and
-  reach Save/Cancel.
-- Introduce generic schema keys for dynamic sections, for example
-  `visible_when`, `enabled_when`, or `repeats_from`, then test them in
-  `form_generator.py` before using them in node specs.
+- Extend the generated UI smoke test to full keyboard simulation: switch tabs
+  with A/D, move through fields with W/S, activate with E/Enter, exit edit
+  mode, and reach Save/Cancel.
+- Consider a `repeats_from` schema key for counted dynamic rows, complementing
+  `visible_when`/`enabled_when`.
+- Add label/value pairs for select options in `form_generator.py` so backend
+  reads stable machine values instead of display strings.
 - Add a screen scaffold command for non-node screens. The scaffold should create
   a `CommandScreenMixin` screen with a status bar, visible Cancel control,
   vertical button order, and a generated keyboard-navigation test.
@@ -191,16 +203,18 @@ Recommended cleanup:
   merge/wait nodes, loop nodes, and utility markers instead of forcing all
   branching behavior through one generic node.
 - Extend config schema only with generic keys: placeholder text, min/max/step for
-  numeric fields, optional blank-select behavior, multiline height hints, and
-  section visibility conditions.
+  numeric fields, optional blank-select behavior, and multiline height hints.
+  Visibility/enablement conditions and mutual exclusion are done (2026-06-12):
+  `enabled_when`, `visible_when`, `mutually_exclusive_with`.
 - Add tests for every schema key in `frontend/widgets/form_generator.py`.
 - Move branch-label generation and pass-through notes toward documented generic
   `ui_hints` where possible.
 - Simplify generated config surfaces: ordinary nodes should show only the fields
   they declare, semantic transient input/output metadata, memory-bank sections
   when enabled, and generic topology selectors when required.
-- Create a "node author checklist" in docs: metadata, schema, ports, categories,
-  pass-through behavior, memory-bank declarations, and expected generated UI.
+- Node author checklist exists in `NODE_STANDARDS.md` (Authoring Checklist
+  section); extend it with categories/pass-through/memory-bank specifics as the
+  node overhaul progresses.
 - Add a validation test that every registered node can mount its generated config
   without frontend custom code unless it is explicitly listed as a structural
   topology editor.

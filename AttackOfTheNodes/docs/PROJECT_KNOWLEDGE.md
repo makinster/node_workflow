@@ -134,7 +134,13 @@ logic is added:
 
 The form generator supports text, number, boolean, select, multiselect,
 multiline, code-like fields, placeholders, validators, height hints, grouped
-tabs, and branch-label fields for multi-output nodes.
+tabs, and branch-label fields for multi-output nodes. It also supports dynamic
+rule keys applied live by `NodeConfigScreen`: `enabled_when` (grey out unless
+a condition on other field values holds), `visible_when` (hide field, label,
+and description), and `mutually_exclusive_with` (checking one boolean unchecks
+its partners). Rules work across config tabs. The node helper expands the
+NODE_STANDARDS input source and output routing models into these fields via
+`input_sources` / `output_routing` spec sections.
 
 Current implementation note: `Node` defines optional `icon_name`, `tags`, and
 `color_hint`, but `NodeFactory.get_node_types_metadata()` does not yet expose

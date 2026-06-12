@@ -13,6 +13,15 @@ and routing model — not through open-ended custom config. A node author define
 which inputs and outputs the node has; users configure how data reaches and
 leaves those fixed ports.
 
+**Helper support (2026-06-12):** the node helper expands this model
+automatically. Declare `input_sources` and `output_routing` sections in a
+helper spec and the generator emits the source selectors, gated Vault key and
+parameter fields, and the mutually exclusive transient/dead-drop pair —
+including the dynamic greying rules described below, which `NodeConfigScreen`
+now applies live through the generic schema keys `enabled_when`,
+`visible_when`, and `mutually_exclusive_with`. See `NODE_HELPER.md` and
+`aotn_node_helper/specs/example_file_instance_node.yaml`.
+
 ## Standard Input Source Model
 
 Every node input that can accept external data offers up to three source

@@ -22,10 +22,17 @@ the links in `docs/README.md`.
   examples for a File instance node and a Basic LLM node.
 - Prefer the helper-first flow for ordinary nodes:
   - Write a spec in `aotn_node_helper/specs/<node_type>.yaml`.
+  - Use `input_sources` and `output_routing` spec sections to expand the
+    standard NODE_STANDARDS input/output model automatically, including the
+    dynamic greying rules. See `NODE_HELPER.md` and
+    `aotn_node_helper/specs/example_file_instance_node.yaml`.
   - Run `../.venv/bin/python ../aotn_node_helper/create_node.py ../aotn_node_helper/specs/<node_type>.yaml`
     from `AttackOfTheNodes/`, or run the same script from the workspace root.
   - Run `../.venv/bin/python ../aotn_node_helper/check_node.py <node_type>`
     for the focused compile/registration/execution check.
+  - Run `../.venv/bin/python ../aotn_node_helper/check_ui.py <node_type>` to
+    verify tab placement, focusability, and dynamic-form rule state on the
+    mounted config screen.
 - The intended human-to-helper workflow is:
   - Describe what the node does and anything unique about it.
   - Provide config tab headers such as `Source`, `Parameters`, and `Payloads`.
@@ -110,6 +117,11 @@ config_tabs:
   - numeric bounds such as `min` and `max`
   - text bounds such as `min_length` and `max_length`
   - multiline/code options such as `height` and `language`
+  - dynamic rule keys: `enabled_when` (grey out unless condition holds),
+    `visible_when` (hide field, label, and description unless condition holds),
+    and `mutually_exclusive_with` (checking one boolean unchecks its partners).
+    Conditions are mappings of field name to expected value; rules work across
+    tabs and are applied live by `NodeConfigScreen`.
 - Generated widgets:
   - text and number fields render as `CommandInput`
   - multiline and code fields render as `CommandTextArea`

@@ -1,0 +1,44 @@
+# Example spec for the standard input-source / output-routing model from
+# docs/NODE_STANDARDS.md. Demonstrates input_sources, output_routing, and the
+# dynamic-form rule keys they expand into. Not registered in the project;
+# generate into a scratch project root to inspect the output.
+node_type: example_file_instance_node
+class_name: ExampleFileInstanceNode
+category: io
+display_name: File Instance
+default_alias: File Instance
+description: Opens a file at a configured or supplied path and reports success
+input_ports: ["input"]
+output_ports: ["default"]
+output_port_metadata:
+  default:
+    name: Open Result
+    description: True when the file opened successfully, false on error
+
+# Standard input source model: generates file_path_source (Source tab),
+# file_path_vault_key (Source tab, enabled when source is Vault), and
+# file_path (Parameters tab, enabled when source is Configured).
+input_sources:
+  file_path:
+    label: File path
+    sources: ["upstream", "vault", "configured"]
+    default: configured
+    description: Where the file path comes from at execution time
+    parameter:
+      type: string
+      label: File path
+      placeholder: /path/to/file
+
+# Standard output routing model: generates transient_output and
+# dead_drop_passthrough (mutually exclusive) plus optional Vault write
+# fields gated on the vault_write checkbox.
+output_routing:
+  default: transient
+  transient_label: Send bool result to next node
+  dead_drop_label: Forward incoming payload unchanged
+  vault:
+    mode: optional
+    label: Save error message to Vault
+    key_label: Error log Vault key
+
+execution_template: transform_stub
