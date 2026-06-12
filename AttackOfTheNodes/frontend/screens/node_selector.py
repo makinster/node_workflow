@@ -232,19 +232,9 @@ class NodeSelectorScreen(ModalScreen):
         self.dismiss(None)
 
     def action_previous_tab(self) -> None:
-        focused = self.app.focused
-        if isinstance(focused, Switch) and focused.id == "io-direction-switch":
-            if focused.value:
-                focused.value = False
-            return
         self._cycle_tab(-1)
 
     def action_next_tab(self) -> None:
-        focused = self.app.focused
-        if isinstance(focused, Switch) and focused.id == "io-direction-switch":
-            if not focused.value:
-                focused.value = True
-            return
         self._cycle_tab(1)
 
     def action_cursor_up(self) -> None:
@@ -540,7 +530,7 @@ class NodeSelectorScreen(ModalScreen):
         if checkboxes:
             focus_command_widget(self, checkboxes[0])
         else:
-            focus_command_widget(self, self.query_one("#node-filter", CommandInput))
+            self._focus_node_list()
 
     def _focus_widget(self, widget: Any) -> None:
         if isinstance(widget, ListView):
