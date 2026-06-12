@@ -4610,14 +4610,13 @@ async def _test_node_selector_uses_family_tabs_and_subcategory_filters():
         assert "start_node" not in all_types
         assert "end_node" not in all_types
 
-        # Default: I/O tab, Input side. No Internet/AI-tagged input nodes yet,
-        # so no checkboxes are visible; focus lands on the node list so item 1
-        # is highlighted immediately.
+        # Default: I/O tab, Input side — focus lands on the filter bar
+        # (not edit mode) so the user can type immediately or navigate down.
         assert screen._active_tab == "I/O"
         assert screen._active_family() == "Inputs"
         assert io_switch.value is False
         assert screen._visible_subcategory_checkboxes() == []
-        assert app.focused is node_list
+        assert app.focused is filter_input
         assert ai_filter.display is False  # no AI-tagged input nodes yet
         assert filter_input.editing is False
         assert {node["type"] for node in screen._visible_nodes} == {
