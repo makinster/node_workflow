@@ -128,6 +128,153 @@ group per model family, since each has its own capabilities). Capability
 grouping is the contract until that pressure is real. `NODE_CATALOG.md`
 carries the same note next to the AI Processing group.
 
+## Full Expanded Taxonomy
+
+This is the target node library. It is not all implemented today. Treat it as
+the design contract for the node overhaul. Groups shown below produce a Group
+Picker in the selector; nodes marked *direct-add* or structurally unique appear
+directly in the list with no picker.
+
+### INPUTS
+
+**Text Input →** *(group with picker)*
+- **User Text Input** — prompt user at runtime; blocks until answered
+- **Web Scrape** — fetch and extract visible text from a URL
+- **PDF to Text** — extract text content from a PDF file
+- **OCR** — image or scanned document to text string
+- **Clipboard Read** — read current clipboard text
+- **Environment Variable** — read a system env var as a string
+- **Template Fill** — substitute named vault/transient values into a text template
+- **RSS / Feed Item** — fetch and parse an RSS or Atom feed entry
+
+**File Reader →** *(group with picker)*
+- **Simple File Read** — read entire file as a text string
+- **Bulk File Read** — read all files matching a folder path or glob pattern
+- **Find & Extract Passage** — search for a pattern and return the surrounding context window
+- **Structured File Read** — parse CSV or JSON into usable object data
+- **AI-Guided Read** — provide a file and a question; AI extracts the relevant portion
+
+**Data Source →** *(group with picker — distinct from Text Input: returns structured data, not raw text)*
+- **API Read** — GET request to a REST API, returns response body
+- **Database Query** — run a read query against SQL or NoSQL, returns result set
+- **System State** — read OS metrics: disk, memory, running processes
+- **Screen / UI Read** — accessibility tree or live screen capture to structured text
+
+**Trigger →** *(group with picker)*
+- **Key Combination** — fire on a keyboard shortcut
+- **File Change** — fire when a watched file is modified
+- **Folder Watch** — fire when files are added or removed from a folder
+- **Scheduled / Cron** — fire at a time or interval
+- **Right-Click / Context Menu** — register an OS context menu entry that starts the workflow
+- **Webhook / HTTP Listener** — fire when an HTTP request arrives on a local port
+- **Process Event** — fire on OS process start or stop
+
+**Trigger architecture note:** Triggers are the most distinct node type in this
+list. They do not execute within a workflow — they start one. The runtime
+implication is that they need a persistent listener process that runs outside
+the normal supervisor execution model. This maps to the "long-lived listening
+resources" item already in the backlog. For now, treat them as config-only
+nodes (define the trigger in config) and build the listener runtime as a
+separate phase. Do not design the workflow execution model around trigger timing.
+
+---
+
+### FLOW CONTROL
+
+**Branch →** *(group with picker — variants have different port shapes, so they must be separate types)*
+- **Parallel Branch** — unconditionally split into N concurrent paths (N output ports)
+- **Simple Conditional Branch** — bool/flag picks true or false path (2 ports)
+- **Multi-Condition Branch** — multiple conditions map to multiple named paths (N named ports)
+- **AI Conditional Branch** — AI evaluates a prompt to decide the path (N named paths + default)
+- **Loop Branch** — repeat a path N times or until a condition exits (loop body + exit ports)
+- **Weighted Branch** — probabilistic path selection (useful for A/B testing within workflows)
+
+**Merge →** *(group with picker)*
+- **Standard Merge** — wait for all selected branches, then continue
+- **First-Wins Merge** — proceed when any one branch arrives; cancel remaining
+- **Conditional Merge** — accept only arriving branches that meet a condition
+- **Timed Merge** — merge after a time limit regardless of branch state; incomplete branches abandoned
+
+**Wait / Timer →** *(group with picker)*
+- **Wait Until** — pause until a named Vault key is set by another node or branch
+- **Fixed Delay** — wait a specified duration then continue
+- **Timeout Guard** — continue with an error signal after a limit expires; pair with a downstream conditional branch for error handling
+- **Debounce** — wait until a burst of rapid incoming changes settles before continuing
+
+**Loop Utility →** *(group with picker)*
+- **Counter** — increment and read a run-scoped integer counter
+- **Accumulator** — collect one value per iteration into a growing list
+- **Repeat Limiter** — error or force-exit if a loop body exceeds a threshold (prevents runaway loops)
+
+**Merge Beacon** — *direct-add* (single type, config handles flag-setter behavior)
+
+**Start / End** — *direct-add* (unique structural nodes, no grouping makes sense)
+
+---
+
+### OUTPUTS
+
+**Text Output →** *(group with picker)*
+- **Standard Text Output** — display text in the execution window (active output, blocks)
+- **Log Output** — append to a running log file without interrupting execution (passive)
+- **Debug Print** — lightweight transient print, visually quieter, for inspection
+- **Formatted Output** — output with sections, dividers, and emphasis (add when rich formatting lands)
+
+**File Write →** *(group with picker)*
+- **File Write** — write content to a file (config: overwrite or append mode — one node, mode select)
+- **Structured Write** — serialize an object to CSV or JSON format
+- **File Delete** — remove a file; output: bool success
+- **File Copy / Move** — duplicate or relocate a file; input: source + destination paths
+
+**Send / Notify →** *(group with picker)*
+- **OS Desktop Notification** — system tray or toast alert
+- **Email Send** — send via SMTP or mail API; input: recipient + subject + body
+- **Webhook / HTTP POST** — push data to an external URL; input: URL + payload + headers
+- **API Write** — PUT/PATCH/DELETE to a REST endpoint
+- **Database Write** — insert or update via SQL/NoSQL connection; input: query/document + data
+
+**User-Facing Prompt →** *(group with picker)*
+- **Confirmation Dialog** — yes/no prompt, blocks until answered; output: bool
+- **User Choice Picker** — present a labeled list, wait for selection; output: chosen string
+- **Progress Message** — show a non-blocking status update; fire and forget
+
+---
+
+### COMPLEX
+
+**AI Processing →** *(group with picker)*
+- **Chat Completion** — LLM text generation, optional session persistence via Vault ai_session
+- **Image Generation** — generate an image from a text prompt; output: image path
+- **Embedding** — convert text to a vector; output: float array
+- **Vision / Multimodal** — analyze an image alongside a text prompt
+- **AI Tool Call** — LLM with structured function/tool calling; output: structured result object
+- **AI Decision** — multi-step reasoning that returns a named, categorized decision with reasoning
+
+**Subworkflow →** *(group with picker — deferred to phases 19/20 per roadmap, taxonomy slot reserved)*
+- **Run Subworkflow** — execute a saved workflow as an inline step
+- **Parallel Subworkflow** — run multiple saved workflows concurrently, collect all outputs
+- **Conditional Subworkflow** — run a workflow only if a condition passes
+
+**Data Transform →** *(group with picker — absorbs current Data and most Debug/Utility nodes)*
+- **Concat** — join multiple text strings
+- **Text Transform** — regex, find/replace, trim, split operations
+- **JSON / Object Transform** — reshape or extract fields from a structured object
+- **Set Variable** — write a named Vault variable
+- **Get Variable** — read a named Vault variable
+- **Math / Comparison** — arithmetic or comparison between numbers; output: value or bool
+
+**Script Runner →** *(group with picker — future; flag security implications)*
+- **Python Script** — execute inline or file-based Python; output: return value + stdout
+- **Shell Command** — run a shell command, capture stdout and exit code
+- **Node.js Script** — execute inline JavaScript
+
+**Script Runner security note:** these nodes are a meaningful attack surface.
+They should require an explicit opt-in setting ("allow script execution") before
+appearing in the selector at all, and the picker description should show a
+visible warning. Do not implement until the security posture is decided.
+
+---
+
 ## Subcategories
 
 Nodes can have multiple subcategories. Subcategories are filterable capability
@@ -427,6 +574,7 @@ selector filters.
 With the family revision, the editor row family color map needs a fifth entry
 for `Utility` (the existing quiet utility styling is the natural fit), and
 `Inputs`/`Outputs` keep distinct colors even though they share a selector tab.
+
 
 ## Problems and Solutions Summary
 

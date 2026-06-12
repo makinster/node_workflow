@@ -26,6 +26,27 @@ Note: adding a node to an existing group requires only declaring the `group`
 field on the node class. No selector code changes are needed. Single-member
 groups auto-promote to direct-add entries.
 
+## Design Or Update Node Taxonomy
+
+Read:
+
+- `PHASE_17_NODE_VISUAL_IDENTITY.md` — Core Simplification Rule, full expanded
+  taxonomy, group picker UI design, keyboard flows, metadata conventions
+- `NODE_STANDARDS.md` — Node Type Classification rule (when to group vs
+  separate vs mode-select)
+- `BACKEND_FRONTEND_BOUNDARY.md` — the `group` field is a frontend-only
+  navigation concept; no backend component should branch on it
+
+Likely files:
+
+- `backend/node_identity.py`
+- `backend/node_factory.py`
+- `frontend/screens/node_selector.py`
+
+Note: adding a node to an existing group requires only declaring the `group`
+field on the node class. No selector code changes are needed. Single-member
+groups auto-promote to direct-add entries.
+
 ## Add Or Change A Node
 
 Read:
