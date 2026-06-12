@@ -16,6 +16,7 @@ tkinter/proof-of-concept material lives under `docs/archive/`.
 | Change backend/runtime behavior | `TASK_INDEX.md`, `ARCHITECTURE.md`, `SIGNAL_FLOW.md` | `PROJECT_KNOWLEDGE.md`, `BACKEND_FRONTEND_BOUNDARY.md` |
 | Continue the roadmap | `AGENT_HANDOFF.md`, `MASTER_BUILD_PLAN.md` | `archive/BUILD_PLAN_HISTORY.md`, `SESSION_LOG.md` |
 | Continue Phase 17 node identity | `PHASE_17_NODE_VISUAL_IDENTITY.md`, `TASK_INDEX.md` | `UI_QUICK_REFERENCE.md`, `TUI_DESIGN.md`, `BACKEND_FRONTEND_BOUNDARY.md` |
+| Design or update node taxonomy | `PHASE_17_NODE_VISUAL_IDENTITY.md`, `NODE_STANDARDS.md` | `TASK_INDEX.md`, `BACKEND_FRONTEND_BOUNDARY.md` |
 | Update docs | `README.md`, `TASK_INDEX.md`, `DOCS_MIGRATION_NOTES.md` | `archive/SESSION_LOG_HISTORY.md` |
 | Check what changed recently | `SESSION_LOG.md` | `archive/SESSION_LOG_HISTORY.md` |
 
