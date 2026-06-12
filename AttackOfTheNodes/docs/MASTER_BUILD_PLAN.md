@@ -186,7 +186,7 @@ Focused checks:
   nodes with dependency/export policy.
 - **Typed vault entries and AI session handles.** Add `type` field to
   `MemoryBank` vault entries (`string`, `number`, `boolean`, `file`,
-  `ai_session`). Add `get_resource(key)` to `RunSession`. Add config-driven
+  `ai_session`). `get_resource(key)` on `RunSession` is already implemented. Add config-driven
   "keep active AI session" output to LLM nodes (no separate Chat Session Node).
   Extend input source dropdowns to type-filter by declared input type. Extend
   the validator with the error/warning split for typed vault reference ordering.

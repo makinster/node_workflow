@@ -82,7 +82,7 @@ Merge behavior is editor-assisted and runtime-coordinated:
   and threaded through `NodeContext` as `context.run_session`. Holds open file
   handles and AI session handles keyed by a string reference. API:
   `open_file(path, mode)`, `register_resource(key, handle, close_hook)`,
-  `get_resource(key)` (planned), `validate_path(path)`, `close_all()`.
+  `get_resource(key)`, `validate_path(path)`, `close_all()`.
   Typed vault references (type `file` or `ai_session`) carry a reference key
   that nodes resolve through `get_resource`.
 - `backend/utils/try_catch.py`: Go-style async result/error helper for new async

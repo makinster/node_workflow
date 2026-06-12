@@ -179,10 +179,10 @@ Done — the core `RunSession` is implemented:
   `path_hint: "file"` (empty required path = error, missing on disk =
   warning). Coverage lives in `tests/test_run_session.py`.
 
-Planned addition — `get_resource(key)` lookup: `register_resource` stores a
-handle by key; `get_resource(key)` retrieves it. Nodes that receive a typed
-vault reference key call `context.run_session.get_resource(ref_key)` to
-resolve the actual Python handle.
+`get_resource(key)` is already implemented — retrieves a previously registered
+handle by key (see `tests/test_run_session.py::test_register_and_get_resource`).
+Nodes that receive a typed vault reference key will call
+`context.run_session.get_resource(ref_key)` to resolve the actual Python handle.
 
 Remaining design notes:
 - Keep the resource session backend-generic. It should not know about Textual,

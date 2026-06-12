@@ -39,7 +39,7 @@ context.memory_bank.set(vault_key, {"type": "file", "ref_key": ref_key})
 ```
 
 A downstream node that reads a `file` or `ai_session` vault entry retrieves
-the handle through:
+the handle through `get_resource`, which is already implemented on `RunSession`:
 
 ```python
 handle = context.run_session.get_resource(ref_key)
