@@ -4,6 +4,21 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-13 — Headless Build Plan created
+
+- Added `docs/HEADLESS_BUILD_PLAN.md`: phased plan (H1–H6) covering the
+  backlog work that is fully verifiable with `compileall` + `pytest`, with
+  no live-TUI verification required — tombstone direct save (H1), tombstone
+  restore engine per the 2026-06-11 design spec (H2), secrets schema flags +
+  editor validator wiring (H3), form generator label/value selects + schema
+  key test coverage (H4), backend branch health derivation (H5), and docs
+  reconciliation (H6).
+- Each phase lists tasks, likely files, focused pytest checks, and exit
+  criteria; live-app work (Phase 17 verification, Secrets settings tab, AI
+  session config UI, branch health colors) is explicitly deferred and stays
+  in `PROJECT_BACKLOG.md`.
+- Added the new doc to the `README.md` Document Directory.
+
 ## 2026-06-12 — SecretsManager + Backend Build Plan (Phases 1–6)
 
 ### SecretsManager module
