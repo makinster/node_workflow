@@ -3,6 +3,12 @@ Memory bank for AttackOfTheNodes v0.5.
 
 Holds runtime data for one workflow run. The persistent store is the named
 variable space; the transient store is the wire between connected node ports.
+
+MEMORY_UPDATE carries only a lightweight delta describing what changed
+(e.g. {"change": "set", "key": ...}); it is a signal, not a snapshot.
+Subscribers that need the current contents pull get_state() on demand. This
+keeps each persistent write O(1) instead of deep-copying both stores per write,
+which grew O(n^2) over the course of a run.
 """
 
 from typing import Any, Dict, Optional
@@ -27,7 +33,7 @@ class MemoryBank:
         """Write a named variable and publish a memory update."""
         self._persistent[key] = value
         self._persistent_type_tags[key] = type_tag
-        self._event_bus.publish(MEMORY_UPDATE, self.get_state())
+        self._event_bus.publish(MEMORY_UPDATE, {"change": "set", "key": key})
 
     def read_persistent(self, key: str, default: Any = None) -> Any:
         """Read a named variable."""
@@ -64,11 +70,11 @@ class MemoryBank:
         self._persistent.clear()
         self._persistent_type_tags.clear()
         self._transient.clear()
-        self._event_bus.publish(MEMORY_UPDATE, self.get_state())
+        self._event_bus.publish(MEMORY_UPDATE, {"change": "clear"})
 
     def load_state(self, state: Dict[str, Any]) -> None:
         """Restore both stores from a serialized snapshot."""
         self._persistent = dict(state.get("persistent", {}))
         self._persistent_type_tags = dict(state.get("persistent_type_tags", {}))
         self._transient = dict(state.get("transient", {}))
-        self._event_bus.publish(MEMORY_UPDATE, self.get_state())
+        self._event_bus.publish(MEMORY_UPDATE, {"change": "load"})

@@ -433,3 +433,68 @@ Design direction:
 - Keep the LLM provider client backend-only. Frontend nodes declare the session
   intent through metadata; the backend resolves the provider and manages
   the connection.
+
+## Planned Project — Backend Execution & Edit-Time Performance
+
+Context: a backend execution-overhead audit (2026-06-13, see `SESSION_LOG.md`)
+measured per-node cost over the real Supervisor/MasterState/EventBus/MemoryBank
+stack at ~15 us/node and linear — small relative to real node I/O, so a C
+rewrite of the execution manager is not warranted. Two O(n^2) hot spots were
+found and fixed (the `MEMORY_UPDATE` full-store snapshot and the per-mutation
+workflow-cache deepcopy). The items below are the remaining, lower-leverage
+optimizations from that audit, deferred so they can be reevaluated as workflows
+grow and the save format finalizes.
+
+**Guiding constraints (must hold for any item here):**
+
+- Preserve concurrent async-branch execution (one cooperative event loop).
+- Preserve all node / branch / merge / WaitUntil / recovery / breakpoint
+  semantics and the live Memory Viewer + dead-drop preview.
+- Any precomputed/derived data stays regenerable from `connections`/config (the
+  source of truth) and is validated on load — never authoritative.
+
+**Deferred items (priority order):**
+
+1. **Node-instance caching ("cache repeated nodes").** `WorkflowMap
+   .get_node_instance()` builds a fresh `Node` and copies config on every visit;
+   loops/cycles re-instantiate each iteration. Cache instances keyed by
+   `node_id`; invalidate on config/alias/delete, clear on load/create/switch.
+   Safe — nodes are verified stateless (no per-visit mutable `self` state), so
+   caching by `node_id` (not by type) never reuses across differing configs.
+   Optional follow-ons: drop the per-build `dict(config)` copy (config is
+   read-only during a run); and, given the unfinalized save format, store config
+   as a shared base + per-node override diff to cut redundant-data footprint for
+   many similar nodes (keep a plain-dict accessor so UI/validator/save readers
+   are unaffected).
+
+2. **Edit-time execution index in the save file.** Extend the existing derived
+   `input_sources` mechanism (`SaveManager` already writes it) into a persisted
+   per-node index: input resolution `{input_port -> (source_node_id,
+   source_port)}` and output routing `{output_port -> target_node_id}`, plus a
+   structure hash. Execution (`Supervisor._prepare_inputs`,
+   `WorkflowMap.find_next_node_id`) would do O(1) lookups instead of scanning
+   connection lists; regenerated on load if absent or hash-mismatched. Graph
+   lookups are currently flat in benchmarks, so this is a structural enabler for
+   future efficiency algorithms more than a raw-speed win. The save format is
+   not finalized, so the index can be a first-class top-level section.
+
+3. **Per-node allocation / overhead trims.** `Supervisor._execute_node`
+   allocates 5 closures + a `NodeContext` + `_NodeResult` per node; reuse a
+   per-supervisor signal sink and a mutable context. Fetch the node record once
+   per step (the breakpoint check and instance lookup currently both read it).
+   `EventBus.publish` copies its subscriber list on every publish; snapshot only
+   on subscribe/unsubscribe instead.
+
+4. **Conditional completion-notify.** `MasterState.mark_node_completed` acquires
+   an `asyncio.Condition` and calls `notify_all()` on every node completion even
+   when no WaitUntil node exists. Skip the lock/notify when there are zero wait
+   targets; preserve WaitUntil and the separate merge barrier.
+
+**Considered and not pursued — transient-output eviction.** Freeing each node's
+transient output once its consumers have read it ("don't keep outputs in
+memory") is, after the `MEMORY_UPDATE` fix, no longer needed for speed — it is a
+memory-footprint optimization only. It is also unsafe without cycle-aware
+refcounting (re-visited nodes in loops re-read upstream outputs; fan-out/merge
+creates late reads) and would change the live Memory Viewer, which shows the
+full transient store. Revisit only if run memory footprint becomes a real
+constraint, and gate any implementation behind a config flag.
