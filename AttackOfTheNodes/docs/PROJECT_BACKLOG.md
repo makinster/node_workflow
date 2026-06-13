@@ -59,11 +59,20 @@ Done (2026-06-13):
 - `node_identity.py` marks tombstone with `editor_only: True`; `NodeFactory`
   exposes it; all other node types have `editor_only: False`.
 
+Done (2026-06-13, Headless Plan H1/H2):
+- `editor_workflow_adapter.py` writes `tombstone_node` directly on save
+  (`materialize_deleted_nodes`), full original-data config per the contract
+  below. Legacy `branch_end_node + _system_role` saves still migrate on load
+  and now carry full restore data. Covered by `test_tombstone_phase_b.py` and
+  `test_tombstone_migration.py`.
+- Tombstone restore implemented as `restore_tombstone()` with connection
+  validation and partial restore (the design spec below). Returns a
+  `TombstoneRestoreReport`; editor undo and replace-with-original route
+  through it. Covered by `test_tombstone_restore.py` (11 tests). The frontend
+  alert that renders the report is the only remaining piece and is deferred
+  (needs live-TUI verification).
+
 Still remaining:
-- Update `editor_workflow_adapter.py` to write `tombstone_node` directly on
-  save, so new saves no longer use the `branch_end_node + _system_role` format.
-- Implement tombstone restore with connection validation and partial restore
-  (see below).
 - Decide whether layout metadata such as `position` and navigation metadata
   such as `bookmarked` belong in portable workflow saves or editor sidecars
   (Phase C).
@@ -152,8 +161,10 @@ Recommended cleanup:
   mode, and reach Save/Cancel.
 - Consider a `repeats_from` schema key for counted dynamic rows, complementing
   `visible_when`/`enabled_when`.
-- Add label/value pairs for select options in `form_generator.py` so backend
-  reads stable machine values instead of display strings.
+- Done (2026-06-13, Headless Plan H4): label/value pairs for select options in
+  `form_generator.py` (`_select_options` accepts `{label, value}` mappings and
+  2-item sequences) so backend reads stable machine values; plain-string
+  options unchanged. Schema-key test matrix in `test_form_generator.py`.
 - Add a screen scaffold command for non-node screens. The scaffold should create
   a `CommandScreenMixin` screen with a status bar, visible Cancel control,
   vertical button order, and a generated keyboard-navigation test.
@@ -171,17 +182,25 @@ Recommended cleanup:
 Goal: make branch validity visible while editing, before users need to run full
 validation.
 
+Done (2026-06-13, Headless Plan H5): the derivation logic is implemented in
+`backend/branch_health.py` — pure-logic `derive_branch_health()` /
+`branch_health_by_port()` classify each branch path as `valid` /
+`ended_unmerged` / `floating` from workflow structure (not stored UI state),
+keyed by `(branch_node_id, port)`. `output_types_from_factory()` tracks the
+node taxonomy. Covered by `test_branch_health.py` (14 tests). The remaining
+work below is the editor visual surfacing, which needs live-TUI verification.
+
 Recommended cleanup:
 
-- Derive branch health from workflow structure, not stored UI state.
-- Represent at least three branch states:
+- (Done) Derive branch health from workflow structure, not stored UI state.
+- (Done) Represent at least three branch states:
   - valid branch ending: end/output node or connected Merge Beacon node;
   - branch ended but not merged: Merge Beacon exists but is not connected to a
     Merge node;
   - floating branch: no valid output/end node and no Merge Beacon.
 - Surface those states in the editor with clear but restrained color: green for
   valid, yellow/orange for branch-ended-but-unmerged, and red/orange for
-  floating/incomplete branches.
+  floating/incomplete branches. (Consume `branch_health_by_port()`.)
 - Extend `NodeCard` or a future editor display adapter so branch-health color is
   separate from execution status icons.
 - Fold this into the FA-7 visual pass: VS Code-like dark styling, readable node
@@ -208,7 +227,10 @@ Recommended cleanup:
   numeric fields, optional blank-select behavior, and multiline height hints.
   Visibility/enablement conditions and mutual exclusion are done (2026-06-12):
   `enabled_when`, `visible_when`, `mutually_exclusive_with`.
-- Add tests for every schema key in `frontend/widgets/form_generator.py`.
+- Done (2026-06-13, Headless Plan H4): `tests/test_form_generator.py` covers
+  every schema key in `frontend/widgets/form_generator.py` (label/required/
+  description, default, options as label/value pairs, boolean, numeric
+  min/max, string length, code language, multiline height, numeric coercion).
 - Move branch-label generation and pass-through notes toward documented generic
   `ui_hints` where possible.
 - Simplify generated config surfaces: ordinary nodes should show only the fields
@@ -349,14 +371,20 @@ marked `"secret": True` (empty required key = error; key absent from store =
 warning; no manager = skip check). Designed for encryption as a one-module
 upgrade.
 
+Done (2026-06-13, Headless Plan H3):
+- `"secret": True` added to API-key config fields: `api_key_secret` on
+  `chat_completion_node`, `embedding_node`, `image_generation_node`;
+  `auth_token_secret` on `http_request_node` (which sends a Bearer header via
+  `context.get_secret()` when set). Helper spec carries the field.
+- `SecretsManager` constructed in `main.py` and threaded through `MasterState`
+  (runtime) and `App` → `EditorScreen.action_validate_workflow`, so editor
+  validation surfaces missing-key warnings live. Covered by
+  `test_validator_secrets.py`.
+
 Remaining UI work:
 - Add a Secrets tab or section in `SettingsScreen` (CRUD for stored keys via
-  `SecretsManager.set_secret / delete_secret / list_keys`).
-- Add `"secret": True` to relevant config schema fields on nodes that use API
-  keys (e.g., `chat_completion_node`, `embedding_node`, `image_generation_node`,
-  `http_request_node`).
-- Thread `SecretsManager` into `EditorScreen.action_validate_workflow` so the
-  editor's validator run can show missing-key warnings live.
+  `SecretsManager.set_secret / delete_secret / list_keys`). Deferred — needs
+  live-TUI verification.
 - (Future) Replace plain-text JSON with at-rest encryption inside
   `SecretsManager._ensure_loaded` / `_save` without touching nodes or wiring.
 

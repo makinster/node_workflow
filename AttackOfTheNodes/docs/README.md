@@ -84,7 +84,6 @@ Read these before starting a new major project or moving/archiving docs.
 | File | What it contains | When to open it |
 |---|---|---|
 | `PROJECT_BACKLOG.md` | Deferred projects with full design specs: boundary cleanup, tombstone restore, runtime resources, typed vault, toast system, AI sessions | Before starting any work listed here — it may already be designed; check before re-designing |
-| `HEADLESS_BUILD_PLAN.md` | Phased plan (H1–H6) for backlog work that needs no live-TUI verification: tombstone save/restore, secrets wiring, form generator, branch health logic | When continuing backlog work in a session without a human watching the running app |
 | `TASK_INDEX.md` | Task-first reading lists, likely files per task, focused `pytest -k` commands, helper tool commands | After choosing a task type — the minimum reading set and the right verification pattern |
 | `DOCS_MIGRATION_NOTES.md` | Record of documentation moves, collapses, and archives during overhauls | When moving, merging, archiving, or deleting a doc — log it here |
 
@@ -102,6 +101,7 @@ context that is not covered by the active docs.
 | `archive/V05_BUILD_PLAN.md` | Historical Python/tkinter proof-of-concept plan | Background context only — not the current implementation |
 | `archive/plans/FRONTEND_AUDIT_BUILD_PLAN.md` | Completed frontend audit plan (FA-0–FA-5); active rules now live in `AGENT_START_GUIDE.md` and `TUI_DESIGN.md` | Only if tracing why a frontend convention exists |
 | `archive/plans/RUNTIME_RESOURCE_SESSION.md` | Original design notes for the `RunSession` resource lifecycle | Core implementation is done; open if you need the extended design (hidden helpers, listening resources) |
+| `archive/plans/HEADLESS_BUILD_PLAN.md` | Completed plan (H1–H5) for backlog work needing no live-TUI: tombstone save/restore, secrets wiring, form generator label/value, branch health logic | Only if tracing why one of those changes was made; deferred UI follow-ups live in `PROJECT_BACKLOG.md` |
 | `archive/plans/USER_FRIENDLY_POLISH_BUILD_PLAN.md` | Completed visual/navigation polish plan; roadmap is now in `MASTER_BUILD_PLAN.md` | Only if tracing why a specific visual decision was made |
 
 ---

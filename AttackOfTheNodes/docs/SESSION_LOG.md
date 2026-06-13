@@ -4,6 +4,22 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-13 — Headless Plan H6: docs reconciliation + plan archived
+
+- Updated `PROJECT_BACKLOG.md`: tombstone save (H1) and restore (H2) marked
+  done under boundary cleanup (only the restore-alert UI remains, deferred);
+  Secrets project reduced to the `SettingsScreen` tab (schema fields +
+  validator wiring done, H3); branch-health derivation marked done with the
+  editor colour pass remaining (H5); form-generator label/value and schema-key
+  tests marked done (H4).
+- `MASTER_BUILD_PLAN.md`: phase 10.6 → Done (restore-alert UI + Phase C
+  metadata deferred); added an H1–H5 entry to Recently Completed.
+- Archived `HEADLESS_BUILD_PLAN.md` → `archive/plans/`; moved its README
+  directory row to the Archive table; logged the move in
+  `DOCS_MIGRATION_NOTES.md`.
+- Headless plan complete: H1–H6 done, full suite 284 passed. Remaining backlog
+  work from this plan is UI-only and needs live-TUI verification.
+
 ## 2026-06-13 — Headless Plan H5: backend branch health derivation
 
 - New `backend/branch_health.py`: pure-logic `derive_branch_health(all_nodes,

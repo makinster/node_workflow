@@ -25,7 +25,12 @@ Execution rules:
 - [x] H3 — Secrets schema flags + editor validator wiring (2026-06-13)
 - [x] H4 — Form generator: label/value selects + schema key coverage (2026-06-13)
 - [x] H5 — Branch health derivation (backend) (2026-06-13)
-- [ ] H6 — Docs reconciliation
+- [x] H6 — Docs reconciliation (2026-06-13)
+
+**Status: complete (2026-06-13).** H1–H5 implemented and verified (full suite
+284 passed); this doc is archived under `archive/plans/`. Deferred UI pieces
+(tombstone restore alert, Secrets settings tab, branch-health colours) are
+tracked in `PROJECT_BACKLOG.md`.
 
 ---
 
