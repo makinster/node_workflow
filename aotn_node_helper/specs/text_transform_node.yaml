@@ -1,8 +1,10 @@
 node_type: text_transform_node
 class_name: TextTransformNode
 category: data
-primary_family: Complex
+primary_family: Utility
 tags: ["Utility"]
+group: "Data Transform"
+selector_section: "Transform"
 icon_name: case-sensitive
 display_name: Text Transform
 default_alias: Text Transform

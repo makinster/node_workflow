@@ -3,6 +3,8 @@ class_name: HttpRequestNode
 category: io
 primary_family: Inputs
 tags: ["Internet"]
+group: "Web Request"
+selector_section: "Web"
 icon_name: globe
 display_name: HTTP Request
 default_alias: HTTP Request

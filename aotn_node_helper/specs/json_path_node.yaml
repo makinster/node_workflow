@@ -1,8 +1,10 @@
 node_type: json_path_node
 class_name: JsonPathNode
 category: data
-primary_family: Complex
+primary_family: Utility
 tags: ["Utility"]
+group: "Data Transform"
+selector_section: "Transform"
 icon_name: braces
 display_name: JSON Path
 default_alias: JSON Path

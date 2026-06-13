@@ -1,8 +1,10 @@
 node_type: random_number_node
 class_name: RandomNumberNode
 category: data
-primary_family: Complex
+primary_family: Utility
 tags: ["Utility"]
+group: "Data Transform"
+selector_section: "Transform"
 icon_name: dice-3
 display_name: Random Number
 default_alias: Random Number
