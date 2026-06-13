@@ -36,8 +36,16 @@ from .debug.variable_setter_node import VariableSetterNode
 from ..node_identity import apply_transitional_node_identity
 
 from .io.example_file_instance_node import ExampleFileInstanceNode
+from .data.text_transform_node import TextTransformNode
+from .data.json_path_node import JsonPathNode
+from .data.random_number_node import RandomNumberNode
+from .io.http_request_node import HttpRequestNode
 
 ALL_NODE_CLASSES = [
+    HttpRequestNode,
+    RandomNumberNode,
+    JsonPathNode,
+    TextTransformNode,
     ExampleFileInstanceNode,
     # Flow
     StartNode,

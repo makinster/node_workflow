@@ -5,7 +5,7 @@ Holds runtime data for one workflow run. The persistent store is the named
 variable space; the transient store is the wire between connected node ports.
 """
 
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from .event_bus import EventBus
 from .events import MEMORY_UPDATE
@@ -20,16 +20,26 @@ class MemoryBank:
     def __init__(self, event_bus: EventBus) -> None:
         self._event_bus = event_bus
         self._persistent: Dict[str, Any] = {}
+        self._persistent_type_tags: Dict[str, Optional[str]] = {}
         self._transient: Dict[str, Any] = {}
 
-    def store_persistent(self, key: str, value: Any) -> None:
+    def store_persistent(self, key: str, value: Any, type_tag: Optional[str] = None) -> None:
         """Write a named variable and publish a memory update."""
         self._persistent[key] = value
+        self._persistent_type_tags[key] = type_tag
         self._event_bus.publish(MEMORY_UPDATE, self.get_state())
 
     def read_persistent(self, key: str, default: Any = None) -> Any:
         """Read a named variable."""
         return self._persistent.get(key, default)
+
+    def read_persistent_by_type(self, type_tag: str) -> Dict[str, Any]:
+        """Return all persistent entries whose stored type_tag matches."""
+        return {
+            k: v
+            for k, v in self._persistent.items()
+            if self._persistent_type_tags.get(k) == type_tag
+        }
 
     def store_transient(self, node_id: str, port_name: str, value: Any) -> None:
         """Write a node output value for one output port."""
@@ -41,21 +51,24 @@ class MemoryBank:
         key = f"{node_id}{_TRANSIENT_SEPARATOR}{port_name}"
         return self._transient.get(key, default)
 
-    def get_state(self) -> Dict[str, Dict[str, Any]]:
+    def get_state(self) -> Dict[str, Any]:
         """Return a snapshot of both stores."""
         return {
             "persistent": dict(self._persistent),
+            "persistent_type_tags": dict(self._persistent_type_tags),
             "transient": dict(self._transient),
         }
 
     def clear(self) -> None:
         """Clear both stores at the start of a run."""
         self._persistent.clear()
+        self._persistent_type_tags.clear()
         self._transient.clear()
         self._event_bus.publish(MEMORY_UPDATE, self.get_state())
 
-    def load_state(self, state: Dict[str, Dict[str, Any]]) -> None:
+    def load_state(self, state: Dict[str, Any]) -> None:
         """Restore both stores from a serialized snapshot."""
         self._persistent = dict(state.get("persistent", {}))
+        self._persistent_type_tags = dict(state.get("persistent_type_tags", {}))
         self._transient = dict(state.get("transient", {}))
         self._event_bus.publish(MEMORY_UPDATE, self.get_state())

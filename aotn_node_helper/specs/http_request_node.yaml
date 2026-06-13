@@ -1,0 +1,35 @@
+node_type: http_request_node
+class_name: HttpRequestNode
+category: io
+primary_family: Inputs
+tags: ["Internet"]
+icon_name: globe
+display_name: HTTP Request
+default_alias: HTTP Request
+description: Make an HTTP GET or POST request and forward the response body
+input_ports: ["input"]
+output_ports: ["default", "error"]
+config_tabs:
+  Parameters:
+    url:
+      type: string
+      label: URL
+      placeholder: "https://example.com/api"
+      default: ""
+      required: true
+    method:
+      type: select
+      label: Method
+      options: ["GET", "POST"]
+      default: GET
+    body:
+      type: multiline
+      label: "Request body (POST)"
+      default: ""
+      required: false
+    timeout_seconds:
+      type: float
+      label: Timeout (seconds)
+      default: 10.0
+      required: false
+execution_template: transform_stub

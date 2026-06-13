@@ -4615,7 +4615,8 @@ async def _test_node_selector_uses_family_tabs_and_subcategory_filters():
         assert screen._active_tab == "I/O"
         assert screen._active_family() == "Inputs"
         assert io_switch.value is False
-        assert screen._visible_subcategory_checkboxes() == []
+        internet_filter = app.query_one("#node-subcategory-internet", Checkbox)
+        assert internet_filter.display is True   # http_request_node has Internet tag
         assert app.focused is filter_input
         assert ai_filter.display is False  # no AI-tagged input nodes yet
         assert filter_input.editing is False
@@ -4623,11 +4624,12 @@ async def _test_node_selector_uses_family_tabs_and_subcategory_filters():
             "example_file_instance_node",
             "file_reader_node",
             "user_text_input_node",
+            "http_request_node",
         }
         # Single-member groups auto-promote: no group entries on this side,
         # and the section headers from selector_section metadata render.
         assert group_entries(screen) == {}
-        assert header_names(screen) == ["Text & Data", "Files"]
+        assert header_names(screen) == ["Text & Data", "Files", "Web"]
 
         # Flip the switch to the Output side.
         io_switch.value = True

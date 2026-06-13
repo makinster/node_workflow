@@ -295,5 +295,98 @@ def test_validator_flags_missing_and_unfound_file_paths(tmp_path):
     assert result["success"], f"Expected success, got {result['errors']}"
 
 
+# ---------------------------------------------------------------------------
+# Chat session tests
+# ---------------------------------------------------------------------------
+
+
+def test_chat_session_created_on_first_access():
+    session = RunSession("r1")
+    history = session.get_or_create_chat_session("conv_a")
+    assert history == []
+
+
+def test_chat_session_reused_by_key():
+    session = RunSession("r1")
+    session.append_chat_message("conv_a", "user", "hello")
+    history = session.get_or_create_chat_session("conv_a")
+    assert len(history) == 1
+    assert history[0]["content"] == "hello"
+
+
+def test_chat_history_returns_copy():
+    session = RunSession("r1")
+    session.append_chat_message("conv_a", "user", "hello")
+    copy = session.get_chat_history("conv_a")
+    copy[0]["role"] = "MUTATED"
+    assert session.get_chat_history("conv_a")[0]["role"] == "user"
+
+
+def test_chat_sessions_are_independent():
+    session = RunSession("r1")
+    session.append_chat_message("conv_a", "user", "from a")
+    session.append_chat_message("conv_b", "user", "from b")
+    assert len(session.get_chat_history("conv_a")) == 1
+    assert session.get_chat_history("conv_a")[0]["content"] == "from a"
+    assert len(session.get_chat_history("conv_b")) == 1
+    assert session.get_chat_history("conv_b")[0]["content"] == "from b"
+
+
+def test_chat_session_accumulates_messages():
+    session = RunSession("r1")
+    session.append_chat_message("conv_a", "user", "hi")
+    session.append_chat_message("conv_a", "assistant", "hello")
+    session.append_chat_message("conv_a", "user", "bye")
+    history = session.get_chat_history("conv_a")
+    assert len(history) == 3
+    assert history[0]["role"] == "user"
+    assert history[1]["role"] == "assistant"
+    assert history[2]["content"] == "bye"
+
+
+def test_close_all_clears_chat_sessions():
+    session = RunSession("r1")
+    session.append_chat_message("conv_a", "user", "hi")
+    session.close_all()
+    assert session.get_chat_history("conv_a") == []
+
+
+def test_get_chat_history_returns_empty_list_for_unknown_key():
+    session = RunSession("r1")
+    assert session.get_chat_history("no_such_key") == []
+
+
+def test_validator_warns_missing_session_key():
+    from backend.event_bus import EventBus
+    from backend.node_factory import NodeFactory
+    from backend.validator import validate_workflow
+    from backend.workflow_map import WorkflowMap
+
+    bus = EventBus()
+    factory = NodeFactory()
+    wm = WorkflowMap(factory, bus)
+    wm.create_new("chat_session_key_check")
+    start = wm.add_node("start_node")
+    node = wm.add_node("echo_node")
+    end = wm.add_node("end_node")
+    wm.connect(start, "default", node, "input")
+    wm.connect(node, "default", end, "input")
+
+    # use_chat_session with empty key → warning
+    wm.update_node_config(node, {"use_chat_session": True, "session_key": ""})
+    result = validate_workflow(wm, factory)
+    assert result["success"] is True
+    assert any(
+        "session_key" in w["message"] for w in result["warnings"]
+    ), f"Expected session_key warning, got: {result['warnings']}"
+
+    # With a key → no warning
+    wm.update_node_config(node, {"use_chat_session": True, "session_key": "my_key"})
+    result2 = validate_workflow(wm, factory)
+    assert not any(
+        "session_key" in w["message"] for w in result2["warnings"]
+    ), f"Unexpected warning: {result2['warnings']}"
+
+
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__, "-v"]))

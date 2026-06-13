@@ -244,6 +244,37 @@ TRANSITIONAL_NODE_IDENTITY: Dict[str, Dict[str, Any]] = {
         "primary_family": UTILITY_FAMILY,
         "tags": [UTILITY],
         "icon_name": "file-x",
+        "editor_only": True,
+    },
+    # Utility — Transform section (generated utility nodes)
+    "text_transform_node": {
+        "primary_family": UTILITY_FAMILY,
+        "tags": [UTILITY],
+        "icon_name": "case-sensitive",
+        "group": "Data Transform",
+        "selector_section": "Transform",
+    },
+    "json_path_node": {
+        "primary_family": UTILITY_FAMILY,
+        "tags": [UTILITY],
+        "icon_name": "braces",
+        "group": "Data Transform",
+        "selector_section": "Transform",
+    },
+    "random_number_node": {
+        "primary_family": UTILITY_FAMILY,
+        "tags": [UTILITY],
+        "icon_name": "dice-3",
+        "group": "Data Transform",
+        "selector_section": "Transform",
+    },
+    # I/O — Input side (web)
+    "http_request_node": {
+        "primary_family": INPUTS,
+        "tags": [INTERNET],
+        "icon_name": "globe",
+        "group": "Web Request",
+        "selector_section": "Web",
     },
 }
 
@@ -261,5 +292,6 @@ def apply_transitional_node_identity(node_classes: Iterable[Type[Node]]) -> None
         node_class.color_hint = str(
             identity.get("color_hint") or FAMILY_COLOR_HINTS.get(primary_family, "")
         )
+        node_class.editor_only = bool(identity.get("editor_only", False))
         node_class.group = identity.get("group")
         node_class.selector_section = identity.get("selector_section")
