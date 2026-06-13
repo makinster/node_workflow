@@ -4,6 +4,31 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-13 — Headless Plan H2: tombstone restore engine
+
+- `frontend/editor_workflow_adapter.py`: new
+  `EditorWorkflowAdapter.restore_tombstone(node_id)` implements the
+  connection-validated restore procedure from `BACKEND_FRONTEND_BOUNDARY.md`.
+  Node type/alias/config always come back; each stored input connection is
+  reconnected only when the source node exists and still declares the output
+  port; each stored output connection only when the target exists, declares
+  the input port, and that port is not occupied by a different source;
+  membank input declarations are restored with the config and flagged when no
+  surviving node declares the variable.
+- Returns a `TombstoneRestoreReport` dataclass (input_errors, output_errors,
+  membank_warnings with node id/alias/port/reason) — plain data for the
+  deferred frontend alert; no UI copy in the adapter.
+- `undo_placeholder()` and `replace_placeholder()` (restore-original path)
+  now route through `restore_tombstone()`, so editor undo also validates
+  drift instead of blindly reconnecting; `replace_placeholder()` returns the
+  report under `restore_report`. The blind `_restore_downstream_inputs`
+  helper was removed.
+- Tests: `tests/test_tombstone_restore.py` (11 tests) covers the clean path,
+  every drift category (source gone, source port gone, target gone, target
+  port occupied, membank source missing), rejection paths, the replace-modal
+  report, and that a partial restore clears the validator's tombstone error.
+  Full suite: 252 passed.
+
 ## 2026-06-13 — Headless Plan H1: tombstone direct save
 
 - `frontend/editor_workflow_adapter.py`: `materialize_deleted_nodes()` now
