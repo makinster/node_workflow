@@ -77,14 +77,23 @@ Merge behavior is editor-assisted and runtime-coordinated:
   orchestration and derived `input_sources`.
 - `backend/validator.py`: static checks for start node, node types,
   connection endpoints, declared ports, tombstones, derived input sources,
-  membank declarations, and unreachable warnings.
+  membank declarations, unreachable warnings, typed vault ai_session mismatches,
+  parallel-branch race warnings, chat session config warnings, and secret-key
+  checks (empty required field = error; key absent from store = warning).
 - `backend/run_session.py`: per-run resource session created by `MasterState`
   and threaded through `NodeContext` as `context.run_session`. Holds open file
-  handles and AI session handles keyed by a string reference. API:
-  `open_file(path, mode)`, `register_resource(key, handle, close_hook)`,
-  `get_resource(key)`, `validate_path(path)`, `close_all()`.
-  Typed vault references (type `file` or `ai_session`) carry a reference key
-  that nodes resolve through `get_resource`.
+  handles, AI session handles, and multi-turn chat histories. API:
+  `open_file`, `register_resource`, `get_resource`, `validate_path`,
+  `get_or_create_chat_session`, `append_chat_message`, `get_chat_history`,
+  `close_all`.
+- `backend/secrets_manager.py`: persistent store for sensitive key-value pairs
+  (API keys, passwords, tokens). Plain-text JSON phase; designed for drop-in
+  encryption. Nodes call `context.get_secret(key_name)` — the manager is the
+  single trust boundary. Storage at `secrets/secrets.json` (gitignored).
+- `backend/node_identity.py`: Phase 17 transitional metadata (primary_family,
+  tags, icon_name, color_hint, group, selector_section, editor_only) for all
+  registered node types. `apply_transitional_node_identity()` stamps these onto
+  node classes at import time.
 - `backend/utils/try_catch.py`: Go-style async result/error helper for new async
   UI paths.
 

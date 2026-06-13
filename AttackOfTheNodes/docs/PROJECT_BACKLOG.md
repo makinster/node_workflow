@@ -51,15 +51,17 @@ tombstone config contract.
 
 Remaining Phase B work (redefined — frontend migration):
 
-- Update `editor_workflow_adapter.py` to write `tombstone_node` (with full
-  original-data config) on save instead of `branch_end_node` with
-  `_system_role` marker.
-- Migrate any existing saves with `_system_role: "deleted_node_branch_end"`
-  `branch_end_node` records to `tombstone_node` format on load.
-- Extend the validator's tombstone error block to surface original input and
-  output connection context from the tombstone config.
-- Confirm `node_identity.py` marks tombstone with `editor_only: True` so
-  non-editor frontends can filter it.
+Done (2026-06-13):
+- `editor_workflow_adapter.py`: `migrate_legacy_deleted_node()` and
+  `migrate_workflow_on_load()` convert old `branch_end_node + _system_role`
+  records to `tombstone_node` on load (7 tests in `test_tombstone_migration.py`).
+- Validator tombstone error block now appends orphaned port context from config.
+- `node_identity.py` marks tombstone with `editor_only: True`; `NodeFactory`
+  exposes it; all other node types have `editor_only: False`.
+
+Still remaining:
+- Update `editor_workflow_adapter.py` to write `tombstone_node` directly on
+  save, so new saves no longer use the `branch_end_node + _system_role` format.
 - Implement tombstone restore with connection validation and partial restore
   (see below).
 - Decide whether layout metadata such as `position` and navigation metadata
@@ -227,16 +229,20 @@ attached behind the scenes when a node needs it.
 
 Full design note: `archive/plans/RUNTIME_RESOURCE_SESSION.md`
 
-Done — the core `RunSession` is implemented:
+Done — the core `RunSession` is implemented, including chat session API:
 
 - `backend/run_session.py` holds per-run handles (`open_file`,
-  `register_resource`, `validate_path`, `close_all`).
+  `register_resource`, `validate_path`, `close_all`) and multi-turn chat
+  histories (`get_or_create_chat_session`, `append_chat_message`,
+  `get_chat_history`, cleared by `close_all`).
 - `MasterState` creates the session at run start, passes it to all
   supervisors, and closes it in `_record_run` on every terminal path.
 - Nodes reach it through `context.run_session`; `FileReaderNode` is the
   first consumer. The validator checks schema fields hinted with
   `path_hint: "file"` (empty required path = error, missing on disk =
   warning). Coverage lives in `tests/test_run_session.py`.
+- Validator warns when a node declares `use_chat_session: True` without a
+  `session_key` configured.
 
 `get_resource(key)` is already implemented — retrieves a previously registered
 handle by key (see `tests/test_run_session.py::test_register_and_get_resource`).
@@ -276,7 +282,7 @@ Remaining design notes:
 
 ## Near-Term Project — Typed Vault Entries and AI Session Handles
 
-Architecture finalized 2026-06-11. No implementation has landed yet.
+Architecture finalized 2026-06-11. Backend foundation landed 2026-06-13.
 
 **Typed vault entries.** `MemoryBank` (the Vault) gains a `type` field on
 every entry. Types at minimum: `string`, `number`, `boolean`, `file`,
@@ -320,14 +326,39 @@ The validator must not infer timing from node count, node type, or branch
 depth. Static analysis cannot know which branch is slower. Warning plus
 Wait Until guidance is the correct ceiling.
 
-**Work items:**
-- Add `type` field to `MemoryBank` vault entries.
-- Add `get_resource(key)` to `RunSession`.
-- Add "keep active AI session" checkbox and session key field to LLM node
-  config.
-- Add Vault write path for `ai_session`-typed entries on LLM node execute.
-- Extend input source dropdowns to filter by declared input type.
-- Extend validator to cover typed vault reference ordering (error/warning split).
+**Done (2026-06-13):**
+- `MemoryBank.store_persistent` accepts `type_tag`; `read_persistent_by_type`
+  filters vault by tag; state snapshot includes type tags; backward compatible.
+- `RunSession` multi-turn chat session API: `get_or_create_chat_session`,
+  `append_chat_message`, `get_chat_history` (deep copy), `close_all` clears.
+- Validator: ai_session type mismatch warning; parallel-branch vault race
+  warning (backward BFS, error/warning split per design spec); `use_chat_session`
+  without `session_key` warning.
+
+**Still needed:**
+- "Keep active AI session" checkbox and session key field on LLM node configs.
+- Vault write path for `ai_session`-typed entries when an LLM node executes.
+- Input source dropdowns filter by declared type in config UI.
+
+## Near-Term Project — Secrets Module (UI Integration)
+
+Backend done (2026-06-13): `backend/secrets_manager.py` is a plain-text JSON
+store wired through `MasterState → Supervisor → NodeContext`. Nodes call
+`context.get_secret(key_name)`. The validator checks config schema fields
+marked `"secret": True` (empty required key = error; key absent from store =
+warning; no manager = skip check). Designed for encryption as a one-module
+upgrade.
+
+Remaining UI work:
+- Add a Secrets tab or section in `SettingsScreen` (CRUD for stored keys via
+  `SecretsManager.set_secret / delete_secret / list_keys`).
+- Add `"secret": True` to relevant config schema fields on nodes that use API
+  keys (e.g., `chat_completion_node`, `embedding_node`, `image_generation_node`,
+  `http_request_node`).
+- Thread `SecretsManager` into `EditorScreen.action_validate_workflow` so the
+  editor's validator run can show missing-key warnings live.
+- (Future) Replace plain-text JSON with at-rest encryption inside
+  `SecretsManager._ensure_loaded` / `_save` without touching nodes or wiring.
 
 ## Later Project — Unified Toast / Alert System
 
