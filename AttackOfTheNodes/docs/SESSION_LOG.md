@@ -4,6 +4,25 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-13 — Headless Plan H4: form generator label/value selects + key coverage
+
+- `frontend/widgets/form_generator.py`: `_select_options()` now normalizes
+  option entries — plain scalars (label == value, unchanged),
+  `{"label": ..., "value": ...}` mappings, and 2-item sequences — so the
+  backend reads stable machine values while the dropdown shows display
+  labels. Applied to `select`, option-bearing string fields, and
+  `multiselect` (initial selection matches by machine value). Value
+  read-back needed no change: `Select.value` / `SelectionList.selected`
+  already return the value half.
+- Helper specs need no changes: `aotn_node_helper` copies field schemas
+  verbatim, so YAML specs can declare label/value option dicts today.
+- Tests: new `tests/test_form_generator.py` (12 tests) — option
+  normalization shapes, label/value round-trips per widget type, and the
+  previously untested schema keys: `label`/`required` star, `description`,
+  `default`, `boolean` round-trip, integer `min`/`max` validator, string
+  `min_length`/`max_length` validator, `code` `language`, and numeric
+  coercion fallback. Full suite: 270 passed.
+
 ## 2026-06-13 — Headless Plan H3: secrets schema flags + editor wiring
 
 - Secret-ref schema fields added (`"secret": True`, optional while execution
