@@ -150,6 +150,11 @@ def tombstone_removed(app: Any) -> None:
     notify_info(app, "Deleted node stub removed")
 
 
+def branch_pruned(app: Any, kept_label: str, pruned_count: int) -> None:
+    suffix = f" ({pruned_count} node{'s' if pruned_count != 1 else ''} removed)"
+    notify_info(app, f"Kept '{kept_label}'{suffix}")
+
+
 def node_replaced(app: Any, node_type: str) -> None:
     notify_info(app, f"Node replaced with {node_type}")
 

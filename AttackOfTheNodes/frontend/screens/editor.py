@@ -11,6 +11,7 @@ from textual.screen import Screen
 from textual.widgets import Header, Label, Static
 
 from backend.validator import validate_workflow
+from frontend.screens.branch_keep_selector_screen import BranchKeepSelectorScreen
 from frontend.screens.branch_selector import BranchSelectorScreen
 from frontend.screens.error_details import ErrorDetailsScreen
 from frontend.screens.merge_beacon_selector import MergeBeaconSelectorScreen
@@ -376,6 +377,19 @@ class EditorScreen(Screen):
         if node and self.workflow_adapter.is_placeholder(self.selected_node_id):
             if node.get("type") == "branch_end_node":
                 self._prune_merge_config_for_beacon(self.selected_node_id)
+                removed = self.workflow_adapter.remove_placeholder(self.selected_node_id)
+                if removed:
+                    self.selected_node_id = None
+                    self.selected_row = None
+                    self.refresh_from_backend()
+                    notifications.tombstone_removed(self.app)
+                return
+            metadata = self.workflow_adapter.placeholder_metadata(self.selected_node_id)
+            if metadata.get("original_type") == "branch_node" and metadata.get(
+                "original_output_connections"
+            ):
+                self._open_branch_keep_selector(self.selected_node_id, metadata)
+                return
             removed = self.workflow_adapter.remove_placeholder(self.selected_node_id)
             if removed:
                 self.selected_node_id = None
@@ -386,6 +400,49 @@ class EditorScreen(Screen):
         self.workflow_adapter.replace_with_placeholder(self.selected_node_id)
         self.refresh_from_backend()
         notifications.node_deleted(self.app)
+
+    def _open_branch_keep_selector(
+        self, node_id: str, metadata: dict
+    ) -> None:
+        original_config = metadata.get("original_config") or {}
+        try:
+            branch_count = int(original_config.get("branch_count", 2))
+        except (TypeError, ValueError):
+            branch_count = 2
+        branch_count = max(2, min(5, branch_count))
+        port_names = [f"path_{chr(97 + i)}" for i in range(branch_count)]
+        port_labels = {
+            f"path_{chr(97 + i)}": str(
+                original_config.get(f"path_{chr(97 + i)}_label", f"Branch {i + 1}")
+            )
+            for i in range(branch_count)
+        }
+        label = str(metadata.get("original_alias") or metadata.get("original_display_name") or node_id)
+        self.app.push_screen(
+            BranchKeepSelectorScreen(
+                branch_node_id=node_id,
+                branch_label=label,
+                ports=port_names,
+                port_labels=port_labels,
+            ),
+            self._handle_branch_keep_result,
+        )
+
+    def _handle_branch_keep_result(self, result: dict | None) -> None:
+        if not result or self.selected_node_id is None:
+            return
+        kept_port = result.get("kept_port", "")
+        if not kept_port:
+            return
+        metadata = self.workflow_adapter.placeholder_metadata(self.selected_node_id)
+        original_config = metadata.get("original_config") or {}
+        kept_label = str(original_config.get(f"{kept_port}_label", kept_port))
+        pruned = self.workflow_adapter.prune_branch_tombstone(self.selected_node_id, kept_port)
+        self.selected_node_id = None
+        self.selected_row = None
+        self.refresh_from_backend()
+        if pruned >= 0:
+            notifications.branch_pruned(self.app, kept_label, pruned)
 
     def _replace_tombstone_from_modal(self, node_type: str | None) -> None:
         if not node_type or self.selected_node_id is None:
