@@ -22,8 +22,8 @@ class HttpRequestNode(Node):
     output_ports: ClassVar[List[str]] = ['default', 'error']
     input_port_metadata: ClassVar[Dict[str, Dict[str, str]]] = {}
     output_port_metadata: ClassVar[Dict[str, Dict[str, str]]] = {}
-    default_config: ClassVar[Dict[str, Any]] = {'url': '', 'method': 'GET', 'body': '', 'timeout_seconds': 10.0}
-    config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {'url': {'type': 'string', 'label': 'URL', 'placeholder': 'https://example.com/api', 'required': True, 'tab': 'Parameters'}, 'method': {'type': 'select', 'label': 'Method', 'options': ['GET', 'POST'], 'tab': 'Parameters'}, 'body': {'type': 'multiline', 'label': 'Request body (POST)', 'required': False, 'tab': 'Parameters'}, 'timeout_seconds': {'type': 'float', 'label': 'Timeout (seconds)', 'required': False, 'tab': 'Parameters'}}
+    default_config: ClassVar[Dict[str, Any]] = {'url': '', 'method': 'GET', 'body': '', 'timeout_seconds': 10.0, 'auth_token_secret': ''}
+    config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {'url': {'type': 'string', 'label': 'URL', 'placeholder': 'https://example.com/api', 'required': True, 'tab': 'Parameters'}, 'method': {'type': 'select', 'label': 'Method', 'options': ['GET', 'POST'], 'tab': 'Parameters'}, 'body': {'type': 'multiline', 'label': 'Request body (POST)', 'required': False, 'tab': 'Parameters'}, 'timeout_seconds': {'type': 'float', 'label': 'Timeout (seconds)', 'required': False, 'tab': 'Parameters'}, 'auth_token_secret': {'type': 'string', 'label': 'Bearer token (secrets store key)', 'secret': True, 'required': False, 'tab': 'Parameters'}}
     ui_hints: ClassVar[Dict[str, Any]] = {}
 
     async def execute(self, context: NodeContext) -> None:
@@ -42,6 +42,11 @@ class HttpRequestNode(Node):
         try:
             body_bytes = body_text.encode("utf-8") if method == "POST" and body_text else None
             req = urllib.request.Request(url, data=body_bytes, method=method)
+            token_key = str(self.config.get("auth_token_secret") or "").strip()
+            if token_key:
+                token = context.get_secret(token_key)
+                if token:
+                    req.add_header("Authorization", f"Bearer {token}")
             with urllib.request.urlopen(req, timeout=timeout) as response:
                 charset = "utf-8"
                 content_type = response.headers.get("Content-Type", "")

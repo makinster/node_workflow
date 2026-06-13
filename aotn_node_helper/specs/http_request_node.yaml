@@ -34,4 +34,10 @@ config_tabs:
       label: Timeout (seconds)
       default: 10.0
       required: false
+    auth_token_secret:
+      type: string
+      label: "Bearer token (secrets store key)"
+      secret: true
+      default: ""
+      required: false
 execution_template: transform_stub

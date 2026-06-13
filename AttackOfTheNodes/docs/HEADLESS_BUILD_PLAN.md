@@ -22,7 +22,7 @@ Execution rules:
 
 - [x] H1 — Tombstone direct save (2026-06-13)
 - [x] H2 — Tombstone restore engine (2026-06-13)
-- [ ] H3 — Secrets schema flags + editor validator wiring
+- [x] H3 — Secrets schema flags + editor validator wiring (2026-06-13)
 - [ ] H4 — Form generator: label/value selects + schema key coverage
 - [ ] H5 — Branch health derivation (backend)
 - [ ] H6 — Docs reconciliation

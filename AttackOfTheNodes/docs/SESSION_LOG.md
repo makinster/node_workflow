@@ -4,6 +4,25 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-13 — Headless Plan H3: secrets schema flags + editor wiring
+
+- Secret-ref schema fields added (`"secret": True`, optional while execution
+  is stubbed): `api_key_secret` on `chat_completion_node`, `embedding_node`,
+  `image_generation_node`; `auth_token_secret` on `http_request_node`. The
+  HTTP node actually uses it: when configured, the request sends
+  `Authorization: Bearer <secret>` resolved via `context.get_secret()`. The
+  helper spec `aotn_node_helper/specs/http_request_node.yaml` carries the
+  field so regeneration keeps it.
+- `main.py` now constructs a `SecretsManager` and passes it to `MasterState`
+  (runtime path was previously unwired) and to the app.
+- `frontend/app.py` / `EditorScreen` accept `secrets_manager`;
+  `action_validate_workflow` forwards it to `validate_workflow`, so
+  editor-triggered validation surfaces missing-key warnings live.
+- Tests appended to `test_validator_secrets.py`: all four nodes declare the
+  secret field, per-node missing-store-key warning, and a pilot test proving
+  the editor wiring (details screen opens with a manager, clean without).
+  Full suite: 258 passed.
+
 ## 2026-06-13 — Headless Plan H2: tombstone restore engine
 
 - `frontend/editor_workflow_adapter.py`: new
