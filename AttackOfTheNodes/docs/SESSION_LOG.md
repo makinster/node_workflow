@@ -4,6 +4,28 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-13 — Headless Plan H1: tombstone direct save
+
+- `frontend/editor_workflow_adapter.py`: `materialize_deleted_nodes()` now
+  writes `tombstone_node` with the full original-data config (contract shape
+  from `BACKEND_FRONTEND_BOUNDARY.md`: `original_type/display_name/alias/
+  config/inputs/outputs` plus the port lists the validator reads). No save
+  path writes `branch_end_node + _system_role` anymore.
+- New module helpers `tombstone_config_from_metadata()` /
+  `metadata_from_tombstone_config()` define the config↔metadata mapping in
+  one place; `migrate_legacy_deleted_node()` now carries full restore data
+  (alias, config, connections) instead of ports only, so legacy saves keep
+  undo-after-reload.
+- `is_materialized_placeholder()` recognizes `tombstone_node` (legacy marker
+  still recognized until load migration runs); `placeholder_metadata()` reads
+  tombstone config directly — editor rendering, undo, and replace flows work
+  on the new format unchanged.
+- Tests: tombstone round-trip + undo-after-materialize-with-fresh-adapter in
+  `test_tombstone_phase_b.py`; full-data migration carry in
+  `test_tombstone_migration.py`; materialize/save/loaded-marker tests in
+  `test_debug_nodes.py` updated to the tombstone format, with a
+  tombstone-format loaded-row render check added. Full suite: 241 passed.
+
 ## 2026-06-13 — Headless Build Plan created
 
 - Added `docs/HEADLESS_BUILD_PLAN.md`: phased plan (H1–H6) covering the

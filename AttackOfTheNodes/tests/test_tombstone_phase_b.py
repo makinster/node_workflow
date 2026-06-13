@@ -126,3 +126,72 @@ def test_validator_tombstone_error_multiple_ports():
     )
 
     print("test_validator_tombstone_error_multiple_ports PASSED")
+
+
+def test_materialized_tombstone_validator_round_trip():
+    """Delete → materialize on save → validator reports the tombstone with
+    orphaned-port context derived from the original connections."""
+    from backend.validator import validate_workflow
+    from frontend.editor_workflow_adapter import EditorWorkflowAdapter
+
+    wm, factory = _make_wm()
+    wm.create_new("tombstone_save_round_trip")
+    start = wm.add_node("start_node")
+    logger = wm.add_node("logger_node", alias="Trace")
+    end = wm.add_node("end_node")
+    wm.connect(start, "default", logger, "input")
+    wm.connect(logger, "default", end, "input")
+
+    adapter = EditorWorkflowAdapter(wm, factory)
+    assert adapter.replace_with_placeholder(logger)
+    assert adapter.materialize_deleted_nodes() == 1
+    assert wm.get_node_data(logger)["type"] == "tombstone_node"
+
+    result = validate_workflow(wm, factory)
+    assert not result["success"]
+    tomb_errors = [e for e in result["errors"] if e["node_id"] == logger]
+    assert tomb_errors, "Materialized tombstone not flagged by validator"
+    msg = tomb_errors[0]["message"]
+    assert "orphaned inputs: input" in msg, f"Missing input context in: {msg!r}"
+    assert "orphaned outputs: default" in msg, f"Missing output context in: {msg!r}"
+
+    print("test_materialized_tombstone_validator_round_trip PASSED")
+
+
+def test_undo_after_materialize_restores_from_tombstone():
+    """Undo still works after save materialization: the tombstone config alone
+    must carry enough data to restore type, alias, config, and connections."""
+    from frontend.editor_workflow_adapter import EditorWorkflowAdapter
+
+    wm, factory = _make_wm()
+    wm.create_new("tombstone_undo_after_save")
+    start = wm.add_node("start_node")
+    logger = wm.add_node("logger_node", alias="Trace")
+    end = wm.add_node("end_node")
+    wm.update_node_config(logger, {"message": "hello"})
+    wm.connect(start, "default", logger, "input")
+    wm.connect(logger, "default", end, "input")
+
+    adapter = EditorWorkflowAdapter(wm, factory)
+    assert adapter.replace_with_placeholder(logger)
+    assert adapter.materialize_deleted_nodes() == 1
+
+    # Simulate reload: a fresh adapter has no in-memory delete overlay, so the
+    # restore data must come from the persisted tombstone config.
+    reloaded_adapter = EditorWorkflowAdapter(wm, factory)
+    assert reloaded_adapter.is_placeholder(logger)
+    assert reloaded_adapter.placeholder_has_restore_data(logger)
+    assert reloaded_adapter.undo_placeholder(logger) is True
+
+    restored = wm.get_node_data(logger)
+    assert restored["type"] == "logger_node"
+    assert restored["alias"] == "Trace"
+    assert restored["config"] == {"message": "hello"}
+    assert restored["connections"]["outputs"] == [
+        {"source_port": "default", "target_node_id": end, "target_port": "input"}
+    ]
+    assert wm.get_node_data(end)["connections"]["inputs"] == [
+        {"target_port": "input", "source_node_id": logger, "source_port": "default"}
+    ]
+
+    print("test_undo_after_materialize_restores_from_tombstone PASSED")

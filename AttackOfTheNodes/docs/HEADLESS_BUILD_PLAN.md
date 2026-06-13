@@ -20,7 +20,7 @@ Execution rules:
 
 ## Phase Checklist
 
-- [ ] H1 — Tombstone direct save
+- [x] H1 — Tombstone direct save (2026-06-13)
 - [ ] H2 — Tombstone restore engine
 - [ ] H3 — Secrets schema flags + editor validator wiring
 - [ ] H4 — Form generator: label/value selects + schema key coverage
