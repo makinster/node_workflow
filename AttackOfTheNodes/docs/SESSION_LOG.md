@@ -4,6 +4,31 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-13 — Headless Plan H5: backend branch health derivation
+
+- New `backend/branch_health.py`: pure-logic `derive_branch_health(all_nodes,
+  output_node_types=None)` classifies each `branch_node` outgoing edge (one
+  spawned parallel path) into `valid` / `ended_unmerged` / `floating` by
+  walking the path forward — `merge_node` or output/end node or
+  merge-connected Merge Beacon → valid; Merge Beacon not wired to a merge →
+  ended_unmerged; dead end / cycle / unconnected port → floating. Nested
+  `branch_node`s count as valid for the outer path and are classified on
+  their own merits. Returns frozen `BranchHealth` dataclasses; states are
+  module constants (`VALID`, `ENDED_UNMERGED`, `FLOATING`).
+- `branch_health_by_port()` keys results by `(branch_node_id, port)` to match
+  how editor branch rows are keyed, so the deferred FA-7 visual pass can map
+  states to colours with O(1) lookups and no re-derivation.
+- `output_types_from_factory(factory)` builds the valid-output-type set from
+  node metadata (Outputs family + `end_node`, plus `text_output_node`), so
+  the policy tracks the taxonomy; the function also works with no factory via
+  `DEFAULT_OUTPUT_NODE_TYPES`. No frontend imports — backend stays UI-agnostic.
+- Tests: `tests/test_branch_health.py` (14 tests) — one fixture per state,
+  chain-to-output, direct-merge, mixed multi-port branch, nested branches,
+  unconnected port, cycle, no-branch empty, the by-port mapping, and the
+  factory/default output-type paths. Full suite: 284 passed.
+- Visual surfacing in the editor (branch-health colours, FA-7 pass) stays
+  deferred — it needs live-TUI verification.
+
 ## 2026-06-13 — Headless Plan H4: form generator label/value selects + key coverage
 
 - `frontend/widgets/form_generator.py`: `_select_options()` now normalizes
