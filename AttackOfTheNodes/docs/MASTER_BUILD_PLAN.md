@@ -95,7 +95,7 @@ or node metadata changes for this phase.
 | FA-0..FA-5 | Frontend standardization helpers | Done |
 | 10 | Documentation modernization | Done |
 | 10.5 | Backend/frontend boundary cleanup (Phase A) | Done |
-| 10.6 | Tombstone design decision + Phase B migration | Planned |
+| 10.6 | Tombstone design decision + Phase B migration | Done (restore-alert UI + Phase C metadata deferred) |
 | 11 | Real AI node execution | Deferred |
 | 12 | Packaging and release hardening | Deferred |
 | 13 | Cursor model foundation | Done |
@@ -144,6 +144,17 @@ or node metadata changes for this phase.
   LLM chat session foundation in `RunSession`; parallel-branch vault race
   warnings; four utility nodes (TextTransform, JsonPath, RandomNumber, HttpRequest)
   via `aotn_node_helper`.
+- Headless build plan H1–H5 (2026-06-13), backlog work verifiable with pytest
+  alone (no live-TUI): saves write `tombstone_node` directly with full
+  original data (H1); `restore_tombstone()` with connection validation and
+  partial restore returning a `TombstoneRestoreReport` (H2); `"secret": True`
+  fields on the four API-key nodes plus `SecretsManager` wired into editor
+  validation (H3); label/value select options and full schema-key test
+  coverage in `form_generator.py` (H4); `backend/branch_health.py` deriving
+  per-branch `valid`/`ended_unmerged`/`floating` state (H5). Plan and outcome
+  in `archive/plans/HEADLESS_BUILD_PLAN.md`. Deferred UI pieces (tombstone
+  restore alert, Secrets settings tab, branch-health colours) remain in
+  `PROJECT_BACKLOG.md`.
 
 See `SESSION_LOG.md` for recent entries and `archive/SESSION_LOG_HISTORY.md`
 for older entries.

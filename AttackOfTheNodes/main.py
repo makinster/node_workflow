@@ -43,6 +43,7 @@ def main() -> None:
     from backend.node_factory import NodeFactory
     from backend.output_manager import OutputManager
     from backend.save_manager import SaveManager
+    from backend.secrets_manager import SecretsManager
     from backend.workflow_map import WorkflowMap
     from frontend.app import App
 
@@ -53,16 +54,26 @@ def main() -> None:
     configuration = ConfigurationManager()
     configure_logging(configuration)
     output_manager = OutputManager()
+    secrets_manager = SecretsManager()
     master = MasterState(
         workflow_map,
         memory_bank,
         bus,
         output_manager=output_manager,
         configuration_manager=configuration,
+        secrets_manager=secrets_manager,
     )
     save_manager = SaveManager(workflow_map, memory_bank, configuration)
 
-    app = App(bus, factory, workflow_map, memory_bank, master, save_manager)
+    app = App(
+        bus,
+        factory,
+        workflow_map,
+        memory_bank,
+        master,
+        save_manager,
+        secrets_manager=secrets_manager,
+    )
     app.run()
 
 

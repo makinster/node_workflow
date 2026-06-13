@@ -66,6 +66,36 @@ def test_migrate_legacy_deleted_node_rewrites_type_and_config():
     print("test_migrate_legacy_deleted_node_rewrites_type_and_config PASSED")
 
 
+def test_migrate_legacy_deleted_node_carries_full_restore_data():
+    from frontend.editor_workflow_adapter import migrate_legacy_deleted_node
+
+    node = _legacy_deleted_node()
+    node["config"]["deleted_node"].update(
+        {
+            "original_alias": "My Concat",
+            "original_config": {"separator": ", "},
+            "original_input_connections": [
+                {"target_port": "input", "source_node_id": "n0", "source_port": "default"}
+            ],
+            "original_output_connections": [
+                {"source_port": "default", "target_node_id": "n9", "target_port": "input"}
+            ],
+        }
+    )
+    result = migrate_legacy_deleted_node(node)
+
+    assert result["config"]["original_alias"] == "My Concat"
+    assert result["config"]["original_config"] == {"separator": ", "}
+    assert result["config"]["original_inputs"] == [
+        {"target_port": "input", "source_node_id": "n0", "source_port": "default"}
+    ]
+    assert result["config"]["original_outputs"] == [
+        {"source_port": "default", "target_node_id": "n9", "target_port": "input"}
+    ]
+
+    print("test_migrate_legacy_deleted_node_carries_full_restore_data PASSED")
+
+
 def test_migrate_legacy_deleted_node_is_no_op_for_plain_branch_end():
     from frontend.editor_workflow_adapter import migrate_legacy_deleted_node
 

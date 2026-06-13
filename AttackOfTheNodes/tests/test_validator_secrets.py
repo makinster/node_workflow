@@ -268,3 +268,104 @@ def test_multiple_secret_fields_all_present_no_complaints(tmp_path):
     assert result["success"] is True
     secret_warns = [w for w in result["warnings"] if "stored_" in w["message"]]
     assert not secret_warns
+
+
+# ---------------------------------------------------------------------------
+# Registered API-key nodes carry secret-ref schema fields (Headless Plan H3)
+# ---------------------------------------------------------------------------
+
+_API_KEY_NODES = [
+    ("chat_completion_node", "api_key_secret"),
+    ("embedding_node", "api_key_secret"),
+    ("image_generation_node", "api_key_secret"),
+    ("http_request_node", "auth_token_secret"),
+]
+
+
+def test_api_key_nodes_declare_secret_schema_fields():
+    factory = NodeFactory()
+    by_type = {m["type"]: m for m in factory.get_node_types_metadata()}
+    for node_type, field_name in _API_KEY_NODES:
+        schema = by_type[node_type].get("config_schema") or {}
+        assert schema.get(field_name, {}).get("secret") is True, (
+            f"{node_type}.{field_name} is not marked secret"
+        )
+        assert schema[field_name].get("required") is False, (
+            f"{node_type}.{field_name} should stay optional while execution is stubbed"
+        )
+
+
+@pytest.mark.parametrize("node_type,field_name", _API_KEY_NODES)
+def test_api_key_node_missing_store_key_warns(tmp_path, node_type, field_name):
+    bus = EventBus()
+    factory = NodeFactory()
+    wm = WorkflowMap(factory, bus)
+    wm.create_new("secret_field_check")
+    start_id = wm.add_node("start_node")
+    node_id = wm.add_node(node_type)
+    wm.connect(start_id, "default", node_id, "input")
+    config = dict(wm.get_node_data(node_id).get("config") or {})
+    config[field_name] = "unstored_key"
+    wm.update_node_config(node_id, config)
+
+    sm = _sm_with_keys(tmp_path, [])
+    result = validate_workflow(wm, factory, secrets_manager=sm)
+    warn_msgs = [w["message"] for w in result["warnings"]]
+    assert any("unstored_key" in m for m in warn_msgs), (
+        f"{node_type}: no missing-key warning for {field_name}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Editor validation wiring (Headless Plan H3)
+# ---------------------------------------------------------------------------
+
+
+def test_editor_validate_passes_secrets_manager(tmp_path):
+    """With a manager wired in, the editor's validate surfaces the missing-key
+    warning (details screen opens); without one, the same workflow is clean."""
+    import asyncio
+
+    from textual.app import App as TextualApp
+    from textual.app import ComposeResult
+
+    from frontend.screens.editor import EditorScreen
+    from frontend.screens.error_details import ErrorDetailsScreen
+
+    def _build_wm():
+        bus = EventBus()
+        factory = NodeFactory()
+        wm = WorkflowMap(factory, bus)
+        wm.create_new("editor_secret_wiring")
+        start_id = wm.add_node("start_node")
+        node_id = wm.add_node("chat_completion_node")
+        wm.connect(start_id, "default", node_id, "input")
+        config = dict(wm.get_node_data(node_id).get("config") or {})
+        config["api_key_secret"] = "unstored_key"
+        wm.update_node_config(node_id, config)
+        return wm
+
+    async def _run(secrets_manager):
+        wm = _build_wm()
+
+        class EditorApp(TextualApp):
+            def compose(self) -> ComposeResult:
+                yield EditorScreen(
+                    wm._factory, wm, secrets_manager=secrets_manager
+                )
+
+        app = EditorApp()
+        async with app.run_test() as pilot:
+            await pilot.pause(0.03)
+            screen = app.query_one(EditorScreen)
+            screen.action_validate_workflow()
+            await pilot.pause(0.03)
+            return isinstance(app.screen, ErrorDetailsScreen)
+
+    sm = _sm_with_keys(tmp_path, [])
+    assert asyncio.run(_run(sm)) is True, (
+        "Missing-key warning did not open the details screen"
+    )
+    assert asyncio.run(_run(None)) is False, (
+        "Validation unexpectedly flagged the workflow without a manager"
+    )

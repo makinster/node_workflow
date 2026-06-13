@@ -19,11 +19,18 @@ class ImageGenerationNode(Node):
         "prompt": "An image of {input}",
         "size": "1024x1024",
         "style": "natural",
+        "api_key_secret": "",
     }
     config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {
         "prompt": {"type": "multiline", "required": True},
         "size": {"type": "string", "options": ["512x512", "1024x1024", "1024x1792"], "required": True},
         "style": {"type": "string", "options": ["natural", "vivid"], "required": True},
+        "api_key_secret": {
+            "type": "string",
+            "label": "API key (secrets store key)",
+            "secret": True,
+            "required": False,
+        },
     }
 
     async def execute(self, context: NodeContext) -> None:

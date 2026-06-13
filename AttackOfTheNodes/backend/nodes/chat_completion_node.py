@@ -21,6 +21,7 @@ class ChatCompletionNode(Node):
         "user_prompt": "{input}",
         "temperature": 0.7,
         "max_tokens": 256,
+        "api_key_secret": "",
     }
     config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {
         "model": {"type": "string", "options": ["gpt-4", "gpt-3.5-turbo", "claude-3"], "required": True},
@@ -28,6 +29,12 @@ class ChatCompletionNode(Node):
         "user_prompt": {"type": "multiline", "required": True},
         "temperature": {"type": "float", "required": True},
         "max_tokens": {"type": "integer", "required": True},
+        "api_key_secret": {
+            "type": "string",
+            "label": "API key (secrets store key)",
+            "secret": True,
+            "required": False,
+        },
     }
 
     async def execute(self, context: NodeContext) -> None:

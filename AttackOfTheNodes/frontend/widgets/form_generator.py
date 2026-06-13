@@ -168,8 +168,8 @@ def _widget_for_field(
     if field_type == "multiselect":
         selected_values = _selected_values(value)
         options = [
-            (str(option), option, option in selected_values)
-            for option in field_schema.get("options", [])
+            (label, option_value, option_value in selected_values)
+            for label, option_value in _select_options(field_schema.get("options", []))
         ]
         return SelectionList(*options, id=f"field-{field_name}")
     input_type = "text"
@@ -188,7 +188,23 @@ def _widget_for_field(
 
 
 def _select_options(options: Iterable[Any]) -> list[tuple[str, Any]]:
-    return [(str(option), option) for option in options]
+    """Normalize schema options to (label, value) pairs.
+
+    Supported entry shapes: plain scalars (label == value), label/value
+    mappings, and 2-item sequences. Backends read the stable value; the label
+    is display-only.
+    """
+    normalized: list[tuple[str, Any]] = []
+    for option in options:
+        if isinstance(option, dict):
+            option_value = option.get("value")
+            label = option.get("label", option_value)
+            normalized.append((str(label), option_value))
+        elif isinstance(option, (tuple, list)) and len(option) == 2:
+            normalized.append((str(option[0]), option[1]))
+        else:
+            normalized.append((str(option), option))
+    return normalized
 
 
 def _selected_values(value: Any) -> set[Any]:
