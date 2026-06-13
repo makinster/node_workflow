@@ -257,9 +257,16 @@ Config field types:
 - `code`
 
 Common schema keys include `label`, `description`, `required`, `options`,
-`placeholder`, `group`, `min`, `max`, `min_length`, `max_length`, `height`, and
-`language`. Dynamic rule keys are `enabled_when`, `visible_when`, and
-`mutually_exclusive_with` (see Dynamic Form Rule Keys above).
+`placeholder`, `group`, `min`, `max`, `min_length`, `max_length`, `height`,
+`language`, `path_hint`, and `secret`. Dynamic rule keys are `enabled_when`,
+`visible_when`, and `mutually_exclusive_with` (see Dynamic Form Rule Keys above).
+
+`path_hint: "file"` marks a string field as a filesystem path; the validator
+emits a warning if the configured path does not exist at validation time.
+
+`secret: true` marks a string field as a secrets-store key reference; the
+validator emits an error if the field is required and empty, and a warning if
+the named key is absent from the secrets store.
 
 ## Helper-First Node Workflow
 

@@ -29,6 +29,7 @@ from .error_handler import ErrorHandler
 from .memory_bank import MemoryBank
 from .node_base import Node, NodeContext
 from .run_session import RunSession
+from .secrets_manager import SecretsManager
 from .workflow_map import WorkflowMap
 
 
@@ -68,6 +69,7 @@ class Supervisor:
         ] = None,
         node_timeout_seconds: float = 30.0,
         run_session: Optional[RunSession] = None,
+        secrets_manager: Optional[SecretsManager] = None,
     ) -> None:
         self.run_id = run_id
         self.branch_id = branch_id
@@ -96,6 +98,7 @@ class Supervisor:
         self._wait_for_merge = wait_for_merge
         self._node_timeout_seconds = float(node_timeout_seconds)
         self._run_session = run_session
+        self._secrets_manager = secrets_manager
 
     async def run(self) -> None:
         """Run this supervisor until its path ends or errors."""
@@ -333,6 +336,7 @@ class Supervisor:
             wait_for_nodes=wait_for_nodes,
             wait_for_merge=wait_for_merge,
             run_session=self._run_session,
+            secrets_manager=self._secrets_manager,
         )
 
         started_at = perf_counter()

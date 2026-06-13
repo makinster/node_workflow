@@ -20,6 +20,12 @@ future agents understand why the docs tree changed.
 | `AGENT_HANDOFF.md` | `AGENT_HANDOFF.md` | Rewritten | Reflect current documentation overhaul and the new docs entry flow. |
 | `FILE_TREE.md` | `FILE_TREE.md` | Refreshed | Align file tree with archived docs and current tracked project shape. |
 
+## 2026-06-13 — Headless Build Plan archived
+
+| Old location | New location | Action | Reason |
+|---|---|---|---|
+| `HEADLESS_BUILD_PLAN.md` | `archive/plans/HEADLESS_BUILD_PLAN.md` | Archived | Plan H1–H5 implemented and verified (full suite 284 passed); kept as history. Active status folded into `MASTER_BUILD_PLAN.md` and `PROJECT_BACKLOG.md`; deferred UI follow-ups tracked in `PROJECT_BACKLOG.md`. README directory row moved from Planning/Backlog to Archive. |
+
 ## Deletions
 
 No tracked documentation files were deleted in this pass. Historical and

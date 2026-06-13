@@ -18,10 +18,17 @@ class EmbeddingNode(Node):
     default_config: ClassVar[Dict[str, Any]] = {
         "model": "text-embedding-3-small",
         "text_field": "input",
+        "api_key_secret": "",
     }
     config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {
         "model": {"type": "string", "options": ["text-embedding-3-small", "text-embedding-3-large"], "required": True},
         "text_field": {"type": "string", "required": True},
+        "api_key_secret": {
+            "type": "string",
+            "label": "API key (secrets store key)",
+            "secret": True,
+            "required": False,
+        },
     }
 
     async def execute(self, context: NodeContext) -> None:

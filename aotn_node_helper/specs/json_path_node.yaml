@@ -1,0 +1,27 @@
+node_type: json_path_node
+class_name: JsonPathNode
+category: data
+primary_family: Utility
+tags: ["Utility"]
+group: "Data Transform"
+selector_section: "Transform"
+icon_name: braces
+display_name: JSON Path
+default_alias: JSON Path
+description: Extract a value from a JSON string by dot-path (e.g. "user.name")
+input_ports: ["input"]
+output_ports: ["default", "error"]
+config_tabs:
+  Parameters:
+    path:
+      type: string
+      label: Dot path
+      placeholder: "user.name"
+      default: ""
+      required: true
+    default_value:
+      type: string
+      label: Default on miss
+      default: ""
+      required: false
+execution_template: transform_stub

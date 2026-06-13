@@ -115,11 +115,14 @@ Focused checks:
 
 Implementation direction:
 
-- Use primary families `Inputs`, `Flow Control`, `Outputs`, and `Complex` for
-  selector tabs.
+- Five backend families: `Inputs`, `Outputs`, `Flow Control`, `Utility`,
+  `Complex`. Four selector tabs: `I/O` (Input/Output switch), `Flow Control`,
+  `Utility`, `Complex`. AI is a subcategory tag, not a family.
+- `group` and `selector_section` are frontend-only navigation metadata; no
+  backend component should branch on them.
 - Use metadata subcategories for filters; nodes may have multiple.
 - Keep selector filters and editor row identity frontend-owned, but expose
-  portable family/tag/icon/color metadata through `NodeFactory`.
+  portable family/tag/icon/color/group/section metadata through `NodeFactory`.
 - Preserve keyboard-first focus, autoscroll, cursor/highlight stability,
   validation colors, and Merge Beacon health colors.
 

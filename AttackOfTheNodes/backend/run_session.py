@@ -13,6 +13,7 @@ Design note: docs/archive/plans/RUNTIME_RESOURCE_SESSION.md
 """
 
 import logging
+from copy import deepcopy
 from pathlib import Path
 from typing import IO, Any, Callable, Dict, List, Optional, Tuple
 
@@ -29,6 +30,7 @@ class RunSession:
         self._files: Dict[Tuple[str, str], IO] = {}
         self._resources: Dict[str, Any] = {}
         self._close_hooks: List[Tuple[Any, Callable[[Any], None]]] = []
+        self._chat_sessions: Dict[str, List[Dict[str, str]]] = {}
 
     @property
     def run_id(self) -> str:
@@ -72,6 +74,22 @@ class RunSession:
         """Return a previously registered resource, or None."""
         return self._resources.get(key)
 
+    def get_or_create_chat_session(self, session_key: str) -> List[Dict[str, str]]:
+        """Return the named chat history list, creating an empty one if needed."""
+        self._ensure_open()
+        if session_key not in self._chat_sessions:
+            self._chat_sessions[session_key] = []
+        return self._chat_sessions[session_key]
+
+    def append_chat_message(self, session_key: str, role: str, content: str) -> None:
+        """Append a message to the named chat session."""
+        history = self.get_or_create_chat_session(session_key)
+        history.append({"role": role, "content": content})
+
+    def get_chat_history(self, session_key: str) -> List[Dict[str, str]]:
+        """Return a deep copy of the named chat session's history."""
+        return deepcopy(self._chat_sessions.get(session_key, []))
+
     def validate_path(self, path: str) -> Tuple[bool, str]:
         """Return (ok, reason) for a path without opening it."""
         text = str(path).strip()
@@ -97,6 +115,7 @@ class RunSession:
         self._close_hooks.clear()
         self._files.clear()
         self._resources.clear()
+        self._chat_sessions.clear()
 
     def _ensure_open(self) -> None:
         if self._closed:

@@ -51,17 +51,28 @@ tombstone config contract.
 
 Remaining Phase B work (redefined — frontend migration):
 
-- Update `editor_workflow_adapter.py` to write `tombstone_node` (with full
-  original-data config) on save instead of `branch_end_node` with
-  `_system_role` marker.
-- Migrate any existing saves with `_system_role: "deleted_node_branch_end"`
-  `branch_end_node` records to `tombstone_node` format on load.
-- Extend the validator's tombstone error block to surface original input and
-  output connection context from the tombstone config.
-- Confirm `node_identity.py` marks tombstone with `editor_only: True` so
-  non-editor frontends can filter it.
-- Implement tombstone restore with connection validation and partial restore
-  (see below).
+Done (2026-06-13):
+- `editor_workflow_adapter.py`: `migrate_legacy_deleted_node()` and
+  `migrate_workflow_on_load()` convert old `branch_end_node + _system_role`
+  records to `tombstone_node` on load (7 tests in `test_tombstone_migration.py`).
+- Validator tombstone error block now appends orphaned port context from config.
+- `node_identity.py` marks tombstone with `editor_only: True`; `NodeFactory`
+  exposes it; all other node types have `editor_only: False`.
+
+Done (2026-06-13, Headless Plan H1/H2):
+- `editor_workflow_adapter.py` writes `tombstone_node` directly on save
+  (`materialize_deleted_nodes`), full original-data config per the contract
+  below. Legacy `branch_end_node + _system_role` saves still migrate on load
+  and now carry full restore data. Covered by `test_tombstone_phase_b.py` and
+  `test_tombstone_migration.py`.
+- Tombstone restore implemented as `restore_tombstone()` with connection
+  validation and partial restore (the design spec below). Returns a
+  `TombstoneRestoreReport`; editor undo and replace-with-original route
+  through it. Covered by `test_tombstone_restore.py` (11 tests). The frontend
+  alert that renders the report is the only remaining piece and is deferred
+  (needs live-TUI verification).
+
+Still remaining:
 - Decide whether layout metadata such as `position` and navigation metadata
   such as `bookmarked` belong in portable workflow saves or editor sidecars
   (Phase C).
@@ -150,8 +161,10 @@ Recommended cleanup:
   mode, and reach Save/Cancel.
 - Consider a `repeats_from` schema key for counted dynamic rows, complementing
   `visible_when`/`enabled_when`.
-- Add label/value pairs for select options in `form_generator.py` so backend
-  reads stable machine values instead of display strings.
+- Done (2026-06-13, Headless Plan H4): label/value pairs for select options in
+  `form_generator.py` (`_select_options` accepts `{label, value}` mappings and
+  2-item sequences) so backend reads stable machine values; plain-string
+  options unchanged. Schema-key test matrix in `test_form_generator.py`.
 - Add a screen scaffold command for non-node screens. The scaffold should create
   a `CommandScreenMixin` screen with a status bar, visible Cancel control,
   vertical button order, and a generated keyboard-navigation test.
@@ -169,17 +182,25 @@ Recommended cleanup:
 Goal: make branch validity visible while editing, before users need to run full
 validation.
 
+Done (2026-06-13, Headless Plan H5): the derivation logic is implemented in
+`backend/branch_health.py` — pure-logic `derive_branch_health()` /
+`branch_health_by_port()` classify each branch path as `valid` /
+`ended_unmerged` / `floating` from workflow structure (not stored UI state),
+keyed by `(branch_node_id, port)`. `output_types_from_factory()` tracks the
+node taxonomy. Covered by `test_branch_health.py` (14 tests). The remaining
+work below is the editor visual surfacing, which needs live-TUI verification.
+
 Recommended cleanup:
 
-- Derive branch health from workflow structure, not stored UI state.
-- Represent at least three branch states:
+- (Done) Derive branch health from workflow structure, not stored UI state.
+- (Done) Represent at least three branch states:
   - valid branch ending: end/output node or connected Merge Beacon node;
   - branch ended but not merged: Merge Beacon exists but is not connected to a
     Merge node;
   - floating branch: no valid output/end node and no Merge Beacon.
 - Surface those states in the editor with clear but restrained color: green for
   valid, yellow/orange for branch-ended-but-unmerged, and red/orange for
-  floating/incomplete branches.
+  floating/incomplete branches. (Consume `branch_health_by_port()`.)
 - Extend `NodeCard` or a future editor display adapter so branch-health color is
   separate from execution status icons.
 - Fold this into the FA-7 visual pass: VS Code-like dark styling, readable node
@@ -206,7 +227,10 @@ Recommended cleanup:
   numeric fields, optional blank-select behavior, and multiline height hints.
   Visibility/enablement conditions and mutual exclusion are done (2026-06-12):
   `enabled_when`, `visible_when`, `mutually_exclusive_with`.
-- Add tests for every schema key in `frontend/widgets/form_generator.py`.
+- Done (2026-06-13, Headless Plan H4): `tests/test_form_generator.py` covers
+  every schema key in `frontend/widgets/form_generator.py` (label/required/
+  description, default, options as label/value pairs, boolean, numeric
+  min/max, string length, code language, multiline height, numeric coercion).
 - Move branch-label generation and pass-through notes toward documented generic
   `ui_hints` where possible.
 - Simplify generated config surfaces: ordinary nodes should show only the fields
@@ -227,16 +251,20 @@ attached behind the scenes when a node needs it.
 
 Full design note: `archive/plans/RUNTIME_RESOURCE_SESSION.md`
 
-Done — the core `RunSession` is implemented:
+Done — the core `RunSession` is implemented, including chat session API:
 
 - `backend/run_session.py` holds per-run handles (`open_file`,
-  `register_resource`, `validate_path`, `close_all`).
+  `register_resource`, `validate_path`, `close_all`) and multi-turn chat
+  histories (`get_or_create_chat_session`, `append_chat_message`,
+  `get_chat_history`, cleared by `close_all`).
 - `MasterState` creates the session at run start, passes it to all
   supervisors, and closes it in `_record_run` on every terminal path.
 - Nodes reach it through `context.run_session`; `FileReaderNode` is the
   first consumer. The validator checks schema fields hinted with
   `path_hint: "file"` (empty required path = error, missing on disk =
   warning). Coverage lives in `tests/test_run_session.py`.
+- Validator warns when a node declares `use_chat_session: True` without a
+  `session_key` configured.
 
 `get_resource(key)` is already implemented — retrieves a previously registered
 handle by key (see `tests/test_run_session.py::test_register_and_get_resource`).
@@ -276,7 +304,7 @@ Remaining design notes:
 
 ## Near-Term Project — Typed Vault Entries and AI Session Handles
 
-Architecture finalized 2026-06-11. No implementation has landed yet.
+Architecture finalized 2026-06-11. Backend foundation landed 2026-06-13.
 
 **Typed vault entries.** `MemoryBank` (the Vault) gains a `type` field on
 every entry. Types at minimum: `string`, `number`, `boolean`, `file`,
@@ -320,14 +348,45 @@ The validator must not infer timing from node count, node type, or branch
 depth. Static analysis cannot know which branch is slower. Warning plus
 Wait Until guidance is the correct ceiling.
 
-**Work items:**
-- Add `type` field to `MemoryBank` vault entries.
-- Add `get_resource(key)` to `RunSession`.
-- Add "keep active AI session" checkbox and session key field to LLM node
-  config.
-- Add Vault write path for `ai_session`-typed entries on LLM node execute.
-- Extend input source dropdowns to filter by declared input type.
-- Extend validator to cover typed vault reference ordering (error/warning split).
+**Done (2026-06-13):**
+- `MemoryBank.store_persistent` accepts `type_tag`; `read_persistent_by_type`
+  filters vault by tag; state snapshot includes type tags; backward compatible.
+- `RunSession` multi-turn chat session API: `get_or_create_chat_session`,
+  `append_chat_message`, `get_chat_history` (deep copy), `close_all` clears.
+- Validator: ai_session type mismatch warning; parallel-branch vault race
+  warning (backward BFS, error/warning split per design spec); `use_chat_session`
+  without `session_key` warning.
+
+**Still needed:**
+- "Keep active AI session" checkbox and session key field on LLM node configs.
+- Vault write path for `ai_session`-typed entries when an LLM node executes.
+- Input source dropdowns filter by declared type in config UI.
+
+## Near-Term Project — Secrets Module (UI Integration)
+
+Backend done (2026-06-13): `backend/secrets_manager.py` is a plain-text JSON
+store wired through `MasterState → Supervisor → NodeContext`. Nodes call
+`context.get_secret(key_name)`. The validator checks config schema fields
+marked `"secret": True` (empty required key = error; key absent from store =
+warning; no manager = skip check). Designed for encryption as a one-module
+upgrade.
+
+Done (2026-06-13, Headless Plan H3):
+- `"secret": True` added to API-key config fields: `api_key_secret` on
+  `chat_completion_node`, `embedding_node`, `image_generation_node`;
+  `auth_token_secret` on `http_request_node` (which sends a Bearer header via
+  `context.get_secret()` when set). Helper spec carries the field.
+- `SecretsManager` constructed in `main.py` and threaded through `MasterState`
+  (runtime) and `App` → `EditorScreen.action_validate_workflow`, so editor
+  validation surfaces missing-key warnings live. Covered by
+  `test_validator_secrets.py`.
+
+Remaining UI work:
+- Add a Secrets tab or section in `SettingsScreen` (CRUD for stored keys via
+  `SecretsManager.set_secret / delete_secret / list_keys`). Deferred — needs
+  live-TUI verification.
+- (Future) Replace plain-text JSON with at-rest encryption inside
+  `SecretsManager._ensure_loaded` / `_save` without touching nodes or wiring.
 
 ## Later Project — Unified Toast / Alert System
 

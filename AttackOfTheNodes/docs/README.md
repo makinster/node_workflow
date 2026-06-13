@@ -101,6 +101,7 @@ context that is not covered by the active docs.
 | `archive/V05_BUILD_PLAN.md` | Historical Python/tkinter proof-of-concept plan | Background context only — not the current implementation |
 | `archive/plans/FRONTEND_AUDIT_BUILD_PLAN.md` | Completed frontend audit plan (FA-0–FA-5); active rules now live in `AGENT_START_GUIDE.md` and `TUI_DESIGN.md` | Only if tracing why a frontend convention exists |
 | `archive/plans/RUNTIME_RESOURCE_SESSION.md` | Original design notes for the `RunSession` resource lifecycle | Core implementation is done; open if you need the extended design (hidden helpers, listening resources) |
+| `archive/plans/HEADLESS_BUILD_PLAN.md` | Completed plan (H1–H5) for backlog work needing no live-TUI: tombstone save/restore, secrets wiring, form generator label/value, branch health logic | Only if tracing why one of those changes was made; deferred UI follow-ups live in `PROJECT_BACKLOG.md` |
 | `archive/plans/USER_FRIENDLY_POLISH_BUILD_PLAN.md` | Completed visual/navigation polish plan; roadmap is now in `MASTER_BUILD_PLAN.md` | Only if tracing why a specific visual decision was made |
 
 ---

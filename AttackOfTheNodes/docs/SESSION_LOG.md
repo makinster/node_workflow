@@ -4,6 +4,215 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-13 — Headless Plan H6: docs reconciliation + plan archived
+
+- Updated `PROJECT_BACKLOG.md`: tombstone save (H1) and restore (H2) marked
+  done under boundary cleanup (only the restore-alert UI remains, deferred);
+  Secrets project reduced to the `SettingsScreen` tab (schema fields +
+  validator wiring done, H3); branch-health derivation marked done with the
+  editor colour pass remaining (H5); form-generator label/value and schema-key
+  tests marked done (H4).
+- `MASTER_BUILD_PLAN.md`: phase 10.6 → Done (restore-alert UI + Phase C
+  metadata deferred); added an H1–H5 entry to Recently Completed.
+- Archived `HEADLESS_BUILD_PLAN.md` → `archive/plans/`; moved its README
+  directory row to the Archive table; logged the move in
+  `DOCS_MIGRATION_NOTES.md`.
+- Headless plan complete: H1–H6 done, full suite 284 passed. Remaining backlog
+  work from this plan is UI-only and needs live-TUI verification.
+
+## 2026-06-13 — Headless Plan H5: backend branch health derivation
+
+- New `backend/branch_health.py`: pure-logic `derive_branch_health(all_nodes,
+  output_node_types=None)` classifies each `branch_node` outgoing edge (one
+  spawned parallel path) into `valid` / `ended_unmerged` / `floating` by
+  walking the path forward — `merge_node` or output/end node or
+  merge-connected Merge Beacon → valid; Merge Beacon not wired to a merge →
+  ended_unmerged; dead end / cycle / unconnected port → floating. Nested
+  `branch_node`s count as valid for the outer path and are classified on
+  their own merits. Returns frozen `BranchHealth` dataclasses; states are
+  module constants (`VALID`, `ENDED_UNMERGED`, `FLOATING`).
+- `branch_health_by_port()` keys results by `(branch_node_id, port)` to match
+  how editor branch rows are keyed, so the deferred FA-7 visual pass can map
+  states to colours with O(1) lookups and no re-derivation.
+- `output_types_from_factory(factory)` builds the valid-output-type set from
+  node metadata (Outputs family + `end_node`, plus `text_output_node`), so
+  the policy tracks the taxonomy; the function also works with no factory via
+  `DEFAULT_OUTPUT_NODE_TYPES`. No frontend imports — backend stays UI-agnostic.
+- Tests: `tests/test_branch_health.py` (14 tests) — one fixture per state,
+  chain-to-output, direct-merge, mixed multi-port branch, nested branches,
+  unconnected port, cycle, no-branch empty, the by-port mapping, and the
+  factory/default output-type paths. Full suite: 284 passed.
+- Visual surfacing in the editor (branch-health colours, FA-7 pass) stays
+  deferred — it needs live-TUI verification.
+
+## 2026-06-13 — Headless Plan H4: form generator label/value selects + key coverage
+
+- `frontend/widgets/form_generator.py`: `_select_options()` now normalizes
+  option entries — plain scalars (label == value, unchanged),
+  `{"label": ..., "value": ...}` mappings, and 2-item sequences — so the
+  backend reads stable machine values while the dropdown shows display
+  labels. Applied to `select`, option-bearing string fields, and
+  `multiselect` (initial selection matches by machine value). Value
+  read-back needed no change: `Select.value` / `SelectionList.selected`
+  already return the value half.
+- Helper specs need no changes: `aotn_node_helper` copies field schemas
+  verbatim, so YAML specs can declare label/value option dicts today.
+- Tests: new `tests/test_form_generator.py` (12 tests) — option
+  normalization shapes, label/value round-trips per widget type, and the
+  previously untested schema keys: `label`/`required` star, `description`,
+  `default`, `boolean` round-trip, integer `min`/`max` validator, string
+  `min_length`/`max_length` validator, `code` `language`, and numeric
+  coercion fallback. Full suite: 270 passed.
+
+## 2026-06-13 — Headless Plan H3: secrets schema flags + editor wiring
+
+- Secret-ref schema fields added (`"secret": True`, optional while execution
+  is stubbed): `api_key_secret` on `chat_completion_node`, `embedding_node`,
+  `image_generation_node`; `auth_token_secret` on `http_request_node`. The
+  HTTP node actually uses it: when configured, the request sends
+  `Authorization: Bearer <secret>` resolved via `context.get_secret()`. The
+  helper spec `aotn_node_helper/specs/http_request_node.yaml` carries the
+  field so regeneration keeps it.
+- `main.py` now constructs a `SecretsManager` and passes it to `MasterState`
+  (runtime path was previously unwired) and to the app.
+- `frontend/app.py` / `EditorScreen` accept `secrets_manager`;
+  `action_validate_workflow` forwards it to `validate_workflow`, so
+  editor-triggered validation surfaces missing-key warnings live.
+- Tests appended to `test_validator_secrets.py`: all four nodes declare the
+  secret field, per-node missing-store-key warning, and a pilot test proving
+  the editor wiring (details screen opens with a manager, clean without).
+  Full suite: 258 passed.
+
+## 2026-06-13 — Headless Plan H2: tombstone restore engine
+
+- `frontend/editor_workflow_adapter.py`: new
+  `EditorWorkflowAdapter.restore_tombstone(node_id)` implements the
+  connection-validated restore procedure from `BACKEND_FRONTEND_BOUNDARY.md`.
+  Node type/alias/config always come back; each stored input connection is
+  reconnected only when the source node exists and still declares the output
+  port; each stored output connection only when the target exists, declares
+  the input port, and that port is not occupied by a different source;
+  membank input declarations are restored with the config and flagged when no
+  surviving node declares the variable.
+- Returns a `TombstoneRestoreReport` dataclass (input_errors, output_errors,
+  membank_warnings with node id/alias/port/reason) — plain data for the
+  deferred frontend alert; no UI copy in the adapter.
+- `undo_placeholder()` and `replace_placeholder()` (restore-original path)
+  now route through `restore_tombstone()`, so editor undo also validates
+  drift instead of blindly reconnecting; `replace_placeholder()` returns the
+  report under `restore_report`. The blind `_restore_downstream_inputs`
+  helper was removed.
+- Tests: `tests/test_tombstone_restore.py` (11 tests) covers the clean path,
+  every drift category (source gone, source port gone, target gone, target
+  port occupied, membank source missing), rejection paths, the replace-modal
+  report, and that a partial restore clears the validator's tombstone error.
+  Full suite: 252 passed.
+
+## 2026-06-13 — Headless Plan H1: tombstone direct save
+
+- `frontend/editor_workflow_adapter.py`: `materialize_deleted_nodes()` now
+  writes `tombstone_node` with the full original-data config (contract shape
+  from `BACKEND_FRONTEND_BOUNDARY.md`: `original_type/display_name/alias/
+  config/inputs/outputs` plus the port lists the validator reads). No save
+  path writes `branch_end_node + _system_role` anymore.
+- New module helpers `tombstone_config_from_metadata()` /
+  `metadata_from_tombstone_config()` define the config↔metadata mapping in
+  one place; `migrate_legacy_deleted_node()` now carries full restore data
+  (alias, config, connections) instead of ports only, so legacy saves keep
+  undo-after-reload.
+- `is_materialized_placeholder()` recognizes `tombstone_node` (legacy marker
+  still recognized until load migration runs); `placeholder_metadata()` reads
+  tombstone config directly — editor rendering, undo, and replace flows work
+  on the new format unchanged.
+- Tests: tombstone round-trip + undo-after-materialize-with-fresh-adapter in
+  `test_tombstone_phase_b.py`; full-data migration carry in
+  `test_tombstone_migration.py`; materialize/save/loaded-marker tests in
+  `test_debug_nodes.py` updated to the tombstone format, with a
+  tombstone-format loaded-row render check added. Full suite: 241 passed.
+
+## 2026-06-13 — Headless Build Plan created
+
+- Added `docs/HEADLESS_BUILD_PLAN.md`: phased plan (H1–H6) covering the
+  backlog work that is fully verifiable with `compileall` + `pytest`, with
+  no live-TUI verification required — tombstone direct save (H1), tombstone
+  restore engine per the 2026-06-11 design spec (H2), secrets schema flags +
+  editor validator wiring (H3), form generator label/value selects + schema
+  key test coverage (H4), backend branch health derivation (H5), and docs
+  reconciliation (H6).
+- Each phase lists tasks, likely files, focused pytest checks, and exit
+  criteria; live-app work (Phase 17 verification, Secrets settings tab, AI
+  session config UI, branch health colors) is explicitly deferred and stays
+  in `PROJECT_BACKLOG.md`.
+- Added the new doc to the `README.md` Document Directory.
+
+## 2026-06-12 — SecretsManager + Backend Build Plan (Phases 1–6)
+
+### SecretsManager module
+
+- Added `backend/secrets_manager.py`: plain-text JSON store at
+  `secrets/secrets.json` (gitignored). Public API: `get_secret`, `set_secret`,
+  `delete_secret`, `list_keys`, `has_key`, `reload`. Lazy-load with single
+  trust boundary — only this module changes when encryption is added.
+- Extended `NodeContext` in `node_base.py` with `secrets_manager` field and
+  `context.get_secret(key)` convenience wrapper (returns `None` when no manager
+  wired in).
+- Wired `SecretsManager` through `MasterState.__init__` → both `Supervisor`
+  creation sites → `NodeContext` kwargs. Nodes never call the manager directly;
+  they call `context.get_secret(key_name)`.
+- Created `secrets/` directory with `.gitkeep`; added
+  `AttackOfTheNodes/secrets/secrets.json` to `.gitignore`.
+- 18 tests in `tests/test_secrets_manager.py` (CRUD, persistence, lazy-load,
+  reload, invalid-JSON fallback, NodeContext integration).
+
+### Backend Build Plan Phases 1–6
+
+**Phase 1 — Tombstone `editor_only` + validator port context**
+- `node_identity.py`: added `"editor_only": True` to tombstone entry;
+  `apply_transitional_node_identity` copies flag onto node class.
+- `node_factory.py`: `get_node_types_metadata` exposes `editor_only` key.
+- `validator.py`: tombstone error message appends
+  `"(orphaned inputs: X; outputs: Y)"` when port config is present.
+- Tests: `tests/test_tombstone_phase_b.py` (4 tests).
+
+**Phase 2 — Legacy save migration**
+- `frontend/editor_workflow_adapter.py`: added `migrate_legacy_deleted_node()`
+  (pure function) and `EditorWorkflowAdapter.migrate_workflow_on_load()`.
+  Converts `branch_end_node + _system_role: deleted_node_branch_end` to
+  `tombstone_node` in-place without touching plain Merge Beacons.
+- Tests: `tests/test_tombstone_migration.py` (7 tests).
+
+**Phase 3 — Typed vault entries**
+- `memory_bank.py`: `store_persistent` accepts `type_tag=None`;
+  `read_persistent_by_type(type_tag)` added; state snapshot includes
+  `persistent_type_tags`; backward compatible with old snapshots.
+- `validator.py`: `_declared_membank_outputs` returns `Dict[str, Optional[str]]`
+  (key → type_tag); warns on ai_session type mismatch.
+- Tests: `tests/test_typed_vault.py` (9 tests).
+
+**Phase 4 — LLM chat session in RunSession**
+- `run_session.py`: `get_or_create_chat_session`, `append_chat_message`,
+  `get_chat_history` (deep copy), `close_all` clears sessions.
+- `validator.py`: warns when `use_chat_session: True` but `session_key` absent.
+- Tests: appended to `tests/test_run_session.py` (8 new tests).
+
+**Phase 5 — Parallel-branch vault race warnings**
+- `validator.py`: added `_build_reverse_adjacency` and `_build_ancestor_set`
+  (backward BFS). When all writers of a vault key are on parallel branches
+  (none is an ancestor of the reader), emits a warning — not an error — to
+  recommend a Wait Until node.
+- Tests: `tests/test_validator_race_warnings.py` (6 tests).
+
+**Phase 6 — Four utility nodes via aotn_node_helper**
+- `backend/nodes/data/text_transform_node.py`: uppercase/lowercase/strip/title/reverse.
+- `backend/nodes/data/json_path_node.py`: dot-path JSON extraction, `error` port.
+- `backend/nodes/data/random_number_node.py`: integer/float in range, optional seed.
+- `backend/nodes/io/http_request_node.py`: GET/POST via stdlib `urllib`, `error` port.
+- Spec YAML files added to `aotn_node_helper/specs/`.
+- `node_identity.py` extended with entries for all four nodes.
+- Tests: `tests/generated/` (4 generated suites, mocked network for HTTP node).
+
+---
+
 ## 2026-06-12 — Taxonomy Revision Implementation: Selector Restructure, Group Picker, Metadata
 
 Code session implementing the taxonomy revision documented below.

@@ -871,11 +871,8 @@ def test_editor_deleted_node_row_renders_as_deleted():
     print("test_editor_deleted_node_row_renders_as_deleted PASSED")
 
 
-def test_deleted_node_materializes_to_system_branch_end_and_drops_outputs():
-    from frontend.editor_workflow_adapter import (
-        DELETED_NODE_SYSTEM_ROLE,
-        EditorWorkflowAdapter,
-    )
+def test_deleted_node_materializes_to_tombstone_and_drops_outputs():
+    from frontend.editor_workflow_adapter import EditorWorkflowAdapter
 
     _, wm, _, _ = _make_services()
     wm.create_new("deleted_materialize")
@@ -892,16 +889,23 @@ def test_deleted_node_materializes_to_system_branch_end_and_drops_outputs():
 
     assert adapter.materialize_deleted_nodes() == 1
     materialized = wm.get_node_data(logger)
-    assert materialized["type"] == "branch_end_node"
+    assert materialized["type"] == "tombstone_node"
     assert materialized["alias"] == "Deleted node"
     assert materialized["connections"]["outputs"] == []
     assert wm.get_node_data(end)["connections"]["inputs"] == []
-    assert materialized["config"]["_system_role"] == DELETED_NODE_SYSTEM_ROLE
-    assert materialized["config"]["deleted_node"]["original_type"] == "logger_node"
-    assert materialized["config"]["deleted_node"]["original_alias"] == "Original Logger"
-    assert materialized["config"]["deleted_node"]["original_config"] == {
-        "message": "original"
-    }
+    assert "_system_role" not in materialized["config"]
+    assert materialized["config"]["original_type"] == "logger_node"
+    assert materialized["config"]["original_alias"] == "Original Logger"
+    assert materialized["config"]["original_config"] == {"message": "original"}
+    assert materialized["config"]["original_outputs"] == [
+        {
+            "source_port": "default",
+            "target_node_id": end,
+            "target_port": "input",
+        }
+    ]
+    assert materialized["config"]["original_input_ports"] == ["input"]
+    assert materialized["config"]["original_output_ports"] == ["default"]
 
     assert adapter.undo_placeholder(logger) is True
     restored = wm.get_node_data(logger)
@@ -922,7 +926,7 @@ def test_deleted_node_materializes_to_system_branch_end_and_drops_outputs():
             "source_port": "default",
         }
     ]
-    print("test_deleted_node_materializes_to_system_branch_end_and_drops_outputs PASSED")
+    print("test_deleted_node_materializes_to_tombstone_and_drops_outputs PASSED")
 
 
 def test_editor_save_materializes_deleted_node_and_loaded_marker_renders():
@@ -1008,8 +1012,10 @@ async def _test_editor_save_materializes_deleted_node_and_loaded_marker_renders(
         await pilot.pause(0.03)
         assert saves == ["saved"]
         saved_marker = wm.get_node_data(logger)
-        assert saved_marker["type"] == "branch_end_node"
-        assert saved_marker["config"]["_system_role"] == DELETED_NODE_SYSTEM_ROLE
+        assert saved_marker["type"] == "tombstone_node"
+        assert saved_marker["config"]["original_type"] == "logger_node"
+        assert saved_marker["config"]["original_alias"] == "Saved Logger"
+        assert "_system_role" not in saved_marker["config"]
 
         screen.refresh_from_backend()
         marker_card = next(card for card in app.query(NodeCard) if card.node_id == logger)
@@ -1045,6 +1051,35 @@ async def _test_editor_save_materializes_deleted_node_and_loaded_marker_renders(
             card for card in loaded_app.query(NodeCard) if card.node_id == loaded_marker
         )
         assert "Deleted node: Loaded Logger (Logger)" in marker_card.display_text
+        assert "z undo" in marker_card.display_text
+
+    # Tombstone-format save record renders the same deleted-node row
+    _, tomb_wm, _, _ = _make_services()
+    tomb_wm.create_new("loaded_tombstone_marker")
+    tomb_start = tomb_wm.add_node("start_node")
+    tomb_marker = tomb_wm.add_node("tombstone_node")
+    tomb_wm.update_node_config(
+        tomb_marker,
+        {
+            "original_type": "logger_node",
+            "original_display_name": "Logger",
+            "original_alias": "Tombstone Logger",
+            "original_config": {"message": "loaded"},
+        },
+    )
+    tomb_wm.connect(tomb_start, "default", tomb_marker, "input")
+
+    class TombstoneApp(App):
+        def compose(self) -> ComposeResult:
+            yield EditorScreen(tomb_wm._factory, tomb_wm)
+
+    tombstone_app = TombstoneApp()
+    async with tombstone_app.run_test() as pilot:
+        await pilot.pause(0.03)
+        marker_card = next(
+            card for card in tombstone_app.query(NodeCard) if card.node_id == tomb_marker
+        )
+        assert "Deleted node: Tombstone Logger (Logger)" in marker_card.display_text
         assert "z undo" in marker_card.display_text
 
     print("test_editor_save_materializes_deleted_node_and_loaded_marker_renders PASSED")
@@ -4615,7 +4650,8 @@ async def _test_node_selector_uses_family_tabs_and_subcategory_filters():
         assert screen._active_tab == "I/O"
         assert screen._active_family() == "Inputs"
         assert io_switch.value is False
-        assert screen._visible_subcategory_checkboxes() == []
+        internet_filter = app.query_one("#node-subcategory-internet", Checkbox)
+        assert internet_filter.display is True   # http_request_node has Internet tag
         assert app.focused is filter_input
         assert ai_filter.display is False  # no AI-tagged input nodes yet
         assert filter_input.editing is False
@@ -4623,11 +4659,12 @@ async def _test_node_selector_uses_family_tabs_and_subcategory_filters():
             "example_file_instance_node",
             "file_reader_node",
             "user_text_input_node",
+            "http_request_node",
         }
         # Single-member groups auto-promote: no group entries on this side,
         # and the section headers from selector_section metadata render.
         assert group_entries(screen) == {}
-        assert header_names(screen) == ["Text & Data", "Files"]
+        assert header_names(screen) == ["Text & Data", "Files", "Web"]
 
         # Flip the switch to the Output side.
         io_switch.value = True

@@ -1,0 +1,21 @@
+node_type: text_transform_node
+class_name: TextTransformNode
+category: data
+primary_family: Utility
+tags: ["Utility"]
+group: "Data Transform"
+selector_section: "Transform"
+icon_name: case-sensitive
+display_name: Text Transform
+default_alias: Text Transform
+description: Apply a text transformation (uppercase, lowercase, strip, title, reverse) to the input string
+input_ports: ["input"]
+output_ports: ["default"]
+config_tabs:
+  Parameters:
+    operation:
+      type: select
+      label: Operation
+      options: ["uppercase", "lowercase", "strip", "title", "reverse"]
+      default: uppercase
+execution_template: transform_stub

@@ -95,7 +95,7 @@ or node metadata changes for this phase.
 | FA-0..FA-5 | Frontend standardization helpers | Done |
 | 10 | Documentation modernization | Done |
 | 10.5 | Backend/frontend boundary cleanup (Phase A) | Done |
-| 10.6 | Tombstone design decision + Phase B migration | Planned |
+| 10.6 | Tombstone design decision + Phase B migration | Done (restore-alert UI + Phase C metadata deferred) |
 | 11 | Real AI node execution | Deferred |
 | 12 | Packaging and release hardening | Deferred |
 | 13 | Cursor model foundation | Done |
@@ -134,6 +134,27 @@ or node metadata changes for this phase.
   by tab-specific subcategories.
 - Phase 17 editor row identity and details-panel identity are implemented and
   covered by focused tests.
+- SecretsManager module (2026-06-13): plain-text JSON store at
+  `secrets/secrets.json`; wired through `MasterState → Supervisor → NodeContext`;
+  nodes call `context.get_secret(key_name)`. Validator checks secret-ref fields
+  (`"secret": True` schema hint). Schema supports at-rest encryption as a
+  one-module upgrade.
+- Backend build plan Phases 1–6 (2026-06-13): tombstone `editor_only` flag and
+  validator port context; legacy save migration; typed vault MemoryBank API;
+  LLM chat session foundation in `RunSession`; parallel-branch vault race
+  warnings; four utility nodes (TextTransform, JsonPath, RandomNumber, HttpRequest)
+  via `aotn_node_helper`.
+- Headless build plan H1–H5 (2026-06-13), backlog work verifiable with pytest
+  alone (no live-TUI): saves write `tombstone_node` directly with full
+  original data (H1); `restore_tombstone()` with connection validation and
+  partial restore returning a `TombstoneRestoreReport` (H2); `"secret": True`
+  fields on the four API-key nodes plus `SecretsManager` wired into editor
+  validation (H3); label/value select options and full schema-key test
+  coverage in `form_generator.py` (H4); `backend/branch_health.py` deriving
+  per-branch `valid`/`ended_unmerged`/`floating` state (H5). Plan and outcome
+  in `archive/plans/HEADLESS_BUILD_PLAN.md`. Deferred UI pieces (tombstone
+  restore alert, Secrets settings tab, branch-health colours) remain in
+  `PROJECT_BACKLOG.md`.
 
 See `SESSION_LOG.md` for recent entries and `archive/SESSION_LOG_HISTORY.md`
 for older entries.
@@ -207,14 +228,13 @@ Focused checks:
   supervisor from one node.
 - **Phase 20 — User-created subworkflow nodes.** Publish workflows as reusable
   nodes with dependency/export policy.
-- **Typed vault entries and AI session handles.** Add `type` field to
-  `MemoryBank` vault entries (`string`, `number`, `boolean`, `file`,
-  `ai_session`). `get_resource(key)` on `RunSession` is already implemented. Add config-driven
-  "keep active AI session" output to LLM nodes (no separate Chat Session Node).
-  Extend input source dropdowns to type-filter by declared input type. Extend
-  the validator with the error/warning split for typed vault reference ordering.
-  Architecture finalized 2026-06-11; see `PROJECT_BACKLOG.md` and
-  `NODE_STANDARDS.md` for the full design.
+- **Typed vault entries and AI session handles.** Backend foundation done
+  (2026-06-13): `MemoryBank.store_persistent` accepts `type_tag`; `read_persistent_by_type`
+  added; validator warns on ai_session type mismatch and parallel-branch races;
+  `RunSession` has multi-turn chat session API. Remaining: config-driven "keep
+  active AI session" checkbox on LLM nodes; Vault write path for `ai_session`
+  entries on execute; input source dropdowns filter by type. See
+  `PROJECT_BACKLOG.md` and `NODE_STANDARDS.md` for full design.
 - **Deferred AI integration.** Implement real AI node execution once UI and
   node authoring conventions stabilize. Typed vault entry support is a
   prerequisite for AI session continuation.
