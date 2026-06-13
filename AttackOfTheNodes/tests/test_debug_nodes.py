@@ -514,7 +514,7 @@ def test_node_factory_exposes_phase_17_identity_metadata():
         item["type"]: item
         for item in wm._factory.get_node_types_metadata()
     }
-    expected_families = {"Inputs", "Flow Control", "Outputs", "Complex"}
+    expected_families = {"Inputs", "Outputs", "Flow Control", "Utility", "Complex"}
 
     for node_type, item in metadata.items():
         assert item["category"] in expected_families, node_type
@@ -524,6 +524,14 @@ def test_node_factory_exposes_phase_17_identity_metadata():
         assert all(isinstance(tag, str) for tag in item["tags"])
         assert item["icon_name"]
         assert item["color_hint"]
+        assert "group" in item
+        assert item["group"] is None or (
+            isinstance(item["group"], str) and item["group"]
+        )
+        assert "selector_section" in item
+        assert item["selector_section"] is None or (
+            isinstance(item["selector_section"], str) and item["selector_section"]
+        )
 
     assert metadata["file_reader_node"]["category"] == "Inputs"
     assert "File I/O" in metadata["file_reader_node"]["tags"]
@@ -3134,7 +3142,7 @@ async def _test_editor_depth_counter_tracks_visible_branch_distance():
         details = screen.query_one("#node-details").display_text
         assert details.startswith(f"Name: Logger ({path_b_first})")
         assert "Kind: Logger" in details
-        assert "Family: Outputs" in details
+        assert "Family: Utility" in details
         assert "Subcategories: Passive Output, Utility" in details
         assert "Step: 2" in details
 
@@ -3192,7 +3200,7 @@ async def _test_editor_identity_rows_keep_keyboard_selection_stable():
         assert node_list.index == 12
         assert screen.selected_node_id == expected_id
         selected_card = next(card for card in app.query(NodeCard) if card.node_id == expected_id)
-        assert "Outputs - Passive Output" in selected_card.display_text
+        assert "Utility - Passive Output" in selected_card.display_text
 
     print("test_editor_identity_rows_keep_keyboard_selection_stable PASSED")
 
@@ -3646,18 +3654,32 @@ async def _test_node_selector_layout_is_compact_and_checkboxes_fit():
             tabs = screen.query_one("#node-family-tabs")
             filt = screen.query_one("#node-filter")
             subs = screen.query_one("#node-subcategory-filters")
+            io_row = screen.query_one("#io-direction-row")
 
-            # No dead space between the tab row and the filter bar.
+            # Filter is directly below the tab row — no dead space.
             gap = filt.region.y - (tabs.region.y + tabs.region.height)
-            assert gap == 0, f"tabs->filter gap {gap} at height {height}"
+            assert gap == 0, (
+                f"tabs->filter gap {gap} != 0 at height {height}"
+            )
 
-            # The subcategory block fits its checkboxes instead of stretching.
+            # On the I/O tab the switch sits below the filter.
+            filt_bottom = filt.region.y + filt.region.height
+            assert io_row.display, "Switch row should be visible on I/O tab"
+            assert io_row.region.y >= filt_bottom, (
+                f"Switch row top {io_row.region.y} should be >= filter bottom"
+                f" {filt_bottom} at height {height}"
+            )
+
+            # Check checkboxes on Complex tab (which has the AI filter).
+            screen._set_active_tab("Complex")
+            await pilot.pause(0.05)
+            subs = screen.query_one("#node-subcategory-filters")
             visible = [
                 cb
                 for cb in screen.query("#node-subcategory-filters Checkbox")
                 if cb.display
             ]
-            assert visible, "Expected visible subcategory checkboxes"
+            assert visible, "Expected visible subcategory checkboxes on Complex tab"
             for cb in visible:
                 bottom = cb.region.y + cb.region.height
                 subs_bottom = subs.region.y + subs.region.height
@@ -3700,18 +3722,16 @@ async def _test_node_selector_rows_are_two_lines_with_indented_description():
         )
         lines = screen._node_row_text(node).split("\n")
         assert len(lines) == 2, f"Expected a two-line row, got {lines!r}"
-        # First line carries the display name; second line is the indented
-        # description for visual separation between nodes.
-        assert node["display_name"] in lines[0]
-        assert lines[1].startswith("    ")
+        # First line: [ display_name ]  Second line: - description
+        assert lines[0] == f"\\[ {node['display_name']} ]", (
+            f"Expected '\\[ {node['display_name']} ]', got {lines[0]!r}"
+        )
+        assert lines[1].startswith("- "), (
+            f"Expected '- ...' description, got {lines[1]!r}"
+        )
         expected_desc = (str(node.get("description") or "").strip() or "No description")
         assert expected_desc[:20] in lines[1]
-
-        # Each subcategory appears in its own parentheses after "name - ";
-        # the family (redundant with the active tab) must not appear.
-        if node.get("tags"):
-            expected_tags = "".join(f"({tag})" for tag in node["tags"])
-            assert f"{node['display_name']} - {expected_tags}" == lines[0]
+        # Family must not appear; subcategory tags are not shown in rows.
         family = screen._node_family(node)
         assert family and family not in lines[0], (
             f"Family {family!r} should not appear in row {lines[0]!r}"
@@ -3750,6 +3770,11 @@ async def _test_node_selector_down_from_last_checkbox_highlights_first_node():
         screen = app.query_one(NodeSelectorScreen)
         list_view = app.query_one("#node-type-list", ListView)
 
+        # The Complex tab has the AI checkbox — use it so we always have a
+        # visible checkbox to navigate from (I/O Input side has none currently).
+        screen._set_active_tab("Complex")
+        await pilot.pause(0.03)
+
         # Focus the last visible subcategory checkbox.
         visible_checkboxes = screen._visible_subcategory_checkboxes()
         assert visible_checkboxes
@@ -3762,7 +3787,8 @@ async def _test_node_selector_down_from_last_checkbox_highlights_first_node():
         await pilot.press("s")
         await pilot.pause(0.03)
         assert app.focused is list_view
-        assert list_view.index == 0
+        first_selectable = screen._selectable_indices()[0]
+        assert list_view.index == first_selectable
         assert list_view.highlighted_child is not None
         assert list_view.highlighted_child.highlighted is True
 
@@ -4541,7 +4567,7 @@ def test_node_selector_uses_family_tabs_and_subcategory_filters():
 
 async def _test_node_selector_uses_family_tabs_and_subcategory_filters():
     from textual.app import App, ComposeResult
-    from textual.widgets import Checkbox, ListView
+    from textual.widgets import Checkbox, ListView, Switch
 
     from frontend.screens.node_selector import NodeSelectorScreen
     from frontend.widgets.command_input import CommandInput
@@ -4552,22 +4578,47 @@ async def _test_node_selector_uses_family_tabs_and_subcategory_filters():
         def compose(self) -> ComposeResult:
             yield NodeSelectorScreen(wm._factory)
 
+    def entry_kinds(screen):
+        return [entry["kind"] for entry in screen._entries]
+
+    def header_names(screen):
+        return [
+            entry["name"]
+            for entry in screen._entries
+            if entry["kind"] == "header"
+        ]
+
+    def group_entries(screen):
+        return {
+            entry["name"]: len(entry["members"])
+            for entry in screen._entries
+            if entry["kind"] == "group"
+        }
+
     app = SelectorApp()
     async with app.run_test() as pilot:
         await pilot.pause(0.03)
         screen = app.query_one(NodeSelectorScreen)
         node_list = app.query_one("#node-type-list", ListView)
         filter_input = app.query_one("#node-filter", CommandInput)
-        file_filter = app.query_one("#node-subcategory-file-io", Checkbox)
-        active_output_filter = app.query_one("#node-subcategory-active-output", Checkbox)
-        parallel_filter = app.query_one("#node-subcategory-parallel", Checkbox)
+        io_switch = app.query_one("#io-direction-switch", Switch)
+        ai_filter = app.query_one("#node-subcategory-ai", Checkbox)
 
-        assert "tombstone_node" not in {node["type"] for node in screen._all_nodes}
-        assert screen._active_family == "Inputs"
-        assert app.focused is file_filter
-        assert file_filter.display is True
-        assert active_output_filter.display is True
-        assert parallel_filter.display is False
+        # Hidden node types never reach the selector.
+        all_types = {node["type"] for node in screen._all_nodes}
+        assert "tombstone_node" not in all_types
+        assert "start_node" not in all_types
+        assert "end_node" not in all_types
+
+        # Default: I/O tab, Input side — focus lands on the filter bar
+        # (not edit mode) so the user can type immediately or navigate down.
+        assert screen._active_tab == "I/O"
+        assert screen._active_family() == "Inputs"
+        assert io_switch.value is False
+        internet_filter = app.query_one("#node-subcategory-internet", Checkbox)
+        assert internet_filter.display is True   # http_request_node has Internet tag
+        assert app.focused is filter_input
+        assert ai_filter.display is False  # no AI-tagged input nodes yet
         assert filter_input.editing is False
         assert {node["type"] for node in screen._visible_nodes} == {
             "example_file_instance_node",
@@ -4575,60 +4626,201 @@ async def _test_node_selector_uses_family_tabs_and_subcategory_filters():
             "user_text_input_node",
             "http_request_node",
         }
+        # Single-member groups auto-promote: no group entries on this side,
+        # and the section headers from selector_section metadata render.
+        assert group_entries(screen) == {}
+        assert header_names(screen) == ["Text & Data", "Files", "Web"]
 
-        screen.action_choose()
-        assert file_filter.value is True
+        # Flip the switch to the Output side.
+        io_switch.value = True
+        await pilot.pause(0.03)
+        assert screen._active_family() == "Outputs"
         assert {node["type"] for node in screen._visible_nodes} == {
-            "example_file_instance_node",
-            "file_reader_node",
+            "text_output_node",
         }
 
-        app.set_focus(active_output_filter)
-        screen.action_choose()
-        assert active_output_filter.value is True
-        assert screen._visible_nodes == []
+        # Flow Control: no filter checkboxes; Branch group with member count;
+        # single-member groups and direct-adds promoted to node rows under
+        # their section headers.
+        screen.action_next_tab()
+        assert screen._active_tab == "Flow Control"
+        assert screen._visible_subcategory_checkboxes() == []
+        assert header_names(screen) == ["Branching", "Timing"]
+        groups = group_entries(screen)
+        assert groups.get("Branch", 0) >= 2
+        visible_types = {node["type"] for node in screen._visible_nodes}
+        assert "merge_node" in visible_types  # Merge group of one, promoted
+        assert "branch_end_node" in visible_types  # direct-add Merge Beacon
+        assert "wait_until_node" in visible_types  # Wait / Timer, promoted
+        assert "branch_node" not in visible_types  # behind the Branch group
 
-        screen.action_next_family()
-        assert screen._active_family == "Flow Control"
-        assert parallel_filter.display is True
-        assert file_filter.display is False
-        assert parallel_filter.value is False
-        assert "branch_node" in {node["type"] for node in screen._visible_nodes}
+        # Utility tab: transform group plus debug/loop helper direct-adds.
+        screen.action_next_tab()
+        assert screen._active_tab == "Utility"
+        assert screen._visible_subcategory_checkboxes() == []
+        assert "Data Transform" in group_entries(screen)
+        assert {"Transform", "Debug", "Loop Helpers"}.issubset(
+            set(header_names(screen))
+        )
+        utility_types = {node["type"] for node in screen._visible_nodes}
+        assert {"echo_node", "probe_node", "counter_node"}.issubset(utility_types)
 
-        app.set_focus(parallel_filter)
-        screen.action_choose()
-        assert parallel_filter.value is True
-        assert "branch_node" in {node["type"] for node in screen._visible_nodes}
-        assert all("Parallel" in node.get("tags", []) for node in screen._visible_nodes)
+        # Complex tab: AI filter visible, AI Processing group of three.
+        screen.action_next_tab()
+        assert screen._active_tab == "Complex"
+        assert ai_filter.display is True
+        assert group_entries(screen).get("AI Processing") == 3
 
+        # Search dissolves groups and headers: AI nodes appear directly.
         await pilot.press("/")
         assert app.focused is filter_input
         assert filter_input.editing is False
         await pilot.press("e")
         assert filter_input.editing is True
-        filter_input.value = "merge"
+        filter_input.value = "chat"
         filter_input.end_edit()
         screen._apply_filter(filter_input.value)
         assert filter_input.editing is False
+        assert header_names(screen) == []
+        assert group_entries(screen) == {}
         assert {node["type"] for node in screen._visible_nodes} == {
-            "branch_end_node",
-            "merge_node",
+            "chat_completion_node",
         }
 
         filter_input.value = "deleted"
         screen._apply_filter(filter_input.value)
-        assert "tombstone_node" not in {node["type"] for node in screen._visible_nodes}
         assert screen._visible_nodes == []
 
-        filter_input.value = "merge"
+        filter_input.value = ""
         screen._apply_filter(filter_input.value)
-        assert screen._visible_nodes
+        assert group_entries(screen).get("AI Processing") == 3
 
         screen.action_focus_node_list()
         assert app.focused is node_list
-        assert node_list.index == 0
+        first_selectable = screen._selectable_indices()[0]
+        assert node_list.index == first_selectable
 
     print("test_node_selector_uses_family_tabs_and_subcategory_filters PASSED")
+
+
+def test_node_selector_group_picker_flow():
+    asyncio.run(_test_node_selector_group_picker_flow())
+
+
+async def _test_node_selector_group_picker_flow():
+    from textual.app import App
+    from textual.widgets import ListView
+
+    from frontend.screens.group_picker import GroupPickerScreen
+    from frontend.screens.node_selector import NodeSelectorScreen
+
+    _, wm, _, _ = _make_services()
+    chosen: list = []
+
+    class PickerApp(App):
+        async def on_mount(self) -> None:
+            await self.push_screen(
+                NodeSelectorScreen(wm._factory), chosen.append
+            )
+
+    app = PickerApp()
+    async with app.run_test(size=(90, 30)) as pilot:
+        await pilot.pause(0.1)
+        screen = app.screen
+        assert isinstance(screen, NodeSelectorScreen)
+        screen._set_active_tab("Flow Control")
+        await pilot.pause(0.03)
+
+        branch_index = next(
+            index
+            for index, entry in enumerate(screen._entries)
+            if entry["kind"] == "group" and entry["name"] == "Branch"
+        )
+        node_list = screen.query_one("#node-type-list", ListView)
+        screen._focus_node_list()
+        node_list.index = branch_index
+        await pilot.pause(0.03)
+
+        # E on the group entry opens the picker, not the selector dismissal.
+        screen.action_choose()
+        await pilot.pause(0.05)
+        picker = app.screen
+        assert isinstance(picker, GroupPickerScreen)
+        assert picker.group_name == "Branch"
+        member_types = [member["type"] for member in picker.members]
+        assert "branch_node" in member_types
+
+        # ESC pops only the picker and returns to the main selector.
+        picker.action_cancel()
+        await pilot.pause(0.05)
+        assert isinstance(app.screen, NodeSelectorScreen)
+        assert chosen == []
+
+        # Re-open and choose a member: both modals close, the selector
+        # resolves with the chosen node type.
+        screen.action_choose()
+        await pilot.pause(0.05)
+        picker = app.screen
+        assert isinstance(picker, GroupPickerScreen)
+        target_index = member_types.index("branch_node")
+        picker_list = picker.query_one("#group-member-list", ListView)
+        picker_list.index = target_index
+        picker.action_choose()
+        await pilot.pause(0.05)
+        assert chosen == ["branch_node"]
+        assert not isinstance(app.screen, (NodeSelectorScreen, GroupPickerScreen))
+
+    print("test_node_selector_group_picker_flow PASSED")
+
+
+def test_node_selector_navigation_skips_section_headers():
+    asyncio.run(_test_node_selector_navigation_skips_section_headers())
+
+
+async def _test_node_selector_navigation_skips_section_headers():
+    from textual.app import App, ComposeResult
+    from textual.widgets import ListView
+
+    from frontend.screens.node_selector import NodeSelectorScreen
+
+    _, wm, _, _ = _make_services()
+
+    class SelApp(App):
+        def compose(self) -> ComposeResult:
+            yield NodeSelectorScreen(wm._factory)
+
+    app = SelApp()
+    async with app.run_test(size=(90, 30)) as pilot:
+        await pilot.pause(0.05)
+        screen = app.query_one(NodeSelectorScreen)
+        node_list = app.query_one("#node-type-list", ListView)
+
+        header_indices = [
+            index
+            for index, entry in enumerate(screen._entries)
+            if entry["kind"] == "header"
+        ]
+        assert header_indices, "Expected section headers on the I/O Input side"
+
+        screen._focus_node_list()
+        await pilot.pause(0.03)
+        assert node_list.index in screen._selectable_indices()
+
+        # Walking the whole list never lands on a header row.
+        seen = [node_list.index]
+        for _ in range(len(screen._entries) + 2):
+            previous = node_list.index
+            screen._move_selection_or_leave_list(1)
+            if app.focused is not node_list:
+                break
+            if node_list.index == previous:
+                break
+            seen.append(node_list.index)
+        assert seen == screen._selectable_indices()
+        for index in seen:
+            assert index not in header_indices
+
+    print("test_node_selector_navigation_skips_section_headers PASSED")
 
 
 def test_branch_selector_uses_shared_list_navigation():

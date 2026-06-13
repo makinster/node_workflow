@@ -149,6 +149,7 @@ AttackOfTheNodes/
     test_tombstone_phase_b.py
     test_typed_vault.py
     test_validator_race_warnings.py
+    test_validator_secrets.py
     generated/
 
   workflows/

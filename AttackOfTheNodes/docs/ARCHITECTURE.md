@@ -103,6 +103,7 @@ context = NodeContext(
     signal_error(error),             # trigger recovery flow
     signal_waiting_for_input(prompt) -> Awaitable[str],
     wait_for_nodes(node_ids, timeout) -> Awaitable[None],
+    run_session,                     # RunSession; None when no session is active
 )
 ```
 
@@ -129,11 +130,50 @@ Current node types:
 | Debug / Utility | LoggerNode, SleepNode, CounterNode, EchoNode, ProbeNode, ErrorNode, MemorySnapshotNode, RandomBranchNode, DeepBranchNode, NoOpNode, RepeatCounterNode, VariableSetterNode, VariableReaderNode |
 | Editor (save-only) | TombstoneNode — save-persistent deleted-node record; always a validation error; never executable |
 
+### `RunSession`
+
+Per-run resource lifecycle manager. Created by `MasterState` at run start,
+threaded through `NodeContext` as `context.run_session`, and closed by
+`MasterState._record_run` on every terminal path (FINISHED, supervisor error,
+forced termination).
+
+Holds Python handles that cannot be JSON-serialized:
+
+- **File handles**: opened via `open_file(path, mode)`, cached by resolved path
+  and mode so multiple readers of the same file share one handle.
+- **Arbitrary resource handles**: stored with `register_resource(key, handle,
+  close_hook=None)` and retrieved with `get_resource(key)` (planned).
+
+Workflow saves store only portable strings (file paths, session key names).
+Handles are reconstructed at runtime through `RunSession`.
+
+**Typed vault reference resolution.** When a `MemoryBank` vault entry carries
+`type: "file"` or `type: "ai_session"`, the entry holds a string `ref_key`,
+not the handle itself. Nodes resolve the handle by calling
+`context.run_session.get_resource(ref_key)`. The type tag determines which
+lookup path applies. Input dropdowns in node config filter by the declared
+input type so only compatible vault entries are offered.
+
+**AI session handles.** Any LLM node that opts into session persistence
+registers a session handle (provider client + message history) in `RunSession`
+under a user-supplied key and writes `(type: ai_session, ref_key)` to the
+vault. Downstream nodes retrieve and continue the session through the same
+key. Message history accumulates in the session object in `RunSession`;
+`MemoryBank` holds only the reference key.
+
+`validate_path(path)` checks whether a file path is accessible before the node
+runs (used by the `Validator` for `path_hint: "file"` schema fields).
+
 ### `MemoryBank`
 
 The shared whiteboard for one run. Two stores:
 
-- **Persistent store**: named variables shared by all supervisors for the whole run. Read/written by nodes through `context.memory_bank`.
+- **Persistent store**: named variables (vault) shared by all supervisors for
+  the whole run. Read/written by nodes through `context.memory_bank`. Every
+  vault entry carries a `type` field: `string`, `number`, `boolean`, `file`, or
+  `ai_session`. Simple types are pure JSON values. `file` and `ai_session`
+  entries store a type tag and a string reference key resolved through
+  `RunSession.get_resource`.
 - **Transient store**: point-to-point data passing keyed as `(source_node_id, port_name)`. Written by the supervisor after each node; read by the supervisor when preparing inputs for the next node.
 
 Both stores are cleared on run start and blank between runs. Persistent changes broadcast `MEMORY_UPDATE`.
@@ -217,6 +257,11 @@ The inspector. Performs a DFS from the start node and checks:
 - Tombstone nodes are flagged as errors with original node name and connection context from stored config.
 - Derived `input_sources` reference existing node ids.
 - Memory-bank input keys are declared by some node's `membank_outputs`.
+- Schema fields hinted with `path_hint: "file"`: empty required path is an
+  error; path missing on disk is a warning.
+- Typed vault reference ordering (planned): error if no node declares the vault
+  key; warning if the declaring node is on a parallel branch with unguaranteed
+  execution order. Applies to all vault types including `file` and `ai_session`.
 
 After traversal, any unvisited node is unreachable and reported as a warning. Return shape:
 

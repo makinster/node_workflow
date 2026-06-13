@@ -86,6 +86,14 @@ class NodeFactory:
                     "color_hint": self._metadata_string(
                         getattr(node_class, "color_hint", "")
                     ),
+                    "group": self._metadata_string(
+                        getattr(node_class, "group", None)
+                    )
+                    or None,
+                    "selector_section": self._metadata_string(
+                        getattr(node_class, "selector_section", None)
+                    )
+                    or None,
                     "input_ports": list(node_class.input_ports),
                     "output_ports": list(node_class.output_ports),
                     "input_port_metadata": self._port_metadata(

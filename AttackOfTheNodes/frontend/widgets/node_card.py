@@ -29,8 +29,9 @@ FRAME_RIGHT_INSET = 2  # spaces between the closing frame and the panel edge
 UTILITY_TAG = "Utility"
 FAMILY_FRAMES = {
     "Inputs": ("[", "]"),
-    "Flow Control": ("{", "}"),
     "Outputs": ("<", ">"),
+    "Flow Control": ("{", "}"),
+    "Utility": ("|", "|"),
     "Complex": ("(", ")"),
 }
 # Framed-segment row colors: background matches the family hue previously
@@ -38,8 +39,9 @@ FAMILY_FRAMES = {
 IDENTITY_ROW_TEXT_COLOR = "#0d1117"
 FAMILY_ROW_BACKGROUNDS = {
     "Inputs": "#7ee787",
-    "Flow Control": "#8ab4f8",
     "Outputs": "#f2cc60",
+    "Flow Control": "#8ab4f8",
+    "Utility": "#9aa7b3",
     "Complex": "#c586c0",
 }
 UTILITY_ROW_BACKGROUND = "#9aa7b3"

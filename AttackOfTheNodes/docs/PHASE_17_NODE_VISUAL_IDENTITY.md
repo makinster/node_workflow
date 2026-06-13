@@ -1,7 +1,8 @@
 # Phase 17 - Node Visual Identity And Selector Taxonomy
 
 **Status:** In progress
-**Last updated:** 2026-06-10
+**Last updated:** 2026-06-12 (taxonomy revision: I/O tab + switch, Utility
+family, in-list section headers, AI-as-subcategory)
 
 Phase 17 is not just a cosmetic row-color pass. It is the foundation for the
 next node overhaul: clearer node families, reusable subcategory tags, a more
@@ -10,6 +11,8 @@ glance without changing runtime behavior.
 
 The current runtime nodes may be redone as this taxonomy settles. Treat existing
 node types as implementation inventory, not the final user-facing library.
+The complete node inventory — implemented, planned, deferred, and concept —
+lives in `NODE_CATALOG.md`.
 
 ## User Experience Goal
 
@@ -21,30 +24,114 @@ Users should be able to answer three questions quickly:
   complex behavior that deserves extra attention?
 
 The selector and editor should use the same language. If a node appears under
-the `Inputs` tab with `File I/O` and `Triggered` filters, the editor details
+the `I/O` tab's Input side with the `File I/O` filter, the editor details
 panel should show the same family and subcategories after the node is added.
+
+## Core Simplification Rule
+
+Before placing any node behind a group picker, apply this rule:
+
+| Situation | Solution |
+|---|---|
+| Variants have different port shapes | Must be separate node types regardless |
+| Variants have same ports, very different config | Group with picker |
+| Variants are minor config differences with same ports | One node + mode select field |
+| Standalone, unique node | Direct-add, no group |
+
+This prevents groups from becoming junk drawers and keeps the number of real
+node types honest.
+
+**Example applications:**
+
+- **File Write overwrite vs append** — same ports, one config field → single
+  node with a mode select. No separate type needed.
+- **Branch variants** — different port shapes (2 ports vs N ports vs loop
+  shape) → must be separate node types.
+- **Email vs Webhook vs OS notification** — same ports, radically different
+  config → group with picker.
+
+Apply this rule before adding any node to `NODE_CATALOG.md` or to the selector.
+The rule is also documented in `NODE_STANDARDS.md` as the Node Type
+Classification guide.
 
 ## Primary Node Families
 
-Each node has one primary family. This family drives selector tabs and the
-strongest row identity.
+Each node has one primary family. Families are backend metadata
+(`primary_family`); how families map onto selector tabs is a frontend
+presentation decision (see Node Selector UX).
 
 | Family | Meaning | Examples |
 |---|---|---|
-| Inputs | Get input from an external source on a shorter timescale than long-lived triggers. | Text In, File Read, Text File Read, Web Scrape, User Text Input |
-| Flow Control | Change workflow structure, branch routing, merge behavior, waiting, or loop shape. | Branch, Conditional Branch, Merge Beacon, Wait Until, Looping Branch |
-| Outputs | Send workflow results to the user, a file, another system, or a branch-ending surface. | Text Output, File Output, active execution-window output |
-| Complex | Nested workflows and unique nodes that do not fit cleanly in the other families. | Subworkflow, unique triggers, advanced branch beacons |
+| Inputs | Get data into the workflow from an external source. | User Text Input, File Read, Data Source, AI Input (session seeding) |
+| Outputs | Send workflow results to the user, a file, or another system. | Text Output, File Write, Send/Notify, User-Facing Prompt |
+| Flow Control | Change workflow structure: branching, merging, waiting, branch termination. | Branch, Merge, Merge Beacon, End Branch, Wait/Timer |
+| Utility | Perform custom actions mid-workflow: automation, data transform, debug/log helpers, loop helpers. A working catch-all for action nodes. | UI Automation, Data Transform, Echo, Probe, Counter |
+| Complex | Nested workflows, AI processing tools, and triggers — structurally unusual nodes. | AI Processing, Subworkflow, Trigger |
 
-`Complex` is a pressure-release family, not a junk drawer. Prefer `Inputs`,
-`Flow Control`, or `Outputs` when the node's main role is clear.
+Notes:
+
+- **Five families, four tabs.** `Inputs` and `Outputs` share the frontend
+  `I/O` tab behind an Input/Output switch. The backend never knows about the
+  switch — it is purely presentation.
+- **AI is a subcategory, not a family.** AI-flavored variants live in their
+  natural family: AI Conditional Branch in Flow Control's Branch group,
+  AI-Guided Read in the File Reader group, AI Input on the I/O Input side.
+  Dedicated AI tooling (Chat Completion, Image Generation, Embedding) lives in
+  Complex under the AI Processing group, where the `AI` filter surfaces it.
+- `Complex` is a pressure-release family, not a junk drawer. Action-style
+  nodes belong in `Utility`; data-in/data-out nodes belong in `Inputs`/`Outputs`.
+
+## Start, End, And Branch Termination
+
+Settled 2026-06-12:
+
+- **Start is never user-addable.** The runtime `start_node` is auto-generated.
+- **There is no standalone End node.** Branches terminate three ways:
+  1. through an output node with the standard **"Terminate branch after
+     completion"** config option enabled (see `NODE_STANDARDS.md`);
+  2. through a merge (the branch ends by joining);
+  3. through the **End Branch** direct-add node — a silent terminator for
+     paths that intentionally discard a route (e.g. the "no" path of a
+     conditional branch that should do nothing).
+
+## Taxonomy Summary
+
+Full node-by-node detail (with status) is in `NODE_CATALOG.md`. The structure:
+
+| Tab | Sections | Groups and direct-adds |
+|---|---|---|
+| **I/O — Input** | Text & Data, Files, AI | Text Input ▸, Data Source ▸, File Reader ▸, AI Input |
+| **I/O — Output** | (flat — short list) | Text Output ▸, File Write ▸, Send/Notify ▸, User-Facing Prompt ▸ |
+| **Flow Control** | Branching, Timing | Branch ▸, Merge ▸, Merge Beacon, End Branch, Wait/Timer ▸ |
+| **Utility** | Automation, Transform, Debug, Loop Helpers | UI Automation ▸, Script Runner ▸ (gated), Data Transform ▸, Echo, Probe, Logger, Sleep/Delay, Counter, Accumulator, Repeat Limiter |
+| **Complex** | AI, Workflow, Triggers | AI Processing ▸, Subworkflow ▸, Trigger ▸ |
+
+`▸` marks a group (opens the Group Picker). Plain entries are direct-add.
+
+## AI Model Approach
+
+AI nodes generalize around **capability**, not model identity. Each AI node
+declares a **curated supported-model list** — not an open-ended model field —
+because prompt adherence, tool support, and structured output must be as
+dependable as possible:
+
+- Conversational nodes (AI Input, Chat Completion) need coherent multi-turn
+  behavior — a moderately strict list.
+- Structured-decision nodes (AI Conditional Branch, AI Tool Call, AI Decision)
+  require reliable structured output (tool calling or JSON mode). The AI
+  selects from defined branch labels/schemas and cannot invent a path. These
+  carry the strictest supported lists.
+
+**Future fork point:** if the supported-model list grows large and models
+diverge in capability, AI Processing may split into per-model groups (one
+group per model family, since each has its own capabilities). Capability
+grouping is the contract until that pressure is real. `NODE_CATALOG.md`
+carries the same note next to the AI Processing group.
 
 ## Subcategories
 
 Nodes can have multiple subcategories. Subcategories are filterable capability
 tags, not mutually exclusive families.
-
-Initial subcategories:
 
 | Subcategory | Meaning |
 |---|---|
@@ -63,44 +150,240 @@ More subcategories can be added as the node overhaul reveals real need, but do
 not create one-off tags for a single node unless it clearly names a future
 filter users would seek.
 
+**Filters are deliberately sparse.** Groups absorb most of the filtering need
+(a group collapses many variants behind one entry), and section headers
+organize the rest. Only two tabs have filter controls:
+
+| Tab | Filters |
+|---|---|
+| I/O | `File I/O` · `Internet` · `AI` (apply to whichever switch side is active) |
+| Flow Control | none |
+| Utility | none |
+| Complex | `AI` |
+
+Subcategory tags still exist on all nodes regardless of which tabs surface
+filter controls — the string search matches tags everywhere, and the editor
+details panel shows them.
+
 ## Metadata Direction
 
 The backend should remain UI-agnostic, but node metadata should expose portable
 identity that any frontend can consume:
 
-- primary family, currently compatible with the existing `category` idea;
-- zero or more subcategory tags;
-- display glyph or icon name;
-- optional color hint;
-- short selector summary;
-- detailed description for the right panel/config surfaces.
+- `primary_family` — one of `Inputs`, `Outputs`, `Flow Control`, `Utility`,
+  `Complex`; drives selector tab mapping and strongest row identity
+- `tags` — zero or more subcategory strings; drives filter checkboxes and
+  search
+- `icon_name` — display glyph or icon name
+- `color_hint` — optional color from the family color map
+- `short_description` — short selector summary
+- `description` — detailed description for the right panel/config surfaces
+- `group` — frontend-only navigation group name (see below)
+- `selector_section` — frontend-only section header the entry renders under
+  (see below)
 
-Implementation note: `Node` already has optional `icon_name`, `tags`, and
-`color_hint` attributes, but `NodeFactory.get_node_types_metadata()` currently
-does not expose `category`, `icon_name`, `tags`, or `color_hint`. Phase 17
-should close that metadata gap before building selector filters around it.
+### The `group` Field
+
+**Groups are not real node types.** They are a frontend-only navigation concept
+derived from node metadata. The backend never knows a group exists.
+
+Each node class declares one field: `group: str | None`. For example:
+
+```python
+class EmailSendNode(Node):
+    primary_family = "Outputs"
+    tags = ["Internet"]
+    group = "Send / Notify"
+```
+
+The selector builds group entries dynamically: scan all nodes for the active
+tab, collect unique `group` values, and create a group entry for any group
+with 2 or more members. Members with `group = None` or belonging to a
+single-member group appear as direct-add entries.
+
+This means adding a new node to an existing group requires only declaring the
+`group` field. No selector code changes are needed.
+
+**Auto-promotion rule:** if a group ends up with only 1 member (because other
+members haven't been implemented yet, or were removed), that member
+auto-promotes to a direct-add entry. No picker appears for a group of one.
+
+### The `selector_section` Field
+
+Section headers organize the main selector list within a tab (e.g. Utility's
+`Automation` / `Transform` / `Debug` / `Loop Helpers`). Like `group`, sections
+are frontend-only navigation metadata:
+
+- Each node class may declare `selector_section: str | None`.
+- All members of a group must declare the same section (the group entry
+  renders under that header). The node helper validates this at spec time.
+- Entries with no section render in an unsectioned block at the top of the
+  list, before the first header.
+- The frontend owns section ordering per tab (a small ordered constant); the
+  metadata only names the section an entry belongs to.
+- A section header with no visible entries (after filters/search) is hidden.
+
+`NodeFactory.get_node_types_metadata()` exposes `group` and `selector_section`
+alongside existing metadata — two additional keys. No backend component
+branches on either field.
 
 ## Node Selector UX
 
-The selector should become a taxonomy-first picker:
+The selector is a two-level design: a **Main Selector** and a **Group Picker**
+second modal. Together they replace the old flat list and the old
+per-subcategory checkbox column.
 
-- Top-level tabs: `Inputs`, `Flow Control`, `Outputs`, `Complex`.
-- A string match filter remains near the top of the selector.
-- Beneath the string filter, show subcategory checkboxes for the active tab.
-- The initial keyboard highlight should be the first subcategory control, not
-  the string filter.
-- The string filter should follow command-mode activation. It should not begin
-  typing simply because the selector opened; `/` can jump to it and `E`/Enter
-  can activate it.
-- The filtered node list appears below subcategory controls.
-- Filter options can differ by tab. Only show subcategories that are relevant
-  to at least one node in the active family.
-- Keyboard navigation must autoscroll cleanly between filter controls, tabs,
-  and the node list so the highlighted control is never cut off-screen.
-- String filtering and subcategory filtering combine: a node must match the
-  active family, active subcategory filters, and any string query.
-- Subcategory filters use `AND` semantics. When multiple subcategories are
-  selected, show only nodes that have every selected subcategory.
+### Tab Structure
+
+Four tabs: `I/O`, `Flow Control`, `Utility`, `Complex`.
+
+The `I/O` tab maps two backend families onto one tab with a switch:
+
+- A Textual `Switch` sits at the top of the tab body: Input on one side,
+  Output on the other.
+- The switch state selects which family's entries fill the list
+  (`Inputs` or `Outputs`).
+- Filter checkboxes and the string filter apply to the active side.
+- The switch is a normal keyboard nav stop between the tab row and the list.
+
+### Main Selector Layout
+
+Every list entry occupies its own line(s), vertically stacked, one per
+keyboard step. Section headers are non-selectable divider rows that keyboard
+navigation automatically jumps over.
+
+```
+┌─ Add Node ──────────────────────────────────────────┐
+│  I/O    Flow Control    [Utility]    Complex          │
+│  ─────────────────────────────────────────────────── │
+│  / filter...                                          │
+│  ─────────────────────────────────────────────────── │
+│  ── Automation ─────────────────────────────────────  │
+│  ► UI Automation                                 6 ▸  │
+│  ► Script Runner                                 3 ▸  │
+│  ── Transform ──────────────────────────────────────  │
+│  ► Data Transform                                7 ▸  │
+│  ── Debug ──────────────────────────────────────────  │
+│    Echo                                               │
+│    Probe                                              │
+│    Logger                                             │
+│    Sleep / Delay                                      │
+│  ── Loop Helpers ───────────────────────────────────  │
+│    Counter                                            │
+│    Accumulator                                        │
+│    Repeat Limiter                                     │
+│                                                       │
+│  W/S move  A/D tabs  E open/add  / filter  ESC close  │
+└───────────────────────────────────────────────────────┘
+```
+
+I/O tab with the switch and its filter strip:
+
+```
+┌─ Add Node ──────────────────────────────────────────┐
+│  [I/O]    Flow Control    Utility    Complex          │
+│  ─────────────────────────────────────────────────── │
+│  ○ Input ──────── Output ●                           │
+│  [ ] File I/O   [ ] Internet   [ ] AI                │
+│  ─────────────────────────────────────────────────── │
+│  / filter...                                          │
+│  ─────────────────────────────────────────────────── │
+│  ► Text Output                                   4 ▸  │
+│  ► File Write                                    4 ▸  │
+│  ► Send / Notify                                 5 ▸  │
+│  ► User-Facing Prompt                            3 ▸  │
+└───────────────────────────────────────────────────────┘
+```
+
+Behavior:
+
+- A string match filter sits at the top of every tab (activate with `/`,
+  command-mode activation as today) for users who want to type a node name
+  instead of moving through the list.
+- Group entries show a member count at the right edge. The count reflects only
+  members that match currently active filters.
+- Groups whose filtered count drops to 0 are hidden. Section headers with no
+  visible entries are hidden.
+- Direct-add entries can be added with `E` immediately.
+- String filtering, subcategory filters (where present), and the I/O switch
+  combine: an entry must match all active constraints.
+- Subcategory filters use `AND` semantics.
+
+**Entry kinds.** The visible list is a sequence of three entry kinds:
+
+| Kind | Selectable | `E` behavior |
+|---|---|---|
+| Section header | No — navigation skips it | n/a (clicking does nothing) |
+| Group entry | Yes | Opens the Group Picker |
+| Node entry (direct-add or dissolved-group member) | Yes | Adds the node, closes the selector |
+
+**Search behavior:** when a filter string is active, all groups flatten and
+section headers disappear. Matching node types appear directly in the list —
+not behind a group entry. This is the most natural behavior for search (you
+are looking for something specific; grouping and sections are for browsing).
+Clear the filter and the grouped, sectioned view re-appears.
+
+**Script Runner gating:** while the "allow script execution" setting is off,
+Script Runner group members do not appear in the list or in search results.
+When enabled, the group entry and picker descriptions carry a visible warning.
+
+### Group Picker (second modal)
+
+```
+┌─ Send / Notify ──────────────────────────────────────┐
+│  > OS Desktop Notification                            │
+│    Email Send                                         │
+│    Webhook / HTTP POST                                │
+│    API Write                                          │
+│    Database Write                                     │
+│                                                        │
+│  [description of highlighted node appears here]       │
+└────────────────────────────────────────────────────────┘
+```
+
+- Opens when `E` is pressed on a group entry in the main selector.
+- `ESC` pops only the picker modal, returning to the main selector. The user
+  does not lose their place if they opened the wrong picker.
+- `E` adds the highlighted type and closes both modals simultaneously.
+- One node per line; the highlighted node's description is always visible
+  below the list.
+- No tabs, no checkboxes, no filter input — group sizes are small (3–8
+  entries). The main selector's string filter already reaches members when
+  active.
+- A generic reusable modal, parameterized by group name and member list.
+  One picker screen serves all groups.
+
+## Keyboard Flows
+
+### Adding a node from a group
+
+```
+1. Open node selector (existing editor binding)
+2. A/D to reach the right tab (on I/O, toggle the Input/Output switch if needed)
+3. W/S through filter checkboxes if narrowing is needed (I/O and Complex only)
+4. W/S to highlight a group entry — count shows at right edge; headers are
+   skipped automatically
+5. E → Group Picker modal opens
+6. W/S to highlight specific type — description visible below
+7. E → node added to canvas, both modals close
+```
+
+Node lands unconnected; editor cursor auto-selects it.
+
+### Adding a direct-add node (no group)
+
+Same as steps 1–4 above, then `E` directly adds the node. No behavior change
+for direct-add nodes.
+
+### Search-first flow (fastest path to a known node)
+
+```
+1. Open selector
+2. / to focus filter, start typing (e.g. "parallel")
+3. Groups and headers dissolve; "Parallel Branch" appears directly in the list
+4. W/S to it, E to add
+5. Selector closes
+```
 
 ## Editor Row UX
 
@@ -141,12 +424,55 @@ The right-side details panel should show the node's primary family and all
 subcategories. This helps users understand why a node appeared under particular
 selector filters.
 
+With the family revision, the editor row family color map needs a fifth entry
+for `Utility` (the existing quiet utility styling is the natural fit), and
+`Inputs`/`Outputs` keep distinct colors even though they share a selector tab.
+
+## Problems and Solutions Summary
+
+| Problem | Solution |
+|---|---|
+| Inputs and Outputs as separate tabs felt heavy with fewer entries | One `I/O` tab with an Input/Output switch above the list; backend families stay separate |
+| ~20 entries per tab hard to scan as a flat list | Non-selectable section headers inside the list; keyboard nav skips them |
+| Checkbox filter column disproportionate to short grouped lists | Filters removed except I/O (`File I/O`/`Internet`/`AI`) and Complex (`AI`); groups + headers do the organizing |
+| Search across groups | Flatten all groups and hide headers when filter string is active; restore when cleared |
+| Group with only 1 member | Auto-promote: single-member groups show as direct-add entries, no picker |
+| ESC behavior in picker | ESC pops only the picker modal, returns to selector. Textual's modal stack handles this naturally |
+| Subcategory filter + group count | Group entry count shows only members that match active filters; 0-count groups hidden |
+| Where do AI nodes live | AI is a subcategory: AI variants sit in their natural family/group; dedicated AI tools in Complex → AI Processing |
+| AI dependability | Curated supported-model list per AI node; strictest for structured-output nodes; possible per-model groups later |
+| Branch end semantics | Outputs carry "Terminate branch after completion"; End Branch node covers silent termination; merges end branches naturally |
+| Trigger nodes need a listener runtime | Out of scope for selector work — config-only for now, listener deferred to a runtime resource phase |
+| Script Runner security | Gate behind an explicit setting; hidden from list and search while gated; warning in picker description |
+| Backend impact | Near zero. `NodeFactory` exposes `group` and `selector_section`; no backend component branches on them |
+
+## What Doesn't Need to Exist
+
+- **A "base" node type on the canvas** — the two-level selector handles
+  everything before the node is placed. The node that lands is always a
+  concrete type.
+- **Per-group custom UI logic** — the picker is a generic reusable modal
+  parameterized by group name and member list. One screen serves all groups.
+- **Filters in the picker** — group sizes are small enough that the picker is
+  just a list. The main selector narrows before you enter a group.
+- **Separate Overwrite File and Append File nodes** — one File Write node with
+  a mode config select. The Core Simplification Rule eliminates these as
+  separate types.
+- **A user-addable Start or standalone End node** — Start is auto-generated;
+  branch termination is handled by output config, merges, and End Branch.
+- **A Breakpoint node** — breakpoints are an editor-level concept (already
+  implemented). Planned step-execution mode is also editor-level.
+
 ## Boundary Rules
 
 - Runtime behavior does not change in Phase 17 unless a metadata field is
   needed to describe existing behavior.
-- Selector tabs, filter state, row brackets, row colors, and display density are
-  frontend concerns.
+- Selector tabs, the I/O switch, filter state, section headers, row brackets,
+  row colors, and display density are frontend concerns.
+- `group` and `selector_section` are frontend-only navigation concepts. The
+  backend exposes them through `NodeFactory` for frontend consumption, but no
+  backend component (Supervisor, WorkflowMap, MemoryBank, Validator) should
+  branch on them.
 - Portable node identity metadata belongs on node classes and through
   `NodeFactory` because future frontends also need it.
 - File handles, browser sessions, listeners, and similar resources are runtime
@@ -155,23 +481,37 @@ selector filters.
 
 ## Forward Design Decisions
 
-These choices are settled for the first implementation pass:
+These choices are settled (taxonomy revision 2026-06-12):
 
-- Subcategory filtering uses `AND` semantics.
-- The string filter is activate-to-edit, not auto-edit on selector open.
-- Subcategory controls are checkboxes.
-- Subcategory choices are tab-specific and derived from the active family.
-- `Complex` remains partly TBD until the other families are stronger; prefer it
-  for structurally unusual nodes such as nested workflows, unique triggers, and
-  advanced beacons.
-- Outputs use `Passive Output` and `Active Output` tags. A future
-  branch-ending output tag can be added if outputs intentionally close branches.
-- `AI` and `Internet` stay distinct. A normal AI API call is `AI`; web browsing,
-  scraping, or non-AI network access is `Internet`; a web-browsing AI node may
-  carry both.
-- Existing nodes should receive transitional metadata. Do not overfit the new
+- Five backend families: `Inputs`, `Outputs`, `Flow Control`, `Utility`,
+  `Complex`. Four selector tabs; `Inputs`/`Outputs` share the `I/O` tab via a
+  switch.
+- AI is a subcategory tag, not a family. AI variants live in their natural
+  groups; dedicated AI tools live in Complex → AI Processing.
+- Filters: I/O tab gets `File I/O` / `Internet` / `AI`; Complex gets `AI`;
+  Flow Control and Utility get none. Subcategory filtering uses `AND`
+  semantics where present.
+- Section headers are in-list, non-selectable, skipped by keyboard navigation,
+  hidden while a string filter is active or when empty.
+- The string filter is activate-to-edit (`/`), present at the top of every
+  tab, and dissolves groups and headers while active.
+- Groups are dynamically derived from node metadata (`group` field). Adding a
+  node to a group requires only the field — no selector code changes.
+- Sections are derived from node metadata (`selector_section` field); the
+  frontend owns per-tab section ordering.
+- The group picker is a single generic modal parameterized by group name and
+  member list. `ESC` in the picker returns to the main selector. `E` adds and
+  closes both.
+- Single-member groups auto-promote to direct-add entries.
+- Output nodes carry the standard "Terminate branch after completion" config
+  option; End Branch is the silent direct-add terminator; Start/End are not
+  user-addable.
+- AI nodes declare curated supported-model lists; structured-output AI nodes
+  carry the strictest lists.
+- Existing nodes should receive transitional metadata (including remapping
+  current debug/data nodes into the `Utility` family). Do not overfit the new
   taxonomy to the current node list because many current nodes are expected to
-  be redone.
+  be redone — `NODE_CATALOG.md` tracks the mapping.
 
 ## File Resource Direction
 
@@ -190,11 +530,30 @@ manager itself.
 
 Phase 17 is complete when:
 
-- the active docs agree on the taxonomy and selector/editor direction;
-- `NodeFactory` exposes the metadata needed by the frontend;
-- the selector has family tabs and subcategory filters with keyboard-first
-  navigation;
-- editor rows show stable visual identity for family/subcategory;
+- the active docs agree on the taxonomy and selector/editor direction (this
+  document, `NODE_CATALOG.md`, and `NODE_STANDARDS.md`);
+- `NodeFactory` exposes the metadata needed by the frontend: `primary_family`
+  (five families), `tags`, `icon_name`, `color_hint`, `group`,
+  `selector_section`;
+- registered nodes are remapped to the five-family scheme (debug/data
+  utility nodes move to `Utility`);
+- the selector has the four-tab structure with the I/O Input/Output switch
+  and the reduced filter set (I/O: File I/O / Internet / AI; Complex: AI);
+- the main selector renders section headers that keyboard navigation skips
+  and that hide when empty or while searching;
+- the selector implements the two-level group picker: group entries with
+  member counts, a generic Group Picker modal for groups with 2+ members;
+- single-member groups auto-promote to direct-add entries with no picker;
+- `ESC` in the group picker returns to the main selector, not all the way out;
+- group counts reflect active filters; 0-count groups are hidden;
+- when a string filter is active, groups and headers dissolve and node types
+  appear directly;
+- editor rows show stable visual identity for family/subcategory across the
+  five families;
 - the details panel exposes family and subcategories;
-- focused tests cover metadata exposure, selector filtering, row rendering, and
-  keyboard/autoscroll behavior.
+- focused tests cover metadata exposure, family-to-tab mapping, the I/O
+  switch, selector filtering, header skipping, group entry rendering, picker
+  navigation, ESC behavior, auto-promotion, row rendering, and
+  keyboard/autoscroll behavior;
+- the editor view is verified clean in the running app at several terminal
+  widths.

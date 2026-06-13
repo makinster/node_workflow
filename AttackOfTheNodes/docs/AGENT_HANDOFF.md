@@ -55,16 +55,21 @@ Active product phase:
 
 - Phase 17: Node visual identity and selector taxonomy.
 
-Phase 17 direction:
+Phase 17 direction (taxonomy revised 2026-06-12):
 
-- Primary selector families: Inputs, Flow Control, Outputs, Complex.
-- Nodes can have multiple subcategory tags such as Triggered, File I/O,
-  Internet, AI, Passive Output, Active Output, Parallel, Conditional, Runtime
-  Resource, and Utility.
-- The selector should use family tabs, a string filter, tab-specific
-  subcategory controls, and a filtered node list.
+- Five backend families: Inputs, Outputs, Flow Control, Utility, Complex.
+- Four selector tabs: I/O (Input/Output switch maps the Inputs and Outputs
+  families onto one tab), Flow Control, Utility, Complex.
+- AI is a subcategory tag, not a family. Filters exist only on the I/O tab
+  (File I/O / Internet / AI) and Complex (AI).
+- Selector lists use in-list section headers that keyboard navigation skips,
+  group entries with member counts that open a generic Group Picker modal,
+  and a string filter that dissolves groups/headers while active.
+- New frontend-only metadata fields: `group` and `selector_section`.
 - Editor rows may become two-line rows showing alias first, then family and
   high-signal subcategories.
+- Full node inventory with statuses lives in `NODE_CATALOG.md`; read
+  `PHASE_17_NODE_VISUAL_IDENTITY.md` before selector/taxonomy work.
 
 Deferred:
 

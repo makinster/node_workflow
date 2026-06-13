@@ -78,8 +78,44 @@ Merge behavior is editor-assisted and runtime-coordinated:
 - `backend/validator.py`: static checks for start node, node types,
   connection endpoints, declared ports, tombstones, derived input sources,
   membank declarations, and unreachable warnings.
+- `backend/run_session.py`: per-run resource session created by `MasterState`
+  and threaded through `NodeContext` as `context.run_session`. Holds open file
+  handles and AI session handles keyed by a string reference. API:
+  `open_file(path, mode)`, `register_resource(key, handle, close_hook)`,
+  `get_resource(key)`, `validate_path(path)`, `close_all()`.
+  Typed vault references (type `file` or `ai_session`) carry a reference key
+  that nodes resolve through `get_resource`.
 - `backend/utils/try_catch.py`: Go-style async result/error helper for new async
   UI paths.
+
+## Data Flow Patterns
+
+**Transient payloads** are JSON values written to `MemoryBank` keyed by
+`(source_node_id, port_name)` after each node executes. The `Supervisor`
+reads them back when preparing inputs for the next node. They are scoped to
+one run and do not survive between runs.
+
+**Vault (MemoryBank persistent store)** holds named JSON values readable by
+any node in any branch. Every vault entry carries a `type` field alongside
+its value. Simple types (`string`, `number`, `boolean`) are pure JSON values.
+Typed handle entries (`file`, `ai_session`) store the type tag and a string
+reference key; the actual Python handle lives in `RunSession` and is retrieved
+with `context.run_session.get_resource(ref_key)`. Input source dropdowns
+filter by declared type, so a `file` input only shows `file` vault entries.
+
+**RunSession handles** are Python objects (file handles, AI provider sessions)
+that cannot be JSON-serialized. They live in `RunSession`, which is created
+fresh per run by `MasterState` and closed on every terminal path. Nodes
+access handles through `context.run_session`. Workflow saves store only
+portable strings (file paths, session key names); handles are reconstructed at
+runtime.
+
+**AI session continuation** uses config-driven vault output on any LLM node
+that opts in. The first node with a given session key starts the session and
+writes an `(type: ai_session, ref_key: <key>)` vault entry. Downstream LLM
+nodes that select the same vault key retrieve the session from `RunSession` and
+append their turn. Message history accumulates in the session object in
+`RunSession`; `MemoryBank` holds only the reference key.
 
 ## Frontend Components
 

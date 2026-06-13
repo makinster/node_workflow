@@ -107,12 +107,11 @@ Screen {
 }
 
 #modal-card {
-    width: 80%;
-    max-width: 100;
+    width: 90%;
     max-height: 90%;
     margin: 2 4;
     padding: 1 2;
-    border: heavy #50c878;
+    border: solid #405061;
     background: #101418;
 }
 
@@ -126,6 +125,16 @@ Screen {
    and let the node list absorb the remaining height. */
 #node-family-tabs {
     height: auto;
+}
+
+/* I/O tab Input/Output switch row (hidden on other tabs). */
+#io-direction-row {
+    height: auto;
+    align: left middle;
+}
+
+#io-direction-row Label {
+    margin: 1 1 0 1;
 }
 
 #node-filter {
@@ -148,6 +157,28 @@ Screen {
 
 .node-select-row {
     height: 2;
+}
+
+/* Section headers inside the selector list: non-selectable dividers that
+   keyboard navigation skips. */
+.node-select-header {
+    height: 1;
+    color: #8b949e;
+}
+
+/* Two-line group entries: { name } (count) then description. */
+.node-select-group {
+    height: 2;
+}
+
+/* Two-line member rows inside the Group Picker. */
+.group-member-row {
+    height: 2;
+}
+
+#group-member-list {
+    height: 1fr;
+    min-height: 4;
 }
 
 #membank-output-rows {

@@ -34,7 +34,7 @@ VALID_TEMPLATES = {
 }
 VALID_CATEGORIES = {"flow", "io", "data", "ai", "debug", "utility"}
 # Phase 17 identity taxonomy; keep in sync with backend/node_identity.py.
-VALID_FAMILIES = {"Inputs", "Flow Control", "Outputs", "Complex"}
+VALID_FAMILIES = {"Inputs", "Outputs", "Flow Control", "Utility", "Complex"}
 VALID_TAGS = {
     "Triggered",
     "File I/O",
@@ -49,8 +49,9 @@ VALID_TAGS = {
 }
 FAMILY_COLOR_HINTS = {
     "Inputs": "green",
-    "Flow Control": "blue",
     "Outputs": "amber",
+    "Flow Control": "blue",
+    "Utility": "grey",
     "Complex": "violet",
 }
 FIELD_RULE_KEYS = {"enabled_when", "visible_when", "mutually_exclusive_with"}
@@ -156,6 +157,16 @@ def normalize_spec(spec: dict[str, Any]) -> dict[str, Any]:
     color_hint = str(
         spec.get("color_hint") or FAMILY_COLOR_HINTS[primary_family]
     ).strip()
+    # Frontend-only navigation metadata: nodes sharing a group appear behind
+    # one Group Picker entry; selector_section names the in-tab header.
+    group = str(spec.get("group") or "").strip() or None
+    selector_section = str(spec.get("selector_section") or "").strip() or None
+    if group and not selector_section and primary_family != "Outputs":
+        raise ValueError(
+            "group requires selector_section so all group members render "
+            "under the same selector header (the Outputs side currently "
+            "renders flat and may omit it)"
+        )
 
     input_ports = _string_list(spec.get("input_ports", ["input"]), "input_ports")
     output_ports = _string_list(spec.get("output_ports", ["default"]), "output_ports")
@@ -231,6 +242,8 @@ def normalize_spec(spec: dict[str, Any]) -> dict[str, Any]:
         "tags": tags,
         "icon_name": icon_name,
         "color_hint": color_hint,
+        "group": group,
+        "selector_section": selector_section,
         "display_name": str(spec.get("display_name") or _title_case(node_type)),
         "default_alias": str(spec.get("default_alias") or spec.get("display_name") or _title_case(node_type)),
         "description": str(spec.get("description") or ""),
@@ -462,7 +475,7 @@ def _validate_field_rules(config_fields: dict[str, Any]) -> None:
 
 
 def render_node_file(spec: dict[str, Any]) -> str:
-    imports = ["from typing import Any, ClassVar, Dict, List"]
+    imports = ["from typing import Any, ClassVar, Dict, List, Optional"]
     if spec["execution_template"] == "async_wait":
         imports.insert(0, "import asyncio")
     body = _execute_body(spec)
@@ -486,6 +499,8 @@ class {spec["class_name"]}(Node):
     tags: ClassVar[List[str]] = {_pretty(spec["tags"])}
     icon_name: ClassVar[str] = {spec["icon_name"]!r}
     color_hint: ClassVar[str] = {spec["color_hint"]!r}
+    group: ClassVar[Optional[str]] = {spec["group"]!r}
+    selector_section: ClassVar[Optional[str]] = {spec["selector_section"]!r}
     input_ports: ClassVar[List[str]] = {_pretty(spec["input_ports"])}
     output_ports: ClassVar[List[str]] = {_pretty(spec["output_ports"])}
     input_port_metadata: ClassVar[Dict[str, Dict[str, str]]] = {_pretty(spec["input_port_metadata"])}

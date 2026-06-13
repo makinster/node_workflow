@@ -5,6 +5,32 @@ This document captures the intended scope, input/output patterns, and UI
 behavior rules for AttackOfTheNodes nodes. It is the authoritative reference
 before authoring a new node type or changing an existing one's I/O model.
 
+## Node Type Classification
+
+Before defining a new node type, decide how it fits in the taxonomy:
+
+| Situation | Solution |
+|---|---|
+| Variants have different port shapes | Must be separate node types regardless |
+| Variants have same ports, very different config | Group with picker |
+| Variants are minor config differences with same ports | One node + mode select field |
+| Standalone, unique node | Direct-add, no group |
+
+**Examples:**
+- File Write overwrite vs append → same ports, one config field → single node
+  with a mode select. No separate type needed.
+- Branch variants → different port shapes (2 ports vs N ports vs loop shape) →
+  must be separate types.
+- Email vs Webhook vs OS notification → same ports, radically different config →
+  group with picker.
+
+Apply this rule before touching the taxonomy in
+`PHASE_17_NODE_VISUAL_IDENTITY.md`. Groups are a frontend-only navigation
+concept — the backend never knows a group exists. Record every new node idea
+in `NODE_CATALOG.md`, even concept-only ones.
+
+---
+
 ## Core Principle
 
 Nodes have predetermined input and output configurations with limited, known
@@ -86,6 +112,40 @@ operation result or error message to a Vault key for error-reporting purposes.
 Vault writes are optional unless the node type requires durable output (e.g.,
 an LLM node where losing the result on session close is unacceptable).
 
+### Branch Termination (output nodes)
+
+Every output node carries a standard config option:
+
+```
+[ ] Terminate branch after completion
+```
+
+Default off. When enabled, the branch ends after the node completes — no
+downstream connection is expected and the supervisor treats the path as
+finished. This replaces the legacy standalone End node: branches end through
+outputs (with this option), through merges, or through the silent **End
+Branch** flow-control node for paths that intentionally discard a route.
+
+Node authors: include this option on every Outputs-family node. It belongs in
+the Payloads tab below the routing controls.
+
+### Emitting Output in Code
+
+Every node signals completion through `context.signal_done(payload)`. The
+payload carries output under port names:
+
+```python
+await context.signal_done({"data": {"default": value}})
+```
+
+Multi-output and branching nodes use named port keys (`path_a`, `path_b`,
+etc.). The `Supervisor` writes these to the transient `MemoryBank` store so
+downstream nodes receive them as prepared inputs.
+
+Durable output for user-facing results goes through `context.memory_bank`
+membank writes. Named vault keys declared in `membank_outputs` are visible to
+all branches and readable via the Vault in node config.
+
 ## Data Type Scope
 
 **Transient payloads are JSON.** They can carry any JSON-serializable value:
@@ -126,6 +186,105 @@ stored as plain strings in node config; actual file handles are opened and
 cached by `RunSession` at execution time so multiple nodes in a run can share
 the same file access. Files can serve as both inputs (read content into
 transient or Vault) and outputs (write Vault or transient content to disk).
+
+## Typed Vault Outputs
+
+Vault writes can carry an explicit `type` field alongside the value. Types:
+`string`, `number`, `boolean`, `file`, `ai_session`.
+
+`string`, `number`, and `boolean` entries behave as before — pure JSON values
+stored and read by name.
+
+`file` and `ai_session` entries store a type tag and a string reference key.
+The actual Python handle lives in `RunSession`, registered by the node that
+opens or creates it:
+
+```python
+context.run_session.register_resource(ref_key, handle)
+# write the reference to the vault
+context.memory_bank.set(vault_key, {"type": "file", "ref_key": ref_key})
+```
+
+A downstream node that reads a `file` or `ai_session` vault entry retrieves
+the handle through `get_resource`, which is already implemented on `RunSession`:
+
+```python
+handle = context.run_session.get_resource(ref_key)
+```
+
+The type tag tells the node and the framework which lookup path to use. From
+the user's perspective this is invisible — they see `filename (file)` in the
+Vault source dropdown.
+
+Input source dropdowns type-filter automatically. An input declared as
+accepting `file` shows only `file` vault entries; an LLM continuation input
+shows only `ai_session` entries.
+
+## AI Session Config-Driven Output (LLM Nodes)
+
+There is no separate Chat Session Node. Any LLM node can opt into session
+persistence via a config checkbox ("keep active AI session") and a
+user-supplied session key.
+
+When the checkbox is set and the node executes:
+
+1. The node opens or retrieves a session handle (provider client + message
+   history list) from `RunSession` under the session key.
+2. It appends the current turn and runs inference.
+3. It registers the updated session handle back in `RunSession`.
+4. It writes `{"type": "ai_session", "ref_key": <session_key>}` to the vault
+   under the session key.
+
+The first LLM node with a given session key starts the session. All subsequent
+nodes that select the same vault key from their source dropdown continue it.
+Message history lives in the session object in `RunSession`; `MemoryBank`
+holds only the type tag and reference key.
+
+Downstream LLM nodes that want to continue a session:
+- Select the vault source for their chat input.
+- See `chat_name (ai_session)` in the type-filtered dropdown.
+- Retrieve the session via `context.run_session.get_resource(session_key)`,
+  append their turn, and re-register the handle.
+
+### AI Input Pattern (session seeding)
+
+The planned **AI Input** node (I/O Input side, see `NODE_CATALOG.md`) is the
+standard way to seed a chat session with context before the response is
+needed:
+
+- Prompt source: Upstream / Vault / Configured (standard input model). Useful
+  when the prompt is customized during workflow execution before being passed
+  to the AI.
+- Executes the turn under a session key and writes
+  `{"type": "ai_session", "ref_key": <session_key>}` to the vault — downstream
+  nodes pick the session up by key.
+- **Default output routing is dead-drop passthrough** — the AI call is a side
+  effect; the incoming payload forwards unchanged.
+- Optional "Output AI response" flips transient output to the response text
+  (standard transient/dead-drop mutual exclusion applies).
+
+AI nodes declare a curated supported-model list, not an open-ended model
+field. Structured-decision AI nodes (AI Conditional Branch, AI Tool Call)
+require models with dependable structured output and carry stricter lists.
+See the AI Model Approach section of `PHASE_17_NODE_VISUAL_IDENTITY.md`.
+
+## Validator Rules for Typed Vault References
+
+Two tiers apply to vault entries that reference RunSession handles:
+
+- **Error**: no node in the workflow declares the vault key at all. The key
+  can never exist at runtime regardless of timing. This blocks the workflow.
+- **Warning**: a node declares the key but lives on a parallel branch where
+  execution order cannot be guaranteed. The validator recommends inserting a
+  Wait Until node or restructuring branches so the key is written before it is
+  read.
+
+The validator must not attempt to infer runtime timing from node count, type,
+or branch depth. Static analysis cannot determine which branch is slower.
+Warning plus Wait Until suggestion is the correct ceiling.
+
+This error/warning split applies uniformly to string, number, file, and
+ai_session vault references.
 
 ## Standard Config Tabs
 
