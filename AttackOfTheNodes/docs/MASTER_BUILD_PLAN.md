@@ -110,6 +110,12 @@ or node metadata changes for this phase.
 
 ## Recently Completed
 
+- Backend/edit-time performance: fixed two O(n^2) hot spots — the
+  `MEMORY_UPDATE` full-store snapshot (`memory_bank.py`) and the per-mutation
+  workflow-cache deepcopy (`workflow_map.py`). Per-node execution overhead is
+  ~15 us/node and linear; a C rewrite is not warranted. Remaining lower-leverage
+  optimizations are deferred under `PROJECT_BACKLOG.md` → "Backend Execution &
+  Edit-Time Performance" (2026-06-13).
 - Task-first docs overhaul: `README.md`, `TASK_INDEX.md`, active roadmap, and
   archived historical build/session detail.
 - Node helper generator at `../aotn_node_helper/`.

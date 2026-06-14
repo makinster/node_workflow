@@ -4,6 +4,35 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-13 — Backend & edit-time performance: two O(n^2) fixes
+
+- Audit context: a backend execution-overhead study measured per-node cost
+  over the real Supervisor/MasterState/EventBus/MemoryBank stack and found it
+  small and linear (~15 us/node) relative to real node I/O — so rewriting the
+  execution manager in C is not warranted. Two O(n^2) hot spots were found and
+  fixed; remaining lower-leverage items are deferred to `PROJECT_BACKLOG.md`.
+- `backend/memory_bank.py`: `MEMORY_UPDATE` now publishes a lightweight delta
+  (e.g. `{"change": "set", "key": ...}`) instead of `get_state()`. Each
+  persistent write previously deep-copied both the persistent and transient
+  stores; since both grow over a run, per-write cost scaled with run size
+  (O(n^2) overall). The sole subscriber (`app._on_backend_event`) ignores the
+  payload and re-pulls `get_state()` on demand, so the live Memory Viewer and
+  dead-drop preview are unchanged. Measured vault-writing chain (us/node):
+  24.4/28.8/36.2 at n=500/1000/2000 → flat 16.9/15.1/15.3.
+- `backend/workflow_map.py`: `_mark_dirty()` no longer calls
+  `_sync_active_to_cache()`. That sync deep-copied the entire `_nodes` graph
+  into the open-workflow cache on every editor mutation (add/connect/config/
+  delete), making building/editing an N-node workflow O(n^2) — a 4000-node
+  graph never finished constructing. The active workflow's live state is
+  `self._nodes`; the cache is refreshed lazily before every path that reads it
+  (switch/close/list) or replaces the active workflow (load/create/save), all
+  of which already sync. Editing is now O(n): build ~2.5 us/edit and flat
+  (1000/2000/4000/8000 nodes → 5.4/9.8/20.2/46.1 ms); a 4000-node workflow now
+  builds (34ms) and runs to FINISHED (50ms).
+- Diagnosis used a throwaway microbenchmark and a `faulthandler` stack dump
+  (which pinned the edit-time deepcopy); benchmark scripts were not committed.
+  Full suite: 284 passed.
+
 ## 2026-06-13 — Headless Plan H6: docs reconciliation + plan archived
 
 - Updated `PROJECT_BACKLOG.md`: tombstone save (H1) and restore (H2) marked

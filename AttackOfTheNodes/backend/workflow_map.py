@@ -474,8 +474,13 @@ class WorkflowMap:
             self._mark_dirty()
 
     def _mark_dirty(self) -> None:
+        # The active workflow's live state is self._nodes; it is the source of
+        # truth and needs no per-mutation snapshot. The cache is refreshed
+        # lazily by _sync_active_to_cache() before any path that reads it
+        # (switch/close/list) or replaces the active workflow (load/create/save).
+        # Syncing here instead deep-copied the whole graph on every edit, making
+        # building/editing an N-node workflow O(n^2).
         self._is_dirty = True
-        self._sync_active_to_cache()
         self._event_bus.publish(WORKFLOW_DIRTY, True)
 
     def _sync_active_to_cache(self) -> None:
