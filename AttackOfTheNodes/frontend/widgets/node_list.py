@@ -65,12 +65,19 @@ class NodeList(ListView):
             )
             self._append_row(row, statuses, timings)
             if row["kind"] == "node" and next_kind == "node":
+                next_row = rows[index + 1]
+                next_node = next_row.get("node") or {}
+                branch_port = (
+                    row.get("node", {}).get("_editor_branch_port")
+                    or next_node.get("_editor_branch_port")
+                )
                 gap_row = {
                     "kind": "gap_arrow",
                     "after_node_id": row["node_id"],
+                    "branch_port": branch_port,
                 }
                 self._rows.append(gap_row)
-                self.append(ListItem(GapArrowCard(), disabled=True))
+                self.append(ListItem(GapArrowCard(branch_port=branch_port)))
         if not rows:
             self.append(ListItem(Label("No nodes. Press I to add a node.")))
         self.normalize_highlight()

@@ -25,13 +25,13 @@ overhaul.
   depth numbers remain unstyled.
 - The initial visible path now starts as `path_a`, giving the start/first branch
   segment the same branch color treatment as Branch path 1.
-- Branch and merge selector labels end with a right-side `|` to visually box
-  in the widget text.
-- Disabled gap rows immediately before visible `merge_node` rows use `┤` in
-  the number/gutter column to suggest incoming branches.
-- Depth rows now use zero-padded number gutters (`000`, `001`, `002`) with no
-  leading connector marker; branch symbols and `|` continuation markers are
-  left-justified in the number/gutter column.
+- Branch and merge selector labels end with a bold right-side `|` to visually
+  box in the widget text.
+- Plain depth-number rows returned to the standard right-aligned number gutter;
+  branch symbols and `|` continuation markers stay left-justified in the
+  number/gutter column.
+- Gap rows between nodes carry branch path color so the `|` immediately before
+  a branch node matches the active branch path.
 - Merge incoming `┤` now renders on the first continuation line of the merge
   node itself, so a merge directly after a Branch selector no longer collides
   with the Branch selector connector.

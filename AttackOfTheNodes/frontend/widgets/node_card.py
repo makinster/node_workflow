@@ -318,6 +318,7 @@ class BranchSelectCard(Static):
                 self.has_class("selected"),
                 foreground=branch_path_color(self.active_port),
                 foreground_start=0,
+                bold_foreground_chars={BRANCH_LABEL_SUFFIX},
             )
         )
 
@@ -410,6 +411,7 @@ class MergeBeaconSelectCard(Static):
                 self.has_class("selected"),
                 foreground=branch_path_color(active_port),
                 foreground_start=0,
+                bold_foreground_chars={BRANCH_LABEL_SUFFIX},
             )
         )
 
@@ -481,8 +483,7 @@ def gap_arrow_text(rendered_width: int, gutter_marker: str | None = None) -> str
 
 def depth_number_gutter(depth: int) -> str:
     """Gutter for numbered rows."""
-    number_text = str(max(0, depth)).zfill(DEPTH_WIDTH)[-DEPTH_WIDTH:]
-    return f"{number_text}{DEPTH_SPACING}"
+    return f"{depth:>{DEPTH_WIDTH}}{DEPTH_SPACING}"
 
 
 def branch_continuation_gutter() -> str:
@@ -515,6 +516,7 @@ def selected_box_text(
     foreground: str | None = None,
     foreground_start: int | None = None,
     gutter_symbol_color: str | None = None,
+    bold_foreground_chars: set[str] | None = None,
 ) -> str | Text:
     """Highlight only the node/jump box area, leaving the depth gutter plain."""
     if not selected and not foreground and not gutter_symbol_color:
@@ -533,6 +535,11 @@ def selected_box_text(
         styled_line = Text(line, no_wrap=True)
         if foreground_style:
             styled_line.stylize(foreground_style, color_start, len(line))
+            if bold_foreground_chars:
+                bold_style = Style(color=foreground, bold=True)
+                for offset, char in enumerate(line):
+                    if offset >= color_start and char in bold_foreground_chars:
+                        styled_line.stylize(bold_style, offset, offset + 1)
         if gutter_style:
             for offset, char in enumerate(line[:DEPTH_WIDTH]):
                 if char.strip() and not char.isdigit():
