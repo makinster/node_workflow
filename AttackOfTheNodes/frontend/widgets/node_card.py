@@ -25,15 +25,8 @@ DEPTH_WIDTH = 3
 DEPTH_SPACING = "   "
 DEPTH_GUTTER = " " * (DEPTH_WIDTH + len(DEPTH_SPACING))
 IDENTITY_TEXT_WIDTH = 48
-FRAME_RIGHT_INSET = 2  # spaces between the closing frame and the panel edge
+TEXT_RIGHT_INSET = 1  # keep content away from the Textual ASCII border edge
 UTILITY_TAG = "Utility"
-FAMILY_FRAMES = {
-    "Inputs": ("[", "]"),
-    "Outputs": ("<", ">"),
-    "Flow Control": ("{", "}"),
-    "Utility": ("|", "|"),
-    "Complex": ("(", ")"),
-}
 # Framed-segment row colors: background matches the family hue previously
 # used for the font; the font flips to a dark high-contrast color on top.
 IDENTITY_ROW_TEXT_COLOR = "#0d1117"
@@ -87,7 +80,7 @@ class NodeCard(Static):
 
     def on_resize(self) -> None:
         # Identity rows pad text to the rendered width; re-fit when it changes
-        # so bracket columns stay on-screen instead of soft-wrapping.
+        # so content stays inside the ASCII border instead of soft-wrapping.
         self.refresh_card()
 
     def on_click(self, event: events.Click) -> None:
@@ -216,21 +209,20 @@ class NodeCard(Static):
             else "x delete | e new node"
         )
         width = self._identity_text_width()
-        line_one = f"{gutter}< {self._fit_text(label, width)} >"
-        line_two = f"{DEPTH_GUTTER}< {self._fit_text(controls, width)} >"
+        line_one = f"{gutter}{self._fit_text(label, width)}"
+        line_two = f"{DEPTH_GUTTER}{self._fit_text(controls, width)}"
         return f"{line_one}\n{line_two}"
 
     def _identity_display_text(self, gutter: str, main_text: str) -> str:
         family = self._identity_family()
         tags = self._identity_tags()
-        left, right = FAMILY_FRAMES.get(family, ("[", "]"))
         identity_text = family or str(self.node_data.get("type") or "Unknown")
         row_tags = self._row_identity_tags(tags)
         if row_tags:
             identity_text = f"{identity_text} - {', '.join(row_tags)}"
         width = self._identity_text_width()
-        line_one = f"{gutter}{left} {self._fit_text(main_text, width)} {right}"
-        line_two = f"{DEPTH_GUTTER}{left} {self._fit_text(identity_text, width)} {right}"
+        line_one = f"{gutter}{self._fit_text(main_text, width)}"
+        line_two = f"{DEPTH_GUTTER}{self._fit_text(identity_text, width)}"
         return f"{line_one}\n{line_two}"
 
     def _identity_family(self) -> str:
@@ -256,17 +248,16 @@ class NodeCard(Static):
         return tags[:1]
 
     def _identity_text_width(self) -> int:
-        """Width for the framed text column, from the rendered card width.
+        """Width for identity text, from the rendered card content width.
 
-        Lines are `gutter + frame + space + text + space + frame`; padding to
-        more than the actual width makes Textual soft-wrap the line and pushes
-        the closing frame onto its own visual row. Unmounted cards (no size
-        yet) fall back to the fixed test/default width.
+        Lines are `gutter + text`. Padding to more than the actual content
+        width makes Textual soft-wrap inside the ASCII border. Unmounted cards
+        (no size yet) fall back to the fixed test/default width.
         """
         rendered_width = self.content_size.width
         if rendered_width <= 0:
             return IDENTITY_TEXT_WIDTH
-        overhead = len(DEPTH_GUTTER) + 4 + FRAME_RIGHT_INSET
+        overhead = len(DEPTH_GUTTER) + TEXT_RIGHT_INSET
         return max(8, rendered_width - overhead)
 
     def _fit_text(self, text: str, width: int = IDENTITY_TEXT_WIDTH) -> str:
@@ -315,10 +306,7 @@ class BranchSelectCard(Static):
 
     def on_mount(self) -> None:
         self.add_class("branch-select-card")
-        # Two extra spaces line the label up with framed node text above.
-        self.display_text = (
-            f"{'☛':>{DEPTH_WIDTH}}{DEPTH_SPACING}  {self.active_label}"
-        )
+        self.display_text = f"{'☛':>{DEPTH_WIDTH}}{DEPTH_SPACING}{self.active_label}"
         self.update(self.display_text)
 
     def on_click(self, event: events.Click) -> None:
@@ -353,10 +341,7 @@ class MergeBeaconSelectCard(Static):
 
     def on_mount(self) -> None:
         self.add_class("merge-beacon-select-card")
-        # Two extra spaces line the label up with framed node text above.
-        self.display_text = (
-            f"{'☛':>{DEPTH_WIDTH}}{DEPTH_SPACING}  {self.active_label}"
-        )
+        self.display_text = f"{'☛':>{DEPTH_WIDTH}}{DEPTH_SPACING}{self.active_label}"
         self.update(self.display_text)
 
     def on_click(self, event: events.Click) -> None:

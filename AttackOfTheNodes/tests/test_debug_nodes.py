@@ -848,8 +848,8 @@ def test_editor_deleted_node_row_renders_as_deleted():
     card.refresh_card()
 
     lines = card.display_text.splitlines()
-    assert lines[0].startswith("  1   < Deleted node: Useful Logger (Logger)")
-    assert lines[1].startswith("      < x delete | z undo | e new node")
+    assert lines[0].startswith("  1   Deleted node: Useful Logger (Logger)")
+    assert lines[1].startswith("      x delete | z undo | e new node")
 
     no_restore = {
         "type": "branch_end_node",
@@ -865,8 +865,8 @@ def test_editor_deleted_node_row_renders_as_deleted():
     )
     no_restore_card.refresh_card()
     no_restore_lines = no_restore_card.display_text.splitlines()
-    assert no_restore_lines[0].startswith("  0   < Deleted node")
-    assert no_restore_lines[1].startswith("      < x delete | e new node")
+    assert no_restore_lines[0].startswith("  0   Deleted node")
+    assert no_restore_lines[1].startswith("      x delete | e new node")
     assert "z undo" not in no_restore_lines[1]
     print("test_editor_deleted_node_row_renders_as_deleted PASSED")
 
@@ -1102,10 +1102,11 @@ def test_node_card_editor_identity_rows_align_and_truncate():
 
     lines = card.display_text.splitlines()
     assert len(lines) == 2
-    assert lines[0].startswith("  4   < Useful Logger")
-    assert lines[1].startswith("      < Outputs - Passive Output")
+    assert lines[0].startswith("  4   Useful Logger")
+    assert lines[1].startswith("      Outputs - Passive Output")
     assert "Utility" not in lines[1]
-    assert lines[0].rfind(">") == lines[1].rfind(">")
+    assert "<" not in lines[0]
+    assert ">" not in lines[1]
 
     long_identity = {
         "type": "file_reader_node",
@@ -1129,7 +1130,8 @@ def test_node_card_editor_identity_rows_align_and_truncate():
     long_card.refresh_card()
     long_lines = long_card.display_text.splitlines()
     assert "…" in long_lines[1]
-    assert long_lines[0].rfind("]") == long_lines[1].rfind("]")
+    assert "[" not in long_lines[0]
+    assert "]" not in long_lines[1]
 
     print("test_node_card_editor_identity_rows_align_and_truncate PASSED")
 
@@ -3158,10 +3160,11 @@ async def _test_editor_depth_counter_tracks_visible_branch_distance():
         branch_row = app.query_one(BranchSelectCard)
         status = app.query_one(StatusBar)
         start_lines = start_card.display_text.splitlines()
-        assert start_lines[0].startswith("  0   { Start")
-        assert start_lines[1].startswith("      { Flow Control - Triggered")
-        assert start_lines[0].rfind("}") == start_lines[1].rfind("}")
-        assert branch_row.display_text == "  ☛     Branch 1"
+        assert start_lines[0].startswith("  0   Start")
+        assert start_lines[1].startswith("      Flow Control - Triggered")
+        assert "{" not in start_lines[0]
+        assert "}" not in start_lines[1]
+        assert branch_row.display_text == "  ☛   Branch 1"
         assert "f file | o options | h help" in status._formatted()
         assert "Ctrl+I" not in status._formatted()
         titles = [str(label.content) for label in app.query(".panel-title")]
@@ -3250,12 +3253,12 @@ async def _test_editor_identity_rows_fit_rendered_panel_width():
     from textual.app import App, ComposeResult
     from textual.containers import Vertical
 
-    from frontend.widgets.node_card import FRAME_RIGHT_INSET, NodeCard
+    from frontend.widgets.node_card import TEXT_RIGHT_INSET, NodeCard
     from frontend.widgets.node_list import NodeList
 
     # The panel is much narrower than the old fixed 48-char identity width,
-    # which used to soft-wrap the closing frame onto its own visual line and
-    # push the identity line out of the two-line row.
+    # which used to soft-wrap long identity rows and push content out of the
+    # visible card.
     panel_width = 40
 
     def node_row(node_id: str, alias: str) -> dict:
@@ -3311,30 +3314,35 @@ async def _test_editor_identity_rows_fit_rendered_panel_width():
         lines = first.display_text.splitlines()
         assert len(lines) == 2, f"Expected two-line row, got {lines!r}"
         for line in lines:
-            # Closing frames sit a fixed inset in from the panel edge.
-            assert len(line) == width - FRAME_RIGHT_INSET, (
-                f"Row line must end {FRAME_RIGHT_INSET} short of the panel "
-                f"edge ({len(line)} != {width - FRAME_RIGHT_INSET}): {line!r}"
+            # Content stays inside the Textual ASCII border without wrapping.
+            assert len(line) == width - TEXT_RIGHT_INSET, (
+                f"Row line must end {TEXT_RIGHT_INSET} short of the content "
+                f"edge ({len(line)} != {width - TEXT_RIGHT_INSET}): {line!r}"
             )
-        # Closing frames stay in one aligned right-hand column, and the
-        # identity line is present with family text.
-        assert lines[0][-1] == lines[1][-1] == "}"
+        # Identity rows no longer inject bracket/frame characters; the Textual
+        # widget border owns the box.
+        assert "{" not in lines[0]
+        assert "}" not in lines[1]
         assert "Flow Control" in lines[1]
+        assert first.styles.border_top[0] == "ascii"
 
         # The rows must actually paint (not just hold content): shadowing
         # Textual paint internals once made every card render blank.
-        painted_line = "".join(seg.text for seg in first.render_line(0))
-        assert "Parallel Branch" in painted_line, (
-            f"Card content did not paint: {painted_line!r}"
+        painted_lines = [
+            "".join(seg.text for seg in first.render_line(y))
+            for y in range(first.region.height)
+        ]
+        assert any("Parallel Branch" in line for line in painted_lines), (
+            f"Card content did not paint: {painted_lines!r}"
         )
 
         # One blank spacer line separates node-to-node groups.
         gap = second.region.y - first.region.y
-        assert gap == 3, f"Expected 2 content lines + 1 spacer, got {gap}"
+        assert gap == 5, f"Expected 4-row card + 1 spacer, got {gap}"
         # A branch selector sits directly below its node with no spacer between.
         branch_item = node_list.children[2]
         selector_gap = branch_item.region.y - second.region.y
-        assert selector_gap == 2, (
+        assert selector_gap == 4, (
             f"Selector must sit directly below its node, got gap {selector_gap}"
         )
         assert branch_item.region.height == 1
@@ -3345,11 +3353,11 @@ async def _test_editor_identity_rows_fit_rendered_panel_width():
         )
         assert "node-row-spaced" not in branch_item.classes
 
-        # Selector text aligns with the framed node text above (gutter + 2).
+        # Selector text aligns with the node text above.
         from frontend.widgets.node_card import BranchSelectCard
 
         branch_card = branch_item.query_one(BranchSelectCard)
-        assert branch_card.display_text == "  ☛     Branch 1"
+        assert branch_card.display_text == "  ☛   Branch 1"
 
         # The framed segment carries the family background with dark
         # high-contrast text; the gutter stays unstyled.

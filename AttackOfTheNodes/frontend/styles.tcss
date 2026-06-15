@@ -47,7 +47,9 @@ Screen {
 }
 
 .node-card-identity {
-    height: 2;
+    height: 4;
+    border: ascii #405061;
+    padding: 0 1;
 }
 
 /* Spacer line after editor node rows; selector/beacon rows stay single-line */

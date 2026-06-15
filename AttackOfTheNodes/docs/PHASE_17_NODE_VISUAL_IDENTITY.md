@@ -1,8 +1,9 @@
 # Phase 17 - Node Visual Identity And Selector Taxonomy
 
 **Status:** In progress
-**Last updated:** 2026-06-12 (taxonomy revision: I/O tab + switch, Utility
-family, in-list section headers, AI-as-subcategory)
+**Last updated:** 2026-06-15 (editor node rows use Textual ASCII text-box
+borders; taxonomy revision remains I/O tab + switch, Utility family, in-list
+section headers, AI-as-subcategory)
 
 Phase 17 is not just a cosmetic row-color pass. It is the foundation for the
 next node overhaul: clearer node families, reusable subcategory tags, a more
@@ -547,17 +548,15 @@ Preferred direction:
 ```
 
 This is conceptual, not a fixed ASCII contract. The preferred implementation is
-to use fixed left/right bracket columns around a text column. That keeps open
-and close brackets aligned across rows, gives the center text maximum room, and
-lets Textual manage styling without fragile manual spacing. Textual widgets are
-fine if they produce a cleaner result than hand-aligned text.
+to use Textual `ascii` borders around each node card, with plain alias and
+family/subcategory text inside the box. Do not prepend family brackets to the
+alias or identity line; the box itself carries the frame.
 
 The important requirements are:
 
 - node rows may use two lines when space allows;
-- bracket or frame style can differ by primary family;
-- brackets/frames align cleanly across rows, preferably with fixed bracket
-  columns on either side of the node text;
+- node cards use a visible text-box border around each individual node;
+- the alias and identity lines do not start with family bracket characters;
 - the first line emphasizes the user-facing alias;
 - the second line shows family plus one or two high-signal subcategories;
 - if the second line cannot fit, truncate the visible subcategory text with an
@@ -615,7 +614,7 @@ for `Utility` (the existing quiet utility styling is the natural fit), and
 
 - Runtime behavior does not change in Phase 17 unless a metadata field is
   needed to describe existing behavior.
-- Selector tabs, the I/O switch, filter state, section headers, row brackets,
+- Selector tabs, the I/O switch, filter state, section headers, row borders,
   row colors, and display density are frontend concerns.
 - `group` and `selector_section` are frontend-only navigation concepts. The
   backend exposes them through `NodeFactory` for frontend consumption, but no

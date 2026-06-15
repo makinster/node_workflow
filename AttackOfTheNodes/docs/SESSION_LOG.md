@@ -4,6 +4,22 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-15 — Editor Node Rows: Textual ASCII Borders
+
+- Fixed the Phase 17 editor node rows on `main`: the previous merge still had
+  the older family bracket/frame rendering (`[ ]`, `< >`, `{ }`) in
+  `frontend/widgets/node_card.py`.
+- `NodeCard` identity rows now render plain alias and family/subcategory text
+  inside a Textual `border: ascii` text box. Deleted-node rows use the same
+  plain-text-in-box treatment.
+- Removed the old bracket-specific branch selector indent so branch selector
+  labels line up with node text again.
+- Updated active UI docs to prefer Textual ASCII node-card borders instead of
+  fixed bracket columns.
+- Focused checks: `../.venv/bin/python -m compileall -q .` and
+  `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "node_card or
+  editor_depth or editor_identity_rows"` (4 passed).
+
 ## 2026-06-15 — Documentation Sync: Backend/UI Gap List
 
 - Fast-forwarded local `main` to `origin/main` after confirming the previous

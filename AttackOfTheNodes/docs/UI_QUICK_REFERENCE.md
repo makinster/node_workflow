@@ -60,8 +60,9 @@ Use `PHASE_17_NODE_VISUAL_IDENTITY.md` for the active plan.
 - The string filter should be activate-to-edit; `/` can jump to it.
 - Editor rows may use two lines: alias first, family/subcategory identity
   second.
-- Prefer fixed left/right bracket columns and truncate long subcategory text
-  with an ellipsis when needed.
+- Prefer a Textual `ascii` border around each node card, with plain alias and
+  family/subcategory text inside the box. Truncate long subcategory text with
+  an ellipsis when needed.
 - Details panel should show primary family and all subcategories.
 - Preserve selection, autoscroll, validation colors, breakpoint markers,
   execution state, and Merge Beacon health colors.

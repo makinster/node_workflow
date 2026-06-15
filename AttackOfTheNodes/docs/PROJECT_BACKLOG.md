@@ -257,8 +257,8 @@ Recommended cleanup:
 - Extend `NodeCard` or a future editor display adapter so branch-health color is
   separate from execution status icons.
 - Fold this into the FA-7 visual pass: VS Code-like dark styling, readable node
-  type colors, type-specific brackets/icons, larger editor rows, and dimmer
-  command text fields when not editing.
+  type colors, node-card borders/icons, larger editor rows, and dimmer command
+  text fields when not editing.
 
 ## Later Project — Schema-Driven Node UI Expansion
 
