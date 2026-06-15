@@ -849,7 +849,7 @@ def test_editor_deleted_node_row_renders_as_deleted():
 
     lines = card.display_text.splitlines()
     assert len(lines) == 4
-    assert lines[0].startswith("  1   +")
+    assert lines[0].startswith("1     +")
     assert lines[1].startswith("|     | Deleted node: Useful Logger (Logger)")
     assert lines[2].startswith("|     | x delete | z undo | e new node")
     assert lines[3].startswith("|     +")
@@ -869,7 +869,7 @@ def test_editor_deleted_node_row_renders_as_deleted():
     no_restore_card.refresh_card()
     no_restore_lines = no_restore_card.display_text.splitlines()
     assert len(no_restore_lines) == 4
-    assert no_restore_lines[0].startswith("  0   +")
+    assert no_restore_lines[0].startswith("0     +")
     assert no_restore_lines[1].startswith("|     | Deleted node")
     assert no_restore_lines[2].startswith("|     | x delete | e new node")
     assert "z undo" not in no_restore_card.display_text
@@ -1107,7 +1107,7 @@ def test_node_card_editor_identity_rows_align_and_truncate():
 
     lines = card.display_text.splitlines()
     assert len(lines) == 4
-    assert lines[0].startswith("  4   +")
+    assert lines[0].startswith("4     +")
     assert lines[1].startswith("|     | Useful Logger")
     assert lines[2].startswith("|     | Outputs - Passive Output")
     assert lines[3].startswith("|     +")
@@ -2668,7 +2668,7 @@ async def _test_merge_beacon_selector_row_jumps_without_rewiring():
         assert selector_card.active_label == "Merge"
         assert selector_card.active_port == "path_a"
         assert selector_card.display_text.startswith("└─────")
-        assert "─┤Merge" in selector_card.display_text
+        assert "⟶ [ Merge ]" in selector_card.display_text
         assert "☛" not in selector_card.display_text
 
         options = screen._merge_beacon_options(beacon)
@@ -3180,13 +3180,13 @@ async def _test_editor_depth_counter_tracks_visible_branch_distance():
         branch_row = app.query_one(BranchSelectCard)
         status = app.query_one(StatusBar)
         start_lines = start_card.display_text.splitlines()
-        assert start_lines[0].startswith("  0   +")
+        assert start_lines[0].startswith("0     +")
         assert start_lines[1].startswith("|     | Start")
         assert start_lines[2].startswith("|     | Flow Control - Triggered")
         assert "{" not in start_lines[0]
         assert "}" not in start_lines[2]
         assert branch_row.display_text.startswith("├─────")
-        assert "─┤Branch 1" in branch_row.display_text
+        assert "⟶ [ Branch 1 ]" in branch_row.display_text
         assert "☛" not in branch_row.display_text
         gap_card = node_list.children[1].query_one(GapArrowCard)
         path_a = branch_path_color("path_a")
@@ -3314,15 +3314,23 @@ async def _test_editor_identity_rows_fit_rendered_panel_width():
         alias: str,
         branch_port: str | None = None,
         node_type: str = "branch_node",
+        vault_outputs: int = 0,
     ) -> dict:
         node = {
             "type": node_type,
             "alias": alias,
             "_editor_depth": 1,
+            "config": {
+                "membank_outputs": [
+                    {"id": f"{node_id}_vault_{index}"}
+                    for index in range(vault_outputs)
+                ]
+            },
             "_identity": {
                 "primary_family": "Flow Control",
                 "tags": ["Parallel"],
             },
+            "_editor_gap_marker": "↓" + ("↳" * vault_outputs),
         }
         if branch_port:
             node["_editor_branch_port"] = branch_port
@@ -3333,7 +3341,7 @@ async def _test_editor_identity_rows_fit_rendered_panel_width():
         }
 
     rows = [
-        node_row("branch-1", "Parallel Branch"),
+        node_row("branch-1", "Parallel Branch", vault_outputs=2),
         node_row("branch-2", "Another Branch"),
         {
             "kind": "branch_select",
@@ -3378,7 +3386,7 @@ async def _test_editor_identity_rows_fit_rendered_panel_width():
                 f"Row line must end {BOX_RIGHT_INSET} short of the content "
                 f"edge ({len(line)} != {width - BOX_RIGHT_INSET}): {line!r}"
             )
-        assert lines[0].startswith("  1   +")
+        assert lines[0].startswith("1     +")
         assert lines[1].startswith("|     | Parallel Branch")
         assert lines[2].startswith("|     | Flow Control - Parallel")
         assert lines[3].startswith("|     +")
@@ -3406,7 +3414,11 @@ async def _test_editor_identity_rows_fit_rendered_panel_width():
         assert node_list.is_selectable_index(1) is False
         assert node_list.next_selectable_index(0, 1) == 2
         gap_card = gap_item.query_one(GapArrowCard)
-        assert gap_card.display_text == gap_arrow_text(gap_card.content_size.width)
+        assert gap_card.display_text == gap_arrow_text(
+            gap_card.content_size.width,
+            output_marker="↓↳↳",
+        )
+        assert "↓↳↳" in gap_card.display_text
         # A branch selector sits directly below its node with no spacer between.
         branch_item = node_list.children[3]
         selector_gap = branch_item.region.y - second.region.y
@@ -3429,12 +3441,11 @@ async def _test_editor_identity_rows_fit_rendered_panel_width():
             f"{branch_line_label('Branch 1', box_width)}"
         )
         assert branch_card.display_text.startswith("├─────")
-        assert "─┤Branch 1" in branch_card.display_text
+        assert "⟶ [ Branch 1 ]" in branch_card.display_text
         assert "☛" not in branch_card.display_text
         label_start = branch_card.display_text.index("Branch 1") - len(DEPTH_GUTTER)
         assert abs((label_start * 2 + len("Branch 1")) - box_width) <= 1
-        label_end = branch_card.display_text.index("Branch 1") + len("Branch 1")
-        assert branch_card.display_text[label_end] == "|"
+        label_end = branch_card.display_text.index(" ]") + len(" ]")
         assert LINE_CHAR not in branch_card.display_text[label_end:]
 
         branch_segments = []
@@ -3458,10 +3469,6 @@ async def _test_editor_identity_rows_fit_rendered_panel_width():
         )
         assert any(
             end > len(DEPTH_GUTTER) for _, end, _, _ in path_color_segments
-        )
-        assert any(
-            start <= label_end < end and bool(bold)
-            for start, end, _, bold in path_color_segments
         )
 
         path_color_segments = []
@@ -3492,7 +3499,7 @@ async def _test_editor_identity_rows_fit_rendered_panel_width():
         )
         assert merge_card.region.y - path_card.region.y == 5
         merge_lines = merge_card.display_text.splitlines()
-        assert merge_lines[0].startswith("  1   +")
+        assert merge_lines[0].startswith("1     +")
         assert merge_lines[1].startswith(f"{MERGE_INCOMING_MARKER}     | Merge")
         merge_marker_segments = []
         offset = 0

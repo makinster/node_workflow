@@ -10,11 +10,11 @@ overhaul.
   connector rows. Rich renders the requested CSS colors via hex equivalents:
   lightseagreen, lightblue, steelblue, turquoise, turquoise.
 - Branch and merge selector rows now draw `├──` / `└──` from the depth gutter
-  into a node-column `─` line that ends with `─┤Branch name`, with no pointer
-  symbol.
+  into a node-column `─` line that ends with `⟶ [ Branch name ]`, with no
+  pointer symbol.
 - Connector stems align under the node-row `|` continuation marker, connector
   tails extend to the node-column line, and branch selector labels are centered
-  under the node box while accounting for the `─┤` prefix.
+  under the node box while accounting for the arrow/bracket prefix.
 - The connector gutter and node-column line are styled with the same branch
   path foreground color; selected-row backgrounds still begin after the depth
   gutter.
@@ -25,11 +25,11 @@ overhaul.
   depth numbers remain unstyled.
 - The initial visible path now starts as `path_a`, giving the start/first branch
   segment the same branch color treatment as Branch path 1.
-- Branch and merge selector labels end with a bold right-side `|` to visually
-  box in the widget text.
-- Plain depth-number rows returned to the standard right-aligned number gutter;
-  branch symbols and `|` continuation markers stay left-justified in the
-  number/gutter column.
+- Branch and merge selector labels use square brackets instead of a right-side
+  `|` because the closing bar read poorly in the terminal.
+- Depth-number rows use standard non-zero-padded numbers left-aligned in the
+  number/gutter column; branch symbols and `|` continuation markers are also
+  left-justified there.
 - Gap rows between nodes carry branch path color so the `|` immediately before
   a branch node matches the active branch path.
 - Merge incoming `┤` now renders on the first continuation line of the merge
@@ -37,6 +37,8 @@ overhaul.
   with the Branch selector connector.
 - Branch-colored `|` continuation markers render bold to better match branch
   path connector weight.
+- Gap markers now reflect source-node outputs: `↓` for transient output plus
+  one `↳` for each configured Vault output, centered under the node box.
 - Continued the gutter rule from the boxed node rows: numbered top rows show
   the depth number, while node box continuation rows use `|` in the number
   column.

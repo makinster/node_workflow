@@ -71,13 +71,22 @@ class NodeList(ListView):
                     row.get("node", {}).get("_editor_branch_port")
                     or next_node.get("_editor_branch_port")
                 )
+                output_marker = row.get("node", {}).get("_editor_gap_marker")
                 gap_row = {
                     "kind": "gap_arrow",
                     "after_node_id": row["node_id"],
                     "branch_port": branch_port,
+                    "output_marker": output_marker,
                 }
                 self._rows.append(gap_row)
-                self.append(ListItem(GapArrowCard(branch_port=branch_port)))
+                self.append(
+                    ListItem(
+                        GapArrowCard(
+                            branch_port=branch_port,
+                            output_marker=output_marker,
+                        )
+                    )
+                )
         if not rows:
             self.append(ListItem(Label("No nodes. Press I to add a node.")))
         self.normalize_highlight()

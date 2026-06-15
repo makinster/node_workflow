@@ -1446,6 +1446,8 @@ class EditorScreen(Screen):
             node = self._node_for_display(current_node_id, node)
             node = dict(node)
             node["_editor_depth"] = depth
+            metadata = self._metadata_for_type(node.get("type", ""))
+            node["_editor_gap_marker"] = self._gap_marker_for_node(node, metadata)
             if current_branch_port:
                 node["_editor_branch_port"] = current_branch_port
             rows.append(
@@ -1464,7 +1466,6 @@ class EditorScreen(Screen):
                 rows.append(self._merge_beacon_select_row(current_node_id, depth))
                 break
 
-            metadata = self._metadata_for_type(node.get("type", ""))
             output_ports = self._output_ports_for_node(node, metadata)
             if len(output_ports) > 1:
                 active_port = self.active_branch_ports.get(current_node_id, output_ports[0])
@@ -1494,6 +1495,18 @@ class EditorScreen(Screen):
             current_node_id = self._target_for_port(node, next_port)
             depth += 1
         return rows
+
+    def _gap_marker_for_node(
+        self,
+        node: Dict[str, Any],
+        metadata: Optional[Dict[str, Any]],
+    ) -> str:
+        config = node.get("config") or {}
+        markers = ""
+        if self._output_ports_for_node(node, metadata):
+            markers += "↓"
+        markers += "↳" * len(normalize_membank_outputs(config))
+        return markers or "↓"
 
     def _hidden_empty_start_node_id(
         self, nodes: Optional[Dict[str, Dict[str, Any]]] = None

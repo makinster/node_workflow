@@ -42,8 +42,8 @@ BRANCH_PATH_COLORS = {
 BRANCH_SELECT_CONNECTOR = "├──"
 MERGE_SELECT_CONNECTOR = "└──"
 LINE_CHAR = "─"
-BRANCH_LABEL_PREFIX = "─┤"
-BRANCH_LABEL_SUFFIX = "|"
+BRANCH_LABEL_PREFIX = "⟶ [ "
+BRANCH_LABEL_SUFFIX = " ]"
 MERGE_INCOMING_MARKER = "┤"
 
 
@@ -318,7 +318,6 @@ class BranchSelectCard(Static):
                 self.has_class("selected"),
                 foreground=branch_path_color(self.active_port),
                 foreground_start=0,
-                bold_foreground_chars={BRANCH_LABEL_SUFFIX},
             )
         )
 
@@ -336,10 +335,12 @@ class GapArrowCard(Static):
         self,
         gutter_marker: str | None = None,
         branch_port: str | None = None,
+        output_marker: str | None = None,
     ) -> None:
         super().__init__()
         self.gutter_marker = gutter_marker
         self.gutter_color = branch_path_color(branch_port) if branch_port else None
+        self.output_marker = output_marker
         self.display_text = ""
 
     def on_mount(self) -> None:
@@ -354,6 +355,7 @@ class GapArrowCard(Static):
         self.display_text = gap_arrow_text(
             self.content_size.width,
             self.gutter_marker,
+            self.output_marker,
         )
         self.update(
             selected_box_text(
@@ -411,7 +413,6 @@ class MergeBeaconSelectCard(Static):
                 self.has_class("selected"),
                 foreground=branch_path_color(active_port),
                 foreground_start=0,
-                bold_foreground_chars={BRANCH_LABEL_SUFFIX},
             )
         )
 
@@ -420,10 +421,9 @@ class MergeBeaconSelectCard(Static):
         event.stop()
 
 
-def center_gap_marker(box_width: int) -> str:
+def center_gap_marker(box_width: int, marker: str | None = None) -> str:
     """Return a centered down marker for the gap below a node box."""
-    marker = DOWN_ARROW * 2 if box_width % 2 == 0 else DOWN_ARROW
-    return center_text(marker, box_width)
+    return center_text(marker or DOWN_ARROW, box_width)
 
 
 def center_text(text: str, width: int) -> str:
@@ -470,7 +470,11 @@ def branch_box_width(rendered_width: int) -> int:
     return box_width
 
 
-def gap_arrow_text(rendered_width: int, gutter_marker: str | None = None) -> str:
+def gap_arrow_text(
+    rendered_width: int,
+    gutter_marker: str | None = None,
+    output_marker: str | None = None,
+) -> str:
     """Center a non-focusable down arrow under the node box."""
     box_width = branch_box_width(rendered_width)
     gutter = (
@@ -478,12 +482,12 @@ def gap_arrow_text(rendered_width: int, gutter_marker: str | None = None) -> str
         if gutter_marker
         else branch_continuation_gutter()
     )
-    return f"{gutter}{center_gap_marker(box_width)}"
+    return f"{gutter}{center_gap_marker(box_width, output_marker)}"
 
 
 def depth_number_gutter(depth: int) -> str:
     """Gutter for numbered rows."""
-    return f"{depth:>{DEPTH_WIDTH}}{DEPTH_SPACING}"
+    return f"{depth:<{DEPTH_WIDTH}}{DEPTH_SPACING}"
 
 
 def branch_continuation_gutter() -> str:
