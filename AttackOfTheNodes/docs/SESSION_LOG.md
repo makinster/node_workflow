@@ -9,9 +9,15 @@ overhaul.
 - Added branch path coloring for up to five Branch outputs in editor selector
   connector rows. Rich renders the requested CSS colors via hex equivalents:
   lightseagreen, lightblue, steelblue, turquoise, turquoise.
-- Branch and merge selector rows now draw `└──` / `├──` from the depth gutter
+- Branch and merge selector rows now draw `├──` / `└──` from the depth gutter
   into a node-column `─` line that ends with `─┤Branch name`, with no pointer
   symbol.
+- Connector stems align under the node-row `|` continuation marker, connector
+  tails extend to the node-column line, and branch selector labels are centered
+  under the node box while accounting for the `─┤` prefix.
+- The connector gutter and node-column line are styled with the same branch
+  path foreground color; selected-row backgrounds still begin after the depth
+  gutter.
 - Continued the gutter rule from the boxed node rows: numbered top rows show
   the depth number, while node box continuation rows use `|` in the number
   column.

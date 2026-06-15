@@ -2667,7 +2667,7 @@ async def _test_merge_beacon_selector_row_jumps_without_rewiring():
         selector_card = app.query_one(MergeBeaconSelectCard)
         assert selector_card.active_label == "Merge"
         assert selector_card.active_port == "path_a"
-        assert selector_card.display_text.startswith("├──   ")
+        assert selector_card.display_text.startswith("  └───")
         assert "─┤Merge" in selector_card.display_text
         assert "☛" not in selector_card.display_text
 
@@ -3180,7 +3180,7 @@ async def _test_editor_depth_counter_tracks_visible_branch_distance():
         assert start_lines[2].startswith("  |   | Flow Control - Triggered")
         assert "{" not in start_lines[0]
         assert "}" not in start_lines[2]
-        assert branch_row.display_text.startswith("└──   ")
+        assert branch_row.display_text.startswith("  ├───")
         assert "─┤Branch 1" in branch_row.display_text
         assert "☛" not in branch_row.display_text
         assert "f file | o options | h help" in status._formatted()
@@ -3404,9 +3404,11 @@ async def _test_editor_identity_rows_fit_rendered_panel_width():
             f"{connector_gutter(BRANCH_SELECT_CONNECTOR)}"
             f"{branch_line_label('Branch 1', box_width)}"
         )
-        assert branch_card.display_text.startswith("└──   ")
+        assert branch_card.display_text.startswith("  ├───")
         assert "─┤Branch 1" in branch_card.display_text
         assert "☛" not in branch_card.display_text
+        label_start = branch_card.display_text.index("Branch 1") - len(DEPTH_GUTTER)
+        assert abs((label_start * 2 + len("Branch 1")) - box_width) <= 1
 
         branch_segments = []
         offset = 0
@@ -3421,8 +3423,12 @@ async def _test_editor_identity_rows_fit_rendered_panel_width():
             segment for segment in branch_segments if path_color in segment[2]
         ]
         assert path_color_segments
-        assert all(
-            start >= len(DEPTH_GUTTER) for start, _, _ in path_color_segments
+        connector_column = 2
+        assert any(
+            start <= connector_column < end for start, end, _ in path_color_segments
+        )
+        assert any(
+            end > len(DEPTH_GUTTER) for _, end, _ in path_color_segments
         )
 
         selected_segments = []

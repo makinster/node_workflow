@@ -39,8 +39,8 @@ BRANCH_PATH_COLORS = {
     "path_d": "#40e0d0",  # turquoise
     "path_e": "#40e0d0",  # turquoise
 }
-BRANCH_SELECT_CONNECTOR = "└──"
-MERGE_SELECT_CONNECTOR = "├──"
+BRANCH_SELECT_CONNECTOR = "├──"
+MERGE_SELECT_CONNECTOR = "└──"
 LINE_CHAR = "─"
 BRANCH_LABEL_PREFIX = "─┤"
 
@@ -304,6 +304,7 @@ class BranchSelectCard(Static):
                 self.display_text,
                 self.has_class("selected"),
                 foreground=branch_path_color(self.active_port),
+                foreground_start=0,
             )
         )
 
@@ -380,6 +381,7 @@ class MergeBeaconSelectCard(Static):
                 self.display_text,
                 self.has_class("selected"),
                 foreground=branch_path_color(active_port),
+                foreground_start=0,
             )
         )
 
@@ -422,7 +424,10 @@ def branch_line_label(label: str, box_width: int) -> str:
     marker = f"{BRANCH_LABEL_PREFIX}{label_text}"
     if len(marker) >= box_width:
         return marker[:box_width]
-    return f"{LINE_CHAR * (box_width - len(marker))}{marker}"
+    label_start = max(0, (box_width - len(label_text)) // 2)
+    line_before = max(0, label_start - len(BRANCH_LABEL_PREFIX))
+    line_after = box_width - line_before - len(marker)
+    return f"{LINE_CHAR * line_before}{marker}{LINE_CHAR * line_after}"
 
 
 def branch_box_width(rendered_width: int) -> int:
@@ -448,7 +453,12 @@ def branch_continuation_gutter() -> str:
 
 def connector_gutter(connector: str) -> str:
     """Gutter used by branch/merge selector connector rows."""
-    return f"{connector:>{DEPTH_WIDTH}}{DEPTH_SPACING}"
+    stem = str(connector or LINE_CHAR)[:1]
+    tail = str(connector or "")[1:]
+    stem_prefix = " " * max(0, DEPTH_WIDTH - 1)
+    tail_width = max(0, len(DEPTH_GUTTER) - len(stem_prefix) - len(stem))
+    extended_tail = (tail + (LINE_CHAR * tail_width))[:tail_width]
+    return f"{stem_prefix}{stem}{extended_tail}"
 
 
 def branch_path_color(port: str) -> str:
@@ -460,19 +470,22 @@ def selected_box_text(
     display_text: str,
     selected: bool,
     foreground: str | None = None,
+    foreground_start: int | None = None,
 ) -> str | Text:
     """Highlight only the node/jump box area, leaving the depth gutter plain."""
     if not selected and not foreground:
         return display_text
     content = Text(no_wrap=True)
-    selected_style = Style(
-        color=foreground,
-        bgcolor=SELECTED_BACKGROUND if selected else None,
-    )
+    foreground_style = Style(color=foreground) if foreground else None
+    selected_style = Style(bgcolor=SELECTED_BACKGROUND) if selected else None
+    color_start = len(DEPTH_GUTTER) if foreground_start is None else foreground_start
     lines = display_text.splitlines()
     for index, line in enumerate(lines):
         styled_line = Text(line, no_wrap=True)
-        styled_line.stylize(selected_style, len(DEPTH_GUTTER), len(line))
+        if foreground_style:
+            styled_line.stylize(foreground_style, color_start, len(line))
+        if selected_style:
+            styled_line.stylize(selected_style, len(DEPTH_GUTTER), len(line))
         content.append(styled_line)
         if index < len(lines) - 1:
             content.append("\n")
