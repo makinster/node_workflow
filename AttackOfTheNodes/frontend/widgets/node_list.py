@@ -52,7 +52,21 @@ class NodeList(ListView):
         timings = timings or {}
         self.clear()
         self._rows = list(rows)
-        for row in self._rows:
+        selector_kinds = {"branch_select", "merge_beacon_select"}
+        for index, row in enumerate(self._rows):
+            next_kind = (
+                self._rows[index + 1]["kind"]
+                if index + 1 < len(self._rows)
+                else None
+            )
+            # Only node rows carry the trailing spacer, and only when a
+            # selector row does not immediately follow (selectors hug their
+            # node). Selector rows never add a blank line below themselves.
+            item_classes = (
+                "node-row-spaced"
+                if row["kind"] == "node" and next_kind not in selector_kinds
+                else ""
+            )
             if row["kind"] == "node":
                 node_id = row["node_id"]
                 card = NodeCard(
@@ -77,7 +91,7 @@ class NodeList(ListView):
                     row.get("active_label"),
                     row.get("depth"),
                 )
-            self.append(ListItem(card))
+            self.append(ListItem(card, classes=item_classes))
         if not rows:
             self.append(ListItem(Label("No nodes. Press I to add a node.")))
         self.normalize_highlight()

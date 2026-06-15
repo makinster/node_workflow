@@ -68,6 +68,7 @@ class AttackOfTheNodesApp(TextualApp):
         memory_bank,
         master_state,
         save_manager=None,
+        secrets_manager=None,
     ) -> None:
         super().__init__()
         self.event_bus = event_bus
@@ -76,6 +77,7 @@ class AttackOfTheNodesApp(TextualApp):
         self.memory_bank = memory_bank
         self.master_state = master_state
         self.save_manager = save_manager
+        self.secrets_manager = secrets_manager
         self.configuration_manager = (
             getattr(save_manager, "configuration_manager", None)
             if save_manager is not None
@@ -102,6 +104,7 @@ class AttackOfTheNodesApp(TextualApp):
             factory=self.factory,
             workflow_map=self.workflow_map,
             save_manager=self.save_manager,
+            secrets_manager=self.secrets_manager,
         )
 
     def show_editor_screen(self) -> None:

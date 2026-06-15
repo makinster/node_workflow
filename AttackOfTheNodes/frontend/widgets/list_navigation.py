@@ -19,9 +19,15 @@ def ensure_list_highlight(list_view: ListView, item_count: int) -> int | None:
 
 
 def focus_list(app, list_view: ListView, item_count: int) -> int | None:
-    """Focus a ListView and ensure its highlight is valid."""
+    """Focus a ListView and ensure its highlight is valid and visible."""
     index = ensure_list_highlight(list_view, item_count)
     app.set_focus(list_view)
+    # Re-assert the highlight. ListView.watch_index only fires on a changed
+    # value, so re-entering the list with an unchanged index would otherwise
+    # leave the highlighted row visually unset.
+    if index is not None:
+        list_view.index = None
+        list_view.index = index
     list_view.scroll_visible(animate=False)
     return index
 

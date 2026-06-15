@@ -77,9 +77,54 @@ Merge behavior is editor-assisted and runtime-coordinated:
   orchestration and derived `input_sources`.
 - `backend/validator.py`: static checks for start node, node types,
   connection endpoints, declared ports, tombstones, derived input sources,
-  membank declarations, and unreachable warnings.
+  membank declarations, unreachable warnings, typed vault ai_session mismatches,
+  parallel-branch race warnings, chat session config warnings, and secret-key
+  checks (empty required field = error; key absent from store = warning).
+- `backend/run_session.py`: per-run resource session created by `MasterState`
+  and threaded through `NodeContext` as `context.run_session`. Holds open file
+  handles, AI session handles, and multi-turn chat histories. API:
+  `open_file`, `register_resource`, `get_resource`, `validate_path`,
+  `get_or_create_chat_session`, `append_chat_message`, `get_chat_history`,
+  `close_all`.
+- `backend/secrets_manager.py`: persistent store for sensitive key-value pairs
+  (API keys, passwords, tokens). Plain-text JSON phase; designed for drop-in
+  encryption. Nodes call `context.get_secret(key_name)` — the manager is the
+  single trust boundary. Storage at `secrets/secrets.json` (gitignored).
+- `backend/node_identity.py`: Phase 17 transitional metadata (primary_family,
+  tags, icon_name, color_hint, group, selector_section, editor_only) for all
+  registered node types. `apply_transitional_node_identity()` stamps these onto
+  node classes at import time.
 - `backend/utils/try_catch.py`: Go-style async result/error helper for new async
   UI paths.
+
+## Data Flow Patterns
+
+**Transient payloads** are JSON values written to `MemoryBank` keyed by
+`(source_node_id, port_name)` after each node executes. The `Supervisor`
+reads them back when preparing inputs for the next node. They are scoped to
+one run and do not survive between runs.
+
+**Vault (MemoryBank persistent store)** holds named JSON values readable by
+any node in any branch. Every vault entry carries a `type` field alongside
+its value. Simple types (`string`, `number`, `boolean`) are pure JSON values.
+Typed handle entries (`file`, `ai_session`) store the type tag and a string
+reference key; the actual Python handle lives in `RunSession` and is retrieved
+with `context.run_session.get_resource(ref_key)`. Input source dropdowns
+filter by declared type, so a `file` input only shows `file` vault entries.
+
+**RunSession handles** are Python objects (file handles, AI provider sessions)
+that cannot be JSON-serialized. They live in `RunSession`, which is created
+fresh per run by `MasterState` and closed on every terminal path. Nodes
+access handles through `context.run_session`. Workflow saves store only
+portable strings (file paths, session key names); handles are reconstructed at
+runtime.
+
+**AI session continuation** uses config-driven vault output on any LLM node
+that opts in. The first node with a given session key starts the session and
+writes an `(type: ai_session, ref_key: <key>)` vault entry. Downstream LLM
+nodes that select the same vault key retrieve the session from `RunSession` and
+append their turn. Message history accumulates in the session object in
+`RunSession`; `MemoryBank` holds only the reference key.
 
 ## Frontend Components
 
@@ -129,17 +174,24 @@ logic is added:
 - `default_config`
 - `config_schema`
 - optional `ui_hints`
-- Phase 17 identity metadata: primary family, subcategory tags,
+- Phase 17 planned identity metadata: primary family, subcategory tags,
   `icon_name`, and `color_hint`
 
 The form generator supports text, number, boolean, select, multiselect,
 multiline, code-like fields, placeholders, validators, height hints, grouped
-tabs, and branch-label fields for multi-output nodes.
+tabs, and branch-label fields for multi-output nodes. It also supports dynamic
+rule keys applied live by `NodeConfigScreen`: `enabled_when` (grey out unless
+a condition on other field values holds), `visible_when` (hide field, label,
+and description), and `mutually_exclusive_with` (checking one boolean unchecks
+its partners). Rules work across config tabs. The node helper expands the
+NODE_STANDARDS input source and output routing models into these fields via
+`input_sources` / `output_routing` spec sections.
 
 Current implementation note: `NodeFactory.get_node_types_metadata()` exposes
-category / primary family, legacy category, subcategory tags, icon name, and
-color hint. Phase 17 selector filters and editor row identity consume that
-portable metadata.
+`primary_family`, `tags`, `icon_name`, and `color_hint`. Existing nodes get
+identity from the transitional table in `backend/node_identity.py`; new
+helper-generated nodes declare identity directly as class metadata
+(`primary_family` is required in helper specs since 2026-06-12).
 
 ## Registered Node Families
 
@@ -168,7 +220,58 @@ Internet, AI, Passive Output, Active Output, Parallel, Conditional, Runtime
 Resource, and Utility. Selector filters and editor row identity should use this
 metadata without changing runtime semantics.
 
-## Current UI Rules
+## Data Flow Patterns — Transient Payloads vs Vault
+
+Understanding when each data path is used is important for reasoning about
+node deletions and workflow integrity.
+
+**MemoryBank is the single store for all runtime data.** Both transient and
+vault data live in the same `MemoryBank`. The distinction is addressing scheme,
+not separate storage.
+
+**Transient data** is keyed by `(source_node_id, port_name)`. It is written by
+a node after execution and consumed by the immediately downstream node's input
+resolution. The key is path-scoped: a parallel branch running concurrently
+cannot look up another branch's transient key, and timing must be correct (the
+write must have occurred before the read). Transient payloads are JSON, so they
+can carry any serializable value — booleans, numbers, strings, LLM responses,
+structured objects. The practical constraint is scope, not size.
+
+The dead-drop option lets a node pass its transient payload through to the next
+node unchanged (forwarding without modifying), or lets a branch-origin node
+seed a downstream node with a specific value without requiring a live transient
+connection through every intermediate node.
+
+**Vault data** uses stable, user-defined string keys declared through
+`membank_outputs` / `membank_inputs`. Any node in the run that knows the key
+can read it, including nodes in other branches or much further downstream. Vault
+is preferred for data that must cross branch boundaries, be accumulated over
+time, or be accessed by nodes that are not adjacent in the execution chain.
+
+Transient and vault are not mutually exclusive as outputs. A node can write the
+same result to both a transient port (for the immediately next node) and a vault
+key (for other branches or later nodes) at the same time.
+
+**Implication for node deletions:**
+
+Many downstream nodes read from the vault directly and are unaffected by
+losing a transient connection. Deleting a single node is a lower-severity
+operation than it might appear. The tombstone blocks the execution path at that
+point, but vault state that surrounding nodes depend on is often independent of
+the deleted node's transient output. Restore-validation failures on transient
+ports are frequently non-critical and should be surfaced as informative alerts,
+not blockers.
+
+**Single-node delete rule:**
+
+Deleting a node removes only that node. Downstream nodes are never automatically
+deleted or modified. The tombstone occupies the deleted node's position as a
+swap-out placeholder. The user can insert new nodes before or after the
+tombstone, restore the original node (with connection validation), or permanently
+remove the tombstone and manually reconnect the gap. The workflow graph beyond
+the tombstone remains intact.
+
+
 
 - Command-mode modals use `W/S` and arrows for navigation, `E`/Enter to
   activate, and `Esc`/`Ctrl+Q` to leave edit/dropdown mode before closing.
@@ -183,25 +286,6 @@ metadata without changing runtime semantics.
   structural sections such as merge branch selection and wait target selection.
 - Backend behavior should not be added solely to make Textual presentation
   easier; frontend adapters own those repairs and visuals.
-
-## Current Frontend Support Gaps
-
-Audited 2026-06-14 while Phase 17 remains active:
-
-- Historical run data is persisted by backend services but has no dedicated UI
-  browser. Current screens expose live/current-run outputs, errors, memory, and
-  timings, not previous run summaries or historical output/error inspection.
-- Node config does not yet render file/path picker controls from schema hints.
-  `FileReaderNode.file_path` declares `path_hint: "file"` and validation uses
-  it, but the generated form still presents a normal text input.
-- `SaveManager` supports saving workflow payloads with memory state and loading
-  with `restore_execution=True`, but app save/load paths do not expose those
-  options. Decide whether this is a product feature or an internal hook.
-- `WorkflowMap` supports workflow rename, cached open-workflow switching, and
-  bookmarks, but the Textual workflow library/editor do not expose those
-  controls.
-- `ErrorHandler` can clear persisted errors for a run, but there is no frontend
-  action for clearing them.
 
 ## Runtime Data
 
@@ -218,12 +302,13 @@ These are operational data folders, not source architecture.
 
 ## Open Cleanup Areas
 
-- Phase 10.5 backend/frontend boundary cleanup: migrate editor tombstones away
-  from backend execution concepts.
+- Phase 10.5 (done) / Phase 10.6 (planned): tombstone stays as an intentional
+  backend type; Phase 10.6 migrates the save path from `branch_end_node` marker
+  to `tombstone_node` with full original data, extends validator error output,
+  and implements restore connection validation. See `BACKEND_FRONTEND_BOUNDARY.md`.
 - Frontend audit phases FA-6/FA-7: viewer long-content safety and visual/help
   alignment.
 - Branch health visualization: distinguish valid branch endings, unmerged
   Merge Beacon markers, and floating branches.
-- Phase 17: node visual identity, selector taxonomy, and current UI-support gap
-  triage.
+- Phase 17: node visual identity and selector taxonomy.
 - Later UI phases: acceleration/help rewrite.

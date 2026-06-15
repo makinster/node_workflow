@@ -33,6 +33,34 @@ VALID_TEMPLATES = {
     "error_stub",
 }
 VALID_CATEGORIES = {"flow", "io", "data", "ai", "debug", "utility"}
+# Phase 17 identity taxonomy; keep in sync with backend/node_identity.py.
+VALID_FAMILIES = {"Inputs", "Outputs", "Flow Control", "Utility", "Complex"}
+VALID_TAGS = {
+    "Triggered",
+    "File I/O",
+    "Internet",
+    "AI",
+    "Passive Output",
+    "Active Output",
+    "Parallel",
+    "Conditional",
+    "Runtime Resource",
+    "Utility",
+}
+FAMILY_COLOR_HINTS = {
+    "Inputs": "green",
+    "Outputs": "amber",
+    "Flow Control": "blue",
+    "Utility": "grey",
+    "Complex": "violet",
+}
+FIELD_RULE_KEYS = {"enabled_when", "visible_when", "mutually_exclusive_with"}
+SOURCE_OPTION_LABELS = {
+    "upstream": "Upstream payload",
+    "vault": "Vault",
+    "configured": "Configured",
+}
+VALID_VAULT_MODES = {"optional", "default_on", "required_unless_transient"}
 
 
 @dataclass(frozen=True)
@@ -40,6 +68,7 @@ class GeneratedPaths:
     node_file: Path
     registration_file: Path
     test_file: Path
+    ui_test_file: Path | None
     ui_todo_file: Path | None
 
 
@@ -69,6 +98,11 @@ def generate_from_spec(
     registration_file = nodes_root / "__init__.py"
     test_dir = project_root / "tests" / "generated"
     test_file = test_dir / f"test_{normalized['node_type']}.py"
+    ui_test_file = (
+        test_dir / f"test_{normalized['node_type']}_ui.py"
+        if normalized.get("generate_ui_test")
+        else None
+    )
     ui_todo_file = (
         ROOT / "aotn_node_helper" / "generated_notes" / f"{normalized['node_type']}_ui.md"
         if normalized.get("structural_ui")
@@ -85,11 +119,13 @@ def generate_from_spec(
     node_file.write_text(render_node_file(normalized), encoding="utf-8")
     update_registration(registration_file, normalized)
     test_file.write_text(render_test_file(normalized), encoding="utf-8")
+    if ui_test_file is not None:
+        ui_test_file.write_text(render_ui_test_file(normalized), encoding="utf-8")
     if ui_todo_file is not None:
         ui_todo_file.parent.mkdir(parents=True, exist_ok=True)
         ui_todo_file.write_text(render_ui_todo(normalized), encoding="utf-8")
 
-    return GeneratedPaths(node_file, registration_file, test_file, ui_todo_file)
+    return GeneratedPaths(node_file, registration_file, test_file, ui_test_file, ui_todo_file)
 
 
 def normalize_spec(spec: dict[str, Any]) -> dict[str, Any]:
@@ -102,11 +138,55 @@ def normalize_spec(spec: dict[str, Any]) -> dict[str, Any]:
     if template not in VALID_TEMPLATES:
         raise ValueError(f"execution_template must be one of {sorted(VALID_TEMPLATES)}")
 
+    primary_family = str(spec.get("primary_family") or "").strip()
+    if not primary_family:
+        raise ValueError(
+            "primary_family is required (Phase 17 node identity); "
+            f"choose one of {sorted(VALID_FAMILIES)}"
+        )
+    if primary_family not in VALID_FAMILIES:
+        raise ValueError(f"primary_family must be one of {sorted(VALID_FAMILIES)}")
+    tags = [str(item).strip() for item in spec.get("tags") or []]
+    unknown_tags = [item for item in tags if item not in VALID_TAGS]
+    if unknown_tags:
+        raise ValueError(
+            f"tags contains unknown entries {unknown_tags}; "
+            f"valid tags are {sorted(VALID_TAGS)}"
+        )
+    icon_name = str(spec.get("icon_name") or "").strip()
+    color_hint = str(
+        spec.get("color_hint") or FAMILY_COLOR_HINTS[primary_family]
+    ).strip()
+    # Frontend-only navigation metadata: nodes sharing a group appear behind
+    # one Group Picker entry; selector_section names the in-tab header.
+    group = str(spec.get("group") or "").strip() or None
+    selector_section = str(spec.get("selector_section") or "").strip() or None
+    if group and not selector_section and primary_family != "Outputs":
+        raise ValueError(
+            "group requires selector_section so all group members render "
+            "under the same selector header (the Outputs side currently "
+            "renders flat and may omit it)"
+        )
+
     input_ports = _string_list(spec.get("input_ports", ["input"]), "input_ports")
     output_ports = _string_list(spec.get("output_ports", ["default"]), "output_ports")
     config_fields = _config_fields_from_spec(spec)
     if not isinstance(config_fields, dict):
         raise ValueError("config_fields/config must be an object")
+
+    standard_fields: dict[str, Any] = {}
+    standard_fields.update(_expand_input_sources(spec))
+    standard_fields.update(_expand_output_routing(spec))
+    for field_name, field in standard_fields.items():
+        if field_name in config_fields:
+            raise ValueError(
+                f"Generated standard field {field_name!r} collides with a spec config field"
+            )
+    merged_fields: dict[str, Any] = {}
+    for field_name, field in {**standard_fields, **config_fields}.items():
+        merged_fields[field_name] = field
+    config_fields = merged_fields
+    _validate_field_rules(config_fields)
 
     config_schema: dict[str, dict[str, Any]] = {}
     default_config: dict[str, Any] = {}
@@ -158,6 +238,12 @@ def normalize_spec(spec: dict[str, Any]) -> dict[str, Any]:
         "module_name": module_name,
         "category": category,
         "category_constant": category.upper(),
+        "primary_family": primary_family,
+        "tags": tags,
+        "icon_name": icon_name,
+        "color_hint": color_hint,
+        "group": group,
+        "selector_section": selector_section,
         "display_name": str(spec.get("display_name") or _title_case(node_type)),
         "default_alias": str(spec.get("default_alias") or spec.get("display_name") or _title_case(node_type)),
         "description": str(spec.get("description") or ""),
@@ -170,11 +256,226 @@ def normalize_spec(spec: dict[str, Any]) -> dict[str, Any]:
         "ui_hints": spec.get("ui_hints", {}) or {},
         "execution_template": template,
         "structural_ui": bool(spec.get("structural_ui", False)),
+        "generate_ui_test": bool(
+            spec.get(
+                "generate_ui_test",
+                bool(
+                    spec.get("config_tabs")
+                    or spec.get("input_sources")
+                    or spec.get("output_routing")
+                ),
+            )
+        ),
     }
 
 
+def _expand_input_sources(spec: dict[str, Any]) -> dict[str, Any]:
+    """Expand the standard input source model into config fields.
+
+    Each entry generates a `<name>_source` selector in the Source tab, an
+    optional `<name>_vault_key` field gated on the Vault source, and an
+    optional Configured parameter field gated on the Configured source. See
+    docs/NODE_STANDARDS.md for the model this implements.
+    """
+    raw = spec.get("input_sources") or {}
+    if not isinstance(raw, dict):
+        raise ValueError("input_sources must be an object")
+    fields: dict[str, Any] = {}
+    for name, entry in raw.items():
+        input_name = str(name).strip()
+        if not re.fullmatch(r"[a-z][a-z0-9_]*", input_name):
+            raise ValueError(f"input_sources name {name!r} must be snake_case")
+        if not isinstance(entry, dict):
+            raise ValueError(f"input_sources.{input_name} must be an object")
+        sources = [str(item).strip().lower() for item in entry.get("sources") or []]
+        unknown = [item for item in sources if item not in SOURCE_OPTION_LABELS]
+        if unknown:
+            raise ValueError(
+                f"input_sources.{input_name} has unknown sources {unknown}; "
+                f"valid sources are {sorted(SOURCE_OPTION_LABELS)}"
+            )
+        if len(sources) < 2:
+            raise ValueError(
+                f"input_sources.{input_name} needs at least two sources; "
+                "single-source inputs do not need a selector"
+            )
+        default_source = str(entry.get("default") or sources[0]).strip().lower()
+        if default_source not in sources:
+            raise ValueError(
+                f"input_sources.{input_name} default {default_source!r} is not in sources"
+            )
+        label = str(entry.get("label") or _title_case(input_name))
+        source_field: dict[str, Any] = {
+            "type": "select",
+            "label": f"{label} source",
+            "options": [SOURCE_OPTION_LABELS[item] for item in sources],
+            "default": SOURCE_OPTION_LABELS[default_source],
+            "tab": "Source",
+        }
+        if entry.get("description"):
+            source_field["description"] = str(entry["description"])
+        fields[f"{input_name}_source"] = source_field
+
+        if "vault" in sources:
+            fields[f"{input_name}_vault_key"] = {
+                "type": "string",
+                "label": f"{label} Vault key",
+                "default": "",
+                "required": False,
+                "tab": "Source",
+                "enabled_when": {f"{input_name}_source": SOURCE_OPTION_LABELS["vault"]},
+            }
+
+        parameter = entry.get("parameter")
+        if "configured" in sources:
+            if not isinstance(parameter, dict):
+                raise ValueError(
+                    f"input_sources.{input_name} allows the Configured source and "
+                    "must declare a parameter field"
+                )
+            parameter_field = dict(parameter)
+            parameter_field.setdefault("type", "string")
+            parameter_field.setdefault("label", label)
+            parameter_field.setdefault("default", "")
+            parameter_field["tab"] = "Parameters"
+            parameter_field["enabled_when"] = {
+                f"{input_name}_source": SOURCE_OPTION_LABELS["configured"]
+            }
+            fields[input_name] = parameter_field
+        elif parameter is not None:
+            raise ValueError(
+                f"input_sources.{input_name} declares a parameter but does not "
+                "allow the Configured source"
+            )
+    return fields
+
+
+def _expand_output_routing(spec: dict[str, Any]) -> dict[str, Any]:
+    """Expand the standard output routing model into Payloads tab fields.
+
+    Generates the transient-output / dead-drop-passthrough pair (mutually
+    exclusive) and optional Vault write fields. See docs/NODE_STANDARDS.md.
+    """
+    raw = spec.get("output_routing")
+    if raw is None:
+        return {}
+    if not isinstance(raw, dict):
+        raise ValueError("output_routing must be an object")
+    default = str(raw.get("default") or "transient").strip().lower()
+    if default not in {"transient", "dead_drop"}:
+        raise ValueError("output_routing.default must be 'transient' or 'dead_drop'")
+    include_dead_drop = bool(raw.get("dead_drop", True))
+    if not include_dead_drop and default == "dead_drop":
+        raise ValueError("output_routing.default is 'dead_drop' but dead_drop is disabled")
+
+    fields: dict[str, Any] = {}
+    transient_field: dict[str, Any] = {
+        "type": "boolean",
+        "label": str(raw.get("transient_label") or "Send result to next node"),
+        "default": default == "transient",
+        "tab": "Payloads",
+    }
+    if include_dead_drop:
+        transient_field["mutually_exclusive_with"] = ["dead_drop_passthrough"]
+    fields["transient_output"] = transient_field
+    if include_dead_drop:
+        fields["dead_drop_passthrough"] = {
+            "type": "boolean",
+            "label": str(
+                raw.get("dead_drop_label") or "Forward incoming payload unchanged"
+            ),
+            "default": default == "dead_drop",
+            "tab": "Payloads",
+            "mutually_exclusive_with": ["transient_output"],
+        }
+
+    vault = raw.get("vault")
+    if vault is None:
+        return fields
+    if isinstance(vault, str):
+        vault = {"mode": vault}
+    if not isinstance(vault, dict):
+        raise ValueError("output_routing.vault must be an object or mode string")
+    mode = str(vault.get("mode") or "optional").strip().lower()
+    if mode not in VALID_VAULT_MODES:
+        raise ValueError(
+            f"output_routing.vault.mode must be one of {sorted(VALID_VAULT_MODES)}"
+        )
+    vault_field: dict[str, Any] = {
+        "type": "boolean",
+        "label": str(vault.get("label") or "Save result to Vault"),
+        "default": mode != "optional",
+        "tab": "Payloads",
+    }
+    if mode == "required_unless_transient":
+        # Locked on (checked and not editable) until the user routes the
+        # result transiently, so the output is never silently discarded.
+        vault_field["enabled_when"] = {"transient_output": True}
+    fields["vault_write"] = vault_field
+    fields["vault_write_key"] = {
+        "type": "string",
+        "label": str(vault.get("key_label") or "Vault key"),
+        "default": "",
+        "required": False,
+        "tab": "Payloads",
+        "enabled_when": {"vault_write": True},
+    }
+    return fields
+
+
+def _validate_field_rules(config_fields: dict[str, Any]) -> None:
+    """Validate enabled_when/visible_when/mutually_exclusive_with declarations."""
+    names = set(config_fields)
+    for field_name, field in config_fields.items():
+        if not isinstance(field, dict):
+            continue
+        for rule_key in ("enabled_when", "visible_when"):
+            condition = field.get(rule_key)
+            if condition is None:
+                continue
+            if not isinstance(condition, dict) or not condition:
+                raise ValueError(
+                    f"Config field {field_name!r} {rule_key} must be a non-empty object"
+                )
+            for referenced in condition:
+                if referenced not in names:
+                    raise ValueError(
+                        f"Config field {field_name!r} {rule_key} references unknown "
+                        f"field {referenced!r}"
+                    )
+        partners = field.get("mutually_exclusive_with")
+        if partners is None:
+            continue
+        if not isinstance(partners, list) or not partners:
+            raise ValueError(
+                f"Config field {field_name!r} mutually_exclusive_with must be a "
+                "non-empty list"
+            )
+        if str(field.get("type", "string")).lower() != "boolean":
+            raise ValueError(
+                f"Config field {field_name!r} mutually_exclusive_with requires a "
+                "boolean field"
+            )
+        for partner in partners:
+            if partner == field_name:
+                raise ValueError(
+                    f"Config field {field_name!r} cannot be mutually exclusive with itself"
+                )
+            partner_field = config_fields.get(partner)
+            if partner_field is None:
+                raise ValueError(
+                    f"Config field {field_name!r} mutually_exclusive_with references "
+                    f"unknown field {partner!r}"
+                )
+            if str(partner_field.get("type", "string")).lower() != "boolean":
+                raise ValueError(
+                    f"Config field {field_name!r} mutually_exclusive_with partner "
+                    f"{partner!r} must be a boolean field"
+                )
+
+
 def render_node_file(spec: dict[str, Any]) -> str:
-    imports = ["from typing import Any, ClassVar, Dict, List"]
+    imports = ["from typing import Any, ClassVar, Dict, List, Optional"]
     if spec["execution_template"] == "async_wait":
         imports.insert(0, "import asyncio")
     body = _execute_body(spec)
@@ -194,6 +495,12 @@ class {spec["class_name"]}(Node):
     default_alias: ClassVar[str] = {spec["default_alias"]!r}
     description: ClassVar[str] = {spec["description"]!r}
     category: ClassVar[str] = NodeCategory.{spec["category_constant"]}
+    primary_family: ClassVar[str] = {spec["primary_family"]!r}
+    tags: ClassVar[List[str]] = {_pretty(spec["tags"])}
+    icon_name: ClassVar[str] = {spec["icon_name"]!r}
+    color_hint: ClassVar[str] = {spec["color_hint"]!r}
+    group: ClassVar[Optional[str]] = {spec["group"]!r}
+    selector_section: ClassVar[Optional[str]] = {spec["selector_section"]!r}
     input_ports: ClassVar[List[str]] = {_pretty(spec["input_ports"])}
     output_ports: ClassVar[List[str]] = {_pretty(spec["output_ports"])}
     input_port_metadata: ClassVar[Dict[str, Dict[str, str]]] = {_pretty(spec["input_port_metadata"])}
@@ -263,6 +570,36 @@ def _render_generated_test_assertions(spec: dict[str, Any]) -> str:
     assert not done'''
     return '''    assert not errors
     assert done'''
+
+
+def render_ui_test_file(spec: dict[str, Any]) -> str:
+    return f'''"""Generated config-UI smoke test for {spec["node_type"]}.
+
+Mounts NodeConfigScreen and checks tab placement, focusability, and
+dynamic-form rule state through aotn_node_helper.ui_checks.
+"""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+import pytest
+
+
+WORKSPACE_ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(WORKSPACE_ROOT))
+
+from aotn_node_helper.ui_checks import run_ui_check  # noqa: E402
+
+
+pytestmark = [pytest.mark.generated_node, pytest.mark.node_type("{spec["node_type"]}")]
+
+
+def test_{spec["node_type"]}_config_ui_contract():
+    problems = run_ui_check("{spec["node_type"]}")
+    assert problems == [], "\\n".join(problems)
+'''
 
 
 def render_ui_todo(spec: dict[str, Any]) -> str:
@@ -489,6 +826,8 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Generated node: {paths.node_file}")
     print(f"Updated registration: {paths.registration_file}")
     print(f"Generated focused tests: {paths.test_file}")
+    if paths.ui_test_file:
+        print(f"Generated config-UI smoke test: {paths.ui_test_file}")
     if paths.ui_todo_file:
         print(f"Generated UI follow-up notes: {paths.ui_todo_file}")
     return 0

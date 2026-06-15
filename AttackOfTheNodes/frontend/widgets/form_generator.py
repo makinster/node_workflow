@@ -25,6 +25,7 @@ from frontend.widgets.command_input import CommandInput, CommandTextArea
 WidgetGetter = Callable[[], Dict[str, Any]]
 DEFAULT_GROUP = "Settings"
 GroupedSchema = List[Tuple[str, Dict[str, Dict[str, Any]]]]
+FIELD_RULE_KEYS = {"enabled_when", "visible_when", "mutually_exclusive_with"}
 
 
 def build_form(
@@ -105,9 +106,21 @@ def _field_children(
     current_value = values.get(field_name, field_schema.get("default", ""))
 
     children = []
-    children.append(Label(f"{label}{required}", classes="form-label"))
+    children.append(
+        Label(
+            f"{label}{required}",
+            classes="form-label",
+            id=f"field-label-{field_name}",
+        )
+    )
     if description:
-        children.append(Label(str(description), classes="form-description"))
+        children.append(
+            Label(
+                str(description),
+                classes="form-description",
+                id=f"field-desc-{field_name}",
+            )
+        )
 
     widget = _widget_for_field(field_name, field_type, field_schema, current_value)
     field_widgets[field_name] = widget
@@ -155,8 +168,8 @@ def _widget_for_field(
     if field_type == "multiselect":
         selected_values = _selected_values(value)
         options = [
-            (str(option), option, option in selected_values)
-            for option in field_schema.get("options", [])
+            (label, option_value, option_value in selected_values)
+            for label, option_value in _select_options(field_schema.get("options", []))
         ]
         return SelectionList(*options, id=f"field-{field_name}")
     input_type = "text"
@@ -175,7 +188,23 @@ def _widget_for_field(
 
 
 def _select_options(options: Iterable[Any]) -> list[tuple[str, Any]]:
-    return [(str(option), option) for option in options]
+    """Normalize schema options to (label, value) pairs.
+
+    Supported entry shapes: plain scalars (label == value), label/value
+    mappings, and 2-item sequences. Backends read the stable value; the label
+    is display-only.
+    """
+    normalized: list[tuple[str, Any]] = []
+    for option in options:
+        if isinstance(option, dict):
+            option_value = option.get("value")
+            label = option.get("label", option_value)
+            normalized.append((str(label), option_value))
+        elif isinstance(option, (tuple, list)) and len(option) == 2:
+            normalized.append((str(option[0]), option[1]))
+        else:
+            normalized.append((str(option), option))
+    return normalized
 
 
 def _selected_values(value: Any) -> set[Any]:
@@ -210,6 +239,85 @@ def _validators_for_field(
 def _slug_id(value: str, index: int) -> str:
     slug = re.sub(r"[^a-zA-Z0-9_-]+", "-", value.strip().lower()).strip("-")
     return f"{index}-{slug or 'group'}"
+
+
+def schema_has_field_rules(config_schema: Dict[str, Dict[str, Any]]) -> bool:
+    """Return true when any field declares a dynamic-form rule key."""
+    return any(
+        key in field_schema
+        for field_schema in config_schema.values()
+        for key in FIELD_RULE_KEYS
+    )
+
+
+def evaluate_field_condition(condition: Any, values: Dict[str, Any]) -> bool:
+    """Evaluate an enabled_when/visible_when condition against form values.
+
+    A condition is a mapping of field name to expected value. All entries must
+    match (AND). An expected value may be a list, which matches when the
+    current value equals any listed entry (OR within one field).
+    """
+    if not isinstance(condition, dict) or not condition:
+        return True
+    for field_name, expected in condition.items():
+        current = values.get(field_name)
+        if isinstance(expected, list):
+            if current not in expected:
+                return False
+        elif current != expected:
+            return False
+    return True
+
+
+def mutual_exclusion_targets(
+    field_name: str,
+    config_schema: Dict[str, Dict[str, Any]],
+) -> list[str]:
+    """Return fields to uncheck when the named boolean field becomes true.
+
+    Declarations are symmetric: if either side lists the other, both exclude
+    each other.
+    """
+    targets: list[str] = []
+    declared = config_schema.get(field_name, {}).get("mutually_exclusive_with") or []
+    for other in declared:
+        if other != field_name and other not in targets:
+            targets.append(str(other))
+    for other_name, other_schema in config_schema.items():
+        partners = other_schema.get("mutually_exclusive_with") or []
+        if other_name != field_name and field_name in partners and other_name not in targets:
+            targets.append(other_name)
+    return targets
+
+
+def apply_field_rules(
+    root: Any,
+    config_schema: Dict[str, Dict[str, Any]],
+    values: Dict[str, Any],
+) -> None:
+    """Apply enabled_when/visible_when rules to mounted generated widgets.
+
+    `root` is any Textual DOM node with `.query` (screen or container). Fields
+    are located by their generated `field-<name>` ids so rules work across
+    config tabs that were built by separate `build_form` calls.
+    """
+    for field_name, field_schema in config_schema.items():
+        enabled_when = field_schema.get("enabled_when")
+        visible_when = field_schema.get("visible_when")
+        if enabled_when is None and visible_when is None:
+            continue
+        widgets = list(root.query(f"#field-{field_name}"))
+        if not widgets:
+            continue
+        widget = widgets[0]
+        if enabled_when is not None:
+            widget.disabled = not evaluate_field_condition(enabled_when, values)
+        if visible_when is not None:
+            visible = evaluate_field_condition(visible_when, values)
+            widget.display = visible
+            for extra_id in (f"field-label-{field_name}", f"field-desc-{field_name}"):
+                for extra in root.query(f"#{extra_id}"):
+                    extra.display = visible
 
 
 def _value_from_widget(widget, field_type: str) -> Any:

@@ -71,11 +71,14 @@ Think of the project as a factory floor with a control room:
 | AI | `chat_completion_node`, `image_generation_node`, `embedding_node` |
 | Debug | `logger_node`, `sleep_node`, `counter_node`, `echo_node`, `probe_node`, `error_node`, `memory_snapshot_node`, `random_branch_node`, `deep_branch_node`, `no_op_node`, `repeat_counter_node`, `tombstone_node`, `variable_setter_node`, `variable_reader_node` |
 
-`tombstone_node` is currently registered as the visual placeholder inserted when
-a node is deleted. It is a known boundary-cleanup target: future work should move
-this editor-only placeholder behavior into frontend adapter state so the backend
-remains reusable by other frontends. See
-`AttackOfTheNodes/docs/BACKEND_FRONTEND_BOUNDARY.md`.
+`tombstone_node` is the save-persistent deleted-node record. When a node is
+deleted and the workflow is saved, a tombstone is written with the full original
+node data (type, alias, config, input connections, output connections) so that
+undo survives save/reload and the validator can surface connection-level repair
+context. It is intentionally a backend type — not a cleanup target. It is always
+an execution error (the validator blocks runs containing tombstones) and is
+filtered from the user-facing node selector. See
+`AttackOfTheNodes/docs/BACKEND_FRONTEND_BOUNDARY.md` for the full contract.
 
 ## Key Events (EventBus)
 

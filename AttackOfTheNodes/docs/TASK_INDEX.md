@@ -1,15 +1,41 @@
 # Task Index
 
-Use this file to choose the smallest useful reading set and the focused checks
-for a task.
+`README.md` routes you to this file. This file gives the minimum reading set,
+likely code files, and the focused `pytest -k` or helper commands for each task
+type. Open the docs listed here, then open deeper references only if those docs
+point you further.
+
+## Design Or Update Node Taxonomy
+
+Read:
+
+- `PHASE_17_NODE_VISUAL_IDENTITY.md` — Core Simplification Rule, full expanded
+  taxonomy, group picker UI design, keyboard flows, metadata conventions
+- `NODE_STANDARDS.md` — Node Type Classification rule (when to group vs
+  separate vs mode-select)
+- `BACKEND_FRONTEND_BOUNDARY.md` — the `group` field is a frontend-only
+  navigation concept; no backend component should branch on it
+
+Likely files:
+
+- `backend/node_identity.py`
+- `backend/node_factory.py`
+- `frontend/screens/node_selector.py`
+
+Note: adding a node to an existing group requires only declaring the `group`
+field on the node class. No selector code changes are needed. Single-member
+groups auto-promote to direct-add entries.
 
 ## Add Or Change A Node
 
 Read:
 
+- `NODE_STANDARDS.md` — input source model, output routing model, dynamic form
+  rules, and reference examples. Read this first before defining any new node.
 - `AGENT_START_GUIDE.md`
-- `PROJECT_KNOWLEDGE.md` sections: Node Metadata Contract, Registered Node
-  Families
+- `NODE_HELPER.md` for helper spec details and generated-file behavior
+- `PROJECT_KNOWLEDGE.md` sections: Node Metadata Contract, Data Flow Patterns,
+  Registered Node Families
 
 Likely files:
 
@@ -89,11 +115,14 @@ Focused checks:
 
 Implementation direction:
 
-- Use primary families `Inputs`, `Flow Control`, `Outputs`, and `Complex` for
-  selector tabs.
+- Five backend families: `Inputs`, `Outputs`, `Flow Control`, `Utility`,
+  `Complex`. Four selector tabs: `I/O` (Input/Output switch), `Flow Control`,
+  `Utility`, `Complex`. AI is a subcategory tag, not a family.
+- `group` and `selector_section` are frontend-only navigation metadata; no
+  backend component should branch on them.
 - Use metadata subcategories for filters; nodes may have multiple.
 - Keep selector filters and editor row identity frontend-owned, but expose
-  portable family/tag/icon/color metadata through `NodeFactory`.
+  portable family/tag/icon/color/group/section metadata through `NodeFactory`.
 - Preserve keyboard-first focus, autoscroll, cursor/highlight stability,
   validation colors, and Merge Beacon health colors.
 
@@ -150,6 +179,8 @@ Read:
 - `AGENT_START_GUIDE.md` sections: Make Node Config Render Correctly, Keyboard
   And Modal Rules
 - `UI_QUICK_REFERENCE.md`
+- `NODE_HELPER.md` section: Direction: UI Standardization Helper, when adding
+  helper support for config UI tests or screen scaffolds
 - `TUI_DESIGN.md` sections: Field Type Mapping, Command Navigation, only when
   changing detailed renderer behavior
 

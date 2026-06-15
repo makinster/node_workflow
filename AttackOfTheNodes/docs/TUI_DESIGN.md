@@ -211,11 +211,11 @@ out of the editor list and appear only in detail/config contexts where
 disambiguation matters. Tombstones render as `Deleted: <original node name>`.
 Phase 17 may expand node rows to two lines when space allows: the first line
 emphasizes the user-facing alias, and the second line shows primary family plus
-one or two high-signal subcategories. Editor node rows should render as
-individual bordered text boxes, with family-specific border/color treatment
-where useful and no literal bracket characters around the alias or identity
-line. Long subcategory text may truncate with an ellipsis because the full list
-is available in the right-side details panel.
+one or two high-signal subcategories. Family-specific brackets/frames or
+equivalent widgets are acceptable. Prefer fixed left/right bracket columns
+around the text column so open and close brackets align across rows and the
+middle text has maximum room. Long subcategory text may truncate with an
+ellipsis because the full list is available in the right-side details panel.
 Rows must not destabilize cursor movement, branch selector rows, validation
 colors, breakpoint markers, execution state, or Merge Beacon health colors. The
 right-side details panel should show the primary family and all subcategories

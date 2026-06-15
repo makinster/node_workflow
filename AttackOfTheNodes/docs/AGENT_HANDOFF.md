@@ -7,9 +7,15 @@ execution TUI backed by an asyncio workflow engine. Backend services stay
 UI-agnostic; frontend behavior lives under `frontend/`.
 
 The current active work is Phase 17: node visual identity and selector
-taxonomy. Metadata exposure, selector tabs/filters, editor row identity, and
-details-panel identity have landed, but the phase is still open while current
-frontend/backend support gaps are being triaged into the roadmap.
+taxonomy. The phase should align editor row identity, selector tabs,
+subcategory filters, and node metadata before the planned node-library
+overhaul.
+
+A design decision on 2026-06-11 reversed the Phase B tombstone decommission
+plan: `tombstone_node` stays as an intentional backend type — the
+save-persistent deleted-node record. Phase B is now a frontend migration task
+(update save path from `branch_end_node` marker to `tombstone_node` with full
+original data, extend validator errors). See `BACKEND_FRONTEND_BOUNDARY.md`.
 
 ## Start Here
 
@@ -49,26 +55,21 @@ Active product phase:
 
 - Phase 17: Node visual identity and selector taxonomy.
 
-Phase 17 direction:
+Phase 17 direction (taxonomy revised 2026-06-12):
 
-- Primary selector families: Inputs, Flow Control, Outputs, Complex.
-- Nodes can have multiple subcategory tags such as Triggered, File I/O,
-  Internet, AI, Passive Output, Active Output, Parallel, Conditional, Runtime
-  Resource, and Utility.
-- The selector uses family tabs, a string filter, tab-specific subcategory
-  controls, and a filtered node list.
-- Editor rows use two-line rows showing alias first, then family and
+- Five backend families: Inputs, Outputs, Flow Control, Utility, Complex.
+- Four selector tabs: I/O (Input/Output switch maps the Inputs and Outputs
+  families onto one tab), Flow Control, Utility, Complex.
+- AI is a subcategory tag, not a family. Filters exist only on the I/O tab
+  (File I/O / Internet / AI) and Complex (AI).
+- Selector lists use in-list section headers that keyboard navigation skips,
+  group entries with member counts that open a generic Group Picker modal,
+  and a string filter that dissolves groups/headers while active.
+- New frontend-only metadata fields: `group` and `selector_section`.
+- Editor rows may become two-line rows showing alias first, then family and
   high-signal subcategories.
-
-Current frontend/backend support gaps:
-
-- No historical run browser for persisted run summaries, outputs, errors, and
-  timings.
-- No generic node-config file picker for schema fields with `path_hint: "file"`.
-- No UI for `SaveManager` memory-state save/load options.
-- No UI for workflow rename, cached open-workflow switching, or bookmark
-  navigation.
-- No UI for clearing persisted run errors.
+- Full node inventory with statuses lives in `NODE_CATALOG.md`; read
+  `PHASE_17_NODE_VISUAL_IDENTITY.md` before selector/taxonomy work.
 
 Deferred:
 

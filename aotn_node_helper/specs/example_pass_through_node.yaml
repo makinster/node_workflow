@@ -1,6 +1,9 @@
 node_type: helper_example_node
 class_name: HelperExampleNode
 category: debug
+primary_family: Complex
+tags: ["Utility"]
+icon_name: repeat
 display_name: Helper Example
 default_alias: Helper Example
 description: Example generated pass-through node

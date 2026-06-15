@@ -24,6 +24,7 @@ from .field_types import validate_config_schema
 if TYPE_CHECKING:
     from .memory_bank import MemoryBank
     from .run_session import RunSession
+    from .secrets_manager import SecretsManager
 
 
 @dataclass
@@ -51,6 +52,13 @@ class NodeContext:
         Awaitable[Dict[str, Any]],
     ]
     run_session: Optional["RunSession"] = None
+    secrets_manager: Optional["SecretsManager"] = None
+
+    def get_secret(self, key: str) -> Optional[str]:
+        """Return the secret value for key, or None if the manager is not wired in."""
+        if self.secrets_manager is None:
+            return None
+        return self.secrets_manager.get_secret(key)
 
 
 class Node(ABC):
@@ -76,6 +84,13 @@ class Node(ABC):
     tags: ClassVar[List[str]] = []
     color_hint: ClassVar[str] = ""
     examples: ClassVar[List[Dict[str, Any]]] = []
+
+    # Frontend-only navigation metadata (Phase 17). The backend exposes these
+    # through NodeFactory but never branches on them. Nodes sharing a group
+    # appear behind one Group Picker entry; selector_section names the header
+    # an entry renders under. Group members must share one selector_section.
+    group: ClassVar[Optional[str]] = None
+    selector_section: ClassVar[Optional[str]] = None
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)

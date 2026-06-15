@@ -86,6 +86,14 @@ class NodeFactory:
                     "color_hint": self._metadata_string(
                         getattr(node_class, "color_hint", "")
                     ),
+                    "group": self._metadata_string(
+                        getattr(node_class, "group", None)
+                    )
+                    or None,
+                    "selector_section": self._metadata_string(
+                        getattr(node_class, "selector_section", None)
+                    )
+                    or None,
                     "input_ports": list(node_class.input_ports),
                     "output_ports": list(node_class.output_ports),
                     "input_port_metadata": self._port_metadata(
@@ -101,6 +109,7 @@ class NodeFactory:
                     "config_schema": dict(node_class.config_schema),
                     "default_config": dict(node_class.default_config),
                     "ui_hints": dict(getattr(node_class, "ui_hints", {})),
+                    "editor_only": bool(getattr(node_class, "editor_only", False)),
                 }
             )
         return sorted(metadata, key=lambda item: item["display_name"])

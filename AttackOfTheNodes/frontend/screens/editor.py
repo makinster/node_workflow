@@ -69,11 +69,12 @@ class EditorScreen(Screen):
         Binding("ctrl+s", "save_workflow", "Save", priority=True),
     ]
 
-    def __init__(self, factory, workflow_map, save_manager=None) -> None:
+    def __init__(self, factory, workflow_map, save_manager=None, secrets_manager=None) -> None:
         super().__init__()
         self.factory = factory
         self.workflow_map = workflow_map
         self.save_manager = save_manager
+        self.secrets_manager = secrets_manager
         self.selected_node_id: Optional[str] = None
         self.selected_row: Optional[Dict[str, Any]] = None
         self.active_branch_ports: Dict[str, str] = {}
@@ -259,7 +260,11 @@ class EditorScreen(Screen):
     def action_validate_workflow(self) -> None:
         self.workflow_adapter.materialize_deleted_nodes()
         self.refresh_from_backend()
-        result = validate_workflow(self.workflow_map, self.factory)
+        result = validate_workflow(
+            self.workflow_map,
+            self.factory,
+            secrets_manager=self.secrets_manager,
+        )
         errors = result.get("errors", [])
         warnings = result.get("warnings", [])
         if not errors and not warnings:

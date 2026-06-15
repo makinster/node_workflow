@@ -47,44 +47,40 @@ Screen {
 }
 
 .node-card-identity {
-    height: 4;
-    border: ascii #6b7280;
-    padding: 0 1;
+    height: 2;
+}
+
+/* Spacer line after editor node rows; selector/beacon rows stay single-line */
+.node-row-spaced {
+    margin-bottom: 1;
 }
 
 .node-family-inputs {
     color: #7ee787;
-    border: ascii #7ee787;
 }
 
 .node-family-flow-control {
     color: #8ab4f8;
-    border: ascii #8ab4f8;
 }
 
 .node-family-outputs {
     color: #f2cc60;
-    border: ascii #f2cc60;
 }
 
 .node-family-complex {
     color: #c586c0;
-    border: ascii #c586c0;
 }
 
 .node-utility {
     color: #9aa7b3;
-    border: ascii #6b7280;
 }
 
 .branch-end-open {
     color: #ff5c5c;
-    border: ascii #ff5c5c;
 }
 
 .branch-end-connected {
     color: #50c878;
-    border: ascii #50c878;
 }
 
 .branch-select-card {
@@ -111,18 +107,78 @@ Screen {
 }
 
 #modal-card {
-    width: 80%;
-    max-width: 100;
+    width: 90%;
     max-height: 90%;
     margin: 2 4;
     padding: 1 2;
-    border: heavy #50c878;
+    border: solid #405061;
     background: #101418;
 }
 
 #node-config-scroll {
     height: 1fr;
     overflow-y: auto;
+}
+
+/* Node selector layout: keep tabs/filter/checkboxes compact (containers
+   default to height 1fr and would otherwise stretch and leave dead space),
+   and let the node list absorb the remaining height. */
+#node-family-tabs {
+    height: auto;
+}
+
+/* I/O tab Input/Output switch row (hidden on other tabs). */
+#io-direction-row {
+    height: auto;
+    align: left middle;
+}
+
+#io-direction-row Label {
+    margin: 1 1 0 1;
+}
+
+#node-filter {
+    height: auto;
+}
+
+#node-subcategory-filters {
+    height: auto;
+}
+
+#node-type-list {
+    height: 1fr;
+    min-height: 4;
+}
+
+/* Two-line selector rows: name/identity then an indented description. */
+#node-type-list ListItem {
+    height: auto;
+}
+
+.node-select-row {
+    height: 2;
+}
+
+/* Section headers inside the selector list: non-selectable dividers that
+   keyboard navigation skips. */
+.node-select-header {
+    height: 1;
+    color: #8b949e;
+}
+
+/* Two-line group entries: { name } (count) then description. */
+.node-select-group {
+    height: 2;
+}
+
+/* Two-line member rows inside the Group Picker. */
+.group-member-row {
+    height: 2;
+}
+
+#group-member-list {
+    height: 1fr;
+    min-height: 4;
 }
 
 #membank-output-rows {

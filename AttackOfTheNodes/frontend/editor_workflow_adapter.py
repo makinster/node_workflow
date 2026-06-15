@@ -3,12 +3,108 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import Any, Dict, Optional
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional
+
+from backend.validator import _declared_membank_outputs, _membank_source_id
 
 
 DELETED_NODE_SYSTEM_ROLE = "deleted_node_branch_end"
 DELETED_NODE_ALIAS = "Deleted node"
 DELETED_NODE_STATE_ATTR = "_editor_deleted_nodes"
+TOMBSTONE_NODE_TYPE = "tombstone_node"
+
+
+@dataclass
+class TombstoneRestoreReport:
+    """Outcome of a tombstone restore. Plain data — rendering is a UI concern.
+
+    The node itself is restored whenever ``restored`` is True, even if some
+    connections could not be re-established. Each error/warning entry carries
+    enough context for the frontend alert sections described in
+    BACKEND_FRONTEND_BOUNDARY.md.
+    """
+
+    node_id: str
+    restored: bool
+    failure_reason: str = ""
+    # {"source_node_id", "source_alias", "port", "reason"} —
+    # reason: "source_missing" | "source_port_missing"
+    input_errors: List[Dict[str, str]] = field(default_factory=list)
+    # {"target_node_id", "target_alias", "port", "reason"} —
+    # reason: "target_missing" | "target_port_missing" | "target_port_occupied"
+    output_errors: List[Dict[str, str]] = field(default_factory=list)
+    # {"variable", "reason"} — reason: "membank_source_missing"
+    membank_warnings: List[Dict[str, str]] = field(default_factory=list)
+
+    @property
+    def clean(self) -> bool:
+        return self.restored and not (
+            self.input_errors or self.output_errors or self.membank_warnings
+        )
+
+
+def tombstone_config_from_metadata(metadata: Dict[str, Any]) -> Dict[str, Any]:
+    """Build the save-persistent tombstone config from delete-time metadata.
+
+    Shape follows the tombstone contract in BACKEND_FRONTEND_BOUNDARY.md:
+    full original node data so restore survives save/reload, plus the port
+    lists the validator reads for orphaned-connection context.
+    """
+    return {
+        "original_type": str(metadata.get("original_type") or ""),
+        "original_display_name": str(metadata.get("original_display_name") or ""),
+        "original_alias": str(metadata.get("original_alias") or ""),
+        "original_config": deepcopy(metadata.get("original_config") or {}),
+        "original_inputs": deepcopy(
+            metadata.get("original_input_connections") or []
+        ),
+        "original_outputs": deepcopy(
+            metadata.get("original_output_connections") or []
+        ),
+        "original_input_ports": list(metadata.get("original_input_ports") or []),
+        "original_output_ports": list(metadata.get("original_output_ports") or []),
+    }
+
+
+def metadata_from_tombstone_config(config: Dict[str, Any]) -> Dict[str, Any]:
+    """Rebuild delete-time metadata from a tombstone config (inverse of above)."""
+    return {
+        "original_type": str(config.get("original_type") or ""),
+        "original_display_name": str(config.get("original_display_name") or ""),
+        "original_alias": str(config.get("original_alias") or ""),
+        "original_config": deepcopy(config.get("original_config") or {}),
+        "original_input_connections": deepcopy(config.get("original_inputs") or []),
+        "original_output_connections": deepcopy(config.get("original_outputs") or []),
+        "original_input_ports": list(config.get("original_input_ports") or []),
+        "original_output_ports": list(config.get("original_output_ports") or []),
+    }
+
+
+def migrate_legacy_deleted_node(node: Dict[str, Any]) -> Dict[str, Any]:
+    """Convert a legacy branch_end_node+_system_role record to tombstone_node in-place.
+
+    Old saves write a deleted node as branch_end_node with:
+        config._system_role == DELETED_NODE_SYSTEM_ROLE
+        config.deleted_node == {original_type, original_display_name, ...}
+
+    New tombstone_node stores the full original data at the config top level,
+    so legacy saves keep undo-after-reload when the metadata carried it.
+    Non-matching nodes are returned unchanged.
+    """
+    config = node.get("config") or {}
+    if not (
+        node.get("type") == "branch_end_node"
+        and config.get("_system_role") == DELETED_NODE_SYSTEM_ROLE
+    ):
+        return node
+    metadata = config.get("deleted_node") or {}
+    if not isinstance(metadata, dict):
+        metadata = {}
+    node["type"] = TOMBSTONE_NODE_TYPE
+    node["alias"] = DELETED_NODE_ALIAS
+    node["config"] = tombstone_config_from_metadata(metadata)
+    return node
 
 
 class EditorWorkflowAdapter:
@@ -31,6 +127,9 @@ class EditorWorkflowAdapter:
         return node_id in self._deleted_nodes or self.is_materialized_placeholder(node)
 
     def is_materialized_placeholder(self, node: Dict[str, Any]) -> bool:
+        if node.get("type") == TOMBSTONE_NODE_TYPE:
+            return True
+        # Legacy marker, recognized until migrate_workflow_on_load runs.
         config = node.get("config") or {}
         return (
             node.get("type") == "branch_end_node"
@@ -42,6 +141,8 @@ class EditorWorkflowAdapter:
         if node_id in self._deleted_nodes:
             return dict(self._deleted_nodes[node_id])
         config = node.get("config") or {}
+        if node.get("type") == TOMBSTONE_NODE_TYPE:
+            return metadata_from_tombstone_config(config)
         metadata = config.get("deleted_node") or {}
         return dict(metadata) if isinstance(metadata, dict) else {}
 
@@ -63,39 +164,191 @@ class EditorWorkflowAdapter:
         node = self.workflow_map.get_node_data(node_id)
         if node is None:
             return False
-        metadata = self.placeholder_metadata(node_id)
-        original_type = str(metadata.get("original_type") or "")
-        if not original_type:
-            return False
         if self.is_materialized_placeholder(node):
-            if not self.factory.is_valid_node_type(original_type):
-                return False
-            node["type"] = original_type
-            node["config"] = deepcopy(metadata.get("original_config") or {})
-            node["alias"] = str(metadata.get("original_alias") or "")
-            node["connections"] = {
-                "inputs": deepcopy(metadata.get("original_input_connections") or []),
-                "outputs": deepcopy(metadata.get("original_output_connections") or []),
-            }
-            self._restore_downstream_inputs(node_id, node["connections"]["outputs"])
-            node.pop("_timing_invalidated", None)
+            return self.restore_tombstone(node_id).restored
+        metadata = self.placeholder_metadata(node_id)
+        if not str(metadata.get("original_type") or ""):
+            return False
         self._deleted_nodes.pop(node_id, None)
         self._mark_dirty()
         return True
 
+    def restore_tombstone(self, node_id: str) -> TombstoneRestoreReport:
+        """Restore a save-persistent tombstone with connection validation.
+
+        Implements the restore procedure from BACKEND_FRONTEND_BOUNDARY.md:
+        node identity, alias, and config always come back; each stored
+        connection is re-established only if the counterparty node and port
+        still exist (and the target input port is not occupied by a different
+        source). A partial restore is always preferred over keeping the
+        tombstone — drift is reported, never blocking.
+        """
+        node = self.workflow_map.get_node_data(node_id)
+        if node is None or not self.is_materialized_placeholder(node):
+            return TombstoneRestoreReport(
+                node_id=node_id, restored=False, failure_reason="not_a_tombstone"
+            )
+        metadata = self.placeholder_metadata(node_id)
+        original_type = str(metadata.get("original_type") or "")
+        if not original_type:
+            return TombstoneRestoreReport(
+                node_id=node_id, restored=False, failure_reason="no_restore_data"
+            )
+        if not self.factory.is_valid_node_type(original_type):
+            return TombstoneRestoreReport(
+                node_id=node_id,
+                restored=False,
+                failure_reason="unknown_original_type",
+            )
+
+        report = TombstoneRestoreReport(node_id=node_id, restored=True)
+        ports_by_type = self._ports_by_type()
+
+        # Step 1: identity/config restore is never blocked by connection drift.
+        node["type"] = original_type
+        node["alias"] = str(metadata.get("original_alias") or "")
+        node["config"] = deepcopy(metadata.get("original_config") or {})
+
+        # Step 2: input connections — source must exist and still declare the port.
+        restored_inputs: list[Dict[str, Any]] = []
+        for conn in metadata.get("original_input_connections") or []:
+            source_id = str(conn.get("source_node_id") or "")
+            source_port = conn.get("source_port", "default")
+            source_node = self.workflow_map.get_node_data(source_id)
+            if source_node is None:
+                report.input_errors.append(
+                    {
+                        "source_node_id": source_id,
+                        "source_alias": "",
+                        "port": source_port,
+                        "reason": "source_missing",
+                    }
+                )
+                continue
+            declared = ports_by_type.get(source_node.get("type", ""), {}).get(
+                "outputs", set()
+            )
+            if source_port not in declared:
+                report.input_errors.append(
+                    {
+                        "source_node_id": source_id,
+                        "source_alias": str(source_node.get("alias") or ""),
+                        "port": source_port,
+                        "reason": "source_port_missing",
+                    }
+                )
+                continue
+            restored_inputs.append(deepcopy(conn))
+            source_outputs = source_node.setdefault("connections", {}).setdefault(
+                "outputs",
+                [],
+            )
+            source_record = {
+                "source_port": source_port,
+                "target_node_id": node_id,
+                "target_port": conn.get("target_port", "input"),
+            }
+            if source_record not in source_outputs:
+                source_outputs.append(source_record)
+        node["connections"] = {"inputs": restored_inputs, "outputs": []}
+
+        # Step 3: output connections — target must exist, declare the port,
+        # and the port must not be occupied by a different source.
+        for conn in metadata.get("original_output_connections") or []:
+            target_id = str(conn.get("target_node_id") or "")
+            target_port = conn.get("target_port", "input")
+            source_port = conn.get("source_port", "default")
+            target_node = self.workflow_map.get_node_data(target_id)
+            if target_node is None:
+                report.output_errors.append(
+                    {
+                        "target_node_id": target_id,
+                        "target_alias": "",
+                        "port": target_port,
+                        "reason": "target_missing",
+                    }
+                )
+                continue
+            declared = ports_by_type.get(target_node.get("type", ""), {}).get(
+                "inputs", set()
+            )
+            if target_port not in declared:
+                report.output_errors.append(
+                    {
+                        "target_node_id": target_id,
+                        "target_alias": str(target_node.get("alias") or ""),
+                        "port": target_port,
+                        "reason": "target_port_missing",
+                    }
+                )
+                continue
+            target_inputs = target_node.setdefault("connections", {}).setdefault(
+                "inputs",
+                [],
+            )
+            occupied = any(
+                input_conn.get("target_port", "input") == target_port
+                and not (
+                    input_conn.get("source_node_id") == node_id
+                    and input_conn.get("source_port", "default") == source_port
+                )
+                for input_conn in target_inputs
+            )
+            if occupied:
+                report.output_errors.append(
+                    {
+                        "target_node_id": target_id,
+                        "target_alias": str(target_node.get("alias") or ""),
+                        "port": target_port,
+                        "reason": "target_port_occupied",
+                    }
+                )
+                continue
+            node["connections"]["outputs"].append(deepcopy(conn))
+            restored_input = {
+                "target_port": target_port,
+                "source_node_id": node_id,
+                "source_port": source_port,
+            }
+            if restored_input not in target_inputs:
+                target_inputs.append(restored_input)
+
+        # Step 4: membank inputs come back with the config regardless; flag
+        # variables whose declared source no longer exists in the workflow.
+        declared_keys = _declared_membank_outputs(self.workflow_map.get_all_node_data())
+        membank_inputs = node["config"].get("membank_inputs") or []
+        if isinstance(membank_inputs, list):
+            for entry in membank_inputs:
+                key = _membank_source_id(entry)
+                if key and key not in declared_keys:
+                    report.membank_warnings.append(
+                        {"variable": key, "reason": "membank_source_missing"}
+                    )
+
+        node.pop("_timing_invalidated", None)
+        self._deleted_nodes.pop(node_id, None)
+        self._mark_dirty()
+        return report
+
+    def _ports_by_type(self) -> Dict[str, Dict[str, set]]:
+        ports: Dict[str, Dict[str, set]] = {}
+        for meta in self.factory.get_node_types_metadata():
+            ports[meta["type"]] = {
+                "inputs": set(meta.get("input_ports") or []),
+                "outputs": set(meta.get("output_ports") or []),
+            }
+        return ports
+
     def materialize_deleted_nodes(self) -> int:
-        """Replace soft-deleted editor rows with saved branch-end placeholders."""
+        """Replace soft-deleted editor rows with save-persistent tombstone records."""
         materialized = 0
         for node_id, metadata in list(self._deleted_nodes.items()):
             node = self.workflow_map.get_node_data(node_id)
             if node is None or self.is_materialized_placeholder(node):
                 continue
-            node["type"] = "branch_end_node"
+            node["type"] = TOMBSTONE_NODE_TYPE
             node["alias"] = DELETED_NODE_ALIAS
-            node["config"] = {
-                "_system_role": DELETED_NODE_SYSTEM_ROLE,
-                "deleted_node": deepcopy(metadata),
-            }
+            node["config"] = tombstone_config_from_metadata(metadata)
             self._drop_outgoing_connections(node_id, node)
             node.pop("_timing_invalidated", None)
             materialized += 1
@@ -154,28 +407,6 @@ class EditorWorkflowAdapter:
                 )
             ]
 
-    def _restore_downstream_inputs(
-        self,
-        node_id: str,
-        outputs: list[Dict[str, Any]],
-    ) -> None:
-        for conn in outputs:
-            target_id = str(conn.get("target_node_id") or "")
-            target_node = self.workflow_map.get_node_data(target_id)
-            if target_node is None:
-                continue
-            target_inputs = target_node.setdefault("connections", {}).setdefault(
-                "inputs",
-                [],
-            )
-            restored_input = {
-                "target_port": conn.get("target_port", "input"),
-                "source_node_id": node_id,
-                "source_port": conn.get("source_port", "default"),
-            }
-            if restored_input not in target_inputs:
-                target_inputs.append(restored_input)
-
     def remove_placeholder(self, node_id: str) -> bool:
         if not self.is_placeholder(node_id):
             return False
@@ -189,7 +420,14 @@ class EditorWorkflowAdapter:
         metadata = self.placeholder_metadata(node_id)
         original_type = metadata.get("original_type")
         restored_original = new_type == original_type
-        was_materialized = self.is_materialized_placeholder(node)
+        if restored_original and self.is_materialized_placeholder(node):
+            report = self.restore_tombstone(node_id)
+            return {
+                "replaced": report.restored,
+                "restored_original": report.restored,
+                "original_type": original_type,
+                "restore_report": report,
+            }
         node["type"] = new_type
         node["config"] = (
             deepcopy(metadata.get("original_config") or {})
@@ -201,12 +439,6 @@ class EditorWorkflowAdapter:
             if restored_original
             else ""
         )
-        if restored_original and was_materialized:
-            node["connections"] = {
-                "inputs": deepcopy(metadata.get("original_input_connections") or []),
-                "outputs": deepcopy(metadata.get("original_output_connections") or []),
-            }
-            self._restore_downstream_inputs(node_id, node["connections"]["outputs"])
         node.pop("_timing_invalidated", None)
         self._deleted_nodes.pop(node_id, None)
         self._mark_dirty()
@@ -215,6 +447,24 @@ class EditorWorkflowAdapter:
             "restored_original": restored_original,
             "original_type": original_type,
         }
+
+    def migrate_workflow_on_load(self, all_nodes: Dict[str, Dict[str, Any]]) -> int:
+        """Migrate legacy deleted-node records to tombstone_node format in-place.
+
+        Returns the count of nodes migrated. Call this after loading a workflow
+        and before the editor renders the node list. The actual call-site wiring
+        in app.py is deferred (UI concern); this method is testable standalone.
+        """
+        count = 0
+        for node in all_nodes.values():
+            config = node.get("config") or {}
+            if (
+                node.get("type") == "branch_end_node"
+                and config.get("_system_role") == DELETED_NODE_SYSTEM_ROLE
+            ):
+                migrate_legacy_deleted_node(node)
+                count += 1
+        return count
 
     def _display_name_for_type(self, node_type: str) -> str:
         for metadata in self.factory.get_node_types_metadata():

@@ -6,10 +6,13 @@ informational, such as loose nodes unreachable from the start node.
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Set
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
 
 from .node_factory import NodeFactory
 from .workflow_map import WorkflowMap
+
+if TYPE_CHECKING:
+    from .secrets_manager import SecretsManager
 
 
 def derive_input_sources(
@@ -41,7 +44,11 @@ def derive_input_sources(
     return input_sources
 
 
-def validate_workflow(workflow_map: WorkflowMap, factory: NodeFactory) -> Dict[str, Any]:
+def validate_workflow(
+    workflow_map: WorkflowMap,
+    factory: NodeFactory,
+    secrets_manager: Optional["SecretsManager"] = None,
+) -> Dict[str, Any]:
     """Validate the loaded workflow structure."""
     errors: List[Dict[str, str]] = []
     warnings: List[Dict[str, str]] = []
@@ -92,11 +99,22 @@ def validate_workflow(workflow_map: WorkflowMap, factory: NodeFactory) -> Dict[s
         if data.get("type") == "tombstone_node":
             cfg = data.get("config") or {}
             original = cfg.get("original_display_name") or cfg.get("original_type") or "unknown"
+            in_ports = cfg.get("original_input_ports") or []
+            out_ports = cfg.get("original_output_ports") or []
+            port_context = ""
+            if in_ports or out_ports:
+                parts = []
+                if in_ports:
+                    parts.append(f"orphaned inputs: {', '.join(in_ports)}")
+                if out_ports:
+                    parts.append(f"orphaned outputs: {', '.join(out_ports)}")
+                port_context = f" ({'; '.join(parts)})"
             errors.append(
                 {
                     "node_id": node_id,
                     "message": (
                         f"Deleted node stub (was: {original}) — replace with a valid node type"
+                        f"{port_context}"
                     ),
                 }
             )
@@ -170,6 +188,41 @@ def validate_workflow(workflow_map: WorkflowMap, factory: NodeFactory) -> Dict[s
                     }
                 )
 
+    # Secret-ref fields: schema fields annotated with "secret": True.
+    # An empty required key is an error; a configured key absent from the store
+    # is a warning (key might be added before the run).
+    # When secrets_manager is None the existence check is skipped.
+    for node_id, data in all_nodes.items():
+        meta = _type_meta_cache.get(data.get("type", ""))
+        if meta is None:
+            continue
+        config = data.get("config") or {}
+        for field_name, field_info in (meta.get("config_schema") or {}).items():
+            if not field_info.get("secret"):
+                continue
+            key_name = str(config.get(field_name, "") or "").strip()
+            if not key_name:
+                if field_info.get("required", False):
+                    errors.append(
+                        {
+                            "node_id": node_id,
+                            "message": (
+                                f"Secret key for field '{field_name}' is required but not configured"
+                            ),
+                        }
+                    )
+                continue
+            if secrets_manager is not None and not secrets_manager.has_key(key_name):
+                warnings.append(
+                    {
+                        "node_id": node_id,
+                        "message": (
+                            f"Secret key '{key_name}' (field '{field_name}') "
+                            f"is not present in the secrets store"
+                        ),
+                    }
+                )
+
     declared_membank_outputs = _declared_membank_outputs(all_nodes)
     for node_id, sources in derive_input_sources(all_nodes).items():
         for source in sources:
@@ -189,6 +242,84 @@ def validate_workflow(workflow_map: WorkflowMap, factory: NodeFactory) -> Dict[s
                         "message": f"Membank input source not declared: {source_id}",
                     }
                 )
+
+    # Typed vault: warn when a node reads a key typed "ai_session" but the writer
+    # declared a different (or null) type_tag.  Error (key absent) is already above.
+    for node_id, data in all_nodes.items():
+        config = data.get("config") or {}
+        membank_inputs = config.get("membank_inputs") or []
+        if not isinstance(membank_inputs, list):
+            continue
+        for entry in membank_inputs:
+            if not isinstance(entry, dict):
+                continue
+            if entry.get("type_tag") != "ai_session":
+                continue
+            key = _membank_source_id(entry)
+            if not key or key not in declared_membank_outputs:
+                continue
+            writer_tag = declared_membank_outputs[key]
+            if writer_tag != "ai_session":
+                warnings.append(
+                    {
+                        "node_id": node_id,
+                        "message": (
+                            f"vault key '{key}' is read as ai_session but writer "
+                            f"does not declare ai_session type tag"
+                        ),
+                    }
+                )
+
+    # Parallel-branch vault race: warn when all writers for a vault key are on
+    # parallel branches (not ancestors of the reader).  This is a warning, not
+    # an error — the validator must not infer timing from node count or type.
+    # The correct ceiling is: suggest a Wait Until node.
+    if declared_membank_outputs:
+        reverse_adj = _build_reverse_adjacency(all_nodes)
+        # Map each vault key to the set of node_ids that write it
+        key_writers: Dict[str, Set[str]] = {}
+        for w_id, w_data in all_nodes.items():
+            w_config = w_data.get("config") or {}
+            for entry in w_config.get("membank_outputs") or []:
+                k = _membank_source_id(entry)
+                if k:
+                    key_writers.setdefault(k, set()).add(w_id)
+
+        for node_id, data in all_nodes.items():
+            config = data.get("config") or {}
+            membank_inputs = config.get("membank_inputs") or []
+            if not isinstance(membank_inputs, list):
+                continue
+            for entry in membank_inputs:
+                key = _membank_source_id(entry)
+                if not key:
+                    continue
+                writers = key_writers.get(key)
+                if not writers:
+                    continue  # already caught by the error check above
+                ancestors = _build_ancestor_set(node_id, all_nodes, reverse_adj)
+                if not any(w in ancestors or w == node_id for w in writers):
+                    warnings.append(
+                        {
+                            "node_id": node_id,
+                            "message": (
+                                f"Node reads vault key '{key}' but all writers are on "
+                                f"parallel branches; consider adding a Wait Until node "
+                                f"before this reader"
+                            ),
+                        }
+                    )
+
+    # Chat session: warn when use_chat_session is enabled but session_key is empty
+    for node_id, data in all_nodes.items():
+        config = data.get("config") or {}
+        if config.get("use_chat_session") and not str(config.get("session_key") or "").strip():
+            warnings.append(
+                {
+                    "node_id": node_id,
+                    "message": "Node has use_chat_session enabled but no session_key configured",
+                }
+            )
 
     if len(start_ids) == 1:
         reachable: Set[str] = set()
@@ -221,9 +352,11 @@ def _dfs_reachable(
             _dfs_reachable(target, all_nodes, visited)
 
 
-def _declared_membank_outputs(all_nodes: Dict[str, Dict[str, Any]]) -> Set[str]:
-    """Collect declared memory-bank output ids from node configs."""
-    declared: Set[str] = set()
+def _declared_membank_outputs(
+    all_nodes: Dict[str, Dict[str, Any]]
+) -> Dict[str, Optional[str]]:
+    """Collect declared memory-bank output ids mapped to their type_tag (or None)."""
+    declared: Dict[str, Optional[str]] = {}
     for data in all_nodes.values():
         config = data.get("config") or {}
         membank_outputs = config.get("membank_outputs") or []
@@ -232,7 +365,8 @@ def _declared_membank_outputs(all_nodes: Dict[str, Dict[str, Any]]) -> Set[str]:
         for entry in membank_outputs:
             source_id = _membank_source_id(entry)
             if source_id:
-                declared.add(source_id)
+                type_tag = entry.get("type_tag") if isinstance(entry, dict) else None
+                declared[source_id] = type_tag
     return declared
 
 
@@ -243,3 +377,37 @@ def _membank_source_id(entry: Any) -> str:
     if isinstance(entry, dict):
         return str(entry.get("source_id") or entry.get("output") or entry.get("id") or "")
     return ""
+
+
+def _build_reverse_adjacency(all_nodes: Dict[str, Dict[str, Any]]) -> Dict[str, Set[str]]:
+    """Build a map of node_id → set of nodes that have a direct output edge to it."""
+    reverse: Dict[str, Set[str]] = {nid: set() for nid in all_nodes}
+    for node_id, data in all_nodes.items():
+        for conn in data.get("connections", {}).get("outputs", []):
+            target = conn.get("target_node_id")
+            if target and target in reverse:
+                reverse[target].add(node_id)
+    return reverse
+
+
+def _build_ancestor_set(
+    node_id: str,
+    all_nodes: Dict[str, Dict[str, Any]],
+    reverse_adj: Optional[Dict[str, Set[str]]] = None,
+) -> Set[str]:
+    """Return the set of all nodes that can reach node_id via forward edges.
+
+    Uses the reverse adjacency map for an efficient backward BFS.
+    Does not include node_id itself.
+    """
+    if reverse_adj is None:
+        reverse_adj = _build_reverse_adjacency(all_nodes)
+    ancestors: Set[str] = set()
+    queue = list(reverse_adj.get(node_id, set()))
+    while queue:
+        candidate = queue.pop()
+        if candidate in ancestors:
+            continue
+        ancestors.add(candidate)
+        queue.extend(reverse_adj.get(candidate, set()) - ancestors)
+    return ancestors

@@ -26,7 +26,9 @@ AttackOfTheNodes/
     output_manager.py
     persistence.py
     run_history.py
+    run_session.py
     save_manager.py
+    secrets_manager.py
     supervisor.py
     validator.py
     workflow_map.py
@@ -49,6 +51,13 @@ AttackOfTheNodes/
       text_output_node.py
       user_text_input_node.py
       wait_until_node.py
+      io/
+        example_file_instance_node.py
+        http_request_node.py
+      data/
+        json_path_node.py
+        random_number_node.py
+        text_transform_node.py
       debug/
         counter_node.py
         deep_branch_node.py
@@ -111,6 +120,7 @@ AttackOfTheNodes/
     DOCS_MIGRATION_NOTES.md
     FILE_TREE.md
     MASTER_BUILD_PLAN.md
+    NODE_HELPER.md
     PHASE_17_NODE_VISUAL_IDENTITY.md
     PROJECT_BACKLOG.md
     PROJECT_KNOWLEDGE.md
@@ -126,9 +136,21 @@ AttackOfTheNodes/
         FRONTEND_AUDIT_BUILD_PLAN.md
         USER_FRIENDLY_POLISH_BUILD_PLAN.md
 
+  secrets/
+    .gitkeep
+
   tests/
     test_debug_nodes.py
+    test_form_rules.py
     test_node_helper.py
+    test_run_session.py
+    test_secrets_manager.py
+    test_tombstone_migration.py
+    test_tombstone_phase_b.py
+    test_typed_vault.py
+    test_validator_race_warnings.py
+    test_validator_secrets.py
+    generated/
 
   workflows/
     .gitkeep
@@ -140,9 +162,16 @@ Workspace-level developer tooling:
 aotn_node_helper/
   create_node.py
   check_node.py
+  check_ui.py
   generator.py
+  ui_checks.py
   specs/
     example_pass_through_node.yaml
+    example_file_instance_node.yaml
+    http_request_node.yaml
+    json_path_node.yaml
+    random_number_node.yaml
+    text_transform_node.yaml
 ```
 
 ## Omitted Paths

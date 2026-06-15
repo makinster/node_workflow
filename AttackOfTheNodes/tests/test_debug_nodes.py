@@ -514,7 +514,7 @@ def test_node_factory_exposes_phase_17_identity_metadata():
         item["type"]: item
         for item in wm._factory.get_node_types_metadata()
     }
-    expected_families = {"Inputs", "Flow Control", "Outputs", "Complex"}
+    expected_families = {"Inputs", "Outputs", "Flow Control", "Utility", "Complex"}
 
     for node_type, item in metadata.items():
         assert item["category"] in expected_families, node_type
@@ -524,6 +524,14 @@ def test_node_factory_exposes_phase_17_identity_metadata():
         assert all(isinstance(tag, str) for tag in item["tags"])
         assert item["icon_name"]
         assert item["color_hint"]
+        assert "group" in item
+        assert item["group"] is None or (
+            isinstance(item["group"], str) and item["group"]
+        )
+        assert "selector_section" in item
+        assert item["selector_section"] is None or (
+            isinstance(item["selector_section"], str) and item["selector_section"]
+        )
 
     assert metadata["file_reader_node"]["category"] == "Inputs"
     assert "File I/O" in metadata["file_reader_node"]["tags"]
@@ -840,8 +848,8 @@ def test_editor_deleted_node_row_renders_as_deleted():
     card.refresh_card()
 
     lines = card.display_text.splitlines()
-    assert lines[0].startswith("  1   Deleted node: Useful Logger (Logger)")
-    assert lines[1].startswith("      x delete | z undo | e new node")
+    assert lines[0].startswith("  1   < Deleted node: Useful Logger (Logger)")
+    assert lines[1].startswith("      < x delete | z undo | e new node")
 
     no_restore = {
         "type": "branch_end_node",
@@ -857,17 +865,14 @@ def test_editor_deleted_node_row_renders_as_deleted():
     )
     no_restore_card.refresh_card()
     no_restore_lines = no_restore_card.display_text.splitlines()
-    assert no_restore_lines[0].startswith("  0   Deleted node")
-    assert no_restore_lines[1].startswith("      x delete | e new node")
+    assert no_restore_lines[0].startswith("  0   < Deleted node")
+    assert no_restore_lines[1].startswith("      < x delete | e new node")
     assert "z undo" not in no_restore_lines[1]
     print("test_editor_deleted_node_row_renders_as_deleted PASSED")
 
 
-def test_deleted_node_materializes_to_system_branch_end_and_drops_outputs():
-    from frontend.editor_workflow_adapter import (
-        DELETED_NODE_SYSTEM_ROLE,
-        EditorWorkflowAdapter,
-    )
+def test_deleted_node_materializes_to_tombstone_and_drops_outputs():
+    from frontend.editor_workflow_adapter import EditorWorkflowAdapter
 
     _, wm, _, _ = _make_services()
     wm.create_new("deleted_materialize")
@@ -884,16 +889,23 @@ def test_deleted_node_materializes_to_system_branch_end_and_drops_outputs():
 
     assert adapter.materialize_deleted_nodes() == 1
     materialized = wm.get_node_data(logger)
-    assert materialized["type"] == "branch_end_node"
+    assert materialized["type"] == "tombstone_node"
     assert materialized["alias"] == "Deleted node"
     assert materialized["connections"]["outputs"] == []
     assert wm.get_node_data(end)["connections"]["inputs"] == []
-    assert materialized["config"]["_system_role"] == DELETED_NODE_SYSTEM_ROLE
-    assert materialized["config"]["deleted_node"]["original_type"] == "logger_node"
-    assert materialized["config"]["deleted_node"]["original_alias"] == "Original Logger"
-    assert materialized["config"]["deleted_node"]["original_config"] == {
-        "message": "original"
-    }
+    assert "_system_role" not in materialized["config"]
+    assert materialized["config"]["original_type"] == "logger_node"
+    assert materialized["config"]["original_alias"] == "Original Logger"
+    assert materialized["config"]["original_config"] == {"message": "original"}
+    assert materialized["config"]["original_outputs"] == [
+        {
+            "source_port": "default",
+            "target_node_id": end,
+            "target_port": "input",
+        }
+    ]
+    assert materialized["config"]["original_input_ports"] == ["input"]
+    assert materialized["config"]["original_output_ports"] == ["default"]
 
     assert adapter.undo_placeholder(logger) is True
     restored = wm.get_node_data(logger)
@@ -914,7 +926,7 @@ def test_deleted_node_materializes_to_system_branch_end_and_drops_outputs():
             "source_port": "default",
         }
     ]
-    print("test_deleted_node_materializes_to_system_branch_end_and_drops_outputs PASSED")
+    print("test_deleted_node_materializes_to_tombstone_and_drops_outputs PASSED")
 
 
 def test_editor_save_materializes_deleted_node_and_loaded_marker_renders():
@@ -1000,8 +1012,10 @@ async def _test_editor_save_materializes_deleted_node_and_loaded_marker_renders(
         await pilot.pause(0.03)
         assert saves == ["saved"]
         saved_marker = wm.get_node_data(logger)
-        assert saved_marker["type"] == "branch_end_node"
-        assert saved_marker["config"]["_system_role"] == DELETED_NODE_SYSTEM_ROLE
+        assert saved_marker["type"] == "tombstone_node"
+        assert saved_marker["config"]["original_type"] == "logger_node"
+        assert saved_marker["config"]["original_alias"] == "Saved Logger"
+        assert "_system_role" not in saved_marker["config"]
 
         screen.refresh_from_backend()
         marker_card = next(card for card in app.query(NodeCard) if card.node_id == logger)
@@ -1039,6 +1053,35 @@ async def _test_editor_save_materializes_deleted_node_and_loaded_marker_renders(
         assert "Deleted node: Loaded Logger (Logger)" in marker_card.display_text
         assert "z undo" in marker_card.display_text
 
+    # Tombstone-format save record renders the same deleted-node row
+    _, tomb_wm, _, _ = _make_services()
+    tomb_wm.create_new("loaded_tombstone_marker")
+    tomb_start = tomb_wm.add_node("start_node")
+    tomb_marker = tomb_wm.add_node("tombstone_node")
+    tomb_wm.update_node_config(
+        tomb_marker,
+        {
+            "original_type": "logger_node",
+            "original_display_name": "Logger",
+            "original_alias": "Tombstone Logger",
+            "original_config": {"message": "loaded"},
+        },
+    )
+    tomb_wm.connect(tomb_start, "default", tomb_marker, "input")
+
+    class TombstoneApp(App):
+        def compose(self) -> ComposeResult:
+            yield EditorScreen(tomb_wm._factory, tomb_wm)
+
+    tombstone_app = TombstoneApp()
+    async with tombstone_app.run_test() as pilot:
+        await pilot.pause(0.03)
+        marker_card = next(
+            card for card in tombstone_app.query(NodeCard) if card.node_id == tomb_marker
+        )
+        assert "Deleted node: Tombstone Logger (Logger)" in marker_card.display_text
+        assert "z undo" in marker_card.display_text
+
     print("test_editor_save_materializes_deleted_node_and_loaded_marker_renders PASSED")
 
 
@@ -1059,10 +1102,10 @@ def test_node_card_editor_identity_rows_align_and_truncate():
 
     lines = card.display_text.splitlines()
     assert len(lines) == 2
-    assert lines[0].startswith("  4   Useful Logger")
-    assert lines[1].startswith("      Outputs - Passive Output")
+    assert lines[0].startswith("  4   < Useful Logger")
+    assert lines[1].startswith("      < Outputs - Passive Output")
     assert "Utility" not in lines[1]
-    assert len(lines[0]) == len(lines[1])
+    assert lines[0].rfind(">") == lines[1].rfind(">")
 
     long_identity = {
         "type": "file_reader_node",
@@ -1086,9 +1129,7 @@ def test_node_card_editor_identity_rows_align_and_truncate():
     long_card.refresh_card()
     long_lines = long_card.display_text.splitlines()
     assert "…" in long_lines[1]
-    assert "[" not in long_lines[0]
-    assert "]" not in long_lines[1]
-    assert len(long_lines[0]) == len(long_lines[1])
+    assert long_lines[0].rfind("]") == long_lines[1].rfind("]")
 
     print("test_node_card_editor_identity_rows_align_and_truncate PASSED")
 
@@ -3117,11 +3158,10 @@ async def _test_editor_depth_counter_tracks_visible_branch_distance():
         branch_row = app.query_one(BranchSelectCard)
         status = app.query_one(StatusBar)
         start_lines = start_card.display_text.splitlines()
-        assert start_lines[0].startswith("  0   Start")
-        assert start_lines[1].startswith("      Flow Control - Triggered")
-        assert "{" not in start_lines[0]
-        assert "}" not in start_lines[1]
-        assert branch_row.display_text == "  ☛   Branch 1"
+        assert start_lines[0].startswith("  0   { Start")
+        assert start_lines[1].startswith("      { Flow Control - Triggered")
+        assert start_lines[0].rfind("}") == start_lines[1].rfind("}")
+        assert branch_row.display_text == "  ☛     Branch 1"
         assert "f file | o options | h help" in status._formatted()
         assert "Ctrl+I" not in status._formatted()
         titles = [str(label.content) for label in app.query(".panel-title")]
@@ -3137,7 +3177,7 @@ async def _test_editor_depth_counter_tracks_visible_branch_distance():
         details = screen.query_one("#node-details").display_text
         assert details.startswith(f"Name: Logger ({path_b_first})")
         assert "Kind: Logger" in details
-        assert "Family: Outputs" in details
+        assert "Family: Utility" in details
         assert "Subcategories: Passive Output, Utility" in details
         assert "Step: 2" in details
 
@@ -3195,9 +3235,146 @@ async def _test_editor_identity_rows_keep_keyboard_selection_stable():
         assert node_list.index == 12
         assert screen.selected_node_id == expected_id
         selected_card = next(card for card in app.query(NodeCard) if card.node_id == expected_id)
-        assert "Outputs - Passive Output" in selected_card.display_text
+        assert "Utility - Passive Output" in selected_card.display_text
 
     print("test_editor_identity_rows_keep_keyboard_selection_stable PASSED")
+
+
+def test_editor_identity_rows_fit_rendered_panel_width():
+    asyncio.run(_test_editor_identity_rows_fit_rendered_panel_width())
+
+
+async def _test_editor_identity_rows_fit_rendered_panel_width():
+    from pathlib import Path as _Path
+
+    from textual.app import App, ComposeResult
+    from textual.containers import Vertical
+
+    from frontend.widgets.node_card import FRAME_RIGHT_INSET, NodeCard
+    from frontend.widgets.node_list import NodeList
+
+    # The panel is much narrower than the old fixed 48-char identity width,
+    # which used to soft-wrap the closing frame onto its own visual line and
+    # push the identity line out of the two-line row.
+    panel_width = 40
+
+    def node_row(node_id: str, alias: str) -> dict:
+        return {
+            "kind": "node",
+            "node_id": node_id,
+            "node": {
+                "type": "branch_node",
+                "alias": alias,
+                "_editor_depth": 1,
+                "_identity": {
+                    "primary_family": "Flow Control",
+                    "tags": ["Parallel"],
+                },
+            },
+        }
+
+    rows = [
+        node_row("branch-1", "Parallel Branch"),
+        node_row("branch-2", "Another Branch"),
+        {
+            "kind": "branch_select",
+            "branch_node_id": "branch-2",
+            "active_port": "path_1",
+            "active_label": "Branch 1",
+            "depth": 1,
+        },
+        node_row("path-node", "Path Node"),
+    ]
+
+    class NarrowApp(App):
+        # Real app stylesheet so row height, spacing, and colors match the TUI.
+        CSS_PATH = str(
+            _Path(__file__).parent.parent / "frontend" / "styles.tcss"
+        )
+        CSS = f"#narrow-panel {{ width: {panel_width}; height: 20; }}"
+
+        def compose(self) -> ComposeResult:
+            yield Vertical(NodeList(), id="narrow-panel")
+
+    app = NarrowApp()
+    async with app.run_test(size=(80, 24)) as pilot:
+        await pilot.pause(0.05)
+        node_list = app.query_one(NodeList)
+        node_list.refresh_rows(rows)
+        await pilot.pause(0.05)
+
+        cards = list(app.query(NodeCard))
+        assert len(cards) == 3
+        first, second, path_card = cards
+        width = first.content_size.width
+        assert 0 < width <= panel_width
+        lines = first.display_text.splitlines()
+        assert len(lines) == 2, f"Expected two-line row, got {lines!r}"
+        for line in lines:
+            # Closing frames sit a fixed inset in from the panel edge.
+            assert len(line) == width - FRAME_RIGHT_INSET, (
+                f"Row line must end {FRAME_RIGHT_INSET} short of the panel "
+                f"edge ({len(line)} != {width - FRAME_RIGHT_INSET}): {line!r}"
+            )
+        # Closing frames stay in one aligned right-hand column, and the
+        # identity line is present with family text.
+        assert lines[0][-1] == lines[1][-1] == "}"
+        assert "Flow Control" in lines[1]
+
+        # The rows must actually paint (not just hold content): shadowing
+        # Textual paint internals once made every card render blank.
+        painted_line = "".join(seg.text for seg in first.render_line(0))
+        assert "Parallel Branch" in painted_line, (
+            f"Card content did not paint: {painted_line!r}"
+        )
+
+        # One blank spacer line separates node-to-node groups.
+        gap = second.region.y - first.region.y
+        assert gap == 3, f"Expected 2 content lines + 1 spacer, got {gap}"
+        # A branch selector sits directly below its node with no spacer between.
+        branch_item = node_list.children[2]
+        selector_gap = branch_item.region.y - second.region.y
+        assert selector_gap == 2, (
+            f"Selector must sit directly below its node, got gap {selector_gap}"
+        )
+        assert branch_item.region.height == 1
+        # No blank line below the selector: the next node hugs it.
+        node_gap = path_card.region.y - branch_item.region.y
+        assert node_gap == 1, (
+            f"Node after selector must hug it (no blank line), got {node_gap}"
+        )
+        assert "node-row-spaced" not in branch_item.classes
+
+        # Selector text aligns with the framed node text above (gutter + 2).
+        from frontend.widgets.node_card import BranchSelectCard
+
+        branch_card = branch_item.query_one(BranchSelectCard)
+        assert branch_card.display_text == "  ☛     Branch 1"
+
+        # The framed segment carries the family background with dark
+        # high-contrast text; the gutter stays unstyled.
+        from frontend.widgets.node_card import (
+            FAMILY_ROW_BACKGROUNDS,
+            IDENTITY_ROW_TEXT_COLOR,
+        )
+
+        rendered = first.render()
+        styled_spans = [
+            span
+            for span in getattr(rendered, "spans", [])
+            if getattr(span.style, "background", None) is not None
+        ]
+        assert styled_spans, "Expected family-colored framed segments"
+        expected_bg = FAMILY_ROW_BACKGROUNDS["Flow Control"].lower()
+        for span in styled_spans:
+            assert span.style.background.hex.lower() == expected_bg
+            assert (
+                span.style.foreground.hex.lower()
+                == IDENTITY_ROW_TEXT_COLOR.lower()
+            )
+            assert span.start >= 6  # gutter columns stay unstyled
+
+    print("test_editor_identity_rows_fit_rendered_panel_width PASSED")
 
 
 def test_help_screen_is_contextual_and_focuses_cancel():
@@ -3420,6 +3597,237 @@ async def _test_node_config_fixed_tabs_are_keyboard_navigable():
         assert app.focused is previous_output
 
     print("test_node_config_fixed_tabs_are_keyboard_navigable PASSED")
+
+
+def test_node_config_keyboard_skips_hidden_payload_previews():
+    asyncio.run(_test_node_config_keyboard_skips_hidden_payload_previews())
+
+
+async def _test_node_config_keyboard_skips_hidden_payload_previews():
+    from textual.app import App, ComposeResult
+
+    from frontend.screens.node_config import NodeConfigScreen
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("node_config_hidden_skips")
+    node = wm.add_node("logger_node")
+    node_data = wm.get_node_data(node)
+
+    class ConfigApp(App):
+        def compose(self) -> ComposeResult:
+            yield NodeConfigScreen(wm._factory, wm, node, node_data)
+
+    app = ConfigApp()
+    async with app.run_test(size=(90, 30)) as pilot:
+        await pilot.pause(0.05)
+        # Walk the whole screen with the down key. Focus must never land on a
+        # widget that is hidden on its own (display=False) — that shows no
+        # highlight and reads as "the cursor vanished / needed two presses".
+        seen_ids = []
+        for _ in range(16):
+            focused = app.focused
+            assert getattr(focused, "display", True), (
+                f"Focus landed on hidden widget {getattr(focused, 'id', focused)!r}"
+            )
+            seen_ids.append(getattr(focused, "id", None))
+            await pilot.press("s")
+            await pilot.pause(0.02)
+
+        # The collapsed previews on the Source tab must be skipped entirely
+        # while their reveal checkboxes are off.
+        assert "previous-output-preview" not in seen_ids
+        assert "source-vault-payload-preview" not in seen_ids
+
+        # When the reveal checkbox is enabled, the preview becomes a real stop.
+        from frontend.widgets.command_input import CommandInput
+        from textual.widgets import Checkbox
+
+        alias = app.query_one("#alias-input", CommandInput)
+        app.set_focus(alias)
+        await pilot.pause(0.02)
+        reveal = app.query_one("#show-previous-output", Checkbox)
+        reveal.value = True
+        await pilot.pause(0.03)
+        await pilot.press("s")  # alias -> reveal checkbox
+        await pilot.pause(0.02)
+        await pilot.press("s")  # reveal checkbox -> now-visible preview
+        await pilot.pause(0.02)
+        assert getattr(app.focused, "id", None) == "previous-output-preview"
+
+    print("test_node_config_keyboard_skips_hidden_payload_previews PASSED")
+
+
+def test_node_selector_layout_is_compact_and_checkboxes_fit():
+    asyncio.run(_test_node_selector_layout_is_compact_and_checkboxes_fit())
+
+
+async def _test_node_selector_layout_is_compact_and_checkboxes_fit():
+    from pathlib import Path as _Path
+
+    from textual.app import App
+    from textual.widgets import Checkbox
+
+    from frontend.screens.node_selector import NodeSelectorScreen
+
+    _, wm, _, _ = _make_services()
+
+    class SelApp(App):
+        CSS_PATH = str(
+            _Path(__file__).parent.parent / "frontend" / "styles.tcss"
+        )
+
+        async def on_mount(self) -> None:
+            await self.push_screen(NodeSelectorScreen(wm._factory))
+
+    # A short terminal is where the old stretched (height: 1fr) tab row and
+    # filter block left dead space and clipped the last checkbox.
+    for height in (30, 22):
+        app = SelApp()
+        async with app.run_test(size=(90, height)) as pilot:
+            await pilot.pause(0.15)
+            screen = app.screen
+            tabs = screen.query_one("#node-family-tabs")
+            filt = screen.query_one("#node-filter")
+            subs = screen.query_one("#node-subcategory-filters")
+            io_row = screen.query_one("#io-direction-row")
+
+            # Filter is directly below the tab row — no dead space.
+            gap = filt.region.y - (tabs.region.y + tabs.region.height)
+            assert gap == 0, (
+                f"tabs->filter gap {gap} != 0 at height {height}"
+            )
+
+            # On the I/O tab the switch sits below the filter.
+            filt_bottom = filt.region.y + filt.region.height
+            assert io_row.display, "Switch row should be visible on I/O tab"
+            assert io_row.region.y >= filt_bottom, (
+                f"Switch row top {io_row.region.y} should be >= filter bottom"
+                f" {filt_bottom} at height {height}"
+            )
+
+            # Check checkboxes on Complex tab (which has the AI filter).
+            screen._set_active_tab("Complex")
+            await pilot.pause(0.05)
+            subs = screen.query_one("#node-subcategory-filters")
+            visible = [
+                cb
+                for cb in screen.query("#node-subcategory-filters Checkbox")
+                if cb.display
+            ]
+            assert visible, "Expected visible subcategory checkboxes on Complex tab"
+            for cb in visible:
+                bottom = cb.region.y + cb.region.height
+                subs_bottom = subs.region.y + subs.region.height
+                assert cb.region.height >= 1, f"checkbox {cb.id} not rendered"
+                assert bottom <= subs_bottom, (
+                    f"checkbox {cb.id} clipped at height {height}"
+                )
+
+    print("test_node_selector_layout_is_compact_and_checkboxes_fit PASSED")
+
+
+def test_node_selector_rows_are_two_lines_with_indented_description():
+    asyncio.run(_test_node_selector_rows_are_two_lines_with_indented_description())
+
+
+async def _test_node_selector_rows_are_two_lines_with_indented_description():
+    from textual.app import App, ComposeResult
+    from textual.widgets import ListItem, ListView, Static
+
+    from frontend.screens.node_selector import NodeSelectorScreen
+
+    _, wm, _, _ = _make_services()
+
+    class SelApp(App):
+        def compose(self) -> ComposeResult:
+            yield NodeSelectorScreen(wm._factory)
+
+    app = SelApp()
+    async with app.run_test(size=(90, 30)) as pilot:
+        await pilot.pause(0.05)
+        screen = app.query_one(NodeSelectorScreen)
+        list_view = app.query_one("#node-type-list", ListView)
+        assert screen._visible_nodes, "Expected nodes in the default family"
+
+        # Use a node that carries subcategory tags so the parenthesized
+        # subcategories are exercised.
+        node = next(
+            (n for n in screen._visible_nodes if n.get("tags")),
+            screen._visible_nodes[0],
+        )
+        lines = screen._node_row_text(node).split("\n")
+        assert len(lines) == 2, f"Expected a two-line row, got {lines!r}"
+        # First line: [ display_name ]  Second line: - description
+        assert lines[0] == f"\\[ {node['display_name']} ]", (
+            f"Expected '\\[ {node['display_name']} ]', got {lines[0]!r}"
+        )
+        assert lines[1].startswith("- "), (
+            f"Expected '- ...' description, got {lines[1]!r}"
+        )
+        expected_desc = (str(node.get("description") or "").strip() or "No description")
+        assert expected_desc[:20] in lines[1]
+        # Family must not appear; subcategory tags are not shown in rows.
+        family = screen._node_family(node)
+        assert family and family not in lines[0], (
+            f"Family {family!r} should not appear in row {lines[0]!r}"
+        )
+
+        # Each node maps to one list row carrying the two-line static.
+        node_items = [
+            item
+            for item in list_view.children
+            if isinstance(item, ListItem) and item.query(".node-select-row")
+        ]
+        assert len(node_items) == len(screen._visible_nodes)
+
+    print("test_node_selector_rows_are_two_lines_with_indented_description PASSED")
+
+
+def test_node_selector_down_from_last_checkbox_highlights_first_node():
+    asyncio.run(_test_node_selector_down_from_last_checkbox_highlights_first_node())
+
+
+async def _test_node_selector_down_from_last_checkbox_highlights_first_node():
+    from textual.app import App, ComposeResult
+    from textual.widgets import Checkbox, ListView
+
+    from frontend.screens.node_selector import NodeSelectorScreen
+
+    _, wm, _, _ = _make_services()
+
+    class SelApp(App):
+        def compose(self) -> ComposeResult:
+            yield NodeSelectorScreen(wm._factory)
+
+    app = SelApp()
+    async with app.run_test(size=(90, 30)) as pilot:
+        await pilot.pause(0.05)
+        screen = app.query_one(NodeSelectorScreen)
+        list_view = app.query_one("#node-type-list", ListView)
+
+        # The Complex tab has the AI checkbox — use it so we always have a
+        # visible checkbox to navigate from (I/O Input side has none currently).
+        screen._set_active_tab("Complex")
+        await pilot.pause(0.03)
+
+        # Focus the last visible subcategory checkbox.
+        visible_checkboxes = screen._visible_subcategory_checkboxes()
+        assert visible_checkboxes
+        app.set_focus(visible_checkboxes[-1])
+        await pilot.pause(0.03)
+        assert isinstance(app.focused, Checkbox)
+
+        # One step down must land on the node list with the first row
+        # highlighted — not a focused list with no visible cursor.
+        await pilot.press("s")
+        await pilot.pause(0.03)
+        assert app.focused is list_view
+        first_selectable = screen._selectable_indices()[0]
+        assert list_view.index == first_selectable
+        assert list_view.highlighted_child is not None
+        assert list_view.highlighted_child.highlighted is True
+
+    print("test_node_selector_down_from_last_checkbox_highlights_first_node PASSED")
 
 
 def test_node_config_schema_tab_hints_place_fields_in_top_level_tabs():
@@ -4194,7 +4602,7 @@ def test_node_selector_uses_family_tabs_and_subcategory_filters():
 
 async def _test_node_selector_uses_family_tabs_and_subcategory_filters():
     from textual.app import App, ComposeResult
-    from textual.widgets import Checkbox, ListView
+    from textual.widgets import Checkbox, ListView, Switch
 
     from frontend.screens.node_selector import NodeSelectorScreen
     from frontend.widgets.command_input import CommandInput
@@ -4205,78 +4613,249 @@ async def _test_node_selector_uses_family_tabs_and_subcategory_filters():
         def compose(self) -> ComposeResult:
             yield NodeSelectorScreen(wm._factory)
 
+    def entry_kinds(screen):
+        return [entry["kind"] for entry in screen._entries]
+
+    def header_names(screen):
+        return [
+            entry["name"]
+            for entry in screen._entries
+            if entry["kind"] == "header"
+        ]
+
+    def group_entries(screen):
+        return {
+            entry["name"]: len(entry["members"])
+            for entry in screen._entries
+            if entry["kind"] == "group"
+        }
+
     app = SelectorApp()
     async with app.run_test() as pilot:
         await pilot.pause(0.03)
         screen = app.query_one(NodeSelectorScreen)
         node_list = app.query_one("#node-type-list", ListView)
         filter_input = app.query_one("#node-filter", CommandInput)
-        file_filter = app.query_one("#node-subcategory-file-io", Checkbox)
-        active_output_filter = app.query_one("#node-subcategory-active-output", Checkbox)
-        parallel_filter = app.query_one("#node-subcategory-parallel", Checkbox)
+        io_switch = app.query_one("#io-direction-switch", Switch)
+        ai_filter = app.query_one("#node-subcategory-ai", Checkbox)
 
-        assert "tombstone_node" not in {node["type"] for node in screen._all_nodes}
-        assert screen._active_family == "Inputs"
-        assert app.focused is file_filter
-        assert file_filter.display is True
-        assert active_output_filter.display is True
-        assert parallel_filter.display is False
+        # Hidden node types never reach the selector.
+        all_types = {node["type"] for node in screen._all_nodes}
+        assert "tombstone_node" not in all_types
+        assert "start_node" not in all_types
+        assert "end_node" not in all_types
+
+        # Default: I/O tab, Input side — focus lands on the filter bar
+        # (not edit mode) so the user can type immediately or navigate down.
+        assert screen._active_tab == "I/O"
+        assert screen._active_family() == "Inputs"
+        assert io_switch.value is False
+        internet_filter = app.query_one("#node-subcategory-internet", Checkbox)
+        assert internet_filter.display is True   # http_request_node has Internet tag
+        assert app.focused is filter_input
+        assert ai_filter.display is False  # no AI-tagged input nodes yet
         assert filter_input.editing is False
         assert {node["type"] for node in screen._visible_nodes} == {
+            "example_file_instance_node",
             "file_reader_node",
             "user_text_input_node",
+            "http_request_node",
+        }
+        # Single-member groups auto-promote: no group entries on this side,
+        # and the section headers from selector_section metadata render.
+        assert group_entries(screen) == {}
+        assert header_names(screen) == ["Text & Data", "Files", "Web"]
+
+        # Flip the switch to the Output side.
+        io_switch.value = True
+        await pilot.pause(0.03)
+        assert screen._active_family() == "Outputs"
+        assert {node["type"] for node in screen._visible_nodes} == {
+            "text_output_node",
         }
 
-        screen.action_choose()
-        assert file_filter.value is True
-        assert {node["type"] for node in screen._visible_nodes} == {"file_reader_node"}
+        # Flow Control: no filter checkboxes; Branch group with member count;
+        # single-member groups and direct-adds promoted to node rows under
+        # their section headers.
+        screen.action_next_tab()
+        assert screen._active_tab == "Flow Control"
+        assert screen._visible_subcategory_checkboxes() == []
+        assert header_names(screen) == ["Branching", "Timing"]
+        groups = group_entries(screen)
+        assert groups.get("Branch", 0) >= 2
+        visible_types = {node["type"] for node in screen._visible_nodes}
+        assert "merge_node" in visible_types  # Merge group of one, promoted
+        assert "branch_end_node" in visible_types  # direct-add Merge Beacon
+        assert "wait_until_node" in visible_types  # Wait / Timer, promoted
+        assert "branch_node" not in visible_types  # behind the Branch group
 
-        app.set_focus(active_output_filter)
-        screen.action_choose()
-        assert active_output_filter.value is True
-        assert screen._visible_nodes == []
+        # Utility tab: transform group plus debug/loop helper direct-adds.
+        screen.action_next_tab()
+        assert screen._active_tab == "Utility"
+        assert screen._visible_subcategory_checkboxes() == []
+        assert "Data Transform" in group_entries(screen)
+        assert {"Transform", "Debug", "Loop Helpers"}.issubset(
+            set(header_names(screen))
+        )
+        utility_types = {node["type"] for node in screen._visible_nodes}
+        assert {"echo_node", "probe_node", "counter_node"}.issubset(utility_types)
 
-        screen.action_next_family()
-        assert screen._active_family == "Flow Control"
-        assert parallel_filter.display is True
-        assert file_filter.display is False
-        assert parallel_filter.value is False
-        assert "branch_node" in {node["type"] for node in screen._visible_nodes}
+        # Complex tab: AI filter visible, AI Processing group of three.
+        screen.action_next_tab()
+        assert screen._active_tab == "Complex"
+        assert ai_filter.display is True
+        assert group_entries(screen).get("AI Processing") == 3
 
-        app.set_focus(parallel_filter)
-        screen.action_choose()
-        assert parallel_filter.value is True
-        assert "branch_node" in {node["type"] for node in screen._visible_nodes}
-        assert all("Parallel" in node.get("tags", []) for node in screen._visible_nodes)
-
+        # Search dissolves groups and headers: AI nodes appear directly.
         await pilot.press("/")
         assert app.focused is filter_input
         assert filter_input.editing is False
         await pilot.press("e")
         assert filter_input.editing is True
-        filter_input.value = "merge"
+        filter_input.value = "chat"
         filter_input.end_edit()
         screen._apply_filter(filter_input.value)
         assert filter_input.editing is False
+        assert header_names(screen) == []
+        assert group_entries(screen) == {}
         assert {node["type"] for node in screen._visible_nodes} == {
-            "branch_end_node",
-            "merge_node",
+            "chat_completion_node",
         }
 
         filter_input.value = "deleted"
         screen._apply_filter(filter_input.value)
-        assert "tombstone_node" not in {node["type"] for node in screen._visible_nodes}
         assert screen._visible_nodes == []
 
-        filter_input.value = "merge"
+        filter_input.value = ""
         screen._apply_filter(filter_input.value)
-        assert screen._visible_nodes
+        assert group_entries(screen).get("AI Processing") == 3
 
         screen.action_focus_node_list()
         assert app.focused is node_list
-        assert node_list.index == 0
+        first_selectable = screen._selectable_indices()[0]
+        assert node_list.index == first_selectable
 
     print("test_node_selector_uses_family_tabs_and_subcategory_filters PASSED")
+
+
+def test_node_selector_group_picker_flow():
+    asyncio.run(_test_node_selector_group_picker_flow())
+
+
+async def _test_node_selector_group_picker_flow():
+    from textual.app import App
+    from textual.widgets import ListView
+
+    from frontend.screens.group_picker import GroupPickerScreen
+    from frontend.screens.node_selector import NodeSelectorScreen
+
+    _, wm, _, _ = _make_services()
+    chosen: list = []
+
+    class PickerApp(App):
+        async def on_mount(self) -> None:
+            await self.push_screen(
+                NodeSelectorScreen(wm._factory), chosen.append
+            )
+
+    app = PickerApp()
+    async with app.run_test(size=(90, 30)) as pilot:
+        await pilot.pause(0.1)
+        screen = app.screen
+        assert isinstance(screen, NodeSelectorScreen)
+        screen._set_active_tab("Flow Control")
+        await pilot.pause(0.03)
+
+        branch_index = next(
+            index
+            for index, entry in enumerate(screen._entries)
+            if entry["kind"] == "group" and entry["name"] == "Branch"
+        )
+        node_list = screen.query_one("#node-type-list", ListView)
+        screen._focus_node_list()
+        node_list.index = branch_index
+        await pilot.pause(0.03)
+
+        # E on the group entry opens the picker, not the selector dismissal.
+        screen.action_choose()
+        await pilot.pause(0.05)
+        picker = app.screen
+        assert isinstance(picker, GroupPickerScreen)
+        assert picker.group_name == "Branch"
+        member_types = [member["type"] for member in picker.members]
+        assert "branch_node" in member_types
+
+        # ESC pops only the picker and returns to the main selector.
+        picker.action_cancel()
+        await pilot.pause(0.05)
+        assert isinstance(app.screen, NodeSelectorScreen)
+        assert chosen == []
+
+        # Re-open and choose a member: both modals close, the selector
+        # resolves with the chosen node type.
+        screen.action_choose()
+        await pilot.pause(0.05)
+        picker = app.screen
+        assert isinstance(picker, GroupPickerScreen)
+        target_index = member_types.index("branch_node")
+        picker_list = picker.query_one("#group-member-list", ListView)
+        picker_list.index = target_index
+        picker.action_choose()
+        await pilot.pause(0.05)
+        assert chosen == ["branch_node"]
+        assert not isinstance(app.screen, (NodeSelectorScreen, GroupPickerScreen))
+
+    print("test_node_selector_group_picker_flow PASSED")
+
+
+def test_node_selector_navigation_skips_section_headers():
+    asyncio.run(_test_node_selector_navigation_skips_section_headers())
+
+
+async def _test_node_selector_navigation_skips_section_headers():
+    from textual.app import App, ComposeResult
+    from textual.widgets import ListView
+
+    from frontend.screens.node_selector import NodeSelectorScreen
+
+    _, wm, _, _ = _make_services()
+
+    class SelApp(App):
+        def compose(self) -> ComposeResult:
+            yield NodeSelectorScreen(wm._factory)
+
+    app = SelApp()
+    async with app.run_test(size=(90, 30)) as pilot:
+        await pilot.pause(0.05)
+        screen = app.query_one(NodeSelectorScreen)
+        node_list = app.query_one("#node-type-list", ListView)
+
+        header_indices = [
+            index
+            for index, entry in enumerate(screen._entries)
+            if entry["kind"] == "header"
+        ]
+        assert header_indices, "Expected section headers on the I/O Input side"
+
+        screen._focus_node_list()
+        await pilot.pause(0.03)
+        assert node_list.index in screen._selectable_indices()
+
+        # Walking the whole list never lands on a header row.
+        seen = [node_list.index]
+        for _ in range(len(screen._entries) + 2):
+            previous = node_list.index
+            screen._move_selection_or_leave_list(1)
+            if app.focused is not node_list:
+                break
+            if node_list.index == previous:
+                break
+            seen.append(node_list.index)
+        assert seen == screen._selectable_indices()
+        for index in seen:
+            assert index not in header_indices
+
+    print("test_node_selector_navigation_skips_section_headers PASSED")
 
 
 def test_branch_selector_uses_shared_list_navigation():
@@ -5650,9 +6229,14 @@ if __name__ == "__main__":
         test_editor_notification_restores_node_list_focus,
         test_editor_depth_counter_tracks_visible_branch_distance,
         test_editor_identity_rows_keep_keyboard_selection_stable,
+        test_editor_identity_rows_fit_rendered_panel_width,
         test_help_screen_is_contextual_and_focuses_cancel,
         test_node_config_select_activates_from_keyboard,
         test_node_config_fixed_tabs_are_keyboard_navigable,
+        test_node_config_keyboard_skips_hidden_payload_previews,
+        test_node_selector_layout_is_compact_and_checkboxes_fit,
+        test_node_selector_rows_are_two_lines_with_indented_description,
+        test_node_selector_down_from_last_checkbox_highlights_first_node,
         test_node_config_schema_tab_hints_place_fields_in_top_level_tabs,
         test_dynamic_row_helper_preserves_visible_rows_only,
         test_dynamic_selection_helper_filters_stale_values,

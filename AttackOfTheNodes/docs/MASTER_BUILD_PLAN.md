@@ -1,6 +1,6 @@
 # AttackOfTheNodes Master Build Plan
 
-**Last updated:** 2026-06-14
+**Last updated:** 2026-06-12
 **Project root:** `AttackOfTheNodes/`
 **Runtime:** Python 3.14, Textual 8.2.7, asyncio, JSON persistence
 
@@ -25,10 +25,12 @@ needs.
 
 ## Current Active Work
 
-Phase 17 is still in progress. It is establishing node visual identity and
-selector taxonomy before the next node-library overhaul: primary node families,
+Phase 17 is in progress. It establishes node visual identity and selector
+taxonomy before the next node-library overhaul: primary node families,
 subcategory filters, metadata exposure, and editor rows that make node roles
-scannable without changing runtime behavior.
+scannable without changing runtime behavior. The feature surface is
+implemented, but live-TUI verification found rendering bugs, so the phase
+stays open until the editor view is verified clean in the running app.
 
 Completed in Phase 17 so far:
 
@@ -40,36 +42,36 @@ Completed in Phase 17 so far:
   dedicated node.
 - `NodeSelectorScreen` has family tabs, tab-specific subcategory checkbox
   filters with `AND` semantics, and command-mode search activation.
-- Editor rows render two-line family/subcategory identity inside individual
-  bordered text boxes, with truncation, quiet utility styling, and preserved
-  Merge Beacon health colors.
+- Editor rows render two-line family/subcategory identity with aligned frames,
+  truncation, quiet utility styling, and preserved Merge Beacon health colors.
 - The editor details panel shows full primary family and subcategory metadata.
 - Focused tests cover metadata exposure, selector filtering, row rendering,
   details-panel identity, truncation, and keyboard/selection stability.
 
+Taxonomy revision (2026-06-12): five backend families (`Inputs`, `Outputs`,
+`Flow Control`, `Utility`, `Complex`) mapped onto four selector tabs — `I/O`
+(Input/Output switch), `Flow Control`, `Utility`, `Complex`. AI became a
+subcategory, not a family. Filters reduced to I/O (`File I/O`/`Internet`/`AI`)
+and Complex (`AI`). In-list section headers organize tabs; keyboard nav skips
+them. Start/End removed from the user-facing taxonomy (terminate-branch
+config on outputs + End Branch node). Full inventory in `NODE_CATALOG.md`.
+
+Implemented for the revision (2026-06-12): `group` / `selector_section`
+metadata exposure, five-family remap with `Utility` editor styling, the
+four-tab selector with I/O switch, section headers, reduced filters, the
+generic Group Picker modal with auto-promotion and ESC-returns-to-selector,
+selector hiding of `start_node`/`end_node`, and node helper validation for
+the new families and fields.
+
 Remaining Phase 17 work:
 
-- Keep the active docs aligned with the true Phase 17 status and current
-  frontend/backend support gaps.
-- Decide whether the currently discovered frontend support gaps belong in the
-  Phase 17 closeout, Phase 18 acceleration/help work, or separate backlog
-  slices.
+- Manually verify the selector (tabs, switch, headers, picker) and the
+  editor view in the running app at several terminal widths: two-line rows,
+  aligned frames, identity line visible, selection highlight, and branch
+  selector rows. (First rendering bug already fixed: identity rows now
+  re-fit to the rendered panel width on resize.)
 - Keep future runtime-resource expansion and node-library redesign work
-  separate from the Phase 17 visual identity foundation unless a small UI
-  affordance is needed for an already-exposed backend metadata hint.
-
-Current frontend/backend support gaps discovered during the Phase 17 audit:
-
-- No run-history browser: the backend persists run summaries, outputs, errors,
-  and timings, but the UI only exposes the current run.
-- No generic file picker for node config fields with schema
-  `path_hint: "file"`; `FileReaderNode.file_path` is still a typed text field.
-- No UI for `SaveManager` memory-state save/load options
-  (`include_memory`, `restore_execution`); decide whether to expose or keep
-  dormant.
-- No UI for `WorkflowMap` rename, cached open-workflow switching, or bookmark
-  navigation.
-- No UI action for clearing persisted run errors.
+  separate from the Phase 17 visual identity foundation.
 
 Read `PHASE_17_NODE_VISUAL_IDENTITY.md` before implementing selector, node row,
 or node metadata changes for this phase.
@@ -92,7 +94,8 @@ or node metadata changes for this phase.
 | 9 | Merge dynamic list + lineage barrier | Done |
 | FA-0..FA-5 | Frontend standardization helpers | Done |
 | 10 | Documentation modernization | Done |
-| 10.5 | Backend/frontend boundary cleanup | Done |
+| 10.5 | Backend/frontend boundary cleanup (Phase A) | Done |
+| 10.6 | Tombstone design decision + Phase B migration | Done (restore-alert UI + Phase C metadata deferred) |
 | 11 | Real AI node execution | Deferred |
 | 12 | Packaging and release hardening | Deferred |
 | 13 | Cursor model foundation | Done |
@@ -100,19 +103,31 @@ or node metadata changes for this phase.
 | 15 | Editor rework | Done |
 | 16 | File modal + node config tabs | Done |
 | Docs | Task-first documentation overhaul | Done |
-| 17 | Node visual identity + selector taxonomy | In Progress |
+| 17 | Node visual identity + selector taxonomy | In progress |
 | 18 | Acceleration + help rewrite | Planned |
 | 19 | Nested workflows: built-in subworkflow node | Planned |
 | 20 | Nested workflows: user-created subworkflows | Planned |
 
 ## Recently Completed
 
+- Backend/edit-time performance: fixed two O(n^2) hot spots — the
+  `MEMORY_UPDATE` full-store snapshot (`memory_bank.py`) and the per-mutation
+  workflow-cache deepcopy (`workflow_map.py`). Per-node execution overhead is
+  ~15 us/node and linear; a C rewrite is not warranted. Remaining lower-leverage
+  optimizations are deferred under `PROJECT_BACKLOG.md` → "Backend Execution &
+  Edit-Time Performance" (2026-06-13).
 - Task-first docs overhaul: `README.md`, `TASK_INDEX.md`, active roadmap, and
   archived historical build/session detail.
 - Node helper generator at `../aotn_node_helper/`.
 - Generated node specs support `config_tabs` for Source / Parameters / Payloads.
 - `NodeConfigScreen` honors schema `tab` hints.
 - Focused generated-node tests live under `tests/generated/`.
+- Dynamic-form schema keys `enabled_when`, `visible_when`, and
+  `mutually_exclusive_with` are implemented in the form generator and applied
+  live by `NodeConfigScreen`, including across tabs (2026-06-12).
+- Helper specs expand the NODE_STANDARDS input/output model via
+  `input_sources` / `output_routing`; `check_ui.py` and generated config-UI
+  smoke tests verify tab placement, focus, and rule state (2026-06-12).
 - Branch config v1 supports 2-5 always-parallel spawn points and per-branch
   seed payloads.
 - Merge Beacon is the user-facing name for persisted `branch_end_node`.
@@ -125,11 +140,32 @@ or node metadata changes for this phase.
   by tab-specific subcategories.
 - Phase 17 editor row identity and details-panel identity are implemented and
   covered by focused tests.
+- SecretsManager module (2026-06-13): plain-text JSON store at
+  `secrets/secrets.json`; wired through `MasterState → Supervisor → NodeContext`;
+  nodes call `context.get_secret(key_name)`. Validator checks secret-ref fields
+  (`"secret": True` schema hint). Schema supports at-rest encryption as a
+  one-module upgrade.
+- Backend build plan Phases 1–6 (2026-06-13): tombstone `editor_only` flag and
+  validator port context; legacy save migration; typed vault MemoryBank API;
+  LLM chat session foundation in `RunSession`; parallel-branch vault race
+  warnings; four utility nodes (TextTransform, JsonPath, RandomNumber, HttpRequest)
+  via `aotn_node_helper`.
+- Headless build plan H1–H5 (2026-06-13), backlog work verifiable with pytest
+  alone (no live-TUI): saves write `tombstone_node` directly with full
+  original data (H1); `restore_tombstone()` with connection validation and
+  partial restore returning a `TombstoneRestoreReport` (H2); `"secret": True`
+  fields on the four API-key nodes plus `SecretsManager` wired into editor
+  validation (H3); label/value select options and full schema-key test
+  coverage in `form_generator.py` (H4); `backend/branch_health.py` deriving
+  per-branch `valid`/`ended_unmerged`/`floating` state (H5). Plan and outcome
+  in `archive/plans/HEADLESS_BUILD_PLAN.md`. Deferred UI pieces (tombstone
+  restore alert, Secrets settings tab, branch-health colours) remain in
+  `PROJECT_BACKLOG.md`.
 
 See `SESSION_LOG.md` for recent entries and `archive/SESSION_LOG_HISTORY.md`
 for older entries.
 
-## Active Phase: Phase 17 — Node Visual Identity + Selector Taxonomy
+## Current Phase: Phase 17 — Node Visual Identity + Selector Taxonomy
 
 Goal: make the node library easier to browse and editor rows easier to scan,
 while laying the metadata foundation for the planned node overhaul.
@@ -144,29 +180,34 @@ Done:
   initially highlights the first subcategory control, and uses command-mode
   activation for search.
 - Subcategory filters use `AND` semantics.
-- Editor rows use two-line alias plus family/subcategory identity inside
-  individual bordered text boxes, with truncation for long identity text.
+- Editor rows use two-line alias plus family/subcategory identity with aligned
+  frames and truncation for long identity text.
 - The details panel shows full primary family and all subcategories.
 - Utility/debug/pass-through nodes render more quietly, while validation,
   breakpoint, execution, and Merge Beacon health states retain priority.
+- Core Simplification Rule documented: when to group vs separate types vs
+  mode-select vs direct-add. See `PHASE_17_NODE_VISUAL_IDENTITY.md` and
+  `NODE_STANDARDS.md`.
+- Taxonomy revised (2026-06-12): five families / four tabs with I/O switch,
+  AI as subcategory, section headers, reduced filters, Start/End removal,
+  AI Input node design, curated AI supported-model approach. Full node
+  inventory (Live/Planned/Deferred/Concept) created in `NODE_CATALOG.md`.
+- Two-level group picker design documented: main selector with group counts,
+  generic Group Picker second modal, auto-promotion rule, `ESC` behavior,
+  search-dissolves-groups behavior, keyboard flows.
 
 Remaining:
 
-- Triage and schedule the current frontend/backend support gaps listed above.
-- Keep the Phase 17 completion criteria honest: metadata exposure, selector
-  filtering, row identity, and details identity are implemented, but the phase
-  remains open while the current gap audit is being folded into the roadmap.
-
-Current todo:
-
-- Update any stale active docs that still call Phase 17 complete.
-- Choose the first UI gap to implement or explicitly defer.
-- Keep future runtime-resource expansion separate from Phase 17 visual work
-  unless it is limited to frontend affordances for existing schema metadata.
+- Live-TUI verification of the restructured selector (tabs, I/O switch,
+  headers, group picker) and editor rows at several terminal widths before
+  closing the phase (first rendering bug already fixed: rows re-fit to
+  panel width).
+- Begin Phase 18 only after the live editor view is verified clean.
 
 Planning reference:
 
 - `PHASE_17_NODE_VISUAL_IDENTITY.md`
+- `NODE_CATALOG.md`
 
 Likely files:
 
@@ -193,8 +234,16 @@ Focused checks:
   supervisor from one node.
 - **Phase 20 — User-created subworkflow nodes.** Publish workflows as reusable
   nodes with dependency/export policy.
+- **Typed vault entries and AI session handles.** Backend foundation done
+  (2026-06-13): `MemoryBank.store_persistent` accepts `type_tag`; `read_persistent_by_type`
+  added; validator warns on ai_session type mismatch and parallel-branch races;
+  `RunSession` has multi-turn chat session API. Remaining: config-driven "keep
+  active AI session" checkbox on LLM nodes; Vault write path for `ai_session`
+  entries on execute; input source dropdowns filter by type. See
+  `PROJECT_BACKLOG.md` and `NODE_STANDARDS.md` for full design.
 - **Deferred AI integration.** Implement real AI node execution once UI and
-  node authoring conventions stabilize.
+  node authoring conventions stabilize. Typed vault entry support is a
+  prerequisite for AI session continuation.
 
 ## Standing Implementation Rules
 
