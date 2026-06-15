@@ -1,0 +1,10 @@
+{
+  "run_id": "run_c2c85934",
+  "outputs": [
+    {
+      "run_id": "run_c2c85934",
+      "node_id": "output_log",
+      "value": "[END] Branch completed (received: Workflow started)"
+    }
+  ]
+}

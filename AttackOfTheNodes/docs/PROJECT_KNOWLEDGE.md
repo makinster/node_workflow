@@ -129,10 +129,17 @@ logic is added:
 - `default_config`
 - `config_schema`
 - optional `ui_hints`
+- Phase 17 identity metadata: primary family, subcategory tags,
+  `icon_name`, and `color_hint`
 
 The form generator supports text, number, boolean, select, multiselect,
 multiline, code-like fields, placeholders, validators, height hints, grouped
 tabs, and branch-label fields for multi-output nodes.
+
+Current implementation note: `NodeFactory.get_node_types_metadata()` exposes
+category / primary family, legacy category, subcategory tags, icon name, and
+color hint. Phase 17 selector filters and editor row identity consume that
+portable metadata.
 
 ## Registered Node Families
 
@@ -142,6 +149,24 @@ tabs, and branch-label fields for multi-output nodes.
 - AI placeholders: Chat Completion, Image Generation, Embedding.
 - Debug/utility: Tombstone, Echo, Logger, Sleep, Counter, Memory Snapshot,
   Probe, Error, Random Branch, Deep Branch, No Op, Repeat Counter.
+
+## Planned Node Taxonomy
+
+Phase 17 introduces user-facing primary families for the upcoming node overhaul:
+
+- Inputs: external-source inputs such as text in, file read, web scrape, and
+  user text input.
+- Flow Control: branch, conditional branch, merge, wait, loop, and branch-shape
+  nodes.
+- Outputs: user-facing or durable workflow outputs, including branch-ending
+  outputs.
+- Complex: nested workflows and unique nodes that do not fit the other
+  families cleanly.
+
+Nodes can also carry multiple subcategories such as Triggered, File I/O,
+Internet, AI, Passive Output, Active Output, Parallel, Conditional, Runtime
+Resource, and Utility. Selector filters and editor row identity should use this
+metadata without changing runtime semantics.
 
 ## Current UI Rules
 
@@ -158,6 +183,25 @@ tabs, and branch-label fields for multi-output nodes.
   structural sections such as merge branch selection and wait target selection.
 - Backend behavior should not be added solely to make Textual presentation
   easier; frontend adapters own those repairs and visuals.
+
+## Current Frontend Support Gaps
+
+Audited 2026-06-14 while Phase 17 remains active:
+
+- Historical run data is persisted by backend services but has no dedicated UI
+  browser. Current screens expose live/current-run outputs, errors, memory, and
+  timings, not previous run summaries or historical output/error inspection.
+- Node config does not yet render file/path picker controls from schema hints.
+  `FileReaderNode.file_path` declares `path_hint: "file"` and validation uses
+  it, but the generated form still presents a normal text input.
+- `SaveManager` supports saving workflow payloads with memory state and loading
+  with `restore_execution=True`, but app save/load paths do not expose those
+  options. Decide whether this is a product feature or an internal hook.
+- `WorkflowMap` supports workflow rename, cached open-workflow switching, and
+  bookmarks, but the Textual workflow library/editor do not expose those
+  controls.
+- `ErrorHandler` can clear persisted errors for a run, but there is no frontend
+  action for clearing them.
 
 ## Runtime Data
 
@@ -180,5 +224,6 @@ These are operational data folders, not source architecture.
   alignment.
 - Branch health visualization: distinguish valid branch endings, unmerged
   Merge Beacon markers, and floating branches.
-- Later UI phases: cursor model, key remap, editor rework, file modal/config
-  tabs, visual identity, acceleration/help rewrite.
+- Phase 17: node visual identity, selector taxonomy, and current UI-support gap
+  triage.
+- Later UI phases: acceleration/help rewrite.

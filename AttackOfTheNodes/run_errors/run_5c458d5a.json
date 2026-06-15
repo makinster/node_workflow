@@ -1,0 +1,25 @@
+{
+  "run_id": "run_5c458d5a",
+  "errors": [
+    {
+      "id": "err_f2d43d0d4a",
+      "timestamp": "2026-06-10T21:45:09.566455+00:00",
+      "category": "UNKNOWN",
+      "message": "Deliberate error from ErrorNode",
+      "type": "RuntimeError",
+      "traceback": "RuntimeError: Deliberate error from ErrorNode\n",
+      "context": {
+        "run_id": "run_5c458d5a",
+        "branch_id": "branch_39b528",
+        "node_id": "node_370febac",
+        "depth": 0,
+        "inputs": {
+          "input": "Workflow started"
+        }
+      },
+      "run_id": "run_5c458d5a",
+      "node_id": "node_370febac",
+      "branch_id": "branch_39b528"
+    }
+  ]
+}

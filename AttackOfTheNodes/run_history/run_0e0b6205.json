@@ -1,0 +1,16 @@
+{
+  "ended_at": "2026-06-09T06:19:14.090670+00:00",
+  "run_id": "run_00ac6729",
+  "workflow_id": "wf_15ab020f0d50",
+  "workflow_name": "test_deep_branch",
+  "started_at": "2026-06-09T06:19:14.087269+00:00",
+  "final_state": "FINISHED",
+  "error_count": 0,
+  "output_count": 0,
+  "node_timings": {
+    "node_6215c0fc": 1.6440171748399734e-06,
+    "node_8d333ba8": 2.0649749785661697e-06
+  },
+  "id": "wf_2e3ee5038144",
+  "name": "Imported Workflow (Imported)"
+}

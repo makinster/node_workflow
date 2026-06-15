@@ -48,6 +48,25 @@ Standard node configs use fixed tabs:
 Ordinary nodes should not require custom frontend code. Use node metadata,
 `config_schema`, `input_port_metadata`, `output_port_metadata`, and `ui_hints`.
 
+## Phase 17 Node Identity
+
+Use `PHASE_17_NODE_VISUAL_IDENTITY.md` for the active plan.
+
+- Selector family tabs: `Inputs`, `Flow Control`, `Outputs`, `Complex`.
+- Subcategory filters are multi-tag metadata, not mutually exclusive families.
+- Subcategory filters are checkboxes with `AND` behavior.
+- Initial selector focus should land on the first subcategory control, not the
+  string filter.
+- The string filter should be activate-to-edit; `/` can jump to it.
+- Editor rows may use two lines: alias first, family/subcategory identity
+  second.
+- Editor rows should render as individual bordered text boxes with plain alias
+  and identity text inside; truncate long subcategory text with an ellipsis when
+  needed.
+- Details panel should show primary family and all subcategories.
+- Preserve selection, autoscroll, validation colors, breakpoint markers,
+  execution state, and Merge Beacon health colors.
+
 ## Current Style Language
 
 - Graph-passed data is a dead-drop payload.

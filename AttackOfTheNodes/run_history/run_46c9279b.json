@@ -1,0 +1,15 @@
+{
+  "ended_at": "2026-06-09T06:19:22.307029+00:00",
+  "run_id": "run_46c9279b",
+  "workflow_id": "wf_132d433f24a9",
+  "workflow_name": "node_timing",
+  "started_at": "2026-06-09T06:19:22.252581+00:00",
+  "final_state": "FINISHED",
+  "error_count": 0,
+  "output_count": 1,
+  "node_timings": {
+    "node_44a228b5": 1.9208528101444244e-06,
+    "node_0680ca1c": 0.05023758811876178,
+    "node_a19113fa": 3.0117109417915344e-05
+  }
+}

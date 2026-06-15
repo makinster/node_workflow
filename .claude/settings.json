@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c//**)",
+      "PowerShell(& \"C:\\\\Users\\\\makin\\\\OneDrive\\\\Documents\\\\node_workflow\\\\.venv\\\\bin\\\\python\" -c \"import sys; sys.path.insert\\(0, r'c:\\\\Users\\\\makin\\\\OneDrive\\\\Documents\\\\node_workflow\\\\attackofthenodes_v05'\\); from frontend.screens.editor import EditorScreen; print\\('Import OK'\\)\" 2>&1)",
+      "PowerShell($python = \"C:\\\\Users\\\\makin\\\\OneDrive\\\\Documents\\\\node_workflow\\\\attackofthenodes_v05\\\\.venv\\\\Scripts\\\\python.exe\"; if \\(Test-Path $python\\) { & $python -m compileall -q \"C:\\\\Users\\\\makin\\\\OneDrive\\\\Documents\\\\node_workflow\\\\attackofthenodes_v05\\\\frontend\\\\screens\\\\node_config.py\" } else { Write-Output \"venv not found at $python\" })",
+      "PowerShell(wsl -e bash -c \"sed -n '4060,4150p' /mnt/c/Users/makin/OneDrive/Documents/node_workflow/.venv/lib/python3.14/site-packages/textual/app.py\")",
+      "PowerShell(wsl -e bash -c \"sed -n '450,500p' /mnt/c/Users/makin/OneDrive/Documents/node_workflow/.venv/lib/python3.14/site-packages/textual/pilot.py\")",
+      "PowerShell(wsl -e bash -c \"grep -n 'async def press\\\\|def press' /mnt/c/Users/makin/OneDrive/Documents/node_workflow/.venv/lib/python3.14/site-packages/textual/pilot.py\")"
+    ]
+  }
+}

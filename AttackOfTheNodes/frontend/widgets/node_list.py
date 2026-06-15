@@ -62,6 +62,7 @@ class NodeList(ListView):
                     timings.get(node_id),
                     show_status=False,
                     show_id=False,
+                    show_identity=True,
                 )
             elif row["kind"] == "branch_select":
                 card = BranchSelectCard(

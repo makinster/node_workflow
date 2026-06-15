@@ -5,6 +5,7 @@ Runs static checks on a loaded workflow. Errors block execution; warnings are
 informational, such as loose nodes unreachable from the start node.
 """
 
+from pathlib import Path
 from typing import Any, Dict, List, Set
 
 from .node_factory import NodeFactory
@@ -133,6 +134,38 @@ def validate_workflow(workflow_map: WorkflowMap, factory: NodeFactory) -> Dict[s
                         "message": (
                             f"Orphaned input connection on undeclared port '{port}' "
                             f"(node type '{node_type}' has no such input)"
+                        ),
+                    }
+                )
+
+    # File-path fields: schema fields hinted with path_hint == "file".
+    # An empty required path is an error; a path missing on disk is only a
+    # warning because an earlier node may create the file during the run.
+    for node_id, data in all_nodes.items():
+        meta = _type_meta_cache.get(data.get("type", ""))
+        if meta is None:
+            continue
+        config = data.get("config") or {}
+        for field_name, field_info in (meta.get("config_schema") or {}).items():
+            if field_info.get("path_hint") != "file":
+                continue
+            raw_path = str(config.get(field_name, "") or "").strip()
+            if not raw_path:
+                if field_info.get("required", False):
+                    errors.append(
+                        {
+                            "node_id": node_id,
+                            "message": f"Missing file path in field '{field_name}'",
+                        }
+                    )
+                continue
+            if not Path(raw_path).expanduser().exists():
+                warnings.append(
+                    {
+                        "node_id": node_id,
+                        "message": (
+                            f"File for field '{field_name}' was not found at "
+                            f"validation time: {raw_path}"
                         ),
                     }
                 )

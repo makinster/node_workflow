@@ -1,0 +1,25 @@
+{
+  "run_id": "run_3296b855",
+  "outputs": [
+    {
+      "run_id": "run_3296b855",
+      "node_id": "output_log",
+      "value": "[first_branch]"
+    },
+    {
+      "run_id": "run_3296b855",
+      "node_id": "output_log",
+      "value": "[END] Branch completed (received: Workflow started)"
+    },
+    {
+      "run_id": "run_3296b855",
+      "node_id": "output_log",
+      "value": "[second_branch]"
+    },
+    {
+      "run_id": "run_3296b855",
+      "node_id": "output_log",
+      "value": "[END] Branch completed (received: Workflow started)"
+    }
+  ]
+}

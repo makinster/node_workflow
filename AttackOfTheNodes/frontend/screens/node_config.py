@@ -718,9 +718,9 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 yield Static(
                     "\n".join(
                         [
-                            "Node type: Branch",
-                            "- This node spawns branching paths.",
-                            "- Parallel paths enabled",
+                            "Node type: Parallel Branch",
+                            "- Duplicates the incoming payload across branch paths.",
+                            "- Parallel paths run independently",
                             "- Conditional branching hidden for a later node pass",
                         ]
                     ),

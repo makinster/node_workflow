@@ -1,0 +1,15 @@
+{
+  "ended_at": "2026-06-10T23:13:54.745767+00:00",
+  "run_id": "run_cc5c2049",
+  "workflow_id": "wf_01902add6ac1",
+  "workflow_name": "test_run_session",
+  "started_at": "2026-06-10T23:13:54.730593+00:00",
+  "final_state": "FINISHED",
+  "error_count": 0,
+  "output_count": 1,
+  "node_timings": {
+    "node_b1ab6ab2": 1.7569982446730137e-06,
+    "node_27443a60": 0.01126785299857147,
+    "node_5a322e31": 1.5325997082982212e-05
+  }
+}

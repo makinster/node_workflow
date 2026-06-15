@@ -1,0 +1,10 @@
+{
+  "run_id": "run_ccf8cebe",
+  "outputs": [
+    {
+      "run_id": "run_ccf8cebe",
+      "node_id": "output_log",
+      "value": "[END] Branch completed (received: Workflow started)"
+    }
+  ]
+}

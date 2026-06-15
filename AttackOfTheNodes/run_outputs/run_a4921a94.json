@@ -1,0 +1,10 @@
+{
+  "run_id": "run_a4921a94",
+  "outputs": [
+    {
+      "run_id": "run_a4921a94",
+      "node_id": "output_log",
+      "value": "[END] Branch completed (received: second body)"
+    }
+  ]
+}

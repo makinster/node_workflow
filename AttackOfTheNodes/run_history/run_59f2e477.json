@@ -1,0 +1,15 @@
+{
+  "ended_at": "2026-06-09T06:19:13.793092+00:00",
+  "run_id": "run_59f2e477",
+  "workflow_id": "wf_b91c30da85d3",
+  "workflow_name": "test_sleep",
+  "started_at": "2026-06-09T06:19:13.587675+00:00",
+  "final_state": "FINISHED",
+  "error_count": 0,
+  "output_count": 1,
+  "node_timings": {
+    "node_44a4ceed": 1.376960426568985e-06,
+    "node_e594a5f7": 0.20065046614035964,
+    "node_89306a1e": 2.957414835691452e-05
+  }
+}

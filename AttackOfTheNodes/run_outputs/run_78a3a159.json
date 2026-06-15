@@ -1,0 +1,25 @@
+{
+  "run_id": "run_78a3a159",
+  "outputs": [
+    {
+      "run_id": "run_78a3a159",
+      "node_id": "output_log",
+      "value": "[step1]"
+    },
+    {
+      "run_id": "run_78a3a159",
+      "node_id": "output_log",
+      "value": "[step2]"
+    },
+    {
+      "run_id": "run_78a3a159",
+      "node_id": "output_log",
+      "value": "[step3]"
+    },
+    {
+      "run_id": "run_78a3a159",
+      "node_id": "output_log",
+      "value": "[END] Branch completed (received: Workflow started)"
+    }
+  ]
+}

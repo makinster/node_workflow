@@ -1,0 +1,15 @@
+{
+  "ended_at": "2026-06-10T23:20:29.415314+00:00",
+  "run_id": "run_c667cf26",
+  "workflow_id": "wf_b8b9490acc17",
+  "workflow_name": "test_rerun",
+  "started_at": "2026-06-10T23:20:29.399159+00:00",
+  "final_state": "FINISHED",
+  "error_count": 0,
+  "output_count": 1,
+  "node_timings": {
+    "node_2e8a1572": 2.1099986042827368e-06,
+    "node_4974aec5": 0.012386940994474571,
+    "node_8aa74416": 1.6917001630645245e-05
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "run_id": "run_09b06059",
+  "outputs": [
+    {
+      "run_id": "run_09b06059",
+      "node_id": "output_log",
+      "value": "[after_set] original-input"
+    },
+    {
+      "run_id": "run_09b06059",
+      "node_id": "output_log",
+      "value": "[END] Branch completed (received: original-input)"
+    }
+  ]
+}

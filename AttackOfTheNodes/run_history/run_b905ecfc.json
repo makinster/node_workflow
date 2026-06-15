@@ -1,0 +1,14 @@
+{
+  "ended_at": "2026-06-09T05:39:15.210017+00:00",
+  "run_id": "run_b905ecfc",
+  "workflow_id": "wf_6f2f32e9f864",
+  "workflow_name": "leak_om",
+  "started_at": "2026-06-09T05:39:15.206592+00:00",
+  "final_state": "FINISHED",
+  "error_count": 0,
+  "output_count": 1,
+  "node_timings": {
+    "node_5fc06f9e": 1.1380761861801147e-06,
+    "node_b723f8ca": 7.4319541454315186e-06
+  }
+}

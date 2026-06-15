@@ -1,0 +1,14 @@
+{
+  "ended_at": "2026-06-10T21:45:09.569435+00:00",
+  "run_id": "run_5c458d5a",
+  "workflow_id": "wf_9813e274e1e7",
+  "workflow_name": "test_run_session_error",
+  "started_at": "2026-06-10T21:45:09.566327+00:00",
+  "final_state": "ERROR",
+  "error_count": 1,
+  "output_count": 0,
+  "node_timings": {
+    "node_b9f5963f": 1.8210048438049853e-06,
+    "node_370febac": 3.1769959605298936e-06
+  }
+}

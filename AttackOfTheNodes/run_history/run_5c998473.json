@@ -1,0 +1,16 @@
+{
+  "ended_at": "2026-06-10T23:19:03.048036+00:00",
+  "run_id": "run_5c998473",
+  "workflow_id": "wf_6b6f080c0f28",
+  "workflow_name": "set_variable_pass_through",
+  "started_at": "2026-06-10T23:19:03.042308+00:00",
+  "final_state": "FINISHED",
+  "error_count": 0,
+  "output_count": 2,
+  "node_timings": {
+    "node_cb718cea": 2.268003299832344e-06,
+    "node_238ee429": 4.19899879489094e-06,
+    "node_63952f29": 9.701994713395834e-06,
+    "node_328b4538": 4.931003786623478e-06
+  }
+}

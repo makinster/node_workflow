@@ -10,8 +10,8 @@ class BranchNode(Node):
     """Spawns parallel execution paths seeded from selected payloads."""
 
     node_type: ClassVar[str] = "branch_node"
-    display_name: ClassVar[str] = "Branch"
-    description: ClassVar[str] = "Spawns branching paths"
+    display_name: ClassVar[str] = "Parallel Branch"
+    description: ClassVar[str] = "Duplicates input across parallel branch paths"
     category: ClassVar[str] = NodeCategory.FLOW
 
     input_ports: ClassVar[List[str]] = ["input"]
@@ -36,7 +36,7 @@ class BranchNode(Node):
         "branch_count": {
             "type": "integer",
             "label": "Branches",
-            "description": "Number of parallel branch paths to spawn",
+            "description": "Number of parallel branch paths to duplicate input across",
             "required": False,
             "min": 2,
             "max": 5,

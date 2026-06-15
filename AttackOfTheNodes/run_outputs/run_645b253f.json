@@ -1,0 +1,15 @@
+{
+  "run_id": "run_645b253f",
+  "outputs": [
+    {
+      "run_id": "run_645b253f",
+      "node_id": "output_log",
+      "value": "[breakpoint_logger]"
+    },
+    {
+      "run_id": "run_645b253f",
+      "node_id": "output_log",
+      "value": "[END] Branch completed (received: Workflow started)"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "run_id": "run_8f7f71ce",
+  "outputs": [
+    {
+      "run_id": "run_8f7f71ce",
+      "node_id": "output_log",
+      "value": "[round_trip] hello"
+    },
+    {
+      "run_id": "run_8f7f71ce",
+      "node_id": "output_log",
+      "value": "[END] Branch completed (received: hello)"
+    }
+  ]
+}

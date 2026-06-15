@@ -59,6 +59,7 @@ class EditorScreen(Screen):
         Binding("v", "validate_workflow", "Validate", priority=True),
         Binding("b", "toggle_breakpoint", "Breakpoint", priority=True),
         Binding("ctrl+b", "clear_breakpoints", "Clear breakpoints", priority=True),
+        Binding("z", "undo_delete", "Undo delete", priority=True),
         Binding("backspace", "delete_selected", "Delete", priority=True),
         Binding("x", "delete_selected", "Delete", priority=True),
         Binding("f", "workflow_library", "File", priority=True),
@@ -96,6 +97,7 @@ class EditorScreen(Screen):
             yield StatusBar("f file | o options | h help | ctrl+q quit")
 
     def on_mount(self) -> None:
+        self.workflow_adapter.bind_state_owner(self.app)
         self._restore_editor_state_from_app()
         self.refresh_from_backend()
         node_list = self.query_one(NodeList)
@@ -106,6 +108,7 @@ class EditorScreen(Screen):
         self._refresh_details()
 
     def on_show(self) -> None:
+        self.workflow_adapter.bind_state_owner(self.app)
         self._restore_editor_state_from_app()
         if self.is_mounted:
             self.refresh_from_backend()
@@ -133,7 +136,7 @@ class EditorScreen(Screen):
                         {
                             "kind": "node",
                             "node_id": self.selected_node_id,
-                            "node": self._node_for_display(node),
+                            "node": self._node_for_display(self.selected_node_id, node),
                             "loose": True,
                         }
                     )
@@ -254,6 +257,8 @@ class EditorScreen(Screen):
         self._cycle_branch_view(incomplete_only=True, direction=1)
 
     def action_validate_workflow(self) -> None:
+        self.workflow_adapter.materialize_deleted_nodes()
+        self.refresh_from_backend()
         result = validate_workflow(self.workflow_map, self.factory)
         errors = result.get("errors", [])
         warnings = result.get("warnings", [])
@@ -275,6 +280,7 @@ class EditorScreen(Screen):
         self.app.action_help()
 
     def action_save_workflow(self) -> None:
+        self.workflow_adapter.materialize_deleted_nodes()
         self.app.action_save_workflow()
 
     def action_toggle_breakpoint(self) -> None:
@@ -328,6 +334,19 @@ class EditorScreen(Screen):
             self._save_node_config_from_modal,
         )
 
+    def action_undo_delete(self) -> None:
+        self._restore_node_list_focus()
+        if self.selected_node_id is None:
+            notifications.no_node_selected(self.app)
+            return
+        if not self.workflow_adapter.is_placeholder(self.selected_node_id):
+            return
+        if not self.workflow_adapter.undo_placeholder(self.selected_node_id):
+            notifications.notify_info(self.app, "Deleted node cannot be restored")
+            return
+        self.refresh_from_backend()
+        notifications.notify_info(self.app, "Deleted node restored")
+
     def action_delete_selected(self) -> None:
         if self.selected_node_id is None:
             notifications.no_node_selected(self.app)
@@ -350,6 +369,8 @@ class EditorScreen(Screen):
             return
         node = self.workflow_map.get_node_data(self.selected_node_id)
         if node and self.workflow_adapter.is_placeholder(self.selected_node_id):
+            if node.get("type") == "branch_end_node":
+                self._prune_merge_config_for_beacon(self.selected_node_id)
             removed = self.workflow_adapter.remove_placeholder(self.selected_node_id)
             if removed:
                 self.selected_node_id = None
@@ -357,8 +378,6 @@ class EditorScreen(Screen):
                 self.refresh_from_backend()
                 notifications.tombstone_removed(self.app)
             return
-        if node and node.get("type") == "branch_end_node":
-            self._prune_merge_config_for_beacon(self.selected_node_id)
         self.workflow_adapter.replace_with_placeholder(self.selected_node_id)
         self.refresh_from_backend()
         notifications.node_deleted(self.app)
@@ -1080,6 +1099,8 @@ class EditorScreen(Screen):
         lines = [
             f"Name: {self._node_label(node_id, node)}",
             f"Kind: {kind}",
+            f"Family: {self._metadata_family(metadata)}",
+            f"Subcategories: {self._metadata_subcategories(metadata)}",
             f"Step: {self._selected_depth_text()}",
             f"Breakpoint: {'on' if node.get('breakpoint') else 'off'}",
         ]
@@ -1245,6 +1266,17 @@ class EditorScreen(Screen):
                 return item
         return None
 
+    def _metadata_family(self, metadata: Optional[Dict[str, Any]]) -> str:
+        if not metadata:
+            return "Unknown"
+        return str(metadata.get("primary_family") or metadata.get("category") or "Unknown")
+
+    def _metadata_subcategories(self, metadata: Optional[Dict[str, Any]]) -> str:
+        if not metadata:
+            return "none"
+        tags = [str(tag) for tag in metadata.get("tags") or [] if str(tag)]
+        return ", ".join(tags) if tags else "none"
+
     def _output_ports_for_node(
         self,
         node: Dict[str, Any],
@@ -1330,6 +1362,7 @@ class EditorScreen(Screen):
             self._select_row(node_list.row_for_index(index))
         if index is not None:
             node_list.index = index
+            node_list.scroll_visible(animate=False)
         node_list.normalize_highlight()
         self.app.set_focus(node_list)
 
@@ -1381,6 +1414,7 @@ class EditorScreen(Screen):
         current = node_list.index if node_list.index is not None else 0
         next_index = max(0, min(len(node_list._rows) - 1, current + delta))
         node_list.index = next_index
+        node_list.scroll_visible(animate=False)
         self._select_row(node_list.row_for_index(next_index))
         self._refresh_details()
         node_list.normalize_highlight()
@@ -1401,7 +1435,7 @@ class EditorScreen(Screen):
             if node is None:
                 break
             visited.add(current_node_id)
-            node = self._node_for_display(node)
+            node = self._node_for_display(current_node_id, node)
             node = dict(node)
             node["_editor_depth"] = depth
             rows.append(
@@ -1412,6 +1446,9 @@ class EditorScreen(Screen):
                     "depth": depth,
                 }
             )
+
+            if self.workflow_adapter.is_placeholder(current_node_id):
+                break
 
             if node.get("type") == "branch_end_node":
                 rows.append(self._merge_beacon_select_row(current_node_id, depth))
@@ -1571,13 +1608,33 @@ class EditorScreen(Screen):
             current_node_id = self._target_for_port(node, ports[0])
         return False
 
-    def _node_for_display(self, node: Dict[str, Any]) -> Dict[str, Any]:
-        if node.get("type") != "branch_end_node":
-            return node
+    def _node_for_display(self, node_id: str, node: Dict[str, Any]) -> Dict[str, Any]:
         display_node = dict(node)
-        display_node["_branch_end_connected_to_merge"] = (
-            self._branch_end_connected_to_merge(node)
-        )
+        if self.workflow_adapter.is_placeholder(node_id):
+            metadata = self.workflow_adapter.placeholder_metadata(node_id)
+            display_node["_deleted_overlay"] = {
+                **metadata,
+                "can_restore": self.workflow_adapter.placeholder_has_restore_data(node_id),
+            }
+            display_node["_identity"] = {
+                "primary_family": "Outputs",
+                "category": "Outputs",
+                "tags": ["Passive Output", "Utility"],
+            }
+            return display_node
+        metadata = self._metadata_for_type(display_node.get("type", ""))
+        if metadata:
+            display_node["_identity"] = {
+                "primary_family": metadata.get("primary_family") or metadata.get("category"),
+                "category": metadata.get("category"),
+                "tags": list(metadata.get("tags") or []),
+                "icon_name": metadata.get("icon_name"),
+                "color_hint": metadata.get("color_hint"),
+            }
+        if node.get("type") == "branch_end_node":
+            display_node["_branch_end_connected_to_merge"] = (
+                self._branch_end_connected_to_merge(node)
+            )
         return display_node
 
     def _row_still_visible(

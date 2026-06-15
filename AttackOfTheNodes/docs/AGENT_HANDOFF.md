@@ -6,9 +6,10 @@ The active app is `AttackOfTheNodes/`, a Python/Textual workflow editor and
 execution TUI backed by an asyncio workflow engine. Backend services stay
 UI-agnostic; frontend behavior lives under `frontend/`.
 
-The current active work is a documentation overhaul: keep the default docs path
-short, task-first, accurate to the current project, and linked to archived deep
-history when needed.
+The current active work is Phase 17: node visual identity and selector
+taxonomy. Metadata exposure, selector tabs/filters, editor row identity, and
+details-panel identity have landed, but the phase is still open while current
+frontend/backend support gaps are being triaged into the roadmap.
 
 ## Start Here
 
@@ -30,6 +31,8 @@ history when needed.
   `docs/archive/V05_BUILD_PLAN.md`.
 - Completed/lower-priority planning docs are under `docs/archive/plans/`.
 - `docs/DOCS_MIGRATION_NOTES.md` records why docs were moved or collapsed.
+- `docs/PHASE_17_NODE_VISUAL_IDENTITY.md` records the active taxonomy and UI
+  direction for selector/editor identity work.
 
 ## Project Status
 
@@ -42,9 +45,30 @@ Completed major phases:
   polish through Phase 16.
 - Node helper generator and focused generated-node test workflow.
 
-Next planned product phase after docs cleanup:
+Active product phase:
 
-- Phase 17: Node visual identity.
+- Phase 17: Node visual identity and selector taxonomy.
+
+Phase 17 direction:
+
+- Primary selector families: Inputs, Flow Control, Outputs, Complex.
+- Nodes can have multiple subcategory tags such as Triggered, File I/O,
+  Internet, AI, Passive Output, Active Output, Parallel, Conditional, Runtime
+  Resource, and Utility.
+- The selector uses family tabs, a string filter, tab-specific subcategory
+  controls, and a filtered node list.
+- Editor rows use two-line rows showing alias first, then family and
+  high-signal subcategories.
+
+Current frontend/backend support gaps:
+
+- No historical run browser for persisted run summaries, outputs, errors, and
+  timings.
+- No generic node-config file picker for schema fields with `path_hint: "file"`.
+- No UI for `SaveManager` memory-state save/load options.
+- No UI for workflow rename, cached open-workflow switching, or bookmark
+  navigation.
+- No UI for clearing persisted run errors.
 
 Deferred:
 
@@ -60,6 +84,8 @@ Deferred:
   `../aotn_node_helper/` when practical.
 - Backend code must not import from `frontend`.
 - Before UI-motivated backend changes, read `BACKEND_FRONTEND_BOUNDARY.md`.
+- Before Phase 17 selector/editor work, read
+  `PHASE_17_NODE_VISUAL_IDENTITY.md`.
 - Use focused `pytest -k` checks for small fixes; run the full relevant suite
   before broad runtime/shared UI commits.
 - Update `SESSION_LOG.md` and, for doc moves/collapses,

@@ -65,12 +65,27 @@ class NodeFactory:
         """Return UI-ready metadata for every registered node type."""
         metadata: List[Dict[str, Any]] = []
         for node_type, node_class in self._node_registry.items():
+            primary_family = self._metadata_string(
+                getattr(node_class, "primary_family", "")
+            )
+            legacy_category = self._metadata_string(getattr(node_class, "category", ""))
+            category = primary_family or legacy_category
             metadata.append(
                 {
                     "type": node_type,
                     "display_name": node_class.display_name,
                     "default_alias": node_class.default_alias,
                     "description": node_class.description,
+                    "category": category,
+                    "primary_family": category,
+                    "legacy_category": legacy_category,
+                    "tags": self._metadata_tags(getattr(node_class, "tags", [])),
+                    "icon_name": self._metadata_string(
+                        getattr(node_class, "icon_name", "")
+                    ),
+                    "color_hint": self._metadata_string(
+                        getattr(node_class, "color_hint", "")
+                    ),
                     "input_ports": list(node_class.input_ports),
                     "output_ports": list(node_class.output_ports),
                     "input_port_metadata": self._port_metadata(
@@ -89,6 +104,23 @@ class NodeFactory:
                 }
             )
         return sorted(metadata, key=lambda item: item["display_name"])
+
+    def _metadata_string(self, value: Any) -> str:
+        """Return a plain string for metadata values, including str enums."""
+        if value is None:
+            return ""
+        enum_value = getattr(value, "value", None)
+        if enum_value is not None:
+            value = enum_value
+        return str(value)
+
+    def _metadata_tags(self, value: Any) -> List[str]:
+        """Return subcategory tags as a list of plain strings."""
+        if value is None:
+            return []
+        if isinstance(value, str):
+            return [value] if value else []
+        return [self._metadata_string(item) for item in value if item]
 
     def _port_metadata(
         self,

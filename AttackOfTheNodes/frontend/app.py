@@ -25,6 +25,7 @@ from backend.events import (
 
 from . import file_io
 from . import notifications
+from .editor_workflow_adapter import EditorWorkflowAdapter
 from .widgets.cursor_state import CursorState
 from .screens.editor import EditorScreen
 from .screens.confirm import ConfirmScreen
@@ -87,6 +88,7 @@ class AttackOfTheNodesApp(TextualApp):
         self._branch_current_nodes = {}
         self._user_input_modal_open = False
         self._error_modal_open = False
+        self._editor_deleted_nodes = {}
         self.cursor_state = CursorState()
         self._subscribe_to_backend_events()
 
@@ -285,6 +287,7 @@ class AttackOfTheNodesApp(TextualApp):
 
     def action_save_workflow(self) -> None:
         """Save the active workflow."""
+        self._materialize_editor_deleted_nodes()
         if self.save_manager is not None:
             self.save_manager.save_current_workflow()
         else:
@@ -296,6 +299,7 @@ class AttackOfTheNodesApp(TextualApp):
         if self.workflow_state in {"RUNNING", "PAUSED", "WAITING_FOR_INPUT"}:
             notifications.workflow_already_running(self)
             return
+        self.action_save_workflow()
         self._reset_run_display_state()
         self.switch_screen(
             ExecutionScreen(
@@ -337,6 +341,7 @@ class AttackOfTheNodesApp(TextualApp):
     def _create_new_workflow(self) -> None:
         """Create a fresh starter workflow without additional confirmation."""
         self.stop_active_workflow()
+        self._editor_deleted_nodes = {}
         self.workflow_map.create_new("Untitled Workflow")
         self.workflow_map.add_node("start_node", alias="Start")
         self._on_backend_event()
@@ -414,6 +419,7 @@ class AttackOfTheNodesApp(TextualApp):
             new_id = self.save_manager.duplicate_workflow(workflow_id)
             if new_id:
                 self.save_manager.load_workflow(new_id)
+                self._editor_deleted_nodes = {}
                 self.show_editor_screen()
                 notifications.workflow_duplicated(self)
         elif action == "delete":
@@ -442,6 +448,7 @@ class AttackOfTheNodesApp(TextualApp):
             else self.workflow_map.load(workflow_id)
         )
         if loaded:
+            self._editor_deleted_nodes = {}
             self.show_editor_screen()
             notifications.workflow_loaded(self, result.get("workflow_name", workflow_id))
         else:
@@ -455,6 +462,7 @@ class AttackOfTheNodesApp(TextualApp):
         if not workflow_id:
             return
         if workflow_id == self.workflow_map.workflow_id:
+            self._editor_deleted_nodes = {}
             self.workflow_map.create_new("Untitled Workflow")
             self.workflow_map.add_node("start_node", alias="Start")
         deleted = self.save_manager.delete_workflow(workflow_id)
@@ -571,6 +579,14 @@ class AttackOfTheNodesApp(TextualApp):
             )
             return
         self._load_workflow_from_library(result)
+
+    def _materialize_editor_deleted_nodes(self) -> None:
+        adapter = EditorWorkflowAdapter(
+            self.workflow_map,
+            self.factory,
+            state_owner=self,
+        )
+        adapter.materialize_deleted_nodes()
 
     def _handle_settings_action(self, result) -> None:
         if not result or result.get("action") != "save":

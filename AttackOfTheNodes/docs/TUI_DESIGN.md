@@ -101,7 +101,19 @@ for updated values.
 
 Use Textual `Screen` / `ModalScreen` classes:
 
-- `node_selector.py`: add-node modal grouped by category, searchable.
+- `node_selector.py`: add-node modal grouped by Phase 17 family tabs:
+  `Inputs`, `Flow Control`, `Outputs`, and `Complex`. It keeps a string match
+  filter near the top, then shows tab-specific subcategory checkboxes
+  such as `Triggered`, `File I/O`, `Internet`, `AI`, `Passive Output`,
+  `Active Output`, `Parallel`, `Conditional`, `Runtime Resource`, and
+  `Utility`. The initial keyboard highlight should land on the first
+  subcategory control rather than the string filter. The string filter is
+  activate-to-edit; `/` may jump to it, but selector open should not
+  immediately put the user in typing mode. Subcategory filters use `AND`
+  semantics, so selecting multiple filters shows nodes that match all selected
+  tags. The filtered node list sits below the subcategory controls. Moving
+  between tabs, filter controls, and list rows must autoscroll so the active
+  control is fully visible.
 - `node_config.py`: schema-generated edit form, memory-bank input/output
   declarations, and topology-derived selectors such as wait/merge controls.
   Port-edge mutation should stay in editor workflows, not generic config forms.
@@ -197,6 +209,17 @@ branches preserves vertical orientation.
 Node rows should show the editable, user-facing alias only. Generated ids stay
 out of the editor list and appear only in detail/config contexts where
 disambiguation matters. Tombstones render as `Deleted: <original node name>`.
+Phase 17 may expand node rows to two lines when space allows: the first line
+emphasizes the user-facing alias, and the second line shows primary family plus
+one or two high-signal subcategories. Editor node rows should render as
+individual bordered text boxes, with family-specific border/color treatment
+where useful and no literal bracket characters around the alias or identity
+line. Long subcategory text may truncate with an ellipsis because the full list
+is available in the right-side details panel.
+Rows must not destabilize cursor movement, branch selector rows, validation
+colors, breakpoint markers, execution state, or Merge Beacon health colors. The
+right-side details panel should show the primary family and all subcategories
+for the selected node.
 The editor Quick View should summarize configured data flow without raw graph
 noise. Show `Inputs` and `Outputs`. Under inputs, show `Transient Source:
 <source node name>` and then `<output name>: <description>`, followed by Memory

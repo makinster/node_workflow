@@ -35,17 +35,26 @@ The backend should remain reusable for future CLI, web, or API frontends. The
 current Textual editor introduced tombstone behavior that is useful visually,
 but not inherently an execution-engine concept.
 
-Use `BACKEND_FRONTEND_BOUNDARY.md` as the plan.
+Use `BACKEND_FRONTEND_BOUNDARY.md` as the plan. Audit refreshed 2026-06-10:
+Phase A (frontend tombstone adapter) is done, and `replace_with_tombstone()`,
+tombstone-specific `replace_node_type()`, and backend-written
+`_timing_invalidated` are already gone. New frontend deletes are soft editor
+overlays that materialize to marked `branch_end_node` records on save.
 
-Recommended cleanup:
+Remaining cleanup (Phase B — gated until Phase 17 selector/editor work
+settles; see the coordination gate in `BACKEND_FRONTEND_BOUNDARY.md`):
 
-- Move tombstone placeholders into a frontend editor adapter.
-- Keep backend `WorkflowMap.delete_node()` as a pure graph operation.
-- Remove or deprecate backend `replace_with_tombstone()` once the frontend
-  adapter is covered by tests.
-- Replace tombstone-specific backend validator copy with generic graph errors.
+- Deregister `tombstone_node` from `backend/nodes/__init__.py` and delete the
+  class, once old-save handling for legacy `tombstone_node` records is
+  decided.
+- Replace tombstone-specific backend validator copy with the generic
+  unknown-type error.
+- Remove the `tombstone_node` entry from `backend/node_identity.py`.
+- Decide how old saves containing `tombstone_node` load (adapter migration
+  vs. unknown-type placeholder rendering).
 - Decide whether layout metadata such as `position` and navigation metadata
-  such as `bookmarked` belong in portable workflow saves or editor sidecars.
+  such as `bookmarked` belong in portable workflow saves or editor sidecars
+  (Phase C).
 
 ## Near-Term Project — Frontend Command UI Toolkit
 
@@ -96,10 +105,15 @@ frontend menus.
 
 Recommended cleanup:
 
-- Redesign the node library into clearer categories and subcategories. Flow
-  should eventually distinguish always-parallel branch nodes, conditional branch
-  nodes, merge/wait nodes, and utility markers instead of forcing all branching
-  behavior through one generic node.
+- Continue the Phase 17 taxonomy work from
+  `PHASE_17_NODE_VISUAL_IDENTITY.md`. The user-facing selector families are
+  Inputs, Flow Control, Outputs, and Complex; reusable subcategories should
+  carry capabilities such as Triggered, File I/O, Internet, AI, Passive Output,
+  Active Output, Parallel, Conditional, Runtime Resource, and Utility.
+- Redesign the node library around that taxonomy. Flow Control should
+  eventually distinguish always-parallel branch nodes, conditional branch nodes,
+  merge/wait nodes, loop nodes, and utility markers instead of forcing all
+  branching behavior through one generic node.
 - Extend config schema only with generic keys: placeholder text, min/max/step for
   numeric fields, optional blank-select behavior, multiline height hints, and
   section visibility conditions.
@@ -115,22 +129,62 @@ Recommended cleanup:
   without frontend custom code unless it is explicitly listed as a structural
   topology editor.
 
+## Current Gap Backlog — Backend Features Without Full UI Surface
+
+Audited 2026-06-14 during active Phase 17 work. These are backend capabilities
+that exist today but are not fully exposed in the Textual frontend.
+
+- **Historical run browser.** `RunHistory`, `OutputManager`, and `ErrorHandler`
+  persist run summaries, outputs, errors, and timings by run id. The execution
+  UI can inspect the current run, but there is no browser for previous runs or
+  their saved outputs/errors/timings.
+- **Schema-driven file pickers in node config.** `FileReaderNode.file_path`
+  declares `path_hint: "file"`, and the validator uses that hint. The generated
+  node config UI still renders the field as plain text. Add a generic frontend
+  browse affordance for file/path hinted fields without moving picker behavior
+  into the backend.
+- **Memory-state save/load options.** `SaveManager.save_current_workflow()` can
+  include memory state, and `load_workflow()` can restore it. The app always
+  uses plain save/load. Decide whether to expose this as a workflow snapshot
+  feature or keep it as an internal/testing hook.
+- **Workflow workspace controls.** `WorkflowMap` supports renaming workflows,
+  switching among cached open workflows, and bookmarking nodes. The current
+  workflow library/editor do not expose rename, open-workflow switching, or
+  bookmark navigation.
+- **Error clearing.** `ErrorHandler.clear_errors_for_run()` exists and publishes
+  `ERRORS_CLEARED`, but the frontend has no clear-errors command.
+
+Implementation rule: treat these as frontend/product affordance gaps unless the
+UI truly needs new portable backend metadata. Do not add backend behavior just
+to simplify Textual presentation.
+
 ## Later Project — Runtime Resources And Hidden Helper Nodes
 
 Goal: support richer node behavior without making the editor visually noisy.
 Visible nodes should stay user-friendly, while reusable utility behavior can be
 attached behind the scenes when a node needs it.
 
-Design notes:
+Full design note: `archive/plans/RUNTIME_RESOURCE_SESSION.md`
 
-- Add a lightweight per-run execution session object for runtime resources.
-  It should let backend execution keep handles open for files, streams, or
-  listeners during one workflow run, then close them predictably at run end.
+Done — the core `RunSession` is implemented:
+
+- `backend/run_session.py` holds per-run handles (`open_file`,
+  `register_resource`, `validate_path`, `close_all`).
+- `MasterState` creates the session at run start, passes it to all
+  supervisors, and closes it in `_record_run` on every terminal path.
+- Nodes reach it through `context.run_session`; `FileReaderNode` is the
+  first consumer. The validator checks schema fields hinted with
+  `path_hint: "file"` (empty required path = error, missing on disk =
+  warning). Coverage lives in `tests/test_run_session.py`.
+
+Remaining design notes:
 - Keep the resource session backend-generic. It should not know about Textual,
   OS dialogs, or editor UI. Frontends choose files; nodes receive portable file
   references or session-managed handles through execution context.
 - Treat files as a first-class input family during the node overhaul. Nodes can
   accept a selected file path/resource and perform validation before execution.
+  Users should see files by their normal names/paths in config; actual open
+  handles and access continuity are runtime concerns.
 - Consider long-lived listening resources later: keyboard triggers, folders,
   sockets, or other automation inputs. Keep this opt-in and lightweight so idle
   workflows do not hold unnecessary resources.

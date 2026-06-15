@@ -1,0 +1,14 @@
+{
+  "ended_at": "2026-06-10T21:43:39.578853+00:00",
+  "run_id": "run_0eda9f1b",
+  "workflow_id": "wf_96e4179ca63f",
+  "workflow_name": "leak_embed",
+  "started_at": "2026-06-10T21:43:39.575026+00:00",
+  "final_state": "FINISHED",
+  "error_count": 0,
+  "output_count": 1,
+  "node_timings": {
+    "node_906fe85d": 1.9850049284286797e-06,
+    "node_f878cf8b": 1.0912001016549766e-05
+  }
+}

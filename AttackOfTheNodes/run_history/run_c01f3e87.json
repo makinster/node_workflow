@@ -1,0 +1,16 @@
+{
+  "ended_at": "2026-06-10T22:05:05.159622+00:00",
+  "run_id": "run_c01f3e87",
+  "workflow_id": "wf_ee16db480b9d",
+  "workflow_name": "test_shared_handle",
+  "started_at": "2026-06-10T22:05:05.154651+00:00",
+  "final_state": "FINISHED",
+  "error_count": 0,
+  "output_count": 1,
+  "node_timings": {
+    "node_c912fce1": 2.015003701671958e-06,
+    "node_2fc4169b": 8.262399933300912e-05,
+    "node_91dd2cdd": 2.0070001482963562e-05,
+    "node_feb7c7b7": 1.4309000107459724e-05
+  }
+}

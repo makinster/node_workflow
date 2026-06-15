@@ -507,6 +507,39 @@ def test_new_nodes_use_default_display_alias():
     print("test_new_nodes_use_default_display_alias PASSED")
 
 
+def test_node_factory_exposes_phase_17_identity_metadata():
+    _, wm, _, _ = _make_services()
+
+    metadata = {
+        item["type"]: item
+        for item in wm._factory.get_node_types_metadata()
+    }
+    expected_families = {"Inputs", "Flow Control", "Outputs", "Complex"}
+
+    for node_type, item in metadata.items():
+        assert item["category"] in expected_families, node_type
+        assert item["primary_family"] == item["category"]
+        assert isinstance(item["legacy_category"], str)
+        assert isinstance(item["tags"], list)
+        assert all(isinstance(tag, str) for tag in item["tags"])
+        assert item["icon_name"]
+        assert item["color_hint"]
+
+    assert metadata["file_reader_node"]["category"] == "Inputs"
+    assert "File I/O" in metadata["file_reader_node"]["tags"]
+    assert metadata["branch_node"]["category"] == "Flow Control"
+    assert metadata["branch_node"]["display_name"] == "Parallel Branch"
+    assert metadata["branch_node"]["tags"] == ["Parallel"]
+    assert metadata["text_output_node"]["category"] == "Outputs"
+    assert {"Passive Output", "Active Output"}.issubset(
+        metadata["text_output_node"]["tags"]
+    )
+    assert metadata["chat_completion_node"]["category"] == "Complex"
+    assert "AI" in metadata["chat_completion_node"]["tags"]
+
+    print("test_node_factory_exposes_phase_17_identity_metadata PASSED")
+
+
 # ---------------------------------------------------------------------------
 # 14. SaveManager writes derived input_sources
 # ---------------------------------------------------------------------------
@@ -745,7 +778,7 @@ def test_tombstone_delete_does_not_cascade_branch_nodes():
     assert adapter.replace_with_placeholder(branch)
     all_nodes = wm.get_all_node_data()
     assert branch in all_nodes
-    assert all_nodes[branch]["type"] == "tombstone_node"
+    assert all_nodes[branch]["type"] == "branch_node"
     assert left in all_nodes
     assert right in all_nodes
     print("test_tombstone_delete_does_not_cascade_branch_nodes PASSED")
@@ -761,10 +794,10 @@ def test_tombstone_restore_preserves_original_and_swap_invalidates_timing():
     adapter = EditorWorkflowAdapter(wm, wm._factory)
 
     assert adapter.replace_with_placeholder(node_id)
-    tombstone = wm.get_node_data(node_id)
-    assert tombstone["type"] == "tombstone_node"
-    assert tombstone["config"]["original_alias"] == "Original Logger"
-    assert tombstone["config"]["original_config"] == {"message": "original"}
+    soft_deleted = wm.get_node_data(node_id)
+    assert soft_deleted["type"] == "logger_node"
+    assert adapter.placeholder_metadata(node_id)["original_alias"] == "Original Logger"
+    assert adapter.placeholder_metadata(node_id)["original_config"] == {"message": "original"}
 
     result = adapter.replace_placeholder(node_id, "logger_node")
     assert result["replaced"] is True
@@ -786,23 +819,278 @@ def test_tombstone_restore_preserves_original_and_swap_invalidates_timing():
 
 
 def test_editor_deleted_node_row_renders_as_deleted():
-    from frontend.editor_workflow_adapter import EditorWorkflowAdapter
+    from frontend.widgets.node_card import NodeCard
+
+    deleted = {
+        "type": "logger_node",
+        "_editor_depth": 1,
+        "_deleted_overlay": {
+            "original_alias": "Useful Logger",
+            "original_display_name": "Logger",
+            "can_restore": True,
+        },
+    }
+    card = NodeCard(
+        "node_1",
+        deleted,
+        show_status=False,
+        show_id=False,
+        show_identity=True,
+    )
+    card.refresh_card()
+
+    lines = card.display_text.splitlines()
+    assert lines[0].startswith("  1   Deleted node: Useful Logger (Logger)")
+    assert lines[1].startswith("      x delete | z undo | e new node")
+
+    no_restore = {
+        "type": "branch_end_node",
+        "_editor_depth": 0,
+        "_deleted_overlay": {"can_restore": False},
+    }
+    no_restore_card = NodeCard(
+        "node_2",
+        no_restore,
+        show_status=False,
+        show_id=False,
+        show_identity=True,
+    )
+    no_restore_card.refresh_card()
+    no_restore_lines = no_restore_card.display_text.splitlines()
+    assert no_restore_lines[0].startswith("  0   Deleted node")
+    assert no_restore_lines[1].startswith("      x delete | e new node")
+    assert "z undo" not in no_restore_lines[1]
+    print("test_editor_deleted_node_row_renders_as_deleted PASSED")
+
+
+def test_deleted_node_materializes_to_system_branch_end_and_drops_outputs():
+    from frontend.editor_workflow_adapter import (
+        DELETED_NODE_SYSTEM_ROLE,
+        EditorWorkflowAdapter,
+    )
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("deleted_materialize")
+    start = wm.add_node("start_node")
+    logger = wm.add_node("logger_node", alias="Original Logger")
+    end = wm.add_node("end_node")
+    wm.update_node_config(logger, {"message": "original"})
+    wm.connect(start, "default", logger, "input")
+    wm.connect(logger, "default", end, "input")
+
+    adapter = EditorWorkflowAdapter(wm, wm._factory)
+    assert adapter.replace_with_placeholder(logger)
+    assert wm.get_node_data(logger)["type"] == "logger_node"
+
+    assert adapter.materialize_deleted_nodes() == 1
+    materialized = wm.get_node_data(logger)
+    assert materialized["type"] == "branch_end_node"
+    assert materialized["alias"] == "Deleted node"
+    assert materialized["connections"]["outputs"] == []
+    assert wm.get_node_data(end)["connections"]["inputs"] == []
+    assert materialized["config"]["_system_role"] == DELETED_NODE_SYSTEM_ROLE
+    assert materialized["config"]["deleted_node"]["original_type"] == "logger_node"
+    assert materialized["config"]["deleted_node"]["original_alias"] == "Original Logger"
+    assert materialized["config"]["deleted_node"]["original_config"] == {
+        "message": "original"
+    }
+
+    assert adapter.undo_placeholder(logger) is True
+    restored = wm.get_node_data(logger)
+    assert restored["type"] == "logger_node"
+    assert restored["alias"] == "Original Logger"
+    assert restored["config"] == {"message": "original"}
+    assert restored["connections"]["outputs"] == [
+        {
+            "source_port": "default",
+            "target_node_id": end,
+            "target_port": "input",
+        }
+    ]
+    assert wm.get_node_data(end)["connections"]["inputs"] == [
+        {
+            "target_port": "input",
+            "source_node_id": logger,
+            "source_port": "default",
+        }
+    ]
+    print("test_deleted_node_materializes_to_system_branch_end_and_drops_outputs PASSED")
+
+
+def test_editor_save_materializes_deleted_node_and_loaded_marker_renders():
+    asyncio.run(_test_editor_save_materializes_deleted_node_and_loaded_marker_renders())
+
+
+def test_editor_x_on_deleted_node_permanently_deletes():
+    asyncio.run(_test_editor_x_on_deleted_node_permanently_deletes())
+
+
+async def _test_editor_x_on_deleted_node_permanently_deletes():
+    from textual.app import App, ComposeResult
+
+    from frontend.screens.editor import EditorScreen
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("editor_deleted_x")
+    start = wm.add_node("start_node")
+    logger = wm.add_node("logger_node")
+    end = wm.add_node("end_node")
+    wm.connect(start, "default", logger, "input")
+    wm.connect(logger, "default", end, "input")
+    wm.mark_saved()
+
+    class EditorApp(App):
+        def compose(self) -> ComposeResult:
+            yield EditorScreen(wm._factory, wm)
+
+    app = EditorApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        screen = app.query_one(EditorScreen)
+        screen.selected_node_id = logger
+        screen.selected_row = {"kind": "node", "node_id": logger}
+
+        screen.action_delete_selected()
+        await pilot.pause(0.03)
+        assert wm.get_node_data(logger)["type"] == "logger_node"
+
+        screen.action_delete_selected()
+        await pilot.pause(0.03)
+        assert wm.get_node_data(logger) is None
+        assert wm.is_dirty is True
+        assert wm.get_node_data(start)["connections"]["outputs"] == []
+        assert wm.get_node_data(end)["connections"]["inputs"] == []
+
+    print("test_editor_x_on_deleted_node_permanently_deletes PASSED")
+
+
+async def _test_editor_save_materializes_deleted_node_and_loaded_marker_renders():
+    from textual.app import App, ComposeResult
+
+    from frontend.editor_workflow_adapter import DELETED_NODE_SYSTEM_ROLE
+    from frontend.screens.editor import EditorScreen
     from frontend.widgets.node_card import NodeCard
 
     _, wm, _, _ = _make_services()
-    wm.create_new("tombstone_row_display")
-    node_id = wm.add_node("logger_node")
-    wm.update_node_alias(node_id, "Useful Logger")
+    wm.create_new("editor_save_deleted_marker")
+    start = wm.add_node("start_node")
+    logger = wm.add_node("logger_node", alias="Saved Logger")
+    wm.connect(start, "default", logger, "input")
 
-    adapter = EditorWorkflowAdapter(wm, wm._factory)
-    assert adapter.replace_with_placeholder(node_id)
-    tombstone = wm.get_node_data(node_id)
-    tombstone["_editor_depth"] = 1
-    card = NodeCard(node_id, tombstone, show_status=False, show_id=False)
+    saves = []
+
+    class SaveApp(App):
+        def compose(self) -> ComposeResult:
+            yield EditorScreen(wm._factory, wm)
+
+        def action_save_workflow(self) -> None:
+            saves.append("saved")
+
+    app = SaveApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        screen = app.query_one(EditorScreen)
+        screen.selected_node_id = logger
+        screen.selected_row = {"kind": "node", "node_id": logger}
+        screen.action_delete_selected()
+        await pilot.pause(0.03)
+        assert wm.get_node_data(logger)["type"] == "logger_node"
+
+        screen.action_save_workflow()
+        await pilot.pause(0.03)
+        assert saves == ["saved"]
+        saved_marker = wm.get_node_data(logger)
+        assert saved_marker["type"] == "branch_end_node"
+        assert saved_marker["config"]["_system_role"] == DELETED_NODE_SYSTEM_ROLE
+
+        screen.refresh_from_backend()
+        marker_card = next(card for card in app.query(NodeCard) if card.node_id == logger)
+        assert "Deleted node: Saved Logger (Logger)" in marker_card.display_text
+        assert "z undo" in marker_card.display_text
+
+    _, loaded_wm, _, _ = _make_services()
+    loaded_wm.create_new("loaded_deleted_marker")
+    loaded_start = loaded_wm.add_node("start_node")
+    loaded_marker = loaded_wm.add_node("branch_end_node")
+    loaded_wm.update_node_config(
+        loaded_marker,
+        {
+            "_system_role": DELETED_NODE_SYSTEM_ROLE,
+            "deleted_node": {
+                "original_type": "logger_node",
+                "original_display_name": "Logger",
+                "original_alias": "Loaded Logger",
+                "original_config": {"message": "loaded"},
+            },
+        },
+    )
+    loaded_wm.connect(loaded_start, "default", loaded_marker, "input")
+
+    class LoadedApp(App):
+        def compose(self) -> ComposeResult:
+            yield EditorScreen(loaded_wm._factory, loaded_wm)
+
+    loaded_app = LoadedApp()
+    async with loaded_app.run_test() as pilot:
+        await pilot.pause(0.03)
+        marker_card = next(
+            card for card in loaded_app.query(NodeCard) if card.node_id == loaded_marker
+        )
+        assert "Deleted node: Loaded Logger (Logger)" in marker_card.display_text
+        assert "z undo" in marker_card.display_text
+
+    print("test_editor_save_materializes_deleted_node_and_loaded_marker_renders PASSED")
+
+
+def test_node_card_editor_identity_rows_align_and_truncate():
+    from frontend.widgets.node_card import NodeCard
+
+    node = {
+        "type": "logger_node",
+        "alias": "Useful Logger",
+        "_editor_depth": 4,
+        "_identity": {
+            "primary_family": "Outputs",
+            "tags": ["Passive Output", "Utility"],
+        },
+    }
+    card = NodeCard("logger-1", node, show_status=False, show_id=False, show_identity=True)
     card.refresh_card()
 
-    assert card.display_text == "  1   Deleted: Useful Logger"
-    print("test_editor_deleted_node_row_renders_as_deleted PASSED")
+    lines = card.display_text.splitlines()
+    assert len(lines) == 2
+    assert lines[0].startswith("  4   Useful Logger")
+    assert lines[1].startswith("      Outputs - Passive Output")
+    assert "Utility" not in lines[1]
+    assert len(lines[0]) == len(lines[1])
+
+    long_identity = {
+        "type": "file_reader_node",
+        "alias": "Config File",
+        "_editor_depth": 0,
+        "_identity": {
+            "primary_family": "Inputs",
+            "tags": [
+                "File I/O",
+                "Runtime Resource With A Particularly Long Label",
+            ],
+        },
+    }
+    long_card = NodeCard(
+        "file-1",
+        long_identity,
+        show_status=False,
+        show_id=False,
+        show_identity=True,
+    )
+    long_card.refresh_card()
+    long_lines = long_card.display_text.splitlines()
+    assert "…" in long_lines[1]
+    assert "[" not in long_lines[0]
+    assert "]" not in long_lines[1]
+    assert len(long_lines[0]) == len(long_lines[1])
+
+    print("test_node_card_editor_identity_rows_align_and_truncate PASSED")
 
 
 # ---------------------------------------------------------------------------
@@ -956,9 +1244,9 @@ async def _test_branch_config_uses_parallel_payload_ui():
         help_text = str(app.query_one(".modal-help").content)
         assert summary == "\n".join(
             [
-                "Node type: Branch",
-                "- This node spawns branching paths.",
-                "- Parallel paths enabled",
+                "Node type: Parallel Branch",
+                "- Duplicates the incoming payload across branch paths.",
+                "- Parallel paths run independently",
                 "- Conditional branching hidden for a later node pass",
             ]
         )
@@ -2144,19 +2432,23 @@ async def _test_deleting_merge_beacon_prunes_merge_config_selection():
         await pilot.pause(0.03)
 
         merge_config = wm.get_node_data(merge).get("config", {})
+        assert screen.workflow_adapter.is_placeholder(beacon)
+        assert wm.get_node_data(beacon)["type"] == "branch_end_node"
+        assert merge_config.get("branches_to_close") == [f"{branch}:path_a"]
+        assert merge_config.get("carry_forward_branch_id") == f"{branch}:path_a"
+        assert merge_config.get("selected_branch_id") == f"{branch}:path_a"
+        assert wm.get_node_data(beacon).get("connections", {}).get("outputs", [])
+
+        screen.action_delete_selected()
+        await pilot.pause(0.03)
+
+        merge_config = wm.get_node_data(merge).get("config", {})
         assert merge_config.get("branches_to_close") == []
         assert merge_config.get("carry_forward_branch_id") == ""
         assert merge_config.get("selected_branch_id") == ""
-        assert wm.get_node_data(beacon).get("connections", {}).get("outputs", []) == []
-
-        screen._replace_tombstone_from_modal("branch_end_node")
-        await pilot.pause(0.03)
-        assert wm.get_node_data(beacon)["type"] == "branch_end_node"
-        assert wm.get_node_data(beacon).get("connections", {}).get("outputs", []) == []
+        assert wm.get_node_data(beacon) is None
         options = merge_input_options(wm, merge)
-        assert [f"{option['branch_id']}:{option['branch_port']}" for option in options] == [
-            f"{branch}:path_a"
-        ]
+        assert options == []
 
     class ConfigApp(App):
         def compose(self) -> ComposeResult:
@@ -2319,7 +2611,7 @@ async def _test_merge_beacon_selector_row_jumps_without_rewiring():
         ]
         assert target_merge not in [row.get("node_id") for row in rows]
         beacon_cards = [card for card in app.query(NodeCard) if card.node_id == beacon]
-        assert beacon_cards[0].display_text.endswith("Merge Beacon")
+        assert "Merge Beacon" in beacon_cards[0].display_text.splitlines()[0]
         selector_card = app.query_one(MergeBeaconSelectCard)
         assert selector_card.active_label == "Merge"
 
@@ -2425,12 +2717,20 @@ async def _test_connected_branch_end_deletes_to_tombstone():
         screen.action_delete_selected()
         await pilot.pause(0.03)
 
-        assert wm.get_node_data(branch_end)["type"] == "tombstone_node"
+        assert wm.get_node_data(branch_end)["type"] == "branch_end_node"
         after_cards = [card for card in app.query(NodeCard) if card.node_id == branch_end]
         assert len(after_cards) == 1
         assert not after_cards[0].has_class("branch-end-open")
         assert not after_cards[0].has_class("branch-end-connected")
-        assert after_cards[0].node_data["type"] == "tombstone_node"
+        assert after_cards[0].node_data["type"] == "branch_end_node"
+        assert "Deleted node" in after_cards[0].display_text
+        assert "z undo" in after_cards[0].display_text
+
+        screen.action_undo_delete()
+        await pilot.pause(0.03)
+        restored_cards = [card for card in app.query(NodeCard) if card.node_id == branch_end]
+        assert len(restored_cards) == 1
+        assert restored_cards[0].has_class("branch-end-connected")
 
     print("test_connected_branch_end_deletes_to_tombstone PASSED")
 
@@ -2816,7 +3116,11 @@ async def _test_editor_depth_counter_tracks_visible_branch_distance():
         start_card = next(card for card in app.query(NodeCard) if card.node_id == start)
         branch_row = app.query_one(BranchSelectCard)
         status = app.query_one(StatusBar)
-        assert start_card.display_text == "  0   Start"
+        start_lines = start_card.display_text.splitlines()
+        assert start_lines[0].startswith("  0   Start")
+        assert start_lines[1].startswith("      Flow Control - Triggered")
+        assert "{" not in start_lines[0]
+        assert "}" not in start_lines[1]
         assert branch_row.display_text == "  ☛   Branch 1"
         assert "f file | o options | h help" in status._formatted()
         assert "Ctrl+I" not in status._formatted()
@@ -2833,9 +3137,67 @@ async def _test_editor_depth_counter_tracks_visible_branch_distance():
         details = screen.query_one("#node-details").display_text
         assert details.startswith(f"Name: Logger ({path_b_first})")
         assert "Kind: Logger" in details
+        assert "Family: Outputs" in details
+        assert "Subcategories: Passive Output, Utility" in details
         assert "Step: 2" in details
 
     print("test_editor_depth_counter_tracks_visible_branch_distance PASSED")
+
+
+def test_editor_identity_rows_keep_keyboard_selection_stable():
+    asyncio.run(_test_editor_identity_rows_keep_keyboard_selection_stable())
+
+
+async def _test_editor_identity_rows_keep_keyboard_selection_stable():
+    from textual.app import App, ComposeResult
+
+    from frontend.screens.editor import EditorScreen
+    from frontend.widgets.node_card import NodeCard
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("editor_identity_keyboard_stability")
+    previous = wm.add_node("start_node")
+    chain_ids = []
+    for index in range(18):
+        node_id = wm.add_node("logger_node")
+        wm.update_node_alias(node_id, f"Log Step {index + 1}")
+        wm.connect(previous, "default", node_id, "input")
+        previous = node_id
+        chain_ids.append(node_id)
+
+    class EditorApp(App):
+        def compose(self) -> ComposeResult:
+            yield EditorScreen(wm._factory, wm)
+
+    app = EditorApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        screen = app.query_one(EditorScreen)
+        node_list = screen.query_one("#node-list")
+
+        for _ in range(12):
+            await pilot.press("s")
+        await pilot.pause(0.03)
+
+        expected_id = chain_ids[11]
+        assert node_list.index == 12
+        assert screen.selected_node_id == expected_id
+        assert node_list.node_id_for_index(node_list.index) == expected_id
+        highlighted = [
+            index
+            for index, item in enumerate(node_list.children)
+            if getattr(item, "highlighted", False)
+        ]
+        assert highlighted == [node_list.index]
+
+        screen.refresh_from_backend()
+        await pilot.pause(0.03)
+        assert node_list.index == 12
+        assert screen.selected_node_id == expected_id
+        selected_card = next(card for card in app.query(NodeCard) if card.node_id == expected_id)
+        assert "Outputs - Passive Output" in selected_card.display_text
+
+    print("test_editor_identity_rows_keep_keyboard_selection_stable PASSED")
 
 
 def test_help_screen_is_contextual_and_focuses_cancel():
@@ -3826,13 +4188,13 @@ async def _test_node_config_payloads_tab_reveals_upstream_and_vault_payloads():
     print("test_node_config_payloads_tab_reveals_upstream_and_vault_payloads PASSED")
 
 
-def test_node_selector_filter_auto_edits_when_focused():
-    asyncio.run(_test_node_selector_filter_auto_edits_when_focused())
+def test_node_selector_uses_family_tabs_and_subcategory_filters():
+    asyncio.run(_test_node_selector_uses_family_tabs_and_subcategory_filters())
 
 
-async def _test_node_selector_filter_auto_edits_when_focused():
+async def _test_node_selector_uses_family_tabs_and_subcategory_filters():
     from textual.app import App, ComposeResult
-    from textual.widgets import ListView
+    from textual.widgets import Checkbox, ListView
 
     from frontend.screens.node_selector import NodeSelectorScreen
     from frontend.widgets.command_input import CommandInput
@@ -3849,32 +4211,72 @@ async def _test_node_selector_filter_auto_edits_when_focused():
         screen = app.query_one(NodeSelectorScreen)
         node_list = app.query_one("#node-type-list", ListView)
         filter_input = app.query_one("#node-filter", CommandInput)
+        file_filter = app.query_one("#node-subcategory-file-io", Checkbox)
+        active_output_filter = app.query_one("#node-subcategory-active-output", Checkbox)
+        parallel_filter = app.query_one("#node-subcategory-parallel", Checkbox)
 
-        screen._focus_node_list()
-        assert app.focused is node_list
-        assert node_list.index == 0
-
-        screen.action_cursor_up()
-        assert app.focused is filter_input
-        assert filter_input.editing is True
-        assert filter_input.value == ""
-
-        await pilot.press("s")
-        assert filter_input.value == "s"
-        await pilot.press("escape")
+        assert "tombstone_node" not in {node["type"] for node in screen._all_nodes}
+        assert screen._active_family == "Inputs"
+        assert app.focused is file_filter
+        assert file_filter.display is True
+        assert active_output_filter.display is True
+        assert parallel_filter.display is False
         assert filter_input.editing is False
-        await pilot.press("tab")
-        assert app.focused is node_list
-        assert node_list.index == 0
-        screen.action_focus_filter()
+        assert {node["type"] for node in screen._visible_nodes} == {
+            "file_reader_node",
+            "user_text_input_node",
+        }
+
+        screen.action_choose()
+        assert file_filter.value is True
+        assert {node["type"] for node in screen._visible_nodes} == {"file_reader_node"}
+
+        app.set_focus(active_output_filter)
+        screen.action_choose()
+        assert active_output_filter.value is True
+        assert screen._visible_nodes == []
+
+        screen.action_next_family()
+        assert screen._active_family == "Flow Control"
+        assert parallel_filter.display is True
+        assert file_filter.display is False
+        assert parallel_filter.value is False
+        assert "branch_node" in {node["type"] for node in screen._visible_nodes}
+
+        app.set_focus(parallel_filter)
+        screen.action_choose()
+        assert parallel_filter.value is True
+        assert "branch_node" in {node["type"] for node in screen._visible_nodes}
+        assert all("Parallel" in node.get("tags", []) for node in screen._visible_nodes)
+
+        await pilot.press("/")
         assert app.focused is filter_input
+        assert filter_input.editing is False
+        await pilot.press("e")
         assert filter_input.editing is True
-        await pilot.press("escape")
-        screen.action_cursor_down()
+        filter_input.value = "merge"
+        filter_input.end_edit()
+        screen._apply_filter(filter_input.value)
+        assert filter_input.editing is False
+        assert {node["type"] for node in screen._visible_nodes} == {
+            "branch_end_node",
+            "merge_node",
+        }
+
+        filter_input.value = "deleted"
+        screen._apply_filter(filter_input.value)
+        assert "tombstone_node" not in {node["type"] for node in screen._visible_nodes}
+        assert screen._visible_nodes == []
+
+        filter_input.value = "merge"
+        screen._apply_filter(filter_input.value)
+        assert screen._visible_nodes
+
+        screen.action_focus_node_list()
         assert app.focused is node_list
         assert node_list.index == 0
 
-    print("test_node_selector_filter_auto_edits_when_focused PASSED")
+    print("test_node_selector_uses_family_tabs_and_subcategory_filters PASSED")
 
 
 def test_branch_selector_uses_shared_list_navigation():
@@ -5204,6 +5606,10 @@ if __name__ == "__main__":
         test_tombstone_delete_does_not_cascade_branch_nodes,
         test_tombstone_restore_preserves_original_and_swap_invalidates_timing,
         test_editor_deleted_node_row_renders_as_deleted,
+        test_deleted_node_materializes_to_system_branch_end_and_drops_outputs,
+        test_editor_save_materializes_deleted_node_and_loaded_marker_renders,
+        test_editor_x_on_deleted_node_permanently_deletes,
+        test_node_card_editor_identity_rows_align_and_truncate,
         test_set_variable_node_can_pass_input_through,
         test_branch_node_default_labels_are_configurable,
         test_branch_config_uses_generated_labels_without_memory_outputs,
@@ -5243,6 +5649,7 @@ if __name__ == "__main__":
         test_editor_restores_persisted_focus_highlight_on_mount,
         test_editor_notification_restores_node_list_focus,
         test_editor_depth_counter_tracks_visible_branch_distance,
+        test_editor_identity_rows_keep_keyboard_selection_stable,
         test_help_screen_is_contextual_and_focuses_cancel,
         test_node_config_select_activates_from_keyboard,
         test_node_config_fixed_tabs_are_keyboard_navigable,
@@ -5263,7 +5670,7 @@ if __name__ == "__main__":
         test_branch_payload_preview_traces_selected_dead_drop_source,
         test_branch_payload_preview_traces_selected_vault_source,
         test_node_config_payloads_tab_reveals_upstream_and_vault_payloads,
-        test_node_selector_filter_auto_edits_when_focused,
+        test_node_selector_uses_family_tabs_and_subcategory_filters,
         test_branch_selector_uses_shared_list_navigation,
         test_workflow_library_uses_shared_list_navigation,
         test_export_cancel_returns_to_file_menu,

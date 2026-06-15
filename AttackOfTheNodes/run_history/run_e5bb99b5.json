@@ -1,0 +1,14 @@
+{
+  "ended_at": "2026-06-09T20:23:40.713405+00:00",
+  "run_id": "run_e5bb99b5",
+  "workflow_id": "wf_c77ef31f5373",
+  "workflow_name": "leak_cap",
+  "started_at": "2026-06-09T20:23:40.709022+00:00",
+  "final_state": "FINISHED",
+  "error_count": 0,
+  "output_count": 1,
+  "node_timings": {
+    "node_fce5a3d5": 2.247048541903496e-06,
+    "node_7e3bb0d2": 9.553041309118271e-06
+  }
+}
