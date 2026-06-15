@@ -29,6 +29,14 @@ overhaul.
   in the widget text.
 - Disabled gap rows immediately before visible `merge_node` rows use `┤` in
   the number/gutter column to suggest incoming branches.
+- Depth rows now use zero-padded number gutters (`000`, `001`, `002`) with no
+  leading connector marker; branch symbols and `|` continuation markers are
+  left-justified in the number/gutter column.
+- Merge incoming `┤` now renders on the first continuation line of the merge
+  node itself, so a merge directly after a Branch selector no longer collides
+  with the Branch selector connector.
+- Branch-colored `|` continuation markers render bold to better match branch
+  path connector weight.
 - Continued the gutter rule from the boxed node rows: numbered top rows show
   the depth number, while node box continuation rows use `|` in the number
   column.

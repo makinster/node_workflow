@@ -9,7 +9,6 @@ from textual.widgets import Label, ListItem, ListView
 from .node_card import (
     BranchSelectCard,
     GapArrowCard,
-    MERGE_INCOMING_MARKER,
     MergeBeaconSelectCard,
     NodeCard,
 )
@@ -66,30 +65,12 @@ class NodeList(ListView):
             )
             self._append_row(row, statuses, timings)
             if row["kind"] == "node" and next_kind == "node":
-                next_row = rows[index + 1]
-                next_node = next_row.get("node") or {}
-                branch_port = (
-                    row.get("node", {}).get("_editor_branch_port")
-                    or next_node.get("_editor_branch_port")
-                )
-                gutter_marker = (
-                    MERGE_INCOMING_MARKER
-                    if next_node.get("type") == "merge_node"
-                    else None
-                )
                 gap_row = {
                     "kind": "gap_arrow",
                     "after_node_id": row["node_id"],
-                    "branch_port": branch_port,
-                    "gutter_marker": gutter_marker,
                 }
                 self._rows.append(gap_row)
-                self.append(
-                    ListItem(
-                        GapArrowCard(gutter_marker, branch_port),
-                        disabled=True,
-                    )
-                )
+                self.append(ListItem(GapArrowCard(), disabled=True))
         if not rows:
             self.append(ListItem(Label("No nodes. Press I to add a node.")))
         self.normalize_highlight()

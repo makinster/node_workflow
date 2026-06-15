@@ -121,14 +121,7 @@ class NodeCard(Static):
         id_text = f" ({self.node_id})" if self.show_id else ""
         prefix = f"{icon} " if icon else ""
         main_text = f"{prefix}{breakpoint_marker}{alias}{id_text}{timing}"
-        if isinstance(depth, int):
-            gutter = (
-                branch_number_gutter(depth)
-                if self.gutter_color
-                else f"{depth:>{DEPTH_WIDTH}}{DEPTH_SPACING}"
-            )
-        else:
-            gutter = DEPTH_GUTTER
+        gutter = depth_number_gutter(depth) if isinstance(depth, int) else DEPTH_GUTTER
         if self.show_identity:
             if isinstance(deleted_overlay, dict) and deleted_overlay:
                 self.display_text = self._deleted_overlay_display_text(
@@ -197,8 +190,17 @@ class NodeCard(Static):
     ) -> str:
         inner_width = self._identity_text_width()
         continuation_gutter = branch_continuation_gutter()
+        first_continuation_gutter = (
+            num_gutter_marker(MERGE_INCOMING_MARKER)
+            if self.node_data.get("type") == "merge_node"
+            else continuation_gutter
+        )
         top = f"{top_gutter}{BOX_CORNER}{BOX_HORIZONTAL * inner_width}{BOX_CORNER}"
-        line_one = self._boxed_content_line(line_one_text, inner_width, continuation_gutter)
+        line_one = self._boxed_content_line(
+            line_one_text,
+            inner_width,
+            first_continuation_gutter,
+        )
         line_two = self._boxed_content_line(line_two_text, inner_width, continuation_gutter)
         bottom = (
             f"{continuation_gutter}{BOX_CORNER}"
@@ -477,14 +479,10 @@ def gap_arrow_text(rendered_width: int, gutter_marker: str | None = None) -> str
     return f"{gutter}{center_gap_marker(box_width)}"
 
 
-def branch_number_gutter(depth: int) -> str:
-    """Gutter for numbered rows on a colored branch path."""
-    number_text = str(depth)
-    if len(number_text) >= DEPTH_WIDTH:
-        visible = f"{BOX_VERTICAL}{number_text}"[-DEPTH_WIDTH:]
-    else:
-        visible = f"{BOX_VERTICAL}{number_text:>{DEPTH_WIDTH - 1}}"
-    return f"{visible}{DEPTH_SPACING}"
+def depth_number_gutter(depth: int) -> str:
+    """Gutter for numbered rows."""
+    number_text = str(max(0, depth)).zfill(DEPTH_WIDTH)[-DEPTH_WIDTH:]
+    return f"{number_text}{DEPTH_SPACING}"
 
 
 def branch_continuation_gutter() -> str:
@@ -494,17 +492,16 @@ def branch_continuation_gutter() -> str:
 
 def num_gutter_marker(marker: str) -> str:
     """Place a non-number marker in the visual connector column."""
-    return f"{marker:>{DEPTH_WIDTH}}{DEPTH_SPACING}"
+    return f"{marker:<{len(DEPTH_GUTTER)}}"
 
 
 def connector_gutter(connector: str) -> str:
     """Gutter used by branch/merge selector connector rows."""
     stem = str(connector or LINE_CHAR)[:1]
     tail = str(connector or "")[1:]
-    stem_prefix = " " * max(0, DEPTH_WIDTH - 1)
-    tail_width = max(0, len(DEPTH_GUTTER) - len(stem_prefix) - len(stem))
+    tail_width = max(0, len(DEPTH_GUTTER) - len(stem))
     extended_tail = (tail + (LINE_CHAR * tail_width))[:tail_width]
-    return f"{stem_prefix}{stem}{extended_tail}"
+    return f"{stem}{extended_tail}"
 
 
 def branch_path_color(port: str) -> str:
@@ -524,7 +521,11 @@ def selected_box_text(
         return display_text
     content = Text(no_wrap=True)
     foreground_style = Style(color=foreground) if foreground else None
-    gutter_style = Style(color=gutter_symbol_color) if gutter_symbol_color else None
+    gutter_style = (
+        Style(color=gutter_symbol_color, bold=True)
+        if gutter_symbol_color
+        else None
+    )
     selected_style = Style(bgcolor=SELECTED_BACKGROUND) if selected else None
     color_start = len(DEPTH_GUTTER) if foreground_start is None else foreground_start
     lines = display_text.splitlines()
