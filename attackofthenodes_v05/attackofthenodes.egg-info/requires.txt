@@ -1,2 +1,0 @@
-textual>=8.2
-textual-dev>=1.8
