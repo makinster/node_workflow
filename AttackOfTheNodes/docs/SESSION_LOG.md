@@ -4,6 +4,21 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-15 — Editor Branch Connectors: Ten-Color Branch Paths
+
+- Fast-forwarded local `main` from `899c155` to `3139181` before starting,
+  per the session sync rule.
+- Replaced the five-entry branch path color map with a ten-color palette tuned
+  for the dark Textual editor background / `ansi-dark` style usage.
+- Branch path rendering now uses frontend-only color keys so each branch node
+  consumes the palette in sequence: five-path branch one uses colors 1-5,
+  branch two uses colors 6-10, then the next branch cycles back.
+- Kept raw port-name color lookup (`path_a`-`path_e`) working for existing
+  manual rows and tests while editor-built rows use the richer sequence keys.
+- Threaded the sequence color key through node gutters, gap arrows, branch
+  selector rows, and Merge Beacon selector rows so one visible path segment
+  stays consistently colored from branch start through branch end.
+
 ## 2026-06-15 — Editor Branch Connectors: Path Colors
 
 - Added branch path coloring for up to five Branch outputs in editor selector

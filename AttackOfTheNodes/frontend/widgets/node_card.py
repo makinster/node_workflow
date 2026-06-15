@@ -32,12 +32,22 @@ BOX_VERTICAL = "|"
 BOX_CORNER = "+"
 DOWN_ARROW = "↓"
 SELECTED_BACKGROUND = "#1a3a5c"
+BRANCH_PATH_PORTS = ("path_a", "path_b", "path_c", "path_d", "path_e")
+BRANCH_PATH_PALETTE = (
+    "#2dd4bf",  # teal
+    "#60a5fa",  # blue
+    "#a78bfa",  # violet
+    "#f472b6",  # pink
+    "#fb7185",  # rose
+    "#fbbf24",  # amber
+    "#a3e635",  # lime
+    "#34d399",  # emerald
+    "#22d3ee",  # cyan
+    "#c084fc",  # purple
+)
 BRANCH_PATH_COLORS = {
-    "path_a": "#20b2aa",  # lightseagreen
-    "path_b": "#add8e6",  # lightblue
-    "path_c": "#4682b4",  # steelblue
-    "path_d": "#40e0d0",  # turquoise
-    "path_e": "#40e0d0",  # turquoise
+    port: BRANCH_PATH_PALETTE[index]
+    for index, port in enumerate(BRANCH_PATH_PORTS)
 }
 BRANCH_SELECT_CONNECTOR = "├──"
 MERGE_SELECT_CONNECTOR = "└──"
@@ -76,8 +86,11 @@ class NodeCard(Static):
         self.show_status = show_status
         self.show_id = show_id
         self.show_identity = show_identity
+        branch_color_key = node_data.get("_editor_branch_color_key")
         branch_port = node_data.get("_editor_branch_port")
-        self.gutter_color = branch_path_color(str(branch_port)) if branch_port else None
+        self.gutter_color = branch_path_color(
+            str(branch_color_key or branch_port)
+        ) if (branch_color_key or branch_port) else None
         self.display_text = ""
 
     def on_mount(self) -> None:
@@ -289,12 +302,14 @@ class BranchSelectCard(Static):
         active_port: str,
         active_label: str | None = None,
         depth: int | None = None,
+        active_color_key: str | None = None,
     ) -> None:
         super().__init__()
         self.branch_node_id = branch_node_id
         self.active_port = active_port
         self.active_label = active_label or active_port
         self.depth = depth
+        self.active_color_key = active_color_key or active_port
         self.display_text = ""
 
     def on_mount(self) -> None:
@@ -316,7 +331,7 @@ class BranchSelectCard(Static):
             selected_box_text(
                 self.display_text,
                 self.has_class("selected"),
-                foreground=branch_path_color(self.active_port),
+                foreground=branch_path_color(self.active_color_key),
                 foreground_start=0,
             )
         )
@@ -335,11 +350,14 @@ class GapArrowCard(Static):
         self,
         gutter_marker: str | None = None,
         branch_port: str | None = None,
+        branch_color_key: str | None = None,
         output_marker: str | None = None,
     ) -> None:
         super().__init__()
         self.gutter_marker = gutter_marker
-        self.gutter_color = branch_path_color(branch_port) if branch_port else None
+        self.gutter_color = branch_path_color(
+            branch_color_key or branch_port
+        ) if (branch_color_key or branch_port) else None
         self.output_marker = output_marker
         self.display_text = ""
 
@@ -383,12 +401,14 @@ class MergeBeaconSelectCard(Static):
         active_label: str | None = None,
         depth: int | None = None,
         active_port: str | None = None,
+        active_color_key: str | None = None,
     ) -> None:
         super().__init__()
         self.beacon_node_id = beacon_node_id
         self.active_label = active_label or "Choose merge"
         self.depth = depth
         self.active_port = active_port or "path_a"
+        self.active_color_key = active_color_key or self.active_port
         self.display_text = ""
 
     def on_mount(self) -> None:
@@ -411,7 +431,7 @@ class MergeBeaconSelectCard(Static):
             selected_box_text(
                 self.display_text,
                 self.has_class("selected"),
-                foreground=branch_path_color(active_port),
+                foreground=branch_path_color(self.active_color_key),
                 foreground_start=0,
             )
         )
@@ -511,7 +531,40 @@ def connector_gutter(connector: str) -> str:
 
 def branch_path_color(port: str) -> str:
     """Return the configured display color for a branch output port."""
-    return BRANCH_PATH_COLORS.get(str(port), BRANCH_PATH_COLORS["path_a"])
+    key = str(port)
+    if key in BRANCH_PATH_COLORS:
+        return BRANCH_PATH_COLORS[key]
+    index = branch_path_palette_index(key)
+    return BRANCH_PATH_PALETTE[index]
+
+
+def branch_path_color_key(branch_index: int, port: str) -> str:
+    """Return a display-only color key for a branch node output path."""
+    port_index = branch_path_port_index(port)
+    return f"branch:{branch_index}:{port_index}"
+
+
+def branch_path_palette_index(key: str) -> int:
+    """Resolve a branch color key to a cycling palette index."""
+    pieces = str(key).split(":")
+    if len(pieces) == 3 and pieces[0] == "branch":
+        try:
+            branch_index = int(pieces[1])
+            port_index = int(pieces[2])
+        except ValueError:
+            return 0
+        return (
+            branch_index * len(BRANCH_PATH_PORTS) + port_index
+        ) % len(BRANCH_PATH_PALETTE)
+    return 0
+
+
+def branch_path_port_index(port: str) -> int:
+    """Return a stable branch-port position for palette assignment."""
+    key = str(port)
+    if key in BRANCH_PATH_PORTS:
+        return BRANCH_PATH_PORTS.index(key)
+    return 0
 
 
 def selected_box_text(

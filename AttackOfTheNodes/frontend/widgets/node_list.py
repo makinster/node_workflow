@@ -71,11 +71,16 @@ class NodeList(ListView):
                     row.get("node", {}).get("_editor_branch_port")
                     or next_node.get("_editor_branch_port")
                 )
+                branch_color_key = (
+                    row.get("node", {}).get("_editor_branch_color_key")
+                    or next_node.get("_editor_branch_color_key")
+                )
                 output_marker = row.get("node", {}).get("_editor_gap_marker")
                 gap_row = {
                     "kind": "gap_arrow",
                     "after_node_id": row["node_id"],
                     "branch_port": branch_port,
+                    "branch_color_key": branch_color_key,
                     "output_marker": output_marker,
                 }
                 self._rows.append(gap_row)
@@ -83,6 +88,7 @@ class NodeList(ListView):
                     ListItem(
                         GapArrowCard(
                             branch_port=branch_port,
+                            branch_color_key=branch_color_key,
                             output_marker=output_marker,
                         )
                     )
@@ -117,6 +123,7 @@ class NodeList(ListView):
                 row["active_port"],
                 row.get("active_label"),
                 row.get("depth"),
+                row.get("active_color_key"),
             )
         else:
             card = MergeBeaconSelectCard(
@@ -124,6 +131,7 @@ class NodeList(ListView):
                 row.get("active_label"),
                 row.get("depth"),
                 row.get("active_port"),
+                row.get("active_color_key"),
             )
         self.append(ListItem(card))
 

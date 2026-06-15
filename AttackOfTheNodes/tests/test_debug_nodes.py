@@ -2668,7 +2668,7 @@ async def _test_merge_beacon_selector_row_jumps_without_rewiring():
         assert selector_card.active_label == "Merge"
         assert selector_card.active_port == "path_a"
         assert selector_card.display_text.startswith("└─────")
-        assert "⟶ [ Merge ]" in selector_card.display_text
+        assert " [ Merge ]" in selector_card.display_text
         assert "☛" not in selector_card.display_text
 
         options = screen._merge_beacon_options(beacon)
@@ -2873,6 +2873,54 @@ async def _test_editor_refresh_does_not_repair_legacy_merge_input_port():
 
 def test_editor_branch_cycle_keys_switch_all_and_incomplete_branch_views():
     asyncio.run(_test_editor_branch_cycle_keys_switch_all_and_incomplete_branch_views())
+
+
+def test_editor_branch_path_palette_uses_ten_colors_before_cycling():
+    from frontend.screens.editor import EditorScreen
+    from frontend.widgets.node_card import (
+        BRANCH_PATH_PALETTE,
+        BRANCH_PATH_PORTS,
+        branch_path_color,
+        branch_path_color_key,
+    )
+
+    assert len(BRANCH_PATH_PALETTE) == 10
+    assert len(set(BRANCH_PATH_PALETTE)) == 10
+    assert [
+        branch_path_color(branch_path_color_key(0, port))
+        for port in BRANCH_PATH_PORTS
+    ] == list(BRANCH_PATH_PALETTE[:5])
+    assert [
+        branch_path_color(branch_path_color_key(1, port))
+        for port in BRANCH_PATH_PORTS
+    ] == list(BRANCH_PATH_PALETTE[5:])
+    assert (
+        branch_path_color(branch_path_color_key(2, "path_a"))
+        == BRANCH_PATH_PALETTE[0]
+    )
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("editor_branch_path_palette")
+    start = wm.add_node("start_node")
+    first_branch = wm.add_node("branch_node")
+    nested_branch = wm.add_node("branch_node")
+    leaf = wm.add_node("logger_node")
+    wm.connect(start, "default", first_branch, "input")
+    wm.connect(first_branch, "path_a", nested_branch, "input")
+    wm.connect(nested_branch, "path_a", leaf, "input")
+
+    screen = EditorScreen(wm._factory, wm)
+    rows = screen._build_visible_rows()
+    branch_rows = [row for row in rows if row["kind"] == "branch_select"]
+
+    assert branch_rows[0]["branch_node_id"] == first_branch
+    assert branch_rows[0]["active_color_key"] == branch_path_color_key(0, "path_a")
+    assert branch_rows[1]["branch_node_id"] == nested_branch
+    assert branch_rows[1]["active_color_key"] == branch_path_color_key(1, "path_a")
+    assert branch_path_color(branch_rows[0]["active_color_key"]) != branch_path_color(
+        branch_rows[1]["active_color_key"]
+    )
+    print("test_editor_branch_path_palette_uses_ten_colors_before_cycling PASSED")
 
 
 def test_editor_command_keys_restore_lost_highlight_after_mouse_focus():
@@ -3186,7 +3234,7 @@ async def _test_editor_depth_counter_tracks_visible_branch_distance():
         assert "{" not in start_lines[0]
         assert "}" not in start_lines[2]
         assert branch_row.display_text.startswith("├─────")
-        assert "⟶ [ Branch 1 ]" in branch_row.display_text
+        assert " [ Branch 1 ]" in branch_row.display_text
         assert "☛" not in branch_row.display_text
         gap_card = node_list.children[1].query_one(GapArrowCard)
         path_a = branch_path_color("path_a")
@@ -3452,7 +3500,7 @@ async def _test_editor_identity_rows_fit_rendered_panel_width():
             f"{branch_line_label('Branch 1', box_width)}"
         )
         assert branch_card.display_text.startswith("├─────")
-        assert "⟶ [ Branch 1 ]" in branch_card.display_text
+        assert " [ Branch 1 ]" in branch_card.display_text
         assert "☛" not in branch_card.display_text
         label_start = branch_card.display_text.index("Branch 1") - len(DEPTH_GUTTER)
         assert abs((label_start * 2 + len("Branch 1")) - box_width) <= 1

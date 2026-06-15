@@ -32,7 +32,12 @@ from frontend.node_io_display import (
     output_display_name,
     trace_transient_producer,
 )
-from frontend.widgets.node_card import BranchSelectCard, MergeBeaconSelectCard, NodeCard
+from frontend.widgets.node_card import (
+    BranchSelectCard,
+    MergeBeaconSelectCard,
+    NodeCard,
+    branch_path_color_key,
+)
 from frontend.widgets.node_list import NodeList
 from frontend.widgets.status_bar import StatusBar
 
@@ -1437,6 +1442,8 @@ class EditorScreen(Screen):
         current_node_id = start_node_id
         depth = 0
         current_branch_port: str | None = "path_a"
+        current_branch_color_key: str | None = branch_path_color_key(0, "path_a")
+        branch_index = 0
 
         while current_node_id and current_node_id not in visited:
             node = nodes.get(current_node_id)
@@ -1450,6 +1457,8 @@ class EditorScreen(Screen):
             node["_editor_gap_marker"] = self._gap_marker_for_node(node, metadata)
             if current_branch_port:
                 node["_editor_branch_port"] = current_branch_port
+            if current_branch_color_key:
+                node["_editor_branch_color_key"] = current_branch_color_key
             rows.append(
                 {
                     "kind": "node",
@@ -1463,7 +1472,13 @@ class EditorScreen(Screen):
                 break
 
             if node.get("type") == "branch_end_node":
-                rows.append(self._merge_beacon_select_row(current_node_id, depth))
+                rows.append(
+                    self._merge_beacon_select_row(
+                        current_node_id,
+                        depth,
+                        current_branch_color_key,
+                    )
+                )
                 break
 
             output_ports = self._output_ports_for_node(node, metadata)
@@ -1473,11 +1488,13 @@ class EditorScreen(Screen):
                     active_port = output_ports[0]
                 self.active_branch_ports[current_node_id] = active_port
                 port_labels = self._branch_port_labels(node)
+                active_color_key = branch_path_color_key(branch_index, active_port)
                 rows.append(
                     {
                         "kind": "branch_select",
                         "branch_node_id": current_node_id,
                         "active_port": active_port,
+                        "active_color_key": active_color_key,
                         "active_label": port_labels.get(active_port, active_port),
                         "output_ports": output_ports,
                         "port_labels": port_labels,
@@ -1486,6 +1503,8 @@ class EditorScreen(Screen):
                 )
                 current_node_id = self._target_for_port(node, active_port)
                 current_branch_port = active_port
+                current_branch_color_key = active_color_key
+                branch_index += 1
                 depth += 1
                 continue
 
@@ -1555,6 +1574,7 @@ class EditorScreen(Screen):
         self,
         beacon_node_id: str,
         depth: int,
+        active_color_key: str | None = None,
     ) -> Dict[str, Any]:
         connected_merge_id = self._merge_beacon_connected_merge_id(beacon_node_id)
         label = "Choose merge"
@@ -1567,6 +1587,7 @@ class EditorScreen(Screen):
             "active_merge_id": connected_merge_id,
             "active_label": label,
             "active_port": self._upstream_branch_port_for_node(beacon_node_id),
+            "active_color_key": active_color_key,
             "depth": depth,
         }
 
