@@ -42,8 +42,9 @@ Completed in Phase 17 so far:
   dedicated node.
 - `NodeSelectorScreen` has family tabs, tab-specific subcategory checkbox
   filters with `AND` semantics, and command-mode search activation.
-- Editor rows render two-line family/subcategory identity with aligned frames,
-  truncation, quiet utility styling, and preserved Merge Beacon health colors.
+- Editor rows render two-line family/subcategory identity inside ASCII boxes,
+  with truncation, the depth gutter outside the box, default node backgrounds,
+  and preserved Merge Beacon state indicators.
 - The editor details panel shows full primary family and subcategory metadata.
 - Focused tests cover metadata exposure, selector filtering, row rendering,
   details-panel identity, truncation, and keyboard/selection stability.
@@ -75,7 +76,7 @@ Remaining Phase 17 work:
 - Keep backend-feature UI surfacing separate from Phase 17. Current gaps are
   tracked in `PROJECT_BACKLOG.md` under "Backend Features Not Yet Surfaced In
   UI" (run history browser, secrets UI, tombstone restore alerts, branch-health
-  colors, schema file pickers, memory snapshot save/load choices, workflow
+  indicators, schema file pickers, memory snapshot save/load choices, workflow
   rename/bookmarks, and error clearing controls).
 
 Read `PHASE_17_NODE_VISUAL_IDENTITY.md` before implementing selector, node row,

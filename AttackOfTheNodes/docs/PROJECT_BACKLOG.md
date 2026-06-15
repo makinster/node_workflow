@@ -251,14 +251,14 @@ Recommended cleanup:
   - branch ended but not merged: Merge Beacon exists but is not connected to a
     Merge node;
   - floating branch: no valid output/end node and no Merge Beacon.
-- Surface those states in the editor with clear but restrained color: green for
-  valid, yellow/orange for branch-ended-but-unmerged, and red/orange for
-  floating/incomplete branches. (Consume `branch_health_by_port()`.)
-- Extend `NodeCard` or a future editor display adapter so branch-health color is
-  separate from execution status icons.
-- Fold this into the FA-7 visual pass: VS Code-like dark styling, readable node
-  type colors, node-card borders/icons, larger editor rows, and dimmer command
-  text fields when not editing.
+- Surface those states in the editor with clear but restrained state markers or
+  labels; keep node interiors on the default background. (Consume
+  `branch_health_by_port()`.)
+- Extend `NodeCard` or a future editor display adapter so branch-health
+  indicators are separate from execution status icons.
+- Fold this into the FA-7 visual pass: VS Code-like dark styling, readable
+  node-card borders/icons, larger editor rows, and dimmer command text fields
+  when not editing.
 
 ## Later Project — Schema-Driven Node UI Expansion
 

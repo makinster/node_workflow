@@ -209,14 +209,16 @@ branches preserves vertical orientation.
 Node rows should show the editable, user-facing alias only. Generated ids stay
 out of the editor list and appear only in detail/config contexts where
 disambiguation matters. Tombstones render as `Deleted: <original node name>`.
-Phase 17 may expand node rows to two lines when space allows: the first line
-emphasizes the user-facing alias, and the second line shows primary family plus
-one or two high-signal subcategories. Prefer a Textual `ascii` border around
-each node card, with plain text inside the box instead of family brackets in
-front of the alias or identity line. Long subcategory text may truncate with an
-ellipsis because the full list is available in the right-side details panel.
+Phase 17 may expand node rows to two text lines inside an ASCII box: the first
+line emphasizes the user-facing alias, and the second line shows primary family
+plus one or two high-signal subcategories. The depth column sits outside the
+box. Node interiors should render on the default background; avoid decorative
+family color fills. Long subcategory text may truncate with an ellipsis because
+the full list is available in the right-side details panel. The spacer between
+two ordinary node rows shows a centered non-focusable `↓` marker; branch and
+merge jump widgets replace that marker and are centered under the node box.
 Rows must not destabilize cursor movement, branch selector rows, validation
-colors, breakpoint markers, execution state, or Merge Beacon health colors. The
+markers, breakpoint markers, execution state, or Merge Beacon state. The
 right-side details panel should show the primary family and all subcategories
 for the selected node.
 The editor Quick View should summarize configured data flow without raw graph

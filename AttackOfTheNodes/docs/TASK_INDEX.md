@@ -124,7 +124,7 @@ Implementation direction:
 - Keep selector filters and editor row identity frontend-owned, but expose
   portable family/tag/icon/color/group/section metadata through `NodeFactory`.
 - Preserve keyboard-first focus, autoscroll, cursor/highlight stability,
-  validation colors, and Merge Beacon health colors.
+  validation markers, and Merge Beacon state indicators.
 
 ## Change Backend Or Runtime Behavior
 

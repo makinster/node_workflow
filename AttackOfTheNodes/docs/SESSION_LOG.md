@@ -4,14 +4,30 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-15 — Editor Node Rows: Gutter, Default Background, Gap Arrows
+
+- Moved the depth number/gutter outside the node text box by drawing the ASCII
+  border inside `NodeCard` instead of using a whole-widget border.
+- Removed decorative family color fills from node rows; node interiors now
+  render on the default editor background.
+- Added centered non-focusable `↓`/`↓↓` markers in the existing insertion gap
+  between ordinary node rows. They are disabled ListView rows, so selection
+  jumps over them.
+- Centered branch and merge jump widgets under the node box; these replace the
+  down-arrow gap marker when present.
+- Focused checks: `../.venv/bin/python -m compileall -q .` and
+  `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "node_selector
+  or node_card or editor_depth or branch_end or editor_identity_rows"` (15
+  passed).
+
 ## 2026-06-15 — Editor Node Rows: Textual ASCII Borders
 
 - Fixed the Phase 17 editor node rows on `main`: the previous merge still had
   the older family bracket/frame rendering (`[ ]`, `< >`, `{ }`) in
   `frontend/widgets/node_card.py`.
-- `NodeCard` identity rows now render plain alias and family/subcategory text
-  inside a Textual `border: ascii` text box. Deleted-node rows use the same
-  plain-text-in-box treatment.
+- `NodeCard` identity rows render plain alias and family/subcategory text
+  inside an ASCII text box. Deleted-node rows use the same plain-text-in-box
+  treatment. Later same-day follow-up moved the depth gutter outside the box.
 - Removed the old bracket-specific branch selector indent so branch selector
   labels line up with node text again.
 - Updated active UI docs to prefer Textual ASCII node-card borders instead of
@@ -200,7 +216,7 @@ overhaul.
   reconciliation (H6).
 - Each phase lists tasks, likely files, focused pytest checks, and exit
   criteria; live-app work (Phase 17 verification, Secrets settings tab, AI
-  session config UI, branch health colors) is explicitly deferred and stays
+  session config UI, branch health indicators) is explicitly deferred and stays
   in `PROJECT_BACKLOG.md`.
 - Added the new doc to the `README.md` Document Directory.
 
@@ -1014,7 +1030,7 @@ Focused pass on the Node Selector and Node Config modals.
   - The second line shows primary family plus one or two high-signal
     subcategories, truncating long identity text with an ellipsis.
   - Utility-tagged rows are visually quieter, while Merge Beacon open/connected
-    health colors still take priority over decorative family colors.
+    state indicators still take priority over decorative styling.
 - The editor attaches frontend-only identity display metadata from
   `NodeFactory.get_node_types_metadata()` to row display copies. Runtime node
   data and backend execution behavior were not changed.

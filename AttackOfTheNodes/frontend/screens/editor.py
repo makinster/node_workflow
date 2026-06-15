@@ -1417,7 +1417,9 @@ class EditorScreen(Screen):
         if not node_list._rows:
             return
         current = node_list.index if node_list.index is not None else 0
-        next_index = max(0, min(len(node_list._rows) - 1, current + delta))
+        next_index = node_list.next_selectable_index(current, delta)
+        if next_index is None:
+            return
         node_list.index = next_index
         node_list.scroll_visible(animate=False)
         self._select_row(node_list.row_for_index(next_index))

@@ -1,9 +1,9 @@
 # Phase 17 - Node Visual Identity And Selector Taxonomy
 
 **Status:** In progress
-**Last updated:** 2026-06-15 (editor node rows use Textual ASCII text-box
-borders; taxonomy revision remains I/O tab + switch, Utility family, in-list
-section headers, AI-as-subcategory)
+**Last updated:** 2026-06-15 (editor node rows use ASCII text-box borders with
+the depth gutter outside the box; taxonomy revision remains I/O tab + switch,
+Utility family, in-list section headers, AI-as-subcategory)
 
 Phase 17 is not just a cosmetic row-color pass. It is the foundation for the
 next node overhaul: clearer node families, reusable subcategory tags, a more
@@ -323,7 +323,8 @@ identity that any frontend can consume:
 - `tags` — zero or more subcategory strings; drives filter checkboxes and
   search
 - `icon_name` — display glyph or icon name
-- `color_hint` — optional color from the family color map
+- `color_hint` — optional legacy/future visual hint. Current editor rows do not
+  use it for background fills.
 - `short_description` — short selector summary
 - `description` — detailed description for the right panel/config surfaces
 - `group` — frontend-only navigation group name (see below)
@@ -540,40 +541,44 @@ Editor rows should become easier to scan while staying keyboard-stable.
 Preferred direction:
 
 ```text
-| [ | Security camera setup      | ] |
-| [ | Inputs - File I/O          | ] |
-
-| { | Security camera trigger    | } |
-| { | Complex - Triggered        | } |
+  1   +--------------------------+
+      | Security camera setup    |
+      | Inputs - File I/O        |
+      +--------------------------+
+                 ↓↓
+  2   +--------------------------+
+      | Security camera trigger  |
+      | Complex - Triggered      |
+      +--------------------------+
 ```
 
-This is conceptual, not a fixed ASCII contract. The preferred implementation is
-to use Textual `ascii` borders around each node card, with plain alias and
-family/subcategory text inside the box. Do not prepend family brackets to the
-alias or identity line; the box itself carries the frame.
+This is conceptual, not a fixed-width contract. The preferred implementation is
+to use ASCII text-box borders around each node's alias and family/subcategory
+text. Do not prepend family brackets to the alias or identity line; the box
+itself carries the frame. The depth gutter remains outside the box.
 
 The important requirements are:
 
 - node rows may use two lines when space allows;
 - node cards use a visible text-box border around each individual node;
+- the depth column is outside the node-card border;
 - the alias and identity lines do not start with family bracket characters;
 - the first line emphasizes the user-facing alias;
 - the second line shows family plus one or two high-signal subcategories;
 - if the second line cannot fit, truncate the visible subcategory text with an
   ellipsis; the full list remains available in the right-side details panel;
-- utility/debug/pass-through nodes should be visually quieter;
-- validation, breakpoint, selection, execution, and Merge Beacon health colors
-  remain more important than decorative family color;
+- node interiors render on the default background, without family color fills;
+- between two ordinary nodes, a centered non-focusable `↓` marker occupies the
+  insertion gap; if the centered space is even-width, use `↓↓`;
+- branch selector and merge jump widgets replace the down-arrow gap marker and
+  are centered under the node box;
+- validation, breakpoint, selection, execution, and Merge Beacon state remain
+  more important than decorative styling;
 - cursor/highlight behavior and branch selector rows must stay stable.
 
 The right-side details panel should show the node's primary family and all
 subcategories. This helps users understand why a node appeared under particular
 selector filters.
-
-With the family revision, the editor row family color map needs a fifth entry
-for `Utility` (the existing quiet utility styling is the natural fit), and
-`Inputs`/`Outputs` keep distinct colors even though they share a selector tab.
-
 
 ## Problems and Solutions Summary
 
@@ -615,7 +620,8 @@ for `Utility` (the existing quiet utility styling is the natural fit), and
 - Runtime behavior does not change in Phase 17 unless a metadata field is
   needed to describe existing behavior.
 - Selector tabs, the I/O switch, filter state, section headers, row borders,
-  row colors, and display density are frontend concerns.
+  gap markers, jump-widget placement, and display density are frontend
+  concerns.
 - `group` and `selector_section` are frontend-only navigation concepts. The
   backend exposes them through `NodeFactory` for frontend consumption, but no
   backend component (Supervisor, WorkflowMap, MemoryBank, Validator) should

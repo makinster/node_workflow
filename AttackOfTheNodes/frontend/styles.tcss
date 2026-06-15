@@ -48,51 +48,18 @@ Screen {
 
 .node-card-identity {
     height: 4;
-    border: ascii #405061;
-    padding: 0 1;
 }
 
-/* Spacer line after editor node rows; selector/beacon rows stay single-line */
-.node-row-spaced {
-    margin-bottom: 1;
-}
-
-.node-family-inputs {
-    color: #7ee787;
-}
-
-.node-family-flow-control {
-    color: #8ab4f8;
-}
-
-.node-family-outputs {
-    color: #f2cc60;
-}
-
-.node-family-complex {
-    color: #c586c0;
-}
-
-.node-utility {
-    color: #9aa7b3;
-}
-
-.branch-end-open {
-    color: #ff5c5c;
-}
-
-.branch-end-connected {
-    color: #50c878;
+.gap-arrow-card {
+    height: 1;
 }
 
 .branch-select-card {
     height: 1;
-    color: #ffa500;
 }
 
 .merge-beacon-select-card {
     height: 1;
-    color: #c586c0;
 }
 
 .node-card.selected {

@@ -848,8 +848,11 @@ def test_editor_deleted_node_row_renders_as_deleted():
     card.refresh_card()
 
     lines = card.display_text.splitlines()
-    assert lines[0].startswith("  1   Deleted node: Useful Logger (Logger)")
-    assert lines[1].startswith("      x delete | z undo | e new node")
+    assert len(lines) == 4
+    assert lines[0].startswith("  1   +")
+    assert lines[1].startswith("      | Deleted node: Useful Logger (Logger)")
+    assert lines[2].startswith("      | x delete | z undo | e new node")
+    assert lines[3].startswith("      +")
 
     no_restore = {
         "type": "branch_end_node",
@@ -865,9 +868,11 @@ def test_editor_deleted_node_row_renders_as_deleted():
     )
     no_restore_card.refresh_card()
     no_restore_lines = no_restore_card.display_text.splitlines()
-    assert no_restore_lines[0].startswith("  0   Deleted node")
-    assert no_restore_lines[1].startswith("      x delete | e new node")
-    assert "z undo" not in no_restore_lines[1]
+    assert len(no_restore_lines) == 4
+    assert no_restore_lines[0].startswith("  0   +")
+    assert no_restore_lines[1].startswith("      | Deleted node")
+    assert no_restore_lines[2].startswith("      | x delete | e new node")
+    assert "z undo" not in no_restore_card.display_text
     print("test_editor_deleted_node_row_renders_as_deleted PASSED")
 
 
@@ -1101,12 +1106,14 @@ def test_node_card_editor_identity_rows_align_and_truncate():
     card.refresh_card()
 
     lines = card.display_text.splitlines()
-    assert len(lines) == 2
-    assert lines[0].startswith("  4   Useful Logger")
-    assert lines[1].startswith("      Outputs - Passive Output")
-    assert "Utility" not in lines[1]
+    assert len(lines) == 4
+    assert lines[0].startswith("  4   +")
+    assert lines[1].startswith("      | Useful Logger")
+    assert lines[2].startswith("      | Outputs - Passive Output")
+    assert lines[3].startswith("      +")
+    assert "Utility" not in lines[2]
     assert "<" not in lines[0]
-    assert ">" not in lines[1]
+    assert ">" not in lines[2]
 
     long_identity = {
         "type": "file_reader_node",
@@ -1129,9 +1136,9 @@ def test_node_card_editor_identity_rows_align_and_truncate():
     )
     long_card.refresh_card()
     long_lines = long_card.display_text.splitlines()
-    assert "…" in long_lines[1]
+    assert "…" in long_lines[2]
     assert "[" not in long_lines[0]
-    assert "]" not in long_lines[1]
+    assert "]" not in long_lines[2]
 
     print("test_node_card_editor_identity_rows_align_and_truncate PASSED")
 
@@ -3146,7 +3153,9 @@ async def _test_editor_depth_counter_tracks_visible_branch_distance():
         screen = app.query_one(EditorScreen)
         node_list = screen.query_one("#node-list")
 
-        rows = node_list._rows
+        rows = [
+            row for row in node_list._rows if row.get("kind") != "gap_arrow"
+        ]
         assert rows[0]["node_id"] == start
         assert rows[0]["depth"] == 0
         assert rows[1]["node_id"] == branch
@@ -3160,11 +3169,12 @@ async def _test_editor_depth_counter_tracks_visible_branch_distance():
         branch_row = app.query_one(BranchSelectCard)
         status = app.query_one(StatusBar)
         start_lines = start_card.display_text.splitlines()
-        assert start_lines[0].startswith("  0   Start")
-        assert start_lines[1].startswith("      Flow Control - Triggered")
+        assert start_lines[0].startswith("  0   +")
+        assert start_lines[1].startswith("      | Start")
+        assert start_lines[2].startswith("      | Flow Control - Triggered")
         assert "{" not in start_lines[0]
-        assert "}" not in start_lines[1]
-        assert branch_row.display_text == "  ☛   Branch 1"
+        assert "}" not in start_lines[2]
+        assert "☛ Branch 1" in branch_row.display_text
         assert "f file | o options | h help" in status._formatted()
         assert "Ctrl+I" not in status._formatted()
         titles = [str(label.content) for label in app.query(".panel-title")]
@@ -3223,7 +3233,7 @@ async def _test_editor_identity_rows_keep_keyboard_selection_stable():
         await pilot.pause(0.03)
 
         expected_id = chain_ids[11]
-        assert node_list.index == 12
+        assert node_list.is_selectable_index(node_list.index)
         assert screen.selected_node_id == expected_id
         assert node_list.node_id_for_index(node_list.index) == expected_id
         highlighted = [
@@ -3232,10 +3242,14 @@ async def _test_editor_identity_rows_keep_keyboard_selection_stable():
             if getattr(item, "highlighted", False)
         ]
         assert highlighted == [node_list.index]
+        assert all(
+            node_list.row_for_index(index).get("kind") != "gap_arrow"
+            for index in highlighted
+        )
 
         screen.refresh_from_backend()
         await pilot.pause(0.03)
-        assert node_list.index == 12
+        assert node_list.is_selectable_index(node_list.index)
         assert screen.selected_node_id == expected_id
         selected_card = next(card for card in app.query(NodeCard) if card.node_id == expected_id)
         assert "Utility - Passive Output" in selected_card.display_text
@@ -3253,7 +3267,14 @@ async def _test_editor_identity_rows_fit_rendered_panel_width():
     from textual.app import App, ComposeResult
     from textual.containers import Vertical
 
-    from frontend.widgets.node_card import TEXT_RIGHT_INSET, NodeCard
+    from frontend.widgets.node_card import (
+        BOX_RIGHT_INSET,
+        DEPTH_GUTTER,
+        GapArrowCard,
+        NodeCard,
+        center_text,
+        gap_arrow_text,
+    )
     from frontend.widgets.node_list import NodeList
 
     # The panel is much narrower than the old fixed 48-char identity width,
@@ -3312,19 +3333,20 @@ async def _test_editor_identity_rows_fit_rendered_panel_width():
         width = first.content_size.width
         assert 0 < width <= panel_width
         lines = first.display_text.splitlines()
-        assert len(lines) == 2, f"Expected two-line row, got {lines!r}"
+        assert len(lines) == 4, f"Expected boxed row, got {lines!r}"
         for line in lines:
-            # Content stays inside the Textual ASCII border without wrapping.
-            assert len(line) == width - TEXT_RIGHT_INSET, (
-                f"Row line must end {TEXT_RIGHT_INSET} short of the content "
-                f"edge ({len(line)} != {width - TEXT_RIGHT_INSET}): {line!r}"
+            # Content stays inside the panel without wrapping.
+            assert len(line) == width - BOX_RIGHT_INSET, (
+                f"Row line must end {BOX_RIGHT_INSET} short of the content "
+                f"edge ({len(line)} != {width - BOX_RIGHT_INSET}): {line!r}"
             )
-        # Identity rows no longer inject bracket/frame characters; the Textual
-        # widget border owns the box.
+        assert lines[0].startswith("  1   +")
+        assert lines[1].startswith("      | Parallel Branch")
+        assert lines[2].startswith("      | Flow Control - Parallel")
+        assert lines[3].startswith("      +")
         assert "{" not in lines[0]
-        assert "}" not in lines[1]
-        assert "Flow Control" in lines[1]
-        assert first.styles.border_top[0] == "ascii"
+        assert "}" not in lines[2]
+        box_width = len(lines[0]) - len(DEPTH_GUTTER)
 
         # The rows must actually paint (not just hold content): shadowing
         # Textual paint internals once made every card render blank.
@@ -3336,11 +3358,19 @@ async def _test_editor_identity_rows_fit_rendered_panel_width():
             f"Card content did not paint: {painted_lines!r}"
         )
 
-        # One blank spacer line separates node-to-node groups.
+        # One disabled arrow row separates node-to-node groups. It exists in
+        # layout but is not selectable/focusable.
         gap = second.region.y - first.region.y
-        assert gap == 5, f"Expected 4-row card + 1 spacer, got {gap}"
+        assert gap == 5, f"Expected 4-row card + 1 arrow line, got {gap}"
+        assert len(node_list.children) == len(rows) + 1
+        gap_item = node_list.children[1]
+        assert gap_item.disabled is True
+        assert node_list.row_for_index(1)["kind"] == "gap_arrow"
+        assert node_list.next_selectable_index(0, 1) == 2
+        gap_card = gap_item.query_one(GapArrowCard)
+        assert gap_card.display_text == gap_arrow_text(gap_card.content_size.width)
         # A branch selector sits directly below its node with no spacer between.
-        branch_item = node_list.children[2]
+        branch_item = node_list.children[3]
         selector_gap = branch_item.region.y - second.region.y
         assert selector_gap == 4, (
             f"Selector must sit directly below its node, got gap {selector_gap}"
@@ -3351,19 +3381,13 @@ async def _test_editor_identity_rows_fit_rendered_panel_width():
         assert node_gap == 1, (
             f"Node after selector must hug it (no blank line), got {node_gap}"
         )
-        assert "node-row-spaced" not in branch_item.classes
 
-        # Selector text aligns with the node text above.
+        # Selector text is centered under the node box, not the whole editor.
         from frontend.widgets.node_card import BranchSelectCard
 
         branch_card = branch_item.query_one(BranchSelectCard)
-        assert branch_card.display_text == "  ☛   Branch 1"
-
-        # The framed segment carries the family background with dark
-        # high-contrast text; the gutter stays unstyled.
-        from frontend.widgets.node_card import (
-            FAMILY_ROW_BACKGROUNDS,
-            IDENTITY_ROW_TEXT_COLOR,
+        assert branch_card.display_text == (
+            f"{DEPTH_GUTTER}{center_text('☛ Branch 1', box_width)}"
         )
 
         rendered = first.render()
@@ -3372,15 +3396,7 @@ async def _test_editor_identity_rows_fit_rendered_panel_width():
             for span in getattr(rendered, "spans", [])
             if getattr(span.style, "background", None) is not None
         ]
-        assert styled_spans, "Expected family-colored framed segments"
-        expected_bg = FAMILY_ROW_BACKGROUNDS["Flow Control"].lower()
-        for span in styled_spans:
-            assert span.style.background.hex.lower() == expected_bg
-            assert (
-                span.style.foreground.hex.lower()
-                == IDENTITY_ROW_TEXT_COLOR.lower()
-            )
-            assert span.start >= 6  # gutter columns stay unstyled
+        assert not styled_spans, "Node rows should render on the default background"
 
     print("test_editor_identity_rows_fit_rendered_panel_width PASSED")
 

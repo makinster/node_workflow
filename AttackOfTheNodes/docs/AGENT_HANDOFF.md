@@ -74,7 +74,7 @@ Phase 17 direction (taxonomy revised 2026-06-12):
 Deferred:
 
 - Backend features that need frontend surfacing: run history browser, secrets
-  settings UI, tombstone restore warning alert, branch-health colors,
+  settings UI, tombstone restore warning alert, branch-health indicators,
   schema-driven file pickers in node config, memory snapshot save/load choices,
   workflow rename/bookmark controls, and error clearing controls. See
   `PROJECT_BACKLOG.md` before starting any of these.

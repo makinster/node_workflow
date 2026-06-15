@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional
 
-from rich.style import Style
-from rich.text import Text
 from textual import events
 from textual.message import Message
 from textual.widgets import Static
@@ -25,19 +23,12 @@ DEPTH_WIDTH = 3
 DEPTH_SPACING = "   "
 DEPTH_GUTTER = " " * (DEPTH_WIDTH + len(DEPTH_SPACING))
 IDENTITY_TEXT_WIDTH = 48
-TEXT_RIGHT_INSET = 1  # keep content away from the Textual ASCII border edge
+BOX_RIGHT_INSET = 1  # keep the drawn box away from the panel edge
 UTILITY_TAG = "Utility"
-# Framed-segment row colors: background matches the family hue previously
-# used for the font; the font flips to a dark high-contrast color on top.
-IDENTITY_ROW_TEXT_COLOR = "#0d1117"
-FAMILY_ROW_BACKGROUNDS = {
-    "Inputs": "#7ee787",
-    "Outputs": "#f2cc60",
-    "Flow Control": "#8ab4f8",
-    "Utility": "#9aa7b3",
-    "Complex": "#c586c0",
-}
-UTILITY_ROW_BACKGROUND = "#9aa7b3"
+BOX_HORIZONTAL = "-"
+BOX_VERTICAL = "|"
+BOX_CORNER = "+"
+DOWN_ARROW = "↓"
 
 
 class NodeCard(Static):
@@ -127,61 +118,10 @@ class NodeCard(Static):
                 self.display_text = self._identity_display_text(gutter, main_text)
         else:
             self.display_text = f"{gutter}{main_text}"
-        self.update(self._card_content())
-
-    def _card_content(self) -> Any:
-        """Return the display text, with framed-segment colors when they apply.
-
-        Merge Beacon health rows and deleted-node rows keep their CSS colors;
-        family backgrounds only decorate ordinary identity rows.
-
-        Named carefully: `Widget._render_content` is a Textual paint internal,
-        and shadowing it makes the widget render blank.
-        """
-        if not self.is_mounted:
-            # Rich content needs the app console; plain text is fine off-app.
-            return self.display_text
-        if not self.show_identity:
-            return self.display_text
-        if self.node_data.get("_deleted_overlay"):
-            return self.display_text
-        if self.node_data.get("type") == "branch_end_node":
-            return self.display_text
-        colors = self._identity_row_colors()
-        if colors is None:
-            return self.display_text
-        background, foreground = colors
-        segment_style = Style(color=foreground, bgcolor=background)
-        content = Text(no_wrap=True)
-        lines = self.display_text.splitlines()
-        for index, line in enumerate(lines):
-            styled_line = Text(line, no_wrap=True)
-            styled_line.stylize(segment_style, len(DEPTH_GUTTER), len(line))
-            content.append(styled_line)
-            if index < len(lines) - 1:
-                content.append("\n")
-        return content
-
-    def _identity_row_colors(self) -> Optional[Tuple[str, str]]:
-        if UTILITY_TAG in self._identity_tags():
-            return (UTILITY_ROW_BACKGROUND, IDENTITY_ROW_TEXT_COLOR)
-        background = FAMILY_ROW_BACKGROUNDS.get(self._identity_family())
-        if background is None:
-            return None
-        return (background, IDENTITY_ROW_TEXT_COLOR)
+        self.update(self.display_text)
 
     def _sync_identity_classes(self) -> None:
         self.set_class(self.show_identity, "node-card-identity")
-        family = self._identity_family()
-        family_class = f"node-family-{self._class_slug(family)}" if family else ""
-        for class_name in [
-            "node-family-inputs",
-            "node-family-flow-control",
-            "node-family-outputs",
-            "node-family-complex",
-        ]:
-            self.set_class(class_name == family_class, class_name)
-        self.set_class(UTILITY_TAG in self._identity_tags(), "node-utility")
         self.set_class(bool(self.node_data.get("_deleted_overlay")), "node-deleted")
 
     def _deleted_overlay_display_text(
@@ -208,10 +148,7 @@ class NodeCard(Static):
             if overlay.get("can_restore")
             else "x delete | e new node"
         )
-        width = self._identity_text_width()
-        line_one = f"{gutter}{self._fit_text(label, width)}"
-        line_two = f"{DEPTH_GUTTER}{self._fit_text(controls, width)}"
-        return f"{line_one}\n{line_two}"
+        return self._boxed_display_text(gutter, label, controls)
 
     def _identity_display_text(self, gutter: str, main_text: str) -> str:
         family = self._identity_family()
@@ -220,10 +157,35 @@ class NodeCard(Static):
         row_tags = self._row_identity_tags(tags)
         if row_tags:
             identity_text = f"{identity_text} - {', '.join(row_tags)}"
-        width = self._identity_text_width()
-        line_one = f"{gutter}{self._fit_text(main_text, width)}"
-        line_two = f"{DEPTH_GUTTER}{self._fit_text(identity_text, width)}"
-        return f"{line_one}\n{line_two}"
+        return self._boxed_display_text(gutter, main_text, identity_text)
+
+    def _boxed_display_text(
+        self,
+        top_gutter: str,
+        line_one_text: str,
+        line_two_text: str,
+    ) -> str:
+        inner_width = self._identity_text_width()
+        top = f"{top_gutter}{BOX_CORNER}{BOX_HORIZONTAL * inner_width}{BOX_CORNER}"
+        line_one = self._boxed_content_line(line_one_text, inner_width)
+        line_two = self._boxed_content_line(line_two_text, inner_width)
+        bottom = (
+            f"{DEPTH_GUTTER}{BOX_CORNER}"
+            f"{BOX_HORIZONTAL * inner_width}{BOX_CORNER}"
+        )
+        lines = [top, line_one, line_two, bottom]
+        return "\n".join(lines)
+
+    def _boxed_content_line(self, text: str, inner_width: int) -> str:
+        if inner_width <= 2:
+            return (
+                f"{DEPTH_GUTTER}{BOX_VERTICAL}"
+                f"{self._fit_text(text, inner_width)}{BOX_VERTICAL}"
+            )
+        return (
+            f"{DEPTH_GUTTER}{BOX_VERTICAL} "
+            f"{self._fit_text(text, inner_width - 2)} {BOX_VERTICAL}"
+        )
 
     def _identity_family(self) -> str:
         identity = self.node_data.get("_identity") or {}
@@ -248,16 +210,17 @@ class NodeCard(Static):
         return tags[:1]
 
     def _identity_text_width(self) -> int:
-        """Width for identity text, from the rendered card content width.
+        """Width for identity text inside the drawn ASCII box.
 
-        Lines are `gutter + text`. Padding to more than the actual content
-        width makes Textual soft-wrap inside the ASCII border. Unmounted cards
-        (no size yet) fall back to the fixed test/default width.
+        Lines are `gutter + border + text + border`. Padding to more than the
+        actual content width makes Textual soft-wrap inside the panel.
+        Unmounted cards (no size yet) fall back to the fixed test/default
+        width.
         """
         rendered_width = self.content_size.width
         if rendered_width <= 0:
             return IDENTITY_TEXT_WIDTH
-        overhead = len(DEPTH_GUTTER) + TEXT_RIGHT_INSET
+        overhead = len(DEPTH_GUTTER) + 2 + BOX_RIGHT_INSET
         return max(8, rendered_width - overhead)
 
     def _fit_text(self, text: str, width: int = IDENTITY_TEXT_WIDTH) -> str:
@@ -266,9 +229,6 @@ class NodeCard(Static):
         if width <= 1:
             return text[:width]
         return f"{text[: width - 1]}…"
-
-    def _class_slug(self, value: str) -> str:
-        return value.lower().replace(" ", "-").replace("/", "")
 
     def _format_timing(self, seconds: float | None) -> str:
         if seconds is None:
@@ -306,7 +266,14 @@ class BranchSelectCard(Static):
 
     def on_mount(self) -> None:
         self.add_class("branch-select-card")
-        self.display_text = f"{'☛':>{DEPTH_WIDTH}}{DEPTH_SPACING}{self.active_label}"
+        self.refresh_card()
+        self.call_after_refresh(self.refresh_card)
+
+    def on_resize(self) -> None:
+        self.refresh_card()
+
+    def refresh_card(self) -> None:
+        self.display_text = jump_widget_text(f"☛ {self.active_label}", self.content_size.width)
         self.update(self.display_text)
 
     def on_click(self, event: events.Click) -> None:
@@ -314,6 +281,26 @@ class BranchSelectCard(Static):
             self.Clicked(self.branch_node_id, self.active_port, event.chain)
         )
         event.stop()
+
+
+class GapArrowCard(Static):
+    """Render a non-selectable insertion gap marker between node rows."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.display_text = ""
+
+    def on_mount(self) -> None:
+        self.add_class("gap-arrow-card")
+        self.refresh_card()
+        self.call_after_refresh(self.refresh_card)
+
+    def on_resize(self) -> None:
+        self.refresh_card()
+
+    def refresh_card(self) -> None:
+        self.display_text = gap_arrow_text(self.content_size.width)
+        self.update(self.display_text)
 
 
 class MergeBeaconSelectCard(Static):
@@ -341,9 +328,52 @@ class MergeBeaconSelectCard(Static):
 
     def on_mount(self) -> None:
         self.add_class("merge-beacon-select-card")
-        self.display_text = f"{'☛':>{DEPTH_WIDTH}}{DEPTH_SPACING}{self.active_label}"
+        self.refresh_card()
+        self.call_after_refresh(self.refresh_card)
+
+    def on_resize(self) -> None:
+        self.refresh_card()
+
+    def refresh_card(self) -> None:
+        self.display_text = jump_widget_text(f"☛ {self.active_label}", self.content_size.width)
         self.update(self.display_text)
 
     def on_click(self, event: events.Click) -> None:
         self.post_message(self.Clicked(self.beacon_node_id, event.chain))
         event.stop()
+
+
+def center_gap_marker(box_width: int) -> str:
+    """Return a centered down marker for the gap below a node box."""
+    marker = DOWN_ARROW * 2 if box_width % 2 == 0 else DOWN_ARROW
+    return center_text(marker, box_width)
+
+
+def center_text(text: str, width: int) -> str:
+    """Center text within width using left bias only when unavoidable."""
+    width = max(1, width)
+    if len(text) >= width:
+        return text[:width]
+    left = (width - len(text)) // 2
+    right = width - len(text) - left
+    return f"{' ' * left}{text}{' ' * right}"
+
+
+def jump_widget_text(label: str, rendered_width: int) -> str:
+    """Center a branch/merge jump label under the node box, outside the gutter."""
+    box_width = (
+        IDENTITY_TEXT_WIDTH + 2
+        if rendered_width <= 0
+        else max(10, rendered_width - len(DEPTH_GUTTER) - BOX_RIGHT_INSET)
+    )
+    return f"{DEPTH_GUTTER}{center_text(label, box_width)}"
+
+
+def gap_arrow_text(rendered_width: int) -> str:
+    """Center a non-focusable down arrow under the node box."""
+    box_width = (
+        IDENTITY_TEXT_WIDTH + 2
+        if rendered_width <= 0
+        else max(10, rendered_width - len(DEPTH_GUTTER) - BOX_RIGHT_INSET)
+    )
+    return f"{DEPTH_GUTTER}{center_gap_marker(box_width)}"

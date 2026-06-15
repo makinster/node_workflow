@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional
 
 from textual.widgets import Label, ListItem, ListView
 
-from .node_card import BranchSelectCard, MergeBeaconSelectCard, NodeCard
+from .node_card import BranchSelectCard, GapArrowCard, MergeBeaconSelectCard, NodeCard
 
 
 class NodeList(ListView):
@@ -51,50 +51,58 @@ class NodeList(ListView):
         statuses = statuses or {}
         timings = timings or {}
         self.clear()
-        self._rows = list(rows)
-        selector_kinds = {"branch_select", "merge_beacon_select"}
-        for index, row in enumerate(self._rows):
+        self._rows = []
+        for index, row in enumerate(rows):
             next_kind = (
-                self._rows[index + 1]["kind"]
-                if index + 1 < len(self._rows)
+                rows[index + 1]["kind"]
+                if index + 1 < len(rows)
                 else None
             )
-            # Only node rows carry the trailing spacer, and only when a
-            # selector row does not immediately follow (selectors hug their
-            # node). Selector rows never add a blank line below themselves.
-            item_classes = (
-                "node-row-spaced"
-                if row["kind"] == "node" and next_kind not in selector_kinds
-                else ""
-            )
-            if row["kind"] == "node":
-                node_id = row["node_id"]
-                card = NodeCard(
-                    node_id,
-                    row["node"],
-                    statuses.get(node_id, "idle"),
-                    timings.get(node_id),
-                    show_status=False,
-                    show_id=False,
-                    show_identity=True,
-                )
-            elif row["kind"] == "branch_select":
-                card = BranchSelectCard(
-                    row["branch_node_id"],
-                    row["active_port"],
-                    row.get("active_label"),
-                    row.get("depth"),
-                )
-            else:
-                card = MergeBeaconSelectCard(
-                    row["beacon_node_id"],
-                    row.get("active_label"),
-                    row.get("depth"),
-                )
-            self.append(ListItem(card, classes=item_classes))
+            self._append_row(row, statuses, timings)
+            if row["kind"] == "node" and next_kind == "node":
+                gap_row = {
+                    "kind": "gap_arrow",
+                    "after_node_id": row["node_id"],
+                }
+                self._rows.append(gap_row)
+                self.append(ListItem(GapArrowCard(), disabled=True))
         if not rows:
             self.append(ListItem(Label("No nodes. Press I to add a node.")))
         self.normalize_highlight()
+
+    def _append_row(
+        self,
+        row: Dict[str, Any],
+        statuses: Dict[str, str],
+        timings: Dict[str, float],
+    ) -> None:
+        """Append one selectable row and keep `_rows` aligned to ListView items."""
+        self._rows.append(row)
+        if row["kind"] == "node":
+            node_id = row["node_id"]
+            card = NodeCard(
+                node_id,
+                row["node"],
+                statuses.get(node_id, "idle"),
+                timings.get(node_id),
+                show_status=False,
+                show_id=False,
+                show_identity=True,
+            )
+        elif row["kind"] == "branch_select":
+            card = BranchSelectCard(
+                row["branch_node_id"],
+                row["active_port"],
+                row.get("active_label"),
+                row.get("depth"),
+            )
+        else:
+            card = MergeBeaconSelectCard(
+                row["beacon_node_id"],
+                row.get("active_label"),
+                row.get("depth"),
+            )
+        self.append(ListItem(card))
 
     def node_id_for_index(self, index: int | None) -> Optional[str]:
         """Return the node id matching a ListView index."""
@@ -108,6 +116,26 @@ class NodeList(ListView):
         if index is None or index < 0 or index >= len(self._rows):
             return None
         return self._rows[index]
+
+    def is_selectable_index(self, index: int | None) -> bool:
+        """Return true when index points at a selectable workflow row."""
+        row = self.row_for_index(index)
+        return bool(row and row.get("kind") != "gap_arrow")
+
+    def next_selectable_index(self, current: int, delta: int) -> Optional[int]:
+        """Return the next selectable index, skipping disabled gap arrows."""
+        if not self._rows:
+            return None
+        if delta == 0:
+            return current if self.is_selectable_index(current) else None
+        step = 1 if delta >= 0 else -1
+        index = current
+        while True:
+            index = max(0, min(len(self._rows) - 1, index + step))
+            if self.is_selectable_index(index):
+                return index
+            if index == 0 or index == len(self._rows) - 1:
+                return current if self.is_selectable_index(current) else None
 
     def index_for_node_id(self, node_id: str) -> Optional[int]:
         """Return the first row index for a node id."""
