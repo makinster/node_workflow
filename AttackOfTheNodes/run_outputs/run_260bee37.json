@@ -1,0 +1,25 @@
+{
+  "run_id": "run_260bee37",
+  "outputs": [
+    {
+      "run_id": "run_260bee37",
+      "node_id": "output_log",
+      "value": "[step1]"
+    },
+    {
+      "run_id": "run_260bee37",
+      "node_id": "output_log",
+      "value": "[step2]"
+    },
+    {
+      "run_id": "run_260bee37",
+      "node_id": "output_log",
+      "value": "[step3]"
+    },
+    {
+      "run_id": "run_260bee37",
+      "node_id": "output_log",
+      "value": "[END] Branch completed (received: Workflow started)"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "run_id": "run_1d983a84",
+  "errors": [
+    {
+      "id": "err_c450d4e852",
+      "timestamp": "2026-06-09T06:19:13.948898+00:00",
+      "category": "UNKNOWN",
+      "message": "deliberate test error",
+      "type": "RuntimeError",
+      "traceback": "RuntimeError: deliberate test error\n",
+      "context": {
+        "run_id": "run_1d983a84",
+        "branch_id": "branch_a77416",
+        "node_id": "node_5e138875",
+        "depth": 0,
+        "inputs": {
+          "input": "Workflow started"
+        }
+      },
+      "run_id": "run_1d983a84",
+      "node_id": "node_5e138875",
+      "branch_id": "branch_a77416"
+    }
+  ]
+}

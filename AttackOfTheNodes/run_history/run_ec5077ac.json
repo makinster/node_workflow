@@ -1,0 +1,20 @@
+{
+  "ended_at": "2026-06-09T19:56:37.198228+00:00",
+  "run_id": "run_ec5077ac",
+  "workflow_id": "wf_9f8df2b44f24",
+  "workflow_name": "merge_selected_input",
+  "started_at": "2026-06-09T19:56:37.142718+00:00",
+  "final_state": "FINISHED",
+  "error_count": 0,
+  "output_count": 2,
+  "node_timings": {
+    "node_0982c105": 2.180924639105797e-06,
+    "node_407e8f80": 7.885042577981949e-06,
+    "node_06d1332c": 1.9990839064121246e-06,
+    "node_4399c09d": 0.05030018207617104,
+    "node_4b6817c6": 4.219822585582733e-06,
+    "node_abca74d1": 0.05053959786891937,
+    "node_d7ab421d": 3.2421899959445e-05,
+    "node_7b193a42": 7.861992344260216e-06
+  }
+}

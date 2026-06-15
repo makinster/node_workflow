@@ -1,0 +1,20 @@
+{
+  "ended_at": "2026-06-10T00:06:22.645264+00:00",
+  "run_id": "run_014bd138",
+  "workflow_id": "wf_206e51101b66",
+  "workflow_name": "wait_until",
+  "started_at": "2026-06-10T00:06:22.589974+00:00",
+  "final_state": "FINISHED",
+  "error_count": 0,
+  "output_count": 4,
+  "node_timings": {
+    "node_f3ba9ca9": 1.8458813428878784e-06,
+    "node_f325888f": 7.57281668484211e-06,
+    "node_83a76f2c": 0.05025733099319041,
+    "node_a1b6b2ac": 3.308802843093872e-05,
+    "node_6e78d2e7": 6.130896508693695e-06,
+    "node_d51b5da0": 0.050397339975461364,
+    "node_ca27cddd": 6.052199751138687e-06,
+    "node_e4351525": 8.03009606897831e-06
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "ended_at": "2026-06-09T05:39:14.949098+00:00",
+  "run_id": "run_5624aa0b",
+  "workflow_id": "wf_f32642de2ae9",
+  "workflow_name": "test_var_round_trip",
+  "started_at": "2026-06-09T05:39:14.945306+00:00",
+  "final_state": "FINISHED",
+  "error_count": 0,
+  "output_count": 2,
+  "node_timings": {
+    "node_633403e7": 1.6030389815568924e-06,
+    "node_bd9b3696": 5.209119990468025e-06,
+    "node_58bcc9fe": 1.8030405044555664e-06,
+    "node_66d67797": 8.760020136833191e-06,
+    "node_33c602f9": 4.6549830585718155e-06
+  }
+}

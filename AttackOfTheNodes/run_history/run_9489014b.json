@@ -1,0 +1,15 @@
+{
+  "ended_at": "2026-06-09T08:31:05.103173+00:00",
+  "run_id": "run_9489014b",
+  "workflow_id": "wf_79ca4ca0cf33",
+  "workflow_name": "breakpoint_run",
+  "started_at": "2026-06-09T08:31:05.088357+00:00",
+  "final_state": "FINISHED",
+  "error_count": 0,
+  "output_count": 2,
+  "node_timings": {
+    "node_d37ce2c2": 2.3869797587394714e-06,
+    "node_4457d613": 3.352714702486992e-05,
+    "node_42720d59": 6.478046998381615e-06
+  }
+}

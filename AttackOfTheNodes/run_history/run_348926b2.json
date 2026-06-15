@@ -1,0 +1,16 @@
+{
+  "ended_at": "2026-06-09T06:19:14.403799+00:00",
+  "run_id": "run_348926b2",
+  "workflow_id": "wf_55a712208214",
+  "workflow_name": "test_conditional",
+  "started_at": "2026-06-09T06:19:14.400347+00:00",
+  "final_state": "FINISHED",
+  "error_count": 0,
+  "output_count": 2,
+  "node_timings": {
+    "node_63e32bb4": 1.9548460841178894e-06,
+    "node_30832517": 3.6798883229494095e-06,
+    "node_cf9e0001": 8.491100743412971e-06,
+    "node_64a00c18": 6.827060133218765e-06
+  }
+}

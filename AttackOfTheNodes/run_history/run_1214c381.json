@@ -1,0 +1,17 @@
+{
+  "ended_at": "2026-06-09T01:42:41.668095+00:00",
+  "run_id": "run_1214c381",
+  "workflow_id": "wf_b4280295d316",
+  "workflow_name": "test_linear",
+  "started_at": "2026-06-09T01:42:41.665146+00:00",
+  "final_state": "FINISHED",
+  "error_count": 0,
+  "output_count": 4,
+  "node_timings": {
+    "node_829b9cff": 1.8670689314603806e-06,
+    "node_2dd33d45": 1.1324882507324219e-05,
+    "node_48d7d3d9": 5.758833140134811e-06,
+    "node_88d47866": 3.86405736207962e-06,
+    "node_68edbb6b": 4.631001502275467e-06
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "run_id": "run_a3aea29a",
+  "outputs": [
+    {
+      "run_id": "run_a3aea29a",
+      "node_id": "output_log",
+      "value": "[END] Branch completed (received: first body)"
+    }
+  ]
+}

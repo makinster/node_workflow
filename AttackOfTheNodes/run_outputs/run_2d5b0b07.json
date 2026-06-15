@@ -1,0 +1,15 @@
+{
+  "run_id": "run_2d5b0b07",
+  "outputs": [
+    {
+      "run_id": "run_2d5b0b07",
+      "node_id": "output_log",
+      "value": "[merged] [left] Workflow started"
+    },
+    {
+      "run_id": "run_2d5b0b07",
+      "node_id": "output_log",
+      "value": "[END] Branch completed (received: [left] Workflow started)"
+    }
+  ]
+}

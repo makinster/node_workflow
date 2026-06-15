@@ -1,0 +1,15 @@
+{
+  "run_id": "run_15aa035b",
+  "outputs": [
+    {
+      "run_id": "run_15aa035b",
+      "node_id": "output_log",
+      "value": "[true_path]"
+    },
+    {
+      "run_id": "run_15aa035b",
+      "node_id": "output_log",
+      "value": "[END] Branch completed (received: needle)"
+    }
+  ]
+}

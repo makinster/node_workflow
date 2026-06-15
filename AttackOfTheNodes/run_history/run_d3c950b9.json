@@ -1,0 +1,17 @@
+{
+  "ended_at": "2026-06-09T23:13:31.922831+00:00",
+  "run_id": "run_d3c950b9",
+  "workflow_id": "wf_28fbbec832a8",
+  "workflow_name": "test_counter",
+  "started_at": "2026-06-09T23:13:31.918338+00:00",
+  "final_state": "FINISHED",
+  "error_count": 0,
+  "output_count": 1,
+  "node_timings": {
+    "node_79341d54": 2.5068875402212143e-06,
+    "node_cb36920c": 3.6999117583036423e-06,
+    "node_5586611f": 1.971842721104622e-06,
+    "node_c9034974": 1.0370276868343353e-06,
+    "node_9796f155": 1.0481104254722595e-05
+  }
+}

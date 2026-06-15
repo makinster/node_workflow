@@ -1,0 +1,14 @@
+{
+  "ended_at": "2026-06-10T23:18:36.937237+00:00",
+  "run_id": "run_ac315f8a",
+  "workflow_id": "wf_e212e9cb2e24",
+  "workflow_name": "test_deep_branch",
+  "started_at": "2026-06-10T23:18:36.933140+00:00",
+  "final_state": "FINISHED",
+  "error_count": 0,
+  "output_count": 0,
+  "node_timings": {
+    "node_989f9504": 2.1099986042827368e-06,
+    "node_48ee3763": 1.8760038074105978e-06
+  }
+}

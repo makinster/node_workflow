@@ -1,0 +1,25 @@
+{
+  "run_id": "run_23087314",
+  "errors": [
+    {
+      "id": "err_759c6e82b8",
+      "timestamp": "2026-06-09T16:54:20.030884+00:00",
+      "category": "UNKNOWN",
+      "message": "RepeatCounterNode 'node_005e3623' has been visited 3 times (max 3) — possible infinite loop detected",
+      "type": "RuntimeError",
+      "traceback": "RuntimeError: RepeatCounterNode 'node_005e3623' has been visited 3 times (max 3) — possible infinite loop detected\n",
+      "context": {
+        "run_id": "run_23087314",
+        "branch_id": "branch_7c0b0c",
+        "node_id": "node_005e3623",
+        "depth": 0,
+        "inputs": {
+          "input": "Workflow started"
+        }
+      },
+      "run_id": "run_23087314",
+      "node_id": "node_005e3623",
+      "branch_id": "branch_7c0b0c"
+    }
+  ]
+}
