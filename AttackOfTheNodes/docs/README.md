@@ -117,3 +117,34 @@ context that is not covered by the active docs.
 - Add an entry to `DOCS_MIGRATION_NOTES.md` when moving, collapsing, archiving,
   or deleting docs.
 - Add a row to the Document Directory above when a new active doc is created.
+
+---
+
+## Branch Sync Rules
+
+This project uses two agents (Claude and Codex) that may work on different
+branches concurrently. Without regular syncing, branches diverge and produce
+large merge conflicts.
+
+**Every agent, every session:**
+
+1. **Check what branch you're on.** Run `git status` and `git log --oneline -5`
+   at session start. Know your current commit.
+2. **Merge main before starting work.** Run:
+   ```
+   git fetch origin && git merge origin/main
+   ```
+   Resolve any conflicts before adding new work. Do not build on a stale base.
+3. **Do not let branches diverge by more than one session.** If you land work on
+   `main`, immediately open a PR or merge to active feature branches. Do not
+   leave them disconnected for multiple sessions.
+4. **Announce your branch in `SESSION_LOG.md`.** Log which branch and commit
+   you started from so the next agent knows the context.
+5. **Prefer small, focused commits.** Large single commits ("Wasn't liking the
+   look...") that touch 25+ files make conflicts hard to resolve. Stage and
+   commit incrementally as you complete each piece of work.
+
+**Why this matters:** In June 2026, the `codex-textual-tui-spinoff` branch
+diverged from `main` by 20+ commits across both sides, requiring manual
+resolution of 27 conflicted files. All that conflict was avoidable with a
+`git merge origin/main` at session start.
