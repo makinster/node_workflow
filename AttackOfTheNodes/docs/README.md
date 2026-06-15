@@ -83,7 +83,7 @@ Read these before starting a new major project or moving/archiving docs.
 
 | File | What it contains | When to open it |
 |---|---|---|
-| `PROJECT_BACKLOG.md` | Deferred projects with full design specs: boundary cleanup, tombstone restore, runtime resources, typed vault, toast system, AI sessions | Before starting any work listed here — it may already be designed; check before re-designing |
+| `PROJECT_BACKLOG.md` | Deferred and near-term projects with full design specs, including backend features not yet surfaced in the UI, boundary cleanup, tombstone restore, runtime resources, typed vault, toast system, and AI sessions | Before starting any work listed here — it may already be designed; check before re-designing |
 | `TASK_INDEX.md` | Task-first reading lists, likely files per task, focused `pytest -k` commands, helper tool commands | After choosing a task type — the minimum reading set and the right verification pattern |
 | `DOCS_MIGRATION_NOTES.md` | Record of documentation moves, collapses, and archives during overhauls | When moving, merging, archiving, or deleting a doc — log it here |
 

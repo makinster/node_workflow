@@ -4,6 +4,20 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-15 — Documentation Sync: Backend/UI Gap List
+
+- Fast-forwarded local `main` to `origin/main` after confirming the previous
+  docs work had landed remotely through the `codex-textual-tui-spinoff` merge.
+- Confirmed `README.md` routes Phase 17 and active docs correctly, and
+  `MASTER_BUILD_PLAN.md` still marks Phase 17 in progress.
+- Added an explicit `PROJECT_BACKLOG.md` section for backend features not yet
+  surfaced in the Textual UI: run history browser, secrets management UI,
+  tombstone restore report alerts, branch-health visualization, schema-driven
+  file pickers for node config, memory snapshot save/load choices, workflow
+  rename/bookmark controls, and error clearing controls.
+- Linked that gap list from `MASTER_BUILD_PLAN.md`, `AGENT_HANDOFF.md`, and
+  the README document directory so future agents do not need to rediscover it.
+
 ## 2026-06-13 — Backend & edit-time performance: two O(n^2) fixes
 
 - Audit context: a backend execution-overhead study measured per-node cost

@@ -1,6 +1,6 @@
 # AttackOfTheNodes Master Build Plan
 
-**Last updated:** 2026-06-12
+**Last updated:** 2026-06-15
 **Project root:** `AttackOfTheNodes/`
 **Runtime:** Python 3.14, Textual 8.2.7, asyncio, JSON persistence
 
@@ -72,6 +72,11 @@ Remaining Phase 17 work:
   re-fit to the rendered panel width on resize.)
 - Keep future runtime-resource expansion and node-library redesign work
   separate from the Phase 17 visual identity foundation.
+- Keep backend-feature UI surfacing separate from Phase 17. Current gaps are
+  tracked in `PROJECT_BACKLOG.md` under "Backend Features Not Yet Surfaced In
+  UI" (run history browser, secrets UI, tombstone restore alerts, branch-health
+  colors, schema file pickers, memory snapshot save/load choices, workflow
+  rename/bookmarks, and error clearing controls).
 
 Read `PHASE_17_NODE_VISUAL_IDENTITY.md` before implementing selector, node row,
 or node metadata changes for this phase.

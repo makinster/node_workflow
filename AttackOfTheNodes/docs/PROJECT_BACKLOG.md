@@ -29,6 +29,59 @@ Ongoing rule: implementation phases should keep `SESSION_LOG.md` current and
 update `MASTER_BUILD_PLAN.md`, `TASK_INDEX.md`, or `AGENT_HANDOFF.md` when
 roadmap status or task routes change.
 
+## Near-Term Project — Backend Features Not Yet Surfaced In UI
+
+The backend has several useful capabilities that are intentionally reusable and
+UI-agnostic, but the Textual frontend does not yet expose them fully. Keep this
+list current when backend features land ahead of live-TUI work.
+
+Current frontend gaps (audited 2026-06-15):
+
+- **Run history browser:** `RunHistory` records persisted run summaries,
+  per-node timings, and emits `RUN_HISTORY_UPDATED`. The editor currently uses
+  history only to compute average node timings; there is no run-history screen
+  for browsing previous runs, opening outputs/errors by run, comparing timings,
+  or clearing old history.
+- **Secrets management UI:** `SecretsManager`, `NodeContext.get_secret()`, and
+  validator checks for schema fields marked `"secret": True` are implemented.
+  `SettingsScreen` still has only an API Keys placeholder, so users cannot yet
+  add, update, list, or delete stored secret keys from the TUI.
+- **Tombstone restore report UI:** `restore_tombstone()` can restore a deleted
+  node and return detailed input/output/memory warnings when connections cannot
+  be reattached. Editor undo and replace-with-original paths can call the
+  backend/frontend adapter, but the promised alert that summarizes partial
+  restore warnings is still deferred.
+- **Branch health visualization:** `backend/branch_health.py` derives
+  `valid`, `ended_unmerged`, and `floating` branch states. The editor has not
+  yet consumed `branch_health_by_port()` to color branch rows independently of
+  execution status.
+- **Schema-driven file picker in node config:** validators understand schema
+  fields with `path_hint: "file"` and `frontend/file_io.py` provides OS picker
+  helpers for workflow import/export. Generated node config fields still render
+  file paths as typed text inputs, so `FileReaderNode` and future file nodes do
+  not yet get a picker button/overlay from schema metadata.
+- **Save/load memory snapshots:** `SaveManager.save_current_workflow()` can
+  include `memory_state`, and `load_workflow(..., restore_execution=True)` can
+  restore it. The workflow library and save/load flows do not expose include
+  memory / restore memory choices.
+- **Workflow rename and bookmarks:** `SaveManager.rename_current_workflow()` and
+  `WorkflowMap.set_bookmark()` / bookmark filtering exist. The frontend does
+  not yet expose workflow rename controls or node bookmark navigation/filtering.
+- **Error clearing controls:** `ErrorHandler.clear_errors_for_run()` publishes
+  `ERRORS_CLEARED`. The current error/details UI is read-oriented and does not
+  provide clear-current-run or clear-all actions.
+
+Recommended cleanup:
+
+- Add each UI surface in a small live-TUI-verifiable slice rather than bundling
+  them into Phase 17. Phase 17 should stay focused on node identity, selector
+  taxonomy, and editor row rendering.
+- Prefer frontend adapters/screens that consume existing backend APIs. Do not
+  move UI-specific state into backend services just to make these controls
+  easier to render.
+- When a gap is closed, move its bullet to `SESSION_LOG.md` and the relevant
+  completed/near-term section below.
+
 ## Planned Project — Backend / Frontend Boundary Cleanup
 
 The backend should remain reusable for future CLI, web, or API frontends.
