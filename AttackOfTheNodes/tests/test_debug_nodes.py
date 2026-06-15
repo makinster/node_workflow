@@ -3175,7 +3175,7 @@ async def _test_editor_depth_counter_tracks_visible_branch_distance():
         branch_row = app.query_one(BranchSelectCard)
         status = app.query_one(StatusBar)
         start_lines = start_card.display_text.splitlines()
-        assert start_lines[0].startswith("  0   +")
+        assert start_lines[0].startswith("| 0   +")
         assert start_lines[1].startswith("  |   | Start")
         assert start_lines[2].startswith("  |   | Flow Control - Triggered")
         assert "{" not in start_lines[0]
@@ -3280,6 +3280,7 @@ async def _test_editor_identity_rows_fit_rendered_panel_width():
         DEPTH_GUTTER,
         GapArrowCard,
         LINE_CHAR,
+        MERGE_INCOMING_MARKER,
         NodeCard,
         SELECTED_BACKGROUND,
         BRANCH_SELECT_CONNECTOR,
@@ -3299,9 +3300,10 @@ async def _test_editor_identity_rows_fit_rendered_panel_width():
         node_id: str,
         alias: str,
         branch_port: str | None = None,
+        node_type: str = "branch_node",
     ) -> dict:
         node = {
-            "type": "branch_node",
+            "type": node_type,
             "alias": alias,
             "_editor_depth": 1,
             "_identity": {
@@ -3328,6 +3330,7 @@ async def _test_editor_identity_rows_fit_rendered_panel_width():
             "depth": 1,
         },
         node_row("path-node", "Path Node", "path_b"),
+        node_row("merge-node", "Merge", "path_b", "merge_node"),
     ]
 
     class NarrowApp(App):
@@ -3350,8 +3353,8 @@ async def _test_editor_identity_rows_fit_rendered_panel_width():
         await pilot.pause(0.05)
 
         cards = list(app.query(NodeCard))
-        assert len(cards) == 3
-        first, second, path_card = cards
+        assert len(cards) == 4
+        first, second, path_card, merge_card = cards
         width = first.content_size.width
         assert 0 < width <= panel_width
         lines = first.display_text.splitlines()
@@ -3384,7 +3387,7 @@ async def _test_editor_identity_rows_fit_rendered_panel_width():
         # layout but is not selectable/focusable.
         gap = second.region.y - first.region.y
         assert gap == 5, f"Expected 4-row card + 1 arrow line, got {gap}"
-        assert len(node_list.children) == len(rows) + 1
+        assert len(node_list.children) == len(rows) + 2
         gap_item = node_list.children[1]
         assert gap_item.disabled is True
         assert node_list.row_for_index(1)["kind"] == "gap_arrow"
@@ -3418,6 +3421,7 @@ async def _test_editor_identity_rows_fit_rendered_panel_width():
         label_start = branch_card.display_text.index("Branch 1") - len(DEPTH_GUTTER)
         assert abs((label_start * 2 + len("Branch 1")) - box_width) <= 1
         label_end = branch_card.display_text.index("Branch 1") + len("Branch 1")
+        assert branch_card.display_text[label_end] == "|"
         assert LINE_CHAR not in branch_card.display_text[label_end:]
 
         branch_segments = []
@@ -3450,10 +3454,35 @@ async def _test_editor_identity_rows_fit_rendered_panel_width():
                 if color is not None and path_color in str(color).lower():
                     path_color_segments.append((y, offset, end, segment.text))
                 offset = end
-        assert not any(y == 0 for y, _, _, _ in path_color_segments)
+        number_column = 2
+        assert any(
+            y == 0 and start <= 0 < end
+            for y, start, end, _ in path_color_segments
+        )
+        assert not any(
+            y == 0 and start <= number_column < end
+            for y, start, end, _ in path_color_segments
+        )
         assert any(
             y > 0 and start <= connector_column < end
             for y, start, end, _ in path_color_segments
+        )
+
+        merge_gap_item = node_list.children[5]
+        merge_gap_card = merge_gap_item.query_one(GapArrowCard)
+        assert merge_gap_card.display_text.startswith(f"  {MERGE_INCOMING_MARKER}   ")
+        assert merge_card.region.y - path_card.region.y == 5
+        merge_gap_color_segments = []
+        offset = 0
+        for segment in merge_gap_card.render_line(0):
+            end = offset + len(segment.text)
+            color = getattr(segment.style, "color", None)
+            if color is not None and path_color in str(color).lower():
+                merge_gap_color_segments.append((offset, end, segment.text))
+            offset = end
+        assert any(
+            start <= connector_column < end
+            for start, end, _ in merge_gap_color_segments
         )
 
         selected_segments = []

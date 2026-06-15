@@ -23,6 +23,12 @@ overhaul.
 - Downstream node rows carry the visible branch path as frontend-only display
   metadata so number-column `|` symbols can use the branch path color while
   depth numbers remain unstyled.
+- The initial visible path now starts as `path_a`, giving the start/first branch
+  segment the same branch color treatment as Branch path 1.
+- Branch and merge selector labels end with a right-side `|` to visually box
+  in the widget text.
+- Disabled gap rows immediately before visible `merge_node` rows use `┤` in
+  the number/gutter column to suggest incoming branches.
 - Continued the gutter rule from the boxed node rows: numbered top rows show
   the depth number, while node box continuation rows use `|` in the number
   column.

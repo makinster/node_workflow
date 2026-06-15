@@ -43,6 +43,8 @@ BRANCH_SELECT_CONNECTOR = "├──"
 MERGE_SELECT_CONNECTOR = "└──"
 LINE_CHAR = "─"
 BRANCH_LABEL_PREFIX = "─┤"
+BRANCH_LABEL_SUFFIX = "|"
+MERGE_INCOMING_MARKER = "┤"
 
 
 class NodeCard(Static):
@@ -119,11 +121,14 @@ class NodeCard(Static):
         id_text = f" ({self.node_id})" if self.show_id else ""
         prefix = f"{icon} " if icon else ""
         main_text = f"{prefix}{breakpoint_marker}{alias}{id_text}{timing}"
-        gutter = (
-            f"{depth:>{DEPTH_WIDTH}}{DEPTH_SPACING}"
-            if isinstance(depth, int)
-            else DEPTH_GUTTER
-        )
+        if isinstance(depth, int):
+            gutter = (
+                branch_number_gutter(depth)
+                if self.gutter_color
+                else f"{depth:>{DEPTH_WIDTH}}{DEPTH_SPACING}"
+            )
+        else:
+            gutter = DEPTH_GUTTER
         if self.show_identity:
             if isinstance(deleted_overlay, dict) and deleted_overlay:
                 self.display_text = self._deleted_overlay_display_text(
@@ -324,8 +329,14 @@ class BranchSelectCard(Static):
 class GapArrowCard(Static):
     """Render a non-selectable insertion gap marker between node rows."""
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        gutter_marker: str | None = None,
+        branch_port: str | None = None,
+    ) -> None:
         super().__init__()
+        self.gutter_marker = gutter_marker
+        self.gutter_color = branch_path_color(branch_port) if branch_port else None
         self.display_text = ""
 
     def on_mount(self) -> None:
@@ -337,8 +348,17 @@ class GapArrowCard(Static):
         self.refresh_card()
 
     def refresh_card(self) -> None:
-        self.display_text = gap_arrow_text(self.content_size.width)
-        self.update(self.display_text)
+        self.display_text = gap_arrow_text(
+            self.content_size.width,
+            self.gutter_marker,
+        )
+        self.update(
+            selected_box_text(
+                self.display_text,
+                False,
+                gutter_symbol_color=self.gutter_color,
+            )
+        )
 
 
 class MergeBeaconSelectCard(Static):
@@ -427,7 +447,7 @@ def branch_selector_text(
 def branch_line_label(label: str, box_width: int) -> str:
     """Fill the node column with a line that runs into the branch label."""
     label_text = str(label or "").strip() or "Branch"
-    marker = f"{BRANCH_LABEL_PREFIX}{label_text}"
+    marker = f"{BRANCH_LABEL_PREFIX}{label_text}{BRANCH_LABEL_SUFFIX}"
     if len(marker) >= box_width:
         return marker[:box_width]
     label_start = max(0, (box_width - len(label_text)) // 2)
@@ -446,15 +466,35 @@ def branch_box_width(rendered_width: int) -> int:
     return box_width
 
 
-def gap_arrow_text(rendered_width: int) -> str:
+def gap_arrow_text(rendered_width: int, gutter_marker: str | None = None) -> str:
     """Center a non-focusable down arrow under the node box."""
     box_width = branch_box_width(rendered_width)
-    return f"{branch_continuation_gutter()}{center_gap_marker(box_width)}"
+    gutter = (
+        num_gutter_marker(gutter_marker)
+        if gutter_marker
+        else branch_continuation_gutter()
+    )
+    return f"{gutter}{center_gap_marker(box_width)}"
+
+
+def branch_number_gutter(depth: int) -> str:
+    """Gutter for numbered rows on a colored branch path."""
+    number_text = str(depth)
+    if len(number_text) >= DEPTH_WIDTH:
+        visible = f"{BOX_VERTICAL}{number_text}"[-DEPTH_WIDTH:]
+    else:
+        visible = f"{BOX_VERTICAL}{number_text:>{DEPTH_WIDTH - 1}}"
+    return f"{visible}{DEPTH_SPACING}"
 
 
 def branch_continuation_gutter() -> str:
     """Gutter used below a node's numbered top row."""
-    return f"{BOX_VERTICAL:>{DEPTH_WIDTH}}{DEPTH_SPACING}"
+    return num_gutter_marker(BOX_VERTICAL)
+
+
+def num_gutter_marker(marker: str) -> str:
+    """Place a non-number marker in the visual connector column."""
+    return f"{marker:>{DEPTH_WIDTH}}{DEPTH_SPACING}"
 
 
 def connector_gutter(connector: str) -> str:
@@ -492,8 +532,10 @@ def selected_box_text(
         styled_line = Text(line, no_wrap=True)
         if foreground_style:
             styled_line.stylize(foreground_style, color_start, len(line))
-        if gutter_style and line[:DEPTH_WIDTH].strip() == BOX_VERTICAL:
-            styled_line.stylize(gutter_style, 0, len(DEPTH_GUTTER))
+        if gutter_style:
+            for offset, char in enumerate(line[:DEPTH_WIDTH]):
+                if char.strip() and not char.isdigit():
+                    styled_line.stylize(gutter_style, offset, offset + 1)
         if selected_style:
             styled_line.stylize(selected_style, len(DEPTH_GUTTER), len(line))
         content.append(styled_line)

@@ -1436,7 +1436,7 @@ class EditorScreen(Screen):
         visited: set[str] = set()
         current_node_id = start_node_id
         depth = 0
-        current_branch_port: str | None = None
+        current_branch_port: str | None = "path_a"
 
         while current_node_id and current_node_id not in visited:
             node = nodes.get(current_node_id)
