@@ -32,6 +32,17 @@ BOX_VERTICAL = "|"
 BOX_CORNER = "+"
 DOWN_ARROW = "↓"
 SELECTED_BACKGROUND = "#1a3a5c"
+BRANCH_PATH_COLORS = {
+    "path_a": "#20b2aa",  # lightseagreen
+    "path_b": "#add8e6",  # lightblue
+    "path_c": "#4682b4",  # steelblue
+    "path_d": "#40e0d0",  # turquoise
+    "path_e": "#40e0d0",  # turquoise
+}
+BRANCH_SELECT_CONNECTOR = "└──"
+MERGE_SELECT_CONNECTOR = "├──"
+LINE_CHAR = "─"
+BRANCH_LABEL_PREFIX = "─┤"
 
 
 class NodeCard(Static):
@@ -174,24 +185,25 @@ class NodeCard(Static):
         line_two_text: str,
     ) -> str:
         inner_width = self._identity_text_width()
+        continuation_gutter = branch_continuation_gutter()
         top = f"{top_gutter}{BOX_CORNER}{BOX_HORIZONTAL * inner_width}{BOX_CORNER}"
-        line_one = self._boxed_content_line(line_one_text, inner_width)
-        line_two = self._boxed_content_line(line_two_text, inner_width)
+        line_one = self._boxed_content_line(line_one_text, inner_width, continuation_gutter)
+        line_two = self._boxed_content_line(line_two_text, inner_width, continuation_gutter)
         bottom = (
-            f"{DEPTH_GUTTER}{BOX_CORNER}"
+            f"{continuation_gutter}{BOX_CORNER}"
             f"{BOX_HORIZONTAL * inner_width}{BOX_CORNER}"
         )
         lines = [top, line_one, line_two, bottom]
         return "\n".join(lines)
 
-    def _boxed_content_line(self, text: str, inner_width: int) -> str:
+    def _boxed_content_line(self, text: str, inner_width: int, gutter: str) -> str:
         if inner_width <= 2:
             return (
-                f"{DEPTH_GUTTER}{BOX_VERTICAL}"
+                f"{gutter}{BOX_VERTICAL}"
                 f"{self._fit_text(text, inner_width)}{BOX_VERTICAL}"
             )
         return (
-            f"{DEPTH_GUTTER}{BOX_VERTICAL} "
+            f"{gutter}{BOX_VERTICAL} "
             f"{self._fit_text(text, inner_width - 2)} {BOX_VERTICAL}"
         )
 
@@ -281,8 +293,19 @@ class BranchSelectCard(Static):
         self.refresh_card()
 
     def refresh_card(self) -> None:
-        self.display_text = jump_widget_text(f"☛ {self.active_label}", self.content_size.width)
-        self.update(selected_box_text(self.display_text, self.has_class("selected")))
+        self.display_text = branch_selector_text(
+            self.active_label,
+            self.active_port,
+            self.content_size.width,
+            BRANCH_SELECT_CONNECTOR,
+        )
+        self.update(
+            selected_box_text(
+                self.display_text,
+                self.has_class("selected"),
+                foreground=branch_path_color(self.active_port),
+            )
+        )
 
     def on_click(self, event: events.Click) -> None:
         self.post_message(
@@ -327,11 +350,13 @@ class MergeBeaconSelectCard(Static):
         beacon_node_id: str,
         active_label: str | None = None,
         depth: int | None = None,
+        active_port: str | None = None,
     ) -> None:
         super().__init__()
         self.beacon_node_id = beacon_node_id
         self.active_label = active_label or "Choose merge"
         self.depth = depth
+        self.active_port = active_port or "path_a"
         self.display_text = ""
 
     def on_mount(self) -> None:
@@ -343,8 +368,20 @@ class MergeBeaconSelectCard(Static):
         self.refresh_card()
 
     def refresh_card(self) -> None:
-        self.display_text = jump_widget_text(f"☛ {self.active_label}", self.content_size.width)
-        self.update(selected_box_text(self.display_text, self.has_class("selected")))
+        active_port = self.active_port
+        self.display_text = branch_selector_text(
+            self.active_label,
+            active_port,
+            self.content_size.width,
+            MERGE_SELECT_CONNECTOR,
+        )
+        self.update(
+            selected_box_text(
+                self.display_text,
+                self.has_class("selected"),
+                foreground=branch_path_color(active_port),
+            )
+        )
 
     def on_click(self, event: events.Click) -> None:
         self.post_message(self.Clicked(self.beacon_node_id, event.chain))
@@ -367,32 +404,71 @@ def center_text(text: str, width: int) -> str:
     return f"{' ' * left}{text}{' ' * right}"
 
 
-def jump_widget_text(label: str, rendered_width: int) -> str:
-    """Center a branch/merge jump label under the node box, outside the gutter."""
+def branch_selector_text(
+    label: str,
+    active_port: str,
+    rendered_width: int,
+    connector: str,
+) -> str:
+    """Return a colored branch/merge selector line with a connector gutter."""
+    box_width = branch_box_width(rendered_width)
+    content = branch_line_label(label, box_width)
+    return f"{connector_gutter(connector)}{content}"
+
+
+def branch_line_label(label: str, box_width: int) -> str:
+    """Fill the node column with a line that runs into the branch label."""
+    label_text = str(label or "").strip() or "Branch"
+    marker = f"{BRANCH_LABEL_PREFIX}{label_text}"
+    if len(marker) >= box_width:
+        return marker[:box_width]
+    return f"{LINE_CHAR * (box_width - len(marker))}{marker}"
+
+
+def branch_box_width(rendered_width: int) -> int:
+    """Width of the node-column branch line, excluding the depth gutter."""
     box_width = (
         IDENTITY_TEXT_WIDTH + 2
         if rendered_width <= 0
         else max(10, rendered_width - len(DEPTH_GUTTER) - BOX_RIGHT_INSET)
     )
-    return f"{DEPTH_GUTTER}{center_text(label, box_width)}"
+    return box_width
 
 
 def gap_arrow_text(rendered_width: int) -> str:
     """Center a non-focusable down arrow under the node box."""
-    box_width = (
-        IDENTITY_TEXT_WIDTH + 2
-        if rendered_width <= 0
-        else max(10, rendered_width - len(DEPTH_GUTTER) - BOX_RIGHT_INSET)
-    )
-    return f"{DEPTH_GUTTER}{center_gap_marker(box_width)}"
+    box_width = branch_box_width(rendered_width)
+    return f"{branch_continuation_gutter()}{center_gap_marker(box_width)}"
 
 
-def selected_box_text(display_text: str, selected: bool) -> str | Text:
+def branch_continuation_gutter() -> str:
+    """Gutter used below a node's numbered top row."""
+    return f"{BOX_VERTICAL:>{DEPTH_WIDTH}}{DEPTH_SPACING}"
+
+
+def connector_gutter(connector: str) -> str:
+    """Gutter used by branch/merge selector connector rows."""
+    return f"{connector:>{DEPTH_WIDTH}}{DEPTH_SPACING}"
+
+
+def branch_path_color(port: str) -> str:
+    """Return the configured display color for a branch output port."""
+    return BRANCH_PATH_COLORS.get(str(port), BRANCH_PATH_COLORS["path_a"])
+
+
+def selected_box_text(
+    display_text: str,
+    selected: bool,
+    foreground: str | None = None,
+) -> str | Text:
     """Highlight only the node/jump box area, leaving the depth gutter plain."""
-    if not selected:
+    if not selected and not foreground:
         return display_text
     content = Text(no_wrap=True)
-    selected_style = Style(bgcolor=SELECTED_BACKGROUND)
+    selected_style = Style(
+        color=foreground,
+        bgcolor=SELECTED_BACKGROUND if selected else None,
+    )
     lines = display_text.splitlines()
     for index, line in enumerate(lines):
         styled_line = Text(line, no_wrap=True)

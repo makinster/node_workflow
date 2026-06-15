@@ -4,6 +4,22 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-15 — Editor Branch Connectors: Path Colors
+
+- Added branch path coloring for up to five Branch outputs in editor selector
+  connector rows. Rich renders the requested CSS colors via hex equivalents:
+  lightseagreen, lightblue, steelblue, turquoise, turquoise.
+- Branch and merge selector rows now draw `└──` / `├──` from the depth gutter
+  into a node-column `─` line that ends with `─┤Branch name`, with no pointer
+  symbol.
+- Continued the gutter rule from the boxed node rows: numbered top rows show
+  the depth number, while node box continuation rows use `|` in the number
+  column.
+- Focused checks: `../.venv/bin/python -m compileall -q .` and
+  `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "node_selector
+  or node_card or editor_depth or branch_end or editor_identity_rows or
+  merge_beacon_selector"` (17 passed).
+
 ## 2026-06-15 — Editor Node Rows: Gutter, Default Background, Gap Arrows
 
 - Moved the depth number/gutter outside the node text box by drawing the ASCII

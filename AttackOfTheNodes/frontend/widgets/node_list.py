@@ -107,6 +107,7 @@ class NodeList(ListView):
                 row["beacon_node_id"],
                 row.get("active_label"),
                 row.get("depth"),
+                row.get("active_port"),
             )
         self.append(ListItem(card))
 

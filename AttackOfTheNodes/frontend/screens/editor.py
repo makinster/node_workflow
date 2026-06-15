@@ -1547,8 +1547,32 @@ class EditorScreen(Screen):
             "beacon_node_id": beacon_node_id,
             "active_merge_id": connected_merge_id,
             "active_label": label,
+            "active_port": self._upstream_branch_port_for_node(beacon_node_id),
             "depth": depth,
         }
+
+    def _upstream_branch_port_for_node(self, node_id: str) -> str:
+        """Return the nearest upstream branch output port for display styling."""
+        visited: set[str] = set()
+        stack = [node_id]
+        while stack:
+            current_id = stack.pop()
+            if current_id in visited:
+                continue
+            visited.add(current_id)
+            node = self.workflow_map.get_node_data(current_id) or {}
+            for input_conn in node.get("connections", {}).get("inputs", []):
+                upstream_id = str(input_conn.get("source_node_id") or "")
+                if not upstream_id:
+                    continue
+                upstream_node = self.workflow_map.get_node_data(upstream_id) or {}
+                metadata = self._metadata_for_type(upstream_node.get("type", ""))
+                upstream_outputs = self._output_ports_for_node(upstream_node, metadata)
+                source_port = str(input_conn.get("source_port") or "default")
+                if len(upstream_outputs) > 1:
+                    return source_port
+                stack.append(upstream_id)
+        return "path_a"
 
     def _merge_beacon_options(self, beacon_node_id: str) -> list[Dict[str, str]]:
         options: list[Dict[str, str]] = []
