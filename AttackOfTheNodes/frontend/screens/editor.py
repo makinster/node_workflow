@@ -1504,13 +1504,11 @@ class EditorScreen(Screen):
         config = node.get("config") or {}
         markers = ""
         if self._output_ports_for_node(node, metadata):
-            markers += "↓"
+            markers += "▼ "
         vault_output_count = len(normalize_membank_outputs(config))
-        if vault_output_count == 1:
-            markers += "↳"
-        elif vault_output_count > 1:
-            markers += f"➥{vault_output_count}"
-        return markers or "↓"
+        if vault_output_count > 0:
+            markers += f"➥ ({vault_output_count})"
+        return markers or "▼ "
 
     def _hidden_empty_start_node_id(
         self, nodes: Optional[Dict[str, Dict[str, Any]]] = None
