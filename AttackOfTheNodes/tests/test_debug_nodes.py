@@ -3194,6 +3194,12 @@ async def _test_editor_depth_counter_tracks_visible_branch_distance():
             span.start <= 0 < span.end
             and path_a in str(span.style.color).lower()
             and bool(span.style.bold)
+            for span in start_card.content.spans
+        )
+        assert any(
+            span.start <= 0 < span.end
+            and path_a in str(span.style.color).lower()
+            and bool(span.style.bold)
             for span in gap_card.content.spans
         )
         assert "f file | o options | h help" in status._formatted()
@@ -3316,6 +3322,11 @@ async def _test_editor_identity_rows_fit_rendered_panel_width():
         node_type: str = "branch_node",
         vault_outputs: int = 0,
     ) -> dict:
+        vault_marker = ""
+        if vault_outputs == 1:
+            vault_marker = "↳"
+        elif vault_outputs > 1:
+            vault_marker = f"➥{vault_outputs}"
         node = {
             "type": node_type,
             "alias": alias,
@@ -3330,7 +3341,7 @@ async def _test_editor_identity_rows_fit_rendered_panel_width():
                 "primary_family": "Flow Control",
                 "tags": ["Parallel"],
             },
-            "_editor_gap_marker": "↓" + ("↳" * vault_outputs),
+            "_editor_gap_marker": f"↓{vault_marker}",
         }
         if branch_port:
             node["_editor_branch_port"] = branch_port
@@ -3416,9 +3427,9 @@ async def _test_editor_identity_rows_fit_rendered_panel_width():
         gap_card = gap_item.query_one(GapArrowCard)
         assert gap_card.display_text == gap_arrow_text(
             gap_card.content_size.width,
-            output_marker="↓↳↳",
+            output_marker="↓➥2",
         )
-        assert "↓↳↳" in gap_card.display_text
+        assert "↓➥2" in gap_card.display_text
         # A branch selector sits directly below its node with no spacer between.
         branch_item = node_list.children[3]
         selector_gap = branch_item.region.y - second.region.y
@@ -3482,7 +3493,10 @@ async def _test_editor_identity_rows_fit_rendered_panel_width():
                         (y, offset, end, segment.text, segment.style.bold)
                     )
                 offset = end
-        assert not any(y == 0 for y, _, _, _, _ in path_color_segments)
+        assert any(
+            y == 0 and start <= connector_column < end and bool(bold)
+            for y, start, end, _, bold in path_color_segments
+        )
         assert any(
             y > 0 and start <= connector_column < end
             for y, start, end, _, _ in path_color_segments

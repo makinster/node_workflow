@@ -21,8 +21,7 @@ overhaul.
 - Selector lines stop at the branch/merge label instead of continuing on the
   far side of the widget text.
 - Downstream node rows carry the visible branch path as frontend-only display
-  metadata so number-column `|` symbols can use the branch path color while
-  depth numbers remain unstyled.
+  metadata so number-column numbers and `|` symbols use the branch path color.
 - The initial visible path now starts as `path_a`, giving the start/first branch
   segment the same branch color treatment as Branch path 1.
 - Branch and merge selector labels use square brackets instead of a right-side
@@ -37,8 +36,9 @@ overhaul.
   with the Branch selector connector.
 - Branch-colored `|` continuation markers render bold to better match branch
   path connector weight.
-- Gap markers now reflect source-node outputs: `↓` for transient output plus
-  one `↳` for each configured Vault output, centered under the node box.
+- Gap markers now reflect source-node outputs: `↓` for transient output,
+  `↳` for one configured Vault output, or `➥N` for multiple Vault outputs,
+  centered under the node box.
 - Continued the gutter rule from the boxed node rows: numbered top rows show
   the depth number, while node box continuation rows use `|` in the number
   column.

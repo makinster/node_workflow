@@ -546,7 +546,7 @@ def selected_box_text(
                         styled_line.stylize(bold_style, offset, offset + 1)
         if gutter_style:
             for offset, char in enumerate(line[:DEPTH_WIDTH]):
-                if char.strip() and not char.isdigit():
+                if char.strip():
                     styled_line.stylize(gutter_style, offset, offset + 1)
         if selected_style:
             styled_line.stylize(selected_style, len(DEPTH_GUTTER), len(line))
