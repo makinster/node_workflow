@@ -8,6 +8,9 @@ overhaul.
 
 - Moved the depth number/gutter outside the node text box by drawing the ASCII
   border inside `NodeCard` instead of using a whole-widget border.
+- Moved the visible selection highlight off the full `ListItem` row and onto
+  the node/jump box text area only, so the depth gutter does not get covered by
+  the selected-row background.
 - Removed decorative family color fills from node rows; node interiors now
   render on the default editor background.
 - Added centered non-focusable `↓`/`↓↓` markers in the existing insertion gap

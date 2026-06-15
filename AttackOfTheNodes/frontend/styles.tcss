@@ -42,6 +42,10 @@ Screen {
     height: 1fr;
 }
 
+#node-list ListItem.-highlight {
+    background: transparent;
+}
+
 .node-card {
     height: 1;
 }
@@ -60,10 +64,6 @@ Screen {
 
 .merge-beacon-select-card {
     height: 1;
-}
-
-.node-card.selected {
-    background: $accent;
 }
 
 #node-details {

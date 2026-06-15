@@ -3272,6 +3272,7 @@ async def _test_editor_identity_rows_fit_rendered_panel_width():
         DEPTH_GUTTER,
         GapArrowCard,
         NodeCard,
+        SELECTED_BACKGROUND,
         center_text,
         gap_arrow_text,
     )
@@ -3325,6 +3326,8 @@ async def _test_editor_identity_rows_fit_rendered_panel_width():
         await pilot.pause(0.05)
         node_list = app.query_one(NodeList)
         node_list.refresh_rows(rows)
+        node_list.index = 0
+        node_list.normalize_highlight()
         await pilot.pause(0.05)
 
         cards = list(app.query(NodeCard))
@@ -3390,13 +3393,37 @@ async def _test_editor_identity_rows_fit_rendered_panel_width():
             f"{DEPTH_GUTTER}{center_text('☛ Branch 1', box_width)}"
         )
 
-        rendered = first.render()
-        styled_spans = [
-            span
-            for span in getattr(rendered, "spans", [])
-            if getattr(span.style, "background", None) is not None
+        selected_segments = []
+        for y in range(first.region.height):
+            offset = 0
+            for segment in first.render_line(y):
+                end = offset + len(segment.text)
+                if getattr(segment.style, "bgcolor", None) is not None:
+                    selected_segments.append(
+                        (offset, end, str(segment.style.bgcolor).lower())
+                    )
+                offset = end
+        selected_box_segments = [
+            segment for segment in selected_segments if SELECTED_BACKGROUND in segment[2]
         ]
-        assert not styled_spans, "Node rows should render on the default background"
+        assert selected_box_segments, "Selected node should highlight the node box"
+        assert all(start >= len(DEPTH_GUTTER) for start, _, _ in selected_box_segments)
+        assert all(
+            SELECTED_BACKGROUND not in color
+            for start, end, color in selected_segments
+            if start < len(DEPTH_GUTTER)
+        )
+
+        unselected_segments = [
+            segment
+            for y in range(second.region.height)
+            for segment in second.render_line(y)
+            if getattr(segment.style, "bgcolor", None) is not None
+        ]
+        assert all(
+            SELECTED_BACKGROUND not in str(segment.style.bgcolor).lower()
+            for segment in unselected_segments
+        ), "Unselected nodes should not use the selected background"
 
     print("test_editor_identity_rows_fit_rendered_panel_width PASSED")
 

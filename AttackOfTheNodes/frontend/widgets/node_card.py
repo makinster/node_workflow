@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
+from rich.style import Style
+from rich.text import Text
 from textual import events
 from textual.message import Message
 from textual.widgets import Static
@@ -29,6 +31,7 @@ BOX_HORIZONTAL = "-"
 BOX_VERTICAL = "|"
 BOX_CORNER = "+"
 DOWN_ARROW = "↓"
+SELECTED_BACKGROUND = "#1a3a5c"
 
 
 class NodeCard(Static):
@@ -118,7 +121,12 @@ class NodeCard(Static):
                 self.display_text = self._identity_display_text(gutter, main_text)
         else:
             self.display_text = f"{gutter}{main_text}"
-        self.update(self.display_text)
+        self.update(self._card_content())
+
+    def _card_content(self) -> Any:
+        if not self.is_mounted:
+            return self.display_text
+        return selected_box_text(self.display_text, self.has_class("selected"))
 
     def _sync_identity_classes(self) -> None:
         self.set_class(self.show_identity, "node-card-identity")
@@ -274,7 +282,7 @@ class BranchSelectCard(Static):
 
     def refresh_card(self) -> None:
         self.display_text = jump_widget_text(f"☛ {self.active_label}", self.content_size.width)
-        self.update(self.display_text)
+        self.update(selected_box_text(self.display_text, self.has_class("selected")))
 
     def on_click(self, event: events.Click) -> None:
         self.post_message(
@@ -336,7 +344,7 @@ class MergeBeaconSelectCard(Static):
 
     def refresh_card(self) -> None:
         self.display_text = jump_widget_text(f"☛ {self.active_label}", self.content_size.width)
-        self.update(self.display_text)
+        self.update(selected_box_text(self.display_text, self.has_class("selected")))
 
     def on_click(self, event: events.Click) -> None:
         self.post_message(self.Clicked(self.beacon_node_id, event.chain))
@@ -377,3 +385,19 @@ def gap_arrow_text(rendered_width: int) -> str:
         else max(10, rendered_width - len(DEPTH_GUTTER) - BOX_RIGHT_INSET)
     )
     return f"{DEPTH_GUTTER}{center_gap_marker(box_width)}"
+
+
+def selected_box_text(display_text: str, selected: bool) -> str | Text:
+    """Highlight only the node/jump box area, leaving the depth gutter plain."""
+    if not selected:
+        return display_text
+    content = Text(no_wrap=True)
+    selected_style = Style(bgcolor=SELECTED_BACKGROUND)
+    lines = display_text.splitlines()
+    for index, line in enumerate(lines):
+        styled_line = Text(line, no_wrap=True)
+        styled_line.stylize(selected_style, len(DEPTH_GUTTER), len(line))
+        content.append(styled_line)
+        if index < len(lines) - 1:
+            content.append("\n")
+    return content

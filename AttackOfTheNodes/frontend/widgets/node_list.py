@@ -6,7 +6,12 @@ from typing import Any, Dict, Optional
 
 from textual.widgets import Label, ListItem, ListView
 
-from .node_card import BranchSelectCard, GapArrowCard, MergeBeaconSelectCard, NodeCard
+from .node_card import (
+    BranchSelectCard,
+    GapArrowCard,
+    MergeBeaconSelectCard,
+    NodeCard,
+)
 
 
 class NodeList(ListView):
@@ -69,6 +74,7 @@ class NodeList(ListView):
         if not rows:
             self.append(ListItem(Label("No nodes. Press I to add a node.")))
         self.normalize_highlight()
+        self.call_after_refresh(self.normalize_highlight)
 
     def _append_row(
         self,
@@ -171,4 +177,21 @@ class NodeList(ListView):
         """Ensure only the current ListView index renders as highlighted."""
         for index, item in enumerate(self.children):
             if isinstance(item, ListItem):
-                item.highlighted = index == self.index
+                is_highlighted = index == self.index
+                item.highlighted = is_highlighted
+                item.styles.background = "#101418"
+                for card in item.children:
+                    if not isinstance(
+                        card,
+                        (NodeCard, BranchSelectCard, MergeBeaconSelectCard),
+                    ):
+                        continue
+                    was_selected = card.has_class("selected")
+                    card.set_class(is_highlighted, "selected")
+                    if was_selected != is_highlighted:
+                        card.refresh_card()
+
+    def watch_index(self, old_index: int | None, new_index: int | None) -> None:
+        """Keep child-card selection in sync with Textual's ListView cursor."""
+        super().watch_index(old_index, new_index)
+        self.normalize_highlight()
