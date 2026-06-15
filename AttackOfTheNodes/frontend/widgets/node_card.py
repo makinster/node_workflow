@@ -74,6 +74,8 @@ class NodeCard(Static):
         self.show_status = show_status
         self.show_id = show_id
         self.show_identity = show_identity
+        branch_port = node_data.get("_editor_branch_port")
+        self.gutter_color = branch_path_color(str(branch_port)) if branch_port else None
         self.display_text = ""
 
     def on_mount(self) -> None:
@@ -137,7 +139,11 @@ class NodeCard(Static):
     def _card_content(self) -> Any:
         if not self.is_mounted:
             return self.display_text
-        return selected_box_text(self.display_text, self.has_class("selected"))
+        return selected_box_text(
+            self.display_text,
+            self.has_class("selected"),
+            gutter_symbol_color=self.gutter_color,
+        )
 
     def _sync_identity_classes(self) -> None:
         self.set_class(self.show_identity, "node-card-identity")
@@ -427,7 +433,7 @@ def branch_line_label(label: str, box_width: int) -> str:
     label_start = max(0, (box_width - len(label_text)) // 2)
     line_before = max(0, label_start - len(BRANCH_LABEL_PREFIX))
     line_after = box_width - line_before - len(marker)
-    return f"{LINE_CHAR * line_before}{marker}{LINE_CHAR * line_after}"
+    return f"{LINE_CHAR * line_before}{marker}{' ' * line_after}"
 
 
 def branch_box_width(rendered_width: int) -> int:
@@ -471,12 +477,14 @@ def selected_box_text(
     selected: bool,
     foreground: str | None = None,
     foreground_start: int | None = None,
+    gutter_symbol_color: str | None = None,
 ) -> str | Text:
     """Highlight only the node/jump box area, leaving the depth gutter plain."""
-    if not selected and not foreground:
+    if not selected and not foreground and not gutter_symbol_color:
         return display_text
     content = Text(no_wrap=True)
     foreground_style = Style(color=foreground) if foreground else None
+    gutter_style = Style(color=gutter_symbol_color) if gutter_symbol_color else None
     selected_style = Style(bgcolor=SELECTED_BACKGROUND) if selected else None
     color_start = len(DEPTH_GUTTER) if foreground_start is None else foreground_start
     lines = display_text.splitlines()
@@ -484,6 +492,8 @@ def selected_box_text(
         styled_line = Text(line, no_wrap=True)
         if foreground_style:
             styled_line.stylize(foreground_style, color_start, len(line))
+        if gutter_style and line[:DEPTH_WIDTH].strip() == BOX_VERTICAL:
+            styled_line.stylize(gutter_style, 0, len(DEPTH_GUTTER))
         if selected_style:
             styled_line.stylize(selected_style, len(DEPTH_GUTTER), len(line))
         content.append(styled_line)

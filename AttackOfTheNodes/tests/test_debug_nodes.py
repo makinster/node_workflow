@@ -3279,6 +3279,7 @@ async def _test_editor_identity_rows_fit_rendered_panel_width():
         BOX_RIGHT_INSET,
         DEPTH_GUTTER,
         GapArrowCard,
+        LINE_CHAR,
         NodeCard,
         SELECTED_BACKGROUND,
         BRANCH_SELECT_CONNECTOR,
@@ -3294,19 +3295,26 @@ async def _test_editor_identity_rows_fit_rendered_panel_width():
     # visible card.
     panel_width = 40
 
-    def node_row(node_id: str, alias: str) -> dict:
+    def node_row(
+        node_id: str,
+        alias: str,
+        branch_port: str | None = None,
+    ) -> dict:
+        node = {
+            "type": "branch_node",
+            "alias": alias,
+            "_editor_depth": 1,
+            "_identity": {
+                "primary_family": "Flow Control",
+                "tags": ["Parallel"],
+            },
+        }
+        if branch_port:
+            node["_editor_branch_port"] = branch_port
         return {
             "kind": "node",
             "node_id": node_id,
-            "node": {
-                "type": "branch_node",
-                "alias": alias,
-                "_editor_depth": 1,
-                "_identity": {
-                    "primary_family": "Flow Control",
-                    "tags": ["Parallel"],
-                },
-            },
+            "node": node,
         }
 
     rows = [
@@ -3319,7 +3327,7 @@ async def _test_editor_identity_rows_fit_rendered_panel_width():
             "active_label": "Branch 1",
             "depth": 1,
         },
-        node_row("path-node", "Path Node"),
+        node_row("path-node", "Path Node", "path_b"),
     ]
 
     class NarrowApp(App):
@@ -3409,6 +3417,8 @@ async def _test_editor_identity_rows_fit_rendered_panel_width():
         assert "☛" not in branch_card.display_text
         label_start = branch_card.display_text.index("Branch 1") - len(DEPTH_GUTTER)
         assert abs((label_start * 2 + len("Branch 1")) - box_width) <= 1
+        label_end = branch_card.display_text.index("Branch 1") + len("Branch 1")
+        assert LINE_CHAR not in branch_card.display_text[label_end:]
 
         branch_segments = []
         offset = 0
@@ -3429,6 +3439,21 @@ async def _test_editor_identity_rows_fit_rendered_panel_width():
         )
         assert any(
             end > len(DEPTH_GUTTER) for _, end, _ in path_color_segments
+        )
+
+        path_color_segments = []
+        for y in range(path_card.region.height):
+            offset = 0
+            for segment in path_card.render_line(y):
+                end = offset + len(segment.text)
+                color = getattr(segment.style, "color", None)
+                if color is not None and path_color in str(color).lower():
+                    path_color_segments.append((y, offset, end, segment.text))
+                offset = end
+        assert not any(y == 0 for y, _, _, _ in path_color_segments)
+        assert any(
+            y > 0 and start <= connector_column < end
+            for y, start, end, _ in path_color_segments
         )
 
         selected_segments = []

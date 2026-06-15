@@ -18,6 +18,11 @@ overhaul.
 - The connector gutter and node-column line are styled with the same branch
   path foreground color; selected-row backgrounds still begin after the depth
   gutter.
+- Selector lines stop at the branch/merge label instead of continuing on the
+  far side of the widget text.
+- Downstream node rows carry the visible branch path as frontend-only display
+  metadata so number-column `|` symbols can use the branch path color while
+  depth numbers remain unstyled.
 - Continued the gutter rule from the boxed node rows: numbered top rows show
   the depth number, while node box continuation rows use `|` in the number
   column.

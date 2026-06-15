@@ -1436,6 +1436,7 @@ class EditorScreen(Screen):
         visited: set[str] = set()
         current_node_id = start_node_id
         depth = 0
+        current_branch_port: str | None = None
 
         while current_node_id and current_node_id not in visited:
             node = nodes.get(current_node_id)
@@ -1445,6 +1446,8 @@ class EditorScreen(Screen):
             node = self._node_for_display(current_node_id, node)
             node = dict(node)
             node["_editor_depth"] = depth
+            if current_branch_port:
+                node["_editor_branch_port"] = current_branch_port
             rows.append(
                 {
                     "kind": "node",
@@ -1481,6 +1484,7 @@ class EditorScreen(Screen):
                     }
                 )
                 current_node_id = self._target_for_port(node, active_port)
+                current_branch_port = active_port
                 depth += 1
                 continue
 
