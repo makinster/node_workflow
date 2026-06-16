@@ -184,6 +184,7 @@ def merge_input_options(workflow_map, current_node_id: str) -> list[Dict[str, st
         for context in branch_contexts.get(current_node_id, [])
     }
     used_merge_ports = _reserved_merge_input_ports(workflow_map, current_node_id)
+    downstream_ids = _descendant_node_ids(workflow_map, current_node_id)
     seen_beacons: set[str] = set()
 
     for beacon_id, beacon_node in workflow_map.get_all_node_data().items():
@@ -194,6 +195,10 @@ def merge_input_options(workflow_map, current_node_id: str) -> list[Dict[str, st
             merge_branch_keys,
         )
         if context is None:
+            continue
+        if context["branch_id"] in downstream_ids:
+            # This branch only starts after passing through the merge node
+            # being configured (it's downstream of it) — it cannot close here.
             continue
         seen_beacons.add(beacon_id)
         branch_id = context["branch_id"]
@@ -229,6 +234,23 @@ def merge_input_options(workflow_map, current_node_id: str) -> list[Dict[str, st
             }
         )
     return options
+
+
+def _descendant_node_ids(workflow_map, source_id: str) -> set[str]:
+    """Return every node id reachable forward from source_id."""
+    descendants: set[str] = set()
+    queue = [source_id]
+    while queue:
+        candidate = queue.pop()
+        node = workflow_map.get_node_data(candidate)
+        if node is None:
+            continue
+        for conn in node.get("connections", {}).get("outputs", []):
+            dest = str(conn.get("target_node_id") or "")
+            if dest and dest not in descendants:
+                descendants.add(dest)
+                queue.append(dest)
+    return descendants
 
 
 def _branch_contexts_by_node(workflow_map) -> Dict[str, list[Dict[str, str]]]:
