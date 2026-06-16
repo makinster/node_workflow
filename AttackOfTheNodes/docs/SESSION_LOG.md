@@ -4,6 +4,37 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-16 — Editor Delete Fixes: Keyboard Focus, Gap Shift-Up, Branch Delete
+
+Branch: `claude/editor-keyboard-focus-highlight-9fp46y`.
+
+- **Keyboard focus highlight:** added `up`/`down` editor bindings (priority)
+  routed through `_move_selection` so arrow keys skip non-selectable gap rows
+  like `W`/`S` already did; added a `NodeList.watch_index` safety net that snaps
+  off any gap row. Arrow-key navigation no longer loses the focus highlight on
+  the `▼`/`➥` gap lines between node cards.
+- **Delete no longer hides downstream nodes:** `_build_visible_rows` was breaking
+  the moment it hit a placeholder, discarding the rest of the chain. Soft-deleted
+  nodes keep their live connections, so they now fall through to normal port
+  traversal; materialized tombstones (outgoing connections dropped on save)
+  continue via `original_outputs`.
+- **Permanent delete shifts downstream up:** `remove_placeholder` now captures the
+  tombstone's upstream/downstream connections before `delete_node` and rewires
+  upstream → downstream so the gap closes instead of orphaning the tail. Branch /
+  start / merge tombstones are excluded (they have structural reconnection paths).
+- **Branch-node delete now reachable:** `_is_protected_structural_node` no longer
+  blocks `branch_node` (only `merge_node`). A connected branch now soft-tombstones
+  on first delete and opens `BranchKeepSelectorScreen` on the second, wiring the
+  previously-dead `prune_branch_tombstone()` flow into the UI. Documented the
+  branch-delete exception to the single-node rule in `BACKEND_FRONTEND_BOUNDARY.md`
+  and `PROJECT_KNOWLEDGE.md`.
+- **Tombstone label** shortened from `Deleted node:` to `Deleted:` in the editor
+  card.
+- Tests: added `test_editor_branch_node_deletes_through_keep_selector` and
+  `test_editor_merge_node_delete_stays_blocked`; updated label and shift-up
+  assertions in `test_debug_nodes.py`. Full suite: 298 passed
+  (`python -m pytest -q`, with `pytest-asyncio` for the generated async tests).
+
 ## 2026-06-15 — Editor Branch Connectors: Branch Border Coloring (explored, reverted)
 
 - Attempted to color the ASCII box borders (`+`, `-`, `|`) of branching nodes
