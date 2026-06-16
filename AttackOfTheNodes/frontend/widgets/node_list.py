@@ -124,6 +124,7 @@ class NodeList(ListView):
                 row.get("active_label"),
                 row.get("depth"),
                 row.get("active_color_key"),
+                row.get("merge_node_id"),
             )
         else:
             card = MergeBeaconSelectCard(
@@ -132,6 +133,7 @@ class NodeList(ListView):
                 row.get("depth"),
                 row.get("active_port"),
                 row.get("active_color_key"),
+                row.get("merge_node_id"),
             )
         self.append(ListItem(card))
 

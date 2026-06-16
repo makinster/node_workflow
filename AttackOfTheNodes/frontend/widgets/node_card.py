@@ -91,6 +91,12 @@ class NodeCard(Static):
         self.gutter_color = branch_path_color(
             str(branch_color_key or branch_port)
         ) if (branch_color_key or branch_port) else None
+        active_color_key = node_data.get("_editor_active_color_key")
+        self.branch_active_color = (
+            branch_path_color(str(active_color_key)) if active_color_key else None
+        )
+        merge_node_id = node_data.get("_editor_merge_node_id")
+        self.merge_border_color = merge_color_for_id(merge_node_id) if merge_node_id else None
         self.display_text = ""
 
     def on_mount(self) -> None:
@@ -150,10 +156,12 @@ class NodeCard(Static):
     def _card_content(self) -> Any:
         if not self.is_mounted:
             return self.display_text
+        border_color = self.branch_active_color or self.merge_border_color
         return selected_box_text(
             self.display_text,
             self.has_class("selected"),
             gutter_symbol_color=self.gutter_color,
+            border_color=border_color,
         )
 
     def _sync_identity_classes(self) -> None:
@@ -303,6 +311,7 @@ class BranchSelectCard(Static):
         active_label: str | None = None,
         depth: int | None = None,
         active_color_key: str | None = None,
+        merge_node_id: str | None = None,
     ) -> None:
         super().__init__()
         self.branch_node_id = branch_node_id
@@ -310,6 +319,7 @@ class BranchSelectCard(Static):
         self.active_label = active_label or active_port
         self.depth = depth
         self.active_color_key = active_color_key or active_port
+        self.merge_node_id = merge_node_id
         self.display_text = ""
 
     def on_mount(self) -> None:
@@ -327,11 +337,16 @@ class BranchSelectCard(Static):
             self.content_size.width,
             BRANCH_SELECT_CONNECTOR,
         )
+        foreground = (
+            merge_color_for_id(self.merge_node_id)
+            if self.merge_node_id
+            else branch_path_color(self.active_color_key)
+        )
         self.update(
             selected_box_text(
                 self.display_text,
                 self.has_class("selected"),
-                foreground=branch_path_color(self.active_color_key),
+                foreground=foreground,
                 foreground_start=0,
             )
         )
@@ -402,6 +417,7 @@ class MergeBeaconSelectCard(Static):
         depth: int | None = None,
         active_port: str | None = None,
         active_color_key: str | None = None,
+        merge_node_id: str | None = None,
     ) -> None:
         super().__init__()
         self.beacon_node_id = beacon_node_id
@@ -409,6 +425,7 @@ class MergeBeaconSelectCard(Static):
         self.depth = depth
         self.active_port = active_port or "path_a"
         self.active_color_key = active_color_key or self.active_port
+        self.merge_node_id = merge_node_id
         self.display_text = ""
 
     def on_mount(self) -> None:
@@ -420,18 +437,22 @@ class MergeBeaconSelectCard(Static):
         self.refresh_card()
 
     def refresh_card(self) -> None:
-        active_port = self.active_port
         self.display_text = branch_selector_text(
             self.active_label,
-            active_port,
+            self.active_port,
             self.content_size.width,
             MERGE_SELECT_CONNECTOR,
+        )
+        foreground = (
+            merge_color_for_id(self.merge_node_id)
+            if self.merge_node_id
+            else branch_path_color(self.active_color_key)
         )
         self.update(
             selected_box_text(
                 self.display_text,
                 self.has_class("selected"),
-                foreground=branch_path_color(self.active_color_key),
+                foreground=foreground,
                 foreground_start=0,
             )
         )
@@ -538,6 +559,14 @@ def branch_path_color(port: str) -> str:
     return BRANCH_PATH_PALETTE[index]
 
 
+def merge_color_for_id(node_id: str) -> Optional[str]:
+    """Return a stable display color for a merge node given its ID."""
+    if not node_id:
+        return None
+    index = sum(ord(c) for c in node_id) % len(BRANCH_PATH_PALETTE)
+    return BRANCH_PATH_PALETTE[index]
+
+
 def branch_path_color_key(branch_index: int, port: str) -> str:
     """Return a display-only color key for a branch node output path."""
     port_index = branch_path_port_index(port)
@@ -574,9 +603,10 @@ def selected_box_text(
     foreground_start: int | None = None,
     gutter_symbol_color: str | None = None,
     bold_foreground_chars: set[str] | None = None,
+    border_color: str | None = None,
 ) -> str | Text:
     """Highlight only the node/jump box area, leaving the depth gutter plain."""
-    if not selected and not foreground and not gutter_symbol_color:
+    if not selected and not foreground and not gutter_symbol_color and not border_color:
         return display_text
     content = Text(no_wrap=True)
     foreground_style = Style(color=foreground) if foreground else None
@@ -585,8 +615,10 @@ def selected_box_text(
         if gutter_symbol_color
         else None
     )
+    border_style = Style(color=border_color, bold=True) if border_color else None
     selected_style = Style(bgcolor=SELECTED_BACKGROUND) if selected else None
     color_start = len(DEPTH_GUTTER) if foreground_start is None else foreground_start
+    box_start = len(DEPTH_GUTTER)
     lines = display_text.splitlines()
     for index, line in enumerate(lines):
         styled_line = Text(line, no_wrap=True)
@@ -601,6 +633,14 @@ def selected_box_text(
             for offset, char in enumerate(line[:DEPTH_WIDTH]):
                 if char.strip():
                     styled_line.stylize(gutter_style, offset, offset + 1)
+        if border_style and len(line) > box_start:
+            box_char = line[box_start]
+            if box_char == BOX_CORNER:
+                styled_line.stylize(border_style, box_start, len(line))
+            elif box_char == BOX_VERTICAL:
+                styled_line.stylize(border_style, box_start, box_start + 1)
+                if len(line) - 1 > box_start:
+                    styled_line.stylize(border_style, len(line) - 1, len(line))
         if selected_style:
             styled_line.stylize(selected_style, len(DEPTH_GUTTER), len(line))
         content.append(styled_line)
