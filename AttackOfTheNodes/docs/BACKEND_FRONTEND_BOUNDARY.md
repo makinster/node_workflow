@@ -152,6 +152,21 @@ position as a swap-out and insert-staging placeholder. The graph beyond the
 tombstone remains intact. This is an editor invariant that the frontend adapter
 must enforce — no cascading deletes, no automatic downstream rewiring.
 
+**Branch-node delete exception (keep selector):**
+
+A `branch_node` is the one case where this rule cannot apply unchanged: it fans
+out into multiple paths, so there is no single "downstream" to preserve. The
+first delete soft-tombstones the branch node like any other node (undoable, all
+paths stay live). The second (permanent) delete opens the **branch keep
+selector** modal: the user picks exactly one path to keep, and the unkept paths
+and their downstream nodes are pruned (stopping at structural boundaries —
+`merge_node`, `branch_end_node`, `start_node`). The branch node's upstream input
+is rewired directly to the head of the kept path so the graph stays connected.
+This pruning is explicit, user-chosen, and confirmed by the modal — not an
+automatic cascade. `merge_node` deletion has no equivalent flow yet and stays
+blocked in the editor. Implemented by `prune_branch_tombstone()` (adapter) and
+`BranchKeepSelectorScreen`.
+
 **Restore severity context:**
 
 Most heavyweight data in a workflow travels through the vault (MemoryBank

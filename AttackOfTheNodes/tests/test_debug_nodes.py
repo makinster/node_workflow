@@ -850,7 +850,7 @@ def test_editor_deleted_node_row_renders_as_deleted():
     lines = card.display_text.splitlines()
     assert len(lines) == 4
     assert lines[0].startswith("1     +")
-    assert lines[1].startswith("|     | Deleted node: Useful Logger (Logger)")
+    assert lines[1].startswith("|     | Deleted: Useful Logger (Logger)")
     assert lines[2].startswith("|     | x delete | z undo | e new node")
     assert lines[3].startswith("|     +")
 
@@ -870,7 +870,7 @@ def test_editor_deleted_node_row_renders_as_deleted():
     no_restore_lines = no_restore_card.display_text.splitlines()
     assert len(no_restore_lines) == 4
     assert no_restore_lines[0].startswith("0     +")
-    assert no_restore_lines[1].startswith("|     | Deleted node")
+    assert no_restore_lines[1].startswith("|     | Deleted")
     assert no_restore_lines[2].startswith("|     | x delete | e new node")
     assert "z undo" not in no_restore_card.display_text
     print("test_editor_deleted_node_row_renders_as_deleted PASSED")
@@ -975,10 +975,129 @@ async def _test_editor_x_on_deleted_node_permanently_deletes():
         await pilot.pause(0.03)
         assert wm.get_node_data(logger) is None
         assert wm.is_dirty is True
-        assert wm.get_node_data(start)["connections"]["outputs"] == []
-        assert wm.get_node_data(end)["connections"]["inputs"] == []
+        # Permanently removing the tombstone shifts downstream nodes up: the
+        # gap closes by wiring start directly to end instead of orphaning end.
+        start_outputs = wm.get_node_data(start)["connections"]["outputs"]
+        assert any(c.get("target_node_id") == end for c in start_outputs)
+        end_inputs = wm.get_node_data(end)["connections"]["inputs"]
+        assert any(c.get("source_node_id") == start for c in end_inputs)
 
     print("test_editor_x_on_deleted_node_permanently_deletes PASSED")
+
+
+def test_editor_branch_node_deletes_through_keep_selector():
+    asyncio.run(_test_editor_branch_node_deletes_through_keep_selector())
+
+
+async def _test_editor_branch_node_deletes_through_keep_selector():
+    from textual.app import App, ComposeResult
+
+    from frontend.screens.branch_keep_selector_screen import BranchKeepSelectorScreen
+    from frontend.screens.editor import EditorScreen
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("editor_branch_delete")
+    start = wm.add_node("start_node")
+    branch = wm.add_node("branch_node", alias="My Branch")
+    wm.update_node_config(
+        branch,
+        {"branch_count": 2, "path_a_label": "Keep", "path_b_label": "Drop"},
+    )
+    logger_a = wm.add_node("logger_node", alias="Logger A")
+    logger_b = wm.add_node("logger_node", alias="Logger B")
+    wm.connect(start, "default", branch, "input")
+    wm.connect(branch, "path_a", logger_a, "input")
+    wm.connect(branch, "path_b", logger_b, "input")
+    wm.mark_saved()
+
+    class EditorApp(App):
+        def compose(self) -> ComposeResult:
+            yield EditorScreen(wm._factory, wm)
+
+    app = EditorApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        screen = app.query_one(EditorScreen)
+        screen.selected_node_id = branch
+        screen.selected_row = {"kind": "node", "node_id": branch}
+
+        # First delete: connected branch node is NOT blocked; it soft-tombstones
+        # while the downstream branches stay live in the graph.
+        screen.action_delete_selected()
+        await pilot.pause(0.03)
+        assert screen.workflow_adapter.is_placeholder(branch)
+        assert wm.get_node_data(branch)["type"] == "branch_node"
+        assert wm.get_node_data(logger_a) is not None
+        assert wm.get_node_data(logger_b) is not None
+
+        # Second delete: opens the branch keep selector instead of orphaning.
+        captured = {}
+        original_push_screen = app.push_screen
+
+        def capture_push_screen(screen_to_push, *args, **kwargs):
+            captured["screen"] = screen_to_push
+            captured["callback"] = args[0] if args else kwargs.get("callback")
+            return None
+
+        app.push_screen = capture_push_screen
+        try:
+            screen.action_delete_selected()
+            await pilot.pause(0.03)
+        finally:
+            app.push_screen = original_push_screen
+
+        assert isinstance(captured.get("screen"), BranchKeepSelectorScreen)
+        assert captured.get("callback") is not None
+
+        # User keeps path_a: path_b and its node are pruned, upstream rewired.
+        captured["callback"]({"kept_port": "path_a"})
+        await pilot.pause(0.03)
+
+        assert wm.get_node_data(branch) is None
+        assert wm.get_node_data(logger_a) is not None
+        assert wm.get_node_data(logger_b) is None
+        start_outputs = wm.get_node_data(start)["connections"]["outputs"]
+        assert any(c.get("target_node_id") == logger_a for c in start_outputs)
+
+    print("test_editor_branch_node_deletes_through_keep_selector PASSED")
+
+
+def test_editor_merge_node_delete_stays_blocked():
+    asyncio.run(_test_editor_merge_node_delete_stays_blocked())
+
+
+async def _test_editor_merge_node_delete_stays_blocked():
+    from textual.app import App, ComposeResult
+
+    from frontend.screens.editor import EditorScreen
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("editor_merge_blocked")
+    start = wm.add_node("start_node")
+    merge = wm.add_node("merge_node", alias="Merge")
+    end = wm.add_node("end_node")
+    wm.connect(start, "default", merge, "path_a")
+    wm.connect(merge, "default", end, "input")
+    wm.mark_saved()
+
+    class EditorApp(App):
+        def compose(self) -> ComposeResult:
+            yield EditorScreen(wm._factory, wm)
+
+    app = EditorApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        screen = app.query_one(EditorScreen)
+        screen.selected_node_id = merge
+        screen.selected_row = {"kind": "node", "node_id": merge}
+
+        screen.action_delete_selected()
+        await pilot.pause(0.03)
+        # Merge node with outputs stays protected: no tombstone is created.
+        assert not screen.workflow_adapter.is_placeholder(merge)
+        assert wm.get_node_data(merge)["type"] == "merge_node"
+
+    print("test_editor_merge_node_delete_stays_blocked PASSED")
 
 
 async def _test_editor_save_materializes_deleted_node_and_loaded_marker_renders():
@@ -1024,7 +1143,7 @@ async def _test_editor_save_materializes_deleted_node_and_loaded_marker_renders(
 
         screen.refresh_from_backend()
         marker_card = next(card for card in app.query(NodeCard) if card.node_id == logger)
-        assert "Deleted node: Saved Logger (Logger)" in marker_card.display_text
+        assert "Deleted: Saved Logger (Logger)" in marker_card.display_text
         assert "z undo" in marker_card.display_text
 
     _, loaded_wm, _, _ = _make_services()
@@ -1055,7 +1174,7 @@ async def _test_editor_save_materializes_deleted_node_and_loaded_marker_renders(
         marker_card = next(
             card for card in loaded_app.query(NodeCard) if card.node_id == loaded_marker
         )
-        assert "Deleted node: Loaded Logger (Logger)" in marker_card.display_text
+        assert "Deleted: Loaded Logger (Logger)" in marker_card.display_text
         assert "z undo" in marker_card.display_text
 
     # Tombstone-format save record renders the same deleted-node row
@@ -1084,7 +1203,7 @@ async def _test_editor_save_materializes_deleted_node_and_loaded_marker_renders(
         marker_card = next(
             card for card in tombstone_app.query(NodeCard) if card.node_id == tomb_marker
         )
-        assert "Deleted node: Tombstone Logger (Logger)" in marker_card.display_text
+        assert "Deleted: Tombstone Logger (Logger)" in marker_card.display_text
         assert "z undo" in marker_card.display_text
 
     print("test_editor_save_materializes_deleted_node_and_loaded_marker_renders PASSED")
@@ -2779,7 +2898,7 @@ async def _test_connected_branch_end_deletes_to_tombstone():
         assert not after_cards[0].has_class("branch-end-open")
         assert not after_cards[0].has_class("branch-end-connected")
         assert after_cards[0].node_data["type"] == "branch_end_node"
-        assert "Deleted node" in after_cards[0].display_text
+        assert "Deleted" in after_cards[0].display_text
         assert "z undo" in after_cards[0].display_text
 
         screen.action_undo_delete()

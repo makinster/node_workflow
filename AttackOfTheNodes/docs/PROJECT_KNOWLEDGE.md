@@ -268,8 +268,18 @@ Deleting a node removes only that node. Downstream nodes are never automatically
 deleted or modified. The tombstone occupies the deleted node's position as a
 swap-out placeholder. The user can insert new nodes before or after the
 tombstone, restore the original node (with connection validation), or permanently
-remove the tombstone and manually reconnect the gap. The workflow graph beyond
-the tombstone remains intact.
+remove the tombstone. Permanently removing an ordinary tombstone closes the gap
+by rewiring its upstream source directly to its downstream target (shift-up), so
+the rest of the chain stays connected. The workflow graph beyond the tombstone
+remains intact.
+
+**Branch-node delete exception:** A `branch_node` fans out into multiple paths,
+so permanent deletion routes through the branch keep selector
+(`BranchKeepSelectorScreen` / `prune_branch_tombstone()`): the user picks one
+path to keep, the others are pruned to their structural boundary, and upstream is
+rewired to the kept path's head. `merge_node` deletion stays blocked in the
+editor (no keep flow yet). See `BACKEND_FRONTEND_BOUNDARY.md` for the full
+contract.
 
 
 

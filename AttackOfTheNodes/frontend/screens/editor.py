@@ -522,7 +522,12 @@ class EditorScreen(Screen):
         return keys
 
     def _is_protected_structural_node(self, node: Dict[str, Any]) -> bool:
-        if node.get("type") not in {"branch_node", "merge_node"}:
+        # Branch nodes are deletable: the first delete soft-tombstones the node
+        # and the second delete opens the branch keep selector (see _do_delete /
+        # _open_branch_keep_selector), which prunes the unkept paths and rewires
+        # upstream to the kept branch head. Merge nodes stay protected — they own
+        # outer branch-close structure with no equivalent keep flow yet.
+        if node.get("type") != "merge_node":
             return False
         return bool(node.get("connections", {}).get("outputs"))
 

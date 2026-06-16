@@ -139,7 +139,7 @@ def cannot_delete_start_node(app: Any) -> None:
 
 
 def cannot_delete_structural_node(app: Any) -> None:
-    notify_error(app, "Branch and merge structure must be rewired before deletion")
+    notify_error(app, "Merge structure must be rewired before deletion")
 
 
 def node_deleted(app: Any) -> None:
