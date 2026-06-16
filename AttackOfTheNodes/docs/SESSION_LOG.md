@@ -4,6 +4,24 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-16 — Merge Config No Longer Offers Downstream Branches to Close
+
+- `merge_input_options()` listed every `branch_end_node` in the workflow as a
+  candidate to close, including beacons whose owning branch point only starts
+  *after* passing through the merge node being configured. Closing such a
+  branch is structurally backwards (the branch doesn't exist yet at the point
+  the merge runs).
+- Root cause: `_branch_contexts_by_node()`'s DFS stops at every Merge Beacon,
+  so neither a merge node nor anything downstream of it is ever assigned a
+  branch context — `merge_input_options` had no signal to exclude beacons
+  whose branch point is downstream of the merge.
+- Fixed by computing the forward-reachable descendant set of the merge node
+  being configured (`_descendant_node_ids`) and excluding any beacon whose
+  context `branch_id` (the originating branch node) falls in that set.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest -q` (299 passed)
+
 ## 2026-06-16 — Merge Beacon Selector Colors Match Connected Merge Branch
 
 - When a Merge Beacon (`branch_end_node`) is connected to a `merge_node`, the
