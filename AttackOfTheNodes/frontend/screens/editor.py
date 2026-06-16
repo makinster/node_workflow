@@ -1489,8 +1489,6 @@ class EditorScreen(Screen):
                 self.active_branch_ports[current_node_id] = active_port
                 port_labels = self._branch_port_labels(node)
                 active_color_key = branch_path_color_key(branch_index, active_port)
-                node["_editor_active_color_key"] = active_color_key
-                merge_node_id = self._find_merge_for_branch(current_node_id, active_port)
                 rows.append(
                     {
                         "kind": "branch_select",
@@ -1501,7 +1499,6 @@ class EditorScreen(Screen):
                         "output_ports": output_ports,
                         "port_labels": port_labels,
                         "depth": depth,
-                        "merge_node_id": merge_node_id,
                     }
                 )
                 current_node_id = self._target_for_port(node, active_port)
@@ -1564,14 +1561,6 @@ class EditorScreen(Screen):
                 return True
         return False
 
-    def _find_merge_for_branch(self, branch_node_id: str, port: str) -> str:
-        """Return the merge node ID that the given branch port ultimately connects to."""
-        tail_id = self._tail_for_branch(branch_node_id, port)
-        tail_node = self.workflow_map.get_node_data(tail_id) or {}
-        if tail_node.get("type") == "branch_end_node":
-            return self._merge_beacon_connected_merge_id(tail_id)
-        return ""
-
     def _merge_beacon_connected_merge_id(self, beacon_node_id: str) -> str:
         beacon = self.workflow_map.get_node_data(beacon_node_id) or {}
         for conn in beacon.get("connections", {}).get("outputs", []):
@@ -1599,7 +1588,6 @@ class EditorScreen(Screen):
             "active_label": label,
             "active_port": self._upstream_branch_port_for_node(beacon_node_id),
             "active_color_key": active_color_key,
-            "merge_node_id": connected_merge_id,
             "depth": depth,
         }
 
@@ -1717,9 +1705,6 @@ class EditorScreen(Screen):
         if node.get("type") == "branch_end_node":
             display_node["_branch_end_connected_to_merge"] = (
                 self._branch_end_connected_to_merge(node)
-            )
-            display_node["_editor_merge_node_id"] = (
-                self._merge_beacon_connected_merge_id(node_id)
             )
         return display_node
 
