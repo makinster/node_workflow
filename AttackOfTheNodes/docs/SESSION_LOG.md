@@ -4,6 +4,26 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-16 — Frontend Review Cleanup Pass
+
+- Started from branch `codex/frontend-review-cleanups` at `03e6432`, aligned
+  with `origin/main` after PR #20.
+- Continued the frontend convention review from the Pass 1/2/3 inventory.
+- `EditorScreen._metadata_for_type()` and `NodeConfigScreen._metadata_for_type()`
+  now delegate to the shared `frontend.node_io_display.metadata_for_type()`
+  helper.
+- `NodeConfigScreen` now uses the shared membank normalizers from
+  `frontend.node_io_display` instead of maintaining duplicate definitions.
+- Removed unused `EditorScreen._format_input_ports()` and
+  `_format_output_ports()`.
+- Deferred wider follow-ups to separate passes: node-type constants,
+  membank-registry consolidation, branch-port list consolidation, and selector
+  tab-name docs drift.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "node_config or editor_identity_rows or quick_view or payloads_tab or command_inputs"` (20 passed)
+  - `../.venv/bin/python -m pytest tests -v` (308 passed)
+
 ## 2026-06-16 — Branch Pruning Ignores Unreachable Merge Feeds
 
 - Continued debugging on branch `delete_branch_bug` after pulling
