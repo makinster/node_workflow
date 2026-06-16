@@ -4,6 +4,31 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-16 — Merge Beacon Selector Colors Match Connected Merge Branch
+
+- When a Merge Beacon (`branch_end_node`) is connected to a `merge_node`, the
+  beacon's selector row text/connector line and its own gutter/numline color
+  now match the branch that contains the merge node, instead of the beacon's
+  own branch color.
+- Added `_merge_node_branch_color_key()`, which reuses
+  `_branch_choices_to_node()` to find the branch-port decisions leading to the
+  merge node; the last decision's port plus `len(choices) - 1` reproduces the
+  same `branch_path_color_key` that `_build_visible_rows` would assign if that
+  branch were the active view.
+- `_build_visible_rows` now resolves this key for non-placeholder beacons with
+  a connected merge node, stores it on the node dict
+  (`_editor_branch_color_key`) so `NodeCard` picks it up for the gutter, and
+  passes it into `_merge_beacon_select_row` as the row's `active_color_key`.
+  Falls back to `current_branch_color_key` when the beacon has no connected
+  merge node.
+- Merged cleanly on top of the same-session "Merge Node Delete +
+  Stranded-Beacon Visibility Fix" change below, which restructured the same
+  `branch_end_node` block; the manual resolution preserves both the
+  placeholder fall-through fix and this color-key override.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "merge_beacon_selector or node_selector or node_card or editor_depth or branch_end or branch_keep or tombstone"` (18 passed)
+
 ## 2026-06-16 — Merge Node Delete + Stranded-Beacon Visibility Fix
 
 Branch: `claude/editor-keyboard-focus-highlight-9fp46y`.
