@@ -1,24 +1,28 @@
-# Generated from active venv — Python 3.14, Textual 8.2.7
-# Regenerate with: pip freeze > requirements.lock
 aiohappyeyeballs==2.6.2
-aiohttp==3.13.5
+aiohttp==3.14.1
 aiohttp-jinja2==1.6
 aiosignal==1.4.0
+-e git+https://github.com/makinster/node_workflow.git@f71c424d60b3a4b445a2a5282747aeae11251135#egg=AttackOfTheNodes&subdirectory=AttackOfTheNodes
 attrs==26.1.0
 click==8.4.1
 frozenlist==1.8.0
-idna==3.16
+idna==3.18
+iniconfig==2.3.0
 Jinja2==3.1.6
 linkify-it-py==2.1.0
 markdown-it-py==4.2.0
 MarkupSafe==3.0.3
 mdit-py-plugins==0.6.1
 mdurl==0.1.2
-msgpack==1.1.2
+msgpack==1.2.0
 multidict==6.7.1
-platformdirs==4.9.6
+packaging==26.2
+platformdirs==4.10.0
+pluggy==1.6.0
 propcache==0.5.2
 Pygments==2.20.0
+pytest==9.1.0
+pytest-asyncio==1.4.0
 rich==15.0.0
 textual==8.2.7
 textual-dev==1.8.0
