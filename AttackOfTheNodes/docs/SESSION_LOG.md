@@ -4,6 +4,28 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-15 — Editor Branch Connectors: Branch Border Coloring (explored, reverted)
+
+- Attempted to color the ASCII box borders (`+`, `-`, `|`) of branching nodes
+  and branch-end (merge beacon) nodes to mirror the branch path colors already
+  used on branch-select cards and numline gutters.
+- Branching node border was set to `active_color_key` (the downstream branch
+  color); merge beacon border was set to a stable hash-derived color from the
+  connected merge node's ID; `BranchSelectCard` and `MergeBeaconSelectCard`
+  foregrounds were switched to the merge-node color when connected.
+- Reverted (commit `b55b38fb5`) because the approach has a fundamental design
+  mismatch: the branching node is a single static card in the editor, but the
+  active branch color changes every time the user switches which branch is
+  visible. Coloring the box border with the currently-active branch would make
+  it flicker on every branch switch rather than conveying stable structural
+  identity.
+- **Design note for future attempts:** border color on a branching node can only
+  work if it conveys something that does not change per branch switch — for
+  example, the node's own family color, a depth-level color, or a color derived
+  from the branching node's own identity rather than from the active branch port.
+  The downstream numline and branch-select colors are per-path and are not
+  suitable as a static node-box border color.
+
 ## 2026-06-15 — Editor Branch Connectors: Ten-Color Branch Paths
 
 - Fast-forwarded local `main` from `899c155` to `3139181` before starting,
