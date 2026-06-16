@@ -76,6 +76,10 @@ Use `PHASE_17_NODE_VISUAL_IDENTITY.md` for the active plan.
 - Named memory-bank data is the Vault.
 - `branch_end_node` is displayed to users as Merge Beacon.
 - Branch v1 is always-parallel with 2-5 spawn points.
+- A Merge Beacon's selector row and gutter color follow the branch containing
+  the merge node it's connected to, not the beacon's own branch.
+- A merge node's config only offers Merge Beacons whose branch starts upstream
+  of (or unrelated to) that merge — never one downstream of it.
 
 ## Deep Reference
 

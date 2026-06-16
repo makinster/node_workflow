@@ -189,6 +189,24 @@ intact on the backend at that point, so dead-ending the view there made
 already-connected downstream nodes look stranded even though nothing had
 actually been disconnected yet.
 
+**Merge candidate selection is graph-position-constrained:** `merge_input_options()`
+must only offer a Merge Beacon to close on a `merge_node` when that beacon's
+owning branch node is upstream of (or unrelated to) the merge being configured.
+A branch node that only appears in the merge node's forward-reachable
+descendant set starts *after* this merge runs, so it cannot have closed by the
+time the merge executes — offering it as a close candidate would let the
+editor wire a structurally impossible merge. Computed via a forward BFS from
+the merge node (`_descendant_node_ids()`), not the (incomplete) branch-context
+map, since that map's DFS stops at every beacon and never assigns a context to
+a merge node or anything downstream of one.
+
+**Editor selector coloring tracks the merge it connects to, not its own
+branch:** When a Merge Beacon is wired to a `merge_node`, the beacon's editor
+selector row (text + connector line) and its own gutter/numline color match
+the branch that *contains the merge node*, not the beacon's own branch. This
+keeps the editor view visually tying a beacon to its destination rather than
+its origin. Implemented by `EditorScreen._merge_node_branch_color_key()`.
+
 **Restore severity context:**
 
 Most heavyweight data in a workflow travels through the vault (MemoryBank
