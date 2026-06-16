@@ -226,27 +226,3 @@ StatusBar {
     background: #18212b;
     color: #a9b8c6;
 }
-
-.category-flow {
-    color: #4a90e2;
-}
-
-.category-data {
-    color: #7b68ee;
-}
-
-.category-io {
-    color: #50c878;
-}
-
-.category-debug {
-    color: #ffa500;
-}
-
-.category-ai {
-    color: #ff6b9d;
-}
-
-.category-utility {
-    color: #a9b8c6;
-}
