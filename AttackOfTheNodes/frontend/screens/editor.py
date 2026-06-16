@@ -371,9 +371,6 @@ class EditorScreen(Screen):
         if node.get("type") == "start_node":
             notifications.cannot_delete_start_node(self.app)
             return
-        if self._is_protected_structural_node(node):
-            notifications.cannot_delete_structural_node(self.app)
-            return
 
         self._do_delete(True)
 
@@ -520,16 +517,6 @@ class EditorScreen(Screen):
             ):
                 keys.add(self._branch_candidate_key(candidate))
         return keys
-
-    def _is_protected_structural_node(self, node: Dict[str, Any]) -> bool:
-        # Branch nodes are deletable: the first delete soft-tombstones the node
-        # and the second delete opens the branch keep selector (see _do_delete /
-        # _open_branch_keep_selector), which prunes the unkept paths and rewires
-        # upstream to the kept branch head. Merge nodes stay protected — they own
-        # outer branch-close structure with no equivalent keep flow yet.
-        if node.get("type") != "merge_node":
-            return False
-        return bool(node.get("connections", {}).get("outputs"))
 
     def _clear_timing_for_node(self, node_id: str) -> None:
         timings = getattr(self.app, "node_timings", None)
@@ -1551,16 +1538,19 @@ class EditorScreen(Screen):
                 # Soft-deleted: node data and connections are intact in workflow_map.
                 # Fall through to normal port traversal so downstream nodes stay visible.
 
-            if node.get("type") == "branch_end_node":
-                if not self.workflow_adapter.is_placeholder(current_node_id):
-                    rows.append(
-                        self._merge_beacon_select_row(
-                            current_node_id,
-                            depth,
-                            current_branch_color_key,
-                        )
+            if node.get("type") == "branch_end_node" and not self.workflow_adapter.is_placeholder(
+                current_node_id
+            ):
+                rows.append(
+                    self._merge_beacon_select_row(
+                        current_node_id,
+                        depth,
+                        current_branch_color_key,
                     )
+                )
                 break
+            # Soft-deleted beacon: connections are still intact, so fall through
+            # to normal single-port traversal instead of dead-ending the view.
 
             output_ports = self._output_ports_for_node(node, metadata)
             if len(output_ports) > 1:

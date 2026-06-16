@@ -277,9 +277,14 @@ remains intact.
 so permanent deletion routes through the branch keep selector
 (`BranchKeepSelectorScreen` / `prune_branch_tombstone()`): the user picks one
 path to keep, the others are pruned to their structural boundary, and upstream is
-rewired to the kept path's head. `merge_node` deletion stays blocked in the
-editor (no keep flow yet). See `BACKEND_FRONTEND_BOUNDARY.md` for the full
-contract.
+rewired to the kept path's head.
+
+**Merge Beacon / merge_node deletes:** Both are deletable now, with no
+auto-rewiring. Deleting a Merge Beacon (`branch_end_node`) only unlinks its own
+branch from the `merge_node` it fed — other branches are untouched. Deleting a
+`merge_node` disconnects every Merge Beacon (and anything downstream) that was
+connected to it; the user reconnects each one manually afterward. See
+`BACKEND_FRONTEND_BOUNDARY.md` for the full contract.
 
 
 

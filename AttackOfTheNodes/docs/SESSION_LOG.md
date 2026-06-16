@@ -4,6 +4,43 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-16 — Merge Node Delete + Stranded-Beacon Visibility Fix
+
+Branch: `claude/editor-keyboard-focus-highlight-9fp46y`.
+
+- **`merge_node` is now deletable:** removed `_is_protected_structural_node`
+  (it only ever blocked `merge_node`). Deletion follows the plain single-node
+  rule — `WorkflowMap.delete_node()` already scrubs connection references on
+  both sides, so every Merge Beacon that fed the deleted merge node (and
+  anything downstream of it) simply becomes disconnected. Nothing is
+  auto-rewired; the user reconnects each beacon manually. Dropped the now-dead
+  `cannot_delete_structural_node` notification.
+- **Merge Beacon delete already matched spec:** verified
+  `_prune_merge_config_for_beacon` / `_disconnect_beacon_merge_outputs` only
+  severs the one beacon→merge connection (and that beacon's stale entry in
+  `branches_to_close`), leaving other branches and the merge node untouched.
+- **Fixed the "stranded node" bug:** `_build_visible_rows` had an unconditional
+  `break` on `branch_end_node` rows, even when the beacon was only
+  soft-tombstoned (first delete press). Soft-delete never touches backend
+  connections, so this made everything past the beacon — including the
+  `merge_node` and its downstream — disappear from the editor despite still
+  being fully connected. Once the user then saved or validated,
+  `materialize_deleted_nodes()` converted the beacon into a real tombstone and
+  *did* drop its connection, so what looked like a pre-existing problem turned
+  into an actual disconnect, with the tombstone flagged by the validator and
+  the editor still not showing any of it. Fixed by only taking the
+  beacon-select-row-and-break path when the beacon is not currently a
+  placeholder; a soft-deleted beacon now falls through to normal single-port
+  traversal so downstream nodes stay visible until the delete is made
+  permanent (at which point the node is actually gone and stops showing up in
+  validation, as expected).
+- Tests: replaced `test_editor_merge_node_delete_stays_blocked` with
+  `test_editor_merge_node_delete_disconnects_beacons`; added
+  `test_editor_soft_deleted_beacon_keeps_downstream_visible`. Full suite: 299
+  passed (`python -m pytest -q`).
+- Updated `BACKEND_FRONTEND_BOUNDARY.md` and `PROJECT_KNOWLEDGE.md` to describe
+  the Merge Beacon / `merge_node` delete contract instead of "stays blocked."
+
 ## 2026-06-16 — Editor Delete Fixes: Keyboard Focus, Gap Shift-Up, Branch Delete
 
 Branch: `claude/editor-keyboard-focus-highlight-9fp46y`.

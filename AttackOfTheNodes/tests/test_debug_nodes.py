@@ -1062,21 +1062,29 @@ async def _test_editor_branch_node_deletes_through_keep_selector():
     print("test_editor_branch_node_deletes_through_keep_selector PASSED")
 
 
-def test_editor_merge_node_delete_stays_blocked():
-    asyncio.run(_test_editor_merge_node_delete_stays_blocked())
+def test_editor_merge_node_delete_disconnects_beacons():
+    asyncio.run(_test_editor_merge_node_delete_disconnects_beacons())
 
 
-async def _test_editor_merge_node_delete_stays_blocked():
+async def _test_editor_merge_node_delete_disconnects_beacons():
     from textual.app import App, ComposeResult
 
     from frontend.screens.editor import EditorScreen
 
     _, wm, _, _ = _make_services()
-    wm.create_new("editor_merge_blocked")
+    wm.create_new("editor_merge_delete")
     start = wm.add_node("start_node")
+    branch = wm.add_node("branch_node", alias="My Branch")
+    wm.update_node_config(branch, {"branch_count": 2})
+    beacon_a = wm.add_node("branch_end_node", alias="Beacon A")
+    beacon_b = wm.add_node("branch_end_node", alias="Beacon B")
     merge = wm.add_node("merge_node", alias="Merge")
     end = wm.add_node("end_node")
-    wm.connect(start, "default", merge, "path_a")
+    wm.connect(start, "default", branch, "input")
+    wm.connect(branch, "path_a", beacon_a, "input")
+    wm.connect(branch, "path_b", beacon_b, "input")
+    wm.connect(beacon_a, "default", merge, "path_a")
+    wm.connect(beacon_b, "default", merge, "path_b")
     wm.connect(merge, "default", end, "input")
     wm.mark_saved()
 
@@ -1091,13 +1099,80 @@ async def _test_editor_merge_node_delete_stays_blocked():
         screen.selected_node_id = merge
         screen.selected_row = {"kind": "node", "node_id": merge}
 
+        # First delete: merge node is no longer protected, soft-tombstones.
         screen.action_delete_selected()
         await pilot.pause(0.03)
-        # Merge node with outputs stays protected: no tombstone is created.
-        assert not screen.workflow_adapter.is_placeholder(merge)
+        assert screen.workflow_adapter.is_placeholder(merge)
         assert wm.get_node_data(merge)["type"] == "merge_node"
+        assert wm.get_node_data(beacon_a) is not None
+        assert wm.get_node_data(beacon_b) is not None
+        assert wm.get_node_data(end) is not None
 
-    print("test_editor_merge_node_delete_stays_blocked PASSED")
+        # Second delete: merge node is permanently removed. Beacons that fed
+        # it become disconnected (not rewired) and stay live in the graph;
+        # the user must manually rewire each one afterward.
+        screen.action_delete_selected()
+        await pilot.pause(0.03)
+
+        assert wm.get_node_data(merge) is None
+        assert wm.get_node_data(beacon_a) is not None
+        assert wm.get_node_data(beacon_b) is not None
+        assert wm.get_node_data(end) is not None
+        assert wm.get_node_data(beacon_a)["connections"]["outputs"] == []
+        assert wm.get_node_data(beacon_b)["connections"]["outputs"] == []
+        assert wm.get_node_data(end)["connections"]["inputs"] == []
+
+    print("test_editor_merge_node_delete_disconnects_beacons PASSED")
+
+
+def test_editor_soft_deleted_beacon_keeps_downstream_visible():
+    asyncio.run(_test_editor_soft_deleted_beacon_keeps_downstream_visible())
+
+
+async def _test_editor_soft_deleted_beacon_keeps_downstream_visible():
+    from textual.app import App, ComposeResult
+
+    from frontend.screens.editor import EditorScreen
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("editor_soft_delete_beacon")
+    start = wm.add_node("start_node")
+    logger_a = wm.add_node("logger_node", alias="A")
+    beacon = wm.add_node("branch_end_node", alias="Beacon")
+    merge = wm.add_node("merge_node", alias="Merge")
+    end = wm.add_node("end_node")
+    wm.connect(start, "default", logger_a, "input")
+    wm.connect(logger_a, "default", beacon, "input")
+    wm.connect(beacon, "default", merge, "path_a")
+    wm.connect(merge, "default", end, "input")
+    wm.mark_saved()
+
+    class EditorApp(App):
+        def compose(self) -> ComposeResult:
+            yield EditorScreen(wm._factory, wm)
+
+    app = EditorApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        screen = app.query_one(EditorScreen)
+        screen.selected_node_id = beacon
+        screen.selected_row = {"kind": "node", "node_id": beacon}
+
+        # First (soft) delete: connections stay intact on the backend, so the
+        # editor must keep showing everything past the beacon instead of
+        # dead-ending the visible row list at the deleted marker.
+        screen.action_delete_selected()
+        await pilot.pause(0.03)
+        assert screen.workflow_adapter.is_placeholder(beacon)
+
+        visible_ids = {
+            row.get("node_id") or row.get("beacon_node_id") or row.get("merge_node_id")
+            for row in screen._build_visible_rows()
+        }
+        assert merge in visible_ids
+        assert end in visible_ids
+
+    print("test_editor_soft_deleted_beacon_keeps_downstream_visible PASSED")
 
 
 async def _test_editor_save_materializes_deleted_node_and_loaded_marker_renders():

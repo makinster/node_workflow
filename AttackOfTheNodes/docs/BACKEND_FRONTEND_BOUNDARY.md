@@ -163,9 +163,31 @@ and their downstream nodes are pruned (stopping at structural boundaries —
 `merge_node`, `branch_end_node`, `start_node`). The branch node's upstream input
 is rewired directly to the head of the kept path so the graph stays connected.
 This pruning is explicit, user-chosen, and confirmed by the modal — not an
-automatic cascade. `merge_node` deletion has no equivalent flow yet and stays
-blocked in the editor. Implemented by `prune_branch_tombstone()` (adapter) and
+automatic cascade. Implemented by `prune_branch_tombstone()` (adapter) and
 `BranchKeepSelectorScreen`.
+
+**Merge Beacon (`branch_end_node`) and `merge_node` deletes:**
+
+Both follow the plain single-node delete rule — no cascading, no auto-rewire —
+but each carries one structural side effect:
+
+- Deleting a Merge Beacon unlinks only the branch that beacon belonged to: its
+  one connection into the `merge_node` is severed (and the beacon's branch
+  entry is dropped from the merge node's `branches_to_close` config), but the
+  merge node and every other branch feeding it are untouched. Implemented by
+  `_prune_merge_config_for_beacon()` / `_disconnect_beacon_merge_outputs()`.
+- Deleting a `merge_node` disconnects every Merge Beacon that was feeding it —
+  `WorkflowMap.delete_node()` scrubs the connection on both sides as part of
+  its normal node removal, so each beacon (and anything downstream of the
+  merge node) simply loses that one connection. Nothing is rewired
+  automatically; the user reconnects each beacon (and the merge node's old
+  downstream, if any) manually afterward.
+
+The editor's visible-row traversal must keep showing everything past a beacon
+while it is only soft-tombstoned (first delete) — connections are still fully
+intact on the backend at that point, so dead-ending the view there made
+already-connected downstream nodes look stranded even though nothing had
+actually been disconnected yet.
 
 **Restore severity context:**
 
