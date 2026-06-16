@@ -407,11 +407,44 @@ class EditorWorkflowAdapter:
                 )
             ]
 
-    def remove_placeholder(self, node_id: str) -> bool:
+    def remove_placeholder(self, node_id: str, reconnect_gap: bool = True) -> bool:
         if not self.is_placeholder(node_id):
             return False
+        node = self.workflow_map.get_node_data(node_id)
+        if node is None:
+            self._deleted_nodes.pop(node_id, None)
+            return False
+
+        upstream_connections = list(node.get("connections", {}).get("inputs", []))
+        downstream_connections = list(node.get("connections", {}).get("outputs", []))
+        original_type = ""
+
+        if self.is_materialized_placeholder(node):
+            config = node.get("config") or {}
+            original_type = str(config.get("original_type") or "")
+            if not downstream_connections:
+                downstream_connections = list(config.get("original_outputs") or [])
+        else:
+            original_type = str(node.get("type") or "")
+
         self._deleted_nodes.pop(node_id, None)
-        return self.workflow_map.delete_node(node_id)
+        result = self.workflow_map.delete_node(node_id)
+
+        _NO_SHIFT_TYPES = {"branch_node", "start_node", "merge_node"}
+        if result and reconnect_gap and original_type not in _NO_SHIFT_TYPES:
+            for in_conn in upstream_connections:
+                source_id = str(in_conn.get("source_node_id") or "")
+                source_port = str(in_conn.get("source_port") or "default")
+                if not source_id or self.workflow_map.get_node_data(source_id) is None:
+                    continue
+                for out_conn in downstream_connections:
+                    target_id = str(out_conn.get("target_node_id") or "")
+                    target_port = str(out_conn.get("target_port") or "input")
+                    if not target_id or self.workflow_map.get_node_data(target_id) is None:
+                        continue
+                    self.workflow_map.connect(source_id, source_port, target_id, target_port)
+
+        return result
 
     def prune_branch_tombstone(self, node_id: str, kept_port: str) -> int:
         """Keep one branch path when permanently deleting a branch-node tombstone.
@@ -492,7 +525,7 @@ class EditorWorkflowAdapter:
         for prune_id in to_prune:
             self.workflow_map.delete_node(prune_id)
 
-        self.remove_placeholder(node_id)
+        self.remove_placeholder(node_id, reconnect_gap=False)
         return len(to_prune)
 
     def replace_placeholder(self, node_id: str, new_type: str) -> Dict[str, Any]:
