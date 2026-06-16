@@ -1907,7 +1907,11 @@ class EditorScreen(Screen):
             node = self.workflow_map.get_node_data(self.selected_node_id)
             metadata = self._metadata_for_type(node.get("type", "")) if node else None
             ports = self._output_ports_for_node(node, metadata) if node else []
-            return {"node_id": self.selected_node_id, "port": (ports or ["default"])[0]}
+            if len(ports) > 1 and self.selected_node_id in self.active_branch_ports:
+                port = self.active_branch_ports[self.selected_node_id]
+            else:
+                port = (ports or ["default"])[0]
+            return {"node_id": self.selected_node_id, "port": port}
         return None
 
     def _branch_candidate_key(self, candidate: Dict[str, Any]) -> str:

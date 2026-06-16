@@ -4,6 +4,30 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-16 — Insert Into Empty Branch Now Targets the Branch Being Viewed
+
+- Reported as: switch to an empty parallel branch (`d`), insert a node — it
+  visually shows up there, but switching away and back makes it disappear
+  from that branch and reappear on a different one (whichever branch's port
+  is declared first on the `branch_node`).
+- Root cause: when the active branch path is empty, there is no node to
+  select yet, so the selected row falls back to the `branch_node` itself with
+  `kind: "node"` rather than `kind: "branch_select"`. `_source_for_insert_node()`
+  has a correct `branch_select`-specific case that reads `active_branch_ports`,
+  but the generic `kind: "node"` fallback just used the branch node's first
+  declared output port unconditionally — ignoring which branch was actually
+  being viewed.
+- Fixed: in that fallback, when the selected node has multiple output ports
+  (i.e. it's a branch node) and an active branch port is recorded for it, use
+  that active port instead of always taking the first one.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest -q` (303 passed, includes new
+    `test_editor_insert_into_empty_branch_uses_active_branch_port`)
+  - Reproduced via a standalone Textual pilot script matching the reported key
+    sequence exactly (create branch, fill path_a, `d` to path_b, insert, `a`
+    back to path_a, `a` again) before and after the fix.
+
 ## 2026-06-16 — Branch Pruning No Longer Leaves Orphaned Merge Beacons or Merge Nodes
 
 - Reported as: deleting a branch whose non-kept path fed a Merge Beacon (which
