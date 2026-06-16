@@ -1062,13 +1062,14 @@ async def _test_editor_branch_node_deletes_through_keep_selector():
     print("test_editor_branch_node_deletes_through_keep_selector PASSED")
 
 
-def test_editor_merge_node_delete_disconnects_beacons():
-    asyncio.run(_test_editor_merge_node_delete_disconnects_beacons())
+def test_editor_merge_node_delete_rewires_home_branch_and_disconnects_beacons():
+    asyncio.run(_test_editor_merge_node_delete_rewires_home_branch_and_disconnects_beacons())
 
 
-async def _test_editor_merge_node_delete_disconnects_beacons():
+async def _test_editor_merge_node_delete_rewires_home_branch_and_disconnects_beacons():
     from textual.app import App, ComposeResult
 
+    from backend.validator import validate_workflow
     from frontend.screens.editor import EditorScreen
 
     _, wm, _, _ = _make_services()
@@ -1076,15 +1077,15 @@ async def _test_editor_merge_node_delete_disconnects_beacons():
     start = wm.add_node("start_node")
     branch = wm.add_node("branch_node", alias="My Branch")
     wm.update_node_config(branch, {"branch_count": 2})
-    beacon_a = wm.add_node("branch_end_node", alias="Beacon A")
-    beacon_b = wm.add_node("branch_end_node", alias="Beacon B")
+    home = wm.add_node("logger_node", alias="Home")
+    beacon = wm.add_node("branch_end_node", alias="Beacon")
     merge = wm.add_node("merge_node", alias="Merge")
     end = wm.add_node("end_node")
     wm.connect(start, "default", branch, "input")
-    wm.connect(branch, "path_a", beacon_a, "input")
-    wm.connect(branch, "path_b", beacon_b, "input")
-    wm.connect(beacon_a, "default", merge, "path_a")
-    wm.connect(beacon_b, "default", merge, "path_b")
+    wm.connect(branch, "path_a", home, "input")
+    wm.connect(home, "default", merge, "path_a")
+    wm.connect(branch, "path_b", beacon, "input")
+    wm.connect(beacon, "default", merge, "path_b")
     wm.connect(merge, "default", end, "input")
     wm.mark_saved()
 
@@ -1104,25 +1105,45 @@ async def _test_editor_merge_node_delete_disconnects_beacons():
         await pilot.pause(0.03)
         assert screen.workflow_adapter.is_placeholder(merge)
         assert wm.get_node_data(merge)["type"] == "merge_node"
-        assert wm.get_node_data(beacon_a) is not None
-        assert wm.get_node_data(beacon_b) is not None
+        assert wm.get_node_data(home) is not None
+        assert wm.get_node_data(beacon) is not None
         assert wm.get_node_data(end) is not None
 
-        # Second delete: merge node is permanently removed. Beacons that fed
-        # it become disconnected (not rewired) and stay live in the graph;
-        # the user must manually rewire each one afterward.
+        # Second delete: merge node is permanently removed. The upstream node
+        # on the branch where the merge lived rewires to the immediate
+        # downstream node; Merge Beacons from other branches disconnect and
+        # become validation-visible repair work.
         screen.action_delete_selected()
         await pilot.pause(0.03)
 
         assert wm.get_node_data(merge) is None
-        assert wm.get_node_data(beacon_a) is not None
-        assert wm.get_node_data(beacon_b) is not None
+        assert wm.get_node_data(home) is not None
+        assert wm.get_node_data(beacon) is not None
         assert wm.get_node_data(end) is not None
-        assert wm.get_node_data(beacon_a)["connections"]["outputs"] == []
-        assert wm.get_node_data(beacon_b)["connections"]["outputs"] == []
-        assert wm.get_node_data(end)["connections"]["inputs"] == []
+        assert wm.get_node_data(home)["connections"]["outputs"] == [
+            {
+                "source_port": "default",
+                "target_node_id": end,
+                "target_port": "input",
+            }
+        ]
+        assert wm.get_node_data(beacon)["connections"]["outputs"] == []
+        assert wm.get_node_data(end)["connections"]["inputs"] == [
+            {
+                "target_port": "input",
+                "source_node_id": home,
+                "source_port": "default",
+            }
+        ]
+        validation = validate_workflow(wm, wm._factory)
+        assert validation["success"] is True
+        assert any(
+            warning.get("node_id") == beacon
+            and "Merge Beacon is not connected to a merge node" in warning.get("message", "")
+            for warning in validation["warnings"]
+        )
 
-    print("test_editor_merge_node_delete_disconnects_beacons PASSED")
+    print("test_editor_merge_node_delete_rewires_home_branch_and_disconnects_beacons PASSED")
 
 
 def test_editor_soft_deleted_beacon_keeps_downstream_visible():
@@ -3212,6 +3233,69 @@ async def _test_editor_branch_cycle_keys_switch_all_and_incomplete_branch_views(
         assert node_list.index == node_list.index_for_node_id(branch_two)
 
     print("test_editor_branch_cycle_keys_switch_all_and_incomplete_branch_views PASSED")
+
+
+def test_editor_insert_into_empty_branch_uses_active_branch_port():
+    asyncio.run(_test_editor_insert_into_empty_branch_uses_active_branch_port())
+
+
+async def _test_editor_insert_into_empty_branch_uses_active_branch_port():
+    """Switching to an empty branch path leaves the selected row pointing at
+    the branch_node itself (kind: "node", not "branch_select"). Inserting a
+    node there must attach to the branch path being viewed
+    (active_branch_ports), not just the branch node's first declared output
+    port — otherwise the new node silently lands on a different branch than
+    the one shown on screen."""
+    from textual.app import App, ComposeResult
+
+    from frontend.screens.editor import EditorScreen
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("editor_insert_empty_branch")
+    start = wm.add_node("start_node")
+    branch = wm.add_node("branch_node")
+    branch_one_out = wm.add_node("text_output_node", alias="B1Out")
+    wm.connect(start, "default", branch, "input")
+    wm.connect(branch, "path_a", branch_one_out, "input")
+    # path_b intentionally left empty
+
+    class EditorApp(App):
+        def compose(self) -> ComposeResult:
+            yield EditorScreen(wm._factory, wm)
+
+    app = EditorApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        screen = app.query_one(EditorScreen)
+
+        await pilot.press("d")
+        await pilot.pause(0.03)
+        assert screen.active_branch_ports[branch] == "path_b"
+
+        screen._pending_node_add_mode = "insert"
+        screen._add_node_from_modal("text_output_node")
+        await pilot.pause(0.03)
+        new_node_id = screen.selected_node_id
+
+        new_node = wm.get_node_data(new_node_id)
+        inputs = new_node.get("connections", {}).get("inputs", [])
+        assert any(
+            conn.get("source_node_id") == branch and conn.get("source_port") == "path_b"
+            for conn in inputs
+        ), "new node should attach to path_b, the branch being viewed"
+
+        await pilot.press("a")
+        await pilot.pause(0.03)
+        assert screen.active_branch_ports[branch] == "path_a"
+        # the node inserted into path_b must still be wired to path_b
+        new_node = wm.get_node_data(new_node_id)
+        inputs = new_node.get("connections", {}).get("inputs", [])
+        assert any(
+            conn.get("source_node_id") == branch and conn.get("source_port") == "path_b"
+            for conn in inputs
+        ), "node must remain on path_b after navigating away and back"
+
+    print("test_editor_insert_into_empty_branch_uses_active_branch_port PASSED")
 
 
 async def _test_editor_command_keys_restore_lost_highlight_after_mouse_focus():

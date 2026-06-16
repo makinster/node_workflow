@@ -8,6 +8,7 @@ informational, such as loose nodes unreachable from the start node.
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
 
+from .branch_health import ENDED_UNMERGED, derive_branch_health, output_types_from_factory
 from .node_factory import NodeFactory
 from .workflow_map import WorkflowMap
 
@@ -332,6 +333,19 @@ def validate_workflow(
                         "message": "Node is not reachable from the start node",
                     }
                 )
+
+    for health in derive_branch_health(all_nodes, output_types_from_factory(factory)):
+        if health.state != ENDED_UNMERGED:
+            continue
+        warnings.append(
+            {
+                "node_id": health.terminus_node_id or health.branch_node_id,
+                "message": (
+                    "Merge Beacon is not connected to a merge node "
+                    f"for branch port '{health.port}'"
+                ),
+            }
+        )
 
     return {"success": not errors, "errors": errors, "warnings": warnings}
 

@@ -291,3 +291,26 @@ def test_default_output_types_classify_without_factory():
     assert states[(branch, "path_a")] == VALID
     assert states[(branch, "path_b")] == VALID
     print("test_default_output_types_classify_without_factory PASSED")
+
+
+def test_validator_warns_for_unmerged_merge_beacon():
+    from backend.validator import validate_workflow
+
+    wm, factory = _make_wm()
+    start = wm.add_node("start_node")
+    branch = wm.add_node("branch_node")
+    end_a = wm.add_node("end_node")
+    beacon_b = wm.add_node("branch_end_node")
+    wm.connect(start, "default", branch, "input")
+    wm.connect(branch, "path_a", end_a, "input")
+    wm.connect(branch, "path_b", beacon_b, "input")
+
+    result = validate_workflow(wm, factory)
+
+    assert result["success"] is True
+    assert any(
+        warning.get("node_id") == beacon_b
+        and "Merge Beacon is not connected to a merge node" in warning.get("message", "")
+        for warning in result["warnings"]
+    )
+    print("test_validator_warns_for_unmerged_merge_beacon PASSED")
