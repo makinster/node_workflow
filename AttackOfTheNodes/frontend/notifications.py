@@ -138,10 +138,6 @@ def cannot_delete_start_node(app: Any) -> None:
     notify_error(app, "Cannot delete the Start node")
 
 
-def cannot_delete_structural_node(app: Any) -> None:
-    notify_error(app, "Merge structure must be rewired before deletion")
-
-
 def node_deleted(app: Any) -> None:
     notify_info(app, "Node deleted - open the stub to choose a replacement")
 
