@@ -4,6 +4,219 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-16 — Branch Pruning Ignores Unreachable Merge Feeds
+
+- Continued debugging on branch `delete_branch_bug` after pulling
+  `origin/delete_branch_bug`.
+- Found a remaining branch-prune gap: `prune_branch_tombstone()` preserved a
+  `merge_node` whenever any input source existed outside the pruned set, even
+  if that source was itself unreachable from `start` after the branch tombstone
+  was removed. That could leave merge tails alive in `_nodes`, and the
+  validator would still report them as unreachable after the editor appeared to
+  have pruned the branch.
+- Fixed merge preservation to use post-prune reachability: simulate removing
+  the branch tombstone and current prune set, add the kept-path upstream
+  rewire, and only count merge input sources reachable in that future graph.
+  Reachable alternate feeds still preserve the merge; loose/unreachable feeds
+  no longer do.
+- Added focused coverage for both cases in `tests/test_branch_prune.py`,
+  including a validation assertion for the surviving-feed path.
+- Verification:
+  - `../.venv/bin/python -m pytest tests/test_branch_prune.py -v` (15 passed)
+
+## 2026-06-16 — Merge Delete Rewires Home Branch and Flags Open Beacons
+
+- Reported as: deleting a `merge_node` made downstream nodes disappear from
+  the usable path. Desired behavior is to delete only the merge node, bridge
+  the branch where the merge lived to the immediate downstream node when ports
+  are compatible, and disconnect Merge Beacon inputs from other branches so
+  the user can rewire them manually.
+- Fixed `EditorWorkflowAdapter.remove_placeholder()` with a merge-specific
+  reconnect path: after `WorkflowMap.delete_node()` removes the merge and all
+  beacon→merge references, the adapter reconnects the non-`branch_end_node`
+  upstream input to the merge's direct downstream output if both ports are
+  declared and currently open. Beacon branches are intentionally not rewired.
+- `validate_workflow()` now uses backend branch-health derivation to warn when
+  a branch reaches a Merge Beacon that is not connected to a merge node, so
+  disconnected beacons left by merge deletion surface as repair work.
+- Updated editor and branch-health tests for the new contract.
+- Verification:
+  - `.venv/bin/python -m pytest AttackOfTheNodes/tests/test_debug_nodes.py -v -k "merge_node_delete or merge_beacon or branch_end or branch_keep"` (11 passed)
+  - `.venv/bin/python -m pytest AttackOfTheNodes/tests/test_branch_health.py -v` (15 passed)
+  - `.venv/bin/python -m pytest AttackOfTheNodes/tests/test_branch_prune.py -v` (15 passed)
+
+## 2026-06-16 — Branch Pruning Treats Output Nodes as Terminal Boundaries
+
+- Reported as: deleting a branch could leave a `text_output_node` from the
+  pruned branch alive in validation even though the editor no longer showed a
+  reachable path to it.
+- Decided against a mutable `valid_branch_end` config flag. The boundary is a
+  node-type contract, so pruning now derives terminal behavior from node
+  semantics: Outputs-family nodes, `text_output_node`, `end_node`, and Merge
+  Beacons are inclusive branch-prune boundaries.
+- Updated `prune_branch_tombstone()` so terminal nodes on non-kept branches are
+  deleted but traversal does not continue past them. Merge Beacons remain a
+  special terminal: they are deleted and any connected `merge_node` is still
+  evaluated for orphan cleanup.
+- Added a regression proving a pruned branch ending at `text_output_node`
+  removes that output node and validation no longer reports it.
+- Verification:
+  - `.venv/bin/python -m pytest AttackOfTheNodes/tests/test_branch_prune.py -v` (16 passed)
+  - `.venv/bin/python -m pytest AttackOfTheNodes/tests/test_branch_health.py -v` (15 passed)
+  - `.venv/bin/python -m pytest AttackOfTheNodes/tests/test_debug_nodes.py -v -k "merge_node_delete or merge_beacon or branch_end or branch_keep"` (11 passed)
+
+## 2026-06-16 — Kept Merge Beacon Branch Drops Old Merge Output
+
+- Reported as: simple branch workflow with path A containing a `merge_node` and
+  path B containing a Merge Beacon connected to that merge. Deleting the branch
+  node, keeping the Merge Beacon branch, and pruning the merge branch left the
+  old merge connection in the kept beacon's later tombstone metadata; deleting
+  the beacon then rendered the pruned merge below the tombstone.
+- Root cause: branch-prune survival checks simulated future reachability by
+  following the kept branch head's current outputs. For a kept Merge Beacon,
+  that meant following its pre-prune output into the merge and treating the
+  merge as still live.
+- Fixed: Merge Beacons are now included in `_is_branch_prune_terminal()`.
+  `prune_branch_tombstone()` disconnects outputs from the kept branch terminal
+  before resolving pending merges, and the future-reachability simulation stops
+  at terminal nodes. The kept beacon remains as an open terminal, while the
+  old merge is pruned and cannot be captured in later tombstone
+  `original_outputs`.
+- Added a regression covering the exact keep-beacon/prune-merge sequence and
+  later beacon tombstone materialization.
+- Verification:
+  - `.venv/bin/python -m pytest tests/test_branch_prune.py -v` (17 passed)
+  - `.venv/bin/python -m pytest tests/test_branch_health.py -v` (15 passed)
+  - `.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "merge_node_delete or merge_beacon or branch_end or branch_keep"` (11 passed)
+  - `.venv/bin/python -m compileall -q .`
+
+## 2026-06-16 — Kept Merge Branch Preserves Merge Downstream Nodes
+
+- Reported as the mirror case of the kept-beacon fix: path A contains a
+  `merge_node` and downstream output node, path B contains a Merge Beacon
+  connected to that merge. Deleting the branch node and keeping path A pruned
+  the beacon branch, but also pruned the merge's downstream nodes.
+- Root cause: pending merge cleanup only considered the merge's old input
+  sources. In the kept-merge case, the old input source is the deleted branch
+  node, but the future graph rewires the branch node's upstream directly into
+  the merge. The cleanup therefore misclassified the kept merge as orphaned
+  and cascaded into its downstream nodes.
+- Fixed pending merge resolution to treat the kept branch head as live when it
+  is the pending `merge_node` and it is reachable in the simulated future graph.
+  The pruned Merge Beacon branch is still deleted; the kept merge and its
+  downstream output chain remain intact.
+- Added a regression for path A `merge_node -> text_output_node`, path B
+  `Merge Beacon -> same merge`, keep path A.
+- Verification:
+  - `.venv/bin/python -m pytest tests/test_branch_prune.py -v` (18 passed)
+  - `.venv/bin/python -m pytest tests/test_branch_health.py -v` (15 passed)
+  - `.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "merge_node_delete or merge_beacon or branch_end or branch_keep"` (11 passed)
+  - `.venv/bin/python -m compileall -q .`
+
+## 2026-06-16 — Insert Into Empty Branch Now Targets the Branch Being Viewed
+
+- Reported as: switch to an empty parallel branch (`d`), insert a node — it
+  visually shows up there, but switching away and back makes it disappear
+  from that branch and reappear on a different one (whichever branch's port
+  is declared first on the `branch_node`).
+- Root cause: when the active branch path is empty, there is no node to
+  select yet, so the selected row falls back to the `branch_node` itself with
+  `kind: "node"` rather than `kind: "branch_select"`. `_source_for_insert_node()`
+  has a correct `branch_select`-specific case that reads `active_branch_ports`,
+  but the generic `kind: "node"` fallback just used the branch node's first
+  declared output port unconditionally — ignoring which branch was actually
+  being viewed.
+- Fixed: in that fallback, when the selected node has multiple output ports
+  (i.e. it's a branch node) and an active branch port is recorded for it, use
+  that active port instead of always taking the first one.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest -q` (303 passed, includes new
+    `test_editor_insert_into_empty_branch_uses_active_branch_port`)
+  - Reproduced via a standalone Textual pilot script matching the reported key
+    sequence exactly (create branch, fill path_a, `d` to path_b, insert, `a`
+    back to path_a, `a` again) before and after the fix.
+
+## 2026-06-16 — Branch Pruning No Longer Leaves Orphaned Merge Beacons or Merge Nodes
+
+- Reported as: deleting a branch whose non-kept path fed a Merge Beacon (which
+  in turn fed a `merge_node`) left a node behind that the validator flagged as
+  unreachable, even after the workflow looked fully repaired in the editor.
+- Root cause #1: `prune_branch_tombstone()`'s stop-type set included
+  `branch_end_node`, treating Merge Beacons as permanent structure. A beacon
+  belongs exclusively to the one branch it closes, so a beacon reached while
+  pruning a non-kept branch must be deleted along with the rest of that
+  branch, not preserved.
+- Root cause #2 (cascading orphan): `merge_node` was an *unconditional* stop
+  type. If the branch being pruned was a `merge_node`'s only remaining input,
+  the merge_node was left behind fully disconnected from upstream — alive in
+  the workflow but unreachable from start, with no way to fix it short of a
+  manual node delete (re-typing it via the node selector keeps the same
+  disconnected node, since type-swap doesn't restore connections).
+- Fixed: `branch_end_node` removed from the stop-type set entirely. `merge_node`
+  is now a *conditional* stop — pruning resolves each encountered merge_node by
+  checking whether any of its current inputs come from a source outside the
+  pruned set (and outside the branch tombstone itself). If none remain, the
+  merge_node is pruned too, and pruning cascades through its own downstream
+  nodes (re-applying the same check to any further merge_node reached that
+  way). A merge_node with a genuinely surviving feed (another live branch)
+  is still preserved untouched.
+- Confirms the broader guarantee: pruned nodes go through
+  `WorkflowMap.delete_node()`, which removes them from the same `_nodes` dict
+  that gets serialized on save — a pruned node cannot reappear in a save file
+  or in any validator output once `prune_branch_tombstone()` correctly
+  identifies it for pruning.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest -q` (302 passed)
+  - End-to-end repro matching the reported scenario (branch → kept path into
+    merge_node path_a, pruned path → Merge Beacon → merge_node path_b → output):
+    validator returns `{"success": true, "errors": [], "warnings": []}` after
+    pruning, with only 3 nodes left in the workflow.
+
+## 2026-06-16 — Merge Config No Longer Offers Downstream Branches to Close
+
+- `merge_input_options()` listed every `branch_end_node` in the workflow as a
+  candidate to close, including beacons whose owning branch point only starts
+  *after* passing through the merge node being configured. Closing such a
+  branch is structurally backwards (the branch doesn't exist yet at the point
+  the merge runs).
+- Root cause: `_branch_contexts_by_node()`'s DFS stops at every Merge Beacon,
+  so neither a merge node nor anything downstream of it is ever assigned a
+  branch context — `merge_input_options` had no signal to exclude beacons
+  whose branch point is downstream of the merge.
+- Fixed by computing the forward-reachable descendant set of the merge node
+  being configured (`_descendant_node_ids`) and excluding any beacon whose
+  context `branch_id` (the originating branch node) falls in that set.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest -q` (299 passed)
+
+## 2026-06-16 — Merge Beacon Selector Colors Match Connected Merge Branch
+
+- When a Merge Beacon (`branch_end_node`) is connected to a `merge_node`, the
+  beacon's selector row text/connector line and its own gutter/numline color
+  now match the branch that contains the merge node, instead of the beacon's
+  own branch color.
+- Added `_merge_node_branch_color_key()`, which reuses
+  `_branch_choices_to_node()` to find the branch-port decisions leading to the
+  merge node; the last decision's port plus `len(choices) - 1` reproduces the
+  same `branch_path_color_key` that `_build_visible_rows` would assign if that
+  branch were the active view.
+- `_build_visible_rows` now resolves this key for non-placeholder beacons with
+  a connected merge node, stores it on the node dict
+  (`_editor_branch_color_key`) so `NodeCard` picks it up for the gutter, and
+  passes it into `_merge_beacon_select_row` as the row's `active_color_key`.
+  Falls back to `current_branch_color_key` when the beacon has no connected
+  merge node.
+- Merged cleanly on top of the same-session "Merge Node Delete +
+  Stranded-Beacon Visibility Fix" change below, which restructured the same
+  `branch_end_node` block; the manual resolution preserves both the
+  placeholder fall-through fix and this color-key override.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "merge_beacon_selector or node_selector or node_card or editor_depth or branch_end or branch_keep or tombstone"` (18 passed)
+
 ## 2026-06-16 — Merge Node Delete + Stranded-Beacon Visibility Fix
 
 Branch: `claude/editor-keyboard-focus-highlight-9fp46y`.

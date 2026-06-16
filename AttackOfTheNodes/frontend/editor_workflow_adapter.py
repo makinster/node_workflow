@@ -431,6 +431,8 @@ class EditorWorkflowAdapter:
         result = self.workflow_map.delete_node(node_id)
 
         _NO_SHIFT_TYPES = {"branch_node", "start_node", "merge_node"}
+        if result and reconnect_gap and original_type == "merge_node":
+            self._reconnect_merge_gap(upstream_connections, downstream_connections)
         if result and reconnect_gap and original_type not in _NO_SHIFT_TYPES:
             for in_conn in upstream_connections:
                 source_id = str(in_conn.get("source_node_id") or "")
@@ -446,6 +448,91 @@ class EditorWorkflowAdapter:
 
         return result
 
+    def _reconnect_merge_gap(
+        self,
+        upstream_connections: List[Dict[str, Any]],
+        downstream_connections: List[Dict[str, Any]],
+    ) -> bool:
+        """Bridge the local path across a deleted merge node when possible."""
+        upstream = self._merge_home_input_connection(upstream_connections)
+        downstream = self._merge_downstream_connection(downstream_connections)
+        if upstream is None or downstream is None:
+            return False
+        source_id = str(upstream.get("source_node_id") or "")
+        source_port = str(upstream.get("source_port") or "default")
+        target_id = str(downstream.get("target_node_id") or "")
+        target_port = str(downstream.get("target_port") or "input")
+        if not source_id or not target_id:
+            return False
+        source_node = self.workflow_map.get_node_data(source_id)
+        target_node = self.workflow_map.get_node_data(target_id)
+        if source_node is None or target_node is None:
+            return False
+        if not self._declares_output_port(source_node, source_port):
+            return False
+        if not self._declares_input_port(target_node, target_port):
+            return False
+        if self._output_port_has_target(source_node, source_port):
+            return False
+        if self._input_port_has_source(target_node, target_port):
+            return False
+        return self.workflow_map.connect(source_id, source_port, target_id, target_port)
+
+    def _merge_home_input_connection(
+        self,
+        upstream_connections: List[Dict[str, Any]],
+    ) -> Optional[Dict[str, Any]]:
+        for conn in upstream_connections:
+            source_id = str(conn.get("source_node_id") or "")
+            source_node = self.workflow_map.get_node_data(source_id)
+            if source_node is None:
+                continue
+            if source_node.get("type") != "branch_end_node":
+                return conn
+        return None
+
+    def _merge_downstream_connection(
+        self,
+        downstream_connections: List[Dict[str, Any]],
+    ) -> Optional[Dict[str, Any]]:
+        for conn in downstream_connections:
+            if str(conn.get("source_port") or "default") == "default":
+                return conn
+        return downstream_connections[0] if downstream_connections else None
+
+    def _declares_output_port(self, node: Dict[str, Any], port: str) -> bool:
+        ports = self._ports_by_type().get(node.get("type", ""), {}).get("outputs", set())
+        return port in ports
+
+    def _declares_input_port(self, node: Dict[str, Any], port: str) -> bool:
+        ports = self._ports_by_type().get(node.get("type", ""), {}).get("inputs", set())
+        return port in ports
+
+    def _output_port_has_target(self, node: Dict[str, Any], port: str) -> bool:
+        return any(
+            str(conn.get("source_port") or "default") == port
+            for conn in node.get("connections", {}).get("outputs", [])
+        )
+
+    def _input_port_has_source(self, node: Dict[str, Any], port: str) -> bool:
+        return any(
+            str(conn.get("target_port") or "input") == port
+            for conn in node.get("connections", {}).get("inputs", [])
+        )
+
+    def _is_branch_prune_terminal(self, node: Dict[str, Any]) -> bool:
+        node_type = str(node.get("type") or "")
+        if node_type in {"branch_end_node", "end_node", "text_output_node"}:
+            return True
+        for metadata in self.factory.get_node_types_metadata():
+            if metadata.get("type") != node_type:
+                continue
+            family = str(
+                metadata.get("primary_family") or metadata.get("category") or ""
+            ).lower()
+            return family == "outputs"
+        return False
+
     def prune_branch_tombstone(self, node_id: str, kept_port: str) -> int:
         """Keep one branch path when permanently deleting a branch-node tombstone.
 
@@ -454,8 +541,19 @@ class EditorWorkflowAdapter:
         upstream input directly to the head of the kept branch and removes the
         tombstone itself.
 
-        Structural stop-types (merge_node, branch_end_node, start_node) are
-        never pruned — they belong to outer structure.
+        ``start_node`` is always a hard stop — it is never pruned. Terminal
+        branch nodes (Outputs-family nodes, ``end_node``, and Merge Beacons)
+        are inclusive prune boundaries: the terminal on a non-kept branch is
+        deleted, but traversal does not continue past it. Merge Beacons also
+        register their connected merge_node for orphan cleanup.
+
+        ``merge_node`` is a *conditional* stop: traversal halts there only
+        while another surviving (non-pruned) branch still feeds it. If the
+        branch being pruned was its only live input, the merge_node has
+        nothing left to merge and would otherwise be left behind as a
+        disconnected, unreachable orphan — so it is pruned too, and pruning
+        cascades through its own downstream nodes (re-checking the same rule
+        for any further merge_node reached that way).
 
         Returns the number of downstream nodes pruned, or -1 on precondition
         failure (not a placeholder, not a branch_node tombstone).
@@ -473,7 +571,7 @@ class EditorWorkflowAdapter:
             "original_input_connections"
         ) or []
 
-        _STOP_TYPES = {"start_node", "merge_node", "branch_end_node"}
+        _HARD_STOP_TYPES = {"start_node"}
 
         # Resolve kept branch head.
         kept_target_id: Optional[str] = None
@@ -485,16 +583,15 @@ class EditorWorkflowAdapter:
                     kept_target_id = candidate
                     kept_target_port = str(conn.get("target_port") or "input")
                 break
+        self._disconnect_kept_branch_terminal_outputs(kept_target_id)
 
-        # BFS to collect nodes to prune from non-kept ports.
+        # BFS to collect nodes to prune from non-kept ports. merge_node is a
+        # conditional stop: record it as pending and resolve afterward.
         to_prune: set = set()
-        for conn in original_outputs:
-            if conn.get("source_port") == kept_port:
-                continue
-            start_id = str(conn.get("target_node_id") or "")
-            if not start_id or self.workflow_map.get_node_data(start_id) is None:
-                continue
-            queue = [start_id]
+        pending_merges: set = set()
+
+        def _enqueue(start_ids: List[str]) -> None:
+            queue = list(start_ids)
             while queue:
                 current = queue.pop(0)
                 if current in to_prune or current == kept_target_id:
@@ -502,13 +599,102 @@ class EditorWorkflowAdapter:
                 current_node = self.workflow_map.get_node_data(current)
                 if current_node is None:
                     continue
-                if current_node.get("type", "") in _STOP_TYPES:
+                node_type = current_node.get("type", "")
+                if node_type in _HARD_STOP_TYPES:
+                    continue
+                if node_type == "merge_node":
+                    pending_merges.add(current)
                     continue
                 to_prune.add(current)
+                if node_type == "branch_end_node":
+                    for out_conn in current_node.get("connections", {}).get("outputs", []):
+                        next_id = str(out_conn.get("target_node_id") or "")
+                        next_node = self.workflow_map.get_node_data(next_id)
+                        if next_node and next_node.get("type") == "merge_node":
+                            pending_merges.add(next_id)
+                    continue
+                if self._is_branch_prune_terminal(current_node):
+                    continue
                 for out_conn in current_node.get("connections", {}).get("outputs", []):
                     next_id = str(out_conn.get("target_node_id") or "")
                     if next_id and next_id not in to_prune:
                         queue.append(next_id)
+
+        def _future_reachable(excluded: set) -> set:
+            """Reachability after branch removal and kept-path rewiring."""
+            all_nodes = self.workflow_map.get_all_node_data()
+            start_ids = [
+                candidate_id
+                for candidate_id, candidate in all_nodes.items()
+                if candidate.get("type") == "start_node" and candidate_id not in excluded
+            ]
+            reachable: set = set()
+            queue = list(start_ids)
+            while queue:
+                current = queue.pop(0)
+                if current in reachable or current in excluded:
+                    continue
+                current_node = self.workflow_map.get_node_data(current)
+                if current_node is None:
+                    continue
+                reachable.add(current)
+                if self._is_branch_prune_terminal(current_node):
+                    continue
+                for out_conn in current_node.get("connections", {}).get("outputs", []):
+                    next_id = str(out_conn.get("target_node_id") or "")
+                    if next_id and next_id not in excluded and next_id not in reachable:
+                        queue.append(next_id)
+                for in_conn in original_inputs:
+                    if current != str(in_conn.get("source_node_id") or ""):
+                        continue
+                    if kept_target_id and kept_target_id not in excluded:
+                        queue.append(kept_target_id)
+            return reachable
+
+        initial_starts = []
+        for conn in original_outputs:
+            if conn.get("source_port") == kept_port:
+                continue
+            start_id = str(conn.get("target_node_id") or "")
+            if start_id and self.workflow_map.get_node_data(start_id) is not None:
+                initial_starts.append(start_id)
+        _enqueue(initial_starts)
+
+        # Resolve pending merge_nodes: a merge_node only survives if at least
+        # one of its current inputs comes from a node outside the pruned set.
+        changed = True
+        while changed:
+            changed = False
+            for merge_id in list(pending_merges):
+                merge_node = self.workflow_map.get_node_data(merge_id)
+                if merge_node is None:
+                    pending_merges.discard(merge_id)
+                    continue
+                reachable_after_prune = _future_reachable(to_prune | {node_id})
+                input_sources = [
+                    str(conn.get("source_node_id") or "")
+                    for conn in merge_node.get("connections", {}).get("inputs", [])
+                ]
+                live_sources = [
+                    s
+                    for s in input_sources
+                    if s
+                    and s != node_id
+                    and s not in to_prune
+                    and s in reachable_after_prune
+                ]
+                merge_is_kept_head = (
+                    merge_id == kept_target_id and merge_id in reachable_after_prune
+                )
+                if not live_sources and not merge_is_kept_head:
+                    to_prune.add(merge_id)
+                    pending_merges.discard(merge_id)
+                    changed = True
+                    downstream_ids = [
+                        str(conn.get("target_node_id") or "")
+                        for conn in merge_node.get("connections", {}).get("outputs", [])
+                    ]
+                    _enqueue([d for d in downstream_ids if d])
 
         # Reconnect upstream to the kept branch head.
         if kept_target_id:
@@ -527,6 +713,20 @@ class EditorWorkflowAdapter:
 
         self.remove_placeholder(node_id, reconnect_gap=False)
         return len(to_prune)
+
+    def _disconnect_kept_branch_terminal_outputs(self, node_id: Optional[str]) -> None:
+        if not node_id:
+            return
+        node = self.workflow_map.get_node_data(node_id)
+        if node is None or not self._is_branch_prune_terminal(node):
+            return
+        for conn in list(node.get("connections", {}).get("outputs", [])):
+            self.workflow_map.disconnect(
+                node_id,
+                str(conn.get("source_port") or "default"),
+                str(conn.get("target_node_id") or ""),
+                str(conn.get("target_port") or "input"),
+            )
 
     def replace_placeholder(self, node_id: str, new_type: str) -> Dict[str, Any]:
         node = self.workflow_map.get_node_data(node_id)

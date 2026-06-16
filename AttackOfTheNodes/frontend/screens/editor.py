@@ -1541,11 +1541,19 @@ class EditorScreen(Screen):
             if node.get("type") == "branch_end_node" and not self.workflow_adapter.is_placeholder(
                 current_node_id
             ):
+                connected_merge_id = self._merge_beacon_connected_merge_id(current_node_id)
+                merge_color_key = (
+                    self._merge_node_branch_color_key(connected_merge_id)
+                    if connected_merge_id
+                    else None
+                )
+                if merge_color_key:
+                    node["_editor_branch_color_key"] = merge_color_key
                 rows.append(
                     self._merge_beacon_select_row(
                         current_node_id,
                         depth,
-                        current_branch_color_key,
+                        merge_color_key if merge_color_key else current_branch_color_key,
                     )
                 )
                 break
@@ -1640,6 +1648,22 @@ class EditorScreen(Screen):
             if target_node.get("type") == "merge_node":
                 return target_id
         return ""
+
+    def _merge_node_branch_color_key(self, merge_node_id: str) -> str | None:
+        """Return the color key for the branch the given merge node lives on.
+
+        Uses _branch_choices_to_node to find the sequence of (branch_node_id,
+        port) choices that lead to the merge node. The last choice gives the
+        immediate branch port; the list length minus one gives the branch_index
+        that _build_visible_rows would assign to that branch node, so the
+        returned key matches the color already used for nodes on that branch.
+        """
+        choices = self._branch_choices_to_node(merge_node_id)
+        if not choices:
+            return None
+        _, port = choices[-1]
+        branch_index = len(choices) - 1
+        return branch_path_color_key(branch_index, port)
 
     def _merge_beacon_select_row(
         self,
@@ -1883,7 +1907,11 @@ class EditorScreen(Screen):
             node = self.workflow_map.get_node_data(self.selected_node_id)
             metadata = self._metadata_for_type(node.get("type", "")) if node else None
             ports = self._output_ports_for_node(node, metadata) if node else []
-            return {"node_id": self.selected_node_id, "port": (ports or ["default"])[0]}
+            if len(ports) > 1 and self.selected_node_id in self.active_branch_ports:
+                port = self.active_branch_ports[self.selected_node_id]
+            else:
+                port = (ports or ["default"])[0]
+            return {"node_id": self.selected_node_id, "port": port}
         return None
 
     def _branch_candidate_key(self, candidate: Dict[str, Any]) -> str:
