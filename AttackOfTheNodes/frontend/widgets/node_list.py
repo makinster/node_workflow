@@ -218,5 +218,12 @@ class NodeList(ListView):
 
     def watch_index(self, old_index: int | None, new_index: int | None) -> None:
         """Keep child-card selection in sync with Textual's ListView cursor."""
+        if new_index is not None and not self.is_selectable_index(new_index):
+            selectable = self.next_selectable_index(new_index, 1)
+            if selectable is None:
+                selectable = self.next_selectable_index(new_index, -1)
+            if selectable is not None:
+                self.index = selectable
+                return
         super().watch_index(old_index, new_index)
         self.normalize_highlight()
