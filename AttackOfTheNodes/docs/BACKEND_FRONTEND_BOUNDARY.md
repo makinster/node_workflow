@@ -159,12 +159,20 @@ out into multiple paths, so there is no single "downstream" to preserve. The
 first delete soft-tombstones the branch node like any other node (undoable, all
 paths stay live). The second (permanent) delete opens the **branch keep
 selector** modal: the user picks exactly one path to keep, and the unkept paths
-and their downstream nodes are pruned (stopping at structural boundaries —
-`merge_node`, `branch_end_node`, `start_node`). The branch node's upstream input
-is rewired directly to the head of the kept path so the graph stays connected.
-This pruning is explicit, user-chosen, and confirmed by the modal — not an
-automatic cascade. Implemented by `prune_branch_tombstone()` (adapter) and
-`BranchKeepSelectorScreen`.
+and their downstream nodes are pruned. `start_node` is the only hard stop —
+never pruned. `branch_end_node` (Merge Beacon) is not a stop at all: it belongs
+exclusively to the one branch it closes, so a beacon reached while pruning a
+non-kept branch is deleted along with it. `merge_node` is a *conditional* stop:
+it survives only while at least one of its current inputs comes from a source
+outside the pruned branch; if the pruned branch was its only remaining feed,
+the merge_node has nothing left to merge and is pruned too, with pruning
+cascading through its own downstream nodes. This prevents a merge_node (or a
+beacon feeding it) from being left behind as a disconnected, unreachable
+orphan that the validator would otherwise flag forever. The branch node's
+upstream input is rewired directly to the head of the kept path so the graph
+stays connected. This pruning is explicit, user-chosen, and confirmed by the
+modal — not an automatic cascade triggered without user action. Implemented by
+`prune_branch_tombstone()` (adapter) and `BranchKeepSelectorScreen`.
 
 **Merge Beacon (`branch_end_node`) and `merge_node` deletes:**
 

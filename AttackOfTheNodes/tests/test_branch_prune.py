@@ -238,7 +238,8 @@ def test_prune_empty_branch_no_crash():
 
 
 def test_prune_merge_node_not_deleted():
-    """BFS must stop at merge_node — it belongs to outer structure."""
+    """A merge_node with another live feed (node_a/keeper, outside this
+    prune) is a true stop: only the pruned-branch chain is removed."""
     wm, factory = _make_wm()
     wm.create_new("prune_merge_stop")
     start = wm.add_node("start_node")
@@ -250,7 +251,8 @@ def test_prune_merge_node_not_deleted():
     wm.connect(start, "default", branch, "input")
     wm.connect(branch, "path_a", node_a, "input")
     wm.connect(branch, "path_b", node_b, "input")
-    wm.connect(node_b, "default", merge, "input")
+    wm.connect(node_a, "default", merge, "path_a")
+    wm.connect(node_b, "default", merge, "path_b")
 
     adapter = _adapter(wm, factory)
     adapter.replace_with_placeholder(branch)
@@ -259,3 +261,86 @@ def test_prune_merge_node_not_deleted():
     assert pruned == 1, "only node_b should be pruned, not the merge_node"
     assert wm.get_node_data(merge) is not None
     assert wm.get_node_data(node_b) is None
+
+
+def test_prune_pruned_branch_merge_beacon_is_deleted_not_orphaned():
+    """A Merge Beacon belongs to the one branch it closes — pruning that
+    branch must delete the beacon too, not leave it dangling with zero
+    connections. merge_node (still fed by the surviving kept branch via
+    its own path into the merge) must survive."""
+    wm, factory = _make_wm()
+    wm.create_new("prune_beacon_owned")
+    start = wm.add_node("start_node")
+    branch = wm.add_node("branch_node")
+    wm.update_node_config(branch, {"branch_count": 2})
+    keeper = wm.add_node("logger_node", alias="Keep")
+    merge = wm.add_node("merge_node", alias="Merge")
+    beacon = wm.add_node("branch_end_node", alias="Merge Beacon")
+    wm.connect(start, "default", branch, "input")
+    wm.connect(branch, "path_a", keeper, "input")
+    wm.connect(branch, "path_b", beacon, "input")
+    wm.connect(keeper, "default", merge, "path_a")
+    wm.connect(beacon, "default", merge, "path_b")
+
+    adapter = _adapter(wm, factory)
+    adapter.replace_with_placeholder(branch)
+    pruned = adapter.prune_branch_tombstone(branch, "path_a")
+
+    assert pruned == 1, "the beacon on the pruned path_b branch should be pruned"
+    assert wm.get_node_data(beacon) is None
+    assert wm.get_node_data(merge) is not None
+    assert wm.get_node_data(keeper) is not None
+
+
+def test_prune_orphaned_merge_node_with_no_other_feed_is_also_pruned():
+    """If the pruned branch was a merge_node's ONLY input, the merge_node has
+    nothing left to merge and must be pruned too (cascading into its own
+    downstream), instead of being left behind as a disconnected orphan that
+    the validator flags as unreachable."""
+    wm, factory = _make_wm()
+    wm.create_new("prune_orphan_merge")
+    start = wm.add_node("start_node")
+    branch = wm.add_node("branch_node")
+    wm.update_node_config(branch, {"branch_count": 2})
+    keeper = wm.add_node("logger_node", alias="Keep")
+    merge = wm.add_node("merge_node", alias="Merge")
+    after_merge = wm.add_node("logger_node", alias="AfterMerge")
+    wm.connect(start, "default", branch, "input")
+    wm.connect(branch, "path_a", keeper, "input")
+    wm.connect(branch, "path_b", merge, "path_a")
+    wm.connect(merge, "default", after_merge, "input")
+
+    adapter = _adapter(wm, factory)
+    adapter.replace_with_placeholder(branch)
+    pruned = adapter.prune_branch_tombstone(branch, "path_a")
+
+    assert pruned == 2, "merge_node and after_merge should both be pruned"
+    assert wm.get_node_data(merge) is None
+    assert wm.get_node_data(after_merge) is None
+    assert wm.get_node_data(keeper) is not None
+
+
+def test_prune_merge_node_survives_when_another_branch_still_feeds_it():
+    """A merge_node fed by a surviving branch (outside this prune entirely)
+    must not be pruned even though this branch's path into it is removed."""
+    wm, factory = _make_wm()
+    wm.create_new("prune_merge_survives")
+    start = wm.add_node("start_node")
+    branch = wm.add_node("branch_node")
+    wm.update_node_config(branch, {"branch_count": 2})
+    keeper = wm.add_node("logger_node", alias="Keep")
+    merge = wm.add_node("merge_node", alias="Merge")
+    other_feed = wm.add_node("logger_node", alias="OtherFeed")
+    wm.connect(start, "default", branch, "input")
+    wm.connect(branch, "path_a", keeper, "input")
+    wm.connect(branch, "path_b", merge, "path_a")
+    wm.connect(other_feed, "default", merge, "path_b")
+
+    adapter = _adapter(wm, factory)
+    adapter.replace_with_placeholder(branch)
+    pruned = adapter.prune_branch_tombstone(branch, "path_a")
+
+    assert pruned == 0, "merge_node still has a surviving feed; nothing to prune"
+    assert wm.get_node_data(merge) is not None
+    assert wm.get_node_data(other_feed) is not None
+    assert wm.get_node_data(keeper) is not None

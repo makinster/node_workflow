@@ -4,6 +4,43 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-16 — Branch Pruning No Longer Leaves Orphaned Merge Beacons or Merge Nodes
+
+- Reported as: deleting a branch whose non-kept path fed a Merge Beacon (which
+  in turn fed a `merge_node`) left a node behind that the validator flagged as
+  unreachable, even after the workflow looked fully repaired in the editor.
+- Root cause #1: `prune_branch_tombstone()`'s stop-type set included
+  `branch_end_node`, treating Merge Beacons as permanent structure. A beacon
+  belongs exclusively to the one branch it closes, so a beacon reached while
+  pruning a non-kept branch must be deleted along with the rest of that
+  branch, not preserved.
+- Root cause #2 (cascading orphan): `merge_node` was an *unconditional* stop
+  type. If the branch being pruned was a `merge_node`'s only remaining input,
+  the merge_node was left behind fully disconnected from upstream — alive in
+  the workflow but unreachable from start, with no way to fix it short of a
+  manual node delete (re-typing it via the node selector keeps the same
+  disconnected node, since type-swap doesn't restore connections).
+- Fixed: `branch_end_node` removed from the stop-type set entirely. `merge_node`
+  is now a *conditional* stop — pruning resolves each encountered merge_node by
+  checking whether any of its current inputs come from a source outside the
+  pruned set (and outside the branch tombstone itself). If none remain, the
+  merge_node is pruned too, and pruning cascades through its own downstream
+  nodes (re-applying the same check to any further merge_node reached that
+  way). A merge_node with a genuinely surviving feed (another live branch)
+  is still preserved untouched.
+- Confirms the broader guarantee: pruned nodes go through
+  `WorkflowMap.delete_node()`, which removes them from the same `_nodes` dict
+  that gets serialized on save — a pruned node cannot reappear in a save file
+  or in any validator output once `prune_branch_tombstone()` correctly
+  identifies it for pruning.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest -q` (302 passed)
+  - End-to-end repro matching the reported scenario (branch → kept path into
+    merge_node path_a, pruned path → Merge Beacon → merge_node path_b → output):
+    validator returns `{"success": true, "errors": [], "warnings": []}` after
+    pruning, with only 3 nodes left in the workflow.
+
 ## 2026-06-16 — Merge Config No Longer Offers Downstream Branches to Close
 
 - `merge_input_options()` listed every `branch_end_node` in the workflow as a
