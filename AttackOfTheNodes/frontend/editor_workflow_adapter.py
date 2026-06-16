@@ -413,6 +413,88 @@ class EditorWorkflowAdapter:
         self._deleted_nodes.pop(node_id, None)
         return self.workflow_map.delete_node(node_id)
 
+    def prune_branch_tombstone(self, node_id: str, kept_port: str) -> int:
+        """Keep one branch path when permanently deleting a branch-node tombstone.
+
+        Walks every output port other than ``kept_port`` downstream (BFS) and
+        deletes all reachable non-structural nodes. Then wires the branch node's
+        upstream input directly to the head of the kept branch and removes the
+        tombstone itself.
+
+        Structural stop-types (merge_node, branch_end_node, start_node) are
+        never pruned — they belong to outer structure.
+
+        Returns the number of downstream nodes pruned, or -1 on precondition
+        failure (not a placeholder, not a branch_node tombstone).
+        """
+        if not self.is_placeholder(node_id):
+            return -1
+        metadata = self.placeholder_metadata(node_id)
+        if metadata.get("original_type") != "branch_node":
+            return -1
+
+        original_outputs: List[Dict[str, Any]] = metadata.get(
+            "original_output_connections"
+        ) or []
+        original_inputs: List[Dict[str, Any]] = metadata.get(
+            "original_input_connections"
+        ) or []
+
+        _STOP_TYPES = {"start_node", "merge_node", "branch_end_node"}
+
+        # Resolve kept branch head.
+        kept_target_id: Optional[str] = None
+        kept_target_port: str = "input"
+        for conn in original_outputs:
+            if conn.get("source_port") == kept_port:
+                candidate = str(conn.get("target_node_id") or "")
+                if candidate and self.workflow_map.get_node_data(candidate) is not None:
+                    kept_target_id = candidate
+                    kept_target_port = str(conn.get("target_port") or "input")
+                break
+
+        # BFS to collect nodes to prune from non-kept ports.
+        to_prune: set = set()
+        for conn in original_outputs:
+            if conn.get("source_port") == kept_port:
+                continue
+            start_id = str(conn.get("target_node_id") or "")
+            if not start_id or self.workflow_map.get_node_data(start_id) is None:
+                continue
+            queue = [start_id]
+            while queue:
+                current = queue.pop(0)
+                if current in to_prune or current == kept_target_id:
+                    continue
+                current_node = self.workflow_map.get_node_data(current)
+                if current_node is None:
+                    continue
+                if current_node.get("type", "") in _STOP_TYPES:
+                    continue
+                to_prune.add(current)
+                for out_conn in current_node.get("connections", {}).get("outputs", []):
+                    next_id = str(out_conn.get("target_node_id") or "")
+                    if next_id and next_id not in to_prune:
+                        queue.append(next_id)
+
+        # Reconnect upstream to the kept branch head.
+        if kept_target_id:
+            for conn in original_inputs:
+                upstream_id = str(conn.get("source_node_id") or "")
+                upstream_port = str(conn.get("source_port") or "output")
+                if upstream_id and self.workflow_map.get_node_data(upstream_id) is not None:
+                    self.workflow_map.connect(
+                        upstream_id, upstream_port,
+                        kept_target_id, kept_target_port,
+                    )
+
+        # Prune downstream nodes then remove the tombstone.
+        for prune_id in to_prune:
+            self.workflow_map.delete_node(prune_id)
+
+        self.remove_placeholder(node_id)
+        return len(to_prune)
+
     def replace_placeholder(self, node_id: str, new_type: str) -> Dict[str, Any]:
         node = self.workflow_map.get_node_data(node_id)
         if node is None or not self.is_placeholder(node_id):
