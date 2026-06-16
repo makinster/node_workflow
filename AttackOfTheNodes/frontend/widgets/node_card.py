@@ -172,13 +172,13 @@ class NodeCard(Static):
             or ""
         ).strip()
         if alias or node_type:
-            label = "Deleted node: "
+            label = "Deleted: "
             if alias and node_type:
                 label = f"{label}{alias} ({node_type})"
             else:
                 label = f"{label}{alias or node_type}"
         else:
-            label = "Deleted node"
+            label = "Deleted"
         controls = (
             "x delete | z undo | e new node"
             if overlay.get("can_restore")
