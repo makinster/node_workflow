@@ -24,6 +24,7 @@ from frontend.screens.node_selector import NodeSelectorScreen
 from frontend import notifications
 from frontend.editor_workflow_adapter import EditorWorkflowAdapter
 from frontend.node_io_display import (
+    metadata_for_type,
     memory_registry,
     node_display_name,
     node_label,
@@ -1322,10 +1323,7 @@ class EditorScreen(Screen):
         return f"{seconds:.2f}s"
 
     def _metadata_for_type(self, node_type: str) -> Optional[Dict[str, Any]]:
-        for item in self.factory.get_node_types_metadata():
-            if item["type"] == node_type:
-                return item
-        return None
+        return metadata_for_type(self.factory, node_type)
 
     def _metadata_family(self, metadata: Optional[Dict[str, Any]]) -> str:
         if not metadata:
@@ -1356,43 +1354,6 @@ class EditorScreen(Screen):
 
     def _node_label(self, node_id: str, node: Dict[str, Any]) -> str:
         return node_label(node_id, node)
-
-    def _format_input_ports(self, node_id: str, metadata: Dict[str, Any]) -> str:
-        ports = metadata.get("input_ports") or []
-        if not ports:
-            return "-"
-        pieces = []
-        node = self.workflow_map.get_node_data(node_id) or {}
-        inputs = node.get("connections", {}).get("inputs", [])
-        for port in ports:
-            source_text = "-"
-            for conn in inputs:
-                if conn.get("target_port") == port:
-                    source_id = conn.get("source_node_id", "?")
-                    source_node = self.workflow_map.get_node_data(source_id) or {}
-                    source_text = self._node_label(source_id, source_node)
-                    break
-            pieces.append(f"{port} <- {source_text}")
-        return "; ".join(pieces)
-
-    def _format_output_ports(self, node: Dict[str, Any], metadata: Dict[str, Any]) -> str:
-        ports = self._output_ports_for_node(node, metadata)
-        if not ports:
-            return "-"
-        pieces = []
-        outputs = node.get("connections", {}).get("outputs", [])
-        port_labels = self._branch_port_labels(node)
-        for port in ports:
-            target_text = "-"
-            for conn in outputs:
-                if conn.get("source_port", "default") == port:
-                    target_id = conn.get("target_node_id", "?")
-                    target_node = self.workflow_map.get_node_data(target_id) or {}
-                    target_text = self._node_label(target_id, target_node)
-                    break
-            label = port_labels.get(port, port)
-            pieces.append(f"{label} -> {target_text}")
-        return "; ".join(pieces)
 
     def _branch_port_labels(self, node: Dict[str, Any]) -> Dict[str, str]:
         config = node.get("config") or {}

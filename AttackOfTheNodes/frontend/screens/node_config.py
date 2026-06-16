@@ -12,6 +12,9 @@ from textual.screen import ModalScreen
 from textual.widgets import Button, Checkbox, Input, Label, Select, SelectionList, Static, TabbedContent, TabPane, TextArea
 
 from frontend.node_io_display import (
+    metadata_for_type,
+    normalize_membank_inputs,
+    normalize_membank_outputs,
     normalize_transient_outputs,
     output_display_description,
     output_display_name,
@@ -70,46 +73,6 @@ def _branch_count_from_config(config: Dict[str, Any]) -> int:
     except (TypeError, ValueError):
         count = MIN_BRANCH_COUNT
     return max(MIN_BRANCH_COUNT, min(MAX_BRANCH_COUNT, count))
-
-
-def normalize_membank_outputs(config: Dict[str, Any]) -> list[Dict[str, str]]:
-    """Return valid membank output declarations from node config."""
-    outputs = config.get("membank_outputs") or []
-    if not isinstance(outputs, list):
-        return []
-    normalized: list[Dict[str, str]] = []
-    for entry in outputs:
-        if not isinstance(entry, dict):
-            continue
-        output_id = str(entry.get("output") or entry.get("id") or "").strip()
-        if not output_id:
-            continue
-        normalized.append(
-            {
-                "id": output_id,
-                "output": output_id,
-                "description": str(entry.get("description") or "").strip(),
-            }
-        )
-    return normalized
-
-
-def normalize_membank_inputs(config: Dict[str, Any]) -> list[str]:
-    """Return membank input ids from node config."""
-    inputs = config.get("membank_inputs") or []
-    if not isinstance(inputs, list):
-        return []
-    normalized: list[str] = []
-    for entry in inputs:
-        value = ""
-        if isinstance(entry, str):
-            value = entry
-        elif isinstance(entry, dict):
-            value = str(entry.get("source_id") or entry.get("id") or "")
-        value = value.strip()
-        if value and value not in normalized:
-            normalized.append(value)
-    return normalized
 
 
 def build_membank_registry(workflow_map) -> Dict[str, Dict[str, Any]]:
@@ -1333,10 +1296,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         return True
 
     def _metadata_for_type(self, node_type: str) -> Optional[Dict[str, Any]]:
-        for item in self.factory.get_node_types_metadata():
-            if item["type"] == node_type:
-                return item
-        return None
+        return metadata_for_type(self.factory, node_type)
 
     def _schema_with_generated_branch_labels(
         self,
