@@ -1528,16 +1528,33 @@ class EditorScreen(Screen):
             )
 
             if self.workflow_adapter.is_placeholder(current_node_id):
-                break
+                actual_node = self.workflow_map.get_node_data(current_node_id) or {}
+                if self.workflow_adapter.is_materialized_placeholder(actual_node):
+                    ph_meta = self.workflow_adapter.placeholder_metadata(current_node_id)
+                    orig_outputs = ph_meta.get("original_output_connections") or []
+                    next_node_id = None
+                    for conn in orig_outputs:
+                        candidate = str(conn.get("target_node_id") or "")
+                        if candidate and self.workflow_map.get_node_data(candidate) is not None:
+                            next_node_id = candidate
+                            break
+                    current_node_id = next_node_id
+                    depth += 1
+                    current_branch_port = None
+                    current_branch_color_key = None
+                    continue
+                # Soft-deleted: node data and connections are intact in workflow_map.
+                # Fall through to normal port traversal so downstream nodes stay visible.
 
             if node.get("type") == "branch_end_node":
-                rows.append(
-                    self._merge_beacon_select_row(
-                        current_node_id,
-                        depth,
-                        current_branch_color_key,
+                if not self.workflow_adapter.is_placeholder(current_node_id):
+                    rows.append(
+                        self._merge_beacon_select_row(
+                            current_node_id,
+                            depth,
+                            current_branch_color_key,
+                        )
                     )
-                )
                 break
 
             output_ports = self._output_ports_for_node(node, metadata)
