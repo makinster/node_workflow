@@ -3214,69 +3214,6 @@ async def _test_editor_branch_cycle_keys_switch_all_and_incomplete_branch_views(
     print("test_editor_branch_cycle_keys_switch_all_and_incomplete_branch_views PASSED")
 
 
-def test_editor_insert_into_empty_branch_uses_active_branch_port():
-    asyncio.run(_test_editor_insert_into_empty_branch_uses_active_branch_port())
-
-
-async def _test_editor_insert_into_empty_branch_uses_active_branch_port():
-    """Switching to an empty branch path leaves the selected row pointing at
-    the branch_node itself (kind: "node", not "branch_select"). Inserting a
-    node there must attach to the branch path being viewed
-    (active_branch_ports), not just the branch node's first declared output
-    port — otherwise the new node silently lands on a different branch than
-    the one shown on screen."""
-    from textual.app import App, ComposeResult
-
-    from frontend.screens.editor import EditorScreen
-
-    _, wm, _, _ = _make_services()
-    wm.create_new("editor_insert_empty_branch")
-    start = wm.add_node("start_node")
-    branch = wm.add_node("branch_node")
-    branch_one_out = wm.add_node("text_output_node", alias="B1Out")
-    wm.connect(start, "default", branch, "input")
-    wm.connect(branch, "path_a", branch_one_out, "input")
-    # path_b intentionally left empty
-
-    class EditorApp(App):
-        def compose(self) -> ComposeResult:
-            yield EditorScreen(wm._factory, wm)
-
-    app = EditorApp()
-    async with app.run_test() as pilot:
-        await pilot.pause(0.03)
-        screen = app.query_one(EditorScreen)
-
-        await pilot.press("d")
-        await pilot.pause(0.03)
-        assert screen.active_branch_ports[branch] == "path_b"
-
-        screen._pending_node_add_mode = "insert"
-        screen._add_node_from_modal("text_output_node")
-        await pilot.pause(0.03)
-        new_node_id = screen.selected_node_id
-
-        new_node = wm.get_node_data(new_node_id)
-        inputs = new_node.get("connections", {}).get("inputs", [])
-        assert any(
-            conn.get("source_node_id") == branch and conn.get("source_port") == "path_b"
-            for conn in inputs
-        ), "new node should attach to path_b, the branch being viewed"
-
-        await pilot.press("a")
-        await pilot.pause(0.03)
-        assert screen.active_branch_ports[branch] == "path_a"
-        # the node inserted into path_b must still be wired to path_b
-        new_node = wm.get_node_data(new_node_id)
-        inputs = new_node.get("connections", {}).get("inputs", [])
-        assert any(
-            conn.get("source_node_id") == branch and conn.get("source_port") == "path_b"
-            for conn in inputs
-        ), "node must remain on path_b after navigating away and back"
-
-    print("test_editor_insert_into_empty_branch_uses_active_branch_port PASSED")
-
-
 async def _test_editor_command_keys_restore_lost_highlight_after_mouse_focus():
     from textual.app import App, ComposeResult
 

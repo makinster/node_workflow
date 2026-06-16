@@ -43,10 +43,7 @@ Merge behavior is editor-assisted and runtime-coordinated:
 - Merge Beacon nodes mark branch completion points. They show red while open and
   green when their `default` output connects to a Merge node.
 - Merge config chooses branches to close and one selected branch output to carry
-  forward. `merge_input_options()` (`frontend/screens/node_config.py`) only
-  offers a Merge Beacon as a candidate when its owning branch node is *not* in
-  the merge node's forward-reachable descendant set — a branch that only
-  starts downstream of the merge being configured cannot close on it.
+  forward.
 - The Textual editor adapter repairs legacy `Merge.input` connections into the
   correct branch path input (`path_a` through `path_e`) when refreshing older
   saves.
