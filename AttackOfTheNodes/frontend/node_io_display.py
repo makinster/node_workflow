@@ -4,6 +4,12 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
+from frontend.node_types import (
+    BRANCH_END_NODE_TYPE,
+    BRANCH_NODE_TYPE,
+    TOMBSTONE_NODE_TYPE,
+)
+
 
 def normalize_membank_outputs(config: Dict[str, Any]) -> list[Dict[str, str]]:
     """Return valid membank output declarations from node config."""
@@ -61,12 +67,12 @@ def node_label(node_id: str, node: Dict[str, Any]) -> str:
 
 def node_display_name(node_id: str, node: Dict[str, Any]) -> str:
     """Return the friendly node name without generated ids."""
-    if node.get("type") == "branch_end_node":
+    if node.get("type") == BRANCH_END_NODE_TYPE:
         alias = str(node.get("alias") or "").strip()
-        if not alias or alias in {"Branch End", "branch_end_node"}:
+        if not alias or alias in {"Branch End", BRANCH_END_NODE_TYPE}:
             return "Merge Beacon"
         return alias
-    if node.get("type") == "tombstone_node":
+    if node.get("type") == TOMBSTONE_NODE_TYPE:
         config = node.get("config") or {}
         original = (
             config.get("original_alias")
@@ -251,7 +257,7 @@ def _trace_transient_producer(
     while current_id and (current_id, current_port) not in visited:
         visited.add((current_id, current_port))
         node = workflow_map.get_node_data(current_id) or {}
-        if node.get("type") == "branch_node" and current_port != "input":
+        if node.get("type") == BRANCH_NODE_TYPE and current_port != "input":
             branch_result = _trace_branch_payload_producer(
                 workflow_map,
                 factory,

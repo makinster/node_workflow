@@ -34,6 +34,14 @@ from frontend.node_io_display import (
     output_display_name,
     trace_transient_producer,
 )
+from frontend.node_types import (
+    BRANCH_END_NODE_TYPE,
+    BRANCH_NODE_TYPE,
+    END_NODE_TYPE,
+    MERGE_NODE_TYPE,
+    START_NODE_TYPE,
+    TEXT_OUTPUT_NODE_TYPE,
+)
 from frontend.widgets.node_card import (
     BranchSelectCard,
     MergeBeaconSelectCard,
@@ -248,7 +256,7 @@ class EditorScreen(Screen):
         if not self.selected_node_id:
             return False
         node = self.workflow_map.get_node_data(self.selected_node_id) or {}
-        return node.get("type") == "branch_end_node"
+        return node.get("type") == BRANCH_END_NODE_TYPE
 
     def action_cycle_branch_prev(self) -> None:
         self._restore_node_list_focus()
@@ -369,7 +377,7 @@ class EditorScreen(Screen):
         if node is None:
             notifications.no_node_selected(self.app)
             return
-        if node.get("type") == "start_node":
+        if node.get("type") == START_NODE_TYPE:
             notifications.cannot_delete_start_node(self.app)
             return
 
@@ -380,7 +388,7 @@ class EditorScreen(Screen):
             return
         node = self.workflow_map.get_node_data(self.selected_node_id)
         if node and self.workflow_adapter.is_placeholder(self.selected_node_id):
-            if node.get("type") == "branch_end_node":
+            if node.get("type") == BRANCH_END_NODE_TYPE:
                 self._prune_merge_config_for_beacon(self.selected_node_id)
                 removed = self.workflow_adapter.remove_placeholder(self.selected_node_id)
                 if removed:
@@ -390,7 +398,7 @@ class EditorScreen(Screen):
                     notifications.tombstone_removed(self.app)
                 return
             metadata = self.workflow_adapter.placeholder_metadata(self.selected_node_id)
-            if metadata.get("original_type") == "branch_node" and metadata.get(
+            if metadata.get("original_type") == BRANCH_NODE_TYPE and metadata.get(
                 "original_output_connections"
             ):
                 self._open_branch_keep_selector(self.selected_node_id, metadata)
@@ -458,7 +466,7 @@ class EditorScreen(Screen):
         )
         if not result.get("replaced"):
             return
-        if result.get("original_type") == "branch_end_node" and node_type != "branch_end_node":
+        if result.get("original_type") == BRANCH_END_NODE_TYPE and node_type != BRANCH_END_NODE_TYPE:
             self._prune_merge_config_for_beacon(self.selected_node_id)
         if not result.get("restored_original"):
             self._clear_timing_for_node(self.selected_node_id)
@@ -471,7 +479,7 @@ class EditorScreen(Screen):
         if not stale_keys:
             return
         for merge_id, merge_node in self.workflow_map.get_all_node_data().items():
-            if merge_node.get("type") != "merge_node":
+            if merge_node.get("type") != MERGE_NODE_TYPE:
                 continue
             config = dict(merge_node.get("config") or {})
             branches = [
@@ -499,7 +507,7 @@ class EditorScreen(Screen):
         for conn in list(beacon_node.get("connections", {}).get("outputs", [])):
             target_id = str(conn.get("target_node_id") or "")
             target_node = self.workflow_map.get_node_data(target_id) or {}
-            if target_node.get("type") != "merge_node":
+            if target_node.get("type") != MERGE_NODE_TYPE:
                 continue
             self.workflow_map.disconnect(
                 beacon_node_id,
@@ -560,7 +568,7 @@ class EditorScreen(Screen):
         self.workflow_map.update_node_alias(self.selected_node_id, alias)
         self.workflow_map.update_node_config(self.selected_node_id, config)
         node = self.workflow_map.get_node_data(self.selected_node_id) or {}
-        if node.get("type") == "merge_node":
+        if node.get("type") == MERGE_NODE_TYPE:
             self._sync_merge_branch_end_connections(
                 self.selected_node_id,
                 config,
@@ -595,7 +603,7 @@ class EditorScreen(Screen):
             option_value = f"{option['branch_id']}:{option['branch_port']}"
             source_id = option.get("branch_end_id", "")
             source_node = self.workflow_map.get_node_data(source_id) if source_id else None
-            if not source_node or source_node.get("type") != "branch_end_node":
+            if not source_node or source_node.get("type") != BRANCH_END_NODE_TYPE:
                 continue
             source_port = option.get("source_port") or "default"
             target_port = option.get("port") or "path_a"
@@ -622,7 +630,7 @@ class EditorScreen(Screen):
 
     def _sync_all_merge_branch_end_connections(self) -> None:
         for node_id, node in self.workflow_map.get_all_node_data().items():
-            if node.get("type") != "merge_node":
+            if node.get("type") != MERGE_NODE_TYPE:
                 continue
             self._repair_merge_input_ports(node_id)
             self._sync_merge_branch_end_connections(
@@ -728,7 +736,7 @@ class EditorScreen(Screen):
         input_ports: list[str],
     ) -> str:
         target_node = self.workflow_map.get_node_data(target_node_id) or {}
-        if target_node.get("type") == "merge_node":
+        if target_node.get("type") == MERGE_NODE_TYPE:
             branch_port = self._upstream_branch_port(source_node_id, source_port)
             if branch_port in input_ports:
                 return branch_port
@@ -897,7 +905,7 @@ class EditorScreen(Screen):
             node_type = node.get("type")
             if self._is_branch_terminal_node(node_type):
                 closed = (
-                    node_type != "branch_end_node"
+                    node_type != BRANCH_END_NODE_TYPE
                     or self._branch_end_connected_to_merge(node)
                 )
                 break
@@ -910,10 +918,10 @@ class EditorScreen(Screen):
 
     def _is_branch_terminal_node(self, node_type: str | None) -> bool:
         return node_type in {
-            "branch_end_node",
-            "end_node",
-            "text_output_node",
-            "merge_node",
+            BRANCH_END_NODE_TYPE,
+            END_NODE_TYPE,
+            TEXT_OUTPUT_NODE_TYPE,
+            MERGE_NODE_TYPE,
         }
 
     def _current_branch_candidate_index(self, candidates: list[Dict[str, Any]]) -> int:
@@ -957,7 +965,7 @@ class EditorScreen(Screen):
             node = nodes.get(current_node_id)
             if node is None:
                 return False
-            if node.get("type") == "branch_end_node":
+            if node.get("type") == BRANCH_END_NODE_TYPE:
                 return False
             metadata = self._metadata_for_type(node.get("type", ""))
             ports = self._output_ports_for_node(node, metadata)
@@ -1057,7 +1065,7 @@ class EditorScreen(Screen):
         node = self.workflow_map.get_node_data(current_node_id)
         if node is None:
             return None
-        if node.get("type") == "branch_end_node":
+        if node.get("type") == BRANCH_END_NODE_TYPE:
             return None
         metadata = self._metadata_for_type(node.get("type", ""))
         output_ports = self._output_ports_for_node(node, metadata)
@@ -1166,7 +1174,7 @@ class EditorScreen(Screen):
             f"Step: {self._selected_depth_text()}",
             f"Breakpoint: {'on' if node.get('breakpoint') else 'off'}",
         ]
-        if node.get("type") == "branch_end_node":
+        if node.get("type") == BRANCH_END_NODE_TYPE:
             lines.extend(self._branch_end_merge_detail_lines(node_id, node))
         if metadata:
             description = str(metadata.get("description", "")).strip()
@@ -1265,7 +1273,7 @@ class EditorScreen(Screen):
         for conn in node.get("connections", {}).get("outputs", []):
             target_id = str(conn.get("target_node_id") or "")
             target_node = self.workflow_map.get_node_data(target_id) or {}
-            if target_node.get("type") != "merge_node":
+            if target_node.get("type") != MERGE_NODE_TYPE:
                 continue
             target_port = str(conn.get("target_port") or "default")
             branch_label, branch_id = upstream_branch_info(
@@ -1343,7 +1351,7 @@ class EditorScreen(Screen):
     ) -> list[str]:
         metadata = metadata or self._metadata_for_type(node.get("type", ""))
         ports = [str(port) for port in (metadata.get("output_ports") if metadata else []) or []]
-        if node.get("type") == "branch_node":
+        if node.get("type") == BRANCH_NODE_TYPE:
             config = node.get("config") or {}
             try:
                 count = int(config.get("branch_count", 2))
@@ -1499,7 +1507,7 @@ class EditorScreen(Screen):
                 # Soft-deleted: node data and connections are intact in workflow_map.
                 # Fall through to normal port traversal so downstream nodes stay visible.
 
-            if node.get("type") == "branch_end_node" and not self.workflow_adapter.is_placeholder(
+            if node.get("type") == BRANCH_END_NODE_TYPE and not self.workflow_adapter.is_placeholder(
                 current_node_id
             ):
                 connected_merge_id = self._merge_beacon_connected_merge_id(current_node_id)
@@ -1576,7 +1584,7 @@ class EditorScreen(Screen):
         if len(nodes) != 1:
             return None
         node_id, node = next(iter(nodes.items()))
-        if node.get("type") != "start_node":
+        if node.get("type") != START_NODE_TYPE:
             return None
         outputs = node.get("connections", {}).get("outputs", [])
         return None if outputs else node_id
@@ -1597,7 +1605,7 @@ class EditorScreen(Screen):
         for conn in node.get("connections", {}).get("outputs", []):
             target_id = conn.get("target_node_id")
             target_node = self.workflow_map.get_node_data(target_id) if target_id else None
-            if target_node and target_node.get("type") == "merge_node":
+            if target_node and target_node.get("type") == MERGE_NODE_TYPE:
                 return True
         return False
 
@@ -1606,7 +1614,7 @@ class EditorScreen(Screen):
         for conn in beacon.get("connections", {}).get("outputs", []):
             target_id = str(conn.get("target_node_id") or "")
             target_node = self.workflow_map.get_node_data(target_id) or {}
-            if target_node.get("type") == "merge_node":
+            if target_node.get("type") == MERGE_NODE_TYPE:
                 return target_id
         return ""
 
@@ -1674,7 +1682,7 @@ class EditorScreen(Screen):
         options: list[Dict[str, str]] = []
         nodes = self.workflow_map.get_all_node_data()
         for merge_node_id, merge_node in nodes.items():
-            if merge_node.get("type") != "merge_node":
+            if merge_node.get("type") != MERGE_NODE_TYPE:
                 continue
             if not self._branch_choices_to_node(merge_node_id):
                 continue
@@ -1758,7 +1766,7 @@ class EditorScreen(Screen):
                 "icon_name": metadata.get("icon_name"),
                 "color_hint": metadata.get("color_hint"),
             }
-        if node.get("type") == "branch_end_node":
+        if node.get("type") == BRANCH_END_NODE_TYPE:
             display_node["_branch_end_connected_to_merge"] = (
                 self._branch_end_connected_to_merge(node)
             )
@@ -1844,7 +1852,7 @@ class EditorScreen(Screen):
             return {"node_id": branch_node_id, "port": active_port}
         if self.selected_node_id:
             node = self.workflow_map.get_node_data(self.selected_node_id)
-            if node and node.get("type") == "branch_end_node":
+            if node and node.get("type") == BRANCH_END_NODE_TYPE:
                 return None
             metadata = self._metadata_for_type(node.get("type", "")) if node else None
             ports = self._output_ports_for_node(node, metadata) if node else []
@@ -1900,7 +1908,7 @@ class EditorScreen(Screen):
             node = nodes.get(current_node_id)
             if node is None:
                 break
-            if node.get("type") == "branch_end_node":
+            if node.get("type") == BRANCH_END_NODE_TYPE:
                 break
             metadata = self._metadata_for_type(node.get("type", ""))
             ports = self._output_ports_for_node(node, metadata)

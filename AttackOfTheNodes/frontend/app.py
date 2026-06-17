@@ -26,6 +26,7 @@ from backend.events import (
 from . import file_io
 from . import notifications
 from .editor_workflow_adapter import EditorWorkflowAdapter
+from .node_types import START_NODE_TYPE
 from .widgets.cursor_state import CursorState
 from .screens.editor import EditorScreen
 from .screens.confirm import ConfirmScreen
@@ -286,7 +287,7 @@ class AttackOfTheNodesApp(TextualApp):
             if last_id and self.save_manager.load_workflow(last_id):
                 return
         self.workflow_map.create_new("Untitled Workflow")
-        self.workflow_map.add_node("start_node", alias="Start")
+        self.workflow_map.add_node(START_NODE_TYPE, alias="Start")
 
     def action_save_workflow(self) -> None:
         """Save the active workflow."""
@@ -346,7 +347,7 @@ class AttackOfTheNodesApp(TextualApp):
         self.stop_active_workflow()
         self._editor_deleted_nodes = {}
         self.workflow_map.create_new("Untitled Workflow")
-        self.workflow_map.add_node("start_node", alias="Start")
+        self.workflow_map.add_node(START_NODE_TYPE, alias="Start")
         self._on_backend_event()
         notifications.workflow_created(self)
 
@@ -467,7 +468,7 @@ class AttackOfTheNodesApp(TextualApp):
         if workflow_id == self.workflow_map.workflow_id:
             self._editor_deleted_nodes = {}
             self.workflow_map.create_new("Untitled Workflow")
-            self.workflow_map.add_node("start_node", alias="Start")
+            self.workflow_map.add_node(START_NODE_TYPE, alias="Start")
         deleted = self.save_manager.delete_workflow(workflow_id)
         self.show_editor_screen()
         notifications.workflow_deleted(self, deleted)
