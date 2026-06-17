@@ -1769,6 +1769,46 @@ def test_form_generator_groups_schema_for_tabs():
     print("test_form_generator_groups_schema_for_tabs PASSED")
 
 
+def test_form_generator_titleizes_field_name_fallback_labels():
+    asyncio.run(_test_form_generator_titleizes_field_name_fallback_labels())
+
+
+async def _test_form_generator_titleizes_field_name_fallback_labels():
+    from textual.app import App, ComposeResult
+    from textual.widgets import Label
+
+    from frontend.widgets.form_generator import build_form, humanize_field_name
+
+    # Pure helper: snake_case -> sentence case, explicit label untouched.
+    assert humanize_field_name("request_user_input") == "Request user input"
+    assert humanize_field_name("template") == "Template"
+
+    schema = {
+        # No explicit label: falls back to a titleized field name.
+        "request_user_input": {"type": "boolean"},
+        # Explicit label is preserved verbatim.
+        "template": {"type": "string", "label": "Output text"},
+    }
+
+    class FormApp(App):
+        def compose(self) -> ComposeResult:
+            form, _ = build_form(schema, {})
+            yield form
+
+    app = FormApp()
+    async with app.run_test():
+        labels = {
+            str(label.content)
+            for label in app.query(Label)
+            if "form-label" in label.classes
+        }
+        assert "Request user input" in labels
+        assert "request_user_input" not in labels
+        assert "Output text" in labels
+
+    print("test_form_generator_titleizes_field_name_fallback_labels PASSED")
+
+
 def test_form_generator_mounts_tabbed_and_single_group_forms():
     asyncio.run(_test_form_generator_mounts_tabbed_and_single_group_forms())
 
@@ -3914,6 +3954,14 @@ async def _test_help_screen_is_contextual_and_focuses_cancel():
         assert "Editor" in help_text
         assert "Move through nodes" in help_text
         assert "Execution" not in help_text
+        # Complete editor binding copy (Phase 17 UI overhaul).
+        assert "Validate workflow" in help_text
+        assert "Check workflow" not in help_text
+        assert "X or Backspace" in help_text
+        assert "Ctrl+S" in help_text
+        assert "Ctrl+R" in help_text
+        assert "Ctrl+Q" in help_text
+        assert "Help" in help_text
         assert len(buttons) == 1
         assert buttons[0].label == "Cancel"
         assert app.focused is buttons[0]
@@ -4240,11 +4288,11 @@ async def _test_node_selector_layout_is_compact_and_checkboxes_fit():
     print("test_node_selector_layout_is_compact_and_checkboxes_fit PASSED")
 
 
-def test_node_selector_rows_are_two_lines_with_indented_description():
-    asyncio.run(_test_node_selector_rows_are_two_lines_with_indented_description())
+def test_node_selector_rows_are_one_line_with_detail():
+    asyncio.run(_test_node_selector_rows_are_one_line_with_detail())
 
 
-async def _test_node_selector_rows_are_two_lines_with_indented_description():
+async def _test_node_selector_rows_are_one_line_with_detail():
     from textual.app import App, ComposeResult
     from textual.widgets import ListItem, ListView, Static
 
@@ -4263,30 +4311,41 @@ async def _test_node_selector_rows_are_two_lines_with_indented_description():
         list_view = app.query_one("#node-type-list", ListView)
         assert screen._visible_nodes, "Expected nodes in the default family"
 
-        # Use a node that carries subcategory tags so the parenthesized
-        # subcategories are exercised.
-        node = next(
-            (n for n in screen._visible_nodes if n.get("tags")),
-            screen._visible_nodes[0],
+        # Pick the first node entry (descriptions no longer live on the rows).
+        node_entry_index = next(
+            index
+            for index, entry in enumerate(screen._entries)
+            if entry["kind"] == "node"
         )
-        lines = screen._node_row_text(node).split("\n")
-        assert len(lines) == 2, f"Expected a two-line row, got {lines!r}"
-        # First line: [ display_name ]  Second line: - description
-        assert lines[0] == f"\\[ {node['display_name']} ]", (
-            f"Expected '\\[ {node['display_name']} ]', got {lines[0]!r}"
+        node = screen._entries[node_entry_index]["node"]
+        row = screen._node_row_text(node)
+        # One-line scan row: "[ Display Name ]" with no embedded description.
+        assert "\n" not in row, f"Expected a one-line row, got {row!r}"
+        assert row == f"\\[ {node['display_name']} ]", (
+            f"Expected '\\[ {node['display_name']} ]', got {row!r}"
         )
-        assert lines[1].startswith("- "), (
-            f"Expected '- ...' description, got {lines[1]!r}"
-        )
-        expected_desc = (str(node.get("description") or "").strip() or "No description")
-        assert expected_desc[:20] in lines[1]
-        # Family must not appear; subcategory tags are not shown in rows.
+        description = str(node.get("description") or "").strip()
+        if description:
+            assert description not in row, (
+                f"Description should not appear in the row {row!r}"
+            )
+        # Family must not appear in rows.
         family = screen._node_family(node)
-        assert family and family not in lines[0], (
-            f"Family {family!r} should not appear in row {lines[0]!r}"
+        assert family and family not in row, (
+            f"Family {family!r} should not appear in row {row!r}"
         )
 
-        # Each node maps to one list row carrying the two-line static.
+        # Highlighting the row drives the single fixed detail line below it.
+        list_view.index = node_entry_index
+        await pilot.pause(0.05)
+        detail = app.query_one("#node-detail", Static)
+        detail_text = str(detail.content)
+        expected_detail = description or "No description"
+        assert detail_text.startswith(expected_detail[:20]), (
+            f"Detail line {detail_text!r} should describe the highlighted node"
+        )
+
+        # Each node still maps to one list row carrying the scan-row static.
         node_items = [
             item
             for item in list_view.children
@@ -4294,7 +4353,49 @@ async def _test_node_selector_rows_are_two_lines_with_indented_description():
         ]
         assert len(node_items) == len(screen._visible_nodes)
 
-    print("test_node_selector_rows_are_two_lines_with_indented_description PASSED")
+    print("test_node_selector_rows_are_one_line_with_detail PASSED")
+
+
+def test_node_selector_io_toggle_keyboard_contract():
+    asyncio.run(_test_node_selector_io_toggle_keyboard_contract())
+
+
+async def _test_node_selector_io_toggle_keyboard_contract():
+    from textual.app import App, ComposeResult
+    from textual.widgets import Button
+
+    from frontend.screens.node_selector import NodeSelectorScreen
+
+    _, wm, _, _ = _make_services()
+
+    class SelApp(App):
+        def compose(self) -> ComposeResult:
+            yield NodeSelectorScreen(wm._factory)
+
+    app = SelApp()
+    async with app.run_test(size=(90, 30)) as pilot:
+        await pilot.pause(0.05)
+        screen = app.query_one(NodeSelectorScreen)
+        input_button = app.query_one("#io-side-input", Button)
+
+        # W/S navigates from the filter onto the segmented toggle.
+        await pilot.press("s")
+        await pilot.pause(0.03)
+        assert app.focused is input_button
+
+        # E toggles the toggle to the Output side (no Switch involved).
+        assert screen._io_output_side is False
+        await pilot.press("e")
+        await pilot.pause(0.03)
+        assert screen._io_output_side is True
+        assert app.focused is app.query_one("#io-side-output", Button)
+
+        # A/D still switch family tabs even while the toggle holds focus.
+        await pilot.press("d")
+        await pilot.pause(0.03)
+        assert screen._active_tab == "Flow Control"
+
+    print("test_node_selector_io_toggle_keyboard_contract PASSED")
 
 
 def test_node_selector_down_from_last_checkbox_highlights_first_node():
@@ -4818,7 +4919,7 @@ def test_editor_quick_view_lists_transient_and_memory_io():
     assert "Memory" in text
     assert "session_id: Session id" in text
     assert "Outputs:" in text
-    assert "Output: No output description configured." in text
+    assert "Output: not configured yet" in text
     assert "final_text: Final text" in text
     assert "Next:" not in text
     print("test_editor_quick_view_lists_transient_and_memory_io PASSED")
@@ -4842,8 +4943,8 @@ def test_editor_quick_view_shows_branch_output_names_and_empty_memory():
     assert "Transient Source: none" in text
     assert "    none" in text
     assert "Outputs:" in text
-    assert "Approve: No output description configured." in text
-    assert "Reject: No output description configured." in text
+    assert "Approve: not configured yet" in text
+    assert "Reject: not configured yet" in text
     print("test_editor_quick_view_shows_branch_output_names_and_empty_memory PASSED")
 
 
@@ -5116,7 +5217,7 @@ def test_node_selector_uses_family_tabs_and_subcategory_filters():
 
 async def _test_node_selector_uses_family_tabs_and_subcategory_filters():
     from textual.app import App, ComposeResult
-    from textual.widgets import Checkbox, ListView, Switch
+    from textual.widgets import Button, Checkbox, ListView
 
     from frontend.screens.node_selector import NodeSelectorScreen
     from frontend.widgets.command_input import CommandInput
@@ -5150,7 +5251,8 @@ async def _test_node_selector_uses_family_tabs_and_subcategory_filters():
         screen = app.query_one(NodeSelectorScreen)
         node_list = app.query_one("#node-type-list", ListView)
         filter_input = app.query_one("#node-filter", CommandInput)
-        io_switch = app.query_one("#io-direction-switch", Switch)
+        io_input_button = app.query_one("#io-side-input", Button)
+        io_output_button = app.query_one("#io-side-output", Button)
         ai_filter = app.query_one("#node-subcategory-ai", Checkbox)
 
         # Hidden node types never reach the selector.
@@ -5163,7 +5265,10 @@ async def _test_node_selector_uses_family_tabs_and_subcategory_filters():
         # (not edit mode) so the user can type immediately or navigate down.
         assert screen._active_tab == "I/O"
         assert screen._active_family() == "Inputs"
-        assert io_switch.value is False
+        # Segmented I/O toggle defaults to the Input side.
+        assert screen._io_output_side is False
+        assert io_input_button.has_class("active")
+        assert not io_output_button.has_class("active")
         internet_filter = app.query_one("#node-subcategory-internet", Checkbox)
         assert internet_filter.display is True   # http_request_node has Internet tag
         assert app.focused is filter_input
@@ -5180,10 +5285,12 @@ async def _test_node_selector_uses_family_tabs_and_subcategory_filters():
         assert group_entries(screen) == {}
         assert header_names(screen) == ["Text & Data", "Files", "Web"]
 
-        # Flip the switch to the Output side.
-        io_switch.value = True
+        # Flip the segmented toggle to the Output side.
+        screen._set_io_side(True)
         await pilot.pause(0.03)
         assert screen._active_family() == "Outputs"
+        assert io_output_button.has_class("active")
+        assert not io_input_button.has_class("active")
         assert {node["type"] for node in screen._visible_nodes} == {
             "text_output_node",
         }
@@ -5687,6 +5794,52 @@ async def _test_memory_viewer_uses_command_navigation():
         assert closed == [None]
 
     print("test_memory_viewer_uses_command_navigation PASSED")
+
+
+def test_memory_viewer_shows_friendly_transient_keys():
+    asyncio.run(_test_memory_viewer_shows_friendly_transient_keys())
+
+
+async def _test_memory_viewer_shows_friendly_transient_keys():
+    from textual.app import App, ComposeResult
+    from textual.widgets import DataTable
+
+    from frontend.screens.memory_viewer import MemoryViewerScreen
+
+    _, wm, memory_bank, _ = _make_services()
+    wm.create_new("memory_friendly_keys")
+    node_id = wm.add_node("logger_node")
+    wm.update_node_alias(node_id, "Producer")
+    memory_bank.store_transient(node_id, "default", "hello")
+
+    class MemoryApp(App):
+        def compose(self) -> ComposeResult:
+            # Pass the workflow map as optional display context.
+            yield MemoryViewerScreen(memory_bank, wm)
+
+    app = MemoryApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        table = app.query_one("#memory-table", DataTable)
+        keys = [str(table.get_row_at(row)[1]) for row in range(table.row_count)]
+        # Transient key renders as "<alias> · <port>"; the raw generated id
+        # never reaches the table.
+        assert "Producer · default" in keys
+        assert all(node_id not in key for key in keys)
+
+    # Without context the raw key is preserved (back-compat).
+    class RawApp(App):
+        def compose(self) -> ComposeResult:
+            yield MemoryViewerScreen(memory_bank)
+
+    raw_app = RawApp()
+    async with raw_app.run_test() as pilot:
+        await pilot.pause(0.03)
+        table = raw_app.query_one("#memory-table", DataTable)
+        keys = [str(table.get_row_at(row)[1]) for row in range(table.row_count)]
+        assert f"{node_id}__default" in keys
+
+    print("test_memory_viewer_shows_friendly_transient_keys PASSED")
 
 
 def test_command_input_auto_edit_on_focus_is_opt_in():
@@ -6749,7 +6902,7 @@ if __name__ == "__main__":
         test_node_config_fixed_tabs_are_keyboard_navigable,
         test_node_config_keyboard_skips_hidden_payload_previews,
         test_node_selector_layout_is_compact_and_checkboxes_fit,
-        test_node_selector_rows_are_two_lines_with_indented_description,
+        test_node_selector_rows_are_one_line_with_detail,
         test_node_selector_down_from_last_checkbox_highlights_first_node,
         test_node_config_schema_tab_hints_place_fields_in_top_level_tabs,
         test_dynamic_row_helper_preserves_visible_rows_only,

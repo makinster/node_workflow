@@ -8,7 +8,11 @@ from textual.containers import Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Button, DataTable, Label
 
+from frontend.node_io_display import node_display_name
 from frontend.widgets.command_navigation import activate_command_widget, focus_command_widget
+
+
+TRANSIENT_SEPARATOR = "__"
 
 
 class MemoryViewerScreen(ModalScreen):
@@ -25,12 +29,16 @@ class MemoryViewerScreen(ModalScreen):
         Binding("enter", "activate_focused", "Activate", priority=True),
     ]
 
-    def __init__(self, memory_bank) -> None:
+    def __init__(self, memory_bank, workflow_map=None) -> None:
         super().__init__()
         self.memory_bank = memory_bank
+        # Optional frontend display context: lets transient keys like
+        # ``node_b4369251__default`` render as ``<alias> · <port>`` instead of
+        # surfacing raw generated node ids in the table.
+        self.workflow_map = workflow_map
 
     def compose(self) -> ComposeResult:
-        with Vertical(id="modal-card"):
+        with Vertical(id="modal-card", classes="fill-modal"):
             yield Label("Memory", classes="modal-title")
             yield DataTable(id="memory-table")
             yield Button("Close", id="close-memory", variant="default")
@@ -74,4 +82,26 @@ class MemoryViewerScreen(ModalScreen):
             table.add_row(store, "-", "-")
             return
         for key, value in values.items():
-            table.add_row(store, str(key), str(value))
+            display_key = (
+                self._friendly_transient_key(str(key))
+                if store == "transient"
+                else str(key)
+            )
+            table.add_row(store, display_key, str(value))
+
+    def _friendly_transient_key(self, key: str) -> str:
+        """Render ``node_id__port`` as ``<alias> · <port>`` when context allows.
+
+        Falls back to the raw key when no workflow context is available or the
+        producing node can no longer be resolved.
+        """
+        if self.workflow_map is None:
+            return key
+        node_id, separator, port = key.partition(TRANSIENT_SEPARATOR)
+        if not separator:
+            return key
+        node_data = self.workflow_map.get_node_data(node_id)
+        if not node_data:
+            return key
+        alias = node_display_name(node_id, node_data)
+        return f"{alias} · {port}"

@@ -58,7 +58,10 @@ class ExecutionScreen(Screen):
                         markup=False,
                         wrap=True,
                     )
-            yield StatusBar("P pause/resume  S stop  M memory  O output  E errors  ESC stop + editor")
+            yield StatusBar(
+                "p pause/resume | s stop | m memory | o output | e errors | "
+                "esc stop + editor"
+            )
 
     def on_mount(self) -> None:
         self.refresh_from_backend()
@@ -98,7 +101,7 @@ class ExecutionScreen(Screen):
         self.refresh_from_backend()
 
     def action_memory(self) -> None:
-        self.app.push_screen(MemoryViewerScreen(self.memory_bank))
+        self.app.push_screen(MemoryViewerScreen(self.memory_bank, self.workflow_map))
 
     def action_output(self) -> None:
         self.app.push_screen(OutputViewerScreen(self._current_outputs()))

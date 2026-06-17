@@ -32,7 +32,7 @@ class TextOutputNode(Node):
         },
         "template": {
             "type": "string",
-            "description": "str.format template with {input} placeholder",
+            "description": "Output text. Use {input} to insert the incoming value.",
             "required": True,
         },
         "request_user_input": {

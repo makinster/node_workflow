@@ -11,6 +11,11 @@ from frontend.node_types import (
 )
 
 
+# Plain-language fallback shown when an output port has no configured
+# description, e.g. "Output: not configured yet" in the editor quick view.
+OUTPUT_NOT_CONFIGURED = "not configured yet"
+
+
 def normalize_membank_outputs(config: Dict[str, Any]) -> list[Dict[str, str]]:
     """Return valid membank output declarations from node config."""
     outputs = config.get("membank_outputs") or []
@@ -171,7 +176,7 @@ def output_display_description(factory, node: Dict[str, Any], port: str) -> str:
     metadata = _port_metadata(factory, node, port, "output")
     if metadata.get("description"):
         return str(metadata["description"])
-    return "No output description configured."
+    return OUTPUT_NOT_CONFIGURED
 
 
 def memory_registry(workflow_map) -> Dict[str, Dict[str, Any]]:
@@ -213,14 +218,14 @@ def transient_output_details(
         if output_id == port:
             return {
                 "name": output_id,
-                "description": output.get("description") or "No output description configured.",
+                "description": output.get("description") or OUTPUT_NOT_CONFIGURED,
             }
     outputs = normalize_membank_outputs(node.get("config") or {})
     if len(outputs) == 1:
         output = outputs[0]
         return {
             "name": output.get("id") or output.get("output") or output_display_name(factory, node, port),
-            "description": output.get("description") or "No output description configured.",
+            "description": output.get("description") or OUTPUT_NOT_CONFIGURED,
         }
     return {
         "name": output_display_name(factory, node, port),
@@ -339,7 +344,7 @@ def _trace_branch_payload_producer(
             "port": vault_key,
             "name": vault_key,
             "description": str(entry.get("description") or "").strip()
-            or "No output description configured.",
+            or OUTPUT_NOT_CONFIGURED,
             "chain_node_ids": chain,
         }
 

@@ -1,6 +1,13 @@
+/* AttackOfTheNodes Textual styling.
+
+   Colors are driven by the active Textual theme (design-system tokens such as
+   $background, $surface, $panel, $boost, $primary, $accent, $foreground,
+   $text-muted) rather than hardcoded hex values. One accent ($primary) is used
+   consistently for focus, active tabs, and selection. */
+
 Screen {
-    background: #101418;
-    color: #e6edf3;
+    background: $background;
+    color: $foreground;
 }
 
 #editor-root {
@@ -10,8 +17,8 @@ Screen {
 #workflow-title {
     height: 1;
     padding: 0 1;
-    background: #18212b;
-    color: #e6edf3;
+    background: $panel;
+    color: $foreground;
 }
 
 #editor-columns {
@@ -19,7 +26,7 @@ Screen {
 }
 
 .panel {
-    border: solid #405061;
+    border: round $foreground 15%;
     height: 100%;
     padding: 0 1;
 }
@@ -34,12 +41,14 @@ Screen {
 
 .panel-title {
     height: 1;
-    color: #50c878;
+    color: $accent;
     text-style: bold;
 }
 
+/* The node list paints to the bottom of the panel viewport. */
 #node-list {
     height: 1fr;
+    background: $background;
 }
 
 #node-list ListItem.-highlight {
@@ -75,13 +84,36 @@ Screen {
     height: 1fr;
 }
 
+/* Modals are sized to their content with sane bounds and centered by the
+   ModalScreen default alignment. Data-heavy/complex modals opt into larger
+   fixed sizes via their own classes below. */
 #modal-card {
-    width: 90%;
+    width: auto;
+    min-width: 50;
+    max-width: 90%;
+    height: auto;
     max-height: 90%;
-    margin: 2 4;
     padding: 1 2;
-    border: solid #405061;
-    background: #101418;
+    border: round $primary;
+    background: $surface;
+}
+
+/* The node config modal carries dense tabbed forms: keep it large. */
+#modal-card.node-config-modal {
+    width: 90%;
+    height: 90%;
+}
+
+/* The node selector needs room for its list and detail line. */
+#modal-card.node-selector-modal {
+    width: 80%;
+    height: 90%;
+}
+
+/* Data-heavy modals (e.g. the memory viewer) fill the available height. */
+#modal-card.fill-modal {
+    width: 80%;
+    height: 90%;
 }
 
 #node-config-scroll {
@@ -89,21 +121,24 @@ Screen {
     overflow-y: auto;
 }
 
-/* Node selector layout: keep tabs/filter/checkboxes compact (containers
+/* Node selector layout: keep tabs/toggle/filter/checkboxes compact (containers
    default to height 1fr and would otherwise stretch and leave dead space),
    and let the node list absorb the remaining height. */
 #node-family-tabs {
     height: auto;
 }
 
-/* I/O tab Input/Output switch row (hidden on other tabs). */
+/* I/O tab segmented Input/Output toggle row (hidden on other tabs). */
 #io-direction-row {
     height: auto;
     align: left middle;
 }
 
-#io-direction-row Label {
-    margin: 1 1 0 1;
+/* Two-button segmented toggle. The active side is styled by Button variant
+   (primary) plus an `active` class; keep the pair tight. */
+.segmented-toggle {
+    min-width: 10;
+    margin: 0 1 0 0;
 }
 
 #node-filter {
@@ -119,25 +154,32 @@ Screen {
     min-height: 4;
 }
 
-/* Two-line selector rows: name/identity then an indented description. */
+/* One-line scan rows: descriptions live in the detail line, not on the row. */
 #node-type-list ListItem {
     height: auto;
 }
 
 .node-select-row {
-    height: 2;
+    height: 1;
 }
 
-/* Section headers inside the selector list: non-selectable dividers that
-   keyboard navigation skips. */
+.node-select-group {
+    height: 1;
+}
+
+/* Section headers inside the selector list: non-selectable, muted dividers
+   that keyboard navigation skips. */
 .node-select-header {
     height: 1;
-    color: #8b949e;
+    color: $text-muted;
 }
 
-/* Two-line group entries: { name } (count) then description. */
-.node-select-group {
-    height: 2;
+/* Fixed detail line below the selector list showing the highlighted row's
+   description. */
+.node-detail {
+    height: 1;
+    color: $text-muted;
+    padding: 0 1;
 }
 
 /* Two-line member rows inside the Group Picker. */
@@ -175,46 +217,79 @@ Screen {
     width: 100%;
 }
 
+/* Calm selection: a subtle boost background, an accent left indicator, and
+   bold text rather than a loud full-row fill. */
 .nav-highlight {
-    background: #1a3a5c;
-    color: #7ec8e3;
+    background: $boost;
+    color: $foreground;
+    text-style: bold;
+}
+
+.row--selected {
+    background: $boost;
+    border-left: thick $primary;
     text-style: bold;
 }
 
 .modal-title {
     height: 1;
-    color: #50c878;
+    color: $accent;
     text-style: bold;
+}
+
+.modal-help {
+    color: $text-muted;
 }
 
 .form-label {
     margin-top: 1;
-    color: #e6edf3;
+    color: $foreground;
     text-style: bold;
 }
 
 .form-description {
-    color: #a9b8c6;
+    color: $text-muted;
 }
 
 .payload-preview:focus {
-    background: #1a3a5c;
-    color: #d7eef7;
+    background: $boost;
+    color: $foreground;
     text-style: bold;
 }
 
+/* Generated single-line inputs are compact (one row) with a reserved left
+   accent column that lights up on focus/edit. Multiline/code fields use
+   CommandTextArea and stay tall. */
+.command-input {
+    width: 100%;
+}
+
+.command-input.single-line {
+    height: 1;
+    border-left: thick $surface;
+}
+
+.command-input.single-line:focus {
+    border-left: thick $primary;
+    background: $boost;
+}
+
+.command-input.single-line.editing:focus {
+    border-left: thick $accent;
+    background: $boost;
+}
+
+/* Multiline command text areas keep the tall focus border. */
 .command-input:focus {
-    border: tall #d6b85a;
-    background: #171f29;
+    border-left: thick $primary;
 }
 
 .command-input.editing:focus {
-    border: tall #50c878;
-    background: #0f2519;
+    border-left: thick $accent;
 }
 
 .pass-through-note {
-    color: #50c878;
+    color: $success;
 }
 
 .button-row {
@@ -223,6 +298,24 @@ Screen {
 }
 
 StatusBar {
-    background: #18212b;
-    color: #a9b8c6;
+    background: $panel;
+    color: $text-muted;
+}
+
+/* Checkboxes: the on-state reads in the accent color so it is easy to see
+   which filters/options are active. */
+Checkbox.-on > .toggle--button {
+    color: $accent;
+    text-style: bold;
+}
+
+/* One lighter active-tab style shared by the node selector and node config so
+   tabs look the same in both. */
+Tab {
+    color: $text-muted;
+}
+
+Tab.-active {
+    color: $accent;
+    text-style: bold;
 }

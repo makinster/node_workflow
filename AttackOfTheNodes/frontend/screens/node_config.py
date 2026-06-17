@@ -20,6 +20,7 @@ from frontend.node_types import (
     WAIT_UNTIL_NODE_TYPE,
 )
 from frontend.node_io_display import (
+    OUTPUT_NOT_CONFIGURED,
     metadata_for_type,
     normalize_membank_inputs,
     normalize_membank_outputs,
@@ -481,7 +482,7 @@ def _source_output_details(source_node: Dict[str, Any], source_port: str) -> Dic
             "name": output.get("id") or output.get("output") or source_port,
             "description": output.get("description") or "No description",
         }
-    return {"name": source_port, "description": "No output description configured."}
+    return {"name": source_port, "description": OUTPUT_NOT_CONFIGURED}
 
 
 def _upstream_branch_label(
@@ -1487,7 +1488,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         else:
             lines.append(f"Payload: {payload_name}")
         description = str(description or "").strip()
-        if description and description != "No output description configured.":
+        if description and description != OUTPUT_NOT_CONFIGURED:
             lines.append(f"Description: {description}")
         return "\n".join(lines)
 
@@ -1625,7 +1626,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 placeholder="Payload name",
             )
             yield CommandInput(
-                value="" if description == "No output description configured." else description,
+                value="" if description == OUTPUT_NOT_CONFIGURED else description,
                 id=f"transient-output-desc-{port}",
                 placeholder="Payload description",
             )

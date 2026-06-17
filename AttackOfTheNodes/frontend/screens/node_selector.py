@@ -23,7 +23,6 @@ from textual.widgets import (
     ListItem,
     ListView,
     Static,
-    Switch,
 )
 
 from frontend.screens.group_picker import GroupPickerScreen
@@ -109,7 +108,7 @@ class NodeSelectorScreen(ModalScreen):
         }
 
     def compose(self) -> ComposeResult:
-        with Vertical(id="modal-card"):
+        with Vertical(id="modal-card", classes="node-selector-modal"):
             yield Label("Add Node", classes="modal-title")
             with Horizontal(id="node-family-tabs"):
                 for tab in TABS:
@@ -124,13 +123,23 @@ class NodeSelectorScreen(ModalScreen):
                 auto_edit_on_focus=False,
             )
             with Horizontal(id="io-direction-row"):
-                yield Label("Input", id="io-direction-label-input")
-                yield Switch(value=False, id="io-direction-switch")
-                yield Label("Output", id="io-direction-label-output")
+                yield Button(
+                    "Input",
+                    id="io-side-input",
+                    classes="segmented-toggle",
+                    variant="primary",
+                )
+                yield Button(
+                    "Output",
+                    id="io-side-output",
+                    classes="segmented-toggle",
+                    variant="default",
+                )
             with Vertical(id="node-subcategory-filters"):
                 for tag in ALL_FILTER_TAGS:
                     yield Checkbox(tag, value=False, id=self._tag_checkbox_ids[tag])
             yield ListView(id="node-type-list")
+            yield Static("", id="node-detail", classes="node-detail")
             yield Static(
                 "W/S navigate  A/D tabs  E activate/add  / filter  ESC close",
                 classes="modal-help",
@@ -144,7 +153,7 @@ class NodeSelectorScreen(ModalScreen):
             if str(node.get("type") or "") not in HIDDEN_NODE_TYPES
         ]
         self._sync_tab_buttons()
-        self._sync_io_switch_visibility()
+        self._sync_io_toggle()
         self._sync_subcategory_filter_visibility()
         self._apply_filter("")
         self._focus_first_subcategory_or_list()
@@ -179,10 +188,18 @@ class NodeSelectorScreen(ModalScreen):
     def on_list_view_selected(self, event: ListView.Selected) -> None:
         self._activate_entry(event.list_view.index)
 
+    def on_list_view_highlighted(self, event: ListView.Highlighted) -> None:
+        if event.list_view.id == "node-type-list":
+            self._update_detail(event.list_view.index)
+
     def on_button_pressed(self, event: Button.Pressed) -> None:
         button_id = event.button.id or ""
         if button_id == "cancel-node-select":
             self.dismiss(None)
+        elif button_id == "io-side-input":
+            self._set_io_side(False)
+        elif button_id == "io-side-output":
+            self._set_io_side(True)
         elif button_id.startswith("node-family-"):
             tab = self._tab_for_button_id(button_id)
             if tab:
@@ -193,13 +210,17 @@ class NodeSelectorScreen(ModalScreen):
             self._sync_selected_subcategories()
             self._apply_filter(self.query_one("#node-filter", CommandInput).value)
 
-    def on_switch_changed(self, event: Switch.Changed) -> None:
-        if event.switch.id == "io-direction-switch":
-            self._io_output_side = bool(event.value)
-            self._sync_subcategory_filter_visibility()
-            # Filters checked on the other side must not constrain this side.
-            self._sync_selected_subcategories()
-            self._apply_filter(self.query_one("#node-filter", CommandInput).value)
+    def _set_io_side(self, output_side: bool) -> None:
+        """Switch the I/O segmented toggle between the Input and Output sides."""
+        if self._active_tab != IO_TAB:
+            return
+        self._io_output_side = bool(output_side)
+        self._sync_io_toggle()
+        self._sync_subcategory_filter_visibility()
+        # Filters checked on the other side must not constrain this side.
+        self._sync_selected_subcategories()
+        self._apply_filter(self.query_one("#node-filter", CommandInput).value)
+        self._focus_active_io_button()
 
     def action_focus_filter(self) -> None:
         focus_command_widget(self, self.query_one("#node-filter", CommandInput))
@@ -220,8 +241,9 @@ class NodeSelectorScreen(ModalScreen):
             self._sync_selected_subcategories()
             self._apply_filter(self.query_one("#node-filter", CommandInput).value)
             return
-        if isinstance(focused, Switch):
-            focused.value = not focused.value
+        if isinstance(focused, Button) and (focused.id or "").startswith("io-side-"):
+            # E/Enter on the segmented toggle flips to the other I/O side.
+            self._set_io_side(not self._io_output_side)
             return
         if isinstance(focused, Button):
             focused.press()
@@ -325,9 +347,11 @@ class NodeSelectorScreen(ModalScreen):
                 )
         if not self._entries:
             list_view.append(ListItem(Static("No matching nodes")))
+            self._update_detail(None)
         else:
             selectable = self._selectable_indices()
             list_view.index = selectable[0] if selectable else 0
+            self._update_detail(list_view.index)
 
     def _grouped_entries(
         self, family: str, nodes: List[Dict[str, Any]]
@@ -408,22 +432,43 @@ class NodeSelectorScreen(ModalScreen):
         return f"── {name} ".ljust(HEADER_RULE_WIDTH, "─")
 
     def _group_row_text(self, entry: Dict[str, Any]) -> str:
-        name = entry["name"]
-        count = len(entry["members"])
-        desc = GROUP_DESCRIPTIONS.get(name, "")
-        if not desc:
-            first = entry["members"][0]
-            desc = str(first.get("description") or "").strip() or "No description"
-        if len(desc) > 76:
-            desc = f"{desc[:75]}…"
-        return f"{{ {name} }} ({count})\n- {desc}"
+        """One-line scan row for a group: ``{ Name } (count)``."""
+        return f"{{ {entry['name']} }} ({len(entry['members'])})"
 
     def _node_row_text(self, node: Dict[str, Any]) -> str:
-        display = node["display_name"]
-        description = str(node.get("description") or "").strip() or "No description"
-        if len(description) > 76:
-            description = f"{description[:75]}…"
-        return f"\\[ {display} ]\n- {description}"
+        """One-line scan row for a node: ``[ Display Name ]``."""
+        return f"\\[ {node['display_name']} ]"
+
+    def _group_description(self, entry: Dict[str, Any]) -> str:
+        desc = GROUP_DESCRIPTIONS.get(entry["name"], "")
+        if not desc:
+            first = entry["members"][0]
+            desc = str(first.get("description") or "").strip()
+        return desc or "No description"
+
+    def _entry_detail_text(self, entry: Dict[str, Any]) -> str:
+        """Description for the highlighted row, shown in the fixed detail line."""
+        if entry["kind"] == "group":
+            return self._group_description(entry)
+        if entry["kind"] == "node":
+            return (
+                str(entry["node"].get("description") or "").strip()
+                or "No description"
+            )
+        return ""
+
+    def _update_detail(self, index: Optional[int]) -> None:
+        detail_query = self.query("#node-detail")
+        if not detail_query:
+            return
+        detail = detail_query.first()
+        if index is None or index < 0 or index >= len(self._entries):
+            detail.update("")
+            return
+        text = self._entry_detail_text(self._entries[index])
+        if len(text) > 84:
+            text = f"{text[:83]}…"
+        detail.update(text)
 
     # ------------------------------------------------------------------
     # Selection and activation
@@ -541,7 +586,7 @@ class NodeSelectorScreen(ModalScreen):
         ]
         widgets.append(self.query_one("#node-filter", CommandInput))
         if self._active_tab == IO_TAB:
-            widgets.append(self.query_one("#io-direction-switch", Switch))
+            widgets.append(self._active_io_button())
         widgets.extend(self._visible_subcategory_checkboxes())
         widgets.append(self.query_one("#node-type-list", ListView))
         widgets.append(self.query_one("#cancel-node-select", Button))
@@ -571,7 +616,7 @@ class NodeSelectorScreen(ModalScreen):
             if isinstance(checkbox, Checkbox):
                 checkbox.value = False
         self._sync_tab_buttons()
-        self._sync_io_switch_visibility()
+        self._sync_io_toggle()
         self._sync_subcategory_filter_visibility()
         self._apply_filter(self.query_one("#node-filter", CommandInput).value)
         self._focus_first_subcategory_or_list()
@@ -581,12 +626,27 @@ class NodeSelectorScreen(ModalScreen):
             button = self.query_one(f"#node-family-{self._slug(tab)}", Button)
             button.variant = "primary" if tab == self._active_tab else "default"
 
-    def _sync_io_switch_visibility(self) -> None:
+    def _sync_io_toggle(self) -> None:
         row = self.query_one("#io-direction-row")
         visible = self._active_tab == IO_TAB
         row.display = visible
-        switch = self.query_one("#io-direction-switch", Switch)
-        switch.disabled = not visible
+        input_button = self.query_one("#io-side-input", Button)
+        output_button = self.query_one("#io-side-output", Button)
+        for button in (input_button, output_button):
+            button.disabled = not visible
+        active = output_button if self._io_output_side else input_button
+        inactive = input_button if self._io_output_side else output_button
+        active.variant = "primary"
+        active.add_class("active")
+        inactive.variant = "default"
+        inactive.remove_class("active")
+
+    def _active_io_button(self) -> Button:
+        button_id = "io-side-output" if self._io_output_side else "io-side-input"
+        return self.query_one(f"#{button_id}", Button)
+
+    def _focus_active_io_button(self) -> None:
+        focus_command_widget(self, self._active_io_button())
 
     def _sync_subcategory_filter_visibility(self) -> None:
         configured = set(TAB_FILTER_TAGS.get(self._active_tab, []))

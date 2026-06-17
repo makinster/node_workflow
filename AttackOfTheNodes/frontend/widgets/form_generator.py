@@ -77,6 +77,20 @@ def build_form(
     return container, get_values
 
 
+def humanize_field_name(field_name: str) -> str:
+    """Titleize a snake_case field name as a sentence-case label.
+
+    Used as a fallback when a schema field omits an explicit ``label`` so the
+    generated form shows ``Request user input`` rather than the raw
+    ``request_user_input`` identifier.
+    """
+    words = str(field_name).replace("_", " ").split()
+    if not words:
+        return str(field_name)
+    text = " ".join(words)
+    return text[:1].upper() + text[1:]
+
+
 def group_config_schema(config_schema: Dict[str, Dict[str, Any]]) -> GroupedSchema:
     """Group schema fields by their optional group key while preserving order."""
     grouped: "OrderedDict[str, Dict[str, Dict[str, Any]]]" = OrderedDict()
@@ -100,7 +114,7 @@ def _field_children(
     field_widgets: Dict[str, Any],
 ) -> list[Any]:
     field_type = str(field_schema.get("type", "string")).lower()
-    label = field_schema.get("label", field_name)
+    label = field_schema.get("label") or humanize_field_name(field_name)
     required = " *" if field_schema.get("required") else ""
     description = field_schema.get("description", "")
     current_value = values.get(field_name, field_schema.get("default", ""))

@@ -110,8 +110,9 @@ class CommandInput(Input):
         self.editing = False
         self.auto_edit_on_focus = auto_edit_on_focus
         self._edit_start_value = self.value
-        self.add_class("command-input")
-        self.styles.height = 3
+        # Single-line command inputs render compact (1 row); the stylesheet
+        # gives them a reserved left-accent column instead of a tall border.
+        self.add_class("command-input", "single-line")
         self.styles.width = "100%"
 
     def begin_edit(self, place_cursor_at_end: bool = True) -> None:
