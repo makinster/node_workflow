@@ -27,6 +27,7 @@ from textual.widgets import (
 )
 
 from frontend.screens.group_picker import GroupPickerScreen
+from frontend.node_types import END_NODE_TYPE, START_NODE_TYPE, TOMBSTONE_NODE_TYPE
 from frontend.widgets.command_input import CommandInput
 from frontend.widgets.command_navigation import focus_command_widget
 
@@ -37,7 +38,7 @@ IO_TAB = "I/O"
 # Hidden from the selector: tombstone is the editor-only deleted-node record;
 # start is auto-generated; end is replaced by terminate-branch output config
 # and the End Branch node.
-HIDDEN_NODE_TYPES = {"tombstone_node", "start_node", "end_node"}
+HIDDEN_NODE_TYPES = {TOMBSTONE_NODE_TYPE, START_NODE_TYPE, END_NODE_TYPE}
 
 # Filter checkboxes are deliberately sparse: groups and section headers do
 # most of the organizing. Only these tabs surface filters.

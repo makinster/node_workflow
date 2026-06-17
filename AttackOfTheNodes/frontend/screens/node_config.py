@@ -11,6 +11,14 @@ from textual.events import Key
 from textual.screen import ModalScreen
 from textual.widgets import Button, Checkbox, Input, Label, Select, SelectionList, Static, TabbedContent, TabPane, TextArea
 
+from frontend.node_types import (
+    BRANCH_END_NODE_TYPE,
+    BRANCH_NODE_TYPE,
+    END_NODE_TYPE,
+    MERGE_NODE_TYPE,
+    TEXT_OUTPUT_NODE_TYPE,
+    WAIT_UNTIL_NODE_TYPE,
+)
 from frontend.node_io_display import (
     metadata_for_type,
     normalize_membank_inputs,
@@ -151,7 +159,7 @@ def merge_input_options(workflow_map, current_node_id: str) -> list[Dict[str, st
     seen_beacons: set[str] = set()
 
     for beacon_id, beacon_node in workflow_map.get_all_node_data().items():
-        if beacon_node.get("type") != "branch_end_node" or beacon_id in seen_beacons:
+        if beacon_node.get("type") != BRANCH_END_NODE_TYPE or beacon_id in seen_beacons:
             continue
         context = _select_beacon_branch_context(
             branch_contexts.get(beacon_id, []),
@@ -244,7 +252,7 @@ def _branch_contexts_by_node(workflow_map) -> Dict[str, list[Dict[str, str]]]:
             return
         seen.add(state)
         add_context(node_id, context)
-        if node.get("type") == "branch_end_node":
+        if node.get("type") == BRANCH_END_NODE_TYPE:
             return
         output_ports = _node_output_ports(workflow_map, node)
         outputs = node.get("connections", {}).get("outputs", [])
@@ -327,7 +335,7 @@ def _node_output_ports(workflow_map, node: Dict[str, Any]) -> list[str]:
         for metadata in factory.get_node_types_metadata():
             if metadata.get("type") == node_type:
                 ports = [str(port) for port in metadata.get("output_ports") or []]
-                if node_type == "branch_node":
+                if node_type == BRANCH_NODE_TYPE:
                     return ports[: _branch_count_from_config(node.get("config") or {})]
                 return ports
     outputs = node.get("connections", {}).get("outputs", [])
@@ -398,7 +406,7 @@ def _trace_branch_path(
                 "last_node": current_node,
                 "last_port": source_port,
             }
-        if target_node.get("type") == "merge_node":
+        if target_node.get("type") == MERGE_NODE_TYPE:
             return {
                 "status": "closed",
                 "target_port": target_port,
@@ -414,7 +422,7 @@ def _trace_branch_path(
 
 
 def _node_closes_branch(node: Dict[str, Any]) -> bool:
-    return node.get("type") in {"end_node", "text_output_node"}
+    return node.get("type") in {END_NODE_TYPE, TEXT_OUTPUT_NODE_TYPE}
 
 
 def _default_merge_input_port(
@@ -450,7 +458,7 @@ def _reserved_merge_input_ports(workflow_map, merge_node_id: str) -> set[str]:
     for conn in merge_node.get("connections", {}).get("inputs", []):
         source_id = str(conn.get("source_node_id") or "")
         source_node = workflow_map.get_node_data(source_id) or {}
-        if source_node.get("type") == "branch_end_node":
+        if source_node.get("type") == BRANCH_END_NODE_TYPE:
             continue
         target_port = str(conn.get("target_port") or "")
         if target_port:
@@ -564,11 +572,11 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
     def compose(self) -> ComposeResult:
         metadata = self._metadata_for_type(self.node_data.get("type", ""))
         schema = metadata.get("config_schema", {}) if metadata else {}
-        if self.node_data.get("type") != "branch_node":
+        if self.node_data.get("type") != BRANCH_NODE_TYPE:
             schema = self._schema_with_generated_branch_labels(metadata, schema)
         config = self.node_data.get("config") or {}
         excluded_config_keys = {"membank_outputs", "membank_inputs", "transient_outputs"}
-        if self.node_data.get("type") == "branch_node":
+        if self.node_data.get("type") == BRANCH_NODE_TYPE:
             excluded_config_keys.update(
                 {
                     "branch_count",
@@ -577,9 +585,9 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                     *(f"{port}_label" for port in BRANCH_PORTS),
                 }
             )
-        if self.node_data.get("type") == "wait_until_node":
+        if self.node_data.get("type") == WAIT_UNTIL_NODE_TYPE:
             excluded_config_keys.add("target_node_ids")
-        if self.node_data.get("type") == "merge_node":
+        if self.node_data.get("type") == MERGE_NODE_TYPE:
             excluded_config_keys.update(
                 {
                     "branches_to_close",
@@ -613,15 +621,15 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 classes="modal-help",
             )
             with VerticalScroll(id="node-config-scroll"):
-                if self.node_data.get("type") == "merge_node":
+                if self.node_data.get("type") == MERGE_NODE_TYPE:
                     yield Label("Branches To Close", classes="form-label nav-section")
                     yield from self._compose_merge_inputs(config)
-                elif self.node_data.get("type") == "branch_end_node":
+                elif self.node_data.get("type") == BRANCH_END_NODE_TYPE:
                     yield Static(
                         self._branch_end_status_text(),
                         classes="form-description",
                     )
-                elif self.node_data.get("type") == "branch_node":
+                elif self.node_data.get("type") == BRANCH_NODE_TYPE:
                     yield from self._compose_branch_config_tabs(metadata, config)
                 else:
                     yield from self._compose_standard_config_tabs(
@@ -659,7 +667,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 yield PayloadPreview("", id="previous-output-preview", classes="form-description")
                 yield from self._compose_membank_inputs(config)
                 yield from self._compose_vault_payload_preview("source")
-                if self.node_data.get("type") == "wait_until_node":
+                if self.node_data.get("type") == WAIT_UNTIL_NODE_TYPE:
                     yield Label("Wait Targets", classes="form-label nav-section")
                     yield from self._compose_wait_targets(config)
 
@@ -1821,7 +1829,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         return {"transient_outputs": outputs}
 
     def _branch_config_values(self) -> Dict[str, Any]:
-        if self.node_data.get("type") != "branch_node":
+        if self.node_data.get("type") != BRANCH_NODE_TYPE:
             return {}
         existing_config = self.node_data.get("config") or {}
         branch_count = self._branch_count_value()
@@ -1852,7 +1860,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         return _branch_count_from_config({"branch_count": count_query.first().value})
 
     def _sync_branch_payload_rows(self) -> None:
-        if self.node_data.get("type") != "branch_node" or not self.query("#branch-payload-rows"):
+        if self.node_data.get("type") != BRANCH_NODE_TYPE or not self.query("#branch-payload-rows"):
             return
         branch_count = self._branch_count_value()
         source_options = self._branch_payload_source_options()
@@ -1988,7 +1996,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         return str(getattr(widget, "value", "")).strip()
 
     def _wait_config_values(self) -> Dict[str, Any]:
-        if self.node_data.get("type") != "wait_until_node":
+        if self.node_data.get("type") != WAIT_UNTIL_NODE_TYPE:
             return {}
         selection_lists = self.query("#wait-targets")
         if not selection_lists:
@@ -1996,7 +2004,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         return {"target_node_ids": list(selection_lists.first().selected)}
 
     def _merge_config_values(self) -> Dict[str, Any]:
-        if self.node_data.get("type") != "merge_node":
+        if self.node_data.get("type") != MERGE_NODE_TYPE:
             return {}
         options = merge_input_options(self.workflow_map, self.node_id)
         branches_to_close = sorted(self._selected_merge_close_values_from_widget())
@@ -2025,7 +2033,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         for conn in outputs:
             target_id = str(conn.get("target_node_id") or "")
             target_node = self.workflow_map.get_node_data(target_id) or {}
-            if target_node.get("type") != "merge_node":
+            if target_node.get("type") != MERGE_NODE_TYPE:
                 continue
             target_port = str(conn.get("target_port") or "default")
             branch_label, branch_id = upstream_branch_info(

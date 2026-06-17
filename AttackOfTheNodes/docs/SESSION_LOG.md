@@ -4,6 +4,31 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-17 — Frontend Node-Type Constants Pass
+
+- Started from branch `codex/node-type-constants` at `64dfb52`, after
+  fast-forwarding `main` from `origin/main`.
+- Added `frontend.node_types` as the frontend-owned home for structural node
+  type identifiers used by editor/control-room behavior:
+  `start_node`, `end_node`, `branch_node`, `branch_end_node`, `merge_node`,
+  `text_output_node`, `tombstone_node`, and `wait_until_node`.
+- Replaced repeated frontend literals in app startup, editor traversal/delete
+  logic, editor workflow adapter tombstone/branch pruning logic, node config
+  merge/wait/branch handling, node selector hiding, node card rendering, and
+  node I/O display helpers.
+- Preserved persisted workflow data shape: node `type` values remain the same
+  strings. No branch pruning, merge deletion, tombstone restore, selector, or
+  runtime logic was intentionally changed.
+- Left test workflow fixture literals in place unless production imports
+  benefited directly; those fixtures document saved/workflow data shapes.
+- Deferred membank-registry consolidation and branch-port list consolidation
+  to their separate passes.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "tombstone or branch_end or merge_node or node_selector or editor"` (41 passed)
+  - `../.venv/bin/python -m pytest tests/test_branch_prune.py tests/test_branch_health.py tests/test_tombstone_restore.py tests/test_tombstone_migration.py tests/test_tombstone_phase_b.py -v` (58 passed)
+  - `../.venv/bin/python -m pytest -q` (308 passed)
+
 ## 2026-06-16 — Frontend Review Cleanup Pass
 
 - Started from branch `codex/frontend-review-cleanups` at `03e6432`, aligned

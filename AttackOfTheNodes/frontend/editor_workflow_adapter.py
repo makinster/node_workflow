@@ -7,12 +7,20 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 from backend.validator import _declared_membank_outputs, _membank_source_id
+from frontend.node_types import (
+    BRANCH_END_NODE_TYPE,
+    BRANCH_NODE_TYPE,
+    END_NODE_TYPE,
+    MERGE_NODE_TYPE,
+    START_NODE_TYPE,
+    TEXT_OUTPUT_NODE_TYPE,
+    TOMBSTONE_NODE_TYPE,
+)
 
 
 DELETED_NODE_SYSTEM_ROLE = "deleted_node_branch_end"
 DELETED_NODE_ALIAS = "Deleted node"
 DELETED_NODE_STATE_ATTR = "_editor_deleted_nodes"
-TOMBSTONE_NODE_TYPE = "tombstone_node"
 
 
 @dataclass
@@ -94,7 +102,7 @@ def migrate_legacy_deleted_node(node: Dict[str, Any]) -> Dict[str, Any]:
     """
     config = node.get("config") or {}
     if not (
-        node.get("type") == "branch_end_node"
+        node.get("type") == BRANCH_END_NODE_TYPE
         and config.get("_system_role") == DELETED_NODE_SYSTEM_ROLE
     ):
         return node
@@ -132,7 +140,7 @@ class EditorWorkflowAdapter:
         # Legacy marker, recognized until migrate_workflow_on_load runs.
         config = node.get("config") or {}
         return (
-            node.get("type") == "branch_end_node"
+            node.get("type") == BRANCH_END_NODE_TYPE
             and config.get("_system_role") == DELETED_NODE_SYSTEM_ROLE
         )
 
@@ -430,8 +438,8 @@ class EditorWorkflowAdapter:
         self._deleted_nodes.pop(node_id, None)
         result = self.workflow_map.delete_node(node_id)
 
-        _NO_SHIFT_TYPES = {"branch_node", "start_node", "merge_node"}
-        if result and reconnect_gap and original_type == "merge_node":
+        _NO_SHIFT_TYPES = {BRANCH_NODE_TYPE, START_NODE_TYPE, MERGE_NODE_TYPE}
+        if result and reconnect_gap and original_type == MERGE_NODE_TYPE:
             self._reconnect_merge_gap(upstream_connections, downstream_connections)
         if result and reconnect_gap and original_type not in _NO_SHIFT_TYPES:
             for in_conn in upstream_connections:
@@ -487,7 +495,7 @@ class EditorWorkflowAdapter:
             source_node = self.workflow_map.get_node_data(source_id)
             if source_node is None:
                 continue
-            if source_node.get("type") != "branch_end_node":
+            if source_node.get("type") != BRANCH_END_NODE_TYPE:
                 return conn
         return None
 
@@ -522,7 +530,7 @@ class EditorWorkflowAdapter:
 
     def _is_branch_prune_terminal(self, node: Dict[str, Any]) -> bool:
         node_type = str(node.get("type") or "")
-        if node_type in {"branch_end_node", "end_node", "text_output_node"}:
+        if node_type in {BRANCH_END_NODE_TYPE, END_NODE_TYPE, TEXT_OUTPUT_NODE_TYPE}:
             return True
         for metadata in self.factory.get_node_types_metadata():
             if metadata.get("type") != node_type:
@@ -561,7 +569,7 @@ class EditorWorkflowAdapter:
         if not self.is_placeholder(node_id):
             return -1
         metadata = self.placeholder_metadata(node_id)
-        if metadata.get("original_type") != "branch_node":
+        if metadata.get("original_type") != BRANCH_NODE_TYPE:
             return -1
 
         original_outputs: List[Dict[str, Any]] = metadata.get(
@@ -571,7 +579,7 @@ class EditorWorkflowAdapter:
             "original_input_connections"
         ) or []
 
-        _HARD_STOP_TYPES = {"start_node"}
+        _HARD_STOP_TYPES = {START_NODE_TYPE}
 
         # Resolve kept branch head.
         kept_target_id: Optional[str] = None
@@ -602,15 +610,15 @@ class EditorWorkflowAdapter:
                 node_type = current_node.get("type", "")
                 if node_type in _HARD_STOP_TYPES:
                     continue
-                if node_type == "merge_node":
+                if node_type == MERGE_NODE_TYPE:
                     pending_merges.add(current)
                     continue
                 to_prune.add(current)
-                if node_type == "branch_end_node":
+                if node_type == BRANCH_END_NODE_TYPE:
                     for out_conn in current_node.get("connections", {}).get("outputs", []):
                         next_id = str(out_conn.get("target_node_id") or "")
                         next_node = self.workflow_map.get_node_data(next_id)
-                        if next_node and next_node.get("type") == "merge_node":
+                        if next_node and next_node.get("type") == MERGE_NODE_TYPE:
                             pending_merges.add(next_id)
                     continue
                 if self._is_branch_prune_terminal(current_node):
@@ -626,7 +634,7 @@ class EditorWorkflowAdapter:
             start_ids = [
                 candidate_id
                 for candidate_id, candidate in all_nodes.items()
-                if candidate.get("type") == "start_node" and candidate_id not in excluded
+                if candidate.get("type") == START_NODE_TYPE and candidate_id not in excluded
             ]
             reachable: set = set()
             queue = list(start_ids)
@@ -774,7 +782,7 @@ class EditorWorkflowAdapter:
         for node in all_nodes.values():
             config = node.get("config") or {}
             if (
-                node.get("type") == "branch_end_node"
+                node.get("type") == BRANCH_END_NODE_TYPE
                 and config.get("_system_role") == DELETED_NODE_SYSTEM_ROLE
             ):
                 migrate_legacy_deleted_node(node)

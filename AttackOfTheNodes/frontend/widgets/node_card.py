@@ -11,6 +11,11 @@ from textual.message import Message
 from textual.widgets import Static
 
 from frontend.node_io_display import node_display_name
+from frontend.node_types import (
+    BRANCH_END_NODE_TYPE,
+    MERGE_NODE_TYPE,
+    TOMBSTONE_NODE_TYPE,
+)
 
 
 STATUS_ICONS = {
@@ -116,12 +121,12 @@ class NodeCard(Static):
             self.show_identity
             and not str(self.node_data.get("alias") or "").strip()
             and self.node_data.get("type")
-            not in ("branch_end_node", "tombstone_node")
+            not in (BRANCH_END_NODE_TYPE, TOMBSTONE_NODE_TYPE)
         ):
             alias = "No alias"
         node_type = self.node_data.get("type", "unknown")
         deleted_overlay = self.node_data.get("_deleted_overlay") or {}
-        if node_type == "branch_end_node" and not deleted_overlay:
+        if node_type == BRANCH_END_NODE_TYPE and not deleted_overlay:
             self.remove_class("branch-end-open", "branch-end-connected")
             if self.node_data.get("_branch_end_connected_to_merge"):
                 self.add_class("branch-end-connected")
@@ -205,7 +210,7 @@ class NodeCard(Static):
         continuation_gutter = branch_continuation_gutter()
         first_continuation_gutter = (
             num_gutter_marker(MERGE_INCOMING_MARKER)
-            if self.node_data.get("type") == "merge_node"
+            if self.node_data.get("type") == MERGE_NODE_TYPE
             else continuation_gutter
         )
         top = f"{top_gutter}{BOX_CORNER}{BOX_HORIZONTAL * inner_width}{BOX_CORNER}"
