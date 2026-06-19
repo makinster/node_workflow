@@ -199,7 +199,12 @@ NODE_STANDARDS input source and output routing models into these fields via
 `input_sources` / `output_routing` spec sections.
 
 Current implementation note: `NodeFactory.get_node_types_metadata()` exposes
-`primary_family`, `tags`, `icon_name`, and `color_hint`. Existing nodes get
+`primary_family`, `tags`, `icon_name`, and `color_hint`, plus a per-port I/O
+contract under `input_port_metadata` / `output_port_metadata`. Each port entry
+carries `name`, `description`, `data_type` (canonical type from
+`backend/data_types.py`; absent ⇒ `any`), and `required` (absent ⇒ `False`).
+These fields are additive with defaults so older nodes and saved workflows load
+unchanged. Existing nodes get
 identity from the transitional table in `backend/node_identity.py`; new
 helper-generated nodes declare identity directly as class metadata
 (`primary_family` is required in helper specs since 2026-06-12).

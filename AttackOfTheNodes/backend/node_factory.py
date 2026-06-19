@@ -8,6 +8,7 @@ instances and exposes metadata for UI and validation.
 import logging
 from typing import Any, Dict, List, Optional, Type
 
+from .data_types import coerce_type
 from .node_base import Node
 from .nodes import ALL_NODE_CLASSES
 
@@ -134,11 +135,18 @@ class NodeFactory:
     def _port_metadata(
         self,
         ports: List[str],
-        configured: Dict[str, Dict[str, str]],
+        configured: Dict[str, Dict[str, Any]],
         direction: str,
-    ) -> Dict[str, Dict[str, str]]:
-        """Return semantic metadata for every declared port."""
-        result: Dict[str, Dict[str, str]] = {}
+    ) -> Dict[str, Dict[str, Any]]:
+        """Return the per-port I/O contract for every declared port.
+
+        Fills the forward-compatible defaults from NODE_STANDARDIZATION_HANDOFF
+        §6: absent `data_type` ⇒ `any` (the explicit permissive type), absent
+        `required` ⇒ optional (`False`). Declared types are canonicalized
+        through backend.data_types so the deprecated `boolean` spelling resolves
+        to `bool`.
+        """
+        result: Dict[str, Dict[str, Any]] = {}
         for port in ports:
             entry = dict(configured.get(port, {}))
             if not entry.get("name"):
@@ -149,6 +157,8 @@ class NodeFactory:
                 else:
                     entry["name"] = port.replace("_", " ").title()
             entry.setdefault("description", "")
+            entry["data_type"] = coerce_type(entry.get("data_type"))
+            entry["required"] = bool(entry.get("required", False))
             result[port] = entry
         return result
 

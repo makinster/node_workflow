@@ -18,6 +18,7 @@ from typing import (
     Optional,
 )
 
+from .data_types import validate_type
 from .field_types import validate_config_schema
 
 
@@ -73,8 +74,12 @@ class Node(ABC):
 
     input_ports: ClassVar[List[str]] = []
     output_ports: ClassVar[List[str]] = ["default"]
-    input_port_metadata: ClassVar[Dict[str, Dict[str, str]]] = {}
-    output_port_metadata: ClassVar[Dict[str, Dict[str, str]]] = {}
+    # Per-port I/O contract metadata. Each entry may carry `name`, `description`,
+    # `data_type` (from backend.data_types; absent ⇒ `any`), and `required`
+    # (absent ⇒ optional/False). NodeFactory fills the defaults on exposure;
+    # see NODE_STANDARDIZATION_HANDOFF.md §4/§6.
+    input_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {}
+    output_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {}
 
     default_config: ClassVar[Dict[str, Any]] = {}
     config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {}
@@ -102,6 +107,27 @@ class Node(ABC):
                 raise ValueError(
                     f"Invalid config_schema in {cls.__name__}: {errors}"
                 )
+        cls._validate_port_data_types()
+
+    @classmethod
+    def _validate_port_data_types(cls) -> None:
+        """Warn when a declared port `data_type` is outside the canonical set.
+
+        Unknown types warn (via backend.data_types.validate_type) rather than
+        raise — the vocabulary is a soft semantic convention, and absent types
+        default to `any` at exposure time. This is the helper-facing validation
+        surface promised by the canonical data-type module.
+        """
+        for direction, metadata in (
+            ("input", cls.input_port_metadata),
+            ("output", cls.output_port_metadata),
+        ):
+            for port, info in metadata.items():
+                if not isinstance(info, dict):
+                    continue
+                declared = info.get("data_type")
+                if declared:
+                    validate_type(declared, source=f"{cls.node_type or cls.__name__} {direction} port '{port}'")
 
     def __init__(self, node_id: str, config: Optional[Dict[str, Any]] = None) -> None:
         self.node_id = node_id

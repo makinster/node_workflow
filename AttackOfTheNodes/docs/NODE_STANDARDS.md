@@ -187,6 +187,27 @@ cached by `RunSession` at execution time so multiple nodes in a run can share
 the same file access. Files can serve as both inputs (read content into
 transient or Vault) and outputs (write Vault or transient content to disk).
 
+## Per-Port Contract Metadata
+
+Each port a node declares carries I/O contract metadata in
+`input_port_metadata` / `output_port_metadata`, exposed through
+`NodeFactory.get_node_types_metadata()`. Per port:
+
+| Field | Meaning | Default when absent |
+|---|---|---|
+| `name` | Human label for the port | derived from the port id |
+| `description` | One line: what travels on the port | `""` |
+| `data_type` | Canonical type from `backend/data_types.py` | `any` (explicit permissive) |
+| `required` | Whether the port must have an assigned source | `False` (optional) |
+
+The fields are **additive with documented defaults** (handoff §6): older node
+files and saved workflows that declare neither still load — absent `data_type`
+becomes `any`, absent `required` becomes optional. The factory canonicalizes
+declared types (so the deprecated `boolean` resolves to `bool`), and declaring
+a type outside the canonical set warns at class-definition time via
+`data_types.validate_type`. The frontend renders this contract; the backend
+advertises it and never inspects frontend state.
+
 ## Typed Vault Outputs
 
 Vault writes can carry an explicit `type` field alongside the value. The type

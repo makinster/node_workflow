@@ -4,6 +4,36 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-19 — Track A Step 2: Per-Port I/O Contract Fields
+
+- Continued on `codex/canonical-data-types` (after the step 1 commit). Track A
+  step 2 (§4/§6): add the per-port contract fields to node classes and expose
+  them through `NodeFactory`, additive with documented defaults.
+- `node_base.py`: documented the `input_port_metadata` / `output_port_metadata`
+  contract (now `Dict[str, Dict[str, Any]]`) and added
+  `_validate_port_data_types()`, called from `__init_subclass__`, which warns
+  (not raises) via `data_types.validate_type` when a declared port `data_type`
+  is outside the canonical set. This is the helper-facing validation surface the
+  step 1 note promised, wired at class-definition time.
+- `node_factory.py` `_port_metadata`: fills the §6 forward-compat defaults on
+  exposure — absent `data_type` ⇒ `any`, absent `required` ⇒ `False` — and
+  canonicalizes declared types (deprecated `boolean` ⇒ `bool`) via
+  `coerce_type`. Existing nodes (which declare neither field) now expose
+  `data_type: "any"` / `required: false` on every port with no node-file edits.
+- Tests: `tests/test_node_contract.py` (defaults on every registered port,
+  absent ⇒ any/optional, canonicalize+coerce, declared metadata survives
+  exposure, unknown port type warns at class definition, canonical/alias types
+  stay quiet). Verified: `compileall -q .` clean; `test_node_contract.py` +
+  `test_data_types.py` 15 passed; `test_debug_nodes.py` + `test_node_helper.py`
+  + `test_typed_vault.py` 150 passed; **full suite 328 passed**.
+- Scope held: no node files regenerated (defaults are filled at exposure, so no
+  per-node `required`/`data_type` were authored — that reference-node pass is
+  step 3); `from:` / `to:` routing destinations are **not** exposed yet (they
+  belong to the unified helper-spec step 3); validator does not yet consume
+  `required` for incomplete-input detection (deferred with the frontend
+  coloring per §6). No rename (step 4). Docs: `NODE_STANDARDS.md` (new Per-Port
+  Contract Metadata section), `PROJECT_KNOWLEDGE.md` (metadata-exposure note).
+
 ## 2026-06-19 — Track A Step 1: Canonical Data-Type Module
 
 - Branched `codex/canonical-data-types` from `main` @ `872ae66` (Add adopted
