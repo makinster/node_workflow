@@ -26,6 +26,12 @@ future agents understand why the docs tree changed.
 |---|---|---|---|
 | `HEADLESS_BUILD_PLAN.md` | `archive/plans/HEADLESS_BUILD_PLAN.md` | Archived | Plan H1–H5 implemented and verified (full suite 284 passed); kept as history. Active status folded into `MASTER_BUILD_PLAN.md` and `PROJECT_BACKLOG.md`; deferred UI follow-ups tracked in `PROJECT_BACKLOG.md`. README directory row moved from Planning/Backlog to Archive. |
 
+## 2026-06-19 — Node Standardization Handoff added
+
+| Old location | New location | Action | Reason |
+|---|---|---|---|
+| n/a | `NODE_STANDARDIZATION_HANDOFF.md` | Added | Consolidates the node-standardization design discussion into an adopted implementation plan (per-node I/O contract via `NodeFactory`, Category > Family > Type rename onto the canonical `category` key, canonical data-type vocab, unified helper spec, master-detail selector). §2 open decisions signed off 2026-06-19: rename approved reusing `category` (retire `primary_family`/`legacy_category` aliases, `group → family`); drill-in family nav; one-line-per-port `to:` display; no behavior badge. README Document Directory row added under Node Authoring. Its changes fold into `NODE_STANDARDS.md`, `PHASE_17_NODE_VISUAL_IDENTITY.md`, and `NODE_HELPER.md` when each track is implemented. |
+
 ## Deletions
 
 No tracked documentation files were deleted in this pass. Historical and

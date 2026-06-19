@@ -53,6 +53,7 @@ Read these before adding, changing, or designing nodes.
 | `NODE_HELPER.md` | YAML spec format, `create_node.py` / `check_node.py` / `check_ui.py` commands, and what the generator produces | When using `aotn_node_helper` to generate a node, or adding a new spec section |
 | `NODE_CATALOG.md` | Complete node inventory — every implemented, planned, deferred, and concept node with status, group, and mapping from current registered types | Checking whether a node idea already exists, recording a new node idea, or planning overhaul scope |
 | `PHASE_17_NODE_VISUAL_IDENTITY.md` | Core simplification rule, five-family taxonomy with I/O switch and section headers, two-level group picker design, keyboard flows, `group`/`selector_section` metadata fields, AI model approach | Designing where a node lives in the taxonomy, implementing the selector restructure or group picker, or adding Phase 17 identity metadata |
+| `NODE_STANDARDIZATION_HANDOFF.md` | Adopted implementation plan: per-node I/O contract exposed via `NodeFactory`, Category > Family > Type terminology rename (canonical `category` key), canonical data-type vocabulary, unified `inputs:`/`outputs:` helper spec, master-detail selector with drill-in family nav, work split (Track A backend/helper, Track B frontend) | Before implementing the node-standardization work; folds into `NODE_STANDARDS.md`, `PHASE_17_NODE_VISUAL_IDENTITY.md`, and `NODE_HELPER.md` |
 
 ### Architecture and Boundaries
 

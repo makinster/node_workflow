@@ -4,6 +4,24 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-19 — Node Standardization Handoff Adopted
+
+- Added `NODE_STANDARDIZATION_HANDOFF.md` (status: Adopted) — the design handoff
+  consolidating the per-node I/O contract, Category > Family > Type rename,
+  canonical data-type vocabulary, unified `inputs:`/`outputs:` helper spec, and
+  master-detail selector into one implementation plan.
+- Owner signed off the four §2 open decisions: (1) terminology rename approved,
+  reusing the existing `category` key as canonical and retiring the
+  `primary_family`/`legacy_category` aliases (`group → family`, `type`
+  untouched); (2) drill-in family navigation; (3) one-line-per-port `to:`
+  display in the detail panel; (4) no behavior badge — description carries
+  behavior. Folded these into §2 (locked) and the affected body sections.
+- Wired the router: README Document Directory row under Node Authoring + a
+  `DOCS_MIGRATION_NOTES.md` "added" entry. Whitespace/LF clean.
+- Not yet implemented — this is the plan. Next: Track A step 1 (canonical
+  data-type module, §5). Track A step 4 (rename) runs after the contract schema
+  work to avoid double-churning the same files.
+
 ## 2026-06-19 — Docs Audit: Taxonomy + Catalog Drift Fixes
 
 - Ran the docs audit (active docs only) on `main` @ `2b681f2`. Verified
