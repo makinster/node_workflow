@@ -3995,7 +3995,8 @@ async def _test_node_config_select_activates_from_keyboard():
         error_mode = app.query_one("#field-error_mode", Select)
         screen = app.query_one(NodeConfigScreen)
         assert getattr(app.focused, "id", None) == "alias-input"
-        await pilot.press("d")
+        # Number keys jump tabs; 2 -> Parameters, focusing its first field.
+        await pilot.press("2")
         await pilot.pause(0.03)
         assert getattr(app.focused, "id", None) == "field-message"
         await pilot.press("s")
@@ -4083,12 +4084,13 @@ async def _test_node_config_fixed_tabs_are_keyboard_navigable():
         assert tabs.active == "node-config-tab-core"
         assert app.focused is alias
 
-        alias.cursor_position = 0
-        await pilot.press("d")
+        # Number keys jump tabs; switching focuses the first field of the tab.
+        await pilot.press("2")
         await pilot.pause(0.1)
         assert tabs.active == "node-config-tab-parameters"
         assert app.focused is parameter_field
 
+        # While editing, left/right move the caret rather than switching tabs.
         parameter_field.value = "abc"
         parameter_field.begin_edit()
         parameter_field.cursor_position = 0
@@ -4098,7 +4100,7 @@ async def _test_node_config_fixed_tabs_are_keyboard_navigable():
         assert parameter_field.cursor_position == 1
         parameter_field.end_edit()
 
-        await pilot.press("d")
+        await pilot.press("3")
         await pilot.pause(0.1)
         assert tabs.active == "node-config-tab-outputs"
         assert app.focused is payload_reveal
@@ -4116,22 +4118,22 @@ async def _test_node_config_fixed_tabs_are_keyboard_navigable():
             await pilot.pause(0.02)
         assert app.focused is output_name
 
-        await pilot.press("d")
+        await pilot.press("4")
         await pilot.pause(0.1)
         assert tabs.active == "node-config-tab-connections"
         assert app.focused is save_button
 
-        await pilot.press("d")
+        await pilot.press("1")
         await pilot.pause(0.1)
         assert tabs.active == "node-config-tab-core"
         assert app.focused is alias
 
-        await pilot.press("d")
+        await pilot.press("2")
         await pilot.pause(0.1)
         assert tabs.active == "node-config-tab-parameters"
         assert app.focused is parameter_field
 
-        await pilot.press("d")
+        await pilot.press("3")
         await pilot.pause(0.1)
         assert tabs.active == "node-config-tab-outputs"
         assert app.focused is payload_reveal
@@ -4144,12 +4146,12 @@ async def _test_node_config_fixed_tabs_are_keyboard_navigable():
         assert tabs.active == "node-config-tab-outputs"
         assert app.focused is save_button
 
-        await pilot.press("a")
-        await pilot.pause(0.1)
-        assert tabs.active == "node-config-tab-parameters"
-        assert app.focused is parameter_field
+        # A number past the tab count is a no-op.
+        await pilot.press("5")
+        await pilot.pause(0.05)
+        assert tabs.active == "node-config-tab-outputs"
 
-        await pilot.press("a")
+        await pilot.press("1")
         await pilot.pause(0.1)
         assert tabs.active == "node-config-tab-core"
         assert app.focused is alias
@@ -4377,25 +4379,105 @@ async def _test_node_selector_io_toggle_keyboard_contract():
         await pilot.pause(0.05)
         screen = app.query_one(NodeSelectorScreen)
         input_button = app.query_one("#io-side-input", Button)
+        output_button = app.query_one("#io-side-output", Button)
 
-        # W/S navigates from the filter onto the segmented toggle.
+        # W/S navigates from the filter onto the segmented toggle row.
         await pilot.press("s")
         await pilot.pause(0.03)
         assert app.focused is input_button
 
-        # E toggles the toggle to the Output side (no Switch involved).
+        # The toggle is a 2-button row: A/D moves within it.
         assert screen._io_output_side is False
+        await pilot.press("d")
+        await pilot.pause(0.03)
+        assert app.focused is output_button
+
+        # E presses the focused side button, selecting the Output side.
         await pilot.press("e")
         await pilot.pause(0.03)
         assert screen._io_output_side is True
-        assert app.focused is app.query_one("#io-side-output", Button)
 
-        # A/D still switch family tabs even while the toggle holds focus.
-        await pilot.press("d")
+        # Tabs switch by number key, not A/D.
+        await pilot.press("2")
         await pilot.pause(0.03)
         assert screen._active_tab == "Flow Control"
 
     print("test_node_selector_io_toggle_keyboard_contract PASSED")
+
+
+def test_activate_command_widget_single_press_toggles_boolean():
+    asyncio.run(_test_activate_command_widget_single_press_toggles_boolean())
+
+
+async def _test_activate_command_widget_single_press_toggles_boolean():
+    from textual.app import App, ComposeResult
+    from textual.widgets import Checkbox, Switch
+
+    from frontend.widgets.command_navigation import activate_command_widget
+
+    class ToggleApp(App):
+        def compose(self) -> ComposeResult:
+            yield Checkbox(value=False, id="cb")
+            yield Switch(value=False, id="sw")
+
+    app = ToggleApp()
+    async with app.run_test():
+        checkbox = app.query_one("#cb", Checkbox)
+        switch = app.query_one("#sw", Switch)
+        # A single activate flips the value (no activate-then-toggle two-step).
+        assert checkbox.value is False
+        assert activate_command_widget(checkbox) is True
+        assert checkbox.value is True
+        assert switch.value is False
+        assert activate_command_widget(switch) is True
+        assert switch.value is True
+
+    print("test_activate_command_widget_single_press_toggles_boolean PASSED")
+
+
+def test_node_config_digit_types_while_editing_but_jumps_in_nav():
+    asyncio.run(_test_node_config_digit_types_while_editing_but_jumps_in_nav())
+
+
+async def _test_node_config_digit_types_while_editing_but_jumps_in_nav():
+    from textual.app import App, ComposeResult
+    from textual.widgets import TabbedContent
+
+    from frontend.screens.node_config import NodeConfigScreen
+    from frontend.widgets.command_input import CommandInput
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("digit_nav")
+    node_id = wm.add_node("logger_node")
+    node_data = wm.get_node_data(node_id)
+
+    class ConfigApp(App):
+        def compose(self) -> ComposeResult:
+            yield NodeConfigScreen(wm._factory, wm, node_id, node_data)
+
+    app = ConfigApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        tabs = app.query_one("#node-config-tabs", TabbedContent)
+        assert tabs.active == "node-config-tab-core"
+
+        # Nav mode: a digit jumps to the matching tab.
+        await pilot.press("2")
+        await pilot.pause(0.05)
+        assert tabs.active == "node-config-tab-parameters"
+        field = app.query_one("#field-label", CommandInput)
+        assert app.focused is field
+
+        # Editing mode: the same digit types into the field, no tab switch.
+        field.begin_edit()
+        field.value = ""
+        field.cursor_position = 0
+        await pilot.press("3")
+        await pilot.pause(0.03)
+        assert tabs.active == "node-config-tab-parameters"
+        assert "3" in field.value
+
+    print("test_node_config_digit_types_while_editing_but_jumps_in_nav PASSED")
 
 
 def test_node_selector_down_from_last_checkbox_highlights_first_node():
@@ -5983,12 +6065,17 @@ async def _test_node_config_command_inputs_require_activation():
         alias.cursor_position = len(alias.value)
         previous_value = alias.value
         await pilot.press("a")
+        # Nav-mode A/D no longer types and no longer switches tabs; on a
+        # single-widget row it positions the caret in the focused input.
         assert alias.value == previous_value
+        assert tabs.active == "node-config-tab-core"
+        assert alias.cursor_position == len(previous_value) - 1
+        # Tabs switch by number key, in nav mode only.
+        await pilot.press("4")
         assert tabs.active == "node-config-tab-connections"
-        await pilot.press("d")
+        await pilot.press("1")
         assert tabs.active == "node-config-tab-core"
         assert app.focused is alias
-        assert alias.cursor_position == len(previous_value)
 
         screen.action_activate_focused()
         assert alias.editing is True

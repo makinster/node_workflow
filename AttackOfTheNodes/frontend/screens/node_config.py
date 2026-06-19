@@ -538,10 +538,13 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         ("escape", "cancel", "Cancel"),
         ("ctrl+s", "save", "Save"),
         ("ctrl+enter", "save", "Save"),
-        Binding("a", "previous_config_tab", "Previous tab", priority=True),
-        Binding("d", "next_config_tab", "Next tab", priority=True),
-        Binding("left", "previous_config_tab", "Previous tab", priority=True),
-        Binding("right", "next_config_tab", "Next tab", priority=True),
+        # Tabs switch by number key (1-5). A/D are within-row navigation,
+        # supplied by CommandScreenMixin.
+        Binding("1", "jump_config_tab(1)", "Tab 1", priority=True),
+        Binding("2", "jump_config_tab(2)", "Tab 2", priority=True),
+        Binding("3", "jump_config_tab(3)", "Tab 3", priority=True),
+        Binding("4", "jump_config_tab(4)", "Tab 4", priority=True),
+        Binding("5", "jump_config_tab(5)", "Tab 5", priority=True),
         Binding("ctrl+q", "cancel", "Cancel", priority=True),
     ]
 
@@ -650,7 +653,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         forms: Dict[str, Any],
     ):
         with TabbedContent(id="node-config-tabs", classes="node-config-tabs"):
-            with TabPane("Source", id="node-config-tab-core"):
+            with TabPane("1 - Source", id="node-config-tab-core"):
                 yield Label("Alias", classes="form-label nav-section")
                 yield CommandInput(value=self.node_data.get("alias", ""), id="alias-input")
                 yield Static(self._format_metadata(metadata), id="node-config-summary")
@@ -672,13 +675,13 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                     yield Label("Wait Targets", classes="form-label nav-section")
                     yield from self._compose_wait_targets(config)
 
-            with TabPane("Parameters", id="node-config-tab-parameters"):
+            with TabPane("2 - Parameters", id="node-config-tab-parameters"):
                 if forms.get("parameters") is not None:
                     yield forms["parameters"]
                 else:
                     yield Static("No parameters.", classes="form-description")
 
-            with TabPane("Payloads", id="node-config-tab-outputs"):
+            with TabPane("3 - Payloads", id="node-config-tab-outputs"):
                 yield Label("Incoming Payloads", classes="form-label nav-section")
                 yield Checkbox(
                     "Reveal upstream payload",
@@ -695,7 +698,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                     yield Label("Vault Payloads", classes="form-label nav-section")
                     yield from self._compose_membank_outputs(config)
 
-            with TabPane("Connections", id="node-config-tab-connections"):
+            with TabPane("4 - Connections", id="node-config-tab-connections"):
                 yield Label("Connections", classes="form-label nav-section")
                 yield Static(
                     "Edit connections from the editor.",
@@ -714,7 +717,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         if not isinstance(payload_sources, dict):
             payload_sources = {}
         with TabbedContent(id="node-config-tabs", classes="node-config-tabs"):
-            with TabPane("Source", id="node-config-tab-core"):
+            with TabPane("1 - Source", id="node-config-tab-core"):
                 yield Label("Alias", classes="form-label nav-section")
                 yield CommandInput(value=self.node_data.get("alias", ""), id="alias-input")
                 yield Static(
@@ -738,7 +741,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 yield from self._compose_membank_inputs(config)
                 yield from self._compose_vault_payload_preview("source")
 
-            with TabPane("Parameters", id="node-config-tab-parameters"):
+            with TabPane("2 - Parameters", id="node-config-tab-parameters"):
                 yield Label("Branches", classes="form-label nav-section")
                 yield CommandInput(
                     value=str(branch_count),
@@ -748,7 +751,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 )
                 yield Static("Choose 2 to 5 spawn points.", classes="form-description")
 
-            with TabPane("Payloads", id="node-config-tab-outputs"):
+            with TabPane("3 - Payloads", id="node-config-tab-outputs"):
                 yield Label("Incoming Payloads", classes="form-label nav-section")
                 yield Checkbox(
                     "Reveal upstream payload",
@@ -767,7 +770,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                     id="branch-payload-rows",
                 )
 
-            with TabPane("Connections", id="node-config-tab-connections"):
+            with TabPane("4 - Connections", id="node-config-tab-connections"):
                 yield Label("Connections", classes="form-label nav-section")
                 yield Static(
                     "Edit connections from the editor.",
@@ -913,10 +916,16 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             expanded_select.expanded = False
             expanded_select.focus()
             return False
-        if action in {"previous_config_tab", "next_config_tab"} and is_editing_text(
-            self.app.focused
-        ):
-            return False
+        if action == "jump_config_tab":
+            # Digits type normally while editing a field or with a Select
+            # overlay open; only switch tabs in nav mode.
+            active_text = getattr(self, "_active_command_text_widget", None)
+            if (
+                is_editing_text(self.app.focused)
+                or is_editing_text(active_text)
+                or expanded_select is not None
+            ):
+                return False
         return super().check_action(action, parameters)
 
     async def on_checkbox_changed(self, event: Checkbox.Changed) -> None:
@@ -987,12 +996,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
 
     def on_key(self, event: Key) -> None:
         if self._expanded_select() is None:
-            if event.key in {"a", "left", "d", "right"} and not is_editing_text(
-                self.app.focused
-            ):
-                self._move_config_tab(-1 if event.key in {"a", "left"} else 1)
-                event.stop()
-                event.prevent_default()
+            # A/D within-row navigation is handled by CommandScreenMixin
+            # bindings; tab switching is via number keys.
             return
         if event.key in {"up", "w"}:
             self.action_cursor_up()
@@ -1107,6 +1112,26 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
 
     def action_next_config_tab(self) -> None:
         self._move_config_tab(1)
+
+    def action_jump_config_tab(self, tab_number: int) -> None:
+        """Jump directly to the Nth config tab (1-based). No-op past the end."""
+        tabbed_query = self.query("#node-config-tabs")
+        if not tabbed_query:
+            return
+        tabs = tabbed_query.first()
+        panes = [pane for pane in tabs.query(TabPane) if pane.id]
+        index = tab_number - 1
+        if index < 0 or index >= len(panes):
+            return
+        target_tab_id = str(panes[index].id)
+        tabs.active = target_tab_id
+        self.call_after_refresh(
+            lambda tab_id=target_tab_id: self._focus_first_config_tab_widget(tab_id)
+        )
+        self.set_timer(
+            0.01,
+            lambda tab_id=target_tab_id: self._focus_first_config_tab_widget(tab_id),
+        )
 
     def _move_config_tab(self, direction: int, *, wrap: bool = True) -> bool:
         tabbed_query = self.query("#node-config-tabs")

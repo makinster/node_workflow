@@ -25,8 +25,19 @@ the highlighted editor row.
 ## Command-Mode Rules
 
 - Command-mode screens use `CommandScreenMixin`.
-- `W/S` and arrows move focus while in nav mode.
-- `E` or Enter activates the highlighted control.
+- `W/S` and up/down move line-by-line between rows; a multi-widget row (widgets
+  stacked on one line) counts as a single line, and vertical moves preserve the
+  horizontal column position where possible.
+- `A/D` and left/right are within-row horizontal navigation: they move between
+  widgets sharing a row and are a no-op on single-widget rows (the common
+  single-column case, where the key falls through to caret movement on a
+  focused text field).
+- Tabbed command-mode screens (node config, node selector) switch tabs by
+  **number key** (`1`–`5`): a digit jumps directly to the Nth tab. Past the tab
+  count it is a no-op; while editing a field a digit types normally. Tab headers
+  show the hotkey as `N - Label`.
+- `E` or Enter activates the highlighted control; on a `Switch`/`Checkbox` it
+  toggles the value in a single press.
 - Text fields require activation unless a prompt/filter opts into
   `auto_edit_on_focus=True`.
 - `Esc`, Enter, and small-field Tab leave text editing while preserving typed
@@ -37,13 +48,13 @@ the highlighted editor row.
 
 ## Node Config Shape
 
-Standard node configs use fixed tabs:
+Standard node configs use fixed numbered tabs (switch with number keys):
 
-- `Source`: alias, node summary, upstream/Vault preview controls, memory reads.
-- `Parameters`: schema-generated fields.
-- `Payloads`: payload preview controls, transient output overrides, Vault
+- `1 - Source`: alias, node summary, upstream/Vault preview controls, memory reads.
+- `2 - Parameters`: schema-generated fields.
+- `3 - Payloads`: payload preview controls, transient output overrides, Vault
   output declarations.
-- `Connections`: read-only connection summary.
+- `4 - Connections`: read-only connection summary.
 
 Ordinary nodes should not require custom frontend code. Use node metadata,
 `config_schema`, `input_port_metadata`, `output_port_metadata`, and `ui_hints`.
@@ -52,7 +63,13 @@ Ordinary nodes should not require custom frontend code. Use node metadata,
 
 Use `PHASE_17_NODE_VISUAL_IDENTITY.md` for the active plan.
 
-- Selector family tabs: `Inputs`, `Flow Control`, `Outputs`, `Complex`.
+- Selector family tabs (documented taxonomy): `Inputs`, `Flow Control`,
+  `Outputs`, `Complex`. NOTE: the implementation currently labels them
+  `I/O / Flow Control / Utility / Complex`; reconciling the two is a tracked
+  taxonomy follow-up (see `PROJECT_BACKLOG.md`), not part of the nav rework.
+- Family tabs switch by number key (`1`–`4`) and show numbered headers
+  (`N - Label`); the I/O segmented toggle is a two-button row navigated with
+  A/D, with `E` selecting the focused side.
 - Subcategory filters are multi-tag metadata, not mutually exclusive families.
 - Subcategory filters are checkboxes with `AND` behavior.
 - Initial selector focus should land on the first subcategory control, not the

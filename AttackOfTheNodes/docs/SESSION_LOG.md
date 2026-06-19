@@ -4,6 +4,37 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-17 — Tabbed UI Keyboard Navigation Rework
+
+- Branched `codex/keyboard-nav-rework` from `codex/textual-ui-overhaul`
+  (commit `0bba5f6`, the just-committed Phase 17 visual overhaul), which is
+  `main` + node-type-constants + the overhaul. `git fetch` is blocked by a
+  local SSL trust issue, so the freshest reachable base was the local commit.
+- WS1 — Row-based 2D navigation in the shared modules: added
+  `group_widgets_into_rows` / `row_move_target` / `within_row_target` to
+  `command_navigation.py` (rows grouped by nearest `Horizontal` ancestor, then
+  by visual line, else one-per-row). `CommandScreenMixin` now moves W/S between
+  rows (preserving column) and A/D within a row, gated so single-widget rows
+  fall through to caret movement.
+- WS1-apply — `node_config` and `node_selector` dropped A/D-as-tab-switch
+  (including `CommandInput`'s `_run_screen_tab_action`); A/D is within-row. The
+  selector I/O control is a two-button row (A/D between sides, E selects).
+- WS2 — Number keys `1`–`5` jump tabs (gated to nav mode, no-op past the count);
+  tab headers numbered `N - Label` in config and selector.
+- WS3 — Verified the execution input prompt already uses `auto_edit_on_focus`.
+- WS4 — `activate_command_widget` single-press toggles `Checkbox`/`Switch`.
+- Stacked-widget audit (one-line rows of focusable widgets in command-mode
+  screens): `node_selector` `node-family-tabs` (4 tab buttons) and
+  `io-direction-row` (2-button I/O toggle). The simple modals
+  (`confirm`/`error_details`/`user_input`) have `button-row` Horizontals but
+  drive them with dedicated letter keys; the row model now also makes those
+  navigable. `node_config` has no horizontal rows.
+- Tests updated to the new contract and new tests added (row nav, within-row
+  A/D, number jumps, digit-types-while-editing, single-press toggle). Full
+  suite green: 311 passed.
+- Flagged the selector family-taxonomy discrepancy (docs say Inputs/Outputs;
+  code uses I/O + Utility) as a separate follow-up in `PROJECT_BACKLOG.md`.
+
 ## 2026-06-17 — Frontend Node-Type Constants Pass
 
 - Started from branch `codex/node-type-constants` at `64dfb52`, after

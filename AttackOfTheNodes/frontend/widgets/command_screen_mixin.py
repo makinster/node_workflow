@@ -24,8 +24,10 @@ from frontend.widgets.command_navigation import (
     blocks_command_action,
     command_focus_widgets,
     focus_command_widget,
+    group_widgets_into_rows,
     is_editing_text,
-    move_command_focus,
+    row_move_target,
+    within_row_target,
 )
 from frontend.widgets.status_bar import StatusBar
 
@@ -35,6 +37,12 @@ _NAV_BINDINGS = [
     Binding("s", "cursor_down", "Down", priority=True),
     Binding("up", "cursor_up", "Up", priority=True),
     Binding("down", "cursor_down", "Down", priority=True),
+    # A/D and left/right move within the current row (2D navigation); a no-op
+    # on single-widget rows, which is the common single-column case.
+    Binding("a", "cursor_left", "Left", priority=True),
+    Binding("d", "cursor_right", "Right", priority=True),
+    Binding("left", "cursor_left", "Left", priority=True),
+    Binding("right", "cursor_right", "Right", priority=True),
     Binding("e", "activate_focused", "Activate", priority=True),
     Binding("enter", "activate_focused", "Activate", priority=True),
 ]
@@ -87,7 +95,25 @@ class CommandScreenMixin:
             return False
         if blocks_command_action(self.app.focused, action):
             return False
+        if action in {"cursor_left", "cursor_right"}:
+            # While editing, A/D type/move the caret in the field.
+            if is_editing_text(active_text) or is_editing_text(self.app.focused):
+                return False
+            # Within-row movement only applies when the focused widget shares a
+            # row with another widget. On a single-widget row (the common case,
+            # e.g. a lone CommandInput) fall through so the key reaches the
+            # widget for caret positioning.
+            if not self._focused_in_multi_widget_row():
+                return False
         return True
+
+    def _focused_in_multi_widget_row(self) -> bool:
+        rows = group_widgets_into_rows(self._nav_widgets())
+        focused = self.app.focused
+        for row in rows:
+            if focused in row:
+                return len(row) > 1
+        return False
 
     def action_cursor_up(self) -> None:
         self._move_cursor(-1)
@@ -95,34 +121,46 @@ class CommandScreenMixin:
     def action_cursor_down(self) -> None:
         self._move_cursor(1)
 
+    def action_cursor_left(self) -> None:
+        self._move_within_row(-1)
+
+    def action_cursor_right(self) -> None:
+        self._move_within_row(1)
+
     def _move_cursor(self, direction: int) -> None:
-        """Move focus by direction (+1 down, -1 up) within _nav_widgets()."""
+        """Move focus between rows (+1 down, -1 up), preserving column."""
         if getattr(self, "_cursor_moving", False):
             return
         self._cursor_moving = True
         try:
-            widgets = self._nav_widgets()
-            if not widgets:
+            rows = group_widgets_into_rows(self._nav_widgets())
+            if not rows:
                 self.app.bell()
                 return
-            current = self.app.focused
-            try:
-                current_index = widgets.index(current)
-                at_boundary = (
-                    (direction < 0 and current_index == 0)
-                    or (direction > 0 and current_index == len(widgets) - 1)
-                )
-            except ValueError:
-                at_boundary = False
-            move_command_focus(
-                self,
-                direction,
-                widgets=widgets,
-                scroll_container=self._scroll_container(),
-            )
+            target, at_boundary = row_move_target(rows, self.app.focused, direction)
+            if target is not None:
+                focus_command_widget(self, target, self._scroll_container())
             if at_boundary:
                 self.app.bell()
             self._sync_cursor_mode()
+        finally:
+            self._cursor_moving = False
+
+    def _move_within_row(self, direction: int) -> None:
+        """Move focus within the current row (+1 right, -1 left)."""
+        if getattr(self, "_cursor_moving", False):
+            return
+        self._cursor_moving = True
+        try:
+            rows = group_widgets_into_rows(self._nav_widgets())
+            if not rows:
+                return
+            target = within_row_target(rows, self.app.focused, direction)
+            if target is not None:
+                focus_command_widget(self, target, self._scroll_container())
+                self._sync_cursor_mode()
+            # Row edge / single-widget row: no-op (no bell, expected on the
+            # common single-column case).
         finally:
             self._cursor_moving = False
 

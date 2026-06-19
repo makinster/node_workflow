@@ -255,14 +255,17 @@ helper and must not be used as a substitute for choosing import/export paths.
 Node config buttons are stacked vertically for W/S navigation. `Ctrl+S` saves
 and closes. Config may expose dead-drop payload name/description overrides based
 on node port metadata, stored in `transient_outputs`. Standard node configs use
-fixed `Source`, `Parameters`, `Payloads`, and `Connections` tabs. W/S moves
-vertically inside the active tab and then to Save/Cancel; it does not move into
-the tab header and does not switch tabs. A/D and left/right switch tabs and move
-focus to the first control in the new tab. When the first control in a tab is
-focused, the scroll container should snap high enough that the tab header is
-visible again; users should never lose the tab row behind a long Payloads
-screen. While a command text field is actively editing, A/D and left/right
-remain cursor-movement keys. Small text fields exit editing on Esc, Enter, or
+fixed numbered tabs `1 - Source`, `2 - Parameters`, `3 - Payloads`, and
+`4 - Connections`. W/S move line-by-line through the active tab and then to
+Save/Cancel, treating a multi-widget row as one line; they do not move into the
+tab header. A/D and left/right are within-row horizontal navigation: they move
+between widgets stacked on the same line, and are a no-op (caret movement on a
+focused text field) on single-widget rows. Tabs switch by **number key**
+(`1`–`5`): a digit jumps directly to the matching tab and moves focus to the
+first control in that tab, snapping the scroll container high enough that the
+tab header stays visible. A number past the tab count is a no-op. While a
+command text field is actively editing, digits type normally and A/D/left/right
+move the caret. Small text fields exit editing on Esc, Enter, or
 Tab and keep the typed value for the modal-level Save. `Ctrl+Q` while editing is
 the explicit revert-to-edit-start command. Large `CommandTextArea` fields keep
 Tab inside the text area for content/indentation editing and use Esc or

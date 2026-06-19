@@ -165,6 +165,24 @@ Restore procedure:
 6. A partial restore (node back, some connections missing) is always preferred
    over leaving a tombstone. The validator will surface remaining loose ends.
 
+## Near-Term Project — Selector Family Taxonomy Reconciliation
+
+Goal: make the node-selector family taxonomy agree across docs, catalog, and
+code. The authoritative docs (`UI_QUICK_REFERENCE.md`,
+`PHASE_17_NODE_VISUAL_IDENTITY.md`) describe families as **Inputs / Flow
+Control / Outputs / Complex** (Inputs and Outputs as separate families, no
+"Utility" family), while the implementation (`frontend/screens/node_selector.py`
+`TABS`) uses **I/O / Flow Control / Utility / Complex** with an Input/Output
+toggle on the `I/O` tab. The 2026-06-17 keyboard-nav rework deliberately did not
+touch this — it would pull in `NODE_CATALOG.md`, `PHASE_17_NODE_VISUAL_IDENTITY.md`,
+and node `group`/`selector_section` metadata.
+
+Recommended:
+
+- Make a deliberate decision on the canonical family set and tab labels.
+- Reconcile selector tab names, `NODE_CATALOG.md`, and the Phase 17 taxonomy so
+  all three agree; update node metadata if the family set changes.
+
 ## Near-Term Project — Frontend Command UI Toolkit
 
 Current config and modal UX should converge on small shared helpers instead of
@@ -210,8 +228,8 @@ Done (2026-06-12):
 Recommended cleanup:
 
 - Extend the generated UI smoke test to full keyboard simulation: switch tabs
-  with A/D, move through fields with W/S, activate with E/Enter, exit edit
-  mode, and reach Save/Cancel.
+  with number keys (`1`–`5`), move between rows with W/S, move within a row
+  with A/D, activate with E/Enter, exit edit mode, and reach Save/Cancel.
 - Consider a `repeats_from` schema key for counted dynamic rows, complementing
   `visible_when`/`enabled_when`.
 - Done (2026-06-13, Headless Plan H4): label/value pairs for select options in

@@ -393,7 +393,10 @@ The `I/O` tab maps two backend families onto one tab with a switch:
 - The switch state selects which family's entries fill the list
   (`Inputs` or `Outputs`).
 - Filter checkboxes and the string filter apply to the active side.
-- The switch is a normal keyboard nav stop between the tab row and the list.
+- The Input/Output control is a two-button segmented toggle between the filter
+  and the list. It is one row: `A/D` move between the Input and Output buttons,
+  and `E`/Enter selects the focused side. Family tabs switch by number key
+  (`1`–`4`), not by A/D.
 
 ### Main Selector Layout
 
@@ -403,7 +406,7 @@ navigation automatically jumps over.
 
 ```
 ┌─ Add Node ──────────────────────────────────────────┐
-│  I/O    Flow Control    [Utility]    Complex          │
+│  1 - I/O   2 - Flow Control   [3 - Utility]   4 - …   │
 │  ─────────────────────────────────────────────────── │
 │  / filter...                                          │
 │  ─────────────────────────────────────────────────── │
@@ -422,7 +425,7 @@ navigation automatically jumps over.
 │    Accumulator                                        │
 │    Repeat Limiter                                     │
 │                                                       │
-│  W/S move  A/D tabs  E open/add  / filter  ESC close  │
+│  W/S move  A/D within row  1-4 tabs  E add  / filter  │
 └───────────────────────────────────────────────────────┘
 ```
 
@@ -508,7 +511,8 @@ When enabled, the group entry and picker descriptions carry a visible warning.
 
 ```
 1. Open node selector (existing editor binding)
-2. A/D to reach the right tab (on I/O, toggle the Input/Output switch if needed)
+2. Number key (1-4) to reach the right tab; on I/O, A/D between the
+   Input/Output toggle buttons and E to select the side
 3. W/S through filter checkboxes if narrowing is needed (I/O and Complex only)
 4. W/S to highlight a group entry — count shows at right edge; headers are
    skipped automatically

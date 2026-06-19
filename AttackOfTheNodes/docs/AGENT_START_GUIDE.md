@@ -217,8 +217,14 @@ config_tabs:
 
 - Command-mode screens should inherit `CommandScreenMixin`.
 - Text fields should use `CommandInput` or `CommandTextArea`.
-- In nav mode, `W/S` and arrow keys move focus.
-- `E` and Enter activate the focused control.
+- Navigation is row-based 2D: in nav mode `W/S`/up-down move line-by-line
+  between rows (a multi-widget row counts as one line), and `A/D`/left-right
+  move within the current row. On single-widget rows (the common case) A/D is a
+  no-op and falls through to caret movement on a focused text field.
+- Tabbed command-mode screens switch tabs by **number key** (`1`–`5`, gated to
+  nav mode) and label tab headers `N - Label`. A/D no longer switch tabs.
+- `E` and Enter activate the focused control; on a `Switch`/`Checkbox` they
+  toggle in a single press.
 - `Esc` and `Ctrl+Q` exit edit mode before closing a modal.
 - `Ctrl+S` saves where supported.
 - List screens should use `frontend/widgets/list_navigation.py`.

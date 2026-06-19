@@ -28,7 +28,12 @@ from textual.widgets import (
 from frontend.screens.group_picker import GroupPickerScreen
 from frontend.node_types import END_NODE_TYPE, START_NODE_TYPE, TOMBSTONE_NODE_TYPE
 from frontend.widgets.command_input import CommandInput
-from frontend.widgets.command_navigation import focus_command_widget
+from frontend.widgets.command_navigation import (
+    focus_command_widget,
+    group_widgets_into_rows,
+    row_move_target,
+    within_row_target,
+)
 
 
 TABS = ["I/O", "Flow Control", "Utility", "Complex"]
@@ -79,8 +84,15 @@ class NodeSelectorScreen(ModalScreen):
         Binding("ctrl+q", "cancel", "Cancel", priority=True),
         ("/", "focus_filter", "Filter"),
         Binding("tab", "focus_node_list", "List", priority=True),
-        Binding("a", "previous_tab", "Previous tab", priority=True),
-        Binding("d", "next_tab", "Next tab", priority=True),
+        # Tabs switch by number key (1-4); A/D move within the current row.
+        Binding("1", "jump_tab(1)", "Tab 1", priority=True),
+        Binding("2", "jump_tab(2)", "Tab 2", priority=True),
+        Binding("3", "jump_tab(3)", "Tab 3", priority=True),
+        Binding("4", "jump_tab(4)", "Tab 4", priority=True),
+        Binding("a", "cursor_left", "Left", priority=True),
+        Binding("d", "cursor_right", "Right", priority=True),
+        Binding("left", "cursor_left", "Left", priority=True),
+        Binding("right", "cursor_right", "Right", priority=True),
         Binding("up", "cursor_up", "Up", priority=True),
         Binding("down", "cursor_down", "Down", priority=True),
         Binding("w", "cursor_up", "Up", priority=True),
@@ -111,9 +123,9 @@ class NodeSelectorScreen(ModalScreen):
         with Vertical(id="modal-card", classes="node-selector-modal"):
             yield Label("Add Node", classes="modal-title")
             with Horizontal(id="node-family-tabs"):
-                for tab in TABS:
+                for index, tab in enumerate(TABS):
                     yield Button(
-                        tab,
+                        f"{index + 1} - {tab}",
                         id=f"node-family-{self._slug(tab)}",
                         variant="primary" if tab == self._active_tab else "default",
                     )
@@ -141,7 +153,7 @@ class NodeSelectorScreen(ModalScreen):
             yield ListView(id="node-type-list")
             yield Static("", id="node-detail", classes="node-detail")
             yield Static(
-                "W/S navigate  A/D tabs  E activate/add  / filter  ESC close",
+                "W/S move  A/D within row  1-4 tabs  E add  / filter  ESC close",
                 classes="modal-help",
             )
             yield Button("Cancel", id="cancel-node-select", variant="default")
@@ -163,14 +175,16 @@ class NodeSelectorScreen(ModalScreen):
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
         focused = self.focused
         if isinstance(focused, CommandInput) and focused.editing:
+            # While typing in the filter, nav keys and digits act as text.
             if action in {
                 "cursor_up",
                 "cursor_down",
+                "cursor_left",
+                "cursor_right",
+                "jump_tab",
                 "choose",
                 "focus_filter",
                 "focus_node_list",
-                "previous_tab",
-                "next_tab",
                 "cancel",
             }:
                 return False
@@ -241,11 +255,9 @@ class NodeSelectorScreen(ModalScreen):
             self._sync_selected_subcategories()
             self._apply_filter(self.query_one("#node-filter", CommandInput).value)
             return
-        if isinstance(focused, Button) and (focused.id or "").startswith("io-side-"):
-            # E/Enter on the segmented toggle flips to the other I/O side.
-            self._set_io_side(not self._io_output_side)
-            return
         if isinstance(focused, Button):
+            # On the segmented I/O toggle this presses the focused side button
+            # (Input/Output), which sets that side via on_button_pressed.
             focused.press()
             return
         list_view = self.query_one("#node-type-list", ListView)
@@ -260,6 +272,12 @@ class NodeSelectorScreen(ModalScreen):
     def action_next_tab(self) -> None:
         self._cycle_tab(1)
 
+    def action_jump_tab(self, tab_number: int) -> None:
+        """Jump directly to the Nth family tab (1-based). No-op past the end."""
+        index = tab_number - 1
+        if 0 <= index < len(TABS):
+            self._set_active_tab(TABS[index])
+
     def action_cursor_up(self) -> None:
         focused = self.app.focused
         if isinstance(focused, CommandInput) and focused.editing:
@@ -271,6 +289,12 @@ class NodeSelectorScreen(ModalScreen):
         if isinstance(focused, CommandInput) and focused.editing:
             return
         self._move_focus_or_selection(1)
+
+    def action_cursor_left(self) -> None:
+        self._move_within_row(-1)
+
+    def action_cursor_right(self) -> None:
+        self._move_within_row(1)
 
     # ------------------------------------------------------------------
     # Entry building
@@ -523,20 +547,31 @@ class NodeSelectorScreen(ModalScreen):
         list_view.index = index
 
     def _move_focus_or_selection(self, delta: int) -> None:
+        """W/S move between rows; the node list owns its own internal cursor."""
         focused = self.app.focused
         list_view = self.query_one("#node-type-list", ListView)
         if focused is list_view:
             self._move_selection_or_leave_list(delta)
             return
-        widgets = self._nav_widgets()
-        if not widgets:
+        rows = group_widgets_into_rows(self._nav_widgets())
+        if not rows:
             return
-        try:
-            current = widgets.index(focused)
-        except ValueError:
-            current = 0 if delta > 0 else len(widgets) - 1
-        next_index = max(0, min(len(widgets) - 1, current + delta))
-        self._focus_widget(widgets[next_index])
+        target, _at_boundary = row_move_target(rows, focused, delta)
+        if target is not None:
+            self._focus_widget(target)
+
+    def _move_within_row(self, delta: int) -> None:
+        """A/D move between widgets sharing the focused widget's row."""
+        focused = self.app.focused
+        if isinstance(focused, CommandInput) and focused.editing:
+            return
+        list_view = self.query_one("#node-type-list", ListView)
+        if focused is list_view:
+            return
+        rows = group_widgets_into_rows(self._nav_widgets())
+        target = within_row_target(rows, focused, delta)
+        if target is not None:
+            self._focus_widget(target)
 
     def _move_selection_or_leave_list(self, delta: int) -> None:
         list_view = self.query_one("#node-type-list", ListView)
@@ -562,14 +597,11 @@ class NodeSelectorScreen(ModalScreen):
             list_view.index = earlier[-1]
 
     def _focus_adjacent_to_list(self, delta: int) -> None:
-        widgets = self._nav_widgets()
         list_view = self.query_one("#node-type-list", ListView)
-        try:
-            list_index = widgets.index(list_view)
-        except ValueError:
-            return
-        next_index = max(0, min(len(widgets) - 1, list_index + delta))
-        self._focus_widget(widgets[next_index])
+        rows = group_widgets_into_rows(self._nav_widgets())
+        target, _at_boundary = row_move_target(rows, list_view, delta)
+        if target is not None and target is not list_view:
+            self._focus_widget(target)
 
     def _focus_first_subcategory_or_list(self) -> None:
         focus_command_widget(self, self.query_one("#node-filter", CommandInput))
@@ -581,12 +613,16 @@ class NodeSelectorScreen(ModalScreen):
             focus_command_widget(self, widget)
 
     def _nav_widgets(self) -> list[Any]:
+        # All four family-tab buttons share the tab row (A/D moves between
+        # them); both I/O side buttons share the toggle row.
         widgets: list[Any] = [
-            self.query_one(f"#node-family-{self._slug(self._active_tab)}", Button),
+            self.query_one(f"#node-family-{self._slug(tab)}", Button)
+            for tab in TABS
         ]
         widgets.append(self.query_one("#node-filter", CommandInput))
         if self._active_tab == IO_TAB:
-            widgets.append(self._active_io_button())
+            widgets.append(self.query_one("#io-side-input", Button))
+            widgets.append(self.query_one("#io-side-output", Button))
         widgets.extend(self._visible_subcategory_checkboxes())
         widgets.append(self.query_one("#node-type-list", ListView))
         widgets.append(self.query_one("#cancel-node-select", Button))
