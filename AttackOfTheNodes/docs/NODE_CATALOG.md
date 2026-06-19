@@ -54,6 +54,7 @@ currently registered node type a row absorbs, where one exists.
 
 | Node | Status | Notes / Maps from |
 |---|---|---|
+| HTTP Request | Live | `http_request_node` — make an HTTP GET or POST request and forward the response body. Group `Web Request`, section `Web`. Tags: Internet |
 | API Read | Concept | GET request to a REST API, returns response body. Tags: Internet |
 | Database Query | Concept | Read query against SQL/NoSQL, returns result set |
 | System State | Concept | Read OS metrics: disk, memory, running processes |
@@ -208,8 +209,9 @@ decided.
 | Set Variable | Live | `set_variable_node` — write a named Vault entry. Duplicate `variable_setter_node` is also registered; consolidate to one type during the overhaul |
 | Get Variable | Live | `get_variable_node` — read a named Vault entry. Duplicate `variable_reader_node` is also registered; consolidate to one type during the overhaul |
 | Concat | Live | `concat_node` — join multiple text strings |
-| Text Transform | Concept | Regex, find/replace, trim, split |
-| JSON / Object Transform | Concept | Reshape or extract fields from structured data |
+| Text Transform | Live | `text_transform_node` — uppercase, lowercase, strip, title, reverse. Regex/find-replace/split still concept-stage |
+| JSON / Object Transform | Live | `json_path_node` — extract a value from a JSON string by dot-path (e.g. `user.name`). Broader reshape/multi-field extraction still concept-stage |
+| Random Number | Live | `random_number_node` — produce a random integer or float within a configured range |
 | Math / Comparison | Concept | Arithmetic or comparison; output: value or bool |
 | Format Text | Concept | Interpolate vault/transient values into a template string (lives in this group, not direct-add) |
 

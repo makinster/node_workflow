@@ -207,21 +207,29 @@ helper-generated nodes declare identity directly as class metadata
 
 ## Planned Node Taxonomy
 
-Phase 17 introduces user-facing primary families for the upcoming node overhaul:
+Phase 17 introduces **five** user-facing primary families for the upcoming node
+overhaul (`PHASE_17_NODE_VISUAL_IDENTITY.md` is authoritative on taxonomy):
 
 - Inputs: external-source inputs such as text in, file read, web scrape, and
   user text input.
-- Flow Control: branch, conditional branch, merge, wait, loop, and branch-shape
-  nodes.
 - Outputs: user-facing or durable workflow outputs, including branch-ending
   outputs.
-- Complex: nested workflows and unique nodes that do not fit the other
-  families cleanly.
+- Flow Control: branch, conditional branch, merge, wait, loop, and branch-shape
+  nodes.
+- Utility: mid-workflow action nodes — automation, data transform, and
+  debug/log/loop helpers; a working catch-all for action nodes.
+- Complex: nested workflows and unique nodes (AI processing, subworkflows,
+  triggers) that do not fit the other families cleanly.
+
+The five families map onto **four selector tabs**: `Inputs` and `Outputs` share
+one `I/O` tab behind an Input/Output switch; `Flow Control`, `Utility`, and
+`Complex` each get their own tab. The switch is pure frontend presentation — the
+backend only knows the `primary_family`.
 
 Nodes can also carry multiple subcategories such as Triggered, File I/O,
-Internet, AI, Passive Output, Active Output, Parallel, Conditional, Runtime
-Resource, and Utility. Selector filters and editor row identity should use this
-metadata without changing runtime semantics.
+Internet, AI, Passive Output, Active Output, Parallel, Conditional, and Runtime
+Resource. Selector filters and editor row identity should use this metadata
+without changing runtime semantics.
 
 ## Data Flow Patterns — Transient Payloads vs Vault
 

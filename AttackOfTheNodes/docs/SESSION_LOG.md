@@ -4,6 +4,25 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-19 — Docs Audit: Taxonomy + Catalog Drift Fixes
+
+- Ran the docs audit (active docs only) on `main` @ `2b681f2`. Verified
+  environment: Python 3.14.4, Textual 8.2.7; registry has 35 nodes across 5
+  families (Inputs, Outputs, Flow Control, Utility, Complex); backend has no
+  `frontend` imports; `test_debug_nodes.py` 133 passed. Router integrity OK
+  (all 19 active docs + 7 archive entries resolve).
+- DRIFT (doc-vs-doc, Known Finding #1): `PROJECT_KNOWLEDGE.md` "Planned Node
+  Taxonomy" listed four families with Utility as a subcategory. Reconciled to
+  Phase 17's five families (Utility promoted) + four-tab / I/O-switch note.
+  PHASE_17 is authoritative. Left the subcategory/`tags` concept intact
+  (Known Finding #3 retirement still awaits owner decision).
+- DRIFT (doc-vs-code): `NODE_CATALOG.md` omitted/mis-statused 4 live registered
+  nodes. Added `http_request_node` (HTTP Request, Live) under Data Source;
+  marked `text_transform_node` and `json_path_node` rows Live with `Maps from`;
+  added `random_number_node` (Random Number, Live) under Data Transform.
+- Did not edit `primary_family`/`tags` terminology in PROJECT_KNOWLEDGE or
+  PHASE_17 (Known Findings #2 and #3 await owner decision).
+
 ## 2026-06-17 — Tabbed UI Keyboard Navigation Rework
 
 - Branched `codex/keyboard-nav-rework` from `codex/textual-ui-overhaul`
