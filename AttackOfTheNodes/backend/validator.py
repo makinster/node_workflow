@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
 
 from .branch_health import ENDED_UNMERGED, derive_branch_health, output_types_from_factory
+from .data_types import DataType
 from .node_factory import NodeFactory
 from .workflow_map import WorkflowMap
 
@@ -246,6 +247,9 @@ def validate_workflow(
 
     # Typed vault: warn when a node reads a key typed "ai_session" but the writer
     # declared a different (or null) type_tag.  Error (key absent) is already above.
+    # Type identities come from backend.data_types (the single canonical source
+    # shared with node port data types) — not free strings.
+    ai_session = DataType.AI_SESSION.value
     for node_id, data in all_nodes.items():
         config = data.get("config") or {}
         membank_inputs = config.get("membank_inputs") or []
@@ -254,13 +258,13 @@ def validate_workflow(
         for entry in membank_inputs:
             if not isinstance(entry, dict):
                 continue
-            if entry.get("type_tag") != "ai_session":
+            if entry.get("type_tag") != ai_session:
                 continue
             key = _membank_source_id(entry)
             if not key or key not in declared_membank_outputs:
                 continue
             writer_tag = declared_membank_outputs[key]
-            if writer_tag != "ai_session":
+            if writer_tag != ai_session:
                 warnings.append(
                     {
                         "node_id": node_id,

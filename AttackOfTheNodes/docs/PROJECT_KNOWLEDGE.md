@@ -93,6 +93,12 @@ Merge behavior is editor-assisted and runtime-coordinated:
   (API keys, passwords, tokens). Plain-text JSON phase; designed for drop-in
   encryption. Nodes call `context.get_secret(key_name)` — the manager is the
   single trust boundary. Storage at `secrets/secrets.json` (gitignored).
+- `backend/data_types.py`: canonical data-type vocabulary (`string`, `number`,
+  `bool`, `var`, `file`, `ai_session`, `any`) shared by node port data types and
+  typed vault-entry tags. Single source of truth; `file`/`ai_session` are
+  RunSession-backed reference types; `any` is the explicit permissive default.
+  Exposes `is_valid_type`, `validate_type` (warns on unknown), `canonicalize`
+  (maps the deprecated `boolean` alias to `bool`), and `is_reference_type`.
 - `backend/node_identity.py`: Phase 17 transitional metadata (primary_family,
   tags, icon_name, color_hint, group, selector_section, editor_only) for all
   registered node types. `apply_transitional_node_identity()` stamps these onto
@@ -109,7 +115,9 @@ one run and do not survive between runs.
 
 **Vault (MemoryBank persistent store)** holds named JSON values readable by
 any node in any branch. Every vault entry carries a `type` field alongside
-its value. Simple types (`string`, `number`, `boolean`) are pure JSON values.
+its value, drawn from the canonical vocabulary in `backend/data_types.py`
+(`string`, `number`, `bool`, `var`, `file`, `ai_session`, `any` — the same set
+node ports use). Simple types (`string`, `number`, `bool`) are pure JSON values.
 Typed handle entries (`file`, `ai_session`) store the type tag and a string
 reference key; the actual Python handle lives in `RunSession` and is retrieved
 with `context.run_session.get_resource(ref_key)`. Input source dropdowns

@@ -189,10 +189,21 @@ transient or Vault) and outputs (write Vault or transient content to disk).
 
 ## Typed Vault Outputs
 
-Vault writes can carry an explicit `type` field alongside the value. Types:
-`string`, `number`, `boolean`, `file`, `ai_session`.
+Vault writes can carry an explicit `type` field alongside the value. The type
+identities come from the canonical data-type vocabulary in
+`backend/data_types.py` — the **single source of truth** shared with node port
+data types so dropdown type-filtering between ports and vault keys stays
+coherent (no parallel free-string vocabularies). Canonical set: `string`,
+`number`, `bool`, `var`, `file`, `ai_session`, `any`.
 
-`string`, `number`, and `boolean` entries behave as before — pure JSON values
+> **Reconciliation (2026-06-19):** this list previously spelled the boolean
+> type `boolean`. Per `NODE_STANDARDIZATION_HANDOFF.md` §5 the canonical
+> spelling is now **`bool`**. `boolean` is accepted only as a deprecated alias
+> (`data_types.canonicalize("boolean") == "bool"`) so older specs and saved
+> workflows still resolve. `any` is the explicit permissive type — there is no
+> silent "untyped" default.
+
+`string`, `number`, and `bool` entries behave as before — pure JSON values
 stored and read by name.
 
 `file` and `ai_session` entries store a type tag and a string reference key.

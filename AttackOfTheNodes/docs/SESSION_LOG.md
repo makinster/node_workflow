@@ -4,6 +4,44 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-19 — Track A Step 1: Canonical Data-Type Module
+
+- Branched `codex/canonical-data-types` from `main` @ `872ae66` (Add adopted
+  Node Standardization Handoff doc). `git fetch` left the local base as the
+  freshest reachable commit (SSL trust issue, per repo norm).
+- Implemented `NODE_STANDARDIZATION_HANDOFF.md` Track A step 1 (§5): new
+  `backend/data_types.py` is the single source of truth for the coarse
+  data-type vocabulary shared by node port data types **and** typed vault-entry
+  tags. Canonical set: `string`, `number`, `bool`, `var`, `file`, `ai_session`,
+  `any`. `file`/`ai_session` are RunSession-backed reference types; `any` is the
+  explicit permissive default (no silent untyped).
+- **Reconciled** the vault-vs-port spelling conflict the handoff flagged: the
+  typed-vault docs spelled boolean `boolean`; §5 (authoritative) uses `bool`.
+  Canonical is now `bool`; `boolean` survives only as a deprecated alias that
+  `canonicalize()` maps to `bool`, so older specs / saved workflows still
+  resolve. No code stored the `boolean` literal (only docs + the `ai_session`
+  literal in the validator), so the reconciliation is doc + alias only.
+- Routed the one existing typed-vault consumer through the module: `validator.py`
+  now compares against `DataType.AI_SESSION.value` instead of a free `"ai_session"`
+  string. MemoryBank stores free `type_tag`s and is unchanged (no validation
+  there); the validator is the meaningful single consumer today.
+- Public surface: `DataType` enum, `CANONICAL_TYPES`, `REFERENCE_TYPES`,
+  `DEFAULT_TYPE`, `LEGACY_ALIASES`, `UnknownDataTypeWarning`, and functions
+  `is_valid_type`, `validate_type` (helper-facing — warns on unknown),
+  `is_reference_type`, `canonicalize`, `coerce_type`, `port_data_types`,
+  `vault_entry_types`, `unknown_types`.
+- Tests: `tests/test_data_types.py` (canonical set, membership/validation,
+  bool-not-boolean, reference types, explicit-`any` default, unknown-type
+  warning, canonical-types-do-not-warn, vault/port lists agree). Verified:
+  `compileall -q .` clean; `test_data_types.py` + `test_typed_vault.py` 18
+  passed; `test_debug_nodes.py` 133 passed.
+- Stayed in scope: no contract schema fields on node classes (step 2), no
+  `primary_family→category` / `group→family` rename (step 4), no node
+  regeneration or frontend selector edits. Docs touched: `NODE_STANDARDS.md`
+  (Typed Vault Outputs), `PROJECT_KNOWLEDGE.md` (vault paragraph + Backend
+  Components). Nothing required owner escalation — the only conflict (`boolean`
+  vs `bool`) was resolved by the handoff itself.
+
 ## 2026-06-19 — Node Standardization Handoff Adopted
 
 - Added `NODE_STANDARDIZATION_HANDOFF.md` (status: Adopted) — the design handoff
