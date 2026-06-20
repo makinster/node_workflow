@@ -5,6 +5,21 @@
 the depth gutter outside the box; taxonomy revision remains I/O tab + switch,
 Utility family, in-list section headers, AI-as-subcategory)
 
+> **Revision — 2026-06-19 (supersedes the subcategory-filter design below).**
+> The **rigid subcategory taxonomy and its filter-checkbox column were retired**
+> and removed from the node selector. Node `tags` survive only as **freeform
+> search keywords** that feed the string filter — there are no subcategory filter
+> checkboxes, no fixed tag vocabulary, and no AND-combining filter UI. The
+> separate Category > Family > Type rename was also **cancelled**: the top tier
+> stays `primary_family` ("family") and the variant grouping stays `group`. Read
+> every "subcategory filter / checkbox" passage below (the capability-tag table,
+> the selector filter flow, the editor-row identity, and the acceptance list) as
+> **historical**; the family + group spine and the per-port I/O contract
+> (`NODE_STANDARDIZATION_HANDOFF.md` §4/§8) are what the selector and details
+> panel render now. The deeper rewrite of this doc is folded into the upcoming
+> selector UI redesign. See `NODE_STANDARDIZATION_HANDOFF.md` (Revision
+> 2026-06-19) and `PROJECT_BACKLOG.md`.
+
 Phase 17 is not just a cosmetic row-color pass. It is the foundation for the
 next node overhaul: clearer node families, reusable subcategory tags, a more
 useful node selector, and editor rows that communicate node identity at a
@@ -300,14 +315,17 @@ filter users would seek.
 
 **Filters are deliberately sparse.** Groups absorb most of the filtering need
 (a group collapses many variants behind one entry), and section headers
-organize the rest. Only two tabs have filter controls:
+organize the rest. (Historical: the table below described per-tab subcategory
+filter checkboxes. Those were removed 2026-06-19 — there are no filter
+checkboxes; only the string filter remains, and `tags` feed it as freeform
+search keywords.)
 
-| Tab | Filters |
+| Tab | Filters (removed) |
 |---|---|
-| I/O | `File I/O` · `Internet` · `AI` (apply to whichever switch side is active) |
+| I/O | ~~`File I/O` · `Internet` · `AI`~~ |
 | Flow Control | none |
 | Utility | none |
-| Complex | `AI` |
+| Complex | ~~`AI`~~ |
 
 Subcategory tags still exist on all nodes regardless of which tabs surface
 filter controls — the string search matches tags everywhere, and the editor
@@ -320,8 +338,8 @@ identity that any frontend can consume:
 
 - `primary_family` — one of `Inputs`, `Outputs`, `Flow Control`, `Utility`,
   `Complex`; drives selector tab mapping and strongest row identity
-- `tags` — zero or more subcategory strings; drives filter checkboxes and
-  search
+- `tags` — zero or more freeform keyword strings; feed node search only (the
+  subcategory filter checkboxes were removed 2026-06-19)
 - `icon_name` — display glyph or icon name
 - `color_hint` — optional legacy/future visual hint. Current editor rows do not
   use it for background fills.
@@ -568,8 +586,8 @@ The important requirements are:
 - the depth column is outside the node-card border;
 - the alias and identity lines do not start with family bracket characters;
 - the first line emphasizes the user-facing alias;
-- the second line shows family plus one or two high-signal subcategories;
-- if the second line cannot fit, truncate the visible subcategory text with an
+- the second line shows the family;
+- if the second line cannot fit, truncate the visible text with an
   ellipsis; the full list remains available in the right-side details panel;
 - node interiors render on the default background, without family color fills;
 - between two ordinary nodes, a centered non-focusable `↓` marker occupies the
@@ -580,9 +598,9 @@ The important requirements are:
   more important than decorative styling;
 - cursor/highlight behavior and branch selector rows must stay stable.
 
-The right-side details panel should show the node's primary family and all
-subcategories. This helps users understand why a node appeared under particular
-selector filters.
+The right-side details panel should show the node's per-port I/O contract
+(`NODE_STANDARDIZATION_HANDOFF.md` §8) — the family is carried by the tab the
+node sits under.
 
 ## Problems and Solutions Summary
 

@@ -70,20 +70,20 @@ Use `PHASE_17_NODE_VISUAL_IDENTITY.md` for the active plan.
 - Family tabs switch by number key (`1`–`4`) and show numbered headers
   (`N - Label`); the I/O segmented toggle is a two-button row navigated with
   A/D, with `E` selecting the focused side.
-- Subcategory filters are multi-tag metadata, not mutually exclusive families.
-- Subcategory filters are checkboxes with `AND` behavior.
-- Initial selector focus should land on the first subcategory control, not the
-  string filter.
-- The string filter should be activate-to-edit; `/` can jump to it.
-- Editor rows may use two lines: alias first, family/subcategory identity
-  second.
-- Prefer an ASCII text-box border around the alias and family/subcategory text.
-  Keep the depth column outside the box, render node interiors on the default
-  background, and truncate long subcategory text with an ellipsis when needed.
+- There is no subcategory filter checkbox column. The rigid subcategory taxonomy
+  was retired 2026-06-19; node `tags` survive only as freeform keywords that feed
+  the string filter (see `NODE_STANDARDIZATION_HANDOFF.md` Revision 2026-06-19).
+- Initial selector focus lands on the string filter (not in typing mode).
+- The string filter is activate-to-edit; `/` can jump to it.
+- Editor rows may use two lines: alias first, family identity second.
+- Prefer an ASCII text-box border around the alias and family text. Keep the
+  depth column outside the box, render node interiors on the default
+  background, and truncate long text with an ellipsis when needed.
 - Between two ordinary node rows, show a centered non-focusable `↓` gap marker.
   Branch and merge jump widgets own that gap when present and should be
   centered under the node box.
-- Details panel should show primary family and all subcategories.
+- Details panel should show the node's per-port I/O contract (see
+  `NODE_STANDARDIZATION_HANDOFF.md` §8).
 - Preserve selection, autoscroll, validation markers, breakpoint markers,
   execution state, and Merge Beacon state indicators.
 

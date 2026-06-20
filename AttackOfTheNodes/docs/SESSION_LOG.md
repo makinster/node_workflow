@@ -4,6 +4,21 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-19 — Docs: Reconcile Removed Subcategory Filter
+
+- Follow-up to step 4: updated the UI docs that still described the removed
+  subcategory filter-checkbox column. `UI_QUICK_REFERENCE.md` and `TUI_DESIGN.md`
+  fully reconciled — no subcategory checkboxes, focus lands on the string filter,
+  `tags` are freeform search keywords, details panel shows the per-port contract.
+- `PHASE_17_NODE_VISUAL_IDENTITY.md` (the authoritative selector/visual-identity
+  design doc, woven through with the subcategory concept): added a prominent
+  "Revision — 2026-06-19" callout superseding the subcategory-filter design, and
+  surgically fixed the most concrete false-existence claims (the per-tab filter
+  table, the `tags` metadata description, the editor-row identity line, the
+  details-panel statement). The deeper narrative rewrite is deliberately folded
+  into the upcoming selector UI redesign rather than duplicated here.
+- Branch `codex/docs-subcategory-reconcile` → fast-forwarded into `main`.
+
 ## 2026-06-19 — Track A Step 4 (owner-revised): Retire Subcategory Filter
 
 - Continued on `codex/canonical-data-types` (after step 3). **Owner revised the
