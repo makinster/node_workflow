@@ -165,6 +165,48 @@ Restore procedure:
 6. A partial restore (node back, some connections missing) is always preferred
    over leaving a tombstone. The validator will surface remaining loose ends.
 
+## Planned Project — Legacy Bypass / Compatibility-Code Audit
+
+Goal: periodically sweep the codebase for accumulated legacy/back-compat
+"bypasses" and remove each once the thing it bridges is gone. Multiple
+migrations (typed vault, tombstones, the canonical data-type + helper-spec work
+2026-06-19, etc.) have each added *additive* compatibility — aliases, format
+fallbacks, dual-path support — specifically to keep tests green and avoid
+mass-rewrites at the time. That is the right call per-migration, but the shims
+accumulate and quietly become permanent if never revisited.
+
+**Distinguish shim from semantics.** Not every fallback is debt. Schema
+*defaults* that define behavior (absent `data_type` ⇒ `any`, absent `required`
+⇒ optional in `node_base`/`node_factory`) are the contract, not legacy code —
+keep them. The audit targets *bridges between an old and a new form* that exist
+only because old data/specs/nodes still exist.
+
+Known shims to reevaluate (extend this list as more are found):
+
+- **Helper legacy spec sections** (`aotn_node_helper/generator.py`):
+  `input_sources` / `output_routing` / `input_port_metadata` /
+  `output_port_metadata` are kept working alongside the unified `inputs:` /
+  `outputs:` blocks (handoff §7). Removable — with their `test_node_helper`
+  cases — once every spec/node is recreated in the unified form. This is the
+  natural payoff of the planned full node-recreation pass.
+- **`boolean` → `bool` data-type alias** (`backend/data_types.py`
+  `LEGACY_ALIASES`): a safety net for any persisted vault `type_tag` spelled
+  `boolean`. Before deleting, grep `workflows/*.json` for
+  `"type_tag": "boolean"`; if none, the alias is dead code. This is the only
+  data-type shim tied to *user data* rather than node code.
+- **Tombstone legacy migration**: `migrate_legacy_deleted_node()` /
+  `branch_end_node + _system_role` conversion on load (see Boundary Cleanup
+  above) — removable once no saved workflow predates `tombstone_node`.
+
+Recommended:
+
+- Keep a short inventory of compat shims, each with an explicit *remove-when*
+  condition, so they are deliberately temporary rather than silently permanent.
+- Fold shim removal into the migration that obsoletes it (e.g. delete the helper
+  legacy paths during the node-recreation pass), not as a separate risky sweep.
+- When removing a shim, remove its tests in the same change so coverage tracks
+  the supported surface, not the retired one.
+
 ## Near-Term Project — Selector Family Taxonomy Reconciliation
 
 Goal: make the node-selector family taxonomy agree across docs, catalog, and
