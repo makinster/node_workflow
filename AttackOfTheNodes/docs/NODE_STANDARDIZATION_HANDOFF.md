@@ -13,6 +13,26 @@ row to the README Document Directory + an entry in `DOCS_MIGRATION_NOTES.md`.
 
 ---
 
+## Revision — 2026-06-19 (owner): terminology rename cancelled
+
+After Track A steps 1–3 landed, the owner revised step 4. **The Category > Family
+> Type rename (§2.1, §3) is cancelled.** The top-tier bucket keeps its existing
+name **`primary_family`** (the "family": Inputs/Outputs, Flow Control, Utility,
+Complex) and the variant grouping keeps **`group`** (Branch, User Input, AI
+Processing). There is no `category`/`primary_family`/`legacy_category`
+consolidation and no `group → family` rename — those sections below are
+**superseded**.
+
+The real cleanup is **retiring the subcategory taxonomy** (`tags`), which "was
+never utilized correctly." Done: the subcategory **filter-checkbox column** was
+removed from the node selector and the generator's rigid `VALID_TAGS`
+enforcement was dropped; **`tags` survive only as freeform search keywords**.
+This is consistent with §2.4 / §3 (retire the rigid behavioral subcategory
+scheme; a freeform tags field may survive). Read §3/§9/§10's Category/Family
+naming as historical from here on.
+
+---
+
 ## 1. What this changes, in one paragraph
 
 Every node gains a single authoritative **I/O contract** declared on the node and

@@ -18,7 +18,6 @@ from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
 from textual.widgets import (
     Button,
-    Checkbox,
     Label,
     ListItem,
     ListView,
@@ -43,16 +42,6 @@ IO_TAB = "I/O"
 # start is auto-generated; end is replaced by terminate-branch output config
 # and the End Branch node.
 HIDDEN_NODE_TYPES = {TOMBSTONE_NODE_TYPE, START_NODE_TYPE, END_NODE_TYPE}
-
-# Filter checkboxes are deliberately sparse: groups and section headers do
-# most of the organizing. Only these tabs surface filters.
-TAB_FILTER_TAGS: Dict[str, List[str]] = {
-    "I/O": ["Internet", "AI"],
-    "Flow Control": [],
-    "Utility": [],
-    "Complex": ["AI"],
-}
-ALL_FILTER_TAGS = ["Internet", "AI"]
 
 # Short descriptions shown on group entries in the selector and picker.
 # Fallback: first member's description.
@@ -109,15 +98,6 @@ class NodeSelectorScreen(ModalScreen):
         self._visible_nodes: list[Dict[str, Any]] = []
         self._active_tab = TABS[0]
         self._io_output_side = False
-        self._selected_subcategories: set[str] = set()
-        self._tag_checkbox_ids = {
-            tag: f"node-subcategory-{self._slug(tag)}"
-            for tag in ALL_FILTER_TAGS
-        }
-        self._checkbox_id_tags = {
-            checkbox_id: tag
-            for tag, checkbox_id in self._tag_checkbox_ids.items()
-        }
 
     def compose(self) -> ComposeResult:
         with Vertical(id="modal-card", classes="node-selector-modal"):
@@ -147,9 +127,6 @@ class NodeSelectorScreen(ModalScreen):
                     classes="segmented-toggle",
                     variant="default",
                 )
-            with Vertical(id="node-subcategory-filters"):
-                for tag in ALL_FILTER_TAGS:
-                    yield Checkbox(tag, value=False, id=self._tag_checkbox_ids[tag])
             yield ListView(id="node-type-list")
             yield Static("", id="node-detail", classes="node-detail")
             yield Static(
@@ -166,11 +143,10 @@ class NodeSelectorScreen(ModalScreen):
         ]
         self._sync_tab_buttons()
         self._sync_io_toggle()
-        self._sync_subcategory_filter_visibility()
         self._apply_filter("")
-        self._focus_first_subcategory_or_list()
-        self.call_after_refresh(self._focus_first_subcategory_or_list)
-        self.set_timer(0.01, self._focus_first_subcategory_or_list)
+        self._focus_filter_input()
+        self.call_after_refresh(self._focus_filter_input)
+        self.set_timer(0.01, self._focus_filter_input)
 
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
         focused = self.focused
@@ -219,20 +195,12 @@ class NodeSelectorScreen(ModalScreen):
             if tab:
                 self._set_active_tab(tab)
 
-    def on_checkbox_changed(self, event: Checkbox.Changed) -> None:
-        if event.checkbox.id in self._checkbox_id_tags:
-            self._sync_selected_subcategories()
-            self._apply_filter(self.query_one("#node-filter", CommandInput).value)
-
     def _set_io_side(self, output_side: bool) -> None:
         """Switch the I/O segmented toggle between the Input and Output sides."""
         if self._active_tab != IO_TAB:
             return
         self._io_output_side = bool(output_side)
         self._sync_io_toggle()
-        self._sync_subcategory_filter_visibility()
-        # Filters checked on the other side must not constrain this side.
-        self._sync_selected_subcategories()
         self._apply_filter(self.query_one("#node-filter", CommandInput).value)
         self._focus_active_io_button()
 
@@ -249,11 +217,6 @@ class NodeSelectorScreen(ModalScreen):
         focused = self.app.focused
         if isinstance(focused, CommandInput):
             focused.begin_edit()
-            return
-        if isinstance(focused, Checkbox):
-            focused.value = not focused.value
-            self._sync_selected_subcategories()
-            self._apply_filter(self.query_one("#node-filter", CommandInput).value)
             return
         if isinstance(focused, Button):
             # On the segmented I/O toggle this presses the focused side button
@@ -313,13 +276,6 @@ class NodeSelectorScreen(ModalScreen):
             for node in self._all_nodes
             if self._node_family(node) == family
         ]
-        if self._selected_subcategories:
-            selected = set(self._selected_subcategories)
-            family_nodes = [
-                node
-                for node in family_nodes
-                if selected.issubset(set(node.get("tags") or []))
-            ]
         if query:
             # Search dissolves groups and hides headers: matching node types
             # appear directly in the list.
@@ -603,7 +559,7 @@ class NodeSelectorScreen(ModalScreen):
         if target is not None and target is not list_view:
             self._focus_widget(target)
 
-    def _focus_first_subcategory_or_list(self) -> None:
+    def _focus_filter_input(self) -> None:
         focus_command_widget(self, self.query_one("#node-filter", CommandInput))
 
     def _focus_widget(self, widget: Any) -> None:
@@ -623,17 +579,9 @@ class NodeSelectorScreen(ModalScreen):
         if self._active_tab == IO_TAB:
             widgets.append(self.query_one("#io-side-input", Button))
             widgets.append(self.query_one("#io-side-output", Button))
-        widgets.extend(self._visible_subcategory_checkboxes())
         widgets.append(self.query_one("#node-type-list", ListView))
         widgets.append(self.query_one("#cancel-node-select", Button))
         return widgets
-
-    def _visible_subcategory_checkboxes(self) -> list[Checkbox]:
-        return [
-            checkbox
-            for checkbox in self.query("#node-subcategory-filters Checkbox")
-            if isinstance(checkbox, Checkbox) and checkbox.display
-        ]
 
     # ------------------------------------------------------------------
     # Tab and filter state
@@ -647,15 +595,10 @@ class NodeSelectorScreen(ModalScreen):
         if tab not in TABS:
             return
         self._active_tab = tab
-        self._selected_subcategories = set()
-        for checkbox in self.query("#node-subcategory-filters Checkbox"):
-            if isinstance(checkbox, Checkbox):
-                checkbox.value = False
         self._sync_tab_buttons()
         self._sync_io_toggle()
-        self._sync_subcategory_filter_visibility()
         self._apply_filter(self.query_one("#node-filter", CommandInput).value)
-        self._focus_first_subcategory_or_list()
+        self._focus_filter_input()
 
     def _sync_tab_buttons(self) -> None:
         for tab in TABS:
@@ -683,30 +626,6 @@ class NodeSelectorScreen(ModalScreen):
 
     def _focus_active_io_button(self) -> None:
         focus_command_widget(self, self._active_io_button())
-
-    def _sync_subcategory_filter_visibility(self) -> None:
-        configured = set(TAB_FILTER_TAGS.get(self._active_tab, []))
-        available = {
-            tag
-            for node in self._all_nodes
-            if self._node_family(node) == self._active_family()
-            for tag in (node.get("tags") or [])
-        }
-        for checkbox in self.query("#node-subcategory-filters Checkbox"):
-            if not isinstance(checkbox, Checkbox):
-                continue
-            tag = self._checkbox_id_tags.get(checkbox.id or "")
-            visible = tag in configured and tag in available
-            checkbox.display = visible
-            checkbox.disabled = not visible
-
-    def _sync_selected_subcategories(self) -> None:
-        selected: set[str] = set()
-        for checkbox in self._visible_subcategory_checkboxes():
-            tag = self._checkbox_id_tags.get(checkbox.id or "")
-            if tag and checkbox.value:
-                selected.add(tag)
-        self._selected_subcategories = selected
 
     def _tab_for_button_id(self, button_id: str) -> str:
         for tab in TABS:

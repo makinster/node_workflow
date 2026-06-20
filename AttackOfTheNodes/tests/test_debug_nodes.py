@@ -4221,15 +4221,14 @@ async def _test_node_config_keyboard_skips_hidden_payload_previews():
     print("test_node_config_keyboard_skips_hidden_payload_previews PASSED")
 
 
-def test_node_selector_layout_is_compact_and_checkboxes_fit():
-    asyncio.run(_test_node_selector_layout_is_compact_and_checkboxes_fit())
+def test_node_selector_layout_is_compact():
+    asyncio.run(_test_node_selector_layout_is_compact())
 
 
-async def _test_node_selector_layout_is_compact_and_checkboxes_fit():
+async def _test_node_selector_layout_is_compact():
     from pathlib import Path as _Path
 
     from textual.app import App
-    from textual.widgets import Checkbox
 
     from frontend.screens.node_selector import NodeSelectorScreen
 
@@ -4244,7 +4243,7 @@ async def _test_node_selector_layout_is_compact_and_checkboxes_fit():
             await self.push_screen(NodeSelectorScreen(wm._factory))
 
     # A short terminal is where the old stretched (height: 1fr) tab row and
-    # filter block left dead space and clipped the last checkbox.
+    # filter block left dead space; the list must sit flush under the filter.
     for height in (30, 22):
         app = SelApp()
         async with app.run_test(size=(90, height)) as pilot:
@@ -4252,7 +4251,6 @@ async def _test_node_selector_layout_is_compact_and_checkboxes_fit():
             screen = app.screen
             tabs = screen.query_one("#node-family-tabs")
             filt = screen.query_one("#node-filter")
-            subs = screen.query_one("#node-subcategory-filters")
             io_row = screen.query_one("#io-direction-row")
 
             # Filter is directly below the tab row — no dead space.
@@ -4269,25 +4267,14 @@ async def _test_node_selector_layout_is_compact_and_checkboxes_fit():
                 f" {filt_bottom} at height {height}"
             )
 
-            # Check checkboxes on Complex tab (which has the AI filter).
-            screen._set_active_tab("Complex")
-            await pilot.pause(0.05)
-            subs = screen.query_one("#node-subcategory-filters")
-            visible = [
-                cb
-                for cb in screen.query("#node-subcategory-filters Checkbox")
-                if cb.display
-            ]
-            assert visible, "Expected visible subcategory checkboxes on Complex tab"
-            for cb in visible:
-                bottom = cb.region.y + cb.region.height
-                subs_bottom = subs.region.y + subs.region.height
-                assert cb.region.height >= 1, f"checkbox {cb.id} not rendered"
-                assert bottom <= subs_bottom, (
-                    f"checkbox {cb.id} clipped at height {height}"
-                )
+            # The node list renders below the switch row with usable height.
+            list_view = screen.query_one("#node-type-list")
+            assert list_view.region.height >= 1, (
+                f"node list not rendered at height {height}"
+            )
+            assert list_view.region.y >= io_row.region.y + io_row.region.height
 
-    print("test_node_selector_layout_is_compact_and_checkboxes_fit PASSED")
+    print("test_node_selector_layout_is_compact PASSED")
 
 
 def test_node_selector_rows_are_one_line_with_detail():
@@ -4480,15 +4467,16 @@ async def _test_node_config_digit_types_while_editing_but_jumps_in_nav():
     print("test_node_config_digit_types_while_editing_but_jumps_in_nav PASSED")
 
 
-def test_node_selector_down_from_last_checkbox_highlights_first_node():
-    asyncio.run(_test_node_selector_down_from_last_checkbox_highlights_first_node())
+def test_node_selector_down_from_filter_highlights_first_node():
+    asyncio.run(_test_node_selector_down_from_filter_highlights_first_node())
 
 
-async def _test_node_selector_down_from_last_checkbox_highlights_first_node():
+async def _test_node_selector_down_from_filter_highlights_first_node():
     from textual.app import App, ComposeResult
-    from textual.widgets import Checkbox, ListView
+    from textual.widgets import ListView
 
     from frontend.screens.node_selector import NodeSelectorScreen
+    from frontend.widgets.command_input import CommandInput
 
     _, wm, _, _ = _make_services()
 
@@ -4501,18 +4489,17 @@ async def _test_node_selector_down_from_last_checkbox_highlights_first_node():
         await pilot.pause(0.05)
         screen = app.query_one(NodeSelectorScreen)
         list_view = app.query_one("#node-type-list", ListView)
+        filter_input = app.query_one("#node-filter", CommandInput)
 
-        # The Complex tab has the AI checkbox — use it so we always have a
-        # visible checkbox to navigate from (I/O Input side has none currently).
+        # The Complex tab has no I/O switch, so the filter sits directly above
+        # the node list — moving down from it must reach the list.
         screen._set_active_tab("Complex")
         await pilot.pause(0.03)
 
-        # Focus the last visible subcategory checkbox.
-        visible_checkboxes = screen._visible_subcategory_checkboxes()
-        assert visible_checkboxes
-        app.set_focus(visible_checkboxes[-1])
+        app.set_focus(filter_input)
         await pilot.pause(0.03)
-        assert isinstance(app.focused, Checkbox)
+        assert app.focused is filter_input
+        assert filter_input.editing is False
 
         # One step down must land on the node list with the first row
         # highlighted — not a focused list with no visible cursor.
@@ -4524,7 +4511,7 @@ async def _test_node_selector_down_from_last_checkbox_highlights_first_node():
         assert list_view.highlighted_child is not None
         assert list_view.highlighted_child.highlighted is True
 
-    print("test_node_selector_down_from_last_checkbox_highlights_first_node PASSED")
+    print("test_node_selector_down_from_filter_highlights_first_node PASSED")
 
 
 def test_node_config_schema_tab_hints_place_fields_in_top_level_tabs():
@@ -5293,13 +5280,13 @@ async def _test_node_config_payloads_tab_reveals_upstream_and_vault_payloads():
     print("test_node_config_payloads_tab_reveals_upstream_and_vault_payloads PASSED")
 
 
-def test_node_selector_uses_family_tabs_and_subcategory_filters():
-    asyncio.run(_test_node_selector_uses_family_tabs_and_subcategory_filters())
+def test_node_selector_uses_family_tabs():
+    asyncio.run(_test_node_selector_uses_family_tabs())
 
 
-async def _test_node_selector_uses_family_tabs_and_subcategory_filters():
+async def _test_node_selector_uses_family_tabs():
     from textual.app import App, ComposeResult
-    from textual.widgets import Button, Checkbox, ListView
+    from textual.widgets import Button, ListView
 
     from frontend.screens.node_selector import NodeSelectorScreen
     from frontend.widgets.command_input import CommandInput
@@ -5335,7 +5322,6 @@ async def _test_node_selector_uses_family_tabs_and_subcategory_filters():
         filter_input = app.query_one("#node-filter", CommandInput)
         io_input_button = app.query_one("#io-side-input", Button)
         io_output_button = app.query_one("#io-side-output", Button)
-        ai_filter = app.query_one("#node-subcategory-ai", Checkbox)
 
         # Hidden node types never reach the selector.
         all_types = {node["type"] for node in screen._all_nodes}
@@ -5351,10 +5337,7 @@ async def _test_node_selector_uses_family_tabs_and_subcategory_filters():
         assert screen._io_output_side is False
         assert io_input_button.has_class("active")
         assert not io_output_button.has_class("active")
-        internet_filter = app.query_one("#node-subcategory-internet", Checkbox)
-        assert internet_filter.display is True   # http_request_node has Internet tag
         assert app.focused is filter_input
-        assert ai_filter.display is False  # no AI-tagged input nodes yet
         assert filter_input.editing is False
         assert {node["type"] for node in screen._visible_nodes} == {
             "example_file_instance_node",
@@ -5382,7 +5365,6 @@ async def _test_node_selector_uses_family_tabs_and_subcategory_filters():
         # their section headers.
         screen.action_next_tab()
         assert screen._active_tab == "Flow Control"
-        assert screen._visible_subcategory_checkboxes() == []
         assert header_names(screen) == ["Branching", "Timing"]
         groups = group_entries(screen)
         assert groups.get("Branch", 0) >= 2
@@ -5395,7 +5377,6 @@ async def _test_node_selector_uses_family_tabs_and_subcategory_filters():
         # Utility tab: transform group plus debug/loop helper direct-adds.
         screen.action_next_tab()
         assert screen._active_tab == "Utility"
-        assert screen._visible_subcategory_checkboxes() == []
         assert "Data Transform" in group_entries(screen)
         assert {"Transform", "Debug", "Loop Helpers"}.issubset(
             set(header_names(screen))
@@ -5403,10 +5384,9 @@ async def _test_node_selector_uses_family_tabs_and_subcategory_filters():
         utility_types = {node["type"] for node in screen._visible_nodes}
         assert {"echo_node", "probe_node", "counter_node"}.issubset(utility_types)
 
-        # Complex tab: AI filter visible, AI Processing group of three.
+        # Complex tab: AI Processing group of three.
         screen.action_next_tab()
         assert screen._active_tab == "Complex"
-        assert ai_filter.display is True
         assert group_entries(screen).get("AI Processing") == 3
 
         # Search dissolves groups and headers: AI nodes appear directly.
@@ -5438,7 +5418,7 @@ async def _test_node_selector_uses_family_tabs_and_subcategory_filters():
         first_selectable = screen._selectable_indices()[0]
         assert node_list.index == first_selectable
 
-    print("test_node_selector_uses_family_tabs_and_subcategory_filters PASSED")
+    print("test_node_selector_uses_family_tabs PASSED")
 
 
 def test_node_selector_group_picker_flow():
@@ -6988,9 +6968,9 @@ if __name__ == "__main__":
         test_node_config_select_activates_from_keyboard,
         test_node_config_fixed_tabs_are_keyboard_navigable,
         test_node_config_keyboard_skips_hidden_payload_previews,
-        test_node_selector_layout_is_compact_and_checkboxes_fit,
+        test_node_selector_layout_is_compact,
         test_node_selector_rows_are_one_line_with_detail,
-        test_node_selector_down_from_last_checkbox_highlights_first_node,
+        test_node_selector_down_from_filter_highlights_first_node,
         test_node_config_schema_tab_hints_place_fields_in_top_level_tabs,
         test_dynamic_row_helper_preserves_visible_rows_only,
         test_dynamic_selection_helper_filters_stale_values,
@@ -7008,7 +6988,7 @@ if __name__ == "__main__":
         test_branch_payload_preview_traces_selected_dead_drop_source,
         test_branch_payload_preview_traces_selected_vault_source,
         test_node_config_payloads_tab_reveals_upstream_and_vault_payloads,
-        test_node_selector_uses_family_tabs_and_subcategory_filters,
+        test_node_selector_uses_family_tabs,
         test_branch_selector_uses_shared_list_navigation,
         test_workflow_library_uses_shared_list_navigation,
         test_export_cancel_returns_to_file_menu,

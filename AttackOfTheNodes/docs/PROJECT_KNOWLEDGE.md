@@ -239,10 +239,12 @@ one `I/O` tab behind an Input/Output switch; `Flow Control`, `Utility`, and
 `Complex` each get their own tab. The switch is pure frontend presentation — the
 backend only knows the `primary_family`.
 
-Nodes can also carry multiple subcategories such as Triggered, File I/O,
-Internet, AI, Passive Output, Active Output, Parallel, Conditional, and Runtime
-Resource. Selector filters and editor row identity should use this metadata
-without changing runtime semantics.
+Nodes may carry freeform `tags` (e.g. File I/O, Internet, AI). As of 2026-06-19
+the rigid subcategory taxonomy was retired: the selector's subcategory
+filter-checkbox column was removed and the helper no longer validates tags
+against a fixed vocabulary. Tags now serve only as loose **search keywords** in
+the node selector; the Family (`primary_family`) + Group spine carries the
+taxonomy. See `NODE_STANDARDIZATION_HANDOFF.md` (Revision 2026-06-19).
 
 ## Data Flow Patterns — Transient Payloads vs Vault
 

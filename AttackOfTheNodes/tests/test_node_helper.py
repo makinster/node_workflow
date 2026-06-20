@@ -253,10 +253,14 @@ def test_node_helper_requires_phase_17_identity(tmp_path: Path):
     with pytest.raises(ValueError, match="primary_family must be one of"):
         generate_from_spec(spec, project_root=project_root)
 
+    # Tags are now freeform search keywords (the rigid subcategory taxonomy was
+    # retired 2026-06-19): any non-empty string is accepted and flows onto the
+    # node for search.
     spec = _standard_model_spec()
     spec["tags"] = ["File I/O", "Time Travel"]
-    with pytest.raises(ValueError, match="unknown entries"):
-        generate_from_spec(spec, project_root=project_root)
+    paths = generate_from_spec(spec, project_root=project_root)
+    node_text = paths.node_file.read_text(encoding="utf-8")
+    assert "tags: ClassVar[List[str]] = ['File I/O', 'Time Travel']" in node_text
 
 
 def _unified_io_spec() -> dict:

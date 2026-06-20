@@ -145,10 +145,6 @@ Screen {
     height: auto;
 }
 
-#node-subcategory-filters {
-    height: auto;
-}
-
 #node-type-list {
     height: 1fr;
     min-height: 4;

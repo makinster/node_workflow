@@ -4,6 +4,36 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-19 — Track A Step 4 (owner-revised): Retire Subcategory Filter
+
+- Continued on `codex/canonical-data-types` (after step 3). **Owner revised the
+  adopted handoff:** the Category > Family > Type rename (§2.1/§3) is
+  **cancelled** — the top tier keeps `primary_family` ("family") and the variant
+  grouping keeps `group`. Instead, step 4 became **retiring the subcategory
+  taxonomy** (`tags`), "never utilized correctly." Chosen scope (owner): remove
+  the subcategory filter UI, keep `tags` as freeform search keywords.
+- Frontend: removed the subcategory **filter-checkbox column** and all its
+  machinery from `frontend/screens/node_selector.py` — the
+  `#node-subcategory-filters` block, the `_selected_subcategories` filtering in
+  `_apply_filter`, `on_checkbox_changed`, `_sync_subcategory_filter_visibility`,
+  `_sync_selected_subcategories`, `_visible_subcategory_checkboxes`, the
+  `TAB_FILTER_TAGS`/`ALL_FILTER_TAGS` constants, and the `Checkbox` import.
+  `tags` still feed `_matches_query` (search). Dropped the matching
+  `#node-subcategory-filters` rule from `styles.tcss`.
+- Helper: dropped the rigid `VALID_TAGS` enforcement in
+  `aotn_node_helper/generator.py`; tags are now freeform (any non-empty string).
+- Tests: reworked the three selector tests in `test_debug_nodes.py` that
+  depended on the filter checkboxes — renamed to drop "checkboxes/subcategory"
+  and re-pointed navigation through the filter input; updated the runner list.
+  Updated `test_node_helper.py` to assert freeform tags are accepted (was
+  asserting rejection).
+- Verified: `compileall -q .` clean; **full suite 331 passed**.
+- Scope held: NO rename of `primary_family`/`group`/`category` (cancelled by
+  owner); `tags` retained for search only. Docs: handoff Revision callout,
+  `PROJECT_KNOWLEDGE.md`, `NODE_HELPER.md`. **Follow-up:** `PHASE_17_NODE_VISUAL_
+  IDENTITY.md`, `TUI_DESIGN.md`, and `UI_QUICK_REFERENCE.md` still describe the
+  removed subcategory filter UI and need a reconciliation pass.
+
 ## 2026-06-19 — Track A Step 3: Unified inputs:/outputs: Helper Spec
 
 - Continued on `codex/canonical-data-types` (after step 2). Track A step 3 (§7):

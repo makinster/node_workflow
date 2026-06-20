@@ -36,18 +36,6 @@ VALID_TEMPLATES = {
 VALID_CATEGORIES = {"flow", "io", "data", "ai", "debug", "utility"}
 # Phase 17 identity taxonomy; keep in sync with backend/node_identity.py.
 VALID_FAMILIES = {"Inputs", "Outputs", "Flow Control", "Utility", "Complex"}
-VALID_TAGS = {
-    "Triggered",
-    "File I/O",
-    "Internet",
-    "AI",
-    "Passive Output",
-    "Active Output",
-    "Parallel",
-    "Conditional",
-    "Runtime Resource",
-    "Utility",
-}
 FAMILY_COLOR_HINTS = {
     "Inputs": "green",
     "Outputs": "amber",
@@ -180,13 +168,10 @@ def normalize_spec(spec: dict[str, Any]) -> dict[str, Any]:
         )
     if primary_family not in VALID_FAMILIES:
         raise ValueError(f"primary_family must be one of {sorted(VALID_FAMILIES)}")
-    tags = [str(item).strip() for item in spec.get("tags") or []]
-    unknown_tags = [item for item in tags if item not in VALID_TAGS]
-    if unknown_tags:
-        raise ValueError(
-            f"tags contains unknown entries {unknown_tags}; "
-            f"valid tags are {sorted(VALID_TAGS)}"
-        )
+    # Tags are freeform search keywords. The rigid subcategory taxonomy (and its
+    # selector filter checkboxes) was retired 2026-06-19, so there is no fixed
+    # vocabulary to validate against — keep any non-empty strings.
+    tags = [str(item).strip() for item in spec.get("tags") or [] if str(item).strip()]
     icon_name = str(spec.get("icon_name") or "").strip()
     color_hint = str(
         spec.get("color_hint") or FAMILY_COLOR_HINTS[primary_family]

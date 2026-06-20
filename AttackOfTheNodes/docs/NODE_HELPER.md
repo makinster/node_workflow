@@ -270,10 +270,10 @@ Phase 17 identity (required since 2026-06-12; keep in sync with
   or `Complex`. This is the user-facing selector family; `category` remains
   the legacy backend grouping. `Inputs` and `Outputs` share the selector's
   `I/O` tab behind an Input/Output switch — that mapping is frontend-only.
-- `tags` (optional): any of `Triggered`, `File I/O`, `Internet`, `AI`,
-  `Passive Output`, `Active Output`, `Parallel`, `Conditional`,
-  `Runtime Resource`, `Utility`. Filter checkboxes (I/O and Complex tabs) and
-  string search use these.
+- `tags` (optional): freeform keyword strings used only for node **search** in
+  the selector. The rigid subcategory taxonomy and its filter checkboxes were
+  retired 2026-06-19, so there is no fixed vocabulary and no validation — pick
+  whatever keywords help discovery (e.g. `File I/O`, `Internet`, `AI`).
 - `group` (optional): frontend navigation group name (e.g. `Send / Notify`).
   Nodes sharing a group appear behind one Group Picker entry in the selector.
   See `PHASE_17_NODE_VISUAL_IDENTITY.md` and `NODE_CATALOG.md` for the group
