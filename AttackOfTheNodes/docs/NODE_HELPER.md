@@ -168,6 +168,61 @@ Vault modes:
 Set `dead_drop: false` to omit the passthrough option for nodes that always
 produce a fresh output.
 
+## Unified `inputs:` / `outputs:` Blocks
+
+The unified blocks (NODE_STANDARDIZATION_HANDOFF.md §7) let an author declare a
+port's full I/O contract in one place. `inputs:` replaces the split
+`input_sources` + `input_port_metadata` sections; `outputs:` replaces
+`output_port_metadata`. They are additive — the legacy sections still work, and
+node-level Payloads routing still comes from the separate `output_routing`
+block either way. The generated reference node is
+`specs/example_file_instance_node.yaml`.
+
+Each key under `inputs:` / `outputs:` is a **port name**. The port list
+(`input_ports` / `output_ports`) is derived from the keys, so do not also
+declare `input_ports` / `output_ports` (or the legacy sections) alongside a
+block — the generator rejects the mix.
+
+```yaml
+inputs:
+  file_path:
+    type: file                       # canonical data type (backend/data_types.py)
+    required: false                  # absent => optional
+    label: File path                 # source-selector label + port name
+    description: Where the path comes from at execution time
+    sources: ["upstream", "vault", "configured"]   # expands the Source selector
+    default: configured
+    parameter:                       # required when 'configured' is allowed
+      type: string
+      label: File path
+      placeholder: /path/to/file
+outputs:
+  default:
+    name: Open Result
+    type: bool                       # 'boolean' is accepted as a deprecated alias
+    required: true
+    to: ["downstream", "vault"]      # routing destinations for the detail panel
+    pass_through: true               # advertises the dead-drop passthrough line
+    description: True when the file opened successfully, false on error
+```
+
+Per-port keys:
+
+- `type` — canonical data type from `backend/data_types.py` (`string`,
+  `number`, `bool`, `var`, `file`, `ai_session`, `any`). Absent ⇒ `any`. An
+  unknown type **warns** (it does not block generation); `boolean`
+  canonicalizes to `bool`.
+- `required` — absent ⇒ optional (`False`).
+- `description` / `name` — port label and one-line description.
+- `sources` (inputs) — when present, expands the same `<port>_source` selector,
+  gated Vault key, and Configured `parameter` field as `input_sources`.
+- `to` (outputs) — routing destinations (`downstream`, `vault`) the selector
+  detail panel renders; `pass_through: true` advertises the dead-drop line.
+
+These ride on `input_port_metadata` / `output_port_metadata` and are exposed
+through `NodeFactory.get_node_types_metadata()`, where absent `data_type` /
+`required` are filled with their defaults.
+
 ## Dynamic Form Rule Keys
 
 Any config field (hand-written or expanded) may declare these schema keys.

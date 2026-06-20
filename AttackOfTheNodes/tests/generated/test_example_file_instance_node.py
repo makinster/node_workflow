@@ -19,8 +19,16 @@ def test_example_file_instance_node_registration_and_metadata():
     metadata = next(item for item in factory.get_node_types_metadata() if item["type"] == "example_file_instance_node")
     assert metadata["display_name"] == 'File Instance'
     assert metadata["default_alias"] == 'File Instance'
-    assert metadata["input_ports"] == ['input']
+    assert metadata["input_ports"] == ['file_path']
     assert metadata["output_ports"] == ['default']
+    # Every declared port exposes the per-port I/O contract (handoff §4/§6):
+    # data_type defaults to "any", required defaults to False.
+    for direction in ("input_port_metadata", "output_port_metadata"):
+        for info in metadata[direction].values():
+            assert info["data_type"] in {
+                "string", "number", "bool", "var", "file", "ai_session", "any",
+            }
+            assert isinstance(info["required"], bool)
 
 
 @pytest.mark.asyncio

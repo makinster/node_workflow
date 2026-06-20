@@ -4,6 +4,47 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-19 — Track A Step 3: Unified inputs:/outputs: Helper Spec
+
+- Continued on `codex/canonical-data-types` (after step 2). Track A step 3 (§7):
+  unified `inputs:` / `outputs:` helper-spec blocks carrying the full per-port
+  contract, plus generator/check/test updates and one regenerated reference
+  node. Read §7 precisely: it replaces `input_sources` + `input_port_metadata`
+  (→ `inputs:`) and `output_port_metadata` (→ `outputs:`); node-level
+  `output_routing` (Payloads config) is unchanged. Implemented additively so the
+  six existing legacy specs keep generating.
+- `aotn_node_helper/generator.py`: added `_expand_inputs_block` /
+  `_expand_outputs_block` / `_contract_metadata`, and refactored the per-input
+  source expansion into a shared `_input_source_fields` so the unified `inputs:`
+  block and the legacy `input_sources` section emit byte-identical
+  Source/Parameters fields. Port lists derive from the block keys; declaring a
+  block alongside its legacy section (or `input_ports`/`output_ports`) is
+  rejected. Port metadata now carries `data_type` / `required` / `sources`
+  (inputs) and `data_type` / `required` / `to` / `pass_through` (outputs).
+  Unknown port types **warn** (stderr), matching §5's soft-convention intent;
+  `boolean` canonicalizes to `bool`. Added a local `CANONICAL_DATA_TYPES` mirror
+  (kept in sync with `backend/data_types.py`, same pattern as `VALID_FAMILIES`).
+  Render type hints for port metadata widened to `Dict[str, Dict[str, Any]]`;
+  the generated focused test now asserts the per-port contract is exposed.
+- Regenerated the reference node `example_file_instance_node` from the rewritten
+  unified spec (`--force`). Diff confirms `config_schema` is **byte-for-byte
+  unchanged** (round-trip equivalence — the `file_path_*` selectors are
+  identical) while the port metadata gains the contract (`data_type` file/bool,
+  `required`, `sources`/`to`, `pass_through`). Its input port is renamed
+  `input → file_path` so the port name and source-field prefix are one name (the
+  point of the unified model). `check_node` and `check_ui` both pass.
+- Updated `tests/test_node_contract.py` (the step-2 assertion that the reference
+  node had no declared type now asserts the declared bool/file contract).
+  Added `tests/test_node_helper.py` cases: unified block emits the same
+  selectors + adds contract, rejects legacy-section mix, rejects unknown `to`
+  destinations, and warns (without raising) on an unknown port type.
+- Verified: `compileall -q .` clean; helper + contract + data-type tests 26
+  passed; **full suite 331 passed** (was 328; +3 new helper tests).
+- Scope held: only ONE node regenerated (mass regeneration deferred, §11);
+  Payloads routing still per-node via `output_routing` (per-port routing config
+  is Track B step 7); no rename of `primary_family→category` / `group→family`
+  (step 4). Docs: `NODE_HELPER.md` (new Unified inputs:/outputs: Blocks section).
+
 ## 2026-06-19 — Track A Step 2: Per-Port I/O Contract Fields
 
 - Continued on `codex/canonical-data-types` (after the step 1 commit). Track A

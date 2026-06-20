@@ -259,6 +259,108 @@ def test_node_helper_requires_phase_17_identity(tmp_path: Path):
         generate_from_spec(spec, project_root=project_root)
 
 
+def _unified_io_spec() -> dict:
+    """Same node as _standard_model_spec, authored with unified inputs:/outputs:."""
+    return {
+        "node_type": "helper_unified_node",
+        "class_name": "HelperUnifiedNode",
+        "category": "debug",
+        "primary_family": "Inputs",
+        "tags": ["File I/O"],
+        "display_name": "Helper Unified",
+        "description": "Unified inputs/outputs contract example",
+        "inputs": {
+            "file_path": {
+                "type": "file",
+                "required": False,
+                "label": "File path",
+                "description": "Where the file path comes from",
+                "sources": ["upstream", "vault", "configured"],
+                "default": "configured",
+                "parameter": {
+                    "type": "string",
+                    "label": "File path",
+                    "placeholder": "/path/to/file",
+                },
+            },
+        },
+        "outputs": {
+            "default": {
+                "name": "Open Result",
+                "type": "bool",
+                "required": True,
+                "to": ["downstream", "vault"],
+                "pass_through": True,
+                "description": "True when the file opened successfully",
+            },
+        },
+        "output_routing": {
+            "default": "transient",
+            "vault": {"mode": "optional", "label": "Save error to Vault"},
+        },
+        "execution_template": "transform_stub",
+    }
+
+
+def test_node_helper_unified_io_block_emits_same_selectors_and_adds_contract(tmp_path: Path):
+    project_root = _project_skeleton(tmp_path)
+
+    paths = generate_from_spec(_unified_io_spec(), project_root=project_root)
+    node_text = paths.node_file.read_text(encoding="utf-8")
+
+    # Port list derives from the block keys.
+    assert "input_ports: ClassVar[List[str]] = ['file_path']" in node_text
+    assert "output_ports: ClassVar[List[str]] = ['default']" in node_text
+
+    # The Source/Parameters selectors expand exactly as the legacy input_sources
+    # section does (same field names, option labels, gating).
+    assert "'file_path_source'" in node_text
+    assert "'Upstream payload', 'Vault', 'Configured'" in node_text
+    assert "'enabled_when': {'file_path_source': 'Vault'}" in node_text
+    assert "'enabled_when': {'file_path_source': 'Configured'}" in node_text
+    # output_routing (node-level Payloads config) is unchanged by the blocks.
+    assert "'transient_output'" in node_text
+    assert "'mutually_exclusive_with': ['dead_drop_passthrough']" in node_text
+
+    # New: the per-port contract rides on the port metadata.
+    assert "input_port_metadata: ClassVar[Dict[str, Dict[str, Any]]]" in node_text
+    assert "'data_type': 'file'" in node_text
+    assert "'sources': ['upstream', 'vault', 'configured']" in node_text
+    assert "'data_type': 'bool'" in node_text
+    assert "'to': ['downstream', 'vault']" in node_text
+    assert "'pass_through': True" in node_text
+
+
+def test_node_helper_unified_block_rejects_legacy_section_mix(tmp_path: Path):
+    project_root = _project_skeleton(tmp_path)
+
+    spec = _unified_io_spec()
+    spec["input_sources"] = {"x": {"sources": ["upstream", "vault"]}}
+    with pytest.raises(ValueError, match="inputs: block replaces"):
+        generate_from_spec(spec, project_root=project_root)
+
+    spec = _unified_io_spec()
+    spec["output_port_metadata"] = {"default": {"name": "X"}}
+    with pytest.raises(ValueError, match="outputs: block replaces"):
+        generate_from_spec(spec, project_root=project_root)
+
+    spec = _unified_io_spec()
+    spec["outputs"]["default"]["to"] = ["downstream", "sideways"]
+    with pytest.raises(ValueError, match="unknown to destinations"):
+        generate_from_spec(spec, project_root=project_root)
+
+
+def test_node_helper_unknown_port_type_warns_without_raising(tmp_path: Path, capsys):
+    project_root = _project_skeleton(tmp_path)
+
+    spec = _unified_io_spec()
+    spec["inputs"]["file_path"]["type"] = "blob"
+    # Unknown data types are a soft convention: warn, do not raise (handoff §5).
+    paths = generate_from_spec(spec, project_root=project_root)
+    assert paths.node_file.exists()
+    assert "unknown data type" in capsys.readouterr().err
+
+
 def test_node_helper_validates_rule_keys(tmp_path: Path):
     project_root = _project_skeleton(tmp_path)
 

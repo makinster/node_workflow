@@ -6,6 +6,7 @@ import argparse
 import ast
 import json
 import re
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -61,6 +62,39 @@ SOURCE_OPTION_LABELS = {
     "configured": "Configured",
 }
 VALID_VAULT_MODES = {"optional", "default_on", "required_unless_transient"}
+# Canonical port/vault data types; keep in sync with backend/data_types.py.
+CANONICAL_DATA_TYPES = {
+    "string",
+    "number",
+    "bool",
+    "var",
+    "file",
+    "ai_session",
+    "any",
+}
+DEFAULT_DATA_TYPE = "any"
+DATA_TYPE_ALIASES = {"boolean": "bool"}
+# Routing destinations a named output port can advertise in its contract (§8).
+VALID_OUTPUT_DESTINATIONS = {"downstream", "vault"}
+
+
+def _warn(message: str) -> None:
+    """Emit a non-fatal helper warning (canonical data-type convention is soft)."""
+    print(f"warning: {message}", file=sys.stderr)
+
+
+def _normalize_data_type(raw: Any, where: str) -> str:
+    """Canonicalize a declared port data type, warning on unknown spellings."""
+    if raw is None or str(raw).strip() == "":
+        return DEFAULT_DATA_TYPE
+    name = str(raw).strip()
+    name = DATA_TYPE_ALIASES.get(name, name)
+    if name not in CANONICAL_DATA_TYPES:
+        _warn(
+            f"{where}: unknown data type {raw!r}; expected one of "
+            f"{sorted(CANONICAL_DATA_TYPES)}"
+        )
+    return name
 
 
 @dataclass(frozen=True)
@@ -168,14 +202,28 @@ def normalize_spec(spec: dict[str, Any]) -> dict[str, Any]:
             "renders flat and may omit it)"
         )
 
-    input_ports = _string_list(spec.get("input_ports", ["input"]), "input_ports")
-    output_ports = _string_list(spec.get("output_ports", ["default"]), "output_ports")
+    # Unified inputs:/outputs: blocks (handoff §7) carry the full per-port
+    # contract and replace input_sources + input_port_metadata / output_port_
+    # metadata. They are additive: specs may still use the legacy sections, and
+    # output_routing (node-level Payloads config) is unchanged either way.
+    if "inputs" in spec:
+        input_ports, input_metadata, input_source_fields = _expand_inputs_block(spec)
+    else:
+        input_ports = _string_list(spec.get("input_ports", ["input"]), "input_ports")
+        input_metadata = _port_metadata(spec.get("input_port_metadata", {}), input_ports)
+        input_source_fields = _expand_input_sources(spec)
+    if "outputs" in spec:
+        output_ports, output_metadata = _expand_outputs_block(spec)
+    else:
+        output_ports = _string_list(spec.get("output_ports", ["default"]), "output_ports")
+        output_metadata = _port_metadata(spec.get("output_port_metadata", {}), output_ports)
+
     config_fields = _config_fields_from_spec(spec)
     if not isinstance(config_fields, dict):
         raise ValueError("config_fields/config must be an object")
 
     standard_fields: dict[str, Any] = {}
-    standard_fields.update(_expand_input_sources(spec))
+    standard_fields.update(input_source_fields)
     standard_fields.update(_expand_output_routing(spec))
     for field_name, field in standard_fields.items():
         if field_name in config_fields:
@@ -249,8 +297,8 @@ def normalize_spec(spec: dict[str, Any]) -> dict[str, Any]:
         "description": str(spec.get("description") or ""),
         "input_ports": input_ports,
         "output_ports": output_ports,
-        "input_port_metadata": _port_metadata(spec.get("input_port_metadata", {}), input_ports),
-        "output_port_metadata": _port_metadata(spec.get("output_port_metadata", {}), output_ports),
+        "input_port_metadata": input_metadata,
+        "output_port_metadata": output_metadata,
         "default_config": default_config,
         "config_schema": config_schema,
         "ui_hints": spec.get("ui_hints", {}) or {},
@@ -263,6 +311,7 @@ def normalize_spec(spec: dict[str, Any]) -> dict[str, Any]:
                     spec.get("config_tabs")
                     or spec.get("input_sources")
                     or spec.get("output_routing")
+                    or spec.get("inputs")
                 ),
             )
         ),
@@ -287,67 +336,177 @@ def _expand_input_sources(spec: dict[str, Any]) -> dict[str, Any]:
             raise ValueError(f"input_sources name {name!r} must be snake_case")
         if not isinstance(entry, dict):
             raise ValueError(f"input_sources.{input_name} must be an object")
+        fields.update(_input_source_fields(input_name, entry, context="input_sources"))
+    return fields
+
+
+def _input_source_fields(
+    input_name: str, entry: dict[str, Any], *, context: str
+) -> dict[str, Any]:
+    """Expand one input's source selector / vault-key / parameter fields.
+
+    Shared by the legacy ``input_sources`` section and the unified ``inputs``
+    block so both authoring forms emit identical Source/Parameters fields.
+    Returns an empty dict when the input declares no multi-source selector.
+    """
+    where = f"{context}.{input_name}"
+    sources = [str(item).strip().lower() for item in entry.get("sources") or []]
+    if not sources:
+        return {}
+    unknown = [item for item in sources if item not in SOURCE_OPTION_LABELS]
+    if unknown:
+        raise ValueError(
+            f"{where} has unknown sources {unknown}; "
+            f"valid sources are {sorted(SOURCE_OPTION_LABELS)}"
+        )
+    if len(sources) < 2:
+        raise ValueError(
+            f"{where} needs at least two sources; "
+            "single-source inputs do not need a selector"
+        )
+    default_source = str(entry.get("default") or sources[0]).strip().lower()
+    if default_source not in sources:
+        raise ValueError(f"{where} default {default_source!r} is not in sources")
+    label = str(entry.get("label") or _title_case(input_name))
+    fields: dict[str, Any] = {}
+    source_field: dict[str, Any] = {
+        "type": "select",
+        "label": f"{label} source",
+        "options": [SOURCE_OPTION_LABELS[item] for item in sources],
+        "default": SOURCE_OPTION_LABELS[default_source],
+        "tab": "Source",
+    }
+    if entry.get("description"):
+        source_field["description"] = str(entry["description"])
+    fields[f"{input_name}_source"] = source_field
+
+    if "vault" in sources:
+        fields[f"{input_name}_vault_key"] = {
+            "type": "string",
+            "label": f"{label} Vault key",
+            "default": "",
+            "required": False,
+            "tab": "Source",
+            "enabled_when": {f"{input_name}_source": SOURCE_OPTION_LABELS["vault"]},
+        }
+
+    parameter = entry.get("parameter")
+    if "configured" in sources:
+        if not isinstance(parameter, dict):
+            raise ValueError(
+                f"{where} allows the Configured source and "
+                "must declare a parameter field"
+            )
+        parameter_field = dict(parameter)
+        parameter_field.setdefault("type", "string")
+        parameter_field.setdefault("label", label)
+        parameter_field.setdefault("default", "")
+        parameter_field["tab"] = "Parameters"
+        parameter_field["enabled_when"] = {
+            f"{input_name}_source": SOURCE_OPTION_LABELS["configured"]
+        }
+        fields[input_name] = parameter_field
+    elif parameter is not None:
+        raise ValueError(
+            f"{where} declares a parameter but does not allow the Configured source"
+        )
+    return fields
+
+
+def _expand_inputs_block(
+    spec: dict[str, Any],
+) -> tuple[list[str], dict[str, dict[str, Any]], dict[str, Any]]:
+    """Expand the unified ``inputs:`` block (handoff §7).
+
+    Each key is an input port name carrying the full per-port contract
+    (``type``, ``required``, ``description``, ``sources``, ``parameter``).
+    Returns ``(input_ports, input_port_metadata, source_selector_fields)``.
+    Replaces the split ``input_sources`` + ``input_port_metadata`` sections;
+    declaring either alongside ``inputs`` is rejected.
+    """
+    raw = spec.get("inputs") or {}
+    if not isinstance(raw, dict):
+        raise ValueError("inputs must be an object")
+    for legacy in ("input_sources", "input_port_metadata", "input_ports"):
+        if legacy in spec:
+            raise ValueError(
+                f"inputs: block replaces {legacy!r}; declare ports once under inputs:"
+            )
+    ports: list[str] = []
+    metadata: dict[str, dict[str, Any]] = {}
+    fields: dict[str, Any] = {}
+    for name, entry in raw.items():
+        port = str(name).strip()
+        if not re.fullmatch(r"[a-z][a-z0-9_]*", port):
+            raise ValueError(f"inputs port name {name!r} must be snake_case")
+        if not isinstance(entry, dict):
+            raise ValueError(f"inputs.{port} must be an object")
+        ports.append(port)
+        metadata[port] = _contract_metadata(port, entry, where=f"inputs.{port}")
         sources = [str(item).strip().lower() for item in entry.get("sources") or []]
-        unknown = [item for item in sources if item not in SOURCE_OPTION_LABELS]
+        if sources:
+            metadata[port]["sources"] = sources
+        fields.update(_input_source_fields(port, entry, context="inputs"))
+    if not ports:
+        raise ValueError("inputs: block must declare at least one port")
+    return ports, metadata, fields
+
+
+def _expand_outputs_block(
+    spec: dict[str, Any],
+) -> tuple[list[str], dict[str, dict[str, Any]]]:
+    """Expand the unified ``outputs:`` block (handoff §7).
+
+    Each key is an output port name carrying the per-port contract (``type``,
+    ``required``, ``description``, ``to`` routing destinations, ``pass_through``
+    dead-drop flag). Returns ``(output_ports, output_port_metadata)``. Replaces
+    ``output_port_metadata``; node-level Payloads routing still comes from the
+    separate ``output_routing`` section.
+    """
+    raw = spec.get("outputs") or {}
+    if not isinstance(raw, dict):
+        raise ValueError("outputs must be an object")
+    for legacy in ("output_port_metadata", "output_ports"):
+        if legacy in spec:
+            raise ValueError(
+                f"outputs: block replaces {legacy!r}; declare ports once under outputs:"
+            )
+    ports: list[str] = []
+    metadata: dict[str, dict[str, Any]] = {}
+    for name, entry in raw.items():
+        port = str(name).strip()
+        if not re.fullmatch(r"[a-z][a-z0-9_]*", port):
+            raise ValueError(f"outputs port name {name!r} must be snake_case")
+        if not isinstance(entry, dict):
+            raise ValueError(f"outputs.{port} must be an object")
+        ports.append(port)
+        info = _contract_metadata(port, entry, where=f"outputs.{port}")
+        destinations = [str(item).strip().lower() for item in entry.get("to") or []]
+        unknown = [d for d in destinations if d not in VALID_OUTPUT_DESTINATIONS]
         if unknown:
             raise ValueError(
-                f"input_sources.{input_name} has unknown sources {unknown}; "
-                f"valid sources are {sorted(SOURCE_OPTION_LABELS)}"
+                f"outputs.{port} has unknown to destinations {unknown}; "
+                f"valid destinations are {sorted(VALID_OUTPUT_DESTINATIONS)}"
             )
-        if len(sources) < 2:
-            raise ValueError(
-                f"input_sources.{input_name} needs at least two sources; "
-                "single-source inputs do not need a selector"
-            )
-        default_source = str(entry.get("default") or sources[0]).strip().lower()
-        if default_source not in sources:
-            raise ValueError(
-                f"input_sources.{input_name} default {default_source!r} is not in sources"
-            )
-        label = str(entry.get("label") or _title_case(input_name))
-        source_field: dict[str, Any] = {
-            "type": "select",
-            "label": f"{label} source",
-            "options": [SOURCE_OPTION_LABELS[item] for item in sources],
-            "default": SOURCE_OPTION_LABELS[default_source],
-            "tab": "Source",
-        }
-        if entry.get("description"):
-            source_field["description"] = str(entry["description"])
-        fields[f"{input_name}_source"] = source_field
+        if destinations:
+            info["to"] = destinations
+        if entry.get("pass_through"):
+            info["pass_through"] = True
+        metadata[port] = info
+    if not ports:
+        raise ValueError("outputs: block must declare at least one port")
+    return ports, metadata
 
-        if "vault" in sources:
-            fields[f"{input_name}_vault_key"] = {
-                "type": "string",
-                "label": f"{label} Vault key",
-                "default": "",
-                "required": False,
-                "tab": "Source",
-                "enabled_when": {f"{input_name}_source": SOURCE_OPTION_LABELS["vault"]},
-            }
 
-        parameter = entry.get("parameter")
-        if "configured" in sources:
-            if not isinstance(parameter, dict):
-                raise ValueError(
-                    f"input_sources.{input_name} allows the Configured source and "
-                    "must declare a parameter field"
-                )
-            parameter_field = dict(parameter)
-            parameter_field.setdefault("type", "string")
-            parameter_field.setdefault("label", label)
-            parameter_field.setdefault("default", "")
-            parameter_field["tab"] = "Parameters"
-            parameter_field["enabled_when"] = {
-                f"{input_name}_source": SOURCE_OPTION_LABELS["configured"]
-            }
-            fields[input_name] = parameter_field
-        elif parameter is not None:
-            raise ValueError(
-                f"input_sources.{input_name} declares a parameter but does not "
-                "allow the Configured source"
-            )
-    return fields
+def _contract_metadata(port: str, entry: dict[str, Any], *, where: str) -> dict[str, Any]:
+    """Build per-port contract metadata (name, description, data_type, required)."""
+    info: dict[str, Any] = {
+        "name": str(entry.get("name") or _title_case(port)),
+        "description": str(entry.get("description") or ""),
+        "data_type": _normalize_data_type(entry.get("type"), where),
+        "required": bool(entry.get("required", False)),
+    }
+    return info
 
 
 def _expand_output_routing(spec: dict[str, Any]) -> dict[str, Any]:
@@ -503,8 +662,8 @@ class {spec["class_name"]}(Node):
     selector_section: ClassVar[Optional[str]] = {spec["selector_section"]!r}
     input_ports: ClassVar[List[str]] = {_pretty(spec["input_ports"])}
     output_ports: ClassVar[List[str]] = {_pretty(spec["output_ports"])}
-    input_port_metadata: ClassVar[Dict[str, Dict[str, str]]] = {_pretty(spec["input_port_metadata"])}
-    output_port_metadata: ClassVar[Dict[str, Dict[str, str]]] = {_pretty(spec["output_port_metadata"])}
+    input_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {_pretty(spec["input_port_metadata"])}
+    output_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {_pretty(spec["output_port_metadata"])}
     default_config: ClassVar[Dict[str, Any]] = {_pretty(spec["default_config"])}
     config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {_pretty(spec["config_schema"])}
     ui_hints: ClassVar[Dict[str, Any]] = {_pretty(spec["ui_hints"])}
@@ -538,6 +697,14 @@ def test_{spec["node_type"]}_registration_and_metadata():
     assert metadata["default_alias"] == {spec["default_alias"]!r}
     assert metadata["input_ports"] == {_pretty(spec["input_ports"])}
     assert metadata["output_ports"] == {_pretty(spec["output_ports"])}
+    # Every declared port exposes the per-port I/O contract (handoff §4/§6):
+    # data_type defaults to "any", required defaults to False.
+    for direction in ("input_port_metadata", "output_port_metadata"):
+        for info in metadata[direction].values():
+            assert info["data_type"] in {{
+                "string", "number", "bool", "var", "file", "ai_session", "any",
+            }}
+            assert isinstance(info["required"], bool)
 
 
 @pytest.mark.asyncio
