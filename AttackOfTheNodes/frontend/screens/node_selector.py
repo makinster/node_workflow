@@ -23,6 +23,7 @@ from textual.widgets import (
     ListView,
     Static,
 )
+from textual.containers import VerticalScroll
 
 from frontend.screens.group_picker import GroupPickerScreen
 from frontend.node_types import END_NODE_TYPE, START_NODE_TYPE, TOMBSTONE_NODE_TYPE
@@ -127,8 +128,10 @@ class NodeSelectorScreen(ModalScreen):
                     classes="segmented-toggle",
                     variant="default",
                 )
-            yield ListView(id="node-type-list")
-            yield Static("", id="node-detail", classes="node-detail")
+            with Horizontal(id="node-selector-body"):
+                yield ListView(id="node-type-list")
+                with VerticalScroll(id="node-detail-panel"):
+                    yield Static("", id="node-detail", classes="node-detail")
             yield Static(
                 "W/S move  A/D within row  1-4 tabs  E add  / filter  ESC close",
                 classes="modal-help",
@@ -445,10 +448,107 @@ class NodeSelectorScreen(ModalScreen):
         if index is None or index < 0 or index >= len(self._entries):
             detail.update("")
             return
-        text = self._entry_detail_text(self._entries[index])
-        if len(text) > 84:
-            text = f"{text[:83]}…"
+        entry = self._entries[index]
+        if entry["kind"] == "node":
+            text = self._render_node_contract(entry["node"])
+        elif entry["kind"] == "group":
+            text = self._render_group_detail(entry)
+        else:
+            text = ""
         detail.update(text)
+
+    # ------------------------------------------------------------------
+    # Contract rendering
+    # ------------------------------------------------------------------
+
+    _TYPE_COLOR = "#4EC9B0"
+
+    def _render_node_contract(self, node: Dict[str, Any]) -> str:
+        """Render the full I/O contract for a node with Rich markup."""
+        display_name = str(node.get("display_name") or node.get("type") or "Node")
+        description = str(node.get("description") or "").strip()
+
+        lines: List[str] = [f"[bold]{display_name}[/bold]"]
+        if description:
+            lines.append(description)
+
+        input_meta: Dict[str, Any] = node.get("input_port_metadata") or {}
+        output_meta: Dict[str, Any] = node.get("output_port_metadata") or {}
+
+        required_inputs = [(p, m) for p, m in input_meta.items() if m.get("required")]
+        optional_inputs = [(p, m) for p, m in input_meta.items() if not m.get("required")]
+        required_outputs = [(p, m) for p, m in output_meta.items() if m.get("required")]
+        optional_outputs = [(p, m) for p, m in output_meta.items() if not m.get("required")]
+
+        def add_section(title: str, ports: List, direction: str) -> None:
+            if not ports:
+                return
+            lines.append("")
+            lines.append(f"[dim]{title}:[/dim]")
+            for i, (port, meta) in enumerate(ports):
+                if i > 0:
+                    lines.append("")
+                lines.extend(self._fmt_port(port, meta, direction))
+
+        add_section("Required Inputs", required_inputs, "input")
+        add_section("Optional Inputs", optional_inputs, "input")
+        add_section("Required Outputs", required_outputs, "output")
+        add_section("Optional Outputs", optional_outputs, "output")
+
+        if not input_meta and not output_meta:
+            lines.append("")
+            lines.append("[dim]No I/O contract declared.[/dim]")
+
+        return "\n".join(lines)
+
+    def _fmt_port(self, port: str, meta: Dict[str, Any], direction: str) -> List[str]:
+        """Return Rich-markup lines for one port (3-line format)."""
+        name = str(meta.get("name") or port).replace("_", " ")
+        data_type = str(meta.get("data_type") or "any")
+        desc = str(meta.get("description") or "").strip()
+        required = bool(meta.get("required"))
+        pass_through = bool(meta.get("pass_through"))
+        required_mark = "*" if required else ""
+
+        port_lines: List[str] = []
+        port_lines.append(
+            f"  {name}{required_mark}  \\[[{self._TYPE_COLOR}]{data_type}[/]]"
+        )
+        if desc:
+            port_lines.append(f"  [dim]{desc}[/dim]")
+        if direction == "input":
+            sources = meta.get("sources") or meta.get("from") or []
+            if sources:
+                src_text = "  ".join(str(s) for s in sources)
+                port_lines.append(f"  [dim]└─< {src_text}[/dim]")
+        else:
+            if pass_through:
+                port_lines.append("  [dim]↔ pass-thru[/dim]")
+            else:
+                dests = meta.get("to") or []
+                if dests:
+                    dest_text = "  ".join(str(d) for d in dests)
+                    port_lines.append(f"  [dim]└─> {dest_text}[/dim]")
+        return port_lines
+
+    def _render_group_detail(self, entry: Dict[str, Any]) -> str:
+        """Render a summary card for a group row."""
+        name = str(entry.get("name") or "Group")
+        desc = self._group_description(entry)
+        members: List[Dict[str, Any]] = entry.get("members") or []
+
+        lines: List[str] = [f"[bold]{{ {name} }}[/bold]"]
+        if desc:
+            lines.append(desc)
+        if members:
+            lines.append("")
+            lines.append(f"[dim]{len(members)} node types:[/dim]")
+            for member in members:
+                display = str(member.get("display_name") or member.get("type") or "")
+                lines.append(f"  \\[ {display} ]")
+        lines.append("")
+        lines.append("[dim]E = open picker[/dim]")
+        return "\n".join(lines)
 
     # ------------------------------------------------------------------
     # Selection and activation

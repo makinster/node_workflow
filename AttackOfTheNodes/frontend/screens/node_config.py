@@ -624,23 +624,24 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 help_text,
                 classes="modal-help",
             )
-            with VerticalScroll(id="node-config-scroll"):
-                if self.node_data.get("type") == MERGE_NODE_TYPE:
+            if self.node_data.get("type") == MERGE_NODE_TYPE:
+                with VerticalScroll(id="node-config-scroll"):
                     yield Label("Branches To Close", classes="form-label nav-section")
                     yield from self._compose_merge_inputs(config)
-                elif self.node_data.get("type") == BRANCH_END_NODE_TYPE:
+            elif self.node_data.get("type") == BRANCH_END_NODE_TYPE:
+                with VerticalScroll(id="node-config-scroll"):
                     yield Static(
                         self._branch_end_status_text(),
                         classes="form-description",
                     )
-                elif self.node_data.get("type") == BRANCH_NODE_TYPE:
-                    yield from self._compose_branch_config_tabs(metadata, config)
-                else:
-                    yield from self._compose_standard_config_tabs(
-                        metadata,
-                        config,
-                        forms,
-                    )
+            elif self.node_data.get("type") == BRANCH_NODE_TYPE:
+                yield from self._compose_branch_config_tabs(metadata, config)
+            else:
+                yield from self._compose_standard_config_tabs(
+                    metadata,
+                    config,
+                    forms,
+                )
             with Vertical(classes="button-row"):
                 yield Button("Save", id="save-node-config", variant="primary")
                 yield Button("Cancel", id="cancel-node-config", variant="default")
@@ -654,57 +655,61 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
     ):
         with TabbedContent(id="node-config-tabs", classes="node-config-tabs"):
             with TabPane("1 - Source", id="node-config-tab-core"):
-                yield Label("Alias", classes="form-label nav-section")
-                yield CommandInput(value=self.node_data.get("alias", ""), id="alias-input")
-                yield Static(self._format_metadata(metadata), id="node-config-summary")
-                if forms.get("source") is not None:
-                    yield forms["source"]
-                pass_through_note = self._pass_through_note(metadata)
-                if pass_through_note:
-                    yield Static(pass_through_note, classes="form-description pass-through-note")
-                yield Label("Upstream Payload", classes="form-label nav-section")
-                yield Checkbox(
-                    "Reveal upstream payload",
-                    value=False,
-                    id="show-previous-output",
-                )
-                yield PayloadPreview("", id="previous-output-preview", classes="form-description")
-                yield from self._compose_membank_inputs(config)
-                yield from self._compose_vault_payload_preview("source")
-                if self.node_data.get("type") == WAIT_UNTIL_NODE_TYPE:
-                    yield Label("Wait Targets", classes="form-label nav-section")
-                    yield from self._compose_wait_targets(config)
+                with VerticalScroll(classes="tab-scroll"):
+                    yield Label("Alias", classes="form-label nav-section")
+                    yield CommandInput(value=self.node_data.get("alias", ""), id="alias-input")
+                    yield Static(self._format_metadata(metadata), id="node-config-summary")
+                    if forms.get("source") is not None:
+                        yield forms["source"]
+                    pass_through_note = self._pass_through_note(metadata)
+                    if pass_through_note:
+                        yield Static(pass_through_note, classes="form-description pass-through-note")
+                    yield Label("Upstream Payload", classes="form-label nav-section")
+                    yield Checkbox(
+                        "Reveal upstream payload",
+                        value=False,
+                        id="show-previous-output",
+                    )
+                    yield PayloadPreview("", id="previous-output-preview", classes="form-description")
+                    yield from self._compose_membank_inputs(config)
+                    yield from self._compose_vault_payload_preview("source")
+                    if self.node_data.get("type") == WAIT_UNTIL_NODE_TYPE:
+                        yield Label("Wait Targets", classes="form-label nav-section")
+                        yield from self._compose_wait_targets(config)
 
             with TabPane("2 - Parameters", id="node-config-tab-parameters"):
-                if forms.get("parameters") is not None:
-                    yield forms["parameters"]
-                else:
-                    yield Static("No parameters.", classes="form-description")
+                with VerticalScroll(classes="tab-scroll"):
+                    if forms.get("parameters") is not None:
+                        yield forms["parameters"]
+                    else:
+                        yield Static("No parameters.", classes="form-description")
 
             with TabPane("3 - Payloads", id="node-config-tab-outputs"):
-                yield Label("Incoming Payloads", classes="form-label nav-section")
-                yield Checkbox(
-                    "Reveal upstream payload",
-                    value=False,
-                    id="show-payload-upstream-payload",
-                )
-                yield PayloadPreview("", id="payload-upstream-payload-preview", classes="form-description")
-                yield from self._compose_vault_payload_preview("payload")
-                if forms.get("payloads") is not None:
-                    yield forms["payloads"]
-                yield Label("Dead Drop Payloads", classes="form-label nav-section")
-                yield from self._compose_transient_outputs(metadata, config)
-                if self._supports_membank_outputs(metadata):
-                    yield Label("Vault Payloads", classes="form-label nav-section")
-                    yield from self._compose_membank_outputs(config)
+                with VerticalScroll(classes="tab-scroll"):
+                    yield Label("Incoming Payloads", classes="form-label nav-section")
+                    yield Checkbox(
+                        "Reveal upstream payload",
+                        value=False,
+                        id="show-payload-upstream-payload",
+                    )
+                    yield PayloadPreview("", id="payload-upstream-payload-preview", classes="form-description")
+                    yield from self._compose_vault_payload_preview("payload")
+                    if forms.get("payloads") is not None:
+                        yield forms["payloads"]
+                    yield Label("Dead Drop Payloads", classes="form-label nav-section")
+                    yield from self._compose_transient_outputs(metadata, config)
+                    if self._supports_membank_outputs(metadata):
+                        yield Label("Vault Payloads", classes="form-label nav-section")
+                        yield from self._compose_membank_outputs(config)
 
             with TabPane("4 - Connections", id="node-config-tab-connections"):
-                yield Label("Connections", classes="form-label nav-section")
-                yield Static(
-                    "Edit connections from the editor.",
-                    classes="form-description",
-                )
-                yield Static(self._format_connections(), id="connection-summary")
+                with VerticalScroll(classes="tab-scroll"):
+                    yield Label("Connections", classes="form-label nav-section")
+                    yield Static(
+                        "Edit connections from the editor.",
+                        classes="form-description",
+                    )
+                    yield Static(self._format_connections(), id="connection-summary")
 
     def _compose_branch_config_tabs(
         self,
@@ -718,65 +723,69 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             payload_sources = {}
         with TabbedContent(id="node-config-tabs", classes="node-config-tabs"):
             with TabPane("1 - Source", id="node-config-tab-core"):
-                yield Label("Alias", classes="form-label nav-section")
-                yield CommandInput(value=self.node_data.get("alias", ""), id="alias-input")
-                yield Static(
-                    "\n".join(
-                        [
-                            "Node type: Parallel Branch",
-                            "- Duplicates the incoming payload across branch paths.",
-                            "- Parallel paths run independently",
-                            "- Conditional branching hidden for a later node pass",
-                        ]
-                    ),
-                    id="node-config-summary",
-                    classes="form-description",
-                )
-                yield Checkbox(
-                    "Reveal upstream payload",
-                    value=False,
-                    id="show-previous-output",
-                )
-                yield PayloadPreview("", id="previous-output-preview", classes="form-description")
-                yield from self._compose_membank_inputs(config)
-                yield from self._compose_vault_payload_preview("source")
+                with VerticalScroll(classes="tab-scroll"):
+                    yield Label("Alias", classes="form-label nav-section")
+                    yield CommandInput(value=self.node_data.get("alias", ""), id="alias-input")
+                    yield Static(
+                        "\n".join(
+                            [
+                                "Node type: Parallel Branch",
+                                "- Duplicates the incoming payload across branch paths.",
+                                "- Parallel paths run independently",
+                                "- Conditional branching hidden for a later node pass",
+                            ]
+                        ),
+                        id="node-config-summary",
+                        classes="form-description",
+                    )
+                    yield Checkbox(
+                        "Reveal upstream payload",
+                        value=False,
+                        id="show-previous-output",
+                    )
+                    yield PayloadPreview("", id="previous-output-preview", classes="form-description")
+                    yield from self._compose_membank_inputs(config)
+                    yield from self._compose_vault_payload_preview("source")
 
             with TabPane("2 - Parameters", id="node-config-tab-parameters"):
-                yield Label("Branches", classes="form-label nav-section")
-                yield CommandInput(
-                    value=str(branch_count),
-                    type="integer",
-                    id="branch-count",
-                    classes="compact-number-field",
-                )
-                yield Static("Choose 2 to 5 spawn points.", classes="form-description")
+                with VerticalScroll(classes="tab-scroll"):
+                    yield Label("Branches", classes="form-label nav-section")
+                    yield CommandInput(
+                        value=str(branch_count),
+                        type="integer",
+                        id="branch-count",
+                        classes="compact-number-field",
+                    )
+                    yield Static("Choose 2 to 5 spawn points.", classes="form-description")
 
             with TabPane("3 - Payloads", id="node-config-tab-outputs"):
-                yield Label("Incoming Payloads", classes="form-label nav-section")
-                yield Checkbox(
-                    "Reveal upstream payload",
-                    value=False,
-                    id="show-payload-upstream-payload",
-                )
-                yield PayloadPreview("", id="payload-upstream-payload-preview", classes="form-description")
-                yield from self._compose_vault_payload_preview("payload")
-                yield Vertical(
-                    *self._branch_payload_row_widgets(
-                        branch_count,
-                        source_options,
-                        payload_sources,
-                        config,
-                    ),
-                    id="branch-payload-rows",
-                )
+                with VerticalScroll(classes="tab-scroll"):
+                    yield Label("Incoming Payloads", classes="form-label nav-section")
+                    yield Checkbox(
+                        "Reveal upstream payload",
+                        value=False,
+                        id="show-payload-upstream-payload",
+                    )
+                    yield PayloadPreview("", id="payload-upstream-payload-preview", classes="form-description")
+                    yield from self._compose_vault_payload_preview("payload")
+                    yield Vertical(
+                        *self._branch_payload_row_widgets(
+                            branch_count,
+                            source_options,
+                            payload_sources,
+                            config,
+                        ),
+                        id="branch-payload-rows",
+                    )
 
             with TabPane("4 - Connections", id="node-config-tab-connections"):
-                yield Label("Connections", classes="form-label nav-section")
-                yield Static(
-                    "Edit connections from the editor.",
-                    classes="form-description",
-                )
-                yield Static(self._format_connections(), id="connection-summary")
+                with VerticalScroll(classes="tab-scroll"):
+                    yield Label("Connections", classes="form-label nav-section")
+                    yield Static(
+                        "Edit connections from the editor.",
+                        classes="form-description",
+                    )
+                    yield Static(self._format_connections(), id="connection-summary")
 
     def _build_standard_config_forms(
         self,
@@ -888,7 +897,10 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         return widgets
 
     def on_mount(self) -> None:
-        self.query_one("#node-config-scroll").can_focus = False
+        for scroll in self.query("#node-config-scroll"):
+            scroll.can_focus = False
+        for scroll in self.query(".tab-scroll"):
+            scroll.can_focus = False
         self._sync_merge_input_details()
         if self.query("#alias-input"):
             self.app.set_focus(self.query_one("#alias-input", CommandInput))
@@ -1181,11 +1193,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             widgets = []
         if widgets:
             try:
-                focus_command_widget(
-                    self,
-                    widgets[0],
-                    self.query_one("#node-config-scroll"),
-                )
+                scroll = self._scroll_container()
+                focus_command_widget(self, widgets[0], scroll)
                 self.call_after_refresh(lambda target=widgets[0]: self._scroll_config_widget_into_view(target))
                 self._sync_cursor_mode()
                 return
@@ -1230,23 +1239,17 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             self._nav_widget = None
 
         try:
-            focus_command_widget(
-                self,
-                target,
-                self.query_one("#node-config-scroll"),
-            )
+            scroll = self._scroll_container()
+            focus_command_widget(self, target, scroll)
             self.call_after_refresh(lambda target=target: self._scroll_config_widget_into_view(target))
         except Exception:
             focus_command_widget(self, target)
 
     def _scroll_config_widget_into_view(self, target: Any) -> None:
         try:
-            scroll = self.query_one("#node-config-scroll")
-            if self._is_first_active_tab_widget(target):
-                tabbed_query = self.query("#node-config-tabs")
-                if tabbed_query:
-                    scroll.scroll_to_widget(tabbed_query.first(), animate=False)
-                    return
+            scroll = self._scroll_container()
+            if scroll is None:
+                return
             scroll.scroll_to_widget(target, animate=False)
             target.scroll_visible(animate=False)
         except Exception:
@@ -1272,6 +1275,17 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         return self._keyboard_focus_widgets()
 
     def _scroll_container(self):
+        """Return the active scroll: tab-inner scroll in tabbed mode, flat scroll otherwise."""
+        try:
+            tabbed = self.query_one("#node-config-tabs", TabbedContent)
+            active_id = tabbed.active
+            if active_id:
+                pane = self.query_one(f"#{active_id}", TabPane)
+                scrolls = list(pane.query(".tab-scroll"))
+                if scrolls:
+                    return scrolls[0]
+        except Exception:
+            pass
         try:
             return self.query_one("#node-config-scroll")
         except Exception:

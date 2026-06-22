@@ -15,7 +15,7 @@ tkinter/proof-of-concept material lives under `docs/archive/`.
 | If you need to... | Read first | Then read if needed |
 |---|---|---|
 | Add or change a node | `NODE_STANDARDS.md`, `AGENT_START_GUIDE.md` | `NODE_HELPER.md`, `PROJECT_KNOWLEDGE.md`, `ARCHITECTURE.md` |
-| Fix frontend/UI behavior | `UI_QUICK_REFERENCE.md`, `AGENT_START_GUIDE.md` | `TUI_DESIGN.md`, `BACKEND_FRONTEND_BOUNDARY.md` |
+| Fix frontend/UI behavior | `UI_QUICK_REFERENCE.md`, `AGENT_START_GUIDE.md` | `TUI_DESIGN.md`, `IO_CONTRACT_UI_DESIGN.md`, `BACKEND_FRONTEND_BOUNDARY.md` |
 | Change backend/runtime behavior | `ARCHITECTURE.md`, `SIGNAL_FLOW.md` | `PROJECT_KNOWLEDGE.md`, `BACKEND_FRONTEND_BOUNDARY.md` |
 | Design or update node taxonomy | `PHASE_17_NODE_VISUAL_IDENTITY.md`, `NODE_CATALOG.md`, `NODE_STANDARDS.md` | `TASK_INDEX.md`, `BACKEND_FRONTEND_BOUNDARY.md` |
 | Continue Phase 17 node identity | `PHASE_17_NODE_VISUAL_IDENTITY.md`, `TASK_INDEX.md` | `UI_QUICK_REFERENCE.md`, `TUI_DESIGN.md`, `BACKEND_FRONTEND_BOUNDARY.md` |
@@ -76,6 +76,7 @@ Read these for frontend work. Start with `UI_QUICK_REFERENCE.md`; open
 |---|---|---|
 | `UI_QUICK_REFERENCE.md` | Editor keybindings, command-mode rules, and modal navigation summary | Start here for any frontend or keyboard-flow fix |
 | `TUI_DESIGN.md` | Full Textual conventions: async setup, screen lifecycle, widget layout, keyboard handling, modal patterns, field type mapping | When the quick reference isn't enough — full screen or widget design work |
+| `IO_CONTRACT_UI_DESIGN.md` | Track B design spec: master-detail selector layout with file-tree I/O contract panel, tab-sticking fix (scroll inside TabPane), vault conditional dropdown, upstream description hint, ⚠ badge, drill-in navigation. All design decisions resolved. | Before implementing any Track B frontend work; replaces ad-hoc design notes |
 | `FILE_TREE.md` | Tracked file map for the current workspace | Finding where a file lives or verifying the directory structure is still current |
 
 ### Planning and Backlog

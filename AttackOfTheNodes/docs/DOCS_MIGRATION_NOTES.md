@@ -32,6 +32,12 @@ future agents understand why the docs tree changed.
 |---|---|---|---|
 | n/a | `NODE_STANDARDIZATION_HANDOFF.md` | Added | Consolidates the node-standardization design discussion into an adopted implementation plan (per-node I/O contract via `NodeFactory`, Category > Family > Type rename onto the canonical `category` key, canonical data-type vocab, unified helper spec, master-detail selector). §2 open decisions signed off 2026-06-19: rename approved reusing `category` (retire `primary_family`/`legacy_category` aliases, `group → family`); drill-in family nav; one-line-per-port `to:` display; no behavior badge. README Document Directory row added under Node Authoring. Its changes fold into `NODE_STANDARDS.md`, `PHASE_17_NODE_VISUAL_IDENTITY.md`, and `NODE_HELPER.md` when each track is implemented. |
 
+## 2026-06-22 — I/O Contract UI Design spec added
+
+| Old location | New location | Action | Reason |
+|---|---|---|---|
+| n/a | `IO_CONTRACT_UI_DESIGN.md` | Added | Finalized design spec for Track B frontend changes surfacing the per-port I/O contract: master-detail selector layout, tab-sticking fix, vault conditional dropdown, upstream description hint, ⚠ badge, drill-in navigation. Resolves all open design decisions from the Track B planning session. README Document Directory row added under Frontend Reference. |
+
 ## Deletions
 
 No tracked documentation files were deleted in this pass. Historical and

@@ -4,6 +4,38 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-22 — Track B Phase 1: Tab Fix + Selector Master-Detail
+
+Branch: `claude/attackofthenodes-frontend-design-nn6put`
+
+**Design decisions finalized (from Track B planning session):**
+- Type mismatch display: Option B (amber `[type]` label) as fallback; primary prevention is dropdown type filtering.
+- Vault incompatibles: hidden entirely from dropdown (no divider).
+- Legacy nodes (no `inputs:` block): silent fallback to flat Source tab.
+- ⚠ badge: driven by last `V` (validate) run (Option A); Option B (continuous) is backlog.
+- Spec written to `docs/IO_CONTRACT_UI_DESIGN.md`.
+
+**Tab-sticking fix (`frontend/screens/node_config.py` + `frontend/styles.tcss`):**
+- Removed the outer `VerticalScroll(id="node-config-scroll")` that wrapped `TabbedContent` in `NodeConfigScreen.compose()`. When the form scrolled, the tab bar scrolled away with it.
+- `TabbedContent` is now a direct child of the modal `Vertical` — pinned at the top.
+- Each `TabPane` (`1-Source`, `2-Parameters`, `3-Payloads`, `4-Connections`) contains its own `VerticalScroll(classes="tab-scroll")`. Same fix applied to `_compose_branch_config_tabs`.
+- Non-tabbed modal paths (Merge node, Branch End) keep a flat `VerticalScroll(id="node-config-scroll")` so legacy scroll-helper code still falls back correctly.
+- `_scroll_container()` updated: tries to find the active pane's `.tab-scroll` first, falls back to `#node-config-scroll`.
+- `on_mount()` updated: disables focus on all `.tab-scroll` and `#node-config-scroll` containers.
+- `_move_keyboard_focus()`, `_scroll_config_widget_into_view()`, `_focus_first_config_tab_widget()` all updated to use `_scroll_container()` instead of direct `#node-config-scroll` query.
+- CSS: added `.tab-scroll { height: 1fr; overflow-y: auto; }` and `#node-config-tabs { height: 1fr; }`.
+- **This fixes the critical tab-disappearing bug on dense config forms.**
+
+**Selector master-detail (`frontend/screens/node_selector.py` + `frontend/styles.tcss`):**
+- Replaced the single-line `Static("", id="node-detail")` with a horizontal split: `ListView` (40%) + `VerticalScroll(id="node-detail-panel")` (60%) inside a `Horizontal(id="node-selector-body")`.
+- `_update_detail()` now renders a full multi-line I/O contract instead of a truncated one-liner.
+- Added `_render_node_contract()`: displays display name + description + Required Inputs / Optional Inputs / Required Outputs / Optional Outputs sections in 3-line-per-port format (`name* [type]` / description / `└─< sources` or `└─> dests`). Type labels use VS Code Dark+ teal `#4EC9B0` via Rich markup.
+- Added `_render_group_detail()`: shows group name, description, member list, and hint text.
+- Added `_fmt_port()` helper for per-port Rich markup formatting.
+- CSS: `#node-selector-body { height: 1fr }`, `#node-type-list` narrowed to 40% width, `#node-detail-panel` 60% width with left border. `.node-detail` changed from single-line `height: 1` to expanding content style.
+
+**Test baseline verified:** 138 failed / 189 passed before and after (all failures are pre-existing environment issues: missing `rich` and `pytest-asyncio` packages in system Python; no regressions introduced).
+
 ## 2026-06-19 — Docs: Reconcile Removed Subcategory Filter
 
 - Follow-up to step 4: updated the UI docs that still described the removed

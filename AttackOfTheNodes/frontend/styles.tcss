@@ -121,6 +121,16 @@ Screen {
     overflow-y: auto;
 }
 
+/* Tabbed config screens: TabbedContent is pinned, scroll lives inside each pane. */
+#node-config-tabs {
+    height: 1fr;
+}
+
+.tab-scroll {
+    height: 1fr;
+    overflow-y: auto;
+}
+
 /* Node selector layout: keep tabs/toggle/filter/checkboxes compact (containers
    default to height 1fr and would otherwise stretch and leave dead space),
    and let the node list absorb the remaining height. */
@@ -145,9 +155,23 @@ Screen {
     height: auto;
 }
 
+/* Master-detail horizontal split inside the selector body. */
+#node-selector-body {
+    height: 1fr;
+}
+
 #node-type-list {
+    width: 40%;
     height: 1fr;
     min-height: 4;
+    min-width: 18;
+}
+
+#node-detail-panel {
+    width: 60%;
+    height: 1fr;
+    border-left: solid $foreground 15%;
+    padding: 0 1;
 }
 
 /* One-line scan rows: descriptions live in the detail line, not on the row. */
@@ -170,12 +194,10 @@ Screen {
     color: $text-muted;
 }
 
-/* Fixed detail line below the selector list showing the highlighted row's
-   description. */
+/* Contract detail panel content — expands to fill the panel scroll area. */
 .node-detail {
-    height: 1;
+    width: 1fr;
     color: $text-muted;
-    padding: 0 1;
 }
 
 /* Two-line member rows inside the Group Picker. */
