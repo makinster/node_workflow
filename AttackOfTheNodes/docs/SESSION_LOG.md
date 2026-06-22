@@ -4,6 +4,40 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-22 — Track B Phase 4c: ⚠ Badge on Editor Node Cards
+
+Branch: `claude/attackofthenodes-frontend-design-nn6put`
+
+Node cards in the editor now show a `⚠` glyph when the last `V`
+(validate) run flagged that node with errors or warnings. The badge clears
+when validation runs clean. Driven by last-run result (Option A from the
+design); continuous background checking remains a backlog item.
+
+**`frontend/widgets/node_card.py`:**
+- `NodeCard.__init__` accepts `has_warning: bool = False`.
+- `refresh_card()` prepends `"⚠ "` to `main_text` when set — visible in
+  both the simple single-line and the 4-line identity-box display paths.
+
+**`frontend/widgets/node_list.py`:**
+- `refresh_rows()` accepts `flagged_node_ids: set | None` and passes
+  `has_warning=node_id in flagged_node_ids` when constructing each `NodeCard`.
+- `_append_row()` receives `flagged_node_ids` as an optional parameter.
+
+**`frontend/screens/editor.py`:**
+- `EditorScreen.__init__` initialises `self._flagged_node_ids: set[str] = set()`.
+- `action_validate_workflow()` computes the flagged set from the union of
+  error and warning `node_id` fields, stores it, then calls
+  `refresh_from_backend()` so badges appear immediately.
+- `refresh_from_backend()` passes `flagged_node_ids=self._flagged_node_ids`
+  to `node_list.refresh_rows()`.
+
+**`tests/test_debug_nodes.py`:** added `test_node_card_warning_badge_appears_when_flagged`.
+
+**`docs/IO_CONTRACT_UI_DESIGN.md`:** updated phase table — Tab fix, Selector
+panel, and ⚠ badge marked Done (2026-06-22).
+
+---
+
 ## 2026-06-22 — Selector Taxonomy: Five Family Tabs (retire I/O toggle)
 
 Branch: `claude/attackofthenodes-frontend-design-nn6put`

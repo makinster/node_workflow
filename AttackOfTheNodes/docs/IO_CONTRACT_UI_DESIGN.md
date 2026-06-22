@@ -252,10 +252,10 @@ deferred. The existing `GroupPickerScreen` modal remains in use until then.
 
 | Phase | Scope | Status |
 |---|---|---|
-| **Tab fix** | `NodeConfigScreen`: scroll inside TabPane, `.tab-scroll` CSS | **In progress** |
-| **Selector panel** | Master-detail split + file-tree contract render | **In progress** |
+| **Tab fix** | `NodeConfigScreen`: scroll inside TabPane, `.tab-scroll` CSS | **Done (2026-06-22)** |
+| **Selector panel** | Master-detail split + file-tree contract render | **Done (2026-06-22)** |
 | **Vault labels** | `[type]` labels in vault SelectionList | Blocked on Typed Vault Entries |
 | **Source tab vault dropdown** | Conditional vault key selector | Deferred (Track B Phase 4b) |
 | **Source tab upstream hint** | Inline upstream description | Deferred (Track B Phase 4b) |
-| **⚠ badge** | Node card validity indicator | Deferred (Track B Phase 4c) |
+| **⚠ badge** | Node card validity indicator | **Done (2026-06-22)** |
 | **Drill-in nav** | In-place list swap + GroupBrowserScreen | Deferred (Track B Phase 3) |
