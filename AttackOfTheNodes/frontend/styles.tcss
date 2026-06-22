@@ -138,6 +138,18 @@ Screen {
     height: auto;
 }
 
+/* Family tabs: flat, content-sized buttons with minimal padding so all five
+   fit across a half-screen modal, then simply gain breathing room (more empty
+   space to the right) when the terminal — and the modal — scale up. */
+#node-family-tabs Button {
+    min-width: 0;
+    width: auto;
+    height: 1;
+    border: none;
+    padding: 0 1;
+    margin: 0 1 0 0;
+}
+
 #node-filter {
     height: auto;
 }

@@ -13,6 +13,7 @@ docs/PHASE_17_NODE_VISUAL_IDENTITY.md.
 
 from __future__ import annotations
 
+import textwrap
 from typing import Any, Dict, List, Optional
 
 from textual.app import ComposeResult
@@ -155,7 +156,27 @@ class NodeSelectorScreen(ModalScreen):
         self._apply_filter("")
         self._focus_filter_input()
         self.call_after_refresh(self._focus_filter_input)
+        # Re-render the contract once the panel has a real width so the
+        # hanging-indent wrapping matches the laid-out width, not the fallback.
+        self.call_after_refresh(self._refresh_current_detail)
         self.set_timer(0.01, self._focus_filter_input)
+
+    def on_resize(self, event: Any) -> None:
+        # The modal scales with the terminal; re-wrap the contract to the new
+        # panel width (half screen wraps tighter, full screen relaxes).
+        self._refresh_current_detail()
+
+    def _refresh_current_detail(self) -> None:
+        """Re-render the detail panel for the currently highlighted item."""
+        if self._drilled_in:
+            quick = self.query_one("#node-quick-list", ListView)
+            self._update_quick_detail(quick.index or 0)
+            return
+        try:
+            node_list = self.query_one("#node-type-list", ListView)
+        except Exception:
+            return
+        self._update_detail(node_list.index)
 
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
         focused = self.focused
@@ -493,6 +514,37 @@ class NodeSelectorScreen(ModalScreen):
 
     _TYPE_COLOR = "#4EC9B0"
 
+    def _detail_width(self) -> int:
+        """Wrap width for the contract panel; falls back before first layout."""
+        try:
+            width = self.query_one("#node-detail", Static).content_size.width
+            if width and width > 0:
+                return width
+        except Exception:
+            pass
+        return 36
+
+    def _wrap_dim(self, text: str, indent: int, prefix: str = "") -> List[str]:
+        """Wrap dim prose so continuation lines align under the first word.
+
+        ``indent`` is the leading-space column for the line; ``prefix`` (e.g.
+        ``"└─< "``) renders only on the first line and the wrap hangs to the
+        column immediately after it. We pre-wrap here (rather than let the
+        Static soft-wrap) so the hanging indent survives — Static's own
+        wrapping always falls back to column 0. Subtracting 1 keeps our lines
+        just inside the panel so Static never re-wraps them.
+        """
+        width = max(8, self._detail_width() - 1)
+        avail = max(6, width - indent - len(prefix))
+        chunks = textwrap.wrap(text, avail) or [""]
+        lines: List[str] = []
+        for i, chunk in enumerate(chunks):
+            if i == 0:
+                lines.append(f"{' ' * indent}[dim]{prefix}{chunk}[/dim]")
+            else:
+                lines.append(f"{' ' * (indent + len(prefix))}[dim]{chunk}[/dim]")
+        return lines
+
     def _render_node_contract(self, node: Dict[str, Any]) -> str:
         """Render the full I/O contract for a node with Rich markup."""
         display_name = str(node.get("display_name") or node.get("type") or "Node")
@@ -545,20 +597,20 @@ class NodeSelectorScreen(ModalScreen):
             f"  {name}{required_mark}  \\[[{self._TYPE_COLOR}]{data_type}[/]]"
         )
         if desc:
-            port_lines.append(f"  [dim]{desc}[/dim]")
+            port_lines.extend(self._wrap_dim(desc, indent=2))
         if direction == "input":
             sources = meta.get("sources") or meta.get("from") or []
             if sources:
-                src_text = "  ".join(str(s) for s in sources)
-                port_lines.append(f"  [dim]└─< {src_text}[/dim]")
+                src_text = " ".join(str(s) for s in sources)
+                port_lines.extend(self._wrap_dim(src_text, indent=2, prefix="└─< "))
         else:
             if pass_through:
-                port_lines.append("  [dim]↔ pass-thru[/dim]")
+                port_lines.append("  [bold]↔ pass-thru[/bold]")
             else:
                 dests = meta.get("to") or []
                 if dests:
-                    dest_text = "  ".join(str(d) for d in dests)
-                    port_lines.append(f"  [dim]└─> {dest_text}[/dim]")
+                    dest_text = " ".join(str(d) for d in dests)
+                    port_lines.extend(self._wrap_dim(dest_text, indent=2, prefix="└─> "))
         return port_lines
 
     def _render_group_detail(self, entry: Dict[str, Any]) -> str:

@@ -5600,6 +5600,63 @@ async def _test_node_selector_group_drill_in():
     print("test_node_selector_group_drill_in PASSED")
 
 
+def test_node_selector_contract_hanging_indent_and_bold_passthru():
+    asyncio.run(_test_node_selector_contract_hanging_indent_and_bold_passthru())
+
+
+async def _test_node_selector_contract_hanging_indent_and_bold_passthru():
+    from textual.app import App
+
+    from frontend.screens.node_selector import NodeSelectorScreen
+
+    _, wm, _, _ = _make_services()
+
+    class SelApp(App):
+        async def on_mount(self) -> None:
+            await self.push_screen(NodeSelectorScreen(wm._factory))
+
+    app = SelApp()
+    # Narrow modal forces wrapping so the hanging indent is exercised.
+    async with app.run_test(size=(70, 30)) as pilot:
+        await pilot.pause(0.15)
+        screen = app.screen
+        assert isinstance(screen, NodeSelectorScreen)
+
+        # Plain dim prose: every wrapped line keeps the 2-space indent so
+        # continuation lines align under the text they wrapped from.
+        long_prose = "alpha beta gamma delta epsilon zeta eta theta iota kappa lambda"
+        lines = screen._wrap_dim(long_prose, indent=2)
+        assert len(lines) >= 2, "expected the sample prose to wrap at narrow width"
+        for line in lines:
+            assert line.startswith("  [dim]"), f"line not indented to col 2: {line!r}"
+
+        # Prefixed source line: the marker shows on the first line only and the
+        # continuation hangs to the column immediately after it (col 6).
+        prefixed = screen._wrap_dim(long_prose, indent=2, prefix="└─< ")
+        assert prefixed[0].startswith("  [dim]└─< ")
+        assert len(prefixed) >= 2
+        assert prefixed[1].startswith("      [dim]"), prefixed[1]
+        assert "└─<" not in prefixed[1]
+
+        # A pass-through output port renders the marker in bold.
+        found_passthru = False
+        for node in screen._all_nodes:
+            output_meta = node.get("output_port_metadata") or {}
+            for port, meta in output_meta.items():
+                if meta.get("pass_through"):
+                    rendered = screen._render_node_contract(node)
+                    assert "[bold]↔ pass-thru[/bold]" in rendered, (
+                        f"pass-thru not bold for {node.get('display_name')}"
+                    )
+                    found_passthru = True
+                    break
+            if found_passthru:
+                break
+        assert found_passthru, "expected at least one pass-through output port"
+
+    print("test_node_selector_contract_hanging_indent_and_bold_passthru PASSED")
+
+
 def test_node_selector_navigation_skips_section_headers():
     asyncio.run(_test_node_selector_navigation_skips_section_headers())
 
@@ -7101,6 +7158,7 @@ if __name__ == "__main__":
         test_node_selector_uses_family_tabs,
         test_node_selector_tab_keyboard_contract,
         test_node_selector_group_drill_in,
+        test_node_selector_contract_hanging_indent_and_bold_passthru,
         test_branch_selector_uses_shared_list_navigation,
         test_workflow_library_uses_shared_list_navigation,
         test_export_cancel_returns_to_file_menu,
