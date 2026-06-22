@@ -113,6 +113,9 @@ class NodeSelectorScreen(ModalScreen):
         self._entries: list[Dict[str, Any]] = []
         self._visible_nodes: list[Dict[str, Any]] = []
         self._active_tab = TABS[0]
+        self._drilled_in = False
+        self._quick_list_members: List[str] = []
+        self._quick_list_nodes: List[Dict[str, Any]] = []
 
     def compose(self) -> ComposeResult:
         with Vertical(id="modal-card", classes="node-selector-modal"):
@@ -132,9 +135,11 @@ class NodeSelectorScreen(ModalScreen):
             with Horizontal(id="node-selector-body"):
                 yield ListView(id="node-type-list")
                 with VerticalScroll(id="node-detail-panel"):
+                    yield ListView(id="node-quick-list", classes="node-quick-list")
                     yield Static("", id="node-detail", classes="node-detail")
             yield Static(
                 "W/S move  A/D within row  1-5 tabs  E add  / filter  ESC close",
+                id="selector-help",
                 classes="modal-help",
             )
             yield Button("Cancel", id="cancel-node-select", variant="default")
@@ -145,6 +150,7 @@ class NodeSelectorScreen(ModalScreen):
             for node in self.factory.get_node_types_metadata()
             if str(node.get("type") or "") not in HIDDEN_NODE_TYPES
         ]
+        self.query_one("#node-quick-list", ListView).display = False
         self._sync_tab_buttons()
         self._apply_filter("")
         self._focus_filter_input()
@@ -179,11 +185,19 @@ class NodeSelectorScreen(ModalScreen):
             self._focus_node_list()
 
     def on_list_view_selected(self, event: ListView.Selected) -> None:
+        if event.list_view.id == "node-quick-list":
+            if self._drilled_in:
+                index = event.list_view.index
+                if index is not None and 0 <= index < len(self._quick_list_members):
+                    self.dismiss(self._quick_list_members[index])
+            return
         self._activate_entry(event.list_view.index)
 
     def on_list_view_highlighted(self, event: ListView.Highlighted) -> None:
         if event.list_view.id == "node-type-list":
             self._update_detail(event.list_view.index)
+        elif event.list_view.id == "node-quick-list" and self._drilled_in:
+            self._update_quick_detail(event.list_view.index or 0)
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         button_id = event.button.id or ""
@@ -205,6 +219,12 @@ class NodeSelectorScreen(ModalScreen):
 
     def action_choose(self) -> None:
         focused = self.app.focused
+        quick_list = self.query_one("#node-quick-list", ListView)
+        if self._drilled_in and focused is quick_list:
+            index = quick_list.index
+            if index is not None and 0 <= index < len(self._quick_list_members):
+                self.dismiss(self._quick_list_members[index])
+            return
         if isinstance(focused, CommandInput):
             focused.begin_edit()
             return
@@ -235,18 +255,42 @@ class NodeSelectorScreen(ModalScreen):
         focused = self.app.focused
         if isinstance(focused, CommandInput) and focused.editing:
             return
+        if self._drilled_in:
+            quick_list = self.query_one("#node-quick-list", ListView)
+            if focused is quick_list:
+                self._move_quick_list(quick_list, -1)
+                return
         self._move_focus_or_selection(-1)
 
     def action_cursor_down(self) -> None:
         focused = self.app.focused
         if isinstance(focused, CommandInput) and focused.editing:
             return
+        if self._drilled_in:
+            quick_list = self.query_one("#node-quick-list", ListView)
+            if focused is quick_list:
+                self._move_quick_list(quick_list, 1)
+                return
         self._move_focus_or_selection(1)
 
     def action_cursor_left(self) -> None:
+        if self._drilled_in:
+            self._exit_quick_list()
+            return
         self._move_within_row(-1)
 
     def action_cursor_right(self) -> None:
+        if self._drilled_in:
+            return
+        list_view = self.query_one("#node-type-list", ListView)
+        focused = self.app.focused
+        if focused is list_view:
+            index = list_view.index
+            if index is not None and 0 <= index < len(self._entries):
+                entry = self._entries[index]
+                if entry["kind"] == "group":
+                    self._enter_quick_list(entry)
+                    return
         self._move_within_row(1)
 
     # ------------------------------------------------------------------
@@ -257,6 +301,7 @@ class NodeSelectorScreen(ModalScreen):
         return TAB_FAMILY.get(self._active_tab, self._active_tab)
 
     def _apply_filter(self, query: str) -> None:
+        self._reset_drill_in()
         query = query.strip().lower()
         family = self._active_family()
         family_nodes = [
@@ -532,7 +577,7 @@ class NodeSelectorScreen(ModalScreen):
                 display = str(member.get("display_name") or member.get("type") or "")
                 lines.append(f"  \\[ {display} ]")
         lines.append("")
-        lines.append("[dim]E = open picker[/dim]")
+        lines.append("[dim]E = open picker  D/→ = quick list[/dim]")
         return "\n".join(lines)
 
     # ------------------------------------------------------------------
@@ -564,6 +609,70 @@ class NodeSelectorScreen(ModalScreen):
             )
             return
         self.dismiss(entry["node"]["type"])
+
+    def _enter_quick_list(self, entry: Dict[str, Any]) -> None:
+        """Drill into a group: show top-6 members in the right panel quick list."""
+        members = sorted(entry.get("members") or [], key=lambda m: m["display_name"])[:6]
+        quick_list = self.query_one("#node-quick-list", ListView)
+        quick_list.clear()
+        for member in members:
+            quick_list.append(ListItem(Static(
+                self._node_row_text(member),
+                classes="node-select-row",
+            )))
+        self._drilled_in = True
+        self._quick_list_members = [m["type"] for m in members]
+        self._quick_list_nodes = list(members)
+        quick_list.display = True
+        quick_list.index = 0
+        self.app.set_focus(quick_list)
+        self._update_quick_detail(0)
+        self._sync_help_text()
+
+    def _exit_quick_list(self) -> None:
+        """Return focus to the left list and restore its group detail."""
+        self._reset_drill_in()
+        self._focus_node_list()
+        list_view = self.query_one("#node-type-list", ListView)
+        self._update_detail(list_view.index)
+
+    def _reset_drill_in(self) -> None:
+        """Clear drill-in state; does not change focus or update detail."""
+        if not self._drilled_in:
+            return
+        self._drilled_in = False
+        self._quick_list_members = []
+        self._quick_list_nodes = []
+        quick_list = self.query_one("#node-quick-list", ListView)
+        quick_list.display = False
+        self._sync_help_text()
+
+    def _move_quick_list(self, quick_list: ListView, delta: int) -> None:
+        """Clamp-move within the quick list; does not exit at boundaries."""
+        count = len(self._quick_list_members)
+        if not count:
+            return
+        current = quick_list.index if quick_list.index is not None else 0
+        new_index = max(0, min(count - 1, current + delta))
+        if new_index != current:
+            quick_list.index = new_index
+
+    def _update_quick_detail(self, index: int) -> None:
+        """Show the I/O contract for the quick-list item at index."""
+        detail = self.query_one("#node-detail", Static)
+        if 0 <= index < len(self._quick_list_nodes):
+            detail.update(self._render_node_contract(self._quick_list_nodes[index]))
+        else:
+            detail.update("")
+
+    def _sync_help_text(self) -> None:
+        help_widget = self.query_one("#selector-help", Static)
+        if self._drilled_in:
+            help_widget.update("W/S quick list  A/← back  E add  ESC close")
+        else:
+            help_widget.update(
+                "W/S move  A/D within row  1-5 tabs  E add  / filter  ESC close"
+            )
 
     # ------------------------------------------------------------------
     # Focus and navigation
@@ -675,6 +784,7 @@ class NodeSelectorScreen(ModalScreen):
     def _set_active_tab(self, tab: str) -> None:
         if tab not in TABS:
             return
+        self._reset_drill_in()
         self._active_tab = tab
         self._sync_tab_buttons()
         self._apply_filter(self.query_one("#node-filter", CommandInput).value)

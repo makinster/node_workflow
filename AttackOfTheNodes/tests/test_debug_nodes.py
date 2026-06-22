@@ -5504,6 +5504,102 @@ async def _test_node_selector_group_picker_flow():
     print("test_node_selector_group_picker_flow PASSED")
 
 
+def test_node_selector_group_drill_in():
+    asyncio.run(_test_node_selector_group_drill_in())
+
+
+async def _test_node_selector_group_drill_in():
+    from textual.app import App
+    from textual.widgets import ListView, Static
+
+    from frontend.screens.node_selector import NodeSelectorScreen
+
+    _, wm, _, _ = _make_services()
+    chosen: list = []
+
+    class DrillApp(App):
+        async def on_mount(self) -> None:
+            await self.push_screen(NodeSelectorScreen(wm._factory), chosen.append)
+
+    app = DrillApp()
+    async with app.run_test(size=(90, 30)) as pilot:
+        await pilot.pause(0.1)
+        screen = app.screen
+        assert isinstance(screen, NodeSelectorScreen)
+        screen._set_active_tab("Flow Control")
+        await pilot.pause(0.03)
+
+        # Find a group entry in the Flow Control tab
+        group_index = next(
+            (i for i, e in enumerate(screen._entries) if e["kind"] == "group"),
+            None,
+        )
+        assert group_index is not None, "Need a group entry for drill-in test"
+        entry = screen._entries[group_index]
+        group_members = sorted(entry["members"], key=lambda m: m["display_name"])
+
+        # Navigate list to the group row
+        node_list = screen.query_one("#node-type-list", ListView)
+        screen._focus_node_list()
+        node_list.index = group_index
+        await pilot.pause(0.03)
+
+        quick_list = screen.query_one("#node-quick-list", ListView)
+        assert not quick_list.display, "Quick list should be hidden before drill-in"
+        assert not screen._drilled_in
+
+        # D/→ on a group row drills into the quick list
+        screen.action_cursor_right()
+        await pilot.pause(0.05)
+        assert screen._drilled_in
+        assert quick_list.display
+        assert app.focused is quick_list
+        assert len(screen._quick_list_members) == min(6, len(group_members))
+        # Members are sorted alphabetically
+        expected_types = [m["type"] for m in group_members[:6]]
+        assert screen._quick_list_members == expected_types
+
+        # Detail panel shows the highlighted member's contract
+        detail_text = str(screen.query_one("#node-detail", Static).content)
+        first_member = group_members[0]
+        assert str(first_member.get("display_name", "")) in detail_text
+
+        # Help text updates while drilled in
+        help_text = str(screen.query_one("#selector-help", Static).content)
+        assert "A/←" in help_text and "back" in help_text
+
+        # W/S moves within the quick list
+        if len(screen._quick_list_members) >= 2:
+            screen.action_cursor_down()
+            await pilot.pause(0.03)
+            assert quick_list.index == 1
+            new_detail = str(screen.query_one("#node-detail", Static).content)
+            second_member_name = str(group_members[1].get("display_name", ""))
+            assert second_member_name in new_detail
+
+        # A/← exits the quick list and returns to the left list
+        screen.action_cursor_left()
+        await pilot.pause(0.05)
+        assert not screen._drilled_in
+        assert not quick_list.display
+        assert app.focused is node_list
+        # Help text restored
+        restored_help = str(screen.query_one("#selector-help", Static).content)
+        assert "A/D within row" in restored_help
+
+        # Drill in again and use E to add a node directly
+        node_list.index = group_index
+        screen.action_cursor_right()
+        await pilot.pause(0.05)
+        assert screen._drilled_in
+        quick_list.index = 0
+        screen.action_choose()
+        await pilot.pause(0.05)
+        assert chosen == [expected_types[0]]
+
+    print("test_node_selector_group_drill_in PASSED")
+
+
 def test_node_selector_navigation_skips_section_headers():
     asyncio.run(_test_node_selector_navigation_skips_section_headers())
 
@@ -7004,6 +7100,7 @@ if __name__ == "__main__":
         test_node_config_payloads_tab_reveals_upstream_and_vault_payloads,
         test_node_selector_uses_family_tabs,
         test_node_selector_tab_keyboard_contract,
+        test_node_selector_group_drill_in,
         test_branch_selector_uses_shared_list_navigation,
         test_workflow_library_uses_shared_list_navigation,
         test_export_cancel_returns_to_file_menu,

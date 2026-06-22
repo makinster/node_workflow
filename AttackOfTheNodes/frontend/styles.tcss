@@ -314,6 +314,17 @@ Checkbox.-on > .toggle--button {
     text-style: bold;
 }
 
+/* Group drill-in quick list: compact auto-height list inside the detail panel. */
+.node-quick-list {
+    height: auto;
+    background: $background;
+    margin-bottom: 1;
+}
+
+.node-quick-list ListItem {
+    height: 1;
+}
+
 /* One lighter active-tab style shared by the node selector and node config so
    tabs look the same in both. */
 Tab {
