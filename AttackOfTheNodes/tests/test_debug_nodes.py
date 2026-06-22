@@ -4104,9 +4104,11 @@ async def _test_node_config_fixed_tabs_are_keyboard_navigable():
         await pilot.pause(0.1)
         assert tabs.active == "node-config-tab-outputs"
         assert app.focused is payload_reveal
-        scroll = app.query_one("#node-config-scroll")
-        scroll.scroll_to(y=100, animate=False)
         screen = app.query_one(NodeConfigScreen)
+        # Scroll now lives inside the active TabPane (.tab-scroll), not a single
+        # outer #node-config-scroll, so the tab bar stays pinned.
+        scroll = screen._scroll_container()
+        scroll.scroll_to(y=100, animate=False)
         screen._scroll_config_widget_into_view(payload_reveal)
         await pilot.pause(0.03)
         assert scroll.scroll_y < 100
@@ -4251,7 +4253,6 @@ async def _test_node_selector_layout_is_compact():
             screen = app.screen
             tabs = screen.query_one("#node-family-tabs")
             filt = screen.query_one("#node-filter")
-            io_row = screen.query_one("#io-direction-row")
 
             # Filter is directly below the tab row — no dead space.
             gap = filt.region.y - (tabs.region.y + tabs.region.height)
@@ -4259,20 +4260,17 @@ async def _test_node_selector_layout_is_compact():
                 f"tabs->filter gap {gap} != 0 at height {height}"
             )
 
-            # On the I/O tab the switch sits below the filter.
+            # The master-detail body (list + contract panel) renders below the
+            # filter with usable height. No I/O toggle row exists any more.
             filt_bottom = filt.region.y + filt.region.height
-            assert io_row.display, "Switch row should be visible on I/O tab"
-            assert io_row.region.y >= filt_bottom, (
-                f"Switch row top {io_row.region.y} should be >= filter bottom"
-                f" {filt_bottom} at height {height}"
-            )
-
-            # The node list renders below the switch row with usable height.
             list_view = screen.query_one("#node-type-list")
             assert list_view.region.height >= 1, (
                 f"node list not rendered at height {height}"
             )
-            assert list_view.region.y >= io_row.region.y + io_row.region.height
+            assert list_view.region.y >= filt_bottom, (
+                f"node list top {list_view.region.y} should be >= filter bottom"
+                f" {filt_bottom} at height {height}"
+            )
 
     print("test_node_selector_layout_is_compact PASSED")
 
@@ -4324,15 +4322,19 @@ async def _test_node_selector_rows_are_one_line_with_detail():
             f"Family {family!r} should not appear in row {row!r}"
         )
 
-        # Highlighting the row drives the single fixed detail line below it.
+        # Highlighting the row drives the master-detail contract panel, which
+        # renders the node's display name (bold) and full description.
         list_view.index = node_entry_index
         await pilot.pause(0.05)
         detail = app.query_one("#node-detail", Static)
         detail_text = str(detail.content)
-        expected_detail = description or "No description"
-        assert detail_text.startswith(expected_detail[:20]), (
-            f"Detail line {detail_text!r} should describe the highlighted node"
+        assert node["display_name"] in detail_text, (
+            f"Contract panel {detail_text!r} should name the highlighted node"
         )
+        if description:
+            assert description in detail_text, (
+                f"Contract panel {detail_text!r} should describe the node"
+            )
 
         # Each node still maps to one list row carrying the scan-row static.
         node_items = [
@@ -4345,13 +4347,12 @@ async def _test_node_selector_rows_are_one_line_with_detail():
     print("test_node_selector_rows_are_one_line_with_detail PASSED")
 
 
-def test_node_selector_io_toggle_keyboard_contract():
-    asyncio.run(_test_node_selector_io_toggle_keyboard_contract())
+def test_node_selector_tab_keyboard_contract():
+    asyncio.run(_test_node_selector_tab_keyboard_contract())
 
 
-async def _test_node_selector_io_toggle_keyboard_contract():
+async def _test_node_selector_tab_keyboard_contract():
     from textual.app import App, ComposeResult
-    from textual.widgets import Button
 
     from frontend.screens.node_selector import NodeSelectorScreen
 
@@ -4365,31 +4366,26 @@ async def _test_node_selector_io_toggle_keyboard_contract():
     async with app.run_test(size=(90, 30)) as pilot:
         await pilot.pause(0.05)
         screen = app.query_one(NodeSelectorScreen)
-        input_button = app.query_one("#io-side-input", Button)
-        output_button = app.query_one("#io-side-output", Button)
 
-        # W/S navigates from the filter onto the segmented toggle row.
-        await pilot.press("s")
+        # Five tabs map 1:1 onto the five backend families; no I/O toggle.
+        assert screen._active_tab == "In"
+        assert screen._active_family() == "Inputs"
+
+        # Tabs switch by number key. Tab 4 is the Outputs family.
+        await pilot.press("4")
         await pilot.pause(0.03)
-        assert app.focused is input_button
+        assert screen._active_tab == "Out"
+        assert screen._active_family() == "Outputs"
 
-        # The toggle is a 2-button row: A/D moves within it.
-        assert screen._io_output_side is False
-        await pilot.press("d")
-        await pilot.pause(0.03)
-        assert app.focused is output_button
-
-        # E presses the focused side button, selecting the Output side.
-        await pilot.press("e")
-        await pilot.pause(0.03)
-        assert screen._io_output_side is True
-
-        # Tabs switch by number key, not A/D.
+        # Tab 2 is Flow Control; tab 5 is Complex.
         await pilot.press("2")
         await pilot.pause(0.03)
         assert screen._active_tab == "Flow Control"
+        await pilot.press("5")
+        await pilot.pause(0.03)
+        assert screen._active_tab == "Complex"
 
-    print("test_node_selector_io_toggle_keyboard_contract PASSED")
+    print("test_node_selector_tab_keyboard_contract PASSED")
 
 
 def test_activate_command_widget_single_press_toggles_boolean():
@@ -4852,7 +4848,7 @@ async def _test_node_config_dynamic_membank_output_rows():
         output_textarea = app.query_one("#membank-output-id-0", CommandTextArea)
         app.set_focus(output_textarea)
         screen.action_activate_focused()
-        scroll = app.query_one("#node-config-scroll")
+        scroll = screen._scroll_container()
         before_scroll_y = scroll.scroll_y
         assert output_textarea.editing is True
         for key in ("up", "down", "left", "right"):
@@ -5320,8 +5316,6 @@ async def _test_node_selector_uses_family_tabs():
         screen = app.query_one(NodeSelectorScreen)
         node_list = app.query_one("#node-type-list", ListView)
         filter_input = app.query_one("#node-filter", CommandInput)
-        io_input_button = app.query_one("#io-side-input", Button)
-        io_output_button = app.query_one("#io-side-output", Button)
 
         # Hidden node types never reach the selector.
         all_types = {node["type"] for node in screen._all_nodes}
@@ -5329,14 +5323,10 @@ async def _test_node_selector_uses_family_tabs():
         assert "start_node" not in all_types
         assert "end_node" not in all_types
 
-        # Default: I/O tab, Input side — focus lands on the filter bar
+        # Default: In tab (Inputs family) — focus lands on the filter bar
         # (not edit mode) so the user can type immediately or navigate down.
-        assert screen._active_tab == "I/O"
+        assert screen._active_tab == "In"
         assert screen._active_family() == "Inputs"
-        # Segmented I/O toggle defaults to the Input side.
-        assert screen._io_output_side is False
-        assert io_input_button.has_class("active")
-        assert not io_output_button.has_class("active")
         assert app.focused is filter_input
         assert filter_input.editing is False
         assert {node["type"] for node in screen._visible_nodes} == {
@@ -5350,12 +5340,10 @@ async def _test_node_selector_uses_family_tabs():
         assert group_entries(screen) == {}
         assert header_names(screen) == ["Text & Data", "Files", "Web"]
 
-        # Flip the segmented toggle to the Output side.
-        screen._set_io_side(True)
+        # Out tab is its own family now (no I/O toggle): tab 4 → Outputs.
+        screen._set_active_tab("Out")
         await pilot.pause(0.03)
         assert screen._active_family() == "Outputs"
-        assert io_output_button.has_class("active")
-        assert not io_input_button.has_class("active")
         assert {node["type"] for node in screen._visible_nodes} == {
             "text_output_node",
         }
@@ -5363,7 +5351,7 @@ async def _test_node_selector_uses_family_tabs():
         # Flow Control: no filter checkboxes; Branch group with member count;
         # single-member groups and direct-adds promoted to node rows under
         # their section headers.
-        screen.action_next_tab()
+        screen._set_active_tab("Flow Control")
         assert screen._active_tab == "Flow Control"
         assert header_names(screen) == ["Branching", "Timing"]
         groups = group_entries(screen)
@@ -5375,7 +5363,7 @@ async def _test_node_selector_uses_family_tabs():
         assert "branch_node" not in visible_types  # behind the Branch group
 
         # Utility tab: transform group plus debug/loop helper direct-adds.
-        screen.action_next_tab()
+        screen._set_active_tab("Utility")
         assert screen._active_tab == "Utility"
         assert "Data Transform" in group_entries(screen)
         assert {"Transform", "Debug", "Loop Helpers"}.issubset(
@@ -5385,7 +5373,7 @@ async def _test_node_selector_uses_family_tabs():
         assert {"echo_node", "probe_node", "counter_node"}.issubset(utility_types)
 
         # Complex tab: AI Processing group of three.
-        screen.action_next_tab()
+        screen._set_active_tab("Complex")
         assert screen._active_tab == "Complex"
         assert group_entries(screen).get("AI Processing") == 3
 
@@ -6989,6 +6977,7 @@ if __name__ == "__main__":
         test_branch_payload_preview_traces_selected_vault_source,
         test_node_config_payloads_tab_reveals_upstream_and_vault_payloads,
         test_node_selector_uses_family_tabs,
+        test_node_selector_tab_keyboard_contract,
         test_branch_selector_uses_shared_list_navigation,
         test_workflow_library_uses_shared_list_navigation,
         test_export_cancel_returns_to_file_menu,

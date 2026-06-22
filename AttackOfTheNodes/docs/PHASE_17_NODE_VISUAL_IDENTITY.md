@@ -5,6 +5,19 @@
 the depth gutter outside the box; taxonomy revision remains I/O tab + switch,
 Utility family, in-list section headers, AI-as-subcategory)
 
+> **Revision — 2026-06-22 (selector taxonomy: five tabs, no I/O toggle).**
+> The combined `I/O` tab with an Input/Output segmented toggle is **retired**.
+> The selector now has **five tabs mapping 1:1 to the five backend families**,
+> ordered `In` (Inputs) · `Flow Control` · `Utility` · `Out` (Outputs) ·
+> `Complex` with hotkeys 1–5. `In`/`Out` are abbreviated display labels mapped
+> to the `Inputs`/`Outputs` `primary_family` values via `TAB_FAMILY` in
+> `node_selector.py`. Rationale: Outputs is becoming its own focus area — live
+> UI-display nodes that render data on screen during workflow execution (and,
+> less commonly, richer user-input nodes on the Inputs side) — so it warrants a
+> dedicated tab. This **closes the "Selector Family Taxonomy Reconciliation"
+> backlog item**. Read every "I/O tab + switch" passage below as historical.
+> See `IO_CONTRACT_UI_DESIGN.md`.
+>
 > **Revision — 2026-06-19 (supersedes the subcategory-filter design below).**
 > The **rigid subcategory taxonomy and its filter-checkbox column were retired**
 > and removed from the node selector. Node `tags` survive only as **freeform

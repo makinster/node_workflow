@@ -1,8 +1,11 @@
 """Node selector modal.
 
-Four tabs map five backend families onto the selector (2026-06-12 taxonomy
-revision): the `I/O` tab shows the `Inputs` or `Outputs` family behind an
-Input/Output switch; `Flow Control`, `Utility`, and `Complex` map directly.
+Five tabs map 1:1 onto the five backend families (2026-06-22 taxonomy
+revision): `In` → Inputs, `Flow Control`, `Utility`, `Out` → Outputs, and
+`Complex`. The earlier combined `I/O` tab with an Input/Output toggle was
+retired so the Outputs family can grow its own identity (live UI display
+nodes during workflow execution). Tab display labels (`In`/`Out`) are
+abbreviated; `TAB_FAMILY` maps each to its backend `primary_family` value.
 Lists are organized by group entries (which open the Group Picker) and
 non-selectable section headers that keyboard navigation skips. See
 docs/PHASE_17_NODE_VISUAL_IDENTITY.md.
@@ -36,8 +39,19 @@ from frontend.widgets.command_navigation import (
 )
 
 
-TABS = ["I/O", "Flow Control", "Utility", "Complex"]
-IO_TAB = "I/O"
+# Tab display order with number-key hotkeys 1-5. Reads like data flow:
+# In → process (Flow Control, Utility) → Out → Complex.
+TABS = ["In", "Flow Control", "Utility", "Out", "Complex"]
+
+# Tab display label → backend `primary_family` value. The abbreviated `In`/`Out`
+# labels map to the full `Inputs`/`Outputs` families; the rest are 1:1.
+TAB_FAMILY = {
+    "In": "Inputs",
+    "Flow Control": "Flow Control",
+    "Utility": "Utility",
+    "Out": "Outputs",
+    "Complex": "Complex",
+}
 
 # Hidden from the selector: tombstone is the editor-only deleted-node record;
 # start is auto-generated; end is replaced by terminate-branch output config
@@ -74,11 +88,12 @@ class NodeSelectorScreen(ModalScreen):
         Binding("ctrl+q", "cancel", "Cancel", priority=True),
         ("/", "focus_filter", "Filter"),
         Binding("tab", "focus_node_list", "List", priority=True),
-        # Tabs switch by number key (1-4); A/D move within the current row.
+        # Tabs switch by number key (1-5); A/D move within the current row.
         Binding("1", "jump_tab(1)", "Tab 1", priority=True),
         Binding("2", "jump_tab(2)", "Tab 2", priority=True),
         Binding("3", "jump_tab(3)", "Tab 3", priority=True),
         Binding("4", "jump_tab(4)", "Tab 4", priority=True),
+        Binding("5", "jump_tab(5)", "Tab 5", priority=True),
         Binding("a", "cursor_left", "Left", priority=True),
         Binding("d", "cursor_right", "Right", priority=True),
         Binding("left", "cursor_left", "Left", priority=True),
@@ -98,7 +113,6 @@ class NodeSelectorScreen(ModalScreen):
         self._entries: list[Dict[str, Any]] = []
         self._visible_nodes: list[Dict[str, Any]] = []
         self._active_tab = TABS[0]
-        self._io_output_side = False
 
     def compose(self) -> ComposeResult:
         with Vertical(id="modal-card", classes="node-selector-modal"):
@@ -115,25 +129,12 @@ class NodeSelectorScreen(ModalScreen):
                 id="node-filter",
                 auto_edit_on_focus=False,
             )
-            with Horizontal(id="io-direction-row"):
-                yield Button(
-                    "Input",
-                    id="io-side-input",
-                    classes="segmented-toggle",
-                    variant="primary",
-                )
-                yield Button(
-                    "Output",
-                    id="io-side-output",
-                    classes="segmented-toggle",
-                    variant="default",
-                )
             with Horizontal(id="node-selector-body"):
                 yield ListView(id="node-type-list")
                 with VerticalScroll(id="node-detail-panel"):
                     yield Static("", id="node-detail", classes="node-detail")
             yield Static(
-                "W/S move  A/D within row  1-4 tabs  E add  / filter  ESC close",
+                "W/S move  A/D within row  1-5 tabs  E add  / filter  ESC close",
                 classes="modal-help",
             )
             yield Button("Cancel", id="cancel-node-select", variant="default")
@@ -145,7 +146,6 @@ class NodeSelectorScreen(ModalScreen):
             if str(node.get("type") or "") not in HIDDEN_NODE_TYPES
         ]
         self._sync_tab_buttons()
-        self._sync_io_toggle()
         self._apply_filter("")
         self._focus_filter_input()
         self.call_after_refresh(self._focus_filter_input)
@@ -189,23 +189,10 @@ class NodeSelectorScreen(ModalScreen):
         button_id = event.button.id or ""
         if button_id == "cancel-node-select":
             self.dismiss(None)
-        elif button_id == "io-side-input":
-            self._set_io_side(False)
-        elif button_id == "io-side-output":
-            self._set_io_side(True)
         elif button_id.startswith("node-family-"):
             tab = self._tab_for_button_id(button_id)
             if tab:
                 self._set_active_tab(tab)
-
-    def _set_io_side(self, output_side: bool) -> None:
-        """Switch the I/O segmented toggle between the Input and Output sides."""
-        if self._active_tab != IO_TAB:
-            return
-        self._io_output_side = bool(output_side)
-        self._sync_io_toggle()
-        self._apply_filter(self.query_one("#node-filter", CommandInput).value)
-        self._focus_active_io_button()
 
     def action_focus_filter(self) -> None:
         focus_command_widget(self, self.query_one("#node-filter", CommandInput))
@@ -222,8 +209,8 @@ class NodeSelectorScreen(ModalScreen):
             focused.begin_edit()
             return
         if isinstance(focused, Button):
-            # On the segmented I/O toggle this presses the focused side button
-            # (Input/Output), which sets that side via on_button_pressed.
+            # On a family tab button this switches to that tab; on Cancel it
+            # dismisses — both routed through on_button_pressed.
             focused.press()
             return
         list_view = self.query_one("#node-type-list", ListView)
@@ -267,9 +254,7 @@ class NodeSelectorScreen(ModalScreen):
     # ------------------------------------------------------------------
 
     def _active_family(self) -> str:
-        if self._active_tab == IO_TAB:
-            return "Outputs" if self._io_output_side else "Inputs"
-        return self._active_tab
+        return TAB_FAMILY.get(self._active_tab, self._active_tab)
 
     def _apply_filter(self, query: str) -> None:
         query = query.strip().lower()
@@ -669,16 +654,12 @@ class NodeSelectorScreen(ModalScreen):
             focus_command_widget(self, widget)
 
     def _nav_widgets(self) -> list[Any]:
-        # All four family-tab buttons share the tab row (A/D moves between
-        # them); both I/O side buttons share the toggle row.
+        # All five family-tab buttons share the tab row (A/D moves between them).
         widgets: list[Any] = [
             self.query_one(f"#node-family-{self._slug(tab)}", Button)
             for tab in TABS
         ]
         widgets.append(self.query_one("#node-filter", CommandInput))
-        if self._active_tab == IO_TAB:
-            widgets.append(self.query_one("#io-side-input", Button))
-            widgets.append(self.query_one("#io-side-output", Button))
         widgets.append(self.query_one("#node-type-list", ListView))
         widgets.append(self.query_one("#cancel-node-select", Button))
         return widgets
@@ -696,7 +677,6 @@ class NodeSelectorScreen(ModalScreen):
             return
         self._active_tab = tab
         self._sync_tab_buttons()
-        self._sync_io_toggle()
         self._apply_filter(self.query_one("#node-filter", CommandInput).value)
         self._focus_filter_input()
 
@@ -704,28 +684,6 @@ class NodeSelectorScreen(ModalScreen):
         for tab in TABS:
             button = self.query_one(f"#node-family-{self._slug(tab)}", Button)
             button.variant = "primary" if tab == self._active_tab else "default"
-
-    def _sync_io_toggle(self) -> None:
-        row = self.query_one("#io-direction-row")
-        visible = self._active_tab == IO_TAB
-        row.display = visible
-        input_button = self.query_one("#io-side-input", Button)
-        output_button = self.query_one("#io-side-output", Button)
-        for button in (input_button, output_button):
-            button.disabled = not visible
-        active = output_button if self._io_output_side else input_button
-        inactive = input_button if self._io_output_side else output_button
-        active.variant = "primary"
-        active.add_class("active")
-        inactive.variant = "default"
-        inactive.remove_class("active")
-
-    def _active_io_button(self) -> Button:
-        button_id = "io-side-output" if self._io_output_side else "io-side-input"
-        return self.query_one(f"#{button_id}", Button)
-
-    def _focus_active_io_button(self) -> None:
-        focus_command_widget(self, self._active_io_button())
 
     def _tab_for_button_id(self, button_id: str) -> str:
         for tab in TABS:

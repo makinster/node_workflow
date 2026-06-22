@@ -131,24 +131,11 @@ Screen {
     overflow-y: auto;
 }
 
-/* Node selector layout: keep tabs/toggle/filter/checkboxes compact (containers
+/* Node selector layout: keep the tab row and filter compact (containers
    default to height 1fr and would otherwise stretch and leave dead space),
    and let the node list absorb the remaining height. */
 #node-family-tabs {
     height: auto;
-}
-
-/* I/O tab segmented Input/Output toggle row (hidden on other tabs). */
-#io-direction-row {
-    height: auto;
-    align: left middle;
-}
-
-/* Two-button segmented toggle. The active side is styled by Button variant
-   (primary) plus an `active` class; keep the pair tight. */
-.segmented-toggle {
-    min-width: 10;
-    margin: 0 1 0 0;
 }
 
 #node-filter {

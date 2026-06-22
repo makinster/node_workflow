@@ -23,14 +23,23 @@
 
 The existing single-line `#node-detail` `Static` is replaced by a **master-detail horizontal split** below the filter row.
 
+**Taxonomy (2026-06-22):** The selector now has **five tabs mapping 1:1 to the
+five backend families**: `In` → Inputs, `Flow Control`, `Utility`, `Out` →
+Outputs, `Complex` (hotkeys 1–5, in that order). The earlier combined `I/O` tab
+with an Input/Output segmented toggle is **retired**. Rationale: Outputs is
+growing its own identity — live UI-display nodes that render data on screen
+during workflow execution — so it warrants a dedicated tab rather than sharing
+one with Inputs. Tab display labels (`In`/`Out`) are abbreviated; `TAB_FAMILY`
+in `node_selector.py` maps each to its `primary_family` value. This also closes
+the long-standing "Selector Family Taxonomy Reconciliation" backlog item.
+
 ### Layout
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │ Add Node                                                         │
-│ [1-I/O] [2-Flow Control] [3-Utility] [4-Complex]                 │
+│ [1-In] [2-Flow Control] [3-Utility] [4-Out] [5-Complex]         │
 │ [Filter nodes_________________________________________]          │
-│ [Input] [Output]   ← I/O tab only                                │
 │ ┌──────────────────────┬───────────────────────────────────────┐ │
 │ │  [ Text Prompt Node ]│ Text Prompt Node                      │ │
 │ │  { AI Processing }   │ Sends a text prompt to an AI model    │ │

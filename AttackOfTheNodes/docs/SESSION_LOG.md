@@ -4,6 +4,52 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-22 — Selector Taxonomy: Five Family Tabs (retire I/O toggle)
+
+Branch: `claude/attackofthenodes-frontend-design-nn6put`
+
+Owner decision: split the combined `I/O` tab into separate Inputs and Outputs
+tabs so the Outputs family can grow its own identity (live UI-display nodes that
+render data on screen during workflow execution; richer user-input nodes less
+commonly on the Inputs side).
+
+**`frontend/screens/node_selector.py`:**
+- `TABS = ["In", "Flow Control", "Utility", "Out", "Complex"]` — five tabs,
+  hotkeys 1–5, ordered to read like data flow (in → process → out).
+- Added `TAB_FAMILY` mapping so abbreviated `In`/`Out` display labels resolve to
+  the `Inputs`/`Outputs` backend `primary_family` values; the other three are 1:1.
+- Removed the entire I/O segmented toggle: `IO_TAB`, `_io_output_side`,
+  `_sync_io_toggle`, `_set_io_side`, `_active_io_button`, `_focus_active_io_button`,
+  the `io-direction-row`/`io-side-input`/`io-side-output` widgets, and their
+  branches in `on_button_pressed`, `action_choose`, and `_nav_widgets`.
+- `_active_family()` simplified to `TAB_FAMILY.get(...)`. Added `jump_tab(5)`
+  binding. Help text `1-4 tabs` → `1-5 tabs`.
+- Now maps 1:1 to the five backend families — closes the "Selector Family
+  Taxonomy Reconciliation" backlog item.
+
+**`frontend/styles.tcss`:** removed dead `#io-direction-row` and
+`.segmented-toggle` rules.
+
+**Tests (`tests/test_debug_nodes.py`):**
+- Rewrote `test_node_selector_io_toggle_keyboard_contract` →
+  `test_node_selector_tab_keyboard_contract` (number-key tab switching across
+  the five tabs; added to the script runner list).
+- Updated `test_node_selector_uses_family_tabs` (default tab `In`/Inputs, `Out`
+  tab for Outputs, explicit `_set_active_tab` for the new order).
+- Updated `test_node_selector_layout_is_compact` (no I/O toggle row; list sits
+  below the filter).
+- Updated `test_node_selector_rows_are_one_line_with_detail` to assert the new
+  master-detail contract panel render (was asserting the old single-line detail).
+
+**Docs:** `IO_CONTRACT_UI_DESIGN.md` (mockup + taxonomy note),
+`UI_QUICK_REFERENCE.md`, `PHASE_17_NODE_VISUAL_IDENTITY.md` (2026-06-22 revision
+callout), `PROJECT_BACKLOG.md` (closed reconciliation item, added Outputs
+UI-display future direction).
+
+**Verified:** installed `rich`/`textual`/`pytest-asyncio` in the session env and
+ran the real UI suite — **full `tests/` suite 331 passed**. (Earlier in the
+session these were uncollectable due to missing packages.)
+
 ## 2026-06-22 — Track B Phase 1: Tab Fix + Selector Master-Detail
 
 Branch: `claude/attackofthenodes-frontend-design-nn6put`

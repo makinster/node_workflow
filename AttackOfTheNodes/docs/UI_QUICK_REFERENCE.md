@@ -63,13 +63,15 @@ Ordinary nodes should not require custom frontend code. Use node metadata,
 
 Use `PHASE_17_NODE_VISUAL_IDENTITY.md` for the active plan.
 
-- Selector family tabs (documented taxonomy): `Inputs`, `Flow Control`,
-  `Outputs`, `Complex`. NOTE: the implementation currently labels them
-  `I/O / Flow Control / Utility / Complex`; reconciling the two is a tracked
-  taxonomy follow-up (see `PROJECT_BACKLOG.md`), not part of the nav rework.
-- Family tabs switch by number key (`1`–`4`) and show numbered headers
-  (`N - Label`); the I/O segmented toggle is a two-button row navigated with
-  A/D, with `E` selecting the focused side.
+- Selector family tabs (2026-06-22): five tabs mapping 1:1 to the five backend
+  families, in this order with hotkeys `1`–`5`: `In` (Inputs), `Flow Control`,
+  `Utility`, `Out` (Outputs), `Complex`. The earlier combined `I/O` tab with an
+  Input/Output segmented toggle is retired so Outputs (live UI-display nodes)
+  has its own tab. `In`/`Out` are abbreviated display labels; `TAB_FAMILY` in
+  `node_selector.py` maps them to the `Inputs`/`Outputs` `primary_family` values.
+  See `IO_CONTRACT_UI_DESIGN.md`. The taxonomy-reconciliation follow-up is closed.
+- Family tabs switch by number key (`1`–`5`) and show numbered headers
+  (`N - Label`).
 - There is no subcategory filter checkbox column. The rigid subcategory taxonomy
   was retired 2026-06-19; node `tags` survive only as freeform keywords that feed
   the string filter (see `NODE_STANDARDIZATION_HANDOFF.md` Revision 2026-06-19).

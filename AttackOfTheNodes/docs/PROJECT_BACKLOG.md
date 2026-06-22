@@ -207,23 +207,26 @@ Recommended:
 - When removing a shim, remove its tests in the same change so coverage tracks
   the supported surface, not the retired one.
 
-## Near-Term Project — Selector Family Taxonomy Reconciliation
+## Closed (2026-06-22) — Selector Family Taxonomy Reconciliation
 
-Goal: make the node-selector family taxonomy agree across docs, catalog, and
-code. The authoritative docs (`UI_QUICK_REFERENCE.md`,
-`PHASE_17_NODE_VISUAL_IDENTITY.md`) describe families as **Inputs / Flow
-Control / Outputs / Complex** (Inputs and Outputs as separate families, no
-"Utility" family), while the implementation (`frontend/screens/node_selector.py`
-`TABS`) uses **I/O / Flow Control / Utility / Complex** with an Input/Output
-toggle on the `I/O` tab. The 2026-06-17 keyboard-nav rework deliberately did not
-touch this — it would pull in `NODE_CATALOG.md`, `PHASE_17_NODE_VISUAL_IDENTITY.md`,
-and node `group`/`selector_section` metadata.
+**Resolved.** The selector now uses **five tabs mapping 1:1 to the five backend
+`primary_family` values**, ordered `In` (Inputs) · `Flow Control` · `Utility` ·
+`Out` (Outputs) · `Complex` with hotkeys 1–5. The combined `I/O` tab and its
+Input/Output segmented toggle were removed. `In`/`Out` are abbreviated display
+labels mapped via `TAB_FAMILY` in `frontend/screens/node_selector.py`. Docs
+(`UI_QUICK_REFERENCE.md`, `PHASE_17_NODE_VISUAL_IDENTITY.md`,
+`IO_CONTRACT_UI_DESIGN.md`) and tests updated to match. Code and the five backend
+families now agree, so there is no longer a taxonomy split to reconcile.
 
-Recommended:
+## Future Direction — Outputs Family: Live UI-Display Nodes
 
-- Make a deliberate decision on the canonical family set and tab labels.
-- Reconcile selector tab names, `NODE_CATALOG.md`, and the Phase 17 taxonomy so
-  all three agree; update node metadata if the family set changes.
+The Outputs tab is intended to grow its own identity: nodes whose job is to make
+UI appear on screen *during* workflow execution so data is easy to view, with
+likely **multiple output-rendering options** (e.g. panels, tables, inline value
+displays). The same pattern applies — less commonly — to certain user-input
+nodes on the Inputs side. This is the motivation behind giving Outputs a
+dedicated selector tab (2026-06-22). No implementation scoped yet; capture
+concrete node concepts in `NODE_CATALOG.md` as they firm up.
 
 ## Near-Term Project — Frontend Command UI Toolkit
 
