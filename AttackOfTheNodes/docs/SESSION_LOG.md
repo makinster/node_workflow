@@ -4,6 +4,41 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-22 — Track B Phase 3: Selector Drill-in Navigation
+
+Branch: `claude/attackofthenodes-frontend-design-nn6put`
+
+`D`/`→` on a group row in the node selector now drills into a quick-list
+that appears at the top of the right detail panel (up to 6 members, sorted
+alphabetically). Navigating the quick list with `W`/`S` updates the I/O
+contract below. `E` adds the highlighted node directly. `A`/`←` returns
+focus to the left list. Tab switching and filter typing auto-exit.
+The full `GroupBrowserScreen` remains deferred.
+
+**`frontend/screens/node_selector.py`:**
+- `__init__`: Added `_drilled_in`, `_quick_list_members`, `_quick_list_nodes`.
+- `compose()`: Added `ListView(id="node-quick-list")` before the contract
+  `Static` in the detail panel; added `id="selector-help"` to help text.
+- New methods: `_enter_quick_list`, `_exit_quick_list`, `_reset_drill_in`,
+  `_move_quick_list`, `_update_quick_detail`, `_sync_help_text`.
+- `action_cursor_right`: Drills in when list focus is on a group entry.
+- `action_cursor_left`: Exits drill-in when `_drilled_in`.
+- `action_cursor_up/down`: Delegates to `_move_quick_list` when in quick list.
+- `action_choose`: Adds the quick-list-selected type when drilled in.
+- `on_list_view_highlighted/selected`: Updated for quick list events.
+- `_render_group_detail`: Added `D/→ = quick list` hint.
+- `_apply_filter`, `_set_active_tab`: Call `_reset_drill_in` on state change.
+
+**`frontend/styles.tcss`:** Added `.node-quick-list` and
+`.node-quick-list ListItem` rules.
+
+**`tests/test_debug_nodes.py`:** Added `test_node_selector_group_drill_in`.
+
+**`docs/IO_CONTRACT_UI_DESIGN.md`:** Updated phase table — Drill-in nav
+marked Done (2026-06-22).
+
+---
+
 ## 2026-06-22 — Track B Phase 4c: ⚠ Badge on Editor Node Cards
 
 Branch: `claude/attackofthenodes-frontend-design-nn6put`

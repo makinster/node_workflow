@@ -258,4 +258,4 @@ deferred. The existing `GroupPickerScreen` modal remains in use until then.
 | **Source tab vault dropdown** | Conditional vault key selector | Deferred (Track B Phase 4b) |
 | **Source tab upstream hint** | Inline upstream description | Deferred (Track B Phase 4b) |
 | **⚠ badge** | Node card validity indicator | **Done (2026-06-22)** |
-| **Drill-in nav** | In-place list swap + GroupBrowserScreen | Deferred (Track B Phase 3) |
+| **Drill-in nav** | Quick-list in detail panel + GroupBrowserScreen deferred | **Done (2026-06-22)** |
