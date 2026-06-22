@@ -99,6 +99,7 @@ class EditorScreen(Screen):
         self._branch_cycle_anchor: Optional[str] = None
         self._refreshing_from_backend = False
         self._pending_node_add_mode = "add"
+        self._flagged_node_ids: set[str] = set()
         self.workflow_adapter = EditorWorkflowAdapter(workflow_map, factory)
 
     def compose(self) -> ComposeResult:
@@ -159,7 +160,11 @@ class EditorScreen(Screen):
                         }
                     )
             node_list = self.query_one(NodeList)
-            node_list.refresh_rows(rows, timings=self._average_node_timings())
+            node_list.refresh_rows(
+                rows,
+                timings=self._average_node_timings(),
+                flagged_node_ids=self._flagged_node_ids,
+            )
             if self.selected_row and not self._row_still_visible(self.selected_row, rows):
                 self.selected_row = rows[0] if rows else None
                 self.selected_node_id = (
@@ -276,7 +281,6 @@ class EditorScreen(Screen):
 
     def action_validate_workflow(self) -> None:
         self.workflow_adapter.materialize_deleted_nodes()
-        self.refresh_from_backend()
         result = validate_workflow(
             self.workflow_map,
             self.factory,
@@ -284,6 +288,12 @@ class EditorScreen(Screen):
         )
         errors = result.get("errors", [])
         warnings = result.get("warnings", [])
+        self._flagged_node_ids = {
+            str(item["node_id"])
+            for item in errors + warnings
+            if item.get("node_id")
+        }
+        self.refresh_from_backend()
         if not errors and not warnings:
             notifications.workflow_valid(self.app)
             return

@@ -51,10 +51,12 @@ class NodeList(ListView):
         rows: list[Dict[str, Any]],
         statuses: Optional[Dict[str, str]] = None,
         timings: Optional[Dict[str, float]] = None,
+        flagged_node_ids: Optional[set] = None,
     ) -> None:
         """Replace the list contents with node and branch selector rows."""
         statuses = statuses or {}
         timings = timings or {}
+        flagged_node_ids = flagged_node_ids or set()
         self.clear()
         self._rows = []
         for index, row in enumerate(rows):
@@ -63,7 +65,7 @@ class NodeList(ListView):
                 if index + 1 < len(rows)
                 else None
             )
-            self._append_row(row, statuses, timings)
+            self._append_row(row, statuses, timings, flagged_node_ids)
             if row["kind"] == "node" and next_kind == "node":
                 next_row = rows[index + 1]
                 next_node = next_row.get("node") or {}
@@ -103,6 +105,7 @@ class NodeList(ListView):
         row: Dict[str, Any],
         statuses: Dict[str, str],
         timings: Dict[str, float],
+        flagged_node_ids: Optional[set] = None,
     ) -> None:
         """Append one selectable row and keep `_rows` aligned to ListView items."""
         self._rows.append(row)
@@ -116,6 +119,7 @@ class NodeList(ListView):
                 show_status=False,
                 show_id=False,
                 show_identity=True,
+                has_warning=node_id in (flagged_node_ids or set()),
             )
         elif row["kind"] == "branch_select":
             card = BranchSelectCard(

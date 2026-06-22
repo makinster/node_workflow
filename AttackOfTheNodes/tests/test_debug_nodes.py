@@ -1358,6 +1358,31 @@ def test_node_card_editor_identity_rows_align_and_truncate():
     print("test_node_card_editor_identity_rows_align_and_truncate PASSED")
 
 
+def test_node_card_warning_badge_appears_when_flagged():
+    from frontend.widgets.node_card import NodeCard
+
+    node = {
+        "type": "logger_node",
+        "alias": "Logger",
+        "_editor_depth": 0,
+        "_identity": {"primary_family": "Outputs", "tags": []},
+    }
+    # Without warning
+    clean = NodeCard("n1", node, show_status=False, show_id=False, show_identity=True)
+    clean.refresh_card()
+    assert "⚠" not in clean.display_text
+
+    # With warning
+    flagged = NodeCard(
+        "n1", node, show_status=False, show_id=False, show_identity=True, has_warning=True
+    )
+    flagged.refresh_card()
+    assert "⚠" in flagged.display_text
+    assert "Logger" in flagged.display_text
+
+    print("test_node_card_warning_badge_appears_when_flagged PASSED")
+
+
 # ---------------------------------------------------------------------------
 # 20. Utility memory writers can pass input through
 # ---------------------------------------------------------------------------
@@ -6911,6 +6936,7 @@ if __name__ == "__main__":
         test_editor_save_materializes_deleted_node_and_loaded_marker_renders,
         test_editor_x_on_deleted_node_permanently_deletes,
         test_node_card_editor_identity_rows_align_and_truncate,
+        test_node_card_warning_badge_appears_when_flagged,
         test_set_variable_node_can_pass_input_through,
         test_branch_node_default_labels_are_configurable,
         test_branch_config_uses_generated_labels_without_memory_outputs,

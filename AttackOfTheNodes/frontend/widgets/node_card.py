@@ -82,6 +82,7 @@ class NodeCard(Static):
         show_status: bool = True,
         show_id: bool = True,
         show_identity: bool = False,
+        has_warning: bool = False,
     ) -> None:
         super().__init__()
         self.node_id = node_id
@@ -91,6 +92,7 @@ class NodeCard(Static):
         self.show_status = show_status
         self.show_id = show_id
         self.show_identity = show_identity
+        self.has_warning = has_warning
         branch_color_key = node_data.get("_editor_branch_color_key")
         branch_port = node_data.get("_editor_branch_port")
         self.gutter_color = branch_path_color(
@@ -138,7 +140,8 @@ class NodeCard(Static):
         depth = self.node_data.get("_editor_depth")
         id_text = f" ({self.node_id})" if self.show_id else ""
         prefix = f"{icon} " if icon else ""
-        main_text = f"{prefix}{breakpoint_marker}{alias}{id_text}{timing}"
+        warning_badge = "⚠ " if self.has_warning else ""
+        main_text = f"{prefix}{warning_badge}{breakpoint_marker}{alias}{id_text}{timing}"
         gutter = depth_number_gutter(depth) if isinstance(depth, int) else DEPTH_GUTTER
         if self.show_identity:
             if isinstance(deleted_overlay, dict) and deleted_overlay:
