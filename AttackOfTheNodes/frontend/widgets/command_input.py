@@ -92,6 +92,9 @@ class CommandInput(Input):
         self.editing = False
         self.auto_edit_on_focus = auto_edit_on_focus
         self._edit_start_value = self.value
+        # Command inputs append on edit; focusing must not select-all (which
+        # would make the first keystroke replace the whole value).
+        self.select_on_focus = False
         # Single-line command inputs render compact (1 row); the stylesheet
         # gives them a reserved left-accent column instead of a tall border.
         self.add_class("command-input", "single-line")

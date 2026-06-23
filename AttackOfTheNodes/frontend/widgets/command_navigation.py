@@ -241,6 +241,9 @@ def focus_command_widget(
             target.begin_edit()
         else:
             target.end_edit()
+            # Fresh navigation focus: drop any stale nav-cursor position so the
+            # next begin_edit() places the caret at the end of the value.
+            target._nav_cursor_positioned = False
             screen.app.set_focus(target)
     else:
         screen.app.set_focus(target)

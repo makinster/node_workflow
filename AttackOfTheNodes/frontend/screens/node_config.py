@@ -24,6 +24,7 @@ from frontend.node_io_display import (
     metadata_for_type,
     normalize_membank_inputs,
     normalize_membank_outputs,
+    node_display_name,
     normalize_transient_outputs,
     output_display_description,
     output_display_name,
@@ -657,7 +658,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             with TabPane("1 - Source", id="node-config-tab-core"):
                 with VerticalScroll(classes="tab-scroll"):
                     yield Label("Alias", classes="form-label nav-section")
-                    yield CommandInput(value=self.node_data.get("alias", ""), id="alias-input")
+                    yield CommandInput(value=self._alias_default_value(), id="alias-input")
                     yield Static(self._format_metadata(metadata), id="node-config-summary")
                     if forms.get("source") is not None:
                         yield forms["source"]
@@ -725,7 +726,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             with TabPane("1 - Source", id="node-config-tab-core"):
                 with VerticalScroll(classes="tab-scroll"):
                     yield Label("Alias", classes="form-label nav-section")
-                    yield CommandInput(value=self.node_data.get("alias", ""), id="alias-input")
+                    yield CommandInput(value=self._alias_default_value(), id="alias-input")
                     yield Static(
                         "\n".join(
                             [
@@ -1007,6 +1008,20 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             self.action_cancel()
 
     def on_key(self, event: Key) -> None:
+        # Safety net for focus drift: a text field can be in editing mode
+        # (which correctly blocks number-key tab switching) while the screen's
+        # actual focus has drifted to another widget — e.g. after a tab switch,
+        # scroll, or a set_focus that did not land. In that state a typed key is
+        # forwarded to whatever holds focus and never reaches the field, so the
+        # field "won't accept input" even though it shows as editing. Re-focus
+        # the editing widget and route the key to it so typing always lands.
+        active = getattr(self, "_active_command_text_widget", None)
+        if is_editing_text(active) and self.app.focused is not active:
+            self.app.set_focus(active)
+            active.post_message(Key(event.key, event.character))
+            event.stop()
+            event.prevent_default()
+            return
         if self._expanded_select() is None:
             # A/D within-row navigation is handled by CommandScreenMixin
             # bindings; tab switching is via number keys.
@@ -1345,6 +1360,23 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
 
     def _metadata_for_type(self, node_type: str) -> Optional[Dict[str, Any]]:
         return metadata_for_type(self.factory, node_type)
+
+    def _alias_default_value(self) -> str:
+        """Pre-fill the alias box with the friendly node name from the node file.
+
+        Uses the saved alias when present; otherwise falls back to the node's
+        ``display_name`` metadata (a user-friendly label with no underscores),
+        and finally to a humanized node type. This keeps the alias field
+        populated from the node definition rather than blank.
+        """
+        alias = str(self.node_data.get("alias") or "").strip()
+        if alias:
+            return alias
+        metadata = self._metadata_for_type(self.node_data.get("type", "")) or {}
+        display_name = str(metadata.get("display_name") or "").strip()
+        if display_name:
+            return display_name
+        return node_display_name(self.node_id, self.node_data).replace("_", " ").title()
 
     def _schema_with_generated_branch_labels(
         self,
