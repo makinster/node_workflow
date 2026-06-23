@@ -23,7 +23,15 @@ from frontend.screens.node_config import (
 from frontend.screens.node_selector import NodeSelectorScreen
 from frontend import notifications
 from frontend.editor_workflow_adapter import EditorWorkflowAdapter
+from frontend.io_contract import (
+    DETAIL_WIDTH_FALLBACK,
+    metadata_flow_lines,
+    render_port_block,
+    wrap_dim,
+)
 from frontend.node_io_display import (
+    OUTPUT_NOT_CONFIGURED,
+    input_display_name,
     metadata_for_type,
     memory_registry,
     node_display_name,
@@ -131,6 +139,12 @@ class EditorScreen(Screen):
         self._restore_editor_state_from_app()
         if self.is_mounted:
             self.refresh_from_backend()
+
+    def on_resize(self, event: Any) -> None:
+        # The details panel pre-wraps its contract to the panel width; re-render
+        # so the hanging indent tracks the resized column.
+        if self.is_mounted:
+            self._refresh_details()
 
     def refresh_from_backend(self) -> None:
         """Reload screen widgets from backend state."""
@@ -1174,108 +1188,170 @@ class EditorScreen(Screen):
         detail.update(text)
 
     def _format_node_details(self, node_id: str, node: Dict[str, Any]) -> str:
+        """Render the configured node's contract using the selector's layout
+        and labeling conventions (name [type], dim description, └─< / └─>),
+        but specialized to how this instance is wired and configured."""
         metadata = self._metadata_for_type(node.get("type", ""))
-        kind = metadata.get("display_name") if metadata else node.get("type", "unknown")
+        description = str((metadata or {}).get("description", "")).strip()
+        tags = [str(tag) for tag in (metadata or {}).get("tags") or [] if str(tag)]
+
         lines = [
             f"Name: {self._node_label(node_id, node)}",
-            f"Kind: {kind}",
+            f"Description: {description}",
             f"Family: {self._metadata_family(metadata)}",
-            f"Subcategories: {self._metadata_subcategories(metadata)}",
-            f"Step: {self._selected_depth_text()}",
-            f"Breakpoint: {'on' if node.get('breakpoint') else 'off'}",
+            f"Tags: {', '.join(tags)}",
         ]
         if node.get("type") == BRANCH_END_NODE_TYPE:
             lines.extend(self._branch_end_merge_detail_lines(node_id, node))
-        if metadata:
-            description = str(metadata.get("description", "")).strip()
-            if description:
-                lines.append(f"About: {description}")
+
         average_timing = self._average_node_timings().get(node_id)
-        if average_timing is not None:
-            lines.append(f"Avg time: {self._format_timing(average_timing)}")
-        lines.extend(self._format_io_summary(node_id, node, metadata))
+        lines.extend([
+            "",
+            f"Depth: {self._selected_depth_text()}",
+            f"Breakpoint: {'on' if node.get('breakpoint') else 'off'}",
+            "Avg Time: "
+            + (self._format_timing(average_timing) if average_timing is not None else "-"),
+        ])
+
+        lines.append("")
+        lines.append("Inputs:")
+        input_lines = self._detail_input_lines(node, metadata)
+        lines.extend(input_lines if input_lines else ["  [dim](none)[/dim]"])
+
+        lines.append("")
+        lines.append("Outputs:")
+        output_lines = self._detail_output_lines(node, metadata)
+        lines.extend(output_lines if output_lines else ["  [dim](none)[/dim]"])
+
         return "\n".join(lines)
 
-    def _format_io_summary(
-        self,
-        node_id: str,
-        node: Dict[str, Any],
-        metadata: Optional[Dict[str, Any]],
+    def _detail_width(self) -> int:
+        """Wrap width for the details panel; falls back before first layout
+        (and when called from unmounted screens in tests)."""
+        try:
+            width = self.query_one("#node-details", Static).content_size.width
+            if width and width > 0:
+                return width
+        except Exception:
+            pass
+        return DETAIL_WIDTH_FALLBACK
+
+    def _wrap_detail(self, text: str, indent: int = 2, prefix: str = "") -> list[str]:
+        return wrap_dim(text, max(8, self._detail_width() - 1), indent, prefix)
+
+    @staticmethod
+    def _connections_by_port(conns: list, key: str) -> Dict[str, list]:
+        grouped: Dict[str, list] = {}
+        for conn in conns:
+            grouped.setdefault(str(conn.get(key) or "default"), []).append(conn)
+        return grouped
+
+    def _detail_input_lines(
+        self, node: Dict[str, Any], metadata: Optional[Dict[str, Any]]
     ) -> list[str]:
-        return [
-            "",
-            "Inputs:",
-            *self._format_transient_input_lines(node),
-            "  Memory",
-            *self._format_memory_lines(node, "inputs"),
-            "",
-            "Outputs:",
-            "  Transient",
-            *self._format_transient_output_lines(node, metadata),
-            "  Memory",
-            *self._format_memory_lines(node, "outputs"),
+        input_meta: Dict[str, Any] = (metadata or {}).get("input_port_metadata") or {}
+        by_port = self._connections_by_port(
+            node.get("connections", {}).get("inputs", []), "target_port"
+        )
+        blocks: list[list[str]] = [
+            render_port_block(
+                input_display_name(self.factory, node, str(port)),
+                str(meta.get("data_type") or "any"),
+                str(meta.get("description") or "").strip(),
+                self._detail_input_flow_lines(meta, by_port.get(str(port), [])),
+                self._wrap_detail,
+            )
+            for port, meta in input_meta.items()
         ]
+        blocks.extend(self._detail_vault_blocks(node, "inputs"))
+        return self._join_port_blocks(blocks)
 
-    def _format_transient_input_lines(self, node: Dict[str, Any]) -> list[str]:
-        inputs = node.get("connections", {}).get("inputs", [])
-        if not inputs:
-            return ["  Transient Source: none"]
-        lines: list[str] = []
-        for conn in inputs:
-            source_id = str(conn.get("source_node_id") or "")
-            source_port = str(conn.get("source_port") or "default")
-            producer = trace_transient_producer(
-                self.workflow_map,
-                self.factory,
-                source_id,
-                source_port,
-            )
-            producer_node = producer.get("node") or {}
-            producer_id = producer.get("node_id") or source_id or "?"
-            lines.append(
-                f"  Transient Source: {node_display_name(producer_id, producer_node)}"
-            )
-            lines.append(
-                f"    {producer['name']}: {producer.get('description') or ''}"
-            )
-        return lines
-
-    def _format_transient_output_lines(
-        self,
-        node: Dict[str, Any],
-        metadata: Optional[Dict[str, Any]],
+    def _detail_output_lines(
+        self, node: Dict[str, Any], metadata: Optional[Dict[str, Any]]
     ) -> list[str]:
-        ports = self._output_ports_for_node(node, metadata)
-        if not ports:
-            return ["    none"]
-        lines: list[str] = []
-        for port in ports:
-            description = output_display_description(self.factory, node, str(port))
-            lines.append(
-                f"    {output_display_name(self.factory, node, str(port))}: {description}"
-            )
-        return lines
+        output_meta: Dict[str, Any] = (metadata or {}).get("output_port_metadata") or {}
+        by_port = self._connections_by_port(
+            node.get("connections", {}).get("outputs", []), "source_port"
+        )
+        blocks: list[list[str]] = []
+        for port in self._output_ports_for_node(node, metadata):
+            meta = output_meta.get(str(port)) or {}
+            desc = output_display_description(self.factory, node, str(port))
+            if desc == OUTPUT_NOT_CONFIGURED:
+                desc = str(meta.get("description") or "").strip()
+            blocks.append(render_port_block(
+                output_display_name(self.factory, node, str(port)),
+                str(meta.get("data_type") or "any"),
+                desc,
+                self._detail_output_flow_lines(meta, by_port.get(str(port), [])),
+                self._wrap_detail,
+            ))
+        blocks.extend(self._detail_vault_blocks(node, "outputs"))
+        return self._join_port_blocks(blocks)
 
-    def _format_memory_lines(self, node: Dict[str, Any], direction: str) -> list[str]:
-        def line(name: str, description: str = "") -> str:
-            return f"    {name}: {description}" if description else f"    {name}:"
+    def _detail_input_flow_lines(self, meta: Dict[str, Any], conns: list) -> list[str]:
+        """A └─< line naming the configured upstream producer(s); falls back to
+        the port's allowed source kinds when it is not wired."""
+        if conns:
+            names: list[str] = []
+            for conn in conns:
+                producer = trace_transient_producer(
+                    self.workflow_map,
+                    self.factory,
+                    str(conn.get("source_node_id") or ""),
+                    str(conn.get("source_port") or "default"),
+                )
+                producer_node = producer.get("node") or {}
+                producer_id = producer.get("node_id") or conn.get("source_node_id") or "?"
+                names.append(node_display_name(str(producer_id), producer_node))
+            return self._wrap_detail("  ".join(names), indent=2, prefix="└─< ")
+        return metadata_flow_lines(meta, "input", self._wrap_detail)
 
-        if direction == "inputs":
-            selected = normalize_membank_inputs(node.get("config") or {})
-            if not selected:
-                return ["    none"]
-            registry = memory_registry(self.workflow_map)
-            return [
-                line(output_id, (registry.get(output_id) or {}).get("description", ""))
-                for output_id in selected
+    def _detail_output_flow_lines(self, meta: Dict[str, Any], conns: list) -> list[str]:
+        """A └─> line naming the configured downstream target(s); falls back to
+        the pass-through marker or allowed destination kinds when unwired."""
+        if conns:
+            names = [
+                node_display_name(
+                    str(conn.get("target_node_id") or ""),
+                    self.workflow_map.get_node_data(str(conn.get("target_node_id") or "")) or {},
+                )
+                for conn in conns
             ]
-        outputs = normalize_membank_outputs(node.get("config") or {})
-        if not outputs:
-            return ["    none"]
+            return self._wrap_detail("  ".join(names), indent=2, prefix="└─> ")
+        return metadata_flow_lines(meta, "output", self._wrap_detail)
+
+    def _detail_vault_blocks(self, node: Dict[str, Any], direction: str) -> list[list[str]]:
+        """Vault (memory bank) reads/writes rendered as `key [vault]` entries."""
+        if direction == "inputs":
+            keys = normalize_membank_inputs(node.get("config") or {})
+            if not keys:
+                return []
+            registry = memory_registry(self.workflow_map)
+            entries = [
+                (key, str((registry.get(key) or {}).get("description") or "").strip())
+                for key in keys
+            ]
+            arrow = "└─< vault"
+        else:
+            entries = [
+                (output["id"], str(output.get("description") or "").strip())
+                for output in normalize_membank_outputs(node.get("config") or {})
+            ]
+            arrow = "└─> vault"
         return [
-            line(output["id"], output.get("description", ""))
-            for output in outputs
+            render_port_block(key, "vault", desc, [f"  [dim]{arrow}[/dim]"], self._wrap_detail)
+            for key, desc in entries
         ]
+
+    def _join_port_blocks(self, blocks: list[list[str]]) -> list[str]:
+        """Flatten port blocks with a blank separator line between them."""
+        lines: list[str] = []
+        for index, block in enumerate(blocks):
+            if index > 0:
+                lines.append("")
+            lines.extend(block)
+        return lines
 
     def _branch_end_merge_detail_lines(
         self, node_id: str, node: Dict[str, Any]
@@ -1347,12 +1423,6 @@ class EditorScreen(Screen):
         if not metadata:
             return "Unknown"
         return str(metadata.get("primary_family") or metadata.get("category") or "Unknown")
-
-    def _metadata_subcategories(self, metadata: Optional[Dict[str, Any]]) -> str:
-        if not metadata:
-            return "none"
-        tags = [str(tag) for tag in metadata.get("tags") or [] if str(tag)]
-        return ", ".join(tags) if tags else "none"
 
     def _output_ports_for_node(
         self,

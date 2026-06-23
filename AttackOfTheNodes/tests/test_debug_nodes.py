@@ -3607,10 +3607,10 @@ async def _test_editor_depth_counter_tracks_visible_branch_distance():
         assert screen.selected_node_id == path_b_first
         details = screen.query_one("#node-details").display_text
         assert details.startswith(f"Name: Logger ({path_b_first})")
-        assert "Kind: Logger" in details
+        assert "Description: Logs the input value and passes it through" in details
         assert "Family: Utility" in details
-        assert "Subcategories: Passive Output, Utility" in details
-        assert "Step: 2" in details
+        assert "Tags: Passive Output, Utility" in details
+        assert "Depth: 2" in details
 
     print("test_editor_depth_counter_tracks_visible_branch_distance PASSED")
 
@@ -4972,6 +4972,42 @@ def test_node_config_previous_output_preview_reads_transient_source():
     print("test_node_config_previous_output_preview_reads_transient_source PASSED")
 
 
+def test_editor_details_panel_uses_contract_layout():
+    from frontend.screens.editor import EditorScreen
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("details_contract_layout")
+    node_id = wm.add_node("example_file_instance_node")
+
+    screen = EditorScreen(wm._factory, wm)
+    text = screen._format_node_details(node_id, wm.get_node_data(node_id))
+    lines = text.split("\n")
+
+    # Header block uses the new labels, in order, with the runtime block after.
+    assert lines[0].startswith("Name: ")
+    assert lines[1].startswith("Description: ")
+    assert lines[2].startswith("Family: ")
+    assert lines[3].startswith("Tags: ")
+    assert "Depth: " in text
+    assert "Breakpoint: off" in text
+    assert "Avg Time: " in text
+    # The retired labels are gone.
+    assert "Kind:" not in text
+    assert "Subcategories:" not in text
+    assert "Step:" not in text
+    assert "Transient Source:" not in text
+
+    # Sections render with the selector's port conventions: name, [type] label,
+    # and a pass-through output marked in bold.
+    assert "Inputs:" in text
+    assert "Outputs:" in text
+    assert "file" in text  # the file_path input's [type] label
+    assert "bool" in text  # the bool output's [type] label
+    assert "[bold]↔ pass-thru[/bold]" in text
+
+    print("test_editor_details_panel_uses_contract_layout PASSED")
+
+
 def test_editor_quick_view_lists_transient_and_memory_io():
     from frontend.screens.editor import EditorScreen
 
@@ -5003,14 +5039,16 @@ def test_editor_quick_view_lists_transient_and_memory_io():
     screen = EditorScreen(wm._factory, wm)
     text = screen._format_node_details(consumer, wm.get_node_data(consumer))
 
+    # Connected upstream is named on the └─< line; the vault read and write
+    # render as `key [vault]` entries with their descriptions.
     assert "Inputs:" in text
-    assert "Transient Source: Producer" in text
-    assert "produced_text: Created text" in text
-    assert "Memory" in text
-    assert "session_id: Session id" in text
+    assert "└─< Producer" in text
+    assert "session_id" in text
+    assert "Session id" in text
     assert "Outputs:" in text
-    assert "Output: not configured yet" in text
-    assert "final_text: Final text" in text
+    assert "final_text" in text
+    assert "Final text" in text
+    assert "└─> vault" in text
     assert "Next:" not in text
     print("test_editor_quick_view_lists_transient_and_memory_io PASSED")
 
@@ -5029,12 +5067,11 @@ def test_editor_quick_view_shows_branch_output_names_and_empty_memory():
     screen = EditorScreen(wm._factory, wm)
     text = screen._format_node_details(branch, wm.get_node_data(branch))
 
+    # Branch output ports take the configured path labels as their names.
     assert "Inputs:" in text
-    assert "Transient Source: none" in text
-    assert "    none" in text
     assert "Outputs:" in text
-    assert "Approve: not configured yet" in text
-    assert "Reject: not configured yet" in text
+    assert "Approve" in text
+    assert "Reject" in text
     print("test_editor_quick_view_shows_branch_output_names_and_empty_memory PASSED")
 
 
@@ -5059,8 +5096,9 @@ def test_editor_quick_view_traces_pass_through_producer():
     screen = EditorScreen(wm._factory, wm)
     text = screen._format_node_details(target, wm.get_node_data(target))
 
-    assert "Transient Source: Producer" in text
-    assert "created_payload: Original data" in text
+    # The └─< line traces through the pass-through Pause node to the real
+    # producer, naming Producer rather than the intermediate.
+    assert "└─< Producer" in text
     assert "Pause" not in text
     print("test_editor_quick_view_traces_pass_through_producer PASSED")
 
@@ -5087,7 +5125,8 @@ def test_editor_quick_view_uses_transient_output_overrides():
     screen = EditorScreen(wm._factory, wm)
     text = screen._format_node_details(source, wm.get_node_data(source))
 
-    assert "approved_text: Text approved for downstream use" in text
+    assert "approved_text" in text
+    assert "Text approved for downstream use" in text
     print("test_editor_quick_view_uses_transient_output_overrides PASSED")
 
 
@@ -5176,8 +5215,7 @@ def test_branch_payload_preview_traces_selected_dead_drop_source():
 
     editor_screen = EditorScreen(wm._factory, wm)
     quick_view = editor_screen._format_node_details(target, wm.get_node_data(target))
-    assert "Transient Source: Seed Source" in quick_view
-    assert "Seed Payload: Prepared upstream text" in quick_view
+    assert "└─< Seed Source" in quick_view
     print("test_branch_payload_preview_traces_selected_dead_drop_source PASSED")
 
 
@@ -7147,6 +7185,7 @@ if __name__ == "__main__":
         test_node_config_saves_transient_output_overrides_and_vertical_buttons,
         test_editor_hides_empty_start_until_first_node_added,
         test_node_config_previous_output_preview_reads_transient_source,
+        test_editor_details_panel_uses_contract_layout,
         test_editor_quick_view_lists_transient_and_memory_io,
         test_editor_quick_view_shows_branch_output_names_and_empty_memory,
         test_editor_quick_view_uses_transient_output_overrides,

@@ -4,6 +4,45 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-23 — Editor Details Panel: Configured Contract Layout
+
+Branch: `claude/attackofthenodes-frontend-design-nn6put`
+
+Reformatted the editor's right-hand `#node-details` panel to use the node
+selector's contract layout and labeling conventions, specialized to how the
+node instance is wired and configured.
+
+**`frontend/io_contract.py` (new):** Shared `TYPE_COLOR`, `type_label()`, and
+`wrap_dim()` (hanging-indent wrap) used by both the selector and the editor.
+
+**`frontend/screens/node_selector.py`:** Now imports the shared helpers;
+`_wrap_dim` delegates to `io_contract.wrap_dim`, `_fmt_port` uses `type_label`.
+Dropped the local `textwrap` import.
+
+**`frontend/screens/editor.py`:**
+- Rewrote `_format_node_details` to the new header (Name / Description /
+  Family / Tags), a runtime block (Depth / Breakpoint / Avg Time), then
+  `Inputs:` / `Outputs:` sections in the selector's 3-line port style.
+- Per-port `└─<` / `└─>` lines name the configured producer/target node(s)
+  when connected; otherwise fall back to allowed source/destination kinds, or
+  bold `↔ pass-thru` for pass-through outputs.
+- Vault reads/writes render as `key [vault]` entries.
+- Added `_detail_width`/`_wrap_detail` + `on_resize` so the panel re-wraps to
+  its column width; port names honor config overrides via the existing
+  `input_display_name`/`output_display_name` helpers.
+- Removed the now-dead `_metadata_subcategories`, `_format_io_summary`,
+  `_format_transient_input_lines`, `_format_transient_output_lines`,
+  `_format_memory_lines`, and the `Kind:`/`Step:`/`About:` labels.
+
+**`tests/test_debug_nodes.py`:** Added
+`test_editor_details_panel_uses_contract_layout`; updated the editor quick-view
+and depth-counter assertions to the new format.
+
+**`docs/IO_CONTRACT_UI_DESIGN.md`:** Documented the editor details layout and
+marked the phase Done (2026-06-23).
+
+---
+
 ## 2026-06-22 — Track B Phase 3: Selector Drill-in Navigation
 
 Branch: `claude/attackofthenodes-frontend-design-nn6put`

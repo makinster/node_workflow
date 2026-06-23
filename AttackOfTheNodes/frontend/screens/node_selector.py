@@ -13,7 +13,6 @@ docs/PHASE_17_NODE_VISUAL_IDENTITY.md.
 
 from __future__ import annotations
 
-import textwrap
 from typing import Any, Dict, List, Optional
 
 from textual.app import ComposeResult
@@ -30,6 +29,12 @@ from textual.widgets import (
 from textual.containers import VerticalScroll
 
 from frontend.screens.group_picker import GroupPickerScreen
+from frontend.io_contract import (
+    DETAIL_WIDTH_FALLBACK,
+    metadata_flow_lines,
+    render_port_block,
+    wrap_dim,
+)
 from frontend.node_types import END_NODE_TYPE, START_NODE_TYPE, TOMBSTONE_NODE_TYPE
 from frontend.widgets.command_input import CommandInput
 from frontend.widgets.command_navigation import (
@@ -512,8 +517,6 @@ class NodeSelectorScreen(ModalScreen):
     # Contract rendering
     # ------------------------------------------------------------------
 
-    _TYPE_COLOR = "#4EC9B0"
-
     def _detail_width(self) -> int:
         """Wrap width for the contract panel; falls back before first layout."""
         try:
@@ -522,28 +525,15 @@ class NodeSelectorScreen(ModalScreen):
                 return width
         except Exception:
             pass
-        return 36
+        return DETAIL_WIDTH_FALLBACK
 
     def _wrap_dim(self, text: str, indent: int, prefix: str = "") -> List[str]:
-        """Wrap dim prose so continuation lines align under the first word.
+        """Wrap dim prose with a hanging indent at the panel's current width.
 
-        ``indent`` is the leading-space column for the line; ``prefix`` (e.g.
-        ``"└─< "``) renders only on the first line and the wrap hangs to the
-        column immediately after it. We pre-wrap here (rather than let the
-        Static soft-wrap) so the hanging indent survives — Static's own
-        wrapping always falls back to column 0. Subtracting 1 keeps our lines
-        just inside the panel so Static never re-wraps them.
+        Subtracting 1 keeps our pre-wrapped lines just inside the panel so the
+        Static never re-wraps them (which would drop the hanging indent).
         """
-        width = max(8, self._detail_width() - 1)
-        avail = max(6, width - indent - len(prefix))
-        chunks = textwrap.wrap(text, avail) or [""]
-        lines: List[str] = []
-        for i, chunk in enumerate(chunks):
-            if i == 0:
-                lines.append(f"{' ' * indent}[dim]{prefix}{chunk}[/dim]")
-            else:
-                lines.append(f"{' ' * (indent + len(prefix))}[dim]{chunk}[/dim]")
-        return lines
+        return wrap_dim(text, max(8, self._detail_width() - 1), indent, prefix)
 
     def _render_node_contract(self, node: Dict[str, Any]) -> str:
         """Render the full I/O contract for a node with Rich markup."""
@@ -584,34 +574,18 @@ class NodeSelectorScreen(ModalScreen):
         return "\n".join(lines)
 
     def _fmt_port(self, port: str, meta: Dict[str, Any], direction: str) -> List[str]:
-        """Return Rich-markup lines for one port (3-line format)."""
+        """Return Rich-markup lines for one port (the generic contract). The
+        ``└─<``/``└─>`` line lists the port's allowed source/destination kinds."""
         name = str(meta.get("name") or port).replace("_", " ")
-        data_type = str(meta.get("data_type") or "any")
-        desc = str(meta.get("description") or "").strip()
-        required = bool(meta.get("required"))
-        pass_through = bool(meta.get("pass_through"))
-        required_mark = "*" if required else ""
-
-        port_lines: List[str] = []
-        port_lines.append(
-            f"  {name}{required_mark}  \\[[{self._TYPE_COLOR}]{data_type}[/]]"
+        if meta.get("required"):
+            name = f"{name}*"
+        return render_port_block(
+            name,
+            str(meta.get("data_type") or "any"),
+            str(meta.get("description") or "").strip(),
+            metadata_flow_lines(meta, direction, self._wrap_dim),
+            self._wrap_dim,
         )
-        if desc:
-            port_lines.extend(self._wrap_dim(desc, indent=2))
-        if direction == "input":
-            sources = meta.get("sources") or meta.get("from") or []
-            if sources:
-                src_text = " ".join(str(s) for s in sources)
-                port_lines.extend(self._wrap_dim(src_text, indent=2, prefix="└─< "))
-        else:
-            if pass_through:
-                port_lines.append("  [bold]↔ pass-thru[/bold]")
-            else:
-                dests = meta.get("to") or []
-                if dests:
-                    dest_text = " ".join(str(d) for d in dests)
-                    port_lines.extend(self._wrap_dim(dest_text, indent=2, prefix="└─> "))
-        return port_lines
 
     def _render_group_detail(self, entry: Dict[str, Any]) -> str:
         """Render a summary card for a group row."""

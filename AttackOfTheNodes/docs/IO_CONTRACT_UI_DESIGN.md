@@ -259,3 +259,47 @@ deferred. The existing `GroupPickerScreen` modal remains in use until then.
 | **Source tab upstream hint** | Inline upstream description | Deferred (Track B Phase 4b) |
 | **⚠ badge** | Node card validity indicator | **Done (2026-06-22)** |
 | **Drill-in nav** | Quick-list in detail panel + GroupBrowserScreen deferred | **Done (2026-06-22)** |
+| **Editor details panel** | Configured-instance contract in selector's layout | **Done (2026-06-23)** |
+
+### Editor Details Panel (2026-06-23)
+
+The editor's right-hand `#node-details` panel was reformatted to reuse the
+selector's contract layout and labeling, specialized to the configured node
+instance. Shared helpers live in `frontend/io_contract.py` (`TYPE_COLOR`,
+`type_label`, `wrap_dim`) and are used by both screens.
+
+```
+Name: <alias> (<id>)
+Description: <node description>
+Family: <primary_family>
+Tags: <comma-separated tags, blank when none>
+
+Depth: <visible branch depth>
+Breakpoint: <on|off>
+Avg Time: <avg run timing, or - >
+
+Inputs:
+  <input name>  [type]
+  <description>
+  └─< <configured upstream producer | allowed source kinds>
+
+  <vault key>  [vault]
+  <description>
+  └─< vault
+
+Outputs:
+  <output name>  [type]
+  <description>
+  └─> <configured downstream target | ↔ pass-thru | allowed dest kinds>
+```
+
+- No required/optional split — the editor shows the instance as wired/configured.
+- The `└─<` / `└─>` line names the **configured** producer/target node(s) when
+  the port is connected; otherwise it falls back to the port's allowed source/
+  destination kinds (or `↔ pass-thru` in bold for pass-through outputs).
+- Input/output port names honor config overrides (branch path labels, transient
+  output overrides); `[type]` comes from port metadata.
+- Vault reads (`membank_inputs`) and writes (`membank_outputs`) render as
+  `key [vault]` entries with `└─< vault` / `└─> vault`.
+- Retired the old `Kind:` / `Subcategories:` / `Step:` / `About:` /
+  `Transient Source:` labels.
