@@ -2,8 +2,24 @@
 
 from __future__ import annotations
 
+import os
+import time
+
 from textual import events
 from textual.widgets import Input, TextArea
+
+_DEBUG_LOG = os.environ.get("CI_EDIT_DEBUG")
+
+
+def _dbg(*args) -> None:
+    if not _DEBUG_LOG:
+        return
+    line = f"[{time.monotonic():.3f}] {' '.join(str(a) for a in args)}\n"
+    try:
+        with open(_DEBUG_LOG, "a") as f:
+            f.write(line)
+    except Exception:
+        pass
 
 
 EDITING_NAV_KEYS = {
@@ -110,6 +126,7 @@ class CommandInput(Input):
         self.add_class("editing")
         setattr(self.screen, "_active_command_text_widget", self)
         self.app.set_focus(self)
+        _dbg("begin_edit", self.id, "focused_after_set_focus:", getattr(self.app, "focused", None) is self)
         if place_cursor_at_end and not getattr(self, "_nav_cursor_positioned", False):
             _move_input_cursor_to_end(self)
         self._nav_cursor_positioned = False
@@ -192,6 +209,31 @@ class CommandInput(Input):
             await super()._on_key(event)
             if event.key in EDITING_NAV_KEYS or event.is_printable:
                 event.stop()
+            return
+
+        # Detect focus drift: another CommandInput/TextArea is actively editing
+        # but focus landed here instead.  Handling keys as if THIS widget owned
+        # the session would steal editing from the intended field, so we redirect.
+        try:
+            _drift_active = getattr(self.screen, "_active_command_text_widget", None)
+        except Exception:
+            _drift_active = None
+        if (
+            _drift_active is not None
+            and _drift_active is not self
+            and isinstance(_drift_active, (CommandInput, CommandTextArea))
+            and _drift_active.editing
+        ):
+            if event.key in ("e", "enter"):
+                # Re-focus the correct editing widget instead of taking over.
+                self.app.set_focus(_drift_active)
+                event.stop()
+                event.prevent_default()
+                return
+            # For printable/delete keys: let them bubble to the screen rescue
+            # handler rather than swallowing them here.  Nav keys bubble too but
+            # the rescue handler explicitly ignores them (they are no-ops while
+            # editing is active).
             return
 
         if event.key in ("e", "enter"):
@@ -322,6 +364,24 @@ class CommandTextArea(TextArea):
             if event.key in EDITING_NAV_KEYS or event.is_printable or event.key == "enter":
                 event.stop()
             return
+
+        # Focus-drift guard: redirect to the correct editing widget.
+        try:
+            _drift_active = getattr(self.screen, "_active_command_text_widget", None)
+        except Exception:
+            _drift_active = None
+        if (
+            _drift_active is not None
+            and _drift_active is not self
+            and isinstance(_drift_active, (CommandInput, CommandTextArea))
+            and _drift_active.editing
+        ):
+            if event.key in ("e", "enter"):
+                self.app.set_focus(_drift_active)
+                event.stop()
+                event.prevent_default()
+                return
+            return  # Let printable/delete keys bubble to screen rescue handler
 
         if event.key in ("e", "enter"):
             self.begin_edit()

@@ -1008,20 +1008,6 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             self.action_cancel()
 
     def on_key(self, event: Key) -> None:
-        # Safety net for focus drift: a text field can be in editing mode
-        # (which correctly blocks number-key tab switching) while the screen's
-        # actual focus has drifted to another widget — e.g. after a tab switch,
-        # scroll, or a set_focus that did not land. In that state a typed key is
-        # forwarded to whatever holds focus and never reaches the field, so the
-        # field "won't accept input" even though it shows as editing. Re-focus
-        # the editing widget and route the key to it so typing always lands.
-        active = getattr(self, "_active_command_text_widget", None)
-        if is_editing_text(active) and self.app.focused is not active:
-            self.app.set_focus(active)
-            active.post_message(Key(event.key, event.character))
-            event.stop()
-            event.prevent_default()
-            return
         if self._expanded_select() is None:
             # A/D within-row navigation is handled by CommandScreenMixin
             # bindings; tab switching is via number keys.
