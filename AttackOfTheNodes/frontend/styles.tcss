@@ -283,15 +283,25 @@ Screen {
 
 .command-input.single-line {
     height: 1;
+    border-top: none;
+    border-bottom: none;
+    border-right: none;
     border-left: thick $surface;
+    padding: 0 2;
 }
 
 .command-input.single-line:focus {
+    border-top: none;
+    border-bottom: none;
+    border-right: none;
     border-left: thick $primary;
     background: $boost;
 }
 
 .command-input.single-line.editing:focus {
+    border-top: none;
+    border-bottom: none;
+    border-right: none;
     border-left: thick $accent;
     background: $boost;
 }
