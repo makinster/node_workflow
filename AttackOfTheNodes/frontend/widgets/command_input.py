@@ -194,10 +194,8 @@ class CommandInput(Input):
                 event.prevent_default()
                 return
             if event.key in ("tab", "shift+tab"):
+                # Exit editing only; don't navigate. A second Tab will navigate.
                 self.end_edit()
-                self._run_screen_action(
-                    "cursor_up" if event.key == "shift+tab" else "cursor_down"
-                )
                 event.stop()
                 event.prevent_default()
                 return
@@ -268,6 +266,18 @@ class CommandInput(Input):
 
         if event.key in ("s", "down"):
             self._run_screen_action("cursor_down")
+            event.stop()
+            event.prevent_default()
+            return
+
+        if event.key == "tab":
+            self._run_screen_action("cursor_down")
+            event.stop()
+            event.prevent_default()
+            return
+
+        if event.key == "shift+tab":
+            self._run_screen_action("cursor_up")
             event.stop()
             event.prevent_default()
             return

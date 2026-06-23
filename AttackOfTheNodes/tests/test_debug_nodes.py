@@ -6302,8 +6302,10 @@ async def _test_node_config_command_inputs_require_activation():
         screen.action_cursor_up()
         assert app.focused is alias
         screen.action_activate_focused()
-        await pilot.press("tab")
+        await pilot.press("tab")   # first Tab: exit editing only
         assert alias.editing is False
+        assert app.focused is alias   # still on the same widget
+        await pilot.press("tab")   # second Tab: navigate away
         assert app.focused is not alias
         await pilot.press("w")
         assert app.focused is alias
@@ -6398,9 +6400,12 @@ async def _test_prompt_modals_use_shared_command_activation():
         await pilot.press("a", "b", "c")
         assert path_input.value == "abc"
         assert screen.check_action("cancel", ()) is False
-        await pilot.press("tab")
+        await pilot.press("tab")   # first Tab: exit editing only
         await pilot.pause()
         assert path_input.editing is False
+        assert path_app.focused is path_input   # still on input
+        await pilot.press("tab")   # second Tab: navigate to confirm
+        await pilot.pause()
         assert path_app.focused is path_app.query_one("#confirm-path", Button)
         path_input.begin_edit()
         submitted_paths = []

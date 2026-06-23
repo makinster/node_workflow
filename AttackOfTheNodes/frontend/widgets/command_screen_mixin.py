@@ -185,6 +185,12 @@ class CommandScreenMixin:
         active = getattr(self, "_active_command_text_widget", None)
         if not is_editing_text(active):
             return
+        # Only rescue when focus has actually drifted to another widget. When
+        # focus is already on the editing widget, normal event flow handles
+        # everything — intercepting here would stop events before App._on_key
+        # fires non-priority bindings (e.g. backspace → delete_left).
+        if self.app.focused is active:
+            return
         # Rescue only non-navigation input. Navigation keys (w/s/a/d/e and
         # arrows/enter) are intentionally blocked by check_action while editing;
         # they must NOT force focus back to the editing field when focus has been
@@ -195,8 +201,7 @@ class CommandScreenMixin:
             return
         if event.key in _NAV_BINDING_KEYS:
             return
-        if self.app.focused is not active:
-            self.app.set_focus(active)
+        self.app.set_focus(active)
         # Re-post the key directly to the editing widget, bypassing App.on_event
         # and the priority-binding check that originally routed it elsewhere.
         active.post_message(event.__class__(event.key, event.character))
