@@ -149,6 +149,18 @@ class CommandInput(Input):
     def on_click(self, event: events.Click) -> None:
         self.begin_edit(place_cursor_at_end=False)
 
+    def check_action(self, action: str, parameters: tuple) -> bool:
+        if not self.editing and action in {
+            "delete_left",
+            "delete_right",
+            "delete_left_word",
+            "delete_right_word",
+            "delete_left_all",
+            "delete_right_all",
+        }:
+            return False
+        return True
+
     def check_consume_key(self, key: str, character: str | None) -> bool:
         if not self.editing:
             return False
@@ -160,6 +172,12 @@ class CommandInput(Input):
             "tab",
             "shift+tab",
             "enter",
+            "backspace",
+            "delete",
+            "ctrl+w",
+            "ctrl+u",
+            "ctrl+k",
+            "ctrl+backspace",
             *EDITING_NAV_KEYS,
         }
 

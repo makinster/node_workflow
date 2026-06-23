@@ -1825,11 +1825,11 @@ async def _test_form_generator_titleizes_field_name_fallback_labels():
         labels = {
             str(label.content)
             for label in app.query(Label)
-            if "form-label" in label.classes
+            if "form-label" in label.classes or "form-label-inline" in label.classes
         }
         assert "Request user input" in labels
         assert "request_user_input" not in labels
-        assert "Output text" in labels
+        assert any(lbl.startswith("Output text") for lbl in labels)
 
     print("test_form_generator_titleizes_field_name_fallback_labels PASSED")
 

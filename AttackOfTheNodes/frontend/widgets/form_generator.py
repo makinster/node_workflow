@@ -6,7 +6,7 @@ from collections import OrderedDict
 import re
 from typing import Any, Callable, Dict, Iterable, List, Tuple
 
-from textual.containers import Vertical
+from textual.containers import Horizontal, Vertical
 from textual.validation import Integer, Length, Number, Validator
 from textual.widgets import (
     Checkbox,
@@ -107,6 +107,13 @@ def schema_uses_tabs(config_schema: Dict[str, Dict[str, Any]]) -> bool:
     return len(group_config_schema(config_schema)) > 1
 
 
+def _is_inline_field(field_type: str, field_schema: Dict[str, Any]) -> bool:
+    """Return True for fields that render as a single-line CommandInput."""
+    if field_schema.get("options") and field_type not in {"multiselect", "boolean"}:
+        return False
+    return field_type not in {"multiline", "code", "boolean", "select", "multiselect"}
+
+
 def _field_children(
     field_name: str,
     field_schema: Dict[str, Any],
@@ -119,14 +126,10 @@ def _field_children(
     description = field_schema.get("description", "")
     current_value = values.get(field_name, field_schema.get("default", ""))
 
+    widget = _widget_for_field(field_name, field_type, field_schema, current_value)
+    field_widgets[field_name] = widget
+
     children = []
-    children.append(
-        Label(
-            f"{label}{required}",
-            classes="form-label",
-            id=f"field-label-{field_name}",
-        )
-    )
     if description:
         children.append(
             Label(
@@ -136,9 +139,29 @@ def _field_children(
             )
         )
 
-    widget = _widget_for_field(field_name, field_type, field_schema, current_value)
-    field_widgets[field_name] = widget
-    children.append(widget)
+    if _is_inline_field(field_type, field_schema):
+        children.append(
+            Horizontal(
+                Label(
+                    f"{label}{required}:",
+                    classes="form-label-inline",
+                    id=f"field-label-{field_name}",
+                ),
+                widget,
+                classes="form-inline-row",
+                id=f"field-row-{field_name}",
+            )
+        )
+    else:
+        children.insert(
+            0,
+            Label(
+                f"{label}{required}",
+                classes="form-label",
+                id=f"field-label-{field_name}",
+            ),
+        )
+        children.append(widget)
     return children
 
 
@@ -329,7 +352,11 @@ def apply_field_rules(
         if visible_when is not None:
             visible = evaluate_field_condition(visible_when, values)
             widget.display = visible
-            for extra_id in (f"field-label-{field_name}", f"field-desc-{field_name}"):
+            for extra_id in (
+                f"field-label-{field_name}",
+                f"field-desc-{field_name}",
+                f"field-row-{field_name}",
+            ):
                 for extra in root.query(f"#{extra_id}"):
                     extra.display = visible
 

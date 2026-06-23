@@ -189,7 +189,7 @@ async def _test_label_required_and_description_render():
     app, _ = _mount_form(schema, {})
     async with app.run_test():
         label = app.query_one("#field-label-name", Label)
-        assert str(label.render()) == "Display name *"
+        assert str(label.render()).startswith("Display name *")
         description = app.query_one("#field-desc-name", Label)
         assert str(description.render()) == "Shown in the editor list"
     print("test_label_required_and_description_render PASSED")

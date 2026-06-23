@@ -264,6 +264,20 @@ Screen {
     text-style: bold;
 }
 
+/* Inline label + input row: label left, input fills remaining width. */
+.form-inline-row {
+    height: 1;
+    margin-top: 1;
+}
+
+.form-label-inline {
+    height: 1;
+    width: auto;
+    color: $foreground;
+    text-style: bold;
+    padding: 0 1 0 0;
+}
+
 .form-description {
     color: $text-muted;
 }
