@@ -130,7 +130,11 @@ class CommandInput(Input):
         self.begin_edit(place_cursor_at_end=False)
 
     def check_consume_key(self, key: str, character: str | None) -> bool:
-        return self.editing and key in {
+        if not self.editing:
+            return False
+        if character is not None and len(character) == 1 and character.isprintable():
+            return True
+        return key in {
             "escape",
             "ctrl+q",
             "tab",
@@ -168,6 +172,20 @@ class CommandInput(Input):
                 event.stop()
                 event.prevent_default()
                 return
+            # For auto-edit fields, w/s/up/down commit the value and navigate.
+            if self.auto_edit_on_focus:
+                if event.key in ("w", "up"):
+                    self.end_edit()
+                    self._run_screen_action("cursor_up")
+                    event.stop()
+                    event.prevent_default()
+                    return
+                if event.key in ("s", "down"):
+                    self.end_edit()
+                    self._run_screen_action("cursor_down")
+                    event.stop()
+                    event.prevent_default()
+                    return
             await super()._on_key(event)
             if event.key in EDITING_NAV_KEYS or event.is_printable:
                 event.stop()
