@@ -238,34 +238,98 @@ Goal: execute a workflow from the terminal without launching the TUI —
 without Textual. The path to a CLI entrypoint is adding a thin wrapper that
 wires the backend without starting the app.
 
-**Design work required before implementing:**
+### Compile-and-Swap Model
 
-- **Headless-safe node contract.** Add a `headless_safe: bool` metadata flag
-  to node classes. The validator checks that all nodes in a headless-flagged
-  workflow satisfy the contract before allowing the run. Nodes that publish
-  `USER_INPUT_NEEDED` (mid-run interactive prompts) are not headless-safe
-  unless they have an explicit stdin fallback.
-- **Input seeding via CLI args.** Input nodes in headless workflows must accept
-  runtime values (`--input key=value`) rather than hardcoded config. This is
-  primarily an Inputs-family design concern — the headless contract and the
-  Inputs node redesign should be planned together.
-- **Output routing.** Output nodes in headless workflows write to stdout, a
-  file, or a structured result object rather than the TUI panel. The
-  Outputs-family redesign should specify the headless output path alongside the
-  TUI path.
-- **Configurable data directory.** The current `Path(__file__).resolve().parent.parent`
-  anchor in `persistence.py` assumes the source tree layout. CLI users need a
-  configurable base path (env var or config file). Implement this before the CLI
-  entrypoint, not after.
+Headless execution uses a **duplicate saved file** produced by a "Save for
+headless execution" export option. The TUI workflow is always the editable
+source of truth; the headless file is compiler output, not hand-edited.
+
+The export step works by **node-type swap**: every I/O node that is
+TUI-specific is replaced with its headless twin — a node with the exact same
+port shape (same input/output ports, same data types) so all graph connections
+transfer without change. The graph topology is preserved exactly; only the
+I/O boundary nodes change.
+
+Each headless twin declares its TUI counterpart via a `headless_equivalent`
+pointer in node metadata (or a registry entry). That pointer is what the
+validator/compiler uses to drive the swap. A node with no declared
+`headless_equivalent` and no headless-safe flag blocks the export with a clear
+error: `"Cannot compile for headless — node '[Alias]' has no terminal
+equivalent."` This surfaces cleanly before the file is ever written.
+
+### Headless Input Node: Interaction Format from Type
+
+The default mode for every headless input twin is **prompt stdin at runtime**.
+No configuration is required at export time — the swap alone is sufficient for
+a working headless workflow.
+
+Each twin knows how to prompt and validate based on its node type. The
+interaction format is inherited, not separately configured:
+
+**Text input twin** — free text, enter to confirm:
+```
+Enter value for "Search Query": _
+```
+
+**Single-select twin** (radio equivalent) — user enters exactly one valid
+index; reprompts on invalid entry:
+```
+Choose an option for "Processing Mode":
+  1. Option A
+  2. Option B
+  3. Option C
+Enter choice: _
+```
+
+**Multi-select twin** (checkbox equivalent) — user enters a comma-separated
+list of valid indices; reprompts on invalid entry or out-of-range values:
+```
+Select options for "Export Formats":
+  1. PDF
+  2. CSV
+  3. JSON
+Enter choices (e.g. 1,2): _
+```
+
+The options list, label, and validation rules all come from the same node
+config the TUI node carried — they transfer through the swap automatically.
+
+### Headless Input Mode (Optional Power-User Config)
+
+After export, individual input nodes can be reconfigured for automation. Each
+headless input twin exposes a `headless_input_mode` field:
+
+| Mode | Behavior |
+|---|---|
+| `prompted` (default) | Prompt stdin at runtime as above |
+| `cli_arg` | Read from `--input alias=value` at launch; no prompt |
+| `static_default` | Value baked into node config; no prompt, no arg needed |
+
+A user scripting `aotn` into a cron job configures their input nodes to
+`cli_arg` or `static_default` so the run is fully non-interactive. The
+default `prompted` mode always works for a human running the workflow manually.
+
+### Headless Output Node
+
+Output twin defaults to **stdout**. Optional `output_file` config on the node
+redirects output to a file path. No configuration required at export time.
+
+### Configurable Data Directory
+
+The current `Path(__file__).resolve().parent.parent` anchor in `persistence.py`
+assumes the source tree layout. CLI users need a configurable base path (env
+var or config file). Implement this before the CLI entrypoint — every new
+hardcoded relative path caller makes the migration larger.
 
 **What to avoid now that would close off this direction:**
 
 - Expanding `signal_waiting_for_input` usage without specifying the headless
-  fallback — every new use of mid-run prompts tightens TUI coupling.
+  fallback — every new use tightens TUI coupling deeper into the node graph.
 - Building Outputs-family nodes that assume a Textual screen exists — the
   output destination must be an abstraction, not hardcoded to the TUI panel.
-- Adding more hardcoded relative paths in `persistence.py` callers — every new
-  caller makes the configurable-path migration larger.
+- Adding more hardcoded relative paths in `persistence.py` callers.
+- Designing TUI I/O nodes whose port shape cannot be matched by a headless twin
+  — identical port shape is what makes the swap mechanical.
 
 See also: `Future Direction — Always-Running Trigger Watcher` (depends on this).
 

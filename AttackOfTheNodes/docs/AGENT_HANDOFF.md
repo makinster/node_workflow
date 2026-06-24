@@ -88,11 +88,13 @@ Three planned expansions that should shape current build decisions. Full design
 notes and "what to avoid now" guidance live in `PROJECT_BACKLOG.md` under the
 corresponding "Future Direction" sections.
 
-- **Headless CLI execution (`aotn`).** Run workflows from the terminal without
-  the TUI. The backend is already UI-agnostic; the remaining work is a
-  headless-safe node contract, configurable path resolution, CLI arg input
-  seeding, and Output nodes that write to stdout/file. Primarily reshapes the
-  Inputs and Outputs node families — design these with headless in mind.
+- **Headless CLI execution (`aotn`).** "Save for headless" exports a duplicate
+  file where TUI I/O nodes are swapped for headless twins with identical port
+  shapes — graph topology preserved, only the I/O boundary nodes change. Twins
+  default to stdin-prompted interaction (format inherited from node type: free
+  text, single-index, or comma-separated multi-index). Optional `headless_input_mode`
+  config enables CLI arg or static-default modes for automation. Nodes with no
+  declared twin block the export with a clear error. See `PROJECT_BACKLOG.md`.
 - **Always-running trigger watcher.** A non-terminating headless workflow that
   monitors for external events and dispatches sub-workflows. Requires trigger
   nodes (exempt from `node_timeout_seconds`), loop/cycle workflow support,

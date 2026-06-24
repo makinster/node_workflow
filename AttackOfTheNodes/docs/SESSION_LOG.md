@@ -14,13 +14,15 @@ changes.
 
 Three future directions documented in `PROJECT_BACKLOG.md`:
 
-- **Headless CLI execution (`aotn`).** `aotn <workflow name>` runs a workflow
-  without launching the TUI. Key design work: headless-safe node contract
-  (validator checks before headless runs), configurable path resolution (replaces
-  the hardcoded `persistence.py` anchor), CLI arg input seeding for Input nodes,
-  stdout/file output routing for Output nodes. Primarily reshapes the Inputs and
-  Outputs node families — both should be designed with the headless path in mind
-  from now on.
+- **Headless CLI execution (`aotn`).** "Save for headless" exports a duplicate
+  file — the TUI workflow stays the editable source of truth. The export swaps
+  TUI I/O nodes for headless twins with identical port shapes so all graph
+  connections transfer unchanged. Twins default to stdin-prompted interaction;
+  format is inherited from node type (free text / single-index / comma-separated
+  multi-index). Optional `headless_input_mode` per node: `prompted` (default),
+  `cli_arg`, or `static_default`. Nodes with no declared twin block export with
+  a clear error. Configurable data directory required before CLI entrypoint.
+  Full design in `PROJECT_BACKLOG.md` → "Future Direction — Headless CLI Execution".
 - **Always-running trigger watcher.** A non-terminating headless workflow that
   monitors for external events and dispatches sub-workflows when conditions fire.
   Requires: trigger node primitives that block on external events (exempt from
