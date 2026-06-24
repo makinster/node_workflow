@@ -251,9 +251,15 @@ Focused checks:
   node authoring conventions stabilize. Typed vault entry support is a
   prerequisite for AI session continuation.
 - **Phase N — Headless CLI execution.** `aotn <workflow name>` entrypoint,
-  headless-safe node contract (validator blocks non-headless nodes), configurable
-  data directory, Input nodes accept CLI args, Output nodes write to stdout/file.
-  See `PROJECT_BACKLOG.md` → "Future Direction — Headless CLI Execution".
+  compile-and-swap export (duplicate file, TUI I/O nodes swapped for headless
+  twins with identical port shapes), `HeadlessStartNode` preamble, configurable
+  data directory, `headless_valid` flag on nested workflows. See
+  `PROJECT_BACKLOG.md` → "Future Direction — Headless CLI Execution".
+- **Phase N (alongside) — Metadata conditional nodes.** `ExecutionModeConditionalNode`
+  and `RunMetadataConditionalNode` (Flow Control → Context Branching). Context-
+  aware validator softening: gated TUI-only nodes are warnings, ungated are
+  errors. See `PROJECT_BACKLOG.md` → "Future Direction — Metadata Conditional
+  Nodes".
 - **Phase N+1 — Always-running trigger watcher.** Trigger node primitives (async
   listeners, exempt from `node_timeout_seconds`), loop/cycle workflow support,
   non-terminal resource lifecycle, nested workflow fire-and-forget dispatch.

@@ -314,6 +314,59 @@ default `prompted` mode always works for a human running the workflow manually.
 Output twin defaults to **stdout**. Optional `output_file` config on the node
 redirects output to a file path. No configuration required at export time.
 
+### Start Node Redesign
+
+The `StartNode` is currently auto-generated and functionally minimal — it is
+hidden in the editor by default and carries no user-facing config. The redesign
+keeps this default but introduces context-specific start node variants revealed
+when the user declares an execution context for the workflow.
+
+| Start node type | When revealed | Purpose |
+|---|---|---|
+| `StandardStartNode` | Always (hidden by default) | Current behavior — TUI workflow |
+| `HeadlessStartNode` | Selected on "Save for headless" export | CLI preamble setup |
+| `NestedStartNode` | Workflow marked as callable sub-workflow (Phases 19/20) | Receives data from parent dispatch |
+| `TriggerStartNode` | Always-running watcher workflow (far future) | Persistent listener lifecycle |
+
+Each variant has the same downstream port shape as `StandardStartNode` so
+the rest of the graph is unaffected. Only the start boundary changes.
+
+**`HeadlessStartNode` — CLI preamble configurator.**
+When revealed at headless export, this node runs before the first workflow node
+executes. Its config carries:
+
+- **Banner text** — workflow title and description printed to stdout at launch.
+- **Global session prompts** — values shared by multiple downstream nodes
+  (e.g. an API key or a working directory) collected once here rather than
+  re-prompted inside each individual input node.
+- **Setup commands** — any environment assertions or pre-flight checks before
+  execution begins.
+
+Centralising setup in the start node keeps individual input nodes focused on
+their single data point and avoids the user being interrupted repeatedly for
+related values that belong together.
+
+### Nested Workflows and Headless Validation
+
+Nested workflow nodes (Phases 19/20) are treated as a **black box** by the
+headless validator. The validator does not re-traverse the nested workflow's
+internal graph. Instead it checks two things only:
+
+1. **Headless validity flag.** The nested workflow node carries a
+   `headless_valid: bool` flag derived when that workflow last passed headless
+   validation. If `false` or absent, the parent headless export blocks with:
+   `"Nested workflow '[name]' has not been validated for headless execution."`
+2. **Port compatibility.** The nested workflow's exposed input/output ports
+   are compatible with the parent graph's connections (same check as any other
+   node).
+
+This is the compiled-library trust model: the nested workflow is validated as a
+unit independently; the parent trusts that pre-validated result. Any nested
+workflow designed for headless must itself pass the same compile-and-swap
+validation before the `headless_valid` flag is set, and any nested workflows
+*it* contains are validated by the same rule recursively — but each level
+trusts its children's flags rather than re-walking the full graph.
+
 ### Configurable Data Directory
 
 The current `Path(__file__).resolve().parent.parent` anchor in `persistence.py`
@@ -332,6 +385,86 @@ hardcoded relative path caller makes the migration larger.
   — identical port shape is what makes the swap mechanical.
 
 See also: `Future Direction — Always-Running Trigger Watcher` (depends on this).
+See also: `Future Direction — Metadata Conditional Nodes` (complementary approach
+for workflows that run in multiple contexts without a separate export).
+
+---
+
+## Future Direction — Metadata Conditional Nodes and Context-Aware Validation
+
+Goal: a dedicated node group that branches on run-time execution context rather
+than on data values, allowing a single workflow to route itself correctly
+depending on how it was launched — TUI, headless CLI, nested sub-workflow, or
+trigger watcher.
+
+This is complementary to the compile-and-swap headless export. Compile-and-swap
+produces a clean headless-only artifact. Metadata conditionals let a single
+workflow handle multiple modes intelligently without a separate export.
+
+### The Node Group
+
+**Execution Context Conditional** nodes live in their own selector group
+(suggested home: Flow Control → Context Branching, or a dedicated
+"Context" direct-add section). Initial members:
+
+- **`ExecutionModeConditionalNode`** — branches on the current execution mode:
+  `tui` / `headless` / `nested` / `triggered`. Each output port corresponds
+  to one mode; the workflow follows the matching path.
+- **`RunMetadataConditionalNode`** — branches on any named run metadata key
+  and value. Generalises the execution-mode node to arbitrary context tags set
+  at launch time or by a parent workflow.
+
+Future extensions (not scoped yet): environment conditionals (`OS`, Python
+version, installed packages), settings conditionals (branches on a
+`ConfigurationManager` key), custom run-tag conditionals set by a caller.
+
+### How Validation Changes
+
+With context-aware branches in the graph, the validator gains a **context
+filter** layer on top of its current full-graph structural pass:
+
+| Finding | Current model | With context conditionals |
+|---|---|---|
+| Structural error (broken connection, missing node) | Error in all modes | Error in all modes — unchanged |
+| TUI-only node on an `execution_mode == headless` branch | Error (blocks headless export) | Warning — "node unreachable in headless mode but gated correctly" |
+| Headless twin on a `execution_mode == tui` branch | N/A | Warning — noted, not blocking |
+| TUI-only node with no context gate in a headless-flagged workflow | Error | Error — not protected by a gate |
+
+The rule: **a node that does not work in a given context is a warning if it
+is properly gated behind a context conditional, and an error if it is not.**
+The validator still runs a full structural pass on all paths; it only softens
+the severity for nodes that are explicitly isolated from the contexts where
+they would fail.
+
+This means workflows can contain TUI-only nodes (rich display, interactive
+prompts) alongside headless-compatible paths, and headless validation does not
+error on the TUI branches as long as they are behind an execution-mode gate.
+
+### Interaction with Headless Export
+
+When a user runs "Save for headless execution" on a workflow containing
+execution-mode conditionals:
+
+- Paths behind `execution_mode == headless` gates are kept as-is.
+- Paths behind `execution_mode == tui` gates are either pruned from the export
+  (the headless file contains only the headless paths) or preserved with a
+  warning notation. Decision to be made at implementation time.
+- The `ExecutionModeConditionalNode` itself is replaced in the export with a
+  direct connection to the headless branch (the conditional is no longer needed
+  when the execution mode is fixed).
+
+### Design Constraints
+
+- Metadata conditionals branch on **read-only context** — they cannot modify
+  run metadata, only read it. Side-effect-free branching keeps the validator's
+  context-filter analysis tractable.
+- The execution mode must be set once at run start by the entry point
+  (`MasterState` or the CLI entrypoint) and must not change mid-run. It is a
+  property of the launch context, not mutable workflow state.
+- Context conditional nodes must be transparent to nested workflow validation —
+  a nested workflow's `headless_valid` flag is set based on whether its
+  headless-mode paths (behind its own context gates) are valid, not on whether
+  it also has valid TUI paths.
 
 ---
 
