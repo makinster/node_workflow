@@ -228,6 +228,162 @@ nodes on the Inputs side. This is the motivation behind giving Outputs a
 dedicated selector tab (2026-06-22). No implementation scoped yet; capture
 concrete node concepts in `NODE_CATALOG.md` as they firm up.
 
+## Future Direction — Headless CLI Execution (`aotn`)
+
+Goal: execute a workflow from the terminal without launching the TUI —
+`aotn <workflow name>` — for scripting, automation, and scheduled runs.
+
+**What is already safe:** The backend (`MasterState`, `Supervisor`,
+`WorkflowMap`, `Validator`) has no frontend imports and can be instantiated
+without Textual. The path to a CLI entrypoint is adding a thin wrapper that
+wires the backend without starting the app.
+
+**Design work required before implementing:**
+
+- **Headless-safe node contract.** Add a `headless_safe: bool` metadata flag
+  to node classes. The validator checks that all nodes in a headless-flagged
+  workflow satisfy the contract before allowing the run. Nodes that publish
+  `USER_INPUT_NEEDED` (mid-run interactive prompts) are not headless-safe
+  unless they have an explicit stdin fallback.
+- **Input seeding via CLI args.** Input nodes in headless workflows must accept
+  runtime values (`--input key=value`) rather than hardcoded config. This is
+  primarily an Inputs-family design concern — the headless contract and the
+  Inputs node redesign should be planned together.
+- **Output routing.** Output nodes in headless workflows write to stdout, a
+  file, or a structured result object rather than the TUI panel. The
+  Outputs-family redesign should specify the headless output path alongside the
+  TUI path.
+- **Configurable data directory.** The current `Path(__file__).resolve().parent.parent`
+  anchor in `persistence.py` assumes the source tree layout. CLI users need a
+  configurable base path (env var or config file). Implement this before the CLI
+  entrypoint, not after.
+
+**What to avoid now that would close off this direction:**
+
+- Expanding `signal_waiting_for_input` usage without specifying the headless
+  fallback — every new use of mid-run prompts tightens TUI coupling.
+- Building Outputs-family nodes that assume a Textual screen exists — the
+  output destination must be an abstraction, not hardcoded to the TUI panel.
+- Adding more hardcoded relative paths in `persistence.py` callers — every new
+  caller makes the configurable-path migration larger.
+
+See also: `Future Direction — Always-Running Trigger Watcher` (depends on this).
+
+---
+
+## Future Direction — Always-Running Trigger Watcher
+
+Goal: a long-running headless workflow that never terminates — it monitors for
+external triggers (file changes, webhooks, cron schedules, socket messages) and
+dispatches sub-workflows when conditions fire. Acts as a lightweight OS-level
+automation layer.
+
+**Depends on:** Headless CLI execution (above) and nested workflows (Phases
+19/20).
+
+**New primitives required:**
+
+- **Trigger nodes.** An Inputs-family node type that blocks waiting for an
+  external event rather than reading a one-shot value. These are persistent
+  async listeners. They must be exempt from `node_timeout_seconds` — the global
+  timeout would kill a blocking listener. Implement a per-node or per-family
+  timeout override before building trigger nodes.
+- **Loop/cycle support.** The always-running workflow must loop — watch →
+  trigger fires → dispatch → return to watching. Cycles are currently rejected
+  by the validator and BFS traversal. A deliberate loop node type (or explicit
+  restart mechanism) must be supported as a first-class design, not accidentally
+  un-rejected.
+- **Nested workflow dispatch.** The dispatch step launches a sub-workflow as a
+  child. Must support fire-and-forget (watcher continues immediately) vs.
+  wait-for-result modes.
+
+**Architecture constraints to maintain now:**
+
+- **Resource lifecycle.** `RunSession.close_all()` is called only on terminal
+  paths — a non-terminating workflow never triggers it. Do not add new resource
+  types that assume a single terminal cleanup call. Resource cleanup must be
+  periodic or per-trigger-cycle for the watcher pattern to work.
+- **MasterState isolation.** Dispatched sub-workflows need isolated execution
+  contexts (separate `MemoryBank`, supervisor tracking, run state). Do not
+  deepen the assumption that only one workflow can be in `RUNNING` state at a
+  time.
+- **OutputManager / ErrorHandler eviction.** Per-run in-memory caches are
+  evicted in `_record_run`, which is only called at terminal paths. A
+  non-terminating workflow's caches grow unboundedly without periodic
+  checkpointing. Do not expand in-memory-only accumulation patterns.
+- **Cross-run persistent state.** The watcher may need to carry state between
+  trigger fires (counter, last-seen timestamp, accumulated results). This is
+  different from the per-run ephemeral `MemoryBank`. Design it as a separate
+  "persistent context" concept — not an extension of `MemoryBank` across runs.
+
+**What to avoid now:**
+
+- Applying `node_timeout_seconds` uniformly without a per-node override path —
+  this makes trigger nodes impossible.
+- Writing new code that assumes `_record_run` is eventually called — anything
+  depending on that assumption breaks for non-terminating workflows.
+- Deepening single-`MasterState` / single-active-run assumptions in event
+  routing or completion logic.
+
+---
+
+## Future Direction — Multi-Frontend Expansion (Chrome Extension, Desktop GUI)
+
+Goal: run the backend as a standalone persistent server that multiple
+simultaneous frontends connect to — the existing TUI, a Chrome extension, and a
+separate desktop GUI. Frontends are naturally aware of shared state because they
+all talk to the same backend server.
+
+**Architecture model.** All frontends become thin clients to `localhost:PORT`.
+The Chrome extension (browser sandbox, JavaScript) connects via HTTP + WebSocket.
+The desktop GUI does the same, or keeps a direct in-process Python path like the
+current TUI. The backend is the single source of truth; frontends subscribe to
+events over WebSocket and issue commands over HTTP. `RunSession` handles (file
+objects, AI sessions) stay Python objects in the backend — frontends receive
+only serializable representations.
+
+**What is already well-positioned:**
+
+- Backend has no frontend imports — the load-bearing separation holds today.
+- JSON workflow format is portable — any frontend can read and write the same files.
+- `EventBus` already uses named events with structured payloads — maps cleanly
+  to WebSocket push.
+- `NodeContext`, `MasterState`, `Supervisor`, `Validator` carry no Textual
+  references.
+
+**What will need to change (not now — but design with it in mind):**
+
+- **Backend as a standalone process.** Currently `MasterState` is instantiated
+  inside the same process as Textual (`main.py` wires both together). The
+  multi-frontend model requires the backend to run as its own process with an
+  HTTP + WebSocket API layer. The TUI either becomes a thin client or retains
+  an optional direct in-process path.
+- **EventBus subscriptions become network streams.** Subscriptions are currently
+  Python closures — they work in-process only. For remote clients, events must
+  be pushed over WebSocket. The payloads are already JSON-serializable; the
+  subscription model needs a network layer on top.
+- **Configurable data directory.** Same requirement as the CLI direction —
+  `persistence.py` path anchoring must become an env var or config file before
+  a backend server can be installed anywhere.
+
+**Invariants to protect right now — these are load-bearing walls:**
+
+1. **No frontend imports in backend code.** One accidental
+   `from frontend.screens import ...` in a node file permanently breaks that
+   node for any non-Textual context. Enforce on every change.
+2. **EventBus payloads must remain JSON-serializable.** No Python objects,
+   Textual widgets, or reactive references in event data. If a payload needs a
+   Python object, store it in `RunSession` and put only the reference key in
+   the event.
+3. **No non-serializable Textual state on MasterState.** If widgets or reactive
+   objects end up referenced from `MasterState`, it cannot be separated into its
+   own process.
+4. **All event payloads carry `run_id`.** The `EventBus` has no run isolation
+   today — events from all supervisors share one bus. As multi-run and
+   multi-frontend scenarios grow, consumers must be able to filter by `run_id`.
+   Ensure new event payloads always carry `run_id` so future isolation is an
+   additive subscriber filter, not a breaking schema change.
+
 ## Near-Term Project — Frontend Command UI Toolkit
 
 Current config and modal UX should converge on small shared helpers instead of
