@@ -250,6 +250,19 @@ Focused checks:
 - **Deferred AI integration.** Implement real AI node execution once UI and
   node authoring conventions stabilize. Typed vault entry support is a
   prerequisite for AI session continuation.
+- **Phase N — Headless CLI execution.** `aotn <workflow name>` entrypoint,
+  headless-safe node contract (validator blocks non-headless nodes), configurable
+  data directory, Input nodes accept CLI args, Output nodes write to stdout/file.
+  See `PROJECT_BACKLOG.md` → "Future Direction — Headless CLI Execution".
+- **Phase N+1 — Always-running trigger watcher.** Trigger node primitives (async
+  listeners, exempt from `node_timeout_seconds`), loop/cycle workflow support,
+  non-terminal resource lifecycle, nested workflow fire-and-forget dispatch.
+  Depends on Phase N and nested workflows (19/20). See `PROJECT_BACKLOG.md` →
+  "Future Direction — Always-Running Trigger Watcher".
+- **Phase N+2 — Multi-frontend backend API layer.** Backend as a standalone
+  HTTP + WebSocket server; TUI, Chrome extension, and desktop GUI as thin
+  clients. See `PROJECT_BACKLOG.md` → "Future Direction — Multi-Frontend
+  Expansion".
 
 ## Standing Implementation Rules
 
@@ -261,3 +274,6 @@ Focused checks:
 - Update `SESSION_LOG.md` after each completed change.
 - Update `DOCS_MIGRATION_NOTES.md` when docs are moved, collapsed, archived, or
   deleted.
+- Keep EventBus payloads JSON-serializable — no Textual widgets, Python handles,
+  or reactive references in event data.
+- All new event payloads must carry `run_id` for future multi-run isolation.

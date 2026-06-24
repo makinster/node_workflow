@@ -82,6 +82,40 @@ Deferred:
 - Packaging/release hardening.
 - Nested workflow phases 19 and 20.
 
+## Long-Range Direction
+
+Three planned expansions that should shape current build decisions. Full design
+notes and "what to avoid now" guidance live in `PROJECT_BACKLOG.md` under the
+corresponding "Future Direction" sections.
+
+- **Headless CLI execution (`aotn`).** "Save for headless" exports a duplicate
+  file where TUI I/O nodes are swapped for headless twins with identical port
+  shapes — graph topology preserved, only the I/O boundary nodes change. Twins
+  default to stdin-prompted interaction (format inherited from node type: free
+  text, single-index, or comma-separated multi-index). Optional `headless_input_mode`
+  config enables CLI arg or static-default modes for automation. Nodes with no
+  declared twin block the export with a clear error. See `PROJECT_BACKLOG.md`.
+- **Always-running trigger watcher.** A non-terminating headless workflow that
+  monitors for external events and dispatches sub-workflows. Requires trigger
+  nodes (exempt from `node_timeout_seconds`), loop/cycle workflow support,
+  non-terminal resource lifecycle, and sub-workflow execution isolation. Depends
+  on headless CLI and nested workflows (Phases 19/20).
+- **Multi-frontend expansion.** TUI, Chrome extension, and desktop GUI as thin
+  clients to a shared backend HTTP + WebSocket server. The backend/frontend
+  separation already holds; the eventual shift is extracting the backend into
+  its own process.
+
+**Invariants that must hold across all future directions — verify on every
+change:**
+
+1. No frontend imports in backend code (`from frontend...` in any node or
+   backend service is a permanent regression).
+2. EventBus payloads stay JSON-serializable — no Python objects, Textual
+   widgets, or reactive references in event data.
+3. No non-serializable Textual state stored on `MasterState`.
+4. All new event payloads carry `run_id` — required for future multi-run and
+   multi-frontend event isolation.
+
 ## Working Rules
 
 - Do not revert unrelated dirty/untracked files.

@@ -4,6 +4,54 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-24 — Architecture Direction: Headless CLI, Trigger Watcher, Multi-Frontend
+
+Branch: `claude/readme-review-main-sync-mtzc25`
+
+Planning session to establish long-range architecture direction and ensure
+current build decisions do not close off future expansion goals. No code
+changes.
+
+Three future directions documented in `PROJECT_BACKLOG.md`:
+
+- **Headless CLI execution (`aotn`).** "Save for headless" exports a duplicate
+  file — the TUI workflow stays the editable source of truth. The export swaps
+  TUI I/O nodes for headless twins with identical port shapes so all graph
+  connections transfer unchanged. Twins default to stdin-prompted interaction;
+  format is inherited from node type (free text / single-index / comma-separated
+  multi-index). Optional `headless_input_mode` per node: `prompted` (default),
+  `cli_arg`, or `static_default`. Nodes with no declared twin block export with
+  a clear error. Configurable data directory required before CLI entrypoint.
+  Full design in `PROJECT_BACKLOG.md` → "Future Direction — Headless CLI Execution".
+- **Always-running trigger watcher.** A non-terminating headless workflow that
+  monitors for external events and dispatches sub-workflows when conditions fire.
+  Requires: trigger node primitives that block on external events (exempt from
+  `node_timeout_seconds`), deliberate loop/cycle support in the workflow model,
+  a resource lifecycle that does not assume terminal-path cleanup, and sub-workflow
+  execution isolation so dispatched runs do not share `MasterState` context with
+  the watcher. Depends on headless CLI and nested workflows (Phases 19/20).
+- **Multi-frontend expansion.** TUI, Chrome extension, and desktop GUI all as
+  thin clients to a shared backend HTTP + WebSocket server. The backend has no
+  frontend imports today — the load-bearing separation holds. The eventual
+  structural shift is extracting the backend into a standalone process; the TUI
+  either becomes a thin client or keeps a direct in-process path.
+
+Key invariants to enforce from now on, added to `AGENT_HANDOFF.md` and
+`MASTER_BUILD_PLAN.md` standing rules:
+
+1. No frontend imports in backend code.
+2. EventBus payloads must remain JSON-serializable — no Python objects, Textual
+   widgets, or reactive references.
+3. No non-serializable Textual state stored on `MasterState`.
+4. All new event payloads carry `run_id` for future multi-run and multi-frontend
+   isolation.
+
+Updated: `PROJECT_BACKLOG.md` (three new Future Direction sections),
+`AGENT_HANDOFF.md` (Long-Range Direction section + invariants),
+`MASTER_BUILD_PLAN.md` (three far-future roadmap phases + two standing rules).
+
+---
+
 ## 2026-06-23 — Editor Details Panel: Configured Contract Layout
 
 Branch: `claude/attackofthenodes-frontend-design-nn6put`
