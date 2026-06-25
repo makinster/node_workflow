@@ -4190,6 +4190,59 @@ async def _test_node_config_fixed_tabs_are_keyboard_navigable():
     print("test_node_config_fixed_tabs_are_keyboard_navigable PASSED")
 
 
+def test_node_config_secret_fields_use_saved_key_dropdown():
+    asyncio.run(_test_node_config_secret_fields_use_saved_key_dropdown())
+
+
+async def _test_node_config_secret_fields_use_saved_key_dropdown():
+    import tempfile
+
+    from textual.app import App, ComposeResult
+    from textual.widgets import Select
+
+    from backend.secrets_manager import SecretsManager
+    from frontend.screens.node_config import NodeConfigScreen
+
+    _, wm, _, _ = _make_services()
+    wm.create_new("node_config_secret_dropdown")
+    node = wm.add_node("chat_completion_node")
+    config = dict(wm.get_node_data(node)["config"])
+    config["api_key_secret"] = "legacy_key"
+    wm.update_node_config(node, config)
+    node_data = wm.get_node_data(node)
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        secrets_manager = SecretsManager(storage_dir=Path(tempdir))
+        secrets_manager.set_secret("openai_key", "sk-test")
+        secrets_manager.set_secret("anthropic_key", "sk-test-2")
+
+        class ConfigApp(App):
+            def compose(self) -> ComposeResult:
+                yield NodeConfigScreen(
+                    wm._factory,
+                    wm,
+                    node,
+                    node_data,
+                    secrets_manager=secrets_manager,
+                )
+
+        app = ConfigApp()
+        async with app.run_test() as pilot:
+            await pilot.pause(0.03)
+            await pilot.press("2")
+            await pilot.pause(0.1)
+            screen = app.query_one(NodeConfigScreen)
+            secret_select = app.query_one("#field-api_key_secret", Select)
+            option_values = {value for _label, value in secret_select._options}
+
+            assert {"openai_key", "anthropic_key", "legacy_key"}.issubset(option_values)
+            assert secret_select.value == "legacy_key"
+            secret_select.value = "openai_key"
+            assert screen._get_form_values()["api_key_secret"] == "openai_key"
+
+    print("test_node_config_secret_fields_use_saved_key_dropdown PASSED")
+
+
 def test_node_config_keyboard_skips_hidden_payload_previews():
     asyncio.run(_test_node_config_keyboard_skips_hidden_payload_previews())
 
@@ -6318,57 +6371,155 @@ def test_simple_command_modals_use_shared_navigation_helpers():
 
 
 async def _test_simple_command_modals_use_shared_navigation_helpers():
+    import tempfile
+
     from textual import events
     from textual.app import App, ComposeResult
-    from textual.widgets import Button, Checkbox
+    from textual.widgets import Button, Checkbox, Select, TabbedContent
 
     from backend.configuration_manager import DEFAULT_SETTINGS
-    from frontend.screens.settings import ApiKeysPlaceholderScreen, SettingsScreen
+    from backend.secrets_manager import SecretsManager
+    from frontend.screens.settings import SettingsScreen
     from frontend.widgets.command_input import CommandInput
 
     class FakeConfigurationManager:
         def get_all(self):
             return dict(DEFAULT_SETTINGS)
 
-    class SettingsApp(App):
-        def compose(self) -> ComposeResult:
-            yield SettingsScreen(FakeConfigurationManager())
+    with tempfile.TemporaryDirectory() as tempdir:
+        secrets_manager = SecretsManager(storage_dir=Path(tempdir))
 
-    app = SettingsApp()
-    async with app.run_test() as pilot:
-        await pilot.pause(0.03)
-        screen = app.query_one(SettingsScreen)
-        max_depth = app.query_one("#setting-max_branch_depth", CommandInput)
-        timeout = app.query_one("#setting-node_timeout_seconds", CommandInput)
-        auto_save = app.query_one("#setting-auto_save_enabled", Checkbox)
-        api_keys = app.query_one("#api-keys-settings", Button)
-        save_button = app.query_one("#save-settings", Button)
-        cancel_button = app.query_one("#cancel-settings", Button)
+        class SettingsApp(App):
+            def compose(self) -> ComposeResult:
+                yield SettingsScreen(
+                    FakeConfigurationManager(),
+                    secrets_manager=secrets_manager,
+                )
 
-        assert app.focused is max_depth
-        assert max_depth.editing is False
+        app = SettingsApp()
+        async with app.run_test() as pilot:
+            await pilot.pause(0.03)
+            screen = app.query_one(SettingsScreen)
+            tabs = app.query_one("#settings-tabs", TabbedContent)
+            max_depth = app.query_one("#setting-max_branch_depth", CommandInput)
+            timeout = app.query_one("#setting-node_timeout_seconds", CommandInput)
+            auto_save = app.query_one("#setting-auto_save_enabled", Checkbox)
+            secret_key = app.query_one("#secret-key-input", CommandInput)
+            add_secret = app.query_one("#add-secret", Button)
+            clear_secret = app.query_one("#clear-secret", Button)
+            key_list = app.query_one("#secret-key-list", Select)
+            save_button = app.query_one("#save-settings", Button)
+            cancel_button = app.query_one("#cancel-settings", Button)
 
-        screen.action_activate_focused()
-        assert max_depth.editing is True
-        assert screen.check_action("cancel", ()) is False
+            assert tabs.active == "settings-tab-general"
+            assert app.focused is max_depth
+            assert max_depth.editing is False
 
-        await max_depth._on_key(events.Key("escape", None))
-        assert max_depth.editing is False
-        screen.action_cursor_down()
-        assert app.focused is timeout
-        screen.action_cursor_down()
-        assert app.focused is auto_save
+            screen.action_activate_focused()
+            assert max_depth.editing is True
+            assert screen.check_action("cancel", ()) is False
+            assert screen.check_action("jump_settings_tab", (2,)) is False
 
-        previous = auto_save.value
-        screen.action_activate_focused()
-        assert auto_save.value is (not previous)
-        widgets = screen._nav_widgets()
-        assert widgets.index(api_keys) < widgets.index(save_button) < widgets.index(cancel_button)
-        await pilot.press("k")
-        await pilot.pause()
-        assert isinstance(app.screen, ApiKeysPlaceholderScreen)
+            await max_depth._on_key(events.Key("escape", None))
+            assert max_depth.editing is False
+            await pilot.press("2")
+            await pilot.pause(0.1)
+            assert tabs.active == "settings-tab-secrets"
+            assert app.focused is secret_key
+            await pilot.press("1")
+            await pilot.pause(0.1)
+            assert tabs.active == "settings-tab-general"
+            assert app.focused is max_depth
+            screen.action_cursor_down()
+            assert app.focused is timeout
+            screen.action_cursor_down()
+            assert app.focused is auto_save
+
+            previous = auto_save.value
+            screen.action_activate_focused()
+            assert auto_save.value is (not previous)
+            assert add_secret not in screen._nav_widgets()
+
+            screen.action_jump_settings_tab(2)
+            await pilot.pause(0.1)
+            assert tabs.active == "settings-tab-secrets"
+            assert app.focused is secret_key
+            widgets = screen._nav_widgets()
+            assert widgets.index(add_secret) < widgets.index(clear_secret) < widgets.index(key_list)
+            assert widgets.index(key_list) < widgets.index(save_button) < widgets.index(cancel_button)
 
     print("test_simple_command_modals_use_shared_navigation_helpers PASSED")
+
+
+def test_settings_secrets_manager_add_clear_delete():
+    asyncio.run(_test_settings_secrets_manager_add_clear_delete())
+
+
+async def _test_settings_secrets_manager_add_clear_delete():
+    import tempfile
+
+    from textual.app import App, ComposeResult
+    from textual.widgets import Select, Static
+
+    from backend.configuration_manager import DEFAULT_SETTINGS
+    from backend.secrets_manager import SecretsManager
+    from frontend.screens.confirm import ConfirmScreen
+    from frontend.screens.settings import SettingsScreen
+    from frontend.widgets.command_input import CommandInput
+
+    class FakeConfigurationManager:
+        def get_all(self):
+            return dict(DEFAULT_SETTINGS)
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        secrets_manager = SecretsManager(storage_dir=Path(tempdir))
+
+        class SettingsApp(App):
+            def compose(self) -> ComposeResult:
+                yield SettingsScreen(
+                    FakeConfigurationManager(),
+                    secrets_manager=secrets_manager,
+                )
+
+        app = SettingsApp()
+        async with app.run_test() as pilot:
+            await pilot.pause(0.03)
+            screen = app.query_one(SettingsScreen)
+            screen.action_jump_settings_tab(2)
+            await pilot.pause(0.1)
+            key_input = app.query_one("#secret-key-input", CommandInput)
+            value_input = app.query_one("#secret-value-input", CommandInput)
+            key_list = app.query_one("#secret-key-list", Select)
+            status = app.query_one("#secrets-status", Static)
+
+            key_input.value = "openai"
+            value_input.value = "sk-test"
+            screen.action_add_secret()
+            await pilot.pause(0.05)
+
+            assert secrets_manager.get_secret("openai") == "sk-test"
+            assert key_input.value == ""
+            assert value_input.value == ""
+            assert key_list.value == "openai"
+            assert "Saved key: openai" in status.content
+
+            key_input.value = "temporary"
+            value_input.value = "not-saved"
+            screen.action_clear_secret()
+            assert key_input.value == ""
+            assert value_input.value == ""
+
+            screen.action_delete_secret()
+            await pilot.pause(0.05)
+            assert isinstance(app.screen, ConfirmScreen)
+            await pilot.press("y")
+            await pilot.pause(0.1)
+
+            assert secrets_manager.get_secret("openai") is None
+            assert key_list.value in (None, Select.NULL, "")
+            assert "Deleted key: openai" in status.content
+
+    print("test_settings_secrets_manager_add_clear_delete PASSED")
 
 
 def test_prompt_modals_use_shared_command_activation():
@@ -7177,6 +7328,7 @@ if __name__ == "__main__":
         test_help_screen_is_contextual_and_focuses_cancel,
         test_node_config_select_activates_from_keyboard,
         test_node_config_fixed_tabs_are_keyboard_navigable,
+        test_node_config_secret_fields_use_saved_key_dropdown,
         test_node_config_keyboard_skips_hidden_payload_previews,
         test_node_selector_layout_is_compact,
         test_node_selector_rows_are_one_line_with_detail,
@@ -7214,6 +7366,7 @@ if __name__ == "__main__":
         test_ctrl_c_uses_screen_copy_and_ctrl_q_stays_contextual,
         test_node_config_command_inputs_require_activation,
         test_simple_command_modals_use_shared_navigation_helpers,
+        test_settings_secrets_manager_add_clear_delete,
         test_prompt_modals_use_shared_command_activation,
         test_editor_click_selects_and_double_click_edits,
         test_editor_ctrl_s_quick_saves,

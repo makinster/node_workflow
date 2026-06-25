@@ -278,8 +278,10 @@ are read-only command stops: W/S or arrows should be able to highlight them,
 scroll them into view, and then continue to the next widget. This keeps ordinary
 nodes quiet while making complex workflows inspectable.
 
-Settings includes a visible Cancel control and reserves `K` for an API Keys
-submenu. The current API Keys screen is a placeholder only.
+Settings uses numbered tabs: `1 - General` for app configuration and
+`2 - Secrets` for saved secret key names. The Secrets tab has Key/API-key input
+fields, an Add/Clear action row, a saved-key dropdown, and `X` deletion with a
+confirmation popup.
 
 The editor persists selected node/branch state on the app shell. Returning from
 execution, closing secondary menus, or showing transient notifications should

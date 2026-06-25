@@ -4,6 +4,39 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-25 — Settings Secrets Manager UI
+
+Branch: `codex/node-type-constants`
+
+Implemented the user-facing secrets manager workflow from Editor → `O` Options.
+
+- `SettingsScreen` is now a numbered tab modal with `1 - General` for existing
+  app settings and `2 - Secrets` for saved secret keys.
+- Secrets tab includes Key and API-key fields, an Add/Clear button row, a saved
+  key dropdown, and `X` deletion with `ConfirmScreen` confirmation.
+- `App.action_settings()` passes the existing `SecretsManager` into settings;
+  `EditorScreen` passes it into `NodeConfigScreen`.
+- `build_form()` accepts stored secret key names, and schema fields marked
+  `"secret": True` render as dropdowns in node config when a manager is wired.
+  Existing configured key names that are not in the store remain selectable as
+  `(not stored)` legacy values.
+- Focused tests added for settings tab navigation, secrets add/clear/delete,
+  and node-config secret dropdown population.
+
+Verified:
+
+```bash
+../.venv/bin/python -m pytest tests/test_debug_nodes.py -q -k "simple_command_modals or settings_secrets_manager or node_config_secret_fields or migrated_command_screens or node_config_fixed_tabs"
+../.venv/bin/python -m pytest tests/test_secrets_manager.py tests/test_validator_secrets.py tests/test_form_generator.py -q
+../.venv/bin/python -m compileall -q .
+git diff --check
+```
+
+Results: focused debug slice 5 passed; related secrets/form suite 47 passed;
+compile and whitespace checks clean.
+
+---
+
 ## 2026-06-24 — Architecture Direction: Start Node Redesign, Metadata Conditionals, Nested Headless Validation
 
 Branch: `claude/readme-review-main-sync-mtzc25`

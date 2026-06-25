@@ -42,10 +42,6 @@ Current frontend gaps (audited 2026-06-15):
   history only to compute average node timings; there is no run-history screen
   for browsing previous runs, opening outputs/errors by run, comparing timings,
   or clearing old history.
-- **Secrets management UI:** `SecretsManager`, `NodeContext.get_secret()`, and
-  validator checks for schema fields marked `"secret": True` are implemented.
-  `SettingsScreen` still has only an API Keys placeholder, so users cannot yet
-  add, update, list, or delete stored secret keys from the TUI.
 - **Tombstone restore report UI:** `restore_tombstone()` can restore a deleted
   node and return detailed input/output/memory warnings when connections cannot
   be reattached. Editor undo and replace-with-original paths can call the
@@ -831,7 +827,7 @@ Wait Until guidance is the correct ceiling.
 - Vault write path for `ai_session`-typed entries when an LLM node executes.
 - Input source dropdowns filter by declared type in config UI.
 
-## Near-Term Project — Secrets Module (UI Integration)
+## Completed Project — Secrets Module (UI Integration)
 
 Backend done (2026-06-13): `backend/secrets_manager.py` is a plain-text JSON
 store wired through `MasterState → Supervisor → NodeContext`. Nodes call
@@ -850,11 +846,18 @@ Done (2026-06-13, Headless Plan H3):
   validation surfaces missing-key warnings live. Covered by
   `test_validator_secrets.py`.
 
-Remaining UI work:
-- Add a Secrets tab or section in `SettingsScreen` (CRUD for stored keys via
-  `SecretsManager.set_secret / delete_secret / list_keys`). Deferred — needs
-  live-TUI verification.
-- (Future) Replace plain-text JSON with at-rest encryption inside
+Done (2026-06-25):
+- `SettingsScreen` is now a numbered two-tab options modal: `1 - General` and
+  `2 - Secrets`.
+- The Secrets tab supports adding/updating stored key/value pairs, clearing the
+  draft fields, listing saved key names, and deleting the selected key after a
+  confirmation popup.
+- Node config fields marked `"secret": True` render as key-name dropdowns when
+  a `SecretsManager` is available, including current legacy values not yet in
+  the store.
+
+Remaining future work:
+- Replace plain-text JSON with at-rest encryption inside
   `SecretsManager._ensure_loaded` / `_save` without touching nodes or wiring.
 
 ## Later Project — Unified Toast / Alert System

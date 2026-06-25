@@ -31,6 +31,7 @@ FIELD_RULE_KEYS = {"enabled_when", "visible_when", "mutually_exclusive_with"}
 def build_form(
     config_schema: Dict[str, Dict[str, Any]],
     values: Dict[str, Any] | None = None,
+    secret_keys: Iterable[str] | None = None,
 ) -> Tuple[Vertical, WidgetGetter]:
     """Build a Textual form container and a getter for current values.
 
@@ -38,6 +39,7 @@ def build_form(
     widgets without requiring backend changes for UI convenience.
     """
     values = values or {}
+    secret_key_options = _secret_key_options(secret_keys)
     field_widgets: Dict[str, Any] = {}
     groups = group_config_schema(config_schema)
 
@@ -47,7 +49,13 @@ def build_form(
             children = []
             for field_name, field_schema in group_schema.items():
                 children.extend(
-                    _field_children(field_name, field_schema, values, field_widgets)
+                    _field_children(
+                        field_name,
+                        field_schema,
+                        values,
+                        field_widgets,
+                        secret_key_options,
+                    )
                 )
             tabs.compose_add_child(
                 TabPane(
@@ -62,7 +70,13 @@ def build_form(
         for _, group_schema in groups:
             for field_name, field_schema in group_schema.items():
                 children.extend(
-                    _field_children(field_name, field_schema, values, field_widgets)
+                    _field_children(
+                        field_name,
+                        field_schema,
+                        values,
+                        field_widgets,
+                        secret_key_options,
+                    )
                 )
         container = Vertical(*children, classes="generated-form")
 
@@ -119,6 +133,7 @@ def _field_children(
     field_schema: Dict[str, Any],
     values: Dict[str, Any],
     field_widgets: Dict[str, Any],
+    secret_key_options: list[tuple[str, str]] | None = None,
 ) -> list[Any]:
     field_type = str(field_schema.get("type", "string")).lower()
     label = field_schema.get("label") or humanize_field_name(field_name)
@@ -126,7 +141,13 @@ def _field_children(
     description = field_schema.get("description", "")
     current_value = values.get(field_name, field_schema.get("default", ""))
 
-    widget = _widget_for_field(field_name, field_type, field_schema, current_value)
+    widget = _widget_for_field(
+        field_name,
+        field_type,
+        field_schema,
+        current_value,
+        secret_key_options,
+    )
     field_widgets[field_name] = widget
 
     children = []
@@ -170,8 +191,21 @@ def _widget_for_field(
     field_type: str,
     field_schema: Dict[str, Any],
     value: Any,
+    secret_key_options: list[tuple[str, str]] | None = None,
 ):
     placeholder = str(field_schema.get("placeholder", ""))
+    if field_schema.get("secret") and secret_key_options is not None:
+        options = list(secret_key_options)
+        current_value = "" if value is None else str(value)
+        option_values = {option_value for _, option_value in options}
+        if current_value and current_value not in option_values:
+            options.append((f"{current_value} (not stored)", current_value))
+        return Select(
+            options,
+            value=current_value if current_value else Select.NULL,
+            id=f"field-{field_name}",
+            allow_blank=True,
+        )
     if field_schema.get("options") and field_type not in {"multiselect", "boolean"}:
         return Select(
             _select_options(field_schema.get("options", [])),
@@ -242,6 +276,14 @@ def _select_options(options: Iterable[Any]) -> list[tuple[str, Any]]:
         else:
             normalized.append((str(option), option))
     return normalized
+
+
+def _secret_key_options(secret_keys: Iterable[str] | None) -> list[tuple[str, str]] | None:
+    """Return Select-compatible options for stored secret key names."""
+    if secret_keys is None:
+        return None
+    keys = sorted({str(key).strip() for key in secret_keys if str(key).strip()})
+    return [(key, key) for key in keys]
 
 
 def _selected_values(value: Any) -> set[Any]:

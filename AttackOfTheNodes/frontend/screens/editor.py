@@ -376,6 +376,7 @@ class EditorScreen(Screen):
                 self.selected_node_id,
                 node,
                 memory_bank=getattr(self.app, "memory_bank", None),
+                secrets_manager=self.secrets_manager,
             ),
             self._save_node_config_from_modal,
         )

@@ -364,7 +364,10 @@ class AttackOfTheNodesApp(TextualApp):
             notifications.settings_unavailable(self)
             return
         self.push_screen(
-            SettingsScreen(self.configuration_manager),
+            SettingsScreen(
+                self.configuration_manager,
+                secrets_manager=self.secrets_manager,
+            ),
             self._handle_settings_action,
         )
 

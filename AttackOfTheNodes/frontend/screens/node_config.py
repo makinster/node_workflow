@@ -556,6 +556,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         node_id: str,
         node_data: Dict[str, Any],
         memory_bank=None,
+        secrets_manager=None,
     ) -> None:
         super().__init__()
         self.factory = factory
@@ -563,6 +564,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         self.node_id = node_id
         self.node_data = node_data
         self.memory_bank = memory_bank
+        self.secrets_manager = secrets_manager
         self._get_form_values: Optional[WidgetGetter] = None
         self._nav_widget: Any = None
         self._initial_membank_outputs = normalize_membank_outputs(
@@ -800,7 +802,11 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             if not tab_schema:
                 forms[tab_name] = None
                 continue
-            form, getter = build_form(tab_schema, values)
+            form, getter = build_form(
+                tab_schema,
+                values,
+                secret_keys=self._secret_key_options(),
+            )
             forms[tab_name] = form
             getters.append(getter)
 
@@ -811,6 +817,14 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             return merged
 
         return forms, get_values
+
+    def _secret_key_options(self) -> list[str] | None:
+        if self.secrets_manager is None:
+            return None
+        try:
+            return list(self.secrets_manager.list_keys())
+        except Exception:
+            return []
 
     def _schema_by_top_level_config_tab(
         self,

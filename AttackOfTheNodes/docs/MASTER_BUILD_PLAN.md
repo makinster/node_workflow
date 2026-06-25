@@ -146,11 +146,14 @@ or node metadata changes for this phase.
   by tab-specific subcategories.
 - Phase 17 editor row identity and details-panel identity are implemented and
   covered by focused tests.
-- SecretsManager module (2026-06-13): plain-text JSON store at
-  `secrets/secrets.json`; wired through `MasterState → Supervisor → NodeContext`;
-  nodes call `context.get_secret(key_name)`. Validator checks secret-ref fields
-  (`"secret": True` schema hint). Schema supports at-rest encryption as a
-  one-module upgrade.
+- SecretsManager module (backend 2026-06-13, UI 2026-06-25): plain-text JSON
+  store at `secrets/secrets.json`; wired through
+  `MasterState → Supervisor → NodeContext`; nodes call
+  `context.get_secret(key_name)`. Validator checks secret-ref fields
+  (`"secret": True` schema hint). Settings exposes General/Secrets tabs for
+  key CRUD, and node config renders secret fields as saved-key dropdowns when
+  a manager is available. Schema supports at-rest encryption as a one-module
+  upgrade.
 - Backend build plan Phases 1–6 (2026-06-13): tombstone `editor_only` flag and
   validator port context; legacy save migration; typed vault MemoryBank API;
   LLM chat session foundation in `RunSession`; parallel-branch vault race
