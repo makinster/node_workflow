@@ -94,7 +94,20 @@ corresponding "Future Direction" sections.
   default to stdin-prompted interaction (format inherited from node type: free
   text, single-index, or comma-separated multi-index). Optional `headless_input_mode`
   config enables CLI arg or static-default modes for automation. Nodes with no
-  declared twin block the export with a clear error. See `PROJECT_BACKLOG.md`.
+  declared twin block the export with a clear error. Start node redesign
+  introduces `HeadlessStartNode` (CLI preamble — banner, global session prompts,
+  pre-flight setup) and `NestedStartNode`/`TriggerStartNode` for other contexts;
+  all variants share the same downstream port shape. Nested workflows are treated
+  as black boxes — validator checks `headless_valid` flag and port compatibility
+  only, does not re-traverse internals. See `PROJECT_BACKLOG.md`.
+- **Metadata conditional nodes.** A new node group (Flow Control → Context
+  Branching) that branches on run-time execution context: `ExecutionModeConditionalNode`
+  (`tui`/`headless`/`nested`/`triggered`) and `RunMetadataConditionalNode`
+  (arbitrary context keys). Enables single workflows to handle multiple execution
+  modes without a separate export. Validator softening rule: TUI-only nodes
+  behind a correct context gate are warnings, not errors; TUI-only nodes with
+  no gate in a headless-flagged workflow are still errors. Complementary to
+  compile-and-swap, not a replacement. See `PROJECT_BACKLOG.md`.
 - **Always-running trigger watcher.** A non-terminating headless workflow that
   monitors for external events and dispatches sub-workflows. Requires trigger
   nodes (exempt from `node_timeout_seconds`), loop/cycle workflow support,

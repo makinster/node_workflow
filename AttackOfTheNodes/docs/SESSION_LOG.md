@@ -4,6 +4,41 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-06-24 — Architecture Direction: Start Node Redesign, Metadata Conditionals, Nested Headless Validation
+
+Branch: `claude/readme-review-main-sync-mtzc25`
+
+Planning session extending the headless CLI design with three additional concepts.
+No code changes.
+
+- **Start node redesign.** `StartNode` stays hidden by default. Context-specific
+  variants are revealed when the user declares an execution context: `HeadlessStartNode`
+  (exposed on "Save for headless" export — configures CLI preamble: banner,
+  global session prompts, pre-flight setup), `NestedStartNode` (workflow
+  callable as sub-workflow, Phases 19/20), `TriggerStartNode` (always-running
+  watcher, far future). All variants share the same downstream port shape so the
+  rest of the graph is unaffected.
+- **Nested workflows as headless black boxes.** The headless validator does not
+  re-traverse a nested workflow's internal graph. It checks two things only: the
+  nested workflow's `headless_valid` flag (set when that workflow passed its own
+  headless validation) and port compatibility. Each validation level trusts its
+  children's flags — the compiled-library trust model.
+- **Metadata conditional nodes.** New node group (Flow Control → Context
+  Branching): `ExecutionModeConditionalNode` branches on `tui`/`headless`/
+  `nested`/`triggered`; `RunMetadataConditionalNode` branches on arbitrary
+  context keys. Enables one workflow to route correctly across execution modes
+  without a separate export. Validator softening rule: TUI-only node behind a
+  correct context gate → warning; TUI-only node ungated in a headless-flagged
+  workflow → error. Structural errors (broken connections) remain errors in all
+  modes regardless of gating. Context is read-only, set once at run start by
+  `MasterState`/CLI entrypoint, immutable mid-run.
+
+Updated: `PROJECT_BACKLOG.md` (start node, nested validation, metadata
+conditional sections added to headless future direction; new metadata conditional
+future direction section), `AGENT_HANDOFF.md` (expanded long-range summary).
+
+---
+
 ## 2026-06-24 — Architecture Direction: Headless CLI, Trigger Watcher, Multi-Frontend
 
 Branch: `claude/readme-review-main-sync-mtzc25`
