@@ -6529,6 +6529,15 @@ async def _test_settings_secrets_manager_add_clear_delete():
             labels = saved_key_labels()
             assert set(labels) == {"anthropic", "openai"}
             assert key_list.index == labels.index("anthropic")
+            app.set_focus(key_list)
+            await pilot.press("s")
+            assert key_list.index == labels.index("openai")
+            await pilot.press("w")
+            assert key_list.index == labels.index("anthropic")
+            await pilot.press("down")
+            assert key_list.index == labels.index("openai")
+            await pilot.press("up")
+            assert key_list.index == labels.index("anthropic")
 
             key_input.value = "temporary"
             value_input.value = "not-saved"

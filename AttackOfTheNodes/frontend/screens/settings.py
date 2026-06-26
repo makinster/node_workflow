@@ -29,6 +29,7 @@ from frontend.widgets.command_navigation import (
 )
 from frontend.widgets.command_input import CommandInput
 from frontend.widgets.command_screen_mixin import CommandScreenMixin
+from frontend.widgets.list_navigation import move_list_highlight
 from frontend.widgets.status_bar import StatusBar
 
 
@@ -206,6 +207,30 @@ class SettingsScreen(CommandScreenMixin, ModalScreen):
                 return True
             node = getattr(node, "parent", None)
         return False
+
+    def action_cursor_up(self) -> None:
+        if self._move_secret_key_highlight(-1):
+            return
+        super().action_cursor_up()
+
+    def action_cursor_down(self) -> None:
+        if self._move_secret_key_highlight(1):
+            return
+        super().action_cursor_down()
+
+    def _move_secret_key_highlight(self, delta: int) -> bool:
+        focused = self.app.focused
+        if not isinstance(focused, ListView) or focused.id != "secret-key-list":
+            return False
+        keys = self._secret_key_names()
+        if not keys:
+            return False
+        current_index = focused.index if focused.index is not None else 0
+        next_index = max(0, min(len(keys) - 1, current_index + delta))
+        if next_index == current_index:
+            return False
+        move_list_highlight(self.app, focused, len(keys), delta)
+        return True
 
     def action_save(self) -> None:
         values: Dict[str, Any] = {}
