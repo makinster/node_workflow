@@ -7,7 +7,7 @@ from typing import Any, Iterable
 from textual import events
 from textual.binding import Binding
 from textual.containers import Horizontal
-from textual.widgets import Button, Checkbox, Select, SelectionList, Switch
+from textual.widgets import Button, Checkbox, ListView, Select, SelectionList, Switch
 from textual.widgets._select import SelectOverlay
 
 from frontend.widgets.command_input import CommandInput, CommandTextArea
@@ -18,6 +18,7 @@ DEFAULT_COMMAND_FOCUS_TYPES = (
     CommandTextArea,
     Checkbox,
     SelectionList,
+    ListView,
     Select,
     Button,
 )

@@ -8,8 +8,11 @@ from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Button, Label
 
+from frontend.widgets.command_navigation import command_focus_widgets
+from frontend.widgets.command_screen_mixin import CommandScreenMixin
 
-class ConfirmScreen(ModalScreen):
+
+class ConfirmScreen(CommandScreenMixin, ModalScreen):
     """Modal that asks the user to confirm or cancel a destructive action."""
 
     BINDINGS = [
@@ -32,6 +35,12 @@ class ConfirmScreen(ModalScreen):
             with Horizontal(classes="button-row"):
                 yield Button(self._yes_label, id="confirm-yes", variant="warning")
                 yield Button(self._no_label, id="confirm-no", variant="default")
+
+    def on_mount(self) -> None:
+        self._focus_first()
+
+    def _nav_widgets(self):
+        return command_focus_widgets(self, (Button,))
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         self.dismiss(event.button.id == "confirm-yes")

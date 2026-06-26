@@ -131,6 +131,13 @@ Screen {
     overflow-y: auto;
 }
 
+.saved-key-list {
+    height: 6;
+    min-height: 3;
+    border: round $foreground 15%;
+    background: $background;
+}
+
 /* Node selector layout: keep the tab row and filter compact (containers
    default to height 1fr and would otherwise stretch and leave dead space),
    and let the node list absorb the remaining height. */

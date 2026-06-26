@@ -6375,7 +6375,7 @@ async def _test_simple_command_modals_use_shared_navigation_helpers():
 
     from textual import events
     from textual.app import App, ComposeResult
-    from textual.widgets import Button, Checkbox, Select, TabbedContent
+    from textual.widgets import Button, Checkbox, ListView, TabbedContent
 
     from backend.configuration_manager import DEFAULT_SETTINGS
     from backend.secrets_manager import SecretsManager
@@ -6407,7 +6407,7 @@ async def _test_simple_command_modals_use_shared_navigation_helpers():
             secret_key = app.query_one("#secret-key-input", CommandInput)
             add_secret = app.query_one("#add-secret", Button)
             clear_secret = app.query_one("#clear-secret", Button)
-            key_list = app.query_one("#secret-key-list", Select)
+            key_list = app.query_one("#secret-key-list", ListView)
             save_button = app.query_one("#save-settings", Button)
             cancel_button = app.query_one("#cancel-settings", Button)
 
@@ -6447,6 +6447,11 @@ async def _test_simple_command_modals_use_shared_navigation_helpers():
             widgets = screen._nav_widgets()
             assert widgets.index(add_secret) < widgets.index(clear_secret) < widgets.index(key_list)
             assert widgets.index(key_list) < widgets.index(save_button) < widgets.index(cancel_button)
+            app.set_focus(add_secret)
+            screen.action_cursor_right()
+            assert app.focused is clear_secret
+            screen.action_cursor_left()
+            assert app.focused is add_secret
 
     print("test_simple_command_modals_use_shared_navigation_helpers PASSED")
 
@@ -6459,7 +6464,7 @@ async def _test_settings_secrets_manager_add_clear_delete():
     import tempfile
 
     from textual.app import App, ComposeResult
-    from textual.widgets import Select, Static
+    from textual.widgets import Button, ListView, Static
 
     from backend.configuration_manager import DEFAULT_SETTINGS
     from backend.secrets_manager import SecretsManager
@@ -6489,8 +6494,11 @@ async def _test_settings_secrets_manager_add_clear_delete():
             await pilot.pause(0.1)
             key_input = app.query_one("#secret-key-input", CommandInput)
             value_input = app.query_one("#secret-value-input", CommandInput)
-            key_list = app.query_one("#secret-key-list", Select)
+            key_list = app.query_one("#secret-key-list", ListView)
             status = app.query_one("#secrets-status", Static)
+
+            def saved_key_labels():
+                return [str(item.query_one(Static).content) for item in key_list.children]
 
             key_input.value = "openai"
             value_input.value = "sk-test"
@@ -6500,8 +6508,27 @@ async def _test_settings_secrets_manager_add_clear_delete():
             assert secrets_manager.get_secret("openai") == "sk-test"
             assert key_input.value == ""
             assert value_input.value == ""
-            assert key_list.value == "openai"
+            assert saved_key_labels() == ["openai"]
+            assert key_list.index == 0
             assert "Saved key: openai" in status.content
+
+            key_input.value = "openai"
+            value_input.value = "sk-overwrite"
+            screen.action_add_secret()
+            await pilot.pause(0.05)
+            assert secrets_manager.get_secret("openai") == "sk-test"
+            assert key_input.value == "openai"
+            assert value_input.value == "sk-overwrite"
+            assert saved_key_labels() == ["openai"]
+            assert "Key already exists: openai" in status.content
+
+            key_input.value = "anthropic"
+            value_input.value = "sk-ant"
+            screen.action_add_secret()
+            await pilot.pause(0.05)
+            labels = saved_key_labels()
+            assert set(labels) == {"anthropic", "openai"}
+            assert key_list.index == labels.index("anthropic")
 
             key_input.value = "temporary"
             value_input.value = "not-saved"
@@ -6509,14 +6536,25 @@ async def _test_settings_secrets_manager_add_clear_delete():
             assert key_input.value == ""
             assert value_input.value == ""
 
+            key_list.index = saved_key_labels().index("openai")
             screen.action_delete_secret()
             await pilot.pause(0.05)
             assert isinstance(app.screen, ConfirmScreen)
+            confirm_screen = app.screen
+            yes_button = confirm_screen.query_one("#confirm-yes", Button)
+            no_button = confirm_screen.query_one("#confirm-no", Button)
+            assert app.focused is yes_button
+            await pilot.press("d")
+            assert app.focused is no_button
+            await pilot.press("a")
+            assert app.focused is yes_button
             await pilot.press("y")
             await pilot.pause(0.1)
 
             assert secrets_manager.get_secret("openai") is None
-            assert key_list.value in (None, Select.NULL, "")
+            assert secrets_manager.get_secret("anthropic") == "sk-ant"
+            assert saved_key_labels() == ["anthropic"]
+            assert key_list.index == 0
             assert "Deleted key: openai" in status.content
 
     print("test_settings_secrets_manager_add_clear_delete PASSED")

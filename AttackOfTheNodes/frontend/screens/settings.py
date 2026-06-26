@@ -13,7 +13,8 @@ from textual.widgets import (
     Button,
     Checkbox,
     Label,
-    Select,
+    ListItem,
+    ListView,
     Static,
     TabbedContent,
     TabPane,
@@ -79,12 +80,7 @@ class SettingsScreen(CommandScreenMixin, ModalScreen):
                             yield Button("Add", id="add-secret", variant="primary")
                             yield Button("Clear", id="clear-secret", variant="default")
                         yield Label("Saved Keys", classes="form-label nav-section")
-                        yield Select(
-                            self._secret_select_options(),
-                            value=self._default_secret_select_value(),
-                            id="secret-key-list",
-                            allow_blank=True,
-                        )
+                        yield ListView(id="secret-key-list", classes="saved-key-list")
                         yield Static("", id="secrets-status", classes="form-description")
             with Vertical(classes="button-row"):
                 yield Button("Save", id="save-settings", variant="primary")
@@ -102,6 +98,7 @@ class SettingsScreen(CommandScreenMixin, ModalScreen):
             self.action_clear_secret()
 
     def on_mount(self) -> None:
+        self._refresh_secret_key_list()
         self._focus_first()
 
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
@@ -133,7 +130,10 @@ class SettingsScreen(CommandScreenMixin, ModalScreen):
             for pane in tabs.query(TabPane)
             if pane.id and pane.id != tabs.active
         }
-        widgets = command_focus_widgets(self, (CommandInput, Checkbox, Select, Button))
+        widgets = command_focus_widgets(
+            self,
+            (CommandInput, Checkbox, ListView, Button),
+        )
         return [
             widget
             for widget in widgets
@@ -236,6 +236,10 @@ class SettingsScreen(CommandScreenMixin, ModalScreen):
         if not key_name or not secret_value:
             self._set_secret_status("Enter both a key and API key")
             return
+        if key_name in set(self._secret_key_names()):
+            self._set_secret_status(f"Key already exists: {key_name}")
+            focus_command_widget(self, key_input, self._scroll_container())
+            return
         self.secrets_manager.set_secret(key_name, secret_value)
         self._set_secret_input_values("", "")
         self._refresh_secret_key_list(key_name)
@@ -277,7 +281,7 @@ class SettingsScreen(CommandScreenMixin, ModalScreen):
         try:
             focus_command_widget(
                 self,
-                self.query_one("#secret-key-list", Select),
+                self.query_one("#secret-key-list", ListView),
                 self._scroll_container(),
             )
         except Exception:
@@ -292,36 +296,32 @@ class SettingsScreen(CommandScreenMixin, ModalScreen):
         value_input.end_edit()
 
     def _selected_secret_key(self) -> Optional[str]:
-        select = self.query_one("#secret-key-list", Select)
-        if select.value in (None, Select.NULL, ""):
+        list_view = self.query_one("#secret-key-list", ListView)
+        keys = self._secret_key_names()
+        if list_view.index is None or list_view.index < 0 or list_view.index >= len(keys):
             return None
-        return str(select.value)
+        return keys[list_view.index]
 
     def _secret_key_names(self) -> list[str]:
         if self.secrets_manager is None:
             return []
         return list(self.secrets_manager.list_keys())
 
-    def _secret_select_options(self) -> list[tuple[str, str]]:
-        return [(key, key) for key in self._secret_key_names()]
-
-    def _default_secret_select_value(self):
-        keys = self._secret_key_names()
-        return keys[0] if keys else Select.NULL
-
     def _refresh_secret_key_list(self, preferred_key: Optional[str] = None) -> None:
-        select = self.query_one("#secret-key-list", Select)
-        options = self._secret_select_options()
-        valid_values = {value for _, value in options}
-        select.set_options(options)
-        if preferred_key and preferred_key in valid_values:
-            select.value = preferred_key
-        elif select.value in valid_values:
-            select.value = select.value
-        elif options:
-            select.value = options[0][1]
+        list_view = self.query_one("#secret-key-list", ListView)
+        keys = self._secret_key_names()
+        current_index = list_view.index
+        list_view.clear()
+        for key in keys:
+            list_view.append(ListItem(Static(key)))
+        if preferred_key and preferred_key in keys:
+            list_view.index = keys.index(preferred_key)
+        elif current_index is not None and 0 <= current_index < len(keys):
+            list_view.index = current_index
+        elif keys:
+            list_view.index = 0
         else:
-            select.value = Select.NULL
+            list_view.index = None
 
     def _set_secret_status(self, message: str) -> None:
         try:
