@@ -796,6 +796,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         values: Dict[str, Any],
     ) -> tuple[Dict[str, Any], WidgetGetter]:
         schemas = self._schema_by_top_level_config_tab(schema)
+        vault_keys_by_type = self._vault_key_options(schema)
         forms: Dict[str, Any] = {}
         getters: list[WidgetGetter] = []
         for tab_name, tab_schema in schemas.items():
@@ -806,6 +807,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 tab_schema,
                 values,
                 secret_keys=self._secret_key_options(),
+                vault_keys_by_type=vault_keys_by_type,
             )
             forms[tab_name] = form
             getters.append(getter)
@@ -825,6 +827,54 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             return list(self.secrets_manager.list_keys())
         except Exception:
             return []
+
+    def _vault_key_options(
+        self,
+        schema: Dict[str, Dict[str, Any]],
+    ) -> Dict[str, list[str]] | None:
+        """Selectable vault keys per type tag for fields declaring vault_type.
+
+        Node-local minimal filter (not the Track B 4b type-filtered source
+        widget): keys come from persisted vault entries of the matching tag,
+        plus — for ai_session — session keys declared by workflow nodes that
+        have "Keep active AI session" enabled, so sessions are wireable before
+        the first run.
+        """
+        tags = sorted(
+            {
+                str(field_schema.get("vault_type"))
+                for field_schema in schema.values()
+                if isinstance(field_schema, dict) and field_schema.get("vault_type")
+            }
+        )
+        if not tags:
+            return None
+        options: Dict[str, list[str]] = {}
+        for tag in tags:
+            keys: set[str] = set()
+            if self.memory_bank is not None:
+                try:
+                    keys.update(self.memory_bank.read_persistent_by_type(tag))
+                except Exception:
+                    pass
+            if tag == "ai_session":
+                keys.update(self._declared_session_keys())
+            options[tag] = sorted(keys)
+        return options
+
+    def _declared_session_keys(self) -> set[str]:
+        keys: set[str] = set()
+        try:
+            all_nodes = self.workflow_map.get_all_node_data()
+        except Exception:
+            return keys
+        for node_data in all_nodes.values():
+            config = node_data.get("config") or {}
+            if config.get("use_chat_session"):
+                session_key = str(config.get("session_key") or "").strip()
+                if session_key:
+                    keys.add(session_key)
+        return keys
 
     def _schema_by_top_level_config_tab(
         self,

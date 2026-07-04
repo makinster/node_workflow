@@ -101,6 +101,7 @@ class ChatCompletionNode(Node):
             "label": "Continue AI session (ai_session Vault key)",
             "required": False,
             "tab": "Source",
+            "vault_type": "ai_session",
             "description": "Vault key of an ai_session entry whose history this call continues",
         },
         "model": {

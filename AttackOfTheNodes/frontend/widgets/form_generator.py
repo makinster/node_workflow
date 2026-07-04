@@ -32,11 +32,16 @@ def build_form(
     config_schema: Dict[str, Dict[str, Any]],
     values: Dict[str, Any] | None = None,
     secret_keys: Iterable[str] | None = None,
+    vault_keys_by_type: Dict[str, List[str]] | None = None,
 ) -> Tuple[Vertical, WidgetGetter]:
     """Build a Textual form container and a getter for current values.
 
     This is intentionally frontend-only: it translates backend schemas into
     widgets without requiring backend changes for UI convenience.
+
+    ``vault_keys_by_type`` maps a canonical vault type tag to selectable key
+    names; string fields declaring ``vault_type`` render as a dropdown over
+    the matching keys (same pattern as ``secret`` fields over ``secret_keys``).
     """
     values = values or {}
     secret_key_options = _secret_key_options(secret_keys)
@@ -55,6 +60,7 @@ def build_form(
                         values,
                         field_widgets,
                         secret_key_options,
+                        vault_keys_by_type,
                     )
                 )
             tabs.compose_add_child(
@@ -76,6 +82,7 @@ def build_form(
                         values,
                         field_widgets,
                         secret_key_options,
+                        vault_keys_by_type,
                     )
                 )
         container = Vertical(*children, classes="generated-form")
@@ -134,6 +141,7 @@ def _field_children(
     values: Dict[str, Any],
     field_widgets: Dict[str, Any],
     secret_key_options: list[tuple[str, str]] | None = None,
+    vault_keys_by_type: Dict[str, List[str]] | None = None,
 ) -> list[Any]:
     field_type = str(field_schema.get("type", "string")).lower()
     label = field_schema.get("label") or humanize_field_name(field_name)
@@ -147,6 +155,7 @@ def _field_children(
         field_schema,
         current_value,
         secret_key_options,
+        vault_keys_by_type,
     )
     field_widgets[field_name] = widget
 
@@ -192,6 +201,7 @@ def _widget_for_field(
     field_schema: Dict[str, Any],
     value: Any,
     secret_key_options: list[tuple[str, str]] | None = None,
+    vault_keys_by_type: Dict[str, List[str]] | None = None,
 ):
     placeholder = str(field_schema.get("placeholder", ""))
     if field_schema.get("secret") and secret_key_options is not None:
@@ -200,6 +210,19 @@ def _widget_for_field(
         option_values = {option_value for _, option_value in options}
         if current_value and current_value not in option_values:
             options.append((f"{current_value} (not stored)", current_value))
+        return Select(
+            options,
+            value=current_value if current_value else Select.NULL,
+            id=f"field-{field_name}",
+            allow_blank=True,
+        )
+    vault_type = field_schema.get("vault_type")
+    if vault_type and vault_keys_by_type is not None:
+        options = [(key, key) for key in vault_keys_by_type.get(str(vault_type), [])]
+        current_value = "" if value is None else str(value)
+        option_values = {option_value for _, option_value in options}
+        if current_value and current_value not in option_values:
+            options.append((f"{current_value} (not declared)", current_value))
         return Select(
             options,
             value=current_value if current_value else Select.NULL,

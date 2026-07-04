@@ -4243,6 +4243,67 @@ async def _test_node_config_secret_fields_use_saved_key_dropdown():
     print("test_node_config_secret_fields_use_saved_key_dropdown PASSED")
 
 
+def test_node_config_ai_session_vault_dropdown():
+    asyncio.run(_test_node_config_ai_session_vault_dropdown())
+
+
+async def _test_node_config_ai_session_vault_dropdown():
+    from textual.app import App, ComposeResult
+    from textual.widgets import Checkbox, Select
+
+    from backend.llm_provider import supported_model_ids
+    from frontend.screens.node_config import NodeConfigScreen
+
+    _, wm, memory_bank, _ = _make_services()
+    wm.create_new("node_config_ai_session_dropdown")
+
+    # A sibling node that declares a session, plus a persisted entry from a
+    # prior run — both must appear in the continuation dropdown.
+    seeder = wm.add_node("chat_completion_node")
+    seed_config = dict(wm.get_node_data(seeder)["config"])
+    seed_config.update({"use_chat_session": True, "session_key": "research"})
+    wm.update_node_config(seeder, seed_config)
+    memory_bank.store_persistent(
+        "prior_run",
+        {"type": "ai_session", "ref_key": "prior_run"},
+        type_tag="ai_session",
+    )
+
+    node = wm.add_node("chat_completion_node")
+    node_data = wm.get_node_data(node)
+
+    class ConfigApp(App):
+        def compose(self) -> ComposeResult:
+            yield NodeConfigScreen(
+                wm._factory,
+                wm,
+                node,
+                node_data,
+                memory_bank=memory_bank,
+            )
+
+    app = ConfigApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.1)
+
+        session_select = app.query_one("#field-continue_session_key", Select)
+        session_options = {value for _label, value in session_select._options}
+        assert {"research", "prior_run"}.issubset(session_options)
+
+        model_select = app.query_one("#field-model", Select)
+        model_options = {value for _label, value in model_select._options}
+        assert set(supported_model_ids()).issubset(model_options)
+
+        # Session-key field stays greyed out until the checkbox is enabled.
+        session_key_input = app.query_one("#field-session_key")
+        assert session_key_input.disabled is True
+        app.query_one("#field-use_chat_session", Checkbox).value = True
+        await pilot.pause(0.1)
+        assert session_key_input.disabled is False
+
+    print("test_node_config_ai_session_vault_dropdown PASSED")
+
+
 def test_node_config_keyboard_skips_hidden_payload_previews():
     asyncio.run(_test_node_config_keyboard_skips_hidden_payload_previews())
 
