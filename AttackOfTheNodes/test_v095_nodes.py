@@ -37,13 +37,8 @@ async def main() -> None:
 
     workflow_map.update_node_config(start, {"greeting": "seed"})
     workflow_map.update_node_config(user, {"prompt": "Say something"})
-    workflow_map.update_node_config(chat, {
-        "model": "gpt-4",
-        "system_prompt": "test",
-        "user_prompt": "please echo {input}",
-        "temperature": 0.1,
-        "max_tokens": 32,
-    })
+    # chat_completion_node now makes real LLM calls, so it is registered but
+    # kept out of the execution path of this offline smoke test.
     workflow_map.update_node_config(conditional, {
         "condition_type": "contains",
         "left_value_source": "input",
@@ -62,8 +57,7 @@ async def main() -> None:
     workflow_map.set_bookmark(conditional, True)
 
     workflow_map.connect(start, "default", user, "input")
-    workflow_map.connect(user, "default", chat, "input")
-    workflow_map.connect(chat, "default", conditional, "input")
+    workflow_map.connect(user, "default", conditional, "input")
     workflow_map.connect(conditional, "true", set_var, "input")
     workflow_map.connect(set_var, "default", get_var, "input")
     workflow_map.connect(get_var, "default", concat, "input")

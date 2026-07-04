@@ -274,36 +274,42 @@ def test_multiple_secret_fields_all_present_no_complaints(tmp_path):
 # Registered API-key nodes carry secret-ref schema fields (Headless Plan H3)
 # ---------------------------------------------------------------------------
 
+# (node_type, secret field, first input port). chat_completion_node's key is
+# required since execution went live (2026-07-04); stubbed nodes stay optional.
 _API_KEY_NODES = [
-    ("chat_completion_node", "api_key_secret"),
-    ("embedding_node", "api_key_secret"),
-    ("image_generation_node", "api_key_secret"),
-    ("http_request_node", "auth_token_secret"),
+    ("chat_completion_node", "api_key_secret", "prompt"),
+    ("embedding_node", "api_key_secret", "input"),
+    ("image_generation_node", "api_key_secret", "input"),
+    ("http_request_node", "auth_token_secret", "input"),
 ]
+
+_REQUIRED_SECRET_NODES = {"chat_completion_node"}
 
 
 def test_api_key_nodes_declare_secret_schema_fields():
     factory = NodeFactory()
     by_type = {m["type"]: m for m in factory.get_node_types_metadata()}
-    for node_type, field_name in _API_KEY_NODES:
+    for node_type, field_name, _port in _API_KEY_NODES:
         schema = by_type[node_type].get("config_schema") or {}
         assert schema.get(field_name, {}).get("secret") is True, (
             f"{node_type}.{field_name} is not marked secret"
         )
-        assert schema[field_name].get("required") is False, (
-            f"{node_type}.{field_name} should stay optional while execution is stubbed"
+        expected_required = node_type in _REQUIRED_SECRET_NODES
+        assert schema[field_name].get("required") is expected_required, (
+            f"{node_type}.{field_name} required flag should be {expected_required} "
+            "(required once execution is real; optional while stubbed)"
         )
 
 
-@pytest.mark.parametrize("node_type,field_name", _API_KEY_NODES)
-def test_api_key_node_missing_store_key_warns(tmp_path, node_type, field_name):
+@pytest.mark.parametrize("node_type,field_name,input_port", _API_KEY_NODES)
+def test_api_key_node_missing_store_key_warns(tmp_path, node_type, field_name, input_port):
     bus = EventBus()
     factory = NodeFactory()
     wm = WorkflowMap(factory, bus)
     wm.create_new("secret_field_check")
     start_id = wm.add_node("start_node")
     node_id = wm.add_node(node_type)
-    wm.connect(start_id, "default", node_id, "input")
+    wm.connect(start_id, "default", node_id, input_port)
     config = dict(wm.get_node_data(node_id).get("config") or {})
     config[field_name] = "unstored_key"
     wm.update_node_config(node_id, config)
@@ -339,7 +345,7 @@ def test_editor_validate_passes_secrets_manager(tmp_path):
         wm.create_new("editor_secret_wiring")
         start_id = wm.add_node("start_node")
         node_id = wm.add_node("chat_completion_node")
-        wm.connect(start_id, "default", node_id, "input")
+        wm.connect(start_id, "default", node_id, "prompt")
         config = dict(wm.get_node_data(node_id).get("config") or {})
         config["api_key_secret"] = "unstored_key"
         wm.update_node_config(node_id, config)
