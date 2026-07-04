@@ -4,6 +4,21 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-07-04 — Chat Completion Build Phase 0: Model Field Doc Reconciliation
+
+Branch: `llm-node` (from `main` @ 6a7c51e)
+
+Docs-only. Phase 0 of the approved Chat Completion real-execution build plan.
+
+- `NODE_STANDARDS.md`: the Basic LLM Node reference example's `Model:` field is
+  now a curated dropdown (was stale free text), citing the AI Model Approach
+  section of `PHASE_17_NODE_VISUAL_IDENTITY.md`. Closes the model-field
+  conflict between the two documents.
+
+Verified: `git diff --check` clean.
+
+---
+
 ## 2026-06-25 — Settings Secrets Manager UI
 
 Branch: `codex/node-type-constants`

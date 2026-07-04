@@ -449,8 +449,13 @@ Document / context source  (required — one source must be selected)
 Prompt:  [_________________________]   ← editable only when source = Configured
                                          greyed out otherwise
 
-Model:   [_________________________]   ← always editable
+Model:   [Claude Sonnet          ▾]    ← curated dropdown, always editable
 ```
+
+The model field is a **curated dropdown**, never free text. Options come from
+the node's declared supported-model list, exposed through node metadata so the
+frontend renders — never defines — the list. See the AI Model Approach section
+of `PHASE_17_NODE_VISUAL_IDENTITY.md`.
 
 **Payloads tab:**
 
