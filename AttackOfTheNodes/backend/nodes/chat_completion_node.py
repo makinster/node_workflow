@@ -104,6 +104,13 @@ class ChatCompletionNode(Node):
             "vault_type": "ai_session",
             "description": "Vault key of an ai_session entry whose history this call continues",
         },
+        "prompt": {
+            "type": "multiline",
+            "label": "Prompt",
+            "required": False,
+            "tab": "Parameters",
+            "enabled_when": {"prompt_source": "Configured"},
+        },
         "model": {
             "type": "select",
             "label": "Model",

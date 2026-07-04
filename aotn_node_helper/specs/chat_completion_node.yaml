@@ -1,0 +1,103 @@
+# Chat Completion node — unified inputs:/outputs: contract (NODE_HELPER.md).
+#
+# The registered node's execute() is HAND-WRITTEN: it makes a real Anthropic
+# call through backend/llm_provider.py and implements AI session persistence
+# (use_chat_session / session_key / continue_session_key). Do NOT regenerate
+# over backend/nodes/chat_completion_node.py without porting execute() and
+# re-checking the fields below.
+#
+# The model options list mirrors backend/llm_provider.SUPPORTED_MODELS — the
+# single curated constant the registered node reads directly. Update the
+# constant first; this spec copy is documentation for regeneration only.
+node_type: chat_completion_node
+class_name: ChatCompletionNode
+category: ai
+primary_family: Complex
+tags: ["AI"]
+icon_name: bot-message-square
+display_name: Chat Completion
+default_alias: Chat Completion
+description: Send a prompt to an LLM and receive a text response
+group: AI Processing
+selector_section: AI
+
+inputs:
+  prompt:
+    type: string
+    required: true
+    label: Prompt
+    description: Instruction text sent to the model
+    sources: ["upstream", "vault", "configured"]
+    default: configured
+    parameter:
+      type: multiline
+      label: Prompt
+  document:
+    type: string
+    required: false
+    label: Document / context
+    description: Optional document appended to the prompt
+    sources: ["upstream", "vault"]
+    default: upstream
+
+outputs:
+  default:
+    name: LLM Result
+    type: string
+    required: true
+    to: ["downstream", "vault"]
+    pass_through: true
+    description: Model response text (or forwarded payload on dead-drop)
+
+# Basic LLM Node routing (NODE_STANDARDS): dead-drop default, vault write
+# locked on unless transient output is checked.
+output_routing:
+  default: dead_drop
+  transient_label: Send LLM result to next node
+  dead_drop_label: Forward incoming payload unchanged
+  vault:
+    mode: required_unless_transient
+    label: Save LLM result to Vault
+    key_label: Result Vault key
+
+config_tabs:
+  Source:
+    continue_session_key:
+      type: string
+      label: Continue AI session (ai_session Vault key)
+      required: false
+      vault_type: ai_session
+      description: Vault key of an ai_session entry whose history this call continues
+  Parameters:
+    model:
+      type: select
+      label: Model
+      options: ["claude-opus-4-8", "claude-sonnet-5", "claude-sonnet-4-6", "claude-haiku-4-5"]
+      default: claude-opus-4-8
+      required: true
+    max_tokens:
+      type: integer
+      label: Max tokens
+      default: 1024
+      required: true
+    temperature:
+      type: float
+      label: Temperature
+      default: 1.0
+      required: true
+      description: Ignored by models that do not accept sampling parameters
+    api_key_secret:
+      type: string
+      label: API key (secrets store key)
+      secret: true
+      required: true
+    use_chat_session:
+      type: boolean
+      label: Keep active AI session
+      default: false
+    session_key:
+      type: string
+      label: Session key
+      required: false
+      enabled_when:
+        use_chat_session: true
