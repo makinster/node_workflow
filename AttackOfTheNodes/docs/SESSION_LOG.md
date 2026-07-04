@@ -4,18 +4,59 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
-## 2026-07-04 — Chat Completion Build Phase 0: Model Field Doc Reconciliation
+## 2026-07-04 — Chat Completion Real Execution + AI Sessions (Phases 0–6)
 
 Branch: `llm-node` (from `main` @ 6a7c51e)
 
-Docs-only. Phase 0 of the approved Chat Completion real-execution build plan.
+Full approved build plan executed in phase-sized commits.
 
-- `NODE_STANDARDS.md`: the Basic LLM Node reference example's `Model:` field is
-  now a curated dropdown (was stale free text), citing the AI Model Approach
-  section of `PHASE_17_NODE_VISUAL_IDENTITY.md`. Closes the model-field
-  conflict between the two documents.
+- **Phase 0 (docs):** `NODE_STANDARDS.md` Basic LLM example's `Model:` field is
+  now a curated dropdown (was stale free text), citing Phase 17 AI Model
+  Approach.
+- **Phase 1:** new `backend/llm_provider.py` — raw stdlib HTTPS Anthropic
+  Messages client (no SDK dependency), `SUPPORTED_MODELS` as the single curated
+  list constant (`claude-opus-4-8` default, `claude-sonnet-5`,
+  `claude-sonnet-4-6`, `claude-haiku-4-5`; verified current 2026-07-04),
+  `CompletionResult`, `get_client()` provider seam. `ModelInfo.supports_temperature`
+  omits `temperature` for models that 400 on sampling params (Opus 4.8,
+  Sonnet 5). Mocked-transport tests; API key never logged.
+- **Phases 2–3:** `chat_completion_node` executes for real. Standard
+  prompt/document input sources (ports renamed `input` → `prompt`/`document`),
+  secrets-store API key (now `required`), dead-drop passthrough default with
+  locked-on vault write, "Keep active AI session" + `session_key` persisting
+  history in `RunSession` and an `ai_session`-tagged vault reference, and a
+  `continue_session_key` continuation input. Failures use the node-error path:
+  no vault write, no history mutation. Client call runs via
+  `asyncio.to_thread` so the TUI event loop never blocks.
+- **Phase 4:** `build_form` gained `vault_keys_by_type`; string fields
+  declaring `vault_type` render as key dropdowns (persisted entries of that
+  tag + workflow-declared session keys). Model dropdown and session-key gating
+  render from schema alone.
+- **Phase 5:** `specs/chat_completion_node.yaml` (unified `inputs:`/`outputs:`
+  contract; execute is hand-written — do not regenerate blindly), generated
+  contract + UI smoke tests; `check_node.py` and `check_ui.py` pass. Also
+  fixed the missing Configured-prompt Parameters field.
+- **Phase 6 (docs):** `NODE_CATALOG.md` Chat Completion → Live;
+  `PROJECT_BACKLOG.md` typed-vault items ticked (general 4b type-filtered
+  source dropdowns remain deferred); `MASTER_BUILD_PLAN.md` roadmap lines;
+  `TASK_INDEX.md` route "Change LLM Node Execution Or AI Sessions".
 
-Verified: `git diff --check` clean.
+Flagged decisions (per plan, for Kelly): (1) raw HTTP chosen — the stdlib path
+was sufficient, no SDK dependency added; (2) curated list seeded as above —
+note Opus 4.8/Sonnet 5 reject `temperature`, handled per-model; (3) node-local
+`vault_type` dropdown shipped instead of the general 4b widget, gap logged in
+`PROJECT_BACKLOG.md`.
+
+Verified:
+
+```bash
+../.venv/bin/python -m compileall -q .
+../.venv/bin/python -m pytest tests/test_debug_nodes.py -q          # 140 passed
+../.venv/bin/python -m pytest tests/test_llm_provider.py tests/test_chat_completion_node.py tests/test_validator_secrets.py -q
+../.venv/bin/python ../aotn_node_helper/check_node.py chat_completion_node
+../.venv/bin/python ../aotn_node_helper/check_ui.py chat_completion_node
+git diff --check
+```
 
 ---
 

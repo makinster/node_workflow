@@ -822,10 +822,20 @@ Wait Until guidance is the correct ceiling.
   warning (backward BFS, error/warning split per design spec); `use_chat_session`
   without `session_key` warning.
 
+**Done (2026-07-04, Chat Completion real-execution build):**
+- "Keep active AI session" checkbox and session key field on
+  `chat_completion_node` (schema-driven; `session_key` gated on the checkbox).
+- Vault write path for `ai_session`-typed entries on successful execution:
+  `store_persistent(session_key, {"type": "ai_session", "ref_key": ...},
+  type_tag="ai_session")`; history lives in `RunSession` only.
+- Node-local `ai_session` continuation dropdown: string fields declaring a
+  `vault_type` schema key render as a key dropdown (persisted entries of that
+  tag + session keys declared in the current workflow).
+
 **Still needed:**
-- "Keep active AI session" checkbox and session key field on LLM node configs.
-- Vault write path for `ai_session`-typed entries when an LLM node executes.
-- Input source dropdowns filter by declared type in config UI.
+- General type-filtered Vault *source* dropdowns across all inputs (Track B
+  Phase 4b, `IO_CONTRACT_UI_DESIGN.md` §3). The `vault_type` dropdown above is
+  the minimal single-field version, not the 4b master-detail widget.
 
 ## Completed Project — Secrets Module (UI Integration)
 

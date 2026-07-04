@@ -246,13 +246,16 @@ Focused checks:
 - **Typed vault entries and AI session handles.** Backend foundation done
   (2026-06-13): `MemoryBank.store_persistent` accepts `type_tag`; `read_persistent_by_type`
   added; validator warns on ai_session type mismatch and parallel-branch races;
-  `RunSession` has multi-turn chat session API. Remaining: config-driven "keep
-  active AI session" checkbox on LLM nodes; Vault write path for `ai_session`
-  entries on execute; input source dropdowns filter by type. See
-  `PROJECT_BACKLOG.md` and `NODE_STANDARDS.md` for full design.
-- **Deferred AI integration.** Implement real AI node execution once UI and
-  node authoring conventions stabilize. Typed vault entry support is a
-  prerequisite for AI session continuation.
+  `RunSession` has multi-turn chat session API. Chat Completion build
+  (2026-07-04) landed the "keep active AI session" checkbox, the `ai_session`
+  vault write path on execute, and a node-local `vault_type` dropdown.
+  Remaining: general type-filtered input source dropdowns (Track B Phase 4b).
+  See `PROJECT_BACKLOG.md` and `NODE_STANDARDS.md` for full design.
+- **Deferred AI integration.** `chat_completion_node` executes for real
+  (2026-07-04) via `backend/llm_provider.py` — raw HTTPS Anthropic client,
+  curated model list in one backend constant, provider registry seam.
+  Remaining: `embedding_node` and `image_generation_node` are still stubs;
+  streaming responses and the `AI Input` node are deferred.
 - **Phase N — Headless CLI execution.** `aotn <workflow name>` entrypoint,
   compile-and-swap export (duplicate file, TUI I/O nodes swapped for headless
   twins with identical port shapes), `HeadlessStartNode` preamble, configurable

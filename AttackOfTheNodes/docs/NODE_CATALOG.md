@@ -255,7 +255,7 @@ Direct-add nodes that pair with the Loop Branch node.
 
 | Node | Status | Notes / Maps from |
 |---|---|---|
-| Chat Completion | Live (stub) | `chat_completion_node` — LLM text generation; real execution deferred. Optional session persistence via vault `ai_session` key. Tags: AI |
+| Chat Completion | Live | `chat_completion_node` — real Anthropic call via `backend/llm_provider.py` (curated model dropdown, secrets-store API key). Session persistence via "Keep active AI session" + vault `ai_session` key; continuation input extends prior sessions. Tags: AI |
 | Image Generation | Live (stub) | `image_generation_node` — image from text prompt; output: image path. Tags: AI |
 | Embedding | Live (stub) | `embedding_node` — text to vector; output: float array. Tags: AI |
 | Vision / Multimodal | Concept | Analyze an image alongside a text prompt. Tags: AI |

@@ -54,6 +54,35 @@ Preferred path:
 Use frontend edits only when the node needs structural UI derived from workflow
 topology. Ordinary node fields should render from metadata and `config_schema`.
 
+## Change LLM Node Execution Or AI Sessions
+
+Read:
+
+- `NODE_STANDARDS.md` — Basic LLM Node reference example, AI Session
+  Config-Driven Output, Typed Vault Outputs
+- `PROJECT_BACKLOG.md` → "Typed Vault Entries and AI Session Handles"
+
+Likely files:
+
+- `backend/llm_provider.py` — curated model list (`SUPPORTED_MODELS`),
+  Anthropic client, provider registry (`get_client`)
+- `backend/nodes/chat_completion_node.py`
+- `backend/run_session.py` (chat session API)
+- `../aotn_node_helper/specs/chat_completion_node.yaml` (contract doc — the
+  node's execute is hand-written; do not regenerate blindly)
+
+Focused checks:
+
+```bash
+../.venv/bin/python -m pytest tests/test_llm_provider.py tests/test_chat_completion_node.py -v
+../.venv/bin/python ../aotn_node_helper/check_node.py chat_completion_node
+../.venv/bin/python ../aotn_node_helper/check_ui.py chat_completion_node
+```
+
+Notes: the model dropdown options come from `SUPPORTED_MODELS` — update the
+constant only, never frontend code. Some models reject sampling parameters;
+`ModelInfo.supports_temperature` controls whether `temperature` is sent.
+
 ## Fix Frontend Or UI Behavior
 
 Read:
