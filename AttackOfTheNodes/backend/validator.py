@@ -42,6 +42,19 @@ def derive_input_sources(
                 source_id = _membank_source_id(entry)
                 if source_id:
                     sources.append({"type": "membank", "source_id": source_id})
+        # Standard-model vault reads: `<port>_source == "Vault"` paired with a
+        # `<port>_vault_key`, plus the AI-session continuation input. These are
+        # the helper-generated field names (NODE_HELPER.md input_sources).
+        for key, value in config.items():
+            if not str(key).endswith("_source") or value != "Vault":
+                continue
+            port = str(key)[: -len("_source")]
+            vault_key = str(config.get(f"{port}_vault_key") or "").strip()
+            if vault_key:
+                sources.append({"type": "membank", "source_id": vault_key})
+        continue_key = str(config.get("continue_session_key") or "").strip()
+        if continue_key:
+            sources.append({"type": "membank", "source_id": continue_key})
         input_sources[node_id] = sources
     return input_sources
 
@@ -225,7 +238,18 @@ def validate_workflow(
                     }
                 )
 
+    metadata_by_type = {
+        str(item.get("type") or ""): item for item in factory.get_node_types_metadata()
+    }
+    standard_vault_writes = _standard_model_vault_writes(all_nodes, metadata_by_type)
+    standard_vault_reads = _standard_model_vault_reads(all_nodes, metadata_by_type)
+
     declared_membank_outputs = _declared_membank_outputs(all_nodes)
+    for node_writes in standard_vault_writes.values():
+        for key, type_tag in node_writes.items():
+            # Prefer a concrete tag over an untyped legacy declaration.
+            if type_tag is not None or key not in declared_membank_outputs:
+                declared_membank_outputs[key] = type_tag
     for node_id, sources in derive_input_sources(all_nodes).items():
         for source in sources:
             source_type = source.get("type")
@@ -253,9 +277,9 @@ def validate_workflow(
     for node_id, data in all_nodes.items():
         config = data.get("config") or {}
         membank_inputs = config.get("membank_inputs") or []
-        if not isinstance(membank_inputs, list):
-            continue
-        for entry in membank_inputs:
+        entries = list(membank_inputs) if isinstance(membank_inputs, list) else []
+        entries.extend(standard_vault_reads.get(node_id, []))
+        for entry in entries:
             if not isinstance(entry, dict):
                 continue
             if entry.get("type_tag") != ai_session:
@@ -289,13 +313,16 @@ def validate_workflow(
                 k = _membank_source_id(entry)
                 if k:
                     key_writers.setdefault(k, set()).add(w_id)
+        for w_id, node_writes in standard_vault_writes.items():
+            for k in node_writes:
+                key_writers.setdefault(k, set()).add(w_id)
 
         for node_id, data in all_nodes.items():
             config = data.get("config") or {}
             membank_inputs = config.get("membank_inputs") or []
-            if not isinstance(membank_inputs, list):
-                continue
-            for entry in membank_inputs:
+            entries = list(membank_inputs) if isinstance(membank_inputs, list) else []
+            entries.extend(standard_vault_reads.get(node_id, []))
+            for entry in entries:
                 key = _membank_source_id(entry)
                 if not key:
                     continue
@@ -386,6 +413,73 @@ def _declared_membank_outputs(
                 type_tag = entry.get("type_tag") if isinstance(entry, dict) else None
                 declared[source_id] = type_tag
     return declared
+
+
+def _standard_model_vault_writes(
+    all_nodes: Dict[str, Dict[str, Any]],
+    metadata_by_type: Dict[str, Dict[str, Any]],
+) -> Dict[str, Dict[str, Optional[str]]]:
+    """Vault writes implied by standard-model config, node_id -> {key: tag}.
+
+    Standard result routing (``vault_write`` + ``vault_write_key``) declares a
+    write tagged with the node's default output data type; an enabled AI
+    session (``use_chat_session`` + ``session_key``) declares an ``ai_session``
+    write. This keeps the existence/type/race checks working for nodes whose
+    config UI no longer edits ``membank_outputs`` directly.
+    """
+    writes: Dict[str, Dict[str, Optional[str]]] = {}
+    for node_id, data in all_nodes.items():
+        config = data.get("config") or {}
+        node_writes: Dict[str, Optional[str]] = {}
+        if config.get("vault_write"):
+            key = str(config.get("vault_write_key") or "").strip()
+            if key:
+                metadata = metadata_by_type.get(str(data.get("type") or "")) or {}
+                out_meta = (metadata.get("output_port_metadata") or {}).get("default") or {}
+                node_writes[key] = str(out_meta.get("data_type") or "") or None
+        if config.get("use_chat_session"):
+            session_key = str(config.get("session_key") or "").strip()
+            if session_key:
+                node_writes[session_key] = DataType.AI_SESSION.value
+        if node_writes:
+            writes[node_id] = node_writes
+    return writes
+
+
+def _standard_model_vault_reads(
+    all_nodes: Dict[str, Dict[str, Any]],
+    metadata_by_type: Dict[str, Dict[str, Any]],
+) -> Dict[str, List[Dict[str, Optional[str]]]]:
+    """Vault reads implied by standard-model config, node_id -> entries.
+
+    ``<port>_source == "Vault"`` with a ``<port>_vault_key`` reads the key as
+    the port's declared data type; ``continue_session_key`` reads an
+    ``ai_session`` entry. Entries use the membank-inputs dict shape
+    (``source_id`` + ``type_tag``) so the shared checks treat them uniformly.
+    """
+    reads: Dict[str, List[Dict[str, Optional[str]]]] = {}
+    for node_id, data in all_nodes.items():
+        config = data.get("config") or {}
+        entries: List[Dict[str, Optional[str]]] = []
+        metadata = metadata_by_type.get(str(data.get("type") or "")) or {}
+        port_meta = metadata.get("input_port_metadata") or {}
+        for key, value in config.items():
+            if not str(key).endswith("_source") or value != "Vault":
+                continue
+            port = str(key)[: -len("_source")]
+            vault_key = str(config.get(f"{port}_vault_key") or "").strip()
+            if not vault_key:
+                continue
+            data_type = str((port_meta.get(port) or {}).get("data_type") or "") or None
+            entries.append({"source_id": vault_key, "type_tag": data_type})
+        continue_key = str(config.get("continue_session_key") or "").strip()
+        if continue_key:
+            entries.append(
+                {"source_id": continue_key, "type_tag": DataType.AI_SESSION.value}
+            )
+        if entries:
+            reads[node_id] = entries
+    return reads
 
 
 def _membank_source_id(entry: Any) -> str:
