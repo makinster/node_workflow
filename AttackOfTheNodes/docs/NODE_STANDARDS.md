@@ -68,14 +68,21 @@ stable, user-defined names that any node in the run can look up by key —
 including nodes in parallel branches or further downstream that were not
 adjacent to the writing node.
 
-When **Upstream** is selected: the Vault key field and the Parameters config
-field for that input both grey out.
+Fields that are irrelevant to the selected source are **hidden**
+(`visible_when`), not greyed out (revised 2026-07-07 — hiding reads better at
+a glance):
 
-When **Vault** is selected: the transient connection hint and the Parameters
-config field for that input both grey out.
+- **Upstream** selected: the Vault key dropdown and the Parameters field for
+  that input are hidden.
+- **Vault** selected: a **type-filtered Vault key dropdown** appears directly
+  below the selector (entries compatible with the port's `data_type`, shown as
+  `key [type]`); the Parameters field is hidden.
+- **Configured** selected: the Vault key dropdown is hidden and the matching
+  Parameters field becomes visible and editable.
 
-When **Configured** is selected: the transient and Vault fields grey out. The
-corresponding Parameters tab field becomes active and editable.
+Grey-out (`enabled_when`) is reserved for controls that are *locked*, not
+irrelevant — e.g. the vault-write checkbox that cannot be unchecked while the
+result is not routed transiently.
 
 Some inputs may not offer all three options. For example, a document/context
 input on a basic LLM node may only offer Upstream or Vault (no hard-configured
@@ -325,19 +332,34 @@ present for every node.
 
 ### Source Tab
 
-Declares where each input comes from. Contains one or more input-source
-selector groups:
+Declares where each input comes from. Layout (revised 2026-07-07):
 
 ```
-[Input name]
-  ( ) Upstream payload      [preview button]
-  ( ) Vault  Key: ________
-  ( ) Configured            → activates the field in Parameters tab
+Alias: [_________________]
+<node type + description>
+
+Incoming Payload                          ← auto-shown when inputs are wired:
+  prompt  [string]  <- Text Input > default   producer chain, description, and
+  "last captured value"                       last captured value per port
+
+── Required Inputs ──────────────────
+Prompt source:  [ Configured ▼ ]
+                                          ← Vault key dropdown appears here
+                                            only when Vault is selected
+── Optional Inputs ──────────────────
+Document / context source:  [ Upstream payload ▼ ]
 ```
 
-Radio-button style: selecting one option within a group disables the other
-two in that group. When Configured is selected, the matching Parameters field
-becomes editable; otherwise it is greyed out.
+- Input selectors are grouped under **Required Inputs** / **Optional Inputs**
+  section headers (schema `section` key, driven by the port's `required`
+  flag).
+- The Vault key control is a **dropdown filtered by the port's data type**
+  (schema `vault_type` key), populated from typed vault entries plus keys
+  declared by workflow writers; it is hidden unless Vault is selected.
+- The old "Reveal upstream payload" / "Reveal Vault payload" checkboxes and
+  the standalone Vault selection list are retired for standard-model nodes;
+  the incoming payload block is always visible when something is connected.
+  Legacy nodes (no `sources` port metadata) keep the old flat layout.
 
 For inputs with only two valid source options (e.g., Upstream or Vault only),
 show only those two. Do not show a Configured option if hard-coding is not
@@ -346,31 +368,37 @@ valid for that input.
 ### Parameters Tab
 
 Contains node-specific configuration values that are either always editable
-(fixed node settings) or conditionally editable based on Source tab selections.
+(fixed node settings) or conditional on Source tab selections.
 
-Fields linked to a Source tab selector are greyed out when that input source
-is set to Upstream or Vault, and become active when set to Configured.
+Fields linked to a Source tab selector are **hidden** unless that input's
+source is Configured (`visible_when`; revised 2026-07-07 — previously greyed).
 Fields that are always editable (such as temperature, model name, or mode
-flags) are never greyed out by source selection.
+flags) are never affected by source selection.
 
 ### Payloads Tab
 
-Declares how the node's output is routed. Contains output routing controls:
+Declares how the node's output is routed, in a **Result Routing** section:
 
 ```
-Transient output
-  [ ] Send result to next node    ──┐ mutually exclusive:
-                                    │ only one can occupy the transient port
-Dead-drop passthrough               │
-  [x] Forward incoming payload  ───┘
+── Result Routing ───────────────────
+[ ] Send result to next node        ─┐ mutually exclusive: only one can
+[x] Forward incoming payload unchanged ─┘ occupy the transient port
+[x] Save result to Vault    Key: [________]
 
-Vault write  (independent of the above)
-  [x] Save result to Vault  Key: ________
+── Outgoing ─────────────────────────
+default  [string] - <port description>     ← read-only contract summary
 ```
 
 Transient output and dead-drop passthrough are mutually exclusive: checking
 one unchecks the other. Vault write is independent and can be combined with
-either transient option.
+either transient option. Checkboxes carry their label on the control itself
+(single row); the vault key input sits beside its checkbox.
+
+For standard-model nodes the routing checkboxes are the **only** vault-write
+UI — the legacy "Write to Vault" payload rows and reveal checkboxes are not
+rendered (the validator derives the vault declarations from `vault_write_key`
+and session fields instead). Node-specific routing-adjacent options (e.g. an
+AI Session section) follow the Result Routing section.
 
 Per-node defaults vary. Document the default state for each node type in its
 spec.
@@ -432,24 +460,23 @@ response. Designed for straightforward summarise/transform/extract tasks.
 **Source tab:**
 
 ```
-Prompt source
-  ( ) Upstream payload    ← receives prompt string from previous node
-  ( ) Vault               Key: ________
-  ( ) Configured          ← activates prompt field in Parameters
+── Required Inputs ──────────────────
+Prompt source:  [ Configured ▼ ]
+  when Vault:   Prompt Vault key: [ notes [string] ▼ ]   ← typed dropdown
 
-Document / context source  (required — one source must be selected)
-  ( ) Upstream payload
-  ( ) Vault               Key: ________
+── Optional Inputs ──────────────────
+Document / context source:  [ Upstream payload ▼ ]
+  when Vault:   Document Vault key: [ ... ▼ ]
   [no Configured option — document must come from a live source]
 ```
 
 **Parameters tab:**
 
 ```
-Prompt:  [_________________________]   ← editable only when source = Configured
-                                         greyed out otherwise
+Prompt (E to edit, ESC to finish)      ← visible only when source = Configured
+[_________________________________]
 
-Model:   [Claude Sonnet          ▾]    ← curated dropdown, always editable
+Model *:        [ claude-opus-4-8 ▼ ]  ← curated dropdown, always editable
 ```
 
 The model field is a **curated dropdown**, never free text. Options come from
@@ -460,17 +487,22 @@ of `PHASE_17_NODE_VISUAL_IDENTITY.md`.
 **Payloads tab:**
 
 ```
-Transient output
-  [ ] Send LLM result to next node     ← can be checked alongside Vault write
+── Result Routing ───────────────────
+[ ] Send LLM result to next node       ─┐ mutually exclusive
+[x] Forward incoming payload unchanged ─┘ (dead-drop default)
+[x] Save LLM result to Vault   Key: [________]
+    Cannot be unchecked unless transient output is checked.
 
-Dead-drop passthrough
-  [x] Forward incoming payload unchanged (default)
-      ↑ unchecked automatically when Transient output is checked
-
-Vault write — result
-  [x] Save LLM result to Vault  Key: ________   ← default checked
-      Cannot be unchecked unless Transient output is checked.
+── AI Session ───────────────────────
+[ ] Keep active AI session
+    Session key: [________]            ← visible only when checked
+Continue AI session: [ research [ai_session] ▼ ]   ← optional; blank = fresh
 ```
+
+The AI Session section lives in the Payloads tab (moved from Parameters
+2026-07-07) so all session controls sit together: the checkbox + key persist
+this node's session onward; the continuation dropdown (type-filtered to
+`ai_session` vault entries) reads a prior session's history into this call.
 
 **Data type:** string. Prompt, document, and LLM result are all strings.
 Incompatible data types are a validation error.

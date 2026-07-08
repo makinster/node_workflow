@@ -832,10 +832,16 @@ Wait Until guidance is the correct ceiling.
   `vault_type` schema key render as a key dropdown (persisted entries of that
   tag + session keys declared in the current workflow).
 
-**Still needed:**
-- General type-filtered Vault *source* dropdowns across all inputs (Track B
-  Phase 4b, `IO_CONTRACT_UI_DESIGN.md` §3). The `vault_type` dropdown above is
-  the minimal single-field version, not the 4b master-detail widget.
+**Done (2026-07-07, config UI redesign):**
+- General type-filtered Vault source dropdowns across all standard-model
+  inputs (Track B Phase 4b, `IO_CONTRACT_UI_DESIGN.md` §3): every
+  `<port>_vault_key` field renders as a dropdown filtered by the port's data
+  type, hidden unless the Vault source is selected. Untagged legacy entries
+  satisfy `string`; declared workflow writers are included pre-run. The
+  validator derives vault declarations from standard-model config
+  (`vault_write_key`, `session_key`, `<port>_vault_key`,
+  `continue_session_key`) so existence/mismatch/race checks no longer depend
+  on the retired membank UI.
 
 ## Completed Project — Secrets Module (UI Integration)
 

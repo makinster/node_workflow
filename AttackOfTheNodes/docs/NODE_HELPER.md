@@ -112,9 +112,13 @@ Two top-level spec sections expand into the standard node I/O model from
 ### input_sources
 
 Declares where each input can come from. Each entry expands into a
-`<name>_source` selector in the Source tab, a `<name>_vault_key` field gated
-on the Vault source, and (when the Configured source is allowed) a `<name>`
-parameter field in the Parameters tab gated on the Configured source.
+`<name>_source` selector in the Source tab (under a `Required Inputs` /
+`Optional Inputs` section header from the entry's `required` flag), a
+`<name>_vault_key` dropdown that is hidden unless the Vault source is
+selected (`visible_when`) and carries `vault_type` = the entry's data type so
+the config screen offers type-filtered vault keys, and (when the Configured
+source is allowed) a `<name>` parameter field in the Parameters tab that is
+visible only for the Configured source.
 
 ```yaml
 input_sources:
@@ -144,7 +148,7 @@ Rules:
 Declares how the node's result leaves. Expands into the Payloads tab fields
 `transient_output` and `dead_drop_passthrough` (mutually exclusive, per
 `NODE_STANDARDS.md`) plus optional `vault_write` / `vault_write_key` fields
-gated on the vault checkbox.
+gated on the vault checkbox — all under a `Result Routing` section header.
 
 ```yaml
 output_routing:
@@ -312,9 +316,18 @@ Config field types:
 - `code`
 
 Common schema keys include `label`, `description`, `required`, `options`,
-`placeholder`, `group`, `min`, `max`, `min_length`, `max_length`, `height`,
-`language`, `path_hint`, and `secret`. Dynamic rule keys are `enabled_when`,
-`visible_when`, and `mutually_exclusive_with` (see Dynamic Form Rule Keys above).
+`placeholder`, `group`, `section`, `min`, `max`, `min_length`, `max_length`,
+`height`, `language`, `path_hint`, `secret`, and `vault_type`. Dynamic rule
+keys are `enabled_when`, `visible_when`, and `mutually_exclusive_with` (see
+Dynamic Form Rule Keys above).
+
+`section: "Header"` renders a bold section header above the first field of a
+consecutive run declaring the same section (e.g. `Required Inputs`,
+`Result Routing`, `AI Session`).
+
+`vault_type: "<canonical type>"` renders a string field as a dropdown over
+vault keys compatible with that type (typed entries plus keys declared by
+workflow writers; untagged legacy entries satisfy `string`; `any` shows all).
 
 `path_hint: "file"` marks a string field as a filesystem path; the validator
 emits a warning if the configured path does not exist at validation time.

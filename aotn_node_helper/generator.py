@@ -353,6 +353,8 @@ def _input_source_fields(
     if default_source not in sources:
         raise ValueError(f"{where} default {default_source!r} is not in sources")
     label = str(entry.get("label") or _title_case(input_name))
+    # Required/Optional section headers group the Source tab at a glance.
+    section = "Required Inputs" if entry.get("required") else "Optional Inputs"
     fields: dict[str, Any] = {}
     source_field: dict[str, Any] = {
         "type": "select",
@@ -360,19 +362,24 @@ def _input_source_fields(
         "options": [SOURCE_OPTION_LABELS[item] for item in sources],
         "default": SOURCE_OPTION_LABELS[default_source],
         "tab": "Source",
+        "section": section,
     }
     if entry.get("description"):
         source_field["description"] = str(entry["description"])
     fields[f"{input_name}_source"] = source_field
 
     if "vault" in sources:
+        # Hidden until the Vault source is selected; renders as a dropdown
+        # filtered to vault entries compatible with the port's data type.
         fields[f"{input_name}_vault_key"] = {
             "type": "string",
             "label": f"{label} Vault key",
             "default": "",
             "required": False,
             "tab": "Source",
-            "enabled_when": {f"{input_name}_source": SOURCE_OPTION_LABELS["vault"]},
+            "section": section,
+            "vault_type": str(entry.get("type") or "any"),
+            "visible_when": {f"{input_name}_source": SOURCE_OPTION_LABELS["vault"]},
         }
 
     parameter = entry.get("parameter")
@@ -387,7 +394,7 @@ def _input_source_fields(
         parameter_field.setdefault("label", label)
         parameter_field.setdefault("default", "")
         parameter_field["tab"] = "Parameters"
-        parameter_field["enabled_when"] = {
+        parameter_field["visible_when"] = {
             f"{input_name}_source": SOURCE_OPTION_LABELS["configured"]
         }
         fields[input_name] = parameter_field
@@ -518,6 +525,7 @@ def _expand_output_routing(spec: dict[str, Any]) -> dict[str, Any]:
         "label": str(raw.get("transient_label") or "Send result to next node"),
         "default": default == "transient",
         "tab": "Payloads",
+        "section": "Result Routing",
     }
     if include_dead_drop:
         transient_field["mutually_exclusive_with"] = ["dead_drop_passthrough"]
@@ -530,6 +538,7 @@ def _expand_output_routing(spec: dict[str, Any]) -> dict[str, Any]:
             ),
             "default": default == "dead_drop",
             "tab": "Payloads",
+            "section": "Result Routing",
             "mutually_exclusive_with": ["transient_output"],
         }
 
@@ -550,6 +559,7 @@ def _expand_output_routing(spec: dict[str, Any]) -> dict[str, Any]:
         "label": str(vault.get("label") or "Save result to Vault"),
         "default": mode != "optional",
         "tab": "Payloads",
+        "section": "Result Routing",
     }
     if mode == "required_unless_transient":
         # Locked on (checked and not editable) until the user routes the
@@ -562,6 +572,7 @@ def _expand_output_routing(spec: dict[str, Any]) -> dict[str, Any]:
         "default": "",
         "required": False,
         "tab": "Payloads",
+        "section": "Result Routing",
         "enabled_when": {"vault_write": True},
     }
     return fields

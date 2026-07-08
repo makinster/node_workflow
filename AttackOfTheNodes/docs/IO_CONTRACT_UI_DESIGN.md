@@ -13,7 +13,10 @@
 |---|---|
 | Type mismatch display | Option B: amber `[type]` label if a mismatch slips through; primary prevention is dropdown filtering |
 | Vault incompatibles in dropdown | Hide entirely — no divider, no ghost entries |
+| Untagged legacy vault entries | Treated as `string`-compatible (shown for `string`/`any` ports, hidden for `file`/`ai_session`) — hiding them everywhere would empty most dropdowns (2026-07-07) |
 | Legacy nodes (no `inputs:` block) | Silent fallback to current flat Source tab |
+| Irrelevant vs locked controls | Irrelevant fields are **hidden** (`visible_when`); grey-out (`enabled_when`) only for locked controls like the required-unless-transient vault write (2026-07-07) |
+| Redundant vault-write UI | Standard-model nodes render only the Result Routing fields; legacy Write to Vault rows and reveal checkboxes are suppressed, with the validator deriving declarations from standard-model config (2026-07-07) |
 | ⚠ badge trigger | Option A: driven by last `V` (validate) run; option B (continuous) is a backlog item |
 | Tab-sticking fix scope | General: scroll inside each `TabPane`, `.tab-scroll` CSS class, audit all tabbed UIs |
 
@@ -178,49 +181,55 @@ def _scroll_container(self):
 
 ---
 
-## 3. Config Source Tab — Vault Conditional Dropdown (Track B Phase 4b)
+## 3. Config Source Tab — Vault Conditional Dropdown (Track B Phase 4b) — **Done (2026-07-07)**
 
 When a port's source is set to `Vault`, a **second `Select` widget** appears
 immediately below the source selector, populated with type-filtered vault keys.
 
 ```
-Text Prompt*  [string]
-├─ Source ▶  [ Upstream             ▼ ]
-
-Document  [string]
-└─ Source ▶  [ Vault                ▼ ]
-        └─< Vault key:  [ document.pdf [file]    ▼ ]
-                                            ↑ conditional widget
-                                              appears when Vault selected
+── Required Inputs ──────────────────
+Prompt source:  [ Vault ▼ ]
+Prompt Vault key:  [ notes [string]  ▼ ]   ← hidden unless Vault selected
 ```
 
-- Vault dropdown shows only entries whose stored `type_tag` matches the port's
-  `data_type`. Incompatible entries are hidden entirely.
-- When `data_type` is `any`, no filtering — all entries shown.
-- Widget is generated/removed reactively via `on_select_changed`.
-- Format: `key [type]` — e.g., `document.pdf [file]`.
-- **Depends on**: Typed Vault Entries backlog item (stored `type_tag` per key).
+Implementation (differs slightly from the original sketch):
+
+- The vault key field is a schema field (`<port>_vault_key`) carrying a
+  `vault_type` key (the port's `data_type`) and
+  `visible_when: {<port>_source: "Vault"}`; `form_generator.build_form`
+  renders it as a `Select` over `vault_keys_by_type` supplied by
+  `NodeConfigScreen._vault_key_options()`. Hidden/shown by the existing
+  dynamic-rule engine, not by reactive widget mount/unmount.
+- Options: persisted vault entries with a compatible `type_tag` **plus keys
+  declared by workflow writers** (legacy `membank_outputs`, standard
+  `vault_write_key`, session keys) so wiring works before the first run.
+- Compatibility: exact tag match; **untagged legacy entries also satisfy
+  `string`**; `any` accepts everything. Incompatible entries hidden entirely.
+- Format: `key [type]`; untagged keys render bare. A configured value that no
+  longer resolves renders as `key (not declared)`.
+- The helper generator emits this pattern for every `input_sources` /
+  `inputs:` port that allows the Vault source.
 
 ---
 
-## 4. Config Source Tab — Upstream Description Hint (Track B Phase 4b)
+## 4. Config Source Tab — Upstream Description Hint (Track B Phase 4b) — **Done (2026-07-07, as Incoming Payload block)**
 
-When a port's source is `Upstream`, show the connected upstream output's
-description inline below the source row.
+Implemented as a single auto-revealed **Incoming Payload** block at the top of
+the Source tab (below alias/description) rather than per-source-row hints —
+one compact entry per connected input port:
 
 ```
-Text Prompt*  [string]
-├─ Source ▶  [ Upstream             ▼ ]
-└─  Http Request
-        └─>  Http Result  [bool]
-             "200 OK, 1.2kb body"   ← last captured value preview if available
+Incoming Payload
+  prompt  [string]  <- Text Input > default
+  <payload description, when declared>
+  Payload: default (str): "last captured value"   ← when memory bank holds one
 ```
 
-- Upstream alias: user alias → `default_alias` from metadata → node type with
-  underscores stripped and title-cased.
-- Output port name and `[type]` rendered on the sub-row.
-- Last captured value shown if `memory_bank` holds a value; omit if absent.
-- Walk uses existing `trace_transient_producer()` + new port `description` field.
+- Producer chain via `trace_transient_producer()`; port `[type]` from input
+  port metadata; last captured value truncated at 800 chars.
+- Replaces the "Reveal upstream payload" / "Reveal Vault payload" checkboxes
+  for standard-model nodes (always visible when connected). Legacy nodes keep
+  the old reveal-checkbox layout.
 
 ---
 
@@ -254,12 +263,13 @@ deferred. The existing `GroupPickerScreen` modal remains in use until then.
 |---|---|---|
 | **Tab fix** | `NodeConfigScreen`: scroll inside TabPane, `.tab-scroll` CSS | **Done (2026-06-22)** |
 | **Selector panel** | Master-detail split + file-tree contract render | **Done (2026-06-22)** |
-| **Vault labels** | `[type]` labels in vault SelectionList | Blocked on Typed Vault Entries |
-| **Source tab vault dropdown** | Conditional vault key selector | Deferred (Track B Phase 4b) |
-| **Source tab upstream hint** | Inline upstream description | Deferred (Track B Phase 4b) |
+| **Vault labels** | `[type]` labels in vault SelectionList | Superseded — legacy SelectionList retired for standard-model nodes; typed labels live in the §3 dropdowns |
+| **Source tab vault dropdown** | Conditional vault key selector | **Done (2026-07-07)** |
+| **Source tab upstream hint** | Inline upstream description | **Done (2026-07-07, Incoming Payload block)** |
 | **⚠ badge** | Node card validity indicator | **Done (2026-06-22)** |
 | **Drill-in nav** | Quick-list in detail panel + GroupBrowserScreen deferred | **Done (2026-06-22)** |
 | **Editor details panel** | Configured-instance contract in selector's layout | **Done (2026-06-23)** |
+| **Standard-model config layout** | Inline alias, auto Incoming Payload, Required/Optional sections, self-labeled checkboxes, hidden-until-relevant gating, compact Outgoing summary, no legacy membank/reveal sections | **Done (2026-07-07)** |
 
 ### Editor Details Panel (2026-06-23)
 

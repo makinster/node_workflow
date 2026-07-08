@@ -61,13 +61,6 @@ output_routing:
     key_label: Result Vault key
 
 config_tabs:
-  Source:
-    continue_session_key:
-      type: string
-      label: Continue AI session (ai_session Vault key)
-      required: false
-      vault_type: ai_session
-      description: Vault key of an ai_session entry whose history this call continues
   Parameters:
     model:
       type: select
@@ -91,13 +84,24 @@ config_tabs:
       label: API key (secrets store key)
       secret: true
       required: true
+  Payloads:
+    # AI Session controls live with routing in the Payloads tab (2026-07-07).
     use_chat_session:
       type: boolean
       label: Keep active AI session
       default: false
+      section: AI Session
     session_key:
       type: string
       label: Session key
       required: false
-      enabled_when:
+      section: AI Session
+      visible_when:
         use_chat_session: true
+    continue_session_key:
+      type: string
+      label: Continue AI session
+      required: false
+      section: AI Session
+      vault_type: ai_session
+      description: Vault key of an ai_session entry whose history this call continues

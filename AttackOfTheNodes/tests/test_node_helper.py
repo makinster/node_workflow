@@ -175,9 +175,9 @@ def test_node_helper_expands_input_sources_and_output_routing(tmp_path: Path):
     assert "'file_path_source': 'Configured'" in node_text  # default_config
     # Vault key gated on the Vault source.
     assert "'file_path_vault_key'" in node_text
-    assert "'enabled_when': {'file_path_source': 'Vault'}" in node_text
+    assert "'visible_when': {'file_path_source': 'Vault'}" in node_text
     # Configured parameter gated on the Configured source, in Parameters tab.
-    assert "'enabled_when': {'file_path_source': 'Configured'}" in node_text
+    assert "'visible_when': {'file_path_source': 'Configured'}" in node_text
     # Output routing pair is mutually exclusive both ways.
     assert "'transient_output'" in node_text
     assert "'mutually_exclusive_with': ['dead_drop_passthrough']" in node_text
@@ -320,8 +320,8 @@ def test_node_helper_unified_io_block_emits_same_selectors_and_adds_contract(tmp
     # section does (same field names, option labels, gating).
     assert "'file_path_source'" in node_text
     assert "'Upstream payload', 'Vault', 'Configured'" in node_text
-    assert "'enabled_when': {'file_path_source': 'Vault'}" in node_text
-    assert "'enabled_when': {'file_path_source': 'Configured'}" in node_text
+    assert "'visible_when': {'file_path_source': 'Vault'}" in node_text
+    assert "'visible_when': {'file_path_source': 'Configured'}" in node_text
     # output_routing (node-level Payloads config) is unchanged by the blocks.
     assert "'transient_output'" in node_text
     assert "'mutually_exclusive_with': ['dead_drop_passthrough']" in node_text

@@ -4,6 +4,57 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-07-07 — Node Config UI Redesign (standard-model layout)
+
+Branch: `llm-node` (continuing from the Chat Completion build)
+
+Owner feedback on the Chat Completion config screens drove a general config-UI
+simplification. All changes are schema/composition-driven; legacy nodes keep
+the old flat layout.
+
+- **Form primitives** (`form_generator.py`, `styles.tcss`): checkboxes carry
+  their own label (single row); descriptions render below their own field;
+  selects/dropdowns join inputs as inline `Label: [widget]` rows; new generic
+  `section` schema key renders bold section headers; inline rows are
+  height-auto so bordered widgets (Select/secret dropdowns) no longer clip.
+- **Gating**: irrelevant fields are now *hidden* (`visible_when`) — vault
+  keys until Vault is selected, the configured prompt until Configured, the
+  session key until the checkbox is on. Grey-out (`enabled_when`) is reserved
+  for the locked vault-write checkbox.
+- **Source tab** (standard-model nodes): inline alias row; auto-revealed
+  Incoming Payload block (producer chain, `[type]`, description, last value —
+  replaces the reveal checkboxes); Required/Optional Inputs sections;
+  per-input vault key dropdowns filtered by port data type (untagged legacy
+  entries satisfy `string`; declared workflow writer keys included pre-run).
+  Legacy Vault selection list removed.
+- **Payloads tab** (standard-model nodes): Result Routing section (checkbox +
+  key rows); AI Session section — `use_chat_session`, `session_key`, and the
+  `continue_session_key` dropdown all moved here; compact read-only Outgoing
+  contract line; legacy Write to Vault rows and reveal checkboxes removed.
+- **Validator** derives vault declarations from standard-model config:
+  `vault_write_key` (typed by default output port) and `session_key`
+  (`ai_session`) as writers; `<port>_vault_key` (typed by port) and
+  `continue_session_key` (`ai_session`) as readers — existence error,
+  ai_session mismatch warning, and parallel-race warning all covered
+  (`tests/test_validator_standard_model_vault.py`).
+- **Helper generator** emits the new pattern (`visible_when`, `vault_type`,
+  Required/Optional + Result Routing sections). Docs updated:
+  `NODE_STANDARDS.md` (hidden-not-greyed, tab layouts, Basic LLM example),
+  `IO_CONTRACT_UI_DESIGN.md` (§3/§4 done, new decisions),
+  `NODE_HELPER.md`, `PROJECT_BACKLOG.md` (Track B 4b dropdowns done).
+
+Verified:
+
+```bash
+../.venv/bin/python -m compileall -q .
+../.venv/bin/python -m pytest tests/ -q                      # full suite green
+../.venv/bin/python ../aotn_node_helper/check_node.py chat_completion_node
+../.venv/bin/python ../aotn_node_helper/check_ui.py chat_completion_node
+git diff --check
+```
+
+---
+
 ## 2026-07-04 — Chat Completion Real Execution + AI Sessions (Phases 0–6)
 
 Branch: `llm-node` (from `main` @ 6a7c51e)
