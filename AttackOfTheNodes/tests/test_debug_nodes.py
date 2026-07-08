@@ -4365,9 +4365,15 @@ async def _test_node_config_standard_model_layout():
             "#membank-writes",
         ):
             assert not app.query(legacy_id), f"{legacy_id} should not render"
-        # Compact outgoing summary replaces the dead-drop/vault editors.
-        outgoing = app.query_one("#outgoing-port-summary")
-        assert "LLM Result" in str(outgoing.content)
+        # New output model: the designated Downstream node payload header shows
+        # name + type, with an editable name field; the Result is also a Vault
+        # payload (both driven by output_port_metadata `to`).
+        downstream = app.query_one("#downstream-header-default")
+        assert "LLM Result (string)" in str(downstream.content)
+        assert app.query_one("#transient-output-name-default").value == "LLM Result"
+        assert app.query("#dead-drop-passthrough")
+        assert app.query_one("#vault-header-default")
+        assert app.query("#vault-output-disabled-default")
 
         # Vault key dropdown: hidden until Vault is selected, then filtered
         # to string-compatible entries (typed string + untagged legacy).
@@ -4384,6 +4390,68 @@ async def _test_node_config_standard_model_layout():
         assert app.query_one("#field-prompt").display is False
 
     print("test_node_config_standard_model_layout PASSED")
+
+
+def test_node_config_payloads_downstream_and_vault():
+    asyncio.run(_test_node_config_payloads_downstream_and_vault())
+
+
+async def _test_node_config_payloads_downstream_and_vault():
+    """New output model: editable downstream name/desc, dead-drop greys them,
+    Disable output greys the vault fields, and save round-trips the keys."""
+    from textual.app import App, ComposeResult
+    from textual.widgets import Checkbox
+
+    from frontend.screens.node_config import NodeConfigScreen
+
+    _, wm, memory_bank, _ = _make_services()
+    wm.create_new("node_config_payloads_model")
+    node = wm.add_node("chat_completion_node")
+    node_data = wm.get_node_data(node)
+
+    captured = {}
+
+    class ConfigApp(App):
+        def compose(self) -> ComposeResult:
+            screen = NodeConfigScreen(
+                wm._factory, wm, node, node_data, memory_bank=memory_bank
+            )
+            captured["screen"] = screen
+            yield screen
+
+    app = ConfigApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.1)
+        screen = captured["screen"]
+
+        name_box = app.query_one("#transient-output-name-default")
+        vault_key = app.query_one("#vault-output-key-default")
+        # Dead-drop off by default: downstream fields editable.
+        assert name_box.disabled is False
+
+        # Forwarding greys the downstream name/description.
+        app.query_one("#dead-drop-passthrough", Checkbox).value = True
+        await pilot.pause(0.05)
+        assert name_box.disabled is True
+
+        # Disable output greys the vault key/description.
+        app.query_one("#vault-output-disabled-default", Checkbox).value = True
+        await pilot.pause(0.05)
+        assert vault_key.disabled is True
+
+        # Edit and save: values round-trip into config.
+        app.query_one("#dead-drop-passthrough", Checkbox).value = False
+        app.query_one("#vault-output-disabled-default", Checkbox).value = False
+        await pilot.pause(0.05)
+        vault_key.value = "chat_result"
+        name_box.value = "Chat answer"
+        values = screen._standard_payload_config_values()
+        assert values["dead_drop_passthrough"] is False
+        assert values["transient_output"] is True
+        assert values["vault_write"] is True
+        assert values["vault_write_key"] == "chat_result"
+
+    print("test_node_config_payloads_downstream_and_vault PASSED")
 
 
 def test_node_config_continue_mode_dynamic_document():
@@ -4436,13 +4504,16 @@ async def _test_node_config_continue_mode_dynamic_document():
         app.query_one("#field-prompt_source", Select).value = "Continue AI session"
         await pilot.pause(0.1)
 
-        # Document source is locked to Configured, its section retitles to
-        # Required Inputs, and the Document textbox is revealed.
-        assert document_source.value == "Configured"
-        assert document_source.disabled is True
+        # Document becomes required — its section retitles to Required Inputs —
+        # but the source stays selectable (no force-to-Configured lock).
+        assert document_source.disabled is False
         titles = section_titles()
         assert "Required Inputs" in titles
         assert "Optional Inputs" not in titles
+
+        # Picking Configured reveals the Document textbox (same as prompt).
+        document_source.value = "Configured"
+        await pilot.pause(0.1)
         assert document_box.display is True
 
     print("test_node_config_continue_mode_dynamic_document PASSED")

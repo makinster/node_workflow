@@ -69,10 +69,14 @@ class ChatCompletionNode(Node):
         "api_key_secret": "",
         "use_chat_session": False,
         "session_key": "",
-        "transient_output": False,
-        "dead_drop_passthrough": True,
+        # Output routing: the Result is the designated downstream payload
+        # (dead-drop off by default), also duplicated to the Vault by default.
+        "transient_output": True,
+        "dead_drop_passthrough": False,
         "vault_write": True,
         "vault_write_key": "",
+        "vault_write_description": "",
+        "transient_outputs": [],
     }
     config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {
         "prompt_source": {
@@ -108,8 +112,8 @@ class ChatCompletionNode(Node):
             "description": "Declared AI session whose chat this node resumes",
         },
         # In Continue mode the document carries the new turn's text, so it is
-        # required and its section retitles to "Required Inputs"; the source is
-        # locked to Configured (a textbox in Parameters) so the user types it.
+        # required and its section retitles to "Required Inputs" — but the user
+        # still picks the source (Upstream / Vault / Configured).
         "document_source": {
             "type": "select",
             "label": "Document / context source",
@@ -120,9 +124,6 @@ class ChatCompletionNode(Node):
             "required_when": {"prompt_source": CONTINUE_SESSION_SOURCE},
             "section_when": {
                 "Required Inputs": {"prompt_source": CONTINUE_SESSION_SOURCE}
-            },
-            "force_value_when": {
-                "Configured": {"prompt_source": CONTINUE_SESSION_SOURCE}
             },
         },
         "document_vault_key": {
@@ -175,35 +176,13 @@ class ChatCompletionNode(Node):
             "required": True,
             "tab": "Parameters",
         },
-        "transient_output": {
-            "type": "boolean",
-            "label": "Send LLM result to next node",
-            "tab": "Payloads",
-            "section": "Result Routing",
-            "mutually_exclusive_with": ["dead_drop_passthrough"],
-        },
-        "dead_drop_passthrough": {
-            "type": "boolean",
-            "label": "Forward incoming payload unchanged",
-            "tab": "Payloads",
-            "section": "Result Routing",
-            "mutually_exclusive_with": ["transient_output"],
-        },
-        "vault_write": {
-            "type": "boolean",
-            "label": "Save LLM result to Vault",
-            "tab": "Payloads",
-            "section": "Result Routing",
-            "enabled_when": {"transient_output": True},
-        },
-        "vault_write_key": {
-            "type": "string",
-            "label": "Result Vault key",
-            "required": False,
-            "tab": "Payloads",
-            "section": "Result Routing",
-            "enabled_when": {"vault_write": True},
-        },
+        # The Payloads routing/vault controls are composed by NodeConfigScreen
+        # from output_port_metadata (one Downstream node payload + optional
+        # Vault payloads), not from schema fields — see the redesigned output
+        # model in NODE_STANDARDS.md. The config keys they read/write
+        # (dead_drop_passthrough, transient_output, vault_write,
+        # vault_write_key, vault_write_description, transient_outputs) live in
+        # default_config below.
         "use_chat_session": {
             "type": "boolean",
             "label": "Keep active AI session",
@@ -323,13 +302,14 @@ class ChatCompletionNode(Node):
             if vault_key:
                 context.memory_bank.store_persistent(vault_key, result.text)
 
-        if self.config.get("transient_output"):
-            payload: Any = result.text
-        else:
-            # Dead-drop passthrough: forward the incoming transient payload.
-            payload = context.inputs.get("document")
+        if self.config.get("dead_drop_passthrough"):
+            # Forward the incoming transient payload unchanged.
+            payload: Any = context.inputs.get("document")
             if payload is None:
                 payload = context.inputs.get("prompt")
+        else:
+            # The Result is the designated downstream payload.
+            payload = result.text
         context.signal_done({"data": {"default": payload}})
 
     def _resolve_prompt(self, context: NodeContext) -> Optional[str]:

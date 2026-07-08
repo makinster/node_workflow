@@ -90,34 +90,42 @@ option — the document is always expected to come from a live data source).
 
 ## Standard Output Routing Model
 
-Every node output that produces data offers the following routing options in
-the Payloads tab.
+**Design principle (revised 2026-07-08):** every node has **one designated
+downstream output** ("Downstream node payload"), fixed at node-design time.
+Every *other* output a node produces is a **keyed Vault payload** of a declared
+type. The Payloads tab is built from `output_port_metadata` (each port's `to`
+list — `downstream` and/or `vault`), not from routing checkboxes.
 
-| Routing option | What it means |
-|---|---|
-| **Transient output** | Send the node's result to the next connected node as the dead-drop payload on the output port. Written to MemoryBank under the ephemeral `(node_id, port_name)` key. |
-| **Dead-drop passthrough** | Forward the incoming transient payload unchanged. The node's own computed result is not pushed to the transient port; the payload that arrived is passed through as-is. |
-| **Vault write** | Save the node's result to the MemoryBank persistent store under a user-provided variable key. Independent of transient routing. |
+**Payloads tab layout** (top to bottom):
 
-**The one mutual exclusion:** Transient output (send my result) and Dead-drop
-passthrough (forward incoming payload unchanged) are mutually exclusive on the
-same port — only one thing can occupy the transient path. Checking one
-unchecks the other.
+1. **Downstream node payload** — the designated output, shown as
+   `Name (type)`, with an **editable payload name** and **editable
+   description** (they seed from the port metadata and can be overwritten;
+   downstream nodes see the edited name/type in their Incoming Payload block).
+2. **`[ ] Forward incoming payload unchanged`** — the single routing checkbox.
+   When checked, the node forwards the arriving payload instead of its own
+   result, and the downstream name/description fields grey out.
+3. **Vault Payload(s)** — for each output also routed to the Vault: an
+   editable Vault key and description. Optional vault outputs carry a
+   `[ ] Disable output` checkbox above them (checking it greys the key /
+   description). A port is optional-to-vault unless its metadata sets
+   `vault_required: true`.
+4. Node-specific routing-adjacent sections (e.g. **AI Session**) follow.
 
-**Transient and Vault write are not mutually exclusive.** A node can send its
-result as both a transient payload to the next node AND write it to the Vault
-simultaneously. This is useful when downstream nodes on the same path need the
-result immediately via transient, while other branches or later nodes access it
-via the stable Vault key.
+An output may be **both** downstream and vault (`to: ["downstream", "vault"]`)
+— e.g. an LLM node's `Result (string)` is the downstream payload *and* is
+optionally duplicated to the Vault, so it appears in both sections.
 
-**Dead-drop and Vault write can also be combined.** A node can pass the
-incoming transient payload unchanged while writing its own computed result
-separately to the Vault. For example, a file instance node that passes through
-the path string as transient (for the next node to use) while writing its
-operation result or error message to a Vault key for error-reporting purposes.
+The old per-output `Transient output` / `Save to Vault` checkboxes are retired.
+Config keys the composer reads/writes: `dead_drop_passthrough` (the checkbox),
+`transient_output` (derived `= not dead_drop`), `transient_outputs` (downstream
+name/description overrides), and `vault_write` / `vault_write_key` /
+`vault_write_description` (the vault output; enabled unless disabled). Multiple
+vault outputs on one node is a documented future extension — the single
+`vault_write*` keys cover the current one-vault-output nodes.
 
-Vault writes are optional unless the node type requires durable output (e.g.,
-an LLM node where losing the result on session close is unacceptable).
+Whenever a payload's data **name** appears in the UI (incoming or outgoing),
+its data **type** is shown after it in parentheses — `Result (string)`.
 
 ### Branch Termination (output nodes)
 
@@ -384,28 +392,31 @@ flags) are never affected by source selection.
 
 ### Payloads Tab
 
-Declares how the node's output is routed, in a **Result Routing** section:
+Built from `output_port_metadata` per the Standard Output Routing Model above:
 
 ```
-── Result Routing ───────────────────
-[ ] Send result to next node        ─┐ mutually exclusive: only one can
-[x] Forward incoming payload unchanged ─┘ occupy the transient port
-[x] Save result to Vault    Key: [________]
+── Downstream node payload ──────────
+Result (string)
+  Payload name: [Result_______________]   greys out when forwarding
+  Description:  [Model response text___]
 
-── Outgoing ─────────────────────────
-default  [string] - <port description>     ← read-only contract summary
+[ ] Forward incoming payload unchanged
+
+── Vault Payload ────────────────────
+Result (string)
+[ ] Disable output                        (optional vault outputs only)
+  Vault key:    [chat_result___________]   greys out when disabled
+  Description:  [______________________]
+
+── AI Session ───────────────────────
+[ ] Keep active AI session ...
 ```
 
-Transient output and dead-drop passthrough are mutually exclusive: checking
-one unchecks the other. Vault write is independent and can be combined with
-either transient option. Checkboxes carry their label on the control itself
-(single row); the vault key input sits beside its checkbox.
-
-For standard-model nodes the routing checkboxes are the **only** vault-write
-UI — the legacy "Write to Vault" payload rows and reveal checkboxes are not
-rendered (the validator derives the vault declarations from `vault_write_key`
-and session fields instead). Node-specific routing-adjacent options (e.g. an
-AI Session section) follow the Result Routing section.
+The single `Forward incoming payload unchanged` checkbox is the only routing
+control; there are no per-output `Send to next node` / `Save to Vault`
+checkboxes. The validator derives the vault declarations from `vault_write_key`
+and session fields; the legacy "Write to Vault" rows and reveal checkboxes are
+not rendered for standard-model nodes.
 
 Per-node defaults vary. Document the default state for each node type in its
 spec.
@@ -509,17 +520,27 @@ of `PHASE_17_NODE_VISUAL_IDENTITY.md`.
 **Payloads tab:**
 
 ```
-── Result Routing ───────────────────
-[ ] Send LLM result to next node       ─┐ mutually exclusive
-[x] Forward incoming payload unchanged ─┘ (dead-drop default)
-[x] Save LLM result to Vault   Key: [________]
-    Cannot be unchecked unless transient output is checked.
+── Downstream node payload ──────────
+Result (string)                        ← the designated downstream output
+  Payload name: [Result_______________]  (greys out if forwarding)
+  Description:  [Model response text___]
+[ ] Forward incoming payload unchanged   (dead-drop; default off)
+
+── Vault Payload ────────────────────
+Result (string)                        ← same Result, optionally duplicated
+[ ] Disable output
+  Vault key:    [chat_result___________]
+  Description:  [______________________]
 
 ── AI Session ───────────────────────
 [ ] Keep active AI session
     Session key: [________]            ← visible only when checked, and only
                                          when NOT continuing a session
 ```
+
+`Result (string)` is the designated downstream payload (dead-drop off by
+default, so the Result flows to the next node) and is also duplicated to the
+Vault by default (disable via the checkbox).
 
 When "Keep active AI session" is checked **in Continue mode**, the resumed
 session is the one extended — no new key is asked for (the session-key field

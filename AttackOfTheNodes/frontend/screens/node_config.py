@@ -701,7 +701,14 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
 
             with TabPane("3 - Payloads", id="node-config-tab-outputs"):
                 with VerticalScroll(classes="tab-scroll"):
-                    if not standard_model:
+                    if standard_model:
+                        # New output model: one designated Downstream node
+                        # payload, optional Vault payloads, then the schema
+                        # Payloads fields (AI Session) at the bottom.
+                        yield from self._compose_standard_payloads(metadata, config)
+                        if forms.get("payloads") is not None:
+                            yield forms["payloads"]
+                    else:
                         yield Label("Incoming Payloads", classes="form-label nav-section")
                         yield Checkbox(
                             "Reveal upstream payload",
@@ -710,13 +717,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                         )
                         yield PayloadPreview("", id="payload-upstream-payload-preview", classes="form-description")
                         yield from self._compose_vault_payload_preview("payload")
-                    if forms.get("payloads") is not None:
-                        yield forms["payloads"]
-                    if standard_model:
-                        # Routing checkboxes above already cover vault writes;
-                        # the legacy Write to Vault rows would be redundant.
-                        yield from self._compose_outgoing_summary(metadata)
-                    else:
+                        if forms.get("payloads") is not None:
+                            yield forms["payloads"]
                         yield Label("Dead Drop Payloads", classes="form-label nav-section")
                         yield from self._compose_transient_outputs(metadata, config)
                         if self._supports_membank_outputs(metadata):
@@ -1102,6 +1104,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         self._sync_membank_input_controls()
         self._sync_branch_payload_rows()
         self._sync_payload_previews()
+        self._sync_standard_payload_controls()
         self._apply_generated_field_rules()
         if self.query("#alias-input"):
             self.call_after_refresh(
@@ -1146,6 +1149,10 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             self._sync_payload_previews()
         elif event.checkbox.id == "field-pass_through":
             await self._refresh_membank_output_rows()
+        elif event.checkbox.id == "dead-drop-passthrough" or (
+            event.checkbox.id or ""
+        ).startswith("vault-output-disabled-"):
+            self._sync_standard_payload_controls()
         if event.checkbox.id and event.checkbox.id.startswith("field-"):
             if event.value:
                 self._uncheck_mutually_exclusive_fields(
@@ -1232,6 +1239,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         config = self._get_form_values() if self._get_form_values else {}
         config.update(self._transient_config_values())
         config.update(self._membank_config_values())
+        config.update(self._standard_payload_config_values())
         config.update(self._wait_config_values())
         config.update(self._branch_config_values())
         config.update(self._merge_config_values())
@@ -1673,6 +1681,53 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 id=f"incoming-payload-{target_port}",
             )
 
+    def _sync_standard_payload_controls(self) -> None:
+        """Grey downstream fields when forwarding, and vault fields when
+        an output is disabled."""
+        metadata = self._metadata_for_type(self.node_data.get("type", ""))
+        if not self._uses_standard_source_model(metadata):
+            return
+        dead_drop_query = self.query("#dead-drop-passthrough")
+        forwarding = bool(dead_drop_query.first().value) if dead_drop_query else False
+        for port in self._downstream_output_ports(metadata):
+            for suffix in (f"transient-output-name-{port}", f"transient-output-desc-{port}"):
+                for widget in self.query(f"#{suffix}"):
+                    widget.disabled = forwarding
+        for port in self._vault_output_ports(metadata):
+            disable_query = self.query(f"#vault-output-disabled-{port}")
+            disabled = bool(disable_query.first().value) if disable_query else False
+            for suffix in (f"vault-output-key-{port}", f"vault-output-desc-{port}"):
+                for widget in self.query(f"#{suffix}"):
+                    widget.disabled = disabled
+
+    def _standard_payload_config_values(self) -> Dict[str, Any]:
+        """Collect the redesigned Payloads controls into config keys."""
+        if not self.query("#dead-drop-passthrough"):
+            return {}
+        metadata = self._metadata_for_type(self.node_data.get("type", ""))
+        dead_drop = bool(self.query_one("#dead-drop-passthrough", Checkbox).value)
+        values: Dict[str, Any] = {
+            "dead_drop_passthrough": dead_drop,
+            "transient_output": not dead_drop,
+        }
+        # A single vault output maps to the vault_write* keys the backend and
+        # validator read; the first vault port wins (multi-vault is a future
+        # extension — see NODE_STANDARDS.md).
+        for port in self._vault_output_ports(metadata):
+            disable_query = self.query(f"#vault-output-disabled-{port}")
+            disabled = bool(disable_query.first().value) if disable_query else False
+            key_query = self.query(f"#vault-output-key-{port}")
+            desc_query = self.query(f"#vault-output-desc-{port}")
+            values["vault_write"] = not disabled
+            values["vault_write_key"] = (
+                self._widget_text_value(key_query.first()) if key_query else ""
+            )
+            values["vault_write_description"] = (
+                self._widget_text_value(desc_query.first()) if desc_query else ""
+            )
+            break
+        return values
+
     def _short_value_text(self, value: Any) -> str:
         """One-line captured-value preview, truncated for the summary block."""
         if isinstance(value, (list, tuple, set, dict)):
@@ -1682,28 +1737,116 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             rendered = f"{rendered[:397]}..."
         return rendered
 
-    def _compose_outgoing_summary(self, metadata: Optional[Dict[str, Any]]):
-        """Compact read-only outgoing-port contract for standard-model nodes."""
-        ports = list((metadata or {}).get("output_ports") or [])
-        if not ports:
-            return
+    def _downstream_output_ports(self, metadata: Optional[Dict[str, Any]]) -> list[str]:
+        """Output ports routed downstream (the designated node payload)."""
         port_meta = (metadata or {}).get("output_port_metadata") or {}
-        lines: list[str] = []
-        for port in ports:
-            info = port_meta.get(str(port)) or {}
-            name = str(info.get("name") or port)
-            data_type = str(info.get("data_type") or "any")
-            description = str(info.get("description") or "").strip()
-            line = f"{name}  [{data_type}]"
-            if description:
-                line = f"{line} - {description}"
-            lines.append(line)
-        yield Label("Outgoing", classes="form-label nav-section")
-        yield Static(
-            "\n".join(lines),
-            classes="form-description",
-            id="outgoing-port-summary",
+        ports = []
+        for port in (metadata or {}).get("output_ports") or []:
+            routing = (port_meta.get(str(port)) or {}).get("to")
+            if routing is None or "downstream" in routing:
+                ports.append(str(port))
+        return ports
+
+    def _vault_output_ports(self, metadata: Optional[Dict[str, Any]]) -> list[str]:
+        """Output ports that may be keyed to the Vault."""
+        port_meta = (metadata or {}).get("output_port_metadata") or {}
+        return [
+            str(port)
+            for port in (metadata or {}).get("output_ports") or []
+            if "vault" in ((port_meta.get(str(port)) or {}).get("to") or [])
+        ]
+
+    def _output_header(self, metadata: Optional[Dict[str, Any]], port: str) -> str:
+        """`Name (type)` header for an output port."""
+        info = ((metadata or {}).get("output_port_metadata") or {}).get(port) or {}
+        name = output_display_name(self.factory, self.node_data, port)
+        data_type = str(info.get("data_type") or "any")
+        return f"{name} ({data_type})"
+
+    def _compose_standard_payloads(
+        self,
+        metadata: Optional[Dict[str, Any]],
+        config: Dict[str, Any],
+    ):
+        """Compose the redesigned standard-model Payloads controls.
+
+        Layout: the designated Downstream node payload (editable name +
+        description, known before routing is chosen), the single
+        "Forward incoming payload unchanged" checkbox beneath it (greys the
+        downstream fields), then optional Vault payloads (each an editable key
+        + description with a "Disable output" checkbox for optional outputs).
+        Model per NODE_STANDARDS.md: one downstream output, the rest vault.
+        """
+        downstream_ports = self._downstream_output_ports(metadata)
+        vault_ports = self._vault_output_ports(metadata)
+
+        yield Label("Downstream node payload", classes="form-label nav-section")
+        for port in downstream_ports:
+            name = output_display_name(self.factory, self.node_data, port)
+            description = output_display_description(self.factory, self.node_data, port)
+            yield Static(
+                self._output_header(metadata, port),
+                classes="form-description",
+                id=f"downstream-header-{port}",
+            )
+            yield Horizontal(
+                Label("Payload name:", classes="form-label-inline"),
+                CommandInput(value=name, id=f"transient-output-name-{port}"),
+                classes="form-inline-row",
+                id=f"downstream-name-row-{port}",
+            )
+            yield Horizontal(
+                Label("Description:", classes="form-label-inline"),
+                CommandInput(
+                    value="" if description == OUTPUT_NOT_CONFIGURED else description,
+                    id=f"transient-output-desc-{port}",
+                ),
+                classes="form-inline-row",
+                id=f"downstream-desc-row-{port}",
+            )
+        yield Checkbox(
+            "Forward incoming payload unchanged",
+            value=bool(config.get("dead_drop_passthrough")),
+            id="dead-drop-passthrough",
         )
+
+        if vault_ports:
+            plural = "s" if len(vault_ports) > 1 else ""
+            yield Label(f"Vault Payload{plural}", classes="form-label nav-section")
+            for port in vault_ports:
+                info = (
+                    (metadata or {}).get("output_port_metadata") or {}
+                ).get(port) or {}
+                optional = not bool(info.get("vault_required"))
+                yield Static(
+                    self._output_header(metadata, port),
+                    classes="form-description",
+                    id=f"vault-header-{port}",
+                )
+                if optional:
+                    yield Checkbox(
+                        "Disable output",
+                        value=not bool(config.get("vault_write", True)),
+                        id=f"vault-output-disabled-{port}",
+                    )
+                default_key = str(config.get("vault_write_key") or "").strip()
+                default_desc = str(config.get("vault_write_description") or "").strip()
+                if not default_desc:
+                    default_desc = "" if (
+                        str(info.get("description") or "").strip() == OUTPUT_NOT_CONFIGURED
+                    ) else str(info.get("description") or "").strip()
+                yield Horizontal(
+                    Label("Vault key:", classes="form-label-inline"),
+                    CommandInput(value=default_key, id=f"vault-output-key-{port}"),
+                    classes="form-inline-row",
+                    id=f"vault-key-row-{port}",
+                )
+                yield Horizontal(
+                    Label("Description:", classes="form-label-inline"),
+                    CommandInput(value=default_desc, id=f"vault-output-desc-{port}"),
+                    classes="form-inline-row",
+                    id=f"vault-desc-row-{port}",
+                )
 
     def _pass_through_note(self, metadata: Optional[Dict[str, Any]]) -> str:
         if metadata is None:

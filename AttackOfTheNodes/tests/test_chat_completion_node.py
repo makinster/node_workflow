@@ -103,13 +103,17 @@ def _patch_client(monkeypatch, client):
 async def test_success_writes_vault_and_forwards_dead_drop(monkeypatch):
     client = FakeClient()
     _patch_client(monkeypatch, client)
-    node = _make_node(vault_write=True, vault_write_key="llm_result")
+    node = _make_node(
+        dead_drop_passthrough=True,
+        vault_write=True,
+        vault_write_key="llm_result",
+    )
     context, signals = _make_context(inputs={"document": "the doc payload"})
 
     await node.execute(context)
 
     assert "error" not in signals
-    # Default routing: dead-drop passthrough forwards the incoming payload.
+    # Dead-drop passthrough forwards the incoming payload; Result still vaults.
     assert signals["done"]["data"]["default"] == "the doc payload"
     assert context.memory_bank.read_persistent("llm_result") == "mock response"
     # The document rides along in the user turn.

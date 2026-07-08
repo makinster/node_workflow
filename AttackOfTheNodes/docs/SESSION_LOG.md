@@ -4,6 +4,44 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-07-08 — Output Model Redesign: Downstream Payload + Keyed Vault Payloads
+
+Branch: `llm-node`
+
+Owner-directed reconception of the node output model plus a Continue-mode fix.
+
+- **Source fix**: Continue AI session no longer locks `document_source` to
+  Configured — the input becomes required (section retitles Optional →
+  Required) but the user still picks Upstream / Vault / Configured.
+  `force_value_when` removed from the chat schema.
+- **New output model** (NODE_STANDARDS): every node has one designated
+  **Downstream node payload** and any other outputs are **keyed Vault
+  payloads**. The standard-model Payloads tab is now composed from
+  `output_port_metadata.to` by `NodeConfigScreen._compose_standard_payloads`:
+  - Downstream node payload at the top: `Name (type)` header + editable
+    payload name and description (seed from metadata, overwritable).
+  - Single `Forward incoming payload unchanged` checkbox beneath it (greys the
+    downstream fields when checked).
+  - `Vault Payload(s)`: editable key + description per vault-routed output,
+    with a `Disable output` checkbox for optional ones (greys key/desc).
+  - AI Session section stays at the bottom.
+  - The per-output `Send to next node` / `Save to Vault` checkboxes and the
+    compact Outgoing summary are gone.
+- Data **type shown in parentheses** wherever a payload name appears (incoming
+  block and the downstream/vault headers).
+- **Chat node**: routing/vault schema fields removed (composed instead);
+  defaults flipped so `Result (string)` is the downstream payload
+  (`dead_drop_passthrough` default False) and duplicated to the vault
+  (`vault_write` default True); `execute()` routes on `dead_drop_passthrough`;
+  added `vault_write_description`.
+- Tests: new `_compose_standard_payloads` save/greying test; updated
+  standard-model layout, continue-mode, and schema tests. Full suite 377
+  passed; `check_node`/`check_ui` OK.
+- Docs: NODE_STANDARDS (output routing model + Payloads tab + Basic LLM
+  example), IO_CONTRACT_UI_DESIGN (three decision rows), helper spec.
+
+---
+
 ## 2026-07-08 — Continue-Session Document Turn + Generic Mode-Driven Rule Keys
 
 Branch: `llm-node`

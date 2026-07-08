@@ -75,24 +75,29 @@ def test_chat_completion_node_session_and_routing_fields():
     assert schema["prompt_vault_key"]["visible_when"] == {"prompt_source": "Vault"}
     assert schema["prompt_vault_key"]["vault_type"] == "string"
     assert schema["prompt"]["visible_when"] == {"prompt_source": "Configured"}
-    # Continue mode makes the document required and locks it to Configured,
-    # with a matching Parameters textbox.
+    # Continue mode makes the document required and retitles its section, but
+    # keeps the source selectable (no force-to-Configured lock).
     assert schema["document_source"]["required_when"] == {
         "prompt_source": "Continue AI session"
     }
-    assert schema["document_source"]["force_value_when"] == {
-        "Configured": {"prompt_source": "Continue AI session"}
-    }
+    assert "force_value_when" not in schema["document_source"]
     assert schema["document_source"]["section_when"] == {
         "Required Inputs": {"prompt_source": "Continue AI session"}
     }
     assert schema["document"]["visible_when"] == {"document_source": "Configured"}
     assert schema["api_key_secret"]["secret"] is True
-    assert "dead_drop_passthrough" in schema["transient_output"]["mutually_exclusive_with"]
-    assert "transient_output" in schema["dead_drop_passthrough"]["mutually_exclusive_with"]
+    # Routing/vault controls are composed from output_port_metadata, not schema
+    # fields; the output port declares downstream + vault routing.
+    assert schema.get("transient_output") is None
+    assert schema.get("vault_write") is None
+    default_out = _metadata()["output_port_metadata"]["default"]
+    assert "downstream" in default_out["to"]
+    assert "vault" in default_out["to"]
 
     factory = NodeFactory()
     node = factory.create_node("chat_completion_node", "n1")
-    assert node.config["dead_drop_passthrough"] is True
-    assert node.config["transient_output"] is False
+    # Result is the designated downstream payload (dead-drop off), also
+    # duplicated to the vault by default.
+    assert node.config["dead_drop_passthrough"] is False
+    assert node.config["transient_output"] is True
     assert node.config["vault_write"] is True

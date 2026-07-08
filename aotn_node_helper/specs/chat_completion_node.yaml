@@ -57,14 +57,18 @@ outputs:
     pass_through: true
     description: Model response text (or forwarded payload on dead-drop)
 
-# Basic LLM Node routing (NODE_STANDARDS): dead-drop default, vault write
-# locked on unless transient output is checked.
+# Output model (NODE_STANDARDS, revised 2026-07-08): the Payloads tab is
+# composed from output_port_metadata `to` (one Downstream node payload + the
+# Vault duplicate), NOT from output_routing checkboxes. The registered node's
+# Result (string) is downstream by default and optionally duplicated to the
+# Vault. The generated output_routing block below is retained only as legacy
+# documentation; the hand-written node does not use it.
 output_routing:
-  default: dead_drop
+  default: transient
   transient_label: Send LLM result to next node
   dead_drop_label: Forward incoming payload unchanged
   vault:
-    mode: required_unless_transient
+    mode: optional
     label: Save LLM result to Vault
     key_label: Result Vault key
 
