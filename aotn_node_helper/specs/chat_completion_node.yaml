@@ -37,8 +37,16 @@ inputs:
     required: false
     label: Document / context
     description: Optional document appended to the prompt
-    sources: ["upstream", "vault"]
+    sources: ["upstream", "vault", "configured"]
     default: upstream
+    parameter:
+      type: multiline
+      label: Document
+    # Continue-mode edge case (hand-written on the registered node): when the
+    # prompt source is "Continue AI session" the document carries the new turn,
+    # so document_source is required, its section retitles to Required Inputs,
+    # and its value is locked to Configured. Documented here; the generated
+    # <port>_source field would need these rule keys merged in on regeneration.
 
 outputs:
   default:
@@ -110,5 +118,8 @@ config_tabs:
       label: Session key
       required: false
       section: AI Session
+      # Hidden in Continue mode too: the resumed session is kept active, so no
+      # new key is asked for (registered node uses the list-OR form of the
+      # non-continue prompt sources).
       visible_when:
         use_chat_session: true

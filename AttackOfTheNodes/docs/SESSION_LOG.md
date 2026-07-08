@@ -4,6 +4,45 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-07-08 — Continue-Session Document Turn + Generic Mode-Driven Rule Keys
+
+Branch: `llm-node`
+
+Owner feedback: in Continue AI session mode the Document input must carry the
+new turn's text, and a real bug — continue mode read only the document port and
+silently sent a bare "Continue." nudge, producing responses unrelated to the
+user's actual input.
+
+- **New generic form rule keys** (`form_generator.apply_field_rules`): so
+  future nodes get this behavior declaratively, not via node-specific code.
+  - `required_when` — adds the `*` marker live when a condition holds.
+  - `section_when` — retitles a field's section header (`{title: condition}`).
+  - `force_value_when` — locks a `select` to a value while a condition holds
+    (`{value: condition}`); re-enabled otherwise. `NodeConfigScreen` guards
+    reentrancy since forcing a value re-fires `Select.Changed`.
+  - Generator `_validate_field_rules` accepts and validates the new keys.
+- **Chat node Continue-mode edge case**: `document_source` gains
+  `required_when` / `section_when` (Optional → Required Inputs) /
+  `force_value_when` (→ Configured) keyed to `prompt_source == Continue AI
+  session`; a `document` multiline param textbox (visible_when
+  document_source == Configured) mirrors the prompt textbox; document sources
+  gain "Configured".
+- **Bug fix**: continue mode now requires and sends the resolved Document text
+  as the new user turn (errors clearly when empty) instead of the silent
+  nudge. Fixes unrelated responses when the upstream landed on the prompt port.
+- **Session reuse**: checking "Keep active AI session" while continuing extends
+  the resumed session in place (onward key = the resumed ref); the session-key
+  field is hidden in continue mode (`visible_when` list-OR of non-continue
+  prompt sources). `_persist_session` now takes the resolved `onward_key`.
+- Docs: `NODE_HELPER.md` (three new rule keys), `NODE_STANDARDS.md` (Basic LLM
+  continue-mode edge case + session reuse), `IO_CONTRACT_UI_DESIGN.md`
+  (decision row), helper spec refreshed.
+
+Verified: full pytest suite (376 passed), `check_node`/`check_ui` OK,
+`compileall` clean.
+
+---
+
 ## 2026-07-07 — Dropdown Eligibility, Option Pruning, Nav-Skip Payload Summary
 
 Branch: `llm-node`

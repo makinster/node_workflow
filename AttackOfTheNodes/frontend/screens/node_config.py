@@ -1170,7 +1170,15 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
     def _apply_generated_field_rules(self) -> None:
         if not self._rule_schema or self._get_form_values is None:
             return
-        apply_field_rules(self, self._rule_schema, self._get_form_values())
+        # force_value_when may set a widget value, which re-fires Select.Changed
+        # and re-enters here; guard so the pass runs once to a fixed point.
+        if getattr(self, "_applying_field_rules", False):
+            return
+        self._applying_field_rules = True
+        try:
+            apply_field_rules(self, self._rule_schema, self._get_form_values())
+        finally:
+            self._applying_field_rules = False
 
     def _uncheck_mutually_exclusive_fields(self, field_name: str) -> None:
         if not self._rule_schema:

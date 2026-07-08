@@ -61,6 +61,7 @@ class ChatCompletionNode(Node):
         "prompt": "",
         "document_source": "Upstream payload",
         "document_vault_key": "",
+        "document": "",
         "continue_session_key": "",
         "model": DEFAULT_MODEL_ID,
         "max_tokens": 1024,
@@ -106,13 +107,23 @@ class ChatCompletionNode(Node):
             "visible_when": {"prompt_source": CONTINUE_SESSION_SOURCE},
             "description": "Declared AI session whose chat this node resumes",
         },
+        # In Continue mode the document carries the new turn's text, so it is
+        # required and its section retitles to "Required Inputs"; the source is
+        # locked to Configured (a textbox in Parameters) so the user types it.
         "document_source": {
             "type": "select",
             "label": "Document / context source",
-            "options": ["Upstream payload", "Vault"],
+            "options": ["Upstream payload", "Vault", "Configured"],
             "tab": "Source",
             "section": "Optional Inputs",
             "description": "Optional document appended to the prompt",
+            "required_when": {"prompt_source": CONTINUE_SESSION_SOURCE},
+            "section_when": {
+                "Required Inputs": {"prompt_source": CONTINUE_SESSION_SOURCE}
+            },
+            "force_value_when": {
+                "Configured": {"prompt_source": CONTINUE_SESSION_SOURCE}
+            },
         },
         "document_vault_key": {
             "type": "string",
@@ -129,6 +140,13 @@ class ChatCompletionNode(Node):
             "required": False,
             "tab": "Parameters",
             "visible_when": {"prompt_source": "Configured"},
+        },
+        "document": {
+            "type": "multiline",
+            "label": "Document (E to edit, ESC to finish)",
+            "required": False,
+            "tab": "Parameters",
+            "visible_when": {"document_source": "Configured"},
         },
         "model": {
             "type": "select",
@@ -191,14 +209,24 @@ class ChatCompletionNode(Node):
             "label": "Keep active AI session",
             "tab": "Payloads",
             "section": "AI Session",
+            "description": (
+                "When continuing a session, extends that same session — "
+                "no new key needed"
+            ),
         },
+        # When continuing, the resumed session is the one kept active, so no
+        # new key is asked for: the field is hidden unless a non-continue
+        # prompt source is selected.
         "session_key": {
             "type": "string",
             "label": "Session key",
             "required": False,
             "tab": "Payloads",
             "section": "AI Session",
-            "visible_when": {"use_chat_session": True},
+            "visible_when": {
+                "use_chat_session": True,
+                "prompt_source": ["Upstream payload", "Vault", "Configured"],
+            },
         },
     }
 
@@ -227,6 +255,7 @@ class ChatCompletionNode(Node):
             )
             return
 
+        onward_key = ""
         if continuing:
             ref = self._continuation_ref(context)
             if not ref:
@@ -245,22 +274,28 @@ class ChatCompletionNode(Node):
                     RuntimeError(f"AI session '{ref}' has no history to continue")
                 )
                 return
-            # The session replaces the prompt: the document (when wired)
-            # becomes the next user turn; with nothing to add, resume the
-            # conversation with a bare continue nudge.
-            if document is not None:
-                user_content: Optional[str] = document
-            elif history[-1].get("role") == "user":
-                user_content = None
-            else:
-                user_content = "Continue."
-            messages = list(history)
-            if user_content is not None:
-                messages.append({"role": "user", "content": user_content})
+            # The resumed session replaces the prompt; the Document input
+            # carries the new turn's text and is required in this mode.
+            if document is None or not document.strip():
+                context.signal_error(
+                    RuntimeError(
+                        "Continue AI session needs Document text to send "
+                        "alongside the resumed chat"
+                    )
+                )
+                return
+            user_content: Optional[str] = document
+            messages = history + [{"role": "user", "content": user_content}]
+            # Keeping the session active extends the resumed session itself —
+            # no separate key.
+            if self.config.get("use_chat_session"):
+                onward_key = ref
         else:
             history = self._resolve_history(context)
             user_content = prompt if document is None else f"{prompt}\n\n{document}"
             messages = history + [{"role": "user", "content": user_content}]
+            if self.config.get("use_chat_session"):
+                onward_key = str(self.config.get("session_key") or "").strip()
 
         client = get_client("anthropic")
         try:
@@ -281,7 +316,7 @@ class ChatCompletionNode(Node):
             context.signal_error(RuntimeError(f"Chat completion failed: {result.error}"))
             return
 
-        self._persist_session(context, history, user_content, result.text)
+        self._persist_session(context, onward_key, history, user_content, result.text)
 
         if self.config.get("vault_write", True):
             vault_key = str(self.config.get("vault_write_key") or "").strip()
@@ -313,6 +348,8 @@ class ChatCompletionNode(Node):
         if source == "Vault":
             key = str(self.config.get("document_vault_key") or "").strip()
             value = context.memory_bank.read_persistent(key) if key else None
+        elif source == "Configured":
+            value = self.config.get("document")
         else:
             value = context.inputs.get("document")
         return None if value is None else str(value)
@@ -340,29 +377,30 @@ class ChatCompletionNode(Node):
     def _persist_session(
         self,
         context: NodeContext,
+        onward_key: str,
         history: List[Dict[str, str]],
         user_content: Optional[str],
         response_text: str,
     ) -> None:
-        """Extend the named session after a successful call (checkbox-gated).
+        """Extend the kept-active session after a successful call.
 
+        ``onward_key`` is the session to extend: this node's own session key in
+        normal mode, or the resumed session's ref when continuing (so keeping
+        the session active extends the same chat rather than forking a copy).
         History lives in RunSession; the vault holds only the ai_session type
         tag and reference key (NODE_STANDARDS, Typed Vault Outputs).
         """
-        if not self.config.get("use_chat_session") or context.run_session is None:
+        if not onward_key or context.run_session is None:
             return
-        session_key = str(self.config.get("session_key") or "").strip()
-        if not session_key:
-            return
-        session_history = context.run_session.get_or_create_chat_session(session_key)
+        session_history = context.run_session.get_or_create_chat_session(onward_key)
         if not session_history and history:
-            # Continuing another session into a fresh key: seed the prior turns.
+            # Seeding a fresh key from another session's prior turns.
             session_history.extend(history)
         if user_content is not None:
-            context.run_session.append_chat_message(session_key, "user", user_content)
-        context.run_session.append_chat_message(session_key, "assistant", response_text)
+            context.run_session.append_chat_message(onward_key, "user", user_content)
+        context.run_session.append_chat_message(onward_key, "assistant", response_text)
         context.memory_bank.store_persistent(
-            session_key,
-            {"type": "ai_session", "ref_key": session_key},
+            onward_key,
+            {"type": "ai_session", "ref_key": onward_key},
             type_tag="ai_session",
         )

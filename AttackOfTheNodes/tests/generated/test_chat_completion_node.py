@@ -59,7 +59,11 @@ def test_chat_completion_node_session_and_routing_fields():
     schema = _metadata()["config_schema"]
     # Session persistence lives in the Payloads tab; the key hides until
     # enabled. Continuation is a prompt-source mode on the Source tab.
-    assert schema["session_key"]["visible_when"] == {"use_chat_session": True}
+    # Hidden until enabled, and suppressed in Continue mode (session reused).
+    assert schema["session_key"]["visible_when"] == {
+        "use_chat_session": True,
+        "prompt_source": ["Upstream payload", "Vault", "Configured"],
+    }
     assert schema["session_key"]["tab"] == "Payloads"
     assert schema["use_chat_session"]["tab"] == "Payloads"
     assert "Continue AI session" in schema["prompt_source"]["options"]
@@ -71,6 +75,18 @@ def test_chat_completion_node_session_and_routing_fields():
     assert schema["prompt_vault_key"]["visible_when"] == {"prompt_source": "Vault"}
     assert schema["prompt_vault_key"]["vault_type"] == "string"
     assert schema["prompt"]["visible_when"] == {"prompt_source": "Configured"}
+    # Continue mode makes the document required and locks it to Configured,
+    # with a matching Parameters textbox.
+    assert schema["document_source"]["required_when"] == {
+        "prompt_source": "Continue AI session"
+    }
+    assert schema["document_source"]["force_value_when"] == {
+        "Configured": {"prompt_source": "Continue AI session"}
+    }
+    assert schema["document_source"]["section_when"] == {
+        "Required Inputs": {"prompt_source": "Continue AI session"}
+    }
+    assert schema["document"]["visible_when"] == {"document_source": "Configured"}
     assert schema["api_key_secret"]["secret"] is True
     assert "dead_drop_passthrough" in schema["transient_output"]["mutually_exclusive_with"]
     assert "transient_output" in schema["dead_drop_passthrough"]["mutually_exclusive_with"]

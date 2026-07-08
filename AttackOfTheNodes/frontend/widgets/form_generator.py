@@ -25,7 +25,13 @@ from frontend.widgets.command_input import CommandInput, CommandTextArea
 WidgetGetter = Callable[[], Dict[str, Any]]
 DEFAULT_GROUP = "Settings"
 GroupedSchema = List[Tuple[str, Dict[str, Dict[str, Any]]]]
-FIELD_RULE_KEYS = {"enabled_when", "visible_when", "mutually_exclusive_with"}
+FIELD_RULE_KEYS = {
+    "enabled_when",
+    "visible_when",
+    "mutually_exclusive_with",
+    "required_when",
+    "section_when",
+}
 
 
 def build_form(
@@ -56,7 +62,7 @@ def build_form(
             current_section: str | None = None
             for field_name, field_schema in group_schema.items():
                 current_section = _append_section_label(
-                    children, field_schema, current_section
+                    children, field_name, field_schema, current_section
                 )
                 children.extend(
                     _field_children(
@@ -82,7 +88,7 @@ def build_form(
         for _, group_schema in groups:
             for field_name, field_schema in group_schema.items():
                 current_section = _append_section_label(
-                    children, field_schema, current_section
+                    children, field_name, field_schema, current_section
                 )
                 children.extend(
                     _field_children(
@@ -149,14 +155,23 @@ def _is_inline_field(field_type: str, field_schema: Dict[str, Any]) -> bool:
 
 def _append_section_label(
     children: list[Any],
+    field_name: str,
     field_schema: Dict[str, Any],
     current_section: str | None,
 ) -> str | None:
-    """Insert a section header when a field starts a new declared section."""
+    """Insert a section header when a field starts a new declared section.
+
+    The label id is derived from the field that opens the section run so a
+    ``section_when`` rule on that field can retitle the header dynamically.
+    """
     section = str(field_schema.get("section") or "").strip()
     if section and section != current_section:
         children.append(
-            Label(section, classes="form-label nav-section form-section-label")
+            Label(
+                section,
+                classes="form-label nav-section form-section-label",
+                id=f"form-section-{field_name}",
+            )
         )
         return section
     return current_section if not section else section
@@ -456,24 +471,34 @@ def apply_field_rules(
     config_schema: Dict[str, Dict[str, Any]],
     values: Dict[str, Any],
 ) -> None:
-    """Apply enabled_when/visible_when rules to mounted generated widgets.
+    """Apply dynamic-form rules to mounted generated widgets.
 
     `root` is any Textual DOM node with `.query` (screen or container). Fields
     are located by their generated `field-<name>` ids so rules work across
     config tabs that were built by separate `build_form` calls.
+
+    Supported per-field rule keys: `enabled_when` (grey), `visible_when`
+    (hide), `required_when` (add the `*` marker live), `section_when` (retitle
+    the field's section header), and `force_value_when` (lock a select to a
+    value while a condition holds). All conditions share the mapping shape
+    evaluated by `evaluate_field_condition`.
     """
     for field_name, field_schema in config_schema.items():
         enabled_when = field_schema.get("enabled_when")
         visible_when = field_schema.get("visible_when")
-        if enabled_when is None and visible_when is None:
+        required_when = field_schema.get("required_when")
+        section_when = field_schema.get("section_when")
+        force_value_when = field_schema.get("force_value_when")
+        if not any(
+            (enabled_when, visible_when, required_when, section_when, force_value_when)
+        ):
             continue
         widgets = list(root.query(f"#field-{field_name}"))
-        if not widgets:
-            continue
-        widget = widgets[0]
-        if enabled_when is not None:
+        widget = widgets[0] if widgets else None
+
+        if enabled_when is not None and widget is not None:
             widget.disabled = not evaluate_field_condition(enabled_when, values)
-        if visible_when is not None:
+        if visible_when is not None and widget is not None:
             visible = evaluate_field_condition(visible_when, values)
             widget.display = visible
             for extra_id in (
@@ -483,6 +508,50 @@ def apply_field_rules(
             ):
                 for extra in root.query(f"#{extra_id}"):
                     extra.display = visible
+        if required_when is not None:
+            required = bool(field_schema.get("required")) or evaluate_field_condition(
+                required_when, values
+            )
+            _set_label_required(root, field_name, field_schema, required)
+        if section_when:
+            title = None
+            for candidate, condition in section_when.items():
+                if evaluate_field_condition(condition, values):
+                    title = candidate
+                    break
+            default_title = str(field_schema.get("section") or "")
+            for header in root.query(f"#form-section-{field_name}"):
+                header.update(title or default_title)
+        if force_value_when and isinstance(widget, Select):
+            forced = None
+            for value, condition in force_value_when.items():
+                if evaluate_field_condition(condition, values):
+                    forced = value
+                    break
+            if forced is not None:
+                if widget.value != forced:
+                    widget.value = forced
+                widget.disabled = True
+            elif enabled_when is None:
+                widget.disabled = False
+
+
+def _set_label_required(
+    root: Any,
+    field_name: str,
+    field_schema: Dict[str, Any],
+    required: bool,
+) -> None:
+    """Refresh a field's rendered label / checkbox text to reflect required."""
+    base = field_schema.get("label") or humanize_field_name(field_name)
+    suffix = " *" if required else ""
+    for label in root.query(f"#field-label-{field_name}"):
+        inline = "form-label-inline" in getattr(label, "classes", set())
+        label.update(f"{base}{suffix}:" if inline else f"{base}{suffix}")
+    if str(field_schema.get("type", "")).lower() == "boolean":
+        for checkbox in root.query(f"#field-{field_name}"):
+            if isinstance(checkbox, Checkbox):
+                checkbox.label = f"{base}{suffix}"
 
 
 def _value_from_widget(widget, field_type: str) -> Any:

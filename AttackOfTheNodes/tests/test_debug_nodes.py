@@ -4386,6 +4386,68 @@ async def _test_node_config_standard_model_layout():
     print("test_node_config_standard_model_layout PASSED")
 
 
+def test_node_config_continue_mode_dynamic_document():
+    asyncio.run(_test_node_config_continue_mode_dynamic_document())
+
+
+async def _test_node_config_continue_mode_dynamic_document():
+    """Selecting Continue AI session makes Document required (section retitles),
+    locks its source to Configured, and reveals the Document textbox."""
+    from textual.app import App, ComposeResult
+    from textual.widgets import Label, Select
+
+    from frontend.screens.node_config import NodeConfigScreen
+
+    _, wm, memory_bank, _ = _make_services()
+    wm.create_new("node_config_continue_document")
+    start = wm.add_node("start_node")
+    seeder = wm.add_node("chat_completion_node")
+    node = wm.add_node("chat_completion_node")
+    wm.connect(start, "default", seeder, "prompt")
+    wm.connect(seeder, "default", node, "prompt")
+    seed_cfg = dict(wm.get_node_data(seeder)["config"])
+    seed_cfg.update({"use_chat_session": True, "session_key": "chat"})
+    wm.update_node_config(seeder, seed_cfg)
+    node_data = wm.get_node_data(node)
+
+    class ConfigApp(App):
+        def compose(self) -> ComposeResult:
+            yield NodeConfigScreen(
+                wm._factory, wm, node, node_data, memory_bank=memory_bank
+            )
+
+    app = ConfigApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.1)
+
+        def section_titles():
+            return {
+                str(label.content)
+                for label in app.query(Label)
+                if "form-section-label" in label.classes
+            }
+
+        document_source = app.query_one("#field-document_source", Select)
+        document_box = app.query_one("#field-document")
+        assert "Optional Inputs" in section_titles()
+        assert document_box.display is False
+
+        # Switch the prompt source to Continue AI session.
+        app.query_one("#field-prompt_source", Select).value = "Continue AI session"
+        await pilot.pause(0.1)
+
+        # Document source is locked to Configured, its section retitles to
+        # Required Inputs, and the Document textbox is revealed.
+        assert document_source.value == "Configured"
+        assert document_source.disabled is True
+        titles = section_titles()
+        assert "Required Inputs" in titles
+        assert "Optional Inputs" not in titles
+        assert document_box.display is True
+
+    print("test_node_config_continue_mode_dynamic_document PASSED")
+
+
 def test_node_config_source_option_eligibility():
     asyncio.run(_test_node_config_source_option_eligibility())
 
@@ -4496,9 +4558,11 @@ async def _test_node_config_prunes_sources_with_no_eligible_entries():
         source_options = [value for _label, value in source_select._options]
         assert source_options == ["Upstream payload", "Configured"]
 
+        # Vault is pruned (empty vault) but Configured stays — it reveals a
+        # textbox, not a vault dropdown, so it is always eligible.
         document_select = app.query_one("#field-document_source", Select)
         document_options = [value for _label, value in document_select._options]
-        assert document_options == ["Upstream payload"]
+        assert document_options == ["Upstream payload", "Configured"]
 
     print("test_node_config_prunes_sources_with_no_eligible_entries PASSED")
 

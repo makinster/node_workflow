@@ -477,13 +477,20 @@ Prompt source:  Where the prompt comes from at execution time
 ── Optional Inputs ──────────────────
 Document / context source:  Optional document appended to the prompt
 [ Upstream payload ▼ ]
-  [no Configured option — document must come from a live source]
 ```
 
-Continuing a session sends the selected session's prior turns; the document
-input (when wired) becomes the next user turn, otherwise a bare "Continue."
-nudge is sent. Dropdowns render full-width under a `label: description`
-header line so their left edges align; single-line inputs stay inline.
+**Continue-mode edge case.** When `prompt_source` is `Continue AI session`,
+the document input carries the new turn's text, so it becomes required: its
+section header retitles `Optional Inputs → Required Inputs` (`section_when`),
+its source is locked to `Configured` (`force_value_when`) revealing a Document
+textbox in Parameters, and it is marked required (`required_when`). The kept
+session's prior turns are sent as history and the document text is the next
+user turn — an empty document is a clear error, not a silent nudge. These are
+generic rule keys (see `NODE_HELPER.md`), so any future node can express the
+same mode-driven required/section/lock behavior declaratively.
+
+Dropdowns render full-width under a `label: description` header line so their
+left edges align; single-line inputs stay inline.
 
 **Parameters tab:**
 
@@ -510,8 +517,13 @@ of `PHASE_17_NODE_VISUAL_IDENTITY.md`.
 
 ── AI Session ───────────────────────
 [ ] Keep active AI session
-    Session key: [________]            ← visible only when checked
+    Session key: [________]            ← visible only when checked, and only
+                                         when NOT continuing a session
 ```
+
+When "Keep active AI session" is checked **in Continue mode**, the resumed
+session is the one extended — no new key is asked for (the session-key field
+stays hidden), so the ongoing chat grows in place rather than forking a copy.
 
 The AI Session section in the Payloads tab persists this node's session
 onward (checkbox + key). *Continuing* a prior session is a Source-tab

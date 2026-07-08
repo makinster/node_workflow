@@ -579,12 +579,12 @@ def _expand_output_routing(spec: dict[str, Any]) -> dict[str, Any]:
 
 
 def _validate_field_rules(config_fields: dict[str, Any]) -> None:
-    """Validate enabled_when/visible_when/mutually_exclusive_with declarations."""
+    """Validate the dynamic-form rule keys on config fields."""
     names = set(config_fields)
     for field_name, field in config_fields.items():
         if not isinstance(field, dict):
             continue
-        for rule_key in ("enabled_when", "visible_when"):
+        for rule_key in ("enabled_when", "visible_when", "required_when"):
             condition = field.get(rule_key)
             if condition is None:
                 continue
@@ -598,6 +598,34 @@ def _validate_field_rules(config_fields: dict[str, Any]) -> None:
                         f"Config field {field_name!r} {rule_key} references unknown "
                         f"field {referenced!r}"
                     )
+        # section_when / force_value_when: a mapping of label -> condition.
+        for rule_key in ("section_when", "force_value_when"):
+            mapping = field.get(rule_key)
+            if mapping is None:
+                continue
+            if not isinstance(mapping, dict) or not mapping:
+                raise ValueError(
+                    f"Config field {field_name!r} {rule_key} must be a non-empty object"
+                )
+            if rule_key == "force_value_when" and (
+                str(field.get("type", "string")).lower() != "select"
+            ):
+                raise ValueError(
+                    f"Config field {field_name!r} force_value_when requires a "
+                    "select field"
+                )
+            for condition in mapping.values():
+                if not isinstance(condition, dict) or not condition:
+                    raise ValueError(
+                        f"Config field {field_name!r} {rule_key} conditions must be "
+                        "non-empty objects"
+                    )
+                for referenced in condition:
+                    if referenced not in names:
+                        raise ValueError(
+                            f"Config field {field_name!r} {rule_key} references "
+                            f"unknown field {referenced!r}"
+                        )
         partners = field.get("mutually_exclusive_with")
         if partners is None:
             continue

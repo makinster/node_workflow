@@ -278,12 +278,13 @@ async def test_continue_session_mode_with_document_turn(monkeypatch):
     ctx1, _ = _make_context(memory_bank=memory_bank, run_session=run_session)
     await seeder.execute(ctx1)
 
-    # Continue AI session prompt-source mode: no prompt; the document becomes
-    # the next turn; the continued history is read but NOT extended (checkbox
-    # off).
+    # Continue AI session prompt-source mode: no prompt; the document (here an
+    # upstream payload) becomes the next turn; the continued history is read
+    # but NOT extended (keep-active checkbox off).
     continuer = _make_node(
         prompt_source="Continue AI session",
         continue_session_key="thread",
+        document_source="Upstream payload",
         prompt="",
     )
     ctx2, sig2 = _make_context(
@@ -299,11 +300,39 @@ async def test_continue_session_mode_with_document_turn(monkeypatch):
     assert len(run_session.get_chat_history("thread")) == 2
 
 
-async def test_continue_session_mode_without_document_sends_nudge(monkeypatch):
+async def test_continue_session_mode_requires_document(monkeypatch):
+    client = FakeClient(results=[CompletionResult(text="seeded answer", ok=True)])
+    _patch_client(monkeypatch, client)
+    run_session = RunSession("run-1")
+    bus = EventBus()
+    memory_bank = MemoryBank(bus)
+
+    seeder = _make_node(use_chat_session=True, session_key="thread", prompt="Seed turn")
+    ctx1, _ = _make_context(memory_bank=memory_bank, run_session=run_session)
+    await seeder.execute(ctx1)
+
+    # Continue mode with no document text: fail loudly instead of sending a
+    # bare nudge that produces responses unrelated to the user's intent.
+    continuer = _make_node(
+        prompt_source="Continue AI session",
+        continue_session_key="thread",
+        document_source="Configured",
+        document="",
+        prompt="",
+    )
+    ctx2, sig2 = _make_context(memory_bank=memory_bank, run_session=run_session)
+    await continuer.execute(ctx2)
+
+    assert "done" not in sig2
+    assert "Document" in str(sig2["error"])
+    assert len(client.calls) == 1  # no second call made
+
+
+async def test_continue_session_reuse_extends_resumed_session(monkeypatch):
     client = FakeClient(
         results=[
-            CompletionResult(text="seeded answer", ok=True),
-            CompletionResult(text="more", ok=True),
+            CompletionResult(text="seed answer", ok=True),
+            CompletionResult(text="continued answer", ok=True),
         ]
     )
     _patch_client(monkeypatch, client)
@@ -315,16 +344,28 @@ async def test_continue_session_mode_without_document_sends_nudge(monkeypatch):
     ctx1, _ = _make_context(memory_bank=memory_bank, run_session=run_session)
     await seeder.execute(ctx1)
 
+    # Continue "thread" AND keep the session active: the same session is
+    # extended in place — no separate onward key.
     continuer = _make_node(
         prompt_source="Continue AI session",
         continue_session_key="thread",
+        document_source="Configured",
+        document="Follow-up question",
+        use_chat_session=True,
         prompt="",
     )
     ctx2, sig2 = _make_context(memory_bank=memory_bank, run_session=run_session)
     await continuer.execute(ctx2)
 
     assert "error" not in sig2
-    assert client.calls[1]["messages"][-1] == {"role": "user", "content": "Continue."}
+    # The resumed history (seed exchange) plus the new document turn was sent.
+    assert client.calls[1]["messages"] == [
+        {"role": "user", "content": "Seed turn"},
+        {"role": "assistant", "content": "seed answer"},
+        {"role": "user", "content": "Follow-up question"},
+    ]
+    # The resumed session was extended in place: 4 turns, no forked copy.
+    assert len(run_session.get_chat_history("thread")) == 4
 
 
 async def test_continue_session_mode_requires_existing_history(monkeypatch):
@@ -351,7 +392,9 @@ async def test_continue_session_mode_requires_existing_history(monkeypatch):
     assert "Select an AI session" in str(sig2["error"])
 
 
-async def test_continuation_seeds_new_session_key(monkeypatch):
+async def test_normal_mode_seeds_new_session_key_from_history(monkeypatch):
+    """Non-continue mode with its own new session key seeds from any prior
+    turns in that key (fresh key stays empty until this node writes)."""
     client = FakeClient(
         results=[
             CompletionResult(text="a1", ok=True),
@@ -363,24 +406,21 @@ async def test_continuation_seeds_new_session_key(monkeypatch):
     bus = EventBus()
     memory_bank = MemoryBank(bus)
 
-    first = _make_node(use_chat_session=True, session_key="old", prompt="Old turn")
+    first = _make_node(use_chat_session=True, session_key="alpha", prompt="Turn one")
     ctx1, _ = _make_context(memory_bank=memory_bank, run_session=run_session)
     await first.execute(ctx1)
 
-    # Continue "old" but persist onward under "new": prior turns seed the new key.
-    second = _make_node(
-        prompt_source="Continue AI session",
-        continue_session_key="old",
-        use_chat_session=True,
-        session_key="new",
-        prompt="",
-    )
+    second = _make_node(use_chat_session=True, session_key="alpha", prompt="Turn two")
     ctx2, _ = _make_context(memory_bank=memory_bank, run_session=run_session)
     await second.execute(ctx2)
 
-    new_history = run_session.get_chat_history("new")
-    assert [m["content"] for m in new_history] == ["Old turn", "a1", "Continue.", "b1"]
-    assert len(run_session.get_chat_history("old")) == 2
+    history = run_session.get_chat_history("alpha")
+    assert [m["content"] for m in history] == [
+        "Turn one",
+        "a1",
+        "Turn two",
+        "b1",
+    ]
 
 
 async def test_model_and_parameters_forwarded(monkeypatch):

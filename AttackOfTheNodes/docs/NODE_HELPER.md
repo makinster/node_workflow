@@ -247,6 +247,27 @@ across tabs (a Source tab selector can grey out a Parameters tab field):
 - `mutually_exclusive_with`: list of boolean fields. Checking this field
   unchecks the listed partners. Declarations are symmetric — declaring on one
   side is enough. Only valid on `boolean` fields.
+- `required_when`: same condition shape. While it holds, the field renders as
+  required (its label / checkbox gains the ` *` marker live), on top of any
+  static `required: true`.
+- `section_when`: a mapping of `section title → condition`. While a condition
+  holds, the field's **section header** is retitled to that title (first match
+  wins; falls back to the static `section`). Only meaningful on the field that
+  opens a section run — e.g. retitling `Optional Inputs` to `Required Inputs`
+  for an input that becomes mandatory in a particular mode.
+- `force_value_when`: a mapping of `value → condition`, valid on `select`
+  fields. While a condition holds, the select is locked to that value and
+  disabled; when none holds it is re-enabled. Use to pin a source to
+  `Configured` in a mode where only a typed value makes sense.
+
+  ```yaml
+  document_source:
+    required_when: { prompt_source: Continue AI session }
+    section_when:
+      Required Inputs: { prompt_source: Continue AI session }
+    force_value_when:
+      Configured: { prompt_source: Continue AI session }
+  ```
 
 The generator validates rule keys at spec time: referenced fields must exist
 and mutual-exclusion participants must be booleans. With the helper's built-in
