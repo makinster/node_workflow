@@ -1822,13 +1822,19 @@ async def _test_form_generator_titleizes_field_name_fallback_labels():
 
     app = FormApp()
     async with app.run_test():
+        from textual.widgets import Checkbox
+
         labels = {
             str(label.content)
             for label in app.query(Label)
             if "form-label" in label.classes or "form-label-inline" in label.classes
         }
-        assert "Request user input" in labels
-        assert "request_user_input" not in labels
+        # Booleans carry their titleized label on the checkbox itself.
+        checkbox_labels = {
+            str(checkbox.label) for checkbox in app.query(Checkbox)
+        }
+        assert "Request user input" in checkbox_labels
+        assert "request_user_input" not in checkbox_labels
         assert any(lbl.startswith("Output text") for lbl in labels)
 
     print("test_form_generator_titleizes_field_name_fallback_labels PASSED")
@@ -4294,14 +4300,88 @@ async def _test_node_config_ai_session_vault_dropdown():
         model_options = {value for _label, value in model_select._options}
         assert set(supported_model_ids()).issubset(model_options)
 
-        # Session-key field stays greyed out until the checkbox is enabled.
+        # Session-key field stays hidden until the checkbox is enabled.
         session_key_input = app.query_one("#field-session_key")
-        assert session_key_input.disabled is True
+        assert session_key_input.display is False
         app.query_one("#field-use_chat_session", Checkbox).value = True
         await pilot.pause(0.1)
-        assert session_key_input.disabled is False
+        assert session_key_input.display is True
 
     print("test_node_config_ai_session_vault_dropdown PASSED")
+
+
+def test_node_config_standard_model_layout():
+    asyncio.run(_test_node_config_standard_model_layout())
+
+
+async def _test_node_config_standard_model_layout():
+    """Standard-model nodes: auto incoming payload, typed vault dropdowns,
+    and no legacy reveal/membank sections."""
+    from textual.app import App, ComposeResult
+    from textual.widgets import Select
+
+    from frontend.screens.node_config import NodeConfigScreen
+
+    _, wm, memory_bank, _ = _make_services()
+    wm.create_new("node_config_standard_model")
+    start = wm.add_node("start_node")
+    node = wm.add_node("chat_completion_node")
+    wm.connect(start, "default", node, "prompt")
+    node_data = wm.get_node_data(node)
+
+    memory_bank.store_persistent("notes", "some text", type_tag="string")
+    memory_bank.store_persistent("legacy_key", "untagged value")
+    memory_bank.store_persistent(
+        "chat_x", {"type": "ai_session", "ref_key": "chat_x"}, type_tag="ai_session"
+    )
+    memory_bank.store_transient(start, "default", "hello payload")
+
+    class ConfigApp(App):
+        def compose(self) -> ComposeResult:
+            yield NodeConfigScreen(
+                wm._factory,
+                wm,
+                node,
+                node_data,
+                memory_bank=memory_bank,
+            )
+
+    app = ConfigApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.1)
+
+        # Incoming payload is auto-revealed with the captured value.
+        incoming = app.query_one("#incoming-payload-prompt")
+        assert "hello payload" in str(incoming.content)
+        # Legacy reveal checkboxes and membank sections are gone.
+        for legacy_id in (
+            "#show-previous-output",
+            "#show-payload-upstream-payload",
+            "#show-source-vault-payload",
+            "#show-payload-vault-payload",
+            "#membank-reads",
+            "#membank-writes",
+        ):
+            assert not app.query(legacy_id), f"{legacy_id} should not render"
+        # Compact outgoing summary replaces the dead-drop/vault editors.
+        outgoing = app.query_one("#outgoing-port-summary")
+        assert "LLM Result" in str(outgoing.content)
+
+        # Vault key dropdown: hidden until Vault is selected, then filtered
+        # to string-compatible entries (typed string + untagged legacy).
+        vault_select = app.query_one("#field-prompt_vault_key", Select)
+        assert vault_select.display is False
+        app.query_one("#field-prompt_source", Select).value = "Vault"
+        await pilot.pause(0.1)
+        assert vault_select.display is True
+        option_values = {value for _label, value in vault_select._options}
+        assert {"notes", "legacy_key"}.issubset(option_values)
+        assert "chat_x" not in option_values
+
+        # Configured prompt editor hides once the source is Vault.
+        assert app.query_one("#field-prompt").display is False
+
+    print("test_node_config_standard_model_layout PASSED")
 
 
 def test_node_config_keyboard_skips_hidden_payload_previews():

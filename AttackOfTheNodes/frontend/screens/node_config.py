@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional
 
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Vertical, VerticalScroll
+from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.events import Key
 from textual.screen import ModalScreen
 from textual.widgets import Button, Checkbox, Input, Label, Select, SelectionList, Static, TabbedContent, TabPane, TextArea
@@ -656,26 +656,38 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         config: Dict[str, Any],
         forms: Dict[str, Any],
     ):
+        standard_model = self._uses_standard_source_model(metadata)
         with TabbedContent(id="node-config-tabs", classes="node-config-tabs"):
             with TabPane("1 - Source", id="node-config-tab-core"):
                 with VerticalScroll(classes="tab-scroll"):
-                    yield Label("Alias", classes="form-label nav-section")
-                    yield CommandInput(value=self._alias_default_value(), id="alias-input")
+                    yield Horizontal(
+                        Label("Alias:", classes="form-label-inline"),
+                        CommandInput(value=self._alias_default_value(), id="alias-input"),
+                        classes="form-inline-row",
+                        id="alias-row",
+                    )
                     yield Static(self._format_metadata(metadata), id="node-config-summary")
+                    if standard_model:
+                        # Standard-model nodes show the incoming payload up
+                        # front; the reveal checkboxes and the legacy vault
+                        # selection list are replaced by per-input source
+                        # selectors with typed vault dropdowns.
+                        yield from self._compose_incoming_payload_summary(metadata)
                     if forms.get("source") is not None:
                         yield forms["source"]
                     pass_through_note = self._pass_through_note(metadata)
                     if pass_through_note:
                         yield Static(pass_through_note, classes="form-description pass-through-note")
-                    yield Label("Upstream Payload", classes="form-label nav-section")
-                    yield Checkbox(
-                        "Reveal upstream payload",
-                        value=False,
-                        id="show-previous-output",
-                    )
-                    yield PayloadPreview("", id="previous-output-preview", classes="form-description")
-                    yield from self._compose_membank_inputs(config)
-                    yield from self._compose_vault_payload_preview("source")
+                    if not standard_model:
+                        yield Label("Upstream Payload", classes="form-label nav-section")
+                        yield Checkbox(
+                            "Reveal upstream payload",
+                            value=False,
+                            id="show-previous-output",
+                        )
+                        yield PayloadPreview("", id="previous-output-preview", classes="form-description")
+                        yield from self._compose_membank_inputs(config)
+                        yield from self._compose_vault_payload_preview("source")
                     if self.node_data.get("type") == WAIT_UNTIL_NODE_TYPE:
                         yield Label("Wait Targets", classes="form-label nav-section")
                         yield from self._compose_wait_targets(config)
@@ -689,21 +701,27 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
 
             with TabPane("3 - Payloads", id="node-config-tab-outputs"):
                 with VerticalScroll(classes="tab-scroll"):
-                    yield Label("Incoming Payloads", classes="form-label nav-section")
-                    yield Checkbox(
-                        "Reveal upstream payload",
-                        value=False,
-                        id="show-payload-upstream-payload",
-                    )
-                    yield PayloadPreview("", id="payload-upstream-payload-preview", classes="form-description")
-                    yield from self._compose_vault_payload_preview("payload")
+                    if not standard_model:
+                        yield Label("Incoming Payloads", classes="form-label nav-section")
+                        yield Checkbox(
+                            "Reveal upstream payload",
+                            value=False,
+                            id="show-payload-upstream-payload",
+                        )
+                        yield PayloadPreview("", id="payload-upstream-payload-preview", classes="form-description")
+                        yield from self._compose_vault_payload_preview("payload")
                     if forms.get("payloads") is not None:
                         yield forms["payloads"]
-                    yield Label("Dead Drop Payloads", classes="form-label nav-section")
-                    yield from self._compose_transient_outputs(metadata, config)
-                    if self._supports_membank_outputs(metadata):
-                        yield Label("Vault Payloads", classes="form-label nav-section")
-                        yield from self._compose_membank_outputs(config)
+                    if standard_model:
+                        # Routing checkboxes above already cover vault writes;
+                        # the legacy Write to Vault rows would be redundant.
+                        yield from self._compose_outgoing_summary(metadata)
+                    else:
+                        yield Label("Dead Drop Payloads", classes="form-label nav-section")
+                        yield from self._compose_transient_outputs(metadata, config)
+                        if self._supports_membank_outputs(metadata):
+                            yield Label("Vault Payloads", classes="form-label nav-section")
+                            yield from self._compose_membank_outputs(config)
 
             with TabPane("4 - Connections", id="node-config-tab-connections"):
                 with VerticalScroll(classes="tab-scroll"):
@@ -727,8 +745,12 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         with TabbedContent(id="node-config-tabs", classes="node-config-tabs"):
             with TabPane("1 - Source", id="node-config-tab-core"):
                 with VerticalScroll(classes="tab-scroll"):
-                    yield Label("Alias", classes="form-label nav-section")
-                    yield CommandInput(value=self._alias_default_value(), id="alias-input")
+                    yield Horizontal(
+                        Label("Alias:", classes="form-label-inline"),
+                        CommandInput(value=self._alias_default_value(), id="alias-input"),
+                        classes="form-inline-row",
+                        id="alias-row",
+                    )
                     yield Static(
                         "\n".join(
                             [
@@ -831,14 +853,15 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
     def _vault_key_options(
         self,
         schema: Dict[str, Dict[str, Any]],
-    ) -> Dict[str, list[str]] | None:
-        """Selectable vault keys per type tag for fields declaring vault_type.
+    ) -> Dict[str, list[tuple[str, str]]] | None:
+        """Selectable `(label, key)` vault options per type tag.
 
-        Node-local minimal filter (not the Track B 4b type-filtered source
-        widget): keys come from persisted vault entries of the matching tag,
-        plus — for ai_session — session keys declared by workflow nodes that
-        have "Keep active AI session" enabled, so sessions are wireable before
-        the first run.
+        Fields declaring a ``vault_type`` schema key render as a dropdown over
+        these options (IO_CONTRACT_UI_DESIGN.md §3). Keys come from persisted
+        vault entries of a compatible tag plus keys declared by workflow-node
+        writers, so wiring works before the first run. Compatibility: exact
+        tag match always; untagged (legacy) entries also satisfy ``string``;
+        ``any`` accepts everything. Labels render as ``key [type]``.
         """
         tags = sorted(
             {
@@ -849,32 +872,64 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         )
         if not tags:
             return None
-        options: Dict[str, list[str]] = {}
-        for tag in tags:
-            keys: set[str] = set()
-            if self.memory_bank is not None:
-                try:
-                    keys.update(self.memory_bank.read_persistent_by_type(tag))
-                except Exception:
-                    pass
-            if tag == "ai_session":
-                keys.update(self._declared_session_keys())
-            options[tag] = sorted(keys)
+
+        # (key -> tag) from persisted vault entries; "" marks untagged/legacy.
+        candidates: Dict[str, str] = {}
+        if self.memory_bank is not None:
+            try:
+                state = self.memory_bank.get_state()
+                entry_tags = state.get("persistent_type_tags") or {}
+                for key in state.get("persistent") or {}:
+                    candidates[str(key)] = str(entry_tags.get(key) or "")
+            except Exception:
+                pass
+        # Keys declared by workflow writers win the more specific tag.
+        for key, tag in self._declared_vault_writer_keys().items():
+            if tag or key not in candidates:
+                candidates[key] = tag
+
+        def compatible(entry_tag: str, wanted: str) -> bool:
+            if wanted == "any" or entry_tag == wanted:
+                return True
+            return entry_tag == "" and wanted == "string"
+
+        options: Dict[str, list[tuple[str, str]]] = {}
+        for wanted in tags:
+            rows = [
+                (f"{key} [{entry_tag}]" if entry_tag else key, key)
+                for key, entry_tag in sorted(candidates.items())
+                if compatible(entry_tag, wanted)
+            ]
+            options[wanted] = rows
         return options
 
-    def _declared_session_keys(self) -> set[str]:
-        keys: set[str] = set()
+    def _declared_vault_writer_keys(self) -> Dict[str, str]:
+        """Vault keys declared by workflow nodes, mapped to their type tag.
+
+        Covers legacy ``membank_outputs`` declarations (untagged), standard
+        result routing (``vault_write_key`` — tagged with the writer's default
+        output type), and AI session keys (``ai_session``).
+        """
+        declared: Dict[str, str] = {}
+        for output_id in build_membank_registry(self.workflow_map):
+            declared.setdefault(str(output_id), "")
         try:
             all_nodes = self.workflow_map.get_all_node_data()
         except Exception:
-            return keys
+            return declared
         for node_data in all_nodes.values():
             config = node_data.get("config") or {}
+            if config.get("vault_write"):
+                key = str(config.get("vault_write_key") or "").strip()
+                if key:
+                    meta = self._metadata_for_type(node_data.get("type", "")) or {}
+                    out_meta = (meta.get("output_port_metadata") or {}).get("default") or {}
+                    declared[key] = str(out_meta.get("data_type") or "")
             if config.get("use_chat_session"):
                 session_key = str(config.get("session_key") or "").strip()
                 if session_key:
-                    keys.add(session_key)
-        return keys
+                    declared[session_key] = "ai_session"
+        return declared
 
     def _schema_by_top_level_config_tab(
         self,
@@ -1462,6 +1517,97 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         if metadata is None:
             return True
         return len(metadata.get("output_ports") or []) <= 1
+
+    def _uses_standard_source_model(self, metadata: Optional[Dict[str, Any]]) -> bool:
+        """True when any input port declares the standard source model.
+
+        Standard-model nodes get the redesigned config layout: auto incoming
+        payload summary, per-input typed vault dropdowns, and no legacy
+        membank/reveal sections. Legacy nodes keep the old flat layout
+        (IO_CONTRACT_UI_DESIGN.md fallback rule).
+        """
+        if metadata is None:
+            return False
+        port_meta = metadata.get("input_port_metadata") or {}
+        return any(
+            (port_meta.get(str(port)) or {}).get("sources")
+            for port in metadata.get("input_ports") or []
+        )
+
+    def _compose_incoming_payload_summary(self, metadata: Optional[Dict[str, Any]]):
+        """Auto-revealed incoming payload block for standard-model nodes.
+
+        One compact entry per connected input port: producer chain › payload
+        name, the payload description when declared, and the last captured
+        value when the memory bank holds one.
+        """
+        self._refresh_node_data()
+        inputs = self.node_data.get("connections", {}).get("inputs", [])
+        if not inputs:
+            return
+        port_meta = (metadata or {}).get("input_port_metadata") or {}
+        yield Label("Incoming Payload", classes="form-label nav-section")
+        for connection in inputs:
+            source_id = str(connection.get("source_node_id") or "")
+            source_port = str(connection.get("source_port") or "default")
+            target_port = str(connection.get("target_port") or "default")
+            producer = trace_transient_producer(
+                self.workflow_map, self.factory, source_id, source_port
+            )
+            chain_ids = producer.get("chain_node_ids") or []
+            source_label = (
+                self._dead_drop_chain_text_from_ids(chain_ids)
+                if chain_ids
+                else self._dead_drop_chain_text(
+                    source_id, str(producer.get("node_id") or source_id)
+                )
+            )
+            payload_name = str(producer.get("name") or source_port)
+            description = str(producer.get("description") or "").strip()
+            info = port_meta.get(target_port) or {}
+            data_type = str(info.get("data_type") or "any")
+            lines = [
+                f"{target_port.replace('_', ' ')}  [{data_type}]  <- {source_label} > {payload_name}"
+            ]
+            if description and description != OUTPUT_NOT_CONFIGURED:
+                lines.append(description)
+            if self.memory_bank is not None:
+                value = self.memory_bank.read_transient(
+                    source_id, source_port, default=None
+                )
+                if value is not None:
+                    rendered = self._payload_value_preview(payload_name, value)
+                    if len(rendered) > 800:
+                        rendered = f"{rendered[:797]}..."
+                    lines.append(rendered)
+            yield PayloadPreview(
+                "\n".join(lines),
+                classes="form-description incoming-payload-summary",
+                id=f"incoming-payload-{target_port}",
+            )
+
+    def _compose_outgoing_summary(self, metadata: Optional[Dict[str, Any]]):
+        """Compact read-only outgoing-port contract for standard-model nodes."""
+        ports = list((metadata or {}).get("output_ports") or [])
+        if not ports:
+            return
+        port_meta = (metadata or {}).get("output_port_metadata") or {}
+        lines: list[str] = []
+        for port in ports:
+            info = port_meta.get(str(port)) or {}
+            name = str(info.get("name") or port)
+            data_type = str(info.get("data_type") or "any")
+            description = str(info.get("description") or "").strip()
+            line = f"{name}  [{data_type}]"
+            if description:
+                line = f"{line} - {description}"
+            lines.append(line)
+        yield Label("Outgoing", classes="form-label nav-section")
+        yield Static(
+            "\n".join(lines),
+            classes="form-description",
+            id="outgoing-port-summary",
+        )
 
     def _pass_through_note(self, metadata: Optional[Dict[str, Any]]) -> str:
         if metadata is None:

@@ -57,8 +57,15 @@ def test_chat_completion_node_model_options_come_from_provider_constant():
 
 def test_chat_completion_node_session_and_routing_fields():
     schema = _metadata()["config_schema"]
-    assert schema["session_key"]["enabled_when"] == {"use_chat_session": True}
+    # Session fields live in the Payloads tab; the key hides until enabled.
+    assert schema["session_key"]["visible_when"] == {"use_chat_session": True}
+    assert schema["session_key"]["tab"] == "Payloads"
+    assert schema["use_chat_session"]["tab"] == "Payloads"
+    assert schema["continue_session_key"]["tab"] == "Payloads"
     assert schema["continue_session_key"]["vault_type"] == "ai_session"
+    assert schema["prompt_vault_key"]["visible_when"] == {"prompt_source": "Vault"}
+    assert schema["prompt_vault_key"]["vault_type"] == "string"
+    assert schema["prompt"]["visible_when"] == {"prompt_source": "Configured"}
     assert schema["api_key_secret"]["secret"] is True
     assert "dead_drop_passthrough" in schema["transient_output"]["mutually_exclusive_with"]
     assert "transient_output" in schema["dead_drop_passthrough"]["mutually_exclusive_with"]
