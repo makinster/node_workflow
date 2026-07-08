@@ -271,10 +271,20 @@ Screen {
     text-style: bold;
 }
 
-/* Inline label + input row: label left, input fills remaining width. */
+/* Inline label + widget row: label left, widget fills remaining width.
+   Height is auto so bordered widgets (Select dropdowns) are not clipped. */
 .form-inline-row {
-    height: 1;
+    height: auto;
     margin-top: 1;
+    align-vertical: middle;
+}
+
+.form-inline-row Select {
+    width: 1fr;
+}
+
+.form-inline-row .command-input {
+    width: 1fr;
 }
 
 .form-label-inline {
@@ -283,6 +293,11 @@ Screen {
     color: $foreground;
     text-style: bold;
     padding: 0 1 0 0;
+}
+
+/* Section headers inside generated forms (schema `section` key). */
+.form-section-label {
+    margin-top: 1;
 }
 
 .form-description {

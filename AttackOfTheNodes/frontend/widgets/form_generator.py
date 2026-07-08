@@ -32,16 +32,17 @@ def build_form(
     config_schema: Dict[str, Dict[str, Any]],
     values: Dict[str, Any] | None = None,
     secret_keys: Iterable[str] | None = None,
-    vault_keys_by_type: Dict[str, List[str]] | None = None,
+    vault_keys_by_type: Dict[str, List[Tuple[str, str]]] | None = None,
 ) -> Tuple[Vertical, WidgetGetter]:
     """Build a Textual form container and a getter for current values.
 
     This is intentionally frontend-only: it translates backend schemas into
     widgets without requiring backend changes for UI convenience.
 
-    ``vault_keys_by_type`` maps a canonical vault type tag to selectable key
-    names; string fields declaring ``vault_type`` render as a dropdown over
-    the matching keys (same pattern as ``secret`` fields over ``secret_keys``).
+    ``vault_keys_by_type`` maps a canonical vault type tag to selectable
+    ``(label, key)`` options; string fields declaring ``vault_type`` render as
+    a dropdown over the matching keys (same pattern as ``secret`` fields over
+    ``secret_keys``).
     """
     values = values or {}
     secret_key_options = _secret_key_options(secret_keys)
@@ -52,7 +53,11 @@ def build_form(
         tabs = TabbedContent(id="generated-form-tabs", classes="generated-form-tabs")
         for index, (group_name, group_schema) in enumerate(groups):
             children = []
+            current_section: str | None = None
             for field_name, field_schema in group_schema.items():
+                current_section = _append_section_label(
+                    children, field_schema, current_section
+                )
                 children.extend(
                     _field_children(
                         field_name,
@@ -73,8 +78,12 @@ def build_form(
         container = Vertical(tabs, classes="generated-form generated-form-tabbed")
     else:
         children = []
+        current_section = None
         for _, group_schema in groups:
             for field_name, field_schema in group_schema.items():
+                current_section = _append_section_label(
+                    children, field_schema, current_section
+                )
                 children.extend(
                     _field_children(
                         field_name,
@@ -129,10 +138,28 @@ def schema_uses_tabs(config_schema: Dict[str, Dict[str, Any]]) -> bool:
 
 
 def _is_inline_field(field_type: str, field_schema: Dict[str, Any]) -> bool:
-    """Return True for fields that render as a single-line CommandInput."""
-    if field_schema.get("options") and field_type not in {"multiselect", "boolean"}:
-        return False
-    return field_type not in {"multiline", "code", "boolean", "select", "multiselect"}
+    """Return True for fields whose label shares a row with the widget.
+
+    Single-line inputs and every dropdown (plain select, secret-key, vault-key)
+    render inline; only tall widgets (multiline/code editors, multi-select
+    lists) and self-labeled checkboxes get a label line of their own.
+    """
+    return field_type not in {"multiline", "code", "boolean", "multiselect"}
+
+
+def _append_section_label(
+    children: list[Any],
+    field_schema: Dict[str, Any],
+    current_section: str | None,
+) -> str | None:
+    """Insert a section header when a field starts a new declared section."""
+    section = str(field_schema.get("section") or "").strip()
+    if section and section != current_section:
+        children.append(
+            Label(section, classes="form-label nav-section form-section-label")
+        )
+        return section
+    return current_section if not section else section
 
 
 def _field_children(
@@ -141,7 +168,7 @@ def _field_children(
     values: Dict[str, Any],
     field_widgets: Dict[str, Any],
     secret_key_options: list[tuple[str, str]] | None = None,
-    vault_keys_by_type: Dict[str, List[str]] | None = None,
+    vault_keys_by_type: Dict[str, List[Tuple[str, str]]] | None = None,
 ) -> list[Any]:
     field_type = str(field_schema.get("type", "string")).lower()
     label = field_schema.get("label") or humanize_field_name(field_name)
@@ -149,17 +176,50 @@ def _field_children(
     description = field_schema.get("description", "")
     current_value = values.get(field_name, field_schema.get("default", ""))
 
-    widget = _widget_for_field(
-        field_name,
-        field_type,
-        field_schema,
-        current_value,
-        secret_key_options,
-        vault_keys_by_type,
-    )
-    field_widgets[field_name] = widget
+    children: list[Any] = []
+    if field_type == "boolean":
+        # Checkboxes carry their own label so the control reads as one row.
+        widget = Checkbox(
+            f"{label}{required}",
+            value=bool(current_value),
+            id=f"field-{field_name}",
+        )
+        field_widgets[field_name] = widget
+        children.append(widget)
+    else:
+        widget = _widget_for_field(
+            field_name,
+            field_type,
+            field_schema,
+            current_value,
+            secret_key_options,
+            vault_keys_by_type,
+        )
+        field_widgets[field_name] = widget
+        if _is_inline_field(field_type, field_schema):
+            children.append(
+                Horizontal(
+                    Label(
+                        f"{label}{required}:",
+                        classes="form-label-inline",
+                        id=f"field-label-{field_name}",
+                    ),
+                    widget,
+                    classes="form-inline-row",
+                    id=f"field-row-{field_name}",
+                )
+            )
+        else:
+            children.append(
+                Label(
+                    f"{label}{required}",
+                    classes="form-label",
+                    id=f"field-label-{field_name}",
+                )
+            )
+            children.append(widget)
 
-    children = []
+    # Descriptions read as a footnote to their own field, directly below it.
     if description:
         children.append(
             Label(
@@ -168,30 +228,6 @@ def _field_children(
                 id=f"field-desc-{field_name}",
             )
         )
-
-    if _is_inline_field(field_type, field_schema):
-        children.append(
-            Horizontal(
-                Label(
-                    f"{label}{required}:",
-                    classes="form-label-inline",
-                    id=f"field-label-{field_name}",
-                ),
-                widget,
-                classes="form-inline-row",
-                id=f"field-row-{field_name}",
-            )
-        )
-    else:
-        children.insert(
-            0,
-            Label(
-                f"{label}{required}",
-                classes="form-label",
-                id=f"field-label-{field_name}",
-            ),
-        )
-        children.append(widget)
     return children
 
 
@@ -201,7 +237,7 @@ def _widget_for_field(
     field_schema: Dict[str, Any],
     value: Any,
     secret_key_options: list[tuple[str, str]] | None = None,
-    vault_keys_by_type: Dict[str, List[str]] | None = None,
+    vault_keys_by_type: Dict[str, List[Tuple[str, str]]] | None = None,
 ):
     placeholder = str(field_schema.get("placeholder", ""))
     if field_schema.get("secret") and secret_key_options is not None:
@@ -218,7 +254,7 @@ def _widget_for_field(
         )
     vault_type = field_schema.get("vault_type")
     if vault_type and vault_keys_by_type is not None:
-        options = [(key, key) for key in vault_keys_by_type.get(str(vault_type), [])]
+        options = list(vault_keys_by_type.get(str(vault_type), []))
         current_value = "" if value is None else str(value)
         option_values = {option_value for _, option_value in options}
         if current_value and current_value not in option_values:
