@@ -52,6 +52,53 @@ are rejected with a clear message — they use custom topology UI. The same
 checks run from the generated `test_<node_type>_ui.py`, so CI covers them
 without invoking the CLI.
 
+## What the Config UI Renders Automatically
+
+This is the standardization contract (established on the Chat Completion node,
+2026-07; the principles apply to every future node). A node whose spec uses the
+standard model — any input declaring `sources` — gets **all** of the following
+from `NodeConfigScreen` with **zero frontend edits**:
+
+**Source tab**
+- Inline alias row, node type + description.
+- Auto-revealed **Incoming Payload** block per connected input: producing node,
+  payload name with its data type in `()`s, description, last captured value.
+  Read-only; keyboard navigation skips it.
+- Input selectors under **Required Inputs / Optional Inputs** section headers
+  (from each port's `required` flag).
+- Per-input **typed Vault key dropdowns**, hidden unless the Vault source is
+  selected. Eligibility: keys whose only writers are this node or downstream
+  on the same branch are excluded; parallel branches stay listed. Source
+  options that would reveal an empty dropdown are pruned from the selector.
+
+**Parameters tab**
+- Schema fields, with source-gated parameters hidden unless their input's
+  source is Configured.
+
+**Payloads tab** (composed from `output_port_metadata`, not schema fields)
+- **Downstream node payload**: `Name (type)` header with editable payload name
+  and description; greys out while forwarding.
+- `Forward incoming payload unchanged` checkbox (only when a downstream port
+  declares `pass_through: true`).
+- **Vault Payload(s)**: editable Vault key + description per vault-routed
+  output; optional outputs get a `Disable output` checkbox
+  (`vault_required: true` removes it).
+- Node-specific Payloads schema fields (e.g. an AI Session section) below.
+
+**Everywhere**
+- Dynamic rule keys applied live: `enabled_when`, `visible_when`,
+  `required_when`, `section_when`, `force_value_when`,
+  `mutually_exclusive_with`.
+- Payload names always show their data type in `()`s.
+- The validator derives vault read/write declarations from the standard config
+  keys (`<port>_vault_key`, `continue_session_key`, `vault_write_key`,
+  `session_key`) — no membank declaration UI needed.
+
+Node-specific *variations* (like the Chat Completion node's Continue AI
+session prompt-source mode) are expressed through the same schema keys — extra
+select options, `visible_when`/`required_when`/`section_when` conditions —
+plus hand-written `execute()` logic, not through custom screens.
+
 ## Spec Shape
 
 Use `config_tabs` for the authoring workflow. It mirrors the config UI and
@@ -145,32 +192,42 @@ Rules:
 
 ### output_routing
 
-Declares how the node's result leaves. Expands into the Payloads tab fields
-`transient_output` and `dead_drop_passthrough` (mutually exclusive, per
-`NODE_STANDARDS.md`) plus optional `vault_write` / `vault_write_key` fields
-gated on the vault checkbox — all under a `Result Routing` section header.
+Declares the node's default routing state. **Since the 2026-07-08 output-model
+redesign, this block emits NO schema fields** — the Payloads tab is composed
+automatically by `NodeConfigScreen` from `output_port_metadata` (the `to`
+routing list, `pass_through`, and `vault_required`), following the
+Downstream-node-payload + keyed-Vault-payloads model in `NODE_STANDARDS.md`.
+The block supplies:
+
+- **default_config routing keys** the composed controls read/write:
+  `transient_output` / `dead_drop_passthrough` (from `default:`), plus
+  `vault_write` / `vault_write_key` / `vault_write_description` /
+  `transient_outputs` when a `vault:` block is present, and
+- **port routing metadata**: a `vault:` block ensures the default output
+  port's `to` includes `vault`; the required mode also sets `vault_required`.
 
 ```yaml
 output_routing:
   default: transient            # or dead_drop
-  transient_label: Send bool result to next node
-  dead_drop_label: Forward incoming payload unchanged
   vault:
     mode: optional              # optional | default_on | required_unless_transient
-    label: Save error message to Vault
-    key_label: Error log Vault key
 ```
 
-Vault modes:
+Vault modes (mapping onto the composed Vault Payload section):
 
-- `optional`: unchecked by default, freely toggled.
-- `default_on`: checked by default, freely toggled.
-- `required_unless_transient`: checked by default and locked (greyed out)
-  until `transient_output` is checked, so the result is never silently
-  discarded. This is the Basic LLM node pattern from `NODE_STANDARDS.md`.
+- `optional`: the `Disable output` checkbox starts **checked**
+  (`vault_write` default False).
+- `default_on`: `Disable output` starts unchecked (`vault_write` True).
+- `required_unless_transient`: the output always writes — `vault_write` True
+  and `vault_required: true` on the port, so no Disable checkbox renders.
 
-Set `dead_drop: false` to omit the passthrough option for nodes that always
-produce a fresh output.
+The legacy `transient_label` / `dead_drop_label` / `label` / `key_label` keys
+are accepted and ignored — the composed UI uses fixed wording (`Forward
+incoming payload unchanged`, `Vault key:`, `Description:`). The forwarding
+checkbox renders only when a downstream port declares `pass_through: true`;
+nodes that always produce a fresh output simply omit it. Routing config key
+names are reserved — a spec config field named e.g. `transient_output` is
+rejected.
 
 ## Unified `inputs:` / `outputs:` Blocks
 
@@ -178,9 +235,9 @@ The unified blocks (NODE_STANDARDIZATION_HANDOFF.md §7) let an author declare a
 port's full I/O contract in one place. `inputs:` replaces the split
 `input_sources` + `input_port_metadata` sections; `outputs:` replaces
 `output_port_metadata`. They are additive — the legacy sections still work, and
-node-level Payloads routing still comes from the separate `output_routing`
-block either way. The generated reference node is
-`specs/example_file_instance_node.yaml`.
+the separate `output_routing` block supplies the default routing state either
+way (the Payloads tab itself is composed from the `outputs:` contract). The
+generated reference node is `specs/example_file_instance_node.yaml`.
 
 Each key under `inputs:` / `outputs:` is a **port name**. The port list
 (`input_ports` / `output_ports`) is derived from the keys, so do not also
@@ -406,7 +463,10 @@ Before implementing structural UI:
 
 - Generated execution templates are starter bodies, not final business logic.
   Standard-model specs still need their `execute()` written to read
-  `<name>_source` and route output per the routing checkboxes.
+  `<name>_source` / `<name>_vault_key` / `<name>` and route output per the
+  routing config keys (`dead_drop_passthrough`, `vault_write` +
+  `vault_write_key`). `backend/nodes/chat_completion_node.py` is the reference
+  implementation of the full pattern.
 - Selector option values are display strings, not separate machine values.
   A future label/value pair in the form generator would decouple backend
   reads from UI copy.

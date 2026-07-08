@@ -33,9 +33,10 @@ inputs:
       label: File path
       placeholder: /path/to/file
 
-# Unified outputs: block — per-port contract metadata, including the routing
-# destinations (`to`) and the dead-drop passthrough capability the detail panel
-# renders (§8). The actual Payloads config fields come from output_routing.
+# Unified outputs: block — per-port contract metadata. The `to` routing list
+# and `pass_through` flag drive the composed Payloads tab (Downstream node
+# payload + Vault payloads, NODE_STANDARDS.md 2026-07-08); output_routing
+# below supplies only the default routing state.
 outputs:
   default:
     name: Open Result
@@ -45,16 +46,13 @@ outputs:
     pass_through: true
     description: True when the file opened successfully, false on error
 
-# Standard output routing model: generates transient_output and
-# dead_drop_passthrough (mutually exclusive) plus optional Vault write fields
-# gated on the vault_write checkbox. Unchanged by the unified blocks.
+# Standard output routing model (2026-07-08): supplies default routing state
+# only — no schema checkbox fields. The Payloads tab is composed from the
+# outputs: contract above. mode optional => the Vault Payload starts with
+# Disable output checked (vault_write False).
 output_routing:
   default: transient
-  transient_label: Send bool result to next node
-  dead_drop_label: Forward incoming payload unchanged
   vault:
     mode: optional
-    label: Save error message to Vault
-    key_label: Error log Vault key
 
 execution_template: transform_stub

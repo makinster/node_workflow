@@ -209,11 +209,18 @@ def normalize_spec(spec: dict[str, Any]) -> dict[str, Any]:
 
     standard_fields: dict[str, Any] = {}
     standard_fields.update(input_source_fields)
-    standard_fields.update(_expand_output_routing(spec))
+    routing_defaults, vault_mode = _expand_output_routing(spec)
     for field_name, field in standard_fields.items():
         if field_name in config_fields:
             raise ValueError(
                 f"Generated standard field {field_name!r} collides with a spec config field"
+            )
+    # Routing config keys are reserved for the composed Payloads controls even
+    # though they are no longer schema fields.
+    for reserved in routing_defaults:
+        if reserved in config_fields:
+            raise ValueError(
+                f"Reserved routing key {reserved!r} collides with a spec config field"
             )
     merged_fields: dict[str, Any] = {}
     for field_name, field in {**standard_fields, **config_fields}.items():
@@ -238,6 +245,23 @@ def normalize_spec(spec: dict[str, Any]) -> dict[str, Any]:
         config_schema[str(field_name)] = schema
         if "default" in raw_field:
             default_config[str(field_name)] = raw_field["default"]
+
+    # Routing state lives in default_config (the composed Payloads controls
+    # read/write these keys); the vault mode rides on the default output port.
+    for key, value in routing_defaults.items():
+        default_config.setdefault(key, value)
+    if vault_mode is not None and output_ports:
+        target = "default" if "default" in output_metadata else output_ports[0]
+        info = dict(output_metadata.get(target) or {})
+        destinations = [
+            str(item).strip().lower() for item in info.get("to") or ["downstream"]
+        ]
+        if "vault" not in destinations:
+            destinations.append("vault")
+        info["to"] = destinations
+        if vault_mode == "required_unless_transient":
+            info["vault_required"] = True
+        output_metadata[target] = info
 
     if template == "producer" and "value" not in default_config:
         default_config["value"] = spec.get("default_payload", "")
@@ -501,15 +525,32 @@ def _contract_metadata(port: str, entry: dict[str, Any], *, where: str) -> dict[
     return info
 
 
-def _expand_output_routing(spec: dict[str, Any]) -> dict[str, Any]:
-    """Expand the standard output routing model into Payloads tab fields.
+def _expand_output_routing(
+    spec: dict[str, Any],
+) -> tuple[dict[str, Any], str | None]:
+    """Expand the standard output routing model into routing defaults.
 
-    Generates the transient-output / dead-drop-passthrough pair (mutually
-    exclusive) and optional Vault write fields. See docs/NODE_STANDARDS.md.
+    Since the 2026-07-08 output-model redesign, the Payloads tab is composed
+    by ``NodeConfigScreen`` from ``output_port_metadata`` (the ``to`` routing
+    list and ``vault_required`` flag) — the routing block no longer emits
+    schema checkbox fields. It now supplies:
+
+    - default routing state (``transient_output`` / ``dead_drop_passthrough``,
+      plus the ``vault_write*`` / ``transient_outputs`` config keys the
+      composed controls read and write), and
+    - the vault mode, which the caller maps onto the default output port:
+      ``optional`` (Disable output starts checked → ``vault_write`` False),
+      ``default_on`` (``vault_write`` True), ``required_unless_transient``
+      (``vault_write`` True and ``vault_required`` on the port, so no Disable
+      checkbox renders).
+
+    Legacy label keys (``transient_label`` etc.) are accepted and ignored —
+    the composed UI uses fixed wording. Returns
+    ``(default_config_updates, vault_mode_or_None)``.
     """
     raw = spec.get("output_routing")
     if raw is None:
-        return {}
+        return {}, None
     if not isinstance(raw, dict):
         raise ValueError("output_routing must be an object")
     default = str(raw.get("default") or "transient").strip().lower()
@@ -519,32 +560,15 @@ def _expand_output_routing(spec: dict[str, Any]) -> dict[str, Any]:
     if not include_dead_drop and default == "dead_drop":
         raise ValueError("output_routing.default is 'dead_drop' but dead_drop is disabled")
 
-    fields: dict[str, Any] = {}
-    transient_field: dict[str, Any] = {
-        "type": "boolean",
-        "label": str(raw.get("transient_label") or "Send result to next node"),
-        "default": default == "transient",
-        "tab": "Payloads",
-        "section": "Result Routing",
+    defaults: dict[str, Any] = {
+        "transient_output": default == "transient",
+        "dead_drop_passthrough": default == "dead_drop",
+        "transient_outputs": [],
     }
-    if include_dead_drop:
-        transient_field["mutually_exclusive_with"] = ["dead_drop_passthrough"]
-    fields["transient_output"] = transient_field
-    if include_dead_drop:
-        fields["dead_drop_passthrough"] = {
-            "type": "boolean",
-            "label": str(
-                raw.get("dead_drop_label") or "Forward incoming payload unchanged"
-            ),
-            "default": default == "dead_drop",
-            "tab": "Payloads",
-            "section": "Result Routing",
-            "mutually_exclusive_with": ["transient_output"],
-        }
 
     vault = raw.get("vault")
     if vault is None:
-        return fields
+        return defaults, None
     if isinstance(vault, str):
         vault = {"mode": vault}
     if not isinstance(vault, dict):
@@ -554,28 +578,10 @@ def _expand_output_routing(spec: dict[str, Any]) -> dict[str, Any]:
         raise ValueError(
             f"output_routing.vault.mode must be one of {sorted(VALID_VAULT_MODES)}"
         )
-    vault_field: dict[str, Any] = {
-        "type": "boolean",
-        "label": str(vault.get("label") or "Save result to Vault"),
-        "default": mode != "optional",
-        "tab": "Payloads",
-        "section": "Result Routing",
-    }
-    if mode == "required_unless_transient":
-        # Locked on (checked and not editable) until the user routes the
-        # result transiently, so the output is never silently discarded.
-        vault_field["enabled_when"] = {"transient_output": True}
-    fields["vault_write"] = vault_field
-    fields["vault_write_key"] = {
-        "type": "string",
-        "label": str(vault.get("key_label") or "Vault key"),
-        "default": "",
-        "required": False,
-        "tab": "Payloads",
-        "section": "Result Routing",
-        "enabled_when": {"vault_write": True},
-    }
-    return fields
+    defaults["vault_write"] = mode != "optional"
+    defaults["vault_write_key"] = ""
+    defaults["vault_write_description"] = ""
+    return defaults, mode
 
 
 def _validate_field_rules(config_fields: dict[str, Any]) -> None:

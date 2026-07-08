@@ -39,13 +39,16 @@ and routing model — not through open-ended custom config. A node author define
 which inputs and outputs the node has; users configure how data reaches and
 leaves those fixed ports.
 
-**Helper support (2026-06-12):** the node helper expands this model
-automatically. Declare `input_sources` and `output_routing` sections in a
-helper spec and the generator emits the source selectors, gated Vault key and
-parameter fields, and the mutually exclusive transient/dead-drop pair —
-including the dynamic greying rules described below, which `NodeConfigScreen`
-now applies live through the generic schema keys `enabled_when`,
-`visible_when`, and `mutually_exclusive_with`. See `NODE_HELPER.md` and
+**Helper support (2026-06-12, aligned with the redesigned UI 2026-07-08):**
+the node helper expands this model automatically. Declare `inputs:`/`outputs:`
+(or the legacy `input_sources`) plus `output_routing` in a helper spec and the
+generator emits the source selectors, hidden-until-Vault typed key dropdowns,
+Configured parameter fields, and the routing defaults + port metadata that
+drive the composed Payloads tab (Downstream node payload + Vault payloads).
+`NodeConfigScreen` applies the dynamic rules live through the generic schema
+keys `enabled_when`, `visible_when`, `required_when`, `section_when`,
+`force_value_when`, and `mutually_exclusive_with`. See `NODE_HELPER.md` — in
+particular "What the Config UI Renders Automatically" — and
 `aotn_node_helper/specs/example_file_instance_node.yaml`.
 
 ## Standard Input Source Model
@@ -451,14 +454,17 @@ File path:  [________________________]   ← hidden unless source = Configured
 **Payloads tab:**
 
 ```
-Transient output
-  [x] Send bool result to next node  (true = opened successfully, false = error)
+── Downstream node payload ──────────
+Open Result (bool)                     (true = opened, false = error)
+  Payload name: [Open Result__________]
+  Description:  [True when the file opened successfully]
+[ ] Forward incoming payload unchanged
 
-Dead-drop passthrough
-  [ ] Forward incoming payload unchanged
-
-Vault write — error log (optional)
-  [ ] Save error message to Vault  Key: ________
+── Vault Payload ────────────────────
+Open Result (bool)
+[x] Disable output                     (error-log vault write is optional,
+  Vault key:    [____________________]  disabled until the user enables it)
+  Description:  [____________________]
 ```
 
 **Notes:**
@@ -571,20 +577,28 @@ Incompatible data types are a validation error.
 
 ## Authoring Checklist
 
-When defining a new node:
+When defining a new node (prefer a helper spec — `NODE_HELPER.md` — so the
+config UI comes for free):
 
 - [ ] List every input and decide which source options it supports (Upstream /
       Vault / Configured). Document any inputs that are restricted to a subset.
-- [ ] List every output and define the default routing state (transient,
-      dead-drop, vault write) and which options the user can change.
+- [ ] Pick the **one designated downstream output** and declare every port's
+      `to` routing (`downstream` and/or `vault`), `pass_through` when the node
+      can forward the incoming payload, and `vault_required` for vault writes
+      that must not be disabled.
+- [ ] Set the default routing state via `output_routing` (`default:
+      transient|dead_drop`, `vault.mode: optional | default_on |
+      required_unless_transient`).
 - [ ] Identify which Parameters fields are conditional on Source tab selections
       and which are always editable.
-- [ ] Confirm data types: transient payloads are JSON and can carry any
-      serializable value. Use Vault when data must cross branch boundaries,
-      be accumulated over time, or be accessed by nodes not in the immediate
-      execution chain.
-- [ ] Define the mutual-exclusion rules for the Payloads tab.
-- [ ] Note any vault writes that are required vs optional and any that cannot
-      be disabled under certain conditions.
+- [ ] Confirm data types on every port — they drive the typed vault dropdown
+      filtering and the `Name (type)` labels throughout the UI.
+- [ ] Express mode-driven variations declaratively with the dynamic rule keys
+      (`visible_when`, `required_when`, `section_when`, `force_value_when`,
+      `mutually_exclusive_with`) rather than custom screens.
+- [ ] Note any vault writes that are required vs optional.
 - [ ] Document the expected downstream pattern (e.g., "place a conditional
       branch after this node to branch on the bool output").
+- [ ] Write `execute()` to read `<port>_source` / `<port>_vault_key` /
+      `<port>` and route per `dead_drop_passthrough` and `vault_write` +
+      `vault_write_key` (reference: `backend/nodes/chat_completion_node.py`).

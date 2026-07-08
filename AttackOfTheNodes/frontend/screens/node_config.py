@@ -583,6 +583,19 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             schema = self._schema_with_generated_branch_labels(metadata, schema)
         config = self.node_data.get("config") or {}
         excluded_config_keys = {"membank_outputs", "membank_inputs", "transient_outputs"}
+        if self._uses_standard_source_model(metadata):
+            # Routing state renders through the composed Downstream/Vault
+            # payload controls; stale schema checkbox fields (pre-2026-07-08
+            # generated nodes) must not double-render.
+            excluded_config_keys.update(
+                {
+                    "transient_output",
+                    "dead_drop_passthrough",
+                    "vault_write",
+                    "vault_write_key",
+                    "vault_write_description",
+                }
+            )
         if self.node_data.get("type") == BRANCH_NODE_TYPE:
             excluded_config_keys.update(
                 {
@@ -1716,10 +1729,12 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
 
     def _standard_payload_config_values(self) -> Dict[str, Any]:
         """Collect the redesigned Payloads controls into config keys."""
-        if not self.query("#dead-drop-passthrough"):
-            return {}
         metadata = self._metadata_for_type(self.node_data.get("type", ""))
-        dead_drop = bool(self.query_one("#dead-drop-passthrough", Checkbox).value)
+        if not self._uses_standard_source_model(metadata):
+            return {}
+        dead_drop_query = self.query("#dead-drop-passthrough")
+        # No forwarding checkbox (no pass_through port): result always flows.
+        dead_drop = bool(dead_drop_query.first().value) if dead_drop_query else False
         values: Dict[str, Any] = {
             "dead_drop_passthrough": dead_drop,
             "transient_output": not dead_drop,
@@ -1818,11 +1833,19 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 classes="form-inline-row",
                 id=f"downstream-desc-row-{port}",
             )
-        yield Checkbox(
-            "Forward incoming payload unchanged",
-            value=bool(config.get("dead_drop_passthrough")),
-            id="dead-drop-passthrough",
+        # The forwarding option renders only when a downstream port advertises
+        # the dead-drop capability (`pass_through: true` in its metadata).
+        port_meta = (metadata or {}).get("output_port_metadata") or {}
+        supports_forwarding = any(
+            (port_meta.get(port) or {}).get("pass_through")
+            for port in downstream_ports
         )
+        if supports_forwarding:
+            yield Checkbox(
+                "Forward incoming payload unchanged",
+                value=bool(config.get("dead_drop_passthrough")),
+                id="dead-drop-passthrough",
+            )
 
         if vault_ports:
             plural = "s" if len(vault_ports) > 1 else ""

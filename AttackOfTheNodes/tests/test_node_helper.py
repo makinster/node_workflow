@@ -178,13 +178,16 @@ def test_node_helper_expands_input_sources_and_output_routing(tmp_path: Path):
     assert "'visible_when': {'file_path_source': 'Vault'}" in node_text
     # Configured parameter gated on the Configured source, in Parameters tab.
     assert "'visible_when': {'file_path_source': 'Configured'}" in node_text
-    # Output routing pair is mutually exclusive both ways.
-    assert "'transient_output'" in node_text
-    assert "'mutually_exclusive_with': ['dead_drop_passthrough']" in node_text
-    assert "'mutually_exclusive_with': ['transient_output']" in node_text
-    # Optional vault write defaults off with a gated key field.
+    # Output routing lives in default_config, not schema checkbox fields —
+    # the Payloads tab is composed from output_port_metadata (2026-07-08).
+    assert "'transient_output': True" in node_text  # default_config
+    assert "'dead_drop_passthrough': False" in node_text
+    assert "'transient_output': {" not in node_text  # no schema field
+    assert "'dead_drop_passthrough': {" not in node_text
+    # Optional vault output starts disabled; the port routes to the vault.
     assert "'vault_write': False" in node_text
-    assert "'enabled_when': {'vault_write': True}" in node_text
+    assert "'vault_write_key': ''" in node_text
+    assert "'to': ['downstream', 'vault']" in node_text
     # Standard-model specs get a generated config-UI smoke test.
     assert paths.ui_test_file is not None
     ui_test_text = paths.ui_test_file.read_text(encoding="utf-8")
@@ -201,9 +204,10 @@ def test_node_helper_required_unless_transient_vault_mode(tmp_path: Path):
     paths = generate_from_spec(spec, project_root=project_root)
     node_text = paths.node_file.read_text(encoding="utf-8")
 
-    # Vault write locked on until transient output is checked.
+    # Required vault output: write enabled with no Disable checkbox
+    # (vault_required rides on the output port metadata).
     assert "'vault_write': True" in node_text
-    assert "'enabled_when': {'transient_output': True}" in node_text
+    assert "'vault_required': True" in node_text
     assert "'dead_drop_passthrough': True" in node_text
     assert "'transient_output': False" in node_text
 
@@ -322,9 +326,11 @@ def test_node_helper_unified_io_block_emits_same_selectors_and_adds_contract(tmp
     assert "'Upstream payload', 'Vault', 'Configured'" in node_text
     assert "'visible_when': {'file_path_source': 'Vault'}" in node_text
     assert "'visible_when': {'file_path_source': 'Configured'}" in node_text
-    # output_routing (node-level Payloads config) is unchanged by the blocks.
-    assert "'transient_output'" in node_text
-    assert "'mutually_exclusive_with': ['dead_drop_passthrough']" in node_text
+    # output_routing rides in default_config; the Payloads tab is composed
+    # from output_port_metadata (2026-07-08) — no routing schema fields.
+    assert "'transient_output': True" in node_text
+    assert "'vault_write': False" in node_text
+    assert "'transient_output': {" not in node_text
 
     # New: the per-port contract rides on the port metadata.
     assert "input_port_metadata: ClassVar[Dict[str, Dict[str, Any]]]" in node_text

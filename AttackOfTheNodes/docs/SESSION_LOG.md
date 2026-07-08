@@ -4,6 +4,47 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-07-08 — Helper Generator Aligned with the Standardized Node UI
+
+Branch: `llm-node`
+
+Owner direction: the Chat Completion UI work is the standard for future nodes;
+the node helper must get new nodes as close as possible automatically.
+
+- **Generator emits the new output model.** `output_routing` no longer
+  produces the retired Payloads checkbox fields (`transient_output` /
+  `dead_drop_passthrough` / `vault_write*` schema entries). It now emits
+  routing **defaults** into `default_config` and maps the vault mode onto the
+  default output port's metadata (`to` gains `vault`;
+  `required_unless_transient` sets `vault_required`). Mode mapping: `optional`
+  → Disable output starts checked; `default_on` → unchecked;
+  `required_unless_transient` → always writes, no Disable checkbox. Legacy
+  label keys accepted and ignored; routing config key names reserved.
+- **Forwarding checkbox is capability-gated**: `Forward incoming payload
+  unchanged` renders only when a downstream port declares
+  `pass_through: true`.
+- **Stale-schema guard**: standard-model nodes exclude any leftover routing
+  schema fields from rendering, so pre-redesign generated nodes cannot
+  double-render routing controls.
+- **Reference node regenerated**: `example_file_instance_node` rebuilt with
+  the new generator (no routing schema fields; `to: [downstream, vault]`;
+  vault optional/disabled by default). Both specs' `output_routing` blocks
+  simplified.
+- **Docs standardized**: new `NODE_HELPER.md` section **"What the Config UI
+  Renders Automatically"** — the full standardization contract (Source
+  incoming-payload block, Required/Optional sections, typed vault dropdowns +
+  eligibility/pruning, composed Payloads tab, dynamic rule keys, validator
+  derivation) that every standard-model node gets with zero frontend edits;
+  rewritten `output_routing` reference; NODE_STANDARDS helper note, File
+  Instance example, and Authoring Checklist updated to the new model (with
+  `chat_completion_node` named as the reference `execute()` implementation).
+
+Verified: full pytest suite green, `check_ui` OK for both
+`example_file_instance_node` and `chat_completion_node`, helper tests updated
+to the new expansion (46 passed).
+
+---
+
 ## 2026-07-08 — Fix: a node cannot continue its own AI session
 
 Branch: `llm-node`
