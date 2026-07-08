@@ -61,6 +61,20 @@ output_routing:
     key_label: Result Vault key
 
 config_tabs:
+  Source:
+    # The registered node also adds a fourth prompt_source option,
+    # "Continue AI session", which reveals this dropdown and replaces the
+    # prompt with the selected session's history (hand-written; the inputs
+    # block cannot express extra selector options).
+    continue_session_key:
+      type: string
+      label: Session
+      required: false
+      section: Required Inputs
+      vault_type: ai_session
+      visible_when:
+        prompt_source: Continue AI session
+      description: Declared AI session whose chat this node resumes
   Parameters:
     model:
       type: select
@@ -85,7 +99,7 @@ config_tabs:
       secret: true
       required: true
   Payloads:
-    # AI Session controls live with routing in the Payloads tab (2026-07-07).
+    # AI Session persistence lives with routing in the Payloads tab (2026-07-07).
     use_chat_session:
       type: boolean
       label: Keep active AI session
@@ -98,10 +112,3 @@ config_tabs:
       section: AI Session
       visible_when:
         use_chat_session: true
-    continue_session_key:
-      type: string
-      label: Continue AI session
-      required: false
-      section: AI Session
-      vault_type: ai_session
-      description: Vault key of an ai_session entry whose history this call continues

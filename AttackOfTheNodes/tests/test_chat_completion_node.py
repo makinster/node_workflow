@@ -262,7 +262,7 @@ async def test_failed_call_leaves_history_untouched(monkeypatch):
     assert len(run_session.get_chat_history("chat")) == 2
 
 
-async def test_continuation_input_without_checkbox(monkeypatch):
+async def test_continue_session_mode_with_document_turn(monkeypatch):
     client = FakeClient(
         results=[
             CompletionResult(text="seeded answer", ok=True),
@@ -278,16 +278,77 @@ async def test_continuation_input_without_checkbox(monkeypatch):
     ctx1, _ = _make_context(memory_bank=memory_bank, run_session=run_session)
     await seeder.execute(ctx1)
 
-    # Continues the session via the vault reference, checkbox off: history is
-    # read but NOT extended.
-    continuer = _make_node(continue_session_key="thread", prompt="Continue turn")
-    ctx2, sig2 = _make_context(memory_bank=memory_bank, run_session=run_session)
+    # Continue AI session prompt-source mode: no prompt; the document becomes
+    # the next turn; the continued history is read but NOT extended (checkbox
+    # off).
+    continuer = _make_node(
+        prompt_source="Continue AI session",
+        continue_session_key="thread",
+        prompt="",
+    )
+    ctx2, sig2 = _make_context(
+        inputs={"document": "next question"},
+        memory_bank=memory_bank,
+        run_session=run_session,
+    )
     await continuer.execute(ctx2)
 
     assert "error" not in sig2
     assert client.calls[1]["messages"][0]["content"] == "Seed turn"
-    assert client.calls[1]["messages"][-1]["content"] == "Continue turn"
+    assert client.calls[1]["messages"][-1]["content"] == "next question"
     assert len(run_session.get_chat_history("thread")) == 2
+
+
+async def test_continue_session_mode_without_document_sends_nudge(monkeypatch):
+    client = FakeClient(
+        results=[
+            CompletionResult(text="seeded answer", ok=True),
+            CompletionResult(text="more", ok=True),
+        ]
+    )
+    _patch_client(monkeypatch, client)
+    run_session = RunSession("run-1")
+    bus = EventBus()
+    memory_bank = MemoryBank(bus)
+
+    seeder = _make_node(use_chat_session=True, session_key="thread", prompt="Seed turn")
+    ctx1, _ = _make_context(memory_bank=memory_bank, run_session=run_session)
+    await seeder.execute(ctx1)
+
+    continuer = _make_node(
+        prompt_source="Continue AI session",
+        continue_session_key="thread",
+        prompt="",
+    )
+    ctx2, sig2 = _make_context(memory_bank=memory_bank, run_session=run_session)
+    await continuer.execute(ctx2)
+
+    assert "error" not in sig2
+    assert client.calls[1]["messages"][-1] == {"role": "user", "content": "Continue."}
+
+
+async def test_continue_session_mode_requires_existing_history(monkeypatch):
+    client = FakeClient()
+    _patch_client(monkeypatch, client)
+    node = _make_node(
+        prompt_source="Continue AI session",
+        continue_session_key="ghost",
+        prompt="",
+    )
+    context, signals = _make_context()
+
+    await node.execute(context)
+
+    assert "done" not in signals
+    assert "ghost" in str(signals["error"])
+    assert client.calls == []
+
+    # And with no session selected at all, fail before any network call.
+    node2 = _make_node(prompt_source="Continue AI session", prompt="")
+    ctx2, sig2 = _make_context()
+    await node2.execute(ctx2)
+    assert "done" not in sig2
+    assert "Select an AI session" in str(sig2["error"])
 
 
 async def test_continuation_seeds_new_session_key(monkeypatch):
@@ -308,16 +369,17 @@ async def test_continuation_seeds_new_session_key(monkeypatch):
 
     # Continue "old" but persist onward under "new": prior turns seed the new key.
     second = _make_node(
+        prompt_source="Continue AI session",
         continue_session_key="old",
         use_chat_session=True,
         session_key="new",
-        prompt="New turn",
+        prompt="",
     )
     ctx2, _ = _make_context(memory_bank=memory_bank, run_session=run_session)
     await second.execute(ctx2)
 
     new_history = run_session.get_chat_history("new")
-    assert [m["content"] for m in new_history] == ["Old turn", "a1", "New turn", "b1"]
+    assert [m["content"] for m in new_history] == ["Old turn", "a1", "Continue.", "b1"]
     assert len(run_session.get_chat_history("old")) == 2
 
 

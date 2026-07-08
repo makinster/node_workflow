@@ -52,9 +52,10 @@ def derive_input_sources(
             vault_key = str(config.get(f"{port}_vault_key") or "").strip()
             if vault_key:
                 sources.append({"type": "membank", "source_id": vault_key})
-        continue_key = str(config.get("continue_session_key") or "").strip()
-        if continue_key:
-            sources.append({"type": "membank", "source_id": continue_key})
+        if _continuation_selected(config):
+            continue_key = str(config.get("continue_session_key") or "").strip()
+            if continue_key:
+                sources.append({"type": "membank", "source_id": continue_key})
         input_sources[node_id] = sources
     return input_sources
 
@@ -472,14 +473,31 @@ def _standard_model_vault_reads(
                 continue
             data_type = str((port_meta.get(port) or {}).get("data_type") or "") or None
             entries.append({"source_id": vault_key, "type_tag": data_type})
-        continue_key = str(config.get("continue_session_key") or "").strip()
-        if continue_key:
-            entries.append(
-                {"source_id": continue_key, "type_tag": DataType.AI_SESSION.value}
-            )
+        if _continuation_selected(config):
+            continue_key = str(config.get("continue_session_key") or "").strip()
+            if continue_key:
+                entries.append(
+                    {"source_id": continue_key, "type_tag": DataType.AI_SESSION.value}
+                )
         if entries:
             reads[node_id] = entries
     return reads
+
+
+# Prompt-source label that resumes an AI session; mirrors
+# backend/nodes/chat_completion_node.CONTINUE_SESSION_SOURCE.
+_CONTINUE_SESSION_SOURCE = "Continue AI session"
+
+
+def _continuation_selected(config: Dict[str, Any]) -> bool:
+    """True when the node's continuation key is active.
+
+    Nodes with a prompt-source selector only read the continuation key while
+    the Continue AI session mode is selected; a stale hidden value must not
+    produce validation noise. Nodes without the selector read it whenever set.
+    """
+    prompt_source = config.get("prompt_source")
+    return prompt_source is None or prompt_source == _CONTINUE_SESSION_SOURCE
 
 
 def _membank_source_id(entry: Any) -> str:

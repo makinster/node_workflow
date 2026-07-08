@@ -1537,15 +1537,15 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
     def _compose_incoming_payload_summary(self, metadata: Optional[Dict[str, Any]]):
         """Auto-revealed incoming payload block for standard-model nodes.
 
-        One compact entry per connected input port: producer chain › payload
-        name, the payload description when declared, and the last captured
-        value when the memory bank holds one.
+        One compact entry per connected input: the producing node, the payload
+        name and data type, its description when declared, and the last
+        captured value when the memory bank holds one. Deliberately portless —
+        the dead-drop payload arrives whether or not an input consumes it.
         """
         self._refresh_node_data()
         inputs = self.node_data.get("connections", {}).get("inputs", [])
         if not inputs:
             return
-        port_meta = (metadata or {}).get("input_port_metadata") or {}
         yield Label("Incoming Payload", classes="form-label nav-section")
         for connection in inputs:
             source_id = str(connection.get("source_node_id") or "")
@@ -1562,29 +1562,46 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                     source_id, str(producer.get("node_id") or source_id)
                 )
             )
+            if "->" not in source_label:
+                source_label = f"{source_label} node"
             payload_name = str(producer.get("name") or source_port)
             description = str(producer.get("description") or "").strip()
-            info = port_meta.get(target_port) or {}
-            data_type = str(info.get("data_type") or "any")
-            lines = [
-                f"{target_port.replace('_', ' ')}  [{data_type}]  <- {source_label} > {payload_name}"
-            ]
+            producer_node = producer.get("node") or {}
+            producer_meta = (
+                self._metadata_for_type(str(producer_node.get("type") or "")) or {}
+            )
+            producer_out = (producer_meta.get("output_port_metadata") or {}).get(
+                str(producer.get("port") or "")
+            ) or {}
+            data_type = str(producer_out.get("data_type") or "any")
+
+            lines = []
+            if len(inputs) > 1:
+                lines.append(f"Input: {target_port.replace('_', ' ')}")
+            lines.append(f"Node source: {source_label}")
+            lines.append(f"Payload: {payload_name} ({data_type})")
             if description and description != OUTPUT_NOT_CONFIGURED:
-                lines.append(description)
+                lines.append(f"Payload desc: {description}")
             if self.memory_bank is not None:
                 value = self.memory_bank.read_transient(
                     source_id, source_port, default=None
                 )
                 if value is not None:
-                    rendered = self._payload_value_preview(payload_name, value)
-                    if len(rendered) > 800:
-                        rendered = f"{rendered[:797]}..."
-                    lines.append(rendered)
+                    lines.append(f"Value: {self._short_value_text(value)}")
             yield PayloadPreview(
                 "\n".join(lines),
                 classes="form-description incoming-payload-summary",
                 id=f"incoming-payload-{target_port}",
             )
+
+    def _short_value_text(self, value: Any) -> str:
+        """One-line captured-value preview, truncated for the summary block."""
+        if isinstance(value, (list, tuple, set, dict)):
+            return f"({type(value).__name__}, {len(value)} items)"
+        rendered = str(value)
+        if len(rendered) > 400:
+            rendered = f"{rendered[:397]}..."
+        return rendered
 
     def _compose_outgoing_summary(self, metadata: Optional[Dict[str, Any]]):
         """Compact read-only outgoing-port contract for standard-model nodes."""

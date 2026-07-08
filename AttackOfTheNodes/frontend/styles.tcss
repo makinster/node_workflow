@@ -295,6 +295,19 @@ Screen {
     padding: 0 1 0 0;
 }
 
+/* Header line above dropdowns/tall widgets: bold label plus the muted
+   description inline after it. */
+.form-header-row {
+    height: auto;
+    margin-top: 1;
+}
+
+.form-description-inline {
+    height: 1;
+    width: auto;
+    padding: 0 0 0 1;
+}
+
 /* Section headers inside generated forms (schema `section` key). */
 .form-section-label {
     margin-top: 1;

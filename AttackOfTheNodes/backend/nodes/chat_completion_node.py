@@ -8,6 +8,12 @@ from ..node_base import Node, NodeContext
 from ..node_category import NodeCategory
 
 
+# Prompt-source mode that resumes a declared AI session instead of sending a
+# fresh prompt. The validator recognizes this label when deriving vault reads
+# (backend/validator.py) — keep the two in sync.
+CONTINUE_SESSION_SOURCE = "Continue AI session"
+
+
 class ChatCompletionNode(Node):
     """Send a prompt (and optional document) to an LLM and route the response.
 
@@ -71,7 +77,12 @@ class ChatCompletionNode(Node):
         "prompt_source": {
             "type": "select",
             "label": "Prompt source",
-            "options": ["Upstream payload", "Vault", "Configured"],
+            "options": [
+                "Upstream payload",
+                "Vault",
+                "Configured",
+                CONTINUE_SESSION_SOURCE,
+            ],
             "tab": "Source",
             "section": "Required Inputs",
             "description": "Where the prompt comes from at execution time",
@@ -84,6 +95,16 @@ class ChatCompletionNode(Node):
             "section": "Required Inputs",
             "vault_type": "string",
             "visible_when": {"prompt_source": "Vault"},
+        },
+        "continue_session_key": {
+            "type": "string",
+            "label": "Session",
+            "required": False,
+            "tab": "Source",
+            "section": "Required Inputs",
+            "vault_type": "ai_session",
+            "visible_when": {"prompt_source": CONTINUE_SESSION_SOURCE},
+            "description": "Declared AI session whose chat this node resumes",
         },
         "document_source": {
             "type": "select",
@@ -179,23 +200,21 @@ class ChatCompletionNode(Node):
             "section": "AI Session",
             "visible_when": {"use_chat_session": True},
         },
-        "continue_session_key": {
-            "type": "string",
-            "label": "Continue AI session",
-            "required": False,
-            "tab": "Payloads",
-            "section": "AI Session",
-            "vault_type": "ai_session",
-            "description": "Vault key of an ai_session entry whose history this call continues",
-        },
     }
 
     async def execute(self, context: NodeContext) -> None:
-        prompt = self._resolve_prompt(context)
-        if prompt is None or not prompt.strip():
-            context.signal_error(RuntimeError("Prompt is empty — configure a prompt source"))
-            return
+        continuing = self.config.get("prompt_source") == CONTINUE_SESSION_SOURCE
         document = self._resolve_document(context)
+
+        if continuing:
+            prompt = None
+        else:
+            prompt = self._resolve_prompt(context)
+            if prompt is None or not prompt.strip():
+                context.signal_error(
+                    RuntimeError("Prompt is empty — configure a prompt source")
+                )
+                return
 
         secret_key = str(self.config.get("api_key_secret") or "").strip()
         if not secret_key:
@@ -208,9 +227,40 @@ class ChatCompletionNode(Node):
             )
             return
 
-        history = self._resolve_history(context)
-        user_content = prompt if document is None else f"{prompt}\n\n{document}"
-        messages = history + [{"role": "user", "content": user_content}]
+        if continuing:
+            ref = self._continuation_ref(context)
+            if not ref:
+                context.signal_error(
+                    RuntimeError("Select an AI session to continue")
+                )
+                return
+            if context.run_session is None:
+                context.signal_error(
+                    RuntimeError("AI sessions are unavailable outside a run")
+                )
+                return
+            history = context.run_session.get_chat_history(ref)
+            if not history:
+                context.signal_error(
+                    RuntimeError(f"AI session '{ref}' has no history to continue")
+                )
+                return
+            # The session replaces the prompt: the document (when wired)
+            # becomes the next user turn; with nothing to add, resume the
+            # conversation with a bare continue nudge.
+            if document is not None:
+                user_content: Optional[str] = document
+            elif history[-1].get("role") == "user":
+                user_content = None
+            else:
+                user_content = "Continue."
+            messages = list(history)
+            if user_content is not None:
+                messages.append({"role": "user", "content": user_content})
+        else:
+            history = self._resolve_history(context)
+            user_content = prompt if document is None else f"{prompt}\n\n{document}"
+            messages = history + [{"role": "user", "content": user_content}]
 
         client = get_client("anthropic")
         try:
@@ -268,27 +318,30 @@ class ChatCompletionNode(Node):
         return None if value is None else str(value)
 
     def _resolve_history(self, context: NodeContext) -> List[Dict[str, str]]:
-        """Prior turns for this call: continuation input wins over own session."""
+        """Prior turns of this node's own session (checkbox-gated)."""
         if context.run_session is None:
             return []
-        continue_key = str(self.config.get("continue_session_key") or "").strip()
-        if continue_key:
-            entry = context.memory_bank.read_persistent(continue_key)
-            ref_key = continue_key
-            if isinstance(entry, dict) and entry.get("type") == "ai_session":
-                ref_key = str(entry.get("ref_key") or continue_key)
-            return context.run_session.get_chat_history(ref_key)
         if self.config.get("use_chat_session"):
             session_key = str(self.config.get("session_key") or "").strip()
             if session_key:
                 return context.run_session.get_chat_history(session_key)
         return []
 
+    def _continuation_ref(self, context: NodeContext) -> str:
+        """Resolve the continued session's RunSession key from the vault entry."""
+        key = str(self.config.get("continue_session_key") or "").strip()
+        if not key:
+            return ""
+        entry = context.memory_bank.read_persistent(key)
+        if isinstance(entry, dict) and entry.get("type") == "ai_session":
+            return str(entry.get("ref_key") or key)
+        return key
+
     def _persist_session(
         self,
         context: NodeContext,
         history: List[Dict[str, str]],
-        user_content: str,
+        user_content: Optional[str],
         response_text: str,
     ) -> None:
         """Extend the named session after a successful call (checkbox-gated).
@@ -305,7 +358,8 @@ class ChatCompletionNode(Node):
         if not session_history and history:
             # Continuing another session into a fresh key: seed the prior turns.
             session_history.extend(history)
-        context.run_session.append_chat_message(session_key, "user", user_content)
+        if user_content is not None:
+            context.run_session.append_chat_message(session_key, "user", user_content)
         context.run_session.append_chat_message(session_key, "assistant", response_text)
         context.memory_bank.store_persistent(
             session_key,

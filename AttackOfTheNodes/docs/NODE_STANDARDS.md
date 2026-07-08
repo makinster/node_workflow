@@ -461,14 +461,22 @@ response. Designed for straightforward summarise/transform/extract tasks.
 
 ```
 ── Required Inputs ──────────────────
-Prompt source:  [ Configured ▼ ]
-  when Vault:   Prompt Vault key: [ notes [string] ▼ ]   ← typed dropdown
+Prompt source:  Where the prompt comes from at execution time
+[ Configured ▼ ]
+  when Vault:               Prompt Vault key dropdown appears (typed)
+  when Continue AI session: Session dropdown appears (ai_session-typed) —
+                            the session's history replaces the prompt
 
 ── Optional Inputs ──────────────────
-Document / context source:  [ Upstream payload ▼ ]
-  when Vault:   Document Vault key: [ ... ▼ ]
+Document / context source:  Optional document appended to the prompt
+[ Upstream payload ▼ ]
   [no Configured option — document must come from a live source]
 ```
+
+Continuing a session sends the selected session's prior turns; the document
+input (when wired) becomes the next user turn, otherwise a bare "Continue."
+nudge is sent. Dropdowns render full-width under a `label: description`
+header line so their left edges align; single-line inputs stay inline.
 
 **Parameters tab:**
 
@@ -496,13 +504,12 @@ of `PHASE_17_NODE_VISUAL_IDENTITY.md`.
 ── AI Session ───────────────────────
 [ ] Keep active AI session
     Session key: [________]            ← visible only when checked
-Continue AI session: [ research [ai_session] ▼ ]   ← optional; blank = fresh
 ```
 
-The AI Session section lives in the Payloads tab (moved from Parameters
-2026-07-07) so all session controls sit together: the checkbox + key persist
-this node's session onward; the continuation dropdown (type-filtered to
-`ai_session` vault entries) reads a prior session's history into this call.
+The AI Session section in the Payloads tab persists this node's session
+onward (checkbox + key). *Continuing* a prior session is a Source-tab
+concern: the "Continue AI session" prompt-source mode with its
+`ai_session`-filtered dropdown (see the Source tab above).
 
 **Data type:** string. Prompt, document, and LLM result are all strings.
 Incompatible data types are a validation error.

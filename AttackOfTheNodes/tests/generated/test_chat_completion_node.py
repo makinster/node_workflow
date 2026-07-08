@@ -57,12 +57,17 @@ def test_chat_completion_node_model_options_come_from_provider_constant():
 
 def test_chat_completion_node_session_and_routing_fields():
     schema = _metadata()["config_schema"]
-    # Session fields live in the Payloads tab; the key hides until enabled.
+    # Session persistence lives in the Payloads tab; the key hides until
+    # enabled. Continuation is a prompt-source mode on the Source tab.
     assert schema["session_key"]["visible_when"] == {"use_chat_session": True}
     assert schema["session_key"]["tab"] == "Payloads"
     assert schema["use_chat_session"]["tab"] == "Payloads"
-    assert schema["continue_session_key"]["tab"] == "Payloads"
+    assert "Continue AI session" in schema["prompt_source"]["options"]
+    assert schema["continue_session_key"]["tab"] == "Source"
     assert schema["continue_session_key"]["vault_type"] == "ai_session"
+    assert schema["continue_session_key"]["visible_when"] == {
+        "prompt_source": "Continue AI session"
+    }
     assert schema["prompt_vault_key"]["visible_when"] == {"prompt_source": "Vault"}
     assert schema["prompt_vault_key"]["vault_type"] == "string"
     assert schema["prompt"]["visible_when"] == {"prompt_source": "Configured"}

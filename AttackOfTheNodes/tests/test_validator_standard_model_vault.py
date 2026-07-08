@@ -50,7 +50,7 @@ def test_session_write_satisfies_continuation_read():
     wm.connect(second, "default", end, "input")
 
     _chat_config(wm, first, use_chat_session=True, session_key="research")
-    _chat_config(wm, second, continue_session_key="research")
+    _chat_config(wm, second, prompt_source="Continue AI session", continue_session_key="research")
 
     result = validate_workflow(wm, factory)
     assert result["success"] is True, _messages(result["errors"])
@@ -66,7 +66,7 @@ def test_undeclared_continuation_key_is_an_error():
     start = wm.add_node("start_node")
     node = wm.add_node("chat_completion_node")
     wm.connect(start, "default", node, "prompt")
-    _chat_config(wm, node, continue_session_key="ghost_session")
+    _chat_config(wm, node, prompt_source="Continue AI session", continue_session_key="ghost_session")
 
     result = validate_workflow(wm, factory)
     assert result["success"] is False
@@ -87,7 +87,7 @@ def test_untyped_writer_triggers_ai_session_mismatch_warning():
     wm.connect(setter, "default", chat, "prompt")
 
     wm.update_node_config(setter, {"membank_outputs": [{"id": "not_a_session"}]})
-    _chat_config(wm, chat, continue_session_key="not_a_session")
+    _chat_config(wm, chat, prompt_source="Continue AI session", continue_session_key="not_a_session")
 
     result = validate_workflow(wm, factory)
     assert result["success"] is True, _messages(result["errors"])
@@ -162,7 +162,7 @@ def test_parallel_session_writer_triggers_race_warning():
     wm.connect(reader, "default", end_b, "input")
 
     _chat_config(wm, writer, use_chat_session=True, session_key="shared_chat")
-    _chat_config(wm, reader, continue_session_key="shared_chat")
+    _chat_config(wm, reader, prompt_source="Continue AI session", continue_session_key="shared_chat")
 
     result = validate_workflow(wm, factory)
     assert result["success"] is True, _messages(result["errors"])

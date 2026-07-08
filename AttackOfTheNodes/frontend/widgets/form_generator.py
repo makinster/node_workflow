@@ -178,54 +178,77 @@ def _field_children(
 
     children: list[Any] = []
     if field_type == "boolean":
-        # Checkboxes carry their own label so the control reads as one row.
+        # Checkboxes carry their own label so the control reads as one row;
+        # a declared description rides on the same row.
         widget = Checkbox(
             f"{label}{required}",
             value=bool(current_value),
             id=f"field-{field_name}",
         )
         field_widgets[field_name] = widget
-        children.append(widget)
-    else:
-        widget = _widget_for_field(
-            field_name,
-            field_type,
-            field_schema,
-            current_value,
-            secret_key_options,
-            vault_keys_by_type,
-        )
-        field_widgets[field_name] = widget
-        if _is_inline_field(field_type, field_schema):
+        if description:
             children.append(
                 Horizontal(
-                    Label(
-                        f"{label}{required}:",
-                        classes="form-label-inline",
-                        id=f"field-label-{field_name}",
-                    ),
                     widget,
+                    Label(
+                        str(description),
+                        classes="form-description form-description-inline",
+                        id=f"field-desc-{field_name}",
+                    ),
                     classes="form-inline-row",
                     id=f"field-row-{field_name}",
                 )
             )
         else:
-            children.append(
-                Label(
-                    f"{label}{required}",
-                    classes="form-label",
-                    id=f"field-label-{field_name}",
-                )
-            )
             children.append(widget)
+        return children
 
-    # Descriptions read as a footnote to their own field, directly below it.
+    widget = _widget_for_field(
+        field_name,
+        field_type,
+        field_schema,
+        current_value,
+        secret_key_options,
+        vault_keys_by_type,
+    )
+    field_widgets[field_name] = widget
+
+    # The header line carries the label and, inline after it, the description.
+    header_items: list[Any] = [
+        Label(
+            f"{label}{required}:",
+            classes="form-label-inline",
+            id=f"field-label-{field_name}",
+        )
+    ]
     if description:
-        children.append(
+        header_items.append(
             Label(
                 str(description),
-                classes="form-description",
+                classes="form-description form-description-inline",
                 id=f"field-desc-{field_name}",
+            )
+        )
+
+    if isinstance(widget, Select) or not _is_inline_field(field_type, field_schema):
+        # Dropdowns and tall widgets sit on their own line under the header so
+        # their left edges align instead of being offset by label width.
+        children.append(
+            Horizontal(
+                *header_items,
+                classes="form-header-row",
+                id=f"field-row-{field_name}",
+            )
+        )
+        children.append(widget)
+    else:
+        # Single-line inputs share the row: label, description, input.
+        children.append(
+            Horizontal(
+                *header_items,
+                widget,
+                classes="form-inline-row",
+                id=f"field-row-{field_name}",
             )
         )
     return children

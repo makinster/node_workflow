@@ -4,6 +4,37 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-07-07 — Config UI Polish Round 2 + Continue-Session Prompt Mode
+
+Branch: `llm-node`
+
+Owner feedback on the first redesign pass (live screenshots):
+
+- **Incoming Payload block** reformatted and made portless — showing
+  `prompt <- Start` confused when the prompt source was Configured. Now:
+  `Node source: Start node` / `Payload: Output (string)` /
+  `Payload desc: ...` / `Value: ...` (desc/value lines only when present;
+  an `Input:` line is added only when several inputs are wired).
+- **Dropdown layout**: dropdowns were offset by varying label widths. They
+  now render full-width under a `label: description` header line
+  (description inline with the header, not below the widget). Single-line
+  inputs keep the inline row, with descriptions inline; checkbox
+  descriptions ride on the checkbox row.
+- **Continue AI session is a prompt-source mode**: the prompt source
+  dropdown gains a fourth option that reveals an `ai_session`-filtered
+  Session dropdown and replaces the prompt. Runtime: resumes the selected
+  session's history; the document input (when wired) becomes the next user
+  turn, else a bare "Continue." nudge; errors cleanly when no session is
+  selected or it has no history. `continue_session_key` moved from the
+  Payloads AI Session section back to Source under this mode; the validator
+  derives its vault read only while the mode is selected (stale hidden
+  values stay quiet).
+
+Verified: full pytest suite (372 passed), `check_ui` contract OK,
+`compileall` clean.
+
+---
+
 ## 2026-07-07 — Node Config UI Redesign (standard-model layout)
 
 Branch: `llm-node` (continuing from the Chat Completion build)
