@@ -269,14 +269,14 @@ the explicit revert-to-edit-start command. Large `CommandTextArea` fields keep
 Tab inside the text area for content/indentation editing and use Esc or
 Ctrl+Enter to leave edit mode while preserving text.
 
-Payload previews are opt-in. Source and Payloads tabs may include `Reveal
-upstream payload` and `Reveal Vault payload` checkboxes. Revealed previews use a
-consistent shape: `Source: <node chain>`, then `Payload: <name> (<type>): <value>`
-when a captured printable value exists, and `Description: <user/node
-description>` only when a meaningful description exists. Revealed preview blocks
-are read-only command stops: W/S or arrows should be able to highlight them,
-scroll them into view, and then continue to the next widget. This keeps ordinary
-nodes quiet while making complex workflows inspectable.
+Payload previews come in two shapes (2026-07-07). Standard-model nodes show an
+auto-revealed `Incoming Payload` block at the top of the Source tab —
+`Node source: <producer> node`, `Payload: <name> (<type>)`, `Payload desc:`
+and `Value:` lines only when present — rendered as a plain read-only Static
+that W/S and arrows **skip** (it is informational, not interactive). Legacy
+nodes keep the opt-in `Reveal upstream payload` / `Reveal Vault payload`
+checkboxes; those revealed previews remain read-only command stops that can be
+highlighted and scrolled into view before navigation continues.
 
 Settings uses numbered tabs: `1 - General` for app configuration and
 `2 - Secrets` for saved secret key names. The Secrets tab has Key/API-key input

@@ -356,6 +356,13 @@ Document / context source:  [ Upstream payload ▼ ]
 - The Vault key control is a **dropdown filtered by the port's data type**
   (schema `vault_type` key), populated from typed vault entries plus keys
   declared by workflow writers; it is hidden unless Vault is selected.
+- **Eligibility (2026-07-07):** dropdowns exclude keys whose only writers sit
+  downstream of this node on the same branch — they cannot exist when this
+  node runs — and the node's own writes. Parallel-branch writers stay listed
+  because static analysis cannot order branch timing (the validator's race
+  warning covers that case). Source options that would reveal an empty
+  dropdown (`Vault`, `Continue AI session`) are pruned from the selector
+  entirely.
 - The old "Reveal upstream payload" / "Reveal Vault payload" checkboxes and
   the standalone Vault selection list are retired for standard-model nodes;
   the incoming payload block is always visible when something is connected.
@@ -427,7 +434,7 @@ File path source
 **Parameters tab:**
 
 ```
-File path:  [________________________]   ← greyed out if source ≠ Configured
+File path:  [________________________]   ← hidden unless source = Configured
 ```
 
 **Payloads tab:**

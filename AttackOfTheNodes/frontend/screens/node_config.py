@@ -817,8 +817,11 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         schema: Dict[str, Dict[str, Any]],
         values: Dict[str, Any],
     ) -> tuple[Dict[str, Any], WidgetGetter]:
-        schemas = self._schema_by_top_level_config_tab(schema)
         vault_keys_by_type = self._vault_key_options(schema)
+        schema = self._prune_unavailable_source_options(
+            schema, vault_keys_by_type, values
+        )
+        schemas = self._schema_by_top_level_config_tab(schema)
         forms: Dict[str, Any] = {}
         getters: list[WidgetGetter] = []
         for tab_name, tab_schema in schemas.items():
@@ -883,8 +886,20 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                     candidates[str(key)] = str(entry_tags.get(key) or "")
             except Exception:
                 pass
-        # Keys declared by workflow writers win the more specific tag.
-        for key, tag in self._declared_vault_writer_keys().items():
+        # Keys declared by workflow writers win the more specific tag — but a
+        # key whose only writers sit downstream of this node on the same
+        # branch cannot exist when this node runs, so it is not offered.
+        # Parallel-branch writers stay eligible (static analysis cannot rank
+        # branch timing; the validator's race warning covers that case).
+        try:
+            downstream = set(self.workflow_map.nodes_reachable_from(self.node_id) or set())
+        except Exception:
+            downstream = set()
+        for key, info in self._declared_vault_writer_keys().items():
+            writers = set(info.get("writers") or set()) - {self.node_id}
+            if not writers or writers <= downstream:
+                continue
+            tag = str(info.get("tag") or "")
             if tag or key not in candidates:
                 candidates[key] = tag
 
@@ -903,33 +918,88 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             options[wanted] = rows
         return options
 
-    def _declared_vault_writer_keys(self) -> Dict[str, str]:
-        """Vault keys declared by workflow nodes, mapped to their type tag.
+    def _declared_vault_writer_keys(self) -> Dict[str, Dict[str, Any]]:
+        """Vault keys declared by workflow nodes: key -> {tag, writers}.
 
         Covers legacy ``membank_outputs`` declarations (untagged), standard
         result routing (``vault_write_key`` — tagged with the writer's default
-        output type), and AI session keys (``ai_session``).
+        output type), and AI session keys (``ai_session``). Writer node ids
+        power the same-branch eligibility filter in ``_vault_key_options``.
         """
-        declared: Dict[str, str] = {}
-        for output_id in build_membank_registry(self.workflow_map):
-            declared.setdefault(str(output_id), "")
+        declared: Dict[str, Dict[str, Any]] = {}
+
+        def add(key: str, tag: str, writer_id: str) -> None:
+            entry = declared.setdefault(key, {"tag": "", "writers": set()})
+            if tag:
+                entry["tag"] = tag
+            if writer_id:
+                entry["writers"].add(str(writer_id))
+
+        for output_id, registry_entry in build_membank_registry(self.workflow_map).items():
+            for writer in registry_entry.get("writers") or []:
+                add(str(output_id), "", str(writer))
         try:
             all_nodes = self.workflow_map.get_all_node_data()
         except Exception:
             return declared
-        for node_data in all_nodes.values():
+        for node_id, node_data in all_nodes.items():
             config = node_data.get("config") or {}
             if config.get("vault_write"):
                 key = str(config.get("vault_write_key") or "").strip()
                 if key:
                     meta = self._metadata_for_type(node_data.get("type", "")) or {}
                     out_meta = (meta.get("output_port_metadata") or {}).get("default") or {}
-                    declared[key] = str(out_meta.get("data_type") or "")
+                    add(key, str(out_meta.get("data_type") or ""), str(node_id))
             if config.get("use_chat_session"):
                 session_key = str(config.get("session_key") or "").strip()
                 if session_key:
-                    declared[session_key] = "ai_session"
+                    add(session_key, "ai_session", str(node_id))
         return declared
+
+    def _prune_unavailable_source_options(
+        self,
+        schema: Dict[str, Dict[str, Any]],
+        vault_keys_by_type: Dict[str, list[tuple[str, str]]] | None,
+        values: Dict[str, Any],
+    ) -> Dict[str, Dict[str, Any]]:
+        """Hide source options whose revealed vault dropdown has no entries.
+
+        A select option that only reveals an empty typed vault dropdown (e.g.
+        "Continue AI session" with no eligible sessions, or "Vault" with no
+        compatible vault keys) is dropped from the selector. A saved value is
+        kept selectable so existing configs still display faithfully.
+        """
+        if vault_keys_by_type is None:
+            return schema
+        removals: Dict[str, set] = {}
+        for field_schema in schema.values():
+            if not isinstance(field_schema, dict) or not field_schema.get("vault_type"):
+                continue
+            condition = field_schema.get("visible_when")
+            if not isinstance(condition, dict) or len(condition) != 1:
+                continue
+            (select_name, option_value), = condition.items()
+            select_schema = schema.get(select_name) or {}
+            if select_schema.get("type") != "select" or not isinstance(option_value, str):
+                continue
+            if not vault_keys_by_type.get(str(field_schema["vault_type"])):
+                removals.setdefault(select_name, set()).add(option_value)
+        if not removals:
+            return schema
+        adjusted = dict(schema)
+        for select_name, gone in removals.items():
+            select_schema = dict(adjusted[select_name])
+            options = [
+                option
+                for option in select_schema.get("options", [])
+                if option not in gone
+            ]
+            current = values.get(select_name, select_schema.get("default"))
+            if current in gone and current not in options:
+                options.append(current)
+            select_schema["options"] = options
+            adjusted[select_name] = select_schema
+        return adjusted
 
     def _schema_by_top_level_config_tab(
         self,
@@ -1588,7 +1658,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 )
                 if value is not None:
                     lines.append(f"Value: {self._short_value_text(value)}")
-            yield PayloadPreview(
+            # Read-only summary: plain Static so keyboard navigation skips it.
+            yield Static(
                 "\n".join(lines),
                 classes="form-description incoming-payload-summary",
                 id=f"incoming-payload-{target_port}",

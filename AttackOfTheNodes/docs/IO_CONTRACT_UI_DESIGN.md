@@ -205,6 +205,14 @@ Implementation (differs slightly from the original sketch):
   `vault_write_key`, session keys) so wiring works before the first run.
 - Compatibility: exact tag match; **untagged legacy entries also satisfy
   `string`**; `any` accepts everything. Incompatible entries hidden entirely.
+- **Eligibility (2026-07-07):** declared keys whose only writers are
+  downstream of the configured node on the same branch — or the node itself —
+  are excluded (they cannot exist when the node runs). Parallel-branch
+  writers stay listed; branch timing is the validator race warning's job.
+- **Option pruning (2026-07-07):** a source option that would reveal an empty
+  typed dropdown (`Vault`, `Continue AI session`) is dropped from the source
+  selector; a previously saved selection stays selectable so old configs
+  display faithfully.
 - Format: `key [type]`; untagged keys render bare. A configured value that no
   longer resolves renders as `key (not declared)`.
 - The helper generator emits this pattern for every `input_sources` /
@@ -225,8 +233,10 @@ Incoming Payload
   Payload: default (str): "last captured value"   ← when memory bank holds one
 ```
 
-- Producer chain via `trace_transient_producer()`; port `[type]` from input
-  port metadata; last captured value truncated at 800 chars.
+- Producer chain via `trace_transient_producer()`; payload data type from the
+  producer's output-port metadata; captured value truncated for display.
+- Rendered as a plain read-only `Static` — **keyboard navigation skips it**
+  (2026-07-07); it is informational, not interactive.
 - Replaces the "Reveal upstream payload" / "Reveal Vault payload" checkboxes
   for standard-model nodes (always visible when connected). Legacy nodes keep
   the old reveal-checkbox layout.

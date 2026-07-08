@@ -143,11 +143,12 @@ config_tabs:
 - Config-screen copy currently uses the project vocabulary: graph-passed data is
   a dead-drop payload, named memory is the Vault, and pass-through forwarding is
   labeled `Dead drop payload`.
-- Source and Payloads tabs may reveal incoming data with `Reveal upstream
-  payload` or `Reveal Vault payload`. Keep these previews opt-in and formatted
-  as source chain, payload name/type/value when available, and optional
-  description. Revealed preview blocks should be read-only command stops so W/S
-  and arrows can highlight them and then continue moving.
+- Standard-model nodes (input ports declaring `sources`) show an auto-revealed
+  `Incoming Payload` block at the top of the Source tab — `Node source:` /
+  `Payload: <name> (<type>)` / `Payload desc:` / `Value:` lines per connected
+  input. It is a plain read-only Static that keyboard navigation skips.
+  Legacy nodes keep the opt-in `Reveal upstream payload` / `Reveal Vault
+  payload` checkboxes, whose revealed previews are read-only command stops.
 
 ## Branch Node V1
 

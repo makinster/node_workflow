@@ -328,6 +328,11 @@ consecutive run declaring the same section (e.g. `Required Inputs`,
 `vault_type: "<canonical type>"` renders a string field as a dropdown over
 vault keys compatible with that type (typed entries plus keys declared by
 workflow writers; untagged legacy entries satisfy `string`; `any` shows all).
+Eligibility: keys whose only writers are downstream of the node on the same
+branch — or the node itself — are excluded (they cannot exist when the node
+runs); parallel-branch writers stay listed. A select option that would reveal
+an empty `vault_type` dropdown (e.g. `Vault`, `Continue AI session`) is pruned
+from the source selector by `NodeConfigScreen`.
 
 `path_hint: "file"` marks a string field as a filesystem path; the validator
 emits a warning if the configured path does not exist at validation time.

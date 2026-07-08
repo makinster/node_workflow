@@ -4,6 +4,36 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-07-07 — Dropdown Eligibility, Option Pruning, Nav-Skip Payload Summary
+
+Branch: `llm-node`
+
+Owner feedback round 3:
+
+- **Incoming Payload block is skipped by keyboard navigation** — rendered as a
+  plain read-only `Static` instead of a focusable `PayloadPreview`.
+- **Vault/session dropdown eligibility**: declared keys whose only writers sit
+  downstream of the configured node on the same branch (or are the node
+  itself) are excluded — they cannot exist when the node runs. Parallel-branch
+  writers stay listed since static analysis cannot order branch timing (the
+  validator race warning covers that). Implemented in
+  `NodeConfigScreen._vault_key_options` via `nodes_reachable_from`.
+- **Source option pruning**: a source option that would reveal an empty typed
+  vault dropdown (`Vault`, `Continue AI session`) is dropped from the source
+  selector; a previously saved selection stays selectable so old configs
+  display faithfully (`_prune_unavailable_source_options`).
+- Docs reviewed per `README.md` routing table; updated `NODE_STANDARDS.md`
+  (eligibility bullets, File Instance hidden-field wording),
+  `IO_CONTRACT_UI_DESIGN.md` (§3 eligibility/pruning, §4 nav-skip),
+  `NODE_HELPER.md` (`vault_type` eligibility), `AGENT_START_GUIDE.md` and
+  `TUI_DESIGN.md` (payload preview shapes: auto block vs legacy reveal
+  checkboxes).
+
+Verified: full pytest suite (374 passed), `check_ui` contract OK,
+`compileall` clean.
+
+---
+
 ## 2026-07-07 — Config UI Polish Round 2 + Continue-Session Prompt Mode
 
 Branch: `llm-node`

@@ -4350,9 +4350,11 @@ async def _test_node_config_standard_model_layout():
     async with app.run_test() as pilot:
         await pilot.pause(0.1)
 
-        # Incoming payload is auto-revealed with the captured value.
+        # Incoming payload is auto-revealed with the captured value, and is a
+        # read-only summary that keyboard navigation skips.
         incoming = app.query_one("#incoming-payload-prompt")
         assert "hello payload" in str(incoming.content)
+        assert incoming.can_focus is False
         # Legacy reveal checkboxes and membank sections are gone.
         for legacy_id in (
             "#show-previous-output",
@@ -4382,6 +4384,123 @@ async def _test_node_config_standard_model_layout():
         assert app.query_one("#field-prompt").display is False
 
     print("test_node_config_standard_model_layout PASSED")
+
+
+def test_node_config_source_option_eligibility():
+    asyncio.run(_test_node_config_source_option_eligibility())
+
+
+async def _test_node_config_source_option_eligibility():
+    """Vault/session dropdowns exclude same-branch downstream writers, and
+    source options with no eligible entries are pruned from the selector."""
+    from textual.app import App, ComposeResult
+    from textual.widgets import Select
+
+    from frontend.screens.node_config import NodeConfigScreen
+
+    _, wm, memory_bank, _ = _make_services()
+    wm.create_new("node_config_source_eligibility")
+    start = wm.add_node("start_node")
+    chat_up = wm.add_node("chat_completion_node")
+    chat_mid = wm.add_node("chat_completion_node")
+    chat_down = wm.add_node("chat_completion_node")
+    chat_side = wm.add_node("chat_completion_node")  # not connected: parallel-ish
+    wm.connect(start, "default", chat_up, "prompt")
+    wm.connect(chat_up, "default", chat_mid, "prompt")
+    wm.connect(chat_mid, "default", chat_down, "prompt")
+
+    def configure(node_id, session_key, result_key):
+        config = dict(wm.get_node_data(node_id)["config"])
+        config.update(
+            {
+                "use_chat_session": True,
+                "session_key": session_key,
+                "vault_write": True,
+                "vault_write_key": result_key,
+            }
+        )
+        wm.update_node_config(node_id, config)
+
+    configure(chat_up, "up_sess", "up_result")
+    configure(chat_down, "down_sess", "down_result")
+    configure(chat_side, "side_sess", "side_result")
+
+    node_data = wm.get_node_data(chat_mid)
+
+    class ConfigApp(App):
+        def compose(self) -> ComposeResult:
+            yield NodeConfigScreen(
+                wm._factory,
+                wm,
+                chat_mid,
+                node_data,
+                memory_bank=memory_bank,
+            )
+
+    app = ConfigApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.1)
+
+        # Upstream and parallel writers are offered; downstream ones are not.
+        session_select = app.query_one("#field-continue_session_key", Select)
+        session_options = {value for _label, value in session_select._options}
+        assert {"up_sess", "side_sess"}.issubset(session_options)
+        assert "down_sess" not in session_options
+
+        vault_select = app.query_one("#field-prompt_vault_key", Select)
+        vault_options = {value for _label, value in vault_select._options}
+        assert {"up_result", "side_result"}.issubset(vault_options)
+        assert "down_result" not in vault_options
+
+        source_select = app.query_one("#field-prompt_source", Select)
+        source_options = {value for _label, value in source_select._options}
+        assert {"Vault", "Continue AI session"}.issubset(source_options)
+
+    print("test_node_config_source_option_eligibility PASSED")
+
+
+def test_node_config_prunes_sources_with_no_eligible_entries():
+    asyncio.run(_test_node_config_prunes_sources_with_no_eligible_entries())
+
+
+async def _test_node_config_prunes_sources_with_no_eligible_entries():
+    from textual.app import App, ComposeResult
+    from textual.widgets import Select
+
+    from frontend.screens.node_config import NodeConfigScreen
+
+    _, wm, memory_bank, _ = _make_services()
+    wm.create_new("node_config_pruned_sources")
+    start = wm.add_node("start_node")
+    node = wm.add_node("chat_completion_node")
+    wm.connect(start, "default", node, "prompt")
+    node_data = wm.get_node_data(node)
+
+    class ConfigApp(App):
+        def compose(self) -> ComposeResult:
+            yield NodeConfigScreen(
+                wm._factory,
+                wm,
+                node,
+                node_data,
+                memory_bank=memory_bank,
+            )
+
+    app = ConfigApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.1)
+
+        # Empty vault and no declared sessions: Vault and Continue AI session
+        # disappear from the source selectors.
+        source_select = app.query_one("#field-prompt_source", Select)
+        source_options = [value for _label, value in source_select._options]
+        assert source_options == ["Upstream payload", "Configured"]
+
+        document_select = app.query_one("#field-document_source", Select)
+        document_options = [value for _label, value in document_select._options]
+        assert document_options == ["Upstream payload"]
+
+    print("test_node_config_prunes_sources_with_no_eligible_entries PASSED")
 
 
 def test_node_config_keyboard_skips_hidden_payload_previews():
