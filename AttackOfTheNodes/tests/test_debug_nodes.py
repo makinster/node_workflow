@@ -4519,6 +4519,55 @@ async def _test_node_config_continue_mode_dynamic_document():
     print("test_node_config_continue_mode_dynamic_document PASSED")
 
 
+def test_node_config_own_session_not_continuable():
+    asyncio.run(_test_node_config_own_session_not_continuable())
+
+
+async def _test_node_config_own_session_not_continuable():
+    """A node that declared its own AI session must not offer 'Continue AI
+    session' for that same key — even after a run persisted the session
+    entry to the vault."""
+    from textual.app import App, ComposeResult
+    from textual.widgets import Select
+
+    from frontend.screens.node_config import NodeConfigScreen
+
+    _, wm, memory_bank, _ = _make_services()
+    wm.create_new("node_config_own_session")
+    start = wm.add_node("start_node")
+    node = wm.add_node("chat_completion_node")
+    wm.connect(start, "default", node, "prompt")
+    # This node declares and keeps its own session.
+    config = dict(wm.get_node_data(node)["config"])
+    config.update(
+        {"api_key_secret": "k", "use_chat_session": True, "session_key": "my_chat"}
+    )
+    wm.update_node_config(node, config)
+    node_data = wm.get_node_data(node)
+    # Simulate a completed run: the session was written to the vault.
+    memory_bank.store_persistent(
+        "my_chat", {"type": "ai_session", "ref_key": "my_chat"}, type_tag="ai_session"
+    )
+
+    class ConfigApp(App):
+        def compose(self) -> ComposeResult:
+            yield NodeConfigScreen(
+                wm._factory, wm, node, node_data, memory_bank=memory_bank
+            )
+
+    app = ConfigApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.1)
+        # No other node declares a session, so Continue AI session is pruned.
+        source_options = [
+            value
+            for _label, value in app.query_one("#field-prompt_source", Select)._options
+        ]
+        assert "Continue AI session" not in source_options
+
+    print("test_node_config_own_session_not_continuable PASSED")
+
+
 def test_node_config_source_option_eligibility():
     asyncio.run(_test_node_config_source_option_eligibility())
 

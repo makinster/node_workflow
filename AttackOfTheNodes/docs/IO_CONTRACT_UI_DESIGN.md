@@ -208,10 +208,14 @@ Implementation (differs slightly from the original sketch):
   `vault_write_key`, session keys) so wiring works before the first run.
 - Compatibility: exact tag match; **untagged legacy entries also satisfy
   `string`**; `any` accepts everything. Incompatible entries hidden entirely.
-- **Eligibility (2026-07-07):** declared keys whose only writers are
-  downstream of the configured node on the same branch — or the node itself —
-  are excluded (they cannot exist when the node runs). Parallel-branch
-  writers stay listed; branch timing is the validator race warning's job.
+- **Eligibility (2026-07-07, tightened 2026-07-08):** a key is offered only if
+  some writer *other than the configured node* — and not solely downstream of
+  it on the same branch — declares it. This gate applies to **every**
+  candidate, including persisted vault entries from a prior run: a session a
+  node created (and thus persisted to the store) is **not** offered back to
+  that same node as a continuation. Keys with no workflow writer at all
+  (external/legacy) are still allowed. Parallel-branch writers stay listed;
+  branch timing is the validator race warning's job.
 - **Option pruning (2026-07-07):** a source option that would reveal an empty
   typed dropdown (`Vault`, `Continue AI session`) is dropped from the source
   selector; a previously saved selection stays selectable so old configs

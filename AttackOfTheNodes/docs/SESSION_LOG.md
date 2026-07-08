@@ -4,6 +4,25 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-07-08 — Fix: a node cannot continue its own AI session
+
+Branch: `llm-node`
+
+Bug: after a workflow with a self-declared AI session was saved and run, the
+session key persisted to the vault. Reopening that node's config then offered
+"Continue AI session" and let the node select its own session key. Root cause:
+`_vault_key_options` added **persisted** vault entries unconditionally, bypassing
+the same-node/downstream eligibility filter that only gated *declared writers*.
+
+Fix: the eligibility check (`writers - {self}` non-empty and not
+downstream-only) now gates **every** candidate — persisted entries included.
+Keys with no workflow writer stay allowed (external/legacy). With no eligible
+`ai_session` key, `_prune_unavailable_source_options` drops the "Continue AI
+session" prompt-source option entirely. New regression test
+`test_node_config_own_session_not_continuable`. Full suite 378 passed.
+
+---
+
 ## 2026-07-08 — Output Model Redesign: Downstream Payload + Keyed Vault Payloads
 
 Branch: `llm-node`

@@ -878,6 +878,28 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         if not tags:
             return None
 
+        # Eligibility (applied to EVERY candidate, persisted or declared): a
+        # key is offered only if some writer other than this node — and not
+        # solely downstream of it on the same branch — declares it. A key whose
+        # only declared writer is this node (e.g. a session it created, which
+        # persists in the store after a run) must NOT be offered back to
+        # itself. Parallel-branch writers stay eligible (static analysis cannot
+        # rank branch timing; the validator's race warning covers that).
+        declared = self._declared_vault_writer_keys()
+        try:
+            downstream = set(self.workflow_map.nodes_reachable_from(self.node_id) or set())
+        except Exception:
+            downstream = set()
+
+        def eligible(key: str) -> bool:
+            info = declared.get(key)
+            if info is None:
+                # No workflow node declares it — external/legacy vault entry,
+                # not attributable to this node, so it is fair game.
+                return True
+            writers = set(info.get("writers") or set()) - {self.node_id}
+            return bool(writers) and not (writers <= downstream)
+
         # (key -> tag) from persisted vault entries; "" marks untagged/legacy.
         candidates: Dict[str, str] = {}
         if self.memory_bank is not None:
@@ -885,21 +907,13 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 state = self.memory_bank.get_state()
                 entry_tags = state.get("persistent_type_tags") or {}
                 for key in state.get("persistent") or {}:
-                    candidates[str(key)] = str(entry_tags.get(key) or "")
+                    if eligible(str(key)):
+                        candidates[str(key)] = str(entry_tags.get(key) or "")
             except Exception:
                 pass
-        # Keys declared by workflow writers win the more specific tag — but a
-        # key whose only writers sit downstream of this node on the same
-        # branch cannot exist when this node runs, so it is not offered.
-        # Parallel-branch writers stay eligible (static analysis cannot rank
-        # branch timing; the validator's race warning covers that case).
-        try:
-            downstream = set(self.workflow_map.nodes_reachable_from(self.node_id) or set())
-        except Exception:
-            downstream = set()
-        for key, info in self._declared_vault_writer_keys().items():
-            writers = set(info.get("writers") or set()) - {self.node_id}
-            if not writers or writers <= downstream:
+        # Declared writers win the more specific tag; same eligibility gate.
+        for key, info in declared.items():
+            if not eligible(key):
                 continue
             tag = str(info.get("tag") or "")
             if tag or key not in candidates:
