@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
+from rich.text import Text
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical, VerticalScroll
@@ -11,6 +12,7 @@ from textual.events import Key
 from textual.screen import ModalScreen
 from textual.widgets import Button, Checkbox, Input, Label, Select, SelectionList, Static, TabbedContent, TabPane, TextArea
 
+from frontend.io_contract import TYPE_COLOR
 from frontend.node_types import (
     BRANCH_END_NODE_TYPE,
     BRANCH_NODE_TYPE,
@@ -1785,12 +1787,17 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             if "vault" in ((port_meta.get(str(port)) or {}).get("to") or [])
         ]
 
-    def _output_header(self, metadata: Optional[Dict[str, Any]], port: str) -> str:
-        """`Name (type)` header for an output port."""
+    def _output_header(self, metadata: Optional[Dict[str, Any]], port: str) -> Text:
+        """Rich `Name [type]` header for an output port."""
         info = ((metadata or {}).get("output_port_metadata") or {}).get(port) or {}
         name = output_display_name(self.factory, self.node_data, port)
         data_type = str(info.get("data_type") or "any")
-        return f"{name} ({data_type})"
+        return Text.assemble(
+            (name, "bold"),
+            "  [",
+            (data_type, f"bold {TYPE_COLOR}"),
+            "]",
+        )
 
     def _compose_standard_payloads(
         self,
@@ -1815,7 +1822,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             description = output_display_description(self.factory, self.node_data, port)
             yield Static(
                 self._output_header(metadata, port),
-                classes="form-description",
+                classes="payload-header",
                 id=f"downstream-header-{port}",
             )
             yield Horizontal(
@@ -1857,7 +1864,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 optional = not bool(info.get("vault_required"))
                 yield Static(
                     self._output_header(metadata, port),
-                    classes="form-description",
+                    classes="payload-header",
                     id=f"vault-header-{port}",
                 )
                 if optional:

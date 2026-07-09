@@ -4369,7 +4369,7 @@ async def _test_node_config_standard_model_layout():
         # name + type, with an editable name field; the Result is also a Vault
         # payload (both driven by output_port_metadata `to`).
         downstream = app.query_one("#downstream-header-default")
-        assert "LLM Result (string)" in str(downstream.content)
+        assert downstream.content.plain == "LLM Result  [string]"
         assert app.query_one("#transient-output-name-default").value == "LLM Result"
         assert app.query("#dead-drop-passthrough")
         assert app.query_one("#vault-header-default")

@@ -271,6 +271,10 @@ Screen {
     text-style: bold;
 }
 
+.nav-section {
+    color: $accent;
+}
+
 /* Inline label + widget row: label left, widget fills remaining width.
    Height is auto so bordered widgets (Select dropdowns) are not clipped. */
 .form-inline-row {
@@ -310,6 +314,11 @@ Screen {
 
 /* Section headers inside generated forms (schema `section` key). */
 .form-section-label {
+    margin-top: 1;
+}
+
+.payload-header {
+    color: $foreground;
     margin-top: 1;
 }
 
@@ -378,11 +387,16 @@ StatusBar {
     color: $text-muted;
 }
 
-/* Checkboxes: the on-state reads in the accent color so it is easy to see
-   which filters/options are active. */
+/* Checkboxes: checked state gets a quiet light-grey fill; focus still uses
+   a stronger fill so keyboard position remains separate from value state. */
 Checkbox.-on > .toggle--button {
-    color: $accent;
+    background: $foreground 20%;
+    color: $foreground;
     text-style: bold;
+}
+
+Checkbox.-on:focus > .toggle--button {
+    background: $foreground 30%;
 }
 
 /* Group drill-in quick list: compact auto-height list inside the detail panel. */
