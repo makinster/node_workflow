@@ -138,7 +138,7 @@ class ChatCompletionNode(Node):
         "prompt_vault_key": "",
         "prompt": "",
         **_context_default_config(),
-        "document_source": "Upstream payload",
+        "document_source": "Configured",
         "document_vault_key": "",
         "document": "",
         "continue_session_key": "",

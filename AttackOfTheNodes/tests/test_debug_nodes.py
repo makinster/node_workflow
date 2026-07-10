@@ -4460,7 +4460,8 @@ def test_node_config_continue_mode_dynamic_document():
 
 async def _test_node_config_continue_mode_dynamic_document():
     """Selecting Continue AI session makes Document required, hides the
-    separate session-save option, and reveals the Document textbox."""
+    separate session-save option, and keeps the configured Document textbox
+    available."""
     from textual.app import App, ComposeResult
     from textual.widgets import Checkbox, Label, Select
 
@@ -4499,7 +4500,8 @@ async def _test_node_config_continue_mode_dynamic_document():
         document_box = app.query_one("#field-document")
         keep_session = app.query_one("#field-use_chat_session", Checkbox)
         assert "Optional Inputs" in section_titles()
-        assert document_box.display is False
+        assert document_source.value == "Configured"
+        assert document_box.display is True
 
         # Switch the prompt source to Continue AI session.
         app.query_one("#field-prompt_source", Select).value = "Continue AI session"
@@ -4512,10 +4514,6 @@ async def _test_node_config_continue_mode_dynamic_document():
         titles = section_titles()
         assert "Required Inputs" in titles
         assert "Optional Inputs" not in titles
-
-        # Picking Configured reveals the Document textbox (same as prompt).
-        document_source.value = "Configured"
-        await pilot.pause(0.1)
         assert document_box.display is True
 
     print("test_node_config_continue_mode_dynamic_document PASSED")
@@ -4828,15 +4826,16 @@ async def _test_node_config_prevents_duplicate_input_sources():
         prompt_source = app.query_one("#field-prompt_source", Select)
         document_source = app.query_one("#field-document_source", Select)
 
-        # Document defaults to Upstream and is wired to the same node output,
-        # so Prompt cannot also pick Upstream.
-        assert "Upstream payload" not in {
+        # Prompt is the first visible selector wired to this upstream output,
+        # so later selectors cannot reuse the same payload source.
+        assert prompt_source.value == "Configured"
+        assert document_source.value == "Configured"
+        assert "Upstream payload" in {
             value for _label, value in prompt_source._options
         }
-
-        document_source.value = "Configured"
-        await pilot.pause(0.1)
-        assert "Upstream payload" in {value for _label, value in prompt_source._options}
+        assert "Upstream payload" not in {
+            value for _label, value in document_source._options
+        }
 
         prompt_source.value = "Upstream payload"
         await pilot.pause(0.1)

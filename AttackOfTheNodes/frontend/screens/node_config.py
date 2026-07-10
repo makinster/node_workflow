@@ -1308,11 +1308,24 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         vault_fields: Dict[str, str],
     ) -> bool:
         upstream_refs = self._upstream_refs_by_source_field(source_fields)
+        first_source_field_by_ref: Dict[tuple[str, str], str] = {}
         first_upstream_field_by_ref: Dict[tuple[str, str], str] = {}
         duplicate_upstream_fields: set[str] = set()
         for field in source_fields:
             source_ref = upstream_refs.get(field)
-            if values.get(field) != "Upstream payload" or source_ref is None:
+            if source_ref is None:
+                continue
+            base_options = self._source_select_base_options.get(field)
+            if base_options is None:
+                query = self.query(f"#field-{field}")
+                if query and isinstance(query.first(), Select):
+                    base_options = list(query.first()._options)
+            if not any(
+                value == "Upstream payload" for _label, value in (base_options or [])
+            ):
+                continue
+            first_source_field_by_ref.setdefault(source_ref, field)
+            if values.get(field) != "Upstream payload":
                 continue
             if source_ref in first_upstream_field_by_ref:
                 duplicate_upstream_fields.add(field)
@@ -1329,14 +1342,16 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 self._source_select_base_options.get(source_field) or widget._options
             )
             source_ref = upstream_refs.get(source_field)
-            upstream_owned_elsewhere = (
+            upstream_reserved_elsewhere = (
                 source_ref is not None
-                and source_ref in first_upstream_field_by_ref
-                and first_upstream_field_by_ref.get(source_ref) != source_field
+                and first_source_field_by_ref.get(source_ref) != source_field
             )
             if (
                 current == "Upstream payload"
-                and source_field in duplicate_upstream_fields
+                and (
+                    source_field in duplicate_upstream_fields
+                    or upstream_reserved_elsewhere
+                )
             ):
                 fallback = self._fallback_source_value(options, "Upstream payload")
                 if fallback is not None and fallback != current:
@@ -1344,7 +1359,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                     values[source_field] = fallback
                     current = fallback
                     changed = True
-            if current != "Upstream payload" and upstream_owned_elsewhere:
+            if current != "Upstream payload" and upstream_reserved_elsewhere:
                 options = [
                     option for option in options if option[1] != "Upstream payload"
                 ]

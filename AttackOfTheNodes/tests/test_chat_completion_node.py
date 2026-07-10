@@ -104,6 +104,7 @@ async def test_success_writes_vault_and_forwards_dead_drop(monkeypatch):
     client = FakeClient()
     _patch_client(monkeypatch, client)
     node = _make_node(
+        document_source="Upstream payload",
         dead_drop_passthrough=True,
         vault_write=True,
         vault_write_key="llm_result",

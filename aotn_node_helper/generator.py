@@ -511,7 +511,8 @@ def _input_source_fields(
             f"{where} needs at least two sources; "
             "single-source inputs do not need a selector"
         )
-    default_source = str(entry.get("default") or sources[0]).strip().lower()
+    implicit_default = "configured" if "configured" in sources else sources[0]
+    default_source = str(entry.get("default") or implicit_default).strip().lower()
     if default_source not in sources:
         raise ValueError(f"{where} default {default_source!r} is not in sources")
     label = str(entry.get("label") or _title_case(input_name))

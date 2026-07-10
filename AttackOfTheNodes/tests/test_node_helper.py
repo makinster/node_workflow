@@ -195,6 +195,17 @@ def test_node_helper_expands_input_sources_and_output_routing(tmp_path: Path):
     assert 'run_ui_check("helper_standard_node")' in ui_test_text
 
 
+def test_node_helper_defaults_generated_source_selects_to_configured(tmp_path: Path):
+    project_root = _project_skeleton(tmp_path)
+    spec = _standard_model_spec()
+    del spec["input_sources"]["file_path"]["default"]
+
+    paths = generate_from_spec(spec, project_root=project_root)
+    node_text = paths.node_file.read_text(encoding="utf-8")
+
+    assert "'file_path_source': 'Configured'" in node_text
+
+
 def test_node_helper_expands_repeatable_input_sources(tmp_path: Path):
     project_root = _project_skeleton(tmp_path)
     spec = _standard_model_spec()

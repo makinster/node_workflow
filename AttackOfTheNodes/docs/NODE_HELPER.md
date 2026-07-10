@@ -189,7 +189,8 @@ Rules:
 
 - `sources` must list at least two of `upstream`, `vault`, `configured`.
   Single-source inputs do not need a selector — declare a plain field instead.
-- `default` must be one of the listed sources (defaults to the first).
+- `default` must be one of the listed sources. When omitted, it defaults to
+  `configured` if available, otherwise to the first listed source.
 - `parameter` is required when `configured` is allowed and rejected when it is
   not.
 - Selector option values are the display strings `Upstream payload`, `Vault`,
