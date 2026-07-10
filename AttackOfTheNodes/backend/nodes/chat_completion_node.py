@@ -188,6 +188,9 @@ class ChatCompletionNode(Node):
             "label": "Keep active AI session",
             "tab": "Payloads",
             "section": "AI Session",
+            "visible_when": {
+                "prompt_source": ["Upstream payload", "Vault", "Configured"],
+            },
             "description": (
                 "When continuing a session, extends that same session — "
                 "no new key needed"
@@ -265,10 +268,9 @@ class ChatCompletionNode(Node):
                 return
             user_content: Optional[str] = document
             messages = history + [{"role": "user", "content": user_content}]
-            # Keeping the session active extends the resumed session itself —
-            # no separate key.
-            if self.config.get("use_chat_session"):
-                onward_key = ref
+            # Continuing a session extends the resumed session itself — no
+            # separate output key or Payloads-tab checkbox is needed.
+            onward_key = ref
         else:
             history = self._resolve_history(context)
             user_content = prompt if document is None else f"{prompt}\n\n{document}"

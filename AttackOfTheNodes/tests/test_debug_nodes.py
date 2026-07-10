@@ -4459,10 +4459,10 @@ def test_node_config_continue_mode_dynamic_document():
 
 
 async def _test_node_config_continue_mode_dynamic_document():
-    """Selecting Continue AI session makes Document required (section retitles),
-    locks its source to Configured, and reveals the Document textbox."""
+    """Selecting Continue AI session makes Document required, hides the
+    separate session-save option, and reveals the Document textbox."""
     from textual.app import App, ComposeResult
-    from textual.widgets import Label, Select
+    from textual.widgets import Checkbox, Label, Select
 
     from frontend.screens.node_config import NodeConfigScreen
 
@@ -4497,6 +4497,7 @@ async def _test_node_config_continue_mode_dynamic_document():
 
         document_source = app.query_one("#field-document_source", Select)
         document_box = app.query_one("#field-document")
+        keep_session = app.query_one("#field-use_chat_session", Checkbox)
         assert "Optional Inputs" in section_titles()
         assert document_box.display is False
 
@@ -4507,6 +4508,7 @@ async def _test_node_config_continue_mode_dynamic_document():
         # Document becomes required — its section retitles to Required Inputs —
         # but the source stays selectable (no force-to-Configured lock).
         assert document_source.disabled is False
+        assert keep_session.display is False
         titles = section_titles()
         assert "Required Inputs" in titles
         assert "Optional Inputs" not in titles
@@ -4685,6 +4687,96 @@ async def _test_node_config_prunes_sources_with_no_eligible_entries():
         assert document_options == ["Upstream payload", "Configured"]
 
     print("test_node_config_prunes_sources_with_no_eligible_entries PASSED")
+
+
+def test_node_config_prevents_duplicate_input_sources():
+    asyncio.run(_test_node_config_prevents_duplicate_input_sources())
+
+
+async def _test_node_config_prevents_duplicate_input_sources():
+    from textual.app import App, ComposeResult
+    from textual.widgets import Select
+
+    from frontend.screens.node_config import NodeConfigScreen
+
+    _, wm, memory_bank, _ = _make_services()
+    wm.create_new("node_config_no_duplicate_sources")
+    start = wm.add_node("start_node")
+    node = wm.add_node("chat_completion_node")
+    wm.connect(start, "default", node, "prompt")
+    wm.connect(start, "default", node, "document")
+    node_data = wm.get_node_data(node)
+
+    class ConfigApp(App):
+        def compose(self) -> ComposeResult:
+            yield NodeConfigScreen(
+                wm._factory, wm, node, node_data, memory_bank=memory_bank
+            )
+
+    app = ConfigApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.1)
+
+        prompt_source = app.query_one("#field-prompt_source", Select)
+        document_source = app.query_one("#field-document_source", Select)
+
+        # Document defaults to Upstream and is wired to the same node output,
+        # so Prompt cannot also pick Upstream.
+        assert "Upstream payload" not in {
+            value for _label, value in prompt_source._options
+        }
+
+        document_source.value = "Configured"
+        await pilot.pause(0.1)
+        assert "Upstream payload" in {value for _label, value in prompt_source._options}
+
+        prompt_source.value = "Upstream payload"
+        await pilot.pause(0.1)
+        assert "Upstream payload" not in {
+            value for _label, value in document_source._options
+        }
+
+    print("test_node_config_prevents_duplicate_input_sources PASSED")
+
+
+def test_node_config_prevents_duplicate_vault_inputs():
+    asyncio.run(_test_node_config_prevents_duplicate_vault_inputs())
+
+
+async def _test_node_config_prevents_duplicate_vault_inputs():
+    from textual.app import App, ComposeResult
+    from textual.widgets import Select
+
+    from frontend.screens.node_config import NodeConfigScreen
+
+    _, wm, memory_bank, _ = _make_services()
+    wm.create_new("node_config_no_duplicate_vault")
+    node = wm.add_node("chat_completion_node")
+    memory_bank.store_persistent("notes", "shared", type_tag="string")
+    node_data = wm.get_node_data(node)
+
+    class ConfigApp(App):
+        def compose(self) -> ComposeResult:
+            yield NodeConfigScreen(
+                wm._factory, wm, node, node_data, memory_bank=memory_bank
+            )
+
+    app = ConfigApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.1)
+
+        prompt_source = app.query_one("#field-prompt_source", Select)
+        prompt_key = app.query_one("#field-prompt_vault_key", Select)
+        document_source = app.query_one("#field-document_source", Select)
+
+        prompt_source.value = "Vault"
+        await pilot.pause(0.1)
+        prompt_key.value = "notes"
+        await pilot.pause(0.1)
+
+        assert "Vault" not in {value for _label, value in document_source._options}
+
+    print("test_node_config_prevents_duplicate_vault_inputs PASSED")
 
 
 def test_node_config_keyboard_skips_hidden_payload_previews():

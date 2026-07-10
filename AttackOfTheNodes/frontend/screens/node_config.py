@@ -577,6 +577,9 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         )
         self._refreshing_membank_outputs = False
         self._rule_schema: Dict[str, Dict[str, Any]] = {}
+        self._generated_config_schema: Dict[str, Dict[str, Any]] = {}
+        self._source_select_base_options: Dict[str, list[tuple[Any, Any]]] = {}
+        self._vault_select_base_options: Dict[str, list[tuple[Any, Any]]] = {}
 
     def compose(self) -> ComposeResult:
         metadata = self._metadata_for_type(self.node_data.get("type", ""))
@@ -632,7 +635,11 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         }
         forms, getter = self._build_standard_config_forms(schema, core_config)
         self._get_form_values = getter
-        self._rule_schema = schema if schema_has_field_rules(schema) else {}
+        self._rule_schema = (
+            self._generated_config_schema
+            if schema_has_field_rules(self._generated_config_schema)
+            else {}
+        )
 
         with Vertical(id="modal-card", classes="node-config-modal"):
             title = f"{self.node_data.get('alias') or self.node_id} ({self.node_id})"
@@ -838,6 +845,15 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         schema = self._prune_unavailable_source_options(
             schema, vault_keys_by_type, values
         )
+        self._generated_config_schema = schema
+        self._source_select_base_options = {
+            field_name: [
+                (str(option), option) for option in field_schema.get("options", [])
+            ]
+            for field_name, field_schema in schema.items()
+            if field_name.endswith("_source") and field_schema.get("type") == "select"
+        }
+        self._vault_select_base_options = {}
         schemas = self._schema_by_top_level_config_tab(schema)
         forms: Dict[str, Any] = {}
         getters: list[WidgetGetter] = []
@@ -1135,6 +1151,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         self._sync_payload_previews()
         self._sync_standard_payload_controls()
         self._apply_generated_field_rules()
+        self._sync_duplicate_input_source_options()
         if self.query("#alias-input"):
             self.call_after_refresh(
                 lambda: self.app.set_focus(self.query_one("#alias-input", CommandInput))
@@ -1202,6 +1219,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             self._sync_merge_input_details()
         elif event.select.id and event.select.id.startswith("field-"):
             self._apply_generated_field_rules()
+            self._sync_duplicate_input_source_options()
 
     def _apply_generated_field_rules(self) -> None:
         if not self._rule_schema or self._get_form_values is None:
@@ -1223,6 +1241,177 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             for widget in self.query(f"#field-{partner}"):
                 if isinstance(widget, Checkbox) and widget.value:
                     widget.value = False
+
+    def _sync_duplicate_input_source_options(self) -> None:
+        """Prevent selecting the same upstream/vault source for two inputs."""
+        if self._get_form_values is None or not self._generated_config_schema:
+            return
+        if getattr(self, "_syncing_duplicate_input_sources", False):
+            return
+        self._syncing_duplicate_input_sources = True
+        try:
+            values = self._get_form_values()
+            source_fields = self._standard_source_fields()
+            vault_fields = self._standard_vault_key_fields(source_fields)
+            self._capture_vault_select_base_options(vault_fields)
+            self._sync_duplicate_vault_key_options(values, source_fields, vault_fields)
+            self._sync_duplicate_source_select_options(
+                values, source_fields, vault_fields
+            )
+        finally:
+            self._syncing_duplicate_input_sources = False
+
+    def _standard_source_fields(self) -> list[str]:
+        return [
+            field_name
+            for field_name, field_schema in self._generated_config_schema.items()
+            if field_name.endswith("_source") and field_schema.get("type") == "select"
+        ]
+
+    def _standard_vault_key_fields(self, source_fields: list[str]) -> Dict[str, str]:
+        fields: Dict[str, str] = {}
+        for source_field in source_fields:
+            port = source_field[: -len("_source")]
+            vault_field = f"{port}_vault_key"
+            field_schema = self._generated_config_schema.get(vault_field)
+            if isinstance(field_schema, dict) and field_schema.get("vault_type"):
+                fields[source_field] = vault_field
+        return fields
+
+    def _capture_vault_select_base_options(self, vault_fields: Dict[str, str]) -> None:
+        for vault_field in vault_fields.values():
+            if vault_field in self._vault_select_base_options:
+                continue
+            query = self.query(f"#field-{vault_field}")
+            if query and isinstance(query.first(), Select):
+                self._vault_select_base_options[vault_field] = list(
+                    query.first()._options
+                )
+
+    def _sync_duplicate_source_select_options(
+        self,
+        values: Dict[str, Any],
+        source_fields: list[str],
+        vault_fields: Dict[str, str],
+    ) -> None:
+        upstream_refs = self._upstream_refs_by_source_field(source_fields)
+        upstream_fields = {
+            field
+            for field in source_fields
+            if values.get(field) == "Upstream payload" and field in upstream_refs
+        }
+        for source_field in source_fields:
+            query = self.query(f"#field-{source_field}")
+            if not query or not isinstance(query.first(), Select):
+                continue
+            widget = query.first()
+            current = widget.value
+            options = list(
+                self._source_select_base_options.get(source_field) or widget._options
+            )
+            source_ref = upstream_refs.get(source_field)
+            duplicate_upstream_selected = any(
+                upstream_refs.get(other_field) == source_ref
+                for other_field in upstream_fields - {source_field}
+            )
+            if (
+                current != "Upstream payload"
+                and source_ref is not None
+                and duplicate_upstream_selected
+            ):
+                options = [
+                    option for option in options if option[1] != "Upstream payload"
+                ]
+            vault_field = vault_fields.get(source_field)
+            if vault_field and current != "Vault":
+                if not self._has_available_vault_key(values, source_field, vault_fields):
+                    options = [option for option in options if option[1] != "Vault"]
+            self._set_select_options_preserving_value(widget, options, current)
+
+    def _upstream_refs_by_source_field(
+        self, source_fields: list[str]
+    ) -> Dict[str, tuple[str, str]]:
+        refs: Dict[str, tuple[str, str]] = {}
+        connections = self.node_data.get("connections", {}).get("inputs", [])
+        for source_field in source_fields:
+            port = source_field[: -len("_source")]
+            for conn in connections:
+                if str(conn.get("target_port") or "default") != port:
+                    continue
+                source_id = str(conn.get("source_node_id") or "").strip()
+                if source_id:
+                    refs[source_field] = (
+                        source_id,
+                        str(conn.get("source_port") or "default"),
+                    )
+                    break
+        return refs
+
+    def _has_available_vault_key(
+        self,
+        values: Dict[str, Any],
+        source_field: str,
+        vault_fields: Dict[str, str],
+    ) -> bool:
+        return any(
+            value not in (None, "", Select.NULL)
+            for _label, value in self._available_vault_options_for(
+                values, source_field, vault_fields
+            )
+        )
+
+    def _sync_duplicate_vault_key_options(
+        self,
+        values: Dict[str, Any],
+        source_fields: list[str],
+        vault_fields: Dict[str, str],
+    ) -> None:
+        for source_field, vault_field in vault_fields.items():
+            query = self.query(f"#field-{vault_field}")
+            if not query or not isinstance(query.first(), Select):
+                continue
+            widget = query.first()
+            current = widget.value
+            options = self._available_vault_options_for(
+                values, source_field, vault_fields, include_current=True
+            )
+            self._set_select_options_preserving_value(widget, options, current)
+
+    def _available_vault_options_for(
+        self,
+        values: Dict[str, Any],
+        source_field: str,
+        vault_fields: Dict[str, str],
+        include_current: bool = False,
+    ) -> list[tuple[Any, Any]]:
+        vault_field = vault_fields.get(source_field)
+        if not vault_field:
+            return []
+        current = values.get(vault_field)
+        used_elsewhere = {
+            values.get(other_vault_field)
+            for other_source, other_vault_field in vault_fields.items()
+            if other_source != source_field
+            and values.get(other_source) == "Vault"
+            and values.get(other_vault_field) not in (None, "")
+        }
+        options = []
+        for label, value in self._vault_select_base_options.get(vault_field, []):
+            if value in used_elsewhere and not (include_current and value == current):
+                continue
+            options.append((label, value))
+        return options
+
+    def _set_select_options_preserving_value(
+        self, widget: Select, options: list[tuple[Any, Any]], current: Any
+    ) -> None:
+        existing = list(widget._options)
+        if existing == options:
+            return
+        widget.set_options(options)
+        legal_values = {value for _label, value in options}
+        if current in legal_values:
+            widget.value = current
 
     def on_selection_list_selected_changed(
         self, event: SelectionList.SelectedChanged

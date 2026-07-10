@@ -283,8 +283,8 @@ async def test_continue_session_mode_with_document_turn(monkeypatch):
     await seeder.execute(ctx1)
 
     # Continue AI session prompt-source mode: no prompt; the document (here an
-    # upstream payload) becomes the next turn; the continued history is read
-    # but NOT extended (keep-active checkbox off).
+    # upstream payload) becomes the next turn and extends the selected session
+    # without a separate keep-active checkbox/key.
     continuer = _make_node(
         prompt_source="Continue AI session",
         continue_session_key="thread",
@@ -301,7 +301,7 @@ async def test_continue_session_mode_with_document_turn(monkeypatch):
     assert "error" not in sig2
     assert client.calls[1]["messages"][0]["content"] == "Seed turn"
     assert client.calls[1]["messages"][-1]["content"] == "next question"
-    assert len(run_session.get_chat_history("thread")) == 2
+    assert len(run_session.get_chat_history("thread")) == 4
 
 
 async def test_continue_session_mode_requires_document(monkeypatch):

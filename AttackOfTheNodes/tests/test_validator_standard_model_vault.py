@@ -171,3 +171,54 @@ def test_parallel_session_writer_triggers_race_warning():
         for m in _messages(result["warnings"])
     ), result["warnings"]
     print("test_parallel_session_writer_triggers_race_warning PASSED")
+
+def test_duplicate_upstream_input_source_is_an_error():
+    wm, factory = _make_wm()
+    wm.create_new("std_duplicate_upstream")
+    start = wm.add_node("start_node")
+    chat = wm.add_node("chat_completion_node")
+    wm.connect(start, "default", chat, "prompt")
+    wm.connect(start, "default", chat, "document")
+    _chat_config(
+        wm, chat, prompt_source="Upstream payload", document_source="Upstream payload"
+    )
+
+    result = validate_workflow(wm, factory)
+    assert result["success"] is False
+    assert any(
+        "Duplicate input source upstream payload" in m
+        and "prompt" in m
+        and "document" in m
+        for m in _messages(result["errors"])
+    ), _messages(result["errors"])
+    print("test_duplicate_upstream_input_source_is_an_error PASSED")
+
+
+def test_duplicate_standard_vault_input_source_is_an_error():
+    wm, factory = _make_wm()
+    wm.create_new("std_duplicate_vault")
+    start = wm.add_node("start_node")
+    setter = wm.add_node("set_variable_node")
+    chat = wm.add_node("chat_completion_node")
+    wm.connect(start, "default", setter, "input")
+    wm.connect(setter, "default", chat, "prompt")
+
+    wm.update_node_config(setter, {"membank_outputs": [{"id": "shared_notes"}]})
+    _chat_config(
+        wm,
+        chat,
+        prompt_source="Vault",
+        prompt_vault_key="shared_notes",
+        document_source="Vault",
+        document_vault_key="shared_notes",
+    )
+
+    result = validate_workflow(wm, factory)
+    assert result["success"] is False
+    assert any(
+        "Duplicate input source vault key 'shared_notes'" in m
+        and "prompt" in m
+        and "document" in m
+        for m in _messages(result["errors"])
+    ), _messages(result["errors"])
+    print("test_duplicate_standard_vault_input_source_is_an_error PASSED")

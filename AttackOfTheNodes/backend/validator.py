@@ -245,6 +245,9 @@ def validate_workflow(
     standard_vault_writes = _standard_model_vault_writes(all_nodes, metadata_by_type)
     standard_vault_reads = _standard_model_vault_reads(all_nodes, metadata_by_type)
 
+    for duplicate in _duplicate_input_source_errors(all_nodes, standard_vault_reads):
+        errors.append(duplicate)
+
     declared_membank_outputs = _declared_membank_outputs(all_nodes)
     for node_writes in standard_vault_writes.values():
         for key, type_tag in node_writes.items():
@@ -416,6 +419,67 @@ def _declared_membank_outputs(
     return declared
 
 
+def _duplicate_input_source_errors(
+    all_nodes: Dict[str, Dict[str, Any]],
+    standard_vault_reads: Dict[str, List[Dict[str, Optional[str]]]],
+) -> List[Dict[str, str]]:
+    """Errors for repeated input-source declarations on one node."""
+    errors: List[Dict[str, str]] = []
+    for node_id, data in all_nodes.items():
+        seen: Dict[tuple[str, str, str], str] = {}
+
+        def add(source_key: tuple[str, str, str], label: str, description: str) -> None:
+            previous = seen.get(source_key)
+            if previous is None:
+                seen[source_key] = label
+                return
+            errors.append(
+                {
+                    "node_id": node_id,
+                    "message": (
+                        f"Duplicate input source {description} used by "
+                        f"'{previous}' and '{label}'"
+                    ),
+                }
+            )
+
+        for conn in data.get("connections", {}).get("inputs", []):
+            source_id = str(conn.get("source_node_id") or "").strip()
+            if not source_id:
+                continue
+            source_port = str(conn.get("source_port") or "default")
+            target_port = str(conn.get("target_port") or "default")
+            add(
+                ("node", source_id, source_port),
+                target_port,
+                f"upstream payload '{source_id}:{source_port}'",
+            )
+
+        config = data.get("config") or {}
+        membank_inputs = config.get("membank_inputs") or []
+        if isinstance(membank_inputs, list):
+            for entry in membank_inputs:
+                source_id = _membank_source_id(entry).strip()
+                if source_id:
+                    add(
+                        ("membank", source_id, ""),
+                        "membank_inputs",
+                        f"vault key '{source_id}'",
+                    )
+
+        for entry in standard_vault_reads.get(node_id, []):
+            source_id = _membank_source_id(entry).strip()
+            if not source_id:
+                continue
+            target_port = str(entry.get("target_port") or source_id)
+            add(
+                ("membank", source_id, ""),
+                target_port,
+                f"vault key '{source_id}'",
+            )
+    return errors
+
+
 def _standard_model_vault_writes(
     all_nodes: Dict[str, Dict[str, Any]],
     metadata_by_type: Dict[str, Dict[str, Any]],
@@ -472,12 +536,18 @@ def _standard_model_vault_reads(
             if not vault_key:
                 continue
             data_type = str((port_meta.get(port) or {}).get("data_type") or "") or None
-            entries.append({"source_id": vault_key, "type_tag": data_type})
+            entries.append(
+                {"source_id": vault_key, "type_tag": data_type, "target_port": port}
+            )
         if _continuation_selected(config):
             continue_key = str(config.get("continue_session_key") or "").strip()
             if continue_key:
                 entries.append(
-                    {"source_id": continue_key, "type_tag": DataType.AI_SESSION.value}
+                    {
+                        "source_id": continue_key,
+                        "type_tag": DataType.AI_SESSION.value,
+                        "target_port": "continue_session_key",
+                    }
                 )
         if entries:
             reads[node_id] = entries
