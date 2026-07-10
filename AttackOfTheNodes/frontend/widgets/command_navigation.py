@@ -223,7 +223,9 @@ def move_command_focus(
         current_index = 0 if direction > 0 else len(widgets) - 1
     next_index = max(0, min(len(widgets) - 1, current_index + direction))
     target = widgets[next_index]
-    focus_command_widget(screen, target, scroll_container)
+    peek_index = next_index + (1 if direction > 0 else -1)
+    peek_widget = widgets[peek_index] if 0 <= peek_index < len(widgets) else None
+    focus_command_widget(screen, target, scroll_container, peek_widget=peek_widget)
     return target
 
 

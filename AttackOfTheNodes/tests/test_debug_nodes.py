@@ -4697,6 +4697,46 @@ def test_node_config_repeatable_context_inputs_reveal_by_count():
     asyncio.run(_test_node_config_repeatable_context_inputs_reveal_by_count())
 
 
+def test_node_config_change_scrolls_to_next_widget():
+    asyncio.run(_test_node_config_change_scrolls_to_next_widget())
+
+
+async def _test_node_config_change_scrolls_to_next_widget():
+    from textual.app import App, ComposeResult
+    from textual.widgets import Select
+
+    from frontend.screens.node_config import NodeConfigScreen
+
+    _, wm, memory_bank, _ = _make_services()
+    wm.create_new("node_config_change_scrolls")
+    node = wm.add_node("chat_completion_node")
+    node_data = wm.get_node_data(node)
+
+    class ConfigApp(App):
+        def compose(self) -> ComposeResult:
+            yield NodeConfigScreen(
+                wm._factory, wm, node, node_data, memory_bank=memory_bank
+            )
+
+    app = ConfigApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.1)
+        screen = app.query_one(NodeConfigScreen)
+        calls = []
+
+        def capture_scroll(target, peek_widget=None):
+            calls.append((getattr(target, "id", ""), getattr(peek_widget, "id", "")))
+
+        screen._scroll_config_widget_into_view = capture_scroll
+        count = app.query_one("#field-context_input_count", Select)
+        count.value = "1"
+        await pilot.pause(0.1)
+
+        assert ("field-context_input_count", "field-context_1_source") in calls
+
+    print("test_node_config_change_scrolls_to_next_widget PASSED")
+
+
 async def _test_node_config_repeatable_context_inputs_reveal_by_count():
     from textual.app import App, ComposeResult
     from textual.widgets import Select
@@ -7591,6 +7631,57 @@ def test_focus_command_widget_reveals_peek_target():
     print("test_focus_command_widget_reveals_peek_target PASSED")
 
 
+def test_command_screen_mixin_reveals_upward_peek_target():
+    import frontend.widgets.command_screen_mixin as mixin
+
+    first, second, third = object(), object(), object()
+    captured = {}
+
+    class FakeApp:
+        focused = third
+
+        def bell(self):
+            captured["bell"] = True
+
+    class FakeScreen:
+        app = FakeApp()
+
+        def _nav_widgets(self):
+            return [first, second, third]
+
+        def _scroll_container(self):
+            return "scroll"
+
+        def _sync_cursor_mode(self):
+            captured["synced"] = True
+
+    def fake_group_widgets(_widgets):
+        return [[first], [second], [third]]
+
+    def fake_focus(_screen, target, scroll_container=None, peek_widget=None):
+        captured["target"] = target
+        captured["scroll"] = scroll_container
+        captured["peek"] = peek_widget
+
+    original_group = mixin.group_widgets_into_rows
+    original_focus = mixin.focus_command_widget
+    try:
+        mixin.group_widgets_into_rows = fake_group_widgets
+        mixin.focus_command_widget = fake_focus
+        mixin.CommandScreenMixin._move_cursor(FakeScreen(), -1)
+    finally:
+        mixin.group_widgets_into_rows = original_group
+        mixin.focus_command_widget = original_focus
+
+    assert captured["target"] is second
+    assert captured["peek"] is first
+    assert captured["scroll"] == "scroll"
+    assert captured["synced"] is True
+    assert "bell" not in captured
+
+    print("test_command_screen_mixin_reveals_upward_peek_target PASSED")
+
+
 async def _test_command_screen_mixin_navigates_widgets():
     from textual.app import App, ComposeResult
     from textual.screen import Screen
@@ -8130,6 +8221,7 @@ if __name__ == "__main__":
         test_node_config_fixed_tabs_are_keyboard_navigable,
         test_node_config_secret_fields_use_saved_key_dropdown,
         test_node_config_repeatable_context_inputs_reveal_by_count,
+        test_node_config_change_scrolls_to_next_widget,
         test_node_config_clears_saved_duplicate_upstream_sources,
         test_node_config_keyboard_skips_hidden_payload_previews,
         test_node_selector_layout_is_compact,
@@ -8177,6 +8269,7 @@ if __name__ == "__main__":
         test_status_bar_mode_indicator,
         test_cursor_state_tracks_mode,
         test_focus_command_widget_reveals_peek_target,
+        test_command_screen_mixin_reveals_upward_peek_target,
         test_command_screen_mixin_navigates_widgets,
         test_command_screen_mixin_boundary_stays_put,
         test_command_screen_mixin_blocks_nav_when_editing,

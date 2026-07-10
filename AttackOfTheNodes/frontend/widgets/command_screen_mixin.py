@@ -141,7 +141,7 @@ class CommandScreenMixin:
             target, at_boundary = row_move_target(rows, self.app.focused, direction)
             if target is not None:
                 peek_target = None
-                if direction > 0 and not at_boundary:
+                if not at_boundary:
                     peek_target, _ = row_move_target(rows, target, direction)
                 focus_command_widget(
                     self,

@@ -1205,6 +1205,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                     event.checkbox.id.removeprefix("field-")
                 )
             self._apply_generated_field_rules()
+        self._scroll_changed_widget_with_peek(event.checkbox)
 
     async def on_input_changed(self, event: Input.Changed) -> None:
         if event.input.id == "membank-output-count":
@@ -1213,6 +1214,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             self._sync_branch_payload_rows()
         elif event.input.id and event.input.id.startswith("field-"):
             self._apply_generated_field_rules()
+        self._scroll_changed_widget_with_peek(event.input)
 
     def on_select_changed(self, event: Select.Changed) -> None:
         if event.select.id == "merge-carry-forward-selector":
@@ -1220,6 +1222,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         elif event.select.id and event.select.id.startswith("field-"):
             self._apply_generated_field_rules()
             self._sync_duplicate_input_source_options()
+        self._scroll_changed_widget_with_peek(event.select)
 
     def _apply_generated_field_rules(self) -> None:
         if not self._rule_schema or self._get_form_values is None:
@@ -1469,6 +1472,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         elif event.selection_list.id == "membank-inputs":
             self._sync_branch_payload_rows()
             self._sync_payload_previews()
+        self._scroll_changed_widget_with_peek(event.selection_list)
 
     async def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "save-node-config":
@@ -1717,8 +1721,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         try:
             scroll = self._scroll_container()
             peek = (
-                widgets[next_index + 1]
-                if direction > 0 and next_index + 1 < len(widgets)
+                widgets[next_index + direction]
+                if 0 <= next_index + direction < len(widgets)
                 else None
             )
             focus_command_widget(self, target, scroll, peek_widget=peek)
@@ -1743,6 +1747,23 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 peek_widget.scroll_visible(animate=False)
         except Exception:
             pass
+
+    def _scroll_changed_widget_with_peek(self, changed_widget: Any) -> None:
+        """After a user change, reveal the changed widget and next field."""
+        self.call_after_refresh(
+            lambda widget=changed_widget: self._scroll_changed_widget_now(widget)
+        )
+
+    def _scroll_changed_widget_now(self, changed_widget: Any) -> None:
+        widgets = self._keyboard_focus_widgets()
+        if not widgets:
+            return
+        target = changed_widget if changed_widget in widgets else self.app.focused
+        if target not in widgets:
+            return
+        index = widgets.index(target)
+        peek = widgets[index + 1] if index + 1 < len(widgets) else None
+        self._scroll_config_widget_into_view(target, peek)
 
     def _is_first_active_tab_widget(self, target: Any) -> bool:
         tabbed_query = self.query("#node-config-tabs")
