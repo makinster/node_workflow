@@ -4739,7 +4739,7 @@ async def _test_node_config_change_scrolls_to_next_widget():
 
 async def _test_node_config_repeatable_context_inputs_reveal_by_count():
     from textual.app import App, ComposeResult
-    from textual.widgets import Select
+    from textual.widgets import Label, Select
 
     from frontend.screens.node_config import NodeConfigScreen
 
@@ -4763,6 +4763,8 @@ async def _test_node_config_repeatable_context_inputs_reveal_by_count():
         context_1_source = app.query_one("#field-context_1_source", Select)
         context_1_key = app.query_one("#field-context_1_vault_key", Select)
         context_1_text = app.query_one("#field-context_1")
+        context_2_source = app.query_one("#field-context_2_source", Select)
+        context_2_text = app.query_one("#field-context_2")
         context_3_source = app.query_one("#field-context_3_source", Select)
         context_4_source = app.query_one("#field-context_4_source", Select)
 
@@ -4772,8 +4774,20 @@ async def _test_node_config_repeatable_context_inputs_reveal_by_count():
         count.value = "3"
         await pilot.pause(0.1)
         assert context_1_source.display is True
+        assert context_2_source.display is True
         assert context_3_source.display is True
         assert context_4_source.display is False
+        context_1_source.value = "Configured"
+        context_2_source.value = "Configured"
+        await pilot.pause(0.1)
+        assert context_1_text.display is True
+        assert context_2_text.display is True
+        assert str(app.query_one("#field-label-context_1", Label).content) == (
+            "Context 1 (E to edit, ESC to finish):"
+        )
+        assert str(app.query_one("#field-label-context_2", Label).content) == (
+            "Context 2 (E to edit, ESC to finish):"
+        )
 
         context_1_source.value = "Vault"
         await pilot.pause(0.1)

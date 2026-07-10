@@ -418,6 +418,9 @@ The helper expands each group into static ports and schema fields:
 `<group>_1`, and so on up to `max` (default `8`, hard cap `20`). Slot fields
 use `visible_when` against the count selector, so the normal generated UI,
 typed Vault dropdowns, duplicate-source prevention, and UI smoke checks apply.
+Generated Source and Parameters labels include the slot number (`Context 1`,
+`Context 2`, ...); use `{index}` in `item_label` or `parameter.label` when a
+custom label needs the number in a different position.
 
 ```yaml
 repeatable_inputs:

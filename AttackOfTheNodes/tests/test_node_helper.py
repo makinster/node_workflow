@@ -218,6 +218,9 @@ def test_node_helper_expands_repeatable_input_sources(tmp_path: Path):
     assert "'context_input_count': {" in node_text
     assert "'options': ['0', '1', '2', '3']" in node_text
     assert "'context_2_source': 'Configured'" in node_text
+    assert "'context_1': {" in node_text
+    assert "'label': 'Context 1'" in node_text
+    assert "'label': 'Context 2'" in node_text
     assert (
         "'visible_when': {'context_2_source': 'Vault', "
         "'context_input_count': ['2', '3']}" in node_text

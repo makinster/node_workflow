@@ -427,12 +427,18 @@ def _expand_repeatable_inputs(
             if slot_name in seen_ports:
                 raise ValueError(f"{where} generated port {slot_name!r} collides")
             slot_entry = dict(entry)
-            slot_entry["label"] = str(
+            base_label = str(
                 entry.get("item_label") or entry.get("label") or _title_case(group)
             )
-            slot_entry["label"] = f"{slot_entry['label']} {index}"
+            slot_entry["label"] = _repeatable_slot_label(base_label, index)
             slot_entry["required"] = False
             slot_entry["section"] = section
+            parameter = slot_entry.get("parameter")
+            if isinstance(parameter, dict):
+                parameter = dict(parameter)
+                parameter_base = str(parameter.get("label") or base_label)
+                parameter["label"] = _repeatable_slot_label(parameter_base, index)
+                slot_entry["parameter"] = parameter
             slot_fields = _input_source_fields(
                 slot_name,
                 slot_entry,
@@ -458,6 +464,13 @@ def _expand_repeatable_inputs(
                 metadata[slot_name]["sources"] = sources
             seen_ports.add(slot_name)
     return ports, metadata, fields
+
+
+def _repeatable_slot_label(base_label: str, index: int) -> str:
+    """Return a human label for a numbered repeatable input slot."""
+    if "{index}" in base_label:
+        return base_label.replace("{index}", str(index))
+    return f"{base_label} {index}"
 
 
 def _merge_visible_when(field: dict[str, Any], condition: dict[str, Any]) -> None:
