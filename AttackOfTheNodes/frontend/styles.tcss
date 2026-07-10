@@ -387,19 +387,26 @@ StatusBar {
     color: $text-muted;
 }
 
-/* Checkboxes: both states use the same quiet light-grey fill; the glyph
-   differentiates checked vs unchecked while focus remains slightly stronger. */
+/* Checkboxes: both states use the same quiet light-grey fill. Textual's
+   inner X is always rendered, so the unchecked glyph matches the fill color. */
 Checkbox > .toggle--button {
     background: $foreground 20%;
-    color: $foreground;
-}
-
-Checkbox.-on > .toggle--button {
-    text-style: bold;
+    color: $foreground 20%;
 }
 
 Checkbox:focus > .toggle--button {
     background: $foreground 30%;
+    color: $foreground 30%;
+}
+
+Checkbox.-on > .toggle--button {
+    color: $foreground;
+    text-style: bold;
+}
+
+Checkbox.-on:focus > .toggle--button {
+    background: $foreground 30%;
+    color: $foreground;
 }
 
 /* Group drill-in quick list: compact auto-height list inside the detail panel. */
