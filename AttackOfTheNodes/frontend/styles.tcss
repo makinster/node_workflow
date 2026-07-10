@@ -387,15 +387,18 @@ StatusBar {
     color: $text-muted;
 }
 
-/* Checkboxes: checked state gets a quiet light-grey fill; focus still uses
-   a stronger fill so keyboard position remains separate from value state. */
-Checkbox.-on > .toggle--button {
+/* Checkboxes: both states use the same quiet light-grey fill; the glyph
+   differentiates checked vs unchecked while focus remains slightly stronger. */
+Checkbox > .toggle--button {
     background: $foreground 20%;
     color: $foreground;
+}
+
+Checkbox.-on > .toggle--button {
     text-style: bold;
 }
 
-Checkbox.-on:focus > .toggle--button {
+Checkbox:focus > .toggle--button {
     background: $foreground 30%;
 }
 
