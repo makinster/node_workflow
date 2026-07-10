@@ -1284,8 +1284,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 continue
             query = self.query(f"#field-{vault_field}")
             if query and isinstance(query.first(), Select):
-                self._vault_select_base_options[vault_field] = list(
-                    query.first()._options
+                self._vault_select_base_options[vault_field] = (
+                    self._select_options_without_blank(query.first()._options)
                 )
 
     def _sync_duplicate_source_select_options(
@@ -1405,13 +1405,25 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
     def _set_select_options_preserving_value(
         self, widget: Select, options: list[tuple[Any, Any]], current: Any
     ) -> None:
-        existing = list(widget._options)
+        options = self._select_options_without_blank(options)
+        existing = self._select_options_without_blank(widget._options)
         if existing == options:
             return
         widget.set_options(options)
         legal_values = {value for _label, value in options}
         if current in legal_values:
             widget.value = current
+
+    @staticmethod
+    def _select_options_without_blank(
+        options: list[tuple[Any, Any]],
+    ) -> list[tuple[Any, Any]]:
+        """Return real Select options, excluding Textual's synthetic blank row."""
+        return [
+            (label, value)
+            for label, value in options
+            if value not in (None, "", Select.NULL)
+        ]
 
     def on_selection_list_selected_changed(
         self, event: SelectionList.SelectedChanged

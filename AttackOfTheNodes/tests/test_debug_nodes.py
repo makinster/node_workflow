@@ -4779,6 +4779,70 @@ async def _test_node_config_prevents_duplicate_vault_inputs():
     print("test_node_config_prevents_duplicate_vault_inputs PASSED")
 
 
+def test_node_config_saved_distinct_vault_inputs_do_not_resync_blanks():
+    asyncio.run(_test_node_config_saved_distinct_vault_inputs_do_not_resync_blanks())
+
+
+async def _test_node_config_saved_distinct_vault_inputs_do_not_resync_blanks():
+    from textual.app import App, ComposeResult
+    from textual.widgets import Select
+
+    from frontend.screens.node_config import NodeConfigScreen
+
+    _, wm, memory_bank, _ = _make_services()
+    wm.create_new("node_config_saved_distinct_vault_inputs")
+    node = wm.add_node("chat_completion_node")
+    memory_bank.store_persistent("prompt_notes", "prompt", type_tag="string")
+    memory_bank.store_persistent("document_notes", "document", type_tag="string")
+    node_data = wm.get_node_data(node)
+    node_data["config"].update(
+        {
+            "prompt_source": "Vault",
+            "prompt_vault_key": "prompt_notes",
+            "document_source": "Vault",
+            "document_vault_key": "document_notes",
+        }
+    )
+
+    class ConfigApp(App):
+        def compose(self) -> ComposeResult:
+            yield NodeConfigScreen(
+                wm._factory, wm, node, node_data, memory_bank=memory_bank
+            )
+
+    app = ConfigApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.1)
+
+        screen = app.query_one(NodeConfigScreen)
+        for _ in range(3):
+            screen._sync_duplicate_input_source_options()
+            await pilot.pause(0.05)
+
+        prompt_key = app.query_one("#field-prompt_vault_key", Select)
+        document_key = app.query_one("#field-document_vault_key", Select)
+
+        assert prompt_key.value == "prompt_notes"
+        assert document_key.value == "document_notes"
+        assert (
+            sum(1 for _label, value in prompt_key._options if value == Select.NULL)
+            == 1
+        )
+        assert (
+            sum(1 for _label, value in document_key._options if value == Select.NULL)
+            == 1
+        )
+        assert "document_notes" not in {value for _label, value in prompt_key._options}
+        assert "prompt_notes" not in {
+            value for _label, value in document_key._options
+        }
+
+        await pilot.press("ctrl+q")
+        await pilot.pause(0.1)
+
+    print("test_node_config_saved_distinct_vault_inputs_do_not_resync_blanks PASSED")
+
+
 def test_node_config_keyboard_skips_hidden_payload_previews():
     asyncio.run(_test_node_config_keyboard_skips_hidden_payload_previews())
 
