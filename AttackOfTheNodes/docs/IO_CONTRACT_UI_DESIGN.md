@@ -18,7 +18,7 @@
 | Irrelevant vs locked controls | Irrelevant fields are **hidden** (`visible_when`); grey-out (`enabled_when`) only for locked controls like the required-unless-transient vault write (2026-07-07) |
 | Mode-driven required inputs | An input that becomes mandatory in a particular mode uses `required_when` (adds `*`) and `section_when` (retitles its section header, e.g. Optional → Required). `force_value_when` exists for locking a select to a value but is not used where the user should keep source choice (2026-07-08) |
 | Output model | One designated **Downstream node payload** (editable name/description) per node; all other outputs are **keyed Vault payloads** of a declared type (editable key + description, `Disable output` checkbox when optional). Single `Forward incoming payload unchanged` checkbox replaces per-output send/save checkboxes. Payloads tab composed from `output_port_metadata.to`, not schema fields (2026-07-08) |
-| Payload names show type | Wherever an incoming/outgoing payload name is rendered, the data type follows in parentheses — `Result (string)` (2026-07-08) |
+| Payload names show type | Wherever an incoming/outgoing payload name is rendered, the data type follows as a bracketed teal label — `Result  [string]` (2026-07-09) |
 | Redundant vault-write UI | Standard-model nodes render only the Result Routing fields; legacy Write to Vault rows and reveal checkboxes are suppressed, with the validator deriving declarations from standard-model config (2026-07-07) |
 | ⚠ badge trigger | Option A: driven by last `V` (validate) run; option B (continuous) is a backlog item |
 | Tab-sticking fix scope | General: scroll inside each `TabPane`, `.tab-scroll` CSS class, audit all tabbed UIs |

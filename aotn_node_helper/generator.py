@@ -43,7 +43,14 @@ FAMILY_COLOR_HINTS = {
     "Utility": "grey",
     "Complex": "violet",
 }
-FIELD_RULE_KEYS = {"enabled_when", "visible_when", "mutually_exclusive_with"}
+FIELD_RULE_KEYS = {
+    "enabled_when",
+    "visible_when",
+    "required_when",
+    "section_when",
+    "force_value_when",
+    "mutually_exclusive_with",
+}
 SOURCE_OPTION_LABELS = {
     "upstream": "Upstream payload",
     "vault": "Vault",

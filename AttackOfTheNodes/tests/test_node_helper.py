@@ -412,3 +412,52 @@ def test_node_helper_validates_rule_keys(tmp_path: Path):
     }
     with pytest.raises(ValueError, match="requires a boolean field"):
         generate_from_spec(spec, project_root=project_root)
+
+
+def test_node_helper_passes_current_dynamic_rule_keys(tmp_path: Path):
+    project_root = _project_skeleton(tmp_path)
+
+    spec = _standard_model_spec()
+    spec["config_tabs"] = {
+        "Parameters": {
+            "mode": {
+                "type": "select",
+                "label": "Mode",
+                "options": ["Auto", "Manual"],
+                "default": "Auto",
+            },
+            "advanced": {
+                "type": "boolean",
+                "label": "Advanced",
+                "default": False,
+                "mutually_exclusive_with": ["simple"],
+            },
+            "simple": {
+                "type": "boolean",
+                "label": "Simple",
+                "default": True,
+            },
+            "notes": {
+                "type": "string",
+                "label": "Notes",
+                "required_when": {"mode": "Manual"},
+                "section": "Optional Inputs",
+                "section_when": {"Required Inputs": {"mode": "Manual"}},
+            },
+            "source_mode": {
+                "type": "select",
+                "label": "Source mode",
+                "options": ["Auto", "Manual"],
+                "default": "Auto",
+                "force_value_when": {"Manual": {"mode": "Manual"}},
+            },
+        }
+    }
+
+    paths = generate_from_spec(spec, project_root=project_root)
+    node_text = paths.node_file.read_text(encoding="utf-8")
+
+    assert "'required_when': {'mode': 'Manual'}" in node_text
+    assert "'section_when': {'Required Inputs': {'mode': 'Manual'}}" in node_text
+    assert "'force_value_when': {'Manual': {'mode': 'Manual'}}" in node_text
+    assert "'mutually_exclusive_with': ['simple']" in node_text

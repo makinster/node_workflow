@@ -248,8 +248,9 @@ Focused checks:
   added; validator warns on ai_session type mismatch and parallel-branch races;
   `RunSession` has multi-turn chat session API. Chat Completion build
   (2026-07-04) landed the "keep active AI session" checkbox, the `ai_session`
-  vault write path on execute, and a node-local `vault_type` dropdown.
-  Remaining: general type-filtered input source dropdowns (Track B Phase 4b).
+  vault write path on execute, standard typed `vault_type` dropdowns,
+  duplicate input-source prevention, and continuation-session UI hiding of the
+  redundant session-save control.
   See `PROJECT_BACKLOG.md` and `NODE_STANDARDS.md` for full design.
 - **Deferred AI integration.** `chat_completion_node` executes for real
   (2026-07-04) via `backend/llm_provider.py` — raw HTTPS Anthropic client,

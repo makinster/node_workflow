@@ -102,7 +102,7 @@ list — `downstream` and/or `vault`), not from routing checkboxes.
 **Payloads tab layout** (top to bottom):
 
 1. **Downstream node payload** — the designated output, shown as
-   `Name (type)`, with an **editable payload name** and **editable
+   `Name  [type]`, with an **editable payload name** and **editable
    description** (they seed from the port metadata and can be overwritten;
    downstream nodes see the edited name/type in their Incoming Payload block).
 2. **`[ ] Forward incoming payload unchanged`** — the single routing checkbox.
@@ -116,7 +116,7 @@ list — `downstream` and/or `vault`), not from routing checkboxes.
 4. Node-specific routing-adjacent sections (e.g. **AI Session**) follow.
 
 An output may be **both** downstream and vault (`to: ["downstream", "vault"]`)
-— e.g. an LLM node's `Result (string)` is the downstream payload *and* is
+— e.g. an LLM node's `Result  [string]` is the downstream payload *and* is
 optionally duplicated to the Vault, so it appears in both sections.
 
 The old per-output `Transient output` / `Save to Vault` checkboxes are retired.
@@ -128,7 +128,8 @@ vault outputs on one node is a documented future extension — the single
 `vault_write*` keys cover the current one-vault-output nodes.
 
 Whenever a payload's data **name** appears in the UI (incoming or outgoing),
-its data **type** is shown after it in parentheses — `Result (string)`.
+its data **type** is shown after it as a bracketed teal label —
+`Result  [string]`.
 
 ### Branch Termination (output nodes)
 
@@ -399,14 +400,14 @@ Built from `output_port_metadata` per the Standard Output Routing Model above:
 
 ```
 ── Downstream node payload ──────────
-Result (string)
+Result  [string]
   Payload name: [Result_______________]   greys out when forwarding
   Description:  [Model response text___]
 
 [ ] Forward incoming payload unchanged
 
 ── Vault Payload ────────────────────
-Result (string)
+Result  [string]
 [ ] Disable output                        (optional vault outputs only)
   Vault key:    [chat_result___________]   greys out when disabled
   Description:  [______________________]
@@ -499,8 +500,8 @@ Document / context source:  Optional document appended to the prompt
 **Continue-mode edge case.** When `prompt_source` is `Continue AI session`,
 the document input carries the new turn's text, so it becomes required: its
 section header retitles `Optional Inputs → Required Inputs` (`section_when`),
-its source is locked to `Configured` (`force_value_when`) revealing a Document
-textbox in Parameters, and it is marked required (`required_when`). The kept
+it is marked required (`required_when`), and the user still chooses the document
+source from the valid non-duplicate options. The kept
 session's prior turns are sent as history and the document text is the next
 user turn — an empty document is a clear error, not a silent nudge. These are
 generic rule keys (see `NODE_HELPER.md`), so any future node can express the
@@ -527,13 +528,13 @@ of `PHASE_17_NODE_VISUAL_IDENTITY.md`.
 
 ```
 ── Downstream node payload ──────────
-Result (string)                        ← the designated downstream output
+Result  [string]                        ← the designated downstream output
   Payload name: [Result_______________]  (greys out if forwarding)
   Description:  [Model response text___]
 [ ] Forward incoming payload unchanged   (dead-drop; default off)
 
 ── Vault Payload ────────────────────
-Result (string)                        ← same Result, optionally duplicated
+Result  [string]                        ← same Result, optionally duplicated
 [ ] Disable output
   Vault key:    [chat_result___________]
   Description:  [______________________]
@@ -544,7 +545,7 @@ Result (string)                        ← same Result, optionally duplicated
                                          when NOT continuing a session
 ```
 
-`Result (string)` is the designated downstream payload (dead-drop off by
+`Result  [string]` is the designated downstream payload (dead-drop off by
 default, so the Result flows to the next node) and is also duplicated to the
 Vault by default (disable via the checkbox).
 
@@ -592,7 +593,7 @@ config UI comes for free):
 - [ ] Identify which Parameters fields are conditional on Source tab selections
       and which are always editable.
 - [ ] Confirm data types on every port — they drive the typed vault dropdown
-      filtering and the `Name (type)` labels throughout the UI.
+      filtering and the `Name  [type]` labels throughout the UI.
 - [ ] Express mode-driven variations declaratively with the dynamic rule keys
       (`visible_when`, `required_when`, `section_when`, `force_value_when`,
       `mutually_exclusive_with`) rather than custom screens.

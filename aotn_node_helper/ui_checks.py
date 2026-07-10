@@ -6,7 +6,9 @@ The checks mount `NodeConfigScreen` for one node type and verify:
 - every schema field renders a generated widget;
 - each widget lands in the top-level tab its schema declares;
 - each widget participates in keyboard focus;
-- `enabled_when` / `visible_when` rule state matches the mounted defaults;
+- dynamic rule declarations reference real fields;
+- `enabled_when` / `visible_when` / `force_value_when` / `section_when`
+  rule state matches the mounted defaults;
 - `mutually_exclusive_with` declarations reference real boolean fields.
 """
 
@@ -50,7 +52,7 @@ def run_ui_check(node_type: str, project_root: Path = PROJECT_ROOT) -> list[str]
 
 async def collect_ui_problems(node_type: str) -> list[str]:
     from textual.app import App, ComposeResult
-    from textual.widgets import TabPane
+    from textual.widgets import Select, TabPane
 
     from backend.event_bus import EventBus
     from backend.node_factory import NodeFactory
@@ -139,6 +141,77 @@ async def collect_ui_problems(node_type: str) -> list[str]:
                         f"{field_name}: visible_when state mismatch at mount "
                         f"(display={widget.display}, expected display={expected_visible})"
                     )
+            force_value_when = field_schema.get("force_value_when") or {}
+            if force_value_when:
+                if not isinstance(widget, Select):
+                    problems.append(f"{field_name}: force_value_when requires Select widget")
+                else:
+                    forced = None
+                    for candidate, condition in force_value_when.items():
+                        if evaluate_field_condition(condition, values):
+                            forced = candidate
+                            break
+                    if forced is not None:
+                        if widget.value != forced:
+                            problems.append(
+                                f"{field_name}: force_value_when value mismatch at mount "
+                                f"(value={widget.value!r}, expected {forced!r})"
+                            )
+                        if not widget.disabled:
+                            problems.append(
+                                f"{field_name}: force_value_when should disable select at mount"
+                            )
+            section_when = field_schema.get("section_when") or {}
+            if section_when:
+                expected_title = None
+                for candidate, condition in section_when.items():
+                    if evaluate_field_condition(condition, values):
+                        expected_title = candidate
+                        break
+                if expected_title is not None:
+                    headers = list(app.query(f"#form-section-{field_name}"))
+                    if headers and str(headers[0].content) != str(expected_title):
+                        problems.append(
+                            f"{field_name}: section_when title mismatch at mount "
+                            f"(title={headers[0].content!r}, expected {expected_title!r})"
+                        )
+
+        for field_name, field_schema in schema.items():
+            for rule_key in ("enabled_when", "visible_when", "required_when"):
+                condition = field_schema.get(rule_key)
+                if condition is None:
+                    continue
+                if not isinstance(condition, dict) or not condition:
+                    problems.append(f"{field_name}: {rule_key} must be a non-empty object")
+                    continue
+                for referenced in condition:
+                    if referenced not in schema:
+                        problems.append(
+                            f"{field_name}: {rule_key} references unknown field {referenced!r}"
+                        )
+            for rule_key in ("section_when", "force_value_when"):
+                mapping = field_schema.get(rule_key)
+                if mapping is None:
+                    continue
+                if not isinstance(mapping, dict) or not mapping:
+                    problems.append(f"{field_name}: {rule_key} must be a non-empty object")
+                    continue
+                if rule_key == "force_value_when" and str(
+                    field_schema.get("type", "string")
+                ).lower() != "select":
+                    problems.append(f"{field_name}: force_value_when requires a select field")
+                for condition in mapping.values():
+                    if not isinstance(condition, dict) or not condition:
+                        problems.append(
+                            f"{field_name}: {rule_key} conditions must be non-empty objects"
+                        )
+                        continue
+                    for referenced in condition:
+                        if referenced not in schema:
+                            problems.append(
+                                f"{field_name}: {rule_key} references unknown field "
+                                f"{referenced!r}"
+                            )
 
         for field_name, field_schema in schema.items():
             partners = field_schema.get("mutually_exclusive_with") or []

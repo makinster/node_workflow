@@ -46,11 +46,12 @@ that node.
 `check_ui.py <node_type>` mounts `NodeConfigScreen` for the node and verifies
 the schema-driven UI contract: every schema field renders a widget, each widget
 lands in its declared top-level tab, each widget participates in keyboard
-focus, and `enabled_when`/`visible_when` rule state matches the mounted
-defaults. Structural nodes (`branch_node`, `merge_node`, `branch_end_node`)
-are rejected with a clear message — they use custom topology UI. The same
-checks run from the generated `test_<node_type>_ui.py`, so CI covers them
-without invoking the CLI.
+focus, dynamic rule declarations reference real fields, and mounted rule state
+for `enabled_when`, `visible_when`, `force_value_when`, and `section_when` is
+correct. Structural nodes (`branch_node`, `merge_node`, `branch_end_node`) are
+rejected with a clear message — they use custom topology UI. The same checks
+run from the generated `test_<node_type>_ui.py`, so CI covers them without
+invoking the CLI.
 
 ## What the Config UI Renders Automatically
 
@@ -62,22 +63,24 @@ from `NodeConfigScreen` with **zero frontend edits**:
 **Source tab**
 - Inline alias row, node type + description.
 - Auto-revealed **Incoming Payload** block per connected input: producing node,
-  payload name with its data type in `()`s, description, last captured value.
-  Read-only; keyboard navigation skips it.
+  payload name plus bracketed teal data type (`Name  [type]`), description,
+  last captured value. Read-only; keyboard navigation skips it.
 - Input selectors under **Required Inputs / Optional Inputs** section headers
   (from each port's `required` flag).
 - Per-input **typed Vault key dropdowns**, hidden unless the Vault source is
   selected. Eligibility: keys whose only writers are this node or downstream
   on the same branch are excluded; parallel branches stay listed. Source
   options that would reveal an empty dropdown are pruned from the selector.
+  The config UI also prevents choosing the same upstream node output or Vault
+  key for two inputs; the validator rejects duplicate saved/manual configs.
 
 **Parameters tab**
 - Schema fields, with source-gated parameters hidden unless their input's
   source is Configured.
 
 **Payloads tab** (composed from `output_port_metadata`, not schema fields)
-- **Downstream node payload**: `Name (type)` header with editable payload name
-  and description; greys out while forwarding.
+- **Downstream node payload**: `Name  [type]` header with editable payload
+  name and description; greys out while forwarding.
 - `Forward incoming payload unchanged` checkbox (only when a downstream port
   declares `pass_through: true`).
 - **Vault Payload(s)**: editable Vault key + description per vault-routed
@@ -89,7 +92,7 @@ from `NodeConfigScreen` with **zero frontend edits**:
 - Dynamic rule keys applied live: `enabled_when`, `visible_when`,
   `required_when`, `section_when`, `force_value_when`,
   `mutually_exclusive_with`.
-- Payload names always show their data type in `()`s.
+- Payload names always show their data type as a bracketed teal `[type]` label.
 - The validator derives vault read/write declarations from the standard config
   keys (`<port>_vault_key`, `continue_session_key`, `vault_write_key`,
   `session_key`) — no membank declaration UI needed.
@@ -314,16 +317,18 @@ across tabs (a Source tab selector can grey out a Parameters tab field):
   for an input that becomes mandatory in a particular mode.
 - `force_value_when`: a mapping of `value → condition`, valid on `select`
   fields. While a condition holds, the select is locked to that value and
-  disabled; when none holds it is re-enabled. Use to pin a source to
-  `Configured` in a mode where only a typed value makes sense.
+  disabled; when none holds it is re-enabled. Use sparingly for modes where
+  only one source can be valid. Do **not** use it when the user should still
+  choose among Upstream / Vault / Configured, as with Chat Completion's
+  continued-session document turn.
 
   ```yaml
   document_source:
-    required_when: { prompt_source: Continue AI session }
+    required_when:
+      prompt_source: Continue AI session
     section_when:
-      Required Inputs: { prompt_source: Continue AI session }
-    force_value_when:
-      Configured: { prompt_source: Continue AI session }
+      Required Inputs:
+        prompt_source: Continue AI session
   ```
 
 The generator validates rule keys at spec time: referenced fields must exist
@@ -396,8 +401,9 @@ Config field types:
 Common schema keys include `label`, `description`, `required`, `options`,
 `placeholder`, `group`, `section`, `min`, `max`, `min_length`, `max_length`,
 `height`, `language`, `path_hint`, `secret`, and `vault_type`. Dynamic rule
-keys are `enabled_when`, `visible_when`, and `mutually_exclusive_with` (see
-Dynamic Form Rule Keys above).
+keys are `enabled_when`, `visible_when`, `required_when`, `section_when`,
+`force_value_when`, and `mutually_exclusive_with` (see Dynamic Form Rule Keys
+above).
 
 `section: "Header"` renders a bold section header above the first field of a
 consecutive run declaring the same section (e.g. `Required Inputs`,
@@ -410,7 +416,9 @@ Eligibility: keys whose only writers are downstream of the node on the same
 branch — or the node itself — are excluded (they cannot exist when the node
 runs); parallel-branch writers stay listed. A select option that would reveal
 an empty `vault_type` dropdown (e.g. `Vault`, `Continue AI session`) is pruned
-from the source selector by `NodeConfigScreen`.
+from the source selector by `NodeConfigScreen`. Standard input source selectors
+also coordinate with one another: once one input uses a connected upstream
+node/port or a Vault key, sibling inputs cannot choose that same source.
 
 `path_hint: "file"` marks a string field as a filesystem path; the validator
 emits a warning if the configured path does not exist at validation time.
@@ -441,8 +449,8 @@ or the shared command widgets before adding node-specific UI.
 Set `structural_ui: true` only when the node needs config UI derived from live
 workflow topology or editor state, such as branch paths, merge targets, wait
 targets, or file picker behavior. Conditional field state no longer requires
-structural UI — use `enabled_when`, `visible_when`, and
-`mutually_exclusive_with` instead.
+structural UI — use `enabled_when`, `visible_when`, `required_when`,
+`section_when`, `force_value_when`, and `mutually_exclusive_with` instead.
 
 The helper deliberately does not patch frontend screens for these cases. It
 emits a UI follow-up note instead. That pause is useful: custom UI is where
@@ -482,7 +490,8 @@ Done so far:
 
 - `check_ui.py <node_type>` mounts `NodeConfigScreen` and asserts tab
   placement, focus participation, and dynamic rule state (2026-06-12).
-- Generic dynamic-form schema keys `enabled_when`, `visible_when`, and
+- Generic dynamic-form schema keys `enabled_when`, `visible_when`,
+  `required_when`, `section_when`, `force_value_when`, and
   `mutually_exclusive_with` are implemented in `form_generator.py` and applied
   live by `NodeConfigScreen` (2026-06-12).
 - Standard-model spec sections `input_sources` and `output_routing` expand the

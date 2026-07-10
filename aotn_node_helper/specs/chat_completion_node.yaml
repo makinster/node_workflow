@@ -60,7 +60,7 @@ outputs:
 # Output model (NODE_STANDARDS, 2026-07-08): output_routing supplies the
 # default routing state; the Payloads tab is composed from the outputs:
 # contract above (Downstream node payload + Vault Payload). The registered
-# node's Result (string) flows downstream by default and is duplicated to the
+# node's Result  [string] flows downstream by default and is duplicated to the
 # Vault by default (mode default_on => Disable output starts unchecked).
 output_routing:
   default: transient
