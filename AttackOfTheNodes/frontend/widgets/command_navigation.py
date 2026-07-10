@@ -231,6 +231,7 @@ def focus_command_widget(
     screen: Any,
     widget: Any,
     scroll_container: Any | None = None,
+    peek_widget: Any | None = None,
 ) -> Any:
     """Focus a command widget and optionally begin editing text prompts."""
     target = widget
@@ -248,11 +249,25 @@ def focus_command_widget(
             screen.app.set_focus(target)
     else:
         screen.app.set_focus(target)
+    scroll_command_widget_into_view(target, scroll_container, peek_widget)
+    return target
+
+
+def scroll_command_widget_into_view(
+    target: Any,
+    scroll_container: Any | None = None,
+    peek_widget: Any | None = None,
+) -> None:
+    """Keep target visible and optionally reveal the next keyboard target."""
     if scroll_container is not None:
         scroll_container.scroll_to_widget(target, animate=False)
     else:
         target.scroll_visible(animate=False)
-    return target
+    if peek_widget is not None and peek_widget is not target:
+        try:
+            peek_widget.scroll_visible(animate=False)
+        except Exception:
+            pass
 
 
 def open_select_at_top(select: Select) -> None:

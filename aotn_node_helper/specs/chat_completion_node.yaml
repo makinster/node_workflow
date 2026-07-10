@@ -43,10 +43,26 @@ inputs:
       type: multiline
       label: Document
     # Continue-mode edge case (hand-written on the registered node): when the
-    # prompt source is "Continue AI session" the document carries the new turn,
-    # so document_source is required, its section retitles to Required Inputs,
-    # and its value is locked to Configured. Documented here; the generated
-    # <port>_source field would need these rule keys merged in on regeneration.
+    # prompt source is "Continue AI session" the repeatable context inputs and
+    # document carry the new turn. Document is only required when no repeatable
+    # context inputs are enabled. Documented here; the generated <port>_source
+    # field would need these rule keys merged in on regeneration.
+
+repeatable_inputs:
+  context:
+    type: string
+    label: Context
+    item_label: Context
+    section: Additional Context
+    count_label: Context inputs
+    count_description: Additional inputs appended in order before Document
+    max: 8
+    default_count: 0
+    sources: ["upstream", "vault", "configured"]
+    default: configured
+    parameter:
+      type: multiline
+      label: Context
 
 outputs:
   default:

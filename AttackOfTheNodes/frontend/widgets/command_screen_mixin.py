@@ -140,7 +140,15 @@ class CommandScreenMixin:
                 return
             target, at_boundary = row_move_target(rows, self.app.focused, direction)
             if target is not None:
-                focus_command_widget(self, target, self._scroll_container())
+                peek_target = None
+                if direction > 0 and not at_boundary:
+                    peek_target, _ = row_move_target(rows, target, direction)
+                focus_command_widget(
+                    self,
+                    target,
+                    self._scroll_container(),
+                    peek_widget=peek_target,
+                )
             if at_boundary:
                 self.app.bell()
             self._sync_cursor_mode()

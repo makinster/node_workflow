@@ -71,6 +71,8 @@ DEFAULT_DATA_TYPE = "any"
 DATA_TYPE_ALIASES = {"boolean": "bool"}
 # Routing destinations a named output port can advertise in its contract (§8).
 VALID_OUTPUT_DESTINATIONS = {"downstream", "vault"}
+DEFAULT_REPEATABLE_INPUT_MAX = 8
+MAX_REPEATABLE_INPUT_MAX = 20
 
 
 def _warn(message: str) -> None:
@@ -204,6 +206,14 @@ def normalize_spec(spec: dict[str, Any]) -> dict[str, Any]:
         input_ports = _string_list(spec.get("input_ports", ["input"]), "input_ports")
         input_metadata = _port_metadata(spec.get("input_port_metadata", {}), input_ports)
         input_source_fields = _expand_input_sources(spec)
+    (
+        repeatable_ports,
+        repeatable_metadata,
+        repeatable_source_fields,
+    ) = _expand_repeatable_inputs(spec, set(input_ports), set(input_source_fields))
+    input_ports.extend(repeatable_ports)
+    input_metadata.update(repeatable_metadata)
+    input_source_fields.update(repeatable_source_fields)
     if "outputs" in spec:
         output_ports, output_metadata = _expand_outputs_block(spec)
     else:
@@ -356,6 +366,114 @@ def _expand_input_sources(spec: dict[str, Any]) -> dict[str, Any]:
     return fields
 
 
+def _expand_repeatable_inputs(
+    spec: dict[str, Any],
+    existing_ports: set[str],
+    existing_fields: set[str],
+) -> tuple[list[str], dict[str, dict[str, Any]], dict[str, Any]]:
+    """Expand bounded repeatable source inputs into static ports and fields."""
+    raw = spec.get("repeatable_inputs") or {}
+    if not isinstance(raw, dict):
+        raise ValueError("repeatable_inputs must be an object")
+    ports: list[str] = []
+    metadata: dict[str, dict[str, Any]] = {}
+    fields: dict[str, Any] = {}
+    seen_ports = set(existing_ports)
+    seen_fields = set(existing_fields)
+    for name, entry in raw.items():
+        group = str(name).strip()
+        if not re.fullmatch(r"[a-z][a-z0-9_]*", group):
+            raise ValueError(f"repeatable_inputs name {name!r} must be snake_case")
+        if not isinstance(entry, dict):
+            raise ValueError(f"repeatable_inputs.{group} must be an object")
+        where = f"repeatable_inputs.{group}"
+        try:
+            max_count = int(entry.get("max", DEFAULT_REPEATABLE_INPUT_MAX))
+        except (TypeError, ValueError):
+            raise ValueError(f"{where}.max must be an integer") from None
+        if max_count < 1 or max_count > MAX_REPEATABLE_INPUT_MAX:
+            raise ValueError(
+                f"{where}.max must be between 1 and {MAX_REPEATABLE_INPUT_MAX}"
+            )
+        try:
+            default_count = int(entry.get("default_count", 0))
+        except (TypeError, ValueError):
+            raise ValueError(f"{where}.default_count must be an integer") from None
+        if default_count < 0 or default_count > max_count:
+            raise ValueError(f"{where}.default_count must be between 0 and max")
+
+        count_field = str(entry.get("count_field") or f"{group}_input_count").strip()
+        if not re.fullmatch(r"[a-z][a-z0-9_]*", count_field):
+            raise ValueError(f"{where}.count_field must be snake_case")
+        if count_field in seen_fields:
+            raise ValueError(f"{where}.count_field {count_field!r} collides")
+        count_label = str(entry.get("count_label") or f"{_title_case(group)} inputs")
+        section = str(entry.get("section") or "Optional Inputs")
+        fields[count_field] = {
+            "type": "select",
+            "label": count_label,
+            "options": [str(index) for index in range(max_count + 1)],
+            "default": str(default_count),
+            "tab": "Source",
+            "section": section,
+        }
+        description = entry.get("count_description") or entry.get("description")
+        if description:
+            fields[count_field]["description"] = str(description)
+        seen_fields.add(count_field)
+
+        for index in range(1, max_count + 1):
+            slot_name = f"{group}_{index}"
+            if slot_name in seen_ports:
+                raise ValueError(f"{where} generated port {slot_name!r} collides")
+            slot_entry = dict(entry)
+            slot_entry["label"] = str(
+                entry.get("item_label") or entry.get("label") or _title_case(group)
+            )
+            slot_entry["label"] = f"{slot_entry['label']} {index}"
+            slot_entry["required"] = False
+            slot_entry["section"] = section
+            slot_fields = _input_source_fields(
+                slot_name,
+                slot_entry,
+                context=f"repeatable_inputs.{group}",
+            )
+            visible_when = {
+                count_field: [str(value) for value in range(index, max_count + 1)]
+            }
+            for field_name, field in slot_fields.items():
+                if field_name in seen_fields:
+                    raise ValueError(f"{where} generated field {field_name!r} collides")
+                _merge_visible_when(field, visible_when)
+                fields[field_name] = field
+                seen_fields.add(field_name)
+            ports.append(slot_name)
+            metadata[slot_name] = _contract_metadata(
+                slot_name, slot_entry, where=f"{where}.{slot_name}"
+            )
+            sources = [
+                str(item).strip().lower() for item in slot_entry.get("sources") or []
+            ]
+            if sources:
+                metadata[slot_name]["sources"] = sources
+            seen_ports.add(slot_name)
+    return ports, metadata, fields
+
+
+def _merge_visible_when(field: dict[str, Any], condition: dict[str, Any]) -> None:
+    """AND an additional visible_when condition into a generated field."""
+    current = field.get("visible_when")
+    if current is None:
+        field["visible_when"] = dict(condition)
+        return
+    if not isinstance(current, dict):
+        field["visible_when"] = dict(condition)
+        return
+    merged = dict(current)
+    merged.update(condition)
+    field["visible_when"] = merged
+
+
 def _input_source_fields(
     input_name: str, entry: dict[str, Any], *, context: str
 ) -> dict[str, Any]:
@@ -385,7 +503,10 @@ def _input_source_fields(
         raise ValueError(f"{where} default {default_source!r} is not in sources")
     label = str(entry.get("label") or _title_case(input_name))
     # Required/Optional section headers group the Source tab at a glance.
-    section = "Required Inputs" if entry.get("required") else "Optional Inputs"
+    section = str(
+        entry.get("section")
+        or ("Required Inputs" if entry.get("required") else "Optional Inputs")
+    )
     fields: dict[str, Any] = {}
     source_field: dict[str, Any] = {
         "type": "select",

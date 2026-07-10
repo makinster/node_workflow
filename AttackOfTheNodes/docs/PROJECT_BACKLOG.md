@@ -624,7 +624,8 @@ Recommended cleanup:
 - Extend the generated UI smoke test to full keyboard simulation: switch tabs
   with number keys (`1`–`5`), move between rows with W/S, move within a row
   with A/D, activate with E/Enter, exit edit mode, and reach Save/Cancel.
-- Consider a `repeats_from` schema key for counted dynamic rows, complementing
+- `repeatable_inputs` now covers bounded ordered source-input groups through
+  helper-expanded count + slot fields, complementing
   `visible_when`/`enabled_when`.
 - Done (2026-06-13, Headless Plan H4): label/value pairs for select options in
   `form_generator.py` (`_select_options` accepts `{label, value}` mappings and

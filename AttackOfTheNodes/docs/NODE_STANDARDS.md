@@ -594,6 +594,8 @@ config UI comes for free):
       and which are always editable.
 - [ ] Confirm data types on every port — they drive the typed vault dropdown
       filtering and the `Name  [type]` labels throughout the UI.
+- [ ] Use `repeatable_inputs` for bounded ordered input groups instead of
+      custom config UI; execute them in numeric slot order.
 - [ ] Express mode-driven variations declaratively with the dynamic rule keys
       (`visible_when`, `required_when`, `section_when`, `force_value_when`,
       `mutually_exclusive_with`) rather than custom screens.

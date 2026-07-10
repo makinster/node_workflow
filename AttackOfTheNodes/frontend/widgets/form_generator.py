@@ -31,6 +31,7 @@ FIELD_RULE_KEYS = {
     "mutually_exclusive_with",
     "required_when",
     "section_when",
+    "force_value_when",
 }
 
 

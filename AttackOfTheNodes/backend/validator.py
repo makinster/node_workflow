@@ -24,9 +24,13 @@ def derive_input_sources(
     input_sources: Dict[str, List[Dict[str, str]]] = {}
     for node_id, data in all_nodes.items():
         sources: List[Dict[str, str]] = []
+        config = data.get("config") or {}
         for conn in data.get("connections", {}).get("inputs", []):
             source_id = conn.get("source_node_id")
-            if source_id:
+            target_port = str(conn.get("target_port") or "default")
+            if source_id and _standard_source_active(
+                config, target_port, "Upstream payload"
+            ):
                 sources.append(
                     {
                         "type": "node",
@@ -35,7 +39,6 @@ def derive_input_sources(
                     }
                 )
 
-        config = data.get("config") or {}
         membank_inputs = config.get("membank_inputs") or []
         if isinstance(membank_inputs, list):
             for entry in membank_inputs:
@@ -49,6 +52,8 @@ def derive_input_sources(
             if not str(key).endswith("_source") or value != "Vault":
                 continue
             port = str(key)[: -len("_source")]
+            if not _repeatable_slot_active(config, port):
+                continue
             vault_key = str(config.get(f"{port}_vault_key") or "").strip()
             if vault_key:
                 sources.append({"type": "membank", "source_id": vault_key})
@@ -443,12 +448,15 @@ def _duplicate_input_source_errors(
                 }
             )
 
+        config = data.get("config") or {}
         for conn in data.get("connections", {}).get("inputs", []):
             source_id = str(conn.get("source_node_id") or "").strip()
             if not source_id:
                 continue
             source_port = str(conn.get("source_port") or "default")
             target_port = str(conn.get("target_port") or "default")
+            if not _standard_source_active(config, target_port, "Upstream payload"):
+                continue
             add(
                 ("node", source_id, source_port),
                 target_port,
@@ -532,6 +540,8 @@ def _standard_model_vault_reads(
             if not str(key).endswith("_source") or value != "Vault":
                 continue
             port = str(key)[: -len("_source")]
+            if not _repeatable_slot_active(config, port):
+                continue
             vault_key = str(config.get(f"{port}_vault_key") or "").strip()
             if not vault_key:
                 continue
@@ -568,6 +578,33 @@ def _continuation_selected(config: Dict[str, Any]) -> bool:
     """
     prompt_source = config.get("prompt_source")
     return prompt_source is None or prompt_source == _CONTINUE_SESSION_SOURCE
+
+
+def _standard_source_active(
+    config: Dict[str, Any], target_port: str, expected_source: str
+) -> bool:
+    """True when a standard source selector actively reads the target source."""
+    if not _repeatable_slot_active(config, target_port):
+        return False
+    source_key = f"{target_port}_source"
+    if source_key not in config:
+        return True
+    return config.get(source_key) == expected_source
+
+
+def _repeatable_slot_active(config: Dict[str, Any], target_port: str) -> bool:
+    """False for numbered repeatable slots hidden by their count selector."""
+    group, separator, suffix = str(target_port).rpartition("_")
+    if not separator or not suffix.isdigit():
+        return True
+    count_key = f"{group}_input_count"
+    if count_key not in config:
+        return True
+    try:
+        count = int(config.get(count_key) or 0)
+    except (TypeError, ValueError):
+        count = 0
+    return int(suffix) <= count
 
 
 def _membank_source_id(entry: Any) -> str:

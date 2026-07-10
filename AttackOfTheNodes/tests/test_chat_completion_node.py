@@ -185,6 +185,70 @@ async def test_vault_prompt_source(monkeypatch):
     assert client.calls[0]["messages"][0]["content"] == "prompt from vault"
 
 
+async def test_context_inputs_append_in_configured_order(monkeypatch):
+    client = FakeClient()
+    _patch_client(monkeypatch, client)
+    node = _make_node(
+        context_input_count="2",
+        context_1_source="Configured",
+        context_1="first context",
+        context_2_source="Vault",
+        context_2_vault_key="stored_context",
+        document_source="Configured",
+        document="final document",
+    )
+    context, signals = _make_context()
+    context.memory_bank.store_persistent("stored_context", "second context")
+
+    await node.execute(context)
+
+    assert "error" not in signals
+    assert client.calls[0]["messages"] == [
+        {
+            "role": "user",
+            "content": (
+                "Summarize this\n\n"
+                "first context\n\n"
+                "second context\n\n"
+                "final document"
+            ),
+        }
+    ]
+
+
+async def test_continue_session_uses_context_and_document_as_next_turn(monkeypatch):
+    client = FakeClient()
+    _patch_client(monkeypatch, client)
+    run_session = RunSession("run-1")
+    run_session.append_chat_message("thread", "user", "Prior question")
+    run_session.append_chat_message("thread", "assistant", "Prior answer")
+    memory_bank = MemoryBank(EventBus())
+    memory_bank.store_persistent(
+        "thread_key",
+        {"type": "ai_session", "ref_key": "thread"},
+        type_tag="ai_session",
+    )
+    node = _make_node(
+        prompt_source="Continue AI session",
+        continue_session_key="thread_key",
+        context_input_count="1",
+        context_1_source="Configured",
+        context_1="next context",
+        document_source="Configured",
+        document="next document",
+    )
+    context, signals = _make_context(memory_bank=memory_bank, run_session=run_session)
+
+    await node.execute(context)
+
+    assert "error" not in signals
+    assert client.calls[0]["messages"] == [
+        {"role": "user", "content": "Prior question"},
+        {"role": "assistant", "content": "Prior answer"},
+        {"role": "user", "content": "next context\n\nnext document"},
+    ]
+
+
 async def test_session_shared_across_nodes(monkeypatch):
     client = FakeClient(
         results=[
@@ -304,7 +368,7 @@ async def test_continue_session_mode_with_document_turn(monkeypatch):
     assert len(run_session.get_chat_history("thread")) == 4
 
 
-async def test_continue_session_mode_requires_document(monkeypatch):
+async def test_continue_session_mode_requires_context_or_document(monkeypatch):
     client = FakeClient(results=[CompletionResult(text="seeded answer", ok=True)])
     _patch_client(monkeypatch, client)
     run_session = RunSession("run-1")
@@ -315,8 +379,8 @@ async def test_continue_session_mode_requires_document(monkeypatch):
     ctx1, _ = _make_context(memory_bank=memory_bank, run_session=run_session)
     await seeder.execute(ctx1)
 
-    # Continue mode with no document text: fail loudly instead of sending a
-    # bare nudge that produces responses unrelated to the user's intent.
+    # Continue mode with no context/document text: fail loudly instead of
+    # sending a bare nudge that produces responses unrelated to the user's intent.
     continuer = _make_node(
         prompt_source="Continue AI session",
         continue_session_key="thread",
@@ -328,7 +392,7 @@ async def test_continue_session_mode_requires_document(monkeypatch):
     await continuer.execute(ctx2)
 
     assert "done" not in sig2
-    assert "Document" in str(sig2["error"])
+    assert "context or Document" in str(sig2["error"])
     assert len(client.calls) == 1  # no second call made
 
 

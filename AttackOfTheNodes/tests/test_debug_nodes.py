@@ -4693,6 +4693,60 @@ def test_node_config_prevents_duplicate_input_sources():
     asyncio.run(_test_node_config_prevents_duplicate_input_sources())
 
 
+def test_node_config_repeatable_context_inputs_reveal_by_count():
+    asyncio.run(_test_node_config_repeatable_context_inputs_reveal_by_count())
+
+
+async def _test_node_config_repeatable_context_inputs_reveal_by_count():
+    from textual.app import App, ComposeResult
+    from textual.widgets import Select
+
+    from frontend.screens.node_config import NodeConfigScreen
+
+    _, wm, memory_bank, _ = _make_services()
+    wm.create_new("node_config_repeatable_context")
+    node = wm.add_node("chat_completion_node")
+    memory_bank.store_persistent("notes", "context", type_tag="string")
+    node_data = wm.get_node_data(node)
+
+    class ConfigApp(App):
+        def compose(self) -> ComposeResult:
+            yield NodeConfigScreen(
+                wm._factory, wm, node, node_data, memory_bank=memory_bank
+            )
+
+    app = ConfigApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.1)
+
+        count = app.query_one("#field-context_input_count", Select)
+        context_1_source = app.query_one("#field-context_1_source", Select)
+        context_1_key = app.query_one("#field-context_1_vault_key", Select)
+        context_1_text = app.query_one("#field-context_1")
+        context_3_source = app.query_one("#field-context_3_source", Select)
+        context_4_source = app.query_one("#field-context_4_source", Select)
+
+        assert context_1_source.display is False
+        assert context_3_source.display is False
+
+        count.value = "3"
+        await pilot.pause(0.1)
+        assert context_1_source.display is True
+        assert context_3_source.display is True
+        assert context_4_source.display is False
+
+        context_1_source.value = "Vault"
+        await pilot.pause(0.1)
+        assert context_1_key.display is True
+        assert "notes" in {value for _label, value in context_1_key._options}
+
+        context_1_source.value = "Configured"
+        await pilot.pause(0.1)
+        assert context_1_text.display is True
+
+    print("test_node_config_repeatable_context_inputs_reveal_by_count PASSED")
+
+
 async def _test_node_config_prevents_duplicate_input_sources():
     from textual.app import App, ComposeResult
     from textual.widgets import Select
@@ -4741,6 +4795,60 @@ async def _test_node_config_prevents_duplicate_input_sources():
 
 def test_node_config_prevents_duplicate_vault_inputs():
     asyncio.run(_test_node_config_prevents_duplicate_vault_inputs())
+
+
+def test_node_config_clears_saved_duplicate_upstream_sources():
+    asyncio.run(_test_node_config_clears_saved_duplicate_upstream_sources())
+
+
+async def _test_node_config_clears_saved_duplicate_upstream_sources():
+    from textual.app import App, ComposeResult
+    from textual.widgets import Select
+
+    from frontend.screens.node_config import NodeConfigScreen
+
+    _, wm, memory_bank, _ = _make_services()
+    wm.create_new("node_config_saved_duplicate_upstream")
+    start = wm.add_node("start_node")
+    node = wm.add_node("chat_completion_node")
+    wm.connect(start, "default", node, "prompt")
+    wm.connect(start, "default", node, "context_1")
+    wm.connect(start, "default", node, "document")
+    node_data = wm.get_node_data(node)
+    node_data["config"].update(
+        {
+            "prompt_source": "Upstream payload",
+            "context_input_count": "1",
+            "context_1_source": "Upstream payload",
+            "document_source": "Upstream payload",
+        }
+    )
+
+    class ConfigApp(App):
+        def compose(self) -> ComposeResult:
+            yield NodeConfigScreen(
+                wm._factory, wm, node, node_data, memory_bank=memory_bank
+            )
+
+    app = ConfigApp()
+    async with app.run_test() as pilot:
+        await pilot.pause(0.1)
+
+        prompt_source = app.query_one("#field-prompt_source", Select)
+        context_source = app.query_one("#field-context_1_source", Select)
+        document_source = app.query_one("#field-document_source", Select)
+
+        assert prompt_source.value == "Upstream payload"
+        assert context_source.value != "Upstream payload"
+        assert document_source.value != "Upstream payload"
+        assert "Upstream payload" not in {
+            value for _label, value in context_source._options
+        }
+        assert "Upstream payload" not in {
+            value for _label, value in document_source._options
+        }
+
+    print("test_node_config_clears_saved_duplicate_upstream_sources PASSED")
 
 
 async def _test_node_config_prevents_duplicate_vault_inputs():
@@ -7438,6 +7546,51 @@ def test_command_screen_mixin_navigates_widgets():
     asyncio.run(_test_command_screen_mixin_navigates_widgets())
 
 
+def test_focus_command_widget_reveals_peek_target():
+    from frontend.widgets.command_navigation import focus_command_widget
+
+    class FakeApp:
+        def __init__(self):
+            self.focused = None
+
+        def set_focus(self, widget):
+            self.focused = widget
+
+    class FakeScreen:
+        def __init__(self):
+            self.app = FakeApp()
+
+    class FakeWidget:
+        auto_edit_on_focus = False
+
+        def __init__(self, widget_id):
+            self.id = widget_id
+            self.visible_calls = 0
+
+        def scroll_visible(self, **_kwargs):
+            self.visible_calls += 1
+
+    class FakeScroll:
+        def __init__(self):
+            self.scrolled_to = None
+
+        def scroll_to_widget(self, widget, **_kwargs):
+            self.scrolled_to = widget
+
+    screen = FakeScreen()
+    target = FakeWidget("target")
+    peek = FakeWidget("peek")
+    scroll = FakeScroll()
+
+    focus_command_widget(screen, target, scroll, peek_widget=peek)
+
+    assert screen.app.focused is target
+    assert scroll.scrolled_to is target
+    assert peek.visible_calls == 1
+
+    print("test_focus_command_widget_reveals_peek_target PASSED")
+
+
 async def _test_command_screen_mixin_navigates_widgets():
     from textual.app import App, ComposeResult
     from textual.screen import Screen
@@ -7976,6 +8129,8 @@ if __name__ == "__main__":
         test_node_config_select_activates_from_keyboard,
         test_node_config_fixed_tabs_are_keyboard_navigable,
         test_node_config_secret_fields_use_saved_key_dropdown,
+        test_node_config_repeatable_context_inputs_reveal_by_count,
+        test_node_config_clears_saved_duplicate_upstream_sources,
         test_node_config_keyboard_skips_hidden_payload_previews,
         test_node_selector_layout_is_compact,
         test_node_selector_rows_are_one_line_with_detail,
@@ -8021,6 +8176,7 @@ if __name__ == "__main__":
         test_command_screen_mixin_class_hierarchy,
         test_status_bar_mode_indicator,
         test_cursor_state_tracks_mode,
+        test_focus_command_widget_reveals_peek_target,
         test_command_screen_mixin_navigates_widgets,
         test_command_screen_mixin_boundary_stays_put,
         test_command_screen_mixin_blocks_nav_when_editing,

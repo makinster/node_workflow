@@ -10,6 +10,7 @@ from __future__ import annotations
 import pytest
 
 from backend.llm_provider import DEFAULT_MODEL_ID, supported_model_ids
+from backend.nodes.chat_completion_node import CONTEXT_INPUT_PORTS
 from backend.node_factory import NodeFactory
 
 
@@ -30,7 +31,7 @@ def test_chat_completion_node_registration_and_metadata():
     assert factory.is_valid_node_type("chat_completion_node")
     metadata = _metadata()
     assert metadata["display_name"] == "Chat Completion"
-    assert metadata["input_ports"] == ["prompt", "document"]
+    assert metadata["input_ports"] == ["prompt", *CONTEXT_INPUT_PORTS, "document"]
     assert metadata["output_ports"] == ["default"]
 
 
@@ -42,6 +43,10 @@ def test_chat_completion_node_port_contract():
     document = metadata["input_port_metadata"]["document"]
     assert document["data_type"] == "string"
     assert document["required"] is False
+    context_1 = metadata["input_port_metadata"]["context_1"]
+    assert context_1["data_type"] == "string"
+    assert context_1["required"] is False
+    assert context_1["sources"] == ["upstream", "vault", "configured"]
     output = metadata["output_port_metadata"]["default"]
     assert output["data_type"] == "string"
     assert output["pass_through"] is True
@@ -53,6 +58,8 @@ def test_chat_completion_node_model_options_come_from_provider_constant():
     factory = NodeFactory()
     node = factory.create_node("chat_completion_node", "n1")
     assert node.config["model"] == DEFAULT_MODEL_ID
+    assert node.config["context_input_count"] == "0"
+    assert node.config["context_8_source"] == "Configured"
 
 
 def test_chat_completion_node_session_and_routing_fields():
@@ -75,14 +82,28 @@ def test_chat_completion_node_session_and_routing_fields():
     assert schema["prompt_vault_key"]["visible_when"] == {"prompt_source": "Vault"}
     assert schema["prompt_vault_key"]["vault_type"] == "string"
     assert schema["prompt"]["visible_when"] == {"prompt_source": "Configured"}
+    assert schema["context_input_count"]["options"] == [
+        str(index) for index in range(len(CONTEXT_INPUT_PORTS) + 1)
+    ]
+    assert schema["context_1_source"]["visible_when"] == {
+        "context_input_count": [str(index) for index in range(1, 9)]
+    }
+    assert schema["context_2_vault_key"]["visible_when"] == {
+        "context_2_source": "Vault",
+        "context_input_count": [str(index) for index in range(2, 9)],
+    }
     # Continue mode makes the document required and retitles its section, but
     # keeps the source selectable (no force-to-Configured lock).
     assert schema["document_source"]["required_when"] == {
-        "prompt_source": "Continue AI session"
+        "prompt_source": "Continue AI session",
+        "context_input_count": "0",
     }
     assert "force_value_when" not in schema["document_source"]
     assert schema["document_source"]["section_when"] == {
-        "Required Inputs": {"prompt_source": "Continue AI session"}
+        "Required Inputs": {
+            "prompt_source": "Continue AI session",
+            "context_input_count": "0",
+        }
     }
     assert schema["document"]["visible_when"] == {"document_source": "Configured"}
     assert schema["api_key_secret"]["secret"] is True

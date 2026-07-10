@@ -12,6 +12,83 @@ from ..node_category import NodeCategory
 # fresh prompt. The validator recognizes this label when deriving vault reads
 # (backend/validator.py) — keep the two in sync.
 CONTINUE_SESSION_SOURCE = "Continue AI session"
+MAX_CONTEXT_INPUTS = 8
+CONTEXT_INPUT_PORTS = [
+    f"context_{index}" for index in range(1, MAX_CONTEXT_INPUTS + 1)
+]
+
+
+def _count_visible_values(index: int) -> List[str]:
+    return [str(value) for value in range(index, MAX_CONTEXT_INPUTS + 1)]
+
+
+def _context_input_metadata() -> Dict[str, Dict[str, Any]]:
+    return {
+        port: {
+            "name": f"Context {index}",
+            "description": "Additional context appended before the document",
+            "data_type": "string",
+            "required": False,
+            "sources": ["upstream", "vault", "configured"],
+        }
+        for index, port in enumerate(CONTEXT_INPUT_PORTS, start=1)
+    }
+
+
+def _context_default_config() -> Dict[str, Any]:
+    config: Dict[str, Any] = {"context_input_count": "0"}
+    for port in CONTEXT_INPUT_PORTS:
+        config[f"{port}_source"] = "Configured"
+        config[f"{port}_vault_key"] = ""
+        config[port] = ""
+    return config
+
+
+def _context_config_schema() -> Dict[str, Dict[str, Any]]:
+    schema: Dict[str, Dict[str, Any]] = {
+        "context_input_count": {
+            "type": "select",
+            "label": "Context inputs",
+            "options": [str(index) for index in range(MAX_CONTEXT_INPUTS + 1)],
+            "tab": "Source",
+            "section": "Additional Context",
+            "description": "Additional inputs appended in order before Document",
+        }
+    }
+    for index, port in enumerate(CONTEXT_INPUT_PORTS, start=1):
+        visible = {"context_input_count": _count_visible_values(index)}
+        schema[f"{port}_source"] = {
+            "type": "select",
+            "label": f"Context {index} source",
+            "options": ["Upstream payload", "Vault", "Configured"],
+            "tab": "Source",
+            "section": "Additional Context",
+            "description": "Additional context appended in configured order",
+            "visible_when": visible,
+        }
+        schema[f"{port}_vault_key"] = {
+            "type": "string",
+            "label": f"Context {index} Vault key",
+            "required": False,
+            "tab": "Source",
+            "section": "Additional Context",
+            "vault_type": "string",
+            "visible_when": {
+                f"{port}_source": "Vault",
+                "context_input_count": _count_visible_values(index),
+            },
+        }
+        schema[port] = {
+            "type": "multiline",
+            "label": f"Context {index} (E to edit, ESC to finish)",
+            "required": False,
+            "tab": "Parameters",
+            "visible_when": {
+                f"{port}_source": "Configured",
+                "context_input_count": _count_visible_values(index),
+            },
+        }
+    return schema
 
 
 class ChatCompletionNode(Node):
@@ -27,7 +104,7 @@ class ChatCompletionNode(Node):
     display_name: ClassVar[str] = "Chat Completion"
     description: ClassVar[str] = "Send a prompt to an LLM and receive a text response"
     category: ClassVar[str] = NodeCategory.AI
-    input_ports: ClassVar[List[str]] = ["prompt", "document"]
+    input_ports: ClassVar[List[str]] = ["prompt", *CONTEXT_INPUT_PORTS, "document"]
     output_ports: ClassVar[List[str]] = ["default"]
     input_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {
         "prompt": {
@@ -37,12 +114,13 @@ class ChatCompletionNode(Node):
             "required": True,
             "sources": ["upstream", "vault", "configured"],
         },
+        **_context_input_metadata(),
         "document": {
             "name": "Document / Context",
             "description": "Optional document appended to the prompt",
             "data_type": "string",
             "required": False,
-            "sources": ["upstream", "vault"],
+            "sources": ["upstream", "vault", "configured"],
         },
     }
     output_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {
@@ -59,6 +137,7 @@ class ChatCompletionNode(Node):
         "prompt_source": "Configured",
         "prompt_vault_key": "",
         "prompt": "",
+        **_context_default_config(),
         "document_source": "Upstream payload",
         "document_vault_key": "",
         "document": "",
@@ -111,8 +190,9 @@ class ChatCompletionNode(Node):
             "visible_when": {"prompt_source": CONTINUE_SESSION_SOURCE},
             "description": "Declared AI session whose chat this node resumes",
         },
+        **_context_config_schema(),
         # In Continue mode the document carries the new turn's text, so it is
-        # required and its section retitles to "Required Inputs" — but the user
+        # required only when no repeatable context slots are enabled. The user
         # still picks the source (Upstream / Vault / Configured).
         "document_source": {
             "type": "select",
@@ -121,9 +201,15 @@ class ChatCompletionNode(Node):
             "tab": "Source",
             "section": "Optional Inputs",
             "description": "Optional document appended to the prompt",
-            "required_when": {"prompt_source": CONTINUE_SESSION_SOURCE},
+            "required_when": {
+                "prompt_source": CONTINUE_SESSION_SOURCE,
+                "context_input_count": "0",
+            },
             "section_when": {
-                "Required Inputs": {"prompt_source": CONTINUE_SESSION_SOURCE}
+                "Required Inputs": {
+                    "prompt_source": CONTINUE_SESSION_SOURCE,
+                    "context_input_count": "0",
+                }
             },
         },
         "document_vault_key": {
@@ -214,7 +300,11 @@ class ChatCompletionNode(Node):
 
     async def execute(self, context: NodeContext) -> None:
         continuing = self.config.get("prompt_source") == CONTINUE_SESSION_SOURCE
+        context_parts = self._resolve_context_inputs(context)
         document = self._resolve_document(context)
+        turn_parts = [*context_parts]
+        if document is not None and document.strip():
+            turn_parts.append(document)
 
         if continuing:
             prompt = None
@@ -256,24 +346,24 @@ class ChatCompletionNode(Node):
                     RuntimeError(f"AI session '{ref}' has no history to continue")
                 )
                 return
-            # The resumed session replaces the prompt; the Document input
-            # carries the new turn's text and is required in this mode.
-            if document is None or not document.strip():
+            # The resumed session replaces the prompt; repeatable context slots
+            # and Document carry the new turn's text in configured order.
+            if not turn_parts:
                 context.signal_error(
                     RuntimeError(
-                        "Continue AI session needs Document text to send "
-                        "alongside the resumed chat"
+                        "Continue AI session needs context or Document text "
+                        "to send alongside the resumed chat"
                     )
                 )
                 return
-            user_content: Optional[str] = document
+            user_content: Optional[str] = "\n\n".join(turn_parts)
             messages = history + [{"role": "user", "content": user_content}]
             # Continuing a session extends the resumed session itself — no
             # separate output key or Payloads-tab checkbox is needed.
             onward_key = ref
         else:
             history = self._resolve_history(context)
-            user_content = prompt if document is None else f"{prompt}\n\n{document}"
+            user_content = "\n\n".join([prompt, *turn_parts])
             messages = history + [{"role": "user", "content": user_content}]
             if self.config.get("use_chat_session"):
                 onward_key = str(self.config.get("session_key") or "").strip()
@@ -326,14 +416,35 @@ class ChatCompletionNode(Node):
         return None if value is None else str(value)
 
     def _resolve_document(self, context: NodeContext) -> Optional[str]:
-        source = self.config.get("document_source", "Upstream payload")
+        return self._resolve_text_input(context, "document", "Upstream payload")
+
+    def _resolve_context_inputs(self, context: NodeContext) -> List[str]:
+        count = self._context_input_count()
+        values: List[str] = []
+        for port in CONTEXT_INPUT_PORTS[:count]:
+            value = self._resolve_text_input(context, port, "Configured")
+            if value is not None and value.strip():
+                values.append(value)
+        return values
+
+    def _context_input_count(self) -> int:
+        try:
+            count = int(self.config.get("context_input_count") or 0)
+        except (TypeError, ValueError):
+            count = 0
+        return max(0, min(count, MAX_CONTEXT_INPUTS))
+
+    def _resolve_text_input(
+        self, context: NodeContext, port: str, default_source: str
+    ) -> Optional[str]:
+        source = self.config.get(f"{port}_source", default_source)
         if source == "Vault":
-            key = str(self.config.get("document_vault_key") or "").strip()
+            key = str(self.config.get(f"{port}_vault_key") or "").strip()
             value = context.memory_bank.read_persistent(key) if key else None
         elif source == "Configured":
-            value = self.config.get("document")
+            value = self.config.get(port)
         else:
-            value = context.inputs.get("document")
+            value = context.inputs.get(port)
         return None if value is None else str(value)
 
     def _resolve_history(self, context: NodeContext) -> List[Dict[str, str]]:

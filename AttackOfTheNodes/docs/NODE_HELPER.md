@@ -67,6 +67,9 @@ from `NodeConfigScreen` with **zero frontend edits**:
   last captured value. Read-only; keyboard navigation skips it.
 - Input selectors under **Required Inputs / Optional Inputs** section headers
   (from each port's `required` flag).
+- Repeatable input groups declared with `repeatable_inputs`: a count selector
+  plus bounded ordered source slots, using the same Upstream / Vault /
+  Configured controls as ordinary inputs.
 - Per-input **typed Vault key dropdowns**, hidden unless the Vault source is
   selected. Eligibility: keys whose only writers are this node or downstream
   on the same branch are excluded; parallel branches stay listed. Source
@@ -408,6 +411,29 @@ above).
 `section: "Header"` renders a bold section header above the first field of a
 consecutive run declaring the same section (e.g. `Required Inputs`,
 `Result Routing`, `AI Session`).
+
+`repeatable_inputs` declares a bounded ordered group of standard source inputs.
+The helper expands each group into static ports and schema fields:
+`<group>_input_count`, `<group>_1_source`, `<group>_1_vault_key`,
+`<group>_1`, and so on up to `max` (default `8`, hard cap `20`). Slot fields
+use `visible_when` against the count selector, so the normal generated UI,
+typed Vault dropdowns, duplicate-source prevention, and UI smoke checks apply.
+
+```yaml
+repeatable_inputs:
+  context:
+    type: string
+    label: Context
+    item_label: Context
+    section: Additional Context
+    count_label: Context inputs
+    max: 8
+    sources: ["upstream", "vault", "configured"]
+    default: configured
+    parameter:
+      type: multiline
+      label: Context
+```
 
 `vault_type: "<canonical type>"` renders a string field as a dropdown over
 vault keys compatible with that type (typed entries plus keys declared by

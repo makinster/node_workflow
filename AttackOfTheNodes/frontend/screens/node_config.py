@@ -1254,19 +1254,29 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             source_fields = self._standard_source_fields()
             vault_fields = self._standard_vault_key_fields(source_fields)
             self._capture_vault_select_base_options(vault_fields)
-            self._sync_duplicate_vault_key_options(values, source_fields, vault_fields)
-            self._sync_duplicate_source_select_options(
+            changed = self._sync_duplicate_source_select_options(
                 values, source_fields, vault_fields
             )
+            if changed:
+                self._apply_generated_field_rules()
+                values = self._get_form_values()
+            self._sync_duplicate_vault_key_options(values, source_fields, vault_fields)
         finally:
             self._syncing_duplicate_input_sources = False
 
     def _standard_source_fields(self) -> list[str]:
-        return [
-            field_name
-            for field_name, field_schema in self._generated_config_schema.items()
-            if field_name.endswith("_source") and field_schema.get("type") == "select"
-        ]
+        fields: list[str] = []
+        for field_name, field_schema in self._generated_config_schema.items():
+            if (
+                not field_name.endswith("_source")
+                or field_schema.get("type") != "select"
+            ):
+                continue
+            query = self.query(f"#field-{field_name}")
+            if query and getattr(query.first(), "display", True) is False:
+                continue
+            fields.append(field_name)
+        return fields
 
     def _standard_vault_key_fields(self, source_fields: list[str]) -> Dict[str, str]:
         fields: Dict[str, str] = {}
@@ -1293,13 +1303,19 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         values: Dict[str, Any],
         source_fields: list[str],
         vault_fields: Dict[str, str],
-    ) -> None:
+    ) -> bool:
         upstream_refs = self._upstream_refs_by_source_field(source_fields)
-        upstream_fields = {
-            field
-            for field in source_fields
-            if values.get(field) == "Upstream payload" and field in upstream_refs
-        }
+        first_upstream_field_by_ref: Dict[tuple[str, str], str] = {}
+        duplicate_upstream_fields: set[str] = set()
+        for field in source_fields:
+            source_ref = upstream_refs.get(field)
+            if values.get(field) != "Upstream payload" or source_ref is None:
+                continue
+            if source_ref in first_upstream_field_by_ref:
+                duplicate_upstream_fields.add(field)
+            else:
+                first_upstream_field_by_ref[source_ref] = field
+        changed = False
         for source_field in source_fields:
             query = self.query(f"#field-{source_field}")
             if not query or not isinstance(query.first(), Select):
@@ -1310,15 +1326,22 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 self._source_select_base_options.get(source_field) or widget._options
             )
             source_ref = upstream_refs.get(source_field)
-            duplicate_upstream_selected = any(
-                upstream_refs.get(other_field) == source_ref
-                for other_field in upstream_fields - {source_field}
+            upstream_owned_elsewhere = (
+                source_ref is not None
+                and source_ref in first_upstream_field_by_ref
+                and first_upstream_field_by_ref.get(source_ref) != source_field
             )
             if (
-                current != "Upstream payload"
-                and source_ref is not None
-                and duplicate_upstream_selected
+                current == "Upstream payload"
+                and source_field in duplicate_upstream_fields
             ):
+                fallback = self._fallback_source_value(options, "Upstream payload")
+                if fallback is not None and fallback != current:
+                    widget.value = fallback
+                    values[source_field] = fallback
+                    current = fallback
+                    changed = True
+            if current != "Upstream payload" and upstream_owned_elsewhere:
                 options = [
                     option for option in options if option[1] != "Upstream payload"
                 ]
@@ -1327,6 +1350,18 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 if not self._has_available_vault_key(values, source_field, vault_fields):
                     options = [option for option in options if option[1] != "Vault"]
             self._set_select_options_preserving_value(widget, options, current)
+        return changed
+
+    @staticmethod
+    def _fallback_source_value(
+        options: list[tuple[Any, Any]], excluded: Any
+    ) -> Any | None:
+        preferred = ("Configured", "Vault")
+        available = [value for _label, value in options if value != excluded]
+        for value in preferred:
+            if value in available:
+                return value
+        return available[0] if available else None
 
     def _upstream_refs_by_source_field(
         self, source_fields: list[str]
@@ -1630,8 +1665,13 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         if widgets:
             try:
                 scroll = self._scroll_container()
-                focus_command_widget(self, widgets[0], scroll)
-                self.call_after_refresh(lambda target=widgets[0]: self._scroll_config_widget_into_view(target))
+                peek = widgets[1] if len(widgets) > 1 else None
+                focus_command_widget(self, widgets[0], scroll, peek_widget=peek)
+                self.call_after_refresh(
+                    lambda target=widgets[0], peek=peek: self._scroll_config_widget_into_view(
+                        target, peek
+                    )
+                )
                 self._sync_cursor_mode()
                 return
             except Exception:
@@ -1676,18 +1716,31 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
 
         try:
             scroll = self._scroll_container()
-            focus_command_widget(self, target, scroll)
-            self.call_after_refresh(lambda target=target: self._scroll_config_widget_into_view(target))
+            peek = (
+                widgets[next_index + 1]
+                if direction > 0 and next_index + 1 < len(widgets)
+                else None
+            )
+            focus_command_widget(self, target, scroll, peek_widget=peek)
+            self.call_after_refresh(
+                lambda target=target, peek=peek: self._scroll_config_widget_into_view(
+                    target, peek
+                )
+            )
         except Exception:
             focus_command_widget(self, target)
 
-    def _scroll_config_widget_into_view(self, target: Any) -> None:
+    def _scroll_config_widget_into_view(
+        self, target: Any, peek_widget: Any | None = None
+    ) -> None:
         try:
             scroll = self._scroll_container()
             if scroll is None:
                 return
             scroll.scroll_to_widget(target, animate=False)
             target.scroll_visible(animate=False)
+            if peek_widget is not None and peek_widget is not target:
+                peek_widget.scroll_visible(animate=False)
         except Exception:
             pass
 

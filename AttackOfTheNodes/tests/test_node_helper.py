@@ -195,6 +195,39 @@ def test_node_helper_expands_input_sources_and_output_routing(tmp_path: Path):
     assert 'run_ui_check("helper_standard_node")' in ui_test_text
 
 
+def test_node_helper_expands_repeatable_input_sources(tmp_path: Path):
+    project_root = _project_skeleton(tmp_path)
+    spec = _standard_model_spec()
+    spec["repeatable_inputs"] = {
+        "context": {
+            "label": "Context",
+            "count_label": "Context inputs",
+            "type": "string",
+            "max": 3,
+            "sources": ["upstream", "vault", "configured"],
+            "default": "configured",
+            "parameter": {"type": "multiline", "label": "Context"},
+        }
+    }
+
+    paths = generate_from_spec(spec, project_root=project_root)
+    node_text = paths.node_file.read_text(encoding="utf-8")
+
+    assert "'input', 'context_1', 'context_2', 'context_3'" in node_text
+    assert "'context_input_count': '0'" in node_text
+    assert "'context_input_count': {" in node_text
+    assert "'options': ['0', '1', '2', '3']" in node_text
+    assert "'context_2_source': 'Configured'" in node_text
+    assert (
+        "'visible_when': {'context_2_source': 'Vault', "
+        "'context_input_count': ['2', '3']}" in node_text
+    )
+    assert (
+        "'visible_when': {'context_3_source': 'Configured', "
+        "'context_input_count': ['3']}" in node_text
+    )
+
+
 def test_node_helper_required_unless_transient_vault_mode(tmp_path: Path):
     project_root = _project_skeleton(tmp_path)
     spec = _standard_model_spec()
