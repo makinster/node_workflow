@@ -208,7 +208,7 @@ decided.
 | Set Variable | Live | `set_variable_node` — write a named Vault entry. Duplicate `variable_setter_node` is also registered; consolidate to one type during the overhaul |
 | Get Variable | Live | `get_variable_node` — read a named Vault entry. Duplicate `variable_reader_node` is also registered; consolidate to one type during the overhaul |
 | Concat | Live | `concat_node` — join multiple text strings |
-| Text Transform | Live | `text_transform_node` — uppercase, lowercase, strip, title, reverse. Regex/find-replace/split still concept-stage |
+| Text Transform | Live | `text_transform_node` — uppercase, lowercase, strip, title, reverse, markdown format (FO2: heading/list/table tidy + optional paragraph re-flow via `backend/text_format.py`). Regex/find-replace/split still concept-stage |
 | JSON / Object Transform | Live | `json_path_node` — extract a value from a JSON string by dot-path (e.g. `user.name`). Broader reshape/multi-field extraction still concept-stage |
 | Random Number | Live | `random_number_node` — produce a random integer or float within a configured range |
 | Math / Comparison | Concept | Arithmetic or comparison; output: value or bool |

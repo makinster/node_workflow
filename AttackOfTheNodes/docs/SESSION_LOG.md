@@ -4,6 +4,34 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-07-11 — FO2: Markdown Formatting as a Text Transform Mode
+
+Branch: `claude/file-output-pywin32-32tnv9`
+
+Phase FO2 of `FILE_OUTPUT_BUILD_PLAN.md` implemented. Per the
+`NODE_STANDARDS.md` classification rule the plan anticipated, this is a
+**mode-select on `text_transform_node`** (same ports, one extra conditional
+field), not a new node type.
+
+- **New `backend/text_format.py`** — pure `format_markdown(text, wrap_width)`
+  with no node/runtime coupling: normalizes line endings and trailing
+  whitespace, ATX heading spacing (`##Title` → `## Title`, closing hashes
+  dropped, blank line before/after), bullet markers to `- ` and ordered
+  markers to `N. `, aligns table columns (preserving `:` alignment markers,
+  inserting a blank line when a table butts against preceding text), collapses
+  blank-line runs, and — when `wrap_width > 0` — re-flows plain paragraphs
+  only (headings/lists/tables/blockquotes/code never wrap). Fenced code
+  blocks pass through untouched. Deliberately conservative; not a full
+  CommonMark canonicalizer.
+- **`text_transform_node`**: new `markdown format` operation + `wrap_width`
+  integer field (`visible_when` the markdown operation is selected; 0 keeps
+  existing breaks). Spec and class updated together.
+
+Verification: new `tests/test_text_format.py` (16 tests, including a messy
+LLM-output end-to-end case) plus markdown-mode cases in the generated
+transform tests; `check_node.py text_transform_node` and `check_ui.py
+text_transform_node` pass.
+
 ## 2026-07-11 — FO1: `file_output_node` (File Write) + Typed File Reference
 
 Branch: `claude/file-output-pywin32-32tnv9` (started from `main` @ `af04c5f`)
