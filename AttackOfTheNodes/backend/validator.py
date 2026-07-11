@@ -371,6 +371,36 @@ def validate_workflow(
                 }
             )
 
+    # OS window choreography (D5): warn — never error — when a node
+    # configures open/placement/close the current platform's window manager
+    # cannot deliver. The workflow still runs; the capability degrades.
+    for node_id, data in all_nodes.items():
+        config = data.get("config") or {}
+        if not config.get("open_after_write"):
+            continue
+        capabilities = _window_capabilities()
+        placement = str(config.get("window_placement") or "OS default")
+        if placement != "OS default" and "place" not in capabilities:
+            warnings.append(
+                {
+                    "node_id": node_id,
+                    "message": (
+                        f"Window placement '{placement}' is not supported on "
+                        f"this platform; the file will open unplaced"
+                    ),
+                }
+            )
+        if config.get("close_on_run_end") and "close" not in capabilities:
+            warnings.append(
+                {
+                    "node_id": node_id,
+                    "message": (
+                        "'Close when run ends' is not supported on this "
+                        "platform; the window will stay open"
+                    ),
+                }
+            )
+
     if len(start_ids) == 1:
         reachable: Set[str] = set()
         _dfs_reachable(start_ids[0], all_nodes, reachable)
@@ -575,6 +605,13 @@ def _standard_model_vault_reads(
 
 # Prompt-source label that resumes an AI session; mirrors
 # backend/nodes/chat_completion_node.CONTINUE_SESSION_SOURCE.
+def _window_capabilities() -> Set[str]:
+    """Current platform's window-manager capabilities (D5 warning support)."""
+    from .window_manager import get_window_manager
+
+    return get_window_manager().capabilities()
+
+
 def _field_visible(
     config: Dict[str, Any],
     defaults: Dict[str, Any],

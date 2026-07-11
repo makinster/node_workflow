@@ -1,20 +1,43 @@
 """File Write node — write content to a path and emit a typed file reference.
 
-FO1 of docs/FILE_OUTPUT_BUILD_PLAN.md. The written handle registers in
+FO1/FO5 of docs/FILE_OUTPUT_BUILD_PLAN.md. The written handle registers in
 RunSession under the reference key, so downstream nodes (viewer, window
 control) resolve the same file by identity (D2/D6) and the handle closes at
 run end. The emitted reference is JSON-serializable: the handle itself never
 travels through MemoryBank.
+
+With `Open after write` on, the file also opens in its OS-default app at the
+configured placement preset (D3) via the platform window manager. Discovery
+failure leaves the node successful — opened but unplaced, never an error
+(D4). The discovered WindowRef registers under `window:<ref_key>`; its
+close-at-run-end hook is opt-in (`Close when run ends`, default off — D12:
+windows that outlive the run are unmanaged orphans).
 """
 
 import base64
 import binascii
+import logging
 from pathlib import Path
 from typing import Any, ClassVar, Dict, List, Optional
 
 from ...file_refs import file_reference, reference_path
 from ...node_base import Node, NodeContext
 from ...node_category import NodeCategory
+from ...window_manager import (
+    PLACE_OS_DEFAULT,
+    PLACEMENT_PRESETS,
+    WindowManager,
+    get_window_manager,
+)
+
+
+logger = logging.getLogger(__name__)
+
+# RunSession key under which nodes may inject/cache the run's window manager
+# (tests register a FakeWindowManager here; production lazily caches the
+# platform manager). The adapter itself stays run-state free (D11) — only
+# this lookup convention lives in node land.
+WINDOW_MANAGER_RESOURCE = "window_manager"
 
 
 # One write mode select, not separate node types (NODE_STANDARDS
@@ -44,8 +67,8 @@ class FileOutputNode(Node):
     output_ports: ClassVar[List[str]] = ['default']
     input_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {'content': {'name': 'Content', 'description': 'Data written to the file', 'data_type': 'any', 'required': True, 'sources': ['upstream', 'vault', 'configured']}, 'file_path': {'name': 'File Path', 'description': 'Destination path, or a file reference from upstream/vault', 'data_type': 'file', 'required': True, 'sources': ['upstream', 'vault', 'configured']}}
     output_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {'default': {'name': 'File Reference', 'description': 'Typed reference to the written file', 'data_type': 'file', 'required': True, 'to': ['downstream', 'vault'], 'pass_through': True}}
-    default_config: ClassVar[Dict[str, Any]] = {'content_source': 'Upstream payload', 'content_vault_key': '', 'content': '', 'file_path_source': 'Configured', 'file_path_vault_key': '', 'file_path': '', 'write_mode': 'Overwrite', 'binary_content': False, 'terminate_branch': False, 'transient_output': True, 'dead_drop_passthrough': False, 'transient_outputs': [], 'vault_write': False, 'vault_write_key': '', 'vault_write_description': ''}
-    config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {'content_source': {'type': 'select', 'label': 'Content source', 'options': ['Upstream payload', 'Vault', 'Configured'], 'tab': 'Source', 'section': 'Required Inputs', 'description': 'Data written to the file'}, 'content_vault_key': {'type': 'string', 'label': 'Content Vault key', 'required': False, 'tab': 'Source', 'section': 'Required Inputs', 'vault_type': 'any', 'visible_when': {'content_source': 'Vault'}}, 'content': {'type': 'multiline', 'label': 'Content (E to edit, ESC to finish)', 'tab': 'Parameters', 'visible_when': {'content_source': 'Configured'}}, 'file_path_source': {'type': 'select', 'label': 'File path source', 'options': ['Upstream payload', 'Vault', 'Configured'], 'tab': 'Source', 'section': 'Required Inputs', 'description': 'Destination path, or a file reference from upstream/vault'}, 'file_path_vault_key': {'type': 'string', 'label': 'File path Vault key', 'required': False, 'tab': 'Source', 'section': 'Required Inputs', 'vault_type': 'file', 'visible_when': {'file_path_source': 'Vault'}}, 'file_path': {'type': 'string', 'label': 'File path', 'placeholder': '/path/to/output.md', 'path_hint': 'file', 'required': True, 'tab': 'Parameters', 'visible_when': {'file_path_source': 'Configured'}}, 'write_mode': {'type': 'select', 'label': 'Write mode', 'options': ['Overwrite', 'Append', 'Create unique'], 'description': 'Create unique adds a numeric suffix instead of replacing', 'tab': 'Parameters'}, 'binary_content': {'type': 'boolean', 'label': 'Binary content (Base64)', 'description': 'Decode the content as Base64 and write raw bytes', 'tab': 'Parameters'}, 'terminate_branch': {'type': 'boolean', 'label': 'Terminate branch after completion', 'section': 'Branch', 'description': 'End this branch after the file is written', 'tab': 'Payloads'}}
+    default_config: ClassVar[Dict[str, Any]] = {'content_source': 'Upstream payload', 'content_vault_key': '', 'content': '', 'file_path_source': 'Configured', 'file_path_vault_key': '', 'file_path': '', 'write_mode': 'Overwrite', 'binary_content': False, 'open_after_write': False, 'window_placement': 'OS default', 'close_on_run_end': False, 'terminate_branch': False, 'transient_output': True, 'dead_drop_passthrough': False, 'transient_outputs': [], 'vault_write': False, 'vault_write_key': '', 'vault_write_description': ''}
+    config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {'content_source': {'type': 'select', 'label': 'Content source', 'options': ['Upstream payload', 'Vault', 'Configured'], 'tab': 'Source', 'section': 'Required Inputs', 'description': 'Data written to the file'}, 'content_vault_key': {'type': 'string', 'label': 'Content Vault key', 'required': False, 'tab': 'Source', 'section': 'Required Inputs', 'vault_type': 'any', 'visible_when': {'content_source': 'Vault'}}, 'content': {'type': 'multiline', 'label': 'Content (E to edit, ESC to finish)', 'tab': 'Parameters', 'visible_when': {'content_source': 'Configured'}}, 'file_path_source': {'type': 'select', 'label': 'File path source', 'options': ['Upstream payload', 'Vault', 'Configured'], 'tab': 'Source', 'section': 'Required Inputs', 'description': 'Destination path, or a file reference from upstream/vault'}, 'file_path_vault_key': {'type': 'string', 'label': 'File path Vault key', 'required': False, 'tab': 'Source', 'section': 'Required Inputs', 'vault_type': 'file', 'visible_when': {'file_path_source': 'Vault'}}, 'file_path': {'type': 'string', 'label': 'File path', 'placeholder': '/path/to/output.md', 'path_hint': 'file', 'required': True, 'tab': 'Parameters', 'visible_when': {'file_path_source': 'Configured'}}, 'write_mode': {'type': 'select', 'label': 'Write mode', 'options': ['Overwrite', 'Append', 'Create unique'], 'description': 'Create unique adds a numeric suffix instead of replacing', 'tab': 'Parameters'}, 'binary_content': {'type': 'boolean', 'label': 'Binary content (Base64)', 'description': 'Decode the content as Base64 and write raw bytes', 'tab': 'Parameters'}, 'open_after_write': {'type': 'boolean', 'label': 'Open after write', 'description': 'Open the file in its OS-default app (a loop opens one window per iteration)', 'tab': 'Parameters', 'section': 'OS Window'}, 'window_placement': {'type': 'select', 'label': 'Open at', 'options': list(PLACEMENT_PRESETS), 'description': 'Screen placement preset for the opened window', 'tab': 'Parameters', 'section': 'OS Window', 'visible_when': {'open_after_write': True}}, 'close_on_run_end': {'type': 'boolean', 'label': 'Close when run ends', 'description': 'Off keeps the window open for reading after the run', 'tab': 'Parameters', 'section': 'OS Window', 'visible_when': {'open_after_write': True}}, 'terminate_branch': {'type': 'boolean', 'label': 'Terminate branch after completion', 'section': 'Branch', 'description': 'End this branch after the file is written', 'tab': 'Payloads'}}
     ui_hints: ClassVar[Dict[str, Any]] = {}
 
     async def execute(self, context: NodeContext) -> None:
@@ -101,6 +124,9 @@ class FileOutputNode(Node):
                 str(self.config["vault_write_key"]).strip(), ref, type_tag="file"
             )
 
+        if self.config.get("open_after_write"):
+            self._open_window(context, ref)
+
         if self.config.get("dead_drop_passthrough"):
             payload: Any = context.inputs.get("content")
         else:
@@ -109,6 +135,48 @@ class FileOutputNode(Node):
         if self.config.get("terminate_branch"):
             done["terminate_branch"] = True
         context.signal_done(done)
+
+    def _open_window(self, context: NodeContext, ref: Dict[str, str]) -> None:
+        """Open the written file at the configured placement (FO5).
+
+        Discovery failure is a degraded success: the file is open but
+        unplaced, no WindowRef registers, and the node stays green (D4).
+        """
+        manager = self._window_manager(context)
+        placement = str(self.config.get("window_placement") or PLACE_OS_DEFAULT)
+        window_ref = manager.open_path(ref["path"], placement)
+        if window_ref is None:
+            logger.warning(
+                "Opened %s but could not identify its window; placement and "
+                "window control are unavailable for it",
+                ref["path"],
+            )
+            return
+        if context.run_session is None:
+            return
+        if self.config.get("close_on_run_end"):
+            context.run_session.register_resource(
+                f"window:{ref['ref_key']}",
+                window_ref,
+                close=lambda handle: manager.close(handle),
+            )
+        else:
+            # D12: without the close hook the window outlives the run as an
+            # unmanaged orphan — registered only for same-run control (FO6).
+            context.run_session.register_resource(
+                f"window:{ref['ref_key']}", window_ref
+            )
+
+    def _window_manager(self, context: NodeContext) -> WindowManager:
+        """The run's window manager: injected/cached in RunSession, else platform."""
+        if context.run_session is not None:
+            cached = context.run_session.get_resource(WINDOW_MANAGER_RESOURCE)
+            if cached is not None:
+                return cached
+        manager = get_window_manager()
+        if context.run_session is not None:
+            context.run_session.register_resource(WINDOW_MANAGER_RESOURCE, manager)
+        return manager
 
     def _resolve_content(self, context: NodeContext) -> Optional[Any]:
         source = self.config.get("content_source", "Upstream payload")

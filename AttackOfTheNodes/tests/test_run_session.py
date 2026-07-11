@@ -369,6 +369,68 @@ def test_validator_skips_source_gated_path_fields():
     assert not path_errors(result), f"Unexpected path error: {result['errors']}"
 
 
+def test_validator_warns_on_unsupported_window_capabilities(tmp_path):
+    """D5: open/placement config on a platform without window support warns."""
+    import platform
+
+    from backend.node_factory import NodeFactory
+    from backend.validator import validate_workflow
+
+    if platform.system() == "Windows":
+        pytest.skip("Warning only fires on platforms without window support")
+
+    _, wm, _, _ = _make_services()
+    factory = NodeFactory()
+    wm.create_new("test_window_capability_warning")
+    start = wm.add_node("start_node")
+    writer = wm.add_node("file_output_node")
+    wm.connect(start, "default", writer, "content")
+
+    target = tmp_path / "out.md"
+    target.write_text("x", encoding="utf-8")
+
+    def window_warnings(result):
+        return [
+            w
+            for w in result["warnings"]
+            if w["node_id"] == writer
+            and ("placement" in w["message"].lower() or "close" in w["message"].lower())
+        ]
+
+    # Open with a real placement + close-on-run-end: both degrade → warnings.
+    wm.update_node_config(
+        writer,
+        {
+            "file_path": str(target),
+            "open_after_write": True,
+            "window_placement": "Right of AOTN",
+            "close_on_run_end": True,
+        },
+    )
+    result = validate_workflow(wm, factory)
+    messages = [w["message"] for w in window_warnings(result)]
+    assert any("placement" in m.lower() for m in messages), messages
+    assert any("close" in m.lower() for m in messages), messages
+    assert result["success"] is True, "Capability gaps are warnings, not errors"
+
+    # OS-default placement without close: nothing to warn about.
+    wm.update_node_config(
+        writer,
+        {
+            "open_after_write": True,
+            "window_placement": "OS default",
+            "close_on_run_end": False,
+        },
+    )
+    result = validate_workflow(wm, factory)
+    assert not window_warnings(result), result["warnings"]
+
+    # Open-after-write off: silent regardless of stale placement config.
+    wm.update_node_config(writer, {"open_after_write": False})
+    result = validate_workflow(wm, factory)
+    assert not window_warnings(result), result["warnings"]
+
+
 # ---------------------------------------------------------------------------
 # Chat session tests
 # ---------------------------------------------------------------------------

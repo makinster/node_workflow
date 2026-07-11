@@ -86,7 +86,7 @@ or an End Branch node — there is no standalone End node.
 
 | Node | Status | Notes |
 |---|---|---|
-| File Write | Live | `file_output_node` — write content to a path and emit a typed `file` reference (FO1). Overwrite / Append / Create unique is a mode select — one node, not two types. Absorbed the retired `example_file_instance_node` stub's unified-spec reference role. Tags: File I/O, Runtime Resource |
+| File Write | Live | `file_output_node` — write content to a path and emit a typed `file` reference (FO1). Overwrite / Append / Create unique is a mode select — one node, not two types. `Open after write` (FO5) opens the file in its OS-default app at a placement preset (D3) with opt-in `Close when run ends` (default off, D12); discovery failure degrades to opened-but-unplaced, never a node error (D4). Inside a repeat/counter loop, open-after-write opens one window per iteration (one per file with Create unique); a validator warning for that is backlog, not FO5. Absorbed the retired `example_file_instance_node` stub's unified-spec reference role. Tags: File I/O, Runtime Resource |
 | Structured Write | Concept | Serialize an object to CSV or JSON. Tags: File I/O |
 | File Delete | Concept | Remove a file; output: bool success. Tags: File I/O |
 | File Copy / Move | Concept | Duplicate or relocate a file; input: source + destination. Tags: File I/O |

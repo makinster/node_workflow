@@ -37,7 +37,7 @@ Execution rules (same as previous plans):
 - [x] FO2 — Markdown/text formatting for humans (2026-07-11)
 - [x] FO3 — In-TUI file viewer (zero OS-window dependency) (2026-07-11)
 - [x] FO4 — `backend/window_manager.py` platform adapter (2026-07-11)
-- [ ] FO5 — Launch + placement on `file_output_node`
+- [x] FO5 — Launch + placement on `file_output_node` (2026-07-11)
 - [ ] FO6 — `window_control_node`
 - [ ] FO7 — Windows live verification + docs reconciliation
 

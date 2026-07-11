@@ -4,6 +4,36 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-07-11 — FO5: Open After Write + Placement on `file_output_node`
+
+Branch: `claude/file-output-pywin32-32tnv9`
+
+Phase FO5 of `FILE_OUTPUT_BUILD_PLAN.md` implemented — "write this md/image
+and open it to the right of AOTN."
+
+- **Config (Parameters tab, `OS Window` section):** `Open after write`
+  checkbox; `Open at` placement preset select (options =
+  `window_manager.PLACEMENT_PRESETS`, visible when open is on); `Close when
+  run ends` toggle, default **off** (run-end cleanup is opt-in, unlike file
+  handles — D12). Spec and class updated together; the loop-multiplied
+  windows behavior is documented on the field and in `NODE_CATALOG.md`
+  (validator warning for loops stays backlog).
+- **Execute path:** after writing, the node resolves the run's window
+  manager — injected/cached under the RunSession resource key
+  `window_manager` (tests register `FakeWindowManager` there), else the
+  platform factory — and calls `open_path(path, placement)`. A discovered
+  `WindowRef` registers under `window:<ref_key>`, with a `manager.close`
+  hook only when `Close when run ends` is on. Discovery failure logs a
+  warning and registers nothing; the node stays successful (D4).
+- **Validator (D5):** warns — never errors — when `open_after_write` is
+  configured with a non-default placement and the platform lacks the
+  `place` capability, or with `close_on_run_end` and no `close` capability.
+
+Verification: four new FakeWindowManager node tests (open+place+register,
+close-at-`close_all` only when configured, discovery-failure degraded
+success, manager untouched when open is off) plus a validator capability
+warning test; `check_ui.py file_output_node` passes; full suite green.
+
 ## 2026-07-11 — FO4: `backend/window_manager.py` Platform Adapter
 
 Branch: `claude/file-output-pywin32-32tnv9`

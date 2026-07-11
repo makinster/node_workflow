@@ -329,3 +329,117 @@ async def test_missing_upstream_content_is_a_node_error(tmp_path):
     assert errors and "content" in str(errors[0]).lower()
     assert not done
     assert not (tmp_path / "never.txt").exists()
+
+
+# ---------------------------------------------------------------------------
+# FO5: open after write + placement (FakeWindowManager)
+# ---------------------------------------------------------------------------
+
+def _session_with_fake_manager(fake):
+    from backend.nodes.io.file_output_node import WINDOW_MANAGER_RESOURCE
+
+    session = RunSession("run")
+    session.register_resource(WINDOW_MANAGER_RESOURCE, fake)
+    return session
+
+
+async def test_open_after_write_opens_places_and_registers(tmp_path):
+    from backend.window_manager import FakeWindowManager
+
+    target = tmp_path / "opened.md"
+    fake = FakeWindowManager()
+    session = _session_with_fake_manager(fake)
+    node = _make_node(
+        {
+            "file_path": str(target),
+            "open_after_write": True,
+            "window_placement": "Right of AOTN",
+        }
+    )
+    context, done, errors = _make_context(
+        inputs={"content": "body"}, run_session=session
+    )
+
+    await node.execute(context)
+
+    assert not errors
+    resolved = str(target.resolve())
+    assert fake.opened == [(resolved, "Right of AOTN")]
+    window = session.get_resource(f"window:file:{resolved}")
+    assert window is not None and window.path == resolved
+
+    # Default (close_on_run_end off, D12): run end must NOT close the window.
+    session.close_all()
+    assert fake.closed == []
+
+
+async def test_close_when_run_ends_closes_at_close_all(tmp_path):
+    from backend.window_manager import FakeWindowManager
+
+    target = tmp_path / "temp_view.md"
+    fake = FakeWindowManager()
+    session = _session_with_fake_manager(fake)
+    node = _make_node(
+        {
+            "file_path": str(target),
+            "open_after_write": True,
+            "close_on_run_end": True,
+        }
+    )
+    context, _, errors = _make_context(
+        inputs={"content": "body"}, run_session=session
+    )
+
+    await node.execute(context)
+    assert not errors
+    assert fake.opened == [(str(target.resolve()), "OS default")]
+    assert fake.closed == []
+
+    session.close_all()
+    assert [ref.path for ref in fake.closed] == [str(target.resolve())]
+
+
+async def test_discovery_failure_is_not_a_node_error(tmp_path):
+    from backend.window_manager import FakeWindowManager
+
+    target = tmp_path / "unplaced.md"
+    fake = FakeWindowManager(discovery_fails=True)
+    session = _session_with_fake_manager(fake)
+    node = _make_node(
+        {
+            "file_path": str(target),
+            "open_after_write": True,
+            "window_placement": "Other monitor",
+        }
+    )
+    context, done, errors = _make_context(
+        inputs={"content": "body"}, run_session=session
+    )
+
+    await node.execute(context)
+
+    # D4: the file opened; placement degraded; the node stays successful and
+    # no WindowRef registers (FO6 then soft-errors per its own rule).
+    assert not errors
+    assert done and done[0]["data"]["default"]["type"] == "file"
+    assert fake.opened, "The launch still happens"
+    resolved = str(target.resolve())
+    assert session.get_resource(f"window:file:{resolved}") is None
+    session.close_all()
+
+
+async def test_open_after_write_off_never_touches_the_manager(tmp_path):
+    from backend.window_manager import FakeWindowManager
+
+    fake = FakeWindowManager()
+    session = _session_with_fake_manager(fake)
+    node = _make_node({"file_path": str(tmp_path / "quiet.md")})
+    context, _, errors = _make_context(
+        inputs={"content": "body"}, run_session=session
+    )
+
+    await node.execute(context)
+
+    assert not errors
+    assert fake.opened == []
+    session.close_all()

@@ -1,7 +1,8 @@
-# file_output_node — FO1 of docs/FILE_OUTPUT_BUILD_PLAN.md. The core file
-# output primitive: writes content (upstream/vault/configured) to a path,
-# registers the handle in RunSession, and emits a typed `file` reference
-# downstream/vault (D2). Launch/placement config lands in FO5.
+# file_output_node — FO1/FO5 of docs/FILE_OUTPUT_BUILD_PLAN.md. The core
+# file output primitive: writes content (upstream/vault/configured) to a
+# path, registers the handle in RunSession, emits a typed `file` reference
+# downstream/vault (D2), and optionally opens the file in its OS-default app
+# at a placement preset (D3; degrades per D4/D5).
 # This spec is also the unified inputs:/outputs: reference node (handoff §7),
 # absorbing that role from the retired example_file_instance_node stub.
 node_type: file_output_node
@@ -67,6 +68,31 @@ config_tabs:
       label: Binary content (Base64)
       default: false
       description: Decode the content as Base64 and write raw bytes
+    # Keep these options in sync with backend/window_manager.py
+    # PLACEMENT_PRESETS (the node class imports the constant directly).
+    open_after_write:
+      type: boolean
+      label: Open after write
+      default: false
+      section: OS Window
+      description: Open the file in its OS-default app (a loop opens one window per iteration)
+    window_placement:
+      type: select
+      label: Open at
+      options: ["OS default", "Right of AOTN", "Left of AOTN", "Other monitor", "Same monitor, right half"]
+      default: OS default
+      section: OS Window
+      description: Screen placement preset for the opened window
+      visible_when:
+        open_after_write: true
+    close_on_run_end:
+      type: boolean
+      label: Close when run ends
+      default: false
+      section: OS Window
+      description: Off keeps the window open for reading after the run
+      visible_when:
+        open_after_write: true
   Payloads:
     terminate_branch:
       type: boolean
