@@ -11,6 +11,15 @@ taxonomy. The phase should align editor row identity, selector tabs,
 subcategory filters, and node metadata before the planned node-library
 overhaul.
 
+The file-output build plan (`FILE_OUTPUT_BUILD_PLAN.md`) landed FO1–FO6 on
+2026-07-11: `file_output_node` (File Write) with typed `file` references,
+the `markdown format` transform mode, the in-TUI `file_view_node` +
+`FileViewerScreen`, the `backend/window_manager.py` platform adapter
+(guarded pywin32, optional `windows` extra), open-after-write placement,
+and `window_control_node`. Only FO7 remains: the manual Windows
+verification protocol at the end of that plan (runs on the owner's
+machine), then fold results and archive the plan.
+
 A design decision on 2026-06-11 reversed the Phase B tombstone decommission
 plan: `tombstone_node` stays as an intentional backend type — the
 save-persistent deleted-node record. Phase B is now a frontend migration task

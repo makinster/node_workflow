@@ -224,6 +224,33 @@ nodes on the Inputs side. This is the motivation behind giving Outputs a
 dedicated selector tab (2026-06-22). No implementation scoped yet; capture
 concrete node concepts in `NODE_CATALOG.md` as they firm up.
 
+## Deferred — File/Window Output Follow-Ups (from FILE_OUTPUT_BUILD_PLAN)
+
+FO1–FO6 landed 2026-07-11 (`file_output_node`, markdown formatting mode,
+`file_view_node` + viewer screen, `backend/window_manager.py`,
+open-after-write placement, `window_control_node`). Deferred out of that
+plan's scope, per its design decisions:
+
+- **Virtual desktop moves (pyvda)** — D7: relies on undocumented Windows
+  internals that break across feature updates; the core use case never
+  needed it. The adapter protocol leaves room for a `desktop` capability.
+- **macOS (`pyobjc`/AppleScript) and Linux (`ewmh`/`xdotool`) window
+  adapters** — the `WindowManager` protocol and D3 preset vocabulary are
+  designed for them; no stub classes ship until one is implemented.
+- **Validator warning for `Open after write` on a loop path** — one window
+  opens per iteration today (documented on the field and in
+  `NODE_CATALOG.md`); loop detection is not free, so the warning is
+  deferred (FO5 task 4).
+- **Cross-run window adoption** — intentionally out (D12): windows that
+  outlive the run are unmanaged orphans; adoption would require
+  re-discovery, which D4 forbids.
+- **Refocus AOTN after a user prompt** — possible follow-up depending on
+  the FO7 focus-fight observation (open-after-write directly upstream of
+  `user_text_input_node` steals OS focus as the TUI prompts).
+- **Remote-backend window effector** — D11: when the backend becomes a
+  server (Multi-Frontend Expansion below), window actions migrate behind
+  the EventBus to a local effector; `capabilities()` already gates it.
+
 ## Future Direction — Headless CLI Execution (`aotn`)
 
 Goal: execute a workflow from the terminal without launching the TUI —

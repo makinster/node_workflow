@@ -40,6 +40,11 @@ Execution rules (same as previous plans):
 - [x] FO5 — Launch + placement on `file_output_node` (2026-07-11)
 - [x] FO6 — `window_control_node` (2026-07-11)
 - [ ] FO7 — Windows live verification + docs reconciliation
+      (docs reconciliation done 2026-07-11 — `MASTER_BUILD_PLAN.md`,
+      `PROJECT_BACKLOG.md` deferred items, `TASK_INDEX.md` route,
+      `NODE_CATALOG.md` Window Focus supersession; the 7-step manual
+      Windows protocol below still needs the owner's machine, then
+      archive this plan with a `DOCS_MIGRATION_NOTES.md` entry)
 
 ---
 

@@ -4,6 +4,27 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-07-11 — FO7 (docs half): File-Output Plan Reconciliation
+
+Branch: `claude/file-output-pywin32-32tnv9`
+
+The docs-reconciliation half of FO7. The live-verification half (the 7-step
+manual Windows protocol in `FILE_OUTPUT_BUILD_PLAN.md`) needs the owner's
+Windows machine and stays open; the plan is NOT archived until it runs.
+
+- `MASTER_BUILD_PLAN.md`: FO row in the Phase Status table; FO1–FO6 summary
+  under Recently Completed.
+- `PROJECT_BACKLOG.md`: new "Deferred — File/Window Output Follow-Ups"
+  section (pyvda per D7, macOS/Linux adapters, loop open-after-write
+  validator warning, cross-run window adoption non-goal per D12, possible
+  refocus-after-prompt follow-up pending FO7's focus-fight check, D11
+  remote-backend effector).
+- `TASK_INDEX.md`: new "Change File Output, File Viewer, Or OS Window
+  Behavior" route with the focused pytest slices.
+- `AGENT_HANDOFF.md`: current-state paragraph for the landed FO work.
+- `NODE_CATALOG.md` Window Focus supersession was already resolved in the
+  FO6 entry below.
+
 ## 2026-07-11 — FO6: `window_control_node` (Focus / Minimize / Close by File)
 
 Branch: `claude/file-output-pywin32-32tnv9`

@@ -110,12 +110,23 @@ or node metadata changes for this phase.
 | 16 | File modal + node config tabs | Done |
 | Docs | Task-first documentation overhaul | Done |
 | 17 | Node visual identity + selector taxonomy | In progress |
+| FO1–FO7 | File output nodes, formatting, OS window placement | FO1–FO6 done (2026-07-11); FO7 Windows live verification pending |
 | 18 | Acceleration + help rewrite | Planned |
 | 19 | Nested workflows: built-in subworkflow node | Planned |
 | 20 | Nested workflows: user-created subworkflows | Planned |
 
 ## Recently Completed
 
+- File output build plan FO1–FO6 (2026-07-11, `FILE_OUTPUT_BUILD_PLAN.md`):
+  `file_output_node` (File Write) with typed `file` references registered in
+  `RunSession`; `markdown format` mode on `text_transform_node`
+  (`backend/text_format.py`); in-TUI `file_view_node` + `FileViewerScreen`
+  via the node-emitted `FILE_VIEW_REQUESTED` event
+  (`NodeContext.emit_event`); `backend/window_manager.py` platform adapter
+  (guarded pywin32, `windows` extra, pure preset geometry, fallback +
+  fake); open-after-write placement config with D5 validator capability
+  warnings; `window_control_node`. Remaining: FO7 manual Windows
+  verification protocol (user's machine), then archive the plan.
 - Backend/edit-time performance: fixed two O(n^2) hot spots — the
   `MEMORY_UPDATE` full-store snapshot (`memory_bank.py`) and the per-mutation
   workflow-cache deepcopy (`workflow_map.py`). Per-node execution overhead is
