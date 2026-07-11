@@ -1,7 +1,9 @@
 # File Output Build Plan — File Nodes, Formatting, and OS Window Placement
 
 **Created:** 2026-07-10
-**Branch:** `claude/output-nodes-file-windows-wq07q6`
+**Revised:** 2026-07-11 — design-review amendments: D2/D3/D4/D5 caveats,
+new D11/D12, FO4/FO5/FO7 additions. No scope change.
+**Branch:** `claude/output-nodes-file-windows-wq07q6` (merged to `main` 2026-07-11)
 **Status:** planned — no phase started
 
 Goal: output nodes that treat files as first-class workflow objects — write
@@ -70,6 +72,11 @@ EventBus payloads must stay JSON-serializable (standing rule), handles must
 die with the run, and reference keys give later nodes an unambiguous way to
 say "that exact file," which D6 depends on.
 
+Cross-run note: the file *on disk* outlives the run, but its `file` reference
+(and RunSession handle) dies with the run. A later run that wants "the file
+from last time" reconstructs from a saved path string — the same rule the
+file reader already follows. No cross-run reference continuity is promised.
+
 ### D3 — Placement presets, not coordinates
 
 Users configure `Open at: Right of AOTN / Left of AOTN / Other monitor /
@@ -79,6 +86,21 @@ pixels from monitor geometry plus AOTN's own window rect
 pixel coordinates; coordinates break the moment a monitor is unplugged; and a
 semantic preset vocabulary is OS-neutral, so a future macOS/Linux adapter
 implements the same options instead of forcing a config-schema migration.
+
+A preset defines a full target rect — **position and size** ("Same monitor,
+right half" is a size claim). The FO4 geometry function returns both from the
+start so the preset vocabulary never needs a breaking change.
+
+**Windows Terminal caveat (2026-07-11):** on modern Windows the default
+console host is Windows Terminal, where console apps run under ConPTY and
+`kernel32.GetConsoleWindow()` returns a *hidden pseudo-console window* whose
+rect is not the visible terminal's. Placement relative to AOTN computed from
+it is wrong on exactly the machine FO7 runs on. FO4 must resolve the real
+terminal window (e.g. walk the parent-process chain to the
+`WindowsTerminal.exe` top-level window, falling back to `GetConsoleWindow()`
+under legacy conhost), and FO7 must verify placement under **both** hosts.
+If the real window cannot be resolved, AOTN-relative presets degrade to their
+monitor-relative equivalents with a logged warning.
 
 ### D4 — Window discovery by launch-time snapshot diff, stored once
 
@@ -93,6 +115,13 @@ re-searched**. Reasoning: discovery is unreliable, so do it exactly once at
 the moment it is most reliable (immediately after launch) and treat the
 result as a run resource thereafter.
 
+Discovery will still misfire sometimes — browsers open files as a tab in an
+existing window (no new top-level HWND at all), and an unrelated window
+appearing during the poll can be misattributed. Standing rule: **discovery
+failure is never a node error.** The file is opened; placement/control
+degrade to "opened but unplaced" with a warning, and no `WindowRef` is
+registered (FO6 then soft-errors per its own rule).
+
 ### D5 — pywin32 is an optional, guarded dependency; unsupported OS degrades
 
 Project deps are currently just `textual`. The dev environment, CI, and
@@ -104,6 +133,18 @@ when a workflow uses placement on an unsupported platform — same pattern as
 the existing `use_chat_session` warning. Reasoning: workflows must stay
 portable documents; a workflow authored on Windows should still *run*
 elsewhere, just without window choreography.
+
+**pywin32 vs raw ctypes — decision recorded (2026-07-11):** this project has
+a precedent for avoiding dependencies (`backend/llm_provider.py` is a raw
+HTTPS client rather than the Anthropic SDK; deps are just `textual`), and
+everything FO4 needs is reachable via stdlib `ctypes.windll`. The decision is
+**pywin32 as an optional extra anyway**: window enumeration, monitor
+geometry, and message sending via raw ctypes are verbose and error-prone,
+and this code can only be verified manually on Windows (FO7) — the
+maintenance risk of hand-rolled ctypes outweighs the zero-dep purism here.
+Unlike the LLM client (hot path, exercised every run, testable), the window
+adapter is cold, optional, and unverifiable in CI. Revisit only if the
+optional-extra install proves a real friction point for users.
 
 ### D6 — Target windows by file identity, never by app type
 
@@ -148,6 +189,38 @@ like an HTTP request — not editor UI. It goes in `backend/window_manager.py`
 behind a small protocol, created per platform by a factory, and must never
 import Textual. Per `BACKEND_FRONTEND_BOUNDARY.md`, the frontend's only role
 is config affordances (path pickers, preset dropdowns).
+
+### D11 — Window management is a *local-execution* capability (2026-07-11)
+
+D10 is correct for today's deployment (backend and TUI in one process on the
+user's machine) and for the headless CLI direction. But under
+`PROJECT_BACKLOG.md` → Multi-Frontend Expansion, the backend becomes a
+standalone server — and then **the backend host and the user's display are no
+longer the same place**: `open_path` would open Excel on the server, and the
+AOTN window rect would belong to the server's console (or nothing).
+
+Recorded so future sessions neither re-litigate D10 nor entrench direct
+calls that block the server split:
+
+- In a remote-backend deployment, window choreography migrates behind the
+  EventBus — the node emits a `WINDOW_ACTION_REQUESTED`-style JSON event and
+  a *local effector* (the frontend, or a thin local agent) executes it. This
+  is the same pattern FO3 already uses for the viewer.
+- The FO4 protocol and the D3 preset vocabulary are the stable surface; only
+  the call site relocates. Keep the adapter free of `MasterState`/run-state
+  coupling so it can be lifted behind an event boundary unchanged.
+- `capabilities()` is the hook that will declare display access: a backend
+  with no local display reports no window capabilities, and the existing D5
+  validator warning covers it with no new mechanism.
+
+### D12 — Windows that outlive the run are unmanaged orphans
+
+With `Close when run ends` off (the default, per FO5), the OS window stays
+open after `RunSession.close_all()` — but its `WindowRef` registration dies
+with the run, so a *later* run's `window_control_node` cannot target it.
+This is intentional, documented behavior, not a bug: the run hands the
+window to the user and forgets it. Anything smarter (cross-run window
+adoption) would require re-discovery, which D4 forbids.
 
 ---
 
@@ -264,8 +337,9 @@ Implementations:
 
 - `WindowsWindowManager`: `os.startfile` / `start` launch, pywin32 guarded
   import, snapshot-diff discovery with timeout + title fallback, monitor
-  geometry via `EnumDisplayMonitors`, own-window rect via `GetConsoleWindow`,
-  `WM_CLOSE` for close.
+  geometry via `EnumDisplayMonitors`, own-window rect per the D3 Windows
+  Terminal caveat (parent-process walk to the real terminal window,
+  `GetConsoleWindow` fallback under legacy conhost), `WM_CLOSE` for close.
 - `FallbackWindowManager`: `xdg-open` / `open` launch, placement no-ops with
   a logged warning, `close` no-op (no handle to close).
 - `get_window_manager()` factory keyed on `platform.system()`.
@@ -280,7 +354,9 @@ Likely files: `backend/window_manager.py`, `tests/test_window_manager.py`,
 `pyproject.toml` (optional `[project.optional-dependencies] windows` extra).
 
 Exit criteria: full suite green on Linux with no pywin32 installed; geometry
-math covered; fake adapter available for node tests.
+math covered (each preset yields a full position + size rect, per D3); fake
+adapter available for node tests; adapter has no `MasterState`/run-state
+coupling (per D11, it must be liftable behind an event boundary unchanged).
 
 ## Phase FO5 — Launch + Placement on `file_output_node`
 
@@ -298,9 +374,15 @@ Tasks:
    when `Close when run ends` is on.
 3. Validator: warn when open/placement is configured and the current
    platform's `capabilities()` lacks it (D5).
+4. Document that `Open after write` inside a repeat/counter loop opens one
+   window per iteration (with `create-unique` write mode, one per file). A
+   validator warning for open-after-write on a loop path is a backlog item,
+   not FO5 scope — loop detection is not free.
 
 Node tests run against `FakeWindowManager` — they assert the calls and the
-RunSession registration, not real windows.
+RunSession registration, not real windows. Discovery failure (adapter
+returns `None`) must leave the node successful with a warning — never a node
+error (D4).
 
 Likely files: `file_output_node` spec + class, `backend/master_state.py` or
 node context wiring if the manager is session-scoped,
@@ -335,11 +417,22 @@ here):
    falls back correctly and does not steal the pre-existing window.
 4. `Close when run ends` on and off; `window_control_node` close mid-run.
 5. Slow-launching app: discovery timeout produces a warning, not a hang.
+6. Host coverage: repeat placement checks under **Windows Terminal** and
+   legacy **conhost** — the AOTN-rect resolution differs between them (D3
+   caveat) and Windows Terminal is the default on the target machine.
+7. Focus fight: `file_output_node` (open after write) directly upstream of a
+   `user_text_input_node` — the opened window steals OS focus from the
+   terminal right as the TUI prompts for input. Verify the user can recover
+   focus and answer; note observed behavior for a possible "refocus AOTN
+   after prompt" follow-up.
 
 Docs: fold outcomes into `MASTER_BUILD_PLAN.md`, `NODE_CATALOG.md`,
 `PROJECT_BACKLOG.md` (defer pyvda/macOS/Linux adapters there), update
 `TASK_INDEX.md` with a file/window task route, archive this plan with a
-`DOCS_MIGRATION_NOTES.md` entry.
+`DOCS_MIGRATION_NOTES.md` entry. In `NODE_CATALOG.md`, resolve the deferred
+**Window Focus** entry explicitly: it is superseded by `window_control_node`,
+which scopes focus to workflow-owned file windows per D6 — arbitrary
+named-app-window targeting stays out of the catalog.
 
 ---
 

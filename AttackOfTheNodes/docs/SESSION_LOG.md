@@ -4,6 +4,47 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-07-11 — File Output Build Plan: Design-Review Amendments
+
+Branch: `main` (plan merged from `claude/output-nodes-file-windows-wq07q6`
+earlier today)
+
+Reviewed `FILE_OUTPUT_BUILD_PLAN.md` against the project vision docs
+(`PROJECT_KNOWLEDGE.md`, `MASTER_BUILD_PLAN.md`, `PROJECT_BACKLOG.md` future
+directions) and amended the plan. No scope change; no phase started.
+
+- **New D11 — window management is a local-execution capability.** Records
+  the tension between D10 (backend window manager) and the Multi-Frontend
+  Expansion direction (backend as a standalone server, where the backend
+  host and the user's display diverge). Migration path: window actions move
+  behind the EventBus to a local effector — the same pattern FO3 uses —
+  with `capabilities()` declaring display access. FO4 exit criteria now
+  require the adapter to be free of run-state coupling so it can be lifted
+  behind an event boundary unchanged.
+- **New D12 — windows that outlive the run are unmanaged orphans.** With
+  `Close when run ends` off, the `WindowRef` dies with `RunSession`; later
+  runs cannot target the window. Documented as intentional.
+- **D3 caveats:** presets define position *and* size (full target rect);
+  Windows Terminal/ConPTY makes `GetConsoleWindow()` return a hidden
+  pseudo-console window, so FO4 must resolve the real terminal window via a
+  parent-process walk with conhost fallback, degrading AOTN-relative presets
+  to monitor-relative with a warning when unresolvable.
+- **D4 rule:** discovery failure is never a node error — file opens,
+  placement degrades to "opened but unplaced" warning, no `WindowRef`
+  registered. Mirrored in FO5 test expectations.
+- **D5 decision record:** pywin32 stays (as an optional extra) over raw
+  ctypes despite the `llm_provider.py` no-dependency precedent — the window
+  adapter is cold, optional, and only manually verifiable, so hand-rolled
+  ctypes maintenance risk outweighs zero-dep purism.
+- **FO5:** documented loop-multiplied windows (validator warning is backlog,
+  not FO5 scope). **FO7:** added Windows Terminal vs conhost host coverage
+  and a focus-fight check (open-after-write directly upstream of
+  `user_text_input_node`); docs reconciliation now explicitly resolves the
+  deferred `NODE_CATALOG.md` **Window Focus** entry as superseded by the
+  file-scoped `window_control_node`.
+
+Verification: docs-only change; `git diff --check` clean.
+
 ## 2026-07-08 — Helper Generator Aligned with the Standardized Node UI
 
 Branch: `llm-node`
