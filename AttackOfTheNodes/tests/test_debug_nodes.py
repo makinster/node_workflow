@@ -5791,7 +5791,7 @@ def test_editor_details_panel_uses_contract_layout():
 
     _, wm, _, _ = _make_services()
     wm.create_new("details_contract_layout")
-    node_id = wm.add_node("example_file_instance_node")
+    node_id = wm.add_node("file_output_node")
 
     screen = EditorScreen(wm._factory, wm)
     text = screen._format_node_details(node_id, wm.get_node_data(node_id))
@@ -5816,7 +5816,6 @@ def test_editor_details_panel_uses_contract_layout():
     assert "Inputs:" in text
     assert "Outputs:" in text
     assert "file" in text  # the file_path input's [type] label
-    assert "bool" in text  # the bool output's [type] label
     assert "[bold]↔ pass-thru[/bold]" in text
 
     print("test_editor_details_panel_uses_contract_layout PASSED")
@@ -6207,7 +6206,6 @@ async def _test_node_selector_uses_family_tabs():
         assert app.focused is filter_input
         assert filter_input.editing is False
         assert {node["type"] for node in screen._visible_nodes} == {
-            "example_file_instance_node",
             "file_reader_node",
             "user_text_input_node",
             "http_request_node",
@@ -6223,6 +6221,7 @@ async def _test_node_selector_uses_family_tabs():
         assert screen._active_family() == "Outputs"
         assert {node["type"] for node in screen._visible_nodes} == {
             "text_output_node",
+            "file_output_node",
         }
 
         # Flow Control: no filter checkboxes; Branch group with member count;

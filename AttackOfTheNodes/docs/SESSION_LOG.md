@@ -4,6 +4,55 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-07-11 — FO1: `file_output_node` (File Write) + Typed File Reference
+
+Branch: `claude/file-output-pywin32-32tnv9` (started from `main` @ `af04c5f`)
+
+Phase FO1 of `FILE_OUTPUT_BUILD_PLAN.md` implemented.
+
+- **New node `file_output_node` ("File Write", Outputs family, group
+  `File Write`)** generated from the unified `inputs:`/`outputs:` spec
+  `aotn_node_helper/specs/file_output_node.yaml` with a hand-written
+  `execute()`. Content and file path use the standard three-source model
+  (`content` accepts `any`; `file_path` is `file`-typed and also accepts an
+  upstream/vault file reference dict, resolving its `path`). Write modes:
+  Overwrite / Append / Create unique (numeric ` (n)` suffix); Base64 binary
+  toggle; parent directories are created. Writes go through
+  `context.run_session.open_file` when in a run (cached `"w"` handles are
+  seek(0)+truncated so overwrite stays deterministic; writes flushed so the
+  file is readable mid-run), direct `Path` I/O otherwise.
+- **Typed `file` reference (D2)** emitted downstream and optionally to the
+  vault (`type_tag="file"`): `{"type": "file", "ref_key": "file:<resolved>",
+  "path": <resolved>}`; the open handle registers in `RunSession` under
+  `ref_key` (keyed by file identity, per D6) and closes at `close_all()`.
+  Dead-drop passthrough forwards the incoming content unchanged.
+- **Standard "Terminate branch after completion"** (`terminate_branch`,
+  Payloads tab) — first Outputs-family node to carry the NODE_STANDARDS
+  branch-termination option; rides the `signal_done` payload the supervisor
+  already honors.
+- **Validator: source-gated field awareness.** The `path_hint: "file"` and
+  `secret: true` checks now skip fields whose `visible_when` doesn't hold
+  (new `_field_visible`, defaults-aware) — a required Configured path no
+  longer false-errors when the input reads from Upstream/Vault. Empty
+  required path with Configured selected stays an error; missing-on-disk
+  stays a warning (an earlier node may create the file mid-run).
+- **Retired `example_file_instance_node`** (spec, node, generated tests,
+  registration) per FO1 task 4 — `file_output_node`'s spec absorbed its
+  unified-spec reference role. Repointed `test_node_contract.py`, the editor
+  details-panel test, and node-selector expected sets; updated
+  `NODE_HELPER.md`, `NODE_STANDARDS.md`, `AGENT_START_GUIDE.md`,
+  `FILE_TREE.md`, and `NODE_CATALOG.md` (File Instance row removed; File
+  Write now Live).
+
+Verification: `check_node.py file_output_node` and `check_ui.py
+file_output_node` pass; new focused tests in
+`tests/generated/test_file_output_node.py` (17) plus run-lifecycle and
+validator-gating tests in `tests/test_run_session.py`; full suite 409 passed
+with one pre-existing settings-screen pilot-timing flake
+(`test_simple_command_modals_use_shared_navigation_helpers`) that fails only
+under full-suite load, on the untouched baseline too, and passes in
+isolation.
+
 ## 2026-07-11 — File Output Build Plan: Design-Review Amendments
 
 Branch: `main` (plan merged from `claude/output-nodes-file-windows-wq07q6`

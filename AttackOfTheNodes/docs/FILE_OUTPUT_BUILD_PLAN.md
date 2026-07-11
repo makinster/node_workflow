@@ -33,7 +33,7 @@ Execution rules (same as previous plans):
 
 ## Phase Checklist
 
-- [ ] FO1 — `file_output_node`: write + typed file reference
+- [x] FO1 — `file_output_node`: write + typed file reference (2026-07-11)
 - [ ] FO2 — Markdown/text formatting for humans
 - [ ] FO3 — In-TUI file viewer (zero OS-window dependency)
 - [ ] FO4 — `backend/window_manager.py` platform adapter

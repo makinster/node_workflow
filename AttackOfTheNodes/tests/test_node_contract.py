@@ -80,22 +80,23 @@ def test_port_metadata_canonicalizes_and_coerces():
 
 def test_declared_contract_survives_through_factory_exposure():
     factory = _make_factory()
-    # example_file_instance_node is the unified-spec reference node: its
-    # outputs: block declares name + data_type + required + to, and the factory
-    # must surface all of it (not just fill defaults).
+    # file_output_node is the unified-spec reference node (absorbed from the
+    # retired example_file_instance_node stub): its outputs: block declares
+    # name + data_type + required + to, and the factory must surface all of it
+    # (not just fill defaults).
     meta = next(
         (
             m
             for m in factory.get_node_types_metadata()
-            if m["type"] == "example_file_instance_node"
+            if m["type"] == "file_output_node"
         ),
         None,
     )
     if meta is None:
-        pytest.skip("example_file_instance_node not registered in this build")
+        pytest.skip("file_output_node not registered in this build")
     out = meta["output_port_metadata"]["default"]
-    assert out["name"] == "Open Result"
-    assert out["data_type"] == "bool"  # declared in the outputs: block
+    assert out["name"] == "File Reference"
+    assert out["data_type"] == "file"  # declared in the outputs: block
     assert out["required"] is True
     assert out["to"] == ["downstream", "vault"]
     assert out["pass_through"] is True

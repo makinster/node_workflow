@@ -296,6 +296,80 @@ def test_validator_flags_missing_and_unfound_file_paths(tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# File Write node (FO1): lifecycle + source-gated path validation
+# ---------------------------------------------------------------------------
+
+def test_file_output_node_writes_and_closes_with_run(tmp_path):
+    asyncio.run(_test_file_output_node_writes_and_closes_with_run(tmp_path))
+
+
+async def _test_file_output_node_writes_and_closes_with_run(tmp_path):
+    target = tmp_path / "run_output.md"
+
+    master, wm, mb, _ = _make_services()
+    wm.create_new("test_file_output_run")
+    start = wm.add_node("start_node")
+    echo = wm.add_node("echo_node")
+    writer = wm.add_node("file_output_node")
+    end = wm.add_node("end_node")
+
+    wm.update_node_config(echo, {"label": "written by the run"})
+    wm.update_node_config(writer, {"file_path": str(target)})
+    wm.connect(start, "default", echo, "input")
+    wm.connect(echo, "default", writer, "content")
+    wm.connect(writer, "default", end, "input")
+
+    await master.start_workflow()
+    session = master._run_session
+    await master.wait_for_completion()
+
+    assert master.state.value == "FINISHED"
+    assert session.is_closed, "File handle must close at run finalization"
+    body = target.read_text(encoding="utf-8")
+    assert "written by the run" in body
+
+    ref = mb.read_transient(writer, "default")
+    assert ref["type"] == "file"
+    assert ref["path"] == str(target.resolve())
+
+
+def test_validator_skips_source_gated_path_fields():
+    from backend.node_factory import NodeFactory
+    from backend.validator import validate_workflow
+
+    _, wm, _, _ = _make_services()
+    factory = NodeFactory()
+    wm.create_new("test_gated_path_validation")
+    start = wm.add_node("start_node")
+    writer = wm.add_node("file_output_node")
+    wm.connect(start, "default", writer, "content")
+
+    def path_errors(result):
+        return [
+            e
+            for e in result["errors"]
+            if e["node_id"] == writer and "file path" in e["message"].lower()
+        ]
+
+    # Configured source (the default) with an empty path -> error.
+    result = validate_workflow(wm, factory)
+    assert path_errors(result), f"Expected empty-path error, got {result['errors']}"
+
+    # Upstream/Vault sources hide the configured path field; an empty
+    # configured value must not error (visible_when gating).
+    wm.update_node_config(writer, {"file_path_source": "Upstream payload"})
+    result = validate_workflow(wm, factory)
+    assert not path_errors(result), f"Unexpected path error: {result['errors']}"
+
+    wm.update_node_config(
+        writer,
+        {"file_path_source": "Vault", "file_path_vault_key": "some_file"},
+    )
+    result = validate_workflow(wm, factory)
+    assert not path_errors(result), f"Unexpected path error: {result['errors']}"
+
+
+# ---------------------------------------------------------------------------
 # Chat session tests
 # ---------------------------------------------------------------------------
 

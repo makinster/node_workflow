@@ -1,0 +1,78 @@
+# file_output_node — FO1 of docs/FILE_OUTPUT_BUILD_PLAN.md. The core file
+# output primitive: writes content (upstream/vault/configured) to a path,
+# registers the handle in RunSession, and emits a typed `file` reference
+# downstream/vault (D2). Launch/placement config lands in FO5.
+# This spec is also the unified inputs:/outputs: reference node (handoff §7),
+# absorbing that role from the retired example_file_instance_node stub.
+node_type: file_output_node
+class_name: FileOutputNode
+category: io
+primary_family: Outputs
+tags: ["File I/O", "Runtime Resource"]
+group: "File Write"
+icon_name: file-output
+display_name: File Write
+default_alias: File Write
+description: Write content to a file and emit a typed file reference
+
+inputs:
+  content:
+    type: any
+    required: true
+    label: Content
+    description: Data written to the file
+    sources: ["upstream", "vault", "configured"]
+    default: upstream
+    parameter:
+      type: multiline
+      label: "Content (E to edit, ESC to finish)"
+  file_path:
+    type: file
+    required: true
+    label: File path
+    description: Destination path, or a file reference from upstream/vault
+    sources: ["upstream", "vault", "configured"]
+    default: configured
+    parameter:
+      type: string
+      label: File path
+      placeholder: /path/to/output.md
+      path_hint: file
+      required: true
+
+outputs:
+  default:
+    name: File Reference
+    type: file
+    required: true
+    to: ["downstream", "vault"]
+    pass_through: true
+    description: Typed reference to the written file
+
+output_routing:
+  default: transient
+  vault:
+    mode: optional
+
+config_tabs:
+  Parameters:
+    write_mode:
+      type: select
+      label: Write mode
+      options: ["Overwrite", "Append", "Create unique"]
+      default: Overwrite
+      description: Create unique adds a numeric suffix instead of replacing
+    binary_content:
+      type: boolean
+      label: Binary content (Base64)
+      default: false
+      description: Decode the content as Base64 and write raw bytes
+  Payloads:
+    terminate_branch:
+      type: boolean
+      label: Terminate branch after completion
+      default: false
+      section: Branch
+      description: End this branch after the file is written
+
+execution_template: output_sink

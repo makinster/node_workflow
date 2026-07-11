@@ -52,7 +52,7 @@ AttackOfTheNodes/
       user_text_input_node.py
       wait_until_node.py
       io/
-        example_file_instance_node.py
+        file_output_node.py
         http_request_node.py
       data/
         json_path_node.py
@@ -167,7 +167,7 @@ aotn_node_helper/
   ui_checks.py
   specs/
     example_pass_through_node.yaml
-    example_file_instance_node.yaml
+    file_output_node.yaml
     http_request_node.yaml
     json_path_node.yaml
     random_number_node.yaml
