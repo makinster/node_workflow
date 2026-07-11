@@ -58,6 +58,8 @@ AttackOfTheNodes/
         file_output_node.py
         file_view_node.py
         http_request_node.py
+        window_control_node.py
+        window_support.py
       data/
         json_path_node.py
         random_number_node.py
@@ -180,6 +182,7 @@ aotn_node_helper/
     json_path_node.yaml
     random_number_node.yaml
     text_transform_node.yaml
+    window_control_node.yaml
 ```
 
 ## Omitted Paths

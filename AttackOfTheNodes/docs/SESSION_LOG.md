@@ -4,6 +4,38 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-07-11 — FO6: `window_control_node` (Focus / Minimize / Close by File)
+
+Branch: `claude/file-output-pywin32-32tnv9`
+
+Phase FO6 of `FILE_OUTPUT_BUILD_PLAN.md` implemented — mid-run window
+choreography.
+
+- **New node `window_control_node` ("Window Control", Utility family,
+  section `Windows`)**: action select (Focus / Minimize / Close), target =
+  a `file` reference from **upstream or vault only** (a window target is
+  always a workflow-owned file, never hand-typed — D6). Resolves the stored
+  `WindowRef` from RunSession under `window:<ref_key>`; raw path strings
+  resolve to the same identity key the writer registered.
+- **Soft-error rule**: a window that was never opened, never discovered
+  (D4), lost to a race, or a run without a session ⇒ logged warning +
+  pass-through of the file reference — never a node error. Only a missing
+  file input errors.
+- **New `backend/nodes/io/window_support.py`** — the shared
+  RunSession↔window-manager lookup (`WINDOW_MANAGER_RESOURCE`,
+  `run_window_manager`), extracted from `file_output_node` so both nodes
+  and their tests use one injection point (the adapter itself stays
+  run-state free per D11).
+- `NODE_CATALOG.md`: Window Control added under a new Utility `Windows`
+  section; the deferred **Window Focus** concept marked Superseded by it.
+
+Verification: 9 focused tests in
+`tests/generated/test_window_control_node.py` (parametrized action
+dispatch, vault-sourced and raw-path targeting, missing-window /
+no-session / failed-action soft paths, empty-input error) with
+`FakeWindowManager`; `check_ui.py window_control_node` passes; full suite
+green.
+
 ## 2026-07-11 — FO5: Open After Write + Placement on `file_output_node`
 
 Branch: `claude/file-output-pywin32-32tnv9`

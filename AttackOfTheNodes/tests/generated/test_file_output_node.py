@@ -336,7 +336,7 @@ async def test_missing_upstream_content_is_a_node_error(tmp_path):
 # ---------------------------------------------------------------------------
 
 def _session_with_fake_manager(fake):
-    from backend.nodes.io.file_output_node import WINDOW_MANAGER_RESOURCE
+    from backend.nodes.io.window_support import WINDOW_MANAGER_RESOURCE
 
     session = RunSession("run")
     session.register_resource(WINDOW_MANAGER_RESOURCE, fake)

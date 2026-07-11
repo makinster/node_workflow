@@ -41,8 +41,10 @@ from .data.random_number_node import RandomNumberNode
 from .io.http_request_node import HttpRequestNode
 from .io.file_output_node import FileOutputNode
 from .io.file_view_node import FileViewNode
+from .io.window_control_node import WindowControlNode
 
 ALL_NODE_CLASSES = [
+    WindowControlNode,
     FileViewNode,
     FileOutputNode,
     HttpRequestNode,

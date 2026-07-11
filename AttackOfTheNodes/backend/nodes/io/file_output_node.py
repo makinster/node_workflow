@@ -23,21 +23,11 @@ from typing import Any, ClassVar, Dict, List, Optional
 from ...file_refs import file_reference, reference_path
 from ...node_base import Node, NodeContext
 from ...node_category import NodeCategory
-from ...window_manager import (
-    PLACE_OS_DEFAULT,
-    PLACEMENT_PRESETS,
-    WindowManager,
-    get_window_manager,
-)
+from ...window_manager import PLACE_OS_DEFAULT, PLACEMENT_PRESETS
+from .window_support import run_window_manager
 
 
 logger = logging.getLogger(__name__)
-
-# RunSession key under which nodes may inject/cache the run's window manager
-# (tests register a FakeWindowManager here; production lazily caches the
-# platform manager). The adapter itself stays run-state free (D11) — only
-# this lookup convention lives in node land.
-WINDOW_MANAGER_RESOURCE = "window_manager"
 
 
 # One write mode select, not separate node types (NODE_STANDARDS
@@ -142,7 +132,7 @@ class FileOutputNode(Node):
         Discovery failure is a degraded success: the file is open but
         unplaced, no WindowRef registers, and the node stays green (D4).
         """
-        manager = self._window_manager(context)
+        manager = run_window_manager(context)
         placement = str(self.config.get("window_placement") or PLACE_OS_DEFAULT)
         window_ref = manager.open_path(ref["path"], placement)
         if window_ref is None:
@@ -166,17 +156,6 @@ class FileOutputNode(Node):
             context.run_session.register_resource(
                 f"window:{ref['ref_key']}", window_ref
             )
-
-    def _window_manager(self, context: NodeContext) -> WindowManager:
-        """The run's window manager: injected/cached in RunSession, else platform."""
-        if context.run_session is not None:
-            cached = context.run_session.get_resource(WINDOW_MANAGER_RESOURCE)
-            if cached is not None:
-                return cached
-        manager = get_window_manager()
-        if context.run_session is not None:
-            context.run_session.register_resource(WINDOW_MANAGER_RESOURCE, manager)
-        return manager
 
     def _resolve_content(self, context: NodeContext) -> Optional[Any]:
         source = self.config.get("content_source", "Upstream payload")

@@ -38,7 +38,7 @@ Execution rules (same as previous plans):
 - [x] FO3 — In-TUI file viewer (zero OS-window dependency) (2026-07-11)
 - [x] FO4 — `backend/window_manager.py` platform adapter (2026-07-11)
 - [x] FO5 — Launch + placement on `file_output_node` (2026-07-11)
-- [ ] FO6 — `window_control_node`
+- [x] FO6 — `window_control_node` (2026-07-11)
 - [ ] FO7 — Windows live verification + docs reconciliation
 
 ---

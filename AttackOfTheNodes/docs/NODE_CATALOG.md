@@ -178,6 +178,12 @@ Variants have different port shapes, so they must be separate types
 
 ## Utility (`primary_family: Utility`)
 
+### Section: Windows
+
+| Node | Status | Notes |
+|---|---|---|
+| Window Control | Live | `window_control_node` — focus / minimize / close the OS window showing a workflow-owned file, targeted by its `file` reference (FO6, D6: file identity, never app type). Missing/vanished window is a soft warning + pass-through. Supersedes the deferred **Window Focus** concept below for workflow-owned file windows; arbitrary named-app targeting stays out of the catalog. Tags: File I/O, Window |
+
 ### Section: Automation
 
 #### Group: UI Automation
@@ -189,7 +195,7 @@ Variants have different port shapes, so they must be separate types
 | Key Press | Concept | Fire a key combination (an action, not a listener — listeners are Triggers) |
 | Read Screen | Deferred | Capture visible text or image from a screen region |
 | Find Element | Deferred | Locate a UI element by text or accessibility label |
-| Window Focus | Deferred | Bring a named application window to the foreground |
+| Window Focus | Superseded | Resolved 2026-07-11: `window_control_node` (Section: Windows above) scopes focus to workflow-owned file windows per D6. Arbitrary named-app-window targeting is intentionally out — app-type targeting is a race condition dressed up as a feature |
 
 #### Group: Script Runner *(security gated)*
 
