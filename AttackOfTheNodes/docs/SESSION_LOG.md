@@ -4,6 +4,48 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-07-11 — FO4: `backend/window_manager.py` Platform Adapter
+
+Branch: `claude/file-output-pywin32-32tnv9`
+
+Phase FO4 of `FILE_OUTPUT_BUILD_PLAN.md` implemented — the OS window
+abstraction, no node wiring yet (that is FO5/FO6).
+
+- **Protocol** (small per D9): `open_path(path, placement) → WindowRef |
+  None`, `focus`/`minimize`/`close(ref) → bool`, `capabilities() → set[str]`
+  (`open`/`place`/`focus`/`minimize`/`close` — the D5 validator warning's
+  vocabulary). Discovery failure returns `None`, never raises (D4). The
+  module imports only stdlib + logging — no MasterState/RunSession/Textual
+  coupling (D11 liftability).
+- **`placement_rect(preset, monitors, own_rect)`** — pure preset→rect math
+  (D3: every preset yields position AND size). Presets: `OS default`,
+  `Right of AOTN`, `Left of AOTN`, `Other monitor`, `Same monitor, right
+  half`. Side slivers under 200px degrade to monitor halves; unresolvable
+  own rect degrades AOTN-relative presets to monitor-relative (D3 Windows
+  Terminal caveat); single-monitor `Other monitor` degrades to the current
+  monitor. All with logged warnings.
+- **`WindowsWindowManager`** — pywin32 guarded per the D5 decision record
+  (recorded 2026-07-11: pywin32 over raw ctypes): `os.startfile` launch,
+  snapshot-diff discovery with a 5s poll + title-contains-filename fallback
+  (D4), `EnumDisplayMonitors` geometry, own-rect resolution via a
+  parent-process walk (`NtQueryInformationProcess` ancestor chain → visible
+  ancestor-owned top-level window) with a visible-`GetConsoleWindow`
+  fallback for legacy conhost, `MoveWindow` placement, `WM_CLOSE` close.
+  Without pywin32 it degrades to open-only. This branch is FO7
+  manual-verification territory, not CI.
+- **`FallbackWindowManager`** (`xdg-open`/`open`, placement no-op with
+  warning), **`FakeWindowManager`** (records calls; `discovery_fails` mode
+  for D4 tests — the FO5/FO6 node-test double), and the
+  `get_window_manager()` platform factory.
+- **`pyproject.toml`**: optional `windows` extra
+  (`pywin32>=306; platform_system == "Windows"`).
+
+Verification: new `tests/test_window_manager.py` (22 tests: factory,
+fallback soft-fail launch/control, fake double, full preset geometry
+matrix incl. mixed-resolution other-monitor and degraded modes, and
+`WindowsWindowManager` degrading cleanly with no pywin32 on Linux);
+`compileall` clean.
+
 ## 2026-07-11 — FO3: In-TUI File Viewer (`file_view_node` + `FileViewerScreen`)
 
 Branch: `claude/file-output-pywin32-32tnv9`

@@ -11,6 +11,12 @@ dependencies = [
     "textual-dev>=1.8",
 ]
 
+# Optional Windows window placement/control (FO4, D5 in
+# docs/FILE_OUTPUT_BUILD_PLAN.md). Without it files still open; placement
+# degrades with a logged warning. Install with: pip install -e ".[windows]"
+[project.optional-dependencies]
+windows = ['pywin32>=306; platform_system == "Windows"']
+
 [project.scripts]
 aotn = "main:main"
 

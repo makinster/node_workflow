@@ -33,6 +33,7 @@ AttackOfTheNodes/
     supervisor.py
     text_format.py
     validator.py
+    window_manager.py
     workflow_map.py
     utils/
       try_catch.py
@@ -155,6 +156,7 @@ AttackOfTheNodes/
     test_typed_vault.py
     test_validator_race_warnings.py
     test_validator_secrets.py
+    test_window_manager.py
     generated/
 
   workflows/
