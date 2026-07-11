@@ -17,6 +17,7 @@ AttackOfTheNodes/
     event_bus.py
     events.py
     field_types.py
+    file_refs.py
     master_state.py
     memory_bank.py
     node_base.py
@@ -30,6 +31,7 @@ AttackOfTheNodes/
     save_manager.py
     secrets_manager.py
     supervisor.py
+    text_format.py
     validator.py
     workflow_map.py
     utils/
@@ -53,6 +55,7 @@ AttackOfTheNodes/
       wait_until_node.py
       io/
         file_output_node.py
+        file_view_node.py
         http_request_node.py
       data/
         json_path_node.py
@@ -90,6 +93,7 @@ AttackOfTheNodes/
       error_details.py
       execution.py
       help.py
+      file_viewer.py
       memory_viewer.py
       merge_beacon_selector.py
       node_config.py
@@ -145,6 +149,7 @@ AttackOfTheNodes/
     test_node_helper.py
     test_run_session.py
     test_secrets_manager.py
+    test_text_format.py
     test_tombstone_migration.py
     test_tombstone_phase_b.py
     test_typed_vault.py
@@ -168,6 +173,7 @@ aotn_node_helper/
   specs/
     example_pass_through_node.yaml
     file_output_node.yaml
+    file_view_node.yaml
     http_request_node.yaml
     json_path_node.yaml
     random_number_node.yaml

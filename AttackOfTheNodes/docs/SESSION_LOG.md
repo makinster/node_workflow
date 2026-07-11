@@ -4,6 +4,45 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-07-11 — FO3: In-TUI File Viewer (`file_view_node` + `FileViewerScreen`)
+
+Branch: `claude/file-output-pywin32-32tnv9`
+
+Phase FO3 of `FILE_OUTPUT_BUILD_PLAN.md` implemented — the zero-OS-dependency
+"open the file" path (D8).
+
+- **Node-emitted EventBus events.** `NodeContext` gains an optional
+  `publish_event` callback plus an `emit_event(name, payload)` helper that
+  no-ops (returns False) when unwired. The supervisor wires it and stamps
+  `run_id`/`branch_id`/`node_id` into every payload, keeping the standing
+  JSON+run_id rule without giving nodes the bus itself. Fire-and-forget:
+  execution never waits on a subscriber; headless runs have none and the
+  event is inert.
+- **New `backend/file_refs.py`** — shared typed-`file`-reference helpers
+  (`file_reference`, `is_file_reference`, `reference_path`, `reference_key`);
+  `file_output_node` now imports these instead of its module-local builder.
+- **New node `file_view_node` ("File Viewer", Outputs family, direct-add)**
+  from a unified helper spec + hand-written `execute()`: resolves its `file`
+  input (reference dict or path; upstream/vault/configured), errors when the
+  file is missing, emits `FILE_VIEW_REQUESTED` (`path`, `ref_key`, `render`),
+  and forwards the file reference downstream (dead-drop and
+  terminate-branch options as on File Write). Render hint: Auto by extension
+  (`.md`/`.markdown` → markdown) with Markdown / Plain text overrides.
+- **New `frontend/screens/file_viewer.py`** (`FileViewerScreen`, fill-modal):
+  renders via Textual `Markdown` or plain `Static`, reads the file at
+  display time (the event never carries contents), ESC/q/Close dismisses.
+  `app.py` subscribes `FILE_VIEW_REQUESTED` → pushes the screen, ignoring
+  requests while one viewer is already open.
+
+Verification: 9 focused node tests in
+`tests/generated/test_file_view_node.py`; two pilot tests in
+`tests/test_debug_nodes.py -k file_view` (full workflow start→echo→File
+Write→File Viewer→end opens the viewer rendering the md, ESC closes;
+open-guard ignores a second request and re-opens after close);
+`check_node.py`/`check_ui.py file_view_node` pass; full suite 439 passed
+(same known settings-screen flake only). `SIGNAL_FLOW.md`, `FILE_TREE.md`,
+`NODE_CATALOG.md` updated.
+
 ## 2026-07-11 — FO2: Markdown Formatting as a Text Transform Mode
 
 Branch: `claude/file-output-pywin32-32tnv9`

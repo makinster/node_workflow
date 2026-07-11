@@ -109,6 +109,12 @@ or an End Branch node — there is no standalone End node.
 | User Choice Picker | Concept | Present a labeled list, wait for selection; output: chosen string. Tags: Active Output |
 | Progress Message | Concept | Non-blocking status update; fire and forget. Tags: Passive Output |
 
+### Direct-add: File Viewer
+
+| Node | Status | Notes |
+|---|---|---|
+| File Viewer | Live | `file_view_node` — display a text/Markdown file inside AOTN (FO3). Emits `FILE_VIEW_REQUESTED`; the frontend pushes `FileViewerScreen` (Textual Markdown for `.md`, plain text otherwise; `Render as` override). Headless runs: event is inert, never a node error. Forwards the file reference downstream. Tags: File I/O, Active Output |
+
 ### Direct-add: AI Response Output
 
 | Node | Status | Notes |

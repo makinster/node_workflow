@@ -198,6 +198,12 @@ Signals sent to `MasterState` via EventBus:
 - `RECOVERY_OPTIONS_AVAILABLE` — emitted when a node errors; carries recovery options.
 - `USER_INPUT_NEEDED` — emitted when `signal_waiting_for_input` is called.
 - `TERMINATE_WORKFLOW_REQUESTED` — emitted when TERMINATE_WORKFLOW recovery action is chosen.
+- Node-emitted events via `context.emit_event(name, payload)` — the
+  supervisor wires `NodeContext.publish_event` and stamps
+  `run_id`/`branch_id`/`node_id` into every payload. Current event:
+  `FILE_VIEW_REQUESTED` (FO3; carries `path`, `ref_key`, `render`).
+  Fire-and-forget: execution never waits on a subscriber, and headless runs
+  simply have none.
 
 ### `MasterState`
 
@@ -280,6 +286,8 @@ Signals consumed (subscribed once at startup):
 - `SUPERVISOR_STATE_UPDATE` → update `node_statuses`
 - `SUPERVISOR_TERMINATING` → mark supervisor as done
 - `USER_INPUT_NEEDED` → open `UserInputScreen` modal
+- `FILE_VIEW_REQUESTED` → open `FileViewerScreen` modal (ignored while one
+  is already open; execution does not wait)
 - `ERROR_OCCURRED` → refresh
 - `ERROR_LOGGED` → refresh
 - `RECOVERY_OPTIONS_AVAILABLE` → open `ErrorDetailsScreen` modal

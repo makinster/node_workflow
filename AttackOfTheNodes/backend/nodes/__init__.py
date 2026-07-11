@@ -40,8 +40,10 @@ from .data.json_path_node import JsonPathNode
 from .data.random_number_node import RandomNumberNode
 from .io.http_request_node import HttpRequestNode
 from .io.file_output_node import FileOutputNode
+from .io.file_view_node import FileViewNode
 
 ALL_NODE_CLASSES = [
+    FileViewNode,
     FileOutputNode,
     HttpRequestNode,
     RandomNumberNode,

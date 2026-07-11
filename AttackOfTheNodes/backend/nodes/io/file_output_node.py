@@ -12,6 +12,7 @@ import binascii
 from pathlib import Path
 from typing import Any, ClassVar, Dict, List, Optional
 
+from ...file_refs import file_reference, reference_path
 from ...node_base import Node, NodeContext
 from ...node_category import NodeCategory
 
@@ -23,17 +24,6 @@ MODE_APPEND = "Append"
 MODE_CREATE_UNIQUE = "Create unique"
 
 _MAX_UNIQUE_ATTEMPTS = 10_000
-
-
-def file_reference(path: str) -> Dict[str, str]:
-    """Build the typed `file` reference for a resolved path.
-
-    The ref key doubles as the RunSession resource key, keyed by file identity
-    so two nodes touching the same file share one registration (D6). The path
-    rides along for cross-run reconstruction and for consumers that only need
-    the location (D2 cross-run note).
-    """
-    return {"type": "file", "ref_key": f"file:{path}", "path": path}
 
 
 class FileOutputNode(Node):
@@ -138,9 +128,7 @@ class FileOutputNode(Node):
             value = context.inputs.get("file_path")
         else:
             value = self.config.get("file_path")
-        if isinstance(value, dict) and value.get("type") == "file":
-            value = value.get("path")
-        return str(value or "").strip()
+        return reference_path(value)
 
     def _file_mode(self, binary: bool) -> str:
         append = self.config.get("write_mode") == MODE_APPEND

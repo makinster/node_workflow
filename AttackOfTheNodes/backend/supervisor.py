@@ -324,6 +324,17 @@ class Supervisor:
                 timeout,
             )
 
+        def publish_event(event_name: str, payload: Dict[str, Any]) -> None:
+            # Node-emitted events always carry run/branch/node identity so
+            # subscribers can attribute them (EventBus payload standing rule).
+            body: Dict[str, Any] = {
+                "run_id": self.run_id,
+                "branch_id": self.branch_id,
+                "node_id": self.current_node_id,
+            }
+            body.update(payload or {})
+            self._event_bus.publish(event_name, body)
+
         context = NodeContext(
             node_id=self.current_node_id or "",
             branch_id=self.branch_id,
@@ -337,6 +348,7 @@ class Supervisor:
             wait_for_merge=wait_for_merge,
             run_session=self._run_session,
             secrets_manager=self._secrets_manager,
+            publish_event=publish_event,
         )
 
         started_at = perf_counter()
