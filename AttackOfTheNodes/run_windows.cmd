@@ -42,7 +42,10 @@ if errorlevel 1 goto :fail
 
 :check_deps
 echo Checking Python dependencies...
-"%VENV_PY%" -c "import textual, rich, backend, frontend" >nul 2>nul
+rem win32gui is part of the optional [windows] extra (pywin32). Including it
+rem here means an existing .venv-win created before the extra was added
+rem reinstalls instead of silently running without window placement.
+"%VENV_PY%" -c "import textual, rich, backend, frontend, win32gui" >nul 2>nul
 if %errorlevel%==0 goto :launch
 
 echo Installing dependencies. This may take a minute on first launch...
@@ -50,7 +53,10 @@ echo Installing dependencies. This may take a minute on first launch...
 if errorlevel 1 goto :fail
 "%VENV_PY%" -m pip install -r requirements.lock
 if errorlevel 1 goto :fail
-"%VENV_PY%" -m pip install -e .
+rem The [windows] extra pulls in pywin32, which powers OS window placement
+rem and control (see docs/FILE_OUTPUT_BUILD_PLAN.md, D5). Without it files
+rem still open, but placement/focus/close degrade to logged warnings.
+"%VENV_PY%" -m pip install -e ".[windows]"
 if errorlevel 1 goto :fail
 
 :launch

@@ -4,6 +4,33 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-07-11 — FO7 Prep: Two Windows-Environment Fixes
+
+Branch: `claude/file-output-pywin32-32tnv9`
+
+Found while preparing the FO7 manual run on the owner's Windows machine —
+both would have made the verification measure the wrong thing.
+
+- **`run_windows.cmd` never installed pywin32.** It ran `pip install -e .`
+  without the `[windows]` extra, and `requirements.lock` carries no
+  pywin32, so the standard Windows launch path silently produced the
+  degraded open-only manager. Now installs `-e ".[windows]"`. The
+  dependency short-circuit check also gained `win32gui`, so an existing
+  `.venv-win` created before the extra existed reinstalls instead of
+  skipping straight to launch.
+- **`test_windows_manager_without_pywin32_degrades` asserted a
+  Linux-only truth** (`_win32 is None`) and would have failed on Windows
+  once pywin32 was installed. Rewritten as
+  `test_windows_manager_capabilities_track_pywin32_availability`: the
+  invariant is that `capabilities()` matches whatever actually imported —
+  open-only without pywin32, the full five with it. Both branches were
+  executed before commit (the pywin32-present branch by injecting stub
+  `win32gui`/`win32api`/`win32con` modules), so neither side ships
+  unrun.
+
+Verification: `tests/test_window_manager.py` 22 passed on Linux; the
+pywin32-present branch passes under stubbed modules.
+
 ## 2026-07-11 — FO7 (docs half): File-Output Plan Reconciliation
 
 Branch: `claude/file-output-pywin32-32tnv9`

@@ -17,6 +17,9 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from backend.window_manager import (  # noqa: E402
+    CAP_CLOSE,
+    CAP_FOCUS,
+    CAP_MINIMIZE,
     CAP_OPEN,
     CAP_PLACE,
     FakeWindowManager,
@@ -215,12 +218,31 @@ def test_home_monitor_found_by_own_rect_center():
     assert rect == Rect(1920 + 2560 - 1280, 0, 1280, 1440)
 
 
-def test_windows_manager_without_pywin32_degrades():
-    # On this Linux dev environment pywin32 can never import, so the
-    # Windows manager must construct cleanly and report open-only.
+def test_windows_manager_capabilities_track_pywin32_availability():
+    """The Windows manager must construct cleanly on any OS (D5).
+
+    Asserted as an invariant rather than a fixed answer, because the answer
+    differs by environment: the Linux dev box and CI can never import
+    pywin32 (open-only), while a Windows machine with the `windows` extra
+    installed reports the full set. Both are correct; what must always hold
+    is that capabilities() reflects what actually imported.
+    """
+    from backend.window_manager import _load_pywin32
+
     manager = WindowsWindowManager()
-    assert manager._win32 is None
-    assert manager.capabilities() == {CAP_OPEN}
+    pywin32_available = _load_pywin32() is not None
+
+    assert (manager._win32 is not None) is pywin32_available
+    if pywin32_available:
+        assert manager.capabilities() == {
+            CAP_OPEN,
+            CAP_PLACE,
+            CAP_FOCUS,
+            CAP_MINIMIZE,
+            CAP_CLOSE,
+        }
+    else:
+        assert manager.capabilities() == {CAP_OPEN}
 
 
 if __name__ == "__main__":
