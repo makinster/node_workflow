@@ -49,7 +49,7 @@ drive the composed Payloads tab (Downstream node payload + Vault payloads).
 keys `enabled_when`, `visible_when`, `required_when`, `section_when`,
 `force_value_when`, and `mutually_exclusive_with`. See `NODE_HELPER.md` — in
 particular "What the Config UI Renders Automatically" — and
-`aotn_node_helper/specs/example_file_instance_node.yaml`.
+`aotn_node_helper/specs/file_output_node.yaml`.
 
 ## Standard Input Source Model
 

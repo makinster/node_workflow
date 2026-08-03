@@ -12,6 +12,7 @@ from textual.css.query import NoMatches
 from backend.events import (
     ERROR_OCCURRED,
     ERROR_LOGGED,
+    FILE_VIEW_REQUESTED,
     MEMORY_UPDATE,
     NODE_TIMING_UPDATE,
     RECOVERY_OPTIONS_AVAILABLE,
@@ -32,6 +33,7 @@ from .screens.editor import EditorScreen
 from .screens.confirm import ConfirmScreen
 from .screens.error_details import ErrorDetailsScreen
 from .screens.execution import ExecutionScreen
+from .screens.file_viewer import FileViewerScreen
 from .screens.help import HelpScreen
 from .screens.settings import SettingsScreen
 from .screens.user_input import UserInputScreen
@@ -91,6 +93,7 @@ class AttackOfTheNodesApp(TextualApp):
         self._branch_current_nodes = {}
         self._user_input_modal_open = False
         self._error_modal_open = False
+        self._file_viewer_open = False
         self._editor_deleted_nodes = {}
         self.cursor_state = CursorState()
         self._subscribe_to_backend_events()
@@ -138,6 +141,7 @@ class AttackOfTheNodesApp(TextualApp):
             SUPERVISOR_STATE_UPDATE: self._on_supervisor_state_update,
             SUPERVISOR_TERMINATING: self._on_supervisor_terminating,
             USER_INPUT_NEEDED: self._on_user_input_needed,
+            FILE_VIEW_REQUESTED: self._on_file_view_requested,
             ERROR_OCCURRED: self._on_backend_event,
             ERROR_LOGGED: self._on_backend_event,
             RECOVERY_OPTIONS_AVAILABLE: self._on_recovery_options_available,
@@ -246,6 +250,21 @@ class AttackOfTheNodesApp(TextualApp):
                 self._submit_user_input_from_modal,
             )
         self._on_backend_event(payload)
+
+    def _on_file_view_requested(self, payload=None) -> None:
+        """Push the FO3 file viewer; execution does not wait on it."""
+        payload = payload or {}
+        path = str(payload.get("path") or "")
+        if not path or self._file_viewer_open:
+            return
+        self._file_viewer_open = True
+        self.push_screen(
+            FileViewerScreen(path=path, render=str(payload.get("render") or "plain")),
+            self._on_file_viewer_closed,
+        )
+
+    def _on_file_viewer_closed(self, _result=None) -> None:
+        self._file_viewer_open = False
 
     def _on_recovery_options_available(self, payload=None) -> None:
         payload = payload or {}

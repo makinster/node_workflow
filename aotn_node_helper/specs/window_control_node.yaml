@@ -1,0 +1,47 @@
+# window_control_node — FO6 of docs/FILE_OUTPUT_BUILD_PLAN.md. Mid-run
+# window choreography: focus / minimize / close the OS window showing a
+# workflow-owned file, targeted by its `file` reference (D6 — by file
+# identity, never by app type). Window state races the user, so a missing
+# or already-gone window is a soft warning + pass-through, never an error.
+node_type: window_control_node
+class_name: WindowControlNode
+category: io
+primary_family: Utility
+tags: ["File I/O", "Window", "Utility"]
+selector_section: "Windows"
+icon_name: app-window
+display_name: Window Control
+default_alias: Window Control
+description: Focus, minimize, or close the window showing a workflow file
+
+inputs:
+  file:
+    type: file
+    required: true
+    label: File
+    description: File reference whose window to control
+    sources: ["upstream", "vault"]
+    default: upstream
+
+outputs:
+  default:
+    name: File Reference
+    type: file
+    required: true
+    to: ["downstream"]
+    pass_through: true
+    description: The targeted file's reference, forwarded unchanged
+
+output_routing:
+  default: transient
+
+config_tabs:
+  Parameters:
+    action:
+      type: select
+      label: Action
+      options: ["Focus", "Minimize", "Close"]
+      default: Focus
+      description: What to do with the file's window
+
+execution_template: pass_through

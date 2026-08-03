@@ -1,0 +1,58 @@
+# file_view_node — FO3 of docs/FILE_OUTPUT_BUILD_PLAN.md. Displays a text/md
+# file inside AOTN: the node emits FILE_VIEW_REQUESTED on the EventBus and a
+# listening frontend pushes the viewer screen (headless runs have no
+# subscriber; the event is inert). Zero OS-window dependency (D8).
+node_type: file_view_node
+class_name: FileViewNode
+category: io
+primary_family: Outputs
+tags: ["File I/O", "Active Output"]
+icon_name: file-search
+display_name: File Viewer
+default_alias: View File
+description: Display a text or Markdown file inside AOTN
+
+inputs:
+  file:
+    type: file
+    required: true
+    label: File
+    description: File reference from upstream/vault, or a configured path
+    sources: ["upstream", "vault", "configured"]
+    default: upstream
+    parameter:
+      type: string
+      label: File path
+      placeholder: /path/to/notes.md
+      path_hint: file
+      required: true
+
+outputs:
+  default:
+    name: File Reference
+    type: file
+    required: true
+    to: ["downstream"]
+    pass_through: true
+    description: The viewed file's reference, forwarded for further steps
+
+output_routing:
+  default: transient
+
+config_tabs:
+  Parameters:
+    render:
+      type: select
+      label: Render as
+      options: ["Auto", "Markdown", "Plain text"]
+      default: Auto
+      description: Auto picks Markdown for .md/.markdown files
+  Payloads:
+    terminate_branch:
+      type: boolean
+      label: Terminate branch after completion
+      default: false
+      section: Branch
+      description: End this branch after the viewer is requested
+
+execution_template: output_sink

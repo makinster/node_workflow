@@ -8,7 +8,7 @@ selector_section: "Transform"
 icon_name: case-sensitive
 display_name: Text Transform
 default_alias: Text Transform
-description: Apply a text transformation (uppercase, lowercase, strip, title, reverse) to the input string
+description: Apply a text transformation (case, strip, reverse, markdown format) to the input string
 input_ports: ["input"]
 output_ports: ["default"]
 config_tabs:
@@ -16,6 +16,14 @@ config_tabs:
     operation:
       type: select
       label: Operation
-      options: ["uppercase", "lowercase", "strip", "title", "reverse"]
+      options: ["uppercase", "lowercase", "strip", "title", "reverse", "markdown format"]
       default: uppercase
+    wrap_width:
+      type: integer
+      label: Wrap width
+      description: "Re-flow paragraphs to this width; 0 keeps existing line breaks"
+      min: 0
+      default: 0
+      visible_when:
+        operation: markdown format
 execution_template: transform_stub

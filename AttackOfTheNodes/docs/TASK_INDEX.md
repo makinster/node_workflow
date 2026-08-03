@@ -201,6 +201,39 @@ Likely files:
 
 Rule: path picking belongs in the frontend; backend services accept paths.
 
+## Change File Output, File Viewer, Or OS Window Behavior
+
+Read:
+
+- `FILE_OUTPUT_BUILD_PLAN.md` — design decisions D1–D12 (typed `file`
+  references, placement presets, discovery rules, degraded modes); do not
+  re-litigate them
+- `NODE_STANDARDS.md` — Typed Vault Outputs, output routing model
+
+Likely files:
+
+- `backend/nodes/io/file_output_node.py`, `backend/nodes/io/file_view_node.py`,
+  `backend/nodes/io/window_control_node.py`, `backend/nodes/io/window_support.py`
+- `backend/file_refs.py` — the `file` reference dict shape
+- `backend/window_manager.py` — adapter protocol, preset geometry, platform
+  implementations (pywin32 branch is manual-verify only, FO7 protocol)
+- `backend/text_format.py` — markdown formatting
+- `frontend/screens/file_viewer.py`, `frontend/app.py` (FILE_VIEW_REQUESTED)
+
+Focused checks:
+
+```bash
+../.venv/bin/python -m pytest tests/generated/test_file_output_node.py \
+    tests/generated/test_file_view_node.py \
+    tests/generated/test_window_control_node.py \
+    tests/test_window_manager.py tests/test_text_format.py -v
+../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "file_view"
+```
+
+Rules: window discovery failure is never a node error (D4); windows are
+targeted by file identity, never app type (D6); the adapter must stay free
+of run-state coupling (D11).
+
 ## Update Config UI Or Form Generation
 
 Read:

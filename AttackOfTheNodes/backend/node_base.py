@@ -54,6 +54,16 @@ class NodeContext:
     ]
     run_session: Optional["RunSession"] = None
     secrets_manager: Optional["SecretsManager"] = None
+    # Publish a JSON-serializable event to the run's EventBus. Wired by the
+    # supervisor (which stamps run_id/branch_id/node_id); None outside a run.
+    publish_event: Optional[Callable[[str, Dict[str, Any]], None]] = None
+
+    def emit_event(self, event_name: str, payload: Dict[str, Any]) -> bool:
+        """Publish an event if a bus is wired in; return whether it was sent."""
+        if self.publish_event is None:
+            return False
+        self.publish_event(event_name, payload)
+        return True
 
     def get_secret(self, key: str) -> Optional[str]:
         """Return the secret value for key, or None if the manager is not wired in."""

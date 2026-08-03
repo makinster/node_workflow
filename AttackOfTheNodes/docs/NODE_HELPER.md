@@ -244,7 +244,7 @@ port's full I/O contract in one place. `inputs:` replaces the split
 `output_port_metadata`. They are additive — the legacy sections still work, and
 the separate `output_routing` block supplies the default routing state either
 way (the Payloads tab itself is composed from the `outputs:` contract). The
-generated reference node is `specs/example_file_instance_node.yaml`.
+generated reference node is `specs/file_output_node.yaml`.
 
 Each key under `inputs:` / `outputs:` is a **port name**. The port list
 (`input_ports` / `output_ports`) is derived from the keys, so do not also
@@ -340,7 +340,7 @@ and mutual-exclusion participants must be booleans. With the helper's built-in
 simple-YAML fallback parser, write conditions as nested mappings (as above)
 rather than inline `{key: value}` braces; inline form requires PyYAML.
 
-See `specs/example_file_instance_node.yaml` for a complete spec using
+See `specs/file_output_node.yaml` for a complete spec using
 `input_sources`, `output_routing`, and the expanded rule keys.
 
 ## Supported Values

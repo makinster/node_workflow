@@ -4,6 +4,274 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-07-11 — FO7 Prep: Two Windows-Environment Fixes
+
+Branch: `claude/file-output-pywin32-32tnv9`
+
+Found while preparing the FO7 manual run on the owner's Windows machine —
+both would have made the verification measure the wrong thing.
+
+- **`run_windows.cmd` never installed pywin32.** It ran `pip install -e .`
+  without the `[windows]` extra, and `requirements.lock` carries no
+  pywin32, so the standard Windows launch path silently produced the
+  degraded open-only manager. Now installs `-e ".[windows]"`. The
+  dependency short-circuit check also gained `win32gui`, so an existing
+  `.venv-win` created before the extra existed reinstalls instead of
+  skipping straight to launch.
+- **`test_windows_manager_without_pywin32_degrades` asserted a
+  Linux-only truth** (`_win32 is None`) and would have failed on Windows
+  once pywin32 was installed. Rewritten as
+  `test_windows_manager_capabilities_track_pywin32_availability`: the
+  invariant is that `capabilities()` matches whatever actually imported —
+  open-only without pywin32, the full five with it. Both branches were
+  executed before commit (the pywin32-present branch by injecting stub
+  `win32gui`/`win32api`/`win32con` modules), so neither side ships
+  unrun.
+
+Verification: `tests/test_window_manager.py` 22 passed on Linux; the
+pywin32-present branch passes under stubbed modules.
+
+## 2026-07-11 — FO7 (docs half): File-Output Plan Reconciliation
+
+Branch: `claude/file-output-pywin32-32tnv9`
+
+The docs-reconciliation half of FO7. The live-verification half (the 7-step
+manual Windows protocol in `FILE_OUTPUT_BUILD_PLAN.md`) needs the owner's
+Windows machine and stays open; the plan is NOT archived until it runs.
+
+- `MASTER_BUILD_PLAN.md`: FO row in the Phase Status table; FO1–FO6 summary
+  under Recently Completed.
+- `PROJECT_BACKLOG.md`: new "Deferred — File/Window Output Follow-Ups"
+  section (pyvda per D7, macOS/Linux adapters, loop open-after-write
+  validator warning, cross-run window adoption non-goal per D12, possible
+  refocus-after-prompt follow-up pending FO7's focus-fight check, D11
+  remote-backend effector).
+- `TASK_INDEX.md`: new "Change File Output, File Viewer, Or OS Window
+  Behavior" route with the focused pytest slices.
+- `AGENT_HANDOFF.md`: current-state paragraph for the landed FO work.
+- `NODE_CATALOG.md` Window Focus supersession was already resolved in the
+  FO6 entry below.
+
+## 2026-07-11 — FO6: `window_control_node` (Focus / Minimize / Close by File)
+
+Branch: `claude/file-output-pywin32-32tnv9`
+
+Phase FO6 of `FILE_OUTPUT_BUILD_PLAN.md` implemented — mid-run window
+choreography.
+
+- **New node `window_control_node` ("Window Control", Utility family,
+  section `Windows`)**: action select (Focus / Minimize / Close), target =
+  a `file` reference from **upstream or vault only** (a window target is
+  always a workflow-owned file, never hand-typed — D6). Resolves the stored
+  `WindowRef` from RunSession under `window:<ref_key>`; raw path strings
+  resolve to the same identity key the writer registered.
+- **Soft-error rule**: a window that was never opened, never discovered
+  (D4), lost to a race, or a run without a session ⇒ logged warning +
+  pass-through of the file reference — never a node error. Only a missing
+  file input errors.
+- **New `backend/nodes/io/window_support.py`** — the shared
+  RunSession↔window-manager lookup (`WINDOW_MANAGER_RESOURCE`,
+  `run_window_manager`), extracted from `file_output_node` so both nodes
+  and their tests use one injection point (the adapter itself stays
+  run-state free per D11).
+- `NODE_CATALOG.md`: Window Control added under a new Utility `Windows`
+  section; the deferred **Window Focus** concept marked Superseded by it.
+
+Verification: 9 focused tests in
+`tests/generated/test_window_control_node.py` (parametrized action
+dispatch, vault-sourced and raw-path targeting, missing-window /
+no-session / failed-action soft paths, empty-input error) with
+`FakeWindowManager`; `check_ui.py window_control_node` passes; full suite
+green.
+
+## 2026-07-11 — FO5: Open After Write + Placement on `file_output_node`
+
+Branch: `claude/file-output-pywin32-32tnv9`
+
+Phase FO5 of `FILE_OUTPUT_BUILD_PLAN.md` implemented — "write this md/image
+and open it to the right of AOTN."
+
+- **Config (Parameters tab, `OS Window` section):** `Open after write`
+  checkbox; `Open at` placement preset select (options =
+  `window_manager.PLACEMENT_PRESETS`, visible when open is on); `Close when
+  run ends` toggle, default **off** (run-end cleanup is opt-in, unlike file
+  handles — D12). Spec and class updated together; the loop-multiplied
+  windows behavior is documented on the field and in `NODE_CATALOG.md`
+  (validator warning for loops stays backlog).
+- **Execute path:** after writing, the node resolves the run's window
+  manager — injected/cached under the RunSession resource key
+  `window_manager` (tests register `FakeWindowManager` there), else the
+  platform factory — and calls `open_path(path, placement)`. A discovered
+  `WindowRef` registers under `window:<ref_key>`, with a `manager.close`
+  hook only when `Close when run ends` is on. Discovery failure logs a
+  warning and registers nothing; the node stays successful (D4).
+- **Validator (D5):** warns — never errors — when `open_after_write` is
+  configured with a non-default placement and the platform lacks the
+  `place` capability, or with `close_on_run_end` and no `close` capability.
+
+Verification: four new FakeWindowManager node tests (open+place+register,
+close-at-`close_all` only when configured, discovery-failure degraded
+success, manager untouched when open is off) plus a validator capability
+warning test; `check_ui.py file_output_node` passes; full suite green.
+
+## 2026-07-11 — FO4: `backend/window_manager.py` Platform Adapter
+
+Branch: `claude/file-output-pywin32-32tnv9`
+
+Phase FO4 of `FILE_OUTPUT_BUILD_PLAN.md` implemented — the OS window
+abstraction, no node wiring yet (that is FO5/FO6).
+
+- **Protocol** (small per D9): `open_path(path, placement) → WindowRef |
+  None`, `focus`/`minimize`/`close(ref) → bool`, `capabilities() → set[str]`
+  (`open`/`place`/`focus`/`minimize`/`close` — the D5 validator warning's
+  vocabulary). Discovery failure returns `None`, never raises (D4). The
+  module imports only stdlib + logging — no MasterState/RunSession/Textual
+  coupling (D11 liftability).
+- **`placement_rect(preset, monitors, own_rect)`** — pure preset→rect math
+  (D3: every preset yields position AND size). Presets: `OS default`,
+  `Right of AOTN`, `Left of AOTN`, `Other monitor`, `Same monitor, right
+  half`. Side slivers under 200px degrade to monitor halves; unresolvable
+  own rect degrades AOTN-relative presets to monitor-relative (D3 Windows
+  Terminal caveat); single-monitor `Other monitor` degrades to the current
+  monitor. All with logged warnings.
+- **`WindowsWindowManager`** — pywin32 guarded per the D5 decision record
+  (recorded 2026-07-11: pywin32 over raw ctypes): `os.startfile` launch,
+  snapshot-diff discovery with a 5s poll + title-contains-filename fallback
+  (D4), `EnumDisplayMonitors` geometry, own-rect resolution via a
+  parent-process walk (`NtQueryInformationProcess` ancestor chain → visible
+  ancestor-owned top-level window) with a visible-`GetConsoleWindow`
+  fallback for legacy conhost, `MoveWindow` placement, `WM_CLOSE` close.
+  Without pywin32 it degrades to open-only. This branch is FO7
+  manual-verification territory, not CI.
+- **`FallbackWindowManager`** (`xdg-open`/`open`, placement no-op with
+  warning), **`FakeWindowManager`** (records calls; `discovery_fails` mode
+  for D4 tests — the FO5/FO6 node-test double), and the
+  `get_window_manager()` platform factory.
+- **`pyproject.toml`**: optional `windows` extra
+  (`pywin32>=306; platform_system == "Windows"`).
+
+Verification: new `tests/test_window_manager.py` (22 tests: factory,
+fallback soft-fail launch/control, fake double, full preset geometry
+matrix incl. mixed-resolution other-monitor and degraded modes, and
+`WindowsWindowManager` degrading cleanly with no pywin32 on Linux);
+`compileall` clean.
+
+## 2026-07-11 — FO3: In-TUI File Viewer (`file_view_node` + `FileViewerScreen`)
+
+Branch: `claude/file-output-pywin32-32tnv9`
+
+Phase FO3 of `FILE_OUTPUT_BUILD_PLAN.md` implemented — the zero-OS-dependency
+"open the file" path (D8).
+
+- **Node-emitted EventBus events.** `NodeContext` gains an optional
+  `publish_event` callback plus an `emit_event(name, payload)` helper that
+  no-ops (returns False) when unwired. The supervisor wires it and stamps
+  `run_id`/`branch_id`/`node_id` into every payload, keeping the standing
+  JSON+run_id rule without giving nodes the bus itself. Fire-and-forget:
+  execution never waits on a subscriber; headless runs have none and the
+  event is inert.
+- **New `backend/file_refs.py`** — shared typed-`file`-reference helpers
+  (`file_reference`, `is_file_reference`, `reference_path`, `reference_key`);
+  `file_output_node` now imports these instead of its module-local builder.
+- **New node `file_view_node` ("File Viewer", Outputs family, direct-add)**
+  from a unified helper spec + hand-written `execute()`: resolves its `file`
+  input (reference dict or path; upstream/vault/configured), errors when the
+  file is missing, emits `FILE_VIEW_REQUESTED` (`path`, `ref_key`, `render`),
+  and forwards the file reference downstream (dead-drop and
+  terminate-branch options as on File Write). Render hint: Auto by extension
+  (`.md`/`.markdown` → markdown) with Markdown / Plain text overrides.
+- **New `frontend/screens/file_viewer.py`** (`FileViewerScreen`, fill-modal):
+  renders via Textual `Markdown` or plain `Static`, reads the file at
+  display time (the event never carries contents), ESC/q/Close dismisses.
+  `app.py` subscribes `FILE_VIEW_REQUESTED` → pushes the screen, ignoring
+  requests while one viewer is already open.
+
+Verification: 9 focused node tests in
+`tests/generated/test_file_view_node.py`; two pilot tests in
+`tests/test_debug_nodes.py -k file_view` (full workflow start→echo→File
+Write→File Viewer→end opens the viewer rendering the md, ESC closes;
+open-guard ignores a second request and re-opens after close);
+`check_node.py`/`check_ui.py file_view_node` pass; full suite 439 passed
+(same known settings-screen flake only). `SIGNAL_FLOW.md`, `FILE_TREE.md`,
+`NODE_CATALOG.md` updated.
+
+## 2026-07-11 — FO2: Markdown Formatting as a Text Transform Mode
+
+Branch: `claude/file-output-pywin32-32tnv9`
+
+Phase FO2 of `FILE_OUTPUT_BUILD_PLAN.md` implemented. Per the
+`NODE_STANDARDS.md` classification rule the plan anticipated, this is a
+**mode-select on `text_transform_node`** (same ports, one extra conditional
+field), not a new node type.
+
+- **New `backend/text_format.py`** — pure `format_markdown(text, wrap_width)`
+  with no node/runtime coupling: normalizes line endings and trailing
+  whitespace, ATX heading spacing (`##Title` → `## Title`, closing hashes
+  dropped, blank line before/after), bullet markers to `- ` and ordered
+  markers to `N. `, aligns table columns (preserving `:` alignment markers,
+  inserting a blank line when a table butts against preceding text), collapses
+  blank-line runs, and — when `wrap_width > 0` — re-flows plain paragraphs
+  only (headings/lists/tables/blockquotes/code never wrap). Fenced code
+  blocks pass through untouched. Deliberately conservative; not a full
+  CommonMark canonicalizer.
+- **`text_transform_node`**: new `markdown format` operation + `wrap_width`
+  integer field (`visible_when` the markdown operation is selected; 0 keeps
+  existing breaks). Spec and class updated together.
+
+Verification: new `tests/test_text_format.py` (16 tests, including a messy
+LLM-output end-to-end case) plus markdown-mode cases in the generated
+transform tests; `check_node.py text_transform_node` and `check_ui.py
+text_transform_node` pass.
+
+## 2026-07-11 — FO1: `file_output_node` (File Write) + Typed File Reference
+
+Branch: `claude/file-output-pywin32-32tnv9` (started from `main` @ `af04c5f`)
+
+Phase FO1 of `FILE_OUTPUT_BUILD_PLAN.md` implemented.
+
+- **New node `file_output_node` ("File Write", Outputs family, group
+  `File Write`)** generated from the unified `inputs:`/`outputs:` spec
+  `aotn_node_helper/specs/file_output_node.yaml` with a hand-written
+  `execute()`. Content and file path use the standard three-source model
+  (`content` accepts `any`; `file_path` is `file`-typed and also accepts an
+  upstream/vault file reference dict, resolving its `path`). Write modes:
+  Overwrite / Append / Create unique (numeric ` (n)` suffix); Base64 binary
+  toggle; parent directories are created. Writes go through
+  `context.run_session.open_file` when in a run (cached `"w"` handles are
+  seek(0)+truncated so overwrite stays deterministic; writes flushed so the
+  file is readable mid-run), direct `Path` I/O otherwise.
+- **Typed `file` reference (D2)** emitted downstream and optionally to the
+  vault (`type_tag="file"`): `{"type": "file", "ref_key": "file:<resolved>",
+  "path": <resolved>}`; the open handle registers in `RunSession` under
+  `ref_key` (keyed by file identity, per D6) and closes at `close_all()`.
+  Dead-drop passthrough forwards the incoming content unchanged.
+- **Standard "Terminate branch after completion"** (`terminate_branch`,
+  Payloads tab) — first Outputs-family node to carry the NODE_STANDARDS
+  branch-termination option; rides the `signal_done` payload the supervisor
+  already honors.
+- **Validator: source-gated field awareness.** The `path_hint: "file"` and
+  `secret: true` checks now skip fields whose `visible_when` doesn't hold
+  (new `_field_visible`, defaults-aware) — a required Configured path no
+  longer false-errors when the input reads from Upstream/Vault. Empty
+  required path with Configured selected stays an error; missing-on-disk
+  stays a warning (an earlier node may create the file mid-run).
+- **Retired `example_file_instance_node`** (spec, node, generated tests,
+  registration) per FO1 task 4 — `file_output_node`'s spec absorbed its
+  unified-spec reference role. Repointed `test_node_contract.py`, the editor
+  details-panel test, and node-selector expected sets; updated
+  `NODE_HELPER.md`, `NODE_STANDARDS.md`, `AGENT_START_GUIDE.md`,
+  `FILE_TREE.md`, and `NODE_CATALOG.md` (File Instance row removed; File
+  Write now Live).
+
+Verification: `check_node.py file_output_node` and `check_ui.py
+file_output_node` pass; new focused tests in
+`tests/generated/test_file_output_node.py` (17) plus run-lifecycle and
+validator-gating tests in `tests/test_run_session.py`; full suite 409 passed
+with one pre-existing settings-screen pilot-timing flake
+(`test_simple_command_modals_use_shared_navigation_helpers`) that fails only
+under full-suite load, on the untouched baseline too, and passes in
+isolation.
+
 ## 2026-07-11 — File Output Build Plan: Design-Review Amendments
 
 Branch: `main` (plan merged from `claude/output-nodes-file-windows-wq07q6`

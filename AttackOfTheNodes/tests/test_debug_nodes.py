@@ -5791,7 +5791,7 @@ def test_editor_details_panel_uses_contract_layout():
 
     _, wm, _, _ = _make_services()
     wm.create_new("details_contract_layout")
-    node_id = wm.add_node("example_file_instance_node")
+    node_id = wm.add_node("file_output_node")
 
     screen = EditorScreen(wm._factory, wm)
     text = screen._format_node_details(node_id, wm.get_node_data(node_id))
@@ -5816,7 +5816,6 @@ def test_editor_details_panel_uses_contract_layout():
     assert "Inputs:" in text
     assert "Outputs:" in text
     assert "file" in text  # the file_path input's [type] label
-    assert "bool" in text  # the bool output's [type] label
     assert "[bold]↔ pass-thru[/bold]" in text
 
     print("test_editor_details_panel_uses_contract_layout PASSED")
@@ -6207,7 +6206,6 @@ async def _test_node_selector_uses_family_tabs():
         assert app.focused is filter_input
         assert filter_input.editing is False
         assert {node["type"] for node in screen._visible_nodes} == {
-            "example_file_instance_node",
             "file_reader_node",
             "user_text_input_node",
             "http_request_node",
@@ -6223,6 +6221,8 @@ async def _test_node_selector_uses_family_tabs():
         assert screen._active_family() == "Outputs"
         assert {node["type"] for node in screen._visible_nodes} == {
             "text_output_node",
+            "file_output_node",
+            "file_view_node",
         }
 
         # Flow Control: no filter checkboxes; Branch group with member count;
@@ -8153,6 +8153,112 @@ async def _test_migrated_command_screens_render_status_bar():
             assert app.query(StatusBar), f"{type(screen).__name__} should render StatusBar"
 
     print("test_migrated_command_screens_render_status_bar PASSED")
+
+
+# ---------------------------------------------------------------------------
+# FO3: in-TUI file viewer (FILE_VIEW_REQUESTED → FileViewerScreen)
+# ---------------------------------------------------------------------------
+
+def test_file_view_workflow_opens_viewer_and_esc_closes(tmp_path):
+    asyncio.run(_test_file_view_workflow_opens_viewer_and_esc_closes(tmp_path))
+
+
+async def _test_file_view_workflow_opens_viewer_and_esc_closes(tmp_path):
+    """FO3 exit criteria: run a workflow → the viewer renders the md; ESC closes."""
+    from textual.widgets import Markdown
+
+    from frontend.app import AttackOfTheNodesApp
+    from frontend.screens.file_viewer import FileViewerScreen
+
+    target = tmp_path / "report.md"
+
+    master, wm, mb, bus = _make_services()
+    wm.create_new("file_view_pilot")
+    start = wm.add_node("start_node")
+    echo = wm.add_node("echo_node")
+    writer = wm.add_node("file_output_node")
+    viewer = wm.add_node("file_view_node")
+    end = wm.add_node("end_node")
+
+    wm.update_node_config(echo, {"label": "# Report heading"})
+    wm.update_node_config(writer, {"file_path": str(target)})
+    wm.connect(start, "default", echo, "input")
+    wm.connect(echo, "default", writer, "content")
+    wm.connect(writer, "default", viewer, "file")
+    wm.connect(viewer, "default", end, "input")
+
+    app = AttackOfTheNodesApp(bus, wm._factory, wm, mb, master)
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        await master.start_workflow()
+        await master.wait_for_completion()
+        await pilot.pause(0.05)
+
+        assert master.state.value == "FINISHED"
+        assert isinstance(app.screen, FileViewerScreen)
+        assert app.screen.render_hint == "markdown"
+        await pilot.pause(0.05)
+        assert app.screen.query(Markdown), "Markdown widget should render the .md file"
+
+        await pilot.press("escape")
+        await pilot.pause(0.03)
+        assert not isinstance(app.screen, FileViewerScreen)
+        assert app._file_viewer_open is False
+
+    print("test_file_view_workflow_opens_viewer_and_esc_closes PASSED")
+
+
+def test_file_view_second_event_ignored_while_open(tmp_path):
+    asyncio.run(_test_file_view_second_event_ignored_while_open(tmp_path))
+
+
+async def _test_file_view_second_event_ignored_while_open(tmp_path):
+    from backend.events import FILE_VIEW_REQUESTED
+    from frontend.app import AttackOfTheNodesApp
+    from frontend.screens.file_viewer import FileViewerScreen
+
+    first = tmp_path / "one.txt"
+    first.write_text("first", encoding="utf-8")
+    second = tmp_path / "two.txt"
+    second.write_text("second", encoding="utf-8")
+
+    master, wm, mb, bus = _make_services()
+    wm.create_new("file_view_guard")
+
+    app = AttackOfTheNodesApp(bus, wm._factory, wm, mb, master)
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        bus.publish(
+            FILE_VIEW_REQUESTED,
+            {"run_id": "r", "path": str(first), "render": "plain"},
+        )
+        await pilot.pause(0.03)
+        assert isinstance(app.screen, FileViewerScreen)
+        assert app.screen.path == str(first)
+
+        # A second request while one viewer is open is ignored, not stacked.
+        bus.publish(
+            FILE_VIEW_REQUESTED,
+            {"run_id": "r", "path": str(second), "render": "plain"},
+        )
+        await pilot.pause(0.03)
+        assert isinstance(app.screen, FileViewerScreen)
+        assert app.screen.path == str(first)
+
+        await pilot.press("q")
+        await pilot.pause(0.03)
+        assert not isinstance(app.screen, FileViewerScreen)
+
+        # Closed: the next request opens again.
+        bus.publish(
+            FILE_VIEW_REQUESTED,
+            {"run_id": "r", "path": str(second), "render": "plain"},
+        )
+        await pilot.pause(0.03)
+        assert isinstance(app.screen, FileViewerScreen)
+        assert app.screen.path == str(second)
+
+    print("test_file_view_second_event_ignored_while_open PASSED")
 
 
 # ---------------------------------------------------------------------------

@@ -22,6 +22,11 @@ RECOVERY_OPTIONS_AVAILABLE = "RECOVERY_OPTIONS_AVAILABLE"
 TERMINATE_WORKFLOW_REQUESTED = "TERMINATE_WORKFLOW_REQUESTED"
 
 USER_INPUT_NEEDED = "USER_INPUT_NEEDED"
+# A node asks any listening frontend to display a file (FO3). JSON payload:
+# run_id / branch_id / node_id (stamped by the supervisor), path, ref_key,
+# render ("markdown" | "plain"). Headless runs have no subscriber and the
+# event is inert by design.
+FILE_VIEW_REQUESTED = "FILE_VIEW_REQUESTED"
 ERROR_OCCURRED = "ERROR_OCCURRED"
 ERROR_LOGGED = "ERROR_LOGGED"
 ERRORS_CLEARED = "ERRORS_CLEARED"

@@ -25,7 +25,7 @@ the links in `docs/README.md`.
   - Use `input_sources` and `output_routing` spec sections to expand the
     standard NODE_STANDARDS input/output model automatically, including the
     dynamic greying rules. See `NODE_HELPER.md` and
-    `aotn_node_helper/specs/example_file_instance_node.yaml`.
+    `aotn_node_helper/specs/file_output_node.yaml`.
   - Run `../.venv/bin/python ../aotn_node_helper/create_node.py ../aotn_node_helper/specs/<node_type>.yaml`
     from `AttackOfTheNodes/`, or run the same script from the workspace root.
   - Run `../.venv/bin/python ../aotn_node_helper/check_node.py <node_type>`
