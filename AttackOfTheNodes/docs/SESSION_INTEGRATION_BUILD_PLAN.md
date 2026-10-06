@@ -38,6 +38,6 @@ launch/placement/close needs owner live review before claiming completion.
 
 Stages 1–5 completed: checkpoint `1c4a57e`, feature merge `95f9049`, focused
 fixes and actual integrated checks. Final suite 546 passed; UI coverage 108 mounts,
-306 states, 72 default roundtrips and 115 variant roundtrips. Stage 6 publication
-is completing; PR details are recorded in SESSION_LOG after creation. Remaining
+306 states, 72 default roundtrips and 115 variant roundtrips. Stage 6 completed: [PR #29](https://github.com/makinster/node_workflow/pull/29)
+is open against main and attached to this chat. Remaining
 broader work is explicitly ordered in CONFIG_UI_BUILD_PLAN.md.

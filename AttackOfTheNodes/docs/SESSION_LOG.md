@@ -59,8 +59,11 @@ live owner checks. File Reader still uses configured paths. Large file work,
 window heuristics and complete live accessibility remain unverified. No broad
 UI redesign or new node behavior was silently introduced.
 
-One PR is being prepared for the complete session branch; publication details
-will be recorded after creation. Main remains unchanged pending PR review.
+Published one session PR: [#29](https://github.com/makinster/node_workflow/pull/29),
+“Integrate file workflows and fix Wait Until/configuration UI blockers,” targeting
+main. Verified feature/main ancestry, pushed `5f944de`, and attached the PR to
+this chat. This publication record is a final docs-only commit on the same PR.
+Main remains unchanged pending PR review.
 
 ## 2026-10-06 — File Output Integration Review
 

@@ -4,6 +4,9 @@ Updated 2026-10-06. Use `/home/makin/src/node_workflow` and its `.venv/bin/pytho
 The OneDrive checkout is recovery-only. Select the WSL project in Codex for the
 new chat. Do not create another independent checkout or copy whole trees.
 
+Session PR: [#29](https://github.com/makinster/node_workflow/pull/29), open against main.
+All session work is committed and pushed on `codex/wait-until-vault-fix`.
+
 ## Current next step — review integrated session PR
 
 This branch now combines the pending fixes, File Output and configuration audit.
