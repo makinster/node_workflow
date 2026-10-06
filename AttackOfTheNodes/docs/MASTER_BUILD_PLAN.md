@@ -25,14 +25,12 @@ needs.
 
 ## Current planning checkpoint (2026-10-06)
 
-[PENDING_CHANGES_REVIEW.md](PENDING_CHANGES_REVIEW.md) reviews the uncommitted
-Wait Until/runtime/UI work and the fetched File Output feature's impact. Main
-is synchronized at `7161ef2`. The completed configuration audit proposes stages;
-a detailed build plan is the next task, not yet implemented or finalized.
-Wait Until's simplified controls are correct in scope, but shared production-CSS
-field overflow must be addressed before visual sign-off. The unmerged File Output
-branch adds three types and Markdown mode and removes the demo, so explicitly
-choose the target inventory before finalizing that plan.
+The session integrates File Output with the pending Wait Until/runtime work and
+small demonstrated fixes. [CONFIG_UI_BUILD_PLAN.md](CONFIG_UI_BUILD_PLAN.md) is
+the ordered plan for the remaining shared UI work. Integrated evidence covers
+37 registered types (one intentional internal tombstone), with production CSS
+at 60/100/140 columns. Current checks and PR publication are recorded in SESSION_LOG.
+Windows FO7 remains open; broad node-layout redesign is not part of stage 0.
 
 ## Current Active Work
 

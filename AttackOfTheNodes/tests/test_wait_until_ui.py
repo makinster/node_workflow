@@ -1,6 +1,7 @@
 """Mounted Wait Until layout, navigation and save-contract tests."""
 import asyncio
 from copy import deepcopy
+from pathlib import Path
 
 import pytest
 from textual.app import App
@@ -26,6 +27,7 @@ def make_screen():
 
 
 class ConfigApp(App):
+    CSS_PATH = str(Path(__file__).resolve().parents[1] / "frontend/styles.tcss")
     def __init__(self, screen, results):
         super().__init__()
         self.config_screen = screen

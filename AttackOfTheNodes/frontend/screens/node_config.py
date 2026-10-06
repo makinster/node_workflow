@@ -1582,7 +1582,9 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
     def action_save(self) -> None:
         alias_query = self.query("#alias-input")
         alias = alias_query.first().value if alias_query else self.node_data.get("alias", "")
-        config = self._get_form_values() if self._get_form_values else {}
+        config = dict(self.node_data.get("config") or {})
+        if self._get_form_values:
+            config.update(self._get_form_values())
         if self.node_data.get("type") == WAIT_UNTIL_NODE_TYPE:
             selected = self._wait_config_values()["target_node_ids"]
             eligible = {value for _, value in wait_target_options(self.workflow_map, self.node_id)}

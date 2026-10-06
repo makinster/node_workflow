@@ -36,4 +36,8 @@ launch/placement/close needs owner live review before claiming completion.
 
 ## Completion record
 
-Updated as stages finish; see SESSION_LOG.md for checks and final PR details.
+Stages 1–5 completed: checkpoint `1c4a57e`, feature merge `95f9049`, focused
+fixes and actual integrated checks. Final suite 546 passed; UI coverage 108 mounts,
+306 states, 72 default roundtrips and 115 variant roundtrips. Stage 6 publication
+is completing; PR details are recorded in SESSION_LOG after creation. Remaining
+broader work is explicitly ordered in CONFIG_UI_BUILD_PLAN.md.

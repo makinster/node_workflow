@@ -29,7 +29,6 @@ outputs:
     type: file
     required: true
     to: ["downstream"]
-    pass_through: true
     description: The targeted file's reference, forwarded unchanged
 
 output_routing:

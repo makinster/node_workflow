@@ -204,7 +204,8 @@ def validate_workflow(
                         }
                     )
                 continue
-            if not Path(raw_path).expanduser().exists():
+            if (field_info.get("path_mode") != "write"
+                    and not Path(raw_path).expanduser().exists()):
                 warnings.append(
                     {
                         "node_id": node_id,

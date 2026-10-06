@@ -390,7 +390,7 @@ class WindowsWindowManager(WindowManager):
             logger.warning("Could not close window for %s: %s", ref.path, exc)
             return False
 
-    # ── Windows internals (FO7-verified) ────────────────────────────────────
+    # ── Windows internals (FO7 live verification outstanding) ────────────────────────────────────
 
     def _snapshot_windows(self) -> Set[int]:
         win32gui, _, _ = self._win32
@@ -420,7 +420,11 @@ class WindowsWindowManager(WindowManager):
                 return next(iter(new_windows))
             if len(new_windows) > 1:
                 by_title = self._match_by_title(new_windows, filename, stem)
-                return by_title if by_title is not None else next(iter(new_windows))
+                if by_title is not None:
+                    return by_title
+                # Do not register an arbitrary window for later move/close.
+                logger.warning("Ambiguous windows after opening %s; leaving unplaced", path)
+                return None
             time.sleep(DISCOVERY_POLL_SECONDS)
         # No new window at all: e.g. Excel opening a workbook into an
         # existing instance. Last resort is a title match across all windows.
@@ -430,11 +434,12 @@ class WindowsWindowManager(WindowManager):
         self, hwnds: Set[int], filename: str, stem: str
     ) -> Optional[int]:
         win32gui, _, _ = self._win32
+        matches = []
         for hwnd in hwnds:
             title = win32gui.GetWindowText(hwnd).lower()
             if filename in title or (stem and stem in title):
-                return hwnd
-        return None
+                matches.append(hwnd)
+        return matches[0] if len(matches) == 1 else None
 
     def _apply_placement(self, ref: WindowRef, placement: str) -> None:
         win32gui, _, win32con = self._win32

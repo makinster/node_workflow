@@ -41,7 +41,7 @@ class WindowControlNode(Node):
     input_ports: ClassVar[List[str]] = ['file']
     output_ports: ClassVar[List[str]] = ['default']
     input_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {'file': {'name': 'File', 'description': 'File reference whose window to control', 'data_type': 'file', 'required': True, 'sources': ['upstream', 'vault']}}
-    output_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {'default': {'name': 'File Reference', 'description': "The targeted file's reference, forwarded unchanged", 'data_type': 'file', 'required': True, 'to': ['downstream'], 'pass_through': True}}
+    output_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {'default': {'name': 'File Reference', 'description': "The targeted file's reference, forwarded unchanged", 'data_type': 'file', 'required': True, 'to': ['downstream']}}
     default_config: ClassVar[Dict[str, Any]] = {'file_source': 'Upstream payload', 'file_vault_key': '', 'action': 'Focus', 'transient_output': True, 'dead_drop_passthrough': False, 'transient_outputs': []}
     config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {'file_source': {'type': 'select', 'label': 'File source', 'options': ['Upstream payload', 'Vault'], 'tab': 'Source', 'section': 'Required Inputs', 'description': 'File reference whose window to control'}, 'file_vault_key': {'type': 'string', 'label': 'File Vault key', 'required': False, 'tab': 'Source', 'section': 'Required Inputs', 'vault_type': 'file', 'visible_when': {'file_source': 'Vault'}}, 'action': {'type': 'select', 'label': 'Action', 'options': ['Focus', 'Minimize', 'Close'], 'description': "What to do with the file's window", 'tab': 'Parameters'}}
     ui_hints: ClassVar[Dict[str, Any]] = {}

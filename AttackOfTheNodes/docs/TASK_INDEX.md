@@ -1,5 +1,8 @@
 # Task Index
 
+Current session integration: [SESSION_INTEGRATION_BUILD_PLAN.md](SESSION_INTEGRATION_BUILD_PLAN.md).
+Remaining configuration work: [CONFIG_UI_BUILD_PLAN.md](CONFIG_UI_BUILD_PLAN.md).
+
 File Output compatibility and integration order: [FILE_OUTPUT_INTEGRATION_REVIEW.md](FILE_OUTPUT_INTEGRATION_REVIEW.md).
 
 `README.md` routes you to this file. This file gives the minimum reading set,

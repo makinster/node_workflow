@@ -1,5 +1,8 @@
 # AttackOfTheNodes Docs
 
+Current session integration: [SESSION_INTEGRATION_BUILD_PLAN.md](SESSION_INTEGRATION_BUILD_PLAN.md).
+Remaining configuration work: [CONFIG_UI_BUILD_PLAN.md](CONFIG_UI_BUILD_PLAN.md).
+
 **Start here.** README routes you to the right document for your task.
 `TASK_INDEX.md` gives the minimum reading set, likely files, and focused test
 commands for each task type. Open deeper references only when a closer document

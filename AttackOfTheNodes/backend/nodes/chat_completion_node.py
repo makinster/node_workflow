@@ -375,7 +375,7 @@ class ChatCompletionNode(Node):
                 model=str(self.config.get("model") or DEFAULT_MODEL_ID),
                 messages=messages,
                 max_tokens=int(self.config.get("max_tokens") or 1024),
-                temperature=float(self.config.get("temperature") or 1.0),
+                temperature=float(self.config.get("temperature", 1.0)),
                 api_key=api_key,
             )
         except Exception as exc:  # network layer may raise; fail the node cleanly

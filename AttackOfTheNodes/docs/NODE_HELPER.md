@@ -551,3 +551,11 @@ Remaining:
 The goal is not to generate every screen. The goal is to make the default path
 hard to get wrong and to catch the recurring regressions before they become
 manual UI debugging sessions.
+
+## File path intent (2026-10-06)
+
+A configured file destination uses `path_hint: file` with `path_mode: write`.
+The validator still rejects an empty required destination, but does not warn
+that a new output file does not yet exist. Read paths retain existence warnings.
+Window Control emits its selected file reference unconditionally; its output
+metadata intentionally omits optional `pass_through` capability.

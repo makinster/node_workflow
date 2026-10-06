@@ -1,5 +1,10 @@
 # AttackOfTheNodes Project Backlog
 
+Current configuration/UI follow-up: [CONFIG_UI_BUILD_PLAN.md](CONFIG_UI_BUILD_PLAN.md)
+records unresolved F01/F05–F12 and FO-R5 with priorities and verification stages.
+File Output is now integrated on the session PR branch; the original audit and
+review retain their before-fix findings. Windows FO7 remains live-owner work.
+
 ## Completed Project — Documentation Modernization
 
 The docs folder previously had split-brain history from the Chrome-extension

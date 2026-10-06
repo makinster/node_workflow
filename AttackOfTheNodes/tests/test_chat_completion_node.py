@@ -492,10 +492,11 @@ async def test_normal_mode_seeds_new_session_key_from_history(monkeypatch):
     ]
 
 
-async def test_model_and_parameters_forwarded(monkeypatch):
+@pytest.mark.parametrize("temperature", [0.0, 0.3])
+async def test_model_and_parameters_forwarded(monkeypatch, temperature):
     client = FakeClient()
     _patch_client(monkeypatch, client)
-    node = _make_node(model="claude-haiku-4-5", max_tokens=256, temperature=0.3)
+    node = _make_node(model="claude-haiku-4-5", max_tokens=256, temperature=temperature)
     context, _ = _make_context()
 
     await node.execute(context)
@@ -503,4 +504,4 @@ async def test_model_and_parameters_forwarded(monkeypatch):
     call = client.calls[0]
     assert call["model"] == "claude-haiku-4-5"
     assert call["max_tokens"] == 256
-    assert call["temperature"] == pytest.approx(0.3)
+    assert call["temperature"] == pytest.approx(temperature)

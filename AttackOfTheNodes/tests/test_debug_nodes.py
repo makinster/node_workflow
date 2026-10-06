@@ -8221,11 +8221,11 @@ async def _test_file_view_workflow_opens_viewer_and_esc_closes(tmp_path):
     print("test_file_view_workflow_opens_viewer_and_esc_closes PASSED")
 
 
-def test_file_view_second_event_ignored_while_open(tmp_path):
-    asyncio.run(_test_file_view_second_event_ignored_while_open(tmp_path))
+def test_file_view_second_event_queued_while_open(tmp_path):
+    asyncio.run(_test_file_view_second_event_queued_while_open(tmp_path))
 
 
-async def _test_file_view_second_event_ignored_while_open(tmp_path):
+async def _test_file_view_second_event_queued_while_open(tmp_path):
     from backend.events import FILE_VIEW_REQUESTED
     from frontend.app import AttackOfTheNodesApp
     from frontend.screens.file_viewer import FileViewerScreen
@@ -8241,6 +8241,7 @@ async def _test_file_view_second_event_ignored_while_open(tmp_path):
     app = AttackOfTheNodesApp(bus, wm._factory, wm, mb, master)
     async with app.run_test() as pilot:
         await pilot.pause(0.03)
+        app.execution_state.reset("r")
         bus.publish(
             FILE_VIEW_REQUESTED,
             {"run_id": "r", "path": str(first), "render": "plain"},
@@ -8249,7 +8250,7 @@ async def _test_file_view_second_event_ignored_while_open(tmp_path):
         assert isinstance(app.screen, FileViewerScreen)
         assert app.screen.path == str(first)
 
-        # A second request while one viewer is open is ignored, not stacked.
+        # A second request waits in FIFO order without stacking another modal.
         bus.publish(
             FILE_VIEW_REQUESTED,
             {"run_id": "r", "path": str(second), "render": "plain"},
@@ -8258,6 +8259,10 @@ async def _test_file_view_second_event_ignored_while_open(tmp_path):
         assert isinstance(app.screen, FileViewerScreen)
         assert app.screen.path == str(first)
 
+        await pilot.press("q")
+        await pilot.pause(0.03)
+        assert isinstance(app.screen, FileViewerScreen)
+        assert app.screen.path == str(second)
         await pilot.press("q")
         await pilot.pause(0.03)
         assert not isinstance(app.screen, FileViewerScreen)
@@ -8271,7 +8276,7 @@ async def _test_file_view_second_event_ignored_while_open(tmp_path):
         assert isinstance(app.screen, FileViewerScreen)
         assert app.screen.path == str(second)
 
-    print("test_file_view_second_event_ignored_while_open PASSED")
+    print("test_file_view_second_event_queued_while_open PASSED")
 
 
 # ---------------------------------------------------------------------------

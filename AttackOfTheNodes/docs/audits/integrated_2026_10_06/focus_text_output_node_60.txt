@@ -1,0 +1,24 @@
+╭────────────────────────────────────────────────────╮      
+│                                                    │      
+│  Edit Node: Text Output (node_b8a37f37)            │      
+│  number keys tabs | w/s move | a/d within row | e  │      
+│  interact | ctrl+s save | esc cancel | ctrl+q      │      
+│  revert                                            │      
+│   1 - Source  2 - Parameters  3 - Payloads  4 - C  │      
+│  ━━╸━━━━━━━━━━╸━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │      
+│                                                    │      
+│  Label *: █  Output                                │      
+│  Label shown alongside the output                  │      
+│                                                    │      
+│  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔                                  │      
+│        Save                                        │      
+│  ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁                                  │      
+│  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔                                  │      
+│       Cancel                                       │      
+│  ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁                                  │      
+│     number keys tabs | w/s move | a/d within row   │      
+│                                                    │      
+╰────────────────────────────────────────────────────╯      
+                                                            
+                                                            
+                                                            

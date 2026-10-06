@@ -4,7 +4,10 @@
 **Revised:** 2026-07-11 — design-review amendments: D2/D3/D4/D5 caveats,
 new D11/D12, FO4/FO5/FO7 additions. No scope change.
 **Branch:** `claude/output-nodes-file-windows-wq07q6` (merged to `main` 2026-07-11)
-**Status:** planned — no phase started
+**Status:** FO1–FO6 implemented and integrated on the session PR branch; FO7 Windows live verification remains open.
+
+2026-10-06 integration repairs and remaining findings: `CONFIG_UI_BUILD_PLAN.md`.
+Viewer requests now use a run-scoped FIFO queue; node execution remains nonblocking.
 
 Goal: output nodes that treat files as first-class workflow objects — write
 them, format them human-friendly, open them in the user's default apps at

@@ -39,6 +39,7 @@ inputs:
       label: File path
       placeholder: /path/to/output.md
       path_hint: file
+      path_mode: write
       required: true
 
 outputs:
@@ -75,7 +76,7 @@ config_tabs:
       label: Open after write
       default: false
       section: OS Window
-      description: Open the file in its OS-default app (a loop opens one window per iteration)
+      description: Open the file in its OS-default app (a loop opens the file each iteration)
     window_placement:
       type: select
       label: Open at

@@ -4,23 +4,15 @@ Updated 2026-10-06. Use `/home/makin/src/node_workflow` and its `.venv/bin/pytho
 The OneDrive checkout is recovery-only. Select the WSL project in Codex for the
 new chat. Do not create another independent checkout or copy whole trees.
 
-## Current next step — configuration UI planning
+## Current next step — review integrated session PR
 
-Current branch: `codex/wait-until-vault-fix`, HEAD `7161ef2`; fetched origin/main
-matches HEAD. Wait Until/runtime fixes, tests and the configuration audit are
-local uncommitted work. Read [PENDING_CHANGES_REVIEW.md](PENDING_CHANGES_REVIEW.md)
-for the reviewed diff, current verification, publication state and the unmerged
-File Output branch that changes the prospective node inventory.
-
-The owner's next task is a configuration-UI build plan based on
-[NODE_CONFIG_UI_AUDIT.md](NODE_CONFIG_UI_AUDIT.md). Wait Until's focused layout
-is implemented locally but its production-CSS timeout overflow is still open;
-functional tests do not constitute visual sign-off. Settle whether the File
-Output feature lands before the build-plan baseline. The execution-branch UI
-proposal is separate and remains deferred. Preserve all pending work.
-
-The sections below retain earlier work and verification history. Old PR #28
-merge instructions are superseded: that fix is already in main `7161ef2`.
+This branch now combines the pending fixes, File Output and configuration audit.
+See [CONFIG_UI_BUILD_PLAN.md](CONFIG_UI_BUILD_PLAN.md) for implemented stage 0 and
+ordered remaining stages; [SESSION_INTEGRATION_BUILD_PLAN.md](SESSION_INTEGRATION_BUILD_PLAN.md)
+records merge/publication strategy. The shared config-preservation and critical
+input overflow defects are fixed. Current merged inventory is 37 types. Windows
+FO7 and owner live accessibility/appearance review remain open. Earlier counts,
+commit IDs and PR #28 instructions below are historical, not current baselines.
 
 ## Completed in this session
 

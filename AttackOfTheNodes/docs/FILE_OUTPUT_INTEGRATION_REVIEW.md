@@ -1,5 +1,13 @@
 # File Output integration review — 2026-10-06
 
+**Integration follow-up (2026-10-06):** File Output is now merged locally with
+pending session fixes. Config preservation, critical input sizing, Chat zero
+temperature, ambiguous window discovery, launch responsiveness, viewer request
+queuing, Window Control's unsupported toggle and writer-path warnings are fixed.
+Read [CONFIG_UI_BUILD_PLAN.md](CONFIG_UI_BUILD_PLAN.md) for remaining findings and
+[current integrated evidence](audits/integrated_2026_10_06/README.md). Original
+findings/counts below describe the earlier inspection, not the latest tree.
+
 ## Recommendation
 
 Retain this work and incorporate it into the configuration build plan. Its file

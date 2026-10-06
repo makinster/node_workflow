@@ -4,6 +4,64 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-06 — Integrate File Output, Repair Audit Blockers, Prepare One Session PR
+
+Authoritative root `/home/makin/src/node_workflow`; branch
+`codex/wait-until-vault-fix`. Fetched origin/main `7161ef2`, already current.
+Preserved prior dirty runtime/UI/tests/docs in checkpoint `1c4a57e`, then merged
+File Output `0a19718` in `95f9049`. Resolved SESSION_LOG conflict by preserving
+both histories. No recovery-copy changes, stash/reset, or automatic main merge.
+
+- Added `SESSION_INTEGRATION_BUILD_PLAN.md` and `CONFIG_UI_BUILD_PLAN.md`,
+  reconciled current handoffs/roadmap, retained original audit evidence and
+  documented unresolved findings with priorities and follow-up verification.
+- Integrated File Write, File Viewer, Window Control, Markdown formatting,
+  typed file refs, optional Windows adapter and launcher work. Registry 37;
+  actual selector 34; editable/user-facing 36; tombstone intentionally internal.
+- Fixed arbitrary ambiguous window selection and nonunique title matches;
+  offloaded blocking launch/discovery, kept resource registration on the loop;
+  missing OS opener logs a warning after successful writing.
+- File view events are scoped to the active displayed run and queued FIFO;
+  input/recovery modal priority and retired-run queue reset are explicit.
+  Updated mounted test that formerly specified dropping a second request.
+- Removed Window Control's unsupported forwarding capability/control in spec
+  and executable metadata. Kept its existing fixed selected-reference output.
+- Shared save overlays existing config. Descriptions wrap beneath fields;
+  stylesheet controls CommandInput width and labels leave input room.
+  Wait Until remains Wait/Connections and never accesses the Vault.
+- Added write-path schema intent, avoiding missing-input warnings for new
+  destinations while retaining empty-required-path errors. Chat temperature
+  zero reaches the provider unchanged. Helper specs match these metadata fixes.
+- Added meaningful regression tests for ambiguous discovery, slow launch loop
+  responsiveness, queued displays, config preservation, geometry and a real
+  parallel File Write → Wait Until → explicit Vault File Viewer workflow.
+
+Actual verification of the integrated tree:
+
+- Final full suite: **546 passed in 71.26s**. Earlier full attempt: 544 passed,
+  one expected-old-viewer-policy test failed; that test was updated to the new
+  FIFO contract, passed narrowly, then the final whole suite passed.
+- Focused initial checks: 94 passed; integration/Wait/Chat checks: 44 passed;
+  final session regressions including parallel file/Vault: 15 passed; mounted
+  viewer tests: 2 passed. These overlap; do not sum them as a baseline.
+- Compileall app/helper and helper UI checks for File Write, File Viewer,
+  Window Control and Wait Until passed. `git diff --check` passed.
+- Current production-CSS audit: **108 mounts**, 306 alternate states, no state
+  errors; Cancel unchanged 36/36; unrelated config retained and stable second
+  saves 72/72; variant roundtrips **115/115**, zero mismatches. Nine focused
+  fields fit at 60/100/140. Synthetic data only; no owner workflows/settings.
+- Evidence under `docs/audits/integrated_2026_10_06/`; before-fix artifacts retained.
+
+Outstanding: capability-gating legacy Vault controls, broader tab/layout cleanup,
+other schema/numeric/routing descriptions and port issues recorded in
+CONFIG_UI_BUILD_PLAN; unsupported-window explanations/validation and Windows FO7
+live owner checks. File Reader still uses configured paths. Large file work,
+window heuristics and complete live accessibility remain unverified. No broad
+UI redesign or new node behavior was silently introduced.
+
+One PR is being prepared for the complete session branch; publication details
+will be recorded after creation. Main remains unchanged pending PR review.
+
 ## 2026-10-06 — File Output Integration Review
 
 Reviewed fetched `origin/claude/file-output-pywin32-32tnv9` at `0a19718`

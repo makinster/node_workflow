@@ -1,18 +1,16 @@
 # AttackOfTheNodes Agent Handoff
 
-## Current continuation — 2026-10-06
+## Current continuation — 2026-10-06 integration
 
-Use the authoritative `/home/makin/src/node_workflow` checkout. Main and fetched
-origin/main are `7161ef2` (PR #28 merged). Local `codex/wait-until-vault-fix`
-contains uncommitted runtime/typing fixes, the focused Wait Until UI and the
-configuration audit. Read [PENDING_CHANGES_REVIEW.md](PENDING_CHANGES_REVIEW.md)
-and [NEXT_CHAT_HANDOFF.md](NEXT_CHAT_HANDOFF.md) before planning new work.
-
-Next: configuration-UI build plan from the audit, after choosing how the unmerged
-File Output feature affects its baseline. Wait Until production-CSS overflow is
-still a blocker to visual sign-off. Existing Phase 17 history and execution-branch
-proposal below do not supersede this task order. Chat Completion and secrets UI
-already exist; older deferred-feature lists are historical context.
+Use `/home/makin/src/node_workflow` and its `.venv/bin/python`; OneDrive is recovery-only.
+`codex/wait-until-vault-fix` now contains the preserved runtime/Wait Until work,
+merged File Output implementation, audits and focused integration fixes. Main
+baseline is `7161ef2`; this session produces one PR. Read
+[SESSION_INTEGRATION_BUILD_PLAN.md](SESSION_INTEGRATION_BUILD_PLAN.md) and
+[CONFIG_UI_BUILD_PLAN.md](CONFIG_UI_BUILD_PLAN.md). The original review/audit are
+historical before-fix evidence; current coverage is under `docs/audits/integrated_2026_10_06/`.
+Next: review the PR, perform Windows FO7 live checks, then implement the remaining
+shared UI capability/layout stages. Preserve the intended Wait Until semantics.
 
 ## Current State
 
