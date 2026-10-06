@@ -4,6 +4,86 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-06 — Owner Confirmed Execution Symbols; PR #28 Review
+
+Branch: `codex/execution-symbol-investigation`, fix `a31900d`, handoff `1f7ac2c`.
+
+- Owner confirmed the execution-symbol fix works live and requested PR work
+  before starting the next chat. Recorded confirmation and merge authorization.
+- Reviewed the fix diff; automated validation remains 414 passing tests.
+  No implementation changes in this follow-up; git diff --check passed.
+- Updated build plan and next-chat handoff: use fetched main once PR #28 is
+  merged, then design branch navigation/output summaries. Recovery/modal edge
+  cases have automated coverage; owner confirmation specifically covers symbols.
+
+## 2026-10-06 — Execution Status Fix Implementation (ES0–ES3)
+
+Branch: `codex/execution-symbol-investigation`, continuing `fa91bd0` and
+investigation `20d58c7`, based on fetched main `8ada5b2`. Canonical WSL checkout.
+
+- Added NODE_EXECUTION_UPDATE with run/branch/node/visit/attempt/status facts;
+  expanded supervisor position/provenance and timing identity. Report each
+  execution, retry, input wait/resume, successful/failed/skipped/stopped outcome.
+- Replaced frontend success guesses with ExecutionDisplayState. Retain ended
+  branches and visit/attempt timing/history; derive independent branch statuses
+  and a deterministic global summary. Ignore stale/retired runs and clear the
+  cache on workflow replacement.
+- Preserved failed outcomes through termination/cancellation, and safe-point
+  successes through stop. Corrected SKIP marking the next node completed before
+  it executed; regression asserts completion registry behavior.
+- Refresh run view after modals; update stable cards in place to retain scroll
+  and selection. Skipped/stopped use text labels without success checkmarks.
+- ES0 regression cases failed on original code (5 failed); now 21 execution
+  checks pass covering linear live/final rendering, parallel shared nodes,
+  retries/repeat visits, recovery, user input, cancellation, barriers, pause,
+  stale events, workflow replacement and three terminal widths.
+- Final verification: `pytest tests/ -q` **414 passed in 49.74s** (includes all
+  154 existing debug tests); focused execution suite **21 passed**; compileall;
+  git diff --check; local Markdown link checks. No live owner confirmation yet.
+- Current implementation recorded in EXECUTION_STATUS_CONTRACT.md. Updated
+  plan/roadmap/backlog/UI routes and NEXT_CHAT_HANDOFF.md. Future A/D branch
+  view, scrolling and output summaries remain a separate design/layout task.
+- ES4 automated work complete; owner live check and review/merge remain.
+  Implementation commit `a31900d` pushed; draft PR #28 opened at
+  https://github.com/makinster/node_workflow/pull/28 (not merged).
+  NEXT_CHAT_HANDOFF.md records exact state and next-chat instructions.
+
+## 2026-10-06 — Execution Fix Build Plan and Future Branch UI
+
+Branch: `codex/execution-symbol-investigation`, continuing investigation commit
+`20d58c7` from fetched main `8ada5b2`. Documentation only.
+
+- Added `EXECUTION_STATUS_BUILD_PLAN.md`: ES0 regression cases, ES1 explicit
+  lifecycle facts, ES2 branch-specific display state, ES3 rendering/resume,
+  ES4 verification and handoff. All stages pending; no application fix made.
+- Recorded owner direction: A/D cycles execution branches, scrollable node
+  lists per branch, and output-summary UI in a separate future task/PR.
+- Defined preparation for branch/visit identity and completed-branch retention;
+  documented output-summary attribution/retention and layout decisions still
+  requiring design. Preserve runtime semantics and current glyph meanings.
+- Linked investigation, README, task index, master plan, handoff, backlog and
+  TUI design so subsequent work finds both immediate and future scope.
+- Verification: documentation link/heading review and `git diff --check`.
+
+## 2026-10-06 — Execution Symbol Investigation and Proposed Plan
+
+Branch: `codex/execution-symbol-investigation`, based on fetched main `8ada5b2`
+in `/home/makin/src/node_workflow`. Investigation and docs only.
+
+- Reproduced missing per-node supervisor events: Start -> Sleep -> Sleep -> End
+  executes fully but leaves the latter three nodes idle in App's status cache.
+- Reproduced error status overwritten as done on branch termination, and a
+  mounted ExecutionScreen remaining stale after a modal closes.
+- Documented event -> cache -> rendering behavior, current symbol meanings,
+  safe-point pauses, barrier waits, timing, run-scoping and concurrent-visit gaps.
+- Added `EXECUTION_STATUS_INVESTIGATION.md` with a staged correctness fix plan
+  and guidance for the upcoming execution UI redesign; linked docs/task routes.
+- Verification: real-run event/cache probes, mounted Textual modal probe;
+  existing focused debug tests 5 passed, 149 deselected; git diff --check.
+- Owner clarified that completed nodes retain circles instead of checkmarks,
+  matching the reproduced missing-transition defect. No application fix
+  implemented; proposed implementation/design decisions recorded for follow-up.
+
 ## 2026-10-06 — Chat Completion Config Opening Delay
 
 Branch: `codex/chat-config-opening-lag`, based on fetched `origin/main`

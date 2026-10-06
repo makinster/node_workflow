@@ -66,6 +66,10 @@ class ExecutionScreen(Screen):
     def on_mount(self) -> None:
         self.refresh_from_backend()
 
+    def on_screen_resume(self) -> None:
+        if self.is_mounted:
+            self.refresh_from_backend()
+
     def on_key(self, event: Key) -> None:
         if event.key.lower() == "s":
             event.stop()

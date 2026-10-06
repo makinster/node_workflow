@@ -1,6 +1,6 @@
 # AttackOfTheNodes Master Build Plan
 
-**Last updated:** 2026-06-15
+**Last updated:** 2026-10-06 (execution-status plan added)
 **Project root:** `AttackOfTheNodes/`
 **Runtime:** Python 3.14, Textual 8.2.7, asyncio, JSON persistence
 
@@ -81,6 +81,23 @@ Remaining Phase 17 work:
 
 Read `PHASE_17_NODE_VISUAL_IDENTITY.md` before implementing selector, node row,
 or node metadata changes for this phase.
+
+## Execution Status Correctness and Future Branch View
+
+Correctness stages ES0–ES3 implemented 2026-10-06; ES4 live check/review remain. Follow
+[EXECUTION_STATUS_BUILD_PLAN.md](EXECUTION_STATUS_BUILD_PLAN.md): ES0 regression
+cases, ES1 lifecycle reporting, ES2 branch-specific frontend derivation,
+ES3 rendering/resume, ES4 verification and handoff. Reproduced defects and
+original semantics are in `EXECUTION_STATUS_INVESTIGATION.md`; current code
+contract is `EXECUTION_STATUS_CONTRACT.md`.
+
+After the correctness fix, the owner plans per-branch execution with A/D branch
+cycling, scrollable branch node lists and output-summary UI. Keep those visual
+changes in a separate task/PR. Prepare runtime branch/visit state now, retain
+completed branches, and preserve navigation/scroll during updates. Output
+summary capture/attribution and detailed layout remain future design work;
+see `PROJECT_BACKLOG.md` -> Execution Screen Branch View. This work does not
+change Phase 17's editor/selector scope or mark any runtime fix completed.
 
 ## Phase Status
 

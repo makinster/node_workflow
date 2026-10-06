@@ -16,6 +16,7 @@ tkinter/proof-of-concept material lives under `docs/archive/`.
 |---|---|---|
 | Add or change a node | `NODE_STANDARDS.md`, `AGENT_START_GUIDE.md` | `NODE_HELPER.md`, `PROJECT_KNOWLEDGE.md`, `ARCHITECTURE.md` |
 | Fix frontend/UI behavior | `UI_QUICK_REFERENCE.md`, `AGENT_START_GUIDE.md` | `TUI_DESIGN.md`, `IO_CONTRACT_UI_DESIGN.md`, `BACKEND_FRONTEND_BOUNDARY.md` |
+| Investigate run-screen symbols or plan execution UI changes | `EXECUTION_STATUS_BUILD_PLAN.md`, `EXECUTION_STATUS_INVESTIGATION.md` | `SIGNAL_FLOW.md`, `TUI_DESIGN.md`, `BACKEND_FRONTEND_BOUNDARY.md` |
 | Change backend/runtime behavior | `ARCHITECTURE.md`, `SIGNAL_FLOW.md` | `PROJECT_KNOWLEDGE.md`, `BACKEND_FRONTEND_BOUNDARY.md` |
 | Design or update node taxonomy | `PHASE_17_NODE_VISUAL_IDENTITY.md`, `NODE_CATALOG.md`, `NODE_STANDARDS.md` | `TASK_INDEX.md`, `BACKEND_FRONTEND_BOUNDARY.md` |
 | Continue Phase 17 node identity | `PHASE_17_NODE_VISUAL_IDENTITY.md`, `TASK_INDEX.md` | `UI_QUICK_REFERENCE.md`, `TUI_DESIGN.md`, `BACKEND_FRONTEND_BOUNDARY.md` |
@@ -75,6 +76,10 @@ Read these for frontend work. Start with `UI_QUICK_REFERENCE.md`; open
 | File | What it contains | When to open it |
 |---|---|---|
 | `UI_QUICK_REFERENCE.md` | Editor keybindings, command-mode rules, and modal navigation summary | Start here for any frontend or keyboard-flow fix |
+| `EXECUTION_STATUS_INVESTIGATION.md` | Reproduced symbol defects, current event/cache/render logic, and correctness-first execution UI plan | Before execution-status fixes or run-screen redesign |
+| `EXECUTION_STATUS_BUILD_PLAN.md` | ES0–ES4 correctness stages and future branch-view requirements | Before fixing execution symbols or building branch navigation/output summaries |
+| `EXECUTION_STATUS_CONTRACT.md` | Implemented node lifecycle, branch cache and run-screen rendering contract | Before changing execution reporting or building branch views |
+| `NEXT_CHAT_HANDOFF.md` | Completed session work, verification/publication state and next tasks | Continue this execution fix or begin its UI follow-up |
 | `TUI_DESIGN.md` | Full Textual conventions: async setup, screen lifecycle, widget layout, keyboard handling, modal patterns, field type mapping | When the quick reference isn't enough — full screen or widget design work |
 | `IO_CONTRACT_UI_DESIGN.md` | Track B design spec: master-detail selector layout with file-tree I/O contract panel, tab-sticking fix (scroll inside TabPane), vault conditional dropdown, upstream description hint, ⚠ badge, drill-in navigation. All design decisions resolved. | Before implementing any Track B frontend work; replaces ad-hoc design notes |
 | `FILE_TREE.md` | Tracked file map for the current workspace | Finding where a file lives or verifying the directory structure is still current |

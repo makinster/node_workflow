@@ -139,7 +139,8 @@ class NodeCard(Static):
         timing = f" ({self._format_timing(self.timing_seconds)})" if self.timing_seconds else ""
         depth = self.node_data.get("_editor_depth")
         id_text = f" ({self.node_id})" if self.show_id else ""
-        prefix = f"{icon} " if icon else ""
+        outcome = f"[{self.status}] " if self.status in {"skipped", "stopped"} else ""
+        prefix = outcome or (f"{icon} " if icon else "")
         warning_badge = "⚠ " if self.has_warning else ""
         main_text = f"{prefix}{warning_badge}{breakpoint_marker}{alias}{id_text}{timing}"
         gutter = depth_number_gutter(depth) if isinstance(depth, int) else DEPTH_GUTTER

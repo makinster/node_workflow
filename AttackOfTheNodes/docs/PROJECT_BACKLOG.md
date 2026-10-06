@@ -78,6 +78,30 @@ Recommended cleanup:
 - When a gap is closed, move its bullet to `SESSION_LOG.md` and the relevant
   completed/near-term section below.
 
+## Planned Project — Execution Screen Branch View
+
+Owner direction recorded 2026-10-06: show execution per branch, use A/D to
+cycle branches, and provide a scrollable node list with output-summary UI.
+Root and completed branches should remain inspectable. Preserve selection and
+scroll per branch across live updates. Execution supervisors and editor graph
+branch selectors are different identities; use runtime parent/depth provenance.
+
+Prerequisite: [EXECUTION_STATUS_BUILD_PLAN.md](EXECUTION_STATUS_BUILD_PLAN.md),
+ES0–ES4, repairs missing node transitions, false completion after errors, and
+stale modal-resume rendering. Prepare run/branch/node visit state now; implement
+navigation/layout afterward in a separate task/PR. ES0–ES3 now implemented;
+ES4 awaits owner live verification/review. Current contract:
+`EXECUTION_STATUS_CONTRACT.md`.
+
+Future design must settle branch labels/order, repeated-visit presentation,
+upcoming versus actually visited rows, wait/pause/skip/stop presentation, and
+output-summary attribution/retention. Existing output-node records and shared
+transient payloads do not provide a complete per-node/per-visit output history.
+Do not add arbitrary payload capture to status events. Preserve backend
+execution/recovery semantics and existing symbol meanings unless a deliberate
+UI decision changes them. This is separate from the persistent run-history
+browser and the Phase 17 editor/selector work.
+
 ## Planned Project — Backend / Frontend Boundary Cleanup
 
 The backend should remain reusable for future CLI, web, or API frontends.

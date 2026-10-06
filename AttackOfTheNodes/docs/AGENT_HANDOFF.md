@@ -17,6 +17,23 @@ save-persistent deleted-node record. Phase B is now a frontend migration task
 (update save path from `branch_end_node` marker to `tombstone_node` with full
 original data, extend validator errors). See `BACKEND_FRONTEND_BOUNDARY.md`.
 
+## Execution Screen Follow-Up (2026-10-06)
+
+Execution-status correctness stages ES0–ES3 are now implemented on
+`codex/execution-symbol-investigation`. Read `EXECUTION_STATUS_CONTRACT.md`
+for current lifecycle facts, run/branch/visit cache, and rendering logic;
+`EXECUTION_STATUS_BUILD_PLAN.md` tracks ES4: owner confirmed symbols live;
+PR #28 reviewed and merge authorized. Verify merge status and fetch main.
+The investigation document is the historical before-fix snapshot.
+
+Tests cover linear/parallel runs, retry/skip/termination/cancellation, input,
+barriers, reruns, modal resume and selection/scroll at three widths. Current UI
+still shows a global node list. Next design: A/D cycling through execution
+branches, scrollable per-branch lists and output summaries. Retained ended
+branches and independent visits are ready; payload summary attribution remains
+future design work. See `NEXT_CHAT_HANDOFF.md` for exact branch/commit/results
+and recommended next steps. Do not rebuild the lifecycle layer in the redesign.
+
 ## Start Here
 
 1. `docs/README.md` — task router.
