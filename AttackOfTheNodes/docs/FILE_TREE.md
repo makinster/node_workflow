@@ -17,6 +17,7 @@ AttackOfTheNodes/
     event_bus.py
     events.py
     field_types.py
+    file_refs.py
     master_state.py
     memory_bank.py
     node_base.py
@@ -30,7 +31,9 @@ AttackOfTheNodes/
     save_manager.py
     secrets_manager.py
     supervisor.py
+    text_format.py
     validator.py
+    window_manager.py
     workflow_map.py
     utils/
       try_catch.py
@@ -52,8 +55,11 @@ AttackOfTheNodes/
       user_text_input_node.py
       wait_until_node.py
       io/
-        example_file_instance_node.py
+        file_output_node.py
+        file_view_node.py
         http_request_node.py
+        window_control_node.py
+        window_support.py
       data/
         json_path_node.py
         random_number_node.py
@@ -90,6 +96,7 @@ AttackOfTheNodes/
       error_details.py
       execution.py
       help.py
+      file_viewer.py
       memory_viewer.py
       merge_beacon_selector.py
       node_config.py
@@ -145,11 +152,13 @@ AttackOfTheNodes/
     test_node_helper.py
     test_run_session.py
     test_secrets_manager.py
+    test_text_format.py
     test_tombstone_migration.py
     test_tombstone_phase_b.py
     test_typed_vault.py
     test_validator_race_warnings.py
     test_validator_secrets.py
+    test_window_manager.py
     generated/
 
   workflows/
@@ -167,11 +176,13 @@ aotn_node_helper/
   ui_checks.py
   specs/
     example_pass_through_node.yaml
-    example_file_instance_node.yaml
+    file_output_node.yaml
+    file_view_node.yaml
     http_request_node.yaml
     json_path_node.yaml
     random_number_node.yaml
     text_transform_node.yaml
+    window_control_node.yaml
 ```
 
 ## Omitted Paths

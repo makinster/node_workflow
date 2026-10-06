@@ -23,10 +23,11 @@ def test_text_transform_node_registration_and_metadata():
     assert metadata["output_ports"] == ['default']
 
 
-async def _run_transform(operation: str, text: str) -> str:
+async def _run_transform(operation: str, text: str, **config) -> str:
     factory = NodeFactory()
     node = factory.create_node("text_transform_node", "n1")
     node.config["operation"] = operation
+    node.config.update(config)
     memory = MemoryBank(EventBus())
     done = []
     context = NodeContext(
@@ -92,3 +93,24 @@ async def test_text_transform_title():
 @pytest.mark.asyncio
 async def test_text_transform_reverse():
     assert await _run_transform("reverse", "abc") == "cba"
+
+
+@pytest.mark.asyncio
+async def test_text_transform_markdown_format():
+    # FO2: mode-select markdown formatting through backend.text_format.
+    out = await _run_transform("markdown format", "##Title\n* item   ")
+    assert out == "## Title\n\n- item\n"
+
+
+@pytest.mark.asyncio
+async def test_text_transform_markdown_format_wraps_when_configured():
+    long_line = "word " * 20
+    out = await _run_transform("markdown format", long_line, wrap_width=30)
+    assert all(len(line) <= 30 for line in out.strip("\n").split("\n"))
+    assert len(out.strip("\n").split("\n")) > 1
+
+
+@pytest.mark.asyncio
+async def test_text_transform_markdown_format_ignores_bad_wrap_width():
+    out = await _run_transform("markdown format", "plain text", wrap_width="nope")
+    assert out == "plain text\n"

@@ -180,13 +180,19 @@ def validate_workflow(
     # File-path fields: schema fields hinted with path_hint == "file".
     # An empty required path is an error; a path missing on disk is only a
     # warning because an earlier node may create the file during the run.
+    # Source-gated fields (visible_when) are skipped while hidden — a
+    # required Configured path is irrelevant when the input reads from
+    # Upstream/Vault (standard input source model).
     for node_id, data in all_nodes.items():
         meta = _type_meta_cache.get(data.get("type", ""))
         if meta is None:
             continue
         config = data.get("config") or {}
+        defaults = meta.get("default_config") or {}
         for field_name, field_info in (meta.get("config_schema") or {}).items():
             if field_info.get("path_hint") != "file":
+                continue
+            if not _field_visible(config, defaults, field_info):
                 continue
             raw_path = str(config.get(field_name, "") or "").strip()
             if not raw_path:
@@ -218,8 +224,11 @@ def validate_workflow(
         if meta is None:
             continue
         config = data.get("config") or {}
+        defaults = meta.get("default_config") or {}
         for field_name, field_info in (meta.get("config_schema") or {}).items():
             if not field_info.get("secret"):
+                continue
+            if not _field_visible(config, defaults, field_info):
                 continue
             key_name = str(config.get(field_name, "") or "").strip()
             if not key_name:
@@ -359,6 +368,36 @@ def validate_workflow(
                 {
                     "node_id": node_id,
                     "message": "Node has use_chat_session enabled but no session_key configured",
+                }
+            )
+
+    # OS window choreography (D5): warn — never error — when a node
+    # configures open/placement/close the current platform's window manager
+    # cannot deliver. The workflow still runs; the capability degrades.
+    for node_id, data in all_nodes.items():
+        config = data.get("config") or {}
+        if not config.get("open_after_write"):
+            continue
+        capabilities = _window_capabilities()
+        placement = str(config.get("window_placement") or "OS default")
+        if placement != "OS default" and "place" not in capabilities:
+            warnings.append(
+                {
+                    "node_id": node_id,
+                    "message": (
+                        f"Window placement '{placement}' is not supported on "
+                        f"this platform; the file will open unplaced"
+                    ),
+                }
+            )
+        if config.get("close_on_run_end") and "close" not in capabilities:
+            warnings.append(
+                {
+                    "node_id": node_id,
+                    "message": (
+                        "'Close when run ends' is not supported on this "
+                        "platform; the window will stay open"
+                    ),
                 }
             )
 
@@ -566,6 +605,39 @@ def _standard_model_vault_reads(
 
 # Prompt-source label that resumes an AI session; mirrors
 # backend/nodes/chat_completion_node.CONTINUE_SESSION_SOURCE.
+def _window_capabilities() -> Set[str]:
+    """Current platform's window-manager capabilities (D5 warning support)."""
+    from .window_manager import get_window_manager
+
+    return get_window_manager().capabilities()
+
+
+def _field_visible(
+    config: Dict[str, Any],
+    defaults: Dict[str, Any],
+    field_info: Dict[str, Any],
+) -> bool:
+    """Whether a schema field's visible_when condition currently holds.
+
+    Mirrors the form generator's rule semantics: every entry must match
+    (AND); a list value matches any listed entry (OR within one field).
+    Unset config keys fall back to the node type's default_config, the same
+    value the config screen renders. Fields with no visible_when are always
+    visible.
+    """
+    condition = field_info.get("visible_when")
+    if not isinstance(condition, dict):
+        return True
+    for key, expected in condition.items():
+        actual = config.get(key, defaults.get(key))
+        if isinstance(expected, list):
+            if actual not in expected:
+                return False
+        elif actual != expected:
+            return False
+    return True
+
+
 _CONTINUE_SESSION_SOURCE = "Continue AI session"
 
 

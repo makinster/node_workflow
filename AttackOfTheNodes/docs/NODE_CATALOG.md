@@ -48,7 +48,6 @@ currently registered node type a row absorbs, where one exists.
 | Find & Extract Passage | Concept | Search for a pattern, return surrounding context window. Tags: File I/O |
 | Structured File Read | Concept | Parse CSV or JSON into usable object data. Tags: File I/O |
 | AI-Guided Read | Concept | Provide a file and a question; AI extracts the relevant portion. Tags: File I/O, AI |
-| File Instance | Live (example) | `example_file_instance_node` — helper-generated reference example; remove or absorb during overhaul |
 
 ### Group: Data Source
 
@@ -87,7 +86,7 @@ or an End Branch node — there is no standalone End node.
 
 | Node | Status | Notes |
 |---|---|---|
-| File Write | Planned | Write content to a file. Overwrite vs append is a mode select — one node, not two types. Tags: File I/O, Runtime Resource |
+| File Write | Live | `file_output_node` — write content to a path and emit a typed `file` reference (FO1). Overwrite / Append / Create unique is a mode select — one node, not two types. `Open after write` (FO5) opens the file in its OS-default app at a placement preset (D3) with opt-in `Close when run ends` (default off, D12); discovery failure degrades to opened-but-unplaced, never a node error (D4). Inside a repeat/counter loop, open-after-write opens one window per iteration (one per file with Create unique); a validator warning for that is backlog, not FO5. Absorbed the retired `example_file_instance_node` stub's unified-spec reference role. Tags: File I/O, Runtime Resource |
 | Structured Write | Concept | Serialize an object to CSV or JSON. Tags: File I/O |
 | File Delete | Concept | Remove a file; output: bool success. Tags: File I/O |
 | File Copy / Move | Concept | Duplicate or relocate a file; input: source + destination. Tags: File I/O |
@@ -109,6 +108,12 @@ or an End Branch node — there is no standalone End node.
 | Confirmation Dialog | Concept | Yes/no prompt, blocks until answered; output: bool. Tags: Active Output |
 | User Choice Picker | Concept | Present a labeled list, wait for selection; output: chosen string. Tags: Active Output |
 | Progress Message | Concept | Non-blocking status update; fire and forget. Tags: Passive Output |
+
+### Direct-add: File Viewer
+
+| Node | Status | Notes |
+|---|---|---|
+| File Viewer | Live | `file_view_node` — display a text/Markdown file inside AOTN (FO3). Emits `FILE_VIEW_REQUESTED`; the frontend pushes `FileViewerScreen` (Textual Markdown for `.md`, plain text otherwise; `Render as` override). Headless runs: event is inert, never a node error. Forwards the file reference downstream. Tags: File I/O, Active Output |
 
 ### Direct-add: AI Response Output
 
@@ -173,6 +178,12 @@ Variants have different port shapes, so they must be separate types
 
 ## Utility (`primary_family: Utility`)
 
+### Section: Windows
+
+| Node | Status | Notes |
+|---|---|---|
+| Window Control | Live | `window_control_node` — focus / minimize / close the OS window showing a workflow-owned file, targeted by its `file` reference (FO6, D6: file identity, never app type). Missing/vanished window is a soft warning + pass-through. Supersedes the deferred **Window Focus** concept below for workflow-owned file windows; arbitrary named-app targeting stays out of the catalog. Tags: File I/O, Window |
+
 ### Section: Automation
 
 #### Group: UI Automation
@@ -184,7 +195,7 @@ Variants have different port shapes, so they must be separate types
 | Key Press | Concept | Fire a key combination (an action, not a listener — listeners are Triggers) |
 | Read Screen | Deferred | Capture visible text or image from a screen region |
 | Find Element | Deferred | Locate a UI element by text or accessibility label |
-| Window Focus | Deferred | Bring a named application window to the foreground |
+| Window Focus | Superseded | Resolved 2026-07-11: `window_control_node` (Section: Windows above) scopes focus to workflow-owned file windows per D6. Arbitrary named-app-window targeting is intentionally out — app-type targeting is a race condition dressed up as a feature |
 
 #### Group: Script Runner *(security gated)*
 
@@ -209,7 +220,7 @@ decided.
 | Set Variable | Live | `set_variable_node` — write a named Vault entry. Duplicate `variable_setter_node` is also registered; consolidate to one type during the overhaul |
 | Get Variable | Live | `get_variable_node` — read a named Vault entry. Duplicate `variable_reader_node` is also registered; consolidate to one type during the overhaul |
 | Concat | Live | `concat_node` — join multiple text strings |
-| Text Transform | Live | `text_transform_node` — uppercase, lowercase, strip, title, reverse. Regex/find-replace/split still concept-stage |
+| Text Transform | Live | `text_transform_node` — uppercase, lowercase, strip, title, reverse, markdown format (FO2: heading/list/table tidy + optional paragraph re-flow via `backend/text_format.py`). Regex/find-replace/split still concept-stage |
 | JSON / Object Transform | Live | `json_path_node` — extract a value from a JSON string by dot-path (e.g. `user.name`). Broader reshape/multi-field extraction still concept-stage |
 | Random Number | Live | `random_number_node` — produce a random integer or float within a configured range |
 | Math / Comparison | Concept | Arithmetic or comparison; output: value or bool |
