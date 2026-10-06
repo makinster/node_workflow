@@ -21,7 +21,8 @@ Branch: `codex/chat-config-opening-lag`, based on fetched `origin/main`
   automated interaction timings, not live-terminal opening measurements.
 - Verification: compileall; focused config/form tests (32 passed, 122
   deselected); full debug suite (154 passed); node-helper tests (14 passed);
-  git diff --check. Live terminal verification remains with the owner.
+  git diff --check. Owner confirmed the fix in the live app on 2026-10-06
+  after local implementation commit `de04338`.
 - Local fix only; no push or merge into main.
 
 ## 2026-07-11 — File Output Build Plan: Design-Review Amendments
