@@ -108,7 +108,13 @@ plus hand-written `execute()` logic, not through custom screens.
 ## Spec Shape
 
 Use `config_tabs` for the authoring workflow. It mirrors the config UI and
-places ordinary fields into the fixed Node Config tabs without frontend edits.
+places ordinary fields into shared Source / Parameters / Payloads sections without
+frontend edits. These are section meanings, not a requirement to show four tabs:
+render only applicable capabilities, number visible tabs consecutively, and reuse
+shared navigation. The current generic composer still renders four tabs for most
+ordinary nodes; this change simplifies Wait Until only. Future general omission
+must be capability-driven and preserve schema placement, not infer runtime
+capabilities from non-empty defaults.
 
 ```yaml
 node_type: example_formatter_node

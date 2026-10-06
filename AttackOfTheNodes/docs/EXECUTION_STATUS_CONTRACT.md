@@ -17,8 +17,9 @@ Statuses are `running`, `waiting`, `done`, `errored`, `skipped`, `stopped`.
 - Node entry emits running. Successful signaling after execute returns emits
   done; failures/missing signals emit errored. Timing in finally is independent
   and includes visit/attempt identity as well as the existing elapsed seconds.
-- User input emits waiting, then running when answered. A stop that resolves
-  the input future emits stopped rather than success. A safe-point stop after
+- User input emits waiting, then running when answered. A stop cancels
+  the input future, emits stopped rather than success, and prevents the input
+  node from publishing an answer or entering the completion registry. A safe-point stop after
   a node succeeds keeps that node's success and leaves the queued node unvisited.
 - SKIP emits skipped for the failed attempt and advances to the next node.
   The next node is not marked completed until it actually executes. This also
@@ -35,6 +36,13 @@ Statuses are `running`, `waiting`, `done`, `errored`, `skipped`, `stopped`.
   object is still present because MasterState consumes it in-process. The new
   lifecycle feed contains no resource objects; converting registration into
   a transport-safe protocol is separate multi-frontend work.
+
+Successful nodes publish transient data before recording completion in the
+WaitUntil registry. Wait Until defaults to timeout_seconds 0.0, meaning wait
+forever regardless of the global node timeout; positive values limit the wait. User Text Input writes configured legacy `membank_outputs`
+Vault keys as string values before signaling success. WaitUntil gates all selected
+targets; it forwards its incoming payload. Cross-branch LLM consumption uses an
+explicit Vault source (for example Document/Context -> `user_text`).
 
 Pause remains cooperative between nodes; breakpoint pause is before executing
 its node. WaitUntil/merge barriers remain running, not user-input waiting.

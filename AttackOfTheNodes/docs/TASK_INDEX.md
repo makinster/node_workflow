@@ -1,5 +1,7 @@
 # Task Index
 
+File Output compatibility and integration order: [FILE_OUTPUT_INTEGRATION_REVIEW.md](FILE_OUTPUT_INTEGRATION_REVIEW.md).
+
 `README.md` routes you to this file. This file gives the minimum reading set,
 likely code files, and the focused `pytest -k` or helper commands for each task
 type. Open the docs listed here, then open deeper references only if those docs
@@ -83,6 +85,26 @@ Notes: the model dropdown options come from `SUPPORTED_MODELS` — update the
 constant only, never frontend code. Some models reject sampling parameters;
 `ModelInfo.supports_temperature` controls whether `temperature` is sent.
 
+## Audit Or Simplify Node Configuration UI
+
+Read `PENDING_CHANGES_REVIEW.md` for pending fixes and the unmerged File Output
+branch impact, then `NODE_CONFIG_UI_AUDIT.md` and its mounted control inventory. The audit
+covers all 35 registered types, including selector groups and intentional hidden
+types, against the 2026-10-06 dirty Wait Until baseline. Start with shared save
+preservation, production-CSS field sizing and capability truth before a broad
+layout pass. The proposed stages are not implemented. Keep runtime changes
+separate and preserve unsupported legacy keys until an explicit migration.
+
+Reproduce with the scripts under `docs/audits/node_config_2026_10_06/`; use their
+README for commands and limitations. UI checks must load `frontend/styles.tcss`.
+
+## Simplify Wait Until Configuration
+
+Read `WAIT_UNTIL_UI_PLAN.md`, `WAIT_UNTIL_INVESTIGATION.md`, and
+`UI_QUICK_REFERENCE.md`. The implemented UI contains Wait and Connections tabs;
+Wait Until never reads or writes the Vault. Target selection is graph-derived
+frontend behavior. Reuse NodeConfigScreen command/tab/list helpers.
+
 ## Fix Frontend Or UI Behavior
 
 Read:
@@ -116,6 +138,7 @@ layout-level conventions.
 ## Investigate Execution Symbols Or Redesign The Run Screen
 
 Read `NEXT_CHAT_HANDOFF.md` for current session results and next steps.
+Read `EXECUTION_BRANCH_UI_DESIGN.md` for the proposed branch UI and preview contract.
 Read `EXECUTION_STATUS_CONTRACT.md` for implemented state/rendering semantics.
 Read `EXECUTION_STATUS_BUILD_PLAN.md` for ES0–ES4 and future A/D branch-view
 requirements. Read `EXECUTION_STATUS_INVESTIGATION.md` for the reproduced defects, current

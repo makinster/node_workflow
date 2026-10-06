@@ -48,13 +48,19 @@ the highlighted editor row.
 
 ## Node Config Shape
 
-Standard node configs use fixed numbered tabs (switch with number keys):
+Node configs share these section meanings (switch visible tabs with number keys):
 
 - `1 - Source`: alias, node summary, upstream/Vault preview controls, memory reads.
 - `2 - Parameters`: schema-generated fields.
 - `3 - Payloads`: payload preview controls, transient output overrides, Vault
   output declarations.
 - `4 - Connections`: read-only connection summary.
+
+Show only applicable sections; four tabs are not mandatory. Omit empty tabs and
+controls for unsupported capabilities, number visible tabs consecutively, and
+use a flat form when sufficient. Wait Until uses `1 - Wait` for alias/targets/
+timeout and `2 - Connections` for read-only wiring. It has no Vault or payload
+routing controls. Shared keyboard rules apply to every layout.
 
 Ordinary nodes should not require custom frontend code. Use node metadata,
 `config_schema`, `input_port_metadata`, `output_port_metadata`, and `ui_hints`.

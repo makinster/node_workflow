@@ -4,6 +4,245 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-06 — File Output Integration Review
+
+Reviewed fetched `origin/claude/file-output-pywin32-32tnv9` at `0a19718`
+against authoritative `/home/makin/src/node_workflow`, branch
+`codex/wait-until-vault-fix`, HEAD/origin-main `7161ef2`, including dirty
+runtime/Wait Until code. Preserved existing work; no application edits,
+feature merge, checkout switch, stash, commit or push.
+
+- Added `FILE_OUTPUT_INTEGRATION_REVIEW.md`: architecture fit, current UI
+  inventory, six prioritized findings, integration order and explicit limits.
+- Git merge-tree found only SESSION_LOG conflict between committed branches.
+  Temporary three-way Python source overlay found no conflicts against actual
+  dirty files; it preserved pending runtime fixes and current chat resources.
+- Corrected source-overlay verification: **304 passed in 59.16s**, including
+  feature-changed tests and both pending Wait Until suites. This is not an
+  installed merged-tree/full-suite baseline. Initial harness configuration/CSS
+  path errors were corrected; they were not application regressions.
+- Mounted three incoming config screens at 60/100/140 × 24 with production CSS;
+  nine mounts, all four tabs captured, combined registry 37. This extends review
+  evidence but does not replace exhaustive conditional/keyboard/save audits.
+- Deterministic ambiguous-window probe selected HWND 202 despite no title match:
+  document as P1 along with blocking synchronous launch polling. No real window
+  opened/controlled. Other findings: dropped viewer requests, ineffective Window
+  Control forwarding toggle, platform explanations and writer-path warnings.
+- File Reader still only accepts a configured path; typed-reference consumption
+  is an explicit future scope decision. Wait Until still has no Vault behavior.
+- Evidence/harness: `docs/audits/file_output_2026_10_06/`. `git diff --check`
+  passed. Windows FO7 protocol, actual integrated full suite and exhaustive new
+  node interaction audit remain outstanding. Owner display-policy choice remains.
+
+## 2026-10-06 — Pending Work Review Before Configuration Build Plan
+
+Authoritative root `/home/makin/src/node_workflow`, branch
+`codex/wait-until-vault-fix`, HEAD `7161ef2`. Fetched origin and merged
+origin/main: already current, zero divergence. Existing uncommitted changes,
+audit artifacts and recovery checkout preserved; no application code changed,
+no commits/pushes/feature merges made in this review.
+
+- Reviewed pending answer-Vault publication, transient-before-completion ordering,
+  stopped-input cancellation, W/S typing, zero-timeout semantics, Wait/Connections
+  composition, target/timeout validation, Save/Cancel and helper adaptation.
+  Reviewed both new test files and pending design/standards/audit documents.
+- Added PENDING_CHANGES_REVIEW.md with file-group dispositions and remaining
+  readiness limits. No additional runtime defect confirmed. Wait Until's
+  production-CSS timeout clipping (audit F03) prevents visual sign-off despite
+  green functional tests; keep the focused design and fix shared sizing later.
+- Inspected fetched File Output feature `0a19718` read-only: nine feature-only
+  commits and nine main-only commits, 48 changed files. Adds File Write, File
+  Viewer, Window Control and Markdown mode; removes File Instance demo. FO7
+  Windows checks remain pending on that branch. This was an integration-impact
+  check, not full validation of that feature; no separate checkout or merge.
+  GitHub PR status unverified because gh is unavailable.
+- Updated current handoff, roadmap, backlog and documentation routes to the
+  configuration build-plan checkpoint; retained historical entries/proposals.
+  Flagged File Output baseline selection before finalizing a build plan and
+  linked the existing audit/Wait Until plan to the reviewed state.
+- Fresh verification: full `pytest tests/ -q` **445 passed in 64.00s**;
+  compileall for app/helper passed; `check_ui.py wait_until_node` passed;
+  local documentation links and git diff --check passed. No owner live UI or
+  Windows verification claimed. Pending work remains local and uncommitted.
+
+## 2026-10-06 — Configuration UI Audit and Staged Plan
+
+Branch: `codex/wait-until-vault-fix`, starting/current HEAD `7161ef2`, authoritative
+`/home/makin/src/node_workflow`. Fetched origin and merged origin/main: already
+up to date. Preserved all 18 initially modified and five untracked files; no
+runtime/UI implementation edits, commits or OneDrive recovery changes.
+
+- Added NODE_CONFIG_UI_AUDIT.md: all 35 registered types, 32 selector-visible
+  types, group/mode coverage, current/recommended controls, 12 prioritized
+  findings, deliberate exclusions/history, reusable fixes and six small stages.
+- Mounted 34 configurations (including automatic Start and legacy End; intentional
+  Tombstone exclusion) at 60/100/140x24 using production styles.tcss. Captured 102
+  width records, 278 alternate states, 68 default save/reopen mounts and 87
+  additional changed-mode/routing save/reopen cases. The 87 selected values all
+  persisted; all 34 Cancel cases left stored data unchanged. Default second-save
+  results were stable, but unrelated config survived only on Wait Until (33/34
+  other screens lose it). Assertions document defects, not expected future behavior.
+- Confirmed unsupported generic Vault controls, registered File Instance demo
+  stub exposure, shared save-key loss and off-screen inputs under production CSS.
+  Wait timeout starts at x=80 at 60 columns; CommandInput's inline 100% width and
+  inline descriptions defeat row sizing. Existing bare-App tests miss this.
+- Additional findings cover irrelevant conditional fields, empty/duplicate tabs,
+  ignored Random Number Payload, numeric coercion, Chat forwarding/blank keys,
+  unused simulation credentials, inaccurate Echo/Repeat descriptions and helper
+  contract gaps. Fake-provider probe confirms Chat temperature 0 is sent as 1.
+- Retained scripts, complete control inventory, compressed raw evidence and
+  terminal text/SVG receipts under docs/audits/node_config_2026_10_06. Updated
+  README and TASK_INDEX routes without replacing preceding session edits.
+- Verification: Python 3.14.4/Textual 8.2.7; focused pytest command covering
+  test_wait_until_ui.py, test_chat_completion_node.py, test_node_helper.py,
+  tests/generated and test_debug_nodes.py: **232 passed in 55.27s**. Audit scripts
+  compiled; packaging coverage assertions, local Markdown links, matrix coverage,
+  and git diff --check passed. No new full-suite result claimed.
+- Limitations recorded: one-factor alternate states rather than exhaustive
+  combinations, no full per-field live keyboard/accessibility sign-off, no real
+  providers, and no per-node disk export/reload audit. Owner live review and demo/
+  termination/Chat contract decisions remain; broad implementation has not begun.
+
+## 2026-10-06 — Wait Until Focused UI and Shared Section Standard
+
+Branch: `codex/wait-until-vault-fix`, base `7161ef2`; fetched origin/main,
+merge already current. Preserved preceding runtime fixes/design documentation.
+
+- Implemented Wait + Connections tabs: alias, graph-derived targets, timeout,
+  unchanged dead-drop explanation and read-only route; removed Vault reads/writes,
+  payload reveals and editable output metadata from Wait Until.
+- Bounded target list, explicit unavailable-target rows, selected-count/empty
+  hints, list-boundary keyboard movement and per-tab focus/scroll restoration.
+  Save rejects invalid/non-finite/negative timeouts and invalid selected targets.
+- Save preserves unrelated config and clears retired Wait Until membank/transient
+  declarations; opening/Cancel does not mutate workflow config. SaveManager's
+  existing derived input_sources calculation removes stale Vault read claims.
+- Updated NODE_STANDARDS, UI_QUICK_REFERENCE, TUI_DESIGN, AGENT_START_GUIDE and
+  NODE_HELPER: shared section meanings, only applicable controls/tabs, consecutive
+  number navigation, flat/focused forms allowed. Other node layouts unchanged.
+- Updated Wait Until UI plan, task routes, roadmap/handoff and helper UI check
+  for timeout's placement in Wait. Initial full run caught an omitted Ctrl+Q revert
+  hint; restored it before final rerun.
+- Added 12 mounted regressions covering 60/100/140-column layouts, long-list
+  navigation, tab focus/scroll, typed letters/digits, unavailable targets,
+  timeout validation, toggle/no-target cases and save/cancel configuration.
+- Focused execution/UI suites **52 passed**; check_ui.py wait_until_node,
+  compileall, git diff --check and local documentation-link checks passed.
+  Final full suite: **445 passed in 63.03s**. No owner live UI
+  confirmation yet; restart app for the configuration change. Uncommitted.
+
+## 2026-10-06 — Wait Until Configuration UI Plan
+
+Branch: `codex/wait-until-vault-fix`, base `7161ef2`; fetched origin/main,
+merge already current. Preserved all prior dirty runtime/design work.
+
+- Mounted current Wait Until screen to inventory controls across all four tabs.
+  Legacy generic composition exposes unsupported Vault reads/writes, previews
+  and output metadata; help copy incorrectly advertises A/D tab navigation.
+- Proposed two tabs (Wait, Connections), targets and timeout together, fixed
+  pass-through explanation, keyboard/list navigation and responsive scrolling.
+- Specified explicit stale-target handling, no-target immediate pass-through,
+  save-only removal of obsolete Vault declarations and derived source refresh.
+- Added WAIT_UNTIL_UI_PLAN.md and documentation routes. Design only; config UI
+  remains unchanged. Verification: mounted inventory, git diff --check and local
+  Markdown links passed. No runtime suite rerun for this docs-only task.
+
+## 2026-10-06 — Wait Until Zero Timeout Means Forever
+
+Branch: `codex/wait-until-vault-fix`, base `7161ef2`; origin/main already current.
+
+- Owner confirmed the cross-branch flow works live after the input fixes and
+  requested 0.0 mean wait forever and remain default. Previously zero became
+  None and Supervisor substituted the global timeout. Pass zero explicitly;
+  positive values still enforce a limit. Updated Parameters description.
+- Extended four cross-branch LLM cases with zero/positive timeout variants and
+  a shorter in-memory global timeout to prove zero does not inherit it.
+- Focused new/execution suites **40 passed in 7.21s**; compileall and diff checks
+  passed. Prior full suite **429 passed** before this timeout edit; not rerun.
+- Initial test setup mistakenly persisted a 0.005 global timeout. Test now uses
+  monkeypatch on the in-memory cache; local global timeout restored to 30 seconds.
+  The prior custom value was not captured. Other settings retained.
+
+## 2026-10-06 — User Input Dialog Drops W/S While Typing
+
+Branch: `codex/wait-until-vault-fix`, base `7161ef2`; fetched origin/main,
+merge already current. Existing dirty design/runtime work preserved.
+
+- Owner reported continued-session missing context at node_8ec97b0a. Exact saved
+  workflow diagnostic using fake provider held the second LLM until input, wrote
+  `user_text`, and completed both calls successfully. Running app was canonical
+  and started after the earlier Vault fix; stale code was not assumed.
+- Mounted dialog reproduction found auto-edit input treats W/S as navigation
+  while editing: a single w/s yielded empty input and sentences lost characters.
+  This can cause the reported error; owner's exact typed answer/timing remains
+  unconfirmed. Backend-only tests missed this keyboard path.
+- UserInputScreen explicitly starts ordinary text editing on mount. W/S now type
+  during editing; command navigation resumes after edit. Shared auto-edit behavior
+  for other screens remains intact. No saved workflow or live process modified.
+- Added four mounted typing/submission regressions: all failed before the change,
+  all pass afterward. Focused suites **36 passed**; full tests/ **429 passed in
+  52.25s**; compileall and git diff --check passed. Updated investigation/handoff.
+  App restart required to load the new UI code; no live owner verification yet.
+
+## 2026-10-06 — Cross-Branch User Input Vault Fix
+
+Branch: `codex/wait-until-vault-fix`, based on merged main `7161ef2`;
+fetched origin/main and merge was already current. Preserved uncommitted branch
+UI design/investigation docs from the preceding work. No saved workflow edits.
+
+- Owner confirmed the User Text Input -> Wait Until -> cross-branch LLM case.
+  Saved LLM already reads Document/Context from Vault `user_text` while continuing
+  an AI session; configured input declarations previously never wrote that key.
+- UserTextInputNode copies the answer to declared legacy Vault keys before success,
+  supporting output/id aliases and tagging the values as strings. Dead-drop answer
+  remains available. Supervisor publishes transient output before completion gates.
+- Stop cancels the pending input future rather than injecting an empty answer;
+  interrupted prompts cannot publish output or satisfy the completion registry.
+- Added 11 regressions: list/string wait targets, fresh and continued LLM calls
+  using a fake provider, legacy declarations, genuine empty answers and stop.
+  Before fix: 11 failed, including completion observed before data publication
+  and stopped input incorrectly appearing in completed_nodes. After fix: all pass.
+- Verification: focused new/execution tests **32 passed**; full tests/ **425 passed
+  in 49.81s**; compileall, git diff --check, local documentation links and
+  check_ui.py user_text_input_node passed. check_node.py compiled but could not run
+  its expected generated test because this legacy node has no helper spec/generated
+  test file; focused real runtime tests and full suite cover the change instead.
+- Updated execution contract, investigation and handoff. No real LLM calls or
+  owner live verification yet. Changes remain local and uncommitted.
+
+## 2026-10-06 — Wait Until / Vault Investigation
+
+Branch: `codex/execution-branch-ui-design`, base `7161ef2`, synchronized with
+origin/main. Preserved existing uncommitted branch-UI design documentation.
+
+- Reproduced two parallel branches with an unanswered User Text Input target.
+  Wait Until held its branch until the answer; downstream reader did not start.
+- After answering, target transient output existed but configured `user_text`
+  Vault declaration was never written; downstream Get Variable returned missing.
+  Generic membank declarations have no runtime application in Supervisor.
+- Read-only local workflow inspection found a matching candidate. No live LLM
+  calls, saved workflow edits, runtime changes or symbol changes.
+- Recorded evidence and proposed focused fix in WAIT_UNTIL_INVESTIGATION.md.
+  Existing cross-branch test: 1 passed, 153 deselected. Real runtime diagnostic,
+  git diff --check and local Markdown links passed. Full suite not rerun.
+
+## 2026-10-06 — Execution Branch UI Design
+
+Branch: `codex/execution-branch-ui-design`, starting from clean main `7161ef2`
+(merged PR #28). Fetched origin; main matched origin/main; merge already current.
+
+- Reviewed retained branch/visit/attempt state, execution screen navigation,
+  Supervisor payload handling and OutputManager finalization.
+- Proposed A/D wrap, stable runtime labels, actual-visit rows, queued-node row,
+  independent scroll/selection/follow and attempt details; proposed S navigation
+  with X stop to resolve the current binding conflict.
+- Defined selected-visit summaries and branch counts, opt-in bounded safe
+  descriptors with explicit attribution, and shared run-wide durable output.
+  Recorded current IDLE reset limitation and barriers' observability limits.
+- Added EXECUTION_BRANCH_UI_DESIGN.md and routed handoff/index/backlog to it.
+  Application unchanged. Verification: git diff --check and local Markdown links
+  passed. Prior 414-test result remains historical; no runtime tests rerun.
+
 ## 2026-10-06 — Owner Confirmed Execution Symbols; PR #28 Review
 
 Branch: `codex/execution-symbol-investigation`, fix `a31900d`, handoff `1f7ac2c`.

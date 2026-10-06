@@ -1,6 +1,6 @@
 # AttackOfTheNodes Master Build Plan
 
-**Last updated:** 2026-10-06 (execution-status plan added)
+**Last updated:** 2026-10-06 (pending-change review and audit planning baseline)
 **Project root:** `AttackOfTheNodes/`
 **Runtime:** Python 3.14, Textual 8.2.7, asyncio, JSON persistence
 
@@ -22,6 +22,17 @@ store plain path strings.
 The backend is UI-agnostic. Frontend-only behavior belongs under `frontend/`.
 Read `BACKEND_FRONTEND_BOUNDARY.md` before adding backend code for editor/UI
 needs.
+
+## Current planning checkpoint (2026-10-06)
+
+[PENDING_CHANGES_REVIEW.md](PENDING_CHANGES_REVIEW.md) reviews the uncommitted
+Wait Until/runtime/UI work and the fetched File Output feature's impact. Main
+is synchronized at `7161ef2`. The completed configuration audit proposes stages;
+a detailed build plan is the next task, not yet implemented or finalized.
+Wait Until's simplified controls are correct in scope, but shared production-CSS
+field overflow must be addressed before visual sign-off. The unmerged File Output
+branch adds three types and Markdown mode and removes the demo, so explicitly
+choose the target inventory before finalizing that plan.
 
 ## Current Active Work
 
@@ -82,9 +93,19 @@ Remaining Phase 17 work:
 Read `PHASE_17_NODE_VISUAL_IDENTITY.md` before implementing selector, node row,
 or node metadata changes for this phase.
 
+## Wait Until Configuration and Shared Section Policy (2026-10-06)
+
+Wait Until now has focused Wait + Connections tabs. Targets and timeout are
+co-located; the node exposes no Vault/payload-routing controls. Shared config
+section meanings remain Source / Parameters / Payloads / Connections, but only
+applicable sections should render; four tabs are not mandatory. See
+[WAIT_UNTIL_UI_PLAN.md](WAIT_UNTIL_UI_PLAN.md) and NODE_STANDARDS. Generalized
+capability-driven tab omission for other nodes is separate work.
+
 ## Execution Status Correctness and Future Branch View
 
-Correctness stages ES0–ES3 implemented 2026-10-06; ES4 live check/review remain. Follow
+Correctness stages ES0–ES3 are merged via PR #28 in `7161ef2`; the owner
+confirmed execution symbols live. Historical stage detail follows in
 [EXECUTION_STATUS_BUILD_PLAN.md](EXECUTION_STATUS_BUILD_PLAN.md): ES0 regression
 cases, ES1 lifecycle reporting, ES2 branch-specific frontend derivation,
 ES3 rendering/resume, ES4 verification and handoff. Reproduced defects and
@@ -95,7 +116,8 @@ After the correctness fix, the owner plans per-branch execution with A/D branch
 cycling, scrollable branch node lists and output-summary UI. Keep those visual
 changes in a separate task/PR. Prepare runtime branch/visit state now, retain
 completed branches, and preserve navigation/scroll during updates. Output
-summary capture/attribution and detailed layout remain future design work;
+summary capture/attribution and detailed layout are proposed in
+`EXECUTION_BRANCH_UI_DESIGN.md`; implementation remains future work;
 see `PROJECT_BACKLOG.md` -> Execution Screen Branch View. This work does not
 change Phase 17's editor/selector scope or mark any runtime fix completed.
 

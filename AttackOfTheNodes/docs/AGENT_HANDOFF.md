@@ -1,5 +1,19 @@
 # AttackOfTheNodes Agent Handoff
 
+## Current continuation — 2026-10-06
+
+Use the authoritative `/home/makin/src/node_workflow` checkout. Main and fetched
+origin/main are `7161ef2` (PR #28 merged). Local `codex/wait-until-vault-fix`
+contains uncommitted runtime/typing fixes, the focused Wait Until UI and the
+configuration audit. Read [PENDING_CHANGES_REVIEW.md](PENDING_CHANGES_REVIEW.md)
+and [NEXT_CHAT_HANDOFF.md](NEXT_CHAT_HANDOFF.md) before planning new work.
+
+Next: configuration-UI build plan from the audit, after choosing how the unmerged
+File Output feature affects its baseline. Wait Until production-CSS overflow is
+still a blocker to visual sign-off. Existing Phase 17 history and execution-branch
+proposal below do not supersede this task order. Chat Completion and secrets UI
+already exist; older deferred-feature lists are historical context.
+
 ## Current State
 
 The active app is `AttackOfTheNodes/`, a Python/Textual workflow editor and

@@ -32,7 +32,7 @@ class WaitUntilNode(Node):
         "timeout_seconds": {
             "type": "float",
             "label": "Timeout seconds",
-            "description": "0 uses the global node timeout setting",
+            "description": "0 waits forever (default); a positive value limits the wait",
             "required": False,
             "min": 0.0,
         },
@@ -41,9 +41,10 @@ class WaitUntilNode(Node):
     async def execute(self, context: NodeContext) -> None:
         target_ids = self._target_node_ids()
         timeout = float(self.config.get("timeout_seconds") or 0.0)
-        timeout_arg = None if timeout <= 0 else timeout
         try:
-            await context.wait_for_nodes(target_ids, timeout_arg)
+            # Pass zero explicitly: None means use the Supervisor's global
+            # timeout, while zero disables the completion-wait timeout.
+            await context.wait_for_nodes(target_ids, timeout)
         except asyncio.TimeoutError:
             context.signal_error(
                 TimeoutError(f"Timed out waiting for nodes: {', '.join(target_ids)}")

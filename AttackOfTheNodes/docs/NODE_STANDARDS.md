@@ -339,8 +339,23 @@ ai_session vault references.
 
 ## Standard Config Tabs
 
-Every node config screen uses these tabs in order. Not all tabs need to be
-present for every node.
+Use Source, Parameters, Payloads, and Connections as shared section meanings,
+in that order when applicable. **Four tabs are not mandatory.** Show only sections
+that expose actual node capabilities or useful information; omit empty sections
+and unsupported source/routing/Vault controls. Compact nodes may use a flat form.
+Topology-driven nodes may use a focused layout while reusing schema fields and
+shared navigation. Wait Until uses `1 - Wait` (alias, targets, timeout and fixed
+forwarding explanation) and `2 - Connections` (read-only wiring).
+
+Number the tabs that are actually present consecutively. Number keys select the
+visible tab; W/S moves controls, A/D stays within a row, and letters/digits type
+normally while editing. Keep Save/Cancel outside the tab's scrolling content.
+Do not introduce per-node navigation behavior to compensate for layout choices.
+
+Configuration controls must match execution. Wait Until coordinates completion
+and forwards its incoming dead-drop unchanged; it never reads or writes the
+Vault. Its downstream node selects any Vault input. Timeout 0.0 means wait forever.
+See [WAIT_UNTIL_UI_PLAN.md](WAIT_UNTIL_UI_PLAN.md) for implementation details.
 
 ### Source Tab
 

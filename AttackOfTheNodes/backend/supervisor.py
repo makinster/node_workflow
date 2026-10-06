@@ -149,7 +149,9 @@ class Supervisor:
         self._resume_event.set()
         if self._pending_input_future and not self._pending_input_future.done():
             self._input_interrupted = True
-            self._pending_input_future.set_result("")
+            # A stop is not an empty answer: prevent the node from publishing
+            # outputs or satisfying completion gates after the interrupted wait.
+            self._pending_input_future.cancel()
         if self._pending_recovery_future and not self._pending_recovery_future.done():
             self._pending_recovery_future.set_result("TERMINATE_BRANCH")
 
@@ -228,11 +230,13 @@ class Supervisor:
                 return
 
             completed_node_id = self.current_node_id
+            if result.payload:
+                self.current_node_id = self._handle_payload(result.payload)
+
             if completed_node_id and self._mark_node_completed is not None:
                 await self._mark_node_completed(completed_node_id)
 
             if result.payload:
-                self.current_node_id = self._handle_payload(result.payload)
                 self._node_phase = "queued"
                 self._publish_state_update()
 

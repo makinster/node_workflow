@@ -78,7 +78,20 @@ Recommended cleanup:
 - When a gap is closed, move its bullet to `SESSION_LOG.md` and the relevant
   completed/near-term section below.
 
+## Next Planning Task — Capability-Driven Node Configuration UI
+
+The Wait Until layout exposed broader capability, save and geometry defects.
+[NODE_CONFIG_UI_AUDIT.md](NODE_CONFIG_UI_AUDIT.md) records current coverage and
+proposed stages. [PENDING_CHANGES_REVIEW.md](PENDING_CHANGES_REVIEW.md) reviews
+local fixes and the unmerged File Output dependency. A detailed build plan is
+next; implementation has not begun. Keep the separate execution-branch proposal
+and unmerged file/window features explicit when selecting the planning baseline.
+
 ## Planned Project — Execution Screen Branch View
+
+PR #28 merged as `7161ef2`; owner confirmed the symbol fix. Proposed follow-up:
+[EXECUTION_BRANCH_UI_DESIGN.md](EXECUTION_BRANCH_UI_DESIGN.md). It settles recommended
+navigation/layout and safe preview defaults; implementation remains pending.
 
 Owner direction recorded 2026-10-06: show execution per branch, use A/D to
 cycle branches, and provide a scrollable node list with output-summary UI.

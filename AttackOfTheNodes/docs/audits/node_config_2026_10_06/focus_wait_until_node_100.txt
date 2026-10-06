@@ -1,0 +1,24 @@
+╭────────────────────────────────────────────────────────────────────────────────────────╮          
+│                                                                                        │          
+│  Edit Node: Wait Until (node_3a2b4560)                                                 │          
+│  1/2 tabs | w/s move | e toggle/edit | ctrl+s save | esc cancel | ctrl+q revert        │          
+│   1 - Wait  2 - Connections                                                            │          
+│  ╸━━━━━━━━╺━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │          
+│  wait forever at zero timeout.                                                         │          
+│                                                                                        │          
+│  Timeout seconds:  0 waits forever (default); a positive value limits the wait█  0.▁▁  │          
+│                                                                                        │          
+│  Incoming: User Text Input.default                                                 ▅▅  │          
+│                                                                                        │          
+│  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔                                                                      │          
+│        Save                                                                            │          
+│  ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁                                                                      │          
+│  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔                                                                      │          
+│       Cancel                                                                           │          
+│  ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁                                                                      │          
+│     1/2 tabs | w/s move | e toggle/edit | ctrl+s save | esc cancel | ctrl+q revert     │          
+│                                                                                        │          
+╰────────────────────────────────────────────────────────────────────────────────────────╯          
+                                                                                                    
+                                                                                                    
+                                                                                                    

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import math
+
 from typing import Any, Dict, Optional
 
 from rich.text import Text
@@ -12,6 +14,7 @@ from textual.events import Key
 from textual.screen import ModalScreen
 from textual.widgets import Button, Checkbox, Input, Label, Select, SelectionList, Static, TabbedContent, TabPane, TextArea
 
+from frontend import notifications
 from frontend.io_contract import TYPE_COLOR
 from frontend.node_types import (
     BRANCH_END_NODE_TYPE,
@@ -644,7 +647,9 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         with Vertical(id="modal-card", classes="node-config-modal"):
             title = f"{self.node_data.get('alias') or self.node_id} ({self.node_id})"
             yield Label(f"Edit Node: {title}", classes="modal-title")
-            help_text = "w/s move | a/d tabs | e interact | ctrl+s save | esc cancel | ctrl+q revert"
+            help_text = "number keys tabs | w/s move | a/d within row | e interact | ctrl+s save | esc cancel | ctrl+q revert"
+            if self.node_data.get("type") == WAIT_UNTIL_NODE_TYPE:
+                help_text = "1/2 tabs | w/s move | e toggle/edit | ctrl+s save | esc cancel | ctrl+q revert"
             yield Static(
                 help_text,
                 classes="modal-help",
@@ -661,6 +666,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                     )
             elif self.node_data.get("type") == BRANCH_NODE_TYPE:
                 yield from self._compose_branch_config_tabs(metadata, config)
+            elif self.node_data.get("type") == WAIT_UNTIL_NODE_TYPE:
+                yield from self._compose_wait_config_tabs(config, forms)
             else:
                 yield from self._compose_standard_config_tabs(
                     metadata,
@@ -755,6 +762,58 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                         classes="form-description",
                     )
                     yield Static(self._format_connections(), id="connection-summary")
+
+    def _compose_wait_config_tabs(self, config: Dict[str, Any], forms: Dict[str, Any]):
+        with TabbedContent(id="node-config-tabs", classes="node-config-tabs"):
+            with TabPane("1 - Wait", id="node-config-tab-core"):
+                with VerticalScroll(classes="tab-scroll"):
+                    yield Horizontal(
+                        Label("Alias:", classes="form-label-inline"),
+                        CommandInput(value=self._alias_default_value(), id="alias-input"),
+                        classes="form-inline-row", id="alias-row",
+                    )
+                    yield Static(
+                        "Wait for all selected nodes to complete, then forward the "
+                        "incoming dead-drop payload unchanged. The next node can read the Vault.",
+                        classes="form-description",
+                    )
+                    yield Label("Wait for these nodes", classes="form-label nav-section")
+                    yield from self._compose_wait_targets(config)
+                    yield Static(self._wait_target_summary(normalize_wait_target_ids(config)),
+                                 id="wait-target-summary", classes="form-description")
+                    yield Static(
+                        "Targets must complete at least once in this run. "
+                        "A target that never executes can wait forever at zero timeout.",
+                        classes="form-description",
+                    )
+                    if forms.get("parameters") is not None:
+                        yield forms["parameters"]
+                    yield Static("", id="wait-config-error", classes="form-description")
+                    yield Static(self._wait_route_summary(), classes="form-description")
+            with TabPane("2 - Connections", id="node-config-tab-connections"):
+                with VerticalScroll(classes="tab-scroll"):
+                    yield Static("Edit connections from the editor.", classes="form-description")
+                    yield Static(self._format_connections(), id="connection-summary")
+
+    def _wait_route_summary(self) -> str:
+        connections = self.node_data.get("connections") or {}
+        incoming = connections.get("inputs") or []
+        outgoing = connections.get("outputs") or []
+        def label(node_id):
+            data = self.workflow_map.get_node_data(node_id) or {}
+            return data.get("alias") or data.get("type") or node_id
+        source = next((c for c in incoming if c.get("target_port") == "input"), None)
+        target = next((c for c in outgoing if c.get("source_port") == "default"), None)
+        before = (f"{label(source['source_node_id'])}.{source.get('source_port', 'default')}"
+                  if source else "Not connected")
+        after = (f"{label(target['target_node_id'])}.{target.get('target_port', 'input')}"
+                 if target else "Not connected")
+        return f"Incoming: {before}\nForward unchanged\nNext: {after}"
+
+    def _wait_target_summary(self, selected) -> str:
+        if not selected:
+            return "No targets selected: this node will continue immediately."
+        return f"{len(selected)} target(s) selected; wait for all."
 
     def _compose_branch_config_tabs(
         self,
@@ -1484,6 +1543,9 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         if event.selection_list.id == "merge-branches-to-close":
             self._sync_merge_carry_forward_selector()
             self._sync_merge_input_details()
+        elif event.selection_list.id == "wait-targets":
+            self.query_one("#wait-target-summary", Static).update(
+                self._wait_target_summary(event.selection_list.selected))
         elif event.selection_list.id == "membank-inputs":
             self._sync_branch_payload_rows()
             self._sync_payload_previews()
@@ -1521,6 +1583,30 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         alias_query = self.query("#alias-input")
         alias = alias_query.first().value if alias_query else self.node_data.get("alias", "")
         config = self._get_form_values() if self._get_form_values else {}
+        if self.node_data.get("type") == WAIT_UNTIL_NODE_TYPE:
+            selected = self._wait_config_values()["target_node_ids"]
+            eligible = {value for _, value in wait_target_options(self.workflow_map, self.node_id)}
+            message = ""
+            if any(target not in eligible for target in selected):
+                message = "Remove unavailable wait targets before saving."
+            timeout_field = self.query_one("#field-timeout_seconds", Input)
+            try:
+                timeout = float(timeout_field.value)
+                if not math.isfinite(timeout) or timeout < 0:
+                    raise ValueError
+            except ValueError:
+                message = "Timeout must be a nonnegative number; 0 waits forever."
+            if message:
+                self.query_one("#wait-config-error", Static).update(message)
+                notifications.notify_error(self.app, message)
+                return
+            # Keep unrelated config, but retire declarations that falsely claim
+            # this coordination node reads/writes Vault or configures outputs.
+            config = dict(self.node_data.get("config") or {})
+            config.update(target_node_ids=selected, timeout_seconds=timeout,
+                          membank_inputs=[], membank_outputs=[], transient_outputs=[])
+            self.dismiss({"alias": alias, "config": config})
+            return
         config.update(self._transient_config_values())
         config.update(self._membank_config_values())
         config.update(self._standard_payload_config_values())
@@ -1626,6 +1712,13 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         if index < 0 or index >= len(panes):
             return
         target_tab_id = str(panes[index].id)
+        if self.node_data.get("type") == WAIT_UNTIL_NODE_TYPE:
+            views = getattr(self, "_wait_tab_views", {})
+            scroll = self._scroll_container()
+            focused = self.app.focused
+            if focused is not None and self._is_descendant_of(focused, self.query_one(f"#{tabs.active}", TabPane)):
+                views[tabs.active] = (focused.id, float(scroll.scroll_y) if scroll else 0)
+            self._wait_tab_views = views
         tabs.active = target_tab_id
         self.call_after_refresh(
             lambda tab_id=target_tab_id: self._focus_first_config_tab_widget(tab_id)
@@ -1672,6 +1765,17 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             tabs = tabbed_query.first()
             if tabs.active != tab_id:
                 tabs.active = tab_id
+        if self.node_data.get("type") == WAIT_UNTIL_NODE_TYPE:
+            saved = getattr(self, "_wait_tab_views", {}).get(tab_id)
+            if saved and saved[0]:
+                widget = self.query(f"#{saved[0]}")
+                if widget:
+                    self.app.set_focus(widget.first())
+                    scroll = self._scroll_container()
+                    if scroll:
+                        scroll.scroll_to(y=saved[1], animate=False)
+                    self._sync_cursor_mode()
+                    return
         try:
             active_pane = self.query_one(f"#{tab_id}", TabPane)
             widgets = [
@@ -2474,11 +2578,19 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
     def _compose_wait_targets(self, config: Dict[str, Any]):
         selected = set(normalize_wait_target_ids(config))
         options = wait_target_options(self.workflow_map, self.node_id)
+        options.sort(key=lambda row: (row[0].casefold(), row[1]))
+        eligible = {value for _, value in options}
+        downstream = self.workflow_map.nodes_reachable_from(self.node_id)
+        for node_id in sorted(selected - eligible):
+            node = self.workflow_map.get_node_data(node_id)
+            reason = ("self" if node_id == self.node_id else
+                      "downstream" if node_id in downstream else "missing")
+            label = (node or {}).get("alias") or node_id
+            options.append((f"Unavailable target: {label} ({reason}; {node_id})", node_id))
         if options:
-            yield SelectionList(
-                *dynamic_selection_rows(options, selected),
-                id="wait-targets",
-            )
+            targets = SelectionList(*dynamic_selection_rows(options, selected), id="wait-targets")
+            targets.styles.height = min(6, len(options) + 2)
+            yield targets
         else:
             yield Static("No non-downstream wait targets are available.", classes="form-description")
 
