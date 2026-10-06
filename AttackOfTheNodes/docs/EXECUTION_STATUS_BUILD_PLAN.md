@@ -1,6 +1,6 @@
 # Execution Status Fix Build Plan
 
-Created 2026-10-06. Status: **ES0–ES3 implemented and automatically verified; ES4 live verification/review pending**.
+Created 2026-10-06. Status: **ES0–ES3 implemented and automatically verified; ES4 automated verification and owner symbol confirmation complete; merge authorized**.
 Base: fetched main `8ada5b2`; investigation commit `20d58c7` on
 `codex/execution-symbol-investigation`. See
 [the investigation](EXECUTION_STATUS_INVESTIGATION.md) for reproduced failures
@@ -126,10 +126,13 @@ completion/error/stop. Rapid event bursts do not leave stale cards.
 
 ## ES4 — Verification and handoff
 
-Status: automated verification complete; owner live check and PR review remain.
+Status: automated verification complete; owner confirmed live symbols on
+2026-10-06. PR #28 reviewed; owner authorized merge. Verify its GitHub status
+before the next UI task.
 21 focused execution regressions passed, including mounted screens at 60/100/140
 columns. Compileall and diff checks passed; full-suite result in SESSION_LOG.md.
-No claim of owner live confirmation is made until reported.
+Owner confirmation covers the reported symbols; recovery/modal edge cases
+remain backed by automated tests, not separate manual reports.
 
 - Compile: `../.venv/bin/python -m compileall -q .` from AttackOfTheNodes.
 - Run new focused execution lifecycle/cache/render tests, full debug suite,

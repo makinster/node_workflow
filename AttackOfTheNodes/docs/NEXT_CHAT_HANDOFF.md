@@ -18,15 +18,16 @@ new chat. Do not create another independent checkout or copy whole trees.
   routing, Vault/dead-drop, safe-point pause, barrier and recovery actions remain.
 - Added 21 execution-specific regressions, including real runtime and mounted
   Textual tests at 60/100/140 columns. Full suite: 414 passed in 49.74s; compileall, diff and
-  local documentation-link checks passed; results recorded in SESSION_LOG.md. These do not replace the owner's live check of the new fix.
+  local documentation-link checks passed; results recorded in SESSION_LOG.md. Owner confirmed the symbols work in the live app on 2026-10-06.
 
 ## Repository state
 
 Branch: `codex/execution-symbol-investigation`, based on main `8ada5b2`.
 Investigation `20d58c7`, build-plan docs `fa91bd0`. Implementation: `a31900d`, verified by **414 passing tests**, including the
 21 execution regressions and 154 existing debug tests. Branch is pushed;
-[draft PR #28](https://github.com/makinster/node_workflow/pull/28) awaits
-owner live verification and review. No merge into main has occurred. This branch
+[PR #28](https://github.com/makinster/node_workflow/pull/28): owner confirmed
+live symbols and authorized publication/merge on 2026-10-06. Check GitHub
+merge status, fetch and use updated main before the next UI task. This branch
 contains the investigation/plan as well as the fix; they have not been merged
 into main. Preserve unrelated Git safeguards and File Output feature branches.
 Fetch, inspect status/history and compare the intended branch tip before changes.
@@ -46,11 +47,11 @@ Implementation files: `backend/events.py`, `backend/supervisor.py`,
 
 ## Immediate next steps
 
-Restart the WSL app and manually confirm the owner's workflow: every successful
-node becomes a checkmark, errors remain errors after ending their branch, and
-Memory/Output modal closure reveals current statuses. Check slow linear and
-parallel workflows; skip/stop must not show success checks. Record owner results.
-Review the fix PR and merge after verification; then update local main.
+Owner confirmed successful nodes now receive the correct symbols. Automated
+checks cover recovery, modal resume and edge cases; these were not separately
+reported as manually verified. PR #28 has been reviewed for the requested merge.
+Verify it is merged, fetch, and fast-forward local main before starting branch
+UI work. Do not reimplement the symbol fix.
 
 ## Following task — Execution screen branch view
 
@@ -87,8 +88,8 @@ git diff --check
 
 ## Suggested opening request for the next chat
 
-“Continue the execution-status work from draft PR #28. Read
+“Continue from execution-status PR #28. Read
 NEXT_CHAT_HANDOFF.md and EXECUTION_STATUS_CONTRACT.md, verify branch/status and
-owner live-test results, then review and prepare the fix for merge. After that,
+the PR merge status (owner confirmed the symbols). Start from updated main and
 plan the A/D branch execution UI using the retained branch/visit state; settle
 output-summary attribution and layout before implementing it.”

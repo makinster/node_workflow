@@ -4,6 +4,18 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-06 — Owner Confirmed Execution Symbols; PR #28 Review
+
+Branch: `codex/execution-symbol-investigation`, fix `a31900d`, handoff `1f7ac2c`.
+
+- Owner confirmed the execution-symbol fix works live and requested PR work
+  before starting the next chat. Recorded confirmation and merge authorization.
+- Reviewed the fix diff; automated validation remains 414 passing tests.
+  No implementation changes in this follow-up; git diff --check passed.
+- Updated build plan and next-chat handoff: use fetched main once PR #28 is
+  merged, then design branch navigation/output summaries. Recovery/modal edge
+  cases have automated coverage; owner confirmation specifically covers symbols.
+
 ## 2026-10-06 — Execution Status Fix Implementation (ES0–ES3)
 
 Branch: `codex/execution-symbol-investigation`, continuing `fa91bd0` and
