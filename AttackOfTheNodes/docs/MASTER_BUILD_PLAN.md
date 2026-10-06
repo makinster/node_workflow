@@ -84,11 +84,12 @@ or node metadata changes for this phase.
 
 ## Execution Status Correctness and Future Branch View
 
-Planned 2026-10-06; implementation has not started. Follow
+Correctness stages ES0–ES3 implemented 2026-10-06; ES4 live check/review remain. Follow
 [EXECUTION_STATUS_BUILD_PLAN.md](EXECUTION_STATUS_BUILD_PLAN.md): ES0 regression
 cases, ES1 lifecycle reporting, ES2 branch-specific frontend derivation,
 ES3 rendering/resume, ES4 verification and handoff. Reproduced defects and
-current semantics are in `EXECUTION_STATUS_INVESTIGATION.md`.
+original semantics are in `EXECUTION_STATUS_INVESTIGATION.md`; current code
+contract is `EXECUTION_STATUS_CONTRACT.md`.
 
 After the correctness fix, the owner plans per-branch execution with A/D branch
 cycling, scrollable branch node lists and output-summary UI. Keep those visual

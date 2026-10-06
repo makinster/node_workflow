@@ -13,6 +13,7 @@ from backend.events import (
     ERROR_OCCURRED,
     ERROR_LOGGED,
     MEMORY_UPDATE,
+    NODE_EXECUTION_UPDATE,
     NODE_TIMING_UPDATE,
     RECOVERY_OPTIONS_AVAILABLE,
     SUPERVISOR_REGISTER,
@@ -23,6 +24,7 @@ from backend.events import (
     WORKFLOW_STATE_UPDATE,
 )
 
+from .execution_state import ExecutionDisplayState
 from . import file_io
 from . import notifications
 from .editor_workflow_adapter import EditorWorkflowAdapter
@@ -85,6 +87,8 @@ class AttackOfTheNodesApp(TextualApp):
             else None
         )
         self.workflow_state = "IDLE"
+        self.execution_state = ExecutionDisplayState()
+        self._retired_display_run_id = None
         self.node_statuses = {}
         self.node_timings = {}
         self.supervisors = {}
@@ -133,6 +137,7 @@ class AttackOfTheNodesApp(TextualApp):
         subscriptions = {
             WORKFLOW_DIRTY: self._on_backend_event,
             WORKFLOW_STATE_UPDATE: self._on_workflow_state_update,
+            NODE_EXECUTION_UPDATE: self._on_node_execution_update,
             NODE_TIMING_UPDATE: self._on_node_timing_update,
             SUPERVISOR_REGISTER: self._on_supervisor_register,
             SUPERVISOR_STATE_UPDATE: self._on_supervisor_state_update,
@@ -163,78 +168,65 @@ class AttackOfTheNodesApp(TextualApp):
 
     def _on_workflow_state_update(self, payload=None) -> None:
         payload = payload or {}
-        previous_state = self.workflow_state
-        self.workflow_state = payload.get("state", self.workflow_state)
-        if self.workflow_state == "IDLE":
+        run_id = payload.get("run_id")
+        state = payload.get("state", self.workflow_state)
+        if (run_id != self.master_state.current_run_id
+                or run_id == self._retired_display_run_id):
+            return
+        if state == "RUNNING" and run_id != self.execution_state.run_id:
             self._reset_run_display_state()
-        elif self.workflow_state == "RUNNING" and previous_state in {"IDLE", "FINISHED", "ERROR"}:
+            self.execution_state.reset(run_id)
+            self.supervisors = self.execution_state.branches
+        self.workflow_state = state
+        if state == "IDLE":
             self._reset_run_display_state()
         self._on_backend_event(payload)
 
     def _on_supervisor_register(self, payload=None) -> None:
         payload = payload or {}
-        branch_id = payload.get("branch_id")
-        if branch_id:
-            self.supervisors[branch_id] = {
-                "state": "RUNNING",
-                "depth": payload.get("depth", 0),
-                "current_node_id": None,
-            }
+        if not self.execution_state.accepts(payload):
+            return
+        self.execution_state.register(payload)
         self._on_backend_event(payload)
 
     def _on_supervisor_state_update(self, payload=None) -> None:
         payload = payload or {}
-        branch_id = payload.get("branch_id")
-        state = payload.get("state", "")
-        current_node_id = payload.get("current_node_id")
+        if not self.execution_state.accepts(payload):
+            return
+        self.execution_state.supervisor(payload)
+        self._branch_current_nodes[payload["branch_id"]] = payload.get("current_node_id")
+        self._on_backend_event(payload)
 
-        previous_node_id = self._branch_current_nodes.get(branch_id)
-        if previous_node_id and previous_node_id != current_node_id:
-            self.node_statuses[previous_node_id] = "done"
-
-        if current_node_id:
-            if state == "WAITING_FOR_INPUT":
-                self.node_statuses[current_node_id] = "waiting"
-            elif state == "AWAITING_RECOVERY":
-                self.node_statuses[current_node_id] = "errored"
-            elif state == "ERROR":
-                self.node_statuses[current_node_id] = "errored"
-            elif state == "TERMINATED":
-                self.node_statuses[current_node_id] = "done"
-            else:
-                self.node_statuses[current_node_id] = "running"
-
-        if branch_id:
-            self._branch_current_nodes[branch_id] = current_node_id
-            self.supervisors.setdefault(branch_id, {})
-            self.supervisors[branch_id].update(
-                {"state": state, "current_node_id": current_node_id}
-            )
+    def _on_node_execution_update(self, payload=None) -> None:
+        payload = payload or {}
+        if not self.execution_state.accepts(payload):
+            return
+        self.execution_state.node(payload)
+        self.node_statuses = self.execution_state.node_statuses()
         self._on_backend_event(payload)
 
     def _on_node_timing_update(self, payload=None) -> None:
         payload = payload or {}
+        if not self.execution_state.accepts(payload):
+            return
         node_id = payload.get("node_id")
         if node_id:
             seconds = float(payload.get("seconds") or 0.0)
             self.node_timings[node_id] = self.node_timings.get(node_id, 0.0) + seconds
+            self.execution_state.timing(payload)
         self._on_backend_event(payload)
 
     def _on_supervisor_terminating(self, payload=None) -> None:
         payload = payload or {}
-        branch_id = payload.get("branch_id")
-        current_node_id = self._branch_current_nodes.get(branch_id)
-        if current_node_id:
-            self.node_statuses[current_node_id] = "done"
-        if branch_id in self.supervisors:
-            self.supervisors[branch_id]["state"] = payload.get("final_state", "TERMINATED")
+        if not self.execution_state.accepts(payload):
+            return
+        self.execution_state.supervisor(payload, terminated=True)
         self._on_backend_event(payload)
 
     def _on_user_input_needed(self, payload=None) -> None:
         payload = payload or {}
-        node_id = payload.get("node_id")
-        if node_id:
-            self.node_statuses[node_id] = "waiting"
+        if not self.execution_state.accepts(payload):
+            return
         if not self._user_input_modal_open:
             self._user_input_modal_open = True
             self.push_screen(
@@ -249,9 +241,8 @@ class AttackOfTheNodesApp(TextualApp):
 
     def _on_recovery_options_available(self, payload=None) -> None:
         payload = payload or {}
-        node_id = payload.get("node_id")
-        if node_id:
-            self.node_statuses[node_id] = "errored"
+        if not self.execution_state.accepts(payload):
+            return
         if not self._error_modal_open:
             self._error_modal_open = True
             self.push_screen(
@@ -273,6 +264,9 @@ class AttackOfTheNodesApp(TextualApp):
         self.master_state.submit_recovery_action(result["branch_id"], result["action"])
 
     def _reset_run_display_state(self) -> None:
+        if self.execution_state.run_id is not None:
+            self._retired_display_run_id = self.execution_state.run_id
+        self.execution_state.reset()
         self.node_statuses = {}
         self.node_timings = {}
         self.supervisors = {}
@@ -345,6 +339,7 @@ class AttackOfTheNodesApp(TextualApp):
     def _create_new_workflow(self) -> None:
         """Create a fresh starter workflow without additional confirmation."""
         self.stop_active_workflow()
+        self._reset_run_display_state()
         self._editor_deleted_nodes = {}
         self.workflow_map.create_new("Untitled Workflow")
         self.workflow_map.add_node(START_NODE_TYPE, alias="Start")
@@ -426,6 +421,7 @@ class AttackOfTheNodesApp(TextualApp):
             new_id = self.save_manager.duplicate_workflow(workflow_id)
             if new_id:
                 self.save_manager.load_workflow(new_id)
+                self._reset_run_display_state()
                 self._editor_deleted_nodes = {}
                 self.show_editor_screen()
                 notifications.workflow_duplicated(self)
@@ -455,6 +451,7 @@ class AttackOfTheNodesApp(TextualApp):
             else self.workflow_map.load(workflow_id)
         )
         if loaded:
+            self._reset_run_display_state()
             self._editor_deleted_nodes = {}
             self.show_editor_screen()
             notifications.workflow_loaded(self, result.get("workflow_name", workflow_id))

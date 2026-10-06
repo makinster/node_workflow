@@ -14,6 +14,7 @@ from typing import Any, Awaitable, Callable, Dict, List, Optional
 from .event_bus import EventBus
 from .events import (
     BREAKPOINT_HIT,
+    NODE_EXECUTION_UPDATE,
     NODE_TIMING_UPDATE,
     RECOVERY_OPTIONS_AVAILABLE,
     SUPERVISOR_ERROR,
@@ -99,6 +100,11 @@ class Supervisor:
         self._node_timeout_seconds = float(node_timeout_seconds)
         self._run_session = run_session
         self._secrets_manager = secrets_manager
+        self._visit_index = 0
+        self._attempt_index = 0
+        self._input_interrupted = False
+        self._last_node_status: Optional[str] = None
+        self._node_phase = "queued"
 
     async def run(self) -> None:
         """Run this supervisor until its path ends or errors."""
@@ -109,14 +115,21 @@ class Supervisor:
                 "supervisor": self,
                 "depth": self.depth,
                 "run_id": self.run_id,
+                "parent_branch_id": self.parent_branch_id,
+                "start_node_id": self._start_node_id,
             },
         )
 
         try:
             await self._run_loop()
-        except Exception:
+        except asyncio.CancelledError:
+            if self._last_node_status in {"running", "waiting"}:
+                self._publish_node_execution("stopped")
+            self.state = SupervisorState.TERMINATED
+            raise
+        except Exception as exc:
             logger.exception("Unhandled error in supervisor %s", self.branch_id)
-            self.state = SupervisorState.ERROR
+            self._fail(exc)
         finally:
             self._publish_terminating()
 
@@ -135,6 +148,7 @@ class Supervisor:
         self._stop_requested = True
         self._resume_event.set()
         if self._pending_input_future and not self._pending_input_future.done():
+            self._input_interrupted = True
             self._pending_input_future.set_result("")
         if self._pending_recovery_future and not self._pending_recovery_future.done():
             self._pending_recovery_future.set_result("TERMINATE_BRANCH")
@@ -167,6 +181,10 @@ class Supervisor:
                 if self._stop_requested:
                     break
 
+            self._visit_index += 1
+            self._attempt_index = 0
+            self._input_interrupted = False
+            self._last_node_status = None
             node = self._workflow_map.get_node_instance(self.current_node_id)
             if node is None:
                 self._fail(f"Node {self.current_node_id} not found in workflow map")
@@ -175,15 +193,20 @@ class Supervisor:
             inputs = self._prepare_inputs(node)
             result = await self._execute_node(node, inputs)
 
+            skipped = False
             while result.error is not None:
                 action = await self._request_recovery(result.error, inputs)
                 if action == "RETRY":
                     result = await self._execute_node(node, inputs)
                     continue
                 if action == "SKIP":
+                    self._publish_node_execution("skipped")
+                    skipped = True
                     self.current_node_id = self._workflow_map.find_next_node_id(
                         self.current_node_id or "", output_port="default"
                     )
+                    self._node_phase = "queued"
+                    self._publish_state_update()
                     result = _NodeResult(completed=True, payload={})
                     break
                 if action == "TERMINATE_WORKFLOW":
@@ -197,6 +220,9 @@ class Supervisor:
                 self._publish_state_update()
                 return
 
+            if skipped:
+                continue
+
             if not result.completed or result.payload is None:
                 self._fail(f"Node {self.current_node_id} returned without signaling")
                 return
@@ -207,6 +233,8 @@ class Supervisor:
 
             if result.payload:
                 self.current_node_id = self._handle_payload(result.payload)
+                self._node_phase = "queued"
+                self._publish_state_update()
 
         if self.state != SupervisorState.ERROR:
             self.state = SupervisorState.TERMINATED
@@ -261,6 +289,10 @@ class Supervisor:
 
     async def _execute_node(self, node: Node, inputs: Dict[str, Any]) -> _NodeResult:
         """Execute a node and capture its context signal result."""
+        self._attempt_index += 1
+        self._node_phase = "executing"
+        self._publish_state_update()
+        self._publish_node_execution("running")
         result = _NodeResult()
 
         def signal_done(payload: Dict[str, Any]) -> None:
@@ -275,6 +307,7 @@ class Supervisor:
             future: asyncio.Future = asyncio.get_running_loop().create_future()
             self._pending_input_future = future
             self.state = SupervisorState.WAITING_FOR_INPUT
+            self._publish_node_execution("waiting")
             self._publish_state_update()
             self._event_bus.publish(
                 USER_INPUT_NEEDED,
@@ -282,10 +315,12 @@ class Supervisor:
                     "branch_id": self.branch_id,
                     "node_id": self.current_node_id,
                     "prompt": prompt,
+                    "run_id": self.run_id,
                 },
             )
             value = await future
             self._pending_input_future = None
+            self._publish_node_execution("stopped" if self._input_interrupted else "running")
             self.state = SupervisorState.RUNNING
             self._publish_state_update()
             return value
@@ -353,9 +388,17 @@ class Supervisor:
                     "branch_id": self.branch_id,
                     "node_id": self.current_node_id,
                     "seconds": perf_counter() - started_at,
+                    "visit_index": self._visit_index,
+                    "attempt_index": self._attempt_index,
                 },
             )
 
+        if self._input_interrupted:
+            self._publish_node_execution("stopped")
+        elif result.error is not None or not result.completed or result.payload is None:
+            self._publish_node_execution("errored")
+        else:
+            self._publish_node_execution("done")
         return result
 
     async def _request_recovery(
@@ -459,6 +502,7 @@ class Supervisor:
     def _fail(self, error: Any) -> None:
         """Transition to error and publish a supervisor error event."""
         self.state = SupervisorState.ERROR
+        self._publish_node_execution("errored")
         message = str(error) if isinstance(error, Exception) else error
         self._event_bus.publish(
             SUPERVISOR_ERROR,
@@ -466,6 +510,24 @@ class Supervisor:
                 "branch_id": self.branch_id,
                 "node_id": self.current_node_id,
                 "error": message,
+                "run_id": self.run_id,
+            },
+        )
+
+    def _publish_node_execution(self, status: str) -> None:
+        """Report an attempt outcome independently of supervisor termination."""
+        if self.current_node_id is None:
+            return
+        self._last_node_status = status
+        self._event_bus.publish(
+            NODE_EXECUTION_UPDATE,
+            {
+                "run_id": self.run_id,
+                "branch_id": self.branch_id,
+                "node_id": self.current_node_id,
+                "visit_index": self._visit_index,
+                "attempt_index": self._attempt_index,
+                "status": status,
             },
         )
 
@@ -476,11 +538,19 @@ class Supervisor:
                 "branch_id": self.branch_id,
                 "state": self.state.value,
                 "current_node_id": self.current_node_id,
+                "run_id": self.run_id,
+                "node_phase": self._node_phase,
             },
         )
 
     def _publish_terminating(self) -> None:
         self._event_bus.publish(
             SUPERVISOR_TERMINATING,
-            {"branch_id": self.branch_id, "final_state": self.state.value},
+            {
+                "branch_id": self.branch_id,
+                "final_state": self.state.value,
+                "run_id": self.run_id,
+                "current_node_id": self.current_node_id,
+                "stop_requested": self._stop_requested,
+            },
         )

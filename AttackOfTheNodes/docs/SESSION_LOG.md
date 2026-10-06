@@ -4,6 +4,36 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-06 — Execution Status Fix Implementation (ES0–ES3)
+
+Branch: `codex/execution-symbol-investigation`, continuing `fa91bd0` and
+investigation `20d58c7`, based on fetched main `8ada5b2`. Canonical WSL checkout.
+
+- Added NODE_EXECUTION_UPDATE with run/branch/node/visit/attempt/status facts;
+  expanded supervisor position/provenance and timing identity. Report each
+  execution, retry, input wait/resume, successful/failed/skipped/stopped outcome.
+- Replaced frontend success guesses with ExecutionDisplayState. Retain ended
+  branches and visit/attempt timing/history; derive independent branch statuses
+  and a deterministic global summary. Ignore stale/retired runs and clear the
+  cache on workflow replacement.
+- Preserved failed outcomes through termination/cancellation, and safe-point
+  successes through stop. Corrected SKIP marking the next node completed before
+  it executed; regression asserts completion registry behavior.
+- Refresh run view after modals; update stable cards in place to retain scroll
+  and selection. Skipped/stopped use text labels without success checkmarks.
+- ES0 regression cases failed on original code (5 failed); now 21 execution
+  checks pass covering linear live/final rendering, parallel shared nodes,
+  retries/repeat visits, recovery, user input, cancellation, barriers, pause,
+  stale events, workflow replacement and three terminal widths.
+- Final verification: `pytest tests/ -q` **414 passed in 49.74s** (includes all
+  154 existing debug tests); focused execution suite **21 passed**; compileall;
+  git diff --check; local Markdown link checks. No live owner confirmation yet.
+- Current implementation recorded in EXECUTION_STATUS_CONTRACT.md. Updated
+  plan/roadmap/backlog/UI routes and NEXT_CHAT_HANDOFF.md. Future A/D branch
+  view, scrolling and output summaries remain a separate design/layout task.
+- ES4 automated work complete; owner live check and review/merge remain.
+  Commit/publication details are recorded in NEXT_CHAT_HANDOFF.md after commit.
+
 ## 2026-10-06 — Execution Fix Build Plan and Future Branch UI
 
 Branch: `codex/execution-symbol-investigation`, continuing investigation commit

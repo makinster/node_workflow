@@ -115,6 +115,8 @@ layout-level conventions.
 
 ## Investigate Execution Symbols Or Redesign The Run Screen
 
+Read `NEXT_CHAT_HANDOFF.md` for current session results and next steps.
+Read `EXECUTION_STATUS_CONTRACT.md` for implemented state/rendering semantics.
 Read `EXECUTION_STATUS_BUILD_PLAN.md` for ES0–ES4 and future A/D branch-view
 requirements. Read `EXECUTION_STATUS_INVESTIGATION.md` for the reproduced defects, current
 symbol and event semantics, and the proposed correctness-first plan. Then use
@@ -124,8 +126,9 @@ Likely files: `backend/supervisor.py`, `backend/master_state.py`,
 `backend/events.py`, `frontend/app.py`, `frontend/screens/execution.py`,
 `frontend/widgets/node_list.py`, and `frontend/widgets/node_card.py`.
 
-Backend execution success does not establish correct frontend symbols. Add
-status-cache and mounted run-screen assertions as part of the future fix.
+Backend execution success does not establish correct frontend symbols. Keep
+status-cache and mounted run-screen assertions in `tests/test_execution_status.py`.
+Run `../.venv/bin/python -m pytest tests/test_execution_status.py -q` from the app.
 
 ## Continue Phase 17 Node Visual Identity
 

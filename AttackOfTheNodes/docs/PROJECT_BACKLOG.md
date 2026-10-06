@@ -89,7 +89,9 @@ branch selectors are different identities; use runtime parent/depth provenance.
 Prerequisite: [EXECUTION_STATUS_BUILD_PLAN.md](EXECUTION_STATUS_BUILD_PLAN.md),
 ES0–ES4, repairs missing node transitions, false completion after errors, and
 stale modal-resume rendering. Prepare run/branch/node visit state now; implement
-navigation/layout afterward in a separate task/PR. No stages implemented yet.
+navigation/layout afterward in a separate task/PR. ES0–ES3 now implemented;
+ES4 awaits owner live verification/review. Current contract:
+`EXECUTION_STATUS_CONTRACT.md`.
 
 Future design must settle branch labels/order, repeated-visit presentation,
 upcoming versus actually visited rows, wait/pause/skip/stop presentation, and

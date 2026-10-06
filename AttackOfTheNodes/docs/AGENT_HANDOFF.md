@@ -19,16 +19,19 @@ original data, extend validator errors). See `BACKEND_FRONTEND_BOUNDARY.md`.
 
 ## Execution Screen Follow-Up (2026-10-06)
 
-The run-screen circle/checkmark defect has been investigated, not fixed.
-Read `EXECUTION_STATUS_INVESTIGATION.md` and `EXECUTION_STATUS_BUILD_PLAN.md`
-before implementation. Missing node lifecycle updates, error overwritten as
-success, and stale modal-resume rendering were reproduced. ES0–ES4 are pending.
+Execution-status correctness stages ES0–ES3 are now implemented on
+`codex/execution-symbol-investigation`. Read `EXECUTION_STATUS_CONTRACT.md`
+for current lifecycle facts, run/branch/visit cache, and rendering logic;
+`EXECUTION_STATUS_BUILD_PLAN.md` tracks ES4 owner live verification/review.
+The investigation document is the historical before-fix snapshot.
 
-Owner plans A/D cycling through execution branches, scrollable per-branch node
-lists and output-summary UI. The fix prepares run/branch/node visit state;
-the visual redesign follows separately. Retain ended branches and keep branch
-navigation/scroll separate from execution state. Output-node logs are not a
-complete per-visit output history; summary attribution needs future design.
+Tests cover linear/parallel runs, retry/skip/termination/cancellation, input,
+barriers, reruns, modal resume and selection/scroll at three widths. Current UI
+still shows a global node list. Next design: A/D cycling through execution
+branches, scrollable per-branch lists and output summaries. Retained ended
+branches and independent visits are ready; payload summary attribution remains
+future design work. See `NEXT_CHAT_HANDOFF.md` for exact branch/commit/results
+and recommended next steps. Do not rebuild the lifecycle layer in the redesign.
 
 ## Start Here
 

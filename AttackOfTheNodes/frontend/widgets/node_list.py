@@ -27,9 +27,19 @@ class NodeList(ListView):
         statuses: Optional[Dict[str, str]] = None,
         timings: Optional[Dict[str, float]] = None,
     ) -> None:
-        """Replace the list contents with current workflow nodes."""
+        """Update execution cards; rebuild only when node IDs/order change."""
         statuses = statuses or {}
         timings = timings or {}
+        # Execution events change status/timing far more often than graph shape.
+        # Keep mounted cards stable so highlights and scroll survive updates.
+        cards = list(self.query(NodeCard))
+        if cards and [card.node_id for card in cards] == list(nodes):
+            for card in cards:
+                card.node_data = nodes[card.node_id]
+                card.status = statuses.get(card.node_id, "idle")
+                card.timing_seconds = timings.get(card.node_id)
+                card.refresh_card()
+            return
         self.clear()
         self._rows = [
             {"kind": "node", "node_id": node_id, "node": node_data}

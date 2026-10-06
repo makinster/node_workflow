@@ -1,6 +1,6 @@
 # Execution Status Fix Build Plan
 
-Created 2026-10-06. Status: **planned; no implementation started**.
+Created 2026-10-06. Status: **ES0–ES3 implemented and automatically verified; ES4 live verification/review pending**.
 Base: fetched main `8ada5b2`; investigation commit `20d58c7` on
 `codex/execution-symbol-investigation`. See
 [the investigation](EXECUTION_STATUS_INVESTIGATION.md) for reproduced failures
@@ -22,7 +22,9 @@ Backend events carry portable facts; the frontend owns glyphs and navigation.
 
 ## Proposed state contract
 
-Finalize field names in ES1 before implementing producers and consumers.
+Implemented field names and derivation are recorded in
+[EXECUTION_STATUS_CONTRACT.md](EXECUTION_STATUS_CONTRACT.md). The bullets below
+retain the agreed requirements; use the contract for current implementation.
 
 - Scope every execution display event by `run_id` and `branch_id`; node events
   also identify `node_id`. Reject events from older runs in the display cache.
@@ -54,7 +56,7 @@ Finalize field names in ES1 before implementing producers and consumers.
 
 ## ES0 — Regression cases
 
-Status: pending. Likely files: focused execution-status tests plus existing
+Status: implemented; covered by `tests/test_execution_status.py`. Likely files: focused execution-status tests plus existing
 `tests/test_debug_nodes.py`. Use real EventBus/Supervisor/App wiring and mounted
 Textual tests; do not rely solely on simulated handler events.
 
@@ -74,7 +76,7 @@ with the existing runtime tests still passing.
 
 ## ES1 — Explicit lifecycle reporting
 
-Status: pending. Likely files: `backend/events.py`, `backend/supervisor.py`,
+Status: implemented; covered by `tests/test_execution_status.py`. Likely files: `backend/events.py`, `backend/supervisor.py`,
 `backend/master_state.py`, runtime/event tests.
 
 - Publish node entry at every execution step and retry; publish explicit
@@ -92,7 +94,7 @@ nodes, failures and repeat visits. Existing runtime checks pass.
 
 ## ES2 — Branch-specific frontend status derivation
 
-Status: pending. Likely files: `frontend/app.py`, a small shared frontend
+Status: implemented; covered by `tests/test_execution_status.py`. Likely files: `frontend/app.py`, a small shared frontend
 execution-state helper, focused reducer/cache tests.
 
 - Consume lifecycle facts in one reducer; remove success-on-node-movement and
@@ -109,7 +111,7 @@ read interface for the future execution view.
 
 ## ES3 — Reliable rendering and resume
 
-Status: pending. Likely files: `frontend/screens/execution.py`,
+Status: implemented; covered by `tests/test_execution_status.py`. Likely files: `frontend/screens/execution.py`,
 `frontend/widgets/node_list.py`, `frontend/widgets/node_card.py`, mounted tests.
 
 - Refresh from current state on screen resume after any covering modal.
@@ -124,7 +126,10 @@ completion/error/stop. Rapid event bursts do not leave stale cards.
 
 ## ES4 — Verification and handoff
 
-Status: pending.
+Status: automated verification complete; owner live check and PR review remain.
+21 focused execution regressions passed, including mounted screens at 60/100/140
+columns. Compileall and diff checks passed; full-suite result in SESSION_LOG.md.
+No claim of owner live confirmation is made until reported.
 
 - Compile: `../.venv/bin/python -m compileall -q .` from AttackOfTheNodes.
 - Run new focused execution lifecycle/cache/render tests, full debug suite,

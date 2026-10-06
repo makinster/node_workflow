@@ -8,6 +8,13 @@ completed nodes during execution; this matches the linear-run reproduction.
 The owner describes a circle as waiting; current code uses it for not visited
 and reserves the pause glyph for waiting for input.
 
+## Current follow-up status
+
+This file preserves the original investigation against `8ada5b2`; the current
+fix implements ES0–ES3. See `EXECUTION_STATUS_CONTRACT.md` for the new event,
+branch cache and rendering logic, and `EXECUTION_STATUS_BUILD_PLAN.md` for
+remaining live verification and future layout work.
+
 ## Finding
 
 The primary defect is missing per-node supervisor updates, rather than an
