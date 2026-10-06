@@ -4,6 +4,23 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-06 — Execution Fix Build Plan and Future Branch UI
+
+Branch: `codex/execution-symbol-investigation`, continuing investigation commit
+`20d58c7` from fetched main `8ada5b2`. Documentation only.
+
+- Added `EXECUTION_STATUS_BUILD_PLAN.md`: ES0 regression cases, ES1 explicit
+  lifecycle facts, ES2 branch-specific display state, ES3 rendering/resume,
+  ES4 verification and handoff. All stages pending; no application fix made.
+- Recorded owner direction: A/D cycles execution branches, scrollable node
+  lists per branch, and output-summary UI in a separate future task/PR.
+- Defined preparation for branch/visit identity and completed-branch retention;
+  documented output-summary attribution/retention and layout decisions still
+  requiring design. Preserve runtime semantics and current glyph meanings.
+- Linked investigation, README, task index, master plan, handoff, backlog and
+  TUI design so subsequent work finds both immediate and future scope.
+- Verification: documentation link/heading review and `git diff --check`.
+
 ## 2026-10-06 — Execution Symbol Investigation and Proposed Plan
 
 Branch: `codex/execution-symbol-investigation`, based on fetched main `8ada5b2`

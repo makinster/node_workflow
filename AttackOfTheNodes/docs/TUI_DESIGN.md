@@ -75,6 +75,20 @@ Node status icons:
 - `✗` errored
 - `⏸` waiting for input
 
+## Planned Execution Screen Changes (2026-10-06)
+
+Current execution uses a global node list. The owner intends a per-branch view:
+A/D cycles execution branches; each branch has a scrollable node list and
+output-summary UI. These controls/layout are not implemented. Preserve branch
+selection and scroll during live updates, and retain completed branches for
+inspection. Distinguish runtime branch IDs from editor branch selectors.
+
+First implement the correctness stages in `EXECUTION_STATUS_BUILD_PLAN.md`.
+Preserve the existing status glyph meanings above; skip/stop and additional
+pause/barrier symbols remain design choices. Branch/visit attribution and
+summary data sources must be designed before output previews are promised.
+See the plan and `PROJECT_BACKLOG.md` for scope and open decisions.
+
 ## Field Type Mapping
 
 The schema-driven form generator should map backend field descriptors to Textual

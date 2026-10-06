@@ -100,6 +100,11 @@ needed before relying on the caches for asynchronous or remote frontends.
 
 ## Recommended game plan
 
+Implementation stages now live in [EXECUTION_STATUS_BUILD_PLAN.md](EXECUTION_STATUS_BUILD_PLAN.md).
+The owner subsequently specified A/D execution-branch cycling, scrollable
+per-branch node lists, and output summaries. The fix must retain branch-specific
+visit/outcome state; the visual redesign remains a follow-up.
+
 1. **Establish behavioral tests before changing layout.** Check intermediate
    live states and rendered cards for linear and forked paths; untouched nodes
    remain idle. Cover error retry/skip/termination, user input, WaitUntil/merge,

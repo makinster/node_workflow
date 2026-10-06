@@ -115,7 +115,8 @@ layout-level conventions.
 
 ## Investigate Execution Symbols Or Redesign The Run Screen
 
-Read `EXECUTION_STATUS_INVESTIGATION.md` for the reproduced defects, current
+Read `EXECUTION_STATUS_BUILD_PLAN.md` for ES0–ES4 and future A/D branch-view
+requirements. Read `EXECUTION_STATUS_INVESTIGATION.md` for the reproduced defects, current
 symbol and event semantics, and the proposed correctness-first plan. Then use
 `SIGNAL_FLOW.md`, `TUI_DESIGN.md`, and `BACKEND_FRONTEND_BOUNDARY.md`.
 

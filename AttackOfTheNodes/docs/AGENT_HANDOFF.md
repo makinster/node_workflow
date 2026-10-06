@@ -17,6 +17,19 @@ save-persistent deleted-node record. Phase B is now a frontend migration task
 (update save path from `branch_end_node` marker to `tombstone_node` with full
 original data, extend validator errors). See `BACKEND_FRONTEND_BOUNDARY.md`.
 
+## Execution Screen Follow-Up (2026-10-06)
+
+The run-screen circle/checkmark defect has been investigated, not fixed.
+Read `EXECUTION_STATUS_INVESTIGATION.md` and `EXECUTION_STATUS_BUILD_PLAN.md`
+before implementation. Missing node lifecycle updates, error overwritten as
+success, and stale modal-resume rendering were reproduced. ES0–ES4 are pending.
+
+Owner plans A/D cycling through execution branches, scrollable per-branch node
+lists and output-summary UI. The fix prepares run/branch/node visit state;
+the visual redesign follows separately. Retain ended branches and keep branch
+navigation/scroll separate from execution state. Output-node logs are not a
+complete per-visit output history; summary attribution needs future design.
+
 ## Start Here
 
 1. `docs/README.md` — task router.
