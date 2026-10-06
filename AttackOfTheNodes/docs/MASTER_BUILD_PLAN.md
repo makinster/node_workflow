@@ -58,24 +58,16 @@ Completed in Phase 17 so far:
 - Focused tests cover metadata exposure, selector filtering, row rendering,
   details-panel identity, truncation, and keyboard/selection stability.
 
-Taxonomy revision (2026-06-12): five backend families (`Inputs`, `Outputs`,
-`Flow Control`, `Utility`, `Complex`) mapped onto four selector tabs — `I/O`
-(Input/Output switch), `Flow Control`, `Utility`, `Complex`. AI became a
-subcategory, not a family. Filters reduced to I/O (`File I/O`/`Internet`/`AI`)
-and Complex (`AI`). In-list section headers organize tabs; keyboard nav skips
-them. Start/End removed from the user-facing taxonomy (terminate-branch
-config on outputs + End Branch node). Full inventory in `NODE_CATALOG.md`.
-
-Implemented for the revision (2026-06-12): `group` / `selector_section`
-metadata exposure, five-family remap with `Utility` editor styling, the
-four-tab selector with I/O switch, section headers, reduced filters, the
-generic Group Picker modal with auto-promotion and ESC-returns-to-selector,
-selector hiding of `start_node`/`end_node`, and node helper validation for
-the new families and fields.
+Current taxonomy: five selector tabs, **In / Flow Control / Utility / Out /
+Complex**, numbered 1–5. `primary_family` is the portable family metadata;
+`group` and `selector_section` are frontend navigation metadata. Tags are search
+keywords. The old combined I/O switch and subcategory checkbox filters are
+retired. The generic Group Picker promotes single-member groups automatically.
+Start/End and tombstones are intentionally excluded from new-node selection.
 
 Remaining Phase 17 work:
 
-- Manually verify the selector (tabs, switch, headers, picker) and the
+- Manually verify the selector (tabs, search, headers, picker) and the
   editor view in the running app at several terminal widths: two-line rows,
   aligned frames, identity line visible, selection highlight, and branch
   selector rows. (First rendering bug already fixed: identity rows now
@@ -139,7 +131,7 @@ change Phase 17's editor/selector scope or mark any runtime fix completed.
 | 10 | Documentation modernization | Done |
 | 10.5 | Backend/frontend boundary cleanup (Phase A) | Done |
 | 10.6 | Tombstone design decision + Phase B migration | Done (restore-alert UI + Phase C metadata deferred) |
-| 11 | Real AI node execution | Deferred |
+| 11 | Real AI node execution | Chat Completion implemented; Embedding/Image remain simulated |
 | 12 | Packaging and release hardening | Deferred |
 | 13 | Cursor model foundation | Done |
 | 14 | Key binding remap | Done |

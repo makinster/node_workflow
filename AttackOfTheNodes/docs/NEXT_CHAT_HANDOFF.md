@@ -1,5 +1,7 @@
 # Next Chat Handoff — Execution Status and Branch UI
 
+Current project and session rundown: [SESSION_SUMMARY.md](SESSION_SUMMARY.md).
+
 Updated 2026-10-06. Use `/home/makin/src/node_workflow` and its `.venv/bin/python`.
 The OneDrive checkout is recovery-only. Select the WSL project in Codex for the
 new chat. Do not create another independent checkout or copy whole trees.

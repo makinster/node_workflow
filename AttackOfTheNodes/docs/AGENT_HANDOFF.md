@@ -44,7 +44,7 @@ Execution-status correctness stages ES0–ES3 are now implemented on
 `codex/execution-symbol-investigation`. Read `EXECUTION_STATUS_CONTRACT.md`
 for current lifecycle facts, run/branch/visit cache, and rendering logic;
 `EXECUTION_STATUS_BUILD_PLAN.md` tracks ES4: owner confirmed symbols live;
-PR #28 reviewed and merge authorized. Verify merge status and fetch main.
+PR #28 merged as `7161ef2`; do not repeat the lifecycle implementation.
 The investigation document is the historical before-fix snapshot.
 
 Tests cover linear/parallel runs, retry/skip/termination/cancellation, input,

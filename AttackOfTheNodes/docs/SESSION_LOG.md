@@ -4,6 +4,15 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-06 — Next-Session Project Rundown
+
+Rechecked Git and GitHub: PR #29 open, unmerged and mergeable; main remains
+`7161ef2`. Added SESSION_SUMMARY.md, corrected stale selector/AI/status roadmap
+paragraphs, and linked the rundown from the docs entry point and handoff. This
+is a docs-only follow-up on the same PR. No new runtime/UI changes or tests;
+546-test integration result above/below remains the last actual full run.
+`git diff --check` passed. Real Windows FO7 and remaining UI stages stay open.
+
 ## 2026-10-06 — Integrate File Output, Repair Audit Blockers, Prepare One Session PR
 
 Authoritative root `/home/makin/src/node_workflow`; branch

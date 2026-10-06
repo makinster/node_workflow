@@ -83,14 +83,14 @@ Recommended cleanup:
 - When a gap is closed, move its bullet to `SESSION_LOG.md` and the relevant
   completed/near-term section below.
 
-## Next Planning Task — Capability-Driven Node Configuration UI
+## Next Implementation Task — Capability-Driven Node Configuration UI
 
-The Wait Until layout exposed broader capability, save and geometry defects.
-[NODE_CONFIG_UI_AUDIT.md](NODE_CONFIG_UI_AUDIT.md) records current coverage and
-proposed stages. [PENDING_CHANGES_REVIEW.md](PENDING_CHANGES_REVIEW.md) reviews
-local fixes and the unmerged File Output dependency. A detailed build plan is
-next; implementation has not begun. Keep the separate execution-branch proposal
-and unmerged file/window features explicit when selecting the planning baseline.
+Stage 0 is implemented in [PR #29](https://github.com/makinster/node_workflow/pull/29):
+File Output integration and focused runtime/save/geometry fixes. The current
+37-type baseline and stages 1–5 are in [CONFIG_UI_BUILD_PLAN.md](CONFIG_UI_BUILD_PLAN.md).
+Start with truthful capability gating for shared legacy Vault controls, then
+applicable sections/navigation. The original audit retains before-fix evidence.
+Keep execution-branch UI design separate; Windows FO7 still requires live review.
 
 ## Planned Project — Execution Screen Branch View
 
@@ -108,7 +108,7 @@ Prerequisite: [EXECUTION_STATUS_BUILD_PLAN.md](EXECUTION_STATUS_BUILD_PLAN.md),
 ES0–ES4, repairs missing node transitions, false completion after errors, and
 stale modal-resume rendering. Prepare run/branch/node visit state now; implement
 navigation/layout afterward in a separate task/PR. ES0–ES3 now implemented;
-ES4 awaits owner live verification/review. Current contract:
+ES4's execution symbols were owner-confirmed and merged via PR #28. Current contract:
 `EXECUTION_STATUS_CONTRACT.md`.
 
 Future design must settle branch labels/order, repeated-visit presentation,

@@ -1,5 +1,7 @@
 # AttackOfTheNodes Docs
 
+Current project and session rundown: [SESSION_SUMMARY.md](SESSION_SUMMARY.md).
+
 Current session integration: [SESSION_INTEGRATION_BUILD_PLAN.md](SESSION_INTEGRATION_BUILD_PLAN.md).
 Remaining configuration work: [CONFIG_UI_BUILD_PLAN.md](CONFIG_UI_BUILD_PLAN.md).
 
