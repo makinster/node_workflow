@@ -4496,6 +4496,19 @@ async def _test_node_config_continue_mode_dynamic_document():
                 if "form-section-label" in label.classes
             }
 
+        # A rule pass must scan the tree once, even for Chat Completion's
+        # many hidden context inputs; per-field scans delayed screen opening.
+        from unittest.mock import patch
+        from frontend.widgets.form_generator import apply_field_rules
+
+        screen = app.query_one(NodeConfigScreen)
+        with patch.object(screen, "query", wraps=screen.query) as query:
+            apply_field_rules(
+                screen, screen._rule_schema, screen._get_form_values()
+            )
+        assert query.call_count == 1
+        query.assert_called_once_with("*")
+
         document_source = app.query_one("#field-document_source", Select)
         document_box = app.query_one("#field-document")
         keep_session = app.query_one("#field-use_chat_session", Checkbox)

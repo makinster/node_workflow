@@ -4,6 +4,27 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-06 — Chat Completion Config Opening Delay
+
+Branch: `codex/chat-config-opening-lag`, based on fetched `origin/main`
+`af04c5f`, in `/home/makin/src/node_workflow`.
+
+- Profiled the mounted Chat Completion config interaction: repeated dynamic
+  rule passes traversed the entire widget tree for each field/label/row.
+- Changed shared form-rule application to build one widget-id lookup per pass,
+  preserving conditional visibility, enabled state, required labels, section
+  titles, and forced select values. Rebuild each pass to reflect DOM changes.
+- Added a traversal-count regression assertion to the mounted Continue AI
+  session test; existing tests cover repeatable context and source choices.
+- Same cProfile test before/after: rule processing 7.664s -> 0.093s;
+  pytest duration 11.08s -> 2.25s. These include profiling overhead and are
+  automated interaction timings, not live-terminal opening measurements.
+- Verification: compileall; focused config/form tests (32 passed, 122
+  deselected); full debug suite (154 passed); node-helper tests (14 passed);
+  git diff --check. Owner confirmed the fix in the live app on 2026-10-06
+  after local implementation commit `de04338`.
+- Local fix only; no push or merge into main.
+
 ## 2026-07-11 — File Output Build Plan: Design-Review Amendments
 
 Branch: `main` (plan merged from `claude/output-nodes-file-windows-wq07q6`
