@@ -4,6 +4,25 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-06 — Execution Symbol Investigation and Proposed Plan
+
+Branch: `codex/execution-symbol-investigation`, based on fetched main `8ada5b2`
+in `/home/makin/src/node_workflow`. Investigation and docs only.
+
+- Reproduced missing per-node supervisor events: Start -> Sleep -> Sleep -> End
+  executes fully but leaves the latter three nodes idle in App's status cache.
+- Reproduced error status overwritten as done on branch termination, and a
+  mounted ExecutionScreen remaining stale after a modal closes.
+- Documented event -> cache -> rendering behavior, current symbol meanings,
+  safe-point pauses, barrier waits, timing, run-scoping and concurrent-visit gaps.
+- Added `EXECUTION_STATUS_INVESTIGATION.md` with a staged correctness fix plan
+  and guidance for the upcoming execution UI redesign; linked docs/task routes.
+- Verification: real-run event/cache probes, mounted Textual modal probe;
+  existing focused debug tests 5 passed, 149 deselected; git diff --check.
+- Owner clarified that completed nodes retain circles instead of checkmarks,
+  matching the reproduced missing-transition defect. No application fix
+  implemented; proposed implementation/design decisions recorded for follow-up.
+
 ## 2026-10-06 — Chat Completion Config Opening Delay
 
 Branch: `codex/chat-config-opening-lag`, based on fetched `origin/main`

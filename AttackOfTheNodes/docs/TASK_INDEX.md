@@ -113,6 +113,19 @@ dynamic sections, notifications, and form generation.
 Open `TUI_DESIGN.md` only when you need full screen details, Textual detours, or
 layout-level conventions.
 
+## Investigate Execution Symbols Or Redesign The Run Screen
+
+Read `EXECUTION_STATUS_INVESTIGATION.md` for the reproduced defects, current
+symbol and event semantics, and the proposed correctness-first plan. Then use
+`SIGNAL_FLOW.md`, `TUI_DESIGN.md`, and `BACKEND_FRONTEND_BOUNDARY.md`.
+
+Likely files: `backend/supervisor.py`, `backend/master_state.py`,
+`backend/events.py`, `frontend/app.py`, `frontend/screens/execution.py`,
+`frontend/widgets/node_list.py`, and `frontend/widgets/node_card.py`.
+
+Backend execution success does not establish correct frontend symbols. Add
+status-cache and mounted run-screen assertions as part of the future fix.
+
 ## Continue Phase 17 Node Visual Identity
 
 Read:
