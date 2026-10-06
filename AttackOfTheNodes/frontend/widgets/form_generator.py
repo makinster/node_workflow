@@ -484,6 +484,13 @@ def apply_field_rules(
     value while a condition holds). All conditions share the mapping shape
     evaluated by `evaluate_field_condition`.
     """
+    # Rebuild once per pass so newly mounted or removed fields are reflected.
+    # Per-field selectors otherwise repeatedly traverse the entire widget tree.
+    widgets_by_id: Dict[str, list[Any]] = {}
+    for mounted_widget in root.query("*"):
+        if mounted_widget.id:
+            widgets_by_id.setdefault(mounted_widget.id, []).append(mounted_widget)
+
     for field_name, field_schema in config_schema.items():
         enabled_when = field_schema.get("enabled_when")
         visible_when = field_schema.get("visible_when")
@@ -494,7 +501,7 @@ def apply_field_rules(
             (enabled_when, visible_when, required_when, section_when, force_value_when)
         ):
             continue
-        widgets = list(root.query(f"#field-{field_name}"))
+        widgets = widgets_by_id.get(f"field-{field_name}", [])
         widget = widgets[0] if widgets else None
 
         if enabled_when is not None and widget is not None:
@@ -507,13 +514,13 @@ def apply_field_rules(
                 f"field-desc-{field_name}",
                 f"field-row-{field_name}",
             ):
-                for extra in root.query(f"#{extra_id}"):
+                for extra in widgets_by_id.get(extra_id, []):
                     extra.display = visible
         if required_when is not None:
             required = bool(field_schema.get("required")) or evaluate_field_condition(
                 required_when, values
             )
-            _set_label_required(root, field_name, field_schema, required)
+            _set_label_required(widgets_by_id, field_name, field_schema, required)
         if section_when:
             title = None
             for candidate, condition in section_when.items():
@@ -521,7 +528,7 @@ def apply_field_rules(
                     title = candidate
                     break
             default_title = str(field_schema.get("section") or "")
-            for header in root.query(f"#form-section-{field_name}"):
+            for header in widgets_by_id.get(f"form-section-{field_name}", []):
                 header.update(title or default_title)
         if force_value_when and isinstance(widget, Select):
             forced = None
@@ -538,7 +545,7 @@ def apply_field_rules(
 
 
 def _set_label_required(
-    root: Any,
+    widgets_by_id: Dict[str, list[Any]],
     field_name: str,
     field_schema: Dict[str, Any],
     required: bool,
@@ -546,11 +553,11 @@ def _set_label_required(
     """Refresh a field's rendered label / checkbox text to reflect required."""
     base = field_schema.get("label") or humanize_field_name(field_name)
     suffix = " *" if required else ""
-    for label in root.query(f"#field-label-{field_name}"):
+    for label in widgets_by_id.get(f"field-label-{field_name}", []):
         inline = "form-label-inline" in getattr(label, "classes", set())
         label.update(f"{base}{suffix}:" if inline else f"{base}{suffix}")
     if str(field_schema.get("type", "")).lower() == "boolean":
-        for checkbox in root.query(f"#field-{field_name}"):
+        for checkbox in widgets_by_id.get(f"field-{field_name}", []):
             if isinstance(checkbox, Checkbox):
                 checkbox.label = f"{base}{suffix}"
 
