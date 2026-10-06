@@ -32,7 +32,9 @@ investigation `20d58c7`, based on fetched main `8ada5b2`. Canonical WSL checkout
   plan/roadmap/backlog/UI routes and NEXT_CHAT_HANDOFF.md. Future A/D branch
   view, scrolling and output summaries remain a separate design/layout task.
 - ES4 automated work complete; owner live check and review/merge remain.
-  Commit/publication details are recorded in NEXT_CHAT_HANDOFF.md after commit.
+  Implementation commit `a31900d` pushed; draft PR #28 opened at
+  https://github.com/makinster/node_workflow/pull/28 (not merged).
+  NEXT_CHAT_HANDOFF.md records exact state and next-chat instructions.
 
 ## 2026-10-06 — Execution Fix Build Plan and Future Branch UI
 
