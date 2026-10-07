@@ -4,7 +4,10 @@
 **Revised:** 2026-07-11 — design-review amendments: D2/D3/D4/D5 caveats,
 new D11/D12, FO4/FO5/FO7 additions. No scope change.
 **Branch:** `claude/output-nodes-file-windows-wq07q6` (merged to `main` 2026-07-11)
-**Status:** planned — no phase started
+**Status:** FO1–FO6 implemented and integrated on the session PR branch; FO7 Windows live verification remains open.
+
+2026-10-06 integration repairs and remaining findings: `CONFIG_UI_BUILD_PLAN.md`.
+Viewer requests now use a run-scoped FIFO queue; node execution remains nonblocking.
 
 Goal: output nodes that treat files as first-class workflow objects — write
 them, format them human-friendly, open them in the user's default apps at
@@ -33,13 +36,18 @@ Execution rules (same as previous plans):
 
 ## Phase Checklist
 
-- [ ] FO1 — `file_output_node`: write + typed file reference
-- [ ] FO2 — Markdown/text formatting for humans
-- [ ] FO3 — In-TUI file viewer (zero OS-window dependency)
-- [ ] FO4 — `backend/window_manager.py` platform adapter
-- [ ] FO5 — Launch + placement on `file_output_node`
-- [ ] FO6 — `window_control_node`
+- [x] FO1 — `file_output_node`: write + typed file reference (2026-07-11)
+- [x] FO2 — Markdown/text formatting for humans (2026-07-11)
+- [x] FO3 — In-TUI file viewer (zero OS-window dependency) (2026-07-11)
+- [x] FO4 — `backend/window_manager.py` platform adapter (2026-07-11)
+- [x] FO5 — Launch + placement on `file_output_node` (2026-07-11)
+- [x] FO6 — `window_control_node` (2026-07-11)
 - [ ] FO7 — Windows live verification + docs reconciliation
+      (docs reconciliation done 2026-07-11 — `MASTER_BUILD_PLAN.md`,
+      `PROJECT_BACKLOG.md` deferred items, `TASK_INDEX.md` route,
+      `NODE_CATALOG.md` Window Focus supersession; the 7-step manual
+      Windows protocol below still needs the owner's machine, then
+      archive this plan with a `DOCS_MIGRATION_NOTES.md` entry)
 
 ---
 

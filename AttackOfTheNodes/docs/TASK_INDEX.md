@@ -1,5 +1,10 @@
 # Task Index
 
+Current session integration: [SESSION_INTEGRATION_BUILD_PLAN.md](SESSION_INTEGRATION_BUILD_PLAN.md).
+Remaining configuration work: [CONFIG_UI_BUILD_PLAN.md](CONFIG_UI_BUILD_PLAN.md).
+
+File Output compatibility and integration order: [FILE_OUTPUT_INTEGRATION_REVIEW.md](FILE_OUTPUT_INTEGRATION_REVIEW.md).
+
 `README.md` routes you to this file. This file gives the minimum reading set,
 likely code files, and the focused `pytest -k` or helper commands for each task
 type. Open the docs listed here, then open deeper references only if those docs
@@ -83,6 +88,31 @@ Notes: the model dropdown options come from `SUPPORTED_MODELS` — update the
 constant only, never frontend code. Some models reject sampling parameters;
 `ModelInfo.supports_temperature` controls whether `temperature` is sent.
 
+## Audit Or Simplify Node Configuration UI
+
+For toggle-dependent visibility and scrolling, start with
+`NODE_CONFIG_VISIBILITY_SCROLL_AUDIT.md` and its reproducible before/after
+evidence under `docs/audits/toggle_scroll_2026_10_06/`. Keep the convenience
+reasons for visible read-only information explicit.
+
+Read `PENDING_CHANGES_REVIEW.md` for pending fixes and the unmerged File Output
+branch impact, then `NODE_CONFIG_UI_AUDIT.md` and its mounted control inventory. The audit
+covers all 35 registered types, including selector groups and intentional hidden
+types, against the 2026-10-06 dirty Wait Until baseline. Start with shared save
+preservation, production-CSS field sizing and capability truth before a broad
+layout pass. The proposed stages are not implemented. Keep runtime changes
+separate and preserve unsupported legacy keys until an explicit migration.
+
+Reproduce with the scripts under `docs/audits/node_config_2026_10_06/`; use their
+README for commands and limitations. UI checks must load `frontend/styles.tcss`.
+
+## Simplify Wait Until Configuration
+
+Read `WAIT_UNTIL_UI_PLAN.md`, `WAIT_UNTIL_INVESTIGATION.md`, and
+`UI_QUICK_REFERENCE.md`. The implemented UI contains Wait and Connections tabs;
+Wait Until never reads or writes the Vault. Target selection is graph-derived
+frontend behavior. Reuse NodeConfigScreen command/tab/list helpers.
+
 ## Fix Frontend Or UI Behavior
 
 Read:
@@ -116,6 +146,7 @@ layout-level conventions.
 ## Investigate Execution Symbols Or Redesign The Run Screen
 
 Read `NEXT_CHAT_HANDOFF.md` for current session results and next steps.
+Read `EXECUTION_BRANCH_UI_DESIGN.md` for the proposed branch UI and preview contract.
 Read `EXECUTION_STATUS_CONTRACT.md` for implemented state/rendering semantics.
 Read `EXECUTION_STATUS_BUILD_PLAN.md` for ES0–ES4 and future A/D branch-view
 requirements. Read `EXECUTION_STATUS_INVESTIGATION.md` for the reproduced defects, current
@@ -217,6 +248,39 @@ Likely files:
 - `backend/persistence.py`
 
 Rule: path picking belongs in the frontend; backend services accept paths.
+
+## Change File Output, File Viewer, Or OS Window Behavior
+
+Read:
+
+- `FILE_OUTPUT_BUILD_PLAN.md` — design decisions D1–D12 (typed `file`
+  references, placement presets, discovery rules, degraded modes); do not
+  re-litigate them
+- `NODE_STANDARDS.md` — Typed Vault Outputs, output routing model
+
+Likely files:
+
+- `backend/nodes/io/file_output_node.py`, `backend/nodes/io/file_view_node.py`,
+  `backend/nodes/io/window_control_node.py`, `backend/nodes/io/window_support.py`
+- `backend/file_refs.py` — the `file` reference dict shape
+- `backend/window_manager.py` — adapter protocol, preset geometry, platform
+  implementations (pywin32 branch is manual-verify only, FO7 protocol)
+- `backend/text_format.py` — markdown formatting
+- `frontend/screens/file_viewer.py`, `frontend/app.py` (FILE_VIEW_REQUESTED)
+
+Focused checks:
+
+```bash
+../.venv/bin/python -m pytest tests/generated/test_file_output_node.py \
+    tests/generated/test_file_view_node.py \
+    tests/generated/test_window_control_node.py \
+    tests/test_window_manager.py tests/test_text_format.py -v
+../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "file_view"
+```
+
+Rules: window discovery failure is never a node error (D4); windows are
+targeted by file identity, never app type (D6); the adapter must stay free
+of run-state coupling (D11).
 
 ## Update Config UI Or Form Generation
 

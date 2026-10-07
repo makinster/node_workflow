@@ -114,7 +114,6 @@ class CommandInput(Input):
         # Single-line command inputs render compact (1 row); the stylesheet
         # gives them a reserved left-accent column instead of a tall border.
         self.add_class("command-input", "single-line")
-        self.styles.width = "100%"
 
     def begin_edit(self, place_cursor_at_end: bool = True) -> None:
         active_text = getattr(self.screen, "_active_command_text_widget", None)

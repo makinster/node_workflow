@@ -24,7 +24,8 @@ class SetVariableNode(Node):
     config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {
         "variable_name": {"type": "string", "required": True},
         "value_source": {"type": "string", "options": ["input", "literal"], "required": True},
-        "value": {"type": "string", "required": False},
+        "value": {"type": "string", "required": False,
+                  "visible_when": {"value_source": "literal"}},
         "pass_through": {
             "type": "boolean",
             "label": "Dead drop payload",

@@ -1,0 +1,60 @@
+{
+  "mounts": 108,
+  "types": 36,
+  "widths": [
+    60,
+    100,
+    140
+  ],
+  "states": 1202,
+  "navigation_samples": 3946,
+  "cancel_unchanged": 108,
+  "findings": [
+    {
+      "type": "conditional_node",
+      "width": 60,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "show-payload-vault-payload",
+        "scroll": 2.0
+      },
+      "region": [
+        3,
+        11,
+        29,
+        3
+      ],
+      "viewport": [
+        3,
+        8,
+        48,
+        3
+      ]
+    },
+    {
+      "type": "embedding_node",
+      "width": 60,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "show-payload-vault-payload",
+        "scroll": 2.0
+      },
+      "region": [
+        3,
+        11,
+        29,
+        3
+      ],
+      "viewport": [
+        3,
+        8,
+        48,
+        3
+      ]
+    }
+  ],
+  "rule_violations": [],
+  "disabled_visible": []
+}

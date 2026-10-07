@@ -1,0 +1,24 @@
+╭────────────────────────────────────────────────────────────────────────────────────────╮          
+│                                                                                        │          
+│  Edit Node: Text Output (node_63c4ce65)                                                │          
+│  number keys tabs | w/s move | a/d within row | e interact | ctrl+s save | esc cancel  │          
+│  | ctrl+q revert                                                                       │          
+│   1 - Source  2 - Parameters  3 - Payloads  4 - Connections                            │          
+│  ━━╸━━━━━━━━━━╸━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │          
+│                                                                                        │          
+│  Label *: █  Output                                                                ▆▆  │          
+│  Label shown alongside the output                                                      │          
+│                                                                                        │          
+│                                                                                        │          
+│  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔                                                                      │          
+│        Save                                                                            │          
+│  ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁                                                                      │          
+│  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔                                                                      │          
+│       Cancel                                                                           │          
+│  ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁                                                                      │          
+│     number keys tabs | w/s move | a/d within row | e interact | ctrl+s save | esc      │          
+│                                                                                        │          
+╰────────────────────────────────────────────────────────────────────────────────────────╯          
+                                                                                                    
+                                                                                                    
+                                                                                                    

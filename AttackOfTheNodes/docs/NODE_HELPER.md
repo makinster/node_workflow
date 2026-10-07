@@ -108,7 +108,13 @@ plus hand-written `execute()` logic, not through custom screens.
 ## Spec Shape
 
 Use `config_tabs` for the authoring workflow. It mirrors the config UI and
-places ordinary fields into the fixed Node Config tabs without frontend edits.
+places ordinary fields into shared Source / Parameters / Payloads sections without
+frontend edits. These are section meanings, not a requirement to show four tabs:
+render only applicable capabilities, number visible tabs consecutively, and reuse
+shared navigation. The current generic composer still renders four tabs for most
+ordinary nodes; this change simplifies Wait Until only. Future general omission
+must be capability-driven and preserve schema placement, not infer runtime
+capabilities from non-empty defaults.
 
 ```yaml
 node_type: example_formatter_node
@@ -244,7 +250,7 @@ port's full I/O contract in one place. `inputs:` replaces the split
 `output_port_metadata`. They are additive — the legacy sections still work, and
 the separate `output_routing` block supplies the default routing state either
 way (the Payloads tab itself is composed from the `outputs:` contract). The
-generated reference node is `specs/example_file_instance_node.yaml`.
+generated reference node is `specs/file_output_node.yaml`.
 
 Each key under `inputs:` / `outputs:` is a **port name**. The port list
 (`input_ports` / `output_ports`) is derived from the keys, so do not also
@@ -340,7 +346,7 @@ and mutual-exclusion participants must be booleans. With the helper's built-in
 simple-YAML fallback parser, write conditions as nested mappings (as above)
 rather than inline `{key: value}` braces; inline form requires PyYAML.
 
-See `specs/example_file_instance_node.yaml` for a complete spec using
+See `specs/file_output_node.yaml` for a complete spec using
 `input_sources`, `output_routing`, and the expanded rule keys.
 
 ## Supported Values
@@ -545,3 +551,17 @@ Remaining:
 The goal is not to generate every screen. The goal is to make the default path
 hard to get wrong and to catch the recurring regressions before they become
 manual UI debugging sessions.
+
+## File path intent (2026-10-06)
+
+A configured file destination uses `path_hint: file` with `path_mode: write`.
+The validator still rejects an empty required destination, but does not warn
+that a new output file does not yet exist. Read paths retain existence warnings.
+Window Control emits its selected file reference unconditionally; its output
+metadata intentionally omits optional `pass_through` capability.
+
+File Reader opts into `normalize_local_path: true` on its file-path schema.
+Validation and execution remove copied surrounding quotes and convert absolute
+Windows paths through `wslpath` when running under WSL. Other file nodes retain
+their existing path behavior. Missing read files remain pre-run warnings because
+an earlier node may create them; empty or incompatible paths are errors.

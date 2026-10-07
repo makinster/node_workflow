@@ -1,0 +1,14 @@
+{
+  "registry_count": 37,
+  "mounts": 108,
+  "cancel_unchanged": 36,
+  "cancel_checks": 36,
+  "unrelated_preserved": 72,
+  "save_checks": 72,
+  "second_save_equal": 72,
+  "conditional_states": 306,
+  "state_errors": [],
+  "selector_addable": 34,
+  "variant_roundtrips": 115,
+  "variant_mismatches": 0
+}

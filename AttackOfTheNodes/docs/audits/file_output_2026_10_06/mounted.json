@@ -1,0 +1,6077 @@
+{
+  "registry_count": 37,
+  "screens": [
+    {
+      "type": "file_output_node",
+      "width": 60,
+      "tabs": {
+        "node-config-tab-core": {
+          "title": "1 - Source",
+          "widgets": [
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                9,
+                7,
+                1
+              ],
+              "text": "Alias:"
+            },
+            {
+              "id": "alias-input",
+              "class": "CommandInput",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                10,
+                9,
+                46,
+                1
+              ],
+              "value": "File Write"
+            },
+            {
+              "id": "node-config-summary",
+              "class": "Static",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                10,
+                46,
+                3
+              ],
+              "text": "Node type: File Write\nWrite content to a file and emit a typed file reference"
+            },
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                14,
+                16,
+                1
+              ],
+              "text": "Incoming Payload"
+            },
+            {
+              "id": "incoming-payload-content",
+              "class": "Static",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                15,
+                46,
+                2
+              ],
+              "text": "Node source: User Text Input node\nPayload: audit_text (any)"
+            },
+            {
+              "id": "form-section-content_source",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                18,
+                15,
+                1
+              ],
+              "text": "Required Inputs"
+            },
+            {
+              "id": "field-label-content_source",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                20,
+                16,
+                1
+              ],
+              "text": "Content source:"
+            },
+            {
+              "id": "field-desc-content_source",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                19,
+                20,
+                25,
+                1
+              ],
+              "text": "Data written to the file"
+            },
+            {
+              "id": "field-content_source",
+              "class": "Select",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                21,
+                46,
+                3
+              ],
+              "value": "Upstream payload",
+              "options": [
+                [
+                  "Upstream payload",
+                  "Upstream payload"
+                ],
+                [
+                  "Vault",
+                  "Vault"
+                ],
+                [
+                  "Configured",
+                  "Configured"
+                ]
+              ]
+            },
+            {
+              "id": "field-label-content_vault_key",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": false,
+              "ancestors_visible": false,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "Content Vault key:"
+            },
+            {
+              "id": "field-content_vault_key",
+              "class": "Select",
+              "tab": "node-config-tab-core",
+              "display": false,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "value": "Select.NULL",
+              "options": [
+                [
+                  "",
+                  "Select.NULL"
+                ],
+                [
+                  "audit_file [file]",
+                  "audit_file"
+                ],
+                [
+                  "audit_session [ai_session]",
+                  "audit_session"
+                ],
+                [
+                  "audit_text [string]",
+                  "audit_text"
+                ],
+                [
+                  "audit_text2 [string]",
+                  "audit_text2"
+                ]
+              ]
+            },
+            {
+              "id": "field-label-file_path_source",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                25,
+                18,
+                1
+              ],
+              "text": "File path source:"
+            },
+            {
+              "id": "field-desc-file_path_source",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                21,
+                25,
+                58,
+                1
+              ],
+              "text": "Destination path, or a file reference from upstream/vault"
+            },
+            {
+              "id": "field-file_path_source",
+              "class": "Select",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                26,
+                46,
+                3
+              ],
+              "value": "Configured",
+              "options": [
+                [
+                  "Upstream payload",
+                  "Upstream payload"
+                ],
+                [
+                  "Vault",
+                  "Vault"
+                ],
+                [
+                  "Configured",
+                  "Configured"
+                ]
+              ]
+            },
+            {
+              "id": "field-label-file_path_vault_key",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": false,
+              "ancestors_visible": false,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "File path Vault key:"
+            },
+            {
+              "id": "field-file_path_vault_key",
+              "class": "Select",
+              "tab": "node-config-tab-core",
+              "display": false,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "value": "Select.NULL",
+              "options": [
+                [
+                  "",
+                  "Select.NULL"
+                ],
+                [
+                  "audit_file [file]",
+                  "audit_file"
+                ]
+              ]
+            }
+          ],
+          "focus_order": [
+            "alias-input",
+            "field-content_source",
+            "field-file_path_source",
+            "save-node-config",
+            "cancel-node-config"
+          ]
+        },
+        "node-config-tab-parameters": {
+          "title": "2 - Parameters",
+          "widgets": [
+            {
+              "id": "field-label-content",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": false,
+              "ancestors_visible": false,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "Content (E to edit, ESC to finish):"
+            },
+            {
+              "id": "field-content",
+              "class": "CommandTextArea",
+              "tab": "node-config-tab-parameters",
+              "display": false,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "value": ""
+            },
+            {
+              "id": "field-label-file_path",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                5,
+                13,
+                1
+              ],
+              "text": "File path *:"
+            },
+            {
+              "id": "field-file_path",
+              "class": "CommandInput",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                16,
+                5,
+                46,
+                1
+              ],
+              "value": ""
+            },
+            {
+              "id": "field-label-write_mode",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                7,
+                12,
+                1
+              ],
+              "text": "Write mode:"
+            },
+            {
+              "id": "field-desc-write_mode",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                15,
+                7,
+                57,
+                1
+              ],
+              "text": "Create unique adds a numeric suffix instead of replacing"
+            },
+            {
+              "id": "field-write_mode",
+              "class": "Select",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                8,
+                46,
+                3
+              ],
+              "value": "Overwrite",
+              "options": [
+                [
+                  "Overwrite",
+                  "Overwrite"
+                ],
+                [
+                  "Append",
+                  "Append"
+                ],
+                [
+                  "Create unique",
+                  "Create unique"
+                ]
+              ]
+            },
+            {
+              "id": "field-binary_content",
+              "class": "Checkbox",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                12,
+                32,
+                3
+              ],
+              "value": false,
+              "label": "Binary content (Base64)"
+            },
+            {
+              "id": "field-desc-binary_content",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                35,
+                12,
+                49,
+                1
+              ],
+              "text": "Decode the content as Base64 and write raw bytes"
+            },
+            {
+              "id": "form-section-open_after_write",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                16,
+                9,
+                1
+              ],
+              "text": "OS Window"
+            },
+            {
+              "id": "field-open_after_write",
+              "class": "Checkbox",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                18,
+                25,
+                3
+              ],
+              "value": false,
+              "label": "Open after write"
+            },
+            {
+              "id": "field-desc-open_after_write",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                28,
+                18,
+                76,
+                1
+              ],
+              "text": "Open the file in its OS-default app (a loop opens one window per iteration)"
+            },
+            {
+              "id": "field-label-window_placement",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": false,
+              "ancestors_visible": false,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "Open at:"
+            },
+            {
+              "id": "field-desc-window_placement",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": false,
+              "ancestors_visible": false,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "Screen placement preset for the opened window"
+            },
+            {
+              "id": "field-window_placement",
+              "class": "Select",
+              "tab": "node-config-tab-parameters",
+              "display": false,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "value": "OS default",
+              "options": [
+                [
+                  "OS default",
+                  "OS default"
+                ],
+                [
+                  "Right of AOTN",
+                  "Right of AOTN"
+                ],
+                [
+                  "Left of AOTN",
+                  "Left of AOTN"
+                ],
+                [
+                  "Other monitor",
+                  "Other monitor"
+                ],
+                [
+                  "Same monitor, right half",
+                  "Same monitor, right half"
+                ]
+              ]
+            },
+            {
+              "id": "field-close_on_run_end",
+              "class": "Checkbox",
+              "tab": "node-config-tab-parameters",
+              "display": false,
+              "ancestors_visible": false,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "value": false,
+              "label": "Close when run ends"
+            },
+            {
+              "id": "field-desc-close_on_run_end",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": false,
+              "ancestors_visible": false,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "Off keeps the window open for reading after the run"
+            }
+          ],
+          "focus_order": [
+            "field-file_path",
+            "field-write_mode",
+            "field-binary_content",
+            "field-open_after_write",
+            "save-node-config",
+            "cancel-node-config"
+          ]
+        },
+        "node-config-tab-outputs": {
+          "title": "3 - Payloads",
+          "widgets": [
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                5,
+                23,
+                1
+              ],
+              "text": "Downstream node payload"
+            },
+            {
+              "id": "downstream-header-default",
+              "class": "Static",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                7,
+                46,
+                1
+              ],
+              "text": "File Reference  [file]"
+            },
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                9,
+                14,
+                1
+              ],
+              "text": "Payload name:"
+            },
+            {
+              "id": "transient-output-name-default",
+              "class": "CommandInput",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                17,
+                9,
+                46,
+                1
+              ],
+              "value": "File Reference"
+            },
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                11,
+                13,
+                1
+              ],
+              "text": "Description:"
+            },
+            {
+              "id": "transient-output-desc-default",
+              "class": "CommandInput",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                16,
+                11,
+                46,
+                1
+              ],
+              "value": "Typed reference to the written file"
+            },
+            {
+              "id": "dead-drop-passthrough",
+              "class": "Checkbox",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                12,
+                43,
+                3
+              ],
+              "value": false,
+              "label": "Forward incoming payload unchanged"
+            },
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                16,
+                13,
+                1
+              ],
+              "text": "Vault Payload"
+            },
+            {
+              "id": "vault-header-default",
+              "class": "Static",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                18,
+                46,
+                1
+              ],
+              "text": "File Reference  [file]"
+            },
+            {
+              "id": "vault-output-disabled-default",
+              "class": "Checkbox",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                19,
+                23,
+                3
+              ],
+              "value": true,
+              "label": "Disable output"
+            },
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                23,
+                11,
+                1
+              ],
+              "text": "Vault key:"
+            },
+            {
+              "id": "vault-output-key-default",
+              "class": "CommandInput",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": true,
+              "focusable": true,
+              "region": [
+                14,
+                23,
+                46,
+                1
+              ],
+              "value": ""
+            },
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                25,
+                13,
+                1
+              ],
+              "text": "Description:"
+            },
+            {
+              "id": "vault-output-desc-default",
+              "class": "CommandInput",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": true,
+              "focusable": true,
+              "region": [
+                16,
+                25,
+                46,
+                1
+              ],
+              "value": "Typed reference to the written file"
+            },
+            {
+              "id": "form-section-terminate_branch",
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                27,
+                6,
+                1
+              ],
+              "text": "Branch"
+            },
+            {
+              "id": "field-terminate_branch",
+              "class": "Checkbox",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                29,
+                42,
+                3
+              ],
+              "value": false,
+              "label": "Terminate branch after completion"
+            },
+            {
+              "id": "field-desc-terminate_branch",
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                45,
+                29,
+                42,
+                1
+              ],
+              "text": "End this branch after the file is written"
+            }
+          ],
+          "focus_order": [
+            "transient-output-name-default",
+            "transient-output-desc-default",
+            "dead-drop-passthrough",
+            "vault-output-disabled-default",
+            "field-terminate_branch",
+            "save-node-config",
+            "cancel-node-config"
+          ]
+        },
+        "node-config-tab-connections": {
+          "title": "4 - Connections",
+          "widgets": [
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-connections",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                9,
+                11,
+                1
+              ],
+              "text": "Connections"
+            },
+            {
+              "id": null,
+              "class": "Static",
+              "tab": "node-config-tab-connections",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                10,
+                46,
+                1
+              ],
+              "text": "Edit connections from the editor."
+            },
+            {
+              "id": "connection-summary",
+              "class": "Static",
+              "tab": "node-config-tab-connections",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                11,
+                46,
+                5
+              ],
+              "text": "  inputs:\n    User Text Input (node_1f0475bf).default -> content\n  outputs:\n    default -> No-Op (node_6f104ae5).input"
+            }
+          ],
+          "focus_order": [
+            "save-node-config",
+            "cancel-node-config"
+          ]
+        }
+      }
+    },
+    {
+      "type": "file_output_node",
+      "width": 100,
+      "tabs": {
+        "node-config-tab-core": {
+          "title": "1 - Source",
+          "widgets": [
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                8,
+                7,
+                1
+              ],
+              "text": "Alias:"
+            },
+            {
+              "id": "alias-input",
+              "class": "CommandInput",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                10,
+                8,
+                82,
+                1
+              ],
+              "value": "File Write"
+            },
+            {
+              "id": "node-config-summary",
+              "class": "Static",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                9,
+                82,
+                2
+              ],
+              "text": "Node type: File Write\nWrite content to a file and emit a typed file reference"
+            },
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                12,
+                16,
+                1
+              ],
+              "text": "Incoming Payload"
+            },
+            {
+              "id": "incoming-payload-content",
+              "class": "Static",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                13,
+                82,
+                2
+              ],
+              "text": "Node source: User Text Input node\nPayload: audit_text (any)"
+            },
+            {
+              "id": "form-section-content_source",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                16,
+                15,
+                1
+              ],
+              "text": "Required Inputs"
+            },
+            {
+              "id": "field-label-content_source",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                18,
+                16,
+                1
+              ],
+              "text": "Content source:"
+            },
+            {
+              "id": "field-desc-content_source",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                19,
+                18,
+                25,
+                1
+              ],
+              "text": "Data written to the file"
+            },
+            {
+              "id": "field-content_source",
+              "class": "Select",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                19,
+                82,
+                3
+              ],
+              "value": "Upstream payload",
+              "options": [
+                [
+                  "Upstream payload",
+                  "Upstream payload"
+                ],
+                [
+                  "Vault",
+                  "Vault"
+                ],
+                [
+                  "Configured",
+                  "Configured"
+                ]
+              ]
+            },
+            {
+              "id": "field-label-content_vault_key",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": false,
+              "ancestors_visible": false,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "Content Vault key:"
+            },
+            {
+              "id": "field-content_vault_key",
+              "class": "Select",
+              "tab": "node-config-tab-core",
+              "display": false,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "value": "Select.NULL",
+              "options": [
+                [
+                  "",
+                  "Select.NULL"
+                ],
+                [
+                  "audit_file [file]",
+                  "audit_file"
+                ],
+                [
+                  "audit_session [ai_session]",
+                  "audit_session"
+                ],
+                [
+                  "audit_text [string]",
+                  "audit_text"
+                ],
+                [
+                  "audit_text2 [string]",
+                  "audit_text2"
+                ]
+              ]
+            },
+            {
+              "id": "field-label-file_path_source",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                23,
+                18,
+                1
+              ],
+              "text": "File path source:"
+            },
+            {
+              "id": "field-desc-file_path_source",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                21,
+                23,
+                58,
+                1
+              ],
+              "text": "Destination path, or a file reference from upstream/vault"
+            },
+            {
+              "id": "field-file_path_source",
+              "class": "Select",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                24,
+                82,
+                3
+              ],
+              "value": "Configured",
+              "options": [
+                [
+                  "Upstream payload",
+                  "Upstream payload"
+                ],
+                [
+                  "Vault",
+                  "Vault"
+                ],
+                [
+                  "Configured",
+                  "Configured"
+                ]
+              ]
+            },
+            {
+              "id": "field-label-file_path_vault_key",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": false,
+              "ancestors_visible": false,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "File path Vault key:"
+            },
+            {
+              "id": "field-file_path_vault_key",
+              "class": "Select",
+              "tab": "node-config-tab-core",
+              "display": false,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "value": "Select.NULL",
+              "options": [
+                [
+                  "",
+                  "Select.NULL"
+                ],
+                [
+                  "audit_file [file]",
+                  "audit_file"
+                ]
+              ]
+            }
+          ],
+          "focus_order": [
+            "alias-input",
+            "field-content_source",
+            "field-file_path_source",
+            "save-node-config",
+            "cancel-node-config"
+          ]
+        },
+        "node-config-tab-parameters": {
+          "title": "2 - Parameters",
+          "widgets": [
+            {
+              "id": "field-label-content",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": false,
+              "ancestors_visible": false,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "Content (E to edit, ESC to finish):"
+            },
+            {
+              "id": "field-content",
+              "class": "CommandTextArea",
+              "tab": "node-config-tab-parameters",
+              "display": false,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "value": ""
+            },
+            {
+              "id": "field-label-file_path",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                8,
+                13,
+                1
+              ],
+              "text": "File path *:"
+            },
+            {
+              "id": "field-file_path",
+              "class": "CommandInput",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                16,
+                8,
+                82,
+                1
+              ],
+              "value": ""
+            },
+            {
+              "id": "field-label-write_mode",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                10,
+                12,
+                1
+              ],
+              "text": "Write mode:"
+            },
+            {
+              "id": "field-desc-write_mode",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                15,
+                10,
+                57,
+                1
+              ],
+              "text": "Create unique adds a numeric suffix instead of replacing"
+            },
+            {
+              "id": "field-write_mode",
+              "class": "Select",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                11,
+                82,
+                3
+              ],
+              "value": "Overwrite",
+              "options": [
+                [
+                  "Overwrite",
+                  "Overwrite"
+                ],
+                [
+                  "Append",
+                  "Append"
+                ],
+                [
+                  "Create unique",
+                  "Create unique"
+                ]
+              ]
+            },
+            {
+              "id": "field-binary_content",
+              "class": "Checkbox",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                15,
+                32,
+                3
+              ],
+              "value": false,
+              "label": "Binary content (Base64)"
+            },
+            {
+              "id": "field-desc-binary_content",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                35,
+                15,
+                49,
+                1
+              ],
+              "text": "Decode the content as Base64 and write raw bytes"
+            },
+            {
+              "id": "form-section-open_after_write",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                19,
+                9,
+                1
+              ],
+              "text": "OS Window"
+            },
+            {
+              "id": "field-open_after_write",
+              "class": "Checkbox",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                21,
+                25,
+                3
+              ],
+              "value": false,
+              "label": "Open after write"
+            },
+            {
+              "id": "field-desc-open_after_write",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                28,
+                21,
+                76,
+                1
+              ],
+              "text": "Open the file in its OS-default app (a loop opens one window per iteration)"
+            },
+            {
+              "id": "field-label-window_placement",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": false,
+              "ancestors_visible": false,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "Open at:"
+            },
+            {
+              "id": "field-desc-window_placement",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": false,
+              "ancestors_visible": false,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "Screen placement preset for the opened window"
+            },
+            {
+              "id": "field-window_placement",
+              "class": "Select",
+              "tab": "node-config-tab-parameters",
+              "display": false,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "value": "OS default",
+              "options": [
+                [
+                  "OS default",
+                  "OS default"
+                ],
+                [
+                  "Right of AOTN",
+                  "Right of AOTN"
+                ],
+                [
+                  "Left of AOTN",
+                  "Left of AOTN"
+                ],
+                [
+                  "Other monitor",
+                  "Other monitor"
+                ],
+                [
+                  "Same monitor, right half",
+                  "Same monitor, right half"
+                ]
+              ]
+            },
+            {
+              "id": "field-close_on_run_end",
+              "class": "Checkbox",
+              "tab": "node-config-tab-parameters",
+              "display": false,
+              "ancestors_visible": false,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "value": false,
+              "label": "Close when run ends"
+            },
+            {
+              "id": "field-desc-close_on_run_end",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": false,
+              "ancestors_visible": false,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "Off keeps the window open for reading after the run"
+            }
+          ],
+          "focus_order": [
+            "field-file_path",
+            "field-write_mode",
+            "field-binary_content",
+            "field-open_after_write",
+            "save-node-config",
+            "cancel-node-config"
+          ]
+        },
+        "node-config-tab-outputs": {
+          "title": "3 - Payloads",
+          "widgets": [
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                8,
+                23,
+                1
+              ],
+              "text": "Downstream node payload"
+            },
+            {
+              "id": "downstream-header-default",
+              "class": "Static",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                10,
+                82,
+                1
+              ],
+              "text": "File Reference  [file]"
+            },
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                12,
+                14,
+                1
+              ],
+              "text": "Payload name:"
+            },
+            {
+              "id": "transient-output-name-default",
+              "class": "CommandInput",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                17,
+                12,
+                82,
+                1
+              ],
+              "value": "File Reference"
+            },
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                14,
+                13,
+                1
+              ],
+              "text": "Description:"
+            },
+            {
+              "id": "transient-output-desc-default",
+              "class": "CommandInput",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                16,
+                14,
+                82,
+                1
+              ],
+              "value": "Typed reference to the written file"
+            },
+            {
+              "id": "dead-drop-passthrough",
+              "class": "Checkbox",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                15,
+                43,
+                3
+              ],
+              "value": false,
+              "label": "Forward incoming payload unchanged"
+            },
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                19,
+                13,
+                1
+              ],
+              "text": "Vault Payload"
+            },
+            {
+              "id": "vault-header-default",
+              "class": "Static",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                21,
+                82,
+                1
+              ],
+              "text": "File Reference  [file]"
+            },
+            {
+              "id": "vault-output-disabled-default",
+              "class": "Checkbox",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                22,
+                23,
+                3
+              ],
+              "value": true,
+              "label": "Disable output"
+            },
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                26,
+                11,
+                1
+              ],
+              "text": "Vault key:"
+            },
+            {
+              "id": "vault-output-key-default",
+              "class": "CommandInput",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": true,
+              "focusable": true,
+              "region": [
+                14,
+                26,
+                82,
+                1
+              ],
+              "value": ""
+            },
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                28,
+                13,
+                1
+              ],
+              "text": "Description:"
+            },
+            {
+              "id": "vault-output-desc-default",
+              "class": "CommandInput",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": true,
+              "focusable": true,
+              "region": [
+                16,
+                28,
+                82,
+                1
+              ],
+              "value": "Typed reference to the written file"
+            },
+            {
+              "id": "form-section-terminate_branch",
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                30,
+                6,
+                1
+              ],
+              "text": "Branch"
+            },
+            {
+              "id": "field-terminate_branch",
+              "class": "Checkbox",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                32,
+                42,
+                3
+              ],
+              "value": false,
+              "label": "Terminate branch after completion"
+            },
+            {
+              "id": "field-desc-terminate_branch",
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                45,
+                32,
+                42,
+                1
+              ],
+              "text": "End this branch after the file is written"
+            }
+          ],
+          "focus_order": [
+            "transient-output-name-default",
+            "transient-output-desc-default",
+            "dead-drop-passthrough",
+            "vault-output-disabled-default",
+            "field-terminate_branch",
+            "save-node-config",
+            "cancel-node-config"
+          ]
+        },
+        "node-config-tab-connections": {
+          "title": "4 - Connections",
+          "widgets": [
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-connections",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                8,
+                11,
+                1
+              ],
+              "text": "Connections"
+            },
+            {
+              "id": null,
+              "class": "Static",
+              "tab": "node-config-tab-connections",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                9,
+                84,
+                1
+              ],
+              "text": "Edit connections from the editor."
+            },
+            {
+              "id": "connection-summary",
+              "class": "Static",
+              "tab": "node-config-tab-connections",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                10,
+                84,
+                4
+              ],
+              "text": "  inputs:\n    User Text Input (node_8f9bc29e).default -> content\n  outputs:\n    default -> No-Op (node_9f237253).input"
+            }
+          ],
+          "focus_order": [
+            "save-node-config",
+            "cancel-node-config"
+          ]
+        }
+      }
+    },
+    {
+      "type": "file_output_node",
+      "width": 140,
+      "tabs": {
+        "node-config-tab-core": {
+          "title": "1 - Source",
+          "widgets": [
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                7,
+                7,
+                1
+              ],
+              "text": "Alias:"
+            },
+            {
+              "id": "alias-input",
+              "class": "CommandInput",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                10,
+                7,
+                118,
+                1
+              ],
+              "value": "File Write"
+            },
+            {
+              "id": "node-config-summary",
+              "class": "Static",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                8,
+                118,
+                2
+              ],
+              "text": "Node type: File Write\nWrite content to a file and emit a typed file reference"
+            },
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                11,
+                16,
+                1
+              ],
+              "text": "Incoming Payload"
+            },
+            {
+              "id": "incoming-payload-content",
+              "class": "Static",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                12,
+                118,
+                2
+              ],
+              "text": "Node source: User Text Input node\nPayload: audit_text (any)"
+            },
+            {
+              "id": "form-section-content_source",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                15,
+                15,
+                1
+              ],
+              "text": "Required Inputs"
+            },
+            {
+              "id": "field-label-content_source",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                17,
+                16,
+                1
+              ],
+              "text": "Content source:"
+            },
+            {
+              "id": "field-desc-content_source",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                19,
+                17,
+                25,
+                1
+              ],
+              "text": "Data written to the file"
+            },
+            {
+              "id": "field-content_source",
+              "class": "Select",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                18,
+                118,
+                3
+              ],
+              "value": "Upstream payload",
+              "options": [
+                [
+                  "Upstream payload",
+                  "Upstream payload"
+                ],
+                [
+                  "Vault",
+                  "Vault"
+                ],
+                [
+                  "Configured",
+                  "Configured"
+                ]
+              ]
+            },
+            {
+              "id": "field-label-content_vault_key",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": false,
+              "ancestors_visible": false,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "Content Vault key:"
+            },
+            {
+              "id": "field-content_vault_key",
+              "class": "Select",
+              "tab": "node-config-tab-core",
+              "display": false,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "value": "Select.NULL",
+              "options": [
+                [
+                  "",
+                  "Select.NULL"
+                ],
+                [
+                  "audit_file [file]",
+                  "audit_file"
+                ],
+                [
+                  "audit_session [ai_session]",
+                  "audit_session"
+                ],
+                [
+                  "audit_text [string]",
+                  "audit_text"
+                ],
+                [
+                  "audit_text2 [string]",
+                  "audit_text2"
+                ]
+              ]
+            },
+            {
+              "id": "field-label-file_path_source",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                22,
+                18,
+                1
+              ],
+              "text": "File path source:"
+            },
+            {
+              "id": "field-desc-file_path_source",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                21,
+                22,
+                58,
+                1
+              ],
+              "text": "Destination path, or a file reference from upstream/vault"
+            },
+            {
+              "id": "field-file_path_source",
+              "class": "Select",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                23,
+                118,
+                3
+              ],
+              "value": "Configured",
+              "options": [
+                [
+                  "Upstream payload",
+                  "Upstream payload"
+                ],
+                [
+                  "Vault",
+                  "Vault"
+                ],
+                [
+                  "Configured",
+                  "Configured"
+                ]
+              ]
+            },
+            {
+              "id": "field-label-file_path_vault_key",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": false,
+              "ancestors_visible": false,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "File path Vault key:"
+            },
+            {
+              "id": "field-file_path_vault_key",
+              "class": "Select",
+              "tab": "node-config-tab-core",
+              "display": false,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "value": "Select.NULL",
+              "options": [
+                [
+                  "",
+                  "Select.NULL"
+                ],
+                [
+                  "audit_file [file]",
+                  "audit_file"
+                ]
+              ]
+            }
+          ],
+          "focus_order": [
+            "alias-input",
+            "field-content_source",
+            "field-file_path_source",
+            "save-node-config",
+            "cancel-node-config"
+          ]
+        },
+        "node-config-tab-parameters": {
+          "title": "2 - Parameters",
+          "widgets": [
+            {
+              "id": "field-label-content",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": false,
+              "ancestors_visible": false,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "Content (E to edit, ESC to finish):"
+            },
+            {
+              "id": "field-content",
+              "class": "CommandTextArea",
+              "tab": "node-config-tab-parameters",
+              "display": false,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "value": ""
+            },
+            {
+              "id": "field-label-file_path",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                7,
+                13,
+                1
+              ],
+              "text": "File path *:"
+            },
+            {
+              "id": "field-file_path",
+              "class": "CommandInput",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                16,
+                7,
+                118,
+                1
+              ],
+              "value": ""
+            },
+            {
+              "id": "field-label-write_mode",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                9,
+                12,
+                1
+              ],
+              "text": "Write mode:"
+            },
+            {
+              "id": "field-desc-write_mode",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                15,
+                9,
+                57,
+                1
+              ],
+              "text": "Create unique adds a numeric suffix instead of replacing"
+            },
+            {
+              "id": "field-write_mode",
+              "class": "Select",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                10,
+                118,
+                3
+              ],
+              "value": "Overwrite",
+              "options": [
+                [
+                  "Overwrite",
+                  "Overwrite"
+                ],
+                [
+                  "Append",
+                  "Append"
+                ],
+                [
+                  "Create unique",
+                  "Create unique"
+                ]
+              ]
+            },
+            {
+              "id": "field-binary_content",
+              "class": "Checkbox",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                14,
+                32,
+                3
+              ],
+              "value": false,
+              "label": "Binary content (Base64)"
+            },
+            {
+              "id": "field-desc-binary_content",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                35,
+                14,
+                49,
+                1
+              ],
+              "text": "Decode the content as Base64 and write raw bytes"
+            },
+            {
+              "id": "form-section-open_after_write",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                18,
+                9,
+                1
+              ],
+              "text": "OS Window"
+            },
+            {
+              "id": "field-open_after_write",
+              "class": "Checkbox",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                20,
+                25,
+                3
+              ],
+              "value": false,
+              "label": "Open after write"
+            },
+            {
+              "id": "field-desc-open_after_write",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                28,
+                20,
+                76,
+                1
+              ],
+              "text": "Open the file in its OS-default app (a loop opens one window per iteration)"
+            },
+            {
+              "id": "field-label-window_placement",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": false,
+              "ancestors_visible": false,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "Open at:"
+            },
+            {
+              "id": "field-desc-window_placement",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": false,
+              "ancestors_visible": false,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "Screen placement preset for the opened window"
+            },
+            {
+              "id": "field-window_placement",
+              "class": "Select",
+              "tab": "node-config-tab-parameters",
+              "display": false,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "value": "OS default",
+              "options": [
+                [
+                  "OS default",
+                  "OS default"
+                ],
+                [
+                  "Right of AOTN",
+                  "Right of AOTN"
+                ],
+                [
+                  "Left of AOTN",
+                  "Left of AOTN"
+                ],
+                [
+                  "Other monitor",
+                  "Other monitor"
+                ],
+                [
+                  "Same monitor, right half",
+                  "Same monitor, right half"
+                ]
+              ]
+            },
+            {
+              "id": "field-close_on_run_end",
+              "class": "Checkbox",
+              "tab": "node-config-tab-parameters",
+              "display": false,
+              "ancestors_visible": false,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "value": false,
+              "label": "Close when run ends"
+            },
+            {
+              "id": "field-desc-close_on_run_end",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": false,
+              "ancestors_visible": false,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "Off keeps the window open for reading after the run"
+            }
+          ],
+          "focus_order": [
+            "field-file_path",
+            "field-write_mode",
+            "field-binary_content",
+            "field-open_after_write",
+            "save-node-config",
+            "cancel-node-config"
+          ]
+        },
+        "node-config-tab-outputs": {
+          "title": "3 - Payloads",
+          "widgets": [
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "Downstream node payload"
+            },
+            {
+              "id": "downstream-header-default",
+              "class": "Static",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "File Reference  [file]"
+            },
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "Payload name:"
+            },
+            {
+              "id": "transient-output-name-default",
+              "class": "CommandInput",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "value": "File Reference"
+            },
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "Description:"
+            },
+            {
+              "id": "transient-output-desc-default",
+              "class": "CommandInput",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "value": "Typed reference to the written file"
+            },
+            {
+              "id": "dead-drop-passthrough",
+              "class": "Checkbox",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "value": false,
+              "label": "Forward incoming payload unchanged"
+            },
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "Vault Payload"
+            },
+            {
+              "id": "vault-header-default",
+              "class": "Static",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "File Reference  [file]"
+            },
+            {
+              "id": "vault-output-disabled-default",
+              "class": "Checkbox",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "value": true,
+              "label": "Disable output"
+            },
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "Vault key:"
+            },
+            {
+              "id": "vault-output-key-default",
+              "class": "CommandInput",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": true,
+              "focusable": true,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "value": ""
+            },
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "Description:"
+            },
+            {
+              "id": "vault-output-desc-default",
+              "class": "CommandInput",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": true,
+              "focusable": true,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "value": "Typed reference to the written file"
+            },
+            {
+              "id": "form-section-terminate_branch",
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "Branch"
+            },
+            {
+              "id": "field-terminate_branch",
+              "class": "Checkbox",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "value": false,
+              "label": "Terminate branch after completion"
+            },
+            {
+              "id": "field-desc-terminate_branch",
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "End this branch after the file is written"
+            }
+          ],
+          "focus_order": [
+            "transient-output-name-default",
+            "transient-output-desc-default",
+            "dead-drop-passthrough",
+            "vault-output-disabled-default",
+            "field-terminate_branch",
+            "save-node-config",
+            "cancel-node-config"
+          ]
+        },
+        "node-config-tab-connections": {
+          "title": "4 - Connections",
+          "widgets": [
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-connections",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                7,
+                11,
+                1
+              ],
+              "text": "Connections"
+            },
+            {
+              "id": null,
+              "class": "Static",
+              "tab": "node-config-tab-connections",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                8,
+                120,
+                1
+              ],
+              "text": "Edit connections from the editor."
+            },
+            {
+              "id": "connection-summary",
+              "class": "Static",
+              "tab": "node-config-tab-connections",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                9,
+                120,
+                4
+              ],
+              "text": "  inputs:\n    User Text Input (node_9082754e).default -> content\n  outputs:\n    default -> No-Op (node_a8468690).input"
+            }
+          ],
+          "focus_order": [
+            "save-node-config",
+            "cancel-node-config"
+          ]
+        }
+      }
+    },
+    {
+      "type": "file_view_node",
+      "width": 60,
+      "tabs": {
+        "node-config-tab-core": {
+          "title": "1 - Source",
+          "widgets": [
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                9,
+                7,
+                1
+              ],
+              "text": "Alias:"
+            },
+            {
+              "id": "alias-input",
+              "class": "CommandInput",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                10,
+                9,
+                46,
+                1
+              ],
+              "value": "View File"
+            },
+            {
+              "id": "node-config-summary",
+              "class": "Static",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                10,
+                46,
+                2
+              ],
+              "text": "Node type: File Viewer\nDisplay a text or Markdown file inside AOTN"
+            },
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                13,
+                16,
+                1
+              ],
+              "text": "Incoming Payload"
+            },
+            {
+              "id": "incoming-payload-file",
+              "class": "Static",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                14,
+                46,
+                2
+              ],
+              "text": "Node source: User Text Input node\nPayload: audit_text (any)"
+            },
+            {
+              "id": "form-section-file_source",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                17,
+                15,
+                1
+              ],
+              "text": "Required Inputs"
+            },
+            {
+              "id": "field-label-file_source",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                19,
+                13,
+                1
+              ],
+              "text": "File source:"
+            },
+            {
+              "id": "field-desc-file_source",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                16,
+                19,
+                57,
+                1
+              ],
+              "text": "File reference from upstream/vault, or a configured path"
+            },
+            {
+              "id": "field-file_source",
+              "class": "Select",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                20,
+                46,
+                3
+              ],
+              "value": "Upstream payload",
+              "options": [
+                [
+                  "Upstream payload",
+                  "Upstream payload"
+                ],
+                [
+                  "Vault",
+                  "Vault"
+                ],
+                [
+                  "Configured",
+                  "Configured"
+                ]
+              ]
+            },
+            {
+              "id": "field-label-file_vault_key",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": false,
+              "ancestors_visible": false,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "File Vault key:"
+            },
+            {
+              "id": "field-file_vault_key",
+              "class": "Select",
+              "tab": "node-config-tab-core",
+              "display": false,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "value": "Select.NULL",
+              "options": [
+                [
+                  "",
+                  "Select.NULL"
+                ],
+                [
+                  "audit_file [file]",
+                  "audit_file"
+                ]
+              ]
+            }
+          ],
+          "focus_order": [
+            "alias-input",
+            "field-file_source",
+            "save-node-config",
+            "cancel-node-config"
+          ]
+        },
+        "node-config-tab-parameters": {
+          "title": "2 - Parameters",
+          "widgets": [
+            {
+              "id": "field-label-file",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": false,
+              "ancestors_visible": false,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "File path *:"
+            },
+            {
+              "id": "field-file",
+              "class": "CommandInput",
+              "tab": "node-config-tab-parameters",
+              "display": false,
+              "ancestors_visible": false,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "value": ""
+            },
+            {
+              "id": "field-label-render",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                9,
+                11,
+                1
+              ],
+              "text": "Render as:"
+            },
+            {
+              "id": "field-desc-render",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                14,
+                9,
+                44,
+                1
+              ],
+              "text": "Auto picks Markdown for .md/.markdown files"
+            },
+            {
+              "id": "field-render",
+              "class": "Select",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                10,
+                46,
+                3
+              ],
+              "value": "Auto",
+              "options": [
+                [
+                  "Auto",
+                  "Auto"
+                ],
+                [
+                  "Markdown",
+                  "Markdown"
+                ],
+                [
+                  "Plain text",
+                  "Plain text"
+                ]
+              ]
+            }
+          ],
+          "focus_order": [
+            "field-render",
+            "save-node-config",
+            "cancel-node-config"
+          ]
+        },
+        "node-config-tab-outputs": {
+          "title": "3 - Payloads",
+          "widgets": [
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                5,
+                23,
+                1
+              ],
+              "text": "Downstream node payload"
+            },
+            {
+              "id": "downstream-header-default",
+              "class": "Static",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                7,
+                46,
+                1
+              ],
+              "text": "File Reference  [file]"
+            },
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                9,
+                14,
+                1
+              ],
+              "text": "Payload name:"
+            },
+            {
+              "id": "transient-output-name-default",
+              "class": "CommandInput",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                17,
+                9,
+                46,
+                1
+              ],
+              "value": "File Reference"
+            },
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                11,
+                13,
+                1
+              ],
+              "text": "Description:"
+            },
+            {
+              "id": "transient-output-desc-default",
+              "class": "CommandInput",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                16,
+                11,
+                46,
+                1
+              ],
+              "value": "The viewed file's reference, forwarded for further steps"
+            },
+            {
+              "id": "dead-drop-passthrough",
+              "class": "Checkbox",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                12,
+                43,
+                3
+              ],
+              "value": false,
+              "label": "Forward incoming payload unchanged"
+            },
+            {
+              "id": "form-section-terminate_branch",
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                16,
+                6,
+                1
+              ],
+              "text": "Branch"
+            },
+            {
+              "id": "field-terminate_branch",
+              "class": "Checkbox",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                18,
+                42,
+                3
+              ],
+              "value": false,
+              "label": "Terminate branch after completion"
+            },
+            {
+              "id": "field-desc-terminate_branch",
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                45,
+                18,
+                46,
+                1
+              ],
+              "text": "End this branch after the viewer is requested"
+            }
+          ],
+          "focus_order": [
+            "transient-output-name-default",
+            "transient-output-desc-default",
+            "dead-drop-passthrough",
+            "field-terminate_branch",
+            "save-node-config",
+            "cancel-node-config"
+          ]
+        },
+        "node-config-tab-connections": {
+          "title": "4 - Connections",
+          "widgets": [
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-connections",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                9,
+                11,
+                1
+              ],
+              "text": "Connections"
+            },
+            {
+              "id": null,
+              "class": "Static",
+              "tab": "node-config-tab-connections",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                10,
+                46,
+                1
+              ],
+              "text": "Edit connections from the editor."
+            },
+            {
+              "id": "connection-summary",
+              "class": "Static",
+              "tab": "node-config-tab-connections",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                11,
+                46,
+                5
+              ],
+              "text": "  inputs:\n    User Text Input (node_e6f137bf).default -> file\n  outputs:\n    default -> No-Op (node_eeaddbd1).input"
+            }
+          ],
+          "focus_order": [
+            "save-node-config",
+            "cancel-node-config"
+          ]
+        }
+      }
+    },
+    {
+      "type": "file_view_node",
+      "width": 100,
+      "tabs": {
+        "node-config-tab-core": {
+          "title": "1 - Source",
+          "widgets": [
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                8,
+                7,
+                1
+              ],
+              "text": "Alias:"
+            },
+            {
+              "id": "alias-input",
+              "class": "CommandInput",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                10,
+                8,
+                82,
+                1
+              ],
+              "value": "View File"
+            },
+            {
+              "id": "node-config-summary",
+              "class": "Static",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                9,
+                82,
+                2
+              ],
+              "text": "Node type: File Viewer\nDisplay a text or Markdown file inside AOTN"
+            },
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                12,
+                16,
+                1
+              ],
+              "text": "Incoming Payload"
+            },
+            {
+              "id": "incoming-payload-file",
+              "class": "Static",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                13,
+                82,
+                2
+              ],
+              "text": "Node source: User Text Input node\nPayload: audit_text (any)"
+            },
+            {
+              "id": "form-section-file_source",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                16,
+                15,
+                1
+              ],
+              "text": "Required Inputs"
+            },
+            {
+              "id": "field-label-file_source",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                18,
+                13,
+                1
+              ],
+              "text": "File source:"
+            },
+            {
+              "id": "field-desc-file_source",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                16,
+                18,
+                57,
+                1
+              ],
+              "text": "File reference from upstream/vault, or a configured path"
+            },
+            {
+              "id": "field-file_source",
+              "class": "Select",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                19,
+                82,
+                3
+              ],
+              "value": "Upstream payload",
+              "options": [
+                [
+                  "Upstream payload",
+                  "Upstream payload"
+                ],
+                [
+                  "Vault",
+                  "Vault"
+                ],
+                [
+                  "Configured",
+                  "Configured"
+                ]
+              ]
+            },
+            {
+              "id": "field-label-file_vault_key",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": false,
+              "ancestors_visible": false,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "File Vault key:"
+            },
+            {
+              "id": "field-file_vault_key",
+              "class": "Select",
+              "tab": "node-config-tab-core",
+              "display": false,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "value": "Select.NULL",
+              "options": [
+                [
+                  "",
+                  "Select.NULL"
+                ],
+                [
+                  "audit_file [file]",
+                  "audit_file"
+                ]
+              ]
+            }
+          ],
+          "focus_order": [
+            "alias-input",
+            "field-file_source",
+            "save-node-config",
+            "cancel-node-config"
+          ]
+        },
+        "node-config-tab-parameters": {
+          "title": "2 - Parameters",
+          "widgets": [
+            {
+              "id": "field-label-file",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": false,
+              "ancestors_visible": false,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "File path *:"
+            },
+            {
+              "id": "field-file",
+              "class": "CommandInput",
+              "tab": "node-config-tab-parameters",
+              "display": false,
+              "ancestors_visible": false,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "value": ""
+            },
+            {
+              "id": "field-label-render",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                8,
+                11,
+                1
+              ],
+              "text": "Render as:"
+            },
+            {
+              "id": "field-desc-render",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                14,
+                8,
+                44,
+                1
+              ],
+              "text": "Auto picks Markdown for .md/.markdown files"
+            },
+            {
+              "id": "field-render",
+              "class": "Select",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                9,
+                82,
+                3
+              ],
+              "value": "Auto",
+              "options": [
+                [
+                  "Auto",
+                  "Auto"
+                ],
+                [
+                  "Markdown",
+                  "Markdown"
+                ],
+                [
+                  "Plain text",
+                  "Plain text"
+                ]
+              ]
+            }
+          ],
+          "focus_order": [
+            "field-render",
+            "save-node-config",
+            "cancel-node-config"
+          ]
+        },
+        "node-config-tab-outputs": {
+          "title": "3 - Payloads",
+          "widgets": [
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                4,
+                23,
+                1
+              ],
+              "text": "Downstream node payload"
+            },
+            {
+              "id": "downstream-header-default",
+              "class": "Static",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                6,
+                82,
+                1
+              ],
+              "text": "File Reference  [file]"
+            },
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                8,
+                14,
+                1
+              ],
+              "text": "Payload name:"
+            },
+            {
+              "id": "transient-output-name-default",
+              "class": "CommandInput",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                17,
+                8,
+                82,
+                1
+              ],
+              "value": "File Reference"
+            },
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                10,
+                13,
+                1
+              ],
+              "text": "Description:"
+            },
+            {
+              "id": "transient-output-desc-default",
+              "class": "CommandInput",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                16,
+                10,
+                82,
+                1
+              ],
+              "value": "The viewed file's reference, forwarded for further steps"
+            },
+            {
+              "id": "dead-drop-passthrough",
+              "class": "Checkbox",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                11,
+                43,
+                3
+              ],
+              "value": false,
+              "label": "Forward incoming payload unchanged"
+            },
+            {
+              "id": "form-section-terminate_branch",
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                15,
+                6,
+                1
+              ],
+              "text": "Branch"
+            },
+            {
+              "id": "field-terminate_branch",
+              "class": "Checkbox",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                17,
+                42,
+                3
+              ],
+              "value": false,
+              "label": "Terminate branch after completion"
+            },
+            {
+              "id": "field-desc-terminate_branch",
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                45,
+                17,
+                46,
+                1
+              ],
+              "text": "End this branch after the viewer is requested"
+            }
+          ],
+          "focus_order": [
+            "transient-output-name-default",
+            "transient-output-desc-default",
+            "dead-drop-passthrough",
+            "field-terminate_branch",
+            "save-node-config",
+            "cancel-node-config"
+          ]
+        },
+        "node-config-tab-connections": {
+          "title": "4 - Connections",
+          "widgets": [
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-connections",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                8,
+                11,
+                1
+              ],
+              "text": "Connections"
+            },
+            {
+              "id": null,
+              "class": "Static",
+              "tab": "node-config-tab-connections",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                9,
+                82,
+                1
+              ],
+              "text": "Edit connections from the editor."
+            },
+            {
+              "id": "connection-summary",
+              "class": "Static",
+              "tab": "node-config-tab-connections",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                10,
+                82,
+                4
+              ],
+              "text": "  inputs:\n    User Text Input (node_4e4290b3).default -> file\n  outputs:\n    default -> No-Op (node_eb5c56c9).input"
+            }
+          ],
+          "focus_order": [
+            "save-node-config",
+            "cancel-node-config"
+          ]
+        }
+      }
+    },
+    {
+      "type": "file_view_node",
+      "width": 140,
+      "tabs": {
+        "node-config-tab-core": {
+          "title": "1 - Source",
+          "widgets": [
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                7,
+                7,
+                1
+              ],
+              "text": "Alias:"
+            },
+            {
+              "id": "alias-input",
+              "class": "CommandInput",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                10,
+                7,
+                118,
+                1
+              ],
+              "value": "View File"
+            },
+            {
+              "id": "node-config-summary",
+              "class": "Static",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                8,
+                118,
+                2
+              ],
+              "text": "Node type: File Viewer\nDisplay a text or Markdown file inside AOTN"
+            },
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                11,
+                16,
+                1
+              ],
+              "text": "Incoming Payload"
+            },
+            {
+              "id": "incoming-payload-file",
+              "class": "Static",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                12,
+                118,
+                2
+              ],
+              "text": "Node source: User Text Input node\nPayload: audit_text (any)"
+            },
+            {
+              "id": "form-section-file_source",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                15,
+                15,
+                1
+              ],
+              "text": "Required Inputs"
+            },
+            {
+              "id": "field-label-file_source",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                17,
+                13,
+                1
+              ],
+              "text": "File source:"
+            },
+            {
+              "id": "field-desc-file_source",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                16,
+                17,
+                57,
+                1
+              ],
+              "text": "File reference from upstream/vault, or a configured path"
+            },
+            {
+              "id": "field-file_source",
+              "class": "Select",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                18,
+                118,
+                3
+              ],
+              "value": "Upstream payload",
+              "options": [
+                [
+                  "Upstream payload",
+                  "Upstream payload"
+                ],
+                [
+                  "Vault",
+                  "Vault"
+                ],
+                [
+                  "Configured",
+                  "Configured"
+                ]
+              ]
+            },
+            {
+              "id": "field-label-file_vault_key",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": false,
+              "ancestors_visible": false,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "File Vault key:"
+            },
+            {
+              "id": "field-file_vault_key",
+              "class": "Select",
+              "tab": "node-config-tab-core",
+              "display": false,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "value": "Select.NULL",
+              "options": [
+                [
+                  "",
+                  "Select.NULL"
+                ],
+                [
+                  "audit_file [file]",
+                  "audit_file"
+                ]
+              ]
+            }
+          ],
+          "focus_order": [
+            "alias-input",
+            "field-file_source",
+            "save-node-config",
+            "cancel-node-config"
+          ]
+        },
+        "node-config-tab-parameters": {
+          "title": "2 - Parameters",
+          "widgets": [
+            {
+              "id": "field-label-file",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": false,
+              "ancestors_visible": false,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "File path *:"
+            },
+            {
+              "id": "field-file",
+              "class": "CommandInput",
+              "tab": "node-config-tab-parameters",
+              "display": false,
+              "ancestors_visible": false,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "value": ""
+            },
+            {
+              "id": "field-label-render",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                7,
+                11,
+                1
+              ],
+              "text": "Render as:"
+            },
+            {
+              "id": "field-desc-render",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                14,
+                7,
+                44,
+                1
+              ],
+              "text": "Auto picks Markdown for .md/.markdown files"
+            },
+            {
+              "id": "field-render",
+              "class": "Select",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                8,
+                120,
+                3
+              ],
+              "value": "Auto",
+              "options": [
+                [
+                  "Auto",
+                  "Auto"
+                ],
+                [
+                  "Markdown",
+                  "Markdown"
+                ],
+                [
+                  "Plain text",
+                  "Plain text"
+                ]
+              ]
+            }
+          ],
+          "focus_order": [
+            "field-render",
+            "save-node-config",
+            "cancel-node-config"
+          ]
+        },
+        "node-config-tab-outputs": {
+          "title": "3 - Payloads",
+          "widgets": [
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                7,
+                23,
+                1
+              ],
+              "text": "Downstream node payload"
+            },
+            {
+              "id": "downstream-header-default",
+              "class": "Static",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                9,
+                118,
+                1
+              ],
+              "text": "File Reference  [file]"
+            },
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                11,
+                14,
+                1
+              ],
+              "text": "Payload name:"
+            },
+            {
+              "id": "transient-output-name-default",
+              "class": "CommandInput",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                17,
+                11,
+                118,
+                1
+              ],
+              "value": "File Reference"
+            },
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                13,
+                13,
+                1
+              ],
+              "text": "Description:"
+            },
+            {
+              "id": "transient-output-desc-default",
+              "class": "CommandInput",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                16,
+                13,
+                118,
+                1
+              ],
+              "value": "The viewed file's reference, forwarded for further steps"
+            },
+            {
+              "id": "dead-drop-passthrough",
+              "class": "Checkbox",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                14,
+                43,
+                3
+              ],
+              "value": false,
+              "label": "Forward incoming payload unchanged"
+            },
+            {
+              "id": "form-section-terminate_branch",
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                18,
+                6,
+                1
+              ],
+              "text": "Branch"
+            },
+            {
+              "id": "field-terminate_branch",
+              "class": "Checkbox",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                20,
+                42,
+                3
+              ],
+              "value": false,
+              "label": "Terminate branch after completion"
+            },
+            {
+              "id": "field-desc-terminate_branch",
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                45,
+                20,
+                46,
+                1
+              ],
+              "text": "End this branch after the viewer is requested"
+            }
+          ],
+          "focus_order": [
+            "transient-output-name-default",
+            "transient-output-desc-default",
+            "dead-drop-passthrough",
+            "field-terminate_branch",
+            "save-node-config",
+            "cancel-node-config"
+          ]
+        },
+        "node-config-tab-connections": {
+          "title": "4 - Connections",
+          "widgets": [
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-connections",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                7,
+                11,
+                1
+              ],
+              "text": "Connections"
+            },
+            {
+              "id": null,
+              "class": "Static",
+              "tab": "node-config-tab-connections",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                8,
+                120,
+                1
+              ],
+              "text": "Edit connections from the editor."
+            },
+            {
+              "id": "connection-summary",
+              "class": "Static",
+              "tab": "node-config-tab-connections",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                9,
+                120,
+                4
+              ],
+              "text": "  inputs:\n    User Text Input (node_82490d90).default -> file\n  outputs:\n    default -> No-Op (node_87d752b2).input"
+            }
+          ],
+          "focus_order": [
+            "save-node-config",
+            "cancel-node-config"
+          ]
+        }
+      }
+    },
+    {
+      "type": "window_control_node",
+      "width": 60,
+      "tabs": {
+        "node-config-tab-core": {
+          "title": "1 - Source",
+          "widgets": [
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                9,
+                7,
+                1
+              ],
+              "text": "Alias:"
+            },
+            {
+              "id": "alias-input",
+              "class": "CommandInput",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                10,
+                9,
+                46,
+                1
+              ],
+              "value": "Window Control"
+            },
+            {
+              "id": "node-config-summary",
+              "class": "Static",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                10,
+                46,
+                3
+              ],
+              "text": "Node type: Window Control\nFocus, minimize, or close the window showing a workflow file"
+            },
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                14,
+                16,
+                1
+              ],
+              "text": "Incoming Payload"
+            },
+            {
+              "id": "incoming-payload-file",
+              "class": "Static",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                15,
+                46,
+                2
+              ],
+              "text": "Node source: User Text Input node\nPayload: audit_text (any)"
+            },
+            {
+              "id": "form-section-file_source",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                18,
+                15,
+                1
+              ],
+              "text": "Required Inputs"
+            },
+            {
+              "id": "field-label-file_source",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                20,
+                13,
+                1
+              ],
+              "text": "File source:"
+            },
+            {
+              "id": "field-desc-file_source",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                16,
+                20,
+                39,
+                1
+              ],
+              "text": "File reference whose window to control"
+            },
+            {
+              "id": "field-file_source",
+              "class": "Select",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                21,
+                46,
+                3
+              ],
+              "value": "Upstream payload",
+              "options": [
+                [
+                  "Upstream payload",
+                  "Upstream payload"
+                ],
+                [
+                  "Vault",
+                  "Vault"
+                ]
+              ]
+            },
+            {
+              "id": "field-label-file_vault_key",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": false,
+              "ancestors_visible": false,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "File Vault key:"
+            },
+            {
+              "id": "field-file_vault_key",
+              "class": "Select",
+              "tab": "node-config-tab-core",
+              "display": false,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "value": "Select.NULL",
+              "options": [
+                [
+                  "",
+                  "Select.NULL"
+                ],
+                [
+                  "audit_file [file]",
+                  "audit_file"
+                ]
+              ]
+            }
+          ],
+          "focus_order": [
+            "alias-input",
+            "field-file_source",
+            "save-node-config",
+            "cancel-node-config"
+          ]
+        },
+        "node-config-tab-parameters": {
+          "title": "2 - Parameters",
+          "widgets": [
+            {
+              "id": "field-label-action",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                9,
+                8,
+                1
+              ],
+              "text": "Action:"
+            },
+            {
+              "id": "field-desc-action",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                11,
+                9,
+                34,
+                1
+              ],
+              "text": "What to do with the file's window"
+            },
+            {
+              "id": "field-action",
+              "class": "Select",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                10,
+                46,
+                3
+              ],
+              "value": "Focus",
+              "options": [
+                [
+                  "Focus",
+                  "Focus"
+                ],
+                [
+                  "Minimize",
+                  "Minimize"
+                ],
+                [
+                  "Close",
+                  "Close"
+                ]
+              ]
+            }
+          ],
+          "focus_order": [
+            "field-action",
+            "save-node-config",
+            "cancel-node-config"
+          ]
+        },
+        "node-config-tab-outputs": {
+          "title": "3 - Payloads",
+          "widgets": [
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                9,
+                23,
+                1
+              ],
+              "text": "Downstream node payload"
+            },
+            {
+              "id": "downstream-header-default",
+              "class": "Static",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                11,
+                46,
+                1
+              ],
+              "text": "File Reference  [file]"
+            },
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                13,
+                14,
+                1
+              ],
+              "text": "Payload name:"
+            },
+            {
+              "id": "transient-output-name-default",
+              "class": "CommandInput",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                17,
+                13,
+                46,
+                1
+              ],
+              "value": "File Reference"
+            },
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                15,
+                13,
+                1
+              ],
+              "text": "Description:"
+            },
+            {
+              "id": "transient-output-desc-default",
+              "class": "CommandInput",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                16,
+                15,
+                46,
+                1
+              ],
+              "value": "The targeted file's reference, forwarded unchanged"
+            },
+            {
+              "id": "dead-drop-passthrough",
+              "class": "Checkbox",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                16,
+                43,
+                3
+              ],
+              "value": false,
+              "label": "Forward incoming payload unchanged"
+            }
+          ],
+          "focus_order": [
+            "transient-output-name-default",
+            "transient-output-desc-default",
+            "dead-drop-passthrough",
+            "save-node-config",
+            "cancel-node-config"
+          ]
+        },
+        "node-config-tab-connections": {
+          "title": "4 - Connections",
+          "widgets": [
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-connections",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                9,
+                11,
+                1
+              ],
+              "text": "Connections"
+            },
+            {
+              "id": null,
+              "class": "Static",
+              "tab": "node-config-tab-connections",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                10,
+                48,
+                1
+              ],
+              "text": "Edit connections from the editor."
+            },
+            {
+              "id": "connection-summary",
+              "class": "Static",
+              "tab": "node-config-tab-connections",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                11,
+                48,
+                5
+              ],
+              "text": "  inputs:\n    User Text Input (node_0c549e8e).default -> file\n  outputs:\n    default -> No-Op (node_aae0f702).input"
+            }
+          ],
+          "focus_order": [
+            "save-node-config",
+            "cancel-node-config"
+          ]
+        }
+      }
+    },
+    {
+      "type": "window_control_node",
+      "width": 100,
+      "tabs": {
+        "node-config-tab-core": {
+          "title": "1 - Source",
+          "widgets": [
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                8,
+                7,
+                1
+              ],
+              "text": "Alias:"
+            },
+            {
+              "id": "alias-input",
+              "class": "CommandInput",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                10,
+                8,
+                82,
+                1
+              ],
+              "value": "Window Control"
+            },
+            {
+              "id": "node-config-summary",
+              "class": "Static",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                9,
+                82,
+                2
+              ],
+              "text": "Node type: Window Control\nFocus, minimize, or close the window showing a workflow file"
+            },
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                12,
+                16,
+                1
+              ],
+              "text": "Incoming Payload"
+            },
+            {
+              "id": "incoming-payload-file",
+              "class": "Static",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                13,
+                82,
+                2
+              ],
+              "text": "Node source: User Text Input node\nPayload: audit_text (any)"
+            },
+            {
+              "id": "form-section-file_source",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                16,
+                15,
+                1
+              ],
+              "text": "Required Inputs"
+            },
+            {
+              "id": "field-label-file_source",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                18,
+                13,
+                1
+              ],
+              "text": "File source:"
+            },
+            {
+              "id": "field-desc-file_source",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                16,
+                18,
+                39,
+                1
+              ],
+              "text": "File reference whose window to control"
+            },
+            {
+              "id": "field-file_source",
+              "class": "Select",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                19,
+                82,
+                3
+              ],
+              "value": "Upstream payload",
+              "options": [
+                [
+                  "Upstream payload",
+                  "Upstream payload"
+                ],
+                [
+                  "Vault",
+                  "Vault"
+                ]
+              ]
+            },
+            {
+              "id": "field-label-file_vault_key",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": false,
+              "ancestors_visible": false,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "File Vault key:"
+            },
+            {
+              "id": "field-file_vault_key",
+              "class": "Select",
+              "tab": "node-config-tab-core",
+              "display": false,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "value": "Select.NULL",
+              "options": [
+                [
+                  "",
+                  "Select.NULL"
+                ],
+                [
+                  "audit_file [file]",
+                  "audit_file"
+                ]
+              ]
+            }
+          ],
+          "focus_order": [
+            "alias-input",
+            "field-file_source",
+            "save-node-config",
+            "cancel-node-config"
+          ]
+        },
+        "node-config-tab-parameters": {
+          "title": "2 - Parameters",
+          "widgets": [
+            {
+              "id": "field-label-action",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                8,
+                8,
+                1
+              ],
+              "text": "Action:"
+            },
+            {
+              "id": "field-desc-action",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                11,
+                8,
+                34,
+                1
+              ],
+              "text": "What to do with the file's window"
+            },
+            {
+              "id": "field-action",
+              "class": "Select",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                9,
+                82,
+                3
+              ],
+              "value": "Focus",
+              "options": [
+                [
+                  "Focus",
+                  "Focus"
+                ],
+                [
+                  "Minimize",
+                  "Minimize"
+                ],
+                [
+                  "Close",
+                  "Close"
+                ]
+              ]
+            }
+          ],
+          "focus_order": [
+            "field-action",
+            "save-node-config",
+            "cancel-node-config"
+          ]
+        },
+        "node-config-tab-outputs": {
+          "title": "3 - Payloads",
+          "widgets": [
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                8,
+                23,
+                1
+              ],
+              "text": "Downstream node payload"
+            },
+            {
+              "id": "downstream-header-default",
+              "class": "Static",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                10,
+                82,
+                1
+              ],
+              "text": "File Reference  [file]"
+            },
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                12,
+                14,
+                1
+              ],
+              "text": "Payload name:"
+            },
+            {
+              "id": "transient-output-name-default",
+              "class": "CommandInput",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                17,
+                12,
+                82,
+                1
+              ],
+              "value": "File Reference"
+            },
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                14,
+                13,
+                1
+              ],
+              "text": "Description:"
+            },
+            {
+              "id": "transient-output-desc-default",
+              "class": "CommandInput",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                16,
+                14,
+                82,
+                1
+              ],
+              "value": "The targeted file's reference, forwarded unchanged"
+            },
+            {
+              "id": "dead-drop-passthrough",
+              "class": "Checkbox",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                15,
+                43,
+                3
+              ],
+              "value": false,
+              "label": "Forward incoming payload unchanged"
+            }
+          ],
+          "focus_order": [
+            "transient-output-name-default",
+            "transient-output-desc-default",
+            "dead-drop-passthrough",
+            "save-node-config",
+            "cancel-node-config"
+          ]
+        },
+        "node-config-tab-connections": {
+          "title": "4 - Connections",
+          "widgets": [
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-connections",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                8,
+                11,
+                1
+              ],
+              "text": "Connections"
+            },
+            {
+              "id": null,
+              "class": "Static",
+              "tab": "node-config-tab-connections",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                9,
+                82,
+                1
+              ],
+              "text": "Edit connections from the editor."
+            },
+            {
+              "id": "connection-summary",
+              "class": "Static",
+              "tab": "node-config-tab-connections",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                10,
+                82,
+                4
+              ],
+              "text": "  inputs:\n    User Text Input (node_4a48d189).default -> file\n  outputs:\n    default -> No-Op (node_6912d06d).input"
+            }
+          ],
+          "focus_order": [
+            "save-node-config",
+            "cancel-node-config"
+          ]
+        }
+      }
+    },
+    {
+      "type": "window_control_node",
+      "width": 140,
+      "tabs": {
+        "node-config-tab-core": {
+          "title": "1 - Source",
+          "widgets": [
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                7,
+                7,
+                1
+              ],
+              "text": "Alias:"
+            },
+            {
+              "id": "alias-input",
+              "class": "CommandInput",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                10,
+                7,
+                118,
+                1
+              ],
+              "value": "Window Control"
+            },
+            {
+              "id": "node-config-summary",
+              "class": "Static",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                8,
+                118,
+                2
+              ],
+              "text": "Node type: Window Control\nFocus, minimize, or close the window showing a workflow file"
+            },
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                11,
+                16,
+                1
+              ],
+              "text": "Incoming Payload"
+            },
+            {
+              "id": "incoming-payload-file",
+              "class": "Static",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                12,
+                118,
+                2
+              ],
+              "text": "Node source: User Text Input node\nPayload: audit_text (any)"
+            },
+            {
+              "id": "form-section-file_source",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                15,
+                15,
+                1
+              ],
+              "text": "Required Inputs"
+            },
+            {
+              "id": "field-label-file_source",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                17,
+                13,
+                1
+              ],
+              "text": "File source:"
+            },
+            {
+              "id": "field-desc-file_source",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                16,
+                17,
+                39,
+                1
+              ],
+              "text": "File reference whose window to control"
+            },
+            {
+              "id": "field-file_source",
+              "class": "Select",
+              "tab": "node-config-tab-core",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                18,
+                118,
+                3
+              ],
+              "value": "Upstream payload",
+              "options": [
+                [
+                  "Upstream payload",
+                  "Upstream payload"
+                ],
+                [
+                  "Vault",
+                  "Vault"
+                ]
+              ]
+            },
+            {
+              "id": "field-label-file_vault_key",
+              "class": "Label",
+              "tab": "node-config-tab-core",
+              "display": false,
+              "ancestors_visible": false,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "text": "File Vault key:"
+            },
+            {
+              "id": "field-file_vault_key",
+              "class": "Select",
+              "tab": "node-config-tab-core",
+              "display": false,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                0,
+                0,
+                0,
+                0
+              ],
+              "value": "Select.NULL",
+              "options": [
+                [
+                  "",
+                  "Select.NULL"
+                ],
+                [
+                  "audit_file [file]",
+                  "audit_file"
+                ]
+              ]
+            }
+          ],
+          "focus_order": [
+            "alias-input",
+            "field-file_source",
+            "save-node-config",
+            "cancel-node-config"
+          ]
+        },
+        "node-config-tab-parameters": {
+          "title": "2 - Parameters",
+          "widgets": [
+            {
+              "id": "field-label-action",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                7,
+                8,
+                1
+              ],
+              "text": "Action:"
+            },
+            {
+              "id": "field-desc-action",
+              "class": "Label",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                11,
+                7,
+                34,
+                1
+              ],
+              "text": "What to do with the file's window"
+            },
+            {
+              "id": "field-action",
+              "class": "Select",
+              "tab": "node-config-tab-parameters",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                8,
+                120,
+                3
+              ],
+              "value": "Focus",
+              "options": [
+                [
+                  "Focus",
+                  "Focus"
+                ],
+                [
+                  "Minimize",
+                  "Minimize"
+                ],
+                [
+                  "Close",
+                  "Close"
+                ]
+              ]
+            }
+          ],
+          "focus_order": [
+            "field-action",
+            "save-node-config",
+            "cancel-node-config"
+          ]
+        },
+        "node-config-tab-outputs": {
+          "title": "3 - Payloads",
+          "widgets": [
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                7,
+                23,
+                1
+              ],
+              "text": "Downstream node payload"
+            },
+            {
+              "id": "downstream-header-default",
+              "class": "Static",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                9,
+                118,
+                1
+              ],
+              "text": "File Reference  [file]"
+            },
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                11,
+                14,
+                1
+              ],
+              "text": "Payload name:"
+            },
+            {
+              "id": "transient-output-name-default",
+              "class": "CommandInput",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                17,
+                11,
+                118,
+                1
+              ],
+              "value": "File Reference"
+            },
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                13,
+                13,
+                1
+              ],
+              "text": "Description:"
+            },
+            {
+              "id": "transient-output-desc-default",
+              "class": "CommandInput",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                16,
+                13,
+                118,
+                1
+              ],
+              "value": "The targeted file's reference, forwarded unchanged"
+            },
+            {
+              "id": "dead-drop-passthrough",
+              "class": "Checkbox",
+              "tab": "node-config-tab-outputs",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": true,
+              "region": [
+                3,
+                14,
+                43,
+                3
+              ],
+              "value": false,
+              "label": "Forward incoming payload unchanged"
+            }
+          ],
+          "focus_order": [
+            "transient-output-name-default",
+            "transient-output-desc-default",
+            "dead-drop-passthrough",
+            "save-node-config",
+            "cancel-node-config"
+          ]
+        },
+        "node-config-tab-connections": {
+          "title": "4 - Connections",
+          "widgets": [
+            {
+              "id": null,
+              "class": "Label",
+              "tab": "node-config-tab-connections",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                7,
+                11,
+                1
+              ],
+              "text": "Connections"
+            },
+            {
+              "id": null,
+              "class": "Static",
+              "tab": "node-config-tab-connections",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                8,
+                120,
+                1
+              ],
+              "text": "Edit connections from the editor."
+            },
+            {
+              "id": "connection-summary",
+              "class": "Static",
+              "tab": "node-config-tab-connections",
+              "display": true,
+              "ancestors_visible": true,
+              "disabled": false,
+              "focusable": false,
+              "region": [
+                3,
+                9,
+                120,
+                4
+              ],
+              "text": "  inputs:\n    User Text Input (node_95c556cf).default -> file\n  outputs:\n    default -> No-Op (node_1fce7753).input"
+            }
+          ],
+          "focus_order": [
+            "save-node-config",
+            "cancel-node-config"
+          ]
+        }
+      }
+    }
+  ]
+}

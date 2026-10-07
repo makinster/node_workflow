@@ -1,0 +1,24 @@
+╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮              
+│                                                                                                                            │              
+│  Edit Node: Wait Until (node_da6f24a9)                                                                                     │              
+│  1/2 tabs | w/s move | e toggle/edit | ctrl+s save | esc cancel | ctrl+q revert                                            │              
+│   1 - Wait  2 - Connections                                                                                                │              
+│  ╸━━━━━━━━╺━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │              
+│  Targets must complete at least once in this run. A target that never executes can wait forever at zero timeout.           │              
+│                                                                                                                            │              
+│  Timeout seconds:  0 waits forever (default); a positive value limits the wait█  0.0                                   ▂▂  │              
+│                                                                                                                            │              
+│  Incoming: User Text Input.default                                                                                     ▆▆  │              
+│                                                                                                                            │              
+│  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔                                                                                                          │              
+│        Save                                                                                                                │              
+│  ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁                                                                                                          │              
+│  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔                                                                                                          │              
+│       Cancel                                                                                                               │              
+│  ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁                                                                                                          │              
+│     1/2 tabs | w/s move | e toggle/edit | ctrl+s save | esc cancel | ctrl+q revert                                         │              
+│                                                                                                                            │              
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯              
+                                                                                                                                            
+                                                                                                                                            
+                                                                                                                                            

@@ -28,6 +28,28 @@ UI-specific adapter behavior.
   or activate the venv and run `python main.py`.
 - Main tests: `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v`.
 
+## Development Environment And OS Support Direction
+
+Owner decision (2026-10-06): current development and debugging use WSL/Linux
+in `/home/makin/src/node_workflow` with its Linux venv. WSL is the current
+debugging environment, not the intended limit of product support.
+
+The future product should offer app versions for Windows, macOS, and Linux.
+Nodes should work appropriately in the environment where the app actually runs:
+use that environment's paths, file access, launch tools, and available OS
+capabilities. Keep portable workflow behavior shared and isolate OS-specific
+operations behind platform adapters. Detect unavailable capabilities and give
+clear guidance; optional operations can degrade with an explanation, while
+unavailable essential operations must report an actionable error.
+
+WSL must be treated as a Linux runtime with explicit Windows interoperability,
+not as native Windows. The File Reader copied-path fix is one example: it
+accepts quoted Windows paths and converts them for WSL. The owner confirmed
+the fix worked. WSL tests do not establish native Windows, macOS, or Linux
+desktop support; verify each target environment before claiming support.
+Packaging and wider platform verification remain future work; see
+[Cross-Platform App Distribution And Node Compatibility](PROJECT_BACKLOG.md#future-direction--cross-platform-app-distribution-and-node-compatibility).
+
 ## Mental Model
 
 A workflow is a directed graph of nodes. Execution starts at a Start node and a

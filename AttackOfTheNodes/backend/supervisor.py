@@ -149,7 +149,9 @@ class Supervisor:
         self._resume_event.set()
         if self._pending_input_future and not self._pending_input_future.done():
             self._input_interrupted = True
-            self._pending_input_future.set_result("")
+            # A stop is not an empty answer: prevent the node from publishing
+            # outputs or satisfying completion gates after the interrupted wait.
+            self._pending_input_future.cancel()
         if self._pending_recovery_future and not self._pending_recovery_future.done():
             self._pending_recovery_future.set_result("TERMINATE_BRANCH")
 
@@ -228,11 +230,13 @@ class Supervisor:
                 return
 
             completed_node_id = self.current_node_id
+            if result.payload:
+                self.current_node_id = self._handle_payload(result.payload)
+
             if completed_node_id and self._mark_node_completed is not None:
                 await self._mark_node_completed(completed_node_id)
 
             if result.payload:
-                self.current_node_id = self._handle_payload(result.payload)
                 self._node_phase = "queued"
                 self._publish_state_update()
 
@@ -359,6 +363,17 @@ class Supervisor:
                 timeout,
             )
 
+        def publish_event(event_name: str, payload: Dict[str, Any]) -> None:
+            # Node-emitted events always carry run/branch/node identity so
+            # subscribers can attribute them (EventBus payload standing rule).
+            body: Dict[str, Any] = {
+                "run_id": self.run_id,
+                "branch_id": self.branch_id,
+                "node_id": self.current_node_id,
+            }
+            body.update(payload or {})
+            self._event_bus.publish(event_name, body)
+
         context = NodeContext(
             node_id=self.current_node_id or "",
             branch_id=self.branch_id,
@@ -372,6 +387,7 @@ class Supervisor:
             wait_for_merge=wait_for_merge,
             run_session=self._run_session,
             secrets_manager=self._secrets_manager,
+            publish_event=publish_event,
         )
 
         started_at = perf_counter()

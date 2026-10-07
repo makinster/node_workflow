@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from collections import deque
 from pathlib import Path
 
 from textual.app import App as TextualApp, ScreenStackError
@@ -12,6 +13,7 @@ from textual.css.query import NoMatches
 from backend.events import (
     ERROR_OCCURRED,
     ERROR_LOGGED,
+    FILE_VIEW_REQUESTED,
     MEMORY_UPDATE,
     NODE_EXECUTION_UPDATE,
     NODE_TIMING_UPDATE,
@@ -34,6 +36,7 @@ from .screens.editor import EditorScreen
 from .screens.confirm import ConfirmScreen
 from .screens.error_details import ErrorDetailsScreen
 from .screens.execution import ExecutionScreen
+from .screens.file_viewer import FileViewerScreen
 from .screens.help import HelpScreen
 from .screens.settings import SettingsScreen
 from .screens.user_input import UserInputScreen
@@ -95,6 +98,8 @@ class AttackOfTheNodesApp(TextualApp):
         self._branch_current_nodes = {}
         self._user_input_modal_open = False
         self._error_modal_open = False
+        self._file_viewer_open = False
+        self._file_view_requests = deque()
         self._editor_deleted_nodes = {}
         self.cursor_state = CursorState()
         self._subscribe_to_backend_events()
@@ -143,6 +148,7 @@ class AttackOfTheNodesApp(TextualApp):
             SUPERVISOR_STATE_UPDATE: self._on_supervisor_state_update,
             SUPERVISOR_TERMINATING: self._on_supervisor_terminating,
             USER_INPUT_NEEDED: self._on_user_input_needed,
+            FILE_VIEW_REQUESTED: self._on_file_view_requested,
             ERROR_OCCURRED: self._on_backend_event,
             ERROR_LOGGED: self._on_backend_event,
             RECOVERY_OPTIONS_AVAILABLE: self._on_recovery_options_available,
@@ -239,6 +245,33 @@ class AttackOfTheNodesApp(TextualApp):
             )
         self._on_backend_event(payload)
 
+    def _on_file_view_requested(self, payload=None) -> None:
+        """Queue displays for the active run; execution does not wait on them."""
+        payload = payload or {}
+        if not self.execution_state.accepts(payload) or not payload.get("path"):
+            return
+        self._file_view_requests.append(dict(payload))
+        self._show_next_file_viewer()
+
+    def _show_next_file_viewer(self) -> None:
+        if self._file_viewer_open or self._user_input_modal_open or self._error_modal_open:
+            return
+        while self._file_view_requests:
+            payload = self._file_view_requests.popleft()
+            if self.execution_state.accepts(payload):
+                break
+        else:
+            return
+        self._file_viewer_open = True
+        self.push_screen(
+            FileViewerScreen(path=str(payload["path"]), render=str(payload.get("render") or "plain")),
+            self._on_file_viewer_closed,
+        )
+
+    def _on_file_viewer_closed(self, _result=None) -> None:
+        self._file_viewer_open = False
+        self._show_next_file_viewer()
+
     def _on_recovery_options_available(self, payload=None) -> None:
         payload = payload or {}
         if not self.execution_state.accepts(payload):
@@ -253,17 +286,18 @@ class AttackOfTheNodesApp(TextualApp):
 
     def _submit_user_input_from_modal(self, result) -> None:
         self._user_input_modal_open = False
-        if not result:
-            return
-        self.master_state.submit_user_input(result["branch_id"], result["value"])
+        if result:
+            self.master_state.submit_user_input(result["branch_id"], result["value"])
+        self._show_next_file_viewer()
 
     def _submit_recovery_from_modal(self, result) -> None:
         self._error_modal_open = False
-        if not result:
-            return
-        self.master_state.submit_recovery_action(result["branch_id"], result["action"])
+        if result:
+            self.master_state.submit_recovery_action(result["branch_id"], result["action"])
+        self._show_next_file_viewer()
 
     def _reset_run_display_state(self) -> None:
+        self._file_view_requests.clear()
         if self.execution_state.run_id is not None:
             self._retired_display_run_id = self.execution_state.run_id
         self.execution_state.reset()

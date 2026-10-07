@@ -1,0 +1,24 @@
+╭────────────────────────────────────────────────────────────────────────────────────────╮          
+│                                                                                        │          
+│  Edit Node: Chat Completion (node_b3288596)                                            │          
+│  number keys tabs | w/s move | a/d within row | e interact | ctrl+s save | esc cancel  │          
+│  | ctrl+q revert                                                                       │          
+│   1 - Source  2 - Parameters  3 - Payloads  4 - Connections                            │          
+│  ━━╸━━━━━━━━━━╸━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │          
+│  Max tokens *: █  1024                                                                 │          
+│                                                                                        │          
+│  Temperature *: █  1.0                                                             ▇▇  │          
+│  Ignored by models that do not accept sampling parameters                          ▇▇  │          
+│                                                                                        │          
+│  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔                                                                      │          
+│        Save                                                                            │          
+│  ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁                                                                      │          
+│  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔                                                                      │          
+│       Cancel                                                                           │          
+│  ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁                                                                      │          
+│     number keys tabs | w/s move | a/d within row | e interact | ctrl+s save | esc      │          
+│                                                                                        │          
+╰────────────────────────────────────────────────────────────────────────────────────────╯          
+                                                                                                    
+                                                                                                    
+                                                                                                    

@@ -234,9 +234,15 @@ def focus_command_widget(
     widget: Any,
     scroll_container: Any | None = None,
     peek_widget: Any | None = None,
+    *,
+    scroll_on_focus: bool = True,
 ) -> Any:
-    """Focus a command widget and optionally begin editing text prompts."""
+    """Focus a command widget and optionally begin editing text prompts.
+
+    Set scroll_on_focus=False when the caller owns scrolling after layout.
+    """
     target = widget
+    focus_options = {} if scroll_on_focus else {"scroll_visible": False}
     active_text = getattr(screen, "_active_command_text_widget", None)
     if active_text is not target and isinstance(active_text, (CommandInput, CommandTextArea)):
         active_text.end_edit()
@@ -248,10 +254,11 @@ def focus_command_widget(
             # Fresh navigation focus: drop any stale nav-cursor position so the
             # next begin_edit() places the caret at the end of the value.
             target._nav_cursor_positioned = False
-            screen.app.set_focus(target)
+            screen.app.set_focus(target, **focus_options)
     else:
-        screen.app.set_focus(target)
-    scroll_command_widget_into_view(target, scroll_container, peek_widget)
+        screen.app.set_focus(target, **focus_options)
+    if scroll_on_focus:
+        scroll_command_widget_into_view(target, scroll_container, peek_widget)
     return target
 
 

@@ -1,0 +1,15 @@
+{
+  "mounts": 108,
+  "types": 36,
+  "widths": [
+    60,
+    100,
+    140
+  ],
+  "states": 1202,
+  "navigation_samples": 4008,
+  "cancel_unchanged": 108,
+  "findings": [],
+  "rule_violations": [],
+  "disabled_visible": []
+}

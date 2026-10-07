@@ -1,0 +1,24 @@
+╭────────────────────────────────────────────────────╮      
+│                                                    │      
+│  Edit Node: Wait Until (node_201dc12c)             │      
+│  1/2 tabs | w/s move | e toggle/edit | ctrl+s      │      
+│  save | esc cancel | ctrl+q revert                 │      
+│   1 - Wait  2 - Connections                        │      
+│  ╸━━━━━━━━╺━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │      
+│                                                    │      
+│  Alias: █  Wait Until                              │      
+│  Wait for all selected nodes to complete, then     │      
+│  forward the incoming dead-drop payload            │      
+│                                                    │      
+│  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔                                  │      
+│        Save                                        │      
+│  ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁                                  │      
+│  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔                                  │      
+│       Cancel                                       │      
+│  ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁                                  │      
+│     1/2 tabs | w/s move | e toggle/edit | ctrl+s   │      
+│                                                    │      
+╰────────────────────────────────────────────────────╯      
+                                                            
+                                                            
+                                                            

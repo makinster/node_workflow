@@ -25,7 +25,7 @@ the links in `docs/README.md`.
   - Use `input_sources` and `output_routing` spec sections to expand the
     standard NODE_STANDARDS input/output model automatically, including the
     dynamic greying rules. See `NODE_HELPER.md` and
-    `aotn_node_helper/specs/example_file_instance_node.yaml`.
+    `aotn_node_helper/specs/file_output_node.yaml`.
   - Run `../.venv/bin/python ../aotn_node_helper/create_node.py ../aotn_node_helper/specs/<node_type>.yaml`
     from `AttackOfTheNodes/`, or run the same script from the workspace root.
   - Run `../.venv/bin/python ../aotn_node_helper/check_node.py <node_type>`
@@ -137,8 +137,12 @@ config_tabs:
   `Source`, `Parameters`, or `Payloads`.
 - If a schema itself has multiple `group` values, those fields render as nested
   generated tabs inside their top-level tab; single-group configs stay flat.
-- Standard Node Config tabs are `Source`, `Parameters`, `Payloads`, and
-  `Connections`. Keep ordinary node fields schema-driven; custom config screens
+- Standard section meanings are `Source`, `Parameters`, `Payloads`, and
+  `Connections`. Show only applicable sections; four tabs are not mandatory.
+  Omit empty sections and unsupported controls, number visible tabs consecutively,
+  and keep shared keyboard navigation. Compact nodes can stay flat. Wait Until
+  uses Wait + Connections and exposes no Vault read/write controls.
+  Keep ordinary node fields schema-driven; custom config screens
   are reserved for topology-derived UI such as Branch, Merge, and Wait targets.
 - Config-screen copy currently uses the project vocabulary: graph-passed data is
   a dead-drop payload, named memory is the Vault, and pass-through forwarding is

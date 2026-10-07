@@ -1,5 +1,36 @@
 # AttackOfTheNodes Project Backlog
 
+Current configuration/UI follow-up: [CONFIG_UI_BUILD_PLAN.md](CONFIG_UI_BUILD_PLAN.md)
+records unresolved F01/F05–F12 and FO-R5 with priorities and verification stages.
+File Output is now integrated on the session PR branch; the original audit and
+review retain their before-fix findings. Windows FO7 remains live-owner work.
+
+## Future Direction — Cross-Platform App Distribution And Node Compatibility
+
+Owner decision (2026-10-06): debug the current project under WSL, and eventually
+provide app versions for the mainstream desktop operating systems: Windows,
+macOS, and Linux. Nodes should behave correctly in their actual runtime
+environment. This records product direction; packaging and additional platform
+implementations are not yet scoped or completed.
+
+- Provide appropriate installation, launch, and app packaging for each OS.
+- Keep portable node behavior consistent; use platform adapters for filesystem,
+  application launching, window control, and other OS-dependent operations.
+- Handle path formats and host/runtime boundaries explicitly. Under WSL,
+  Windows interoperability is a separate capability, not native Windows support.
+- Detect capabilities and gate OS-specific dependencies and controls. Explain
+  unavailable optional operations and report clear errors for essential ones;
+  do not silently claim a successful unsupported operation.
+- Verify portable nodes and OS-specific behavior in native Windows, macOS,
+  and Linux environments, alongside WSL debugging. Track support per capability;
+  passing Linux/WSL tests alone does not complete native OS verification.
+
+The owner confirmed File Reader's copied Windows-path handling works under WSL.
+Apply the same environment-aware principle to future node work. Existing Windows
+FO7 live verification and deferred macOS/Linux window adapters remain open;
+this direction does not imply every OS exposes identical window capabilities.
+See [Development Environment And OS Support Direction](PROJECT_KNOWLEDGE.md#development-environment-and-os-support-direction).
+
 ## Completed Project — Documentation Modernization
 
 The docs folder previously had split-brain history from the Chrome-extension
@@ -78,7 +109,20 @@ Recommended cleanup:
 - When a gap is closed, move its bullet to `SESSION_LOG.md` and the relevant
   completed/near-term section below.
 
+## Next Implementation Task — Capability-Driven Node Configuration UI
+
+Stage 0 is implemented in [PR #29](https://github.com/makinster/node_workflow/pull/29):
+File Output integration and focused runtime/save/geometry fixes. The current
+37-type baseline and stages 1–5 are in [CONFIG_UI_BUILD_PLAN.md](CONFIG_UI_BUILD_PLAN.md).
+Start with truthful capability gating for shared legacy Vault controls, then
+applicable sections/navigation. The original audit retains before-fix evidence.
+Keep execution-branch UI design separate; Windows FO7 still requires live review.
+
 ## Planned Project — Execution Screen Branch View
+
+PR #28 merged as `7161ef2`; owner confirmed the symbol fix. Proposed follow-up:
+[EXECUTION_BRANCH_UI_DESIGN.md](EXECUTION_BRANCH_UI_DESIGN.md). It settles recommended
+navigation/layout and safe preview defaults; implementation remains pending.
 
 Owner direction recorded 2026-10-06: show execution per branch, use A/D to
 cycle branches, and provide a scrollable node list with output-summary UI.
@@ -90,7 +134,7 @@ Prerequisite: [EXECUTION_STATUS_BUILD_PLAN.md](EXECUTION_STATUS_BUILD_PLAN.md),
 ES0–ES4, repairs missing node transitions, false completion after errors, and
 stale modal-resume rendering. Prepare run/branch/node visit state now; implement
 navigation/layout afterward in a separate task/PR. ES0–ES3 now implemented;
-ES4 awaits owner live verification/review. Current contract:
+ES4's execution symbols were owner-confirmed and merged via PR #28. Current contract:
 `EXECUTION_STATUS_CONTRACT.md`.
 
 Future design must settle branch labels/order, repeated-visit presentation,
@@ -247,6 +291,33 @@ displays). The same pattern applies — less commonly — to certain user-input
 nodes on the Inputs side. This is the motivation behind giving Outputs a
 dedicated selector tab (2026-06-22). No implementation scoped yet; capture
 concrete node concepts in `NODE_CATALOG.md` as they firm up.
+
+## Deferred — File/Window Output Follow-Ups (from FILE_OUTPUT_BUILD_PLAN)
+
+FO1–FO6 landed 2026-07-11 (`file_output_node`, markdown formatting mode,
+`file_view_node` + viewer screen, `backend/window_manager.py`,
+open-after-write placement, `window_control_node`). Deferred out of that
+plan's scope, per its design decisions:
+
+- **Virtual desktop moves (pyvda)** — D7: relies on undocumented Windows
+  internals that break across feature updates; the core use case never
+  needed it. The adapter protocol leaves room for a `desktop` capability.
+- **macOS (`pyobjc`/AppleScript) and Linux (`ewmh`/`xdotool`) window
+  adapters** — the `WindowManager` protocol and D3 preset vocabulary are
+  designed for them; no stub classes ship until one is implemented.
+- **Validator warning for `Open after write` on a loop path** — one window
+  opens per iteration today (documented on the field and in
+  `NODE_CATALOG.md`); loop detection is not free, so the warning is
+  deferred (FO5 task 4).
+- **Cross-run window adoption** — intentionally out (D12): windows that
+  outlive the run are unmanaged orphans; adoption would require
+  re-discovery, which D4 forbids.
+- **Refocus AOTN after a user prompt** — possible follow-up depending on
+  the FO7 focus-fight observation (open-after-write directly upstream of
+  `user_text_input_node` steals OS focus as the TUI prompts).
+- **Remote-backend window effector** — D11: when the backend becomes a
+  server (Multi-Frontend Expansion below), window actions migrate behind
+  the EventBus to a local effector; `capabilities()` already gates it.
 
 ## Future Direction — Headless CLI Execution (`aotn`)
 

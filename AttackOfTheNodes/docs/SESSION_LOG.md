@@ -4,6 +4,452 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-07 — Publish Confirmed Fixes And Synchronize
+
+Owner confirmed the node UI fixes live and requested a PR and an up-to-date
+project. Reuse existing PR #29 on `codex/wait-until-vault-fix`, which remained
+open after fetching origin; main baseline `7161ef2`, starting HEAD `6b34303`.
+Include the tested File Reader/path documentation and visibility/scroll audit
+work in the integrated PR. Owner authorized merging and checkout synchronization;
+GitHub and Git history record the resulting merge commit. Preserve the unrelated
+Windows-path-named test file and the recovery checkout. Refreshed current agent
+handoff with verified coverage and the remaining capability/layout work.
+
+Verification before publication: 589 tests passed, final 108-mount audit clean,
+compilation/helpers passed as recorded below; `git diff --check` passed.
+
+## 2026-10-06 — Audit Every Editable Node For Visibility And Scrolling
+
+Owner confirmed the preceding UI fix and requested a whole-node audit of
+toggle-dependent controls, convenience reasons for retained information, and
+scrolling. Authoritative root `/home/makin/src/node_workflow`; branch
+`codex/wait-until-vault-fix`; starting HEAD `6b34303`, with preceding session
+changes dirty. Fetch/merge origin/main was already up to date. Preserved those
+changes and the owner's untracked Windows-path-named test file. No recovery
+checkout changes, commit, push, PR merge, or new platform integration.
+
+- Reviewed registered schemas/execution use and mounted all 36 editable types,
+  including compatibility Start/End and excluding the internal tombstone.
+  Reused owner-safe synthetic audit helpers with explicit production CSS.
+- Added schema visibility for Text Output's user-input prompt, Set Variable's
+  literal value, Conditional's variable name, and HTTP's POST body. Updated
+  HTTP helper spec alongside the executable schema without regenerating its
+  custom execution. No backend execution logic changed for these controls.
+- Hide unavailable legacy Write to Vault checkboxes on both setter types while
+  forwarding; no useful visible disabled choices remain in the audited states.
+- Removed competing automatic/deferred scroll reveals. Shared focus helper
+  supports caller-owned scrolling; Node Config opts out and reveals only its
+  current focused target after layout. Other screens retain existing behavior.
+  Guard against stale reveal requests and avoid scrolling outside the tab.
+- Added NODE_CONFIG_VISIBILITY_SCROLL_AUDIT, before/intermediate/final evidence,
+  reproducible audit runner with optional failure gate, and convenience reasons
+  for read-only previews, wiring, empty states and still-active parameter fields.
+  Updated README/TASK_INDEX, shared style standards and the UI build plan.
+
+Final actual verification: **589 full-suite tests passed in 92.82s**.
+**108 mounts**, **1,202 toggle/source states**, **4,008 navigation samples**,
+Cancel unchanged **108/108**, **zero** final scroll findings, generated-rule
+visibility mismatches, or visible disabled selectors/checkboxes. Explicitly
+validated the saved final summary. Focused visibility/scroll tests: **17 passed**;
+earlier affected-UI subset: 48 passed (overlaps). HTTP node helper/five tests and
+UI helpers for HTTP Request, Text Output, Set Variable, Conditional passed.
+Compileall app/helper and `git diff --check` passed.
+
+Retained rapid-before scan's transient candidates rather than claiming 226 real
+defects. Settled-before confirmed one Image Generation scroll failure and two
+visible disabled checkboxes; intermediate three-width scan exposed two further
+short-viewport failures in Conditional/Embedding. All are clear in the final
+scan after consolidating the scroll path. Evidence uses synthetic populated
+Vaults, 24-row headless WSL screens, and one-factor selector variants; it is not
+exhaustive combinations or native/live accessibility verification. Unsupported
+runtime Vault controls, empty tabs, simulated-AI options and platform capabilities
+remain separately scoped in CONFIG_UI_BUILD_PLAN.
+
+## 2026-10-06 — Hide Toggle-Dependent Config And Fix Initial LLM Scrolling
+
+Owner requested hidden dependent configuration instead of disabled clutter,
+and first-field focus without the initial LLM tab jumping to the bottom.
+Authoritative root `/home/makin/src/node_workflow`, branch
+`codex/wait-until-vault-fix`, starting HEAD `6b34303`. Fetch/merge origin/main
+was already up to date. Preserved pending File Reader/docs edits and the owner's
+untracked test file. This work remains local and uncommitted.
+
+- Shared legacy Vault lists and empty-state messages hide until reads are
+  enabled. Write count, label, and rows hide until writes are enabled. Keep
+  hidden edited rows mounted so toggling back restores unsaved values.
+- Hide standard downstream name/description rows when forwarding incoming
+  data, and Vault key/description rows when output is disabled. Merge's carry
+  selector, label, and details hide until a branch is selected. Hidden fields
+  remain excluded from keyboard navigation and preserve appropriate values.
+- Only changes on the focused widget may request scrolling, including the
+  deferred callback. Initial/programmatic events no longer scroll toward
+  unhighlighted fields. Config navigation reveals its current target without
+  pre-scrolling to the next neighbour. First-field/tab focus remains intact.
+- Added the general visibility and scrolling rules to UI_QUICK_REFERENCE;
+  updated NODE_STANDARDS routing examples and CONFIG_UI_BUILD_PLAN. This is a
+  focused stage-2 slice; stage-1 capability auditing and empty-tab cleanup remain.
+
+Final verification: **580 full-suite tests passed in 86.24s**, including eight
+new production-CSS UI tests covering Text Output and LLM at 60/100/140 columns,
+toggle preservation, hidden navigation exclusion, Cancel preservation, initial
+scroll position, non-focused changes, and routing visibility. Existing Merge
+test now checks hiding/reappearance as branches are selected. Compilation and
+Chat Completion/Text Output helper UI checks passed. Merge helper reports
+structural UI is unsupported; the actual mounted Merge test passed instead.
+`git diff --check` passed. An intermediate callback rename missed the selection
+list handler; that failure was corrected before the final complete suite.
+
+## 2026-10-06 — Owner-Confirmed WSL Fix And Future OS Support Direction
+
+Owner confirmed the File Reader path fix works in the running app. Documented
+WSL/Linux as the current development/debugging environment and Windows, macOS,
+and Linux app versions as the intended future product direction in
+PROJECT_KNOWLEDGE and PROJECT_BACKLOG. Nodes should adapt to actual runtime
+paths and capabilities through platform adapters, with clear unsupported-operation
+feedback and native verification before support claims. No packaging or additional
+OS integration was implemented by this documentation change.
+
+Authoritative root `/home/makin/src/node_workflow`, branch
+`codex/wait-until-vault-fix`, HEAD `6b34303`. Fetched origin and merged origin/main:
+already up to date. Preserved the pending File Reader changes and the owner's
+untracked test file. Verification: `git diff --check` passed; no tests rerun for
+this docs-only change. Prior actual full-suite result remains 572 passed.
+
+## 2026-10-06 — File Reader Copied Windows Paths And Read Errors
+
+Authoritative root `/home/makin/src/node_workflow`, branch
+`codex/wait-until-vault-fix`, starting commit `6b34303`, initially clean.
+Fetched origin and merged origin/main: already up to date. Changes remain local
+and uncommitted; no PR merge or recovery-checkout changes.
+
+- File Reader removes paired copied quotes and surrounding clipboard whitespace,
+  expands home paths, and converts Windows paths using `wslpath` under WSL.
+  Conversion during execution runs in a worker thread. Native Windows paths
+  retain their normal behavior; incompatible Windows paths on other systems
+  produce guidance rather than a misleading missing-file error.
+- Schema opt-in `normalize_local_path` keeps pre-run validation consistent with
+  execution without changing other file nodes. Missing files remain warnings
+  because earlier nodes can create them. Empty, null-containing, incompatible,
+  or unconvertible paths produce errors. Stored workflow config is preserved.
+- Runtime errors explain missing files, folders, denied access, and non-UTF-8
+  content. Both direct reads and RunSession handle reuse are covered.
+- Verification: **572 full-suite tests passed in 72.29s**, including 26 focused
+  File Reader tests. Helper `check_node.py file_reader_node` (including compileall)
+  and `check_ui.py file_reader_node` passed. Real temporary Windows-drive file
+  read under WSL passed quoted/unquoted with and without RunSession (four checks).
+  Native Windows handling was simulated, not live verified. `git diff --check`
+  passed. Legacy File Reader has no helper spec; its implementation was edited
+  directly and its focused helper test added without regenerating the node.
+
+## 2026-10-06 — Next-Session Project Rundown
+
+Rechecked Git and GitHub: PR #29 open, unmerged and mergeable; main remains
+`7161ef2`. Added SESSION_SUMMARY.md, corrected stale selector/AI/status roadmap
+paragraphs, and linked the rundown from the docs entry point and handoff. This
+is a docs-only follow-up on the same PR. No new runtime/UI changes or tests;
+546-test integration result above/below remains the last actual full run.
+`git diff --check` passed. Real Windows FO7 and remaining UI stages stay open.
+
+## 2026-10-06 — Integrate File Output, Repair Audit Blockers, Prepare One Session PR
+
+Authoritative root `/home/makin/src/node_workflow`; branch
+`codex/wait-until-vault-fix`. Fetched origin/main `7161ef2`, already current.
+Preserved prior dirty runtime/UI/tests/docs in checkpoint `1c4a57e`, then merged
+File Output `0a19718` in `95f9049`. Resolved SESSION_LOG conflict by preserving
+both histories. No recovery-copy changes, stash/reset, or automatic main merge.
+
+- Added `SESSION_INTEGRATION_BUILD_PLAN.md` and `CONFIG_UI_BUILD_PLAN.md`,
+  reconciled current handoffs/roadmap, retained original audit evidence and
+  documented unresolved findings with priorities and follow-up verification.
+- Integrated File Write, File Viewer, Window Control, Markdown formatting,
+  typed file refs, optional Windows adapter and launcher work. Registry 37;
+  actual selector 34; editable/user-facing 36; tombstone intentionally internal.
+- Fixed arbitrary ambiguous window selection and nonunique title matches;
+  offloaded blocking launch/discovery, kept resource registration on the loop;
+  missing OS opener logs a warning after successful writing.
+- File view events are scoped to the active displayed run and queued FIFO;
+  input/recovery modal priority and retired-run queue reset are explicit.
+  Updated mounted test that formerly specified dropping a second request.
+- Removed Window Control's unsupported forwarding capability/control in spec
+  and executable metadata. Kept its existing fixed selected-reference output.
+- Shared save overlays existing config. Descriptions wrap beneath fields;
+  stylesheet controls CommandInput width and labels leave input room.
+  Wait Until remains Wait/Connections and never accesses the Vault.
+- Added write-path schema intent, avoiding missing-input warnings for new
+  destinations while retaining empty-required-path errors. Chat temperature
+  zero reaches the provider unchanged. Helper specs match these metadata fixes.
+- Added meaningful regression tests for ambiguous discovery, slow launch loop
+  responsiveness, queued displays, config preservation, geometry and a real
+  parallel File Write → Wait Until → explicit Vault File Viewer workflow.
+
+Actual verification of the integrated tree:
+
+- Final full suite: **546 passed in 71.26s**. Earlier full attempt: 544 passed,
+  one expected-old-viewer-policy test failed; that test was updated to the new
+  FIFO contract, passed narrowly, then the final whole suite passed.
+- Focused initial checks: 94 passed; integration/Wait/Chat checks: 44 passed;
+  final session regressions including parallel file/Vault: 15 passed; mounted
+  viewer tests: 2 passed. These overlap; do not sum them as a baseline.
+- Compileall app/helper and helper UI checks for File Write, File Viewer,
+  Window Control and Wait Until passed. `git diff --check` passed.
+- Current production-CSS audit: **108 mounts**, 306 alternate states, no state
+  errors; Cancel unchanged 36/36; unrelated config retained and stable second
+  saves 72/72; variant roundtrips **115/115**, zero mismatches. Nine focused
+  fields fit at 60/100/140. Synthetic data only; no owner workflows/settings.
+- Evidence under `docs/audits/integrated_2026_10_06/`; before-fix artifacts retained.
+
+Outstanding: capability-gating legacy Vault controls, broader tab/layout cleanup,
+other schema/numeric/routing descriptions and port issues recorded in
+CONFIG_UI_BUILD_PLAN; unsupported-window explanations/validation and Windows FO7
+live owner checks. File Reader still uses configured paths. Large file work,
+window heuristics and complete live accessibility remain unverified. No broad
+UI redesign or new node behavior was silently introduced.
+
+Published one session PR: [#29](https://github.com/makinster/node_workflow/pull/29),
+“Integrate file workflows and fix Wait Until/configuration UI blockers,” targeting
+main. Verified feature/main ancestry, pushed `5f944de`, and attached the PR to
+this chat. This publication record is a final docs-only commit on the same PR.
+Main remains unchanged pending PR review.
+
+## 2026-10-06 — File Output Integration Review
+
+Reviewed fetched `origin/claude/file-output-pywin32-32tnv9` at `0a19718`
+against authoritative `/home/makin/src/node_workflow`, branch
+`codex/wait-until-vault-fix`, HEAD/origin-main `7161ef2`, including dirty
+runtime/Wait Until code. Preserved existing work; no application edits,
+feature merge, checkout switch, stash, commit or push.
+
+- Added `FILE_OUTPUT_INTEGRATION_REVIEW.md`: architecture fit, current UI
+  inventory, six prioritized findings, integration order and explicit limits.
+- Git merge-tree found only SESSION_LOG conflict between committed branches.
+  Temporary three-way Python source overlay found no conflicts against actual
+  dirty files; it preserved pending runtime fixes and current chat resources.
+- Corrected source-overlay verification: **304 passed in 59.16s**, including
+  feature-changed tests and both pending Wait Until suites. This is not an
+  installed merged-tree/full-suite baseline. Initial harness configuration/CSS
+  path errors were corrected; they were not application regressions.
+- Mounted three incoming config screens at 60/100/140 × 24 with production CSS;
+  nine mounts, all four tabs captured, combined registry 37. This extends review
+  evidence but does not replace exhaustive conditional/keyboard/save audits.
+- Deterministic ambiguous-window probe selected HWND 202 despite no title match:
+  document as P1 along with blocking synchronous launch polling. No real window
+  opened/controlled. Other findings: dropped viewer requests, ineffective Window
+  Control forwarding toggle, platform explanations and writer-path warnings.
+- File Reader still only accepts a configured path; typed-reference consumption
+  is an explicit future scope decision. Wait Until still has no Vault behavior.
+- Evidence/harness: `docs/audits/file_output_2026_10_06/`. `git diff --check`
+  passed. Windows FO7 protocol, actual integrated full suite and exhaustive new
+  node interaction audit remain outstanding. Owner display-policy choice remains.
+
+## 2026-10-06 — Pending Work Review Before Configuration Build Plan
+
+Authoritative root `/home/makin/src/node_workflow`, branch
+`codex/wait-until-vault-fix`, HEAD `7161ef2`. Fetched origin and merged
+origin/main: already current, zero divergence. Existing uncommitted changes,
+audit artifacts and recovery checkout preserved; no application code changed,
+no commits/pushes/feature merges made in this review.
+
+- Reviewed pending answer-Vault publication, transient-before-completion ordering,
+  stopped-input cancellation, W/S typing, zero-timeout semantics, Wait/Connections
+  composition, target/timeout validation, Save/Cancel and helper adaptation.
+  Reviewed both new test files and pending design/standards/audit documents.
+- Added PENDING_CHANGES_REVIEW.md with file-group dispositions and remaining
+  readiness limits. No additional runtime defect confirmed. Wait Until's
+  production-CSS timeout clipping (audit F03) prevents visual sign-off despite
+  green functional tests; keep the focused design and fix shared sizing later.
+- Inspected fetched File Output feature `0a19718` read-only: nine feature-only
+  commits and nine main-only commits, 48 changed files. Adds File Write, File
+  Viewer, Window Control and Markdown mode; removes File Instance demo. FO7
+  Windows checks remain pending on that branch. This was an integration-impact
+  check, not full validation of that feature; no separate checkout or merge.
+  GitHub PR status unverified because gh is unavailable.
+- Updated current handoff, roadmap, backlog and documentation routes to the
+  configuration build-plan checkpoint; retained historical entries/proposals.
+  Flagged File Output baseline selection before finalizing a build plan and
+  linked the existing audit/Wait Until plan to the reviewed state.
+- Fresh verification: full `pytest tests/ -q` **445 passed in 64.00s**;
+  compileall for app/helper passed; `check_ui.py wait_until_node` passed;
+  local documentation links and git diff --check passed. No owner live UI or
+  Windows verification claimed. Pending work remains local and uncommitted.
+
+## 2026-10-06 — Configuration UI Audit and Staged Plan
+
+Branch: `codex/wait-until-vault-fix`, starting/current HEAD `7161ef2`, authoritative
+`/home/makin/src/node_workflow`. Fetched origin and merged origin/main: already
+up to date. Preserved all 18 initially modified and five untracked files; no
+runtime/UI implementation edits, commits or OneDrive recovery changes.
+
+- Added NODE_CONFIG_UI_AUDIT.md: all 35 registered types, 32 selector-visible
+  types, group/mode coverage, current/recommended controls, 12 prioritized
+  findings, deliberate exclusions/history, reusable fixes and six small stages.
+- Mounted 34 configurations (including automatic Start and legacy End; intentional
+  Tombstone exclusion) at 60/100/140x24 using production styles.tcss. Captured 102
+  width records, 278 alternate states, 68 default save/reopen mounts and 87
+  additional changed-mode/routing save/reopen cases. The 87 selected values all
+  persisted; all 34 Cancel cases left stored data unchanged. Default second-save
+  results were stable, but unrelated config survived only on Wait Until (33/34
+  other screens lose it). Assertions document defects, not expected future behavior.
+- Confirmed unsupported generic Vault controls, registered File Instance demo
+  stub exposure, shared save-key loss and off-screen inputs under production CSS.
+  Wait timeout starts at x=80 at 60 columns; CommandInput's inline 100% width and
+  inline descriptions defeat row sizing. Existing bare-App tests miss this.
+- Additional findings cover irrelevant conditional fields, empty/duplicate tabs,
+  ignored Random Number Payload, numeric coercion, Chat forwarding/blank keys,
+  unused simulation credentials, inaccurate Echo/Repeat descriptions and helper
+  contract gaps. Fake-provider probe confirms Chat temperature 0 is sent as 1.
+- Retained scripts, complete control inventory, compressed raw evidence and
+  terminal text/SVG receipts under docs/audits/node_config_2026_10_06. Updated
+  README and TASK_INDEX routes without replacing preceding session edits.
+- Verification: Python 3.14.4/Textual 8.2.7; focused pytest command covering
+  test_wait_until_ui.py, test_chat_completion_node.py, test_node_helper.py,
+  tests/generated and test_debug_nodes.py: **232 passed in 55.27s**. Audit scripts
+  compiled; packaging coverage assertions, local Markdown links, matrix coverage,
+  and git diff --check passed. No new full-suite result claimed.
+- Limitations recorded: one-factor alternate states rather than exhaustive
+  combinations, no full per-field live keyboard/accessibility sign-off, no real
+  providers, and no per-node disk export/reload audit. Owner live review and demo/
+  termination/Chat contract decisions remain; broad implementation has not begun.
+
+## 2026-10-06 — Wait Until Focused UI and Shared Section Standard
+
+Branch: `codex/wait-until-vault-fix`, base `7161ef2`; fetched origin/main,
+merge already current. Preserved preceding runtime fixes/design documentation.
+
+- Implemented Wait + Connections tabs: alias, graph-derived targets, timeout,
+  unchanged dead-drop explanation and read-only route; removed Vault reads/writes,
+  payload reveals and editable output metadata from Wait Until.
+- Bounded target list, explicit unavailable-target rows, selected-count/empty
+  hints, list-boundary keyboard movement and per-tab focus/scroll restoration.
+  Save rejects invalid/non-finite/negative timeouts and invalid selected targets.
+- Save preserves unrelated config and clears retired Wait Until membank/transient
+  declarations; opening/Cancel does not mutate workflow config. SaveManager's
+  existing derived input_sources calculation removes stale Vault read claims.
+- Updated NODE_STANDARDS, UI_QUICK_REFERENCE, TUI_DESIGN, AGENT_START_GUIDE and
+  NODE_HELPER: shared section meanings, only applicable controls/tabs, consecutive
+  number navigation, flat/focused forms allowed. Other node layouts unchanged.
+- Updated Wait Until UI plan, task routes, roadmap/handoff and helper UI check
+  for timeout's placement in Wait. Initial full run caught an omitted Ctrl+Q revert
+  hint; restored it before final rerun.
+- Added 12 mounted regressions covering 60/100/140-column layouts, long-list
+  navigation, tab focus/scroll, typed letters/digits, unavailable targets,
+  timeout validation, toggle/no-target cases and save/cancel configuration.
+- Focused execution/UI suites **52 passed**; check_ui.py wait_until_node,
+  compileall, git diff --check and local documentation-link checks passed.
+  Final full suite: **445 passed in 63.03s**. No owner live UI
+  confirmation yet; restart app for the configuration change. Uncommitted.
+
+## 2026-10-06 — Wait Until Configuration UI Plan
+
+Branch: `codex/wait-until-vault-fix`, base `7161ef2`; fetched origin/main,
+merge already current. Preserved all prior dirty runtime/design work.
+
+- Mounted current Wait Until screen to inventory controls across all four tabs.
+  Legacy generic composition exposes unsupported Vault reads/writes, previews
+  and output metadata; help copy incorrectly advertises A/D tab navigation.
+- Proposed two tabs (Wait, Connections), targets and timeout together, fixed
+  pass-through explanation, keyboard/list navigation and responsive scrolling.
+- Specified explicit stale-target handling, no-target immediate pass-through,
+  save-only removal of obsolete Vault declarations and derived source refresh.
+- Added WAIT_UNTIL_UI_PLAN.md and documentation routes. Design only; config UI
+  remains unchanged. Verification: mounted inventory, git diff --check and local
+  Markdown links passed. No runtime suite rerun for this docs-only task.
+
+## 2026-10-06 — Wait Until Zero Timeout Means Forever
+
+Branch: `codex/wait-until-vault-fix`, base `7161ef2`; origin/main already current.
+
+- Owner confirmed the cross-branch flow works live after the input fixes and
+  requested 0.0 mean wait forever and remain default. Previously zero became
+  None and Supervisor substituted the global timeout. Pass zero explicitly;
+  positive values still enforce a limit. Updated Parameters description.
+- Extended four cross-branch LLM cases with zero/positive timeout variants and
+  a shorter in-memory global timeout to prove zero does not inherit it.
+- Focused new/execution suites **40 passed in 7.21s**; compileall and diff checks
+  passed. Prior full suite **429 passed** before this timeout edit; not rerun.
+- Initial test setup mistakenly persisted a 0.005 global timeout. Test now uses
+  monkeypatch on the in-memory cache; local global timeout restored to 30 seconds.
+  The prior custom value was not captured. Other settings retained.
+
+## 2026-10-06 — User Input Dialog Drops W/S While Typing
+
+Branch: `codex/wait-until-vault-fix`, base `7161ef2`; fetched origin/main,
+merge already current. Existing dirty design/runtime work preserved.
+
+- Owner reported continued-session missing context at node_8ec97b0a. Exact saved
+  workflow diagnostic using fake provider held the second LLM until input, wrote
+  `user_text`, and completed both calls successfully. Running app was canonical
+  and started after the earlier Vault fix; stale code was not assumed.
+- Mounted dialog reproduction found auto-edit input treats W/S as navigation
+  while editing: a single w/s yielded empty input and sentences lost characters.
+  This can cause the reported error; owner's exact typed answer/timing remains
+  unconfirmed. Backend-only tests missed this keyboard path.
+- UserInputScreen explicitly starts ordinary text editing on mount. W/S now type
+  during editing; command navigation resumes after edit. Shared auto-edit behavior
+  for other screens remains intact. No saved workflow or live process modified.
+- Added four mounted typing/submission regressions: all failed before the change,
+  all pass afterward. Focused suites **36 passed**; full tests/ **429 passed in
+  52.25s**; compileall and git diff --check passed. Updated investigation/handoff.
+  App restart required to load the new UI code; no live owner verification yet.
+
+## 2026-10-06 — Cross-Branch User Input Vault Fix
+
+Branch: `codex/wait-until-vault-fix`, based on merged main `7161ef2`;
+fetched origin/main and merge was already current. Preserved uncommitted branch
+UI design/investigation docs from the preceding work. No saved workflow edits.
+
+- Owner confirmed the User Text Input -> Wait Until -> cross-branch LLM case.
+  Saved LLM already reads Document/Context from Vault `user_text` while continuing
+  an AI session; configured input declarations previously never wrote that key.
+- UserTextInputNode copies the answer to declared legacy Vault keys before success,
+  supporting output/id aliases and tagging the values as strings. Dead-drop answer
+  remains available. Supervisor publishes transient output before completion gates.
+- Stop cancels the pending input future rather than injecting an empty answer;
+  interrupted prompts cannot publish output or satisfy the completion registry.
+- Added 11 regressions: list/string wait targets, fresh and continued LLM calls
+  using a fake provider, legacy declarations, genuine empty answers and stop.
+  Before fix: 11 failed, including completion observed before data publication
+  and stopped input incorrectly appearing in completed_nodes. After fix: all pass.
+- Verification: focused new/execution tests **32 passed**; full tests/ **425 passed
+  in 49.81s**; compileall, git diff --check, local documentation links and
+  check_ui.py user_text_input_node passed. check_node.py compiled but could not run
+  its expected generated test because this legacy node has no helper spec/generated
+  test file; focused real runtime tests and full suite cover the change instead.
+- Updated execution contract, investigation and handoff. No real LLM calls or
+  owner live verification yet. Changes remain local and uncommitted.
+
+## 2026-10-06 — Wait Until / Vault Investigation
+
+Branch: `codex/execution-branch-ui-design`, base `7161ef2`, synchronized with
+origin/main. Preserved existing uncommitted branch-UI design documentation.
+
+- Reproduced two parallel branches with an unanswered User Text Input target.
+  Wait Until held its branch until the answer; downstream reader did not start.
+- After answering, target transient output existed but configured `user_text`
+  Vault declaration was never written; downstream Get Variable returned missing.
+  Generic membank declarations have no runtime application in Supervisor.
+- Read-only local workflow inspection found a matching candidate. No live LLM
+  calls, saved workflow edits, runtime changes or symbol changes.
+- Recorded evidence and proposed focused fix in WAIT_UNTIL_INVESTIGATION.md.
+  Existing cross-branch test: 1 passed, 153 deselected. Real runtime diagnostic,
+  git diff --check and local Markdown links passed. Full suite not rerun.
+
+## 2026-10-06 — Execution Branch UI Design
+
+Branch: `codex/execution-branch-ui-design`, starting from clean main `7161ef2`
+(merged PR #28). Fetched origin; main matched origin/main; merge already current.
+
+- Reviewed retained branch/visit/attempt state, execution screen navigation,
+  Supervisor payload handling and OutputManager finalization.
+- Proposed A/D wrap, stable runtime labels, actual-visit rows, queued-node row,
+  independent scroll/selection/follow and attempt details; proposed S navigation
+  with X stop to resolve the current binding conflict.
+- Defined selected-visit summaries and branch counts, opt-in bounded safe
+  descriptors with explicit attribution, and shared run-wide durable output.
+  Recorded current IDLE reset limitation and barriers' observability limits.
+- Added EXECUTION_BRANCH_UI_DESIGN.md and routed handoff/index/backlog to it.
+  Application unchanged. Verification: git diff --check and local Markdown links
+  passed. Prior 414-test result remains historical; no runtime tests rerun.
+
 ## 2026-10-06 — Owner Confirmed Execution Symbols; PR #28 Review
 
 Branch: `codex/execution-symbol-investigation`, fix `a31900d`, handoff `1f7ac2c`.
@@ -104,6 +550,273 @@ Branch: `codex/chat-config-opening-lag`, based on fetched `origin/main`
   git diff --check. Owner confirmed the fix in the live app on 2026-10-06
   after local implementation commit `de04338`.
 - Local fix only; no push or merge into main.
+## 2026-07-11 — FO7 Prep: Two Windows-Environment Fixes
+
+Branch: `claude/file-output-pywin32-32tnv9`
+
+Found while preparing the FO7 manual run on the owner's Windows machine —
+both would have made the verification measure the wrong thing.
+
+- **`run_windows.cmd` never installed pywin32.** It ran `pip install -e .`
+  without the `[windows]` extra, and `requirements.lock` carries no
+  pywin32, so the standard Windows launch path silently produced the
+  degraded open-only manager. Now installs `-e ".[windows]"`. The
+  dependency short-circuit check also gained `win32gui`, so an existing
+  `.venv-win` created before the extra existed reinstalls instead of
+  skipping straight to launch.
+- **`test_windows_manager_without_pywin32_degrades` asserted a
+  Linux-only truth** (`_win32 is None`) and would have failed on Windows
+  once pywin32 was installed. Rewritten as
+  `test_windows_manager_capabilities_track_pywin32_availability`: the
+  invariant is that `capabilities()` matches whatever actually imported —
+  open-only without pywin32, the full five with it. Both branches were
+  executed before commit (the pywin32-present branch by injecting stub
+  `win32gui`/`win32api`/`win32con` modules), so neither side ships
+  unrun.
+
+Verification: `tests/test_window_manager.py` 22 passed on Linux; the
+pywin32-present branch passes under stubbed modules.
+
+## 2026-07-11 — FO7 (docs half): File-Output Plan Reconciliation
+
+Branch: `claude/file-output-pywin32-32tnv9`
+
+The docs-reconciliation half of FO7. The live-verification half (the 7-step
+manual Windows protocol in `FILE_OUTPUT_BUILD_PLAN.md`) needs the owner's
+Windows machine and stays open; the plan is NOT archived until it runs.
+
+- `MASTER_BUILD_PLAN.md`: FO row in the Phase Status table; FO1–FO6 summary
+  under Recently Completed.
+- `PROJECT_BACKLOG.md`: new "Deferred — File/Window Output Follow-Ups"
+  section (pyvda per D7, macOS/Linux adapters, loop open-after-write
+  validator warning, cross-run window adoption non-goal per D12, possible
+  refocus-after-prompt follow-up pending FO7's focus-fight check, D11
+  remote-backend effector).
+- `TASK_INDEX.md`: new "Change File Output, File Viewer, Or OS Window
+  Behavior" route with the focused pytest slices.
+- `AGENT_HANDOFF.md`: current-state paragraph for the landed FO work.
+- `NODE_CATALOG.md` Window Focus supersession was already resolved in the
+  FO6 entry below.
+
+## 2026-07-11 — FO6: `window_control_node` (Focus / Minimize / Close by File)
+
+Branch: `claude/file-output-pywin32-32tnv9`
+
+Phase FO6 of `FILE_OUTPUT_BUILD_PLAN.md` implemented — mid-run window
+choreography.
+
+- **New node `window_control_node` ("Window Control", Utility family,
+  section `Windows`)**: action select (Focus / Minimize / Close), target =
+  a `file` reference from **upstream or vault only** (a window target is
+  always a workflow-owned file, never hand-typed — D6). Resolves the stored
+  `WindowRef` from RunSession under `window:<ref_key>`; raw path strings
+  resolve to the same identity key the writer registered.
+- **Soft-error rule**: a window that was never opened, never discovered
+  (D4), lost to a race, or a run without a session ⇒ logged warning +
+  pass-through of the file reference — never a node error. Only a missing
+  file input errors.
+- **New `backend/nodes/io/window_support.py`** — the shared
+  RunSession↔window-manager lookup (`WINDOW_MANAGER_RESOURCE`,
+  `run_window_manager`), extracted from `file_output_node` so both nodes
+  and their tests use one injection point (the adapter itself stays
+  run-state free per D11).
+- `NODE_CATALOG.md`: Window Control added under a new Utility `Windows`
+  section; the deferred **Window Focus** concept marked Superseded by it.
+
+Verification: 9 focused tests in
+`tests/generated/test_window_control_node.py` (parametrized action
+dispatch, vault-sourced and raw-path targeting, missing-window /
+no-session / failed-action soft paths, empty-input error) with
+`FakeWindowManager`; `check_ui.py window_control_node` passes; full suite
+green.
+
+## 2026-07-11 — FO5: Open After Write + Placement on `file_output_node`
+
+Branch: `claude/file-output-pywin32-32tnv9`
+
+Phase FO5 of `FILE_OUTPUT_BUILD_PLAN.md` implemented — "write this md/image
+and open it to the right of AOTN."
+
+- **Config (Parameters tab, `OS Window` section):** `Open after write`
+  checkbox; `Open at` placement preset select (options =
+  `window_manager.PLACEMENT_PRESETS`, visible when open is on); `Close when
+  run ends` toggle, default **off** (run-end cleanup is opt-in, unlike file
+  handles — D12). Spec and class updated together; the loop-multiplied
+  windows behavior is documented on the field and in `NODE_CATALOG.md`
+  (validator warning for loops stays backlog).
+- **Execute path:** after writing, the node resolves the run's window
+  manager — injected/cached under the RunSession resource key
+  `window_manager` (tests register `FakeWindowManager` there), else the
+  platform factory — and calls `open_path(path, placement)`. A discovered
+  `WindowRef` registers under `window:<ref_key>`, with a `manager.close`
+  hook only when `Close when run ends` is on. Discovery failure logs a
+  warning and registers nothing; the node stays successful (D4).
+- **Validator (D5):** warns — never errors — when `open_after_write` is
+  configured with a non-default placement and the platform lacks the
+  `place` capability, or with `close_on_run_end` and no `close` capability.
+
+Verification: four new FakeWindowManager node tests (open+place+register,
+close-at-`close_all` only when configured, discovery-failure degraded
+success, manager untouched when open is off) plus a validator capability
+warning test; `check_ui.py file_output_node` passes; full suite green.
+
+## 2026-07-11 — FO4: `backend/window_manager.py` Platform Adapter
+
+Branch: `claude/file-output-pywin32-32tnv9`
+
+Phase FO4 of `FILE_OUTPUT_BUILD_PLAN.md` implemented — the OS window
+abstraction, no node wiring yet (that is FO5/FO6).
+
+- **Protocol** (small per D9): `open_path(path, placement) → WindowRef |
+  None`, `focus`/`minimize`/`close(ref) → bool`, `capabilities() → set[str]`
+  (`open`/`place`/`focus`/`minimize`/`close` — the D5 validator warning's
+  vocabulary). Discovery failure returns `None`, never raises (D4). The
+  module imports only stdlib + logging — no MasterState/RunSession/Textual
+  coupling (D11 liftability).
+- **`placement_rect(preset, monitors, own_rect)`** — pure preset→rect math
+  (D3: every preset yields position AND size). Presets: `OS default`,
+  `Right of AOTN`, `Left of AOTN`, `Other monitor`, `Same monitor, right
+  half`. Side slivers under 200px degrade to monitor halves; unresolvable
+  own rect degrades AOTN-relative presets to monitor-relative (D3 Windows
+  Terminal caveat); single-monitor `Other monitor` degrades to the current
+  monitor. All with logged warnings.
+- **`WindowsWindowManager`** — pywin32 guarded per the D5 decision record
+  (recorded 2026-07-11: pywin32 over raw ctypes): `os.startfile` launch,
+  snapshot-diff discovery with a 5s poll + title-contains-filename fallback
+  (D4), `EnumDisplayMonitors` geometry, own-rect resolution via a
+  parent-process walk (`NtQueryInformationProcess` ancestor chain → visible
+  ancestor-owned top-level window) with a visible-`GetConsoleWindow`
+  fallback for legacy conhost, `MoveWindow` placement, `WM_CLOSE` close.
+  Without pywin32 it degrades to open-only. This branch is FO7
+  manual-verification territory, not CI.
+- **`FallbackWindowManager`** (`xdg-open`/`open`, placement no-op with
+  warning), **`FakeWindowManager`** (records calls; `discovery_fails` mode
+  for D4 tests — the FO5/FO6 node-test double), and the
+  `get_window_manager()` platform factory.
+- **`pyproject.toml`**: optional `windows` extra
+  (`pywin32>=306; platform_system == "Windows"`).
+
+Verification: new `tests/test_window_manager.py` (22 tests: factory,
+fallback soft-fail launch/control, fake double, full preset geometry
+matrix incl. mixed-resolution other-monitor and degraded modes, and
+`WindowsWindowManager` degrading cleanly with no pywin32 on Linux);
+`compileall` clean.
+
+## 2026-07-11 — FO3: In-TUI File Viewer (`file_view_node` + `FileViewerScreen`)
+
+Branch: `claude/file-output-pywin32-32tnv9`
+
+Phase FO3 of `FILE_OUTPUT_BUILD_PLAN.md` implemented — the zero-OS-dependency
+"open the file" path (D8).
+
+- **Node-emitted EventBus events.** `NodeContext` gains an optional
+  `publish_event` callback plus an `emit_event(name, payload)` helper that
+  no-ops (returns False) when unwired. The supervisor wires it and stamps
+  `run_id`/`branch_id`/`node_id` into every payload, keeping the standing
+  JSON+run_id rule without giving nodes the bus itself. Fire-and-forget:
+  execution never waits on a subscriber; headless runs have none and the
+  event is inert.
+- **New `backend/file_refs.py`** — shared typed-`file`-reference helpers
+  (`file_reference`, `is_file_reference`, `reference_path`, `reference_key`);
+  `file_output_node` now imports these instead of its module-local builder.
+- **New node `file_view_node` ("File Viewer", Outputs family, direct-add)**
+  from a unified helper spec + hand-written `execute()`: resolves its `file`
+  input (reference dict or path; upstream/vault/configured), errors when the
+  file is missing, emits `FILE_VIEW_REQUESTED` (`path`, `ref_key`, `render`),
+  and forwards the file reference downstream (dead-drop and
+  terminate-branch options as on File Write). Render hint: Auto by extension
+  (`.md`/`.markdown` → markdown) with Markdown / Plain text overrides.
+- **New `frontend/screens/file_viewer.py`** (`FileViewerScreen`, fill-modal):
+  renders via Textual `Markdown` or plain `Static`, reads the file at
+  display time (the event never carries contents), ESC/q/Close dismisses.
+  `app.py` subscribes `FILE_VIEW_REQUESTED` → pushes the screen, ignoring
+  requests while one viewer is already open.
+
+Verification: 9 focused node tests in
+`tests/generated/test_file_view_node.py`; two pilot tests in
+`tests/test_debug_nodes.py -k file_view` (full workflow start→echo→File
+Write→File Viewer→end opens the viewer rendering the md, ESC closes;
+open-guard ignores a second request and re-opens after close);
+`check_node.py`/`check_ui.py file_view_node` pass; full suite 439 passed
+(same known settings-screen flake only). `SIGNAL_FLOW.md`, `FILE_TREE.md`,
+`NODE_CATALOG.md` updated.
+
+## 2026-07-11 — FO2: Markdown Formatting as a Text Transform Mode
+
+Branch: `claude/file-output-pywin32-32tnv9`
+
+Phase FO2 of `FILE_OUTPUT_BUILD_PLAN.md` implemented. Per the
+`NODE_STANDARDS.md` classification rule the plan anticipated, this is a
+**mode-select on `text_transform_node`** (same ports, one extra conditional
+field), not a new node type.
+
+- **New `backend/text_format.py`** — pure `format_markdown(text, wrap_width)`
+  with no node/runtime coupling: normalizes line endings and trailing
+  whitespace, ATX heading spacing (`##Title` → `## Title`, closing hashes
+  dropped, blank line before/after), bullet markers to `- ` and ordered
+  markers to `N. `, aligns table columns (preserving `:` alignment markers,
+  inserting a blank line when a table butts against preceding text), collapses
+  blank-line runs, and — when `wrap_width > 0` — re-flows plain paragraphs
+  only (headings/lists/tables/blockquotes/code never wrap). Fenced code
+  blocks pass through untouched. Deliberately conservative; not a full
+  CommonMark canonicalizer.
+- **`text_transform_node`**: new `markdown format` operation + `wrap_width`
+  integer field (`visible_when` the markdown operation is selected; 0 keeps
+  existing breaks). Spec and class updated together.
+
+Verification: new `tests/test_text_format.py` (16 tests, including a messy
+LLM-output end-to-end case) plus markdown-mode cases in the generated
+transform tests; `check_node.py text_transform_node` and `check_ui.py
+text_transform_node` pass.
+
+## 2026-07-11 — FO1: `file_output_node` (File Write) + Typed File Reference
+
+Branch: `claude/file-output-pywin32-32tnv9` (started from `main` @ `af04c5f`)
+
+Phase FO1 of `FILE_OUTPUT_BUILD_PLAN.md` implemented.
+
+- **New node `file_output_node` ("File Write", Outputs family, group
+  `File Write`)** generated from the unified `inputs:`/`outputs:` spec
+  `aotn_node_helper/specs/file_output_node.yaml` with a hand-written
+  `execute()`. Content and file path use the standard three-source model
+  (`content` accepts `any`; `file_path` is `file`-typed and also accepts an
+  upstream/vault file reference dict, resolving its `path`). Write modes:
+  Overwrite / Append / Create unique (numeric ` (n)` suffix); Base64 binary
+  toggle; parent directories are created. Writes go through
+  `context.run_session.open_file` when in a run (cached `"w"` handles are
+  seek(0)+truncated so overwrite stays deterministic; writes flushed so the
+  file is readable mid-run), direct `Path` I/O otherwise.
+- **Typed `file` reference (D2)** emitted downstream and optionally to the
+  vault (`type_tag="file"`): `{"type": "file", "ref_key": "file:<resolved>",
+  "path": <resolved>}`; the open handle registers in `RunSession` under
+  `ref_key` (keyed by file identity, per D6) and closes at `close_all()`.
+  Dead-drop passthrough forwards the incoming content unchanged.
+- **Standard "Terminate branch after completion"** (`terminate_branch`,
+  Payloads tab) — first Outputs-family node to carry the NODE_STANDARDS
+  branch-termination option; rides the `signal_done` payload the supervisor
+  already honors.
+- **Validator: source-gated field awareness.** The `path_hint: "file"` and
+  `secret: true` checks now skip fields whose `visible_when` doesn't hold
+  (new `_field_visible`, defaults-aware) — a required Configured path no
+  longer false-errors when the input reads from Upstream/Vault. Empty
+  required path with Configured selected stays an error; missing-on-disk
+  stays a warning (an earlier node may create the file mid-run).
+- **Retired `example_file_instance_node`** (spec, node, generated tests,
+  registration) per FO1 task 4 — `file_output_node`'s spec absorbed its
+  unified-spec reference role. Repointed `test_node_contract.py`, the editor
+  details-panel test, and node-selector expected sets; updated
+  `NODE_HELPER.md`, `NODE_STANDARDS.md`, `AGENT_START_GUIDE.md`,
+  `FILE_TREE.md`, and `NODE_CATALOG.md` (File Instance row removed; File
+  Write now Live).
+
+Verification: `check_node.py file_output_node` and `check_ui.py
+file_output_node` pass; new focused tests in
+`tests/generated/test_file_output_node.py` (17) plus run-lifecycle and
+validator-gating tests in `tests/test_run_session.py`; full suite 409 passed
+with one pre-existing settings-screen pilot-timing flake
+(`test_simple_command_modals_use_shared_navigation_helpers`) that fails only
+under full-suite load, on the untouched baseline too, and passes in
+isolation.
 
 ## 2026-07-11 — File Output Build Plan: Design-Review Amendments
 

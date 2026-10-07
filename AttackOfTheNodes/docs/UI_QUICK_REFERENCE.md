@@ -48,7 +48,7 @@ the highlighted editor row.
 
 ## Node Config Shape
 
-Standard node configs use fixed numbered tabs (switch with number keys):
+Node configs share these section meanings (switch visible tabs with number keys):
 
 - `1 - Source`: alias, node summary, upstream/Vault preview controls, memory reads.
 - `2 - Parameters`: schema-generated fields.
@@ -56,8 +56,30 @@ Standard node configs use fixed numbered tabs (switch with number keys):
   output declarations.
 - `4 - Connections`: read-only connection summary.
 
+Show only applicable sections; four tabs are not mandatory. Omit empty tabs and
+controls for unsupported capabilities, number visible tabs consecutively, and
+use a flat form when sufficient. Wait Until uses `1 - Wait` for alias/targets/
+timeout and `2 - Connections` for read-only wiring. It has no Vault or payload
+routing controls. Shared keyboard rules apply to every layout.
+
 Ordinary nodes should not require custom frontend code. Use node metadata,
 `config_schema`, `input_port_metadata`, `output_port_metadata`, and `ui_hints`.
+
+Hide dependent options, labels, and empty-state messages until their enabling
+toggle is selected. This applies to Vault read lists, Vault write fields, and
+output fields made inapplicable by routing choices. Preserve their values when
+hidden so toggling back restores the choices. For schema fields use
+`visible_when`; reserve disabled styling for a genuinely locked control whose
+state still needs explaining.
+Any visible locked control needs an explicit explanation in the UI and a
+documented convenience reason; prefer a read-only summary for inspection alone.
+See [the visibility/scrolling audit](NODE_CONFIG_VISIBILITY_SCROLL_AUDIT.md) for
+current retained displays and their purposes.
+
+Open configuration on the first field of the initial tab. Initialization and
+programmatic changes to other fields must not move the scroll position.
+During navigation, scroll only as needed to keep the highlighted field visible;
+do not scroll to reveal its next neighbour before it is highlighted.
 
 ## Phase 17 Node Identity
 

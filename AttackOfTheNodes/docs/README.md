@@ -1,5 +1,10 @@
 # AttackOfTheNodes Docs
 
+Current project and session rundown: [SESSION_SUMMARY.md](SESSION_SUMMARY.md).
+
+Current session integration: [SESSION_INTEGRATION_BUILD_PLAN.md](SESSION_INTEGRATION_BUILD_PLAN.md).
+Remaining configuration work: [CONFIG_UI_BUILD_PLAN.md](CONFIG_UI_BUILD_PLAN.md).
+
 **Start here.** README routes you to the right document for your task.
 `TASK_INDEX.md` gives the minimum reading set, likely files, and focused test
 commands for each task type. Open deeper references only when a closer document
@@ -78,7 +83,13 @@ Read these for frontend work. Start with `UI_QUICK_REFERENCE.md`; open
 | `UI_QUICK_REFERENCE.md` | Editor keybindings, command-mode rules, and modal navigation summary | Start here for any frontend or keyboard-flow fix |
 | `EXECUTION_STATUS_INVESTIGATION.md` | Reproduced symbol defects, current event/cache/render logic, and correctness-first execution UI plan | Before execution-status fixes or run-screen redesign |
 | `EXECUTION_STATUS_BUILD_PLAN.md` | ES0–ES4 correctness stages and future branch-view requirements | Before fixing execution symbols or building branch navigation/output summaries |
+| `NODE_CONFIG_UI_AUDIT.md` | All 35 registered types, mounted controls/variants, capability/save/geometry findings and staged implementation plan | Before broad node configuration UI changes; audit evidence under `docs/audits/` |
+| `NODE_CONFIG_VISIBILITY_SCROLL_AUDIT.md` | All editable node types audited for toggle/source visibility and scroll behavior, repairs and convenience-display reasons | Before changing dependent controls or config scrolling |
+| `WAIT_UNTIL_UI_PLAN.md` | Implemented focused Wait Until layout, navigation, target selection and save cleanup | Before simplifying Wait Until configuration |
+| `WAIT_UNTIL_INVESTIGATION.md` | Cross-branch gate reproduction and missing User Text Input Vault write evidence | Investigating Wait Until/shared-memory failures |
+| `EXECUTION_BRANCH_UI_DESIGN.md` | Proposed branch cycling, visit lists, responsive details and bounded output-preview contract | Before implementing the execution branch UI |
 | `EXECUTION_STATUS_CONTRACT.md` | Implemented node lifecycle, branch cache and run-screen rendering contract | Before changing execution reporting or building branch views |
+| `PENDING_CHANGES_REVIEW.md` | Review of local runtime/Wait Until changes and unmerged File Output impact | Before turning the configuration audit into a build plan |
 | `NEXT_CHAT_HANDOFF.md` | Completed session work, verification/publication state and next tasks | Continue this execution fix or begin its UI follow-up |
 | `TUI_DESIGN.md` | Full Textual conventions: async setup, screen lifecycle, widget layout, keyboard handling, modal patterns, field type mapping | When the quick reference isn't enough — full screen or widget design work |
 | `IO_CONTRACT_UI_DESIGN.md` | Track B design spec: master-detail selector layout with file-tree I/O contract panel, tab-sticking fix (scroll inside TabPane), vault conditional dropdown, upstream description hint, ⚠ badge, drill-in navigation. All design decisions resolved. | Before implementing any Track B frontend work; replaces ad-hoc design notes |

@@ -24,4 +24,14 @@ class UserTextInputNode(Node):
 
     async def execute(self, context: NodeContext) -> None:
         value = await context.signal_waiting_for_input(str(self.config.get("prompt", "Enter text:")))
+        # Legacy Vault declarations name copies of this node's answer. Publish
+        # them before signaling success so cross-branch readers can use them.
+        outputs = self.config.get("membank_outputs") or []
+        if isinstance(outputs, list):
+            for output in outputs:
+                if not isinstance(output, dict):
+                    continue
+                key = str(output.get("output") or output.get("id") or "").strip()
+                if key:
+                    context.memory_bank.store_persistent(key, value, type_tag="string")
         context.signal_done({"data": {"default": value}, "next_node_id": None})

@@ -1,6 +1,6 @@
 # AttackOfTheNodes Master Build Plan
 
-**Last updated:** 2026-10-06 (execution-status plan added)
+**Last updated:** 2026-10-06 (pending-change review and audit planning baseline)
 **Project root:** `AttackOfTheNodes/`
 **Runtime:** Python 3.14, Textual 8.2.7, asyncio, JSON persistence
 
@@ -22,6 +22,15 @@ store plain path strings.
 The backend is UI-agnostic. Frontend-only behavior belongs under `frontend/`.
 Read `BACKEND_FRONTEND_BOUNDARY.md` before adding backend code for editor/UI
 needs.
+
+## Current planning checkpoint (2026-10-06)
+
+The session integrates File Output with the pending Wait Until/runtime work and
+small demonstrated fixes. [CONFIG_UI_BUILD_PLAN.md](CONFIG_UI_BUILD_PLAN.md) is
+the ordered plan for the remaining shared UI work. Integrated evidence covers
+37 registered types (one intentional internal tombstone), with production CSS
+at 60/100/140 columns. Current checks and PR publication are recorded in SESSION_LOG.
+Windows FO7 remains open; broad node-layout redesign is not part of stage 0.
 
 ## Current Active Work
 
@@ -49,24 +58,16 @@ Completed in Phase 17 so far:
 - Focused tests cover metadata exposure, selector filtering, row rendering,
   details-panel identity, truncation, and keyboard/selection stability.
 
-Taxonomy revision (2026-06-12): five backend families (`Inputs`, `Outputs`,
-`Flow Control`, `Utility`, `Complex`) mapped onto four selector tabs — `I/O`
-(Input/Output switch), `Flow Control`, `Utility`, `Complex`. AI became a
-subcategory, not a family. Filters reduced to I/O (`File I/O`/`Internet`/`AI`)
-and Complex (`AI`). In-list section headers organize tabs; keyboard nav skips
-them. Start/End removed from the user-facing taxonomy (terminate-branch
-config on outputs + End Branch node). Full inventory in `NODE_CATALOG.md`.
-
-Implemented for the revision (2026-06-12): `group` / `selector_section`
-metadata exposure, five-family remap with `Utility` editor styling, the
-four-tab selector with I/O switch, section headers, reduced filters, the
-generic Group Picker modal with auto-promotion and ESC-returns-to-selector,
-selector hiding of `start_node`/`end_node`, and node helper validation for
-the new families and fields.
+Current taxonomy: five selector tabs, **In / Flow Control / Utility / Out /
+Complex**, numbered 1–5. `primary_family` is the portable family metadata;
+`group` and `selector_section` are frontend navigation metadata. Tags are search
+keywords. The old combined I/O switch and subcategory checkbox filters are
+retired. The generic Group Picker promotes single-member groups automatically.
+Start/End and tombstones are intentionally excluded from new-node selection.
 
 Remaining Phase 17 work:
 
-- Manually verify the selector (tabs, switch, headers, picker) and the
+- Manually verify the selector (tabs, search, headers, picker) and the
   editor view in the running app at several terminal widths: two-line rows,
   aligned frames, identity line visible, selection highlight, and branch
   selector rows. (First rendering bug already fixed: identity rows now
@@ -82,9 +83,19 @@ Remaining Phase 17 work:
 Read `PHASE_17_NODE_VISUAL_IDENTITY.md` before implementing selector, node row,
 or node metadata changes for this phase.
 
+## Wait Until Configuration and Shared Section Policy (2026-10-06)
+
+Wait Until now has focused Wait + Connections tabs. Targets and timeout are
+co-located; the node exposes no Vault/payload-routing controls. Shared config
+section meanings remain Source / Parameters / Payloads / Connections, but only
+applicable sections should render; four tabs are not mandatory. See
+[WAIT_UNTIL_UI_PLAN.md](WAIT_UNTIL_UI_PLAN.md) and NODE_STANDARDS. Generalized
+capability-driven tab omission for other nodes is separate work.
+
 ## Execution Status Correctness and Future Branch View
 
-Correctness stages ES0–ES3 implemented 2026-10-06; ES4 live check/review remain. Follow
+Correctness stages ES0–ES3 are merged via PR #28 in `7161ef2`; the owner
+confirmed execution symbols live. Historical stage detail follows in
 [EXECUTION_STATUS_BUILD_PLAN.md](EXECUTION_STATUS_BUILD_PLAN.md): ES0 regression
 cases, ES1 lifecycle reporting, ES2 branch-specific frontend derivation,
 ES3 rendering/resume, ES4 verification and handoff. Reproduced defects and
@@ -95,7 +106,8 @@ After the correctness fix, the owner plans per-branch execution with A/D branch
 cycling, scrollable branch node lists and output-summary UI. Keep those visual
 changes in a separate task/PR. Prepare runtime branch/visit state now, retain
 completed branches, and preserve navigation/scroll during updates. Output
-summary capture/attribution and detailed layout remain future design work;
+summary capture/attribution and detailed layout are proposed in
+`EXECUTION_BRANCH_UI_DESIGN.md`; implementation remains future work;
 see `PROJECT_BACKLOG.md` -> Execution Screen Branch View. This work does not
 change Phase 17's editor/selector scope or mark any runtime fix completed.
 
@@ -119,7 +131,7 @@ change Phase 17's editor/selector scope or mark any runtime fix completed.
 | 10 | Documentation modernization | Done |
 | 10.5 | Backend/frontend boundary cleanup (Phase A) | Done |
 | 10.6 | Tombstone design decision + Phase B migration | Done (restore-alert UI + Phase C metadata deferred) |
-| 11 | Real AI node execution | Deferred |
+| 11 | Real AI node execution | Chat Completion implemented; Embedding/Image remain simulated |
 | 12 | Packaging and release hardening | Deferred |
 | 13 | Cursor model foundation | Done |
 | 14 | Key binding remap | Done |
@@ -127,12 +139,23 @@ change Phase 17's editor/selector scope or mark any runtime fix completed.
 | 16 | File modal + node config tabs | Done |
 | Docs | Task-first documentation overhaul | Done |
 | 17 | Node visual identity + selector taxonomy | In progress |
+| FO1–FO7 | File output nodes, formatting, OS window placement | FO1–FO6 done (2026-07-11); FO7 Windows live verification pending |
 | 18 | Acceleration + help rewrite | Planned |
 | 19 | Nested workflows: built-in subworkflow node | Planned |
 | 20 | Nested workflows: user-created subworkflows | Planned |
 
 ## Recently Completed
 
+- File output build plan FO1–FO6 (2026-07-11, `FILE_OUTPUT_BUILD_PLAN.md`):
+  `file_output_node` (File Write) with typed `file` references registered in
+  `RunSession`; `markdown format` mode on `text_transform_node`
+  (`backend/text_format.py`); in-TUI `file_view_node` + `FileViewerScreen`
+  via the node-emitted `FILE_VIEW_REQUESTED` event
+  (`NodeContext.emit_event`); `backend/window_manager.py` platform adapter
+  (guarded pywin32, `windows` extra, pure preset geometry, fallback +
+  fake); open-after-write placement config with D5 validator capability
+  warnings; `window_control_node`. Remaining: FO7 manual Windows
+  verification protocol (user's machine), then archive the plan.
 - Backend/edit-time performance: fixed two O(n^2) hot spots — the
   `MEMORY_UPDATE` full-store snapshot (`memory_bank.py`) and the per-mutation
   workflow-cache deepcopy (`workflow_map.py`). Per-node execution overhead is

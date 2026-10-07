@@ -1,8 +1,23 @@
 # Next Chat Handoff — Execution Status and Branch UI
 
+Current project and session rundown: [SESSION_SUMMARY.md](SESSION_SUMMARY.md).
+
 Updated 2026-10-06. Use `/home/makin/src/node_workflow` and its `.venv/bin/python`.
 The OneDrive checkout is recovery-only. Select the WSL project in Codex for the
 new chat. Do not create another independent checkout or copy whole trees.
+
+Session PR: [#29](https://github.com/makinster/node_workflow/pull/29), open against main.
+All session work is committed and pushed on `codex/wait-until-vault-fix`.
+
+## Current next step — review integrated session PR
+
+This branch now combines the pending fixes, File Output and configuration audit.
+See [CONFIG_UI_BUILD_PLAN.md](CONFIG_UI_BUILD_PLAN.md) for implemented stage 0 and
+ordered remaining stages; [SESSION_INTEGRATION_BUILD_PLAN.md](SESSION_INTEGRATION_BUILD_PLAN.md)
+records merge/publication strategy. The shared config-preservation and critical
+input overflow defects are fixed. Current merged inventory is 37 types. Windows
+FO7 and owner live accessibility/appearance review remain open. Earlier counts,
+commit IDs and PR #28 instructions below are historical, not current baselines.
 
 ## Completed in this session
 
@@ -20,7 +35,48 @@ new chat. Do not create another independent checkout or copy whole trees.
   Textual tests at 60/100/140 columns. Full suite: 414 passed in 49.74s; compileall, diff and
   local documentation-link checks passed; results recorded in SESSION_LOG.md. Owner confirmed the symbols work in the live app on 2026-10-06.
 
-## Repository state
+## Wait Until layout and shared tab standard
+
+Wait Until now uses `1 - Wait` (alias, targets, timeout, forwarding explanation)
+and `2 - Connections`. Unsupported Vault/routing controls are absent. Save
+clears obsolete Wait Until Vault declarations; Cancel preserves them unchanged.
+Unavailable targets remain visible until explicitly removed; invalid timeout
+input blocks Save. Focus/scroll are remembered across tab switches.
+
+Shared documentation now treats Source/Parameters/Payloads/Connections as
+section meanings, with only applicable sections shown and consecutive numbered
+tabs. Four tabs are not mandatory; compact/topology-driven nodes may use focused
+layouts. Other nodes' current layouts are unchanged. See WAIT_UNTIL_UI_PLAN.md
+and SESSION_LOG for verification. Restart the app to load the new config UI.
+
+## User input keyboard follow-up
+
+Continued-session empty-document report prompted exact saved graph diagnostics:
+with a non-empty submitted answer, Wait Until gates correctly and the LLM reads
+`user_text`. Mounted dialog tests found W/S navigating while typing and dropping
+answer characters. UserInputScreen now starts normal editing explicitly; four
+new keyboard regressions pass. Full suite: **429 passed in 52.25s**. Restart the
+app for this additional UI change. Exact original answer/timing remains unconfirmed.
+
+## Wait Until follow-up
+
+Owner confirmed the cross-branch User Text Input -> Vault -> LLM scenario.
+Working fix on `codex/wait-until-vault-fix`: declared input Vault writes precede
+success, transient publication precedes completion gates, and stopped input
+does not satisfy gates. See `WAIT_UNTIL_INVESTIGATION.md` and SESSION_LOG for
+verification. Saved workflow was not changed; its LLM already reads `user_text`
+through Document/Context. Prior uncommitted branch-UI design docs are preserved.
+
+## Current continuation — merged base and design
+
+PR #28 is merged in main `7161ef2`; canonical main matched fetched origin/main
+on 2026-10-06. Branch UI design is recorded in
+[EXECUTION_BRANCH_UI_DESIGN.md](EXECUTION_BRANCH_UI_DESIGN.md) on
+`codex/execution-branch-ui-design`. Design only; implementation remains pending.
+Read it before implementing navigation or previews. The repository-state and
+immediate-next-step sections below are historical pre-merge handoff text.
+
+## Repository state (historical)
 
 Branch: `codex/execution-symbol-investigation`, based on main `8ada5b2`.
 Investigation `20d58c7`, build-plan docs `fa91bd0`. Implementation: `a31900d`, verified by **414 passing tests**, including the
@@ -45,7 +101,7 @@ Implementation files: `backend/events.py`, `backend/supervisor.py`,
 `frontend/screens/execution.py`, `frontend/widgets/node_list.py`,
 `frontend/widgets/node_card.py`; tests: `tests/test_execution_status.py`.
 
-## Immediate next steps
+## Historical immediate next steps
 
 Owner confirmed successful nodes now receive the correct symbols. Automated
 checks cover recovery, modal resume and edge cases; these were not separately
@@ -86,7 +142,7 @@ From `AttackOfTheNodes/`, using the canonical venv:
 git diff --check
 ```
 
-## Suggested opening request for the next chat
+## Historical opening request (superseded by current next step)
 
 “Continue from execution-status PR #28. Read
 NEXT_CHAT_HANDOFF.md and EXECUTION_STATUS_CONTRACT.md, verify branch/status and

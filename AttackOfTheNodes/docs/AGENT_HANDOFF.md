@@ -1,5 +1,22 @@
 # AttackOfTheNodes Agent Handoff
 
+## Current continuation — 2026-10-07 publication
+
+Use `/home/makin/src/node_workflow` and its `.venv/bin/python`; OneDrive is recovery-only.
+PR #29 integrates the runtime/Wait Until work, File Output implementation,
+File Reader Windows/WSL path handling, and configuration visibility/scroll fixes.
+The owner confirmed the fixes live and authorized publication and merging.
+Check GitHub for merge status and synchronize with `origin/main` before new work.
+
+Verification: 589 full-suite tests passed; the final visibility/scroll audit
+covered 36 editable types, 108 mounts, 1,202 conditional states and 4,008
+navigation samples with zero findings. See
+[NODE_CONFIG_VISIBILITY_SCROLL_AUDIT.md](NODE_CONFIG_VISIBILITY_SCROLL_AUDIT.md).
+Next: capability-based shared controls, especially unsupported legacy Vault
+options, then applicable-section/tab cleanup and schema validation. Windows
+FO7 live verification remains pending. Keep the execution-branch redesign
+separate and preserve Wait Until's unchanged incoming dead-drop semantics.
+
 ## Current State
 
 The active app is `AttackOfTheNodes/`, a Python/Textual workflow editor and
@@ -10,6 +27,15 @@ The current active work is Phase 17: node visual identity and selector
 taxonomy. The phase should align editor row identity, selector tabs,
 subcategory filters, and node metadata before the planned node-library
 overhaul.
+
+The file-output build plan (`FILE_OUTPUT_BUILD_PLAN.md`) landed FO1–FO6 on
+2026-07-11: `file_output_node` (File Write) with typed `file` references,
+the `markdown format` transform mode, the in-TUI `file_view_node` +
+`FileViewerScreen`, the `backend/window_manager.py` platform adapter
+(guarded pywin32, optional `windows` extra), open-after-write placement,
+and `window_control_node`. Only FO7 remains: the manual Windows
+verification protocol at the end of that plan (runs on the owner's
+machine), then fold results and archive the plan.
 
 A design decision on 2026-06-11 reversed the Phase B tombstone decommission
 plan: `tombstone_node` stays as an intentional backend type — the
@@ -23,7 +49,7 @@ Execution-status correctness stages ES0–ES3 are now implemented on
 `codex/execution-symbol-investigation`. Read `EXECUTION_STATUS_CONTRACT.md`
 for current lifecycle facts, run/branch/visit cache, and rendering logic;
 `EXECUTION_STATUS_BUILD_PLAN.md` tracks ES4: owner confirmed symbols live;
-PR #28 reviewed and merge authorized. Verify merge status and fetch main.
+PR #28 merged as `7161ef2`; do not repeat the lifecycle implementation.
 The investigation document is the historical before-fix snapshot.
 
 Tests cover linear/parallel runs, retry/skip/termination/cancellation, input,

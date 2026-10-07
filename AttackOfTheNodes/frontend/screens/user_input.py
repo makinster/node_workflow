@@ -34,7 +34,7 @@ class UserInputScreen(CommandScreenMixin, ModalScreen):
             yield Static(f"Node: {self.node_id}\nBranch: {self.branch_id}")
             yield Static("Type response  Ctrl+Enter submit  Esc leaves edit/cancels", classes="modal-help")
             yield Label(self.prompt, classes="form-label")
-            yield CommandInput(id="user-input-value", auto_edit_on_focus=True)
+            yield CommandInput(id="user-input-value")
             with Horizontal(classes="button-row"):
                 yield Button("Submit", id="submit-user-input", variant="primary")
                 yield Button("Cancel", id="cancel-user-input", variant="default")
@@ -42,6 +42,9 @@ class UserInputScreen(CommandScreenMixin, ModalScreen):
 
     def on_mount(self) -> None:
         self._focus_first()
+        # Start in text entry, but avoid auto-edit's W/S focus navigation:
+        # those letters belong to the user's answer while editing.
+        self.query_one("#user-input-value", CommandInput).begin_edit()
 
     def on_input_submitted(self, _event: Input.Submitted) -> None:
         self.action_submit()

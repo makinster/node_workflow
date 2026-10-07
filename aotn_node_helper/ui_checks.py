@@ -107,6 +107,10 @@ async def collect_ui_problems(node_type: str) -> list[str]:
             widgets[field_name] = widget
 
             expected_pane = TAB_PANE_IDS[_normalize_tab(field_schema.get("tab"))]
+            # Wait Until combines its schema-generated timeout with the
+            # topology-derived target picker in the focused Wait tab.
+            if node_type == "wait_until_node" and field_name == "timeout_seconds":
+                expected_pane = "node-config-tab-core"
             pane = next(
                 (ancestor for ancestor in widget.ancestors if isinstance(ancestor, TabPane)),
                 None,
