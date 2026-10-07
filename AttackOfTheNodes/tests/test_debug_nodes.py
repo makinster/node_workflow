@@ -2265,6 +2265,19 @@ async def _test_merge_config_uses_multi_branch_selector_and_carry_forward_dropdo
         await pilot.pause()
         assert carry_selector.expanded is True
 
+        carry_selector.expanded = False
+        app.set_focus(branch_selector)
+        branch_selector.deselect(f"{branch}:path_a")
+        await pilot.pause()
+        assert not carry_selector.display
+        assert not app.query_one("#merge-carry-forward-label").display
+        assert not details.display
+        branch_selector.select(f"{branch}:path_b")
+        await pilot.pause()
+        assert carry_selector.display
+        assert app.query_one("#merge-carry-forward-label").display
+        assert details.display
+
     print("test_merge_config_uses_multi_branch_selector_and_carry_forward_dropdown PASSED")
 
 
@@ -4397,8 +4410,7 @@ def test_node_config_payloads_downstream_and_vault():
 
 
 async def _test_node_config_payloads_downstream_and_vault():
-    """New output model: editable downstream name/desc, dead-drop greys them,
-    Disable output greys the vault fields, and save round-trips the keys."""
+    """Routing hides inactive fields and save round-trips the retained keys."""
     from textual.app import App, ComposeResult
     from textual.widgets import Checkbox
 
@@ -4429,12 +4441,12 @@ async def _test_node_config_payloads_downstream_and_vault():
         # Dead-drop off by default: downstream fields editable.
         assert name_box.disabled is False
 
-        # Forwarding greys the downstream name/description.
+        # Forwarding hides and disables downstream name/description.
         app.query_one("#dead-drop-passthrough", Checkbox).value = True
         await pilot.pause(0.05)
         assert name_box.disabled is True
 
-        # Disable output greys the vault key/description.
+        # Disable output hides and disables vault key/description.
         app.query_one("#vault-output-disabled-default", Checkbox).value = True
         await pilot.pause(0.05)
         assert vault_key.disabled is True
@@ -4735,15 +4747,16 @@ async def _test_node_config_change_scrolls_to_next_widget():
         screen = app.query_one(NodeConfigScreen)
         calls = []
 
-        def capture_scroll(target, peek_widget=None):
-            calls.append((getattr(target, "id", ""), getattr(peek_widget, "id", "")))
+        def capture_scroll(target):
+            calls.append(getattr(target, "id", ""))
 
         screen._scroll_config_widget_into_view = capture_scroll
         count = app.query_one("#field-context_input_count", Select)
+        app.set_focus(count)
         count.value = "1"
         await pilot.pause(0.1)
 
-        assert ("field-context_input_count", "field-context_1_source") in calls
+        assert "field-context_input_count" in calls
 
     print("test_node_config_change_scrolls_to_next_widget PASSED")
 

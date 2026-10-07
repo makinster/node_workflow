@@ -34,6 +34,23 @@ Preserve execution semantics and backend/frontend boundaries.
 
 ## Deliberately deferred bugs and decisions
 
+Owner-requested shared visibility/scrolling slice implemented locally (2026-10-06):
+legacy Vault lists and write fields stay hidden until enabled; inactive standard
+routing fields and Merge carry-forward selection stay hidden with their labels.
+Temporary hiding preserves entered values. Configuration starts on its first
+field, and only the highlighted field drives scrolling; initialization events
+and next-neighbour previews no longer move the view. This addresses a focused
+part of stage 2, not stage 1's runtime capability audit or the remaining empty-tab
+cleanup. Verification and local publication state are recorded in SESSION_LOG.
+
+The follow-up [visibility/scrolling audit](NODE_CONFIG_VISIBILITY_SCROLL_AUDIT.md)
+covers every editable type. It also hides Text Output's optional prompt,
+Set Variable's inactive literal, Conditional's inactive variable name, HTTP's
+GET body, and unavailable legacy write toggles. Node Config owns its scrolling
+without competing deferred centering/reveal requests. These are targeted stage
+2/3 repairs; numerical validation, ignored fields, empty tabs, runtime capability
+composition and platform explanations are still separate work.
+
 - **P1 F01:** misleading legacy generic Vault controls remain on nodes whose
   execution does not use them. Requires a coordinated capability contract;
   do not infer support from having a single output port.

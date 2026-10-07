@@ -5,6 +5,32 @@ records unresolved F01/F05–F12 and FO-R5 with priorities and verification stag
 File Output is now integrated on the session PR branch; the original audit and
 review retain their before-fix findings. Windows FO7 remains live-owner work.
 
+## Future Direction — Cross-Platform App Distribution And Node Compatibility
+
+Owner decision (2026-10-06): debug the current project under WSL, and eventually
+provide app versions for the mainstream desktop operating systems: Windows,
+macOS, and Linux. Nodes should behave correctly in their actual runtime
+environment. This records product direction; packaging and additional platform
+implementations are not yet scoped or completed.
+
+- Provide appropriate installation, launch, and app packaging for each OS.
+- Keep portable node behavior consistent; use platform adapters for filesystem,
+  application launching, window control, and other OS-dependent operations.
+- Handle path formats and host/runtime boundaries explicitly. Under WSL,
+  Windows interoperability is a separate capability, not native Windows support.
+- Detect capabilities and gate OS-specific dependencies and controls. Explain
+  unavailable optional operations and report clear errors for essential ones;
+  do not silently claim a successful unsupported operation.
+- Verify portable nodes and OS-specific behavior in native Windows, macOS,
+  and Linux environments, alongside WSL debugging. Track support per capability;
+  passing Linux/WSL tests alone does not complete native OS verification.
+
+The owner confirmed File Reader's copied Windows-path handling works under WSL.
+Apply the same environment-aware principle to future node work. Existing Windows
+FO7 live verification and deferred macOS/Linux window adapters remain open;
+this direction does not imply every OS exposes identical window capabilities.
+See [Development Environment And OS Support Direction](PROJECT_KNOWLEDGE.md#development-environment-and-os-support-direction).
+
 ## Completed Project — Documentation Modernization
 
 The docs folder previously had split-brain history from the Chrome-extension

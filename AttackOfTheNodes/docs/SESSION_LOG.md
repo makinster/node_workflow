@@ -4,6 +4,143 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-07 — Publish Confirmed Fixes And Synchronize
+
+Owner confirmed the node UI fixes live and requested a PR and an up-to-date
+project. Reuse existing PR #29 on `codex/wait-until-vault-fix`, which remained
+open after fetching origin; main baseline `7161ef2`, starting HEAD `6b34303`.
+Include the tested File Reader/path documentation and visibility/scroll audit
+work in the integrated PR. Owner authorized merging and checkout synchronization;
+GitHub and Git history record the resulting merge commit. Preserve the unrelated
+Windows-path-named test file and the recovery checkout. Refreshed current agent
+handoff with verified coverage and the remaining capability/layout work.
+
+Verification before publication: 589 tests passed, final 108-mount audit clean,
+compilation/helpers passed as recorded below; `git diff --check` passed.
+
+## 2026-10-06 — Audit Every Editable Node For Visibility And Scrolling
+
+Owner confirmed the preceding UI fix and requested a whole-node audit of
+toggle-dependent controls, convenience reasons for retained information, and
+scrolling. Authoritative root `/home/makin/src/node_workflow`; branch
+`codex/wait-until-vault-fix`; starting HEAD `6b34303`, with preceding session
+changes dirty. Fetch/merge origin/main was already up to date. Preserved those
+changes and the owner's untracked Windows-path-named test file. No recovery
+checkout changes, commit, push, PR merge, or new platform integration.
+
+- Reviewed registered schemas/execution use and mounted all 36 editable types,
+  including compatibility Start/End and excluding the internal tombstone.
+  Reused owner-safe synthetic audit helpers with explicit production CSS.
+- Added schema visibility for Text Output's user-input prompt, Set Variable's
+  literal value, Conditional's variable name, and HTTP's POST body. Updated
+  HTTP helper spec alongside the executable schema without regenerating its
+  custom execution. No backend execution logic changed for these controls.
+- Hide unavailable legacy Write to Vault checkboxes on both setter types while
+  forwarding; no useful visible disabled choices remain in the audited states.
+- Removed competing automatic/deferred scroll reveals. Shared focus helper
+  supports caller-owned scrolling; Node Config opts out and reveals only its
+  current focused target after layout. Other screens retain existing behavior.
+  Guard against stale reveal requests and avoid scrolling outside the tab.
+- Added NODE_CONFIG_VISIBILITY_SCROLL_AUDIT, before/intermediate/final evidence,
+  reproducible audit runner with optional failure gate, and convenience reasons
+  for read-only previews, wiring, empty states and still-active parameter fields.
+  Updated README/TASK_INDEX, shared style standards and the UI build plan.
+
+Final actual verification: **589 full-suite tests passed in 92.82s**.
+**108 mounts**, **1,202 toggle/source states**, **4,008 navigation samples**,
+Cancel unchanged **108/108**, **zero** final scroll findings, generated-rule
+visibility mismatches, or visible disabled selectors/checkboxes. Explicitly
+validated the saved final summary. Focused visibility/scroll tests: **17 passed**;
+earlier affected-UI subset: 48 passed (overlaps). HTTP node helper/five tests and
+UI helpers for HTTP Request, Text Output, Set Variable, Conditional passed.
+Compileall app/helper and `git diff --check` passed.
+
+Retained rapid-before scan's transient candidates rather than claiming 226 real
+defects. Settled-before confirmed one Image Generation scroll failure and two
+visible disabled checkboxes; intermediate three-width scan exposed two further
+short-viewport failures in Conditional/Embedding. All are clear in the final
+scan after consolidating the scroll path. Evidence uses synthetic populated
+Vaults, 24-row headless WSL screens, and one-factor selector variants; it is not
+exhaustive combinations or native/live accessibility verification. Unsupported
+runtime Vault controls, empty tabs, simulated-AI options and platform capabilities
+remain separately scoped in CONFIG_UI_BUILD_PLAN.
+
+## 2026-10-06 — Hide Toggle-Dependent Config And Fix Initial LLM Scrolling
+
+Owner requested hidden dependent configuration instead of disabled clutter,
+and first-field focus without the initial LLM tab jumping to the bottom.
+Authoritative root `/home/makin/src/node_workflow`, branch
+`codex/wait-until-vault-fix`, starting HEAD `6b34303`. Fetch/merge origin/main
+was already up to date. Preserved pending File Reader/docs edits and the owner's
+untracked test file. This work remains local and uncommitted.
+
+- Shared legacy Vault lists and empty-state messages hide until reads are
+  enabled. Write count, label, and rows hide until writes are enabled. Keep
+  hidden edited rows mounted so toggling back restores unsaved values.
+- Hide standard downstream name/description rows when forwarding incoming
+  data, and Vault key/description rows when output is disabled. Merge's carry
+  selector, label, and details hide until a branch is selected. Hidden fields
+  remain excluded from keyboard navigation and preserve appropriate values.
+- Only changes on the focused widget may request scrolling, including the
+  deferred callback. Initial/programmatic events no longer scroll toward
+  unhighlighted fields. Config navigation reveals its current target without
+  pre-scrolling to the next neighbour. First-field/tab focus remains intact.
+- Added the general visibility and scrolling rules to UI_QUICK_REFERENCE;
+  updated NODE_STANDARDS routing examples and CONFIG_UI_BUILD_PLAN. This is a
+  focused stage-2 slice; stage-1 capability auditing and empty-tab cleanup remain.
+
+Final verification: **580 full-suite tests passed in 86.24s**, including eight
+new production-CSS UI tests covering Text Output and LLM at 60/100/140 columns,
+toggle preservation, hidden navigation exclusion, Cancel preservation, initial
+scroll position, non-focused changes, and routing visibility. Existing Merge
+test now checks hiding/reappearance as branches are selected. Compilation and
+Chat Completion/Text Output helper UI checks passed. Merge helper reports
+structural UI is unsupported; the actual mounted Merge test passed instead.
+`git diff --check` passed. An intermediate callback rename missed the selection
+list handler; that failure was corrected before the final complete suite.
+
+## 2026-10-06 — Owner-Confirmed WSL Fix And Future OS Support Direction
+
+Owner confirmed the File Reader path fix works in the running app. Documented
+WSL/Linux as the current development/debugging environment and Windows, macOS,
+and Linux app versions as the intended future product direction in
+PROJECT_KNOWLEDGE and PROJECT_BACKLOG. Nodes should adapt to actual runtime
+paths and capabilities through platform adapters, with clear unsupported-operation
+feedback and native verification before support claims. No packaging or additional
+OS integration was implemented by this documentation change.
+
+Authoritative root `/home/makin/src/node_workflow`, branch
+`codex/wait-until-vault-fix`, HEAD `6b34303`. Fetched origin and merged origin/main:
+already up to date. Preserved the pending File Reader changes and the owner's
+untracked test file. Verification: `git diff --check` passed; no tests rerun for
+this docs-only change. Prior actual full-suite result remains 572 passed.
+
+## 2026-10-06 — File Reader Copied Windows Paths And Read Errors
+
+Authoritative root `/home/makin/src/node_workflow`, branch
+`codex/wait-until-vault-fix`, starting commit `6b34303`, initially clean.
+Fetched origin and merged origin/main: already up to date. Changes remain local
+and uncommitted; no PR merge or recovery-checkout changes.
+
+- File Reader removes paired copied quotes and surrounding clipboard whitespace,
+  expands home paths, and converts Windows paths using `wslpath` under WSL.
+  Conversion during execution runs in a worker thread. Native Windows paths
+  retain their normal behavior; incompatible Windows paths on other systems
+  produce guidance rather than a misleading missing-file error.
+- Schema opt-in `normalize_local_path` keeps pre-run validation consistent with
+  execution without changing other file nodes. Missing files remain warnings
+  because earlier nodes can create them. Empty, null-containing, incompatible,
+  or unconvertible paths produce errors. Stored workflow config is preserved.
+- Runtime errors explain missing files, folders, denied access, and non-UTF-8
+  content. Both direct reads and RunSession handle reuse are covered.
+- Verification: **572 full-suite tests passed in 72.29s**, including 26 focused
+  File Reader tests. Helper `check_node.py file_reader_node` (including compileall)
+  and `check_ui.py file_reader_node` passed. Real temporary Windows-drive file
+  read under WSL passed quoted/unquoted with and without RunSession (four checks).
+  Native Windows handling was simulated, not live verified. `git diff --check`
+  passed. Legacy File Reader has no helper spec; its implementation was edited
+  directly and its focused helper test added without regenerating the node.
+
 ## 2026-10-06 — Next-Session Project Rundown
 
 Rechecked Git and GitHub: PR #29 open, unmerged and mergeable; main remains

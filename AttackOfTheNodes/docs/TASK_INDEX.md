@@ -90,6 +90,11 @@ constant only, never frontend code. Some models reject sampling parameters;
 
 ## Audit Or Simplify Node Configuration UI
 
+For toggle-dependent visibility and scrolling, start with
+`NODE_CONFIG_VISIBILITY_SCROLL_AUDIT.md` and its reproducible before/after
+evidence under `docs/audits/toggle_scroll_2026_10_06/`. Keep the convenience
+reasons for visible read-only information explicit.
+
 Read `PENDING_CHANGES_REVIEW.md` for pending fixes and the unmerged File Output
 branch impact, then `NODE_CONFIG_UI_AUDIT.md` and its mounted control inventory. The audit
 covers all 35 registered types, including selector groups and intentional hidden

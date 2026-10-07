@@ -84,6 +84,7 @@ Read these for frontend work. Start with `UI_QUICK_REFERENCE.md`; open
 | `EXECUTION_STATUS_INVESTIGATION.md` | Reproduced symbol defects, current event/cache/render logic, and correctness-first execution UI plan | Before execution-status fixes or run-screen redesign |
 | `EXECUTION_STATUS_BUILD_PLAN.md` | ES0–ES4 correctness stages and future branch-view requirements | Before fixing execution symbols or building branch navigation/output summaries |
 | `NODE_CONFIG_UI_AUDIT.md` | All 35 registered types, mounted controls/variants, capability/save/geometry findings and staged implementation plan | Before broad node configuration UI changes; audit evidence under `docs/audits/` |
+| `NODE_CONFIG_VISIBILITY_SCROLL_AUDIT.md` | All editable node types audited for toggle/source visibility and scroll behavior, repairs and convenience-display reasons | Before changing dependent controls or config scrolling |
 | `WAIT_UNTIL_UI_PLAN.md` | Implemented focused Wait Until layout, navigation, target selection and save cleanup | Before simplifying Wait Until configuration |
 | `WAIT_UNTIL_INVESTIGATION.md` | Cross-branch gate reproduction and missing User Text Input Vault write evidence | Investigating Wait Until/shared-memory failures |
 | `EXECUTION_BRANCH_UI_DESIGN.md` | Proposed branch cycling, visit lists, responsive details and bounded output-preview contract | Before implementing the execution branch UI |

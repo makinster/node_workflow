@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
 
 from .branch_health import ENDED_UNMERGED, derive_branch_health, output_types_from_factory
 from .data_types import DataType
+from .file_paths import normalize_local_path
 from .node_factory import NodeFactory
 from .workflow_map import WorkflowMap
 
@@ -204,14 +205,21 @@ def validate_workflow(
                         }
                     )
                 continue
+            try:
+                path = (normalize_local_path(raw_path)
+                        if field_info.get("normalize_local_path")
+                        else Path(raw_path).expanduser())
+            except ValueError as exc:
+                errors.append({"node_id": node_id, "message": str(exc)})
+                continue
             if (field_info.get("path_mode") != "write"
-                    and not Path(raw_path).expanduser().exists()):
+                    and not path.exists()):
                 warnings.append(
                     {
                         "node_id": node_id,
                         "message": (
                             f"File for field '{field_name}' was not found at "
-                            f"validation time: {raw_path}"
+                            f"validation time: {path}"
                         ),
                     }
                 )

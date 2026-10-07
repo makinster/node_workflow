@@ -1199,11 +1199,11 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             scroll.can_focus = False
         self._sync_merge_input_details()
         if self.query("#alias-input"):
-            self.app.set_focus(self.query_one("#alias-input", CommandInput))
+            self.app.set_focus(self.query_one("#alias-input", CommandInput), scroll_visible=False)
         else:
             focusable = self._keyboard_focus_widgets()
             if focusable:
-                self.app.set_focus(focusable[0])
+                self.app.set_focus(focusable[0], scroll_visible=False)
         self._sync_membank_output_controls()
         self._sync_membank_input_controls()
         self._sync_branch_payload_rows()
@@ -1213,11 +1213,11 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         self._sync_duplicate_input_source_options()
         if self.query("#alias-input"):
             self.call_after_refresh(
-                lambda: self.app.set_focus(self.query_one("#alias-input", CommandInput))
+                lambda: self.app.set_focus(self.query_one("#alias-input", CommandInput), scroll_visible=False)
             )
             self.set_timer(
                 0.01,
-                lambda: self.app.set_focus(self.query_one("#alias-input", CommandInput)),
+                lambda: self.app.set_focus(self.query_one("#alias-input", CommandInput), scroll_visible=False),
             )
 
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
@@ -1264,7 +1264,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                     event.checkbox.id.removeprefix("field-")
                 )
             self._apply_generated_field_rules()
-        self._scroll_changed_widget_with_peek(event.checkbox)
+        self._scroll_changed_widget(event.checkbox)
 
     async def on_input_changed(self, event: Input.Changed) -> None:
         if event.input.id == "membank-output-count":
@@ -1273,7 +1273,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             self._sync_branch_payload_rows()
         elif event.input.id and event.input.id.startswith("field-"):
             self._apply_generated_field_rules()
-        self._scroll_changed_widget_with_peek(event.input)
+        self._scroll_changed_widget(event.input)
 
     def on_select_changed(self, event: Select.Changed) -> None:
         if event.select.id == "merge-carry-forward-selector":
@@ -1281,7 +1281,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         elif event.select.id and event.select.id.startswith("field-"):
             self._apply_generated_field_rules()
             self._sync_duplicate_input_source_options()
-        self._scroll_changed_widget_with_peek(event.select)
+        self._scroll_changed_widget(event.select)
 
     def _apply_generated_field_rules(self) -> None:
         if not self._rule_schema or self._get_form_values is None:
@@ -1549,7 +1549,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         elif event.selection_list.id == "membank-inputs":
             self._sync_branch_payload_rows()
             self._sync_payload_previews()
-        self._scroll_changed_widget_with_peek(event.selection_list)
+        self._scroll_changed_widget(event.selection_list)
 
     async def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "save-node-config":
@@ -1629,7 +1629,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         focused = self.app.focused
         active_text = getattr(self, "_active_command_text_widget", None)
         if is_editing_text(active_text):
-            self.app.set_focus(active_text)
+            self.app.set_focus(active_text, scroll_visible=False)
             return
         if is_editing_text(focused):
             return
@@ -1651,7 +1651,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         focused = self.app.focused
         active_text = getattr(self, "_active_command_text_widget", None)
         if is_editing_text(active_text):
-            self.app.set_focus(active_text)
+            self.app.set_focus(active_text, scroll_visible=False)
             return
         if is_editing_text(focused):
             return
@@ -1772,7 +1772,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             if saved and saved[0]:
                 widget = self.query(f"#{saved[0]}")
                 if widget:
-                    self.app.set_focus(widget.first())
+                    self.app.set_focus(widget.first(), scroll_visible=False)
                     scroll = self._scroll_container()
                     if scroll:
                         scroll.scroll_to(y=saved[1], animate=False)
@@ -1790,12 +1790,9 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         if widgets:
             try:
                 scroll = self._scroll_container()
-                peek = widgets[1] if len(widgets) > 1 else None
-                focus_command_widget(self, widgets[0], scroll, peek_widget=peek)
+                focus_command_widget(self, widgets[0], scroll, scroll_on_focus=False)
                 self.call_after_refresh(
-                    lambda target=widgets[0], peek=peek: self._scroll_config_widget_into_view(
-                        target, peek
-                    )
+                    lambda target=widgets[0]: self._scroll_config_widget_into_view(target)
                 )
                 self._sync_cursor_mode()
                 return
@@ -1803,7 +1800,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 pass
         save_query = self.query("#save-node-config")
         if save_query:
-            self.app.set_focus(save_query.first())
+            self.app.set_focus(save_query.first(), scroll_visible=False)
             self._sync_cursor_mode()
 
     def _is_descendant_of(self, widget: Any, ancestor: Any) -> bool:
@@ -1841,50 +1838,42 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
 
         try:
             scroll = self._scroll_container()
-            peek = (
-                widgets[next_index + direction]
-                if 0 <= next_index + direction < len(widgets)
-                else None
-            )
-            focus_command_widget(self, target, scroll, peek_widget=peek)
+            focus_command_widget(self, target, scroll, scroll_on_focus=False)
             self.call_after_refresh(
-                lambda target=target, peek=peek: self._scroll_config_widget_into_view(
-                    target, peek
-                )
+                lambda target=target: self._scroll_config_widget_into_view(target)
             )
         except Exception:
-            focus_command_widget(self, target)
+            focus_command_widget(self, target, scroll_on_focus=False)
 
-    def _scroll_config_widget_into_view(
-        self, target: Any, peek_widget: Any | None = None
-    ) -> None:
+    def _scroll_config_widget_into_view(self, target: Any) -> None:
         try:
+            if target is not self.app.focused:
+                return
             scroll = self._scroll_container()
             if scroll is None:
                 return
-            scroll.scroll_to_widget(target, animate=False)
-            target.scroll_visible(animate=False)
-            if peek_widget is not None and peek_widget is not target:
-                peek_widget.scroll_visible(animate=False)
+            if self._is_descendant_of(target, scroll):
+                scroll.scroll_to_widget(target, animate=False, immediate=True)
         except Exception:
             pass
 
-    def _scroll_changed_widget_with_peek(self, changed_widget: Any) -> None:
-        """After a user change, reveal the changed widget and next field."""
+    def _scroll_changed_widget(self, changed_widget: Any) -> None:
+        """Keep the active field visible; initialization must not move the view."""
+        if changed_widget is not self.app.focused:
+            return
         self.call_after_refresh(
             lambda widget=changed_widget: self._scroll_changed_widget_now(widget)
         )
 
     def _scroll_changed_widget_now(self, changed_widget: Any) -> None:
+        if changed_widget is not self.app.focused:
+            return
         widgets = self._keyboard_focus_widgets()
         if not widgets:
             return
-        target = changed_widget if changed_widget in widgets else self.app.focused
-        if target not in widgets:
+        if changed_widget not in widgets:
             return
-        index = widgets.index(target)
-        peek = widgets[index + 1] if index + 1 < len(widgets) else None
-        self._scroll_config_widget_into_view(target, peek)
+        self._scroll_config_widget_into_view(changed_widget)
 
     def _is_first_active_tab_widget(self, target: Any) -> bool:
         tabbed_query = self.query("#node-config-tabs")
@@ -2107,20 +2096,25 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             )
 
     def _sync_standard_payload_controls(self) -> None:
-        """Grey downstream fields when forwarding, and vault fields when
-        an output is disabled."""
+        """Hide controls whose routing toggle makes them inapplicable."""
         metadata = self._metadata_for_type(self.node_data.get("type", ""))
         if not self._uses_standard_source_model(metadata):
             return
         dead_drop_query = self.query("#dead-drop-passthrough")
         forwarding = bool(dead_drop_query.first().value) if dead_drop_query else False
         for port in self._downstream_output_ports(metadata):
+            for row in (f"downstream-name-row-{port}", f"downstream-desc-row-{port}"):
+                for widget in self.query(f"#{row}"):
+                    widget.display = not forwarding
             for suffix in (f"transient-output-name-{port}", f"transient-output-desc-{port}"):
                 for widget in self.query(f"#{suffix}"):
                     widget.disabled = forwarding
         for port in self._vault_output_ports(metadata):
             disable_query = self.query(f"#vault-output-disabled-{port}")
             disabled = bool(disable_query.first().value) if disable_query else False
+            for row in (f"vault-key-row-{port}", f"vault-desc-row-{port}"):
+                for widget in self.query(f"#{row}"):
+                    widget.display = not disabled
             for suffix in (f"vault-output-key-{port}", f"vault-output-desc-{port}"):
                 for widget in self.query(f"#{suffix}"):
                     widget.disabled = disabled
@@ -2204,7 +2198,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
 
         Layout: the designated Downstream node payload (editable name +
         description, known before routing is chosen), the single
-        "Forward incoming payload unchanged" checkbox beneath it (greys the
+        "Forward incoming payload unchanged" checkbox beneath it (hides the
         downstream fields), then optional Vault payloads (each an editable key
         + description with a "Disable output" checkbox for optional outputs).
         Model per NODE_STANDARDS.md: one downstream output, the rest vault.
@@ -2533,7 +2527,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         )
         count_input.disabled = not enabled
         yield Checkbox("Write to Vault", value=enabled, id="membank-writes")
-        yield Label("Payload count", classes="form-description")
+        yield Label("Payload count", classes="form-description", id="membank-output-count-label")
         yield count_input
         yield Vertical(id="membank-output-rows")
 
@@ -2550,7 +2544,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             selection_list.disabled = not enabled
             yield selection_list
         else:
-            yield Static("The vault is empty", classes="form-description")
+            yield Static("The vault is empty", classes="form-description", id="membank-inputs-empty")
 
     def _compose_transient_outputs(
         self,
@@ -2613,7 +2607,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             ),
             id="merge-branches-to-close",
         )
-        yield Label("Carry Forward Output", classes="form-label nav-section")
+        yield Label("Carry Forward Output", classes="form-label nav-section", id="merge-carry-forward-label")
         carry_options = self._merge_carry_forward_options(options, selected_values)
         carry_value = self._selected_merge_carry_value(carry_options, config)
         yield Select(
@@ -2704,6 +2698,10 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         selected_value = selector_query.first().value if selector_query else ""
         selected_closures = self._selected_merge_close_values_from_widget()
         option = self._merge_option_by_value(str(selected_value or ""))
+        if selector_query:
+            selector_query.first().display = option is not None
+        for label in self.query("#merge-carry-forward-label"):
+            label.display = option is not None
         if option is not None:
             detail.update(
                 "\n".join(
@@ -2720,7 +2718,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             detail.display = True
             return
         detail.update("No branch selected.")
-        detail.display = True
+        detail.display = False
 
     def _membank_config_values(self) -> Dict[str, Any]:
         values: Dict[str, Any] = {"membank_outputs": [], "membank_inputs": []}
@@ -2839,6 +2837,9 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         selection_query = self.query("#membank-inputs")
         if selection_query:
             selection_query.first().disabled = not reads_enabled
+            selection_query.first().display = reads_enabled
+        for widget in self.query("#membank-inputs-empty"):
+            widget.display = reads_enabled
 
     def _sync_membank_output_controls(self) -> None:
         if not self.query("#membank-writes"):
@@ -2852,8 +2853,12 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             return
         writes_checkbox = self.query_one("#membank-writes", Checkbox)
         writes_checkbox.disabled = pass_through_selected
+        writes_checkbox.display = not pass_through_selected
         count_input = count_query.first()
         count_input.disabled = not writes_enabled
+        count_input.display = writes_enabled
+        for widget in self.query("#membank-output-count-label, #membank-output-rows"):
+            widget.display = writes_enabled
         if writes_enabled and self._membank_output_count() <= 0:
             count_input.value = "1"
 
@@ -2870,7 +2875,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             if self._pass_through_selected():
                 writes_enabled = False
             if not writes_enabled:
-                count = 0
+                # Keep edited rows mounted while hidden so re-enabling restores them.
+                return
             await container.remove_children()
             await container.mount(*self._membank_output_row_widgets(values[:count]))
         finally:

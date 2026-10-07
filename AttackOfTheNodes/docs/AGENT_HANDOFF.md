@@ -1,16 +1,21 @@
 # AttackOfTheNodes Agent Handoff
 
-## Current continuation — 2026-10-06 integration
+## Current continuation — 2026-10-07 publication
 
 Use `/home/makin/src/node_workflow` and its `.venv/bin/python`; OneDrive is recovery-only.
-`codex/wait-until-vault-fix` now contains the preserved runtime/Wait Until work,
-merged File Output implementation, audits and focused integration fixes. Main
-baseline is `7161ef2`; this session produces one PR. Read
-[SESSION_INTEGRATION_BUILD_PLAN.md](SESSION_INTEGRATION_BUILD_PLAN.md) and
-[CONFIG_UI_BUILD_PLAN.md](CONFIG_UI_BUILD_PLAN.md). The original review/audit are
-historical before-fix evidence; current coverage is under `docs/audits/integrated_2026_10_06/`.
-Next: review the PR, perform Windows FO7 live checks, then implement the remaining
-shared UI capability/layout stages. Preserve the intended Wait Until semantics.
+PR #29 integrates the runtime/Wait Until work, File Output implementation,
+File Reader Windows/WSL path handling, and configuration visibility/scroll fixes.
+The owner confirmed the fixes live and authorized publication and merging.
+Check GitHub for merge status and synchronize with `origin/main` before new work.
+
+Verification: 589 full-suite tests passed; the final visibility/scroll audit
+covered 36 editable types, 108 mounts, 1,202 conditional states and 4,008
+navigation samples with zero findings. See
+[NODE_CONFIG_VISIBILITY_SCROLL_AUDIT.md](NODE_CONFIG_VISIBILITY_SCROLL_AUDIT.md).
+Next: capability-based shared controls, especially unsupported legacy Vault
+options, then applicable-section/tab cleanup and schema validation. Windows
+FO7 live verification remains pending. Keep the execution-branch redesign
+separate and preserve Wait Until's unchanged incoming dead-drop semantics.
 
 ## Current State
 

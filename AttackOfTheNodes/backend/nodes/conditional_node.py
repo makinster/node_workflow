@@ -25,7 +25,8 @@ class ConditionalNode(Node):
     config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {
         "condition_type": {"type": "string", "options": ["equals", "not_equals", "contains", "regex"], "required": True},
         "left_value_source": {"type": "string", "options": ["input", "variable"], "required": True},
-        "variable_name": {"type": "string", "required": False},
+        "variable_name": {"type": "string", "required": False,
+                          "visible_when": {"left_value_source": "variable"}},
         "right_value": {"type": "string", "required": True},
     }
 

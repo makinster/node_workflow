@@ -83,9 +83,11 @@ a glance):
 - **Configured** selected: the Vault key dropdown is hidden and the matching
   Parameters field becomes visible and editable.
 
-Grey-out (`enabled_when`) is reserved for controls that are *locked*, not
-irrelevant — e.g. the vault-write checkbox that cannot be unchecked while the
-result is not routed transiently.
+Grey-out (`enabled_when`) is reserved for a genuinely locked state whose visible
+presence helps the user understand a constraint. Explain that constraint in the
+UI and document the convenience reason. Prefer a read-only summary if inspection
+is the only purpose. A field gated by a toggle, source, or mode uses
+`visible_when`; hide its label and description too, while preserving its value.
 
 Some inputs may not offer all three options. For example, a document/context
 input on a basic LLM node may only offer Upstream or Vault (no hard-configured
@@ -107,10 +109,10 @@ list — `downstream` and/or `vault`), not from routing checkboxes.
    downstream nodes see the edited name/type in their Incoming Payload block).
 2. **`[ ] Forward incoming payload unchanged`** — the single routing checkbox.
    When checked, the node forwards the arriving payload instead of its own
-   result, and the downstream name/description fields grey out.
+   result, and the downstream name/description fields are hidden.
 3. **Vault Payload(s)** — for each output also routed to the Vault: an
    editable Vault key and description. Optional vault outputs carry a
-   `[ ] Disable output` checkbox above them (checking it greys the key /
+   `[ ] Disable output` checkbox above them (checking it hides the key /
    description). A port is optional-to-vault unless its metadata sets
    `vault_required: true`.
 4. Node-specific routing-adjacent sections (e.g. **AI Session**) follow.
@@ -416,7 +418,7 @@ Built from `output_port_metadata` per the Standard Output Routing Model above:
 ```
 ── Downstream node payload ──────────
 Result  [string]
-  Payload name: [Result_______________]   greys out when forwarding
+  Payload name: [Result_______________]   hidden when forwarding
   Description:  [Model response text___]
 
 [ ] Forward incoming payload unchanged
@@ -424,7 +426,7 @@ Result  [string]
 ── Vault Payload ────────────────────
 Result  [string]
 [ ] Disable output                        (optional vault outputs only)
-  Vault key:    [chat_result___________]   greys out when disabled
+  Vault key:    [chat_result___________]   hidden when disabled
   Description:  [______________________]
 
 ── AI Session ───────────────────────
@@ -544,7 +546,7 @@ of `PHASE_17_NODE_VISUAL_IDENTITY.md`.
 ```
 ── Downstream node payload ──────────
 Result  [string]                        ← the designated downstream output
-  Payload name: [Result_______________]  (greys out if forwarding)
+  Payload name: [Result_______________]  (hidden if forwarding)
   Description:  [Model response text___]
 [ ] Forward incoming payload unchanged   (dead-drop; default off)
 

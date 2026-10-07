@@ -29,6 +29,8 @@ config_tabs:
       label: "Request body (POST)"
       default: ""
       required: false
+      visible_when:
+        method: POST
     timeout_seconds:
       type: float
       label: Timeout (seconds)

@@ -23,7 +23,7 @@ class HttpRequestNode(Node):
     input_port_metadata: ClassVar[Dict[str, Dict[str, str]]] = {}
     output_port_metadata: ClassVar[Dict[str, Dict[str, str]]] = {}
     default_config: ClassVar[Dict[str, Any]] = {'url': '', 'method': 'GET', 'body': '', 'timeout_seconds': 10.0, 'auth_token_secret': ''}
-    config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {'url': {'type': 'string', 'label': 'URL', 'placeholder': 'https://example.com/api', 'required': True, 'tab': 'Parameters'}, 'method': {'type': 'select', 'label': 'Method', 'options': ['GET', 'POST'], 'tab': 'Parameters'}, 'body': {'type': 'multiline', 'label': 'Request body (POST)', 'required': False, 'tab': 'Parameters'}, 'timeout_seconds': {'type': 'float', 'label': 'Timeout (seconds)', 'required': False, 'tab': 'Parameters'}, 'auth_token_secret': {'type': 'string', 'label': 'Bearer token (secrets store key)', 'secret': True, 'required': False, 'tab': 'Parameters'}}
+    config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {'url': {'type': 'string', 'label': 'URL', 'placeholder': 'https://example.com/api', 'required': True, 'tab': 'Parameters'}, 'method': {'type': 'select', 'label': 'Method', 'options': ['GET', 'POST'], 'tab': 'Parameters'}, 'body': {'type': 'multiline', 'label': 'Request body (POST)', 'required': False, 'tab': 'Parameters', 'visible_when': {'method': 'POST'}}, 'timeout_seconds': {'type': 'float', 'label': 'Timeout (seconds)', 'required': False, 'tab': 'Parameters'}, 'auth_token_secret': {'type': 'string', 'label': 'Bearer token (secrets store key)', 'secret': True, 'required': False, 'tab': 'Parameters'}}
     ui_hints: ClassVar[Dict[str, Any]] = {}
 
     async def execute(self, context: NodeContext) -> None:

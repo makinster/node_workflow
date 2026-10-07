@@ -43,7 +43,7 @@ currently registered node type a row absorbs, where one exists.
 
 | Node | Status | Notes / Maps from |
 |---|---|---|
-| Simple File Read | Live | `file_reader_node` — read entire file as a text string. Tags: File I/O, Runtime Resource |
+| Simple File Read | Live | `file_reader_node` — read entire file as a UTF-8 text string. Accepts copied quoted paths and converts Windows paths under WSL; reports actionable path/read errors. Tags: File I/O, Runtime Resource |
 | Bulk File Read | Concept | Read all files matching a folder path or glob pattern. Tags: File I/O |
 | Find & Extract Passage | Concept | Search for a pattern, return surrounding context window. Tags: File I/O |
 | Structured File Read | Concept | Parse CSV or JSON into usable object data. Tags: File I/O |

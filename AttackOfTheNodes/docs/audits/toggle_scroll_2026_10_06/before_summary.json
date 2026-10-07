@@ -1,0 +1,2305 @@
+{
+  "mounts": 36,
+  "types": 36,
+  "widths": [
+    100
+  ],
+  "states": 466,
+  "navigation_samples": 1294,
+  "cancel_unchanged": 36,
+  "findings": [
+    {
+      "type": "chat_completion_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "field-context_input_count",
+        "scroll": 19.0
+      }
+    },
+    {
+      "type": "chat_completion_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "field-document_source",
+        "scroll": 27.0
+      }
+    },
+    {
+      "type": "chat_completion_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-parameters",
+      "actual": {
+        "focus": "field-model",
+        "scroll": 6.0
+      }
+    },
+    {
+      "type": "chat_completion_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-parameters",
+      "actual": {
+        "focus": "field-max_tokens",
+        "scroll": 10.099914590830625
+      }
+    },
+    {
+      "type": "chat_completion_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-parameters",
+      "actual": {
+        "focus": "field-temperature",
+        "scroll": 12.0
+      }
+    },
+    {
+      "type": "chat_completion_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-parameters",
+      "actual": {
+        "focus": "field-api_key_secret",
+        "scroll": 14.0
+      }
+    },
+    {
+      "type": "chat_completion_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-name-default",
+        "scroll": 0.0
+      }
+    },
+    {
+      "type": "chat_completion_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-desc-default",
+        "scroll": 2.0
+      }
+    },
+    {
+      "type": "chat_completion_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "dead-drop-passthrough",
+        "scroll": 2.0
+      }
+    },
+    {
+      "type": "chat_completion_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "vault-output-disabled-default",
+        "scroll": 7.0
+      }
+    },
+    {
+      "type": "concat_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-previous-output",
+        "scroll": 0.0
+      }
+    },
+    {
+      "type": "concat_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "membank-reads",
+        "scroll": 5.0
+      }
+    },
+    {
+      "type": "concat_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-source-vault-payload",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "concat_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-name-default",
+        "scroll": 5.0
+      }
+    },
+    {
+      "type": "concat_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-desc-default",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "concat_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "membank-writes",
+        "scroll": 9.136795779530255
+      }
+    },
+    {
+      "type": "conditional_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-previous-output",
+        "scroll": 0.0
+      }
+    },
+    {
+      "type": "conditional_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "membank-reads",
+        "scroll": 5.0
+      }
+    },
+    {
+      "type": "conditional_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-source-vault-payload",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "conditional_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-parameters",
+      "actual": {
+        "focus": "field-right_value",
+        "scroll": 10.0
+      }
+    },
+    {
+      "type": "conditional_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-parameters",
+      "actual": {
+        "focus": "field-true_label",
+        "scroll": 10.0
+      }
+    },
+    {
+      "type": "conditional_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-parameters",
+      "actual": {
+        "focus": "field-false_label",
+        "scroll": 12.0
+      }
+    },
+    {
+      "type": "conditional_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "show-payload-vault-payload",
+        "scroll": 1.0
+      }
+    },
+    {
+      "type": "conditional_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-name-true",
+        "scroll": 4.0
+      }
+    },
+    {
+      "type": "conditional_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-desc-true",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "conditional_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-name-false",
+        "scroll": 9.095108091250347
+      }
+    },
+    {
+      "type": "conditional_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-desc-false",
+        "scroll": 12.0
+      }
+    },
+    {
+      "type": "counter_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-previous-output",
+        "scroll": 0.0
+      }
+    },
+    {
+      "type": "counter_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "membank-reads",
+        "scroll": 5.0
+      }
+    },
+    {
+      "type": "counter_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-source-vault-payload",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "counter_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-name-default",
+        "scroll": 1.0
+      }
+    },
+    {
+      "type": "counter_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-desc-default",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "deep_branch_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "membank-reads",
+        "scroll": 5.0
+      }
+    },
+    {
+      "type": "deep_branch_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-source-vault-payload",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "deep_branch_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-name-default",
+        "scroll": 1.0
+      }
+    },
+    {
+      "type": "deep_branch_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-desc-default",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "deep_branch_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-name-branch",
+        "scroll": 9.0
+      }
+    },
+    {
+      "type": "deep_branch_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-desc-branch",
+        "scroll": 11.0
+      }
+    },
+    {
+      "type": "echo_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-previous-output",
+        "scroll": 0.0
+      }
+    },
+    {
+      "type": "echo_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "membank-reads",
+        "scroll": 6.0
+      }
+    },
+    {
+      "type": "echo_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-source-vault-payload",
+        "scroll": 9.0
+      }
+    },
+    {
+      "type": "echo_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-name-default",
+        "scroll": 1.0
+      }
+    },
+    {
+      "type": "echo_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-desc-default",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "echo_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "membank-writes",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "embedding_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-previous-output",
+        "scroll": 0.0
+      }
+    },
+    {
+      "type": "embedding_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "membank-reads",
+        "scroll": 5.0
+      }
+    },
+    {
+      "type": "embedding_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-source-vault-payload",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "embedding_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-parameters",
+      "actual": {
+        "focus": "field-text_field",
+        "scroll": 3.0
+      }
+    },
+    {
+      "type": "embedding_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-parameters",
+      "actual": {
+        "focus": "field-api_key_secret",
+        "scroll": 3.0
+      }
+    },
+    {
+      "type": "embedding_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "show-payload-vault-payload",
+        "scroll": 1.0
+      }
+    },
+    {
+      "type": "embedding_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-name-default",
+        "scroll": 4.0
+      }
+    },
+    {
+      "type": "embedding_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-desc-default",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "embedding_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "membank-writes",
+        "scroll": 9.086270809023082
+      }
+    },
+    {
+      "type": "end_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-previous-output",
+        "scroll": 0.0
+      }
+    },
+    {
+      "type": "end_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "membank-reads",
+        "scroll": 5.0
+      }
+    },
+    {
+      "type": "end_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-source-vault-payload",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "end_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "membank-writes",
+        "scroll": 1.0
+      }
+    },
+    {
+      "type": "error_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-previous-output",
+        "scroll": 0.0
+      }
+    },
+    {
+      "type": "error_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "membank-reads",
+        "scroll": 5.0
+      }
+    },
+    {
+      "type": "error_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-source-vault-payload",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "error_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "show-payload-vault-payload",
+        "scroll": 1.0
+      }
+    },
+    {
+      "type": "error_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-name-default",
+        "scroll": 4.0
+      }
+    },
+    {
+      "type": "error_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-desc-default",
+        "scroll": 8.06774011179062
+      }
+    },
+    {
+      "type": "error_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "membank-writes",
+        "scroll": 9.06774011179062
+      }
+    },
+    {
+      "type": "file_reader_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-previous-output",
+        "scroll": 0.0
+      }
+    },
+    {
+      "type": "file_reader_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "membank-reads",
+        "scroll": 5.0
+      }
+    },
+    {
+      "type": "file_reader_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-source-vault-payload",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "file_reader_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "show-payload-vault-payload",
+        "scroll": 1.0
+      }
+    },
+    {
+      "type": "file_reader_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-name-default",
+        "scroll": 4.0
+      }
+    },
+    {
+      "type": "file_reader_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-desc-default",
+        "scroll": 9.003997503673824
+      }
+    },
+    {
+      "type": "file_reader_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "membank-writes",
+        "scroll": 9.174326559894961
+      }
+    },
+    {
+      "type": "file_view_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "field-file_source",
+        "scroll": 11.0
+      }
+    },
+    {
+      "type": "file_view_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-name-default",
+        "scroll": 0.0
+      }
+    },
+    {
+      "type": "file_view_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-desc-default",
+        "scroll": 2.0
+      }
+    },
+    {
+      "type": "file_view_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "field-terminate_branch",
+        "scroll": 12.002620457727424
+      }
+    },
+    {
+      "type": "file_output_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-parameters",
+      "actual": {
+        "focus": "field-binary_content",
+        "scroll": 4.0
+      }
+    },
+    {
+      "type": "file_output_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-parameters",
+      "actual": {
+        "focus": "field-open_after_write",
+        "scroll": 7.002632257034062
+      }
+    },
+    {
+      "type": "file_output_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-name-default",
+        "scroll": 0.0
+      }
+    },
+    {
+      "type": "file_output_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-desc-default",
+        "scroll": 2.0
+      }
+    },
+    {
+      "type": "file_output_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "vault-output-disabled-default",
+        "scroll": 14.0
+      }
+    },
+    {
+      "type": "file_output_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "field-terminate_branch",
+        "scroll": 14.0
+      }
+    },
+    {
+      "type": "get_variable_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-previous-output",
+        "scroll": 0.0
+      }
+    },
+    {
+      "type": "get_variable_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "membank-reads",
+        "scroll": 5.0
+      }
+    },
+    {
+      "type": "get_variable_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-source-vault-payload",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "get_variable_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-name-default",
+        "scroll": 1.0
+      }
+    },
+    {
+      "type": "get_variable_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-desc-default",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "get_variable_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "membank-writes",
+        "scroll": 9.0
+      }
+    },
+    {
+      "type": "http_request_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-previous-output",
+        "scroll": 5.0
+      }
+    },
+    {
+      "type": "http_request_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "membank-reads",
+        "scroll": 5.0
+      }
+    },
+    {
+      "type": "http_request_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-source-vault-payload",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "http_request_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-parameters",
+      "actual": {
+        "focus": "field-timeout_seconds",
+        "scroll": 9.002201237884508
+      }
+    },
+    {
+      "type": "http_request_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-parameters",
+      "actual": {
+        "focus": "field-auth_token_secret",
+        "scroll": 9.0
+      }
+    },
+    {
+      "type": "http_request_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-parameters",
+      "actual": {
+        "focus": "field-default_label",
+        "scroll": 14.0
+      }
+    },
+    {
+      "type": "http_request_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "show-payload-vault-payload",
+        "scroll": 1.0
+      }
+    },
+    {
+      "type": "http_request_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-name-default",
+        "scroll": 4.0
+      }
+    },
+    {
+      "type": "http_request_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-desc-default",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "http_request_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-desc-error",
+        "scroll": 11.173979856239294
+      }
+    },
+    {
+      "type": "image_generation_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-previous-output",
+        "scroll": 5.0
+      }
+    },
+    {
+      "type": "image_generation_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "membank-reads",
+        "scroll": 5.0
+      }
+    },
+    {
+      "type": "image_generation_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-source-vault-payload",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "image_generation_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-parameters",
+      "actual": {
+        "focus": "field-size",
+        "scroll": 5.003008991901688
+      }
+    },
+    {
+      "type": "image_generation_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-parameters",
+      "actual": {
+        "focus": "field-style",
+        "scroll": 5.0
+      }
+    },
+    {
+      "type": "image_generation_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-parameters",
+      "actual": {
+        "focus": "field-api_key_secret",
+        "scroll": 10.0
+      }
+    },
+    {
+      "type": "image_generation_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "show-payload-vault-payload",
+        "scroll": 1.0
+      }
+    },
+    {
+      "type": "image_generation_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-name-default",
+        "scroll": 4.0
+      }
+    },
+    {
+      "type": "image_generation_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-desc-default",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "image_generation_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "membank-writes",
+        "scroll": 9.0
+      }
+    },
+    {
+      "type": "json_path_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-previous-output",
+        "scroll": 0.0
+      }
+    },
+    {
+      "type": "json_path_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "membank-reads",
+        "scroll": 5.0
+      }
+    },
+    {
+      "type": "json_path_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-parameters",
+      "actual": {
+        "focus": "field-error_label",
+        "scroll": 5.0
+      }
+    },
+    {
+      "type": "json_path_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "show-payload-vault-payload",
+        "scroll": 4.0
+      }
+    },
+    {
+      "type": "json_path_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-name-default",
+        "scroll": 4.0
+      }
+    },
+    {
+      "type": "json_path_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-desc-default",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "json_path_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-name-error",
+        "scroll": 9.0
+      }
+    },
+    {
+      "type": "json_path_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-desc-error",
+        "scroll": 11.0
+      }
+    },
+    {
+      "type": "logger_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-previous-output",
+        "scroll": 0.0
+      }
+    },
+    {
+      "type": "logger_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "membank-reads",
+        "scroll": 6.0
+      }
+    },
+    {
+      "type": "logger_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-source-vault-payload",
+        "scroll": 9.0
+      }
+    },
+    {
+      "type": "logger_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-desc-default",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "logger_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "membank-writes",
+        "scroll": 9.0
+      }
+    },
+    {
+      "type": "memory_snapshot_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-previous-output",
+        "scroll": 0.0
+      }
+    },
+    {
+      "type": "memory_snapshot_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "membank-reads",
+        "scroll": 5.0
+      }
+    },
+    {
+      "type": "memory_snapshot_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-source-vault-payload",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "memory_snapshot_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "show-payload-vault-payload",
+        "scroll": 1.0
+      }
+    },
+    {
+      "type": "memory_snapshot_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-name-default",
+        "scroll": 4.0
+      }
+    },
+    {
+      "type": "memory_snapshot_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-desc-default",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "memory_snapshot_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "membank-writes",
+        "scroll": 9.0
+      }
+    },
+    {
+      "type": "no_op_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-previous-output",
+        "scroll": 0.0
+      }
+    },
+    {
+      "type": "no_op_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-source-vault-payload",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "no_op_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "show-payload-vault-payload",
+        "scroll": 1.0
+      }
+    },
+    {
+      "type": "no_op_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-name-default",
+        "scroll": 4.0
+      }
+    },
+    {
+      "type": "no_op_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "membank-writes",
+        "scroll": 14.0
+      }
+    },
+    {
+      "type": "branch_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-previous-output",
+        "scroll": 5.0
+      }
+    },
+    {
+      "type": "branch_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "membank-reads",
+        "scroll": 5.0
+      }
+    },
+    {
+      "type": "branch_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-source-vault-payload",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "branch_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "show-payload-vault-payload",
+        "scroll": 1.0055059518002656
+      }
+    },
+    {
+      "type": "probe_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-previous-output",
+        "scroll": 0.0
+      }
+    },
+    {
+      "type": "probe_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "membank-reads",
+        "scroll": 5.0
+      }
+    },
+    {
+      "type": "probe_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-source-vault-payload",
+        "scroll": 11.0
+      }
+    },
+    {
+      "type": "probe_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "show-payload-vault-payload",
+        "scroll": 1.0
+      }
+    },
+    {
+      "type": "probe_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-desc-default",
+        "scroll": 9.00086516527603
+      }
+    },
+    {
+      "type": "probe_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "membank-writes",
+        "scroll": 9.0
+      }
+    },
+    {
+      "type": "random_branch_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-previous-output",
+        "scroll": 0.0
+      }
+    },
+    {
+      "type": "random_branch_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "membank-reads",
+        "scroll": 5.0
+      }
+    },
+    {
+      "type": "random_branch_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-source-vault-payload",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "random_branch_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-parameters",
+      "actual": {
+        "focus": "field-path_b_label",
+        "scroll": 0.0
+      }
+    },
+    {
+      "type": "random_branch_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-name-path_a",
+        "scroll": 8.003279054402181
+      }
+    },
+    {
+      "type": "random_branch_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-desc-path_a",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "random_branch_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-name-path_b",
+        "scroll": 9.0
+      }
+    },
+    {
+      "type": "random_branch_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-desc-path_b",
+        "scroll": 11.003279054402181
+      }
+    },
+    {
+      "type": "random_number_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-previous-output",
+        "scroll": 0.0
+      }
+    },
+    {
+      "type": "random_number_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "membank-reads",
+        "scroll": 5.0
+      }
+    },
+    {
+      "type": "random_number_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-source-vault-payload",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "random_number_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-parameters",
+      "actual": {
+        "focus": "field-max_value",
+        "scroll": 4.0
+      }
+    },
+    {
+      "type": "random_number_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-parameters",
+      "actual": {
+        "focus": "field-seed",
+        "scroll": 5.002349677281643
+      }
+    },
+    {
+      "type": "random_number_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-parameters",
+      "actual": {
+        "focus": "field-value",
+        "scroll": 5.0
+      }
+    },
+    {
+      "type": "random_number_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "show-payload-vault-payload",
+        "scroll": 1.0
+      }
+    },
+    {
+      "type": "random_number_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-name-default",
+        "scroll": 4.0
+      }
+    },
+    {
+      "type": "random_number_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-desc-default",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "random_number_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "membank-writes",
+        "scroll": 9.0
+      }
+    },
+    {
+      "type": "repeat_counter_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-previous-output",
+        "scroll": 0.0
+      }
+    },
+    {
+      "type": "repeat_counter_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "membank-reads",
+        "scroll": 5.0
+      }
+    },
+    {
+      "type": "repeat_counter_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-source-vault-payload",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "repeat_counter_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "show-payload-vault-payload",
+        "scroll": 1.0
+      }
+    },
+    {
+      "type": "repeat_counter_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-name-default",
+        "scroll": 8.003812704611548
+      }
+    },
+    {
+      "type": "repeat_counter_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-desc-default",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "repeat_counter_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "membank-writes",
+        "scroll": 9.0
+      }
+    },
+    {
+      "type": "set_variable_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-previous-output",
+        "scroll": 5.0
+      }
+    },
+    {
+      "type": "set_variable_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "membank-reads",
+        "scroll": 5.0
+      }
+    },
+    {
+      "type": "set_variable_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-source-vault-payload",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "set_variable_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-parameters",
+      "actual": {
+        "focus": "field-value",
+        "scroll": 4.0
+      }
+    },
+    {
+      "type": "set_variable_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-parameters",
+      "actual": {
+        "focus": "field-pass_through",
+        "scroll": 5.003119899772705
+      }
+    },
+    {
+      "type": "set_variable_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "show-payload-vault-payload",
+        "scroll": 1.0
+      }
+    },
+    {
+      "type": "set_variable_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-name-default",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "set_variable_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-desc-default",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "sleep_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "membank-reads",
+        "scroll": 6.0
+      }
+    },
+    {
+      "type": "sleep_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-source-vault-payload",
+        "scroll": 9.0
+      }
+    },
+    {
+      "type": "sleep_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-name-default",
+        "scroll": 5.0
+      }
+    },
+    {
+      "type": "sleep_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-desc-default",
+        "scroll": 8.086272308253088
+      }
+    },
+    {
+      "type": "sleep_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "membank-writes",
+        "scroll": 14.0
+      }
+    },
+    {
+      "type": "sleep_node",
+      "width": 100,
+      "kind": "nonfocused_change_scroll",
+      "control": "show-previous-output",
+      "before": {
+        "focus": "alias-input",
+        "scroll": 2.0
+      },
+      "after": {
+        "focus": null,
+        "scroll": 0.0
+      }
+    },
+    {
+      "type": "start_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-previous-output",
+        "scroll": 0.0
+      }
+    },
+    {
+      "type": "start_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "membank-reads",
+        "scroll": 5.0
+      }
+    },
+    {
+      "type": "start_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-source-vault-payload",
+        "scroll": 11.0
+      }
+    },
+    {
+      "type": "start_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "show-payload-vault-payload",
+        "scroll": 1.0
+      }
+    },
+    {
+      "type": "start_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-name-default",
+        "scroll": 4.0
+      }
+    },
+    {
+      "type": "start_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-desc-default",
+        "scroll": 9.0
+      }
+    },
+    {
+      "type": "start_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "membank-writes",
+        "scroll": 9.0
+      }
+    },
+    {
+      "type": "text_output_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-previous-output",
+        "scroll": 5.0
+      }
+    },
+    {
+      "type": "text_output_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "membank-reads",
+        "scroll": 5.0
+      }
+    },
+    {
+      "type": "text_output_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-source-vault-payload",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "text_output_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-parameters",
+      "actual": {
+        "focus": "field-template",
+        "scroll": 1.0028088759270453
+      }
+    },
+    {
+      "type": "text_output_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-parameters",
+      "actual": {
+        "focus": "field-request_user_input",
+        "scroll": 2.0
+      }
+    },
+    {
+      "type": "text_output_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-parameters",
+      "actual": {
+        "focus": "field-prompt",
+        "scroll": 5.0
+      }
+    },
+    {
+      "type": "text_output_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "show-payload-vault-payload",
+        "scroll": 1.0
+      }
+    },
+    {
+      "type": "text_output_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-name-default",
+        "scroll": 4.0405916223783755
+      }
+    },
+    {
+      "type": "text_output_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-desc-default",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "text_output_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "membank-writes",
+        "scroll": 9.0
+      }
+    },
+    {
+      "type": "text_transform_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-previous-output",
+        "scroll": 0.0
+      }
+    },
+    {
+      "type": "text_transform_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "membank-reads",
+        "scroll": 6.0
+      }
+    },
+    {
+      "type": "text_transform_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-source-vault-payload",
+        "scroll": 12.0
+      }
+    },
+    {
+      "type": "text_transform_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "show-payload-vault-payload",
+        "scroll": 1.0
+      }
+    },
+    {
+      "type": "text_transform_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-name-default",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "text_transform_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-desc-default",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "text_transform_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "membank-writes",
+        "scroll": 9.0
+      }
+    },
+    {
+      "type": "user_text_input_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-previous-output",
+        "scroll": 0.0
+      }
+    },
+    {
+      "type": "user_text_input_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "membank-reads",
+        "scroll": 5.0
+      }
+    },
+    {
+      "type": "user_text_input_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-source-vault-payload",
+        "scroll": 11.0
+      }
+    },
+    {
+      "type": "user_text_input_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "show-payload-vault-payload",
+        "scroll": 1.0
+      }
+    },
+    {
+      "type": "user_text_input_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-name-default",
+        "scroll": 4.0
+      }
+    },
+    {
+      "type": "user_text_input_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "membank-writes",
+        "scroll": 9.0
+      }
+    },
+    {
+      "type": "variable_reader_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-previous-output",
+        "scroll": 0.0
+      }
+    },
+    {
+      "type": "variable_reader_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "membank-reads",
+        "scroll": 5.0
+      }
+    },
+    {
+      "type": "variable_reader_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-source-vault-payload",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "variable_reader_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "show-payload-vault-payload",
+        "scroll": 1.0
+      }
+    },
+    {
+      "type": "variable_reader_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-name-default",
+        "scroll": 4.0
+      }
+    },
+    {
+      "type": "variable_reader_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-desc-default",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "variable_reader_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "membank-writes",
+        "scroll": 9.0
+      }
+    },
+    {
+      "type": "variable_setter_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-previous-output",
+        "scroll": 0.0
+      }
+    },
+    {
+      "type": "variable_setter_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "membank-reads",
+        "scroll": 5.0
+      }
+    },
+    {
+      "type": "variable_setter_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "show-source-vault-payload",
+        "scroll": 8.0
+      }
+    },
+    {
+      "type": "variable_setter_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-desc-default",
+        "scroll": 9.000931805341914
+      }
+    },
+    {
+      "type": "wait_until_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "wait-targets",
+        "scroll": 0.0
+      }
+    },
+    {
+      "type": "wait_until_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "field-timeout_seconds",
+        "scroll": 4.0
+      }
+    },
+    {
+      "type": "window_control_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-core",
+      "actual": {
+        "focus": "field-file_source",
+        "scroll": 11.0
+      }
+    },
+    {
+      "type": "window_control_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-name-default",
+        "scroll": 0.0
+      }
+    },
+    {
+      "type": "window_control_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "transient-output-desc-default",
+        "scroll": 2.0
+      }
+    }
+  ],
+  "rule_violations": [],
+  "disabled_visible": [
+    {
+      "type": "set_variable_node",
+      "width": 100,
+      "id": "membank-writes",
+      "disabled": true,
+      "visible": true,
+      "value": false
+    },
+    {
+      "type": "variable_setter_node",
+      "width": 100,
+      "id": "membank-writes",
+      "disabled": true,
+      "visible": true,
+      "value": false
+    }
+  ]
+}

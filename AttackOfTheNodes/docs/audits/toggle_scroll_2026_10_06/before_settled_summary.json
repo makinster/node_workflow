@@ -1,0 +1,53 @@
+{
+  "mounts": 36,
+  "types": 36,
+  "widths": [
+    100
+  ],
+  "states": 466,
+  "navigation_samples": 1318,
+  "cancel_unchanged": 36,
+  "findings": [
+    {
+      "type": "image_generation_node",
+      "width": 100,
+      "kind": "offscreen_focus",
+      "tab": "node-config-tab-outputs",
+      "actual": {
+        "focus": "show-payload-vault-payload",
+        "scroll": 1.0
+      },
+      "region": [
+        3,
+        11,
+        29,
+        3
+      ],
+      "viewport": [
+        3,
+        7,
+        84,
+        4
+      ]
+    }
+  ],
+  "rule_violations": [],
+  "disabled_visible": [
+    {
+      "type": "set_variable_node",
+      "width": 100,
+      "id": "membank-writes",
+      "disabled": true,
+      "visible": true,
+      "value": false
+    },
+    {
+      "type": "variable_setter_node",
+      "width": 100,
+      "id": "membank-writes",
+      "disabled": true,
+      "visible": true,
+      "value": false
+    }
+  ]
+}

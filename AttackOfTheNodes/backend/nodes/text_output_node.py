@@ -44,6 +44,7 @@ class TextOutputNode(Node):
             "type": "string",
             "description": "Prompt text shown when requesting user input",
             "required": False,
+            "visible_when": {"request_user_input": True},
         },
     }
 

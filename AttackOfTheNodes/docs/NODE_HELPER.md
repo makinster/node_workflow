@@ -559,3 +559,9 @@ The validator still rejects an empty required destination, but does not warn
 that a new output file does not yet exist. Read paths retain existence warnings.
 Window Control emits its selected file reference unconditionally; its output
 metadata intentionally omits optional `pass_through` capability.
+
+File Reader opts into `normalize_local_path: true` on its file-path schema.
+Validation and execution remove copied surrounding quotes and convert absolute
+Windows paths through `wslpath` when running under WSL. Other file nodes retain
+their existing path behavior. Missing read files remain pre-run warnings because
+an earlier node may create them; empty or incompatible paths are errors.
