@@ -6,9 +6,11 @@ instances and exposes metadata for UI and validation.
 """
 
 import logging
+from copy import deepcopy
 from typing import Any, Dict, List, Optional, Type
 
 from .data_types import coerce_type
+from .config_migrations import normalize_node_config
 from .node_base import Node
 from .nodes import ALL_NODE_CLASSES
 
@@ -46,14 +48,14 @@ class NodeFactory:
         if node_class is None:
             logger.error("Unknown node type: %s", node_type)
             return None
-        return node_class(node_id, config)
+        return node_class(node_id, normalize_node_config(node_type, config) if config is not None else None)
 
     def create_config_template(self, node_type: str) -> Optional[Dict[str, Any]]:
         """Return a fresh default config copy for a node type."""
         node_class = self._node_registry.get(node_type)
         if node_class is None:
             return None
-        return dict(node_class.default_config)
+        return deepcopy(node_class.default_config)
 
     def get_default_alias(self, node_type: str) -> Optional[str]:
         """Return the default user-facing alias for a node type."""
@@ -111,6 +113,7 @@ class NodeFactory:
                     "default_config": dict(node_class.default_config),
                     "ui_hints": dict(getattr(node_class, "ui_hints", {})),
                     "editor_only": bool(getattr(node_class, "editor_only", False)),
+                    "terminates_branch": bool(node_class.terminates_branch),
                 }
             )
         return sorted(metadata, key=lambda item: item["display_name"])

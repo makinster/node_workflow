@@ -30,6 +30,7 @@ def _make_wm():
 def _chat_config(wm, node_id, **overrides):
     config = dict(wm.get_node_data(node_id)["config"])
     config["api_key_secret"] = "anthropic_key"
+    config["vault_write"] = False  # Tests opt into named result output explicitly.
     config.update(overrides)
     wm.update_node_config(node_id, config)
 

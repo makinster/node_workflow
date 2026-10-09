@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
 
 from .branch_health import ENDED_UNMERGED, derive_branch_health, output_types_from_factory
 from .data_types import DataType
+from .vault_declarations import standard_vault_writes
 from .file_paths import normalize_local_path
 from .node_factory import NodeFactory
 from .workflow_map import WorkflowMap
@@ -268,6 +269,19 @@ def validate_workflow(
     standard_vault_writes = _standard_model_vault_writes(all_nodes, metadata_by_type)
     standard_vault_reads = _standard_model_vault_reads(all_nodes, metadata_by_type)
 
+    # Source selectors must name a real key; missing selections cannot fall
+    # through to a connected input. Use node metadata to avoid unrelated keys.
+    for node_id, data in all_nodes.items():
+        config = data.get("config") or {}
+        metadata = metadata_by_type.get(data.get("type", "")) or {}
+        for port in (metadata.get("input_port_metadata") or {}):
+            if (config.get(f"{port}_source") == "Vault"
+                    and _repeatable_slot_active(config, port)
+                    and not str(config.get(f"{port}_vault_key") or "").strip()):
+                errors.append({"node_id": node_id, "message": f"Vault source for '{port}' requires a key"})
+        if config.get("vault_write") and not str(config.get("vault_write_key") or "").strip():
+            errors.append({"node_id": node_id, "message": "Vault output requires a key"})
+
     for duplicate in _duplicate_input_source_errors(all_nodes, standard_vault_reads):
         errors.append(duplicate)
 
@@ -309,12 +323,17 @@ def validate_workflow(
         for entry in entries:
             if not isinstance(entry, dict):
                 continue
-            if entry.get("type_tag") != ai_session:
+            reader_tag = entry.get("type_tag")
+            if not reader_tag or reader_tag == "any":
                 continue
             key = _membank_source_id(entry)
             if not key or key not in declared_membank_outputs:
                 continue
             writer_tag = declared_membank_outputs[key]
+            if reader_tag != ai_session:
+                if writer_tag and writer_tag != "any" and writer_tag != reader_tag:
+                    warnings.append({"node_id": node_id, "message": f"Vault key '{key}' has type {writer_tag}, incompatible with {reader_tag} input"})
+                continue
             if writer_tag != ai_session:
                 warnings.append(
                     {
@@ -551,17 +570,8 @@ def _standard_model_vault_writes(
     writes: Dict[str, Dict[str, Optional[str]]] = {}
     for node_id, data in all_nodes.items():
         config = data.get("config") or {}
-        node_writes: Dict[str, Optional[str]] = {}
-        if config.get("vault_write"):
-            key = str(config.get("vault_write_key") or "").strip()
-            if key:
-                metadata = metadata_by_type.get(str(data.get("type") or "")) or {}
-                out_meta = (metadata.get("output_port_metadata") or {}).get("default") or {}
-                node_writes[key] = str(out_meta.get("data_type") or "") or None
-        if config.get("use_chat_session"):
-            session_key = str(config.get("session_key") or "").strip()
-            if session_key:
-                node_writes[session_key] = DataType.AI_SESSION.value
+        node_type = str(data.get("type") or "")
+        node_writes = standard_vault_writes(node_type, config, metadata_by_type.get(node_type) or {})
         if node_writes:
             writes[node_id] = node_writes
     return writes

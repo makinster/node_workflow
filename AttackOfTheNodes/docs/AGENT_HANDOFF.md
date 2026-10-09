@@ -1,5 +1,27 @@
 # AttackOfTheNodes Agent Handoff
 
+## Saved workflow follow-up — 2026-10-08
+
+Writer forwarding now handles File Path-only connections. Start has one value
+editor and a read-only routing preview; Text Output shows its selected source
+and formatted output preview. Text Output continues when connected, restoring
+existing Text Output → Wait Until chains; unconnected outputs end naturally,
+and End stops explicitly. This supersedes the previous unconditional Text
+Output termination policy. See [follow-up evidence](audits/payload_followup_2026_10_08/README.md)
+and the latest SESSION_LOG for verification. Owner workflows were not modified.
+
+## Payload/file implementation — 2026-10-07
+
+The requested payload/file build is implemented on `codex/payload-file-routing`,
+based on merged PR #29 (`1211e68`), and prepared for PR publication. See [the completed contract and migration notes](PAYLOAD_FILE_IO_BUILD_PLAN.md)
+and [verification evidence](audits/payload_file_io_2026_10_07/README.md).
+Includes File Manager multi-file references, Reader text routing, Writer
+prepend/append/newline options, typed source selection, forwarding previews,
+Start/Text Output Vault routing, explicit termination and Merge home payloads.
+Line-number insertion remains deferred. Native Windows FO7 and the reported
+user/host path prefix remain live-verification items, not confirmed fixes.
+This status supersedes older planned descriptions below.
+
 ## Current continuation — 2026-10-07 publication
 
 Use `/home/makin/src/node_workflow` and its `.venv/bin/python`; OneDrive is recovery-only.

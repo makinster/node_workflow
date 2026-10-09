@@ -1,0 +1,43 @@
+node_type: text_output_node
+class_name: TextOutputNode
+category: io
+primary_family: Outputs
+display_name: Text Output
+description: Formats input through a template and logs it
+inputs:
+  input:
+    type: any
+    label: Input
+    description: Any payload formatted as text; use File Reader for file contents
+    required: true
+    sources: ["upstream", "vault"]
+    default: upstream
+outputs:
+  default:
+    name: Formatted output
+    type: string
+    to: ["downstream"]
+ui_hints:
+  formatted_output_preview: true
+config_tabs:
+  Parameters:
+    label:
+      type: string
+      default: Output
+      required: true
+      description: Label shown alongside the output
+    template:
+      type: string
+      default: '{input}'
+      required: true
+      description: 'Output text. Use {input} to insert the incoming value.'
+    request_user_input:
+      type: boolean
+      default: false
+      description: Pause and prompt the user before producing output
+    prompt:
+      type: string
+      default: 'Enter a value:'
+      visible_when:
+        request_user_input: true
+execution_template: output_sink

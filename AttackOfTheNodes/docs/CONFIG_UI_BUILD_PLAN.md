@@ -1,5 +1,27 @@
 # Configuration UI build plan — integrated inventory
 
+## Saved workflow follow-up — 2026-10-08
+
+Writer forwarding now handles File Path-only connections. Start has one value
+editor and a read-only routing preview; Text Output shows its selected source
+and formatted output preview. Text Output continues when connected, restoring
+existing Text Output → Wait Until chains; unconnected outputs end naturally,
+and End stops explicitly. This supersedes the previous unconditional Text
+Output termination policy. See [follow-up evidence](audits/payload_followup_2026_10_08/README.md)
+and the latest SESSION_LOG for verification. Owner workflows were not modified.
+
+## Payload/file implementation — 2026-10-07
+
+The requested payload/file build is implemented locally on `main` at `1211e68`
+(uncommitted changes). See [the completed contract and migration notes](PAYLOAD_FILE_IO_BUILD_PLAN.md)
+and [verification evidence](audits/payload_file_io_2026_10_07/README.md).
+Includes File Manager multi-file references, Reader text routing, Writer
+prepend/append/newline options, typed source selection, forwarding previews,
+Start/Text Output Vault routing, explicit termination and Merge home payloads.
+Line-number insertion remains deferred. Native Windows FO7 and the reported
+user/host path prefix remain live-verification items, not confirmed fixes.
+This status supersedes older planned descriptions below.
+
 Baseline: authoritative checkout, current session integration branch, 37 registered
 node types; 36 user-facing/editable types and one intentional internal tombstone.
 Start/End are editable compatibility types, not selector additions. File Instance
@@ -10,6 +32,16 @@ Evidence: [original audit](NODE_CONFIG_UI_AUDIT.md),
 [current integrated coverage](audits/integrated_2026_10_06/README.md).
 This document orders the remaining UI work; the session integration strategy is
 [SESSION_INTEGRATION_BUILD_PLAN.md](SESSION_INTEGRATION_BUILD_PLAN.md).
+
+Owner-requested continuation (2026-10-07):
+[PAYLOAD_FILE_IO_BUILD_PLAN.md](PAYLOAD_FILE_IO_BUILD_PLAN.md) coordinates stages
+1/4 with actual Start/Text Output Vault support, forwarding provenance, typed
+source pruning, multi-file Viewer, Writer editing modes, completion-option
+removal and Merge carry-forward fixes. It is planned work, not completed scope.
+File Viewer is now named File Manager; P2a adds explicit File Reader file-input
+and text-output routing to downstream/Vault using the existing Reader node.
+Its explicit terminal-node direction supersedes the older optional completion
+checkbox policy for this follow-up; old-save migration must be settled first.
 
 ## Policy
 

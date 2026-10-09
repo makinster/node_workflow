@@ -125,6 +125,9 @@ class AttackOfTheNodesApp(TextualApp):
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
         from frontend.widgets.command_input import CommandInput, CommandTextArea
         if action == "back":
+            if isinstance(self.screen, ErrorDetailsScreen):
+                # Let the modal dismiss itself so its recovery callback runs.
+                return False
             focused = self.focused
             if isinstance(focused, (CommandInput, CommandTextArea)) and getattr(focused, "editing", False):
                 return False

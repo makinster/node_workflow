@@ -6,6 +6,7 @@ async execute(context). The supervisor supplies NodeContext during execution.
 """
 
 from abc import ABC, abstractmethod
+from copy import deepcopy
 from dataclasses import dataclass
 from typing import (
     TYPE_CHECKING,
@@ -84,6 +85,7 @@ class Node(ABC):
 
     input_ports: ClassVar[List[str]] = []
     output_ports: ClassVar[List[str]] = ["default"]
+    terminates_branch: ClassVar[bool] = False
     # Per-port I/O contract metadata. Each entry may carry `name`, `description`,
     # `data_type` (from backend.data_types; absent ⇒ `any`), and `required`
     # (absent ⇒ optional/False). NodeFactory fills the defaults on exposure;
@@ -141,7 +143,7 @@ class Node(ABC):
 
     def __init__(self, node_id: str, config: Optional[Dict[str, Any]] = None) -> None:
         self.node_id = node_id
-        self.config = dict(config) if config is not None else dict(self.default_config)
+        self.config = deepcopy(config if config is not None else self.default_config)
 
     @abstractmethod
     async def execute(self, context: NodeContext) -> None:

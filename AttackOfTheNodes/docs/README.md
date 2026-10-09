@@ -4,6 +4,8 @@ Current project and session rundown: [SESSION_SUMMARY.md](SESSION_SUMMARY.md).
 
 Current session integration: [SESSION_INTEGRATION_BUILD_PLAN.md](SESSION_INTEGRATION_BUILD_PLAN.md).
 Remaining configuration work: [CONFIG_UI_BUILD_PLAN.md](CONFIG_UI_BUILD_PLAN.md).
+Owner-requested payload, Vault and File I/O fixes:
+[PAYLOAD_FILE_IO_BUILD_PLAN.md](PAYLOAD_FILE_IO_BUILD_PLAN.md).
 
 **Start here.** README routes you to the right document for your task.
 `TASK_INDEX.md` gives the minimum reading set, likely files, and focused test
@@ -101,6 +103,7 @@ Read these before starting a new major project or moving/archiving docs.
 
 | File | What it contains | When to open it |
 |---|---|---|
+| `PAYLOAD_FILE_IO_BUILD_PLAN.md` | Current payload previews, typed source choices, Start/Text Output Vault behavior, multi-file Viewer, Writer modes, explicit termination and Merge branch fixes; staged agent ownership and verification | Before implementing the owner's 2026-10-07 payload/File I/O requests |
 | `PROJECT_BACKLOG.md` | Deferred and near-term projects with full design specs, including backend features not yet surfaced in the UI, boundary cleanup, tombstone restore, runtime resources, typed vault, toast system, and AI sessions | Before starting any work listed here — it may already be designed; check before re-designing |
 | `TASK_INDEX.md` | Task-first reading lists, likely files per task, focused `pytest -k` commands, helper tool commands | After choosing a task type — the minimum reading set and the right verification pattern |
 | `DOCS_MIGRATION_NOTES.md` | Record of documentation moves, collapses, and archives during overhauls | When moving, merging, archiving, or deleting a doc — log it here |

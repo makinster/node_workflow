@@ -16,6 +16,7 @@ class ConcatNode(Node):
     category: ClassVar[str] = NodeCategory.DATA
     input_ports: ClassVar[List[str]] = ["input"]
     output_ports: ClassVar[List[str]] = ["default"]
+    output_port_metadata = {"default": {"name": "Text", "data_type": "string"}}
     default_config: ClassVar[Dict[str, Any]] = {
         "template": "{input}",
     }

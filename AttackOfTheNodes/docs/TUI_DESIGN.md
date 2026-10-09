@@ -288,6 +288,16 @@ the explicit revert-to-edit-start command. Large `CommandTextArea` fields keep
 Tab inside the text area for content/indentation editing and use Esc or
 Ctrl+Enter to leave edit mode while preserving text.
 
+Generated multiline/code editors default to six rows, including their borders,
+unless the schema specifies `height`. A fixed default keeps the text and cursor
+visible inside auto-height forms, even when the configured value is empty.
+
+Error Details uses shared command navigation with vertically arranged recovery
+buttons: W/S or up/down move, E/Enter choose, and Esc/Q/Ctrl+Q close. Its scroll
+container reveals focused buttons after layout, including below long tracebacks.
+Validation jump buttons follow the same rules. App-level Back yields to this
+modal so dismissal runs its callback and clears the pending-error flag.
+
 Payload previews come in two shapes (2026-07-07). Standard-model nodes show an
 auto-revealed `Incoming Payload` block at the top of the Source tab —
 `Node source: <producer> node`, `Payload: <name> (<type>)`, `Payload desc:`

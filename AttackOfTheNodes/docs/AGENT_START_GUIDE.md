@@ -205,6 +205,11 @@ config_tabs:
   out to the File menu.
 - Keep picker code frontend-only. Backend save/import/export services should
   accept paths and should not know how the user selected them.
+- File Reader, File Writer, and File Viewer normalize local paths at execution
+  and configured-path validation using `backend/file_paths.py`. Windows
+  Copy as path quotes are removed and absolute Windows paths are translated
+  with `wslpath` under WSL. Writer/Viewer also normalize upstream/Vault paths.
+  Configured paths are used only when that input's source is Configured.
 - Use `AttackOfTheNodes/frontend/file_io.py` for:
   - `pick_open_file(...)`
   - `pick_save_file(...)`

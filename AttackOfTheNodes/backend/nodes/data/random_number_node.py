@@ -21,7 +21,7 @@ class RandomNumberNode(Node):
     input_ports: ClassVar[List[str]] = ['input']
     output_ports: ClassVar[List[str]] = ['default']
     input_port_metadata: ClassVar[Dict[str, Dict[str, str]]] = {}
-    output_port_metadata: ClassVar[Dict[str, Dict[str, str]]] = {}
+    output_port_metadata: ClassVar[Dict[str, Dict[str, str]]] = {"default": {"name": "Number", "data_type": "number"}}
     default_config: ClassVar[Dict[str, Any]] = {'mode': 'integer', 'min_value': 0, 'max_value': 100, 'seed': '', 'value': ''}
     config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {'mode': {'type': 'select', 'label': 'Mode', 'options': ['integer', 'float'], 'tab': 'Parameters'}, 'min_value': {'type': 'float', 'label': 'Minimum value', 'required': False, 'tab': 'Parameters'}, 'max_value': {'type': 'float', 'label': 'Maximum value', 'required': False, 'tab': 'Parameters'}, 'seed': {'type': 'string', 'label': 'Random seed (blank = unseeded)', 'required': False, 'tab': 'Parameters'}, 'value': {'type': 'string', 'label': 'Payload', 'required': False}}
     ui_hints: ClassVar[Dict[str, Any]] = {}

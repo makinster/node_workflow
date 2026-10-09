@@ -15,7 +15,7 @@ of three states:
 This module is backend-only and Textual-agnostic. The editor / FA-7 visual
 pass consumes the returned data to colour branch rows without re-deriving the
 structure. Build the output-node-type set from factory metadata with
-``output_types_from_factory`` so the policy tracks the node taxonomy.
+``output_types_from_factory`` so the policy tracks explicit stops and output endpoints.
 """
 
 from __future__ import annotations
@@ -52,9 +52,8 @@ class BranchHealth:
 def output_types_from_factory(factory: Any) -> Set[str]:
     """Collect node types that are valid output/end termini from metadata.
 
-    A type qualifies when it is the explicit ``end_node`` or its primary
-    family/category is ``Outputs``. Always returns a set safe to pass as
-    ``output_node_types``.
+    Explicit stops and unconnected Text Output nodes are valid endpoints.
+    Connected Text Output nodes are traversed; file outputs also continue.
     """
     types: Set[str] = {END_NODE_TYPE}
     try:
@@ -65,8 +64,7 @@ def output_types_from_factory(factory: Any) -> Set[str]:
         node_type = meta.get("type")
         if not node_type:
             continue
-        family = (meta.get("primary_family") or meta.get("category") or "").strip()
-        if family.lower() == "outputs":
+        if meta.get("terminates_branch"):
             types.add(node_type)
     # text_output_node predates the Outputs family tag in some builds.
     types |= DEFAULT_OUTPUT_NODE_TYPES
@@ -147,7 +145,9 @@ def _classify_branch(
             return BranchHealth(
                 branch_node_id, port, ENDED_UNMERGED, current_id, "beacon_unmerged"
             )
-        if node_type in outputs:
+        if node_type in outputs and not (
+            node_type == "text_output_node" and _outgoing_edges(node)
+        ):
             return BranchHealth(branch_node_id, port, VALID, current_id, "output_end")
         if node_type == BRANCH_NODE_TYPE:
             # A nested split leads onward to structured sub-branches, which are

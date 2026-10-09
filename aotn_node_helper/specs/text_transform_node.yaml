@@ -11,6 +11,10 @@ default_alias: Text Transform
 description: Apply a text transformation (case, strip, reverse, markdown format) to the input string
 input_ports: ["input"]
 output_ports: ["default"]
+output_port_metadata:
+  default:
+    name: Text
+    data_type: string
 config_tabs:
   Parameters:
     operation:

@@ -348,6 +348,7 @@ def test_editor_validate_passes_secrets_manager(tmp_path):
         wm.connect(start_id, "default", node_id, "prompt")
         config = dict(wm.get_node_data(node_id).get("config") or {})
         config["api_key_secret"] = "unstored_key"
+        config["vault_write"] = False
         wm.update_node_config(node_id, config)
         return wm
 

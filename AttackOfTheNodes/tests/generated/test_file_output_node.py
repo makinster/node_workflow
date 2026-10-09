@@ -254,7 +254,7 @@ async def test_dead_drop_forwards_incoming_content(tmp_path):
     assert done[0]["data"]["default"] == "payload travels on"
 
 
-async def test_terminate_branch_flag_rides_the_done_payload(tmp_path):
+async def test_legacy_terminate_branch_flag_does_not_stop_file_continuation(tmp_path):
     node = _make_node(
         {"file_path": str(tmp_path / "last.txt"), "terminate_branch": True}
     )
@@ -265,7 +265,7 @@ async def test_terminate_branch_flag_rides_the_done_payload(tmp_path):
     await node.execute(context)
 
     assert not errors
-    assert done[0].get("terminate_branch") is True
+    assert not done[0].get("terminate_branch")
 
 
 async def test_upstream_file_reference_resolves_to_its_path(tmp_path):

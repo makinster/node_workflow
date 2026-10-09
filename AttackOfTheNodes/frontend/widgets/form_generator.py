@@ -4,11 +4,14 @@ from __future__ import annotations
 
 from collections import OrderedDict
 import re
+import uuid
 from typing import Any, Callable, Dict, Iterable, List, Tuple
 
 from textual.containers import Horizontal, Vertical
+from textual.message import Message
 from textual.validation import Integer, Length, Number, Validator
 from textual.widgets import (
+    Button,
     Checkbox,
     Input,
     Label,
@@ -33,6 +36,56 @@ FIELD_RULE_KEYS = {
     "section_when",
     "force_value_when",
 }
+
+
+class ObjectListField(Vertical):
+    """Reusable ordered rows rendered from an item schema, with stable ids."""
+    class Changed(Message):
+        """Rows were added or removed."""
+
+    DEFAULT_CSS = "ObjectListField, ObjectListField > Vertical { height: auto; }"
+
+    def __init__(self, value, item_schema, **kwargs):
+        super().__init__(**kwargs)
+        self.item_schema = item_schema
+        self.initial_rows = value if isinstance(value, list) else []
+        self.rows = []
+
+    def compose(self):
+        for row in self.initial_rows:
+            if isinstance(row, dict):
+                yield self._row(row)
+        yield Button("Add file", id=f"{self.id}-add")
+
+    def _row(self, value):
+        values = dict(value)
+        values.setdefault("id", uuid.uuid4().hex)
+        schema = {key: field for key, field in self.item_schema.items() if key != "id"}
+        # Each nested form gets distinct widget ids via field prefixes.
+        prefix = f"row-{uuid.uuid4().hex}-"
+        form, getter = build_form({prefix+k: v for k,v in schema.items()}, {prefix+k:v for k,v in values.items()})
+        remove = Button("Remove file")
+        container = Vertical(form, remove)
+        self.rows.append((container, remove, getter, prefix, values["id"]))
+        return container
+
+    async def on_button_pressed(self, event):
+        if event.button.id == f"{self.id}-add":
+            event.stop()
+            await self.mount(self._row({}), before=event.button)
+            self.post_message(self.Changed())
+            return
+        for row in list(self.rows):
+            if event.button is row[1]:
+                event.stop()
+                self.rows.remove(row)
+                await row[0].remove()
+                self.post_message(self.Changed())
+                return
+
+    @property
+    def value(self):
+        return [{"id": row_id, **{key.removeprefix(prefix): value for key, value in getter().items()}} for _, _, getter, prefix, row_id in self.rows]
 
 
 def build_form(
@@ -150,7 +203,7 @@ def _is_inline_field(field_type: str, field_schema: Dict[str, Any]) -> bool:
     Single-line inputs render inline; dropdowns use their own line; only tall widgets (multiline/code editors, multi-select
     lists) and self-labeled checkboxes get a label line of their own.
     """
-    return field_type not in {"multiline", "code", "boolean", "multiselect"}
+    return field_type not in {"multiline", "code", "boolean", "multiselect", "object_list"}
 
 
 def _append_section_label(
@@ -259,6 +312,8 @@ def _widget_for_field(
     secret_key_options: list[tuple[str, str]] | None = None,
     vault_keys_by_type: Dict[str, List[Tuple[str, str]]] | None = None,
 ):
+    if field_type == "object_list":
+        return ObjectListField(value, field_schema.get("item_schema") or {}, id=f"field-{field_name}")
     placeholder = str(field_schema.get("placeholder", ""))
     if field_schema.get("secret") and secret_key_options is not None:
         options = list(secret_key_options)
@@ -287,7 +342,7 @@ def _widget_for_field(
         )
     if field_schema.get("options") and field_type not in {"multiselect", "boolean"}:
         return Select(
-            _select_options(field_schema.get("options", [])),
+            [(f"{label} (unavailable)" if item in field_schema.get("unavailable_options", []) else label, item) for label, item in _select_options(field_schema.get("options", []))],
             value=value if value not in (None, "") else Select.NULL,
             id=f"field-{field_name}",
             allow_blank=False,
@@ -299,7 +354,9 @@ def _widget_for_field(
             placeholder=placeholder,
             language=field_schema.get("language") if field_type == "code" else None,
         )
-        height = field_schema.get("height")
+        # TextArea's flexible default collapses to its borders inside an
+        # auto-height generated form, leaving no visible text/cursor rows.
+        height = field_schema.get("height", 6)
         if height is not None:
             try:
                 widget.styles.height = max(1, int(height))
@@ -310,7 +367,7 @@ def _widget_for_field(
         return Checkbox(value=bool(value), id=f"field-{field_name}")
     if field_type == "select":
         return Select(
-            _select_options(field_schema.get("options", [])),
+            [(f"{label} (unavailable)" if item in field_schema.get("unavailable_options", []) else label, item) for label, item in _select_options(field_schema.get("options", []))],
             value=value if value not in (None, "") else Select.NULL,
             id=f"field-{field_name}",
             allow_blank=False,
@@ -544,6 +601,8 @@ def _set_label_required(
 
 
 def _value_from_widget(widget, field_type: str) -> Any:
+    if isinstance(widget, ObjectListField):
+        return widget.value
     if isinstance(widget, Input):
         if field_type == "integer":
             try:

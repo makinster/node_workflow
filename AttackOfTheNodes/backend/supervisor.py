@@ -462,13 +462,14 @@ class Supervisor:
     def _handle_payload(self, payload: Dict[str, Any]) -> Optional[str]:
         """Write outputs, spawn branches, and determine next node."""
         data = payload.get("data", {})
-        if payload.get("terminate_branch"):
-            return None
         if data:
             for port_name, value in data.items():
                 self._memory_bank.store_transient(
                     self.current_node_id or "", port_name, value
                 )
+
+        if payload.get("terminate_branch"):
+            return None
 
         branches = payload.get("branches")
         if branches:

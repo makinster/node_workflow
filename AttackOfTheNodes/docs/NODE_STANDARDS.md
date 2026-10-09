@@ -123,32 +123,52 @@ optionally duplicated to the Vault, so it appears in both sections.
 
 The old per-output `Transient output` / `Save to Vault` checkboxes are retired.
 Config keys the composer reads/writes: `dead_drop_passthrough` (the checkbox),
-`transient_output` (derived `= not dead_drop`), `transient_outputs` (downstream
+`transient_output` (own-result publication; forwarded payloads still flow), `transient_outputs` (downstream
 name/description overrides), and `vault_write` / `vault_write_key` /
-`vault_write_description` (the vault output; enabled unless disabled). Multiple
-vault outputs on one node is a documented future extension — the single
-`vault_write*` keys cover the current one-vault-output nodes.
+`vault_write_description` (the vault output; enabled unless disabled). The single `vault_write*` keys describe the primary result. File Manager adds
+explicit keyed `additional_files` rows; nonselected files require Vault keys.
+Start and File Reader expose independent downstream publication, including
+Vault-only text results.
+
+File Manager emits the viewed file's typed reference as its default downstream
+payload. Forward incoming payload unchanged replaces only that downstream
+payload. Its optional Vault output always stores the viewed file reference,
+independent of forwarding, for later nodes and parallel branches in the run.
+
+File references identify files, not successive versions. File Writer reuses an
+upstream/Vault reference (including its resource key) when Overwrite or Append
+targets that same file. Create unique emits a different reference when it
+creates another file. Additional Vault keys are names for the same reference.
+File output forms explain this and label payload-name overrides Display name;
+these overrides do not change file identity. File Writer's forwarding checkbox
+names the connected input: Content takes precedence when both inputs are wired,
+otherwise File Path carries the unchanged incoming payload. Configured/Vault
+content and path choices do not change which connected payload is forwarded.
+
+When inserting nodes, the editor prefers a unique exact input type match over
+an `any` input (e.g. File Manager reference → File Writer File Path). Ambiguous
+or unknown types retain the first-input convention. Config Save can reassign
+an inactive input connection to a unique matching, unconnected Upstream input;
+active connections and Configured/Vault destination choices are preserved.
 
 Whenever a payload's data **name** appears in the UI (incoming or outgoing),
 its data **type** is shown after it as a bracketed teal label —
 `Result  [string]`.
 
-### Branch Termination (output nodes)
+### Branch termination
 
-Every output node carries a standard config option:
+Termination is explicit node behavior, declared by `terminates_branch` metadata,
+not a generic Outputs-family checkbox. End explicitly terminates. Text Output
+records formatted text and continues when connected; without a connection it
+ends naturally. File Manager, File Reader, File Writer and Window Control
+continue along connections.
+Merge Beacon participates in the Merge rendezvous; internal supervisor
+termination signals remain part of merge/recovery execution.
 
-```
-[ ] Terminate branch after completion
-```
-
-Default off. When enabled, the branch ends after the node completes — no
-downstream connection is expected and the supervisor treats the path as
-finished. This replaces the legacy standalone End node: branches end through
-outputs (with this option), through merges, or through the silent **End
-Branch** flow-control node for paths that intentionally discard a route.
-
-Node authors: include this option on every Outputs-family node. It belongs in
-the Payloads tab below the routing controls.
+Old File Manager/Writer completion flags are archived by
+`file_io_continuation_v1` migration and no longer affect execution. Use a
+terminal node to end such a route. New node specs must not add the retired
+optional completion checkbox.
 
 ### Emitting Output in Code
 
@@ -392,6 +412,11 @@ Document / context source:  [ Upstream payload ▼ ]
   warning covers that case). Source options that would reveal an empty
   dropdown (`Vault`, `Continue AI session`) are pruned from the selector
   entirely.
+- Deleted nodes (including saved tombstones) do not supply selectable Vault
+  keys. A shared key stays available when another eligible writer remains.
+  File references left in memory without a current workflow writer are hidden;
+  deleting a node does not erase Vault data needed for undo. Existing saved
+  selections remain visible as unavailable declarations so they can be repaired.
 - The old "Reveal upstream payload" / "Reveal Vault payload" checkboxes and
   the standalone Vault selection list are retired for standard-model nodes;
   the incoming payload block is always visible when something is connected.
@@ -622,3 +647,16 @@ config UI comes for free):
 - [ ] Write `execute()` to read `<port>_source` / `<port>_vault_key` /
       `<port>` and route per `dead_drop_passthrough` and `vault_write` +
       `vault_write_key` (reference: `backend/nodes/chat_completion_node.py`).
+
+### Routing previews (2026-10-08)
+
+Start configures its greeting only in Parameters. Payloads displays a read-only
+preview from `ui_hints.output_value_fields` and routing controls; legacy display
+name overrides do not replace that value. This leaves room for future Start
+parameters without duplicating value editors in the routing tab.
+
+Text Output deliberately accepts `any` and formats it as text. A file reference
+is printed as a reference, not dereferenced; use File Reader to obtain file
+contents. Payloads shows source, label/template, a captured-value preview when
+available, and connection-dependent continuation. No value is invented before
+execution. End remains the explicit stop node.

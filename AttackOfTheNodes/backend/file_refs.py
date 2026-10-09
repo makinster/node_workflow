@@ -31,12 +31,11 @@ def is_file_reference(value: Any) -> bool:
 def reference_path(value: Any) -> str:
     """Extract a filesystem path from a file reference or raw path value.
 
-    Accepts a `file` reference dict (returns its `path`) or any raw value
-    (stringified). Returns "" for None/empty input.
+    Accepts a `file` reference dict (returns its `path`) or a raw path string. Returns "" for None/empty input.
     """
     if is_file_reference(value):
         value = value.get("path")
-    return str(value or "").strip()
+    return value.strip() if isinstance(value, str) else ""
 
 
 def reference_key(value: Any) -> str:

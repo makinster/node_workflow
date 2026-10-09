@@ -6,12 +6,14 @@ from typing import Any, Dict
 
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Horizontal, Vertical
+from textual.containers import VerticalScroll
 from textual.screen import ModalScreen
 from textual.widgets import Button, Label, Static
 
+from frontend.widgets.command_screen_mixin import CommandScreenMixin
 
-class ErrorDetailsScreen(ModalScreen):
+
+class ErrorDetailsScreen(CommandScreenMixin, ModalScreen):
     """Show structured errors and recovery choices."""
 
     BINDINGS = [
@@ -30,13 +32,20 @@ class ErrorDetailsScreen(ModalScreen):
             return
 
         options = self.payload.get("options", [])
-        with Vertical(id="modal-card"):
+        with VerticalScroll(id="modal-card"):
             yield Label("Error Details", classes="modal-title")
             yield Static(self._format_error(), id="error-details")
-            with Horizontal(classes="button-row"):
-                for option in options:
-                    yield Button(option, id=f"recovery-{option}", variant="default")
-                yield Button("Close", id="close-error", variant="default")
+            yield Label("W/S or arrows: move · E/Enter: select · Esc: close", classes="modal-help")
+            for option in options:
+                yield Button(option.replace("_", " ").title(), id=f"recovery-{option}", variant="default")
+            yield Button("Close", id="close-error", variant="default")
+
+    def on_mount(self) -> None:
+        # Long tracebacks need layout before the first button can be revealed.
+        self.call_after_refresh(self._focus_first)
+
+    def _scroll_container(self) -> VerticalScroll:
+        return self.query_one("#modal-card", VerticalScroll)
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         button_id = str(event.button.id or "")
@@ -75,7 +84,7 @@ class ErrorDetailsScreen(ModalScreen):
         errors = validation.get("errors", [])
         warnings = validation.get("warnings", [])
         self.payload["_jump_targets"] = {}
-        with Vertical(id="modal-card"):
+        with VerticalScroll(id="modal-card"):
             yield Label("Validation Details", classes="modal-title")
             if not errors and not warnings:
                 yield Static("Workflow is valid.", classes="validation-card")
@@ -98,8 +107,7 @@ class ErrorDetailsScreen(ModalScreen):
                         button_id = f"jump-validation-{label.lower()}-{index}"
                         self.payload["_jump_targets"][button_id] = node_id
                         yield Button("Jump to node", id=button_id, variant="default")
-            with Horizontal(classes="button-row"):
-                yield Button("Close", id="close-error", variant="default")
+            yield Button("Close", id="close-error", variant="default")
 
     def _validation_type(self, message: str) -> str:
         text = message.lower()

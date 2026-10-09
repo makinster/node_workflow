@@ -14,7 +14,9 @@ from textual.events import Key
 from textual.screen import ModalScreen
 from textual.widgets import Button, Checkbox, Input, Label, Select, SelectionList, Static, TabbedContent, TabPane, TextArea
 
+from backend.vault_declarations import standard_vault_writes
 from frontend import notifications
+from frontend.editor_workflow_adapter import EditorWorkflowAdapter
 from frontend.io_contract import TYPE_COLOR
 from frontend.node_types import (
     BRANCH_END_NODE_TYPE,
@@ -27,6 +29,7 @@ from frontend.node_types import (
 from frontend.node_io_display import (
     OUTPUT_NOT_CONFIGURED,
     metadata_for_type,
+    memory_registry,
     normalize_membank_inputs,
     normalize_membank_outputs,
     node_display_name,
@@ -58,6 +61,8 @@ from frontend.widgets.form_generator import (
 )
 from frontend.widgets.status_bar import StatusBar
 
+
+_MISSING_PAYLOAD = object()
 
 MAX_MEMBANK_OUTPUT_ROWS = 5
 BRANCH_PORTS = ["path_a", "path_b", "path_c", "path_d", "path_e"]
@@ -92,21 +97,7 @@ def _branch_count_from_config(config: Dict[str, Any]) -> int:
 
 def build_membank_registry(workflow_map) -> Dict[str, Dict[str, Any]]:
     """Scan workflow nodes for declared membank outputs."""
-    registry: Dict[str, Dict[str, Any]] = {}
-    for node_id, node in workflow_map.get_all_node_data().items():
-        for output in normalize_membank_outputs(node.get("config") or {}):
-            entry = registry.setdefault(
-                output["id"],
-                {
-                    "id": output["id"],
-                    "description": output["description"],
-                    "writers": [],
-                },
-            )
-            if output["description"] and not entry.get("description"):
-                entry["description"] = output["description"]
-            entry["writers"].append(node_id)
-    return registry
+    return memory_registry(workflow_map)
 
 
 def membank_input_options(workflow_map, current_node_id: str) -> list[tuple[str, str]]:
@@ -459,6 +450,23 @@ def _available_merge_input_port(
     return preferred
 
 
+def selected_merge_ports(workflow_map, node_id, options, selected):
+    """Allocate the finite input capacity only to branches actually selected."""
+    used = _reserved_merge_input_ports(workflow_map, node_id)
+    assignments = {}
+    for option in options:
+        key = f"{option['branch_id']}:{option['branch_port']}"
+        if key not in selected:
+            continue
+        preferred = option.get("port")
+        port = preferred if preferred in BRANCH_PORTS and preferred not in used else next((port for port in BRANCH_PORTS if port not in used), None)
+        if port is None:
+            raise ValueError(f"Merge has capacity for {len(BRANCH_PORTS) - len(_reserved_merge_input_ports(workflow_map, node_id))} closing branches; reduce the selection.")
+        assignments[key] = port
+        used.add(port)
+    return assignments
+
+
 def _reserved_merge_input_ports(workflow_map, merge_node_id: str) -> set[str]:
     merge_node = workflow_map.get_node_data(merge_node_id) or {}
     reserved: set[str] = set()
@@ -562,6 +570,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         node_data: Dict[str, Any],
         memory_bank=None,
         secrets_manager=None,
+        workflow_adapter=None,
     ) -> None:
         super().__init__()
         self.factory = factory
@@ -570,6 +579,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         self.node_data = node_data
         self.memory_bank = memory_bank
         self.secrets_manager = secrets_manager
+        self.workflow_adapter = workflow_adapter or EditorWorkflowAdapter(workflow_map, factory)
         self._get_form_values: Optional[WidgetGetter] = None
         self._nav_widget: Any = None
         self._initial_membank_outputs = normalize_membank_outputs(
@@ -900,6 +910,13 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         schema: Dict[str, Dict[str, Any]],
         values: Dict[str, Any],
     ) -> tuple[Dict[str, Any], WidgetGetter]:
+        schema = {key: dict(field) for key, field in schema.items()}
+        for field in schema.values():
+            source = field.get("options_from")
+            if source:
+                options = list(field.get("options_include") or [])
+                options.extend((str(row.get("path") or row.get("id")), row["id"]) for row in values.get(source, []) if isinstance(row, dict) and row.get("id"))
+                field["options"] = options
         vault_keys_by_type = self._vault_key_options(schema)
         schema = self._prune_unavailable_source_options(
             schema, vault_keys_by_type, values
@@ -907,7 +924,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         self._generated_config_schema = schema
         self._source_select_base_options = {
             field_name: [
-                (str(option), option) for option in field_schema.get("options", [])
+                (f"{option} (unavailable)" if option in field_schema.get("unavailable_options", []) else str(option), option) for option in field_schema.get("options", [])
             ]
             for field_name, field_schema in schema.items()
             if field_name.endswith("_source") and field_schema.get("type") == "select"
@@ -957,6 +974,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         writers, so wiring works before the first run. Compatibility: exact
         tag match always; untagged (legacy) entries also satisfy ``string``;
         ``any`` accepts everything. Labels render as ``key [type]``.
+        Persisted file entries require a current workflow declaration. Deleted
+        declarations are retained for filtering, with no active writer ids.
         """
         tags = sorted(
             {
@@ -997,6 +1016,10 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 state = self.memory_bank.get_state()
                 entry_tags = state.get("persistent_type_tags") or {}
                 for key in state.get("persistent") or {}:
+                    # File references are run outputs: a leftover value alone
+                    # does not make a removed producer available in this graph.
+                    if entry_tags.get(key) == "file" and str(key) not in declared:
+                        continue
                     if eligible(str(key)):
                         candidates[str(key)] = str(entry_tags.get(key) or "")
             except Exception:
@@ -1031,6 +1054,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         result routing (``vault_write_key`` — tagged with the writer's default
         output type), and AI session keys (``ai_session``). Writer node ids
         power the same-branch eligibility filter in ``_vault_key_options``.
+        Deleted nodes retain keys but contribute no writer ids, including
+        when their original configuration lives inside a saved tombstone.
         """
         declared: Dict[str, Dict[str, Any]] = {}
 
@@ -1041,25 +1066,27 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             if writer_id:
                 entry["writers"].add(str(writer_id))
 
-        for output_id, registry_entry in build_membank_registry(self.workflow_map).items():
-            for writer in registry_entry.get("writers") or []:
-                add(str(output_id), "", str(writer))
         try:
             all_nodes = self.workflow_map.get_all_node_data()
         except Exception:
             return declared
         for node_id, node_data in all_nodes.items():
-            config = node_data.get("config") or {}
-            if config.get("vault_write"):
-                key = str(config.get("vault_write_key") or "").strip()
-                if key:
-                    meta = self._metadata_for_type(node_data.get("type", "")) or {}
-                    out_meta = (meta.get("output_port_metadata") or {}).get("default") or {}
-                    add(key, str(out_meta.get("data_type") or ""), str(node_id))
-            if config.get("use_chat_session"):
-                session_key = str(config.get("session_key") or "").strip()
-                if session_key:
-                    add(session_key, "ai_session", str(node_id))
+            deleted = self.workflow_adapter.is_placeholder(node_id)
+            if deleted:
+                original = self.workflow_adapter.placeholder_metadata(node_id)
+                config = original.get("original_config") or {}
+                node_type = original.get("original_type", "")
+            else:
+                config = node_data.get("config") or {}
+                node_type = node_data.get("type", "")
+            # Keep deleted declarations with no eligible writer. Otherwise a
+            # persisted value would be mistaken for an external Vault entry.
+            writer_id = "" if deleted else str(node_id)
+            for output in normalize_membank_outputs(config):
+                add(str(output["id"]), "", writer_id)
+            meta = self._metadata_for_type(node_type) or {}
+            for key, tag in standard_vault_writes(node_type, config, meta).items():
+                add(key, tag or "", writer_id)
         return declared
 
     def _prune_unavailable_source_options(
@@ -1075,9 +1102,27 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         compatible vault keys) is dropped from the selector. A saved value is
         kept selectable so existing configs still display faithfully.
         """
-        if vault_keys_by_type is None:
-            return schema
+        vault_keys_by_type = vault_keys_by_type or {}
         removals: Dict[str, set] = {}
+        metadata = self._metadata_for_type(self.node_data.get("type", "")) or {}
+        ports = metadata.get("input_port_metadata") or {}
+        connections = self.node_data.get("connections", {}).get("inputs", [])
+        for port, info in ports.items():
+            field = f"{port}_source"
+            if field not in schema:
+                continue
+            connection = next((conn for conn in connections if conn.get("target_port") == port), None)
+            actual = "any"
+            publishes = True
+            if connection:
+                source_node = self.workflow_map.get_node_data(connection.get("source_node_id", "")) or {}
+                source_config = source_node.get("config") or {}
+                publishes = source_config.get("transient_output", True) is not False or bool(source_config.get("dead_drop_passthrough"))
+                producer = trace_transient_producer(self.workflow_map, self.factory, connection.get("source_node_id", ""), connection.get("source_port", "default"))
+                actual = producer.get("data_type", "any")
+            wanted = info.get("data_type", "any")
+            if not connection or not publishes or (wanted != "any" and actual != "any" and actual != wanted):
+                removals.setdefault(field, set()).add("Upstream payload")
         for field_schema in schema.values():
             if not isinstance(field_schema, dict) or not field_schema.get("vault_type"):
                 continue
@@ -1101,8 +1146,11 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 if option not in gone
             ]
             current = values.get(select_name, select_schema.get("default"))
-            if current in gone and current not in options:
+            if select_name in values and current in gone and current not in options:
                 options.append(current)
+                select_schema["unavailable_options"] = [current]
+            if select_schema.get("default") not in options and options:
+                select_schema["default"] = options[0]
             select_schema["options"] = options
             adjusted[select_name] = select_schema
         return adjusted
@@ -1283,7 +1331,31 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             self._sync_duplicate_input_source_options()
         self._scroll_changed_widget(event.select)
 
+    def on_object_list_field_changed(self, event):
+        self._sync_dynamic_options()
+
+    def _sync_dynamic_options(self):
+        if self._get_form_values is None:
+            return
+        values = self._get_form_values()
+        for name, field in self._generated_config_schema.items():
+            source = field.get("options_from")
+            if not source:
+                continue
+            query = self.query(f"#field-{name}")
+            if not query or not isinstance(query.first(), Select):
+                continue
+            options = list(field.get("options_include") or [])
+            options.extend((str(row.get("path") or row.get("id")), row["id"]) for row in values.get(source, []) if isinstance(row, dict) and row.get("id"))
+            widget = query.first()
+            current = widget.value
+            if current not in {value for _, value in options} and current not in (None, "", Select.NULL):
+                options.append((f"{current} (unavailable)", current))
+            self._set_select_options_preserving_value(widget, options, current)
+
     def _apply_generated_field_rules(self) -> None:
+        self._sync_dynamic_options()
+        self._sync_routing_previews()
         if not self._rule_schema or self._get_form_values is None:
             return
         # force_value_when may set a widget value, which re-fires Select.Changed
@@ -1614,7 +1686,11 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         config.update(self._standard_payload_config_values())
         config.update(self._wait_config_values())
         config.update(self._branch_config_values())
-        config.update(self._merge_config_values())
+        try:
+            config.update(self._merge_config_values())
+        except ValueError as error:
+            notifications.notify_error(self.app, str(error))
+            return
         self.dismiss({"alias": alias, "config": config})
 
     def action_cancel(self) -> None:
@@ -2014,9 +2090,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         return enhanced
 
     def _supports_membank_outputs(self, metadata: Optional[Dict[str, Any]]) -> bool:
-        if metadata is None:
-            return True
-        return len(metadata.get("output_ports") or []) <= 1
+        return bool((metadata or {}).get("ui_hints", {}).get("legacy_vault_outputs"))
 
     def _uses_standard_source_model(self, metadata: Optional[Dict[str, Any]]) -> bool:
         """True when any input port declares the standard source model.
@@ -2029,7 +2103,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         if metadata is None:
             return False
         port_meta = metadata.get("input_port_metadata") or {}
-        return any(
+        return bool((metadata.get("ui_hints") or {}).get("standard_output")) or any(
             (port_meta.get(str(port)) or {}).get("sources")
             for port in metadata.get("input_ports") or []
         )
@@ -2073,7 +2147,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             producer_out = (producer_meta.get("output_port_metadata") or {}).get(
                 str(producer.get("port") or "")
             ) or {}
-            data_type = str(producer_out.get("data_type") or "any")
+            data_type = str(producer.get("data_type") or producer_out.get("data_type") or "any")
 
             lines = []
             if len(inputs) > 1:
@@ -2084,9 +2158,9 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 lines.append(f"Payload desc: {description}")
             if self.memory_bank is not None:
                 value = self.memory_bank.read_transient(
-                    source_id, source_port, default=None
+                    source_id, source_port, default=_MISSING_PAYLOAD
                 )
-                if value is not None:
+                if value is not _MISSING_PAYLOAD:
                     lines.append(f"Value: {self._short_value_text(value)}")
             # Read-only summary: plain Static so keyboard navigation skips it.
             yield Static(
@@ -2129,7 +2203,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         dead_drop = bool(dead_drop_query.first().value) if dead_drop_query else False
         values: Dict[str, Any] = {
             "dead_drop_passthrough": dead_drop,
-            "transient_output": not dead_drop,
+            "transient_output": bool(self.query_one("#publish-downstream", Checkbox).value) if self.query("#publish-downstream") else not dead_drop,
         }
         # A single vault output maps to the vault_write* keys the backend and
         # validator read; the first vault port wins (multi-vault is a future
@@ -2148,6 +2222,43 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             )
             break
         return values
+
+    def _sync_routing_previews(self) -> None:
+        metadata = self._metadata_for_type(self.node_data.get("type", "")) or {}
+        hints = metadata.get("ui_hints") or {}
+        values = dict(self.node_data.get("config") or {})
+        if self._get_form_values:
+            values.update(self._get_form_values())
+        for port, field in (hints.get("output_value_fields") or {}).items():
+            for widget in self.query(f"#configured-output-preview-{port}"):
+                widget.update(f"Configured in Parameters: {self._short_value_text(values.get(field, ''))}\nEdit the value in Parameters; choose its destinations here.")
+        for widget in self.query("#formatted-output-preview"):
+            value = _MISSING_PAYLOAD
+            if values.get("input_source") == "Vault":
+                key = str(values.get("input_vault_key") or "")
+                source = f"Vault: {key or '(no key selected)'}"
+                if self.memory_bank is not None and key:
+                    value = self.memory_bank.read_persistent(key, default=_MISSING_PAYLOAD)
+            else:
+                source = "Upstream payload"
+                connection = next((c for c in self.node_data.get("connections", {}).get("inputs", []) if c.get("target_port") == "input"), None)
+                if connection and self.memory_bank is not None:
+                    value = self.memory_bank.read_transient(connection["source_node_id"], connection.get("source_port", "default"), default=_MISSING_PAYLOAD)
+            label = values.get("label", "Output")
+            template = values.get("template", "{input}")
+            lines = [f"Source: {source}", f"Output format: [{label}] {template}"]
+            if values.get("request_user_input"):
+                lines.append("The prompted user response replaces the selected input at execution.")
+            elif value is _MISSING_PAYLOAD:
+                lines.append("Preview available after the selected source produces a value.")
+            else:
+                try:
+                    lines.append("Preview (captured value): " + self._short_value_text(f"[{label}] {template.format(input=value)}"))
+                except (KeyError, IndexError, ValueError) as error:
+                    lines.append(f"Invalid template: {error}")
+            connected = bool(self.node_data.get("connections", {}).get("outputs"))
+            lines.append("Routing: " + ("Continues along its connection after recording output." if connected and not metadata.get("terminates_branch") else "Ends here after recording output."))
+            widget.update("\n".join(lines))
 
     def _short_value_text(self, value: Any) -> str:
         """One-line captured-value preview, truncated for the summary block."""
@@ -2205,8 +2316,24 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         """
         downstream_ports = self._downstream_output_ports(metadata)
         vault_ports = self._vault_output_ports(metadata)
+        port_meta = (metadata or {}).get("output_port_metadata") or {}
 
-        yield Label("Downstream node payload", classes="form-label nav-section")
+        hints = (metadata or {}).get("ui_hints") or {}
+        if hints.get("formatted_output_preview"):
+            yield Label("Output log", classes="form-label nav-section")
+            yield Static("Any selected payload is formatted as text. File references print as references; use File Reader for contents.", classes="form-description")
+            yield Static("", id="formatted-output-preview", classes="form-description", markup=False)
+        if downstream_ports:
+            yield Label("Downstream node payload", classes="form-label nav-section")
+        if any((port_meta.get(port) or {}).get("data_type") == "file"
+               for port in downstream_ports + vault_ports):
+            yield Static(
+                "The same file keeps the same reference. Display names and Vault keys "
+                "label that reference; they do not create copies or versions of the file. "
+                "Creating a different file produces a different reference.",
+                classes="form-description",
+                id="file-reference-output-note",
+            )
         for port in downstream_ports:
             name = output_display_name(self.factory, self.node_data, port)
             description = output_display_description(self.factory, self.node_data, port)
@@ -2215,8 +2342,14 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 classes="payload-header",
                 id=f"downstream-header-{port}",
             )
+            if hints.get("formatted_output_preview"):
+                continue
+            if port in (hints.get("output_value_fields") or {}):
+                yield Static("", id=f"configured-output-preview-{port}", classes="form-description", markup=False)
+                continue
             yield Horizontal(
-                Label("Payload name:", classes="form-label-inline"),
+                Label("Display name:" if (port_meta.get(port) or {}).get("data_type") == "file"
+                      else "Payload name:", classes="form-label-inline"),
                 CommandInput(value=name, id=f"transient-output-name-{port}"),
                 classes="form-inline-row",
                 id=f"downstream-name-row-{port}",
@@ -2232,14 +2365,21 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             )
         # The forwarding option renders only when a downstream port advertises
         # the dead-drop capability (`pass_through: true` in its metadata).
-        port_meta = (metadata or {}).get("output_port_metadata") or {}
         supports_forwarding = any(
             (port_meta.get(port) or {}).get("pass_through")
             for port in downstream_ports
         )
+        if downstream_ports and not supports_forwarding and vault_ports:
+            yield Checkbox("Publish downstream payload", value=bool(config.get("transient_output", True)), id="publish-downstream")
         if supports_forwarding:
+            forwarded_port = ((metadata or {}).get("ui_hints") or {}).get("forwarded_input_port")
+            if ((metadata or {}).get("ui_hints") or {}).get("forwarded_input_fallbacks"):
+                connected = {c.get("target_port") for c in self.node_data.get("connections", {}).get("inputs", [])}
+                forwarded_port = next((p for p in [forwarded_port] + (metadata["ui_hints"]["forwarded_input_fallbacks"]) if p in connected), None)
+            forwarded_name = (((metadata or {}).get("input_port_metadata") or {}).get(forwarded_port) or {}).get("name")
             yield Checkbox(
-                "Forward incoming payload unchanged",
+                f"Forward incoming {forwarded_name} payload unchanged" if forwarded_name
+                else "Forward incoming payload unchanged",
                 value=bool(config.get("dead_drop_passthrough")),
                 id="dead-drop-passthrough",
             )
@@ -2360,8 +2500,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         value = None
         has_value = False
         if self.memory_bank is not None:
-            value = self.memory_bank.read_transient(source_id, source_port, default=None)
-            has_value = value is not None
+            value = self.memory_bank.read_transient(source_id, source_port, default=_MISSING_PAYLOAD)
+            has_value = value is not _MISSING_PAYLOAD
         return self._payload_preview_text(
             source_label,
             payload_name,
@@ -2395,8 +2535,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             value = None
             has_value = False
             if self.memory_bank is not None:
-                value = self.memory_bank.read_persistent(output_id, default=None)
-                has_value = value is not None
+                value = self.memory_bank.read_persistent(output_id, default=_MISSING_PAYLOAD)
+                has_value = value is not _MISSING_PAYLOAD
             if lines:
                 lines.append("")
             lines.append(
@@ -2433,6 +2573,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         return "\n".join(lines)
 
     def _compose_vault_payload_preview(self, location: str):
+        if self.node_data.get("type") != BRANCH_NODE_TYPE:
+            return
         yield Checkbox(
             "Reveal Vault payload",
             value=False,
@@ -2445,6 +2587,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         )
 
     def _sync_payload_previews(self) -> None:
+        self._sync_routing_previews()
         self._sync_previous_output_preview()
         for location in ("source", "payload"):
             checkbox_query = self.query(f"#show-{location}-vault-payload")
@@ -2532,6 +2675,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         yield Vertical(id="membank-output-rows")
 
     def _compose_membank_inputs(self, config: Dict[str, Any]):
+        if self.node_data.get("type") != BRANCH_NODE_TYPE:
+            return
         selected = set(normalize_membank_inputs(config))
         options = membank_input_options(self.workflow_map, self.node_id)
         enabled = bool(selected)
@@ -2594,8 +2739,11 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         options = merge_input_options(self.workflow_map, self.node_id)
         if not options:
             yield Static("No open branches are available to close.", classes="form-description")
-            return
+            if not _reserved_merge_input_ports(self.workflow_map, self.node_id):
+                return
         selected_values = self._selected_merge_close_values(options, config)
+        capacity = len(BRANCH_PORTS) - len(_reserved_merge_input_ports(self.workflow_map, self.node_id))
+        yield Static(f"Select up to {capacity} branches to close; home inputs reserve the remaining ports.", classes="form-description")
         yield SelectionList(
             *dynamic_selection_rows(
                 [
@@ -2635,7 +2783,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
     def _merge_carry_forward_options(
         self, options: list[Dict[str, str]], selected_values: set[str]
     ) -> list[tuple[str, str]]:
-        return [
+        return [(f"Home branch | Input: {port}", f"home:{port}") for port in sorted(_reserved_merge_input_ports(self.workflow_map, self.node_id))] + [
             (
                 f"{option['branch_label']} | Output: {option['output_name']}",
                 self._merge_option_value(option),
@@ -2698,6 +2846,13 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         selected_value = selector_query.first().value if selector_query else ""
         selected_closures = self._selected_merge_close_values_from_widget()
         option = self._merge_option_by_value(str(selected_value or ""))
+        if str(selected_value).startswith("home:"):
+            detail.update("Carry forward: home branch incoming payload")
+            detail.display = True
+            selector_query.first().display = True
+            for label in self.query("#merge-carry-forward-label"):
+                label.display = True
+            return
         if selector_query:
             selector_query.first().display = option is not None
         for label in self.query("#merge-carry-forward-label"):
@@ -2721,7 +2876,11 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         detail.display = False
 
     def _membank_config_values(self) -> Dict[str, Any]:
-        values: Dict[str, Any] = {"membank_outputs": [], "membank_inputs": []}
+        values: Dict[str, Any] = {}
+        if self.query("#membank-reads"):
+            values["membank_inputs"] = []
+        if self.query("#membank-writes"):
+            values["membank_outputs"] = []
 
         writes_query = self.query("#membank-writes")
         if not writes_query:
@@ -2750,7 +2909,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                     }
                 )
 
-        reads_enabled = self.query_one("#membank-reads", Checkbox).value
+        reads_enabled = bool(self.query("#membank-reads") and self.query_one("#membank-reads", Checkbox).value)
         if reads_enabled:
             selection_lists = self.query("#membank-inputs")
             if selection_lists:
@@ -2969,17 +3128,22 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             return {}
         options = merge_input_options(self.workflow_map, self.node_id)
         branches_to_close = sorted(self._selected_merge_close_values_from_widget())
+        assignments = selected_merge_ports(self.workflow_map, self.node_id, options, set(branches_to_close))
         carry_value = ""
         selector_query = self.query("#merge-carry-forward-selector")
         if selector_query:
             carry_value = str(selector_query.first().value or "")
+        if carry_value.startswith("home:"):
+            port = carry_value.removeprefix("home:")
+            if port in _reserved_merge_input_ports(self.workflow_map, self.node_id):
+                return {"branches_to_close": branches_to_close, "carry_forward_branch_id": carry_value, "selected_branch_id": "", "selected_input_port": port}
         for option in options:
             if self._merge_option_value(option) == carry_value:
                 return {
                     "branches_to_close": branches_to_close,
                     "carry_forward_branch_id": carry_value,
                     "selected_branch_id": carry_value,
-                    "selected_input_port": option["port"],
+                    "selected_input_port": assignments.get(carry_value, option["port"]),
                 }
         return {
             "branches_to_close": branches_to_close,
