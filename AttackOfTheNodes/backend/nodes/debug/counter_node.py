@@ -15,6 +15,7 @@ class CounterNode(Node):
     category: ClassVar[str] = NodeCategory.DEBUG
     input_ports: ClassVar[List[str]] = ["input"]
     output_ports: ClassVar[List[str]] = ["default"]
+    ui_hints = {"pass_through": True, "forwarded_input_port": "input"}
     default_config: ClassVar[Dict[str, Any]] = {"counter_name": "counter"}
     config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {
         "counter_name": {"type": "string", "label": "Counter Name", "required": True},

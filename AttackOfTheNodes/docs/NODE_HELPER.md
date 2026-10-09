@@ -565,3 +565,32 @@ Validation and execution remove copied surrounding quotes and convert absolute
 Windows paths through `wslpath` when running under WSL. Other file nodes retain
 their existing path behavior. Missing read files remain pre-run warnings because
 an earlier node may create them; empty or incompatible paths are errors.
+
+## Payload/file extensions (2026-10-07)
+
+Zero-input producers declare `ui_hints.standard_output: true` to render standard
+output routing without a fake input port. Input metadata can specify
+`configured_field` (Reader uses `file_path`) when its configured field differs
+from the port name. `forwarded_input_port` identifies the input actually
+forwarded; File Writer forwards Content, File Manager forwards File.
+
+Repeatable forms use `type: object_list` with `item_schema`; row ids remain
+stable through editing. A select can use `options_from` to track row choices.
+File Manager's `additional_files` schema/spec is the reference. Extend the
+shared generator and widgets for structural field needs rather than adding
+node-specific screens. Regenerate into a temporary project for review when a
+node has custom execution, then retain that execution and test it separately.
+
+Use canonical `string`, `number` and `file` output metadata. File references
+are distinct from text that looks like a path. Optional downstream publication
+and Vault writes are independent. Legacy Vault controls require an actual
+runtime capability (`legacy_vault_outputs`); generic checkboxes must not claim
+operations that a node ignores. Termination follows NODE_STANDARDS, with no
+optional file-node completion flag.
+
+`ui_hints.output_value_fields` maps output ports to their parameter fields for
+read-only routing previews (Start: default → greeting). `formatted_output_preview`
+exposes Text Output's selected source and configured format without duplicate
+output editors. `forwarded_input_fallbacks` lists connected input ports to use
+only when the preferred `forwarded_input_port` is absent; runtime must use the
+same precedence (Writer: Content, then File Path).

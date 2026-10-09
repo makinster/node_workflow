@@ -43,11 +43,16 @@ currently registered node type a row absorbs, where one exists.
 
 | Node | Status | Notes / Maps from |
 |---|---|---|
-| Simple File Read | Live | `file_reader_node` — read entire file as a UTF-8 text string. Accepts copied quoted paths and converts Windows paths under WSL; reports actionable path/read errors. Tags: File I/O, Runtime Resource |
+| Simple File Read | Live | `file_reader_node` — read an entire configured file or typed upstream/Vault file reference as a UTF-8 string, published downstream and/or to typed Vault. Accepts copied quoted paths and converts Windows paths under WSL; reports actionable path/read errors. Tags: File I/O, Runtime Resource |
 | Bulk File Read | Concept | Read all files matching a folder path or glob pattern. Tags: File I/O |
 | Find & Extract Passage | Concept | Search for a pattern, return surrounding context window. Tags: File I/O |
 | Structured File Read | Concept | Parse CSV or JSON into usable object data. Tags: File I/O |
 | AI-Guided Read | Concept | Provide a file and a question; AI extracts the relevant portion. Tags: File I/O, AI |
+
+File Reader accepts a file reference from Upstream/Vault or
+a configured path, then emits the file contents as a typed `string` downstream
+and/or to Vault. The existing `file_reader_node` preserves old graphs; see
+[PAYLOAD_FILE_IO_BUILD_PLAN.md](PAYLOAD_FILE_IO_BUILD_PLAN.md), P2a.
 
 ### Group: Data Source
 
@@ -86,7 +91,7 @@ or an End Branch node — there is no standalone End node.
 
 | Node | Status | Notes |
 |---|---|---|
-| File Write | Live | `file_output_node` — write content to a path and emit a typed `file` reference (FO1). Overwrite / Append / Create unique is a mode select — one node, not two types. `Open after write` (FO5) opens the file in its OS-default app at a placement preset (D3) with opt-in `Close when run ends` (default off, D12); discovery failure degrades to opened-but-unplaced, never a node error (D4). Inside a repeat/counter loop, open-after-write opens one window per iteration (one per file with Create unique); a validator warning for that is backlog, not FO5. Absorbed the retired `example_file_instance_node` stub's unified-spec reference role. Tags: File I/O, Runtime Resource |
+| File Write | Live | `file_output_node` — write content to a path and emit a typed `file` reference (FO1). Overwrite / Append / Prepend / Create unique is a mode select — one node, not two types. `Open after write` (FO5) opens the file in its OS-default app at a placement preset (D3) with opt-in `Close when run ends` (default off, D12); discovery failure degrades to opened-but-unplaced, never a node error (D4). Inside a repeat/counter loop, open-after-write opens one window per iteration (one per file with Create unique); a validator warning for that is backlog, not FO5. Absorbed the retired `example_file_instance_node` stub's unified-spec reference role. Tags: File I/O, Runtime Resource |
 | Structured Write | Concept | Serialize an object to CSV or JSON. Tags: File I/O |
 | File Delete | Concept | Remove a file; output: bool success. Tags: File I/O |
 | File Copy / Move | Concept | Duplicate or relocate a file; input: source + destination. Tags: File I/O |
@@ -109,11 +114,11 @@ or an End Branch node — there is no standalone End node.
 | User Choice Picker | Concept | Present a labeled list, wait for selection; output: chosen string. Tags: Active Output |
 | Progress Message | Concept | Non-blocking status update; fire and forget. Tags: Passive Output |
 
-### Direct-add: File Viewer
+### Direct-add: File Manager
 
 | Node | Status | Notes |
 |---|---|---|
-| File Viewer | Live | `file_view_node` — display a text/Markdown file inside AOTN (FO3). Emits `FILE_VIEW_REQUESTED`; the frontend pushes `FileViewerScreen` (Textual Markdown for `.md`, plain text otherwise; `Render as` override). Headless runs: event is inert, never a node error. Forwards the file reference downstream. Tags: File I/O, Active Output |
+| File Manager | Live | `file_view_node` — renamed from File Viewer; stable internal type preserves old workflows. Displays a text/Markdown file inside AOTN (FO3). Emits `FILE_VIEW_REQUESTED`; the frontend pushes `FileViewerScreen` (Textual Markdown for `.md`, plain text otherwise; `Render as` override). Headless runs: event is inert, never a node error. Forwards the file reference downstream. Supports multiple configured files, one selected downstream reference, named typed Vault references for all other files, and unchanged incoming forwarding. Tags: File I/O, Active Output |
 
 ### Direct-add: AI Response Output
 

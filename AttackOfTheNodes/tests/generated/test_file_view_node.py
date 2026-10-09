@@ -55,7 +55,7 @@ def test_file_view_node_registration_and_metadata():
     factory = NodeFactory()
     assert factory.is_valid_node_type("file_view_node")
     metadata = next(item for item in factory.get_node_types_metadata() if item["type"] == "file_view_node")
-    assert metadata["display_name"] == 'File Viewer'
+    assert metadata["display_name"] == 'File Manager'
     assert metadata["input_ports"] == ['file']
     assert metadata["output_ports"] == ['default']
     assert metadata["input_port_metadata"]["file"]["data_type"] == "file"
@@ -170,7 +170,7 @@ async def test_headless_context_is_inert_not_an_error(tmp_path):
     assert done and done[0]["data"]["default"]["type"] == "file"
 
 
-async def test_terminate_branch_flag_rides_the_done_payload(tmp_path):
+async def test_legacy_terminate_branch_flag_does_not_stop_file_continuation(tmp_path):
     target = tmp_path / "end.md"
     target.write_text("x", encoding="utf-8")
     node = _make_node(
@@ -181,4 +181,4 @@ async def test_terminate_branch_flag_rides_the_done_payload(tmp_path):
     await node.execute(context)
 
     assert not errors
-    assert done[0].get("terminate_branch") is True
+    assert not done[0].get("terminate_branch")

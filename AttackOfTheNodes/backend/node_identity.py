@@ -41,8 +41,8 @@ FAMILY_COLOR_HINTS = {
 
 
 TRANSITIONAL_NODE_IDENTITY: Dict[str, Dict[str, Any]] = {
-    # Structural runtime types. Start is auto-generated and End is replaced by
-    # terminate-branch output config; both are hidden from the selector.
+    # Start is auto-generated; End remains an explicit terminal compatibility
+    # node. Both are hidden from the selector.
     "start_node": {
         "primary_family": FLOW_CONTROL,
         "tags": [TRIGGERED],

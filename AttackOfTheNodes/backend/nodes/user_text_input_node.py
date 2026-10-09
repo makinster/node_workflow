@@ -15,6 +15,8 @@ class UserTextInputNode(Node):
     category: ClassVar[str] = NodeCategory.IO
     input_ports: ClassVar[List[str]] = ["input"]
     output_ports: ClassVar[List[str]] = ["default"]
+    output_port_metadata = {"default": {"name": "Text", "data_type": "string"}}
+    ui_hints = {"legacy_vault_outputs": True}
     default_config: ClassVar[Dict[str, Any]] = {
         "prompt": "Enter text:",
     }

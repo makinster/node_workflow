@@ -18,6 +18,7 @@ from frontend.screens.merge_beacon_selector import MergeBeaconSelectorScreen
 from frontend.screens.node_config import (
     NodeConfigScreen,
     merge_input_options,
+    selected_merge_ports,
     upstream_branch_info,
 )
 from frontend.screens.node_selector import NodeSelectorScreen
@@ -377,6 +378,7 @@ class EditorScreen(Screen):
                 node,
                 memory_bank=getattr(self.app, "memory_bank", None),
                 secrets_manager=self.secrets_manager,
+                workflow_adapter=self.workflow_adapter,
             ),
             self._save_node_config_from_modal,
         )
@@ -592,6 +594,7 @@ class EditorScreen(Screen):
         config = result.get("config", {})
         self.workflow_map.update_node_alias(self.selected_node_id, alias)
         self.workflow_map.update_node_config(self.selected_node_id, config)
+        self._reassign_inactive_input_connections(self.selected_node_id)
         node = self.workflow_map.get_node_data(self.selected_node_id) or {}
         if node.get("type") == MERGE_NODE_TYPE:
             self._sync_merge_branch_end_connections(
@@ -624,7 +627,9 @@ class EditorScreen(Screen):
             for value in config.get("branches_to_close", [])
             if str(value)
         }
-        for option in merge_input_options(self.workflow_map, merge_node_id):
+        options = merge_input_options(self.workflow_map, merge_node_id)
+        assignments = selected_merge_ports(self.workflow_map, merge_node_id, options, selected)
+        for option in options:
             option_value = f"{option['branch_id']}:{option['branch_port']}"
             source_id = option.get("branch_end_id", "")
             source_node = self.workflow_map.get_node_data(source_id) if source_id else None
@@ -650,7 +655,7 @@ class EditorScreen(Screen):
                 source_id,
                 source_port,
                 merge_node_id,
-                target_port,
+                assignments[option_value],
             )
 
     def _sync_all_merge_branch_end_connections(self) -> None:
@@ -765,7 +770,46 @@ class EditorScreen(Screen):
             branch_port = self._upstream_branch_port(source_node_id, source_port)
             if branch_port in input_ports:
                 return branch_port
+        matching = self._matching_typed_input_ports(source_node_id, source_port, target_node_id, input_ports)
+        if len(matching) == 1:
+            return matching[0]
         return input_ports[0]
+
+    def _matching_typed_input_ports(
+        self, source_id: str, source_port: str, target_id: str, ports: list[str],
+    ) -> list[str]:
+        producer = trace_transient_producer(self.workflow_map, self.factory, source_id, source_port)
+        data_type = producer.get("data_type", "any")
+        if data_type == "any":
+            return []
+        target = self.workflow_map.get_node_data(target_id) or {}
+        target_meta = self._metadata_for_type(target.get("type", "")) or {}
+        inputs = target_meta.get("input_port_metadata") or {}
+        return [port for port in ports if (inputs.get(port) or {}).get("data_type") == data_type]
+
+    def _reassign_inactive_input_connections(self, node_id: str) -> None:
+        """On config Save, move unused wiring to a unique typed Upstream input."""
+        node = self.workflow_map.get_node_data(node_id) or {}
+        config = node.get("config") or {}
+        metadata = self._metadata_for_type(node.get("type", "")) or {}
+        connections = list((node.get("connections") or {}).get("inputs") or [])
+        occupied = {conn.get("target_port") for conn in connections}
+        for conn in connections:
+            old_port = conn.get("target_port")
+            if config.get(f"{old_port}_source") not in {"Configured", "Vault"}:
+                continue
+            available = [port for port in metadata.get("input_ports") or []
+                         if port not in occupied and config.get(f"{port}_source") == "Upstream payload"]
+            matches = self._matching_typed_input_ports(
+                conn["source_node_id"], conn["source_port"], node_id, available,
+            )
+            if len(matches) != 1:
+                continue
+            new_port = matches[0]
+            self.workflow_map.disconnect(conn["source_node_id"], conn["source_port"], node_id, old_port)
+            self.workflow_map.connect(conn["source_node_id"], conn["source_port"], node_id, new_port)
+            occupied.discard(old_port)
+            occupied.add(new_port)
 
     def _upstream_branch_port(self, source_node_id: str, source_port: str) -> str:
         node = self.workflow_map.get_node_data(source_node_id) or {}
@@ -1146,6 +1190,12 @@ class EditorScreen(Screen):
             target_node_id,
             target_port,
         )
+        source_field = f"{target_port}_source"
+        source_schema = (target_meta.get("config_schema") or {}).get(source_field) or {}
+        if target_port != input_ports[0] and "Upstream payload" in source_schema.get("options", []):
+            config = dict(target.get("config") or {})
+            config[source_field] = "Upstream payload"
+            self.workflow_map.update_node_config(target_node_id, config)
         if existing_target:
             target_output_ports = target_meta.get("output_ports") or []
             existing = self.workflow_map.get_node_data(existing_target)
@@ -1154,11 +1204,21 @@ class EditorScreen(Screen):
             )
             existing_input_ports = existing_meta.get("input_ports") if existing_meta else []
             if target_output_ports and existing_input_ports:
+                occupied = {
+                    conn.get("target_port")
+                    for conn in (existing.get("connections") or {}).get("inputs", [])
+                }
+                available = [port for port in existing_input_ports if port not in occupied]
+                if not available:
+                    return
                 self.workflow_map.connect(
                     target_node_id,
                     target_output_ports[0],
                     existing_target,
-                    existing_input_ports[0],
+                    self._target_input_port_for_connection(
+                        target_node_id, target_output_ports[0], existing_target,
+                        available,
+                    ),
                 )
 
     def _refresh_details(self) -> None:

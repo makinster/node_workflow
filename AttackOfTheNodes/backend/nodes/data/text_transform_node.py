@@ -27,7 +27,7 @@ class TextTransformNode(Node):
     input_ports: ClassVar[List[str]] = ['input']
     output_ports: ClassVar[List[str]] = ['default']
     input_port_metadata: ClassVar[Dict[str, Dict[str, str]]] = {}
-    output_port_metadata: ClassVar[Dict[str, Dict[str, str]]] = {}
+    output_port_metadata: ClassVar[Dict[str, Dict[str, str]]] = {"default": {"name": "Text", "data_type": "string"}}
     default_config: ClassVar[Dict[str, Any]] = {'operation': 'uppercase', 'wrap_width': 0}
     config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {
         'operation': {

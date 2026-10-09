@@ -1,0 +1,11 @@
+{
+  "registry_count": 37,
+  "mounts": 108,
+  "cancel_unchanged": 36,
+  "cancel_checks": 36,
+  "unrelated_preserved": 72,
+  "save_checks": 72,
+  "second_save_equal": 72,
+  "conditional_states": 163,
+  "state_errors": []
+}

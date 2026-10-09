@@ -14,6 +14,7 @@ from .event_bus import EventBus
 from .events import WORKFLOW_DIRTY
 from .node_base import Node
 from .node_factory import NodeFactory
+from .config_migrations import normalize_node_config
 from .persistence import load_workflow, save_workflow
 
 
@@ -72,6 +73,8 @@ class WorkflowMap:
         self._workflow_id = data["id"]
         self._workflow_name = data.get("name", self._workflow_id)
         self._nodes = deepcopy(data.get("nodes", {}))
+        for node in self._nodes.values():
+            node["config"] = normalize_node_config(node.get("type", ""), node.get("config") or {})
         self._is_dirty = False
         self._sync_active_to_cache()
 
@@ -342,7 +345,7 @@ class WorkflowMap:
         """Replace a node config dict."""
         if node_id not in self._nodes:
             return False
-        self._nodes[node_id]["config"] = dict(new_config)
+        self._nodes[node_id]["config"] = normalize_node_config(self._nodes[node_id]["type"], new_config)
         self._mark_dirty()
         return True
 

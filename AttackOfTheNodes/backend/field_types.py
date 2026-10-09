@@ -14,6 +14,7 @@ class FieldType(str, Enum):
     MULTISELECT = "multiselect"
     MULTILINE = "multiline"
     CODE = "code"
+    OBJECT_LIST = "object_list"
 
 
 _VALID_TYPES = {ft.value for ft in FieldType}
@@ -31,6 +32,12 @@ def validate_config_schema(schema: Dict[str, Dict[str, Any]]) -> List[str]:
         field_type = field_info.get("type", "string")
         if field_type not in _VALID_TYPES:
             errors.append(f"Field '{field_name}': unknown type '{field_type}'")
+        if field_type == "object_list":
+            items = field_info.get("item_schema")
+            if not isinstance(items, dict) or not items:
+                errors.append(f"Field '{field_name}': object_list requires item_schema")
+            else:
+                errors.extend(f"Field '{field_name}': {error}" for error in validate_config_schema(items))
         if field_type in {"select", "multiselect"} and not field_info.get("options"):
             errors.append(
                 f"Field '{field_name}': type '{field_type}' requires 'options'"

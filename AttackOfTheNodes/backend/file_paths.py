@@ -16,8 +16,25 @@ def normalize_local_path(value: str) -> Path:
         raise ValueError("Enter a file path in Parameters.")
     if "\x00" in path:
         raise ValueError("The file path contains an invalid null character.")
-    windows_path = bool(re.match(r"^[A-Za-z]:", path)) or path.startswith("\\\\")
+    # Drive-relative paths depend on per-drive working directories and cannot
+    # be resolved portably. Detect syntax before deciding which OS handles it.
+    if re.match(r"^[A-Za-z]:($|[^\\/])", path):
+        raise ValueError("Use a full Windows path, such as C:\\Users\\name\\file.txt.")
+    windows_path = bool(re.match(r"^[A-Za-z]:[\\/]", path)) or path.startswith("\\\\")
     if windows_path and platform.system() != "Windows":
+        if path.startswith("\\\\?\\UNC\\"):
+            path = "\\\\" + path[8:]
+        elif path.startswith("\\\\?\\"):
+            path = path[4:]
+        # WSL UNC shares name a distro; only the running distro maps locally.
+        share = re.match(r"^\\\\(?:wsl\.localhost|wsl\$)\\([^\\]+)(.*)$", path, re.IGNORECASE)
+        if share:
+            distro = os.environ.get("WSL_DISTRO_NAME", "")
+            if not distro or share.group(1).casefold() != distro.casefold():
+                raise ValueError("The WSL share belongs to another or unknown distro; use a path accessible in this distro.")
+            path = share.group(2).replace("\\", "/") or "/"
+            return Path(path)
+
         if not (os.environ.get("WSL_DISTRO_NAME") or
                 "microsoft" in platform.release().lower()):
             raise ValueError("This Windows path is not accessible on this system. "
@@ -35,5 +52,8 @@ def normalize_local_path(value: str) -> Path:
         if result.returncode != 0 or not result.stdout.strip():
             raise ValueError("Could not convert the Windows path under WSL. "
                              "Check the path or enter its Linux equivalent.")
-        path = result.stdout.strip()
+        converted = result.stdout.rstrip("\r\n")
+        if not converted.startswith("/") or "\n" in converted or "\r" in converted or "\x00" in converted:
+            raise ValueError("Windows path conversion did not return an absolute local Linux path.")
+        path = converted
     return Path(path).expanduser()

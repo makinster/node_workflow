@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
+from backend.vault_declarations import standard_vault_writes
+
 from frontend.node_types import (
     BRANCH_END_NODE_TYPE,
     BRANCH_NODE_TYPE,
@@ -133,6 +135,9 @@ def normalize_transient_outputs(config: Dict[str, Any]) -> Dict[str, Dict[str, s
 def output_display_name(factory, node: Dict[str, Any], port: str) -> str:
     """Return a friendly name for a node output port."""
     config = node.get("config") or {}
+    metadata = metadata_for_type(factory, node.get("type", "")) or {}
+    if port in ((metadata.get("ui_hints") or {}).get("output_value_fields") or {}):
+        return str(_port_metadata(factory, node, port, "output").get("name") or port)
     override = normalize_transient_outputs(config).get(port) or {}
     if override.get("name"):
         return override["name"]
@@ -183,28 +188,41 @@ def memory_registry(workflow_map) -> Dict[str, Dict[str, Any]]:
     """Scan workflow nodes for declared memory outputs."""
     registry: Dict[str, Dict[str, Any]] = {}
     for node_id, node in workflow_map.get_all_node_data().items():
-        for output in normalize_membank_outputs(node.get("config") or {}):
+        config = node.get("config") or {}
+        outputs = normalize_membank_outputs(config)
+        factory = getattr(workflow_map, "_factory", None)
+        metadata = metadata_for_type(factory, node.get("type", "")) if factory is not None else {}
+        declarations = standard_vault_writes(node.get("type", ""), config, metadata or {})
+        for key, tag in declarations.items():
+            outputs.append({"id": key, "description": str(config.get("vault_write_description") or ""), "data_type": tag or "any"})
+        for output in outputs:
             entry = registry.setdefault(
                 output["id"],
                 {
                     "id": output["id"],
                     "description": output["description"],
                     "writers": [],
+                    "data_type": output.get("data_type", "any"),
                 },
             )
             if output["description"] and not entry.get("description"):
                 entry["description"] = output["description"]
+            if output.get("data_type"):
+                entry["data_type"] = output["data_type"]
             entry["writers"].append(node_id)
     return registry
 
 
-def is_pass_through_node(factory, node: Dict[str, Any]) -> bool:
+def is_pass_through_node(factory, node: Dict[str, Any], port: str | None = None) -> bool:
     """Return whether this node should be treated as display pass-through."""
     metadata = metadata_for_type(factory, node.get("type", ""))
     if metadata and (metadata.get("ui_hints") or {}).get("pass_through"):
         return True
     config = node.get("config") or {}
-    return config.get("pass_through") is True
+    if config.get("pass_through") is True:
+        return True
+    output = ((metadata or {}).get("output_port_metadata") or {}).get(port or "default") or {}
+    return config.get("dead_drop_passthrough") is True and bool(output.get("pass_through"))
 
 
 def transient_output_details(
@@ -273,11 +291,22 @@ def _trace_transient_producer(
             )
             if branch_result:
                 return branch_result
-        if not node or not is_pass_through_node(factory, node):
+        if not node or not is_pass_through_node(factory, node, current_port):
             break
-        upstream = _first_input_connection(node)
+        metadata = metadata_for_type(factory, node.get("type", "")) or {}
+        hints = metadata.get("ui_hints") or {}
+        forward_port = hints.get("forwarded_input_port")
+        upstream = _first_input_connection(node, str(forward_port)) if forward_port else _first_input_connection(node)
         if not upstream:
-            break
+            for fallback in hints.get("forwarded_input_fallbacks") or []:
+                upstream = _first_input_connection(node, str(fallback))
+                if upstream:
+                    break
+        if not upstream:
+            # A forwarding node with no connected input has no own result.
+            return {"node_id": current_id, "node": node, "port": current_port,
+                    "name": "No connected incoming payload", "description": "",
+                    "data_type": "any", "chain_node_ids": [current_id]}
         next_id = str(upstream.get("source_node_id") or "")
         next_port = str(upstream.get("source_port") or "default")
         if not next_id:
@@ -304,6 +333,7 @@ def _trace_transient_producer(
         "name": details["name"],
         "description": details["description"],
         "chain_node_ids": [current_id] if current_id else [],
+        "data_type": "any" if is_pass_through_node(factory, node, current_port) else _port_metadata(factory, node, current_port, "output").get("data_type", "any"),
     }
 
 
@@ -346,6 +376,7 @@ def _trace_branch_payload_producer(
             "description": str(entry.get("description") or "").strip()
             or OUTPUT_NOT_CONFIGURED,
             "chain_node_ids": chain,
+            "data_type": entry.get("data_type", "any"),
         }
 
     upstream = _first_input_connection(branch_node, "input") or _first_input_connection(branch_node)
@@ -387,6 +418,8 @@ def _first_input_connection(
         for conn in inputs:
             if str(conn.get("target_port") or "") == target_port:
                 return conn
+    if target_port is not None:
+        return None
     return inputs[0] if inputs else None
 
 

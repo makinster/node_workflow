@@ -10,6 +10,8 @@ from ..output_entry import OutputLogEntry
 class EndNode(Node):
     """Terminates a workflow branch by signaling done with no continuation."""
 
+    terminates_branch: ClassVar[bool] = True
+
     node_type: ClassVar[str] = "end_node"
     display_name: ClassVar[str] = "End"
     description: ClassVar[str] = "Terminates a workflow branch"
@@ -46,4 +48,4 @@ class EndNode(Node):
         )
         context.memory_bank.store_persistent("output_log", log)
 
-        context.signal_done({"data": {}, "next_node_id": None})
+        context.signal_done({"data": {}, "next_node_id": None, "terminate_branch": True})

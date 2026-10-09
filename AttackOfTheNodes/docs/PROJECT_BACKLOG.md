@@ -1,5 +1,34 @@
 # AttackOfTheNodes Project Backlog
 
+## Payload/file implementation — 2026-10-07
+
+The requested payload/file build is implemented locally on `main` at `1211e68`
+(uncommitted changes). See [the completed contract and migration notes](PAYLOAD_FILE_IO_BUILD_PLAN.md)
+and [verification evidence](audits/payload_file_io_2026_10_07/README.md).
+Includes File Manager multi-file references, Reader text routing, Writer
+prepend/append/newline options, typed source selection, forwarding previews,
+Start/Text Output Vault routing, explicit termination and Merge home payloads.
+Line-number insertion remains deferred. Native Windows FO7 and the reported
+user/host path prefix remain live-verification items, not confirmed fixes.
+This status supersedes older planned descriptions below.
+
+## Owner-requested Payload And File I/O Follow-up (2026-10-07)
+
+See [PAYLOAD_FILE_IO_BUILD_PLAN.md](PAYLOAD_FILE_IO_BUILD_PLAN.md) for the
+ordered implementation and agent ownership of forwarding previews, typed
+Upstream/Vault choices, Start/Text Output Vault behavior, multi-file Viewer,
+Writer newline/Prepend/Append, optional termination-control removal and Merge
+carry-forward completeness. These changes are planned, not implemented.
+Line-number insertion remains a TODO, including a possible typed numeric input
+and defined indexing/out-of-range semantics. Existing single-file reference
+reuse, Windows/WSL paths and deleted-source filtering must be preserved.
+File Viewer is now File Manager. Extend existing File Reader to copy file
+contents as text to downstream/Vault (P2a), accepting configured paths or
+Upstream/Vault file references; do not add another Reader type.
+P0a also investigates the owner's quoted Windows Copy as path example and
+apparent user/host prefix, separating expected WSL normalization from config
+mutation/display defects and hardening path syntax/runtime classification.
+
 Current configuration/UI follow-up: [CONFIG_UI_BUILD_PLAN.md](CONFIG_UI_BUILD_PLAN.md)
 records unresolved F01/F05–F12 and FO-R5 with priorities and verification stages.
 File Output is now integrated on the session PR branch; the original audit and

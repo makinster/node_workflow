@@ -1478,7 +1478,7 @@ async def _test_branch_config_uses_generated_labels_without_memory_outputs():
         assert app.query_one("#field-path_b_label", CommandInput).value == "Reject"
         assert not app.query("#membank-writes")
         values = screen._membank_config_values()
-        assert values["membank_outputs"] == []
+        assert not values.get("membank_outputs")
 
     editor = EditorScreen(wm._factory, wm)
     labels = editor._branch_port_labels(wm.get_node_data(branch))
@@ -1649,8 +1649,8 @@ async def _test_node_config_selection_lists_exit_at_edges():
 
     _, wm, _, _ = _make_services()
     wm.create_new("selection_list_edges")
-    writer = wm.add_node("logger_node")
-    target = wm.add_node("logger_node")
+    writer = wm.add_node("user_text_input_node")
+    target = wm.add_node("branch_node")
     wm.update_node_config(
         writer,
         {"membank_outputs": [{"id": "session_id", "description": "Session id"}]},
@@ -4707,7 +4707,7 @@ async def _test_node_config_prunes_sources_with_no_eligible_entries():
         # textbox, not a vault dropdown, so it is always eligible.
         document_select = app.query_one("#field-document_source", Select)
         document_options = [value for _label, value in document_select._options]
-        assert document_options == ["Upstream payload", "Configured"]
+        assert document_options == ["Configured"]  # Document has no connection.
 
     print("test_node_config_prunes_sources_with_no_eligible_entries PASSED")
 
@@ -5283,6 +5283,68 @@ async def _test_activate_command_widget_single_press_toggles_boolean():
     print("test_activate_command_widget_single_press_toggles_boolean PASSED")
 
 
+def test_file_writer_configured_content_has_visible_keyboard_editor():
+    asyncio.run(_test_file_writer_configured_content_has_visible_keyboard_editor())
+
+
+async def _test_file_writer_configured_content_has_visible_keyboard_editor():
+    from textual.app import App
+    from textual.widgets import Select, TabbedContent
+
+    from frontend.screens.node_config import NodeConfigScreen
+    from frontend.widgets.command_input import CommandTextArea
+
+    for width in (60, 100, 140):
+        _, wm, mb, _ = _make_services()
+        wm.create_new("file_writer_content_edit")
+        node_id = wm.add_node("file_output_node")
+        saved = []
+
+        class ConfigApp(App):
+            CSS_PATH = str(Path(__file__).parent.parent / "frontend" / "styles.tcss")
+
+            async def on_mount(self):
+                await self.push_screen(
+                    NodeConfigScreen(
+                        wm._factory, wm, node_id, wm.get_node_data(node_id),
+                        memory_bank=mb,
+                    ),
+                    saved.append,
+                )
+
+        app = ConfigApp()
+        async with app.run_test(size=(width, 24)) as pilot:
+            await pilot.pause()
+            screen = app.screen
+            content = screen.query_one("#field-content", CommandTextArea)
+            assert not content.display
+            source = screen.query_one("#field-content_source", Select)
+            source.value = "Configured"
+            await pilot.pause()
+            assert source.value == "Configured"
+            await pilot.press("2")
+            await pilot.pause()
+            assert app.focused is content
+            assert content.content_region.height >= 4
+            assert content.content_region.intersection(screen.region).height >= 4
+            await pilot.press("e")
+            assert content.editing and not content.read_only
+            assert content.has_class("editing")
+            await pilot.press("h", "i", "enter", "w", "s", "a", "d", "2")
+            assert content.text == "hi\nwsad2"
+            assert content.selection.end == (1, 5)
+            assert screen.query_one("#node-config-tabs", TabbedContent).active == "node-config-tab-parameters"
+            await pilot.press("escape")
+            assert not content.editing and content.read_only
+            await pilot.press("s")
+            assert app.focused is not content
+            await pilot.press("ctrl+s")
+            await pilot.pause()
+            assert saved[0]["config"]["content"] == "hi\nwsad2"
+            assert saved[0]["config"]["content_source"] == "Configured"
+            assert wm.get_node_data(node_id)["config"]["content"] == ""
+
+
 def test_node_config_digit_types_while_editing_but_jumps_in_nav():
     asyncio.run(_test_node_config_digit_types_while_editing_but_jumps_in_nav())
 
@@ -5496,11 +5558,10 @@ async def _test_node_config_pass_through_disables_membank_outputs():
     async with app.run_test() as pilot:
         await pilot.pause(0.03)
         pass_through = app.query_one("#field-pass_through", Checkbox)
-        writes = app.query_one("#membank-writes", Checkbox)
         screen = app.query_one(NodeConfigScreen)
         assert pass_through.value is True
-        assert writes.disabled is True
-        assert screen._membank_config_values()["membank_outputs"] == []
+        assert not app.query("#membank-writes")
+        assert "membank_outputs" not in screen._membank_config_values()
 
     print("test_node_config_pass_through_disables_membank_outputs PASSED")
 
@@ -5667,7 +5728,7 @@ async def _test_node_config_dynamic_membank_output_rows():
 
     _, wm, _, _ = _make_services()
     wm.create_new("dynamic_membank_outputs")
-    node_id = wm.add_node("logger_node")
+    node_id = wm.add_node("user_text_input_node")
     node_data = wm.get_node_data(node_id)
 
     class ConfigApp(App):
@@ -6113,8 +6174,8 @@ async def _test_node_config_payloads_tab_reveals_upstream_and_vault_payloads():
     _, wm, mb, _ = _make_services()
     wm.create_new("payload_tab_reveal")
     producer = wm.add_node("logger_node")
-    vault_writer = wm.add_node("logger_node")
-    target = wm.add_node("logger_node")
+    vault_writer = wm.add_node("user_text_input_node")
+    target = wm.add_node("branch_node")
 
     wm.update_node_alias(producer, "Producer")
     wm.update_node_alias(vault_writer, "Vault Writer")
@@ -7226,6 +7287,10 @@ async def _test_simple_command_modals_use_shared_navigation_helpers():
             screen.action_activate_focused()
             assert auto_save.value is (not previous)
             assert add_secret not in screen._nav_widgets()
+
+            # Direct focus/toggle actions queue messages. Settle them before
+            # switching panes, as Pilot key presses normally do.
+            await pilot.pause()
 
             screen.action_jump_settings_tab(2)
             await pilot.pause(0.1)

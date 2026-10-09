@@ -1,105 +1,95 @@
-# file_output_node — FO1/FO5 of docs/FILE_OUTPUT_BUILD_PLAN.md. The core
-# file output primitive: writes content (upstream/vault/configured) to a
-# path, registers the handle in RunSession, emits a typed `file` reference
-# downstream/vault (D2), and optionally opens the file in its OS-default app
-# at a placement preset (D3; degrades per D4/D5).
-# This spec is also the unified inputs:/outputs: reference node (handoff §7),
-# absorbing that role from the retired example_file_instance_node stub.
-node_type: file_output_node
-class_name: FileOutputNode
-category: io
-primary_family: Outputs
-tags: ["File I/O", "Runtime Resource"]
-group: "File Write"
-icon_name: file-output
-display_name: File Write
-default_alias: File Write
-description: Write content to a file and emit a typed file reference
-
+node_type: 'file_output_node'
+class_name: 'FileOutputNode'
+category: 'io'
+primary_family: 'Outputs'
+tags: ['File I/O', 'Runtime Resource']
+group: 'File Write'
+icon_name: 'file-output'
+display_name: 'File Write'
+default_alias: 'File Write'
+description: 'Write content to a file and emit a typed file reference'
+ui_hints:
+  forwarded_input_port: 'content'
+  forwarded_input_fallbacks: ["file_path"]
 inputs:
   content:
-    type: any
-    required: true
-    label: Content
-    description: Data written to the file
-    sources: ["upstream", "vault", "configured"]
-    default: upstream
+    type: 'string'
+    required: True
+    label: 'Content'
+    description: 'Text or Base64 text written to the file'
+    sources: ['upstream', 'vault', 'configured']
+    default: 'upstream'
     parameter:
-      type: multiline
-      label: "Content (E to edit, ESC to finish)"
+      type: 'multiline'
+      label: 'Content (E to edit, ESC to finish)'
   file_path:
-    type: file
-    required: true
-    label: File path
-    description: Destination path, or a file reference from upstream/vault
-    sources: ["upstream", "vault", "configured"]
-    default: configured
+    type: 'file'
+    required: True
+    label: 'File path'
+    description: 'Destination path, or a file reference from upstream/vault'
+    sources: ['upstream', 'vault', 'configured']
+    default: 'configured'
     parameter:
-      type: string
-      label: File path
-      placeholder: /path/to/output.md
-      path_hint: file
-      path_mode: write
-      required: true
-
+      type: 'string'
+      label: 'File path'
+      placeholder: '/path/to/output.md'
+      path_hint: 'file'
+      normalize_local_path: True
+      path_mode: 'write'
+      required: True
 outputs:
   default:
-    name: File Reference
-    type: file
-    required: true
-    to: ["downstream", "vault"]
-    pass_through: true
-    description: Typed reference to the written file
-
+    name: 'File Reference'
+    type: 'file'
+    required: True
+    to: ['downstream', 'vault']
+    pass_through: True
+    description: 'Typed reference to the written file'
 output_routing:
-  default: transient
+  default: 'transient'
   vault:
-    mode: optional
-
+    mode: 'optional'
 config_tabs:
   Parameters:
     write_mode:
-      type: select
-      label: Write mode
-      options: ["Overwrite", "Append", "Create unique"]
-      default: Overwrite
-      description: Create unique adds a numeric suffix instead of replacing
+      type: 'select'
+      label: 'Write mode'
+      options: ['Overwrite', 'Append', 'Prepend', 'Create unique']
+      default: 'Overwrite'
+      description: 'Append adds at bottom; Prepend adds at top. Text is joined exactly, without automatic separators.'
     binary_content:
-      type: boolean
-      label: Binary content (Base64)
-      default: false
-      description: Decode the content as Base64 and write raw bytes
-    # Keep these options in sync with backend/window_manager.py
-    # PLACEMENT_PRESETS (the node class imports the constant directly).
+      type: 'boolean'
+      label: 'Binary content (Base64)'
+      default: False
+      description: 'Decode the content as Base64 and write raw bytes'
     open_after_write:
-      type: boolean
-      label: Open after write
-      default: false
-      section: OS Window
-      description: Open the file in its OS-default app (a loop opens the file each iteration)
+      type: 'boolean'
+      label: 'Open after write'
+      default: False
+      section: 'OS Window'
+      description: 'Open the file in its OS-default app (a loop opens the file each iteration)'
     window_placement:
-      type: select
-      label: Open at
-      options: ["OS default", "Right of AOTN", "Left of AOTN", "Other monitor", "Same monitor, right half"]
-      default: OS default
-      section: OS Window
-      description: Screen placement preset for the opened window
+      type: 'select'
+      label: 'Open at'
+      options: ['OS default', 'Right of AOTN', 'Left of AOTN', 'Other monitor', 'Same monitor, right half']
+      default: 'OS default'
+      section: 'OS Window'
+      description: 'Screen placement preset for the opened window'
       visible_when:
-        open_after_write: true
+        open_after_write: True
     close_on_run_end:
-      type: boolean
-      label: Close when run ends
-      default: false
-      section: OS Window
-      description: Off keeps the window open for reading after the run
+      type: 'boolean'
+      label: 'Close when run ends'
+      default: False
+      section: 'OS Window'
+      description: 'Off keeps the window open for reading after the run'
       visible_when:
-        open_after_write: true
-  Payloads:
-    terminate_branch:
-      type: boolean
-      label: Terminate branch after completion
-      default: false
-      section: Branch
-      description: End this branch after the file is written
-
-execution_template: output_sink
+        open_after_write: True
+    interpret_newlines:
+      type: 'boolean'
+      label: 'Interpret newline escapes (\\n and /n)'
+      default: False
+      description: 'Convert only these two sequences in text; literal by default.'
+      visible_when:
+        binary_content: False
+execution_template: 'output_sink'

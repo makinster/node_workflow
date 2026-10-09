@@ -1,0 +1,30 @@
+node_type: start_node
+class_name: StartNode
+category: flow
+primary_family: Flow Control
+display_name: Start
+description: Entry point for workflow execution
+input_ports: []
+outputs:
+  default:
+    name: Greeting
+    type: string
+    required: true
+    to: ["downstream", "vault"]
+    pass_through: false
+output_routing:
+  default: transient
+  vault:
+    mode: optional
+ui_hints:
+  standard_output: true
+  output_value_fields:
+    default: greeting
+config_tabs:
+  Parameters:
+    greeting:
+      type: string
+      default: Workflow started
+      required: true
+      description: Message to emit when the workflow begins
+execution_template: pass_through

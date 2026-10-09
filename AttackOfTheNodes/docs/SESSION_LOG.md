@@ -4,6 +4,369 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-09 — Publish Payload/File Routing PR
+
+Owner confirmed the saved-workflow fixes live and requested a PR. Authoritative
+root `/home/makin/src/node_workflow`, starting `main` at `1211e68`; fetched
+origin/main and confirmed synchronization. Created `codex/payload-file-routing`
+for the accumulated payload/file implementation and saved-workflow follow-up.
+Preserved the unrelated Windows-path test file, `Workflow started` output,
+and recovery-only checkout. Updated handoff publication status.
+
+Fresh verification: **796 tests passed in 126.79s**; app/helper compilation
+and `git diff --check` passed. Publish for review; merging is a separate step.
+
+## 2026-10-08 — Fix Saved File Forwarding And Connected Text Output
+
+Resumed the interrupted follow-up in `/home/makin/src/node_workflow`, `main`,
+base `1211e68`. Fetched origin and confirmed already up to date before edits.
+Changes remain uncommitted; preserved existing work and the recovery checkout.
+Recovered the attached screenshot through `/mnt/c/Users/...` and inspected the
+saved file-test graph read-only, without executing or modifying owner files.
+
+Reproduced Writer's configured Content + incoming File Path connection: both
+runtime and tracing assumed Content. Both now prefer connected Content and
+fall back to connected File Path, preserving the actual incoming payload and
+its provenance. A forwarding node without a connected source does not claim
+its own result. UI labels follow the selected connected forwarding input.
+
+Start now has one value editor in Parameters, with a read-only live value
+preview in Payloads plus its routing controls. Old custom output-name overrides
+no longer mislabel its greeting and are cleared on Save. Text Output now shows
+selected source, template/label, captured-value preview and routing in Payloads.
+Its existing any-input contract is intentional: values are formatted as text;
+file references are displayed, not read. This is explained in the UI and tested.
+
+The saved Wait Until was downstream of Text Output b2. Unconditional termination
+introduced in the previous build prevented reaching Wait Until at all. Restored
+Text Output continuation when connected, naturally ending when unconnected;
+End remains an explicit stop. Branch-health traversal follows connected Text
+Output nodes. This supersedes the prior unconditional Text Output termination
+contract. No change to Wait Until's target/completion barrier was necessary.
+The optional routing preference was unanswered; continuation was chosen to
+restore the owner's demonstrated existing workflow, as stated during the work.
+
+Verification: **796 full-suite tests passed in 127.58s**. Focused combined regression slice: 46 passed.
+Existing Wait Until UI/runtime slice plus new UI/file tests: 38 passed before
+continuation changes. New integration covers configured file writes on one
+parallel branch and Text Output → Wait Until → File Reader on the other,
+waiting for either Writer or its following Text Output, across save/reload and
+two runs. Start/Text Output production-CSS mounts cover 60/100/140 columns.
+Helper UI checks pass for Start, Text Output and Writer; all three specs were
+regenerated in temporary projects, preserving custom runtime implementations.
+Compile and whitespace checks pass. Earlier full-run failures were obsolete
+Content-only label and terminal-output assertions, corrected to exercise the
+new contracts; the integrated End completion log is now asserted explicitly.
+
+Evidence: `docs/audits/payload_followup_2026_10_08/README.md` and
+`tests/test_reported_payload_routing.py`. Owner workflows remain unchanged;
+reopen/restart the app to load the updated implementation. Native Windows FO7,
+line-number insertion and the unreproduced host-prefix issue are unchanged.
+
+## 2026-10-07 — Complete Payload/File Build And Integration Audit
+
+Continued the interrupted build in `/home/makin/src/node_workflow`, `main`,
+base HEAD `1211e68` (origin synchronized during this build). All changes remain
+uncommitted. Preserved existing edits, unrelated untracked files and the
+recovery-only OneDrive checkout. Three agents implemented the file, runtime
+and frontend tracks; the integrator finished their audits after usage limits.
+
+Implemented the PAYLOAD_FILE_IO_BUILD_PLAN contract: File Manager rename and
+multiple files with selected downstream reference/remaining typed Vault keys;
+File Reader configured/upstream/Vault reference reads with independent text
+publication; Writer string Content, prepend/append and opt-in newline escapes;
+Start typed Vault output; Text Output source dropdown; accurate forwarding
+previews/types; compatible source filtering and deleted-reference lifecycle;
+explicit terminal nodes; Merge home/selected-sibling carry-forward and capacity
+checks. Earlier Content/error-modal keyboard fixes remain included.
+
+Shared audit fixes: actual legacy Vault capabilities gate controls, output
+metadata identifies text/number producers, User Text Input declarations carry
+string type, nested defaults are copied, and Vault-only outputs are excluded
+from upstream choices. Saved file forwarding uses `transient_output=False`
+to suppress the own result, not the forwarded input; both runtime and source
+eligibility now preserve that distinction with regression coverage.
+
+Versioned migrations preserve old values under `_config_migrations` and unknown
+config keys. Retired file termination flags become continuation; End/Text Output
+express terminal paths. Text Output legacy multi-key source selection requires
+choosing one. Existing Reader configs remain Configured. See the build plan for
+all migration details. Preserved the original Reader path tests in a dedicated
+file after helper generation replaced the generated test file.
+
+Verification: **784 full-suite tests passed in 121.97s**, including the full debug suite. Compile checks passed for app/helper and
+`git diff --check` passed. Helper UI contracts passed for Reader, Writer,
+Manager, Start and Text Output. Mounted production-CSS audit: 37 types in the
+registry, 36 editable types, 108 mounts at 60/100/140 columns; 36/36 Cancel,
+72/72 unrelated-config preservation, 72/72 repeated-save equality, 163
+conditional states, no state exceptions. Both integrated home/sibling Merge
+workflows pass, including save/reload, file/text Vaults, Reader/Writer,
+terminal output, and deletion/undo. Earlier failed runs exposed obsolete UI
+fixtures/error wording; updated tests retain their behavioral assertions.
+Evidence: `docs/audits/payload_file_io_2026_10_07/`.
+
+Remaining: numbered-line insertion is deferred. Native Windows/window placement
+and owner's live terminal FO7 remain manual checks. The quoted Windows example
+normalizes to its existing WSL path; the reported `makin@kelly:` prefix was not
+reproduced and its origin is unconfirmed. No claim of live Windows verification.
+
+## 2026-10-07 — Add Windows Copy-As-Path Investigation To Build Plan
+
+Owner reported a quoted Windows path displayed as
+`makin@kelly:/mnt/c/Users/makin/Documents/App_Tests/test.md` on execution.
+Authoritative root `/home/makin/src/node_workflow`, `main`, HEAD `1211e68`;
+origin/main synchronized. Preserved existing edits and unrelated files.
+
+Read-only check of the exact quoted Windows input through normalize_local_path
+returned `/mnt/c/Users/makin/Documents/App_Tests/test.md`; is_file was True.
+No contents read or file changes made. Current converter does not construct a
+user/host prefix, and FileViewerScreen displays the supplied path directly.
+The expected WSL translation is verified; the reported prefix/UI symptom is
+not reproduced and remains open.
+
+Added P0a to PAYLOAD_FILE_IO_BUILD_PLAN and linked the concern in PROJECT_BACKLOG:
+trace config/reference/event/display separately, preserve entered paths,
+classify drive/UNC/POSIX forms with runtime OS rather than slash direction alone,
+retain wslpath for actual mount mappings, and define extended/WSL-share/network
+support and errors. Path tests must cover Save/reopen and complete execution,
+not only the converter. File track owns this before new file-access features.
+
+Existing Reader/path regression slice **61 passed in 0.11s**; this does not
+establish coverage of every newly planned path form. Local plan Markdown links
+and `git diff --check` passed. No runtime changes; documentation uncommitted.
+
+## 2026-10-07 — Rename File Manager And Plan Reader Text Routing
+
+Owner renamed File Viewer to File Manager and requested File Reader contents
+as text transient/Vault payloads. Authoritative root
+`/home/makin/src/node_workflow`, branch `main`, HEAD `1211e68`; origin/main
+fetch/fast-forward merge up to date. Earlier dirty/untracked work preserved.
+
+Changed the node's display name and new-node default alias to File Manager,
+aligned its helper spec and existing generated metadata expectation, and updated
+NODE_CATALOG. Internal `file_view_node`, viewer screen/event identifiers and
+existing saved aliases remain intact. The node still displays one file until
+the planned multi-file stage lands.
+
+Existing FileReaderNode already reads a configured UTF-8 file into downstream
+text. Extended PAYLOAD_FILE_IO_BUILD_PLAN with P2a to add typed file-reference
+Upstream/Vault sources and independent typed string downstream/Vault outputs;
+preserve old file_path/port identities, read-only behavior, empty-file handling
+and current Windows/WSL normalization. Reader remains separate from Manager's
+file-reference output. Updated track ownership, integration scenarios and
+CONFIG_UI_BUILD_PLAN/MASTER_BUILD_PLAN/PROJECT_BACKLOG links. Reader extensions
+are planned, not implemented; no duplicate Reader node added.
+
+Verification: `check_node.py file_view_node` compiled the application and passed
+**9 existing node tests**; `check_ui.py file_view_node` passed. Local Markdown
+links and `git diff --check` passed. No new tests needed for the label-only
+runtime change; no full-suite rerun. Changes uncommitted.
+
+## 2026-10-07 — Plan Payload, Vault And File I/O Follow-up
+
+Owner requested a coordinated build plan for forwarding preview/source-type
+defects, Start/Text Output Vault controls, multi-file Viewer, Writer newline and
+top/bottom insertion, completion-checkbox removal and Merge branch choices.
+Worked in `/home/makin/src/node_workflow`, `main`, HEAD `1211e68`;
+fetch/fast-forward merge origin/main up to date. Preserved earlier uncommitted
+fixes and unrelated untracked files; recovery checkout untouched.
+
+Investigated current code. Found legacy-only pass-through detection, first-input
+tracing, Start's absent Vault write, Text Output's absent standard source/Vault
+read, Writer Content declared any, empty-Vault-only source pruning, single-file
+Viewer execution, file completion controls and selected-beacon-only Merge carry
+choices. Noted Sleep forwards incoming data and `next_node_id: None` does not
+stop connected traversal. These are code findings; exact owner graphs were not
+live-reproduced. No application changes or agents launched in this planning task.
+
+Created PAYLOAD_FILE_IO_BUILD_PLAN with P0–P6, shared type/provenance contracts,
+separate frontend/runtime/file/integrator ownership, serialized shared-file
+editing, multi-file declaration/execution rules, migration decisions, explicit
+line-number TODO and behavioral/live verification gates. Linked it from README,
+TASK_INDEX, CONFIG_UI_BUILD_PLAN, MASTER_BUILD_PLAN and PROJECT_BACKLOG. The new
+owner terminal-node direction is identified as superseding the old optional
+checkbox policy, with old-save migration to settle before implementation.
+
+Documentation-only verification: local Markdown links and `git diff --check`.
+No new application tests run; prior **686 passed** remains the last completed
+implementation baseline. Plan and related documentation are uncommitted.
+
+## 2026-10-07 — Hide Deleted File Producers From Vault Source Pickers
+
+Owner reported deleted file-reference producers still offered as Vault sources
+for new File I/O nodes. Authoritative root `/home/makin/src/node_workflow`,
+branch `main`, starting HEAD `1211e68`; fetch/merge origin/main up to date.
+Preserved all earlier uncommitted fixes, unrelated untracked file, and the
+recovery checkout.
+
+Found two causes: soft-delete is a frontend overlay, so scanning backend
+configs counted deleted nodes as live writers; after tombstone materialization
+or permanent removal, leftover Vault values were treated as external entries.
+Editor now passes its workflow adapter to NodeConfigScreen. Writer declarations
+use the adapter to recognize soft deletion and tombstones, retain original
+keys with no active writer ids, and filter those keys from compatible source
+options. A surviving eligible writer keeps a shared key available. Persisted
+file entries without a current graph declaration are hidden even after full
+removal or replacement. Vault data and tombstone restoration remain intact;
+undo restores choices. External nonfile entries retain existing compatibility.
+Saved invalid selections remain visible as not declared for repair; fresh
+consumers do not offer those choices or an empty Vault source option.
+
+Added 15 regressions covering Viewer/Writer producers before/after execution,
+soft delete/undo, JSON save/reload and restore, permanent removal, replacement,
+shared parallel keys, self/downstream exclusions after parallel deletion,
+external nonfile values, and mounted editor-to-config Writer/Viewer/Window
+Control source pickers with fresh and previously saved selections. Updated
+NODE_STANDARDS eligibility documentation. Initial mounted tests accidentally
+selected the editor's highlighted deleted row; fixed the fixture to select the
+consumer's actual displayed row. Final new regression slice **15 passed**;
+existing config/tombstone/Vault slice **35 passed**. Frontend compilation and
+`git diff --check` passed. Full application suite **686 passed in 118.51s**;
+final `git diff --check` passed. UI verification used headless Textual with
+production CSS; live-terminal verification remains with the owner.
+Changes uncommitted.
+
+## 2026-10-07 — Reuse Same-File References And Clarify Output Labels
+
+Owner confirmed the rewired workflow works, then asked to automatically reuse
+a file reference used as input instead of suggesting incremental references to
+the same file. Authoritative root `/home/makin/src/node_workflow`, branch `main`,
+starting HEAD `1211e68`; fetch/merge origin/main up to date. Preserved all earlier
+fixes, unrelated untracked file, and recovery checkout.
+
+References already use resolved paths as identity, not incrementing counters.
+File Writer now retains the actual source reference and resource key when it
+writes the same file. This matches Viewer/Window Control reuse and preserves
+noncanonical incoming keys. Create unique still returns a new reference when
+it writes another file. Vault outputs keep the file reference even when
+downstream forwarding emits Content; output remains usable by later nodes.
+
+Shared file-output Payloads forms explain reuse and label the editable name
+Display name. Additional Vault keys are explained as names for the same file,
+not copies or versions. File Writer advertises its forwarded input in ui_hints
+and its helper spec; the shared checkbox now explicitly names Content, avoiding
+the misleading suggestion that selecting it is required to reuse File Path.
+No automatic checkbox changes or disabling of downstream/Vault output.
+
+Added 20 regressions: upstream/Vault references, repeated Overwrite/Append,
+forwarding on/off, with/without RunSession, preserved keys/registered handles,
+distinct Create unique file identity, reconstruction of a reference missing its
+identity key, and mounted 60-column Writer/Viewer copy.
+Updated Windows-path expectations to preserve incoming typed references while
+still converting paths for actual file access.
+
+Focused affected-file slice **95 passed**; Writer/Viewer UI helpers, compilation,
+and `git diff --check` passed. First full run: **669 passed / 1 failed** in the
+previously intermittent Settings navigation test. It directly moves focus and
+toggles a checkbox without awaiting queued messages before switching tabs;
+added a Pilot pause at that boundary. No Settings production code changed.
+Final reference + Settings slice **21 passed**. Final full application suite
+**671 passed in 116.26s**. Writer forwarding hint matches its normalized helper
+spec; final `git diff --check` passed. Headless UI used production CSS; owner
+live-terminal verification remains.
+Changes uncommitted.
+
+## 2026-10-07 — File Viewer Vault Reference And Downstream File Wiring
+
+Owner confirmed Windows file access and reported File Writer failing to receive
+File Viewer's reference. Requested default reference downstream unless forwarding
+is selected, and an independent optional typed Vault reference accessible to
+parallel branches. Authoritative root `/home/makin/src/node_workflow`, branch
+`main`, starting HEAD `1211e68`; fetch/merge origin/main up to date. Preserved
+all preceding fixes, the unrelated untracked file, and recovery checkout.
+
+- Viewer already emitted a file reference by default. Added optional Vault
+  output metadata/defaults and execution that writes the viewed reference with
+  type `file`, independently of downstream forwarding. Updated its helper spec;
+  reused standard Payloads controls without custom node-screen UI.
+- Identified editor insertion always wiring the first input: File Writer
+  Content, leaving File Path empty. Prefer a unique exact metadata type match;
+  new typed non-first-input connections select Upstream in that input's source.
+  Insert-between reconnection uses the same selector. Unknown/forwarded or
+  ambiguous output types retain the existing first-input behavior.
+- On configuration Save, move an inactive connection (its input now Configured
+  or Vault) to a unique matching unconnected Upstream input. This repairs the
+  existing Viewer→Writer Content misconnection when Content is Configured/Vault
+  and File Path is Upstream. Preserve active Content wiring and configured paths;
+  no automatic load/refresh migration or changes to owner's saved workflows.
+- Added eleven tests: Viewer default/pass-through × Vault on/off, real
+  Viewer→Writer execution after insertion and existing-config Save, preservation
+  of intentional/occupied wiring, mounted production-CSS Vault controls/save/type
+  declarations with forwarding on/off, and actual parallel Vault consumers.
+
+Focused routing tests **11 passed**; existing Viewer/path tests **44 passed**.
+Viewer node/UI helpers, normalized helper-spec optional Vault defaults,
+compilation, and `git diff --check` passed. Final full suite **651 passed in
+116.19s**. First full run had **649 passed / 1 failed** in the existing Settings
+modal navigation test (late tab change); it passed in isolation and unchanged
+in the final full run. Added occupied-port insertion preservation before that
+final run. No Settings production changes were made.
+Changes uncommitted; owner must restart and save the existing Writer config to
+apply the connection repair.
+
+## 2026-10-07 — Windows Copied Paths And Error Dialog Keyboard Recovery
+
+Owner supplied two Error Details screenshots: File Viewer could not find an
+existing Windows path under WSL, and File Writer reported an empty path. Both
+dialogs lacked command navigation. Authoritative root
+`/home/makin/src/node_workflow`, branch `main`, starting HEAD `1211e68`;
+fetch/merge origin/main was up to date. Preserved the preceding Content editor
+fix, unrelated untracked Windows-path-named file, and recovery checkout.
+
+- File Writer and File Viewer now use the existing `normalize_local_path`
+  service at execution, offloading WSL conversion to a thread. Quoted Windows
+  Copy as path values work with Configured, upstream, and Vault sources;
+  configured-path preflight uses the same normalization. Helper specs retain
+  the matching schema hint without regenerating hand-written execution.
+- Confirmed the exact screenshot's `test.md` exists at its `/mnt/c/...`
+  equivalent. Executed the viewer node against quoted and unquoted copies:
+  both completed and emitted the correct Linux path. Did not write that file.
+- An empty selected path source remains an error. Writer now names the source
+  and explains where to supply the path; no implicit source fallback was added.
+- Error Details adopts CommandScreenMixin and vertically arranged buttons,
+  human-readable recovery labels, and a scroll container. Deferred first focus
+  reveals buttons after long-traceback layout; validation jump/Close controls
+  share the behavior. App Back yields to Error Details so Ctrl+Q runs dismissal
+  and clears the pending-error flag via the callback.
+- Added 35 path tests covering sources, quoted paths, session/no-session,
+  reference identity, preflight, conversion failures, and missing-source help.
+  Added 15 production-CSS keyboard tests using the real app, three widths,
+  long tracebacks, all recovery actions, dismissal callbacks, and validation
+  jumps. Early tests exposed default App Ctrl+Q interception and initial scroll
+  timing; final tests use the real app and deferred focus.
+
+Verification: path/Reader/Writer/Viewer slice **91 passed**; error UI slice
+**15 passed**; final full application suite **640 passed in 112.66s**.
+Writer/Viewer node and UI helpers, compilation, and `git diff --check` passed.
+Real WSL path/node verification passed; keyboard checks used headless mounted
+production CSS, with owner live-terminal verification remaining. Changes
+uncommitted.
+
+## 2026-10-07 — Restore Visible File Writer Content Editing
+
+Owner reported that File Writer Content appeared unable to enter editing after
+selecting Configured in Source and switching to Parameters. Authoritative root
+`/home/makin/src/node_workflow`, branch `main`, starting HEAD `1211e68`;
+fetch/merge origin/main was up to date. Preserved the unrelated untracked
+Windows-path-named file and left the recovery checkout untouched.
+
+Production-CSS reproduction showed a two-row TextArea with zero content rows.
+E correctly entered editing and accepted text, but the border-only layout hid
+both text and cursor. Generated multiline/code fields now default to six rows
+when their schema omits height; explicit schema heights retain their behavior.
+No node execution or keyboard bindings changed. Documented the sizing rule.
+
+Added a mounted File Writer regression at 60/100/140 columns and 24 rows:
+enable Configured from Source, switch with 2, verify visible content geometry,
+activate with E, type multiline text including navigation letters and a digit,
+leave with Escape, navigate, and Save with the text preserved. Synthetic
+workflow remains untouched until the caller applies the returned config.
+
+Verification: focused regression passed; full application suite **590 passed
+in 99.61s**. Compilation and `git diff --check` passed. Headless mounted tests
+used production CSS; live owner-terminal verification remains. Changes
+uncommitted.
+
 ## 2026-10-07 — Publish Confirmed Fixes And Synchronize
 
 Owner confirmed the node UI fixes live and requested a PR and an up-to-date

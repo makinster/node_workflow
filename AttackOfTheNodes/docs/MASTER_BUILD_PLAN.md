@@ -1,6 +1,28 @@
 # AttackOfTheNodes Master Build Plan
 
-**Last updated:** 2026-10-06 (pending-change review and audit planning baseline)
+## Saved workflow follow-up — 2026-10-08
+
+Writer forwarding now handles File Path-only connections. Start has one value
+editor and a read-only routing preview; Text Output shows its selected source
+and formatted output preview. Text Output continues when connected, restoring
+existing Text Output → Wait Until chains; unconnected outputs end naturally,
+and End stops explicitly. This supersedes the previous unconditional Text
+Output termination policy. See [follow-up evidence](audits/payload_followup_2026_10_08/README.md)
+and the latest SESSION_LOG for verification. Owner workflows were not modified.
+
+## Payload/file implementation — 2026-10-07
+
+The requested payload/file build is implemented locally on `main` at `1211e68`
+(uncommitted changes). See [the completed contract and migration notes](PAYLOAD_FILE_IO_BUILD_PLAN.md)
+and [verification evidence](audits/payload_file_io_2026_10_07/README.md).
+Includes File Manager multi-file references, Reader text routing, Writer
+prepend/append/newline options, typed source selection, forwarding previews,
+Start/Text Output Vault routing, explicit termination and Merge home payloads.
+Line-number insertion remains deferred. Native Windows FO7 and the reported
+user/host path prefix remain live-verification items, not confirmed fixes.
+This status supersedes older planned descriptions below.
+
+**Last updated:** 2026-10-07 (payload and File I/O follow-up planning)
 **Project root:** `AttackOfTheNodes/`
 **Runtime:** Python 3.14, Textual 8.2.7, asyncio, JSON persistence
 
@@ -22,6 +44,20 @@ store plain path strings.
 The backend is UI-agnostic. Frontend-only behavior belongs under `frontend/`.
 Read `BACKEND_FRONTEND_BOUNDARY.md` before adding backend code for editor/UI
 needs.
+
+## Payload and File I/O follow-up (2026-10-07)
+
+The owner requested forwarding-preview fixes, accurate typed source choices,
+Start/Text Output Vault support, a multi-file Viewer, Writer newline/top/bottom
+editing, removal of optional completion switches and complete eligible Merge
+carry-forward choices. [PAYLOAD_FILE_IO_BUILD_PLAN.md](PAYLOAD_FILE_IO_BUILD_PLAN.md)
+records code evidence, P0–P6 dependencies, agent file ownership, compatibility
+decisions and tests. Implementation is pending; line-number insertion is an
+explicit later TODO. Keep this work separate from execution-screen redesign.
+Naming refinement: File Viewer is renamed File Manager (same internal node
+type); existing File Reader will accept file references and copy their contents
+to typed text transient/Vault outputs in stage P2a. The rename is implemented
+locally; Reader routing and the other functional stages remain planned.
 
 ## Current planning checkpoint (2026-10-06)
 

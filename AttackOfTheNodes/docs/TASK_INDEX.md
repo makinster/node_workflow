@@ -2,6 +2,9 @@
 
 Current session integration: [SESSION_INTEGRATION_BUILD_PLAN.md](SESSION_INTEGRATION_BUILD_PLAN.md).
 Remaining configuration work: [CONFIG_UI_BUILD_PLAN.md](CONFIG_UI_BUILD_PLAN.md).
+Payload previews, typed sources and File I/O follow-up:
+[PAYLOAD_FILE_IO_BUILD_PLAN.md](PAYLOAD_FILE_IO_BUILD_PLAN.md) — current evidence,
+P0–P6 implementation order, agent ownership, migrations and verification.
 
 File Output compatibility and integration order: [FILE_OUTPUT_INTEGRATION_REVIEW.md](FILE_OUTPUT_INTEGRATION_REVIEW.md).
 

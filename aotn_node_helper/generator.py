@@ -24,6 +24,7 @@ VALID_FIELD_TYPES = {
     "multiselect",
     "multiline",
     "code",
+    "object_list",
 }
 VALID_TEMPLATES = {
     "pass_through",
@@ -563,7 +564,10 @@ def _input_source_fields(
         parameter_field["visible_when"] = {
             f"{input_name}_source": SOURCE_OPTION_LABELS["configured"]
         }
-        fields[input_name] = parameter_field
+        configured_field = str(entry.get("configured_field") or input_name)
+        if not re.fullmatch(r"[a-z][a-z0-9_]*", configured_field):
+            raise ValueError(f"{where} configured_field must be snake_case")
+        fields[configured_field] = parameter_field
     elif parameter is not None:
         raise ValueError(
             f"{where} declares a parameter but does not allow the Configured source"
@@ -601,12 +605,12 @@ def _expand_inputs_block(
             raise ValueError(f"inputs.{port} must be an object")
         ports.append(port)
         metadata[port] = _contract_metadata(port, entry, where=f"inputs.{port}")
+        if entry.get("configured_field"):
+            metadata[port]["configured_field"] = str(entry["configured_field"])
         sources = [str(item).strip().lower() for item in entry.get("sources") or []]
         if sources:
             metadata[port]["sources"] = sources
         fields.update(_input_source_fields(port, entry, context="inputs"))
-    if not ports:
-        raise ValueError("inputs: block must declare at least one port")
     return ports, metadata, fields
 
 
@@ -1093,7 +1097,7 @@ def _required_identifier(spec: dict[str, Any], key: str) -> str:
 
 
 def _string_list(value: Any, name: str) -> list[str]:
-    if not isinstance(value, list) or not value:
+    if not isinstance(value, list) or (not value and name != "input_ports"):
         raise ValueError(f"{name} must be a non-empty list")
     result = [str(item).strip() for item in value if str(item).strip()]
     if len(result) != len(value):

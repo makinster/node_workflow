@@ -1,0 +1,33 @@
+node_type: 'file_reader_node'
+class_name: 'FileReaderNode'
+category: 'io'
+primary_family: 'Inputs'
+tags: ['File I/O']
+icon_name: 'file-input'
+display_name: 'File Reader'
+description: 'Copies UTF-8 file contents into a text payload'
+inputs:
+  input:
+    type: 'file'
+    required: True
+    label: 'File'
+    sources: ['upstream', 'vault', 'configured']
+    default: 'configured'
+    configured_field: 'file_path'
+    parameter:
+      type: 'string'
+      label: 'File path'
+      path_hint: 'file'
+      normalize_local_path: True
+      required: True
+outputs:
+  default:
+    name: 'File contents'
+    type: 'string'
+    required: True
+    to: ['downstream', 'vault']
+output_routing:
+  default: 'transient'
+  vault:
+    mode: 'optional'
+execution_template: 'transform_stub'

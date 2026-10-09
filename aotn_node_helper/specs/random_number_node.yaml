@@ -11,6 +11,10 @@ default_alias: Random Number
 description: Produce a random integer or float within a configured range
 input_ports: ["input"]
 output_ports: ["default"]
+output_port_metadata:
+  default:
+    name: Number
+    data_type: number
 config_tabs:
   Parameters:
     mode:

@@ -23,7 +23,7 @@ def config_app(wm, node, memory):
 
 
 @pytest.mark.parametrize("width", [60, 100, 140])
-async def test_vault_toggle_hides_list_and_preserves_selections(width):
+async def test_text_output_source_hides_key_and_preserves_selection(width):
     _, wm, memory, _ = _make_services()
     wm.create_new("visibility")
     writer = wm.add_node("user_text_input_node")
@@ -34,23 +34,22 @@ async def test_vault_toggle_hides_list_and_preserves_selections(width):
     async with app.run_test(size=(width, 24)) as pilot:
         await pilot.pause()
         screen = app.screen
-        toggle = screen.query_one("#membank-reads", Checkbox)
-        choices = screen.query_one("#membank-inputs", SelectionList)
-        assert not toggle.value
+        toggle = screen.query_one("#field-input_source", Select)
+        choices = screen.query_one("#field-input_vault_key", Select)
+        assert not screen.query("#membank-reads")
         assert not choices.display
         assert choices not in screen._keyboard_focus_widgets()
-        app.set_focus(toggle)
-        await pilot.press("enter")
+        toggle.value = "Vault"
         await pilot.pause()
         assert choices.display and not choices.disabled
-        choices.select("notes")
-        await pilot.press("enter")
+        choices.value = "notes"
+        toggle.value = "Upstream payload"
         await pilot.pause()
         assert not choices.display
-        assert choices.selected == ["notes"]
-        await pilot.press("enter")
+        assert choices.value == "notes"
+        toggle.value = "Vault"
         await pilot.pause()
-        assert choices.display and choices.selected == ["notes"]
+        assert choices.display and choices.value == "notes"
         screen.action_cancel()
         await pilot.pause()
         assert wm.get_node_data(node) == before
@@ -135,7 +134,7 @@ async def test_payload_toggle_hides_dependent_rows_and_retains_values():
 async def test_legacy_vault_write_fields_hidden_until_enabled():
     _, wm, memory, _ = _make_services()
     wm.create_new("legacy_write_visibility")
-    node = wm.add_node("logger_node")
+    node = wm.add_node("user_text_input_node")
     app = config_app(wm, node, memory)
     async with app.run_test(size=(100, 24)) as pilot:
         await pilot.pause()
@@ -214,15 +213,14 @@ async def test_unavailable_legacy_write_checkbox_is_hidden(node_type):
     async with app.run_test(size=(100, 24)) as pilot:
         await pilot.pause()
         screen = app.screen
-        writes = screen.query_one("#membank-writes", Checkbox)
-        assert writes.disabled and not writes.display
+        assert not screen.query("#membank-writes")
         passthrough = screen.query_one("#field-pass_through", Checkbox)
         passthrough.value = False
         await pilot.pause()
-        assert writes.display and not writes.disabled
+        assert not screen.query("#membank-writes")
         passthrough.value = True
         await pilot.pause()
-        assert not writes.display
+        assert not screen.query("#membank-writes")
 
 
 @pytest.mark.parametrize("width", [60, 100, 140])
@@ -254,7 +252,7 @@ async def test_short_payload_tab_scroll_stays_on_current_highlight(width):
         assert app.focused is focus
         assert scroll.scroll_y == position
         # A stale reveal request for another control must not move this view.
-        last_field = screen.query_one("#membank-writes")
+        last_field = screen.query_one("#alias-input")
         screen._scroll_config_widget_into_view(last_field)
         await pilot.pause()
         assert scroll.scroll_y == position
