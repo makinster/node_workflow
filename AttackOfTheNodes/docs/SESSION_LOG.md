@@ -4,6 +4,33 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-09 — Investigate AOTN Distributed Direction Brief
+
+Investigation only; no code or other doc changes. Started from `main` at
+`32e9132` (PR #30). Checked the owner's distributed-direction brief (triggers,
+workflow contracts, headless server, supervisor/router, AI inputs, `[error]`
+type, error details tab, error mux) against code and docs. Full findings went
+to the owner in the session reply; key code facts:
+
+- Triggers, nested workflows, headless CLI and the multi-frontend API are
+  already recorded as Phase 19/20 and Phase N/N+1/N+2 in MASTER_BUILD_PLAN and
+  PROJECT_BACKLOG. The backlog makes the trigger watcher depend on headless and
+  nested workflows. No separate rejection-record file exists in the repo.
+- The backend runs without Textual installed (`demo_execution.py` finished).
+  Headless runs block forever on any node error (recovery future), user input,
+  or a saved breakpoint. `MasterState.start_workflow` does not validate.
+- `http_request_node`/`json_path_node` failures write the `error` port but
+  route via `default`. The node reports `done`, the run finishes, and a node
+  wired to `error` never runs (scratch probe).
+- "Dead-drop" and "transient" are synonyms in the docs and code; the second
+  output kind is Vault. Config tab 4 is the read-only Connections tab, which
+  WAIT_UNTIL_UI_PLAN marks "retain" and tests depend on.
+- The backlog's "cycles are rejected by the validator" does not match the code:
+  there is no cycle check. `node_timeout_seconds` only bounds Wait Until and
+  Merge waits, not `execute()`.
+
+No tests run (no code changed).
+
 ## 2026-10-09 — Publish Payload/File Routing PR
 
 Owner confirmed the saved-workflow fixes live and requested a PR. Authoritative
