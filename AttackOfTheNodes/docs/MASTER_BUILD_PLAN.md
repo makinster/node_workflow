@@ -1,5 +1,17 @@
 # AttackOfTheNodes Master Build Plan
 
+## Distributed direction approved — 2026-10-11
+
+The owner signed off the revised long-term plan in
+[DISTRIBUTED_BUILD_PLAN.md](DISTRIBUTED_BUILD_PLAN.md):
+- input/recovery providers instead of headless twins;
+- triggers launch runs;
+- subworkflows as child runs;
+- `RunContext` extraction as step 1b.
+
+Step 1 (bug fixes) has not started and waits on the owner's read of that plan.
+It supersedes the Phase N / N+1 / N+2 sketches under Later Roadmap.
+
 ## Saved workflow follow-up — 2026-10-08
 
 Writer forwarding now handles File Path-only connections. Start has one value
@@ -333,6 +345,29 @@ Focused checks:
   curated model list in one backend constant, provider registry seam.
   Remaining: `embedding_node` and `image_generation_node` are still stubs;
   streaming responses and the `AI Input` node are deferred.
+- **Distributed direction (approved 2026-10-10/11).** Headless runs, triggers,
+  contracts and the server now follow
+  [DISTRIBUTED_BUILD_PLAN.md](DISTRIBUTED_BUILD_PLAN.md). Phases 19/20 are its
+  step 4. Step 1 starts only after the owner has read the plan.
+
+  | Step | Contents |
+  |---|---|
+  | 1 | Bug fixes: error-port routing, Stop/leak, unattended policy passed in at run start |
+  | 1b | `RunContext` extraction + WaitRegistry |
+  | any time | Refresh coalescer (frontend only) |
+  | 2 | Run service API, `RecoveryPolicy`/`InputProvider`, configurable data directory, `aotn run` CLI |
+  | 3 | `[error]` routing: payload schema, declared error codes, error mux, unreachable signal |
+  | slice | ESP32 proof: cron → capture to run-owned `file` → error routed to a notification |
+  | 4 | Workflow contracts + subworkflows as child runs (Phases 19/20) |
+  | 5 | Event sources + start triggers with `single`/`queued` modes (`restart` once Stop is clean) |
+  | 6 | HTTP/WebSocket server, auth, encrypted secrets, `parallel` runs |
+
+### Superseded roadmap entries (kept for history)
+
+The entries below are superseded by `DISTRIBUTED_BUILD_PLAN.md` decisions
+D1–D4. The metadata conditional nodes remain a future option; only their
+export interaction is superseded.
+
 - **Phase N — Headless CLI execution.** `aotn <workflow name>` entrypoint,
   compile-and-swap export (duplicate file, TUI I/O nodes swapped for headless
   twins with identical port shapes), `HeadlessStartNode` preamble, configurable

@@ -46,3 +46,13 @@ completed planning files were archived instead.
 Untracked root `docs/hello.txt` was intentionally not touched because it is
 outside the tracked active docs tree and prior workflow asked to ignore
 untracked unrelated files.
+
+## 2026-10-11 — Distributed Direction Build Plan added
+
+| Old location | New location | Action | Reason |
+|---|---|---|---|
+| n/a | `DISTRIBUTED_BUILD_PLAN.md` | Added | Records the approved long-term direction: decisions D1–D4/R1–R4 and steps 1–6 |
+| `PROJECT_BACKLOG.md` headless CLI, Start-node redesign, nested headless validation, headless-export interaction, always-running watcher, performance item 4 | same file | Superseded banners added; text kept | The owner asked that superseded sections be marked rather than deleted |
+| `MASTER_BUILD_PLAN.md` Phase N / N+1 / N+2 roadmap bullets | same file, "Superseded roadmap entries" | Kept under a superseded heading; the step table was added above them | Same reason |
+| `AGENT_HANDOFF.md` Long-Range Direction | same file | Superseded pointer added | Same reason |
+| `NODE_CATALOG.md` Wait Until row | same file | Corrected | The row said Wait Until waits on a Vault key; the code waits on node completion |

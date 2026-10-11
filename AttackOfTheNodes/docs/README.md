@@ -4,6 +4,7 @@ Current project and session rundown: [SESSION_SUMMARY.md](SESSION_SUMMARY.md).
 
 Current session integration: [SESSION_INTEGRATION_BUILD_PLAN.md](SESSION_INTEGRATION_BUILD_PLAN.md).
 Remaining configuration work: [CONFIG_UI_BUILD_PLAN.md](CONFIG_UI_BUILD_PLAN.md).
+Long-term distributed direction (approved 2026-10-11): [DISTRIBUTED_BUILD_PLAN.md](DISTRIBUTED_BUILD_PLAN.md).
 Owner-requested payload, Vault and File I/O fixes:
 [PAYLOAD_FILE_IO_BUILD_PLAN.md](PAYLOAD_FILE_IO_BUILD_PLAN.md).
 
@@ -27,7 +28,7 @@ tkinter/proof-of-concept material lives under `docs/archive/`.
 | Change backend/runtime behavior | `ARCHITECTURE.md`, `SIGNAL_FLOW.md` | `PROJECT_KNOWLEDGE.md`, `BACKEND_FRONTEND_BOUNDARY.md` |
 | Design or update node taxonomy | `PHASE_17_NODE_VISUAL_IDENTITY.md`, `NODE_CATALOG.md`, `NODE_STANDARDS.md` | `TASK_INDEX.md`, `BACKEND_FRONTEND_BOUNDARY.md` |
 | Continue Phase 17 node identity | `PHASE_17_NODE_VISUAL_IDENTITY.md`, `TASK_INDEX.md` | `UI_QUICK_REFERENCE.md`, `TUI_DESIGN.md`, `BACKEND_FRONTEND_BOUNDARY.md` |
-| Continue the roadmap | `AGENT_HANDOFF.md`, `MASTER_BUILD_PLAN.md` | `SESSION_LOG.md`, `PROJECT_BACKLOG.md` |
+| Continue the roadmap | `AGENT_HANDOFF.md`, `MASTER_BUILD_PLAN.md` | `DISTRIBUTED_BUILD_PLAN.md`, `SESSION_LOG.md`, `PROJECT_BACKLOG.md` |
 | Update docs | `README.md`, `TASK_INDEX.md`, `DOCS_MIGRATION_NOTES.md` | — |
 | Check what changed recently | `SESSION_LOG.md` | `archive/SESSION_LOG_HISTORY.md` |
 
@@ -103,6 +104,7 @@ Read these before starting a new major project or moving/archiving docs.
 
 | File | What it contains | When to open it |
 |---|---|---|
+| `DISTRIBUTED_BUILD_PLAN.md` | Approved long-term direction (2026-10-11): decision record D1–D4/R1–R4, step 1 bug fixes through step 6 server, trigger concurrency modes, run-owned temp files, open wait-for-event question | Before any headless, trigger, subworkflow, `[error]` routing, WaitRegistry or server work |
 | `PAYLOAD_FILE_IO_BUILD_PLAN.md` | Current payload previews, typed source choices, Start/Text Output Vault behavior, multi-file Viewer, Writer modes, explicit termination and Merge branch fixes; staged agent ownership and verification | Before implementing the owner's 2026-10-07 payload/File I/O requests |
 | `PROJECT_BACKLOG.md` | Deferred and near-term projects with full design specs, including backend features not yet surfaced in the UI, boundary cleanup, tombstone restore, runtime resources, typed vault, toast system, and AI sessions | Before starting any work listed here — it may already be designed; check before re-designing |
 | `TASK_INDEX.md` | Task-first reading lists, likely files per task, focused `pytest -k` commands, helper tool commands | After choosing a task type — the minimum reading set and the right verification pattern |

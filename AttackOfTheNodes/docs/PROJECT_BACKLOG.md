@@ -1,5 +1,12 @@
 # AttackOfTheNodes Project Backlog
 
+## Distributed direction approved — 2026-10-11
+
+See [DISTRIBUTED_BUILD_PLAN.md](DISTRIBUTED_BUILD_PLAN.md). The headless twin, Start-node variant, nested headless validation,
+headless-export and always-running watcher sections below carry superseded
+banners. Their text is kept for history. Step 1 (bug fixes) waits on the
+owner's read of the plan.
+
 ## Payload/file implementation — 2026-10-07
 
 The requested payload/file build is implemented locally on `main` at `1211e68`
@@ -350,6 +357,18 @@ plan's scope, per its design decisions:
 
 ## Future Direction — Headless CLI Execution (`aotn`)
 
+> **Partly superseded (2026-10-11).** Headless execution now follows [DISTRIBUTED_BUILD_PLAN.md](DISTRIBUTED_BUILD_PLAN.md)
+> steps 1–2:
+> - an unattended policy passed in at run start;
+> - a run service API;
+> - `RecoveryPolicy`/`InputProvider` interfaces;
+> - an `aotn run` CLI.
+>
+> Compile-and-swap twins are replaced by providers (decision D1). Still
+> active: the goal, "Configurable Data Directory" and the "What to avoid"
+> list. Each superseded subsection below is marked; the original text is
+> kept for history.
+
 Goal: execute a workflow from the terminal without launching the TUI —
 `aotn <workflow name>` — for scripting, automation, and scheduled runs.
 
@@ -359,6 +378,10 @@ without Textual. The path to a CLI entrypoint is adding a thin wrapper that
 wires the backend without starting the app.
 
 ### Compile-and-Swap Model
+
+> **Superseded (2026-10-11)** by [DISTRIBUTED_BUILD_PLAN.md](DISTRIBUTED_BUILD_PLAN.md) decision D1. No headless twin node
+> types: input comes from the run's `InputProvider` (stdin, CLI args, API, AI),
+> and output from the run service's events and results.
 
 Headless execution uses a **duplicate saved file** produced by a "Save for
 headless execution" export option. The TUI workflow is always the editable
@@ -378,6 +401,10 @@ error: `"Cannot compile for headless — node '[Alias]' has no terminal
 equivalent."` This surfaces cleanly before the file is ever written.
 
 ### Headless Input Node: Interaction Format from Type
+
+> **Superseded (2026-10-11)** by [DISTRIBUTED_BUILD_PLAN.md](DISTRIBUTED_BUILD_PLAN.md) decision D1. No headless twin node
+> types: input comes from the run's `InputProvider` (stdin, CLI args, API, AI),
+> and output from the run service's events and results.
 
 The default mode for every headless input twin is **prompt stdin at runtime**.
 No configuration is required at export time — the swap alone is sufficient for
@@ -416,6 +443,10 @@ config the TUI node carried — they transfer through the swap automatically.
 
 ### Headless Input Mode (Optional Power-User Config)
 
+> **Superseded (2026-10-11)** by [DISTRIBUTED_BUILD_PLAN.md](DISTRIBUTED_BUILD_PLAN.md) decision D1. No headless twin node
+> types: input comes from the run's `InputProvider` (stdin, CLI args, API, AI),
+> and output from the run service's events and results.
+
 After export, individual input nodes can be reconfigured for automation. Each
 headless input twin exposes a `headless_input_mode` field:
 
@@ -431,10 +462,19 @@ default `prompted` mode always works for a human running the workflow manually.
 
 ### Headless Output Node
 
+> **Superseded (2026-10-11)** by [DISTRIBUTED_BUILD_PLAN.md](DISTRIBUTED_BUILD_PLAN.md) decision D1. No headless twin node
+> types: input comes from the run's `InputProvider` (stdin, CLI args, API, AI),
+> and output from the run service's events and results.
+
 Output twin defaults to **stdout**. Optional `output_file` config on the node
 redirects output to a file path. No configuration required at export time.
 
 ### Start Node Redesign
+
+> **Partly superseded (2026-10-11).** `HeadlessStartNode` is replaced by the
+> provider model (D1), and `TriggerStartNode` by start triggers that launch runs
+> through a workflow contract (D2). `NestedStartNode` becomes the typed Start
+> contract of [DISTRIBUTED_BUILD_PLAN.md](DISTRIBUTED_BUILD_PLAN.md) step 4.
 
 The `StartNode` is currently auto-generated and functionally minimal — it is
 hidden in the editor by default and carries no user-facing config. The redesign
@@ -468,6 +508,11 @@ related values that belong together.
 
 ### Nested Workflows and Headless Validation
 
+> **Superseded (2026-10-11).** There is no headless export, so there is no
+> `headless_valid` flag. Subworkflows are child runs linked by `parent_run_id`
+> (D3) and are validated against their typed contract ([DISTRIBUTED_BUILD_PLAN.md](DISTRIBUTED_BUILD_PLAN.md) step 4). The
+> black-box trust idea (check the contract, not the internals) carries over.
+
 Nested workflow nodes (Phases 19/20) are treated as a **black box** by the
 headless validator. The validator does not re-traverse the nested workflow's
 internal graph. Instead it checks two things only:
@@ -488,6 +533,8 @@ validation before the `headless_valid` flag is set, and any nested workflows
 trusts its children's flags rather than re-walking the full graph.
 
 ### Configurable Data Directory
+
+> **Still active (2026-10-11):** scheduled in [DISTRIBUTED_BUILD_PLAN.md](DISTRIBUTED_BUILD_PLAN.md) step 2, before the CLI.
 
 The current `Path(__file__).resolve().parent.parent` anchor in `persistence.py`
 assumes the source tree layout. CLI users need a configurable base path (env
@@ -562,6 +609,10 @@ error on the TUI branches as long as they are behind an execution-mode gate.
 
 ### Interaction with Headless Export
 
+> **Superseded (2026-10-11).** There is no headless export (D1 in [DISTRIBUTED_BUILD_PLAN.md](DISTRIBUTED_BUILD_PLAN.md)).
+> The metadata conditional nodes themselves remain a possible future option,
+> keyed on the run's launch context.
+
 When a user runs "Save for headless execution" on a workflow containing
 execution-mode conditionals:
 
@@ -589,6 +640,16 @@ execution-mode conditionals:
 ---
 
 ## Future Direction — Always-Running Trigger Watcher
+
+> **Superseded (2026-10-11)** by [DISTRIBUTED_BUILD_PLAN.md](DISTRIBUTED_BUILD_PLAN.md) decision D2: a trigger launches a new
+> run per event, through the workflow's contract, with per-trigger
+> concurrency modes (step 5). A wait-for-event node in the middle of a
+> workflow is an open question in that plan.
+>
+> The cross-run persistent state point below carries forward into step 5.
+> **Correction:** "Cycles are currently rejected by the validator" is wrong.
+> The validator has no cycle check, and loops run today (verified
+> 2026-10-09). The original text is kept for history.
 
 Goal: a long-running headless workflow that never terminates — it monitors for
 external triggers (file changes, webhooks, cron schedules, socket messages) and
@@ -645,6 +706,9 @@ automation layer.
 ---
 
 ## Future Direction — Multi-Frontend Expansion (Chrome Extension, Desktop GUI)
+
+> **Scheduled (2026-10-11)** as [DISTRIBUTED_BUILD_PLAN.md](DISTRIBUTED_BUILD_PLAN.md) step 6, over the step 2 run service.
+> The invariants listed below remain in force.
 
 Goal: run the backend as a standalone persistent server that multiple
 simultaneous frontends connect to — the existing TUI, a Chrome extension, and a
@@ -1098,7 +1162,8 @@ grow and the save format finalizes.
    `EventBus.publish` copies its subscriber list on every publish; snapshot only
    on subscribe/unsubscribe instead.
 
-4. **Conditional completion-notify.** `MasterState.mark_node_completed` acquires
+4. **Superseded 2026-10-11** by the WaitRegistry in [DISTRIBUTED_BUILD_PLAN.md](DISTRIBUTED_BUILD_PLAN.md) step 1b.
+   **Conditional completion-notify.** `MasterState.mark_node_completed` acquires
    an `asyncio.Condition` and calls `notify_all()` on every node completion even
    when no WaitUntil node exists. Skip the lock/notify when there are zero wait
    targets; preserve WaitUntil and the separate merge barrier.

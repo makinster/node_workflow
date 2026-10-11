@@ -167,7 +167,7 @@ Variants have different port shapes, so they must be separate types
 
 | Node | Status | Notes / Maps from |
 |---|---|---|
-| Wait Until | Live | `wait_until_node` — pause until a named Vault key is set. Tags: Triggered, Conditional |
+| Wait Until | Live | `wait_until_node` — pause until the selected target nodes have completed in the current run (corrected 2026-10-11; it never waited on a Vault key). Tags: Triggered, Conditional |
 | Fixed Delay | Live (debug) | Absorbs `sleep_node` — wait a duration then continue |
 | Timeout Guard | Concept | Continue with an error signal after a limit expires |
 | Debounce | Concept | Wait until a burst of rapid changes settles |
@@ -300,6 +300,10 @@ grouping is the contract until that pressure is real.
 ### Section: Triggers
 
 #### Group: Trigger
+
+> 2026-10-11: start triggers launch a new run per event through a shared
+> event-source layer ([DISTRIBUTED_BUILD_PLAN.md](DISTRIBUTED_BUILD_PLAN.md) step 5, decision D2). A wait-for-event node in the
+> middle of a workflow is an open question in that plan.
 
 Triggers do not execute within a workflow — they start one. They need a
 persistent listener process outside the supervisor execution model (the

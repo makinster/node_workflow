@@ -318,6 +318,9 @@ Read:
 - `AGENT_HANDOFF.md`
 - `MASTER_BUILD_PLAN.md`
 - `SESSION_LOG.md`
+- `DISTRIBUTED_BUILD_PLAN.md` for headless runs, triggers, subworkflows,
+  `[error]` routing, WaitRegistry/RunContext or server work. Step 1 waits on
+  the owner's read of the plan.
 
 Optional deep history:
 

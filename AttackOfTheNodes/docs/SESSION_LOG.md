@@ -4,6 +4,61 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-11 — Record Approved Distributed Direction Build Plan
+
+Docs only; no code changes. Branch `ccr-1b2501bf-dgol6g`, based on `main` at
+`32e9132`. The plan builds on the Oct 9 investigation and a review of the
+WaitRegistry/Refresh Coalescer v2 proposal.
+
+**Approved.** The owner signed off decisions D1–D4:
+
+- providers instead of headless twins;
+- triggers launch runs;
+- subworkflows as child runs;
+- `RunContext` extraction as step 1b.
+
+They also accepted refinements R1–R4:
+
+- step 1 is bug fixes only;
+- the unattended policy is passed in at run start;
+- per-trigger `single`/`queued` modes first, `restart` once Stop is clean,
+  `parallel` at step 6;
+- `file` reuse with run-owned temp files, kept when a run fails.
+
+**Added** `DISTRIBUTED_BUILD_PLAN.md`. The wait-for-event node is recorded as
+an open question with its tradeoffs, not as a decision.
+
+**Superseded, not deleted:**
+
+- `PROJECT_BACKLOG.md`: superseded banners on the headless twin, Start-node
+  variant, nested headless validation, headless-export, watcher and
+  completion-notify sections. The text is kept.
+- `MASTER_BUILD_PLAN.md`: a step table, with the old Phase N/N+1/N+2 bullets
+  kept under a superseded heading.
+
+**Pointers and fixes:**
+
+- Pointers in `AGENT_HANDOFF.md`, `README.md` and `TASK_INDEX.md`.
+- Corrected the `NODE_CATALOG.md` Wait Until row (node completion, not a
+  Vault key).
+- Logged in `DOCS_MIGRATION_NOTES.md`.
+
+**Corrections recorded in the plan:**
+
+- Merge does not stall when a sibling branch fails (corrects the Oct 9 entry).
+- `node_timeout_seconds` effectively bounds nothing.
+- The backlog's cycle-rejection claim is wrong.
+
+**Probes run during the review:**
+
+- Wait Until hangs when its target was terminated or skipped.
+- Stop does not release Wait Until, and a stopped run's waiter wakes inside
+  the next run and writes into its memory.
+- About 5 events per node, each causing a synchronous full screen refresh.
+
+**Step 1 has not started.** It waits on the owner's read of the plan.
+Verification: `git diff --check`, and relative links checked.
+
 ## 2026-10-09 — Investigate AOTN Distributed Direction Brief
 
 Investigation only; no code or other doc changes. Started from `main` at

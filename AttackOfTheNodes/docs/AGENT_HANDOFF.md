@@ -149,6 +149,14 @@ Deferred:
 
 ## Long-Range Direction
 
+> **Superseded in part (2026-10-11).** The approved long-term plan is [DISTRIBUTED_BUILD_PLAN.md](DISTRIBUTED_BUILD_PLAN.md):
+> - providers replace the headless twins described below;
+> - triggers launch runs instead of an always-running watcher;
+> - subworkflows are child runs;
+> - `RunContext` extraction is step 1b.
+>
+> The multi-frontend bullet is its step 6. The text below is kept for history.
+
 Three planned expansions that should shape current build decisions. Full design
 notes and "what to avoid now" guidance live in `PROJECT_BACKLOG.md` under the
 corresponding "Future Direction" sections.
