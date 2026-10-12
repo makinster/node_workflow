@@ -29,7 +29,7 @@ Responsibilities:
 
 Data trades:
 
-- Provides `max_branch_depth`, `node_timeout_seconds`, `last_active_workflow_id` to execution and save services.
+- Provides `max_branch_depth`, `node_timeout_seconds`, `last_active_workflow_id` to execution and save services. (`node_timeout_seconds` only applies to a `wait_for_nodes`/`wait_for_merge` call made with `timeout=None`; Wait Until and Merge pass `0.0`, and node execution itself is never timed out.)
 - Persists updated settings through `persistence.py`.
 
 Signals: none.
@@ -377,13 +377,14 @@ MasterState.start_workflow(unattended="terminate_branch" | "terminate_workflow")
 ```
 
 The TUI passes nothing (attended); the step 2 run service turns this value
-into the first `RecoveryPolicy`. Known gap until step 1b: a Wait Until whose
-target was terminated or never reached still waits forever, attended or not.
+into the first `RecoveryPolicy`. Since step 1b a Wait Until whose target can
+no longer complete fails instead of waiting, so it follows the policy too.
 
 ### User Stops A Run
 
 ```
 MasterState.stop()
+  -> RunContext.wait_registry.stop(): waiters get a `stopped` result
   -> supervisor.request_stop() for each supervisor
   -> cancel each supervisor task (except one that is itself terminating the
      workflow)
@@ -464,11 +465,18 @@ Supervisor._pause_for_breakpoint_if_needed
 ```
 WaitUntilNode.execute
   -> context.wait_for_nodes(target_ids, timeout) -> awaitable
-     -> Supervisor delegates to MasterState.wait_until_nodes_completed
-     -> Acquires asyncio.Condition, waits for all target_ids in completed_nodes
-  -> As other supervisors complete nodes, MasterState.mark_node_completed fires Condition
-  -> When all targets are present, wait_for_nodes returns
-  -> WaitUntilNode calls context.signal_done, supervisor continues
+     -> Supervisor calls the wait callable bound to its own RunContext
+     -> RunContext.wait_registry.wait_for_all([("node", id), ...])
+        -> on registration MasterState evaluates the unreachable rule (D5)
+  -> other supervisors finish nodes:
+     -> report_node_outcome(node, completed|failed|skipped, delivered_to)
+        -> RunContext delivery tracking; MasterState re-evaluates pending keys
+     -> mark_node_completed -> WaitRegistry.mark_completed(("node", id))
+  -> a supervisor terminates -> pending keys re-evaluated
+  -> all targets completed: wait returns, WaitUntilNode signals done
+  -> a target can no longer complete: TargetUnreachableError naming it
+     -> WaitUntilNode signals error -> recovery (or the unattended policy)
+  -> run stopped: WaitStoppedError; the supervisor discards the result
 ```
 
 ### Run Completion

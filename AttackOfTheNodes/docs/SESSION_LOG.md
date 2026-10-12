@@ -4,6 +4,83 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-12 — Distributed Step 1b: RunContext, WaitRegistry, Delivery Tracking
+
+Branch `dist/step-1b-run-context`, from `main` at `e39f5f7` (step 1, PR #32).
+Before: 818 passed. After: 860 passed.
+
+- **`RunContext`** (`backend/run_context.py`): one per run, holding the memory
+  bank reference, `RunSession`, `WaitRegistry`, node timings, branch/merge
+  groups, delivery tracking, live supervisors, `run_id`/`parent_run_id`, the
+  unattended policy and the start time. Supervisors get callables bound to
+  their own run. The Supervisor constructor only gained an optional
+  `report_node_outcome` keyword. `MasterState.completed_nodes`,
+  `node_timings` and `_run_session` remain as views of the current run.
+- **`WaitRegistry`** (`backend/wait_registry.py`): tuple keys
+  (`("node", id)`), sticky completion, wait-for-all on one Future, any
+  unreachable key fails the wait at once, `stop()` gives waiters a `stopped`
+  result. Merge is unchanged apart from its state moving into `RunContext`.
+- **Delivery tracking + D5**: supervisors report each visit's final state and
+  routed targets; pending wait keys are re-evaluated when a node finishes, a
+  supervisor terminates or a wait registers. Never timeout-based.
+- **Wait Until** fails with `TargetUnreachableError` naming the target instead
+  of waiting forever. The code `engine.upstream_unreachable` comes in step 3.
+- **Benchmarks (D6)**: `benchmarks/bench_linear_run.py` (5.04 events per node
+  on a 200-node linear run, matching the Oct 9 figure) and
+  `benchmarks/bench_wait_registry.py`. A test checks pytest collects nothing
+  from `benchmarks/`. Proposal v2 Task 1 Case B (refresh rate with a mounted
+  `ExecutionScreen`) is a frontend measurement and belongs to the coalescer.
+
+**Interpretation notes (no decision reopened):**
+
+- Proposal v2 was not available in the repo, so its WaitRegistry unit tests
+  could not be copied; `tests/test_wait_registry.py` covers the behavior the
+  plan specifies instead.
+- The plan says 1b fixes the Oct 9 hang "where the target was terminated". A
+  target that itself failed was reached, so the literal D5 incoming-connection
+  test does not cover it. The rule therefore also treats a target whose own
+  latest visit failed or was skipped, and that no live supervisor can reach
+  again, as unable to complete.
+- A source that never ran and that no live supervisor can reach is treated as
+  settled (it can only ever become `skipped`, which D9 does explicitly in step
+  3). Without this, a target two or more hops past a failure or an untaken
+  port still hung; the independent review reproduced that.
+- The memory bank stays the one shared instance the TUI displays (cleared per
+  run); separate memory per run is part of step 6's parallel runs.
+
+**Review fixes (independent diff review before merge):**
+
+- Multi-hop hang (above).
+- Outcomes are now reported after a node is marked completed, so evaluation
+  never sees a finished node that is not yet completed.
+- A branch refused by `max_branch_depth` counted as delivered; deliveries
+  for branches are now recorded by `MasterState` only when the child exists
+  (`SUPERVISOR_REQUEST_BRANCH` gains `source_node_id`).
+- Recorded, not fixed (deadlock detection is beyond D5): a target reachable
+  only through the parked waiter, and a Merge whose group includes the
+  waiter's branch (that one also hangs on earlier code). Because Stop cancels
+  tasks, a waiter in a real run sees cancellation; the registry's `stopped`
+  result matters for waits that are not task-cancelled.
+
+**Behavior changes:**
+
+- A Wait Until whose target can no longer complete (failed and not
+  re-reachable, no incoming connections, or every source finished without
+  routing to it) now fails and goes to recovery (or the unattended policy)
+  instead of waiting forever.
+- When Stop is requested while a node is running, the supervisor discards the
+  node's result and reports it `stopped` (it no longer routes the result or
+  marks the node completed).
+
+**Tests:** `tests/test_wait_registry.py` (17), `tests/test_wait_until_reachability.py`
+(24: terminated target, source failure, two hops past a failure, untaken
+Conditional port one and two hops, no incoming connections, depth-refused
+branch, Merge before the target, a real loop, long wait behind a pending
+input never failed, stale supervisor isolation, unattended Wait Until), and
+`tests/test_benchmarks_not_collected.py` (3). The step 1 lifecycle tests'
+Wait Until fixture now targets a node downstream of the waiter: its old
+target had no incoming connections, which D5 now rightly fails at once.
+
 ## 2026-10-12 — Distributed Step 1: Bug Fixes
 
 Branch `dist/step-1-bug-fixes`, one commit per fix. **Baseline on unchanged
