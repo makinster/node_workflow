@@ -103,6 +103,10 @@ class MasterState:
             logger.error("Cannot start: workflow has no start node")
             return False
 
+        # Leftover tasks would otherwise wake inside the new run and write
+        # into its memory, so they are cancelled before any state is reset.
+        await self._cancel_leftover_tasks()
+
         self.current_run_id = f"run_{uuid.uuid4().hex[:8]}"
         self._started_at = datetime.now(timezone.utc).isoformat()
         self.run_outputs = []
@@ -157,9 +161,29 @@ class MasterState:
         self._set_state(WorkflowState.RUNNING)
 
     def stop(self) -> None:
-        """Request all supervisors to stop."""
-        for supervisor in self._supervisors.values():
+        """Request all supervisors to stop, then cancel their tasks.
+
+        Cancelling releases supervisors parked on a wait (Wait Until, Merge)
+        that a stop request alone cannot reach.
+        """
+        for supervisor in list(self._supervisors.values()):
             supervisor.request_stop()
+        current = asyncio.current_task()
+        for task in list(self._supervisor_tasks.values()):
+            # A supervisor that asked to terminate the workflow is already
+            # returning; cancelling itself would only obscure that.
+            if task is not current and not task.done():
+                task.cancel()
+
+    async def _cancel_leftover_tasks(self) -> None:
+        """Cancel and await supervisor tasks left over from a previous run."""
+        tasks = [task for task in self._supervisor_tasks.values() if not task.done()]
+        for supervisor in list(self._supervisors.values()):
+            supervisor.request_stop()
+        for task in tasks:
+            task.cancel()
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
 
     def submit_user_input(self, branch_id: str, value: str) -> bool:
         """Forward user input to a waiting supervisor."""

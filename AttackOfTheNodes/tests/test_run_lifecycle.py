@@ -190,3 +190,111 @@ async def test_json_path_success_still_routes_default():
     context.inputs = {"input": '{"a": 1}'}
     await node.execute(context)
     assert done[0] == {"data": {"default": 1}}
+
+
+# ---------------------------------------------------------------------------
+# 1b-fix. Stop and the leak into the next run
+# ---------------------------------------------------------------------------
+
+
+def _wait_until_workflow(workflow_map: WorkflowMap):
+    """start -> wait_until(target) -> after; target is never reached."""
+    start = workflow_map.add_node("start_node")
+    waiter = workflow_map.add_node("wait_until_node")
+    after = workflow_map.add_node("no_op_node")
+    target = workflow_map.add_node("no_op_node")
+    workflow_map.update_node_config(waiter, {"target_node_ids": target})
+    workflow_map.connect(start, "default", waiter, "input")
+    workflow_map.connect(waiter, "default", after, "input")
+    return waiter, after, target
+
+
+async def _until_waiting(events: List[Dict[str, Any]], node_id: str, run_id: str) -> None:
+    async def poll() -> None:
+        while not any(
+            event["node_id"] == node_id
+            and event["run_id"] == run_id
+            and event["status"] == "running"
+            for event in events
+        ):
+            await asyncio.sleep(0.01)
+
+    await asyncio.wait_for(poll(), timeout=RUN_TIMEOUT)
+    # Let the node reach its await on the completion condition.
+    await asyncio.sleep(0.02)
+
+
+async def test_stop_releases_a_waiting_wait_until():
+    bus, workflow_map, master = _services()
+    events = _record_node_events(bus)
+    waiter, after, _ = _wait_until_workflow(workflow_map)
+
+    assert await master.start_workflow()
+    run_id = master.current_run_id
+    await _until_waiting(events, waiter, run_id)
+    assert master.state.value == "RUNNING"
+
+    master.stop()
+    await _finish(master)
+
+    assert master.state.value != "RUNNING"
+    assert master._supervisor_tasks == {}
+    assert not _ran(events, after)
+    assert any(
+        event["node_id"] == waiter and event["status"] == "stopped" for event in events
+    )
+    assert master.run_history.list_runs()[0]["run_id"] == run_id
+
+
+async def test_stopped_wait_until_does_not_wake_in_the_next_run():
+    bus, workflow_map, master = _services()
+    events = _record_node_events(bus)
+    waiter, after, target = _wait_until_workflow(workflow_map)
+
+    assert await master.start_workflow()
+    first_run = master.current_run_id
+    await _until_waiting(events, waiter, first_run)
+    master.stop()
+
+    assert await master.start_workflow()
+    second_run = master.current_run_id
+    assert second_run != first_run
+    await _until_waiting(events, waiter, second_run)
+
+    # The target completes in the second run; only that run's waiter may wake.
+    await master.mark_node_completed(target)
+    await _finish(master)
+    # A leaked task is not tracked by wait_for_completion; give it time to run.
+    await asyncio.sleep(0.1)
+
+    assert _ran(events, after, second_run)
+    # The first run's waiter must neither finish (writing its output into the
+    # second run's memory) nor run its downstream node.
+    assert not _ran(events, waiter, first_run)
+    assert not any(
+        event["run_id"] == first_run and event["node_id"] == after
+        for event in events
+    )
+
+
+async def test_starting_a_new_run_without_stop_cancels_leftover_supervisors():
+    """start_workflow must cancel and await old tasks, not just forget them."""
+    bus, workflow_map, master = _services()
+    events = _record_node_events(bus)
+    waiter, after, target = _wait_until_workflow(workflow_map)
+
+    assert await master.start_workflow()
+    first_run = master.current_run_id
+    await _until_waiting(events, waiter, first_run)
+    leftover = list(master._supervisor_tasks.values())
+
+    assert await master.start_workflow()
+    second_run = master.current_run_id
+    assert all(task.done() for task in leftover)
+
+    await _until_waiting(events, waiter, second_run)
+    await master.mark_node_completed(target)
+    await _finish(master)
+
+    assert _ran(events, after, second_run)
+    assert not _ran(events, after, first_run)
