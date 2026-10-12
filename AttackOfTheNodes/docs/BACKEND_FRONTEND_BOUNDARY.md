@@ -18,6 +18,13 @@ Good backend responsibilities:
   generic `ui_hints`.
 - Derived save/validation metadata such as `input_sources` when it is part of
   workflow integrity.
+- **Each node's output ports (port model).** Metadata `output_ports` is the
+  type's full list; `NodeFactory.node_output_ports(node_data)` (or
+  `output_ports_for(type, config)`, `WorkflowMap.output_ports(node_id)`)
+  returns the ports one node actually has, from its config, via
+  `Node.resolve_output_ports(config)`. Frontends call it and never re-derive
+  the rule (for example the Branch path count). The engine-level `error` port
+  is not listed.
 
 Frontend responsibilities:
 
@@ -36,7 +43,9 @@ Backend changes that should stay:
 - `WorkflowMap.nodes_reachable_from()`: graph reachability is reusable engine
   logic.
 - Save/validation derivation of `input_sources`: structural workflow metadata.
-- Port and membank validation: backend integrity checks.
+- Port and membank validation: backend integrity checks. A connection on a
+  port the type has but this node's config hides is a warning (it never
+  runs); a port the type never had is an error.
 - Breakpoints and node timing: runtime/debug capabilities useful to every
   frontend.
 - Completion registry, `WaitUntilNode`, `MergeNode`, and merge coordination:

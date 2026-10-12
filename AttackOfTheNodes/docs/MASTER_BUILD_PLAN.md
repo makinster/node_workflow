@@ -361,7 +361,7 @@ Focused checks:
   | 3 | `[error]` routing: payload schema, declared error codes (with a default generic code), Errors section beside Connections, error mux, skipped status that spreads downstream | Done |
   | slice | ESP32 proof: cron → capture to run-owned `file` → error routed to a notification | Done |
   | P0 | Housekeeping: routed (handled) errors do not fail a run (D10) | Done |
-  | P1 | Port model: backend resolves each node's ports from its config | Authorized |
+  | P1 | Port model: backend resolves each node's ports from its config | Done |
   | P2 | Error Mux routes with stable ids, UI pickers and auto-fill | Authorized |
   | P3 | Branch on the same mechanism; `error` offered on every node | Authorized |
   | 4 | Workflow contracts + subworkflows as child runs (Phases 19/20) | Needs go-ahead |

@@ -233,9 +233,7 @@ class EditorWorkflowAdapter:
                     }
                 )
                 continue
-            declared = ports_by_type.get(source_node.get("type", ""), {}).get(
-                "outputs", set()
-            )
+            declared = set(self.factory.node_output_ports(source_node))
             if source_port not in declared:
                 report.input_errors.append(
                     {
@@ -341,10 +339,7 @@ class EditorWorkflowAdapter:
     def _ports_by_type(self) -> Dict[str, Dict[str, set]]:
         ports: Dict[str, Dict[str, set]] = {}
         for meta in self.factory.get_node_types_metadata():
-            ports[meta["type"]] = {
-                "inputs": set(meta.get("input_ports") or []),
-                "outputs": set(meta.get("output_ports") or []),
-            }
+            ports[meta["type"]] = {"inputs": set(meta.get("input_ports") or [])}
         return ports
 
     def materialize_deleted_nodes(self) -> int:
@@ -509,8 +504,7 @@ class EditorWorkflowAdapter:
         return downstream_connections[0] if downstream_connections else None
 
     def _declares_output_port(self, node: Dict[str, Any], port: str) -> bool:
-        ports = self._ports_by_type().get(node.get("type", ""), {}).get("outputs", set())
-        return port in ports
+        return port in self.factory.node_output_ports(node)
 
     def _declares_input_port(self, node: Dict[str, Any], port: str) -> bool:
         ports = self._ports_by_type().get(node.get("type", ""), {}).get("inputs", set())

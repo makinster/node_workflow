@@ -174,6 +174,17 @@ class Node(ABC):
         """Return this node type's input port names."""
         return list(self.input_ports)
 
+    @classmethod
+    def resolve_output_ports(cls, config: Optional[Dict[str, Any]]) -> List[str]:
+        """Output ports a node of this type has with ``config``.
+
+        The backend owns each node's port shape (port model, P1). The default
+        is the class list; nodes whose ports depend on their config (Branch
+        path count, later Error Mux routes) override this. The engine-level
+        ``error`` port is never listed here.
+        """
+        return list(cls.output_ports)
+
     def get_output_ports(self) -> List[str]:
-        """Return this node type's output port names."""
-        return list(self.output_ports)
+        """Return this node's output port names, resolved from its config."""
+        return self.resolve_output_ports(self.config)

@@ -158,7 +158,8 @@ config_tabs:
 
 - `branch_node` is currently exposed as an always-parallel branch spawner.
 - It supports fixed ports `path_a` through `path_e`, with `branch_count` clamped
-  from `2` to `5`.
+  from `2` to `5` (`branch_count_from_config` in `backend/nodes/branch_node.py`,
+  which `BranchNode.resolve_output_ports` uses).
 - The config UI hides legacy conditional fields. Keep legacy config keys readable
   for old saves, but do not add new conditional UI to `branch_node`; use a future
   dedicated conditional-branch node/pass instead.
@@ -168,12 +169,14 @@ config_tabs:
 - Downstream display treats the selected branch seed as that branch port's
   dead-drop payload. Config previews and editor Quick View should trace to the
   original source while keeping the Branch node in the source chain.
-- When changing Branch behavior, update editor active-port traversal so only the
-  first `branch_count` ports are shown in branch cycling and branch selector rows.
+- The editor's branch cycling and branch selector rows show only the ports
+  `NodeFactory.node_output_ports(node)` returns; change the rule in the backend,
+  not in the UI.
 
 ## Make Inputs And Outputs Display Correctly
 
-- Use `input_ports` and `output_ports` for graph structure.
+- Use `input_ports` for graph structure, and `NodeFactory.node_output_ports(node)`
+  for a node's outputs (metadata `output_ports` is the type's full list).
 - Use `input_port_metadata` and `output_port_metadata` for default human names
   and descriptions.
 - Use config `transient_outputs` when users override transient output names or

@@ -14,6 +14,11 @@ from textual.events import Key
 from textual.screen import ModalScreen
 from textual.widgets import Button, Checkbox, Input, Label, Select, SelectionList, Static, TabbedContent, TabPane, TextArea
 
+from backend.nodes.branch_node import (
+    MAX_BRANCH_COUNT,
+    MIN_BRANCH_COUNT,
+    branch_count_from_config as _branch_count_from_config,
+)
 from backend.vault_declarations import standard_vault_writes
 from frontend import notifications
 from frontend.editor_workflow_adapter import EditorWorkflowAdapter
@@ -66,8 +71,6 @@ _MISSING_PAYLOAD = object()
 
 MAX_MEMBANK_OUTPUT_ROWS = 5
 BRANCH_PORTS = ["path_a", "path_b", "path_c", "path_d", "path_e"]
-MIN_BRANCH_COUNT = 2
-MAX_BRANCH_COUNT = 5
 LEGACY_BRANCH_CONFIG_KEYS = {
     "condition",
     "match_value",
@@ -85,14 +88,6 @@ class PayloadPreview(Static):
         super().__init__(*args, **kwargs)
         self.can_focus = True
         self.add_class("payload-preview")
-
-
-def _branch_count_from_config(config: Dict[str, Any]) -> int:
-    try:
-        count = int(config.get("branch_count", MIN_BRANCH_COUNT))
-    except (TypeError, ValueError):
-        count = MIN_BRANCH_COUNT
-    return max(MIN_BRANCH_COUNT, min(MAX_BRANCH_COUNT, count))
 
 
 def build_membank_registry(workflow_map) -> Dict[str, Dict[str, Any]]:
@@ -328,14 +323,9 @@ def _beacon_output_details(workflow_map, beacon_node: Dict[str, Any]) -> Dict[st
 
 def _node_output_ports(workflow_map, node: Dict[str, Any]) -> list[str]:
     factory = getattr(workflow_map, "_factory", None)
-    node_type = node.get("type")
-    if factory is not None:
-        for metadata in factory.get_node_types_metadata():
-            if metadata.get("type") == node_type:
-                ports = [str(port) for port in metadata.get("output_ports") or []]
-                if node_type == BRANCH_NODE_TYPE:
-                    return ports[: _branch_count_from_config(node.get("config") or {})]
-                return ports
+    if factory is not None and factory.is_valid_node_type(str(node.get("type") or "")):
+        # The backend resolves ports from the node's config (port model).
+        return factory.node_output_ports(node)
     outputs = node.get("connections", {}).get("outputs", [])
     return sorted({str(conn.get("source_port", "default")) for conn in outputs})
 
@@ -2069,7 +2059,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
     ) -> Dict[str, Dict[str, Any]]:
         if metadata is None:
             return dict(schema)
-        output_ports = list(metadata.get("output_ports") or [])
+        output_ports = self._own_output_ports(metadata)
         if len(output_ports) <= 1:
             return dict(schema)
 
@@ -2272,11 +2262,17 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             rendered = f"{rendered[:397]}..."
         return rendered
 
+    def _own_output_ports(self, metadata: Optional[Dict[str, Any]]) -> list[str]:
+        """This node's output ports, resolved by the backend from its config."""
+        if not metadata:
+            return []
+        return self.factory.node_output_ports(self.node_data)
+
     def _downstream_output_ports(self, metadata: Optional[Dict[str, Any]]) -> list[str]:
         """Output ports routed downstream (the designated node payload)."""
         port_meta = (metadata or {}).get("output_port_metadata") or {}
         ports = []
-        for port in (metadata or {}).get("output_ports") or []:
+        for port in self._own_output_ports(metadata):
             routing = (port_meta.get(str(port)) or {}).get("to")
             if routing is None or "downstream" in routing:
                 ports.append(str(port))
@@ -2287,7 +2283,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         port_meta = (metadata or {}).get("output_port_metadata") or {}
         return [
             str(port)
-            for port in (metadata or {}).get("output_ports") or []
+            for port in self._own_output_ports(metadata)
             if "vault" in ((port_meta.get(str(port)) or {}).get("to") or [])
         ]
 
@@ -2722,7 +2718,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         metadata: Optional[Dict[str, Any]],
         config: Dict[str, Any],
     ):
-        ports = list(metadata.get("output_ports") or []) if metadata else []
+        ports = self._own_output_ports(metadata)
         if not ports:
             yield Static("No dead drop payloads.", classes="form-description")
             return
@@ -2944,8 +2940,16 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
 
     def _transient_config_values(self) -> Dict[str, Any]:
         metadata = self._metadata_for_type(self.node_data.get("type", ""))
-        ports = list(metadata.get("output_ports") or []) if metadata else []
-        outputs = []
+        ports = self._own_output_ports(metadata)
+        # Keep overrides for ports this config hides (a lowered Branch count),
+        # so raising the count again brings their names back.
+        outputs = [
+            dict(entry)
+            for port, entry in normalize_transient_outputs(
+                self.node_data.get("config") or {}
+            ).items()
+            if port not in ports and (entry.get("name") or entry.get("description"))
+        ]
         for port in ports:
             port = str(port)
             name_query = self.query(f"#transient-output-name-{port}")
