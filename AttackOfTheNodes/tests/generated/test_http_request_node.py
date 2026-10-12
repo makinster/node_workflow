@@ -21,6 +21,14 @@ def test_http_request_node_registration_and_metadata():
     assert metadata["default_alias"] == 'HTTP Request'
     assert metadata["input_ports"] == ['input']
     assert metadata["output_ports"] == ['default', 'error']
+    # Every declared port exposes the per-port I/O contract (handoff §4/§6):
+    # data_type defaults to "any", required defaults to False.
+    for direction in ("input_port_metadata", "output_port_metadata"):
+        for info in metadata[direction].values():
+            assert info["data_type"] in {
+                "string", "number", "bool", "var", "file", "ai_session", "any",
+            }
+            assert isinstance(info["required"], bool)
 
 
 async def _run_http(url="", method="GET", body=""):

@@ -36,6 +36,8 @@ from .workflow_map import WorkflowMap
 
 logger = logging.getLogger(__name__)
 
+ERROR_PORT = "error"
+
 
 @dataclass
 class _NodeResult:
@@ -409,6 +411,9 @@ class Supervisor:
                 },
             )
 
+        if result.error is None and result.payload is not None:
+            result.error = self._unrouted_error_port_failure(result.payload)
+
         if self._input_interrupted:
             self._publish_node_execution("stopped")
         elif result.error is not None or not result.completed or result.payload is None:
@@ -416,6 +421,23 @@ class Supervisor:
         else:
             self._publish_node_execution("done")
         return result
+
+    def _unrouted_error_port_failure(
+        self, payload: Dict[str, Any]
+    ) -> Optional[Exception]:
+        """Turn a failure routed to an unconnected ``error`` port into a node error.
+
+        A connected ``error`` port routes normally. An unconnected one must not
+        end the branch silently, so the normal recovery path runs instead.
+        """
+        if payload.get("output_port") != ERROR_PORT:
+            return None
+        if self._workflow_map.find_next_node_id(
+            self.current_node_id or "", output_port=ERROR_PORT
+        ) is not None:
+            return None
+        message = (payload.get("data") or {}).get(ERROR_PORT)
+        return RuntimeError(str(message or "Node signaled failure on its error port"))
 
     async def _request_recovery(
         self, error: BaseException, inputs: Dict[str, Any]
