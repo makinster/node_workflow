@@ -4,6 +4,134 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-12 — Authorize Distributed Plan Execution; Merge Plan To Main
+
+Docs only. The owner authorized execution of steps 1, 1b, the refresh
+coalescer, 2, 3 and the ESP32 proof slice. Each step lands as its own PR,
+which the agent merges to `main` once the suite is green. The agents stop
+before step 4.
+
+Added `DISTRIBUTED_EXECUTION_PROMPT.md`, a copy-ready prompt for the next
+session, and updated the plan, master plan and backlog status notes plus
+README. The plan branch `ccr-1b2501bf-dgol6g` was merged to `main` by PR.
+
+## 2026-10-12 — Record Step 1b And Step 3 Decisions (D5–D9)
+
+Docs only; no code changes. Branch `ccr-1b2501bf-dgol6g`. The owner resolved
+the open decisions in `DISTRIBUTED_BUILD_PLAN.md`:
+
+- **D5, unreachable.** Structural and based on incoming connections, never on
+  a timeout. A node is unreachable when every source of an incoming
+  connection is final and none of them routed to it, and no live supervisor
+  can still reach those sources. A required input that is never delivered
+  stays a data error.
+- **D6, benchmarks.** `AttackOfTheNodes/benchmarks/`, backend only, outside
+  `tests/`.
+- **D7, error matching.** Stable codes, with a default generic code on every
+  node. Messages stay free text. A mux with no matching code falls through to
+  pause (app) or the failure policy (headless).
+- **D8, node config.** Keep the Connections tab and add an Errors section
+  (confirms the 2026-10-09 recommendation).
+- **D9, skipped status.** Skipped is its own status, with a reason. It counts
+  as finished but never as completed, and spreads downstream until the path
+  rejoins something live. Untaken paths are marked `not_taken`. A Wait Until
+  whose target is unreachable fails with `engine.upstream_unreachable`.
+
+**Design.** One delivery-tracking mechanism in `RunContext` serves D5 in
+step 1b and D9 in step 3. Step 1b also fixes the Oct 9 Wait Until hang: Wait
+Until now fails with a clear message instead of waiting forever.
+
+**Behavior changes queued for step 3:**
+
+- The recovery Skip button spreads the skip downstream instead of running the
+  next node with an empty input.
+- Untaken paths show as skipped.
+
+Also updated: the `MASTER_BUILD_PLAN.md` step table. Step 1 still waits on the
+owner's read of the plan.
+
+## 2026-10-11 — Record Approved Distributed Direction Build Plan
+
+Docs only; no code changes. Branch `ccr-1b2501bf-dgol6g`, based on `main` at
+`32e9132`. The plan builds on the Oct 9 investigation and a review of the
+WaitRegistry/Refresh Coalescer v2 proposal.
+
+**Approved.** The owner signed off decisions D1–D4:
+
+- providers instead of headless twins;
+- triggers launch runs;
+- subworkflows as child runs;
+- `RunContext` extraction as step 1b.
+
+They also accepted refinements R1–R4:
+
+- step 1 is bug fixes only;
+- the unattended policy is passed in at run start;
+- per-trigger `single`/`queued` modes first, `restart` once Stop is clean,
+  `parallel` at step 6;
+- `file` reuse with run-owned temp files, kept when a run fails.
+
+**Added** `DISTRIBUTED_BUILD_PLAN.md`. The wait-for-event node is recorded as
+an open question with its tradeoffs, not as a decision.
+
+**Superseded, not deleted:**
+
+- `PROJECT_BACKLOG.md`: superseded banners on the headless twin, Start-node
+  variant, nested headless validation, headless-export, watcher and
+  completion-notify sections. The text is kept.
+- `MASTER_BUILD_PLAN.md`: a step table, with the old Phase N/N+1/N+2 bullets
+  kept under a superseded heading.
+
+**Pointers and fixes:**
+
+- Pointers in `AGENT_HANDOFF.md`, `README.md` and `TASK_INDEX.md`.
+- Corrected the `NODE_CATALOG.md` Wait Until row (node completion, not a
+  Vault key).
+- Logged in `DOCS_MIGRATION_NOTES.md`.
+
+**Corrections recorded in the plan:**
+
+- Merge does not stall when a sibling branch fails (corrects the Oct 9 entry).
+- `node_timeout_seconds` effectively bounds nothing.
+- The backlog's cycle-rejection claim is wrong.
+
+**Probes run during the review:**
+
+- Wait Until hangs when its target was terminated or skipped.
+- Stop does not release Wait Until, and a stopped run's waiter wakes inside
+  the next run and writes into its memory.
+- About 5 events per node, each causing a synchronous full screen refresh.
+
+**Step 1 has not started.** It waits on the owner's read of the plan.
+Verification: `git diff --check`, and relative links checked.
+
+## 2026-10-09 — Investigate AOTN Distributed Direction Brief
+
+Investigation only; no code or other doc changes. Started from `main` at
+`32e9132` (PR #30). Checked the owner's distributed-direction brief (triggers,
+workflow contracts, headless server, supervisor/router, AI inputs, `[error]`
+type, error details tab, error mux) against code and docs. Full findings went
+to the owner in the session reply; key code facts:
+
+- Triggers, nested workflows, headless CLI and the multi-frontend API are
+  already recorded as Phase 19/20 and Phase N/N+1/N+2 in MASTER_BUILD_PLAN and
+  PROJECT_BACKLOG. The backlog makes the trigger watcher depend on headless and
+  nested workflows. No separate rejection-record file exists in the repo.
+- The backend runs without Textual installed (`demo_execution.py` finished).
+  Headless runs block forever on any node error (recovery future), user input,
+  or a saved breakpoint. `MasterState.start_workflow` does not validate.
+- `http_request_node`/`json_path_node` failures write the `error` port but
+  route via `default`. The node reports `done`, the run finishes, and a node
+  wired to `error` never runs (scratch probe).
+- "Dead-drop" and "transient" are synonyms in the docs and code; the second
+  output kind is Vault. Config tab 4 is the read-only Connections tab, which
+  WAIT_UNTIL_UI_PLAN marks "retain" and tests depend on.
+- The backlog's "cycles are rejected by the validator" does not match the code:
+  there is no cycle check. `node_timeout_seconds` only bounds Wait Until and
+  Merge waits, not `execute()`.
+
+No tests run (no code changed).
+
 ## 2026-10-09 — Publish Payload/File Routing PR
 
 Owner confirmed the saved-workflow fixes live and requested a PR. Authoritative
