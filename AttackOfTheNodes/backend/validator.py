@@ -12,7 +12,14 @@ from .branch_health import ENDED_UNMERGED, derive_branch_health, output_types_fr
 from .data_types import DataType
 from .vault_declarations import standard_vault_writes
 from .file_paths import normalize_local_path
-from .node_errors import ENGINE_ERROR_DEFINITIONS, ERROR_PORT
+from .node_errors import (
+    ENGINE_ERROR_DEFINITIONS,
+    ERROR_PORT,
+    UNMATCHED_ROUTE,
+    mux_has_unmatched_route,
+    mux_route_problems,
+    mux_routes,
+)
 from .node_factory import NodeFactory
 from .workflow_map import WorkflowMap
 
@@ -82,12 +89,11 @@ def _validate_error_muxes(
         if data.get("type") != ERROR_MUX_NODE_TYPE:
             continue
         config = data.get("config") or {}
-        meta = type_meta.get(ERROR_MUX_NODE_TYPE) or {}
-        routes = {
-            port: _codes(config.get(f"{port}_codes"))
-            for port in meta.get("output_ports") or []
-        }
-        if not any(routes.values()):
+        routes = {route["id"]: route["codes"] for route in mux_routes(config)}
+        labels = {route["id"]: route["label"] for route in mux_routes(config)}
+        for problem in mux_route_problems(config):
+            warnings.append({"node_id": node_id, "message": f"Error Mux {problem}"})
+        if not any(routes.values()) and not mux_has_unmatched_route(config):
             warnings.append({"node_id": node_id,
                              "message": "Error Mux lists no codes, so it never routes anything"})
         sources = [
@@ -118,7 +124,7 @@ def _validate_error_muxes(
                         errors.append({
                             "node_id": node_id,
                             "message": (
-                                f"Error Mux {port} lists code '{code}', which "
+                                f"Error Mux route '{labels[port]}' lists code '{code}', which "
                                 f"{source.get('alias') or source_id} never raises "
                                 f"(declared: {', '.join(sorted(c for c in known if c))})"
                             ),
@@ -131,13 +137,13 @@ def _validate_error_muxes(
             if codes and port not in connected:
                 warnings.append({
                     "node_id": node_id,
-                    "message": f"Error Mux {port} lists codes but has no connection",
+                    "message": f"Error Mux route '{labels[port]}' lists codes but has no connection",
                 })
-
-
-def _codes(raw: Any) -> List[str]:
-    items = raw if isinstance(raw, list) else str(raw or "").replace("\n", ",").split(",")
-    return [str(item).strip() for item in items if str(item).strip()]
+        if mux_has_unmatched_route(config) and UNMATCHED_ROUTE not in connected:
+            warnings.append({
+                "node_id": node_id,
+                "message": "Error Mux unmatched route is on but has no connection",
+            })
 
 
 def validate_workflow(

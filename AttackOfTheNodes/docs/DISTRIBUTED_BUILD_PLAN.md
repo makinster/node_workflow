@@ -112,7 +112,7 @@ the real backend.
 | — | ESP32 proof slice — **done** | Steps 2–3 |
 | P0 | Housekeeping: handled errors do not fail a run (D10) — **done** | Owner go-ahead 2026-10-12 |
 | P1 | Port model: backend `node_output_ports()` resolves each node's ports from its config — **done** | P0 |
-| P2 | Error Mux routes: any number of named routes with stable ids; UI pickers and auto-fill | P1 |
+| P2 | Error Mux routes: any number of named routes with stable ids; UI pickers and auto-fill — **done** | P1 |
 | P3 | Branch on the same mechanism; editor offers `error` on every node | P2 |
 | 4 | Contracts + subworkflows (Phases 19/20) | Step 3 (after P3) |
 | 5 | Event sources + start triggers | Step 4 |

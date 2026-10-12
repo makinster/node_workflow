@@ -4,6 +4,51 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-12 — P2: Error Mux Routes, Code Pickers and Auto-Fill
+
+Branch `dist/p2-error-mux-routes`, from `main` at `49c5587` (P1, PR #39).
+Before: 1000 passed. After: 1022 passed.
+
+- **Routes (backend, `node_errors.py`).** `routes: [{id, label, codes}]` plus
+  `unmatched_route`. `mux_routes`, `mux_output_ports`, `mux_route_for_code`
+  (first listing wins, then `unmatched`), `mux_route_problems` (missing,
+  reserved or repeated ids; a code on two routes), `error_codes`.
+- **Error Mux** (spec change, regenerated, custom body restored; `check_node` /
+  `check_ui` pass): class `output_ports` is `["unmatched"]`; ports come from
+  `resolve_output_ports` (route ids) and names from the new
+  `Node.describe_output_ports` (route labels).
+  `NodeFactory.node_output_port_metadata(node)` and
+  `declared_output_ports(type)` serve them; `output_display_name` uses them.
+- **Migration** (`config_migrations`, `error_mux_routes_v1`): `path_a_codes`
+  ... `path_c_codes` become routes `path_a`–`path_c` labelled Path A–C, so old
+  connections and tests keep working; the old keys are kept as evidence.
+- **Validator:** route problems and duplicate codes are warnings; unknown codes
+  name the route label; an unconnected route with codes or an unconnected
+  unmatched route is a warning; a connection on a deleted route is an
+  undeclared-port error.
+- **UI only** (`frontend/error_mux_ui.py`): codes from the node wired into
+  `error` (its declared errors, then engine codes, then any code a route
+  already lists) fill each route's code picker; an empty mux is prefilled with
+  one route per code when its config opens, and when the editor wires an
+  `error` port into it; **Refill from upstream** rebuilds the routes, keeping
+  the id and name of any single-code route. `ObjectListField` gained
+  `add_label` / `remove_label` / `id_prefix` / `refill_label` and
+  `replace_rows`; file lists keep "Add file" / "Remove file".
+- **Prune on save:** `WorkflowMap.prune_removed_output_connections(node,
+  previous_ports)` drops connections on ports the save removed (deleted
+  routes). Hidden Branch paths and already-invalid connections are untouched.
+
+**Behavior changes:** Error Mux config is a route list (old configs migrate);
+new muxes start with no outputs until routes exist; generated `<port>_label`
+fields are limited to the type's declared ports.
+
+**Self-review fixes:** the prune first ran on every config save and would
+have silently removed already-invalid connections; it is now limited to ports
+the save removed. Route ports no longer get generated `_label` fields.
+
+**Open items:** the editor still offers `error` only on nodes that list it (P3);
+auto-fill on wiring covers the editor's add/insert flow.
+
 ## 2026-10-12 — P1: Port Model, Ports Resolved by the Backend
 
 Branch `dist/p1-port-model`, from `main` at `60b6f37` (P0, PR #38).

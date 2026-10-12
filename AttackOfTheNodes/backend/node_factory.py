@@ -71,12 +71,32 @@ class NodeFactory:
             return []
         return [str(port) for port in node_class.resolve_output_ports(dict(config or {}))]
 
+    def declared_output_ports(self, node_type: str) -> List[str]:
+        """The type's fixed class list (metadata ``output_ports``)."""
+        node_class = self._node_registry.get(node_type)
+        return [str(port) for port in node_class.output_ports] if node_class else []
+
     def node_output_ports(self, node_data: Optional[Dict[str, Any]]) -> List[str]:
         """Output ports of a saved node (``{"type": ..., "config": ...}``)."""
         node_data = node_data or {}
         return self.output_ports_for(
             str(node_data.get("type") or ""), node_data.get("config") or {}
         )
+
+    def node_output_port_metadata(
+        self, node_data: Optional[Dict[str, Any]]
+    ) -> Dict[str, Dict[str, Any]]:
+        """Normalized metadata for each port ``node_output_ports`` returns."""
+        node_data = node_data or {}
+        node_class = self._node_registry.get(str(node_data.get("type") or ""))
+        if node_class is None:
+            return {}
+        config = dict(node_data.get("config") or {})
+        ports = [str(port) for port in node_class.resolve_output_ports(config)]
+        declared = dict(node_class.output_port_metadata)
+        for port, extra in node_class.describe_output_ports(config).items():
+            declared[port] = {**dict(declared.get(port) or {}), **dict(extra or {})}
+        return self._port_metadata(ports, declared, "output")
 
     def get_default_alias(self, node_type: str) -> Optional[str]:
         """Return the default user-facing alias for a node type."""

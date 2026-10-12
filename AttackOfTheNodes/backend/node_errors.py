@@ -130,6 +130,116 @@ def declared_codes(definitions: Iterable[Mapping[str, Any]]) -> List[str]:
     return [str(item.get("code")) for item in definitions]
 
 
+# ---------------------------------------------------------------------------
+# Error Mux routes (port model P2)
+# ---------------------------------------------------------------------------
+
+# Port of the optional catch-all route for codes no other route lists.
+UNMATCHED_ROUTE = "unmatched"
+# Pre-P2 Error Mux configs stored codes per fixed path; they migrate to
+# routes with these ids so existing connections keep working.
+LEGACY_MUX_PATHS = ("path_a", "path_b", "path_c")
+_RESERVED_ROUTE_IDS = {ERROR_PORT, UNMATCHED_ROUTE}
+
+
+def error_codes(raw: Any) -> List[str]:
+    """Codes from a list or a comma/newline-separated string, de-duplicated."""
+    items = raw if isinstance(raw, (list, tuple)) else str(raw or "").replace("\n", ",").split(",")
+    codes: List[str] = []
+    for item in items:
+        text = str(item).strip()
+        if text and text not in codes:
+            codes.append(text)
+    return codes
+
+
+def mux_routes(config: Optional[Mapping[str, Any]]) -> List[Dict[str, Any]]:
+    """An Error Mux's usable routes: ``[{"id", "label", "codes"}]``, in order.
+
+    Each route's ``id`` is its output port. Entries without an id, with a
+    reserved id (``error``, ``unmatched``) or repeating an earlier id are
+    ignored; ``mux_route_problems`` reports them.
+    """
+    raw = (config or {}).get("routes")
+    routes: List[Dict[str, Any]] = []
+    seen: set[str] = set()
+    for entry in raw if isinstance(raw, list) else []:
+        if not isinstance(entry, Mapping):
+            continue
+        route_id = str(entry.get("id") or "").strip()
+        if not route_id or route_id in seen or route_id in _RESERVED_ROUTE_IDS:
+            continue
+        seen.add(route_id)
+        label = str(entry.get("label") or "").strip() or f"Route {len(routes) + 1}"
+        routes.append({"id": route_id, "label": label, "codes": error_codes(entry.get("codes"))})
+    return routes
+
+
+def mux_has_unmatched_route(config: Optional[Mapping[str, Any]]) -> bool:
+    return bool((config or {}).get("unmatched_route"))
+
+
+def mux_output_ports(config: Optional[Mapping[str, Any]]) -> List[str]:
+    """Route ids in order, then ``unmatched`` when that route is on."""
+    ports = [route["id"] for route in mux_routes(config)]
+    if mux_has_unmatched_route(config):
+        ports.append(UNMATCHED_ROUTE)
+    return ports
+
+
+def mux_route_for_code(config: Optional[Mapping[str, Any]], code: Optional[str]) -> Optional[str]:
+    """The route (port) a failure with ``code`` takes; the first listing wins."""
+    if not code:
+        return None
+    for route in mux_routes(config):
+        if code in route["codes"]:
+            return route["id"]
+    if mux_has_unmatched_route(config):
+        return UNMATCHED_ROUTE
+    return None
+
+
+def mux_route_problems(config: Optional[Mapping[str, Any]]) -> List[str]:
+    """Configuration mistakes ``mux_routes`` silently skips, for the validator."""
+    raw = (config or {}).get("routes")
+    if raw is None:
+        return []
+    if not isinstance(raw, list):
+        return ["routes must be a list"]
+    problems: List[str] = []
+    seen: set[str] = set()
+    owner: Dict[str, str] = {}
+    for index, entry in enumerate(raw):
+        if not isinstance(entry, Mapping):
+            problems.append(f"route {index + 1} is not an object")
+            continue
+        route_id = str(entry.get("id") or "").strip()
+        if not route_id:
+            problems.append(f"route {index + 1} has no id")
+        elif route_id in _RESERVED_ROUTE_IDS:
+            problems.append(f"route id '{route_id}' is reserved")
+        elif route_id in seen:
+            problems.append(f"route id '{route_id}' is used twice")
+        seen.add(route_id)
+        for code in error_codes(entry.get("codes")):
+            if code in owner:
+                problems.append(
+                    f"code '{code}' is listed on two routes; the first ({owner[code]}) wins"
+                )
+            else:
+                owner[code] = str(entry.get("label") or route_id)
+    return problems
+
+
+def legacy_mux_routes(config: Mapping[str, Any]) -> List[Dict[str, Any]]:
+    """Routes for a pre-P2 config that stored ``path_a_codes`` ... ``path_c_codes``."""
+    return [
+        {"id": port, "label": f"Path {port[-1].upper()}",
+         "codes": error_codes(config.get(f"{port}_codes"))}
+        for port in LEGACY_MUX_PATHS
+    ]
+
+
 def build_error_payload(
     *,
     code: str,

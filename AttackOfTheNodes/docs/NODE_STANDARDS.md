@@ -497,6 +497,16 @@ presentation of `NodeFactory` metadata only.
   follows its recovery policy when headless. The node is failed, never
   completed, and its `default` path is skipped as `not_taken`.
 - Match on codes, never on message text.
+- **Config-driven ports (port model).** A node whose outputs depend on its
+  config overrides the classmethods `resolve_output_ports(config)` (the port
+  list) and `describe_output_ports(config)` (per-port `name` / `description`,
+  merged over `output_port_metadata`). The class `output_ports` stays the
+  type's fixed list. Branch (path count) and Error Mux (routes, keyed by
+  stable ids, plus `unmatched`) do this. Everything else asks
+  `NodeFactory.node_output_ports(node)` /
+  `node_output_port_metadata(node)`; when a config save removes a port, the
+  editor drops that port's connections
+  (`WorkflowMap.prune_removed_output_connections`).
 - A node class may set `receives_failed_input = True` (Error Mux does). When
   a failure is routed to it along `error`, the supervisor also passes the
   failed node's input as `inputs["failed_input"]`: the value of its single

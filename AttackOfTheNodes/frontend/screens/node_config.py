@@ -20,6 +20,12 @@ from backend.nodes.branch_node import (
     branch_count_from_config as _branch_count_from_config,
 )
 from backend.vault_declarations import standard_vault_writes
+from frontend.error_mux_ui import (
+    ERROR_MUX_NODE_TYPE,
+    code_options,
+    routes_from_definitions,
+    upstream_error_definitions,
+)
 from frontend import notifications
 from frontend.editor_workflow_adapter import EditorWorkflowAdapter
 from frontend.io_contract import TYPE_COLOR
@@ -636,6 +642,9 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             for key, value in config.items()
             if key not in excluded_config_keys
         }
+        if self.node_data.get("type") == ERROR_MUX_NODE_TYPE and not core_config.get("routes"):
+            # A new mux starts with one route per code the upstream node raises.
+            core_config["routes"] = routes_from_definitions(self._upstream_error_definitions())
         forms, getter = self._build_standard_config_forms(schema, core_config)
         self._get_form_values = getter
         self._rule_schema = (
@@ -904,6 +913,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         values: Dict[str, Any],
     ) -> tuple[Dict[str, Any], WidgetGetter]:
         schema = {key: dict(field) for key, field in schema.items()}
+        for field_name, field in schema.items():
+            self._fill_upstream_error_code_options(field, values.get(field_name))
         for field in schema.values():
             source = field.get("options_from")
             if source:
@@ -1326,6 +1337,32 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
 
     def on_object_list_field_changed(self, event):
         self._sync_dynamic_options()
+
+    async def on_object_list_field_refill_requested(self, event) -> None:
+        """Error Mux: one route per upstream code, keeping matching route ids."""
+        event.stop()
+        rows = routes_from_definitions(self._upstream_error_definitions(), event.field.value)
+        if not rows:
+            notifications.notify_info(self.app, "Nothing is connected to the error input")
+            return
+        await event.field.replace_rows(rows)
+
+    def _upstream_error_definitions(self) -> list[Dict[str, Any]]:
+        return upstream_error_definitions(self.factory, self.workflow_map, self.node_id)
+
+    def _fill_upstream_error_code_options(self, field: Dict[str, Any], value: Any) -> None:
+        """Options for fields marked ``options_source: upstream_error_codes``,
+        including those inside an object_list's rows (UI-only; the backend
+        validator re-checks codes against the upstream declarations)."""
+        items = field.get("item_schema")
+        if isinstance(items, dict):
+            field["item_schema"] = items = {key: dict(item) for key, item in items.items()}
+            for item in items.values():
+                if item.get("options_source") == "upstream_error_codes":
+                    item["options"] = code_options(self._upstream_error_definitions(), value)
+        elif field.get("options_source") == "upstream_error_codes":
+            routes = [{"codes": value}] if value else []
+            field["options"] = code_options(self._upstream_error_definitions(), routes)
 
     def _sync_dynamic_options(self):
         if self._get_form_values is None:
@@ -2059,7 +2096,10 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
     ) -> Dict[str, Dict[str, Any]]:
         if metadata is None:
             return dict(schema)
-        output_ports = self._own_output_ports(metadata)
+        # Only the type's declared ports get generated name fields;
+        # config-driven ports (Error Mux routes) are named in their own config.
+        declared = set(self.factory.declared_output_ports(str(self.node_data.get("type") or "")))
+        output_ports = [port for port in self._own_output_ports(metadata) if port in declared]
         if len(output_ports) <= 1:
             return dict(schema)
 

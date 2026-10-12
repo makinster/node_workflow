@@ -4,16 +4,21 @@ from typing import Any, ClassVar, Dict, List, Optional
 
 from ...node_base import Node, NodeContext
 from ...node_category import NodeCategory
-from ...node_errors import FAILED_INPUT
+from ...node_errors import (
+    FAILED_INPUT,
+    mux_output_ports,
+    mux_route_for_code,
+    mux_routes,
+)
 
 
 class ErrorMuxNode(Node):
-    """Route a failure from a node's error port to a path by its error code."""
+    """Route a failure from a node's error port to a route by its error code."""
 
     node_type: ClassVar[str] = 'error_mux_node'
     display_name: ClassVar[str] = 'Error Mux'
     default_alias: ClassVar[str] = 'Error Mux'
-    description: ClassVar[str] = "Route a failure from a node's error port to a path by its error code"
+    description: ClassVar[str] = "Route a failure from a node's error port to a route by its error code"
     category: ClassVar[str] = NodeCategory.FLOW
     primary_family: ClassVar[str] = 'Flow Control'
     tags: ClassVar[List[str]] = ['Conditional']
@@ -22,17 +27,35 @@ class ErrorMuxNode(Node):
     group: ClassVar[Optional[str]] = None
     selector_section: ClassVar[Optional[str]] = None
     input_ports: ClassVar[List[str]] = ['error']
-    output_ports: ClassVar[List[str]] = ['path_a', 'path_b', 'path_c']
+    output_ports: ClassVar[List[str]] = ['unmatched']
     input_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {'error': {'name': 'Error', 'description': "Versioned error payload from the failing node's error port"}}
-    output_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {'path_a': {'name': 'Error', 'description': "The error payload (or the failed node's input, see Pass along), when its code is listed for path A"}, 'path_b': {'name': 'Error', 'description': "The error payload (or the failed node's input, see Pass along), when its code is listed for path B"}, 'path_c': {'name': 'Error', 'description': "The error payload (or the failed node's input, see Pass along), when its code is listed for path C"}}
-    default_config: ClassVar[Dict[str, Any]] = {'forward': 'error', 'path_a_codes': '', 'path_b_codes': '', 'path_c_codes': ''}
-    config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {'forward': {'type': 'select', 'label': 'Pass along', 'options': ['error', 'failed_input'], 'description': 'What the chosen path receives: the error payload, or the input the failed node was given (to retry or fall back on the same data)', 'tab': 'Parameters'}, 'path_a_codes': {'type': 'string', 'label': 'Path A codes', 'placeholder': 'timeout, network', 'description': 'Comma-separated error codes routed to path A', 'required': False, 'tab': 'Parameters'}, 'path_b_codes': {'type': 'string', 'label': 'Path B codes', 'description': 'Comma-separated error codes routed to path B', 'required': False, 'tab': 'Parameters'}, 'path_c_codes': {'type': 'string', 'label': 'Path C codes', 'description': 'Comma-separated error codes routed to path C', 'required': False, 'tab': 'Parameters'}}
+    output_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {'unmatched': {'name': 'Unmatched', 'description': "The error payload (or the failed node's input, see Pass along), when no route lists its code"}}
+    default_config: ClassVar[Dict[str, Any]] = {'forward': 'error', 'routes': [], 'unmatched_route': False}
+    config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {'forward': {'type': 'select', 'label': 'Pass along', 'options': ['error', 'failed_input'], 'description': 'What the chosen route receives: the error payload, or the input the failed node was given (to retry or fall back on the same data)', 'tab': 'Parameters'}, 'routes': {'type': 'object_list', 'label': 'Routes', 'description': 'One output per route. A failure takes the first route that lists its code. Codes come from the node connected to the error input.', 'add_label': 'Add route', 'remove_label': 'Remove route', 'id_prefix': 'route_', 'refill_label': 'Refill from upstream', 'item_schema': {'id': {'type': 'string', 'label': 'Stable id'}, 'label': {'type': 'string', 'label': 'Route name', 'placeholder': 'Retry later'}, 'codes': {'type': 'multiselect', 'label': 'Error codes', 'options': ['node_error'], 'options_source': 'upstream_error_codes'}}, 'tab': 'Parameters'}, 'unmatched_route': {'type': 'boolean', 'label': 'Unmatched route', 'description': 'Add an output for codes no route lists, so every failure is routed', 'tab': 'Parameters'}}
     ui_hints: ClassVar[Dict[str, Any]] = {}
     error_definitions: ClassVar[List[Dict[str, Any]]] = []
 
     # Engine hook: when a failure is routed here, the supervisor also passes
     # the failed node's input as inputs["failed_input"].
     receives_failed_input: ClassVar[bool] = True
+
+    @classmethod
+    def resolve_output_ports(cls, config: Optional[Dict[str, Any]]) -> List[str]:
+        """One port per route (its stable id), then ``unmatched`` when on."""
+        return mux_output_ports(config)
+
+    @classmethod
+    def describe_output_ports(
+        cls, config: Optional[Dict[str, Any]]
+    ) -> Dict[str, Dict[str, Any]]:
+        described: Dict[str, Dict[str, Any]] = {}
+        for route in mux_routes(config):
+            codes = ", ".join(route["codes"]) or "no codes yet"
+            described[route["id"]] = {
+                "name": route["label"],
+                "description": f"The error payload (or the failed node's input, see Pass along) for: {codes}",
+            }
+        return described
 
     async def execute(self, context: NodeContext) -> None:
         payload = context.inputs.get("error")
@@ -41,7 +64,7 @@ class ErrorMuxNode(Node):
         if port is None:
             # The engine only routes codes this mux accepts; reaching here
             # means the payload did not come from an error port.
-            context.signal_error(RuntimeError(f"Error Mux has no path for code {code!r}"))
+            context.signal_error(RuntimeError(f"Error Mux has no route for code {code!r}"))
             return
         value = payload
         if self.config.get("forward") == "failed_input":
@@ -50,21 +73,8 @@ class ErrorMuxNode(Node):
         context.signal_done({"data": {port: value}, "output_port": port})
 
     def accepts_error_code(self, code: Optional[str]) -> bool:
-        """Engine hook (D7): route a failure here only when a path lists its code."""
+        """Engine hook (D7): route a failure here only when a route takes its code."""
         return self.route_for_code(code) is not None
 
     def route_for_code(self, code: Optional[str]) -> Optional[str]:
-        if not code:
-            return None
-        for port in self.output_ports:
-            if code in self.codes_for_port(port):
-                return port
-        return None
-
-    def codes_for_port(self, port: str) -> List[str]:
-        raw = self.config.get(f"{port}_codes") or ""
-        if isinstance(raw, list):
-            items = raw
-        else:
-            items = str(raw).replace("\n", ",").split(",")
-        return [str(item).strip() for item in items if str(item).strip()]
+        return mux_route_for_code(self.config, code)

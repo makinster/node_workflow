@@ -97,6 +97,11 @@ def _port_metadata(
     port: str,
     direction: str,
 ) -> Dict[str, str]:
+    if direction == "output" and hasattr(factory, "node_output_port_metadata"):
+        # Config-driven ports (Error Mux routes) get their names here.
+        value = factory.node_output_port_metadata(node).get(port)
+        if isinstance(value, dict):
+            return value
     metadata = metadata_for_type(factory, node.get("type", ""))
     if not metadata:
         return {}

@@ -595,7 +595,17 @@ from the port name. `forwarded_input_port` identifies the input actually
 forwarded; File Writer forwards Content, File Manager forwards File.
 
 Repeatable forms use `type: object_list` with `item_schema`; row ids remain
-stable through editing. A select can use `options_from` to track row choices.
+stable through editing. Optional field keys: `add_label` / `remove_label`
+(button text, default "Add file" / "Remove file"), `id_prefix` (new ids are
+`<prefix><8 hex>`), and `refill_label` (a button that posts
+`ObjectListField.RefillRequested`; the screen may answer with
+`replace_rows`). An item field may declare `options_source:
+upstream_error_codes` so the config UI fills its options from the node wired
+into the `error` input (Error Mux routes are the reference). Ports driven by
+such a list are not a spec key: keep the spec's `output_ports` as the type's
+fixed list and override `resolve_output_ports` / `describe_output_ports` in
+the custom runtime body, which regeneration preserves (see NODE_STANDARDS,
+config-driven ports). A select can use `options_from` to track row choices.
 File Manager's `additional_files` schema/spec is the reference. Extend the
 shared generator and widgets for structural field needs rather than adding
 node-specific screens. Regenerate into a temporary project for review when a
