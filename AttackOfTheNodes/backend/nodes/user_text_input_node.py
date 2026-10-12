@@ -4,6 +4,7 @@ from typing import Any, ClassVar, Dict, List
 
 from ..node_base import Node, NodeContext
 from ..node_category import NodeCategory
+from ..node_errors import ENGINE_ERROR_DEFINITIONS, ENGINE_UNATTENDED_INPUT
 
 
 class UserTextInputNode(Node):
@@ -17,6 +18,10 @@ class UserTextInputNode(Node):
     output_ports: ClassVar[List[str]] = ["default"]
     output_port_metadata = {"default": {"name": "Text", "data_type": "string"}}
     ui_hints = {"legacy_vault_outputs": True}
+    # Raised when the run has no one to answer (unattended runs).
+    error_definitions: ClassVar[List[Dict[str, Any]]] = [
+        dict(ENGINE_ERROR_DEFINITIONS[ENGINE_UNATTENDED_INPUT])
+    ]
     default_config: ClassVar[Dict[str, Any]] = {
         "prompt": "Enter text:",
     }

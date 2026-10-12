@@ -124,6 +124,20 @@ async def collect_ui_problems(node_type: str) -> list[str]:
             if not widget.can_focus and not (field_schema.get("type") == "object_list" and any(child.can_focus for child in widget.query("*"))):
                 problems.append(f"{field_name}: widget is not keyboard focusable")
 
+        # D8: the Connections tab stays, and an Errors section lists every
+        # declared code (including the default generic one) with its
+        # description.
+        if not list(app.query("#node-config-tab-connections")):
+            problems.append("Connections tab is missing")
+        error_sections = list(app.query("#error-definitions"))
+        if not error_sections:
+            problems.append("Errors section is missing (#error-definitions)")
+        else:
+            rendered = str(error_sections[0].render())
+            for error in metadata.get("errors") or []:
+                if error["code"] not in rendered or error["description"] not in rendered:
+                    problems.append(f"Errors section does not show {error['code']!r}")
+
         values = screen._get_form_values() if screen._get_form_values else {}
         for field_name, field_schema in schema.items():
             widget = widgets.get(field_name)

@@ -99,6 +99,7 @@ class AttackOfTheNodesApp(TextualApp):
         self.execution_state = ExecutionDisplayState()
         self._retired_display_run_id = None
         self.node_statuses = {}
+        self.node_skip_reasons = {}
         self.node_timings = {}
         self.supervisors = {}
         self._branch_current_nodes = {}
@@ -246,6 +247,7 @@ class AttackOfTheNodesApp(TextualApp):
             return
         self.execution_state.node(payload)
         self.node_statuses = self.execution_state.node_statuses()
+        self.node_skip_reasons = self.execution_state.skip_reasons()
         self.schedule_refresh()
 
     def _on_node_timing_update(self, payload=None) -> None:
@@ -339,6 +341,7 @@ class AttackOfTheNodesApp(TextualApp):
             self._retired_display_run_id = self.execution_state.run_id
         self.execution_state.reset()
         self.node_statuses = {}
+        self.node_skip_reasons = {}
         self.node_timings = {}
         self.supervisors = {}
         self._branch_current_nodes = {}

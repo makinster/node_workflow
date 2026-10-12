@@ -27,6 +27,7 @@ class ErrorHandler:
         error: BaseException,
         context: Optional[Dict[str, Any]] = None,
         category: Optional[str] = None,
+        code: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Record, persist, and broadcast a structured error."""
         context = dict(context or {})
@@ -44,6 +45,7 @@ class ErrorHandler:
             "run_id": run_id,
             "node_id": context.get("node_id"),
             "branch_id": context.get("branch_id"),
+            "code": code,
         }
         errors = self._errors_by_run.setdefault(run_id, self.get_errors_for_run(run_id))
         errors.append(error_record)

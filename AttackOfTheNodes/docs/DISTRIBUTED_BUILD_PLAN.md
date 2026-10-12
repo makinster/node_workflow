@@ -107,7 +107,7 @@ the real backend.
 | 1b | `RunContext` + WaitRegistry + delivery tracking (D5) — **done** | Step 1 merged |
 | — | Refresh coalescer (frontend only) — **done** | Any time |
 | 2 | Run service + CLI — **done** | Step 1b merged |
-| 3 | `[error]` routing, error codes, Errors section, skipped status (D7–D9) | Step 2 merged |
+| 3 | `[error]` routing, error codes, Errors section, skipped status (D7–D9) — **done** | Step 2 merged |
 | — | ESP32 proof slice | Steps 2–3 |
 | 4 | Contracts + subworkflows (Phases 19/20) | Step 3 |
 | 5 | Event sources + start triggers | Step 4 |
@@ -266,6 +266,10 @@ SESSION_LOG for the API, the deviations and the behavior changes.
 - Move logging setup out of the TUI-only `main.py` path.
 
 ### Step 3 — `[error]` routing
+
+**Status: done (2026-10-12, branch `dist/step-3-error-routing`).** See
+SESSION_LOG for interpretation notes, open items and the logged behavior
+changes.
 
 - **Payload schema:** versioned JSON with:
   - a namespaced `code` (`engine.*` vs node-declared);

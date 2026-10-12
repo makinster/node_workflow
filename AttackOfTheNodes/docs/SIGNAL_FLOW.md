@@ -356,6 +356,7 @@ node calls context.signal_error(error)
   -> Supervisor stores recovery Future, sets state AWAITING_RECOVERY
   -> RECOVERY_OPTIONS_AVAILABLE fires -> App opens ErrorDetailsScreen modal
   -> User picks action (RETRY / SKIP / TERMINATE_BRANCH / TERMINATE_WORKFLOW)
+     (SKIP marks the node skipped and ends the branch; downstream skips spread)
   -> App._submit_recovery_from_modal -> MasterState.submit_recovery_action
   -> MasterState -> supervisor.submit_recovery_action(action)
   -> Supervisor resolves recovery Future; applies action
@@ -381,17 +382,26 @@ aotn run <workflow> [--data-dir DIR] [--policy P] [--input K=V] [--json]
   -> interactive prompts read stdin in a daemon thread, one prompt at a time
 ```
 
-### Node Routes A Failure To Its `error` Port
+### Node Fails: Error Codes, `error` Port, Recovery (step 3)
 
 ```
-node calls context.signal_done({"data": {"error": msg}, "output_port": "error"})
-  -> error port connected: routes like any other port (no recovery)
-  -> error port unconnected: Supervisor turns the payload into a node error
-     -> node reports `errored`; normal recovery flow above runs
+node raises / signal_error(exc)   or   signal_done({"data": {"error": msg,
+                                       "code": c}, "output_port": "error"})
+  -> node reports `errored`
+  -> Supervisor gives the failure a code: declared (NodeError / data.code),
+     engine (engine.upstream_unreachable, engine.unattended_input) or the
+     default node_error
+  -> ErrorHandler.log_error(..., code) -> persisted, ERROR_LOGGED (once)
+  -> `error` port connected?
+     -> Error Mux that lists the code, or any non-mux node:
+        transient (node, "error") = versioned payload; route there;
+        node outcome failed (delivered to the handler); `default` path is
+        skipped as not_taken
+     -> otherwise (unconnected, or a mux without the code):
+        recovery (RECOVERY_OPTIONS_AVAILABLE with `code`) or the run's policy
 ```
 
-HTTP Request and JSON Path use this. A failure is never routed down
-`default`.
+A failure is never routed down `default`.
 
 ### Unattended Run
 

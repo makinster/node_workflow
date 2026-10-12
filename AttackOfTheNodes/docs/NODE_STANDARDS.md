@@ -472,6 +472,37 @@ spec.
 Read-only topology view showing current input and output connection wiring.
 Managed by the editor, not by the user through this tab directly.
 
+Below it, an **Errors** section (D8, step 3) lists every error code the node
+can fail with: the default generic `node_error` first, then the codes the node
+declares, each with its description and whether it is retryable. It is
+presentation of `NodeFactory` metadata only.
+
+## Errors and the `error` port (step 3, D7)
+
+- Every node can fail through one engine-level port named `error`. A failure
+  is either an exception (raise `backend.node_errors.NodeError(code, message,
+  details=..., retryable=...)` for a declared code; any other exception gets
+  `node_error`) or a signal on the port:
+  `context.signal_done({"data": {"error": msg, "code": code, "details": {...}},
+  "output_port": "error"})`.
+- Declare codes in `error_definitions` (helper specs: `errors:`), each with
+  `code`, `description`, `retryable`. Codes are lowercase dotted snake_case,
+  unique, not `node_error` and not in the engine's `engine.` namespace (a node
+  may list an engine code it raises, e.g. Wait Until's
+  `engine.upstream_unreachable`). An undeclared code falls back to
+  `node_error` with `details.undeclared_code`.
+- The engine logs every failure once, then routes the versioned error payload
+  along a connected `error` port (an Error Mux only for codes it lists; any
+  other node for every code). Otherwise the run pauses for recovery, or
+  follows its recovery policy when headless. The node is failed, never
+  completed, and its `default` path is skipped as `not_taken`.
+- Match on codes, never on message text.
+- A node class may set `receives_failed_input = True` (Error Mux does). When
+  a failure is routed to it along `error`, the supervisor also passes the
+  failed node's input as `inputs["failed_input"]`: the value of its single
+  input port, or a dict by port name when it has several. Other nodes never
+  see this key.
+
 ---
 
 ## Reference Example — File Instance Node

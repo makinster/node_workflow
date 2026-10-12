@@ -299,6 +299,8 @@ def normalize_spec(spec: dict[str, Any]) -> dict[str, Any]:
             },
         )
 
+    error_definitions = _error_definitions(spec.get("errors"))
+
     class_name = str(spec.get("class_name") or _pascal_case(node_type)).strip()
     if not re.fullmatch(r"[A-Z][A-Za-z0-9]*", class_name):
         raise ValueError("class_name must be a valid PascalCase Python class name")
@@ -329,6 +331,7 @@ def normalize_spec(spec: dict[str, Any]) -> dict[str, Any]:
         "default_config": default_config,
         "config_schema": config_schema,
         "ui_hints": spec.get("ui_hints", {}) or {},
+        "error_definitions": error_definitions,
         "execution_template": template,
         "structural_ui": bool(spec.get("structural_ui", False)),
         "generate_ui_test": bool(
@@ -843,6 +846,7 @@ class {spec["class_name"]}(Node):
     default_config: ClassVar[Dict[str, Any]] = {_pretty(spec["default_config"])}
     config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {_pretty(spec["config_schema"])}
     ui_hints: ClassVar[Dict[str, Any]] = {_pretty(spec["ui_hints"])}
+    error_definitions: ClassVar[List[Dict[str, Any]]] = {_pretty(spec["error_definitions"])}
 
     async def execute(self, context: NodeContext) -> None:
 {body}
@@ -881,6 +885,8 @@ def test_{spec["node_type"]}_registration_and_metadata():
                 "string", "number", "bool", "var", "file", "ai_session", "any",
             }}
             assert isinstance(info["required"], bool)
+    # Declared error codes (D7); the default generic code is always first.
+    assert [error["code"] for error in metadata["errors"]] == {_pretty(["node_error"] + [item["code"] for item in spec["error_definitions"]])}
 
 
 @pytest.mark.asyncio
@@ -1141,6 +1147,49 @@ def _port_metadata(raw: Any, ports: list[str]) -> dict[str, dict[str, str]]:
             "name": str(value.get("name") or ""),
             "description": str(value.get("description") or ""),
         }
+    return result
+
+
+_ERROR_CODE_PATTERN = re.compile(r"^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*$")
+
+
+def _error_definitions(raw: Any) -> list[dict[str, Any]]:
+    """Validate the spec's `errors:` list (code, description, retryable).
+
+    Mirrors backend/node_errors.normalize_error_definitions: codes are
+    lowercase dotted snake_case, unique, not `node_error` (added to every
+    node automatically) and not in the reserved `engine.` namespace.
+    """
+    if raw is None:
+        return []
+    if not isinstance(raw, list):
+        raise ValueError("errors must be a list of {code, description, retryable}")
+    seen: set[str] = set()
+    result: list[dict[str, Any]] = []
+    for index, entry in enumerate(raw):
+        where = f"errors[{index}]"
+        if not isinstance(entry, dict):
+            raise ValueError(f"{where} must be an object")
+        unknown = set(entry) - {"code", "description", "retryable"}
+        if unknown:
+            raise ValueError(f"{where} has unknown keys: {sorted(unknown)}")
+        code = str(entry.get("code") or "").strip()
+        if not _ERROR_CODE_PATTERN.fullmatch(code):
+            raise ValueError(f"{where}.code {code!r} must be lowercase snake_case segments joined by dots")
+        if code.startswith("engine."):
+            raise ValueError(f"{where}.code {code!r} is reserved for the engine")
+        if code == "node_error":
+            raise ValueError(f"{where}.code 'node_error' is added to every node automatically")
+        if code in seen:
+            raise ValueError(f"{where}.code {code!r} is declared twice")
+        seen.add(code)
+        description = str(entry.get("description") or "").strip()
+        if not description:
+            raise ValueError(f"{where}.description is required")
+        retryable = entry.get("retryable", False)
+        if not isinstance(retryable, bool):
+            raise ValueError(f"{where}.retryable must be true or false")
+        result.append({"code": code, "description": description, "retryable": retryable})
     return result
 
 

@@ -29,6 +29,8 @@ def test_json_path_node_registration_and_metadata():
                 "string", "number", "bool", "var", "file", "ai_session", "any",
             }
             assert isinstance(info["required"], bool)
+    # Declared error codes (D7); the default generic code is always first.
+    assert [error["code"] for error in metadata["errors"]] == ['node_error', 'invalid_json']
 
 
 import json as _json

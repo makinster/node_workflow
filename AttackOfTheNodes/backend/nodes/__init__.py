@@ -42,8 +42,10 @@ from .io.http_request_node import HttpRequestNode
 from .io.file_output_node import FileOutputNode
 from .io.file_view_node import FileViewNode
 from .io.window_control_node import WindowControlNode
+from .flow.error_mux_node import ErrorMuxNode
 
 ALL_NODE_CLASSES = [
+    ErrorMuxNode,
     WindowControlNode,
     FileViewNode,
     FileOutputNode,

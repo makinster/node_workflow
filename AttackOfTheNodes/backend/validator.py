@@ -12,6 +12,7 @@ from .branch_health import ENDED_UNMERGED, derive_branch_health, output_types_fr
 from .data_types import DataType
 from .vault_declarations import standard_vault_writes
 from .file_paths import normalize_local_path
+from .node_errors import ENGINE_ERROR_DEFINITIONS, ERROR_PORT
 from .node_factory import NodeFactory
 from .workflow_map import WorkflowMap
 
@@ -65,6 +66,78 @@ def derive_input_sources(
                 sources.append({"type": "membank", "source_id": continue_key})
         input_sources[node_id] = sources
     return input_sources
+
+
+ERROR_MUX_NODE_TYPE = "error_mux_node"
+
+
+def _validate_error_muxes(
+    all_nodes: Dict[str, Dict[str, Any]],
+    type_meta: Dict[str, Any],
+    errors: List[Dict[str, str]],
+    warnings: List[Dict[str, str]],
+) -> None:
+    """D7: an Error Mux may only list codes its upstream node can raise."""
+    for node_id, data in all_nodes.items():
+        if data.get("type") != ERROR_MUX_NODE_TYPE:
+            continue
+        config = data.get("config") or {}
+        meta = type_meta.get(ERROR_MUX_NODE_TYPE) or {}
+        routes = {
+            port: _codes(config.get(f"{port}_codes"))
+            for port in meta.get("output_ports") or []
+        }
+        if not any(routes.values()):
+            warnings.append({"node_id": node_id,
+                             "message": "Error Mux lists no codes, so it never routes anything"})
+        sources = [
+            conn for conn in data.get("connections", {}).get("inputs", [])
+            if conn.get("target_port") == "error"
+        ]
+        if not sources:
+            warnings.append({"node_id": node_id,
+                             "message": "Error Mux has no incoming error connection"})
+        for conn in sources:
+            source_id = conn.get("source_node_id")
+            if conn.get("source_port") != ERROR_PORT:
+                errors.append({
+                    "node_id": node_id,
+                    "message": (
+                        f"Error Mux input comes from port '{conn.get('source_port')}' "
+                        f"of {source_id}; connect a node's '{ERROR_PORT}' port"
+                    ),
+                })
+                continue
+            source = all_nodes.get(source_id) or {}
+            source_meta = type_meta.get(source.get("type", "")) or {}
+            known = {item.get("code") for item in source_meta.get("errors") or []}
+            known |= set(ENGINE_ERROR_DEFINITIONS)
+            for port, codes in routes.items():
+                for code in codes:
+                    if code not in known:
+                        errors.append({
+                            "node_id": node_id,
+                            "message": (
+                                f"Error Mux {port} lists code '{code}', which "
+                                f"{source.get('alias') or source_id} never raises "
+                                f"(declared: {', '.join(sorted(c for c in known if c))})"
+                            ),
+                        })
+        connected = {
+            conn.get("source_port")
+            for conn in data.get("connections", {}).get("outputs", [])
+        }
+        for port, codes in routes.items():
+            if codes and port not in connected:
+                warnings.append({
+                    "node_id": node_id,
+                    "message": f"Error Mux {port} lists codes but has no connection",
+                })
+
+
+def _codes(raw: Any) -> List[str]:
+    items = raw if isinstance(raw, list) else str(raw or "").replace("\n", ",").split(",")
+    return [str(item).strip() for item in items if str(item).strip()]
 
 
 def validate_workflow(
@@ -156,7 +229,8 @@ def validate_workflow(
         declared_in = set(meta.get("input_ports") or [])
         for conn in data.get("connections", {}).get("outputs", []):
             port = conn.get("source_port", "default")
-            if port not in declared_out:
+            # `error` is the one engine-level failure port every node has.
+            if port not in declared_out and port != ERROR_PORT:
                 errors.append(
                     {
                         "node_id": node_id,
@@ -178,6 +252,8 @@ def validate_workflow(
                         ),
                     }
                 )
+
+    _validate_error_muxes(all_nodes, _type_meta_cache, errors, warnings)
 
     # File-path fields: schema fields hinted with path_hint == "file".
     # An empty required path is an error; a path missing on disk is only a

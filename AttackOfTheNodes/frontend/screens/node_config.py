@@ -772,6 +772,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                         classes="form-description",
                     )
                     yield Static(self._format_connections(), id="connection-summary")
+                    yield from self._compose_errors_section()
 
     def _compose_wait_config_tabs(self, config: Dict[str, Any], forms: Dict[str, Any]):
         with TabbedContent(id="node-config-tabs", classes="node-config-tabs"):
@@ -804,6 +805,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 with VerticalScroll(classes="tab-scroll"):
                     yield Static("Edit connections from the editor.", classes="form-description")
                     yield Static(self._format_connections(), id="connection-summary")
+                    yield from self._compose_errors_section()
 
     def _wait_route_summary(self) -> str:
         connections = self.node_data.get("connections") or {}
@@ -904,6 +906,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                         classes="form-description",
                     )
                     yield Static(self._format_connections(), id="connection-summary")
+                    yield from self._compose_errors_section()
 
     def _build_standard_config_forms(
         self,
@@ -2443,6 +2446,29 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 str(metadata.get("description", "")),
             ]
         )
+
+    def _compose_errors_section(self):
+        """D8: list declared error codes beside Connections (metadata only)."""
+        yield Label("Errors", classes="form-label nav-section")
+        yield Static(
+            "Codes this node can fail with. Connect its error port to an "
+            "Error Mux to route matching codes; anything else stops for recovery.",
+            classes="form-description",
+        )
+        yield Static(
+            self._format_error_definitions(),
+            id="error-definitions",
+            classes="form-description",
+            markup=False,
+        )
+
+    def _format_error_definitions(self) -> str:
+        metadata = self._metadata_for_type(str(self.node_data.get("type") or "")) or {}
+        lines = []
+        for error in metadata.get("errors") or []:
+            retry = " (retryable)" if error.get("retryable") else ""
+            lines.append(f"  {error.get('code')}{retry}: {error.get('description')}")
+        return "\n".join(lines) or "  (none)"
 
     def _format_connections(self) -> str:
         self._refresh_node_data()

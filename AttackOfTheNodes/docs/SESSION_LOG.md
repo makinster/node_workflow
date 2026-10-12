@@ -4,6 +4,111 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-12 — Distributed Step 3: Error Codes, Error Mux, Errors Section, Skipped Status
+
+Branch `dist/step-3-error-routing`, from `main` at `5e65265` (step 2, PR #35).
+Before: 905 passed. After: 952 passed.
+
+- **D7 codes** (`backend/node_errors.py`): `NodeError`, declared
+  `error_definitions` (helper specs: `errors:`), the default generic
+  `node_error` on every node, `engine.*` codes, and the versioned error
+  payload (`version`, `code`, `message`, `node_id`, `run_id`, `stage`,
+  `details`, `retryable`, `error_id` = the `ErrorHandler` record id). The
+  payload lives on the transient store only. `ErrorHandler` records and
+  `RECOVERY_OPTIONS_AVAILABLE` carry the code.
+- **One engine-level `error` port.** Every failure (exception or a signal on
+  `error`) is coded and logged once, then routes along a connected `error`
+  port or falls through to recovery / the run's policy. The validator accepts
+  `error` connections from any node.
+- **Error Mux** (`error_mux_node`, helper spec): routes by code to path A/B/C;
+  no matching code falls through. The validator checks its codes against the
+  upstream node's declarations (plus engine codes) and flags a mux fed from a
+  non-`error` port.
+- **Helper**: `errors:` parsing/validation, emitted `error_definitions`, a
+  generated codes assertion and a `ui_checks` Errors-section check. HTTP
+  Request (`missing_url`, `timeout`, `network`, `http_status` with status and
+  body in details) and JSON Path (`invalid_json`) declare codes; both were
+  regenerated with custom bodies and tests restored. Wait Until and User Text
+  Input list the engine codes they raise.
+- **D8 Errors section** beside Connections (all config layouts, including Wait
+  Until and branch/merge).
+- **D9 skipped status** with reasons, spreading, run history
+  `skipped_nodes`, logs, and `[skipped: <reason>]` on execution cards. Wait
+  Until on an unreachable target fails with `engine.upstream_unreachable`.
+
+**Interpretation notes (owner agreed 2026-10-12):**
+
+- "One engine-level `error` port for every node" is implemented in the engine
+  and validator; nodes do not list `error` in `output_ports` (the editor treats
+  any node with several output ports as a branch). Wiring `error` from nodes
+  that do not list it in the editor is an **open item**.
+- A non-mux node connected to `error` receives every code (catch-all); only an
+  Error Mux filters by code.
+- A node whose error was routed is `failed` (not completed); its `default`
+  target is skipped `not_taken`.
+
+**Behavior changes:**
+
+- The recovery **Skip** button no longer runs the next node with an empty
+  input. Its downstream path is skipped until it rejoins something live.
+- Untaken paths now show as skipped (`not_taken`, or `upstream_failed` /
+  `upstream_skipped`) rather than having no status.
+- A failure routed along a connected `error` port now carries the versioned
+  error payload (a dict) instead of the node's message string, and the node
+  is failed rather than completed.
+
+**Tests:** new `tests/test_error_routing.py` (34) covering every test the plan
+lists (linear spread, Merge with a live sibling, not-taken Conditional port,
+error routing skips `default`, recovery Skip spreads, Wait Until on a skipped
+target fails with `engine.upstream_unreachable`, mux fall-through to the
+policy, skipped never completed) plus codes, payload, generator, Errors
+section and validator checks; `tests/generated/test_error_mux_node.py`.
+Updated for the logged behavior changes: two tests in
+`test_execution_status.py` (Skip no longer runs the next node; the untaken
+`end` is skipped) and one in `test_run_lifecycle.py` (the error port carries
+the payload dict).
+
+**Fixed after the adversarial review** (each with a regression test in
+`tests/test_error_routing.py`):
+
+- A mux or catch-all fed by several `error` connections read the first
+  connection's slot, not the node that failed (empty or stale payload). The
+  supervisor now remembers which node and port routed it to its current node,
+  and an input port with several connections reads that one
+  (`WorkflowMap.find_input_sources`). This also applies to ordinary ports fed
+  by several connections.
+- Non-JSON error `details` (e.g. bytes) or inputs broke the persisted
+  `run_errors` file and stopped the run. Logged details and inputs now go
+  through `node_errors.json_safe`.
+- Skip spreading scanned the whole graph after every node (quadratic on long
+  runs). A completed node that delivered to all its successors now skips the
+  scan.
+- A user Stop during a recovery prompt marked downstream nodes skipped
+  `upstream_failed`. A user Stop (`RunContext.stop_requested`) no longer
+  spreads skips. A failure that terminates the workflow (`_halt`) still does.
+
+**Owner request during review: Error Mux "Pass along".** A path after an
+Error Mux only received the error record, so the data the failed node was
+working on was lost to the handling path. The mux spec gained a `forward`
+select (`error` default, `failed_input`); the node was regenerated and its
+custom body restored, and `check_node` / `check_ui` pass. Engine hook:
+`receives_failed_input` on the node class (`node_errors.FAILED_INPUT`). The
+error payload stays on the failed node's `error` slot either way. Tests:
+`test_mux_can_pass_the_failed_nodes_input_down_its_path`,
+`test_a_catch_all_node_does_not_get_the_failed_input`, and a generated-test
+case.
+
+**Open items from the review (not fixed, need a decision):**
+
+- A routed (handled) error is still logged, so `aotn run` exits 1 for a run
+  that handled its errors through a mux. Error records do not say whether an
+  error was routed.
+- Nodes on an untaken loop (or fed by an orphan node that never runs) are
+  never marked skipped, because skipping waits for every source to be final.
+  D5 waits still treat them correctly; only the displayed status is missing.
+- Spread skip events use `visit_index` 0 on the branch that triggered them.
+  Nothing displays per-visit data yet.
+
 ## 2026-10-12 — Distributed Step 2: Run Service, Policies, Data Directory, CLI
 
 Branch `dist/step-2-run-service`, from `main` at `5749b9e`. Before: 866

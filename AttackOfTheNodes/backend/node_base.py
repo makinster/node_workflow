@@ -20,6 +20,7 @@ from typing import (
 )
 
 from .data_types import validate_type
+from .node_errors import normalize_error_definitions
 from .field_types import validate_config_schema
 
 
@@ -109,6 +110,12 @@ class Node(ABC):
     group: ClassVar[Optional[str]] = None
     selector_section: ClassVar[Optional[str]] = None
 
+    # Declared error codes (D7): [{"code", "description", "retryable"}].
+    # NodeFactory adds the default generic `node_error` code to every node.
+    # Engine codes (`engine.*`) may be listed to surface them in the Errors
+    # section; node codes may not use that namespace.
+    error_definitions: ClassVar[List[Dict[str, Any]]] = []
+
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
         if not cls.default_alias:
@@ -120,6 +127,11 @@ class Node(ABC):
                     f"Invalid config_schema in {cls.__name__}: {errors}"
                 )
         cls._validate_port_data_types()
+        cls.error_definitions = normalize_error_definitions(
+            cls.error_definitions,
+            where=f"{cls.__name__}.error_definitions",
+            allow_engine_codes=True,
+        )
 
     @classmethod
     def _validate_port_data_types(cls) -> None:

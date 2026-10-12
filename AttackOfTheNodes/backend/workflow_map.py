@@ -217,6 +217,31 @@ class WorkflowMap:
                 }
         return None
 
+    def find_input_sources(
+        self, current_node_id: str, input_port: str
+    ) -> List[Dict[str, str]]:
+        """Every upstream node and port connected to an input port."""
+        node = self._nodes.get(current_node_id)
+        if node is None:
+            return []
+        return [
+            {
+                "source_node_id": conn["source_node_id"],
+                "source_port": conn.get("source_port", "default"),
+            }
+            for conn in node.get("connections", {}).get("inputs", [])
+            if conn.get("target_port") == input_port
+        ]
+
+    def successor_ids(self, node_id: str) -> set[str]:
+        """Direct targets of a node's output connections."""
+        node = self._nodes.get(node_id) or {}
+        return {
+            conn.get("target_node_id")
+            for conn in node.get("connections", {}).get("outputs", [])
+            if conn.get("target_node_id")
+        }
+
     def nodes_reachable_from(self, node_id: str) -> set[str]:
         """Return all node ids reachable by following output connections forward.
 

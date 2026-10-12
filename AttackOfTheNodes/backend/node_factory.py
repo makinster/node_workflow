@@ -9,6 +9,7 @@ import logging
 from copy import deepcopy
 from typing import Any, Dict, List, Optional, Type
 
+from .node_errors import ERROR_PORT, definitions_with_default
 from .data_types import coerce_type
 from .config_migrations import normalize_node_config
 from .node_base import Node
@@ -114,6 +115,12 @@ class NodeFactory:
                     "ui_hints": dict(getattr(node_class, "ui_hints", {})),
                     "editor_only": bool(getattr(node_class, "editor_only", False)),
                     "terminates_branch": bool(node_class.terminates_branch),
+                    # D7: declared codes plus the default generic code, which
+                    # is listed first so no error is ever unmatched.
+                    "errors": definitions_with_default(
+                        getattr(node_class, "error_definitions", [])
+                    ),
+                    "error_port": ERROR_PORT,
                 }
             )
         return sorted(metadata, key=lambda item: item["display_name"])
