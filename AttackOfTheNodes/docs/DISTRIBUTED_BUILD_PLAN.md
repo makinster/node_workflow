@@ -336,6 +336,9 @@ changes.
 
 ### ESP32 proof slice (between steps 3 and 4)
 
+**Status: done (2026-10-12, branch `dist/esp32-proof-slice`).** See
+SESSION_LOG.
+
 The pipeline: cron runs `aotn run capture` → an HTTP node GETs `/capture` and
 saves the bytes as a run-owned `file` → the `error` port routes to a
 notification (HTTP POST, for example ntfy or Telegram).

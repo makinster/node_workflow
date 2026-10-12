@@ -7,12 +7,12 @@ from ...node_category import NodeCategory
 
 
 class HttpRequestNode(Node):
-    """Make an HTTP GET or POST request and forward the response body."""
+    """Make an HTTP GET or POST request and forward the response body (as text, or saved to a run-owned file)."""
 
     node_type: ClassVar[str] = 'http_request_node'
     display_name: ClassVar[str] = 'HTTP Request'
     default_alias: ClassVar[str] = 'HTTP Request'
-    description: ClassVar[str] = 'Make an HTTP GET or POST request and forward the response body'
+    description: ClassVar[str] = 'Make an HTTP GET or POST request and forward the response body (as text, or saved to a run-owned file)'
     category: ClassVar[str] = NodeCategory.IO
     primary_family: ClassVar[str] = 'Inputs'
     tags: ClassVar[List[str]] = ['Internet']
@@ -24,8 +24,8 @@ class HttpRequestNode(Node):
     output_ports: ClassVar[List[str]] = ['default', 'error']
     input_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {}
     output_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {}
-    default_config: ClassVar[Dict[str, Any]] = {'url': '', 'method': 'GET', 'body': '', 'timeout_seconds': 10.0, 'auth_token_secret': ''}
-    config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {'url': {'type': 'string', 'label': 'URL', 'placeholder': 'https://example.com/api', 'required': True, 'tab': 'Parameters'}, 'method': {'type': 'select', 'label': 'Method', 'options': ['GET', 'POST'], 'tab': 'Parameters'}, 'body': {'type': 'multiline', 'label': 'Request body (POST)', 'required': False, 'visible_when': {'method': 'POST'}, 'tab': 'Parameters'}, 'timeout_seconds': {'type': 'float', 'label': 'Timeout (seconds)', 'required': False, 'tab': 'Parameters'}, 'auth_token_secret': {'type': 'string', 'label': 'Bearer token (secrets store key)', 'secret': True, 'required': False, 'tab': 'Parameters'}}
+    default_config: ClassVar[Dict[str, Any]] = {'url': '', 'method': 'GET', 'body_source': 'config', 'body': '', 'response_mode': 'text', 'keep_response_file': False, 'timeout_seconds': 10.0, 'auth_token_secret': ''}
+    config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {'url': {'type': 'string', 'label': 'URL', 'placeholder': 'https://example.com/api', 'required': True, 'tab': 'Parameters'}, 'method': {'type': 'select', 'label': 'Method', 'options': ['GET', 'POST'], 'tab': 'Parameters'}, 'body_source': {'type': 'select', 'label': 'Body from (POST)', 'options': ['config', 'input'], 'description': "config sends the Request body field; input sends the node's input (text as is, anything else as JSON)", 'visible_when': {'method': 'POST'}, 'tab': 'Parameters'}, 'body': {'type': 'multiline', 'label': 'Request body (POST)', 'required': False, 'visible_when': {'method': 'POST'}, 'tab': 'Parameters'}, 'response_mode': {'type': 'select', 'label': 'Response as', 'options': ['text', 'file'], 'description': 'text decodes the body; file saves the raw bytes to a run-owned file and outputs a file reference', 'tab': 'Parameters'}, 'keep_response_file': {'type': 'boolean', 'label': 'Keep the response file after the run', 'description': 'Off: the file is deleted when the run succeeds (kept if it fails). On: always kept.', 'visible_when': {'response_mode': 'file'}, 'tab': 'Parameters'}, 'timeout_seconds': {'type': 'float', 'label': 'Timeout (seconds)', 'required': False, 'tab': 'Parameters'}, 'auth_token_secret': {'type': 'string', 'label': 'Bearer token (secrets store key)', 'secret': True, 'required': False, 'tab': 'Parameters'}}
     ui_hints: ClassVar[Dict[str, Any]] = {}
     error_definitions: ClassVar[List[Dict[str, Any]]] = [{'code': 'missing_url', 'description': 'No URL is configured.', 'retryable': False}, {'code': 'timeout', 'description': 'The server did not answer within the timeout.', 'retryable': True}, {'code': 'network', 'description': 'The request could not reach the server (DNS, refused, TLS...).', 'retryable': True}, {'code': 'http_status', 'description': 'The server answered with an HTTP error status (details carry status and body).', 'retryable': False}]
 
@@ -42,23 +42,31 @@ class HttpRequestNode(Node):
             return
 
         method = str(self.config.get("method") or "GET").upper()
-        body_text = str(self.config.get("body") or "")
         timeout = float(self.config.get("timeout_seconds") or 10.0)
+        file_mode = str(self.config.get("response_mode") or "text") == "file"
+        if file_mode and context.run_session is None:
+            context.signal_error(RuntimeError("Saving the response to a file needs a run"))
+            return
 
         try:
-            body_bytes = body_text.encode("utf-8") if method == "POST" and body_text else None
+            body_bytes, body_type = self._request_body(context, method)
             req = urllib.request.Request(url, data=body_bytes, method=method)
+            if body_type:
+                req.add_header("Content-Type", body_type)
             token_key = str(self.config.get("auth_token_secret") or "").strip()
             if token_key:
                 token = context.get_secret(token_key)
                 if token:
                     req.add_header("Authorization", f"Bearer {token}")
             with urllib.request.urlopen(req, timeout=timeout) as response:
-                charset = "utf-8"
-                content_type = response.headers.get("Content-Type", "")
-                if "charset=" in content_type:
-                    charset = content_type.split("charset=")[-1].split(";")[0].strip()
-                result = response.read().decode(charset, errors="replace")
+                if file_mode:
+                    result = self._save_response(context, response)
+                else:
+                    charset = "utf-8"
+                    content_type = response.headers.get("Content-Type", "")
+                    if "charset=" in content_type:
+                        charset = content_type.split("charset=")[-1].split(";")[0].strip()
+                    result = response.read().decode(charset, errors="replace")
             context.signal_done({"data": {"default": result}})
         except urllib.error.HTTPError as exc:
             try:
@@ -76,3 +84,41 @@ class HttpRequestNode(Node):
             context.signal_done({"data": {
                 "error": str(exc), "code": code, "details": {"url": url},
             }, "output_port": "error"})
+
+    def _request_body(self, context: NodeContext, method: str):
+        """Return (body bytes or None, Content-Type or None) for the request."""
+        import json
+
+        from ...node_errors import json_safe
+
+        if method != "POST":
+            return None, None
+        if str(self.config.get("body_source") or "config") == "input":
+            value = context.inputs.get("input")
+            if value is None:
+                return b"", None
+            if isinstance(value, str):
+                return value.encode("utf-8"), "text/plain; charset=utf-8"
+            if isinstance(value, (bytes, bytearray)):
+                return bytes(value), "application/octet-stream"
+            return json.dumps(json_safe(value)).encode("utf-8"), "application/json"
+        text = str(self.config.get("body") or "")
+        return (text.encode("utf-8") if text else None), None
+
+    def _save_response(self, context: NodeContext, response: Any) -> Dict[str, str]:
+        """Stream the raw response bytes into a run-owned file (R4)."""
+        import mimetypes
+
+        content_type = response.headers.get("Content-Type", "").split(";")[0].strip()
+        extension = mimetypes.guess_extension(content_type) if content_type else None
+        session = context.run_session
+        path = session.new_run_file(f"{context.node_id}{extension or '.bin'}")
+        with open(path, "wb") as handle:
+            while True:
+                chunk = response.read(65536)
+                if not chunk:
+                    break
+                handle.write(chunk)
+        if self.config.get("keep_response_file"):
+            return session.keep_file(path)
+        return session.run_file_reference(path)

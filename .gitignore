@@ -21,6 +21,7 @@ tmp/
 
 # AttackOfTheNodes runtime data
 AttackOfTheNodes/logs/
+AttackOfTheNodes/run_files/
 AttackOfTheNodes/settings/*.json
 AttackOfTheNodes/run_errors/*.json
 AttackOfTheNodes/run_history/*.json

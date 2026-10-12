@@ -156,6 +156,15 @@ Holds Python handles that cannot be JSON-serialized:
 Workflow saves store only portable strings (file paths, session key names).
 Handles are reconstructed at runtime through `RunSession`.
 
+**Run-owned temporary files (R4, ESP32 slice).** `new_run_file(name)` reserves
+a path under `<data dir>/run_files/<run_id>/` (`persistence.RUN_FILES_DIR`,
+created on first use) with lifetime `run`; `run_file_reference(path)` builds
+the `file` ref (`lifetime: "run"`), and `keep_file(ref)` marks it `kept`.
+`MasterState._record_run` calls `close_all(delete_run_files=succeeded)`, where
+succeeded means FINISHED, no errors logged and no user Stop (the same runs
+that exit 0). Otherwise every run file is kept for debugging. `file` refs
+without `lifetime` mean `kept`, so older refs are unchanged.
+
 **Typed vault reference resolution.** When a `MemoryBank` vault entry carries
 `type: "file"` or `type: "ai_session"`, the entry holds a string `ref_key`,
 not the handle itself. Nodes resolve the handle by calling

@@ -713,10 +713,17 @@ class MasterState:
     def _record_run(self, final_state: str) -> None:
         if not self.current_run_id:
             return
-        # Run is over on every path that records it; release runtime resources.
-        if self._run is not None:
-            self._run.run_session.close_all()
         errors = self._error_handler.get_errors_for_run(self.current_run_id)
+        # Run is over on every path that records it; release runtime resources.
+        # R4: run-owned files are deleted only when the run succeeded (finished,
+        # no errors, not stopped); otherwise they are kept for debugging.
+        if self._run is not None:
+            succeeded = (
+                final_state == "FINISHED"
+                and not errors
+                and not self._run.stop_requested
+            )
+            self._run.run_session.close_all(delete_run_files=succeeded)
         self._run_history.record_run(
             {
                 "run_id": self.current_run_id,
