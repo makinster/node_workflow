@@ -208,7 +208,7 @@ Run loop:
 4. Prepare inputs from transient memory or initial branch data.
 5. Execute node and capture result via `perf_counter`-wrapped `node.execute(context)`.
 6. Emit `NODE_TIMING_UPDATE` with elapsed seconds.
-7. If an error, publish recovery options and await a decision (RETRY / SKIP / TERMINATE_BRANCH / TERMINATE_WORKFLOW).
+7. If an error, publish recovery options and await a decision (RETRY / SKIP / TERMINATE_BRANCH / TERMINATE_WORKFLOW). A payload routed to an unconnected `error` port counts as an error. In an unattended run the policy action is applied without waiting, input requests fail, and breakpoints are skipped.
 8. On success, call `mark_node_completed(node_id)`.
 9. Write outputs to transient memory; spawn branches if signaled.
 10. Advance to next node or terminate.
@@ -219,11 +219,12 @@ The floor manager. Does not execute nodes; it coordinates supervisors.
 
 Starting a run:
 
-1. Generate `run_id`.
-2. Clear `MemoryBank`, `OutputManager`, supervisor tracking, `node_timings`, and `completed_nodes`.
-3. Find the workflow start node.
-4. Create and task root supervisor.
-5. Broadcast `WORKFLOW_STATE_UPDATE(RUNNING)`.
+1. Cancel and await any supervisor tasks left over from the previous run.
+2. Generate `run_id`; store the run's unattended policy (`None` for the TUI).
+3. Clear `MemoryBank`, `OutputManager`, supervisor tracking, `node_timings`, and `completed_nodes`.
+4. Find the workflow start node.
+5. Create and task root supervisor.
+6. Broadcast `WORKFLOW_STATE_UPDATE(RUNNING)`.
 
 Supervisor event routing handles:
 
@@ -235,6 +236,9 @@ Supervisor event routing handles:
 - `BREAKPOINT_HIT` — pause all active supervisors.
 - `NODE_TIMING_UPDATE` — accumulate elapsed seconds per node into `node_timings`.
 - `TERMINATE_WORKFLOW_REQUESTED` — stop all supervisors; record run as ERROR.
+
+`stop()` requests stop on every supervisor and then cancels their tasks, so a
+supervisor parked on a wait is released.
 
 WaitUntil coordination:
 

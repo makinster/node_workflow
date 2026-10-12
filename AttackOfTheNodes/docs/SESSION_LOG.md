@@ -4,6 +4,57 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-12 — Distributed Step 1: Bug Fixes
+
+Branch `dist/step-1-bug-fixes`, one commit per fix. **Baseline on unchanged
+`main` (`51c1f0c`): 796 passed.** After this step: 818 passed.
+
+- **1a, error-port routing.** HTTP Request and JSON Path signal failures with
+  `{"data": {"error": msg}, "output_port": "error"}`; HTTP Request also
+  catches `TimeoutError`. The Supervisor turns a payload routed to an
+  unconnected `error` port into a node error, so recovery runs. Both nodes
+  were regenerated from their specs with the custom bodies and tests
+  restored; the generated header gains `group`/`selector_section` from the
+  spec (runtime identity is unchanged — `node_identity` already applied it).
+- **1b-fix, Stop and leak.** `MasterState.stop()` cancels supervisor tasks
+  after requesting stop, and `start_workflow` cancels and awaits leftover
+  tasks before resetting state.
+- **1c, unattended policy.** `start_workflow(unattended=None |
+  "terminate_branch" | "terminate_workflow")`, passed to every Supervisor.
+  Errors are logged and persisted, then the policy applies without waiting;
+  input requests fail with `UnattendedInputError`; breakpoints are skipped.
+  The TUI passes nothing.
+
+**Behavior changes:**
+
+- Saved workflows that previously continued silently after an HTTP Request or
+  JSON Path failure now stop for recovery, unless their `error` port is
+  connected.
+- Stop interrupts a node that is executing or waiting (reported `stopped`)
+  instead of only stopping at the next safe point, and releases Wait Until.
+  A stopped run is still recorded as `FINISHED` (known follow-up: no
+  `STOPPED` state).
+
+**Review fixes (independent diff review before merge):**
+
+- A supervisor task cancelled before its first step never published
+  `SUPERVISOR_TERMINATING`, so the run stayed `RUNNING` and
+  `wait_for_completion` spun without yielding (Stop right after Start; or
+  `terminate_workflow` with parallel failing branches). Tasks are now pruned
+  by a done-callback that re-checks completion.
+- Two overlapping `start_workflow` calls could lose track of a live
+  supervisor; starts are now serialized by a lock.
+- Not fixed, recorded: cancelling does not stop work running in a thread
+  (`asyncio.to_thread` in Chat Completion and File Output), and a Wait Until
+  whose target can never complete still hangs an unattended run until step
+  1b's unreachable rule lands.
+
+**Tests:** new `tests/test_run_lifecycle.py` from the Oct 9 probes: error port
+connected/unconnected/retry, HTTP timeout and URL errors, Stop releases Wait
+Until, no wake-up leak into the next run (with and without Stop), and an
+unattended run hitting an error, an input request and a breakpoint under both
+policies. The Stop/leak tests fail on the previous code.
+
 ## 2026-10-12 — Authorize Distributed Plan Execution; Merge Plan To Main
 
 Docs only. The owner authorized execution of steps 1, 1b, the refresh

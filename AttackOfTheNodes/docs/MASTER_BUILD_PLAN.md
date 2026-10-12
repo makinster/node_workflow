@@ -351,17 +351,17 @@ Focused checks:
   [DISTRIBUTED_BUILD_PLAN.md](DISTRIBUTED_BUILD_PLAN.md). Phases 19/20 are its
   step 4. Steps 1–3 and the ESP32 slice are authorized (2026-10-12).
 
-  | Step | Contents |
-  |---|---|
-  | 1 | Bug fixes: error-port routing, Stop/leak, unattended policy passed in at run start |
-  | 1b | `RunContext` extraction + WaitRegistry + delivery tracking (structural unreachable rule, no timeouts) |
-  | any time | Refresh coalescer (frontend only) |
-  | 2 | Run service API, `RecoveryPolicy`/`InputProvider`, configurable data directory, `aotn run` CLI |
-  | 3 | `[error]` routing: payload schema, declared error codes (with a default generic code), Errors section beside Connections, error mux, skipped status that spreads downstream |
-  | slice | ESP32 proof: cron → capture to run-owned `file` → error routed to a notification |
-  | 4 | Workflow contracts + subworkflows as child runs (Phases 19/20) |
-  | 5 | Event sources + start triggers with `single`/`queued` modes (`restart` once Stop is clean) |
-  | 6 | HTTP/WebSocket server, auth, encrypted secrets, `parallel` runs |
+  | Step | Contents | Status |
+  |---|---|---|
+  | 1 | Bug fixes: error-port routing, Stop/leak, unattended policy passed in at run start | Done |
+  | 1b | `RunContext` extraction + WaitRegistry + delivery tracking (structural unreachable rule, no timeouts) | Authorized |
+  | any time | Refresh coalescer (frontend only) | Authorized |
+  | 2 | Run service API, `RecoveryPolicy`/`InputProvider`, configurable data directory, `aotn run` CLI | Authorized |
+  | 3 | `[error]` routing: payload schema, declared error codes (with a default generic code), Errors section beside Connections, error mux, skipped status that spreads downstream | Authorized |
+  | slice | ESP32 proof: cron → capture to run-owned `file` → error routed to a notification | Authorized |
+  | 4 | Workflow contracts + subworkflows as child runs (Phases 19/20) | Needs go-ahead |
+  | 5 | Event sources + start triggers with `single`/`queued` modes (`restart` once Stop is clean) | Needs go-ahead |
+  | 6 | HTTP/WebSocket server, auth, encrypted secrets, `parallel` runs | Needs go-ahead |
 
 ### Superseded roadmap entries (kept for history)
 

@@ -36,6 +36,18 @@ from .workflow_map import WorkflowMap
 
 logger = logging.getLogger(__name__)
 
+ERROR_PORT = "error"
+
+# Unattended policy value -> recovery action taken without waiting for a client.
+UNATTENDED_ACTIONS = {
+    "terminate_branch": "TERMINATE_BRANCH",
+    "terminate_workflow": "TERMINATE_WORKFLOW",
+}
+
+
+class UnattendedInputError(RuntimeError):
+    """A node asked for user input in a run that has no one to answer."""
+
 
 @dataclass
 class _NodeResult:
@@ -71,7 +83,10 @@ class Supervisor:
         node_timeout_seconds: float = 30.0,
         run_session: Optional[RunSession] = None,
         secrets_manager: Optional[SecretsManager] = None,
+        unattended: Optional[str] = None,
     ) -> None:
+        if unattended is not None and unattended not in UNATTENDED_ACTIONS:
+            raise ValueError(f"Unknown unattended policy: {unattended!r}")
         self.run_id = run_id
         self.branch_id = branch_id
         self.depth = depth
@@ -100,6 +115,7 @@ class Supervisor:
         self._node_timeout_seconds = float(node_timeout_seconds)
         self._run_session = run_session
         self._secrets_manager = secrets_manager
+        self._unattended = unattended
         self._visit_index = 0
         self._attempt_index = 0
         self._input_interrupted = False
@@ -252,6 +268,9 @@ class Supervisor:
         node_data = self._workflow_map.get_node_data(current_node_id) or {}
         if not node_data.get("breakpoint"):
             return False
+        if self._unattended:
+            # No one can resume an unattended run, so breakpoints are skipped.
+            return False
         if self._skip_breakpoint_once_for == current_node_id:
             self._skip_breakpoint_once_for = None
             return False
@@ -308,6 +327,10 @@ class Supervisor:
             result.error = exc
 
         async def signal_waiting_for_input(prompt: str) -> str:
+            if self._unattended:
+                raise UnattendedInputError(
+                    f"Input required but run is unattended (prompt: {prompt!r})"
+                )
             future: asyncio.Future = asyncio.get_running_loop().create_future()
             self._pending_input_future = future
             self.state = SupervisorState.WAITING_FOR_INPUT
@@ -409,6 +432,9 @@ class Supervisor:
                 },
             )
 
+        if result.error is None and result.payload is not None:
+            result.error = self._unrouted_error_port_failure(result.payload)
+
         if self._input_interrupted:
             self._publish_node_execution("stopped")
         elif result.error is not None or not result.completed or result.payload is None:
@@ -416,6 +442,23 @@ class Supervisor:
         else:
             self._publish_node_execution("done")
         return result
+
+    def _unrouted_error_port_failure(
+        self, payload: Dict[str, Any]
+    ) -> Optional[Exception]:
+        """Turn a failure routed to an unconnected ``error`` port into a node error.
+
+        A connected ``error`` port routes normally. An unconnected one must not
+        end the branch silently, so the normal recovery path runs instead.
+        """
+        if payload.get("output_port") != ERROR_PORT:
+            return None
+        if self._workflow_map.find_next_node_id(
+            self.current_node_id or "", output_port=ERROR_PORT
+        ) is not None:
+            return None
+        message = (payload.get("data") or {}).get(ERROR_PORT)
+        return RuntimeError(str(message or "Node signaled failure on its error port"))
 
     async def _request_recovery(
         self, error: BaseException, inputs: Dict[str, Any]
@@ -431,6 +474,9 @@ class Supervisor:
                 "inputs": inputs,
             },
         )
+        if self._unattended:
+            # The error is logged and persisted above; act without waiting.
+            return UNATTENDED_ACTIONS[self._unattended]
         future: asyncio.Future = asyncio.get_running_loop().create_future()
         self._pending_recovery_future = future
         self.state = SupervisorState.AWAITING_RECOVERY

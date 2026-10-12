@@ -353,6 +353,57 @@ node calls context.signal_error(error)
   -> Supervisor resolves recovery Future; applies action
 ```
 
+### Node Routes A Failure To Its `error` Port
+
+```
+node calls context.signal_done({"data": {"error": msg}, "output_port": "error"})
+  -> error port connected: routes like any other port (no recovery)
+  -> error port unconnected: Supervisor turns the payload into a node error
+     -> node reports `errored`; normal recovery flow above runs
+```
+
+HTTP Request and JSON Path use this. A failure is never routed down
+`default`.
+
+### Unattended Run
+
+```
+MasterState.start_workflow(unattended="terminate_branch" | "terminate_workflow")
+  -> every Supervisor of the run gets the policy
+  -> node error: ErrorHandler.log_error (persisted, ERROR_LOGGED), then the
+     policy action is applied without RECOVERY_OPTIONS_AVAILABLE
+  -> input request: node fails with UnattendedInputError -> policy
+  -> breakpoint: skipped, no BREAKPOINT_HIT
+```
+
+The TUI passes nothing (attended); the step 2 run service turns this value
+into the first `RecoveryPolicy`. Known gap until step 1b: a Wait Until whose
+target was terminated or never reached still waits forever, attended or not.
+
+### User Stops A Run
+
+```
+MasterState.stop()
+  -> supervisor.request_stop() for each supervisor
+  -> cancel each supervisor task (except one that is itself terminating the
+     workflow)
+  -> a node mid-execution or parked in Wait Until / Merge / input is released
+     -> NODE_EXECUTION_UPDATE(stopped), SUPERVISOR_TERMINATING
+  -> run completes (still recorded as FINISHED; there is no STOPPED state yet)
+
+MasterState.start_workflow()
+  -> serialized by a lock, so overlapping starts cannot lose track of a task
+  -> cancels and awaits leftover supervisor tasks first, so a stale waiter
+     can never wake inside the new run
+```
+
+A task cancelled before its first step never publishes
+`SUPERVISOR_TERMINATING`; a done-callback removes it and re-checks run
+completion. Cancelling does not stop work already handed to a thread
+(`asyncio.to_thread`, e.g. a Chat Completion API call or a File Output
+write): that work finishes in the background even though the node shows
+`stopped`.
+
 ### Node Requests Branching
 
 ```
