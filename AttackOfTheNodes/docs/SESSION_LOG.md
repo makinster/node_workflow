@@ -4,6 +4,59 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-12 — ESP32 Proof Slice: Binary-Safe HTTP, Run-Owned Files, Error Notification
+
+Branch `dist/esp32-proof-slice`, from `main` at `f2c1677` (step 3, PR #36).
+Before: 952 passed. After: 967 passed.
+
+- **Run-owned temporary files (R4).** `RunSession.new_run_file`,
+  `run_file_reference`, `keep_file`, `file_lifetime`; files live under
+  `<data dir>/run_files/<run_id>/` (`persistence.RUN_FILES_DIR`, gitignored,
+  created only when a run writes one). `file_refs.file_reference(path,
+  lifetime=None)` and `reference_lifetime()`; absent lifetime means `kept`.
+  `close_all(delete_run_files=...)`: `MasterState._record_run` deletes `run`
+  files (and the empty run directory) only when the run succeeded — FINISHED,
+  no errors logged, not stopped by the user — and keeps them otherwise.
+- **HTTP Request** (spec change, regenerated, custom body restored,
+  `check_node` / `check_ui` pass):
+  - **Response as** (`response_mode`: `text` default | `file`): `file`
+    streams the raw bytes into a run-owned file named after the node with an
+    extension from the Content-Type, and outputs the `file` ref. Without a run
+    session it fails with `node_error`.
+  - **Keep the response file** (`keep_response_file`): marks the file `kept`.
+  - **Body from** (`body_source`: `config` default | `input`): POSTs the
+    node's input; text as `text/plain`, bytes as `application/octet-stream`,
+    anything else as JSON (`application/json`, made JSON-safe).
+- **Error to notification:** capture `error` → Error Mux (`http_status,
+  network, timeout`) → HTTP POST with Body from `input`, which sends the
+  versioned error payload.
+
+**Done checks (`tests/test_esp32_slice.py`, local `http.server`):**
+
+- A JPEG-shaped body (invalid UTF-8) is saved byte-for-byte as a run-owned
+  `.jpg` under `run_files/<run_id>/`, and the ref is JSON.
+- A 503 endpoint routes `http_status` (status, body) through the mux to the
+  notification endpoint, which receives the JSON payload with `run_id` and
+  `node_id`.
+- Run files are deleted on success (directory removed), kept on ERROR, on
+  FINISHED-with-errors and on Stop, and kept on success when marked `kept`.
+- `aotn run capture.json --data-dir <tmp>` exits 0 and leaves no run files;
+  the failing variant notifies and exits 1.
+
+**Behavior changes:** none for existing workflows (new options default to the
+old behavior; refs without `lifetime` are unchanged). `RunSession.close_all()`
+without arguments keeps run files.
+
+**Open items / risks:**
+
+- A routed (handled) error still makes `aotn run` exit 1 (step 3 open item),
+  so the failing capture run exits 1 even though it notified.
+- `urlopen` runs on the event loop thread, so a slow camera blocks other
+  branches of the same run (pre-existing for HTTP Request).
+- A run-owned file deleted on success may still be named in run outputs; use
+  Keep the response file when the file is the result.
+- Interrupted processes leave run files behind (no sweeper yet).
+
 ## 2026-10-12 — Distributed Step 3: Error Codes, Error Mux, Errors Section, Skipped Status
 
 Branch `dist/step-3-error-routing`, from `main` at `5e65265` (step 2, PR #35).

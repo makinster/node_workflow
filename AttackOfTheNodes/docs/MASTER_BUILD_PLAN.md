@@ -358,7 +358,7 @@ Focused checks:
   | any time | Refresh coalescer (frontend only) | Done |
   | 2 | Run service API, `RecoveryPolicy`/`InputProvider`, configurable data directory, `aotn run` CLI | Done |
   | 3 | `[error]` routing: payload schema, declared error codes (with a default generic code), Errors section beside Connections, error mux, skipped status that spreads downstream | Done |
-  | slice | ESP32 proof: cron → capture to run-owned `file` → error routed to a notification | Authorized |
+  | slice | ESP32 proof: cron → capture to run-owned `file` → error routed to a notification | Done |
   | 4 | Workflow contracts + subworkflows as child runs (Phases 19/20) | Needs go-ahead |
   | 5 | Event sources + start triggers with `single`/`queued` modes (`restart` once Stop is clean) | Needs go-ahead |
   | 6 | HTTP/WebSocket server, auth, encrypted secrets, `parallel` runs | Needs go-ahead |

@@ -35,6 +35,8 @@ SETTINGS_DIR = DATA_DIR / "settings"
 RUN_OUTPUTS_DIR = DATA_DIR / "run_outputs"
 SECRETS_DIR = DATA_DIR / "secrets"
 LOGS_DIR = DATA_DIR / "logs"
+# Run-owned temporary files (R4): run_files/<run_id>/, created on first use.
+RUN_FILES_DIR = DATA_DIR / "run_files"
 
 
 def save_workflow(workflow_id: str, workflow_data: Dict[str, Any]) -> None:

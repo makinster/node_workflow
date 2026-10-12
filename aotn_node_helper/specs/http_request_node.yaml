@@ -8,7 +8,7 @@ selector_section: "Web"
 icon_name: globe
 display_name: HTTP Request
 default_alias: HTTP Request
-description: Make an HTTP GET or POST request and forward the response body
+description: Make an HTTP GET or POST request and forward the response body (as text, or saved to a run-owned file)
 input_ports: ["input"]
 output_ports: ["default", "error"]
 config_tabs:
@@ -24,6 +24,14 @@ config_tabs:
       label: Method
       options: ["GET", "POST"]
       default: GET
+    body_source:
+      type: select
+      label: "Body from (POST)"
+      options: ["config", "input"]
+      default: config
+      description: "config sends the Request body field; input sends the node's input (text as is, anything else as JSON)"
+      visible_when:
+        method: POST
     body:
       type: multiline
       label: "Request body (POST)"
@@ -31,6 +39,19 @@ config_tabs:
       required: false
       visible_when:
         method: POST
+    response_mode:
+      type: select
+      label: "Response as"
+      options: ["text", "file"]
+      default: text
+      description: "text decodes the body; file saves the raw bytes to a run-owned file and outputs a file reference"
+    keep_response_file:
+      type: boolean
+      label: "Keep the response file after the run"
+      default: false
+      description: "Off: the file is deleted when the run succeeds (kept if it fails). On: always kept."
+      visible_when:
+        response_mode: file
     timeout_seconds:
       type: float
       label: Timeout (seconds)

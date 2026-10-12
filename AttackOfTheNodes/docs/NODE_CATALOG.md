@@ -58,7 +58,7 @@ and/or to Vault. The existing `file_reader_node` preserves old graphs; see
 
 | Node | Status | Notes / Maps from |
 |---|---|---|
-| HTTP Request | Live | `http_request_node` — make an HTTP GET or POST request and forward the response body. Failures (including socket timeouts) route to the `error` port; with `error` unconnected they stop for recovery. Group `Web Request`, section `Web`. Tags: Internet |
+| HTTP Request | Live | `http_request_node` — make an HTTP GET or POST request and forward the response body. **Response as** `file` saves the raw bytes (binary-safe) to a run-owned file and outputs a `file` ref (deleted when the run succeeds unless **Keep the response file** is on; kept when the run fails). **Body from** `input` POSTs the node's input (text as is, anything else as JSON), e.g. an error payload to a notification service. Failures (including socket timeouts) route to the `error` port; with `error` unconnected they stop for recovery. Group `Web Request`, section `Web`. Tags: Internet |
 | API Read | Concept | GET request to a REST API, returns response body. Tags: Internet |
 | Database Query | Concept | Read query against SQL/NoSQL, returns result set |
 | System State | Concept | Read OS metrics: disk, memory, running processes |
