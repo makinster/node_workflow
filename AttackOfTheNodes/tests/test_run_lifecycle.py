@@ -300,6 +300,45 @@ async def test_starting_a_new_run_without_stop_cancels_leftover_supervisors():
     assert not _ran(events, after, first_run)
 
 
+async def test_stop_before_the_root_task_runs_still_completes_the_run():
+    """A task cancelled before its first step never reports terminating."""
+    _, workflow_map, master = _services()
+    _wait_until_workflow(workflow_map)
+
+    assert await master.start_workflow()
+    run_id = master.current_run_id
+    master.stop()
+    await _finish(master)
+
+    assert master._supervisor_tasks == {}
+    assert master.state.value == "FINISHED"
+    assert master.run_history.list_runs()[0]["run_id"] == run_id
+
+
+async def test_overlapping_starts_leave_no_untracked_supervisor():
+    bus, workflow_map, master = _services()
+    events = _record_node_events(bus)
+    waiter, _, _ = _wait_until_workflow(workflow_map)
+
+    assert await master.start_workflow()
+    await _until_waiting(events, waiter, master.current_run_id)
+
+    results = await asyncio.gather(master.start_workflow(), master.start_workflow())
+    assert results == [True, True]
+    await _until_waiting(events, waiter, master.current_run_id)
+
+    live = [
+        task
+        for task in asyncio.all_tasks()
+        if task is not asyncio.current_task() and not task.done()
+        and "Supervisor.run" in repr(task.get_coro())
+    ]
+    assert len(live) == 1
+    assert set(master._supervisor_tasks.values()) == set(live)
+    master.stop()
+    await _finish(master)
+
+
 # ---------------------------------------------------------------------------
 # 1c. Unattended policy
 # ---------------------------------------------------------------------------
@@ -401,6 +440,25 @@ async def test_unattended_policy_applies_to_branch_supervisors():
     assert prompts == []
     assert master.state.value == "FINISHED"
     assert master.run_history.list_runs()[0]["error_count"] == 2
+
+
+async def test_terminate_workflow_policy_with_parallel_failing_branches_finishes():
+    """A sibling cancelled before it starts must not keep the run open."""
+    bus, workflow_map, master = _services()
+    prompts = _client_prompts(bus)
+    start = workflow_map.add_node("start_node")
+    branch = workflow_map.add_node("branch_node")
+    workflow_map.connect(start, "default", branch, "input")
+    for port in workflow_map.get_node_instance(branch).get_output_ports()[:2]:
+        failing = workflow_map.add_node("error_node")
+        workflow_map.connect(branch, port, failing, "input")
+
+    assert await master.start_workflow(unattended="terminate_workflow")
+    await _finish(master)
+
+    assert prompts == []
+    assert master.state.value == "ERROR"
+    assert master._supervisor_tasks == {}
 
 
 async def test_attended_run_still_waits_for_a_recovery_choice():

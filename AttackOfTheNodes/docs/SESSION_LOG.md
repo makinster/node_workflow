@@ -7,7 +7,7 @@ overhaul.
 ## 2026-10-12 — Distributed Step 1: Bug Fixes
 
 Branch `dist/step-1-bug-fixes`, one commit per fix. **Baseline on unchanged
-`main` (`51c1f0c`): 796 passed.** After this step: 815 passed.
+`main` (`51c1f0c`): 796 passed.** After this step: 818 passed.
 
 - **1a, error-port routing.** HTTP Request and JSON Path signal failures with
   `{"data": {"error": msg}, "output_port": "error"}`; HTTP Request also
@@ -34,6 +34,20 @@ Branch `dist/step-1-bug-fixes`, one commit per fix. **Baseline on unchanged
   instead of only stopping at the next safe point, and releases Wait Until.
   A stopped run is still recorded as `FINISHED` (known follow-up: no
   `STOPPED` state).
+
+**Review fixes (independent diff review before merge):**
+
+- A supervisor task cancelled before its first step never published
+  `SUPERVISOR_TERMINATING`, so the run stayed `RUNNING` and
+  `wait_for_completion` spun without yielding (Stop right after Start; or
+  `terminate_workflow` with parallel failing branches). Tasks are now pruned
+  by a done-callback that re-checks completion.
+- Two overlapping `start_workflow` calls could lose track of a live
+  supervisor; starts are now serialized by a lock.
+- Not fixed, recorded: cancelling does not stop work running in a thread
+  (`asyncio.to_thread` in Chat Completion and File Output), and a Wait Until
+  whose target can never complete still hangs an unattended run until step
+  1b's unreachable rule lands.
 
 **Tests:** new `tests/test_run_lifecycle.py` from the Oct 9 probes: error port
 connected/unconnected/retry, HTTP timeout and URL errors, Stop releases Wait

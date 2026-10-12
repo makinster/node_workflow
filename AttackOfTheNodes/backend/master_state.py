@@ -77,6 +77,9 @@ class MasterState:
         self._supervisor_tasks: Dict[str, asyncio.Task] = {}
         self._run_session: Optional[RunSession] = None
         self._unattended: Optional[str] = None
+        # Serializes starts: each must cancel the previous run's tasks before
+        # creating its own, or an overlapping start would lose track of them.
+        self._start_lock = asyncio.Lock()
 
         self._event_bus.subscribe(SUPERVISOR_REGISTER, self._on_supervisor_register)
         self._event_bus.subscribe(
@@ -99,10 +102,15 @@ class MasterState:
         ``unattended`` is ``None`` (a client answers recovery and input
         requests), ``"terminate_branch"`` or ``"terminate_workflow"``. When set,
         errors and input requests follow that policy without waiting, and
-        breakpoints are skipped.
+        breakpoints are skipped. (A Wait Until whose target can never complete
+        still waits; step 1b's unreachable rule fixes that.)
         """
         if unattended is not None and unattended not in UNATTENDED_ACTIONS:
             raise ValueError(f"Unknown unattended policy: {unattended!r}")
+        async with self._start_lock:
+            return await self._start_workflow_locked(unattended)
+
+    async def _start_workflow_locked(self, unattended: Optional[str]) -> bool:
         if not self._workflow_map.is_loaded:
             logger.error("Cannot start: no workflow loaded")
             return False
@@ -152,7 +160,7 @@ class MasterState:
             secrets_manager=self._secrets_manager,
             unattended=self._unattended,
         )
-        self._supervisor_tasks[root.branch_id] = asyncio.create_task(root.run())
+        self._track_task(root.branch_id, asyncio.create_task(root.run()))
         return True
 
     def pause(self) -> None:
@@ -229,6 +237,29 @@ class MasterState:
         while self._supervisor_tasks:
             tasks = list(self._supervisor_tasks.values())
             await asyncio.gather(*tasks, return_exceptions=True)
+            # Yield so done-callbacks can prune tasks that ended without
+            # publishing SUPERVISOR_TERMINATING (cancelled before they ran).
+            await asyncio.sleep(0)
+
+    def _track_task(self, branch_id: str, task: asyncio.Task) -> None:
+        self._supervisor_tasks[branch_id] = task
+        task.add_done_callback(
+            lambda done, branch_id=branch_id: self._on_task_done(branch_id, done)
+        )
+
+    def _on_task_done(self, branch_id: str, task: asyncio.Task) -> None:
+        """Forget a task that ended without its supervisor reporting it.
+
+        A task cancelled before its first step never runs ``Supervisor.run``,
+        so it never publishes ``SUPERVISOR_TERMINATING``. Tasks that did report
+        are already gone, and tasks of an earlier run are never tracked here.
+        """
+        if self._supervisor_tasks.get(branch_id) is not task:
+            return
+        self._supervisor_tasks.pop(branch_id, None)
+        self._supervisors.pop(branch_id, None)
+        self._account_for_branch_termination(branch_id)
+        self._check_run_completion()
 
     def _on_supervisor_register(self, payload: Dict[str, Any]) -> None:
         branch_id = payload["branch_id"]
@@ -282,7 +313,7 @@ class MasterState:
             secrets_manager=self._secrets_manager,
             unattended=self._unattended,
         )
-        self._supervisor_tasks[child.branch_id] = asyncio.create_task(child.run())
+        self._track_task(child.branch_id, asyncio.create_task(child.run()))
 
     async def mark_node_completed(self, node_id: str) -> None:
         """Record a node completion and wake wait-until nodes."""
