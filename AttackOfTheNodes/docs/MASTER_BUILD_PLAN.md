@@ -9,7 +9,8 @@ The owner signed off the revised long-term plan in
 - subworkflows as child runs;
 - `RunContext` extraction as step 1b.
 
-Step 1 (bug fixes) has not started and waits on the owner's read of that plan.
+Execution of steps 1–3 plus the ESP32 slice was authorized on 2026-10-12
+(see `DISTRIBUTED_EXECUTION_PROMPT.md`). Step 4 onward needs a new go-ahead.
 It supersedes the Phase N / N+1 / N+2 sketches under Later Roadmap.
 
 ## Saved workflow follow-up — 2026-10-08
@@ -348,7 +349,7 @@ Focused checks:
 - **Distributed direction (approved 2026-10-10/11).** Headless runs, triggers,
   contracts and the server now follow
   [DISTRIBUTED_BUILD_PLAN.md](DISTRIBUTED_BUILD_PLAN.md). Phases 19/20 are its
-  step 4. Step 1 starts only after the owner has read the plan.
+  step 4. Steps 1–3 and the ESP32 slice are authorized (2026-10-12).
 
   | Step | Contents |
   |---|---|

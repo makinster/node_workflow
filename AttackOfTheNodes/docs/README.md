@@ -105,6 +105,7 @@ Read these before starting a new major project or moving/archiving docs.
 | File | What it contains | When to open it |
 |---|---|---|
 | `DISTRIBUTED_BUILD_PLAN.md` | Approved long-term direction (2026-10-11): decision record D1–D4/R1–R4, step 1 bug fixes through step 6 server, trigger concurrency modes, run-owned temp files, open wait-for-event question | Before any headless, trigger, subworkflow, `[error]` routing, WaitRegistry or server work |
+| `DISTRIBUTED_EXECUTION_PROMPT.md` | Copy-ready prompt for the session that executes distributed plan steps 1–3 + the ESP32 slice, one PR per step | Starting that execution session |
 | `PAYLOAD_FILE_IO_BUILD_PLAN.md` | Current payload previews, typed source choices, Start/Text Output Vault behavior, multi-file Viewer, Writer modes, explicit termination and Merge branch fixes; staged agent ownership and verification | Before implementing the owner's 2026-10-07 payload/File I/O requests |
 | `PROJECT_BACKLOG.md` | Deferred and near-term projects with full design specs, including backend features not yet surfaced in the UI, boundary cleanup, tombstone restore, runtime resources, typed vault, toast system, and AI sessions | Before starting any work listed here — it may already be designed; check before re-designing |
 | `TASK_INDEX.md` | Task-first reading lists, likely files per task, focused `pytest -k` commands, helper tool commands | After choosing a task type — the minimum reading set and the right verification pattern |

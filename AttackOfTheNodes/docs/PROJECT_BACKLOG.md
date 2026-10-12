@@ -4,8 +4,8 @@
 
 See [DISTRIBUTED_BUILD_PLAN.md](DISTRIBUTED_BUILD_PLAN.md). The headless twin, Start-node variant, nested headless validation,
 headless-export and always-running watcher sections below carry superseded
-banners. Their text is kept for history. Step 1 (bug fixes) waits on the
-owner's read of the plan.
+banners. Their text is kept for history. Execution of steps 1–3 plus the
+ESP32 slice was authorized on 2026-10-12.
 
 ## Payload/file implementation — 2026-10-07
 
