@@ -361,6 +361,26 @@ node calls context.signal_error(error)
   -> Supervisor resolves recovery Future; applies action
 ```
 
+### Command-Line Run (`aotn run`)
+
+```
+aotn run <workflow> [--data-dir DIR] [--policy P] [--input K=V] [--json]
+  -> main.main routes "run" to aotn_cli.main (no Textual import on this path)
+  -> --data-dir sets AOTN_DATA_DIR before the backend is imported
+  -> RunService.create(); configure_logging(settings)
+  -> RunService.load(id | name | file.json)   (not found / unloadable -> exit 4)
+  -> policies: stdin RecoveryPolicy + InputProvider when stdin is a terminal
+     and no --policy; otherwise TerminatePolicy(--policy or
+     terminate_workflow) + NoInputProvider
+  -> RunService.start(...) validates first   (invalid / unstartable -> exit 3)
+  -> ERROR_LOGGED -> "error: <alias> (<node_id>): <message>" on stderr
+  -> RunService.wait() -> RunResult
+     -> outputs on stdout (or the result as JSON with --json)
+     -> summary on stderr; exit 0 / 1 (finished with errors) / 2 (failed)
+  -> SIGINT (POSIX loops) -> RunService.stop(); result STOPPED, exit 130
+  -> interactive prompts read stdin in a daemon thread, one prompt at a time
+```
+
 ### Node Routes A Failure To Its `error` Port
 
 ```

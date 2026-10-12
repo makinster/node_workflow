@@ -21,7 +21,12 @@ The execution pipeline is:
 
 ### `persistence.py`
 
-Intentionally dumb flat-file I/O. All paths are anchored to the project root via `Path(__file__).resolve().parent.parent`. No schema interpretation or workflow logic lives here.
+Intentionally dumb flat-file I/O. No schema interpretation or workflow logic lives here.
+
+All data paths hang off one data directory, `DATA_DIR`: the project folder by
+default, or `$AOTN_DATA_DIR` when set (the CLI's `--data-dir` sets it). It is
+read once at import, so it must be set before the backend is imported.
+`SECRETS_DIR` (`secrets/`) and `LOGS_DIR` (`logs/`) live there too.
 
 Data directories:
 
@@ -314,6 +319,38 @@ After traversal, any unvisited node is unreachable and reported as a warning. Re
 ```
 
 Each error and warning includes `node_id` so the UI can highlight the affected node.
+
+### `RunService` (`backend/run_service.py`)
+
+The one in-process API clients use to run workflows (step 2 of the
+distributed plan): `load(reference)` (saved id, saved name, or a workflow
+`.json` path; loading never changes settings), `validate()`,
+`start(inputs=, recovery_policy=, input_provider=, validate=True)` (validates
+first and refuses with `WorkflowValidationError`), `subscribe()` (returns an
+unsubscribe function), `submit_input()`, `submit_recovery()`, `pause()`,
+`resume()`, `stop()`, `wait()` and `result()`. `RunResult` is
+JSON-serializable and maps to shared exit codes (0 finished, 1 finished with
+errors, 2 failed, 3 invalid or unstartable, 4 not found or unloadable, 130
+stopped). A run stopped through the service reports `STOPPED` even though the
+engine records `FINISHED` (no engine `STOPPED` state yet). `RunService.create()`
+builds a full backend stack with no frontend import. The CLI uses it; the TUI
+still drives `MasterState`'s public methods directly (unchanged behavior).
+
+### Run policies (`backend/run_policies.py`, D1)
+
+`RecoveryPolicy.decide(RecoveryRequest)` and `InputProvider.provide(InputRequest)`
+are supplied by whoever starts a run. With none, the run is attended: the
+engine publishes `RECOVERY_OPTIONS_AVAILABLE` / `USER_INPUT_NEEDED` and waits
+for a client. A policy whose `pause_at_breakpoints` is False also skips
+breakpoints. `start_workflow(unattended=...)` from step 1 is shorthand for
+`TerminatePolicy(mode)` plus `NoInputProvider`, the first `RecoveryPolicy`.
+
+### Logging (`backend/logging_setup.py`)
+
+`configure_logging(configuration)` is shared by every client: WARNING and
+above to stderr, plus a daily rotating file under the data directory's
+`logs/` when `log_to_file_enabled` is set. `main.configure_logging` remains
+as a thin wrapper.
 
 ## Frontend Components (Textual TUI)
 

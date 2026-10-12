@@ -29,6 +29,17 @@ from .events import (
 from .error_handler import ErrorHandler
 from .memory_bank import MemoryBank
 from .node_base import Node, NodeContext
+from .run_policies import (
+    UNATTENDED_ACTIONS,
+    InputProvider,
+    InputRequest,
+    RecoveryPolicy,
+    RecoveryRequest,
+    RECOVERY_ACTIONS,
+    TERMINATE_BRANCH,
+    UnattendedInputError,
+    unattended_policies,
+)
 from .run_session import RunSession
 from .secrets_manager import SecretsManager
 from .workflow_map import WorkflowMap
@@ -38,15 +49,11 @@ logger = logging.getLogger(__name__)
 
 ERROR_PORT = "error"
 
-# Unattended policy value -> recovery action taken without waiting for a client.
-UNATTENDED_ACTIONS = {
-    "terminate_branch": "TERMINATE_BRANCH",
-    "terminate_workflow": "TERMINATE_WORKFLOW",
-}
 
-
-class UnattendedInputError(RuntimeError):
-    """A node asked for user input in a run that has no one to answer."""
+def _task_is_cancelling() -> bool:
+    """True when the running task itself has been asked to cancel."""
+    task = asyncio.current_task()
+    return bool(task is not None and task.cancelling())
 
 
 @dataclass
@@ -85,9 +92,15 @@ class Supervisor:
         secrets_manager: Optional[SecretsManager] = None,
         unattended: Optional[str] = None,
         report_node_outcome: Optional[Callable[[str, str, List[str]], None]] = None,
+        recovery_policy: Optional[RecoveryPolicy] = None,
+        input_provider: Optional[InputProvider] = None,
     ) -> None:
-        if unattended is not None and unattended not in UNATTENDED_ACTIONS:
-            raise ValueError(f"Unknown unattended policy: {unattended!r}")
+        if unattended is not None:
+            if unattended not in UNATTENDED_ACTIONS:
+                raise ValueError(f"Unknown unattended policy: {unattended!r}")
+            default_policy, default_provider = unattended_policies(unattended)
+            recovery_policy = recovery_policy or default_policy
+            input_provider = input_provider or default_provider
         self.run_id = run_id
         self.branch_id = branch_id
         self.depth = depth
@@ -116,7 +129,9 @@ class Supervisor:
         self._node_timeout_seconds = float(node_timeout_seconds)
         self._run_session = run_session
         self._secrets_manager = secrets_manager
-        self._unattended = unattended
+        # None means attended: a client answers through MasterState.
+        self._recovery_policy = recovery_policy
+        self._input_provider = input_provider
         self._report_node_outcome = report_node_outcome
         self._last_delivered: List[str] = []
         self._visit_index = 0
@@ -303,8 +318,11 @@ class Supervisor:
         node_data = self._workflow_map.get_node_data(current_node_id) or {}
         if not node_data.get("breakpoint"):
             return False
-        if self._unattended:
-            # No one can resume an unattended run, so breakpoints are skipped.
+        if (
+            self._recovery_policy is not None
+            and not self._recovery_policy.pause_at_breakpoints
+        ):
+            # No one can resume this run, so breakpoints are skipped.
             return False
         if self._skip_breakpoint_once_for == current_node_id:
             self._skip_breakpoint_once_for = None
@@ -362,10 +380,26 @@ class Supervisor:
             result.error = exc
 
         async def signal_waiting_for_input(prompt: str) -> str:
-            if self._unattended:
-                raise UnattendedInputError(
-                    f"Input required but run is unattended (prompt: {prompt!r})"
-                )
+            if self._input_provider is not None:
+                # Raising here fails the node; it then follows recovery.
+                self._publish_node_execution("waiting")
+                try:
+                    value = await self._input_provider.provide(
+                        InputRequest(
+                            run_id=self.run_id,
+                            branch_id=self.branch_id,
+                            node_id=self.current_node_id,
+                            prompt=prompt,
+                        )
+                    )
+                except asyncio.CancelledError:
+                    if _task_is_cancelling():
+                        raise
+                    # A provider's own cancelled future is a failure, not a
+                    # stop of this run.
+                    raise RuntimeError("Input provider was cancelled") from None
+                self._publish_node_execution("running")
+                return value
             future: asyncio.Future = asyncio.get_running_loop().create_future()
             self._pending_input_future = future
             self.state = SupervisorState.WAITING_FOR_INPUT
@@ -509,9 +543,29 @@ class Supervisor:
                 "inputs": inputs,
             },
         )
-        if self._unattended:
-            # The error is logged and persisted above; act without waiting.
-            return UNATTENDED_ACTIONS[self._unattended]
+        if self._recovery_policy is not None:
+            # The error is logged and persisted above; the run's policy decides.
+            try:
+                action = await self._recovery_policy.decide(
+                    RecoveryRequest(
+                        run_id=self.run_id,
+                        branch_id=self.branch_id,
+                        node_id=self.current_node_id,
+                        error=error_record,
+                    )
+                )
+            except asyncio.CancelledError:
+                if _task_is_cancelling():
+                    raise
+                action = self._policy_failed(RuntimeError("Recovery policy was cancelled"))
+            except Exception as exc:
+                action = self._policy_failed(exc)
+            if action not in RECOVERY_ACTIONS:
+                logger.warning(
+                    "Recovery policy returned %r; terminating the branch", action
+                )
+                action = TERMINATE_BRANCH
+            return action
         future: asyncio.Future = asyncio.get_running_loop().create_future()
         self._pending_recovery_future = future
         self.state = SupervisorState.AWAITING_RECOVERY
@@ -539,6 +593,20 @@ class Supervisor:
         self.state = SupervisorState.RUNNING
         self._publish_state_update()
         return action
+
+    def _policy_failed(self, exc: BaseException) -> str:
+        """Log a broken recovery policy like any error, then end the branch."""
+        self._error_handler.log_error(
+            exc if isinstance(exc, Exception) else RuntimeError(str(exc)),
+            {
+                "run_id": self.run_id,
+                "branch_id": self.branch_id,
+                "node_id": self.current_node_id,
+                "depth": self.depth,
+                "stage": "recovery_policy",
+            },
+        )
+        return TERMINATE_BRANCH
 
     def _handle_payload(self, payload: Dict[str, Any]) -> Optional[str]:
         """Write outputs, spawn branches, and determine next node.
