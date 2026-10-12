@@ -356,7 +356,7 @@ Focused checks:
   | 1 | Bug fixes: error-port routing, Stop/leak, unattended policy passed in at run start | Done |
   | 1b | `RunContext` extraction + WaitRegistry + delivery tracking (structural unreachable rule, no timeouts) | Done |
   | any time | Refresh coalescer (frontend only) | Done |
-  | 2 | Run service API, `RecoveryPolicy`/`InputProvider`, configurable data directory, `aotn run` CLI | Authorized |
+  | 2 | Run service API, `RecoveryPolicy`/`InputProvider`, configurable data directory, `aotn run` CLI | Done |
   | 3 | `[error]` routing: payload schema, declared error codes (with a default generic code), Errors section beside Connections, error mux, skipped status that spreads downstream | Authorized |
   | slice | ESP32 proof: cron → capture to run-owned `file` → error routed to a notification | Authorized |
   | 4 | Workflow contracts + subworkflows as child runs (Phases 19/20) | Needs go-ahead |

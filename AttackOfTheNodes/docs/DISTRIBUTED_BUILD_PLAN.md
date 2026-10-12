@@ -106,7 +106,7 @@ the real backend.
 | 1 | Bug fixes: error-port routing, Stop/leak, unattended policy — **done** | Owner has read this plan |
 | 1b | `RunContext` + WaitRegistry + delivery tracking (D5) — **done** | Step 1 merged |
 | — | Refresh coalescer (frontend only) — **done** | Any time |
-| 2 | Run service + CLI | Step 1b merged |
+| 2 | Run service + CLI — **done** | Step 1b merged |
 | 3 | `[error]` routing, error codes, Errors section, skipped status (D7–D9) | Step 2 merged |
 | — | ESP32 proof slice | Steps 2–3 |
 | 4 | Contracts + subworkflows (Phases 19/20) | Step 3 |
@@ -246,6 +246,9 @@ SESSION_LOG for tests, interpretation notes and behavior changes.
 - Files: `frontend/app.py` plus the execution-screen tests.
 
 ### Step 2 — Run service and CLI
+
+**Status: done (2026-10-12, branch `dist/step-2-run-service`).** See
+SESSION_LOG for the API, the deviations and the behavior changes.
 
 - **In-process run API:** load, validate, start (with inputs and a policy),
   subscribe to events, submit input or recovery, stop, get result.
