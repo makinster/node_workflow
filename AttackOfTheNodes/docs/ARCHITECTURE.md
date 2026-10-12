@@ -38,7 +38,11 @@ The settings board. Loads settings from `settings/settings.json`, caches them in
 Key settings:
 
 - `max_branch_depth`: hard ceiling for nested branch spawning.
-- `node_timeout_seconds`: per-node execution timeout passed to supervisors.
+- `node_timeout_seconds`: passed to supervisors, but it bounds very little.
+  It only applies when a node calls `wait_for_nodes`/`wait_for_merge` with
+  `timeout=None`; Wait Until and Merge pass an explicit `0.0` (wait
+  indefinitely), and no node execution is wrapped in a timeout. Timeouts stay
+  per node (for example Wait Until's own `timeout_seconds`).
 
 ### `EventBus`
 
@@ -240,10 +244,46 @@ Supervisor event routing handles:
 `stop()` requests stop on every supervisor and then cancels their tasks, so a
 supervisor parked on a wait is released.
 
-WaitUntil coordination:
+Per-run state lives in a `RunContext` (`backend/run_context.py`), created
+once per run: memory bank reference, `RunSession`, `WaitRegistry`, node
+timings, branch and merge groups, delivery tracking, live supervisors,
+`run_id`/`parent_run_id`, the unattended policy and the start time. Each
+supervisor gets `mark_node_completed`, `wait_for_nodes`, `wait_for_merge` and
+`report_node_outcome` callables bound to **its own** run, so a stale
+supervisor can never mark completions in another run. `MasterState` keeps
+`completed_nodes`, `node_timings` and `run_context` as read-only views of the
+current run.
 
-- `mark_node_completed(node_id)` — adds node to `completed_nodes`, notifies all waiters via an `asyncio.Condition`.
-- `wait_until_nodes_completed(target_ids, timeout)` — awaits the condition until all targets are in `completed_nodes`.
+The memory bank is still the one shared instance the TUI displays, cleared at
+run start; per-run memory instances belong to the parallel-runs work (step 6).
+
+WaitUntil coordination (`backend/wait_registry.py`):
+
+- `mark_node_completed(node_id)` — marks key `("node", node_id)` completed in
+  the run's `WaitRegistry`; completion is sticky for the run and releases every
+  waiter whose keys are now all complete.
+- `wait_until_nodes_completed(target_ids, timeout)` — parks on one Future per
+  wait. It ends `completed`, `unreachable` (raises `TargetUnreachableError`
+  naming the target) or `stopped` (raises `WaitStoppedError`; never a raised
+  `CancelledError` from the registry). A positive timeout raises
+  `asyncio.TimeoutError`.
+- Delivery tracking: each supervisor reports a node visit's final state
+  (`completed`, `failed`, `skipped`) and the targets it routed to.
+- Structural unreachable rule (D5), re-evaluated whenever a node finishes, a
+  supervisor terminates or a wait is registered, and never on a timeout. A
+  target can no longer complete when no live supervisor is at it or can reach
+  it, and either its own latest visit failed or was skipped, or none of its
+  incoming connections' sources routed to it and no live supervisor can still
+  reach any of them. A source that never ran and cannot be reached is settled
+  (step 3's D9 marks it skipped). A target with no incoming connections is
+  therefore unreachable at once. A required input that is never delivered
+  stays a data error, not unreachability.
+- Known limits (not deadlock detection): a target reachable only through the
+  parked waiter itself, or behind a Merge whose group includes the waiter's
+  branch, still waits forever. A Merge plus waiter deadlock also exists on
+  earlier code.
+- Merge keeps its own barrier (now held in the `RunContext`); it already
+  releases when a sibling branch ends.
 
 Run completion occurs when `_supervisors` and `_supervisor_tasks` are both empty. MasterState then finalizes outputs, records the run, and broadcasts `WORKFLOW_STATE_UPDATE(FINISHED)`.
 

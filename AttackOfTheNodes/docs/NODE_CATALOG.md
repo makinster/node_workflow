@@ -167,7 +167,7 @@ Variants have different port shapes, so they must be separate types
 
 | Node | Status | Notes / Maps from |
 |---|---|---|
-| Wait Until | Live | `wait_until_node` — pause until the selected target nodes have completed in the current run (corrected 2026-10-11; it never waited on a Vault key). Tags: Triggered, Conditional |
+| Wait Until | Live | `wait_until_node` — pause until the selected target nodes have completed in the current run (corrected 2026-10-11; it never waited on a Vault key). Fails with a clear error naming the target when that target can no longer complete (structural rule D5, never a timeout); its own `timeout_seconds` still bounds the wait when set. Tags: Triggered, Conditional |
 | Fixed Delay | Live (debug) | Absorbs `sleep_node` — wait a duration then continue |
 | Timeout Guard | Concept | Continue with an error signal after a limit expires |
 | Debounce | Concept | Wait until a burst of rapid changes settles |

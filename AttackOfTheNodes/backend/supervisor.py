@@ -84,6 +84,7 @@ class Supervisor:
         run_session: Optional[RunSession] = None,
         secrets_manager: Optional[SecretsManager] = None,
         unattended: Optional[str] = None,
+        report_node_outcome: Optional[Callable[[str, str, List[str]], None]] = None,
     ) -> None:
         if unattended is not None and unattended not in UNATTENDED_ACTIONS:
             raise ValueError(f"Unknown unattended policy: {unattended!r}")
@@ -116,6 +117,8 @@ class Supervisor:
         self._run_session = run_session
         self._secrets_manager = secrets_manager
         self._unattended = unattended
+        self._report_node_outcome = report_node_outcome
+        self._last_delivered: List[str] = []
         self._visit_index = 0
         self._attempt_index = 0
         self._input_interrupted = False
@@ -148,6 +151,23 @@ class Supervisor:
             self._fail(exc)
         finally:
             self._publish_terminating()
+
+    @property
+    def position(self) -> Optional[str]:
+        """Node this supervisor is at or about to run; ``None`` once ended."""
+        if self.state == SupervisorState.IDLE:
+            # Created but not started yet: it will begin at its start node.
+            return self._start_node_id
+        if self.state in (SupervisorState.TERMINATED, SupervisorState.ERROR):
+            return None
+        return self.current_node_id
+
+    def _report_outcome(
+        self, node_id: Optional[str], state: str, delivered_to: Optional[List[str]] = None
+    ) -> None:
+        """Tell the run which final state a node reached and where it routed."""
+        if node_id and self._report_node_outcome is not None:
+            self._report_node_outcome(node_id, state, list(delivered_to or []))
 
     def request_pause(self) -> None:
         """Pause between node executions."""
@@ -210,23 +230,34 @@ class Supervisor:
 
             inputs = self._prepare_inputs(node)
             result = await self._execute_node(node, inputs)
+            if self._stop_requested:
+                break
 
             skipped = False
             while result.error is not None:
                 action = await self._request_recovery(result.error, inputs)
                 if action == "RETRY":
                     result = await self._execute_node(node, inputs)
+                    if self._stop_requested:
+                        break
                     continue
                 if action == "SKIP":
                     self._publish_node_execution("skipped")
                     skipped = True
+                    skipped_node_id = self.current_node_id
                     self.current_node_id = self._workflow_map.find_next_node_id(
                         self.current_node_id or "", output_port="default"
+                    )
+                    # Today's Skip still runs the default path (D9 changes this
+                    # in step 3); record that delivery for the run.
+                    self._report_outcome(
+                        skipped_node_id, "skipped", [self.current_node_id or ""]
                     )
                     self._node_phase = "queued"
                     self._publish_state_update()
                     result = _NodeResult(completed=True, payload={})
                     break
+                self._report_outcome(self.current_node_id, "failed")
                 if action == "TERMINATE_WORKFLOW":
                     self._event_bus.publish(
                         TERMINATE_WORKFLOW_REQUESTED,
@@ -238,6 +269,8 @@ class Supervisor:
                 self._publish_state_update()
                 return
 
+            if self._stop_requested:
+                break
             if skipped:
                 continue
 
@@ -246,11 +279,13 @@ class Supervisor:
                 return
 
             completed_node_id = self.current_node_id
+            self._last_delivered = []
             if result.payload:
                 self.current_node_id = self._handle_payload(result.payload)
 
             if completed_node_id and self._mark_node_completed is not None:
                 await self._mark_node_completed(completed_node_id)
+            self._report_outcome(completed_node_id, "completed", self._last_delivered)
 
             if result.payload:
                 self._node_phase = "queued"
@@ -435,7 +470,7 @@ class Supervisor:
         if result.error is None and result.payload is not None:
             result.error = self._unrouted_error_port_failure(result.payload)
 
-        if self._input_interrupted:
+        if self._input_interrupted or self._stop_requested:
             self._publish_node_execution("stopped")
         elif result.error is not None or not result.completed or result.payload is None:
             self._publish_node_execution("errored")
@@ -506,7 +541,11 @@ class Supervisor:
         return action
 
     def _handle_payload(self, payload: Dict[str, Any]) -> Optional[str]:
-        """Write outputs, spawn branches, and determine next node."""
+        """Write outputs, spawn branches, and determine next node.
+
+        Records the node ids it routes to in ``_last_delivered``.
+        """
+        self._last_delivered = []
         data = payload.get("data", {})
         if data:
             for port_name, value in data.items():
@@ -524,19 +563,18 @@ class Supervisor:
 
         explicit_next = payload.get("next_node_id")
         if explicit_next:
+            self._last_delivered.append(explicit_next)
             return explicit_next
 
         # Port routing hint embedded in data (used by RandomBranchNode and similar)
         route_port = (payload.get("data") or {}).get("_route_via_port")
-        if route_port:
-            return self._workflow_map.find_next_node_id(
-                self.current_node_id or "", output_port=route_port
-            )
-
-        output_port = payload.get("output_port", "default")
-        return self._workflow_map.find_next_node_id(
+        output_port = route_port or payload.get("output_port", "default")
+        next_node_id = self._workflow_map.find_next_node_id(
             self.current_node_id or "", output_port=output_port
         )
+        if next_node_id:
+            self._last_delivered.append(next_node_id)
+        return next_node_id
 
     def _spawn_branches(self, branches: List[Dict[str, Any]]) -> None:
         """Publish one branch request per requested output path."""
@@ -557,6 +595,7 @@ class Supervisor:
                     "parent_branch_id": self.branch_id,
                     "parent_depth": self.depth,
                     "run_id": self.run_id,
+                    "source_node_id": self.current_node_id,
                     "start_node_id": start_node_id,
                     "initial_data": branch.get("initial_data", {}),
                 },
@@ -564,6 +603,7 @@ class Supervisor:
 
     def _fail(self, error: Any) -> None:
         """Transition to error and publish a supervisor error event."""
+        self._report_outcome(self.current_node_id, "failed")
         self.state = SupervisorState.ERROR
         self._publish_node_execution("errored")
         message = str(error) if isinstance(error, Exception) else error

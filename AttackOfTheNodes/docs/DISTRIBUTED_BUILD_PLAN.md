@@ -104,7 +104,7 @@ the real backend.
 | Step | Contents | Gate |
 |---|---|---|
 | 1 | Bug fixes: error-port routing, Stop/leak, unattended policy — **done** | Owner has read this plan |
-| 1b | `RunContext` + WaitRegistry + delivery tracking (D5) | Step 1 merged |
+| 1b | `RunContext` + WaitRegistry + delivery tracking (D5) — **done** | Step 1 merged |
 | — | Refresh coalescer (frontend only) | Any time |
 | 2 | Run service + CLI | Step 1b merged |
 | 3 | `[error]` routing, error codes, Errors section, skipped status (D7–D9) | Step 2 merged |
@@ -173,6 +173,9 @@ The generated HTTP Request test still passes (`data["error"]` is kept).
 and the behaviour change is logged.
 
 ### Step 1b — RunContext and WaitRegistry
+
+**Status: done (2026-10-12, branch `dist/step-1b-run-context`).** See
+SESSION_LOG for tests, interpretation notes and behavior changes.
 
 - **RunContext.** Extract per-run state into a `RunContext`:
   - memory bank;

@@ -198,7 +198,12 @@ async def test_json_path_success_still_routes_default():
 
 
 def _wait_until_workflow(workflow_map: WorkflowMap):
-    """start -> wait_until(target) -> after; target is never reached."""
+    """start -> wait_until(target) -> after -> target.
+
+    The target stays structurally reachable (through the live waiter), so the
+    unreachable rule never fails the wait: it parks until stopped or until a
+    test marks the target completed.
+    """
     start = workflow_map.add_node("start_node")
     waiter = workflow_map.add_node("wait_until_node")
     after = workflow_map.add_node("no_op_node")
@@ -206,6 +211,7 @@ def _wait_until_workflow(workflow_map: WorkflowMap):
     workflow_map.update_node_config(waiter, {"target_node_ids": target})
     workflow_map.connect(start, "default", waiter, "input")
     workflow_map.connect(waiter, "default", after, "input")
+    workflow_map.connect(after, "default", target, "input")
     return waiter, after, target
 
 
