@@ -2,14 +2,16 @@
 Master state for AttackOfTheNodes v0.5.
 
 Coordinates all active supervisors, owns the run state machine, spawns branch
-supervisors, and detects workflow completion.
+supervisors, and detects workflow completion. Per-run state lives in a
+``RunContext`` created for each run; supervisors receive callables bound to
+their own run's context.
 """
 
 import asyncio
 import logging
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 from .event_bus import EventBus
 from .events import (
@@ -29,10 +31,17 @@ from .error_handler import ErrorHandler
 from .memory_bank import MemoryBank
 from .configuration_manager import ConfigurationManager
 from .output_manager import OutputManager
+from .run_context import RunContext
 from .run_history import RunHistory
 from .run_session import RunSession
 from .secrets_manager import SecretsManager
 from .supervisor import UNATTENDED_ACTIONS, Supervisor
+from .wait_registry import (
+    TargetUnreachableError,
+    WaitStatus,
+    WaitStoppedError,
+    node_key,
+)
 from .workflow_map import WorkflowMap
 
 
@@ -40,7 +49,7 @@ logger = logging.getLogger(__name__)
 
 
 class MasterState:
-    """Coordinates supervisors for one workflow run."""
+    """Coordinates supervisors for one workflow run at a time."""
 
     def __init__(
         self,
@@ -64,19 +73,11 @@ class MasterState:
 
         self.state = WorkflowState.IDLE
         self.current_run_id: Optional[str] = None
-        self._started_at: Optional[str] = None
         self.run_outputs: List[str] = []
-        self.node_timings: Dict[str, float] = {}
-        self.completed_nodes: set[str] = set()
-        self._completion_condition = asyncio.Condition()
-        self._merge_condition = asyncio.Condition()
-        self._branch_groups: Dict[str, str] = {}
-        self._merge_groups: Dict[str, Dict[str, Any]] = {}
+        self._run: Optional[RunContext] = None
 
         self._supervisors: Dict[str, Supervisor] = {}
         self._supervisor_tasks: Dict[str, asyncio.Task] = {}
-        self._run_session: Optional[RunSession] = None
-        self._unattended: Optional[str] = None
         # Serializes starts: each must cancel the previous run's tasks before
         # creating its own, or an overlapping start would lose track of them.
         self._start_lock = asyncio.Lock()
@@ -96,14 +97,38 @@ class MasterState:
             TERMINATE_WORKFLOW_REQUESTED, self._on_terminate_workflow_requested
         )
 
+    # -- current-run views (kept for existing callers) -------------------------
+
+    @property
+    def run_context(self) -> Optional[RunContext]:
+        """The current (or most recent) run's context."""
+        return self._run
+
+    @property
+    def completed_nodes(self) -> Set[str]:
+        return self._run.completed_nodes if self._run else set()
+
+    @property
+    def node_timings(self) -> Dict[str, float]:
+        return self._run.node_timings if self._run else {}
+
+    @property
+    def _run_session(self) -> Optional[RunSession]:
+        return self._run.run_session if self._run else None
+
+    @property
+    def _started_at(self) -> Optional[str]:
+        return self._run.started_at if self._run else None
+
+    # -- run control -----------------------------------------------------------
+
     async def start_workflow(self, unattended: Optional[str] = None) -> bool:
         """Begin executing the loaded workflow.
 
         ``unattended`` is ``None`` (a client answers recovery and input
         requests), ``"terminate_branch"`` or ``"terminate_workflow"``. When set,
         errors and input requests follow that policy without waiting, and
-        breakpoints are skipped. (A Wait Until whose target can never complete
-        still waits; step 1b's unreachable rule fixes that.)
+        breakpoints are skipped.
         """
         if unattended is not None and unattended not in UNATTENDED_ACTIONS:
             raise ValueError(f"Unknown unattended policy: {unattended!r}")
@@ -124,44 +149,83 @@ class MasterState:
         # into its memory, so they are cancelled before any state is reset.
         await self._cancel_leftover_tasks()
 
-        self.current_run_id = f"run_{uuid.uuid4().hex[:8]}"
-        self._unattended = unattended
-        self._started_at = datetime.now(timezone.utc).isoformat()
+        run_id = f"run_{uuid.uuid4().hex[:8]}"
+        self.current_run_id = run_id
         self.run_outputs = []
-        self.node_timings = {}
-        self.completed_nodes = set()
-        self._branch_groups.clear()
-        self._merge_groups.clear()
-        self._output_manager.clear_run(self.current_run_id)
+        self._output_manager.clear_run(run_id)
         self._memory_bank.clear()
         self._supervisors.clear()
         self._supervisor_tasks.clear()
-        if self._run_session is not None:
-            self._run_session.close_all()
-        self._run_session = RunSession(self.current_run_id)
+        if self._run is not None:
+            self._run.run_session.close_all()
+        self._run = RunContext(
+            run_id=run_id,
+            memory_bank=self._memory_bank,
+            run_session=RunSession(run_id),
+            unattended=unattended,
+            started_at=datetime.now(timezone.utc).isoformat(),
+        )
         self._set_state(WorkflowState.RUNNING)
 
-        root = Supervisor(
-            run_id=self.current_run_id,
+        root = self._new_supervisor(
+            self._run,
             branch_id=f"branch_{uuid.uuid4().hex[:6]}",
             depth=0,
             start_node_id=start_node_id,
-            workflow_map=self._workflow_map,
-            memory_bank=self._memory_bank,
-            event_bus=self._event_bus,
-            error_handler=self._error_handler,
-            mark_node_completed=self.mark_node_completed,
-            wait_for_nodes=self.wait_until_nodes_completed,
-            wait_for_merge=self.wait_for_merge_arrival,
-            node_timeout_seconds=float(
-                self._configuration_manager.get("node_timeout_seconds")
-            ),
-            run_session=self._run_session,
-            secrets_manager=self._secrets_manager,
-            unattended=self._unattended,
         )
         self._track_task(root.branch_id, asyncio.create_task(root.run()))
         return True
+
+    def _new_supervisor(self, run: RunContext, **kwargs: Any) -> Supervisor:
+        """Create a supervisor whose callbacks are bound to ``run``."""
+
+        async def mark_completed(node_id: str) -> None:
+            if run is self._run:
+                await self.mark_node_completed(node_id)
+            else:
+                # A stale supervisor only ever touches its own run.
+                run.mark_completed(node_id)
+
+        async def wait_for_nodes(
+            target_node_ids: List[str], timeout_seconds: Optional[float] = None
+        ) -> None:
+            await self._wait_for_nodes_in_run(run, target_node_ids, timeout_seconds)
+
+        async def wait_for_merge(
+            merge_node_id: str,
+            branch_id: str,
+            selected_input_port: str,
+            inputs: Dict[str, Any],
+            timeout_seconds: Optional[float] = None,
+        ) -> Dict[str, Any]:
+            return await self._wait_for_merge_in_run(
+                run, merge_node_id, branch_id, selected_input_port, inputs, timeout_seconds
+            )
+
+        def report_outcome(node_id: str, state: str, delivered_to: List[str]) -> None:
+            run.record_outcome(node_id, state, delivered_to)
+            self._evaluate_waits(run)
+
+        supervisor = Supervisor(
+            run_id=run.run_id,
+            workflow_map=self._workflow_map,
+            memory_bank=run.memory_bank,
+            event_bus=self._event_bus,
+            error_handler=self._error_handler,
+            mark_node_completed=mark_completed,
+            wait_for_nodes=wait_for_nodes,
+            wait_for_merge=wait_for_merge,
+            node_timeout_seconds=float(
+                self._configuration_manager.get("node_timeout_seconds")
+            ),
+            run_session=run.run_session,
+            secrets_manager=self._secrets_manager,
+            unattended=run.unattended,
+            report_node_outcome=report_outcome,
+            **kwargs,
+        )
+        run.live_supervisors[supervisor.branch_id] = supervisor
+        return supervisor
 
     def pause(self) -> None:
         """Request all active supervisors to pause."""
@@ -182,9 +246,11 @@ class MasterState:
     def stop(self) -> None:
         """Request all supervisors to stop, then cancel their tasks.
 
-        Cancelling releases supervisors parked on a wait (Wait Until, Merge)
-        that a stop request alone cannot reach.
+        Waiters get a ``stopped`` result from the run's WaitRegistry, and
+        cancelling releases any other wait a stop request alone cannot reach.
         """
+        if self._run is not None:
+            self._run.wait_registry.stop()
         for supervisor in list(self._supervisors.values()):
             supervisor.request_stop()
         current = asyncio.current_task()
@@ -197,6 +263,8 @@ class MasterState:
     async def _cancel_leftover_tasks(self) -> None:
         """Cancel and await supervisor tasks left over from a previous run."""
         tasks = [task for task in self._supervisor_tasks.values() if not task.done()]
+        if self._run is not None:
+            self._run.wait_registry.stop()
         for supervisor in list(self._supervisors.values()):
             supervisor.request_stop()
         for task in tasks:
@@ -258,7 +326,7 @@ class MasterState:
             return
         self._supervisor_tasks.pop(branch_id, None)
         self._supervisors.pop(branch_id, None)
-        self._account_for_branch_termination(branch_id)
+        self._forget_live_supervisor(self._run, branch_id)
         self._check_run_completion()
 
     def _on_supervisor_register(self, payload: Dict[str, Any]) -> None:
@@ -270,7 +338,8 @@ class MasterState:
         branch_id = payload["branch_id"]
         self._supervisors.pop(branch_id, None)
         self._supervisor_tasks.pop(branch_id, None)
-        self._account_for_branch_termination(branch_id)
+        run = self._run if self._run and self._run.run_id == payload.get("run_id") else None
+        self._forget_live_supervisor(run, branch_id)
         logger.debug(
             "Supervisor %s terminated (final state: %s)",
             branch_id,
@@ -278,7 +347,18 @@ class MasterState:
         )
         self._check_run_completion()
 
+    def _forget_live_supervisor(self, run: Optional[RunContext], branch_id: str) -> None:
+        if run is None:
+            return
+        run.live_supervisors.pop(branch_id, None)
+        self._account_for_branch_termination(run, branch_id)
+        self._evaluate_waits(run)
+
     def _on_request_branch(self, payload: Dict[str, Any]) -> None:
+        run = self._run
+        if run is None or payload.get("run_id") != run.run_id:
+            logger.warning("Ignoring branch request from inactive run %s", payload.get("run_id"))
+            return
         new_depth = payload["parent_depth"] + 1
         max_branch_depth = int(self._configuration_manager.get("max_branch_depth"))
         if new_depth > max_branch_depth:
@@ -290,55 +370,83 @@ class MasterState:
             return
 
         child_branch_id = f"branch_{uuid.uuid4().hex[:6]}"
-        self._register_branch_group(payload["parent_branch_id"], child_branch_id)
+        self._register_branch_group(run, payload["parent_branch_id"], child_branch_id)
 
-        child = Supervisor(
-            run_id=payload["run_id"],
+        child = self._new_supervisor(
+            run,
             branch_id=child_branch_id,
             depth=new_depth,
             start_node_id=payload["start_node_id"],
-            workflow_map=self._workflow_map,
-            memory_bank=self._memory_bank,
-            event_bus=self._event_bus,
-            error_handler=self._error_handler,
             initial_data=payload.get("initial_data", {}),
             parent_branch_id=payload["parent_branch_id"],
-            mark_node_completed=self.mark_node_completed,
-            wait_for_nodes=self.wait_until_nodes_completed,
-            wait_for_merge=self.wait_for_merge_arrival,
-            node_timeout_seconds=float(
-                self._configuration_manager.get("node_timeout_seconds")
-            ),
-            run_session=self._run_session,
-            secrets_manager=self._secrets_manager,
-            unattended=self._unattended,
         )
         self._track_task(child.branch_id, asyncio.create_task(child.run()))
 
+    # -- completion registry ---------------------------------------------------
+
     async def mark_node_completed(self, node_id: str) -> None:
-        """Record a node completion and wake wait-until nodes."""
-        async with self._completion_condition:
-            self.completed_nodes.add(node_id)
-            self._completion_condition.notify_all()
+        """Record a node completion in the current run and wake waiters."""
+        if self._run is not None:
+            self._run.mark_completed(node_id)
 
     async def wait_until_nodes_completed(
         self, target_node_ids: List[str], timeout_seconds: Optional[float] = None
     ) -> None:
         """Wait until all target nodes have completed at least once this run."""
-        targets = {node_id for node_id in target_node_ids if node_id}
+        if self._run is None:
+            return
+        await self._wait_for_nodes_in_run(self._run, target_node_ids, timeout_seconds)
+
+    async def _wait_for_nodes_in_run(
+        self,
+        run: RunContext,
+        target_node_ids: List[str],
+        timeout_seconds: Optional[float] = None,
+    ) -> None:
+        """Wait on ``run``'s registry; fail when a target can no longer complete.
+
+        Raises ``TargetUnreachableError`` (structural rule, never a timeout),
+        ``WaitStoppedError`` when the run is stopped, or ``asyncio.TimeoutError``
+        when a positive ``timeout_seconds`` elapses.
+        """
+        targets = [node_id for node_id in target_node_ids if node_id]
         if not targets:
             return
-
-        async def wait_for_targets() -> None:
-            async with self._completion_condition:
-                await self._completion_condition.wait_for(
-                    lambda: targets.issubset(self.completed_nodes)
-                )
-
-        if timeout_seconds is None or timeout_seconds <= 0:
-            await wait_for_targets()
+        outcome = await run.wait_registry.wait_for_all(
+            [node_key(node_id) for node_id in targets],
+            timeout=timeout_seconds,
+            on_registered=lambda: self._evaluate_waits(run),
+        )
+        if outcome.status == WaitStatus.COMPLETED:
             return
-        await asyncio.wait_for(wait_for_targets(), timeout=timeout_seconds)
+        if outcome.status == WaitStatus.STOPPED:
+            raise WaitStoppedError("Run stopped while waiting")
+        target_id = str(outcome.key[1]) if outcome.key else ""
+        raise TargetUnreachableError(
+            f"Wait target {self._describe_node(target_id)} can no longer "
+            f"complete in this run: {outcome.reason}",
+            key=outcome.key,
+        )
+
+    def _evaluate_waits(self, run: RunContext) -> None:
+        """Apply the structural unreachable rule (D5) to every pending key."""
+        pending = run.wait_registry.pending_keys()
+        if not pending:
+            return
+        reach = run.live_reach(self._workflow_map)
+        for key in pending:
+            if len(key) != 2 or key[0] != "node":
+                continue
+            reason = run.unreachable_reason(str(key[1]), self._workflow_map, reach)
+            if reason:
+                run.wait_registry.mark_unreachable(key, reason)
+
+    def _describe_node(self, node_id: str) -> str:
+        data = self._workflow_map.get_node_data(node_id) or {}
+        alias = str(data.get("alias") or "").strip()
+        return f"'{alias}' ({node_id})" if alias else node_id
+
+    # -- merge barrier -----------------------------------------------------------
 
     async def wait_for_merge_arrival(
         self,
@@ -349,7 +457,22 @@ class MasterState:
         timeout_seconds: Optional[float] = None,
     ) -> Dict[str, Any]:
         """Wait for sibling branches to reach/leave a merge, then elect one output."""
-        group_id = self._branch_groups.get(branch_id)
+        if self._run is None:
+            return {"continue": True, "value": next(iter(inputs.values()), "")}
+        return await self._wait_for_merge_in_run(
+            self._run, merge_node_id, branch_id, selected_input_port, inputs, timeout_seconds
+        )
+
+    async def _wait_for_merge_in_run(
+        self,
+        run: RunContext,
+        merge_node_id: str,
+        branch_id: str,
+        selected_input_port: str,
+        inputs: Dict[str, Any],
+        timeout_seconds: Optional[float] = None,
+    ) -> Dict[str, Any]:
+        group_id = run.branch_groups.get(branch_id)
         if group_id is None:
             return {
                 "continue": True,
@@ -357,8 +480,8 @@ class MasterState:
             }
 
         async def wait_for_group() -> Dict[str, Any]:
-            async with self._merge_condition:
-                group = self._merge_groups.setdefault(
+            async with run.merge_condition:
+                group = run.merge_groups.setdefault(
                     group_id,
                     {
                         "pending": set(),
@@ -371,10 +494,8 @@ class MasterState:
                 group["selected_input_port"] = selected_input_port
                 group.setdefault("arrivals", {})[branch_id] = dict(inputs)
                 group.setdefault("pending", set()).discard(branch_id)
-                self._merge_condition.notify_all()
-                await self._merge_condition.wait_for(
-                    lambda: not group.get("pending")
-                )
+                run.merge_condition.notify_all()
+                await run.merge_condition.wait_for(lambda: not group.get("pending"))
                 winner_branch = self._merge_winner_branch(group)
                 value = self._merge_selected_value(group, selected_input_port)
                 return {"continue": branch_id == winner_branch, "value": value}
@@ -383,10 +504,12 @@ class MasterState:
             return await wait_for_group()
         return await asyncio.wait_for(wait_for_group(), timeout=timeout_seconds)
 
-    def _register_branch_group(self, parent_branch_id: str, child_branch_id: str) -> None:
-        group_id = self._branch_groups.get(parent_branch_id, parent_branch_id)
-        self._branch_groups[child_branch_id] = group_id
-        group = self._merge_groups.setdefault(
+    def _register_branch_group(
+        self, run: RunContext, parent_branch_id: str, child_branch_id: str
+    ) -> None:
+        group_id = run.branch_groups.get(parent_branch_id, parent_branch_id)
+        run.branch_groups[child_branch_id] = group_id
+        group = run.merge_groups.setdefault(
             group_id,
             {
                 "pending": set(),
@@ -397,19 +520,19 @@ class MasterState:
         )
         group.setdefault("pending", set()).add(child_branch_id)
 
-    def _account_for_branch_termination(self, branch_id: str) -> None:
-        group_id = self._branch_groups.get(branch_id)
+    def _account_for_branch_termination(self, run: RunContext, branch_id: str) -> None:
+        group_id = run.branch_groups.get(branch_id)
         if group_id is None:
             return
-        group = self._merge_groups.get(group_id)
+        group = run.merge_groups.get(group_id)
         if group is None:
             return
         group.setdefault("pending", set()).discard(branch_id)
-        asyncio.create_task(self._notify_merge_waiters())
+        asyncio.create_task(self._notify_merge_waiters(run))
 
-    async def _notify_merge_waiters(self) -> None:
-        async with self._merge_condition:
-            self._merge_condition.notify_all()
+    async def _notify_merge_waiters(self, run: RunContext) -> None:
+        async with run.merge_condition:
+            run.merge_condition.notify_all()
 
     def _merge_winner_branch(self, group: Dict[str, Any]) -> Optional[str]:
         selected_port = str(group.get("selected_input_port") or "")
@@ -432,7 +555,11 @@ class MasterState:
                     return value
         return ""
 
+    # -- bus handlers --------------------------------------------------------------
+
     def _on_supervisor_state_update(self, payload: Dict[str, Any]) -> None:
+        if payload.get("run_id") != self.current_run_id:
+            return
         if payload["state"] == "WAITING_FOR_INPUT":
             self._set_state(WorkflowState.WAITING_FOR_INPUT)
         elif payload["state"] == "AWAITING_RECOVERY":
@@ -451,13 +578,14 @@ class MasterState:
         self._set_state(WorkflowState.PAUSED)
 
     def _on_node_timing_update(self, payload: Dict[str, Any]) -> None:
-        if payload.get("run_id") != self.current_run_id:
+        if self._run is None or payload.get("run_id") != self._run.run_id:
             return
         node_id = payload.get("node_id")
         if not node_id:
             return
         seconds = float(payload.get("seconds") or 0.0)
-        self.node_timings[node_id] = self.node_timings.get(node_id, 0.0) + seconds
+        timings = self._run.node_timings
+        timings[node_id] = timings.get(node_id, 0.0) + seconds
 
     def _on_terminate_workflow_requested(self, _payload: Dict[str, Any]) -> None:
         self.stop()
@@ -490,8 +618,8 @@ class MasterState:
         if not self.current_run_id:
             return
         # Run is over on every path that records it; release runtime resources.
-        if self._run_session is not None:
-            self._run_session.close_all()
+        if self._run is not None:
+            self._run.run_session.close_all()
         errors = self._error_handler.get_errors_for_run(self.current_run_id)
         self._run_history.record_run(
             {
