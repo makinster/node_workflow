@@ -4,6 +4,41 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-12 — Record Step 1b And Step 3 Decisions (D5–D9)
+
+Docs only; no code changes. Branch `ccr-1b2501bf-dgol6g`. The owner resolved
+the open decisions in `DISTRIBUTED_BUILD_PLAN.md`:
+
+- **D5, unreachable.** Structural and based on incoming connections, never on
+  a timeout. A node is unreachable when every source of an incoming
+  connection is final and none of them routed to it, and no live supervisor
+  can still reach those sources. A required input that is never delivered
+  stays a data error.
+- **D6, benchmarks.** `AttackOfTheNodes/benchmarks/`, backend only, outside
+  `tests/`.
+- **D7, error matching.** Stable codes, with a default generic code on every
+  node. Messages stay free text. A mux with no matching code falls through to
+  pause (app) or the failure policy (headless).
+- **D8, node config.** Keep the Connections tab and add an Errors section
+  (confirms the 2026-10-09 recommendation).
+- **D9, skipped status.** Skipped is its own status, with a reason. It counts
+  as finished but never as completed, and spreads downstream until the path
+  rejoins something live. Untaken paths are marked `not_taken`. A Wait Until
+  whose target is unreachable fails with `engine.upstream_unreachable`.
+
+**Design.** One delivery-tracking mechanism in `RunContext` serves D5 in
+step 1b and D9 in step 3. Step 1b also fixes the Oct 9 Wait Until hang: Wait
+Until now fails with a clear message instead of waiting forever.
+
+**Behavior changes queued for step 3:**
+
+- The recovery Skip button spreads the skip downstream instead of running the
+  next node with an empty input.
+- Untaken paths show as skipped.
+
+Also updated: the `MASTER_BUILD_PLAN.md` step table. Step 1 still waits on the
+owner's read of the plan.
+
 ## 2026-10-11 — Record Approved Distributed Direction Build Plan
 
 Docs only; no code changes. Branch `ccr-1b2501bf-dgol6g`, based on `main` at

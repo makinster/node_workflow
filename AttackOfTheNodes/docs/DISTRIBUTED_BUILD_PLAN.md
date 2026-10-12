@@ -1,7 +1,8 @@
 # Distributed Direction Build Plan
 
-**Status:** approved direction (owner sign-off 2026-10-10/11). **Step 1 has not
-started.** It starts only after the owner has read this plan.
+**Status:** approved direction (owner sign-off 2026-10-10/11). The step 1b
+and step 3 open decisions were resolved on 2026-10-12 (D5–D9). **Step 1 has
+not started.** It starts only after the owner has read this plan.
 
 **Sources:**
 
@@ -47,6 +48,11 @@ Do not build anything a later step has to undo:
 | R2 | How the unattended policy is supplied | Passed in when the run starts (`start_workflow(unattended=...)`) | A persisted `ConfigurationManager` setting such as "when no UI attached" | `MasterState` cannot tell whether a UI is subscribed, and a persisted value could end up active inside the TUI | 2026-10-10 |
 | R3 | What happens when a trigger fires during an active run | A per-trigger concurrency mode. Build `single` and `queued` first, `restart` once Stop is clean, `parallel` at step 6 | One global queue; or leave it to whatever the code does | A burst of motion events must not queue 30 captures, while each doorbell press matters. Dropping silently is the worst outcome, so drops are counted | 2026-10-11 |
 | R4 | Binary and intermediate data | Reuse `file` refs with **run-owned temporary files** and a `lifetime` field; **temp files are kept when a run fails** | Add a new `blob` data type now | No change to type lists, labels, pickers or the helper. Cleanup is handled by the run. A `blob` label can be added later on the same field | 2026-10-11 |
+| D5 | What "unreachable" means for a waited-on node | **Structural, based on incoming connections, never on a timeout.** A node is unreachable when the source of every incoming connection is final (completed, failed or skipped) and none of them routed to it, and no live supervisor can still reach those sources (this covers loops). A required input that is never delivered (for example one fed from the Vault or a Configured value) stays a data error, not unreachability | Timeout-based detection; basing the rule on inputs marked `required` | Timeouts belong to individual nodes, and later to triggers. Workflows that wait indefinitely for a trigger must not be killed by this rule. In this engine a node runs when a supervisor reaches it through *any* incoming connection, and `required` is only a data flag | 2026-10-12 |
+| D6 | Where benchmark scripts live | A top-level `AttackOfTheNodes/benchmarks/` folder (no existing scripts or tooling folder was found). Backend only, no frontend imports | Inside `tests/` | Keeps the normal pytest run fast. `pytest.ini` sets no `testpaths`, so step 1b checks that pytest does not collect the benchmark scripts | 2026-10-12 |
+| D7 | How errors are matched | **Stable codes.** Each node declares its codes in error definitions, which are also what the Errors section shows. Every node gets one default generic code, so no error is ever unmatched. The message stays free text for display and logs. A mux with no matching code falls through to the normal failure behavior: a pause in the app, or the failure policy when headless | Matching on message text | Messages get reworded and include variable details, so a text match breaks silently. The validator can check a mux's codes against what the upstream node declares | 2026-10-12 |
+| D8 | Where declared errors are shown in node config | **Keep the Connections tab and add an Errors section** | Repurposing tab 4 | Connections is retained by `NODE_STANDARDS.md` and `WAIT_UNTIL_UI_PLAN.md`, and tests depend on it. Confirms the 2026-10-09 recommendation | 2026-10-12 |
+| D9 | How skipped nodes behave | **Skipped is its own status, with a reason** (`recovery_skip`, `upstream_skipped`, `not_taken`, `upstream_failed`). It counts as finished for ending the run and for D5, produces no output, and is never reported as completed. Skips spread downstream until the path rejoins something live; this includes the recovery Skip button. Paths never taken are skipped with reason `not_taken`. A Wait Until (later, a wait-for-event node) whose target becomes unreachable fails with `engine.upstream_unreachable` | Treating a skip as completed; today's Skip behavior, which runs the next node with an empty input; leaving untaken paths unmarked; letting the waiter skip itself silently | A run that took a recovery branch must not look like everything ran. The unreachable error can be routed by a mux or falls through to the normal failure behavior | 2026-10-12 |
 
 ## Current-state facts this plan relies on
 
@@ -95,10 +101,10 @@ the real backend.
 | Step | Contents | Gate |
 |---|---|---|
 | 1 | Bug fixes: error-port routing, Stop/leak, unattended policy | Owner has read this plan |
-| 1b | `RunContext` + WaitRegistry | Step 1 merged |
+| 1b | `RunContext` + WaitRegistry + delivery tracking (D5) | Step 1 merged |
 | — | Refresh coalescer (frontend only) | Any time |
 | 2 | Run service + CLI | Step 1b merged |
-| 3 | `[error]` routing | Step 2 merged |
+| 3 | `[error]` routing, error codes, Errors section, skipped status (D7–D9) | Step 2 merged |
 | — | ESP32 proof slice | Steps 2–3 |
 | 4 | Contracts + subworkflows (Phases 19/20) | Step 3 |
 | 5 | Event sources + start triggers | Step 4 |
@@ -180,18 +186,43 @@ and the behaviour change is logged.
   - Stopped waiters get a `stopped` result rather than a raised
     `CancelledError`, which would confuse `asyncio.timeout`/`TaskGroup`
     bookkeeping.
-  - `mark_unreachable` exists and is unit tested, but nothing calls it until
-    step 3.
+  - Any unreachable key fails a wait-for-all at once.
   - Merge is left alone; it already releases correctly when a sibling ends.
   - Completion stays sticky per run. Keys are tuples, `("node", node_id)`, so
     a visit or iteration number can be added later without an API change.
+- **Delivery tracking (D5).** One new piece of per-run state in `RunContext`
+  serves both D5 now and D9 in step 3. It records:
+  - which outgoing connections each finished node actually routed along;
+  - each node's final state (completed, failed, skipped).
+
+  When a supervisor finishes a node or terminates, re-evaluate each pending
+  wait key against D5. A key is unreachable when:
+  - every incoming connection's source is final;
+  - none of those sources delivered to the target;
+  - no live supervisor can still reach those sources. Check this with the
+    existing `WorkflowMap.nodes_reachable_from` (`backend/workflow_map.py`).
+
+  Then call `mark_unreachable`. This rule never uses a timeout.
+- **Wait Until on an unreachable target** fails with a clear message naming
+  the target, instead of waiting forever. This fixes the Oct 9 hang where the
+  target was terminated or skipped. The code `engine.upstream_unreachable` is
+  added in step 3. Timeouts remain per node (Wait Until's own
+  `timeout_seconds`).
 - **Proposal v2 Task 0** (the audit) is largely answered by the facts above.
   Task 1 Case B (refresh rate) must be measured with a mounted
-  `ExecutionScreen`. Commit benchmark scripts (location: owner's call).
-- **Open decisions to settle before coding:**
-  - unreachable semantics (recommended: any unreachable key fails a
-    wait-for-all at once);
-  - benchmark location.
+  `ExecutionScreen`.
+- **Benchmarks (D6):** commit scripts to `AttackOfTheNodes/benchmarks/`,
+  backend only. Confirm that a plain `pytest` run from `AttackOfTheNodes/`
+  does not collect them; name files `bench_*.py` and keep them out of
+  `tests/`.
+- **Tests:**
+  - the WaitRegistry unit tests from proposal v2;
+  - Wait Until fails, rather than hangs, when its target's branch is
+    terminated;
+  - a target with no incoming connections is unreachable at once;
+  - a target inside a loop is not marked unreachable while a live
+    supervisor can still reach it;
+  - a long Wait Until on a reachable target is never failed by the rule.
 
 ### Any time — Refresh coalescer (frontend only)
 
@@ -233,24 +264,57 @@ and the behaviour change is logged.
   `run_errors/` plus the log; there is no clear-on-read.
 - **One engine-level `error` port name** for every node, so port shapes stay
   uniform.
-- **Declared errors:** an `errors:` list in helper specs (code, description,
-  retryable), emitted as a class attribute and exposed by `NodeFactory`. The
-  factory adds the generic `node_error` entry automatically. This needs
-  generator parsing/validation, a generated test asserting the codes, and a
-  `ui_checks` check that the section renders.
-- **Unreachable wiring:** when a supervisor terminates, mark pending wait keys
-  that no live supervisor can still reach (`WorkflowMap.nodes_reachable_from`).
-- **Error mux.** Put the linked-path check before `_request_recovery`:
-  - a handled code routes along `error`;
-  - an unhandled error pauses on the failing node, as today.
-- **Open questions for the owner:**
-  - Match on stable codes or on message strings? Recommended: codes. The
-    validator can then check mux codes against the upstream declarations.
-  - Error display: a new Errors section/tab, or repurpose tab 4? Recommended:
-    keep Connections. `NODE_STANDARDS.md` and `WAIT_UNTIL_UI_PLAN.md` retain
-    it and tests depend on it. Options are a combined "Connections & Errors"
-    or an applicable-only Errors section.
-  - Does a skipped node count as completed for Wait Until?
+- **Declared errors (D7):** an `errors:` list in helper specs (code,
+  description, retryable), emitted as a class attribute and exposed by
+  `NodeFactory`.
+  - The factory adds one default generic code (`node_error`) to every node,
+    so nothing is ever unmatched.
+  - Engine codes such as `engine.upstream_unreachable` share the namespaced
+    scheme.
+  - The message stays free text.
+  - This needs generator parsing/validation, a generated test asserting the
+    codes, and a `ui_checks` check that the section renders.
+- **Errors section (D8):** keep the Connections tab and add an Errors section
+  listing each declared code with its description, including the default
+  generic entry. It is presentation of `NodeFactory` metadata only.
+- **Error mux (D7).** Matches on codes. Put the linked-path check before
+  `_request_recovery`:
+  - a matched code routes along `error` to the mux path;
+  - no match falls through to the normal failure behavior: a pause in the
+    app, or the run's failure policy when headless.
+
+  The validator checks that the mux's codes appear in the upstream node's
+  declarations.
+- **Skipped status (D9).** Built on step 1b's delivery tracking.
+  - `skipped` is published as a `NODE_EXECUTION_UPDATE` status with a `reason`
+    field: `recovery_skip`, `upstream_skipped`, `not_taken` or
+    `upstream_failed`.
+  - It counts as finished for run completion and for D5, produces no output,
+    and is never reported as completed. `mark_node_completed` is not called
+    for it.
+  - Skips spread: when a node's incoming-connection sources are all final and
+    none delivered, it is marked skipped and the evaluation continues
+    downstream. The spread stops at any node that still has a live or
+    delivering source (for example a Merge with a live sibling).
+  - Untaken paths (the other port of a Conditional, or the default path after
+    an error is routed to `error`) are skipped with reason `not_taken`.
+  - Shown distinctly in the execution screen (precedence in
+    `frontend/execution_state.py`), in run history and in logs.
+  - A Wait Until whose target becomes unreachable now fails with
+    `engine.upstream_unreachable` (step 1b's message gains the code).
+- **Behavior changes to log on landing:**
+  - The recovery **Skip** button no longer runs the next node with an empty
+    input. Its downstream path is skipped until it rejoins something live.
+  - Untaken paths now show as skipped rather than having no status.
+- **Tests:**
+  - skip spreading through a linear chain;
+  - rejoining at a Merge with a live sibling;
+  - a not-taken Conditional port;
+  - routing to the error port marks the default path skipped;
+  - recovery Skip spreads;
+  - Wait Until on a skipped target fails with `engine.upstream_unreachable`;
+  - a mux with no matching code falls through to the policy;
+  - a skipped node is never counted as completed.
 
 ### ESP32 proof slice (between steps 3 and 4)
 
@@ -342,7 +406,9 @@ event-source layer as start triggers.
 - When one event matches both a waiting run and a start trigger, something
   must decide which takes it. Suggested: the waiting run.
 - Needs an explicit timeout choice and a Stop that releases it, which depends
-  on step 1/1b.
+  on step 1/1b. D5 never uses a timeout, so indefinite waits stay allowed; any
+  timeout is the node's own setting. If its event source becomes unavailable,
+  the node fails with an engine code (D9).
 - Key combinations need an OS capability gate; a headless server may not
   support them at all.
 
