@@ -7,7 +7,7 @@ overhaul.
 ## 2026-10-12 — Distributed Step 3: Error Codes, Error Mux, Errors Section, Skipped Status
 
 Branch `dist/step-3-error-routing`, from `main` at `5e65265` (step 2, PR #35).
-Before: 905 passed. After: 944 passed.
+Before: 905 passed. After: 949 passed.
 
 - **D7 codes** (`backend/node_errors.py`): `NodeError`, declared
   `error_definitions` (helper specs: `errors:`), the default generic
@@ -67,6 +67,36 @@ Updated for the logged behavior changes: two tests in
 `test_execution_status.py` (Skip no longer runs the next node; the untaken
 `end` is skipped) and one in `test_run_lifecycle.py` (the error port carries
 the payload dict).
+
+**Fixed after the adversarial review** (each with a regression test in
+`tests/test_error_routing.py`):
+
+- A mux or catch-all fed by several `error` connections read the first
+  connection's slot, not the node that failed (empty or stale payload). The
+  supervisor now remembers which node and port routed it to its current node,
+  and an input port with several connections reads that one
+  (`WorkflowMap.find_input_sources`). This also applies to ordinary ports fed
+  by several connections.
+- Non-JSON error `details` (e.g. bytes) or inputs broke the persisted
+  `run_errors` file and stopped the run. Logged details and inputs now go
+  through `node_errors.json_safe`.
+- Skip spreading scanned the whole graph after every node (quadratic on long
+  runs). A completed node that delivered to all its successors now skips the
+  scan.
+- A user Stop during a recovery prompt marked downstream nodes skipped
+  `upstream_failed`. A user Stop (`RunContext.stop_requested`) no longer
+  spreads skips. A failure that terminates the workflow (`_halt`) still does.
+
+**Open items from the review (not fixed, need a decision):**
+
+- A routed (handled) error is still logged, so `aotn run` exits 1 for a run
+  that handled its errors through a mux. Error records do not say whether an
+  error was routed.
+- Nodes on an untaken loop (or fed by an orphan node that never runs) are
+  never marked skipped, because skipping waits for every source to be final.
+  D5 waits still treat them correctly; only the displayed status is missing.
+- Spread skip events use `visit_index` 0 on the branch that triggered them.
+  Nothing displays per-visit data yet.
 
 ## 2026-10-12 — Distributed Step 2: Run Service, Policies, Data Directory, CLI
 

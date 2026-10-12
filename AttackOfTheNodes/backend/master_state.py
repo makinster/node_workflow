@@ -241,6 +241,15 @@ class MasterState:
             reason: Optional[str] = None,
         ) -> None:
             run.record_outcome(node_id, state, delivered_to, reason)
+            if (
+                state == "completed"
+                and self._workflow_map.successor_ids(node_id) <= set(delivered_to)
+            ):
+                # Delivered to every successor: nothing can newly become
+                # unreachable, so skip the whole-graph scan (keeps long linear
+                # runs linear). Waits still re-evaluate.
+                self._evaluate_waits(run)
+                return
             self._after_outcome(run, branch_id)
 
         supervisor = Supervisor(
@@ -282,6 +291,12 @@ class MasterState:
         self._set_state(WorkflowState.RUNNING)
 
     def stop(self) -> None:
+        """Stop the run on request: unfinished nodes are stopped, not skipped."""
+        if self._run is not None:
+            self._run.stop_requested = True
+        self._halt()
+
+    def _halt(self) -> None:
         """Request all supervisors to stop, then cancel their tasks.
 
         Waiters get a ``stopped`` result from the run's WaitRegistry, and
@@ -476,6 +491,9 @@ class MasterState:
 
     def _spread_skips(self, run: RunContext, branch_id: str) -> None:
         """Mark nodes no path can reach as skipped, spreading downstream."""
+        if run.stop_requested:
+            # A stopped run's unfinished nodes are stopped, not skipped.
+            return
         reach = run.live_reach(self._workflow_map)
         while True:
             candidates = run.skip_candidates(self._workflow_map, reach)
@@ -658,7 +676,8 @@ class MasterState:
         timings[node_id] = timings.get(node_id, 0.0) + seconds
 
     def _on_terminate_workflow_requested(self, _payload: Dict[str, Any]) -> None:
-        self.stop()
+        # A failure ended the run: paths it cut off are still skipped (D9).
+        self._halt()
         self._set_state(WorkflowState.ERROR)
         self._capture_outputs()
         self._record_run("ERROR")

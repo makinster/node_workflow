@@ -68,6 +68,8 @@ class RunContext:
     # Supervisors created for this run that have not terminated yet, keyed by
     # branch id. Tracked from creation, before they register on the bus.
     live_supervisors: Dict[str, Any] = field(default_factory=dict)
+    # Set by a user Stop (not by a failure terminating the workflow).
+    stop_requested: bool = False
 
     # -- completions ---------------------------------------------------------
 

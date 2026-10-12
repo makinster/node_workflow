@@ -38,6 +38,7 @@ from .node_errors import (
     NodeError,
     build_error_payload,
     definitions_with_default,
+    json_safe,
 )
 from .run_policies import (
     UNATTENDED_ACTIONS,
@@ -131,6 +132,9 @@ class Supervisor:
 
         self._start_node_id = start_node_id
         self._initial_data = dict(initial_data) if initial_data else {}
+        # (node_id, port) that routed this supervisor to its current node, so
+        # an input port fed by several connections reads the one that fired.
+        self._arrived_from: Optional[tuple] = None
         self._workflow_map = workflow_map
         self._memory_bank = memory_bank
         self._event_bus = event_bus
@@ -290,6 +294,7 @@ class Supervisor:
                         self._error_payload(failure, record),
                     )
                     self._report_outcome(failed_node_id, "failed", [target])
+                    self._arrived_from = (failed_node_id, ERROR_PORT)
                     self.current_node_id = target
                     self._node_phase = "queued"
                     self._publish_state_update()
@@ -385,9 +390,7 @@ class Supervisor:
         """Build node inputs from connected upstream transient outputs."""
         inputs: Dict[str, Any] = {}
         for input_port in node.get_input_ports():
-            source = self._workflow_map.find_input_source(
-                self.current_node_id or "", input_port
-            )
+            source = self._input_source(input_port)
             if source is None:
                 if input_port in self._initial_data:
                     inputs[input_port] = self._initial_data[input_port]
@@ -399,6 +402,22 @@ class Supervisor:
         if not inputs and not node.get_input_ports():
             inputs = dict(self._initial_data)
         return inputs
+
+    def _input_source(self, input_port: str) -> Optional[Dict[str, str]]:
+        """The connection feeding ``input_port``; the one that fired wins."""
+        sources = self._workflow_map.find_input_sources(
+            self.current_node_id or "", input_port
+        )
+        if not sources:
+            return None
+        if self._arrived_from is not None:
+            arrived_node, arrived_port = self._arrived_from
+            for source in sources:
+                if source["source_node_id"] == arrived_node and (
+                    arrived_port is None or source["source_port"] == arrived_port
+                ):
+                    return source
+        return sources[0]
 
     async def _execute_node(self, node: Node, inputs: Dict[str, Any]) -> _NodeResult:
         """Execute a node and capture its context signal result."""
@@ -577,7 +596,8 @@ class Supervisor:
         retryable: Optional[bool] = None
         if isinstance(error, NodeError):
             code = error.code
-            details = dict(error.details)
+            # Details are persisted and published; keep them JSON-safe.
+            details = json_safe(dict(error.details))
             retryable = error.retryable
             if code not in by_code and code not in ENGINE_ERROR_DEFINITIONS:
                 logger.warning(
@@ -613,7 +633,7 @@ class Supervisor:
                 "branch_id": self.branch_id,
                 "node_id": self.current_node_id,
                 "depth": self.depth,
-                "inputs": inputs,
+                "inputs": json_safe(inputs),
                 "stage": failure.stage,
                 "details": failure.details,
                 "retryable": failure.retryable,
@@ -746,6 +766,7 @@ class Supervisor:
         explicit_next = payload.get("next_node_id")
         if explicit_next:
             self._last_delivered.append(explicit_next)
+            self._arrived_from = (self.current_node_id, None)
             return explicit_next
 
         # Port routing hint embedded in data (used by RandomBranchNode and similar)
@@ -756,6 +777,7 @@ class Supervisor:
         )
         if next_node_id:
             self._last_delivered.append(next_node_id)
+            self._arrived_from = (self.current_node_id, output_port)
         return next_node_id
 
     def _spawn_branches(self, branches: List[Dict[str, Any]]) -> None:

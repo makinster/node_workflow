@@ -417,6 +417,108 @@ async def test_http_request_failures_carry_declared_codes(failure, code):
 
 
 # ---------------------------------------------------------------------------
+# Regressions from the step 3 review
+# ---------------------------------------------------------------------------
+
+
+async def test_shared_mux_reads_the_payload_of_the_node_that_failed():
+    bus, workflow_map, master = _services()
+    recoveries = _answer(bus, master, "TERMINATE_BRANCH")
+    start = workflow_map.add_node("start_node")
+    healthy = workflow_map.add_node("no_op_node")
+    failing = workflow_map.add_node("error_node")
+    mux = workflow_map.add_node("error_mux_node")
+    handler = workflow_map.add_node("no_op_node")
+    workflow_map.update_node_config(mux, {"path_a_codes": DEFAULT_ERROR_CODE})
+    workflow_map.connect(start, "default", healthy, "input")
+    workflow_map.connect(healthy, "default", failing, "input")
+    # The healthy node's error slot is connected first and stays empty.
+    workflow_map.connect(healthy, "error", mux, "error")
+    workflow_map.connect(failing, "error", mux, "error")
+    workflow_map.connect(mux, "path_a", handler, "input")
+
+    assert await master.start_workflow()
+    await _finish(master)
+
+    assert recoveries == []
+    routed = master._memory_bank.read_transient(mux, "path_a")
+    assert routed["node_id"] == failing
+    assert routed["code"] == DEFAULT_ERROR_CODE
+    assert handler in master.completed_nodes
+
+
+async def test_non_json_error_details_and_inputs_are_logged_safely():
+    import json
+
+    from backend.nodes.debug.error_node import ErrorNode
+    from backend.supervisor import Supervisor
+
+    bus = EventBus()
+    supervisor = Supervisor("r", "b", 0, "n", WorkflowMap(NodeFactory(), bus), MemoryBank(bus), bus)
+    supervisor.current_node_id = "n"
+    failure = supervisor._describe_failure(
+        ErrorNode("n"), NodeError(DEFAULT_ERROR_CODE, "boom", details={"stderr": b"\xff oops"})
+    )
+    assert failure.details == {"stderr": "\ufffd oops"}
+    record = supervisor._log_failure(failure, {"input": b"\x00\xff", "other": {1, 2}})
+    json.dumps(record)
+    assert record["code"] == DEFAULT_ERROR_CODE
+    second = supervisor._log_failure(failure, {})
+    assert second["code"] == DEFAULT_ERROR_CODE
+
+
+async def test_a_long_linear_run_does_not_rescan_for_skips_per_node(monkeypatch):
+    from backend.run_context import RunContext
+
+    calls: List[int] = []
+    original = RunContext.skip_candidates
+
+    def counting(self, *args, **kwargs):
+        calls.append(1)
+        return original(self, *args, **kwargs)
+
+    monkeypatch.setattr(RunContext, "skip_candidates", counting)
+    bus, workflow_map, master = _services()
+    start = workflow_map.add_node("start_node")
+    _chain(workflow_map, start, 30)
+
+    assert await master.start_workflow()
+    await _finish(master)
+
+    assert master.state.value == "FINISHED"
+    assert len(calls) <= 2
+
+
+async def test_an_unused_error_path_is_skipped_after_a_completed_node():
+    bus, workflow_map, master = _services()
+    start = workflow_map.add_node("start_node")
+    (worker,) = _chain(workflow_map, start, 1)
+    handler = workflow_map.add_node("no_op_node")
+    workflow_map.connect(worker, "error", handler, "input")
+
+    assert await master.start_workflow()
+    await _finish(master)
+
+    assert master.run_context.skip_reasons == {handler: "not_taken"}
+
+
+async def test_stop_during_a_recovery_prompt_does_not_mark_skips():
+    bus, workflow_map, master = _services()
+    # Stop from inside the prompt: the supervisor resolves its own pending
+    # recovery as terminate rather than being cancelled.
+    bus.subscribe(RECOVERY_OPTIONS_AVAILABLE, lambda payload: master.stop())
+    start = workflow_map.add_node("start_node")
+    failing = workflow_map.add_node("error_node")
+    workflow_map.connect(start, "default", failing, "input")
+    _chain(workflow_map, failing, 2)
+
+    assert await master.start_workflow()
+    await _finish(master)
+
+    assert master.run_context.skip_reasons == {}
+
+
+# ---------------------------------------------------------------------------
 # D7 declarations, D8 Errors section, validator
 # ---------------------------------------------------------------------------
 

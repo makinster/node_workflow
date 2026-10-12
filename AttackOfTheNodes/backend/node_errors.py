@@ -146,19 +146,19 @@ def build_error_payload(
         "node_id": node_id,
         "run_id": run_id,
         "stage": stage,
-        "details": _json_safe(dict(details or {})),
+        "details": json_safe(dict(details or {})),
         "retryable": bool(retryable),
         "error_id": error_id,
     }
 
 
-def _json_safe(value: Any) -> Any:
+def json_safe(value: Any) -> Any:
     if isinstance(value, (str, int, float, bool)) or value is None:
         return value
     if isinstance(value, bytes):
         return value.decode("utf-8", errors="replace")
     if isinstance(value, Mapping):
-        return {str(key): _json_safe(item) for key, item in value.items()}
+        return {str(key): json_safe(item) for key, item in value.items()}
     if isinstance(value, (list, tuple, set)):
-        return [_json_safe(item) for item in value]
+        return [json_safe(item) for item in value]
     return str(value)
