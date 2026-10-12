@@ -349,6 +349,26 @@ rather than inline `{key: value}` braces; inline form requires PyYAML.
 See `specs/file_output_node.yaml` for a complete spec using
 `input_sources`, `output_routing`, and the expanded rule keys.
 
+## Declared Errors (`errors:`)
+
+Specs may declare the error codes a node can fail with (step 3, D7):
+
+```yaml
+errors:
+  - code: timeout
+    description: "The server did not answer within the timeout."
+    retryable: true
+```
+
+The generator validates the list (lowercase dotted snake_case codes, unique,
+no `node_error`, no `engine.` codes, a description, a boolean `retryable`),
+emits it as the `error_definitions` class attribute, and the generated test
+asserts `metadata["errors"]` codes (`node_error` first, then the declared
+ones). `check_ui.py` checks that the config screen keeps the Connections tab
+and shows every code in its Errors section. The custom runtime body signals a
+declared failure with `{"data": {"error": msg, "code": ...}, "output_port":
+"error"}` or by raising `NodeError(code, msg)`.
+
 ## Supported Values
 
 Categories:

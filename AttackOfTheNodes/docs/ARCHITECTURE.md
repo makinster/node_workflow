@@ -320,6 +320,21 @@ After traversal, any unvisited node is unreachable and reported as a warning. Re
 
 Each error and warning includes `node_id` so the UI can highlight the affected node.
 
+### Errors and skips (`backend/node_errors.py`, step 3)
+
+- **D7 codes.** Each node declares `error_definitions`; `NodeFactory` adds the
+  default generic `node_error` first. Engine codes use `engine.*`. The
+  supervisor codes every failure, logs it once, then routes the versioned
+  error payload along a connected `error` port (an Error Mux only for codes it
+  lists) or falls through to recovery / the run's policy. `error` is accepted
+  as an output port on every node by the validator; the editor only offers it
+  on nodes that list it (HTTP Request, JSON Path) — wiring it from other nodes
+  in the editor is an open item.
+- **D8.** Node config keeps Connections and adds an Errors section.
+- **D9.** `RunContext.skip_candidates()` plus `MasterState._spread_skips()`
+  mark nodes skipped with a reason whenever an outcome is reported or a
+  supervisor ends; skipped nodes count as finished (D5) but never completed.
+
 ### `RunService` (`backend/run_service.py`)
 
 The one in-process API clients use to run workflows (step 2 of the

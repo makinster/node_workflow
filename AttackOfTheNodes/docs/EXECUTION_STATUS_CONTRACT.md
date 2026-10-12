@@ -80,7 +80,31 @@ refresh after updating its ordinary status/timing attributes.
 
 Glyph meanings stay: circle not visited, play executing, check successful,
 cross errored, pause waiting for input. Skipped/stopped use explicit text labels
-`[skipped]` and `[stopped]` and receive no checkmark. Warning, breakpoint,
+`[skipped]` and `[stopped]` and receive no checkmark. Since step 3 a skipped
+node shows its reason, e.g. `[skipped: not taken]`.
+
+## Skipped status (step 3, D9)
+
+`skipped` is its own status with a `reason` field on `NODE_EXECUTION_UPDATE`:
+`recovery_skip`, `upstream_skipped`, `not_taken` or `upstream_failed`.
+
+- Recovery Skip publishes `skipped` (`recovery_skip`) for the failed attempt
+  and ends the branch; it no longer runs the next node with an empty input.
+- `MasterState` spreads skips: a node whose incoming-connection sources are all
+  final and none routed to it, and that no live supervisor can reach, is
+  published `skipped` with `visit_index` 0 and `attempt_index` 0 on the branch
+  that caused it, and the evaluation continues downstream. It stops at any
+  node with a live or delivering source (for example a Merge with a live
+  sibling).
+- Reason: a failed source that routed nowhere gives `upstream_failed`; a
+  skipped source gives `upstream_skipped`; sources that routed elsewhere (a
+  Conditional's other port, `default` after an error routed to `error`) give
+  `not_taken`.
+- A skipped node counts as finished for run completion and for D5, produces no
+  output, and is never marked completed. Run history records
+  `skipped_nodes: {node_id: reason}`; the log records each skip.
+- `ExecutionDisplayState.skip_reasons()` and `App.node_skip_reasons` carry the
+  reasons to the execution screen. Warning, breakpoint,
 Merge Beacon and editor branch-health indicators are independent.
 
 ## Next UI work
