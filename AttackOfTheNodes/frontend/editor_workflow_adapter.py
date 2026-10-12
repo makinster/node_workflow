@@ -6,6 +6,7 @@ from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
+from backend.node_errors import ERROR_PORT
 from backend.validator import _declared_membank_outputs, _membank_source_id
 from frontend.node_types import (
     BRANCH_END_NODE_TYPE,
@@ -233,7 +234,7 @@ class EditorWorkflowAdapter:
                     }
                 )
                 continue
-            declared = set(self.factory.node_output_ports(source_node))
+            declared = set(self.factory.node_output_ports(source_node)) | {ERROR_PORT}
             if source_port not in declared:
                 report.input_errors.append(
                     {
@@ -504,7 +505,8 @@ class EditorWorkflowAdapter:
         return downstream_connections[0] if downstream_connections else None
 
     def _declares_output_port(self, node: Dict[str, Any], port: str) -> bool:
-        return port in self.factory.node_output_ports(node)
+        # `error` is the engine-level failure port every node has (D7).
+        return port == ERROR_PORT or port in self.factory.node_output_ports(node)
 
     def _declares_input_port(self, node: Dict[str, Any], port: str) -> bool:
         ports = self._ports_by_type().get(node.get("type", ""), {}).get("inputs", set())
