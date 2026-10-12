@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Optional
 from .event_bus import EventBus
 from .events import WORKFLOW_DIRTY
 from .node_base import Node
+from .node_errors import ERROR_PORT
 from .node_factory import NodeFactory
 from .config_migrations import normalize_node_config
 from .persistence import load_workflow, save_workflow
@@ -175,6 +176,35 @@ class WorkflowMap:
     def get_all_node_data(self) -> Dict[str, Dict[str, Any]]:
         """Return a shallow copy of all nodes."""
         return dict(self._nodes)
+
+    def prune_removed_output_connections(self, node_id: str, previous_ports) -> int:
+        """Disconnect outputs on ports a config change just removed.
+
+        Only ports in ``previous_ports`` (the node's ports before the change)
+        that now exist nowhere are pruned, such as a deleted Error Mux route.
+        A port the config merely hides but the type still lists (a Branch path
+        above the count) keeps its connection, so raising the count restores
+        it; connections that were already invalid are left for the validator
+        to report. The ``error`` port is never pruned. Returns the number removed.
+        """
+        node = self.get_node_data(node_id)
+        if node is None:
+            return 0
+        node_type = str(node.get("type") or "")
+        if not self._factory.is_valid_node_type(node_type):
+            return 0
+        keep = set(self.output_ports(node_id)) | {ERROR_PORT}
+        keep |= set(self._factory.declared_output_ports(node_type))
+        removed_ports = {str(port) for port in previous_ports or []} - keep
+        removed = 0
+        for conn in list((node.get("connections") or {}).get("outputs", [])):
+            port = str(conn.get("source_port", "default"))
+            if port not in removed_ports:
+                continue
+            if self.disconnect(node_id, port, str(conn.get("target_node_id") or ""),
+                               str(conn.get("target_port") or "input")):
+                removed += 1
+        return removed
 
     def output_ports(self, node_id: str) -> List[str]:
         """Output ports of a node in this workflow, resolved from its config."""

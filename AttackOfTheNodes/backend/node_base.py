@@ -185,6 +185,17 @@ class Node(ABC):
         """
         return list(cls.output_ports)
 
+    @classmethod
+    def describe_output_ports(
+        cls, config: Optional[Dict[str, Any]]
+    ) -> Dict[str, Dict[str, Any]]:
+        """Port metadata for config-driven ports (name, description, ...).
+
+        Merged over the class ``output_port_metadata``; the default adds
+        nothing. Override together with ``resolve_output_ports``.
+        """
+        return {}
+
     def get_output_ports(self) -> List[str]:
         """Return this node's output port names, resolved from its config."""
         return self.resolve_output_ports(self.config)

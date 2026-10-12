@@ -39,15 +39,28 @@ FIELD_RULE_KEYS = {
 
 
 class ObjectListField(Vertical):
-    """Reusable ordered rows rendered from an item schema, with stable ids."""
+    """Reusable ordered rows rendered from an item schema, with stable ids.
+
+    Field schema keys: ``add_label`` / ``remove_label`` (button text),
+    ``id_prefix`` (new row ids are ``<prefix><8 hex>``), and ``refill_label``
+    (a button that asks the screen for suggested rows; see RefillRequested).
+    """
     class Changed(Message):
         """Rows were added or removed."""
 
+    class RefillRequested(Message):
+        """The refill button was pressed; the screen may call replace_rows."""
+
+        def __init__(self, field: "ObjectListField") -> None:
+            super().__init__()
+            self.field = field
+
     DEFAULT_CSS = "ObjectListField, ObjectListField > Vertical { height: auto; }"
 
-    def __init__(self, value, item_schema, **kwargs):
+    def __init__(self, value, item_schema, field_schema=None, **kwargs):
         super().__init__(**kwargs)
         self.item_schema = item_schema
+        self.field_schema = dict(field_schema or {})
         self.initial_rows = value if isinstance(value, list) else []
         self.rows = []
 
@@ -55,25 +68,47 @@ class ObjectListField(Vertical):
         for row in self.initial_rows:
             if isinstance(row, dict):
                 yield self._row(row)
-        yield Button("Add file", id=f"{self.id}-add")
+        yield Button(str(self.field_schema.get("add_label") or "Add file"), id=f"{self.id}-add")
+        if self.field_schema.get("refill_label"):
+            yield Button(str(self.field_schema["refill_label"]), id=f"{self.id}-refill")
+
+    def _new_id(self) -> str:
+        prefix = str(self.field_schema.get("id_prefix") or "")
+        return f"{prefix}{uuid.uuid4().hex[:8]}" if prefix else uuid.uuid4().hex
 
     def _row(self, value):
         values = dict(value)
-        values.setdefault("id", uuid.uuid4().hex)
+        if not values.get("id"):
+            values["id"] = self._new_id()
         schema = {key: field for key, field in self.item_schema.items() if key != "id"}
         # Each nested form gets distinct widget ids via field prefixes.
         prefix = f"row-{uuid.uuid4().hex}-"
         form, getter = build_form({prefix+k: v for k,v in schema.items()}, {prefix+k:v for k,v in values.items()})
-        remove = Button("Remove file")
+        remove = Button(str(self.field_schema.get("remove_label") or "Remove file"))
         container = Vertical(form, remove)
         self.rows.append((container, remove, getter, prefix, values["id"]))
         return container
+
+    async def replace_rows(self, rows) -> None:
+        """Replace every row (ids in ``rows`` are kept) and announce it."""
+        for row in list(self.rows):
+            await row[0].remove()
+        self.rows.clear()
+        add_button = self.query_one(f"#{self.id}-add", Button)
+        for value in rows:
+            if isinstance(value, dict):
+                await self.mount(self._row(value), before=add_button)
+        self.post_message(self.Changed())
 
     async def on_button_pressed(self, event):
         if event.button.id == f"{self.id}-add":
             event.stop()
             await self.mount(self._row({}), before=event.button)
             self.post_message(self.Changed())
+            return
+        if event.button.id == f"{self.id}-refill":
+            event.stop()
+            self.post_message(self.RefillRequested(self))
             return
         for row in list(self.rows):
             if event.button is row[1]:
@@ -313,7 +348,9 @@ def _widget_for_field(
     vault_keys_by_type: Dict[str, List[Tuple[str, str]]] | None = None,
 ):
     if field_type == "object_list":
-        return ObjectListField(value, field_schema.get("item_schema") or {}, id=f"field-{field_name}")
+        return ObjectListField(
+            value, field_schema.get("item_schema") or {}, field_schema, id=f"field-{field_name}"
+        )
     placeholder = str(field_schema.get("placeholder", ""))
     if field_schema.get("secret") and secret_key_options is not None:
         options = list(secret_key_options)

@@ -340,8 +340,10 @@ Each error and warning includes `node_id` so the UI can highlight the affected n
 - **D7 codes.** Each node declares `error_definitions`; `NodeFactory` adds the
   default generic `node_error` first. Engine codes use `engine.*`. The
   supervisor codes every failure, logs it once, then routes the versioned
-  error payload along a connected `error` port (an Error Mux only for codes it
-  lists) or falls through to recovery / the run's policy. `error` is accepted
+  error payload along a connected `error` port (an Error Mux only for codes
+  one of its routes lists, or any code when its unmatched route is on; route
+  logic lives in `node_errors.mux_routes` / `mux_route_for_code`) or falls
+  through to recovery / the run's policy. `error` is accepted
   as an output port on every node by the validator; the editor only offers it
   on nodes that list it (HTTP Request, JSON Path) — wiring it from other nodes
   in the editor is an open item.

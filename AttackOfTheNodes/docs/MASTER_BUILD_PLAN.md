@@ -362,7 +362,7 @@ Focused checks:
   | slice | ESP32 proof: cron → capture to run-owned `file` → error routed to a notification | Done |
   | P0 | Housekeeping: routed (handled) errors do not fail a run (D10) | Done |
   | P1 | Port model: backend resolves each node's ports from its config | Done |
-  | P2 | Error Mux routes with stable ids, UI pickers and auto-fill | Authorized |
+  | P2 | Error Mux routes with stable ids, UI pickers and auto-fill | Done |
   | P3 | Branch on the same mechanism; `error` offered on every node | Authorized |
   | 4 | Workflow contracts + subworkflows as child runs (Phases 19/20) | Needs go-ahead |
   | 5 | Event sources + start triggers with `single`/`queued` modes (`restart` once Stop is clean) | Needs go-ahead |

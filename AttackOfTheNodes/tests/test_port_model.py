@@ -60,10 +60,24 @@ def test_metadata_keeps_the_full_type_list():
     assert meta["branch_node"]["output_ports"] == ALL_PATHS
 
 
+CONFIG_DRIVEN = {"branch_node", "error_mux_node"}
+
+
+def test_only_known_nodes_have_config_driven_ports():
+    from backend.node_base import Node
+    from backend.nodes import ALL_NODE_CLASSES
+
+    overriding = {
+        cls.node_type for cls in ALL_NODE_CLASSES
+        if cls.resolve_output_ports.__func__ is not Node.resolve_output_ports.__func__
+    }
+    assert overriding == CONFIG_DRIVEN
+
+
 def test_fixed_port_nodes_resolve_to_their_class_list():
     factory = NodeFactory()
     for meta in factory.get_node_types_metadata():
-        if meta["type"] == "branch_node":
+        if meta["type"] in CONFIG_DRIVEN:
             continue
         resolved = factory.output_ports_for(meta["type"], meta["default_config"])
         assert resolved == list(meta["output_ports"]), meta["type"]

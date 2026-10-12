@@ -24,7 +24,12 @@ Good backend responsibilities:
   returns the ports one node actually has, from its config, via
   `Node.resolve_output_ports(config)`. Frontends call it and never re-derive
   the rule (for example the Branch path count). The engine-level `error` port
-  is not listed.
+  is not listed. Per-port names come from
+  `NodeFactory.node_output_port_metadata(node)` (Error Mux route labels).
+- What an Error Mux route is (`node_errors.mux_routes`, ids, matching,
+  migration of old `path_*_codes`). Proposing routes — upstream code pickers,
+  auto-fill on wiring, "Refill from upstream" — is frontend-only
+  (`frontend/error_mux_ui.py`); the validator re-checks the result.
 
 Frontend responsibilities:
 

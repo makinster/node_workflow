@@ -3,6 +3,8 @@
 from copy import deepcopy
 from typing import Any
 
+from .node_errors import LEGACY_MUX_PATHS, legacy_mux_routes
+
 
 def normalize_node_config(node_type: str, config: dict[str, Any]) -> dict[str, Any]:
     """Return upgraded config, retaining unknown keys and migration evidence.
@@ -51,6 +53,18 @@ def normalize_node_config(node_type: str, config: dict[str, Any]) -> dict[str, A
             history = result.get("_config_migrations")
             history = dict(history) if isinstance(history, dict) else {}
             history["start_vault_output_v1"] = {"membank_outputs": result.pop("membank_outputs")}
+            result["_config_migrations"] = history
+
+    if node_type == "error_mux_node" and "routes" not in result:
+        legacy_keys = [f"{port}_codes" for port in LEGACY_MUX_PATHS]
+        if any(key in result for key in legacy_keys):
+            # Route ids keep the old path names, so connections still match.
+            result["routes"] = legacy_mux_routes(result)
+            history = result.get("_config_migrations")
+            history = dict(history) if isinstance(history, dict) else {}
+            history["error_mux_routes_v1"] = {
+                key: result.pop(key) for key in legacy_keys if key in result
+            }
             result["_config_migrations"] = history
 
     if node_type == "file_reader_node" and "input_source" not in result:

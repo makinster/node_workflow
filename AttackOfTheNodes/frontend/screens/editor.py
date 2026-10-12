@@ -11,6 +11,7 @@ from textual.screen import Screen
 from textual.widgets import Header, Label, Static
 
 from backend.validator import validate_workflow
+from frontend.error_mux_ui import autofill_mux_routes
 from frontend.screens.branch_keep_selector_screen import BranchKeepSelectorScreen
 from frontend.screens.branch_selector import BranchSelectorScreen
 from frontend.screens.error_details import ErrorDetailsScreen
@@ -585,8 +586,13 @@ class EditorScreen(Screen):
             return
         alias = str(result.get("alias", "")).strip()
         config = result.get("config", {})
+        previous_ports = self.workflow_map.output_ports(self.selected_node_id)
         self.workflow_map.update_node_alias(self.selected_node_id, alias)
         self.workflow_map.update_node_config(self.selected_node_id, config)
+        # A removed Error Mux route takes its connections with it.
+        self.workflow_map.prune_removed_output_connections(
+            self.selected_node_id, previous_ports
+        )
         self._reassign_inactive_input_connections(self.selected_node_id)
         node = self.workflow_map.get_node_data(self.selected_node_id) or {}
         if node.get("type") == MERGE_NODE_TYPE:
@@ -1183,6 +1189,10 @@ class EditorScreen(Screen):
             target_node_id,
             target_port,
         )
+        # Wiring a node's error port into an empty Error Mux fills its routes
+        # from that node's declared codes (UI-only convenience).
+        if autofill_mux_routes(self.factory, self.workflow_map, target_node_id):
+            target = self.workflow_map.get_node_data(target_node_id) or target
         source_field = f"{target_port}_source"
         source_schema = (target_meta.get("config_schema") or {}).get(source_field) or {}
         if target_port != input_ports[0] and "Upstream payload" in source_schema.get("options", []):
