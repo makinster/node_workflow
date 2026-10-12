@@ -39,6 +39,8 @@ def test_linear_symbols_follow_actual_execution():
             await pilot.pause()
             assert await master.start_workflow()
             await until(lambda: app.node_statuses.get(ids[1]) == "running")
+            # Telemetry is coalesced; flush instead of waiting for the timer.
+            app.flush_refresh()
             await pilot.pause(0.001)
             live_card = next(c for c in screen.query(NodeCard) if c.node_id == ids[1])
             assert live_card.status == "running"
@@ -314,6 +316,7 @@ def test_render_updates_preserve_cards_highlight_and_scroll(width):
                 "run_id": master.current_run_id, "branch_id": branch_id,
                 "node_id": ids[1], "visit_index": 20, "attempt_index": 1,
                 "status": "skipped"})
+            app.flush_refresh()
             await pilot.pause()
             assert list(screen.query(NodeCard)) == cards
             assert node_list.index == 20
