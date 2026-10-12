@@ -103,7 +103,7 @@ the real backend.
 
 | Step | Contents | Gate |
 |---|---|---|
-| 1 | Bug fixes: error-port routing, Stop/leak, unattended policy | Owner has read this plan |
+| 1 | Bug fixes: error-port routing, Stop/leak, unattended policy — **done** | Owner has read this plan |
 | 1b | `RunContext` + WaitRegistry + delivery tracking (D5) | Step 1 merged |
 | — | Refresh coalescer (frontend only) | Any time |
 | 2 | Run service + CLI | Step 1b merged |
@@ -114,6 +114,9 @@ the real backend.
 | 6 | Server, API, auth, parallel runs | Step 5 |
 
 ### Step 1 — Bug fixes only
+
+**Status: done (2026-10-12, branch `dist/step-1-bug-fixes`).** See
+SESSION_LOG for tests and behavior changes.
 
 One commit per fix, so each can be reverted alone. No new interfaces.
 
