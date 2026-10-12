@@ -4,6 +4,48 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-12 — P3b: Branch Beyond Five Paths, Merge Slots to Match
+
+Branch `dist/p3b-branch-merge-slots`, from `main` at `745fed3` (P3a, PR #41).
+Before: 1029 passed. After: 1053 passed.
+
+The owner chose "Branch + Merge" over raising only Branch's cap or deferring.
+
+- `backend/branch_paths.py`: one naming scheme for Branch paths and Merge
+  slots (`path_a` … `path_z`, `path_aa` …), `MIN_BRANCH_COUNT` 2,
+  `MAX_BRANCH_COUNT` 64 (a safety limit on run width), `DEFAULT_MERGE_SLOTS`
+  5, `branch_count_from_config`, `merge_slot_count`, `slots_covering`.
+- Branch: the type lists all 64 paths; `resolve_output_ports` returns the
+  first `branch_count`; `execute` spawns exactly those.
+- Merge: the type lists all 64 slots; new `input_slots` config (default 5)
+  and `resolve_input_ports`. Inputs now have the mirror of the P1 output
+  model: `Node.resolve_input_ports`, `get_input_ports()` uses it,
+  `NodeFactory.input_ports_for` / `node_input_ports` / `declared_input_ports`,
+  `WorkflowMap.input_ports`.
+- Validator: inputs per node; a connection into a slot above `input_slots`
+  is a warning ("never read"); a port the type never had stays an error.
+- Editor: slot allocation draws from every slot name;
+  `_ensure_merge_input_slots` raises `input_slots` to cover connected slots
+  after each Merge sync; input-port reads (connect, insert, typed-input
+  reassignment, repair) use the backend resolver. Tombstone restore checks
+  inputs per node (the type-level `_ports_by_type` table is gone).
+- Node config: Branch rows are composed for `max(count, 5)` paths and
+  mounted on demand when the count grows (labels of hidden paths are kept on
+  save); "Choose 2 to 64 spawn points"; Merge capacity text uses every slot.
+- Node card colours use the path index, so `path_f`+ cycle the palette.
+
+**Behavior changes:** Branch accepts up to 64 paths; a Merge can close more
+than five branches. Old saves: Branch and Merge behave exactly as before (five
+slots, same names). Tests that encoded the five-path cap
+(`test_branch_node_default_labels_are_configurable`, the P1 port-model
+tests) now assert the new contract; the `FakeFactory` gained
+`node_input_ports`.
+
+**Checked read-only:** every workflow under `workflows/` validates the same on
+this branch and on `main` (`wf_597a2a4f596f`'s two errors pre-date this work:
+an Error Mux fed from Error Node's `default` port, and an input on a port
+Error Node lacks).
+
 ## 2026-10-12 — P3a: Error Paths on Every Node in the Editor
 
 Branch `dist/p3-error-path-and-branch`, from `main` at `57a0709` (P2, PR #40).

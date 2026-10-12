@@ -206,6 +206,10 @@ class WorkflowMap:
                 removed += 1
         return removed
 
+    def input_ports(self, node_id: str) -> List[str]:
+        """Input ports of a node in this workflow, resolved from its config."""
+        return self._factory.node_input_ports(self.get_node_data(node_id))
+
     def output_ports(self, node_id: str) -> List[str]:
         """Output ports of a node in this workflow, resolved from its config."""
         return self._factory.node_output_ports(self.get_node_data(node_id))

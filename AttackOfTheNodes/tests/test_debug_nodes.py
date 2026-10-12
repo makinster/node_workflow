@@ -1430,11 +1430,16 @@ def test_branch_node_default_labels_are_configurable():
     assert BranchNode.default_config["path_b_label"] == "Branch 2"
     assert BranchNode.default_config["path_e_label"] == "Branch 5"
     assert BranchNode.default_config["branch_count"] == 2
-    assert BranchNode.output_ports == ["path_a", "path_b", "path_c", "path_d", "path_e"]
+    # P3: the type lists every path up to the safety limit; the first five
+    # keep their old names, so saved workflows are unchanged.
+    from backend.branch_paths import MAX_BRANCH_COUNT
+
+    assert BranchNode.output_ports[:5] == ["path_a", "path_b", "path_c", "path_d", "path_e"]
+    assert len(BranchNode.output_ports) == MAX_BRANCH_COUNT
     assert "path_a_label" in BranchNode.config_schema
     assert "path_b_label" in BranchNode.config_schema
     assert BranchNode.config_schema["branch_count"]["min"] == 2
-    assert BranchNode.config_schema["branch_count"]["max"] == 5
+    assert BranchNode.config_schema["branch_count"]["max"] == MAX_BRANCH_COUNT
     assert BranchNode.config_schema["path_a_label"]["label"] == "Branch 1 name"
     assert BranchNode.config_schema["path_a_label"]["group"] == "Branch Names"
     print("test_branch_node_default_labels_are_configurable PASSED")
@@ -5490,6 +5495,9 @@ async def _test_node_config_schema_tab_hints_place_fields_in_top_level_tabs():
 
         def declared_output_ports(self, node_type):
             return list(metadata["output_ports"])
+
+        def node_input_ports(self, node):
+            return list(metadata["input_ports"])
 
     class FakeWorkflowMap:
         def get_all_node_data(self):

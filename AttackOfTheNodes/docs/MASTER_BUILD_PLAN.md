@@ -363,7 +363,7 @@ Focused checks:
   | P0 | Housekeeping: routed (handled) errors do not fail a run (D10) | Done |
   | P1 | Port model: backend resolves each node's ports from its config | Done |
   | P2 | Error Mux routes with stable ids, UI pickers and auto-fill | Done |
-  | P3 | Branch on the same mechanism; `error` offered on every node | Authorized |
+  | P3 | Branch on the same mechanism (with Merge slots to match); `error` offered on every node | Done |
   | 4 | Workflow contracts + subworkflows as child runs (Phases 19/20) | Needs go-ahead |
   | 5 | Event sources + start triggers with `single`/`queued` modes (`restart` once Stop is clean) | Needs go-ahead |
   | 6 | HTTP/WebSocket server, auth, encrypted secrets, `parallel` runs | Needs go-ahead |

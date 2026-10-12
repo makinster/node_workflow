@@ -71,6 +71,27 @@ class NodeFactory:
             return []
         return [str(port) for port in node_class.resolve_output_ports(dict(config or {}))]
 
+    def input_ports_for(
+        self, node_type: str, config: Optional[Dict[str, Any]] = None
+    ) -> List[str]:
+        """Input ports a node of ``node_type`` has with ``config``."""
+        node_class = self._node_registry.get(node_type)
+        if node_class is None:
+            return []
+        return [str(port) for port in node_class.resolve_input_ports(dict(config or {}))]
+
+    def node_input_ports(self, node_data: Optional[Dict[str, Any]]) -> List[str]:
+        """Input ports of a saved node, resolved from its config."""
+        node_data = node_data or {}
+        return self.input_ports_for(
+            str(node_data.get("type") or ""), node_data.get("config") or {}
+        )
+
+    def declared_input_ports(self, node_type: str) -> List[str]:
+        """The type's fixed class list (metadata ``input_ports``)."""
+        node_class = self._node_registry.get(node_type)
+        return [str(port) for port in node_class.input_ports] if node_class else []
+
     def declared_output_ports(self, node_type: str) -> List[str]:
         """The type's fixed class list (metadata ``output_ports``)."""
         node_class = self._node_registry.get(node_type)

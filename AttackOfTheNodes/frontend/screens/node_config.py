@@ -14,6 +14,7 @@ from textual.events import Key
 from textual.screen import ModalScreen
 from textual.widgets import Button, Checkbox, Input, Label, Select, SelectionList, Static, TabbedContent, TabPane, TextArea
 
+from backend.branch_paths import ALL_PATH_PORTS, path_port, path_ports
 from backend.nodes.branch_node import (
     MAX_BRANCH_COUNT,
     MIN_BRANCH_COUNT,
@@ -82,7 +83,9 @@ from frontend.widgets.status_bar import StatusBar
 _MISSING_PAYLOAD = object()
 
 MAX_MEMBANK_OUTPUT_ROWS = 5
-BRANCH_PORTS = ["path_a", "path_b", "path_c", "path_d", "path_e"]
+# Branch config rows are composed for at least this many paths; more are
+# mounted when the count grows.
+COMPOSED_BRANCH_ROWS = 5
 LEGACY_BRANCH_CONFIG_KEYS = {
     "condition",
     "match_value",
@@ -152,7 +155,7 @@ def wait_target_options(workflow_map, current_node_id: str) -> list[tuple[str, s
 
 def merge_input_options(workflow_map, current_node_id: str) -> list[Dict[str, str]]:
     """Return Merge Beacon branches that this merge may close."""
-    merge_input_ports = ["path_a", "path_b", "path_c", "path_d", "path_e"]
+    merge_input_ports = list(ALL_PATH_PORTS)
     options: list[Dict[str, str]] = []
     branch_contexts = _branch_contexts_by_node(workflow_map)
     merge_branch_keys = {
@@ -461,9 +464,9 @@ def selected_merge_ports(workflow_map, node_id, options, selected):
         if key not in selected:
             continue
         preferred = option.get("port")
-        port = preferred if preferred in BRANCH_PORTS and preferred not in used else next((port for port in BRANCH_PORTS if port not in used), None)
+        port = preferred if preferred in ALL_PATH_PORTS and preferred not in used else next((port for port in ALL_PATH_PORTS if port not in used), None)
         if port is None:
-            raise ValueError(f"Merge has capacity for {len(BRANCH_PORTS) - len(_reserved_merge_input_ports(workflow_map, node_id))} closing branches; reduce the selection.")
+            raise ValueError(f"Merge has capacity for {len(ALL_PATH_PORTS) - len(_reserved_merge_input_ports(workflow_map, node_id))} closing branches; reduce the selection.")
         assignments[key] = port
         used.add(port)
     return assignments
@@ -622,7 +625,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                     "branch_count",
                     "branch_payload_sources",
                     *LEGACY_BRANCH_CONFIG_KEYS,
-                    *(f"{port}_label" for port in BRANCH_PORTS),
+                    *(f"{port}_label" for port in ALL_PATH_PORTS),
                 }
             )
         if self.node_data.get("type") == WAIT_UNTIL_NODE_TYPE:
@@ -881,7 +884,10 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                         id="branch-count",
                         classes="compact-number-field",
                     )
-                    yield Static("Choose 2 to 5 spawn points.", classes="form-description")
+                    yield Static(
+                        f"Choose {MIN_BRANCH_COUNT} to {MAX_BRANCH_COUNT} spawn points.",
+                        classes="form-description",
+                    )
 
             with TabPane("3 - Payloads", id="node-config-tab-outputs"):
                 with VerticalScroll(classes="tab-scroll"):
@@ -1221,34 +1227,42 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         config: Dict[str, Any],
     ) -> list[Any]:
         widgets: list[Any] = []
-        for index, port in enumerate(BRANCH_PORTS):
-            label = str(
-                config.get(f"{port}_label") or f"Branch {index + 1}"
-            )
-            selected_source = str(payload_sources.get(port) or "dead_drop:input")
-            valid_values = {value for _, value in source_options}
-            if selected_source not in valid_values:
-                selected_source = "dead_drop:input"
-            row = Vertical(
-                Label("Spawn Point:", classes="form-description"),
-                CommandInput(
-                    value=label,
-                    id=f"branch-label-{port}",
-                    placeholder=f"Branch {index + 1}",
-                ),
-                Label("Start with:", classes="form-description"),
-                Select(
-                    source_options,
-                    value=selected_source,
-                    id=f"branch-payload-source-{port}",
-                    allow_blank=False,
-                ),
-                id=f"branch-payload-row-{port}",
-                classes="branch-payload-row",
-            )
+        for index in range(max(branch_count, COMPOSED_BRANCH_ROWS)):
+            row = self._branch_payload_row(index, source_options, payload_sources, config)
             row.display = index < branch_count
             widgets.append(row)
         return widgets
+
+    def _branch_payload_row(
+        self,
+        index: int,
+        source_options: list[tuple[str, str]],
+        payload_sources: Dict[str, Any],
+        config: Dict[str, Any],
+    ) -> Vertical:
+        port = path_port(index)
+        label = str(config.get(f"{port}_label") or f"Branch {index + 1}")
+        selected_source = str(payload_sources.get(port) or "dead_drop:input")
+        valid_values = {value for _, value in source_options}
+        if selected_source not in valid_values:
+            selected_source = "dead_drop:input"
+        return Vertical(
+            Label("Spawn Point:", classes="form-description"),
+            CommandInput(
+                value=label,
+                id=f"branch-label-{port}",
+                placeholder=f"Branch {index + 1}",
+            ),
+            Label("Start with:", classes="form-description"),
+            Select(
+                source_options,
+                value=selected_source,
+                id=f"branch-payload-source-{port}",
+                allow_blank=False,
+            ),
+            id=f"branch-payload-row-{port}",
+            classes="branch-payload-row",
+        )
 
     def on_mount(self) -> None:
         for scroll in self.query("#node-config-scroll"):
@@ -2146,7 +2160,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         port_meta = metadata.get("input_port_metadata") or {}
         return bool((metadata.get("ui_hints") or {}).get("standard_output")) or any(
             (port_meta.get(str(port)) or {}).get("sources")
-            for port in metadata.get("input_ports") or []
+            for port in self.factory.node_input_ports(self.node_data)
         )
 
     def _compose_incoming_payload_summary(self, metadata: Optional[Dict[str, Any]]):
@@ -2827,7 +2841,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             if not _reserved_merge_input_ports(self.workflow_map, self.node_id):
                 return
         selected_values = self._selected_merge_close_values(options, config)
-        capacity = len(BRANCH_PORTS) - len(_reserved_merge_input_ports(self.workflow_map, self.node_id))
+        capacity = len(ALL_PATH_PORTS) - len(_reserved_merge_input_ports(self.workflow_map, self.node_id))
         yield Static(f"Select up to {capacity} branches to close; home inputs reserve the remaining ports.", classes="form-description")
         yield SelectionList(
             *dynamic_selection_rows(
@@ -3045,7 +3059,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         for key in LEGACY_BRANCH_CONFIG_KEYS:
             if key in existing_config:
                 values[key] = existing_config[key]
-        for index, port in enumerate(BRANCH_PORTS):
+        composed = len(self.query(".branch-payload-row"))
+        for index, port in enumerate(path_ports(max(branch_count, composed))):
             label_query = self.query(f"#branch-label-{port}")
             if label_query:
                 label = self._widget_text_value(label_query.first())
@@ -3070,7 +3085,16 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         branch_count = self._branch_count_value()
         source_options = self._branch_payload_source_options()
         valid_values = {value for _, value in source_options}
-        for index, port in enumerate(BRANCH_PORTS):
+        rows = self.query_one("#branch-payload-rows")
+        config = self.node_data.get("config") or {}
+        payload_sources = config.get("branch_payload_sources") or {}
+        if not isinstance(payload_sources, dict):
+            payload_sources = {}
+        composed = len(self.query(".branch-payload-row"))
+        for index in range(composed, branch_count):
+            # A raised count gets its rows on demand (up to MAX_BRANCH_COUNT).
+            rows.mount(self._branch_payload_row(index, source_options, payload_sources, config))
+        for index, port in enumerate(path_ports(max(branch_count, composed))):
             row_query = self.query(f"#branch-payload-row-{port}")
             if row_query:
                 row_query.first().display = index < branch_count

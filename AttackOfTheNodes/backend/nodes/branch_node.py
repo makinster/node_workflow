@@ -2,21 +2,15 @@
 
 from typing import Any, ClassVar, Dict, List, Optional
 
+from ..branch_paths import (  # noqa: F401  (re-exported for the UI)
+    ALL_PATH_PORTS,
+    MAX_BRANCH_COUNT,
+    MIN_BRANCH_COUNT,
+    branch_count_from_config,
+    path_ports,
+)
 from ..node_base import Node, NodeContext
 from ..node_category import NodeCategory
-
-
-MIN_BRANCH_COUNT = 2
-MAX_BRANCH_COUNT = 5
-
-
-def branch_count_from_config(config: Optional[Dict[str, Any]]) -> int:
-    """The number of Branch paths ``config`` asks for, clamped to 2-5."""
-    try:
-        count = int((config or {}).get("branch_count", MIN_BRANCH_COUNT))
-    except (TypeError, ValueError):
-        count = MIN_BRANCH_COUNT
-    return max(MIN_BRANCH_COUNT, min(MAX_BRANCH_COUNT, count))
 
 
 class BranchNode(Node):
@@ -28,7 +22,8 @@ class BranchNode(Node):
     category: ClassVar[str] = NodeCategory.FLOW
 
     input_ports: ClassVar[List[str]] = ["input"]
-    output_ports: ClassVar[List[str]] = ["path_a", "path_b", "path_c", "path_d", "path_e"]
+    # The type's full list; one node has its first ``branch_count`` paths.
+    output_ports: ClassVar[List[str]] = list(ALL_PATH_PORTS)
 
     default_config: ClassVar[Dict[str, Any]] = {
         "branch_count": 2,
@@ -51,8 +46,8 @@ class BranchNode(Node):
             "label": "Branches",
             "description": "Number of parallel branch paths to duplicate input across",
             "required": False,
-            "min": 2,
-            "max": 5,
+            "min": MIN_BRANCH_COUNT,
+            "max": MAX_BRANCH_COUNT,
         },
         "condition": {
             "type": "string",
@@ -128,7 +123,7 @@ class BranchNode(Node):
     @classmethod
     def resolve_output_ports(cls, config: Optional[Dict[str, Any]]) -> List[str]:
         """Only the first ``branch_count`` paths exist; the rest are hidden."""
-        return list(cls.output_ports[: branch_count_from_config(config)])
+        return path_ports(branch_count_from_config(config))
 
     async def execute(self, context: NodeContext) -> None:
         condition = self.config.get("condition", "always_branch")
@@ -141,7 +136,7 @@ class BranchNode(Node):
         elif condition == "string_match" and "branch_count" not in self.config:
             ports = [self._choose_string_match_port(input_value)]
         else:
-            ports = self.output_ports[: self._branch_count()]
+            ports = self.get_output_ports()
 
         seeded_values: Dict[str, Any] = {}
         for port in ports:
