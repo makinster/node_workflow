@@ -4,6 +4,29 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-12 — P3a: Error Paths on Every Node in the Editor
+
+Branch `dist/p3-error-path-and-branch`, from `main` at `57a0709` (P2, PR #40).
+Before: 1022 passed. After: 1029 passed.
+
+- `frontend/error_paths.py`: `editor_output_ports(factory, node)` is the
+  backend's ports plus `error` when the node shows it — always for nodes that
+  list `error` (HTTP Request, JSON Path), otherwise when config
+  `show_error_path` is on or an `error` connection exists. The editor's
+  `_output_ports_for_node` and node config's `_node_output_ports` use it, so a
+  shown error path cycles, is selectable for add/insert (which auto-fills an
+  empty Error Mux), and appears in branch selector rows.
+- Node config Errors section: **Show error path in the editor** checkbox
+  (hidden on nodes that list `error`), saved as `show_error_path` for every
+  node type including Wait Until.
+- Tombstone restore treats `error` as a port every node has (matching the
+  validator), so a restored handler reconnects to its failing node.
+
+**Behavior changes:** the Connections tab now has a focusable field, so
+switching to it focuses the checkbox before Save
+(`test_node_config_fixed_tabs_are_keyboard_navigable` updated to assert
+that, then `s` reaches Save). Nothing changes for nodes that do not opt in.
+
 ## 2026-10-12 — P2: Error Mux Routes, Code Pickers and Auto-Fill
 
 Branch `dist/p2-error-mux-routes`, from `main` at `49c5587` (P1, PR #39).

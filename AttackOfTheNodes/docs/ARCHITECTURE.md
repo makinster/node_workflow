@@ -344,9 +344,11 @@ Each error and warning includes `node_id` so the UI can highlight the affected n
   one of its routes lists, or any code when its unmatched route is on; route
   logic lives in `node_errors.mux_routes` / `mux_route_for_code`) or falls
   through to recovery / the run's policy. `error` is accepted
-  as an output port on every node by the validator; the editor only offers it
-  on nodes that list it (HTTP Request, JSON Path) — wiring it from other nodes
-  in the editor is an open item.
+  as an output port on every node by the validator. The editor always shows it
+  on nodes that list it (HTTP Request, JSON Path); any other node shows its
+  error path once its Errors section's **Show error path in the editor** is on
+  (`show_error_path` in config) or once that path is wired
+  (`frontend/error_paths.py`, P3).
 - **D8.** Node config keeps Connections and adds an Errors section.
 - **D9.** `RunContext.skip_candidates()` plus `MasterState._spread_skips()`
   mark nodes skipped with a reason whenever an outcome is reported or a

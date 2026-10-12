@@ -12,6 +12,7 @@ from textual.widgets import Header, Label, Static
 
 from backend.validator import validate_workflow
 from frontend.error_mux_ui import autofill_mux_routes
+from frontend.error_paths import editor_output_ports
 from frontend.screens.branch_keep_selector_screen import BranchKeepSelectorScreen
 from frontend.screens.branch_selector import BranchSelectorScreen
 from frontend.screens.error_details import ErrorDetailsScreen
@@ -1496,8 +1497,9 @@ class EditorScreen(Screen):
         metadata = metadata or self._metadata_for_type(node.get("type", ""))
         if not metadata:
             return []
-        # The backend resolves ports from the node's config (port model).
-        return self.factory.node_output_ports(node)
+        # The backend resolves ports from the node's config (port model); the
+        # error path is added when this node shows it (frontend/error_paths).
+        return editor_output_ports(self.factory, node)
 
     def _node_label(self, node_id: str, node: Dict[str, Any]) -> str:
         return node_label(node_id, node)

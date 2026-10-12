@@ -4167,6 +4167,12 @@ async def _test_node_config_fixed_tabs_are_keyboard_navigable():
         await pilot.press("4")
         await pilot.pause(0.1)
         assert tabs.active == "node-config-tab-connections"
+        # The Errors section's error-path toggle is the tab's first field (P3);
+        # the next field down is Save.
+        error_path = app.query_one("#show-error-path", Checkbox)
+        assert app.focused is error_path
+        await pilot.press("s")
+        await pilot.pause(0.03)
         assert app.focused is save_button
 
         await pilot.press("1")

@@ -20,6 +20,12 @@ from backend.nodes.branch_node import (
     branch_count_from_config as _branch_count_from_config,
 )
 from backend.vault_declarations import standard_vault_writes
+from frontend.error_paths import (
+    SHOW_ERROR_PATH,
+    editor_output_ports,
+    has_error_connection,
+    lists_error_port,
+)
 from frontend.error_mux_ui import (
     ERROR_MUX_NODE_TYPE,
     code_options,
@@ -331,7 +337,7 @@ def _node_output_ports(workflow_map, node: Dict[str, Any]) -> list[str]:
     factory = getattr(workflow_map, "_factory", None)
     if factory is not None and factory.is_valid_node_type(str(node.get("type") or "")):
         # The backend resolves ports from the node's config (port model).
-        return factory.node_output_ports(node)
+        return editor_output_ports(factory, node)
     outputs = node.get("connections", {}).get("outputs", [])
     return sorted({str(conn.get("source_port", "default")) for conn in outputs})
 
@@ -1709,6 +1715,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             config = dict(self.node_data.get("config") or {})
             config.update(target_node_ids=selected, timeout_seconds=timeout,
                           membank_inputs=[], membank_outputs=[], transient_outputs=[])
+            config.update(self._error_path_config_values())
             self.dismiss({"alias": alias, "config": config})
             return
         config.update(self._transient_config_values())
@@ -1716,6 +1723,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         config.update(self._standard_payload_config_values())
         config.update(self._wait_config_values())
         config.update(self._branch_config_values())
+        config.update(self._error_path_config_values())
         try:
             config.update(self._merge_config_values())
         except ValueError as error:
@@ -2497,6 +2505,21 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             classes="form-description",
             markup=False,
         )
+        if not lists_error_port(self.factory, self.node_data):
+            # Any node can fail along `error`; this shows that path in the
+            # editor so it can be wired (it stays shown while it is wired).
+            yield Checkbox(
+                "Show error path in the editor",
+                value=bool((self.node_data.get("config") or {}).get(SHOW_ERROR_PATH))
+                or has_error_connection(self.node_data),
+                id="show-error-path",
+            )
+
+    def _error_path_config_values(self) -> Dict[str, Any]:
+        query = self.query("#show-error-path")
+        if not query:
+            return {}
+        return {SHOW_ERROR_PATH: bool(query.first().value)}
 
     def _format_error_definitions(self) -> str:
         metadata = self._metadata_for_type(str(self.node_data.get("type") or "")) or {}
