@@ -5479,6 +5479,9 @@ async def _test_node_config_schema_tab_hints_place_fields_in_top_level_tabs():
         def get_node_types_metadata(self):
             return [metadata]
 
+        def node_output_ports(self, node):
+            return list(metadata["output_ports"])
+
     class FakeWorkflowMap:
         def get_all_node_data(self):
             return {"node": node_data}

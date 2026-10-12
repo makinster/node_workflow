@@ -4,6 +4,41 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-12 — P1: Port Model, Ports Resolved by the Backend
+
+Branch `dist/p1-port-model`, from `main` at `60b6f37` (P0, PR #38).
+Before: 977 passed. After: 1000 passed.
+
+- `Node.resolve_output_ports(config)` (classmethod; default: the class list)
+  and `get_output_ports()` now use it. `BranchNode` overrides it with
+  `branch_count_from_config` (moved from the UI, with `MIN_BRANCH_COUNT` /
+  `MAX_BRANCH_COUNT`, into `backend/nodes/branch_node.py`).
+- `NodeFactory.output_ports_for(type, config)`, `node_output_ports(node_data)`
+  and `WorkflowMap.output_ports(node_id)`. Metadata `output_ports` is unchanged
+  (the type's full list).
+- Consumers switched to the backend: the editor's `_output_ports_for_node`
+  (about 20 call sites) and Branch tombstone keep-selector; node config's
+  `_node_output_ports`, generated port-label fields, downstream/vault port
+  lists and transient (dead drop) rows; the editor's insert-between wiring;
+  the tombstone restore source-port check and `_declares_output_port`.
+- Validator: per-node ports. A connection on a port the type has but the
+  config hides (a Branch path above its count) is a **warning** ("never
+  runs"); ports the type never had stay errors. No saved workflow under
+  `workflows/` has such a connection (checked read-only).
+
+**Behavior changes:** the hidden-path warning; node config's dead drop rows for
+a Branch list only its counted paths (overrides for hidden paths are kept on
+save so raising the count brings them back); tombstone restore no longer
+reconnects a connection from a Branch path the source now hides.
+
+**Tests:** `tests/test_port_model.py` (23). The `FakeFactory` in
+`test_debug_nodes.py` gained `node_output_ports` to match the factory API.
+
+**Open items:** Merge has five fixed input ports (`path_a`–`path_e`) and the
+Branch config rows use the same five; lifting Branch's cap (P3) must decide
+Merge's capacity too. `test_refresh_coalescer` timing test failed once under
+full-suite load (passes alone, with and without this change).
+
 ## 2026-10-12 — P0: Handled Errors Do Not Fail a Run (D10)
 
 Branch `dist/p0-handled-errors`, from `main` at `0667520` (ESP32 slice, PR #37).

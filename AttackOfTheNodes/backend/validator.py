@@ -225,12 +225,25 @@ def validate_workflow(
         meta = _type_meta_cache.get(node_type)
         if meta is None:
             continue  # unknown type already flagged above
-        declared_out = set(meta.get("output_ports") or [])
+        type_out = set(meta.get("output_ports") or [])
+        declared_out = set(factory.node_output_ports(data))
         declared_in = set(meta.get("input_ports") or [])
         for conn in data.get("connections", {}).get("outputs", []):
             port = conn.get("source_port", "default")
+            if port in type_out and port not in declared_out:
+                # The type has this port but this node's config hides it (for
+                # example a Branch path above its count): it can never fire.
+                warnings.append(
+                    {
+                        "node_id": node_id,
+                        "message": (
+                            f"Connection on hidden output '{port}' never runs "
+                            f"(this node's settings do not use that output)"
+                        ),
+                    }
+                )
             # `error` is the one engine-level failure port every node has.
-            if port not in declared_out and port != ERROR_PORT:
+            if port not in declared_out and port not in type_out and port != ERROR_PORT:
                 errors.append(
                     {
                         "node_id": node_id,

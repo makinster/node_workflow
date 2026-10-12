@@ -1,9 +1,22 @@
 """Branch node: spawns parallel execution paths."""
 
-from typing import Any, ClassVar, Dict, List
+from typing import Any, ClassVar, Dict, List, Optional
 
 from ..node_base import Node, NodeContext
 from ..node_category import NodeCategory
+
+
+MIN_BRANCH_COUNT = 2
+MAX_BRANCH_COUNT = 5
+
+
+def branch_count_from_config(config: Optional[Dict[str, Any]]) -> int:
+    """The number of Branch paths ``config`` asks for, clamped to 2-5."""
+    try:
+        count = int((config or {}).get("branch_count", MIN_BRANCH_COUNT))
+    except (TypeError, ValueError):
+        count = MIN_BRANCH_COUNT
+    return max(MIN_BRANCH_COUNT, min(MAX_BRANCH_COUNT, count))
 
 
 class BranchNode(Node):
@@ -112,6 +125,11 @@ class BranchNode(Node):
         },
     }
 
+    @classmethod
+    def resolve_output_ports(cls, config: Optional[Dict[str, Any]]) -> List[str]:
+        """Only the first ``branch_count`` paths exist; the rest are hidden."""
+        return list(cls.output_ports[: branch_count_from_config(config)])
+
     async def execute(self, context: NodeContext) -> None:
         condition = self.config.get("condition", "always_branch")
         input_value = context.inputs.get("input", "")
@@ -141,11 +159,7 @@ class BranchNode(Node):
         context.signal_done({"data": {}, "branches": branches})
 
     def _branch_count(self) -> int:
-        try:
-            count = int(self.config.get("branch_count", 2))
-        except (TypeError, ValueError):
-            count = 2
-        return max(2, min(5, count))
+        return branch_count_from_config(self.config)
 
     def _seed_value_for_port(
         self,

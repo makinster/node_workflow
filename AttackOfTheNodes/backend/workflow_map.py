@@ -176,6 +176,10 @@ class WorkflowMap:
         """Return a shallow copy of all nodes."""
         return dict(self._nodes)
 
+    def output_ports(self, node_id: str) -> List[str]:
+        """Output ports of a node in this workflow, resolved from its config."""
+        return self._factory.node_output_ports(self.get_node_data(node_id))
+
     def get_node_instance(self, node_id: str) -> Optional[Node]:
         """Create an executable node instance from stored node data."""
         data = self._nodes.get(node_id)

@@ -97,6 +97,11 @@ Each node lives under `backend/nodes/` and extends `Node`. Nodes are intentional
 Each node defines:
 
 - Class-level metadata: `node_type`, `display_name`, `description`, `category`, `input_ports`, `output_ports`, `default_config`, `config_schema`, `ui_hints`.
+- Optional `resolve_output_ports(config)` classmethod when the ports depend on
+  config (Branch keeps the first `branch_count` paths). `output_ports` stays the
+  type's full list; `NodeFactory.node_output_ports(node_data)` is the one way to
+  ask which ports a saved node has (validator, editor, node config, tombstone
+  restore).
 - `async execute(context: NodeContext) -> None`.
 
 Execution context:

@@ -58,6 +58,26 @@ class NodeFactory:
             return None
         return deepcopy(node_class.default_config)
 
+    def output_ports_for(
+        self, node_type: str, config: Optional[Dict[str, Any]] = None
+    ) -> List[str]:
+        """Output ports a node of ``node_type`` has with ``config``.
+
+        Unknown types have none. Metadata ``output_ports`` stays the type's
+        full list; this is the one place that narrows or extends it per node.
+        """
+        node_class = self._node_registry.get(node_type)
+        if node_class is None:
+            return []
+        return [str(port) for port in node_class.resolve_output_ports(dict(config or {}))]
+
+    def node_output_ports(self, node_data: Optional[Dict[str, Any]]) -> List[str]:
+        """Output ports of a saved node (``{"type": ..., "config": ...}``)."""
+        node_data = node_data or {}
+        return self.output_ports_for(
+            str(node_data.get("type") or ""), node_data.get("config") or {}
+        )
+
     def get_default_alias(self, node_type: str) -> Optional[str]:
         """Return the default user-facing alias for a node type."""
         node_class = self._node_registry.get(node_type)

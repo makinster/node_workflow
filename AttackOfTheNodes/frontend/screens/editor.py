@@ -445,17 +445,10 @@ class EditorScreen(Screen):
         self, node_id: str, metadata: dict
     ) -> None:
         original_config = metadata.get("original_config") or {}
-        try:
-            branch_count = int(original_config.get("branch_count", 2))
-        except (TypeError, ValueError):
-            branch_count = 2
-        branch_count = max(2, min(5, branch_count))
-        port_names = [f"path_{chr(97 + i)}" for i in range(branch_count)]
+        port_names = self.factory.output_ports_for(BRANCH_NODE_TYPE, original_config)
         port_labels = {
-            f"path_{chr(97 + i)}": str(
-                original_config.get(f"path_{chr(97 + i)}_label", f"Branch {i + 1}")
-            )
-            for i in range(branch_count)
+            port: str(original_config.get(f"{port}_label", f"Branch {index + 1}"))
+            for index, port in enumerate(port_names)
         }
         label = str(metadata.get("original_alias") or metadata.get("original_display_name") or node_id)
         self.app.push_screen(
@@ -1197,7 +1190,7 @@ class EditorScreen(Screen):
             config[source_field] = "Upstream payload"
             self.workflow_map.update_node_config(target_node_id, config)
         if existing_target:
-            target_output_ports = target_meta.get("output_ports") or []
+            target_output_ports = self._output_ports_for_node(target, target_meta)
             existing = self.workflow_map.get_node_data(existing_target)
             existing_meta = (
                 self._metadata_for_type(existing.get("type", "")) if existing else None
@@ -1491,15 +1484,10 @@ class EditorScreen(Screen):
         metadata: Optional[Dict[str, Any]] = None,
     ) -> list[str]:
         metadata = metadata or self._metadata_for_type(node.get("type", ""))
-        ports = [str(port) for port in (metadata.get("output_ports") if metadata else []) or []]
-        if node.get("type") == BRANCH_NODE_TYPE:
-            config = node.get("config") or {}
-            try:
-                count = int(config.get("branch_count", 2))
-            except (TypeError, ValueError):
-                count = 2
-            return ports[: max(2, min(5, count))]
-        return ports
+        if not metadata:
+            return []
+        # The backend resolves ports from the node's config (port model).
+        return self.factory.node_output_ports(node)
 
     def _node_label(self, node_id: str, node: Dict[str, Any]) -> str:
         return node_label(node_id, node)
