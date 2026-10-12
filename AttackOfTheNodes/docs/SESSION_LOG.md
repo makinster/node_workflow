@@ -4,6 +4,30 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-12 — P0: Handled Errors Do Not Fail a Run (D10)
+
+Branch `dist/p0-handled-errors`, from `main` at `0667520` (ESP32 slice, PR #37).
+The owner approved the port-model spin-off P0–P3 ahead of step 4.
+
+- **D10.** `ErrorHandler.log_error(..., handled=False)` adds a top-level
+  `handled` flag to every error record. `Supervisor` now decides the error
+  route *before* logging, so a failure routed along `error` is logged with
+  `handled: true`; one that falls through to recovery or the policy is
+  `handled: false`. `error_handler.unhandled_errors()` filters records
+  (records without the flag count as unhandled).
+- `RunResult.exit_code` returns 1 only for unhandled errors;
+  `RunResult.unhandled_errors` and `to_dict()["unhandled_error_count"]`.
+- `MasterState._record_run` deletes run files when there are no *unhandled*
+  errors, and run history records `unhandled_error_count` beside
+  `error_count`.
+- `aotn run` summary: `1 error(s), 1 handled`.
+- Plans: ESP32 row marked done; P0–P3 added to the DISTRIBUTED_BUILD_PLAN
+  step table with a spin-off section; D10 in the decision record.
+
+**Behavior change:** a run whose only errors were routed (for example the
+failing ESP32 capture that notifies) now exits 0 instead of 1 and deletes its
+run files. Errors are still logged and shown in the Errors view.
+
 ## 2026-10-12 — ESP32 Proof Slice: Binary-Safe HTTP, Run-Owned Files, Error Notification
 
 Branch `dist/esp32-proof-slice`, from `main` at `f2c1677` (step 3, PR #36).

@@ -15,6 +15,11 @@ from .events import ERROR_LOGGED, ERRORS_CLEARED
 from .persistence import RUN_ERRORS_DIR, load_json_record, save_json_record
 
 
+def unhandled_errors(errors: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """The records in ``errors`` that no error path handled."""
+    return [error for error in errors if not error.get("handled")]
+
+
 class ErrorHandler:
     """Central structured error logger."""
 
@@ -28,8 +33,13 @@ class ErrorHandler:
         context: Optional[Dict[str, Any]] = None,
         category: Optional[str] = None,
         code: Optional[str] = None,
+        handled: bool = False,
     ) -> Dict[str, Any]:
-        """Record, persist, and broadcast a structured error."""
+        """Record, persist, and broadcast a structured error.
+
+        ``handled`` is True when the failure was routed along an error path
+        (D7); a run whose errors were all handled still counts as succeeded.
+        """
         context = dict(context or {})
         run_id = context.get("run_id") or "unknown_run"
         error_record = {
@@ -46,6 +56,7 @@ class ErrorHandler:
             "node_id": context.get("node_id"),
             "branch_id": context.get("branch_id"),
             "code": code,
+            "handled": bool(handled),
         }
         errors = self._errors_by_run.setdefault(run_id, self.get_errors_for_run(run_id))
         errors.append(error_record)
@@ -68,6 +79,10 @@ class ErrorHandler:
         errors = list(record.get("errors", []))
         self._errors_by_run[run_id] = errors
         return list(errors)
+
+    def get_unhandled_errors_for_run(self, run_id: str) -> List[Dict[str, Any]]:
+        """Errors for a run that were not routed along an error path."""
+        return unhandled_errors(self.get_errors_for_run(run_id))
 
     def finalize_run(self, run_id: str) -> None:
         """Evict in-memory errors for a completed run.

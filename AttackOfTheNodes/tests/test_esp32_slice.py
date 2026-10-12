@@ -295,9 +295,10 @@ def test_aotn_run_capture_notifies_on_failure(camera, tmp_path):
 
     result = aotn(str(workflow), data_dir=tmp_path / "data")
 
-    # The error was handled by routing it, but it is still logged (exit 1);
-    # see SESSION_LOG open items.
-    assert result.returncode == 1, result.stderr
+    # The error was routed to the notification, so it is handled: the run
+    # succeeds (exit 0) and the summary says the error was handled.
+    assert result.returncode == 0, result.stderr
+    assert "1 error(s), 1 handled" in result.stderr
     assert len(notifications) == 1
     assert json.loads(notifications[0]["body"])["code"] == "http_status"
 

@@ -161,8 +161,9 @@ a path under `<data dir>/run_files/<run_id>/` (`persistence.RUN_FILES_DIR`,
 created on first use) with lifetime `run`; `run_file_reference(path)` builds
 the `file` ref (`lifetime: "run"`), and `keep_file(ref)` marks it `kept`.
 `MasterState._record_run` calls `close_all(delete_run_files=succeeded)`, where
-succeeded means FINISHED, no errors logged and no user Stop (the same runs
-that exit 0). Otherwise every run file is kept for debugging. `file` refs
+succeeded means FINISHED, no unhandled errors and no user Stop (the same runs
+that exit 0; D10: an error routed along an error path is logged with
+`handled: true` and does not count). Otherwise every run file is kept for debugging. `file` refs
 without `lifetime` mean `kept`, so older refs are unchanged.
 
 **Typed vault reference resolution.** When a `MemoryBank` vault entry carries
@@ -353,7 +354,8 @@ distributed plan): `load(reference)` (saved id, saved name, or a workflow
 first and refuses with `WorkflowValidationError`), `subscribe()` (returns an
 unsubscribe function), `submit_input()`, `submit_recovery()`, `pause()`,
 `resume()`, `stop()`, `wait()` and `result()`. `RunResult` is
-JSON-serializable and maps to shared exit codes (0 finished, 1 finished with
+JSON-serializable and maps to shared exit codes (0 finished, including runs
+whose errors were all routed along error paths, 1 finished with unhandled
 errors, 2 failed, 3 invalid or unstartable, 4 not found or unloadable, 130
 stopped). A run stopped through the service reports `STOPPED` even though the
 engine records `FINISHED` (no engine `STOPPED` state yet). `RunService.create()`

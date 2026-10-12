@@ -296,6 +296,32 @@ async def test_mux_without_a_matching_code_falls_through_to_the_policy(policy, s
     assert [e["code"] for e in errors] == ["invalid_json"]
 
 
+async def test_a_routed_error_is_logged_as_handled():
+    bus, workflow_map, master = _services()
+    parse, mux, handler = _mux_workflow(workflow_map, "invalid_json")
+
+    assert await master.start_workflow(recovery_policy=TerminatePolicy("terminate_branch"))
+    await _finish(master)
+
+    errors = master.error_handler.get_errors_for_run(master.current_run_id)
+    assert [(e["code"], e["handled"]) for e in errors] == [("invalid_json", True)]
+    history = master.run_history.list_runs()[0]
+    assert history["error_count"] == 1
+    assert history["unhandled_error_count"] == 0
+
+
+async def test_an_error_no_path_matches_is_logged_as_unhandled():
+    bus, workflow_map, master = _services()
+    parse, mux, handler = _mux_workflow(workflow_map, "timeout")
+
+    assert await master.start_workflow(recovery_policy=TerminatePolicy("terminate_branch"))
+    await _finish(master)
+
+    errors = master.error_handler.get_errors_for_run(master.current_run_id)
+    assert [(e["code"], e["handled"]) for e in errors] == [("invalid_json", False)]
+    assert master.run_history.list_runs()[0]["unhandled_error_count"] == 1
+
+
 async def test_mux_can_pass_the_failed_nodes_input_down_its_path():
     bus, workflow_map, master = _services()
     recoveries = _answer(bus, master, "TERMINATE_BRANCH")

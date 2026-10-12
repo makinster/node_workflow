@@ -28,6 +28,7 @@ from backend.run_policies import (
 from backend.events import ERROR_LOGGED
 from backend.run_service import (
     EXIT_FINISHED_WITH_ERRORS,
+    RunResult,
     EXIT_INTERRUPTED,
     EXIT_OK,
     EXIT_RUN_FAILED,
@@ -363,3 +364,34 @@ def test_data_directory_follows_the_environment_variable(tmp_path):
     assert Path(paths["workflows"]) == root / "workflows"
     assert Path(paths["secrets"]) == root / "secrets"
     assert Path(paths["logs"]) == root / "logs"
+
+
+# ---------------------------------------------------------------------------
+# Handled errors: routed along an error path, they do not fail the run
+# ---------------------------------------------------------------------------
+
+
+def _result(state, *handled_flags):
+    errors = [{"code": "node_error", "handled": flag} for flag in handled_flags]
+    return RunResult("run_x", "wf", "Workflow", state, errors=errors)
+
+
+@pytest.mark.parametrize("state,flags,code", [
+    ("FINISHED", (), EXIT_OK),
+    ("FINISHED", (True,), EXIT_OK),
+    ("FINISHED", (True, True), EXIT_OK),
+    ("FINISHED", (True, False), EXIT_FINISHED_WITH_ERRORS),
+    ("FINISHED", (False,), EXIT_FINISHED_WITH_ERRORS),
+    ("ERROR", (True,), EXIT_RUN_FAILED),
+    ("STOPPED", (True,), EXIT_INTERRUPTED),
+])
+def test_exit_code_counts_only_unhandled_errors(state, flags, code):
+    result = _result(state, *flags)
+    assert result.exit_code == code
+    assert result.to_dict()["unhandled_error_count"] == flags.count(False)
+
+
+def test_records_without_a_handled_flag_count_as_unhandled():
+    result = RunResult("run_x", "wf", "Workflow", "FINISHED",
+                       errors=[{"code": "node_error"}])
+    assert result.exit_code == EXIT_FINISHED_WITH_ERRORS

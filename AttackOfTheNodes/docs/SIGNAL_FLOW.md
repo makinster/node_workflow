@@ -377,7 +377,7 @@ aotn run <workflow> [--data-dir DIR] [--policy P] [--input K=V] [--json]
   -> ERROR_LOGGED -> "error: <alias> (<node_id>): <message>" on stderr
   -> RunService.wait() -> RunResult
      -> outputs on stdout (or the result as JSON with --json)
-     -> summary on stderr; exit 0 / 1 (finished with errors) / 2 (failed)
+     -> summary on stderr; exit 0 / 1 (unhandled errors) / 2 (failed)
   -> SIGINT (POSIX loops) -> RunService.stop(); result STOPPED, exit 130
   -> interactive prompts read stdin in a daemon thread, one prompt at a time
 ```

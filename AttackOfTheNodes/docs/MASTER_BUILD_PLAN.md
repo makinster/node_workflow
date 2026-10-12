@@ -10,7 +10,8 @@ The owner signed off the revised long-term plan in
 - `RunContext` extraction as step 1b.
 
 Execution of steps 1–3 plus the ESP32 slice was authorized on 2026-10-12
-(see `DISTRIBUTED_EXECUTION_PROMPT.md`). Step 4 onward needs a new go-ahead.
+(see `DISTRIBUTED_EXECUTION_PROMPT.md`), then the port-model spin-off P0–P3.
+Step 4 onward needs a new go-ahead.
 It supersedes the Phase N / N+1 / N+2 sketches under Later Roadmap.
 
 ## Saved workflow follow-up — 2026-10-08
@@ -359,6 +360,10 @@ Focused checks:
   | 2 | Run service API, `RecoveryPolicy`/`InputProvider`, configurable data directory, `aotn run` CLI | Done |
   | 3 | `[error]` routing: payload schema, declared error codes (with a default generic code), Errors section beside Connections, error mux, skipped status that spreads downstream | Done |
   | slice | ESP32 proof: cron → capture to run-owned `file` → error routed to a notification | Done |
+  | P0 | Housekeeping: routed (handled) errors do not fail a run (D10) | Done |
+  | P1 | Port model: backend resolves each node's ports from its config | Authorized |
+  | P2 | Error Mux routes with stable ids, UI pickers and auto-fill | Authorized |
+  | P3 | Branch on the same mechanism; `error` offered on every node | Authorized |
   | 4 | Workflow contracts + subworkflows as child runs (Phases 19/20) | Needs go-ahead |
   | 5 | Event sources + start triggers with `single`/`queued` modes (`restart` once Stop is clean) | Needs go-ahead |
   | 6 | HTTP/WebSocket server, auth, encrypted secrets, `parallel` runs | Needs go-ahead |
