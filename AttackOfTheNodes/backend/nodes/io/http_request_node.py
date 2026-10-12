@@ -27,6 +27,7 @@ class HttpRequestNode(Node):
     default_config: ClassVar[Dict[str, Any]] = {'url': '', 'method': 'GET', 'body': '', 'timeout_seconds': 10.0, 'auth_token_secret': ''}
     config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {'url': {'type': 'string', 'label': 'URL', 'placeholder': 'https://example.com/api', 'required': True, 'tab': 'Parameters'}, 'method': {'type': 'select', 'label': 'Method', 'options': ['GET', 'POST'], 'tab': 'Parameters'}, 'body': {'type': 'multiline', 'label': 'Request body (POST)', 'required': False, 'visible_when': {'method': 'POST'}, 'tab': 'Parameters'}, 'timeout_seconds': {'type': 'float', 'label': 'Timeout (seconds)', 'required': False, 'tab': 'Parameters'}, 'auth_token_secret': {'type': 'string', 'label': 'Bearer token (secrets store key)', 'secret': True, 'required': False, 'tab': 'Parameters'}}
     ui_hints: ClassVar[Dict[str, Any]] = {}
+    error_definitions: ClassVar[List[Dict[str, Any]]] = [{'code': 'missing_url', 'description': 'No URL is configured.', 'retryable': False}, {'code': 'timeout', 'description': 'The server did not answer within the timeout.', 'retryable': True}, {'code': 'network', 'description': 'The request could not reach the server (DNS, refused, TLS...).', 'retryable': True}, {'code': 'http_status', 'description': 'The server answered with an HTTP error status (details carry status and body).', 'retryable': False}]
 
     async def execute(self, context: NodeContext) -> None:
         import urllib.error
@@ -35,7 +36,8 @@ class HttpRequestNode(Node):
         url = str(self.config.get("url") or "").strip()
         if not url:
             context.signal_done(
-                {"data": {"error": "URL is required"}, "output_port": "error"}
+                {"data": {"error": "URL is required", "code": "missing_url"},
+                 "output_port": "error"}
             )
             return
 
@@ -58,6 +60,19 @@ class HttpRequestNode(Node):
                     charset = content_type.split("charset=")[-1].split(";")[0].strip()
                 result = response.read().decode(charset, errors="replace")
             context.signal_done({"data": {"default": result}})
+        except urllib.error.HTTPError as exc:
+            try:
+                body = exc.read(4096).decode("utf-8", errors="replace")
+            except Exception:
+                body = ""
+            context.signal_done({"data": {
+                "error": str(exc), "code": "http_status",
+                "details": {"status": exc.code, "url": url, "response_body": body},
+            }, "output_port": "error"})
         except (urllib.error.URLError, TimeoutError) as exc:
             # Socket timeouts raise TimeoutError directly, not URLError.
-            context.signal_done({"data": {"error": str(exc)}, "output_port": "error"})
+            reason = getattr(exc, "reason", exc)
+            code = "timeout" if isinstance(reason, TimeoutError) else "network"
+            context.signal_done({"data": {
+                "error": str(exc), "code": code, "details": {"url": url},
+            }, "output_port": "error"})

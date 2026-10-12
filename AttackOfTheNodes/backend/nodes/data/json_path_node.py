@@ -27,6 +27,7 @@ class JsonPathNode(Node):
     default_config: ClassVar[Dict[str, Any]] = {'path': '', 'default_value': ''}
     config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {'path': {'type': 'string', 'label': 'Dot path', 'placeholder': 'user.name', 'required': True, 'tab': 'Parameters'}, 'default_value': {'type': 'string', 'label': 'Default on miss', 'required': False, 'tab': 'Parameters'}}
     ui_hints: ClassVar[Dict[str, Any]] = {}
+    error_definitions: ClassVar[List[Dict[str, Any]]] = [{'code': 'invalid_json', 'description': 'The input is not valid JSON.', 'retryable': False}]
 
     async def execute(self, context: NodeContext) -> None:
         import json
@@ -39,7 +40,8 @@ class JsonPathNode(Node):
             data = json.loads(raw) if isinstance(raw, str) else raw
         except (json.JSONDecodeError, TypeError) as exc:
             context.signal_done(
-                {"data": {"error": f"Invalid JSON: {exc}"}, "output_port": "error"}
+                {"data": {"error": f"Invalid JSON: {exc}", "code": "invalid_json"},
+                 "output_port": "error"}
             )
             return
 

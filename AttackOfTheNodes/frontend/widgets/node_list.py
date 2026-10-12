@@ -26,10 +26,12 @@ class NodeList(ListView):
         nodes: Dict[str, Dict[str, Any]],
         statuses: Optional[Dict[str, str]] = None,
         timings: Optional[Dict[str, float]] = None,
+        reasons: Optional[Dict[str, str]] = None,
     ) -> None:
         """Update execution cards; rebuild only when node IDs/order change."""
         statuses = statuses or {}
         timings = timings or {}
+        reasons = reasons or {}
         # Execution events change status/timing far more often than graph shape.
         # Keep mounted cards stable so highlights and scroll survive updates.
         cards = list(self.query(NodeCard))
@@ -37,6 +39,7 @@ class NodeList(ListView):
             for card in cards:
                 card.node_data = nodes[card.node_id]
                 card.status = statuses.get(card.node_id, "idle")
+                card.status_detail = reasons.get(card.node_id, "")
                 card.timing_seconds = timings.get(card.node_id)
                 card.refresh_card()
             return
@@ -52,6 +55,9 @@ class NodeList(ListView):
                 statuses.get(node_id, "idle"),
                 timings.get(node_id),
             )
+            if reasons.get(node_id):
+                card.status_detail = reasons[node_id]
+                card.refresh_card()
             self.append(ListItem(card))
         if not nodes:
             self.append(ListItem(Label("No nodes. Press I to add a node.")))

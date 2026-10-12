@@ -7,6 +7,7 @@ from typing import Any, ClassVar, Dict, List
 
 from ..node_base import Node, NodeContext
 from ..node_category import NodeCategory
+from ..node_errors import ENGINE_ERROR_DEFINITIONS, ENGINE_UPSTREAM_UNREACHABLE
 
 
 class WaitUntilNode(Node):
@@ -18,6 +19,10 @@ class WaitUntilNode(Node):
     category: ClassVar[str] = NodeCategory.FLOW
     input_ports: ClassVar[List[str]] = ["input"]
     output_ports: ClassVar[List[str]] = ["default"]
+    # Raised (as TargetUnreachableError) when a target can no longer complete.
+    error_definitions: ClassVar[List[Dict[str, Any]]] = [
+        dict(ENGINE_ERROR_DEFINITIONS[ENGINE_UPSTREAM_UNREACHABLE])
+    ]
     default_config: ClassVar[Dict[str, Any]] = {
         "target_node_ids": "",
         "timeout_seconds": 0.0,

@@ -1,0 +1,47 @@
+node_type: error_mux_node
+class_name: ErrorMuxNode
+category: flow
+primary_family: Flow Control
+tags: ["Conditional"]
+icon_name: git-fork
+display_name: Error Mux
+default_alias: Error Mux
+description: Route a failure from a node's error port to a path by its error code
+input_ports: ["error"]
+output_ports: ["path_a", "path_b", "path_c"]
+input_port_metadata:
+  error:
+    name: Error
+    description: Versioned error payload from the failing node's error port
+output_port_metadata:
+  path_a:
+    name: Error
+    description: The error payload, when its code is listed for path A
+  path_b:
+    name: Error
+    description: The error payload, when its code is listed for path B
+  path_c:
+    name: Error
+    description: The error payload, when its code is listed for path C
+config_tabs:
+  Parameters:
+    path_a_codes:
+      type: string
+      label: "Path A codes"
+      placeholder: "timeout, network"
+      description: "Comma-separated error codes routed to path A"
+      default: ""
+      required: false
+    path_b_codes:
+      type: string
+      label: "Path B codes"
+      description: "Comma-separated error codes routed to path B"
+      default: ""
+      required: false
+    path_c_codes:
+      type: string
+      label: "Path C codes"
+      description: "Comma-separated error codes routed to path C"
+      default: ""
+      required: false
+execution_template: transform_stub

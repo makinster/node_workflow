@@ -24,4 +24,8 @@ config_tabs:
       label: Default on miss
       default: ""
       required: false
+errors:
+  - code: invalid_json
+    description: "The input is not valid JSON."
+    retryable: false
 execution_template: transform_stub

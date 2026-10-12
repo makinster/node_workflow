@@ -96,7 +96,11 @@ async def test_failure_routes_along_connected_error_port():
     assert recoveries == []
     assert _ran(events, error_sink)
     assert not _ran(events, default_sink)
-    assert "Invalid JSON" in master._memory_bank.read_transient(parse, "error")
+    # Step 3: the error port carries the versioned error payload.
+    payload = master._memory_bank.read_transient(parse, "error")
+    assert payload["version"] == 1
+    assert "Invalid JSON" in payload["message"]
+    assert payload["node_id"] == parse
 
 
 async def test_failure_on_unconnected_error_port_requests_recovery():

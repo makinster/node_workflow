@@ -88,6 +88,8 @@ class NodeCard(Static):
         self.node_id = node_id
         self.node_data = node_data
         self.status = status
+        # Extra outcome detail, e.g. why a node was skipped (D9).
+        self.status_detail = ""
         self.timing_seconds = timing_seconds
         self.show_status = show_status
         self.show_id = show_id
@@ -140,6 +142,8 @@ class NodeCard(Static):
         depth = self.node_data.get("_editor_depth")
         id_text = f" ({self.node_id})" if self.show_id else ""
         outcome = f"[{self.status}] " if self.status in {"skipped", "stopped"} else ""
+        if self.status == "skipped" and self.status_detail:
+            outcome = f"[skipped: {self.status_detail.replace('_', ' ')}] "
         prefix = outcome or (f"{icon} " if icon else "")
         warning_badge = "⚠ " if self.has_warning else ""
         main_text = f"{prefix}{warning_badge}{breakpoint_marker}{alias}{id_text}{timing}"

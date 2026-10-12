@@ -75,10 +75,10 @@ def test_recovery_outcomes_are_not_success(action, expected):
         await master.start_workflow()
         await master.wait_for_completion()
         assert app.node_statuses[failed] == expected
-        if action == "SKIP":
-            assert app.node_statuses[end] == "done"
-        else:
-            assert app.node_statuses.get(end, "idle") == "idle"
+        # D9 (step 3): Skip no longer runs the next node, and a path that can
+        # no longer run is shown as skipped rather than left without status.
+        assert app.node_statuses[end] == "skipped"
+        assert end not in master.completed_nodes
     asyncio.run(asyncio.wait_for(check(), timeout=15))
 
 
@@ -391,9 +391,13 @@ def test_skip_does_not_mark_next_node_completed_before_execution():
                       if p["node_id"] == end and p["status"] == "running" else None)
         await master.start_workflow()
         await master.wait_for_completion()
-        assert premature == [False]
-        assert end in master.completed_nodes
+        # D9 (step 3): Skip ends the branch; the next node never runs and is
+        # skipped, so it is never marked completed.
+        assert premature == []
+        assert end not in master.completed_nodes
         assert failed not in master.completed_nodes
+        assert master.run_context.skip_reasons == {
+            failed: "recovery_skip", end: "upstream_skipped"}
     asyncio.run(asyncio.wait_for(check(), timeout=15))
 
 

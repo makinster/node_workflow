@@ -86,6 +86,7 @@ class ExecutionScreen(Screen):
             self.workflow_map.get_all_node_data(),
             getattr(app, "node_statuses", {}),
             getattr(app, "node_timings", {}),
+            getattr(app, "node_skip_reasons", {}),
         )
         self.query_one("#branch-summary", Static).update(self._format_branches())
         self.query_one("#memory-summary", Static).update(self._format_memory())

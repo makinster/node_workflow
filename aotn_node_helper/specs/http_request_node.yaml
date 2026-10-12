@@ -42,4 +42,17 @@ config_tabs:
       secret: true
       default: ""
       required: false
+errors:
+  - code: missing_url
+    description: "No URL is configured."
+    retryable: false
+  - code: timeout
+    description: "The server did not answer within the timeout."
+    retryable: true
+  - code: network
+    description: "The request could not reach the server (DNS, refused, TLS...)."
+    retryable: true
+  - code: http_status
+    description: "The server answered with an HTTP error status (details carry status and body)."
+    retryable: false
 execution_template: transform_stub

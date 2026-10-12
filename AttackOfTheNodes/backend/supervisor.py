@@ -29,6 +29,16 @@ from .events import (
 from .error_handler import ErrorHandler
 from .memory_bank import MemoryBank
 from .node_base import Node, NodeContext
+from .node_errors import (
+    DEFAULT_ERROR_CODE,
+    ENGINE_ERROR_DEFINITIONS,
+    ENGINE_UNATTENDED_INPUT,
+    ENGINE_UPSTREAM_UNREACHABLE,
+    ERROR_PORT,
+    NodeError,
+    build_error_payload,
+    definitions_with_default,
+)
 from .run_policies import (
     UNATTENDED_ACTIONS,
     InputProvider,
@@ -42,18 +52,29 @@ from .run_policies import (
 )
 from .run_session import RunSession
 from .secrets_manager import SecretsManager
+from .wait_registry import TargetUnreachableError
 from .workflow_map import WorkflowMap
 
 
 logger = logging.getLogger(__name__)
-
-ERROR_PORT = "error"
 
 
 def _task_is_cancelling() -> bool:
     """True when the running task itself has been asked to cancel."""
     task = asyncio.current_task()
     return bool(task is not None and task.cancelling())
+
+
+@dataclass
+class _Failure:
+    """A node failure described by its code (D7)."""
+
+    code: str
+    message: str
+    exception: BaseException
+    details: Dict[str, Any]
+    retryable: bool
+    stage: str = "execute"
 
 
 @dataclass
@@ -91,7 +112,9 @@ class Supervisor:
         run_session: Optional[RunSession] = None,
         secrets_manager: Optional[SecretsManager] = None,
         unattended: Optional[str] = None,
-        report_node_outcome: Optional[Callable[[str, str, List[str]], None]] = None,
+        report_node_outcome: Optional[
+            Callable[[str, str, List[str], Optional[str]], None]
+        ] = None,
         recovery_policy: Optional[RecoveryPolicy] = None,
         input_provider: Optional[InputProvider] = None,
     ) -> None:
@@ -178,11 +201,15 @@ class Supervisor:
         return self.current_node_id
 
     def _report_outcome(
-        self, node_id: Optional[str], state: str, delivered_to: Optional[List[str]] = None
+        self,
+        node_id: Optional[str],
+        state: str,
+        delivered_to: Optional[List[str]] = None,
+        reason: Optional[str] = None,
     ) -> None:
         """Tell the run which final state a node reached and where it routed."""
         if node_id and self._report_node_outcome is not None:
-            self._report_node_outcome(node_id, state, list(delivered_to or []))
+            self._report_node_outcome(node_id, state, list(delivered_to or []), reason)
 
     def request_pause(self) -> None:
         """Pause between node executions."""
@@ -248,31 +275,41 @@ class Supervisor:
             if self._stop_requested:
                 break
 
-            skipped = False
+            routed = False
             while result.error is not None:
-                action = await self._request_recovery(result.error, inputs)
+                failure = self._describe_failure(node, result.error)
+                record = self._log_failure(failure, inputs)
+                failed_node_id = self.current_node_id
+                target = self._error_route(failure.code)
+                if target is not None:
+                    # A matching error path exists: route the coded payload
+                    # along `error` instead of asking for recovery (D7).
+                    self._memory_bank.store_transient(
+                        failed_node_id or "",
+                        ERROR_PORT,
+                        self._error_payload(failure, record),
+                    )
+                    self._report_outcome(failed_node_id, "failed", [target])
+                    self.current_node_id = target
+                    self._node_phase = "queued"
+                    self._publish_state_update()
+                    routed = True
+                    break
+                action = await self._request_recovery(record, failure)
                 if action == "RETRY":
                     result = await self._execute_node(node, inputs)
                     if self._stop_requested:
                         break
                     continue
                 if action == "SKIP":
-                    self._publish_node_execution("skipped")
-                    skipped = True
-                    skipped_node_id = self.current_node_id
-                    self.current_node_id = self._workflow_map.find_next_node_id(
-                        self.current_node_id or "", output_port="default"
-                    )
-                    # Today's Skip still runs the default path (D9 changes this
-                    # in step 3); record that delivery for the run.
-                    self._report_outcome(
-                        skipped_node_id, "skipped", [self.current_node_id or ""]
-                    )
-                    self._node_phase = "queued"
+                    # D9: the node is skipped and its branch ends; downstream
+                    # nodes are skipped until the path rejoins something live.
+                    self._publish_node_execution("skipped", reason="recovery_skip")
+                    self._report_outcome(failed_node_id, "skipped", [], "recovery_skip")
+                    self.state = SupervisorState.TERMINATED
                     self._publish_state_update()
-                    result = _NodeResult(completed=True, payload={})
-                    break
-                self._report_outcome(self.current_node_id, "failed")
+                    return
+                self._report_outcome(failed_node_id, "failed")
                 if action == "TERMINATE_WORKFLOW":
                     self._event_bus.publish(
                         TERMINATE_WORKFLOW_REQUESTED,
@@ -286,7 +323,7 @@ class Supervisor:
 
             if self._stop_requested:
                 break
-            if skipped:
+            if routed:
                 continue
 
             if not result.completed or result.payload is None:
@@ -502,7 +539,7 @@ class Supervisor:
             )
 
         if result.error is None and result.payload is not None:
-            result.error = self._unrouted_error_port_failure(result.payload)
+            result.error = self._error_port_signal(result.payload)
 
         if self._input_interrupted or self._stop_requested:
             self._publish_node_execution("stopped")
@@ -512,37 +549,113 @@ class Supervisor:
             self._publish_node_execution("done")
         return result
 
-    def _unrouted_error_port_failure(
-        self, payload: Dict[str, Any]
-    ) -> Optional[Exception]:
-        """Turn a failure routed to an unconnected ``error`` port into a node error.
+    def _error_port_signal(self, payload: Dict[str, Any]) -> Optional[Exception]:
+        """A payload signaled on the ``error`` port is a failure (D7).
 
-        A connected ``error`` port routes normally. An unconnected one must not
-        end the branch silently, so the normal recovery path runs instead.
+        The node's ``data`` may carry ``error`` (message), ``code``,
+        ``details`` and ``retryable``. Whether it routes along a connected
+        ``error`` path or goes to recovery is decided by the failure pipeline.
         """
         if payload.get("output_port") != ERROR_PORT:
             return None
-        if self._workflow_map.find_next_node_id(
-            self.current_node_id or "", output_port=ERROR_PORT
-        ) is not None:
-            return None
-        message = (payload.get("data") or {}).get(ERROR_PORT)
-        return RuntimeError(str(message or "Node signaled failure on its error port"))
+        data = payload.get("data") or {}
+        message = str(data.get(ERROR_PORT) or "Node signaled failure on its error port")
+        details = data.get("details") if isinstance(data.get("details"), dict) else {}
+        retryable = data.get("retryable")
+        return NodeError(
+            str(data.get("code") or DEFAULT_ERROR_CODE),
+            message,
+            details=details,
+            retryable=retryable if isinstance(retryable, bool) else None,
+        )
 
-    async def _request_recovery(
-        self, error: BaseException, inputs: Dict[str, Any]
-    ) -> str:
-        """Log an error, publish recovery options, and await a decision."""
-        error_record = self._error_handler.log_error(
-            error if isinstance(error, BaseException) else Exception(str(error)),
+    def _describe_failure(self, node: Node, error: BaseException) -> _Failure:
+        """Give a failure its code: declared, engine, or the default generic."""
+        definitions = definitions_with_default(getattr(node, "error_definitions", []))
+        by_code = {item["code"]: item for item in definitions}
+        details: Dict[str, Any] = {}
+        retryable: Optional[bool] = None
+        if isinstance(error, NodeError):
+            code = error.code
+            details = dict(error.details)
+            retryable = error.retryable
+            if code not in by_code and code not in ENGINE_ERROR_DEFINITIONS:
+                logger.warning(
+                    "Node %s raised undeclared error code %r; using %r",
+                    self.current_node_id, code, DEFAULT_ERROR_CODE,
+                )
+                details["undeclared_code"] = code
+                code = DEFAULT_ERROR_CODE
+        elif isinstance(error, TargetUnreachableError):
+            code = ENGINE_UPSTREAM_UNREACHABLE
+        elif isinstance(error, UnattendedInputError):
+            code = ENGINE_UNATTENDED_INPUT
+        else:
+            code = DEFAULT_ERROR_CODE
+        if retryable is None:
+            definition = by_code.get(code) or ENGINE_ERROR_DEFINITIONS.get(code) or {}
+            retryable = bool(definition.get("retryable", False))
+        return _Failure(
+            code=code,
+            message=str(error) or type(error).__name__,
+            exception=error,
+            details=details,
+            retryable=retryable,
+        )
+
+    def _log_failure(self, failure: _Failure, inputs: Dict[str, Any]) -> Dict[str, Any]:
+        """Log and persist every failure once, routed or not."""
+        error = failure.exception
+        return self._error_handler.log_error(
+            error if isinstance(error, Exception) else Exception(str(error)),
             {
                 "run_id": self.run_id,
                 "branch_id": self.branch_id,
                 "node_id": self.current_node_id,
                 "depth": self.depth,
                 "inputs": inputs,
+                "stage": failure.stage,
+                "details": failure.details,
+                "retryable": failure.retryable,
             },
+            code=failure.code,
         )
+
+    def _error_payload(self, failure: _Failure, record: Dict[str, Any]) -> Dict[str, Any]:
+        return build_error_payload(
+            code=failure.code,
+            message=failure.message,
+            node_id=self.current_node_id,
+            run_id=self.run_id,
+            stage=failure.stage,
+            details=failure.details,
+            retryable=failure.retryable,
+            error_id=record.get("id"),
+        )
+
+    def _error_route(self, code: str) -> Optional[str]:
+        """The node to route this failure to, or None to request recovery.
+
+        A connected ``error`` port leading to a node that matches codes (an
+        error mux) routes only matching codes; a mux with no matching code
+        falls through to recovery or the run's policy. Any other node
+        connected to ``error`` receives every failure.
+        """
+        target = self._workflow_map.find_next_node_id(
+            self.current_node_id or "", output_port=ERROR_PORT
+        )
+        if target is None:
+            return None
+        instance = self._workflow_map.get_node_instance(target)
+        accepts = getattr(instance, "accepts_error_code", None)
+        if callable(accepts) and not accepts(code):
+            return None
+        return target
+
+    async def _request_recovery(
+        self, error_record: Dict[str, Any], failure: _Failure
+    ) -> str:
+        """Publish recovery options for a logged error and await a decision."""
         if self._recovery_policy is not None:
             # The error is logged and persisted above; the run's policy decides.
             try:
@@ -578,6 +691,7 @@ class Supervisor:
                 "run_id": self.run_id,
                 "error": error_record,
                 "error_message": error_record["message"],
+                "code": failure.code,
                 "category": error_record["category"],
                 "traceback": error_record["traceback"],
                 "options": [
@@ -685,22 +799,22 @@ class Supervisor:
             },
         )
 
-    def _publish_node_execution(self, status: str) -> None:
+    def _publish_node_execution(self, status: str, reason: Optional[str] = None) -> None:
         """Report an attempt outcome independently of supervisor termination."""
         if self.current_node_id is None:
             return
         self._last_node_status = status
-        self._event_bus.publish(
-            NODE_EXECUTION_UPDATE,
-            {
-                "run_id": self.run_id,
-                "branch_id": self.branch_id,
-                "node_id": self.current_node_id,
-                "visit_index": self._visit_index,
-                "attempt_index": self._attempt_index,
-                "status": status,
-            },
-        )
+        payload: Dict[str, Any] = {
+            "run_id": self.run_id,
+            "branch_id": self.branch_id,
+            "node_id": self.current_node_id,
+            "visit_index": self._visit_index,
+            "attempt_index": self._attempt_index,
+            "status": status,
+        }
+        if reason:
+            payload["reason"] = reason
+        self._event_bus.publish(NODE_EXECUTION_UPDATE, payload)
 
     def _publish_state_update(self) -> None:
         self._event_bus.publish(

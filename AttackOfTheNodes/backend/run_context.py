@@ -30,6 +30,15 @@ NODE_FAILED = "failed"
 NODE_SKIPPED = "skipped"
 FINAL_STATES = frozenset({NODE_COMPLETED, NODE_FAILED, NODE_SKIPPED})
 
+# Why a node was skipped (D9).
+SKIP_RECOVERY = "recovery_skip"
+SKIP_UPSTREAM_SKIPPED = "upstream_skipped"
+SKIP_NOT_TAKEN = "not_taken"
+SKIP_UPSTREAM_FAILED = "upstream_failed"
+SKIP_REASONS = frozenset(
+    {SKIP_RECOVERY, SKIP_UPSTREAM_SKIPPED, SKIP_NOT_TAKEN, SKIP_UPSTREAM_FAILED}
+)
+
 
 @dataclass
 class RunContext:
@@ -55,6 +64,7 @@ class RunContext:
     # node id -> target node ids it has routed to during this run.
     node_final: Dict[str, str] = field(default_factory=dict)
     deliveries: Dict[str, Set[str]] = field(default_factory=dict)
+    skip_reasons: Dict[str, str] = field(default_factory=dict)
     # Supervisors created for this run that have not terminated yet, keyed by
     # branch id. Tracked from creation, before they register on the bus.
     live_supervisors: Dict[str, Any] = field(default_factory=dict)
@@ -75,11 +85,25 @@ class RunContext:
     # -- delivery tracking ---------------------------------------------------
 
     def record_outcome(
-        self, node_id: str, state: str, delivered_to: Iterable[str] = ()
+        self,
+        node_id: str,
+        state: str,
+        delivered_to: Iterable[str] = (),
+        reason: Optional[str] = None,
     ) -> None:
-        """Record a node visit's final state and the targets it routed to."""
+        """Record a node visit's final state and the targets it routed to.
+
+        Skipped nodes carry a reason (D9); they count as finished but are
+        never completed.
+        """
         if state not in FINAL_STATES:
             raise ValueError(f"Unknown final node state: {state!r}")
+        if state == NODE_SKIPPED:
+            if reason not in SKIP_REASONS:
+                raise ValueError(f"Unknown skip reason: {reason!r}")
+            self.skip_reasons[node_id] = str(reason)
+        else:
+            self.skip_reasons.pop(node_id, None)
         self.node_final[node_id] = state
         targets = {target for target in delivered_to if target}
         if targets:
@@ -92,6 +116,54 @@ class RunContext:
 
     def delivered(self, source_id: str, target_id: str) -> bool:
         return target_id in self.deliveries.get(source_id, set())
+
+    # -- D9: skip spreading -----------------------------------------------------
+
+    def skip_candidates(
+        self,
+        workflow_map: "WorkflowMap",
+        reach: Set[str],
+    ) -> list[tuple[str, str]]:
+        """Nodes that must now be marked skipped, with their reasons.
+
+        A node is skipped when it has incoming connections, every source is
+        final, none of them routed to it, and no live supervisor is at it or
+        can reach it. The caller marks them and asks again, so skips spread
+        downstream until a node with a live or delivering source is reached.
+        """
+        completed = self.completed_nodes
+        found: list[tuple[str, str]] = []
+        for node_id, data in workflow_map.get_all_node_data().items():
+            if node_id in completed or node_id in self.node_final or node_id in reach:
+                continue
+            sources = {
+                conn.get("source_node_id")
+                for conn in data.get("connections", {}).get("inputs", [])
+                if conn.get("source_node_id")
+            }
+            if not sources:
+                continue
+            if any(
+                self.node_final.get(source) not in FINAL_STATES
+                or self.delivered(source, node_id)
+                for source in sources
+            ):
+                continue
+            found.append((node_id, self._skip_reason(sources)))
+        return found
+
+    def _skip_reason(self, sources: Set[str]) -> str:
+        states = {source: self.node_final.get(source) for source in sources}
+        if any(
+            state == NODE_FAILED and not self.deliveries.get(source)
+            for source, state in states.items()
+        ):
+            return SKIP_UPSTREAM_FAILED
+        if NODE_SKIPPED in states.values():
+            return SKIP_UPSTREAM_SKIPPED
+        # Every source finished and routed somewhere else: a path not taken
+        # (a Conditional's other port, or `default` after routing to `error`).
+        return SKIP_NOT_TAKEN
 
     # -- D5: structural unreachable rule --------------------------------------
 

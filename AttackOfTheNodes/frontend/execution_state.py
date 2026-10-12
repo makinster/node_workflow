@@ -21,7 +21,7 @@ class ExecutionDisplayState:
         return self.branches.setdefault(branch_id, {
             "state": "RUNNING", "depth": 0, "current_node_id": None,
             "parent_branch_id": None, "start_node_id": None, "visits": {},
-            "node_statuses": {}, "latest_visits": {},
+            "node_statuses": {}, "latest_visits": {}, "node_reasons": {},
         })
 
     def register(self, payload: dict[str, Any]) -> None:
@@ -53,6 +53,7 @@ class ExecutionDisplayState:
         if position >= branch["latest_visits"].get(node_id, (-1, -1)):
             branch["latest_visits"][node_id] = position
             branch["node_statuses"][node_id] = payload["status"]
+            branch["node_reasons"][node_id] = payload.get("reason")
 
     def timing(self, payload: dict[str, Any]) -> None:
         if "visit_index" not in payload:
@@ -81,3 +82,14 @@ class ExecutionDisplayState:
         priority = ("running", "waiting", "errored", "stopped", "skipped", "done")
         return {node: next(status for status in priority if status in statuses)
                 for node, statuses in by_node.items()}
+
+    def skip_reasons(self) -> dict[str, str]:
+        """Why each node whose displayed status is skipped was skipped (D9)."""
+        statuses = self.node_statuses()
+        reasons: dict[str, str] = {}
+        for branch in self.branches.values():
+            for node_id, reason in branch.get("node_reasons", {}).items():
+                if (reason and statuses.get(node_id) == "skipped"
+                        and branch["node_statuses"].get(node_id) == "skipped"):
+                    reasons.setdefault(node_id, reason)
+        return reasons
