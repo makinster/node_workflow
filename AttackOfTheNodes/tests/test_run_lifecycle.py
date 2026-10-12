@@ -298,3 +298,130 @@ async def test_starting_a_new_run_without_stop_cancels_leftover_supervisors():
 
     assert _ran(events, after, second_run)
     assert not _ran(events, after, first_run)
+
+
+# ---------------------------------------------------------------------------
+# 1c. Unattended policy
+# ---------------------------------------------------------------------------
+
+POLICIES = ["terminate_branch", "terminate_workflow"]
+EXPECTED_FINAL_STATE = {"terminate_branch": "FINISHED", "terminate_workflow": "ERROR"}
+
+
+def _client_prompts(bus: EventBus) -> List[str]:
+    """Record every request that would need a client to answer."""
+    from backend.events import BREAKPOINT_HIT, USER_INPUT_NEEDED
+
+    prompts: List[str] = []
+    for event in (RECOVERY_OPTIONS_AVAILABLE, USER_INPUT_NEEDED, BREAKPOINT_HIT):
+        bus.subscribe(event, lambda payload, name=event: prompts.append(name))
+    return prompts
+
+
+@pytest.mark.parametrize("policy", POLICIES)
+async def test_unattended_run_does_not_hang_on_an_error(policy):
+    bus, workflow_map, master = _services()
+    events = _record_node_events(bus)
+    prompts = _client_prompts(bus)
+    start = workflow_map.add_node("start_node")
+    failing = workflow_map.add_node("error_node")
+    after = workflow_map.add_node("no_op_node")
+    workflow_map.connect(start, "default", failing, "input")
+    workflow_map.connect(failing, "default", after, "input")
+
+    assert await master.start_workflow(unattended=policy)
+    await _finish(master)
+
+    assert prompts == []
+    assert master.state.value == EXPECTED_FINAL_STATE[policy]
+    assert not _ran(events, after)
+    history = master.run_history.list_runs()[0]
+    assert history["run_id"] == master.current_run_id
+    assert history["error_count"] == 1
+
+
+@pytest.mark.parametrize("policy", POLICIES)
+async def test_unattended_run_does_not_hang_on_an_input_request(policy):
+    bus, workflow_map, master = _services()
+    events = _record_node_events(bus)
+    prompts = _client_prompts(bus)
+    logged: List[Dict[str, Any]] = []
+    from backend.events import ERROR_LOGGED
+
+    bus.subscribe(ERROR_LOGGED, logged.append)
+    start = workflow_map.add_node("start_node")
+    ask = workflow_map.add_node("user_text_input_node")
+    after = workflow_map.add_node("no_op_node")
+    workflow_map.connect(start, "default", ask, "input")
+    workflow_map.connect(ask, "default", after, "input")
+
+    assert await master.start_workflow(unattended=policy)
+    await _finish(master)
+
+    assert prompts == []
+    assert master.state.value == EXPECTED_FINAL_STATE[policy]
+    assert not _ran(events, after)
+    assert any(event["node_id"] == ask and event["status"] == "errored" for event in events)
+    assert len(logged) == 1
+    assert "unattended" in str(logged[0]).lower()
+
+
+@pytest.mark.parametrize("policy", POLICIES)
+async def test_unattended_run_skips_breakpoints(policy):
+    bus, workflow_map, master = _services()
+    events = _record_node_events(bus)
+    prompts = _client_prompts(bus)
+    start = workflow_map.add_node("start_node")
+    paused = workflow_map.add_node("no_op_node")
+    workflow_map.connect(start, "default", paused, "input")
+    workflow_map.set_breakpoint(paused, True)
+
+    assert await master.start_workflow(unattended=policy)
+    await _finish(master)
+
+    assert prompts == []
+    assert master.state.value == "FINISHED"
+    assert _ran(events, paused)
+
+
+async def test_unattended_policy_applies_to_branch_supervisors():
+    bus, workflow_map, master = _services()
+    prompts = _client_prompts(bus)
+    start = workflow_map.add_node("start_node")
+    branch = workflow_map.add_node("branch_node")
+    workflow_map.connect(start, "default", branch, "input")
+    ports = [port for port in workflow_map.get_node_instance(branch).get_output_ports()]
+    for port in ports[:2]:
+        failing = workflow_map.add_node("error_node")
+        workflow_map.connect(branch, port, failing, "input")
+
+    assert await master.start_workflow(unattended="terminate_branch")
+    await _finish(master)
+
+    assert prompts == []
+    assert master.state.value == "FINISHED"
+    assert master.run_history.list_runs()[0]["error_count"] == 2
+
+
+async def test_attended_run_still_waits_for_a_recovery_choice():
+    """The TUI passes nothing; recovery keeps waiting for the client."""
+    bus, workflow_map, master = _services()
+    recoveries: List[Dict[str, Any]] = []
+    bus.subscribe(RECOVERY_OPTIONS_AVAILABLE, recoveries.append)
+    start = workflow_map.add_node("start_node")
+    failing = workflow_map.add_node("error_node")
+    workflow_map.connect(start, "default", failing, "input")
+
+    assert await master.start_workflow()
+    with pytest.raises(asyncio.TimeoutError):
+        await asyncio.wait_for(asyncio.shield(master.wait_for_completion()), 0.2)
+    assert len(recoveries) == 1
+    master.submit_recovery_action(recoveries[0]["branch_id"], "TERMINATE_BRANCH")
+    await _finish(master)
+
+
+async def test_unknown_unattended_policy_is_rejected():
+    _, workflow_map, master = _services()
+    workflow_map.add_node("start_node")
+    with pytest.raises(ValueError):
+        await master.start_workflow(unattended="ignore")

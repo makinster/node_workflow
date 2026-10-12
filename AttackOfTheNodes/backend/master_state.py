@@ -32,7 +32,7 @@ from .output_manager import OutputManager
 from .run_history import RunHistory
 from .run_session import RunSession
 from .secrets_manager import SecretsManager
-from .supervisor import Supervisor
+from .supervisor import UNATTENDED_ACTIONS, Supervisor
 from .workflow_map import WorkflowMap
 
 
@@ -76,6 +76,7 @@ class MasterState:
         self._supervisors: Dict[str, Supervisor] = {}
         self._supervisor_tasks: Dict[str, asyncio.Task] = {}
         self._run_session: Optional[RunSession] = None
+        self._unattended: Optional[str] = None
 
         self._event_bus.subscribe(SUPERVISOR_REGISTER, self._on_supervisor_register)
         self._event_bus.subscribe(
@@ -92,8 +93,16 @@ class MasterState:
             TERMINATE_WORKFLOW_REQUESTED, self._on_terminate_workflow_requested
         )
 
-    async def start_workflow(self) -> bool:
-        """Begin executing the loaded workflow."""
+    async def start_workflow(self, unattended: Optional[str] = None) -> bool:
+        """Begin executing the loaded workflow.
+
+        ``unattended`` is ``None`` (a client answers recovery and input
+        requests), ``"terminate_branch"`` or ``"terminate_workflow"``. When set,
+        errors and input requests follow that policy without waiting, and
+        breakpoints are skipped.
+        """
+        if unattended is not None and unattended not in UNATTENDED_ACTIONS:
+            raise ValueError(f"Unknown unattended policy: {unattended!r}")
         if not self._workflow_map.is_loaded:
             logger.error("Cannot start: no workflow loaded")
             return False
@@ -108,6 +117,7 @@ class MasterState:
         await self._cancel_leftover_tasks()
 
         self.current_run_id = f"run_{uuid.uuid4().hex[:8]}"
+        self._unattended = unattended
         self._started_at = datetime.now(timezone.utc).isoformat()
         self.run_outputs = []
         self.node_timings = {}
@@ -140,6 +150,7 @@ class MasterState:
             ),
             run_session=self._run_session,
             secrets_manager=self._secrets_manager,
+            unattended=self._unattended,
         )
         self._supervisor_tasks[root.branch_id] = asyncio.create_task(root.run())
         return True
@@ -269,6 +280,7 @@ class MasterState:
             ),
             run_session=self._run_session,
             secrets_manager=self._secrets_manager,
+            unattended=self._unattended,
         )
         self._supervisor_tasks[child.branch_id] = asyncio.create_task(child.run())
 
