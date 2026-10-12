@@ -60,6 +60,7 @@ def test_failed_run_prints_the_error_and_exits_non_zero(tmp_path):
     wf = write_workflow(tmp_path / "bad.json", fail=True)
     result = aotn(str(wf), data_dir=tmp_path / "data")
     assert result.returncode == 2
+    assert "Got: hello" in result.stdout
     assert "error: Boom (" in result.stderr
     assert "Deliberate error from ErrorNode" in result.stderr
     assert "NO_TEXTUAL" in result.stderr
@@ -96,6 +97,73 @@ def test_invalid_workflow_exits_3_without_running(tmp_path):
         (tmp_path / "data" / "run_history").glob("*.json"))
 
 
+def test_unloadable_file_exits_cleanly(tmp_path):
+    path = tmp_path / "list.json"
+    path.write_text("[1, 2]")
+    result = aotn(str(path), data_dir=tmp_path / "data")
+    assert result.returncode == 4
+    assert "Traceback" not in result.stderr
+
+
+def test_unstartable_workflow_without_validation_exits_cleanly(tmp_path):
+    wf = write_workflow(tmp_path / "nostart.json", start=False)
+    result = aotn(str(wf), "--no-validate", data_dir=tmp_path / "data")
+    assert result.returncode == 3
+    assert "could not be started" in result.stderr
+    assert "Traceback" not in result.stderr
+
+
+@pytest.mark.skipif(not hasattr(os, "openpty"), reason="needs a pseudo-terminal")
+def test_ctrl_c_at_an_interactive_prompt_exits(tmp_path):
+    import signal
+    import time
+
+    wf = write_workflow(tmp_path / "ask.json", ask=True)
+    controller, terminal = os.openpty()
+    env = dict(os.environ)
+    env.pop("AOTN_DATA_DIR", None)
+    process = subprocess.Popen(
+        [sys.executable, "-c", RUNNER, "run", str(wf), "--data-dir", str(tmp_path / "data")],
+        cwd=PROJECT_ROOT, env=env, stdin=terminal, stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE, text=True,
+    )
+    try:
+        time.sleep(2.0)  # let it start and block on the input prompt
+        process.send_signal(signal.SIGINT)
+        _, stderr = process.communicate(timeout=10)
+    finally:
+        if process.poll() is None:
+            process.kill()
+        os.close(controller)
+        os.close(terminal)
+    assert process.returncode == 130, stderr
+    assert "stopped" in stderr
+
+
+def test_data_dir_after_the_backend_is_loaded_is_refused(tmp_path):
+    import aotn_cli
+
+    with pytest.raises(SystemExit) as excinfo:
+        aotn_cli.main(["whatever", "--data-dir", str(tmp_path / "elsewhere")])
+    assert excinfo.value.code == 2
+
+
+def test_parallel_prompts_are_answered_one_at_a_time():
+    import aotn_cli
+    from backend.run_policies import RecoveryRequest
+
+    prompts = io.StringIO()
+    policy, _ = aotn_cli._stdin_policies(io.StringIO("w\nb\n"), prompts)
+
+    async def both():
+        make = lambda branch: RecoveryRequest(run_id="r", branch_id=branch,
+                                              node_id="n", error={})
+        return await asyncio.gather(policy.decide(make("a")), policy.decide(make("b")))
+
+    assert asyncio.run(both()) == ["TERMINATE_WORKFLOW", "TERMINATE_BRANCH"]
+    assert prompts.getvalue().count("Recover how?") == 2
+
+
 def test_saved_workflow_by_name_and_json_result(tmp_path):
     data_dir = tmp_path / "data"
     (data_dir / "workflows").mkdir(parents=True)
@@ -126,7 +194,7 @@ def test_plain_aotn_still_launches_the_tui(monkeypatch):
 
 
 def test_stdin_policies_answer_on_the_terminal():
-    import cli
+    import aotn_cli as cli
     from backend.run_policies import InputRequest, RecoveryRequest, UnattendedInputError
 
     prompts = io.StringIO()

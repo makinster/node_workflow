@@ -603,6 +603,7 @@ class MasterState:
     def _on_supervisor_error(self, payload: Dict[str, Any]) -> None:
         self._set_state(WorkflowState.ERROR)
         self._event_bus.publish(ERROR_OCCURRED, payload)
+        self._capture_outputs()
         self._record_run("ERROR")
 
     def _on_breakpoint_hit(self, _payload: Dict[str, Any]) -> None:
@@ -623,6 +624,7 @@ class MasterState:
     def _on_terminate_workflow_requested(self, _payload: Dict[str, Any]) -> None:
         self.stop()
         self._set_state(WorkflowState.ERROR)
+        self._capture_outputs()
         self._record_run("ERROR")
 
     def _check_run_completion(self) -> None:
@@ -630,13 +632,19 @@ class MasterState:
             return
         if self.state == WorkflowState.ERROR:
             return
+        self._capture_outputs()
+        self._set_state(WorkflowState.FINISHED)
+        self._record_run("FINISHED")
+
+    def _capture_outputs(self) -> None:
+        """Store the outputs produced so far, whether the run finished or failed."""
+        if not self.current_run_id:
+            return
         self.run_outputs = list(
             self._memory_bank.read_persistent("output_log", default=[])
         )
         self._output_manager.store_output_log(self.current_run_id, self.run_outputs)
         self.run_outputs = self._output_manager.finalize_run(self.current_run_id)
-        self._set_state(WorkflowState.FINISHED)
-        self._record_run("FINISHED")
 
     def _set_state(self, new_state: WorkflowState) -> None:
         if self.state == new_state:

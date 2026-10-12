@@ -330,7 +330,9 @@ first and refuses with `WorkflowValidationError`), `subscribe()` (returns an
 unsubscribe function), `submit_input()`, `submit_recovery()`, `pause()`,
 `resume()`, `stop()`, `wait()` and `result()`. `RunResult` is
 JSON-serializable and maps to shared exit codes (0 finished, 1 finished with
-errors, 2 failed, 3 invalid, 4 not found, 130 interrupted). `RunService.create()`
+errors, 2 failed, 3 invalid or unstartable, 4 not found or unloadable, 130
+stopped). A run stopped through the service reports `STOPPED` even though the
+engine records `FINISHED` (no engine `STOPPED` state yet). `RunService.create()`
 builds a full backend stack with no frontend import. The CLI uses it; the TUI
 still drives `MasterState`'s public methods directly (unchanged behavior).
 

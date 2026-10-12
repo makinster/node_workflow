@@ -50,6 +50,12 @@ logger = logging.getLogger(__name__)
 ERROR_PORT = "error"
 
 
+def _task_is_cancelling() -> bool:
+    """True when the running task itself has been asked to cancel."""
+    task = asyncio.current_task()
+    return bool(task is not None and task.cancelling())
+
+
 @dataclass
 class _NodeResult:
     """Mutable holder written by node signal callbacks."""
@@ -376,14 +382,24 @@ class Supervisor:
         async def signal_waiting_for_input(prompt: str) -> str:
             if self._input_provider is not None:
                 # Raising here fails the node; it then follows recovery.
-                return await self._input_provider.provide(
-                    InputRequest(
-                        run_id=self.run_id,
-                        branch_id=self.branch_id,
-                        node_id=self.current_node_id,
-                        prompt=prompt,
+                self._publish_node_execution("waiting")
+                try:
+                    value = await self._input_provider.provide(
+                        InputRequest(
+                            run_id=self.run_id,
+                            branch_id=self.branch_id,
+                            node_id=self.current_node_id,
+                            prompt=prompt,
+                        )
                     )
-                )
+                except asyncio.CancelledError:
+                    if _task_is_cancelling():
+                        raise
+                    # A provider's own cancelled future is a failure, not a
+                    # stop of this run.
+                    raise RuntimeError("Input provider was cancelled") from None
+                self._publish_node_execution("running")
+                return value
             future: asyncio.Future = asyncio.get_running_loop().create_future()
             self._pending_input_future = future
             self.state = SupervisorState.WAITING_FOR_INPUT
@@ -529,14 +545,21 @@ class Supervisor:
         )
         if self._recovery_policy is not None:
             # The error is logged and persisted above; the run's policy decides.
-            action = await self._recovery_policy.decide(
-                RecoveryRequest(
-                    run_id=self.run_id,
-                    branch_id=self.branch_id,
-                    node_id=self.current_node_id,
-                    error=error_record,
+            try:
+                action = await self._recovery_policy.decide(
+                    RecoveryRequest(
+                        run_id=self.run_id,
+                        branch_id=self.branch_id,
+                        node_id=self.current_node_id,
+                        error=error_record,
+                    )
                 )
-            )
+            except asyncio.CancelledError:
+                if _task_is_cancelling():
+                    raise
+                action = self._policy_failed(RuntimeError("Recovery policy was cancelled"))
+            except Exception as exc:
+                action = self._policy_failed(exc)
             if action not in RECOVERY_ACTIONS:
                 logger.warning(
                     "Recovery policy returned %r; terminating the branch", action
@@ -570,6 +593,20 @@ class Supervisor:
         self.state = SupervisorState.RUNNING
         self._publish_state_update()
         return action
+
+    def _policy_failed(self, exc: BaseException) -> str:
+        """Log a broken recovery policy like any error, then end the branch."""
+        self._error_handler.log_error(
+            exc if isinstance(exc, Exception) else RuntimeError(str(exc)),
+            {
+                "run_id": self.run_id,
+                "branch_id": self.branch_id,
+                "node_id": self.current_node_id,
+                "depth": self.depth,
+                "stage": "recovery_policy",
+            },
+        )
+        return TERMINATE_BRANCH
 
     def _handle_payload(self, payload: Dict[str, Any]) -> Optional[str]:
         """Write outputs, spawn branches, and determine next node.

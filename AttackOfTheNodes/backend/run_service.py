@@ -32,7 +32,7 @@ from .workflow_map import WorkflowMap
 EXIT_OK = 0
 EXIT_FINISHED_WITH_ERRORS = 1
 EXIT_RUN_FAILED = 2
-EXIT_INVALID_WORKFLOW = 3
+EXIT_INVALID_WORKFLOW = 3  # also: the workflow could not be started
 EXIT_NOT_FOUND = 4
 EXIT_USAGE = 64
 EXIT_INTERRUPTED = 130
@@ -40,6 +40,10 @@ EXIT_INTERRUPTED = 130
 
 class WorkflowNotFoundError(LookupError):
     """No saved workflow or file matches the reference."""
+
+
+class WorkflowLoadError(WorkflowNotFoundError):
+    """A workflow was found but its data cannot be loaded."""
 
 
 class WorkflowValidationError(RuntimeError):
@@ -65,6 +69,8 @@ class RunResult:
 
     @property
     def exit_code(self) -> int:
+        if self.final_state == "STOPPED":
+            return EXIT_INTERRUPTED
         if self.final_state == "FINISHED":
             return EXIT_FINISHED_WITH_ERRORS if self.errors else EXIT_OK
         return EXIT_RUN_FAILED
@@ -101,6 +107,7 @@ class RunService:
         self._secrets_manager = secrets_manager
         self._configuration = configuration_manager
         self._errors_by_run: Dict[str, List[Dict[str, Any]]] = {}
+        self._stopped_runs: set[str] = set()
         self._bus.subscribe(ERROR_LOGGED, self._on_error_logged)
 
     @classmethod
@@ -156,7 +163,12 @@ class RunService:
         not touch ``last_active_workflow_id``).
         """
         data = self._resolve(reference)
-        self._workflow_map.load_data(data)
+        if not isinstance(data, dict) or not data.get("id"):
+            raise WorkflowLoadError(f"{reference!r} is not a workflow (no id)")
+        try:
+            self._workflow_map.load_data(data)
+        except (KeyError, TypeError, ValueError, AttributeError) as exc:
+            raise WorkflowLoadError(f"Cannot load workflow {reference!r}: {exc!r}") from exc
         return {
             "id": str(self._workflow_map.workflow_id or ""),
             "name": self._workflow_map.workflow_name,
@@ -216,7 +228,9 @@ class RunService:
         if not started or not self._master.current_run_id:
             raise RuntimeError("The workflow could not be started")
         run_id = self._master.current_run_id
-        self._errors_by_run[run_id] = []
+        # Only the current run's errors are kept (per-run cache eviction).
+        self._errors_by_run = {run_id: []}
+        self._stopped_runs.clear()
         return run_id
 
     def subscribe(self, event_name: str, callback: Callable[[Any], None]) -> Callable[[], None]:
@@ -237,6 +251,9 @@ class RunService:
         self._master.resume()
 
     def stop(self) -> None:
+        """Stop the current run; its result reports ``STOPPED``."""
+        if self._master.current_run_id:
+            self._stopped_runs.add(self._master.current_run_id)
         self._master.stop()
 
     async def wait(self) -> RunResult:
@@ -246,11 +263,16 @@ class RunService:
 
     def result(self) -> RunResult:
         run_id = self._master.current_run_id
+        final_state = self._master.state.value
+        # The engine has no STOPPED state yet (step 1 follow-up), so a stopped
+        # run that ended cleanly is reported as STOPPED here, not FINISHED.
+        if run_id in self._stopped_runs and final_state == "FINISHED":
+            final_state = "STOPPED"
         return RunResult(
             run_id=run_id,
             workflow_id=self._workflow_map.workflow_id,
             workflow_name=self._workflow_map.workflow_name,
-            final_state=self._master.state.value,
+            final_state=final_state,
             errors=list(self._errors_by_run.get(run_id or "", [])),
             outputs=list(self._master.run_outputs),
             node_timings=dict(self._master.node_timings),

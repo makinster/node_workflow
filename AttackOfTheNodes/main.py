@@ -2,7 +2,7 @@
 """AttackOfTheNodes entry point.
 
 ``aotn`` launches the Textual TUI; ``aotn run <workflow>`` runs a workflow
-from the command line (see ``cli.py``) without importing Textual.
+from the command line (see ``aotn_cli.py``) without importing Textual.
 """
 
 import sys
@@ -20,7 +20,7 @@ def main(argv: Optional[List[str]] = None) -> Optional[int]:
     """Launch the TUI, or dispatch ``aotn run`` to the command-line client."""
     args = list(sys.argv[1:] if argv is None else argv)
     if args and args[0] == "run":
-        from cli import main as run_main
+        from aotn_cli import main as run_main
 
         return run_main(args[1:])
     run_tui()

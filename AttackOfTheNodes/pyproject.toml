@@ -21,7 +21,7 @@ windows = ['pywin32>=306; platform_system == "Windows"']
 aotn = "main:main"
 
 [tool.setuptools]
-py-modules = ["main", "cli"]
+py-modules = ["main", "aotn_cli"]
 
 [tool.setuptools.packages.find]
 where = ["."]

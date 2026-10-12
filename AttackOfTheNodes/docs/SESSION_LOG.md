@@ -7,7 +7,7 @@ overhaul.
 ## 2026-10-12 — Distributed Step 2: Run Service, Policies, Data Directory, CLI
 
 Branch `dist/step-2-run-service`, from `main` at `5749b9e`. Before: 866
-passed. After: 893 passed.
+passed. After: 905 passed.
 
 - **Run service** (`backend/run_service.py`): load (saved id, saved name, or
   `.json` file; never touches `last_active_workflow_id`), validate, start with
@@ -25,7 +25,7 @@ passed. After: 893 passed.
   Persistence now creates missing parent folders.
 - **Logging** moved to `backend/logging_setup.py`; the log file follows the
   data directory.
-- **CLI** `aotn run <workflow>` (`cli.py`, routed from `main.main`): errors on
+- **CLI** `aotn run <workflow>` (`aotn_cli.py`, routed from `main.main`): errors on
   stderr from `ERROR_LOGGED`, outputs on stdout (or `--json`), exit codes 0 /
   1 / 2 / 3 / 4 / 130, stdin policies when interactive, `--policy` (default
   `terminate_workflow`) when not, `--input KEY=VALUE` recorded on the run.
@@ -39,16 +39,38 @@ passed. After: 893 passed.
   change.
 - Run inputs are recorded on the `RunContext` only; the Start contract that
   consumes them is step 4.
-- With `--policy terminate_workflow` a failed run prints no outputs: an
-  `ERROR` run never finalizes its output log (existing behavior).
+- The engine still has no `STOPPED` workflow state (step 1 follow-up). The
+  run service reports a stopped run as `STOPPED` (exit 130) in `RunResult`;
+  run history still records it as `FINISHED`.
+
+**Review fixes (independent diff review before merge):**
+
+- Ctrl+C at an interactive CLI prompt hung the process: the stdin reader ran
+  in the default executor, which `asyncio.run` waits for. Prompts now read in
+  a daemon thread and are serialized, so parallel branches cannot interleave.
+- A run ending in `ERROR` stored and printed no outputs; `MasterState` now
+  captures the output log on the `ERROR` paths too.
+- A provider raising `CancelledError` (its own future, not a stop) cancelled
+  the supervisor and the run looked successful; it now fails the node. A
+  recovery policy that raises is logged through `ErrorHandler` and ends the
+  branch.
+- Unloadable workflow files and unstartable workflows (`--no-validate`) exit
+  cleanly (4 and 3) instead of with a traceback.
+- `RunService` keeps only the current run's error list; the new tests write
+  run records to a temporary folder; the CLI module is `aotn_cli` (not the
+  generic `cli`).
+- Provider-answered input now reports the node `waiting` while it waits.
 
 **Behavior changes:**
 
 - `aotn` accepts a `run` subcommand; plain `aotn` still launches the TUI.
 - Data folders are created with their parents when missing.
+- A run that ends in `ERROR` now records the outputs it produced in
+  `run_outputs/` (previously only finished runs did).
 
-**Tests:** `tests/test_run_service.py` (17) and `tests/test_cli.py` (10, CLI
-runs in a subprocess against a temporary data directory).
+**Tests:** `tests/test_run_service.py` (24) and `tests/test_cli.py` (15, CLI
+runs in a subprocess against a temporary data directory, including Ctrl+C at
+an interactive prompt on a pseudo-terminal).
 
 ## 2026-10-12 — Distributed Plan: Refresh Coalescer (Frontend Only)
 

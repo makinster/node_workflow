@@ -25,11 +25,14 @@ from backend.run_policies import (
     TerminatePolicy,
     UnattendedInputError,
 )
+from backend.events import ERROR_LOGGED
 from backend.run_service import (
     EXIT_FINISHED_WITH_ERRORS,
+    EXIT_INTERRUPTED,
     EXIT_OK,
     EXIT_RUN_FAILED,
     RunService,
+    WorkflowLoadError,
     WorkflowNotFoundError,
     WorkflowValidationError,
 )
@@ -38,6 +41,16 @@ from backend.workflow_map import WorkflowMap
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 RUN_TIMEOUT = 5.0
+
+
+@pytest.fixture(autouse=True)
+def _run_records_in_tmp(tmp_path, monkeypatch):
+    """Keep run history, errors and outputs out of the project folder."""
+    from backend import error_handler, output_manager, run_history
+
+    monkeypatch.setattr(error_handler, "RUN_ERRORS_DIR", tmp_path / "run_errors")
+    monkeypatch.setattr(run_history, "RUN_HISTORY_DIR", tmp_path / "run_history")
+    monkeypatch.setattr(output_manager, "RUN_OUTPUTS_DIR", tmp_path / "run_outputs")
 
 
 def workflow_data(name: str = "Service Smoke", *, fail: bool = False, ask: bool = False,
@@ -243,7 +256,64 @@ async def test_stop_through_the_service(tmp_path):
     await asyncio.sleep(0.05)
     service.stop()
     result = await asyncio.wait_for(service.wait(), RUN_TIMEOUT)
+    # The engine still records FINISHED (no STOPPED state yet); the service
+    # reports what actually happened.
+    assert result.final_state == "STOPPED"
+    assert result.exit_code == EXIT_INTERRUPTED
+
+
+async def test_a_failed_run_keeps_the_outputs_it_produced(tmp_path):
+    _, result = await run_file(
+        write_workflow(tmp_path / "wf.json", fail=True),
+        recovery_policy=TerminatePolicy("terminate_workflow"),
+    )
+    assert result.final_state == "ERROR"
+    assert result.outputs, "outputs produced before the failure must survive"
+
+
+async def test_a_provider_cancelling_its_own_future_fails_the_node(tmp_path):
+    class Cancelled(InputProvider):
+        async def provide(self, request: InputRequest) -> str:
+            future = asyncio.get_running_loop().create_future()
+            future.cancel()
+            return await future
+
+    _, result = await run_file(
+        write_workflow(tmp_path / "wf.json", ask=True),
+        recovery_policy=TerminatePolicy("terminate_workflow"),
+        input_provider=Cancelled(),
+    )
+    assert result.final_state == "ERROR"
+    assert "cancelled" in result.errors[0]["message"]
+
+
+async def test_a_broken_recovery_policy_is_logged_and_ends_the_branch(tmp_path):
+    class Broken(RecoveryPolicy):
+        async def decide(self, request: RecoveryRequest) -> str:
+            raise ValueError("policy blew up")
+
+    _, result = await run_file(write_workflow(tmp_path / "wf.json", fail=True),
+                               recovery_policy=Broken())
+    messages = [e["message"] for e in result.errors]
+    assert "policy blew up" in messages
     assert result.final_state == "FINISHED"
+
+
+@pytest.mark.parametrize("content", ["[1, 2]", "{}", '{"id": "x", "nodes": 5}'])
+def test_unloadable_workflow_files_raise_a_load_error(tmp_path, content):
+    path = tmp_path / "broken.json"
+    path.write_text(content)
+    with pytest.raises(WorkflowLoadError):
+        RunService.create().load(str(path))
+
+
+async def test_only_the_current_runs_errors_are_kept(tmp_path):
+    service = RunService.create()
+    service.load(str(write_workflow(tmp_path / "wf.json", fail=True)))
+    for _ in range(3):
+        await service.start(recovery_policy=TerminatePolicy("terminate_branch"))
+        await asyncio.wait_for(service.wait(), RUN_TIMEOUT)
+    assert list(service._errors_by_run) == [service.current_run_id]
 
 
 def test_unattended_shorthand_is_the_first_recovery_policy():

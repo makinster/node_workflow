@@ -18,6 +18,7 @@ import json
 import os
 import signal
 import sys
+import threading
 from typing import Any, Dict, List, Optional, Sequence, TextIO
 
 
@@ -80,6 +81,37 @@ def _parse_inputs(pairs: Sequence[str]) -> Dict[str, str]:
     return inputs
 
 
+async def _readline_in_daemon_thread(stream: TextIO) -> str:
+    """Read one line without blocking the loop or the process exit.
+
+    ``asyncio.to_thread`` uses the default executor, which ``asyncio.run``
+    waits for at shutdown, so a reader blocked in ``readline`` after Ctrl+C
+    would hang the process. A daemon thread never holds up exit.
+    """
+    loop = asyncio.get_running_loop()
+    future: asyncio.Future = loop.create_future()
+
+    def read() -> None:
+        try:
+            line = stream.readline()
+        except Exception as exc:  # pragma: no cover - passed to the waiter
+            loop.call_soon_threadsafe(_settle, future, None, exc)
+        else:
+            loop.call_soon_threadsafe(_settle, future, line, None)
+
+    threading.Thread(target=read, name="aotn-stdin", daemon=True).start()
+    return await future
+
+
+def _settle(future: asyncio.Future, value: Any, exc: Optional[BaseException]) -> None:
+    if future.done():
+        return
+    if exc is not None:
+        future.set_exception(exc)
+    else:
+        future.set_result(value)
+
+
 def _stdin_policies(stdin: TextIO, stderr: TextIO):
     """Recovery and input answered on the terminal."""
     from backend.run_policies import (
@@ -90,10 +122,15 @@ def _stdin_policies(stdin: TextIO, stderr: TextIO):
         UnattendedInputError,
     )
 
+    # Parallel branches may ask at the same time; one prompt at a time keeps
+    # each typed line going to the branch that asked for it.
+    prompt_lock = asyncio.Lock()
+
     async def read_line(prompt: str) -> Optional[str]:
-        stderr.write(prompt)
-        stderr.flush()
-        line = await asyncio.to_thread(stdin.readline)
+        async with prompt_lock:
+            stderr.write(prompt)
+            stderr.flush()
+            line = await _readline_in_daemon_thread(stdin)
         if line == "":
             return None
         return line.rstrip("\r\n")
@@ -196,6 +233,9 @@ async def _run(args: argparse.Namespace, stdin: TextIO, stdout: TextIO, stderr: 
         for error in exc.result.get("errors") or []:
             stderr.write(f"  - {describe(error.get('node_id')) if error.get('node_id') else 'workflow'}: "
                          f"{error.get('message')}\n")
+        return EXIT_INVALID_WORKFLOW
+    except RuntimeError as exc:
+        stderr.write(f"aotn run: {loaded['name']}: {exc}\n")
         return EXIT_INVALID_WORKFLOW
 
     result = await service.wait()
