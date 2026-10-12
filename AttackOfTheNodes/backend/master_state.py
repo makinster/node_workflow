@@ -28,7 +28,7 @@ from .events import (
     WORKFLOW_STATE_UPDATE,
     WorkflowState,
 )
-from .error_handler import ErrorHandler
+from .error_handler import ErrorHandler, unhandled_errors
 from .memory_bank import MemoryBank
 from .configuration_manager import ConfigurationManager
 from .output_manager import OutputManager
@@ -714,13 +714,15 @@ class MasterState:
         if not self.current_run_id:
             return
         errors = self._error_handler.get_errors_for_run(self.current_run_id)
+        unhandled = unhandled_errors(errors)
         # Run is over on every path that records it; release runtime resources.
         # R4: run-owned files are deleted only when the run succeeded (finished,
-        # no errors, not stopped); otherwise they are kept for debugging.
+        # no unhandled errors, not stopped); otherwise they are kept for
+        # debugging. Errors routed along an error path count as handled.
         if self._run is not None:
             succeeded = (
                 final_state == "FINISHED"
-                and not errors
+                and not unhandled
                 and not self._run.stop_requested
             )
             self._run.run_session.close_all(delete_run_files=succeeded)
@@ -732,6 +734,7 @@ class MasterState:
                 "started_at": self._started_at,
                 "final_state": final_state,
                 "error_count": len(errors),
+                "unhandled_error_count": len(unhandled),
                 "output_count": len(self.run_outputs),
                 "node_timings": dict(self.node_timings),
                 "skipped_nodes": dict(self._run.skip_reasons) if self._run else {},

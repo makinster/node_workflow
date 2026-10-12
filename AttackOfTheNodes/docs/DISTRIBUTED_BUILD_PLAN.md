@@ -44,6 +44,7 @@ Do not build anything a later step has to undo:
 | # | Decision | Chosen | Rejected | Why | Date |
 |---|---|---|---|---|---|
 | D1 | How non-TUI runs get input and recovery choices | `InputProvider` / `RecoveryPolicy` interfaces supplied by whoever starts the run (TUI, CLI, API, AI) | Compile-and-swap export with headless twin node types | Twins double the node catalog and add an export artifact to keep in sync. Providers let the same node ask whichever client launched the run, and the future server needs them anyway | 2026-10-10 |
+| D10 | Whether a handled error fails a run | **An error routed along an error path is handled.** Its record carries `handled: true`; a run whose errors were all handled succeeds (exit 0, run files deleted). Unhandled errors still exit 1 | Exiting 1 for every logged error; not logging routed errors | A workflow that catches its own failures (camera busy → notification) did what it was built to do; cron and scripts must not see it as broken. Logging every error keeps the Errors view and run history complete, and `unhandled_error_count` sits beside `error_count` | 2026-10-12 |
 | D2 | How triggers relate to runs | A trigger **launches a new run** through the workflow's contract | An always-running watcher: one run that never ends and loops back to its trigger | A run that never ends needs cycles, a `RunSession` that never closes, unbounded output/error caches and timeout exemptions. One run per event keeps runs finite, crash handling per run, and restart as "re-arm the registry" | 2026-10-10 |
 | D3 | What a subworkflow is | Its **own run** (`RunContext`) linked by `parent_run_id` | A scope inside the parent run with key prefixes | Gives isolated memory (already required by the backlog). "Call and wait" and "fire and forget" become one mechanism. Per-run eviction keeps working | 2026-10-10 |
 | D4 | When per-run state is extracted | **Step 1b**, right after the bug fixes and ahead of `[error]` routing | Later, at the server step | Concurrency, subworkflows and triggers all depend on it. Touch `master_state.py` once, early | 2026-10-10 |
@@ -108,8 +109,12 @@ the real backend.
 | — | Refresh coalescer (frontend only) — **done** | Any time |
 | 2 | Run service + CLI — **done** | Step 1b merged |
 | 3 | `[error]` routing, error codes, Errors section, skipped status (D7–D9) — **done** | Step 2 merged |
-| — | ESP32 proof slice | Steps 2–3 |
-| 4 | Contracts + subworkflows (Phases 19/20) | Step 3 |
+| — | ESP32 proof slice — **done** | Steps 2–3 |
+| P0 | Housekeeping: handled errors do not fail a run (D10) — **done** | Owner go-ahead 2026-10-12 |
+| P1 | Port model: backend `node_output_ports()` resolves each node's ports from its config | P0 |
+| P2 | Error Mux routes: any number of named routes with stable ids; UI pickers and auto-fill | P1 |
+| P3 | Branch on the same mechanism; editor offers `error` on every node | P2 |
+| 4 | Contracts + subworkflows (Phases 19/20) | Step 3 (after P3) |
 | 5 | Event sources + start triggers | Step 4 |
 | 6 | Server, API, auth, parallel runs | Step 5 |
 
@@ -357,6 +362,27 @@ It needs:
   - a node can mark a file `kept`.
 
 It can be tested against any HTTP endpoint before hardware arrives.
+
+### Spin-off — port model (P0–P3, before step 4)
+
+Approved 2026-10-12. Today a node's ports are fixed class lists
+(`output_ports`), and Branch hides unused `path_*` ports in two copies of
+UI-only logic. The backend should own the port shape and the UI should own
+field entry.
+
+- **P0 — Housekeeping.** D10 (handled errors); this table's ESP32 row.
+- **P1 — Port model refactor, no behavior change.** One backend function
+  `node_output_ports(node_data)` (class ports, narrowed or extended by config)
+  used by the validator, the editor adapter and both UI helpers, replacing
+  the direct `metadata["output_ports"]` reads. Closes the gap where the
+  validator accepts a connection on a Branch path that the count hides.
+- **P2 — Error Mux routes.** A `routes` list (`id`, `label`, `codes`), any
+  number of routes, ports named by stable route id; an optional *unmatched*
+  route; old `path_*_codes` configs migrate on load. All entry is UI-only:
+  upstream code pickers, auto-fill when `error` is connected, "refill from
+  upstream".
+- **P3 — Reuse.** Branch uses the same mechanism without the five-path cap;
+  the editor offers `error` on every node (the engine already accepts it).
 
 ### Step 4 — Contracts and subworkflows (Phases 19/20)
 

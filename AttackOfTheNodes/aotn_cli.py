@@ -249,11 +249,19 @@ async def _run(args: argparse.Namespace, stdin: TextIO, stdout: TextIO, stderr: 
     stdout.flush()
     stderr.write(
         f"aotn run: {result.workflow_name} {result.final_state.lower()}"
-        f" ({len(result.errors)} error(s), run {result.run_id})\n"
+        f" ({_error_summary(result)}, run {result.run_id})\n"
     )
     if interrupted:
         return EXIT_INTERRUPTED
     return result.exit_code
+
+
+def _error_summary(result: Any) -> str:
+    total = len(result.errors)
+    handled = total - len(result.unhandled_errors)
+    if handled:
+        return f"{total} error(s), {handled} handled"
+    return f"{total} error(s)"
 
 
 def _display(value: Any) -> str:

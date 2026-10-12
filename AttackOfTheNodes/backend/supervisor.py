@@ -286,9 +286,9 @@ class Supervisor:
             routed = False
             while result.error is not None:
                 failure = self._describe_failure(node, result.error)
-                record = self._log_failure(failure, inputs)
-                failed_node_id = self.current_node_id
                 target = self._error_route(failure.code)
+                record = self._log_failure(failure, inputs, handled=target is not None)
+                failed_node_id = self.current_node_id
                 if target is not None:
                     # A matching error path exists: route the coded payload
                     # along `error` instead of asking for recovery (D7).
@@ -637,8 +637,10 @@ class Supervisor:
             retryable=retryable,
         )
 
-    def _log_failure(self, failure: _Failure, inputs: Dict[str, Any]) -> Dict[str, Any]:
-        """Log and persist every failure once, routed or not."""
+    def _log_failure(
+        self, failure: _Failure, inputs: Dict[str, Any], handled: bool = False
+    ) -> Dict[str, Any]:
+        """Log and persist every failure once, routed (handled) or not."""
         error = failure.exception
         return self._error_handler.log_error(
             error if isinstance(error, Exception) else Exception(str(error)),
@@ -653,6 +655,7 @@ class Supervisor:
                 "retryable": failure.retryable,
             },
             code=failure.code,
+            handled=handled,
         )
 
     def _error_payload(self, failure: _Failure, record: Dict[str, Any]) -> Dict[str, Any]:

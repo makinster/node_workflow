@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
 from .configuration_manager import ConfigurationManager
+from .error_handler import unhandled_errors
 from .event_bus import EventBus
 from .events import ERROR_LOGGED
 from .master_state import MasterState
@@ -68,11 +69,16 @@ class RunResult:
     node_timings: Dict[str, float] = field(default_factory=dict)
 
     @property
+    def unhandled_errors(self) -> List[Dict[str, Any]]:
+        """Errors no error path handled; routed errors do not fail a run."""
+        return unhandled_errors(self.errors)
+
+    @property
     def exit_code(self) -> int:
         if self.final_state == "STOPPED":
             return EXIT_INTERRUPTED
         if self.final_state == "FINISHED":
-            return EXIT_FINISHED_WITH_ERRORS if self.errors else EXIT_OK
+            return EXIT_FINISHED_WITH_ERRORS if self.unhandled_errors else EXIT_OK
         return EXIT_RUN_FAILED
 
     def to_dict(self) -> Dict[str, Any]:
@@ -82,6 +88,7 @@ class RunResult:
             "workflow_name": self.workflow_name,
             "final_state": self.final_state,
             "errors": list(self.errors),
+            "unhandled_error_count": len(self.unhandled_errors),
             "outputs": list(self.outputs),
             "node_timings": dict(self.node_timings),
             "exit_code": self.exit_code,
