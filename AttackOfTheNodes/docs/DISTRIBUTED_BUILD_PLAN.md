@@ -105,7 +105,7 @@ the real backend.
 |---|---|---|
 | 1 | Bug fixes: error-port routing, Stop/leak, unattended policy — **done** | Owner has read this plan |
 | 1b | `RunContext` + WaitRegistry + delivery tracking (D5) — **done** | Step 1 merged |
-| — | Refresh coalescer (frontend only) | Any time |
+| — | Refresh coalescer (frontend only) — **done** | Any time |
 | 2 | Run service + CLI | Step 1b merged |
 | 3 | `[error]` routing, error codes, Errors section, skipped status (D7–D9) | Step 2 merged |
 | — | ESP32 proof slice | Steps 2–3 |
@@ -234,6 +234,8 @@ SESSION_LOG for tests, interpretation notes and behavior changes.
   - a long Wait Until on a reachable target is never failed by the rule.
 
 ### Any time — Refresh coalescer (frontend only)
+
+**Status: done (2026-10-12, branch `dist/refresh-coalescer`).**
 
 - Coalesce (update state, mark dirty, refresh on a timer):
   `NODE_EXECUTION_UPDATE`, `SUPERVISOR_STATE_UPDATE`, `NODE_TIMING_UPDATE`,

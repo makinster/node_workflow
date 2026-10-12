@@ -4,6 +4,34 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-12 — Distributed Plan: Refresh Coalescer (Frontend Only)
+
+Branch `dist/refresh-coalescer`, built in its own worktree alongside step 1b
+and merged with step 1b's `main` (`41f2063`). Before: 860 passed. After: 866
+passed. Only `frontend/app.py` and frontend tests changed.
+
+- `NODE_EXECUTION_UPDATE`, `SUPERVISOR_STATE_UPDATE`, `NODE_TIMING_UPDATE`,
+  `MEMORY_UPDATE`, `SUPERVISOR_REGISTER`, `SUPERVISOR_TERMINATING` update App
+  state and mark the screen dirty; a 75 ms timer (`REFRESH_COALESCE_SECONDS`)
+  refreshes once.
+- `USER_INPUT_NEEDED`, `RECOVERY_OPTIONS_AVAILABLE`, `WORKFLOW_STATE_UPDATE`,
+  `ERROR_LOGGED`, `ERROR_OCCURRED` act at once and flush. `WORKFLOW_DIRTY`
+  (editor edits) also flushes, which keeps its immediate refresh.
+- `App.flush_refresh()` is exposed for tests. With no running app the refresh
+  stays immediate.
+- Measured on a 32-node run with a mounted `ExecutionScreen`: 168 screen
+  refreshes before, at most 10 after (proposal v2 Task 1 Case B).
+
+**Behavior change:** during a run the execution screen updates at most every
+75 ms instead of on every event; the final frame after a run is unchanged.
+
+**Tests:** new `tests/test_refresh_coalescer.py` (6). Two mounted-screen tests
+in `test_execution_status.py` now call `app.flush_refresh()` before asserting
+a card changed, rather than relying on a refresh per event; their assertions
+are unchanged. One unrelated run of the full suite saw
+`test_error_details_navigation.py::test_error_buttons_have_keyboard_focus_and_scroll[True-140]`
+fail once; it passed on six reruns, on both this branch and `main`.
+
 ## 2026-10-12 — Distributed Step 1b: RunContext, WaitRegistry, Delivery Tracking
 
 Branch `dist/step-1b-run-context`, from `main` at `e39f5f7` (step 1, PR #32).
