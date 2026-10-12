@@ -4,6 +4,7 @@ from typing import Any, ClassVar, Dict, List, Optional
 
 from ...node_base import Node, NodeContext
 from ...node_category import NodeCategory
+from ...node_errors import FAILED_INPUT
 
 
 class ErrorMuxNode(Node):
@@ -23,11 +24,15 @@ class ErrorMuxNode(Node):
     input_ports: ClassVar[List[str]] = ['error']
     output_ports: ClassVar[List[str]] = ['path_a', 'path_b', 'path_c']
     input_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {'error': {'name': 'Error', 'description': "Versioned error payload from the failing node's error port"}}
-    output_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {'path_a': {'name': 'Error', 'description': 'The error payload, when its code is listed for path A'}, 'path_b': {'name': 'Error', 'description': 'The error payload, when its code is listed for path B'}, 'path_c': {'name': 'Error', 'description': 'The error payload, when its code is listed for path C'}}
-    default_config: ClassVar[Dict[str, Any]] = {'path_a_codes': '', 'path_b_codes': '', 'path_c_codes': ''}
-    config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {'path_a_codes': {'type': 'string', 'label': 'Path A codes', 'placeholder': 'timeout, network', 'description': 'Comma-separated error codes routed to path A', 'required': False, 'tab': 'Parameters'}, 'path_b_codes': {'type': 'string', 'label': 'Path B codes', 'description': 'Comma-separated error codes routed to path B', 'required': False, 'tab': 'Parameters'}, 'path_c_codes': {'type': 'string', 'label': 'Path C codes', 'description': 'Comma-separated error codes routed to path C', 'required': False, 'tab': 'Parameters'}}
+    output_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {'path_a': {'name': 'Error', 'description': "The error payload (or the failed node's input, see Pass along), when its code is listed for path A"}, 'path_b': {'name': 'Error', 'description': "The error payload (or the failed node's input, see Pass along), when its code is listed for path B"}, 'path_c': {'name': 'Error', 'description': "The error payload (or the failed node's input, see Pass along), when its code is listed for path C"}}
+    default_config: ClassVar[Dict[str, Any]] = {'forward': 'error', 'path_a_codes': '', 'path_b_codes': '', 'path_c_codes': ''}
+    config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {'forward': {'type': 'select', 'label': 'Pass along', 'options': ['error', 'failed_input'], 'description': 'What the chosen path receives: the error payload, or the input the failed node was given (to retry or fall back on the same data)', 'tab': 'Parameters'}, 'path_a_codes': {'type': 'string', 'label': 'Path A codes', 'placeholder': 'timeout, network', 'description': 'Comma-separated error codes routed to path A', 'required': False, 'tab': 'Parameters'}, 'path_b_codes': {'type': 'string', 'label': 'Path B codes', 'description': 'Comma-separated error codes routed to path B', 'required': False, 'tab': 'Parameters'}, 'path_c_codes': {'type': 'string', 'label': 'Path C codes', 'description': 'Comma-separated error codes routed to path C', 'required': False, 'tab': 'Parameters'}}
     ui_hints: ClassVar[Dict[str, Any]] = {}
     error_definitions: ClassVar[List[Dict[str, Any]]] = []
+
+    # Engine hook: when a failure is routed here, the supervisor also passes
+    # the failed node's input as inputs["failed_input"].
+    receives_failed_input: ClassVar[bool] = True
 
     async def execute(self, context: NodeContext) -> None:
         payload = context.inputs.get("error")
@@ -38,7 +43,11 @@ class ErrorMuxNode(Node):
             # means the payload did not come from an error port.
             context.signal_error(RuntimeError(f"Error Mux has no path for code {code!r}"))
             return
-        context.signal_done({"data": {port: payload}, "output_port": port})
+        value = payload
+        if self.config.get("forward") == "failed_input":
+            # Supplied by the engine because receives_failed_input is set.
+            value = context.inputs.get(FAILED_INPUT)
+        context.signal_done({"data": {port: value}, "output_port": port})
 
     def accepts_error_code(self, code: Optional[str]) -> bool:
         """Engine hook (D7): route a failure here only when a path lists its code."""

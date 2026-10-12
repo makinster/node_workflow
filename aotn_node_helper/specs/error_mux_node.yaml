@@ -16,15 +16,21 @@ input_port_metadata:
 output_port_metadata:
   path_a:
     name: Error
-    description: The error payload, when its code is listed for path A
+    description: "The error payload (or the failed node's input, see Pass along), when its code is listed for path A"
   path_b:
     name: Error
-    description: The error payload, when its code is listed for path B
+    description: "The error payload (or the failed node's input, see Pass along), when its code is listed for path B"
   path_c:
     name: Error
-    description: The error payload, when its code is listed for path C
+    description: "The error payload (or the failed node's input, see Pass along), when its code is listed for path C"
 config_tabs:
   Parameters:
+    forward:
+      type: select
+      label: "Pass along"
+      options: ["error", "failed_input"]
+      default: error
+      description: "What the chosen path receives: the error payload, or the input the failed node was given (to retry or fall back on the same data)"
     path_a_codes:
       type: string
       label: "Path A codes"

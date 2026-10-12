@@ -139,7 +139,7 @@ Variants have different port shapes, so they must be separate types
 | Node | Status | Notes / Maps from |
 |---|---|---|
 | Parallel Branch | Live | `branch_node` — unconditional split into 2–5 concurrent paths. Tags: Parallel |
-| Error Mux | Live | `error_mux_node` — routes a failure arriving from a node's `error` port to path A/B/C by its error code (comma-separated codes per path). A code it does not list falls through to recovery, or the run's policy when headless. The validator checks its codes against what the upstream node declares. Tags: Conditional |
+| Error Mux | Live | `error_mux_node` — routes a failure arriving from a node's `error` port to path A/B/C by its error code (comma-separated codes per path). A code it does not list falls through to recovery, or the run's policy when headless. **Pass along** chooses what the path receives: the error payload (default) or the input the failed node was given, to retry or fall back on the same data. The validator checks its codes against what the upstream node declares. Tags: Conditional |
 | Simple Conditional Branch | Planned | Bool/flag picks true or false path (2 ports). Tags: Conditional. (`conditional_node` is the legacy ancestor.) |
 | Multi-Condition Branch | Concept | Multiple conditions map to multiple named paths. Tags: Conditional |
 | AI Conditional Branch | Deferred | AI evaluates a prompt to decide the path. Tags: Conditional, AI. **Strict model constraint:** requires reliable structured output (tool calling or JSON mode); the AI selects from defined branch labels and cannot invent a path. Supported-model list will be stricter than conversational AI nodes. |

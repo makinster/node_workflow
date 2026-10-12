@@ -76,3 +76,15 @@ def test_error_mux_accepts_only_listed_codes_first_path_wins():
     assert node.route_for_code("node_error") == "path_c"
     assert not node.accepts_error_code("network")
     assert not node.accepts_error_code(None)
+
+
+@pytest.mark.asyncio
+async def test_error_mux_can_pass_along_the_failed_nodes_input():
+    node = NodeFactory().create_node("error_mux_node", "generated")
+    assert node.config["forward"] == "error"
+    node.config.update({"path_a_codes": "timeout", "forward": "failed_input"})
+    done, errors = [], []
+    inputs = {"error": {"code": "timeout"}, "failed_input": {"url": "http://x"}}
+    await node.execute(_context(inputs, done, errors))
+    assert not errors
+    assert done == [{"data": {"path_a": {"url": "http://x"}}, "output_port": "path_a"}]

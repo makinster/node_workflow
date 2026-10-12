@@ -7,7 +7,7 @@ overhaul.
 ## 2026-10-12 — Distributed Step 3: Error Codes, Error Mux, Errors Section, Skipped Status
 
 Branch `dist/step-3-error-routing`, from `main` at `5e65265` (step 2, PR #35).
-Before: 905 passed. After: 949 passed.
+Before: 905 passed. After: 952 passed.
 
 - **D7 codes** (`backend/node_errors.py`): `NodeError`, declared
   `error_definitions` (helper specs: `errors:`), the default generic
@@ -86,6 +86,17 @@ the payload dict).
 - A user Stop during a recovery prompt marked downstream nodes skipped
   `upstream_failed`. A user Stop (`RunContext.stop_requested`) no longer
   spreads skips. A failure that terminates the workflow (`_halt`) still does.
+
+**Owner request during review: Error Mux "Pass along".** A path after an
+Error Mux only received the error record, so the data the failed node was
+working on was lost to the handling path. The mux spec gained a `forward`
+select (`error` default, `failed_input`); the node was regenerated and its
+custom body restored, and `check_node` / `check_ui` pass. Engine hook:
+`receives_failed_input` on the node class (`node_errors.FAILED_INPUT`). The
+error payload stays on the failed node's `error` slot either way. Tests:
+`test_mux_can_pass_the_failed_nodes_input_down_its_path`,
+`test_a_catch_all_node_does_not_get_the_failed_input`, and a generated-test
+case.
 
 **Open items from the review (not fixed, need a decision):**
 

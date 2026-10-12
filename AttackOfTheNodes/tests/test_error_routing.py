@@ -296,6 +296,56 @@ async def test_mux_without_a_matching_code_falls_through_to_the_policy(policy, s
     assert [e["code"] for e in errors] == ["invalid_json"]
 
 
+async def test_mux_can_pass_the_failed_nodes_input_down_its_path():
+    bus, workflow_map, master = _services()
+    recoveries = _answer(bus, master, "TERMINATE_BRANCH")
+    parse, mux, handler = _mux_workflow(workflow_map, "invalid_json")
+    workflow_map.update_node_config(mux, {"path_a_codes": "invalid_json", "forward": "failed_input"})
+
+    assert await master.start_workflow()
+    await _finish(master)
+
+    assert recoveries == []
+    given = master._memory_bank.read_transient(
+        *workflow_map.find_input_source(parse, "input").values()
+    )
+    assert given is not None
+    assert master._memory_bank.read_transient(mux, "path_a") == given
+    # The error payload is still on the failed node's error slot.
+    assert master._memory_bank.read_transient(parse, "error")["code"] == "invalid_json"
+    assert handler in master.completed_nodes
+
+
+async def test_a_catch_all_node_does_not_get_the_failed_input():
+    bus, workflow_map, master = _services()
+    _answer(bus, master, "TERMINATE_BRANCH")
+    seen: List[Dict[str, Any]] = []
+    start = workflow_map.add_node("start_node")
+    failing = workflow_map.add_node("error_node")
+    handler = workflow_map.add_node("no_op_node")
+    workflow_map.connect(start, "default", failing, "input")
+    workflow_map.connect(failing, "error", handler, "input")
+    original = master._new_supervisor
+
+    def spy(run, **kwargs):
+        supervisor = original(run, **kwargs)
+        prepare = supervisor._prepare_inputs
+
+        def record(node):
+            inputs = prepare(node)
+            seen.append(inputs)
+            return inputs
+
+        supervisor._prepare_inputs = record
+        return supervisor
+
+    master._new_supervisor = spy
+    assert await master.start_workflow()
+    await _finish(master)
+
+    assert seen and all("failed_input" not in inputs for inputs in seen)
+
+
 async def test_mux_without_a_matching_code_pauses_for_recovery_when_attended():
     bus, workflow_map, master = _services()
     recoveries = _answer(bus, master, "TERMINATE_BRANCH")

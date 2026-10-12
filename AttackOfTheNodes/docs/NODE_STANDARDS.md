@@ -497,6 +497,11 @@ presentation of `NodeFactory` metadata only.
   follows its recovery policy when headless. The node is failed, never
   completed, and its `default` path is skipped as `not_taken`.
 - Match on codes, never on message text.
+- A node class may set `receives_failed_input = True` (Error Mux does). When
+  a failure is routed to it along `error`, the supervisor also passes the
+  failed node's input as `inputs["failed_input"]`: the value of its single
+  input port, or a dict by port name when it has several. Other nodes never
+  see this key.
 
 ---
 

@@ -35,6 +35,7 @@ from .node_errors import (
     ENGINE_UNATTENDED_INPUT,
     ENGINE_UPSTREAM_UNREACHABLE,
     ERROR_PORT,
+    FAILED_INPUT,
     NodeError,
     build_error_payload,
     definitions_with_default,
@@ -135,6 +136,9 @@ class Supervisor:
         # (node_id, port) that routed this supervisor to its current node, so
         # an input port fed by several connections reads the one that fired.
         self._arrived_from: Optional[tuple] = None
+        # The failed node's input, kept while a failure is routed along
+        # `error` (offered to nodes with ``receives_failed_input``).
+        self._failed_input: Any = None
         self._workflow_map = workflow_map
         self._memory_bank = memory_bank
         self._event_bus = event_bus
@@ -295,6 +299,10 @@ class Supervisor:
                     )
                     self._report_outcome(failed_node_id, "failed", [target])
                     self._arrived_from = (failed_node_id, ERROR_PORT)
+                    ports = node.get_input_ports()
+                    self._failed_input = (
+                        inputs.get(ports[0]) if len(ports) == 1 else dict(inputs)
+                    )
                     self.current_node_id = target
                     self._node_phase = "queued"
                     self._publish_state_update()
@@ -401,6 +409,12 @@ class Supervisor:
 
         if not inputs and not node.get_input_ports():
             inputs = dict(self._initial_data)
+        if (
+            getattr(node, "receives_failed_input", False)
+            and self._arrived_from is not None
+            and self._arrived_from[1] == ERROR_PORT
+        ):
+            inputs[FAILED_INPUT] = self._failed_input
         return inputs
 
     def _input_source(self, input_port: str) -> Optional[Dict[str, str]]:

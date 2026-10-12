@@ -23,6 +23,9 @@ ERROR_PORT = "error"
 ERROR_PAYLOAD_VERSION = 1
 
 DEFAULT_ERROR_CODE = "node_error"
+# Input key under which a node with ``receives_failed_input`` gets the failed
+# node's input when a failure is routed to it along ``error``.
+FAILED_INPUT = "failed_input"
 ENGINE_UPSTREAM_UNREACHABLE = "engine.upstream_unreachable"
 ENGINE_UNATTENDED_INPUT = "engine.unattended_input"
 
