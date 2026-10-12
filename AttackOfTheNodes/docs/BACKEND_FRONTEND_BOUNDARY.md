@@ -26,6 +26,11 @@ Good backend responsibilities:
   the rule (for example the Branch path count). The engine-level `error` port
   is not listed. Per-port names come from
   `NodeFactory.node_output_port_metadata(node)` (Error Mux route labels).
+- Each node's input ports, mirroring outputs: `Node.resolve_input_ports`,
+  `NodeFactory.node_input_ports(node)` / `input_ports_for` /
+  `declared_input_ports`, `WorkflowMap.input_ports`. Merge's slot count
+  (`input_slots`) is the only config-driven case. A connection into a slot the
+  config hides is a validator warning (never read).
 - What an Error Mux route is (`node_errors.mux_routes`, ids, matching,
   migration of old `path_*_codes`). Proposing routes — upstream code pickers,
   auto-fill on wiring, "Refill from upstream" — is frontend-only

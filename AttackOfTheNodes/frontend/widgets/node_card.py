@@ -10,6 +10,7 @@ from textual import events
 from textual.message import Message
 from textual.widgets import Static
 
+from backend.branch_paths import path_index
 from frontend.node_io_display import node_display_name
 from frontend.node_types import (
     BRANCH_END_NODE_TYPE,
@@ -574,10 +575,8 @@ def branch_path_palette_index(key: str) -> int:
 
 def branch_path_port_index(port: str) -> int:
     """Return a stable branch-port position for palette assignment."""
-    key = str(port)
-    if key in BRANCH_PATH_PORTS:
-        return BRANCH_PATH_PORTS.index(key)
-    return 0
+    index = path_index(port)
+    return 0 if index is None else index
 
 
 def selected_box_text(

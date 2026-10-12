@@ -138,7 +138,7 @@ Variants have different port shapes, so they must be separate types
 
 | Node | Status | Notes / Maps from |
 |---|---|---|
-| Parallel Branch | Live | `branch_node` — unconditional split into 2–5 concurrent paths. Tags: Parallel |
+| Parallel Branch | Live | `branch_node` — unconditional split into 2–64 concurrent paths (`path_a` … `path_z`, `path_aa` …; 64 is a safety limit on run width). Tags: Parallel |
 | Error Mux | Live | `error_mux_node` — routes a failure arriving from a node's `error` port to one of any number of named **routes** by its error code; each route is its own output (stable id), and the first route that lists a code wins. The optional **Unmatched route** takes every other code; without it, an unlisted code falls through to recovery, or the run's policy when headless. Wiring a node's `error` port into an empty mux fills one route per code that node declares; config offers those codes as pickers and **Refill from upstream** (route ids of single-code routes are kept, so connections survive). Old Path A/B/C configs migrate to routes `path_a`–`path_c`. **Pass along** chooses what the path receives: the error payload (default) or the input the failed node was given, to retry or fall back on the same data. The validator checks its codes against what the upstream node declares. Tags: Conditional |
 | Simple Conditional Branch | Planned | Bool/flag picks true or false path (2 ports). Tags: Conditional. (`conditional_node` is the legacy ancestor.) |
 | Multi-Condition Branch | Concept | Multiple conditions map to multiple named paths. Tags: Conditional |
@@ -150,7 +150,7 @@ Variants have different port shapes, so they must be separate types
 
 | Node | Status | Notes / Maps from |
 |---|---|---|
-| Standard Merge | Live | `merge_node` — wait for all selected branches, then continue. Tags: Parallel |
+| Standard Merge | Live | `merge_node` — wait for all selected branches, then continue. Input slots use the Branch path names; five by default (`input_slots`), raised by the editor when it closes more branches. Tags: Parallel |
 | First-Wins Merge | Concept | Proceed when any one branch arrives; cancel remaining |
 | Conditional Merge | Concept | Accept only arriving branches that meet a condition. Tags: Conditional |
 | Timed Merge | Concept | Merge after a time limit; incomplete branches abandoned |

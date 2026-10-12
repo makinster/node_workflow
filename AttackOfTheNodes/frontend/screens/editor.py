@@ -10,6 +10,7 @@ from textual.containers import Horizontal, Vertical
 from textual.screen import Screen
 from textual.widgets import Header, Label, Static
 
+from backend.branch_paths import merge_slot_count, slots_covering
 from backend.validator import validate_workflow
 from frontend.error_mux_ui import autofill_mux_routes
 from frontend.error_paths import editor_output_ports
@@ -657,6 +658,20 @@ class EditorScreen(Screen):
                 merge_node_id,
                 assignments[option_value],
             )
+        self._ensure_merge_input_slots(merge_node_id)
+
+    def _ensure_merge_input_slots(self, merge_node_id: str) -> None:
+        """Raise a Merge's input_slots so every connected slot is one it reads."""
+        merge_node = self.workflow_map.get_node_data(merge_node_id) or {}
+        connected = [
+            conn.get("target_port")
+            for conn in (merge_node.get("connections") or {}).get("inputs", [])
+        ]
+        needed = slots_covering(connected)
+        config = dict(merge_node.get("config") or {})
+        if needed > merge_slot_count(config):
+            config["input_slots"] = needed
+            self.workflow_map.update_node_config(merge_node_id, config)
 
     def _sync_all_merge_branch_end_connections(self) -> None:
         for node_id, node in self.workflow_map.get_all_node_data().items():
@@ -670,8 +685,9 @@ class EditorScreen(Screen):
 
     def _repair_merge_input_ports(self, merge_node_id: str) -> None:
         merge_node = self.workflow_map.get_node_data(merge_node_id) or {}
-        metadata = self._metadata_for_type(merge_node.get("type", ""))
-        declared_inputs = list(metadata.get("input_ports") or []) if metadata else []
+        # Only ports the type never had are repaired; a slot above this
+        # merge's count is covered by raising input_slots instead.
+        declared_inputs = self.factory.declared_input_ports(str(merge_node.get("type") or ""))
         if not declared_inputs:
             return
         for conn in list(merge_node.get("connections", {}).get("inputs", [])):
@@ -798,7 +814,7 @@ class EditorScreen(Screen):
             old_port = conn.get("target_port")
             if config.get(f"{old_port}_source") not in {"Configured", "Vault"}:
                 continue
-            available = [port for port in metadata.get("input_ports") or []
+            available = [port for port in self.factory.node_input_ports(node)
                          if port not in occupied and config.get(f"{port}_source") == "Upstream payload"]
             matches = self._matching_typed_input_ports(
                 conn["source_node_id"], conn["source_port"], node_id, available,
@@ -1164,7 +1180,7 @@ class EditorScreen(Screen):
         target_meta = self._metadata_for_type(target.get("type", ""))
         if source_meta is None or target_meta is None:
             return
-        input_ports = target_meta.get("input_ports") or []
+        input_ports = self.factory.node_input_ports(target)
         if not input_ports:
             return
         target_port = self._target_input_port_for_connection(
@@ -1206,7 +1222,9 @@ class EditorScreen(Screen):
             existing_meta = (
                 self._metadata_for_type(existing.get("type", "")) if existing else None
             )
-            existing_input_ports = existing_meta.get("input_ports") if existing_meta else []
+            existing_input_ports = (
+                self.factory.node_input_ports(existing) if existing_meta else []
+            )
             if target_output_ports and existing_input_ports:
                 occupied = {
                     conn.get("target_port")

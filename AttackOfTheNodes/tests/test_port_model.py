@@ -15,6 +15,7 @@ import pytest
 
 from backend.event_bus import EventBus
 from backend.node_factory import NodeFactory
+from backend.branch_paths import ALL_PATH_PORTS, path_ports
 from backend.nodes.branch_node import (
     MAX_BRANCH_COUNT,
     MIN_BRANCH_COUNT,
@@ -42,22 +43,24 @@ def _map():
     ({"branch_count": "4"}, 4),
     ({"branch_count": 5}, 5),
     ({"branch_count": 1}, MIN_BRANCH_COUNT),
-    ({"branch_count": 99}, MAX_BRANCH_COUNT),
+    ({"branch_count": 8}, 8),
+    ({"branch_count": 999}, MAX_BRANCH_COUNT),
     ({"branch_count": "lots"}, 2),
     ({"branch_count": None}, 2),
 ])
 def test_branch_ports_follow_the_path_count(config, count):
     factory = NodeFactory()
     assert branch_count_from_config(config) == count
-    assert BranchNode.resolve_output_ports(config) == ALL_PATHS[:count]
-    assert factory.output_ports_for("branch_node", config) == ALL_PATHS[:count]
-    assert factory.node_output_ports({"type": "branch_node", "config": config}) == ALL_PATHS[:count]
+    assert BranchNode.resolve_output_ports(config) == path_ports(count)
+    assert factory.output_ports_for("branch_node", config) == path_ports(count)
+    assert factory.node_output_ports({"type": "branch_node", "config": config}) == path_ports(count)
 
 
 def test_metadata_keeps_the_full_type_list():
     factory = NodeFactory()
     meta = {m["type"]: m for m in factory.get_node_types_metadata()}
-    assert meta["branch_node"]["output_ports"] == ALL_PATHS
+    assert meta["branch_node"]["output_ports"] == ALL_PATH_PORTS
+    assert meta["merge_node"]["input_ports"] == ALL_PATH_PORTS
 
 
 CONFIG_DRIVEN = {"branch_node", "error_mux_node"}
@@ -135,11 +138,11 @@ def test_validator_accepts_a_visible_branch_path_without_a_hidden_warning():
 
 
 def test_validator_still_rejects_a_port_the_type_never_had():
-    factory, workflow_map, branch = _branch_workflow(2, "path_z")
+    factory, workflow_map, branch = _branch_workflow(2, "not_a_path")
 
     result = validate_workflow(workflow_map, factory)
 
-    assert any("undeclared port 'path_z'" in m for m in _messages(result["errors"], branch))
+    assert any("undeclared port 'not_a_path'" in m for m in _messages(result["errors"], branch))
 
 
 def test_hidden_branch_paths_never_fire():

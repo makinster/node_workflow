@@ -233,7 +233,8 @@ def validate_workflow(
             continue  # unknown type already flagged above
         type_out = set(meta.get("output_ports") or [])
         declared_out = set(factory.node_output_ports(data))
-        declared_in = set(meta.get("input_ports") or [])
+        type_in = set(meta.get("input_ports") or [])
+        declared_in = set(factory.node_input_ports(data))
         for conn in data.get("connections", {}).get("outputs", []):
             port = conn.get("source_port", "default")
             if port in type_out and port not in declared_out:
@@ -261,7 +262,18 @@ def validate_workflow(
                 )
         for conn in data.get("connections", {}).get("inputs", []):
             port = conn.get("target_port", "default")
-            if port not in declared_in:
+            if port in type_in and port not in declared_in:
+                # A Merge slot above this node's input_slots is never read.
+                warnings.append(
+                    {
+                        "node_id": node_id,
+                        "message": (
+                            f"Connection into hidden input '{port}' is never read "
+                            f"(this node's settings do not use that input)"
+                        ),
+                    }
+                )
+            if port not in declared_in and port not in type_in:
                 errors.append(
                     {
                         "node_id": node_id,

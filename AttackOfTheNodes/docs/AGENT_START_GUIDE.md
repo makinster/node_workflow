@@ -157,9 +157,13 @@ config_tabs:
 ## Branch Node V1
 
 - `branch_node` is currently exposed as an always-parallel branch spawner.
-- It supports fixed ports `path_a` through `path_e`, with `branch_count` clamped
-  from `2` to `5` (`branch_count_from_config` in `backend/nodes/branch_node.py`,
-  which `BranchNode.resolve_output_ports` uses).
+- Its paths are `path_a` … `path_z`, `path_aa` … (`backend/branch_paths.py`),
+  with `branch_count` clamped from `2` to `MAX_BRANCH_COUNT` (64, a safety
+  limit). `BranchNode.resolve_output_ports` returns the first `branch_count`.
+- Merge input slots use the same names. A Merge reads `input_slots` slots
+  (`MergeNode.resolve_input_ports`; at least five, so old saves are
+  unchanged). The editor raises `input_slots` when it connects a closing
+  branch to a higher slot (`EditorScreen._ensure_merge_input_slots`).
 - The config UI hides legacy conditional fields. Keep legacy config keys readable
   for old saves, but do not add new conditional UI to `branch_node`; use a future
   dedicated conditional-branch node/pass instead.

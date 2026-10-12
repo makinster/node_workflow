@@ -170,9 +170,15 @@ class Node(ABC):
                 errors.append(f"Missing required field: {field_name}")
         return errors
 
+    @classmethod
+    def resolve_input_ports(cls, config: Optional[Dict[str, Any]]) -> List[str]:
+        """Input ports a node of this type has with ``config`` (default: the
+        class list). Merge overrides it with its ``input_slots`` count."""
+        return list(cls.input_ports)
+
     def get_input_ports(self) -> List[str]:
-        """Return this node type's input port names."""
-        return list(self.input_ports)
+        """Return this node's input port names, resolved from its config."""
+        return self.resolve_input_ports(self.config)
 
     @classmethod
     def resolve_output_ports(cls, config: Optional[Dict[str, Any]]) -> List[str]:

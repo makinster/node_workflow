@@ -211,7 +211,6 @@ class EditorWorkflowAdapter:
             )
 
         report = TombstoneRestoreReport(node_id=node_id, restored=True)
-        ports_by_type = self._ports_by_type()
 
         # Step 1: identity/config restore is never blocked by connection drift.
         node["type"] = original_type
@@ -276,9 +275,7 @@ class EditorWorkflowAdapter:
                     }
                 )
                 continue
-            declared = ports_by_type.get(target_node.get("type", ""), {}).get(
-                "inputs", set()
-            )
+            declared = set(self.factory.node_input_ports(target_node))
             if target_port not in declared:
                 report.output_errors.append(
                     {
@@ -336,12 +333,6 @@ class EditorWorkflowAdapter:
         self._deleted_nodes.pop(node_id, None)
         self._mark_dirty()
         return report
-
-    def _ports_by_type(self) -> Dict[str, Dict[str, set]]:
-        ports: Dict[str, Dict[str, set]] = {}
-        for meta in self.factory.get_node_types_metadata():
-            ports[meta["type"]] = {"inputs": set(meta.get("input_ports") or [])}
-        return ports
 
     def materialize_deleted_nodes(self) -> int:
         """Replace soft-deleted editor rows with save-persistent tombstone records."""
@@ -509,8 +500,7 @@ class EditorWorkflowAdapter:
         return port == ERROR_PORT or port in self.factory.node_output_ports(node)
 
     def _declares_input_port(self, node: Dict[str, Any], port: str) -> bool:
-        ports = self._ports_by_type().get(node.get("type", ""), {}).get("inputs", set())
-        return port in ports
+        return port in self.factory.node_input_ports(node)
 
     def _output_port_has_target(self, node: Dict[str, Any], port: str) -> bool:
         return any(
