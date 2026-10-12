@@ -372,6 +372,9 @@ class MasterState:
         child_branch_id = f"branch_{uuid.uuid4().hex[:6]}"
         self._register_branch_group(run, payload["parent_branch_id"], child_branch_id)
 
+        # Delivery is recorded only for a child that actually exists, so a
+        # branch refused by the depth limit never looks delivered.
+        run.record_delivery(payload.get("source_node_id") or "", payload["start_node_id"])
         child = self._new_supervisor(
             run,
             branch_id=child_branch_id,

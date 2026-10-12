@@ -264,6 +264,136 @@ async def test_stale_supervisor_marks_completions_only_in_its_own_run():
     await _finish(master)
 
 
+@pytest.mark.parametrize("policy", [None, "terminate_branch"])
+async def test_target_two_hops_past_a_failure_is_unreachable(policy):
+    """The middle node never runs, and nothing live can reach it."""
+    bus, workflow_map, master = _services()
+    recoveries = _recoveries(bus, master)
+    fork, path_a, path_b = _fork(workflow_map)
+    failing = workflow_map.add_node("error_node")
+    middle = workflow_map.add_node("no_op_node")
+    target = workflow_map.add_node("no_op_node")
+    workflow_map.connect(fork, path_b, failing, "input")
+    workflow_map.connect(failing, "default", middle, "input")
+    workflow_map.connect(middle, "default", target, "input")
+    waiter = _waiter_on(workflow_map, target, fork, path_a)
+    logged: List[Dict[str, Any]] = []
+    bus.subscribe(ERROR_LOGGED, logged.append)
+
+    assert await master.start_workflow(unattended=policy)
+    await _finish(master)
+
+    waiter_errors = [e for e in logged if e["error"]["node_id"] == waiter]
+    assert len(waiter_errors) == 1
+    if policy is None:
+        assert waiter in [r["node_id"] for r in recoveries]
+
+
+async def test_target_two_hops_down_an_untaken_conditional_port_is_unreachable():
+    bus, workflow_map, master = _services()
+    recoveries = _recoveries(bus, master)
+    fork, path_a, path_b = _fork(workflow_map)
+    condition = workflow_map.add_node("conditional_node")
+    workflow_map.update_node_config(
+        condition, {"condition_type": "equals", "right_value": "never matches"}
+    )
+    middle = workflow_map.add_node("no_op_node")
+    target = workflow_map.add_node("no_op_node")
+    taken = workflow_map.add_node("no_op_node")
+    workflow_map.connect(fork, path_b, condition, "input")
+    workflow_map.connect(condition, "true", middle, "input")
+    workflow_map.connect(middle, "default", target, "input")
+    workflow_map.connect(condition, "false", taken, "input")
+    waiter = _waiter_on(workflow_map, target, fork, path_a)
+
+    assert await master.start_workflow()
+    await _finish(master)
+
+    assert [r["node_id"] for r in recoveries] == [waiter]
+
+
+async def test_branch_refused_by_the_depth_limit_does_not_count_as_delivered(monkeypatch):
+    bus, workflow_map, master = _services()
+    recoveries = _recoveries(bus, master)
+    # Depth 1: the outer fork's children run; the inner fork's are refused.
+    monkeypatch.setitem(master._configuration_manager._settings, "max_branch_depth", 1)
+    logged: List[Dict[str, Any]] = []
+    bus.subscribe(ERROR_LOGGED, logged.append)
+    outer, path_a, path_b = _fork(workflow_map)
+    inner = workflow_map.add_node("branch_node")
+    target = workflow_map.add_node("no_op_node")
+    workflow_map.connect(outer, path_b, inner, "input")
+    workflow_map.connect(inner, "path_a", target, "input")
+    waiter = _waiter_on(workflow_map, target, outer, path_a)
+
+    assert await master.start_workflow(unattended="terminate_branch")
+    await _finish(master)
+
+    assert master._supervisor_tasks == {}
+    assert target not in master.completed_nodes
+    assert [e["error"]["node_id"] for e in logged] == [waiter]
+    assert recoveries == []
+
+
+async def test_wait_on_a_node_after_a_merge_completes():
+    bus, workflow_map, master = _services()
+    events = _statuses(bus)
+    recoveries = _recoveries(bus, master)
+    start = workflow_map.add_node("start_node")
+    fork = workflow_map.add_node("branch_node")
+    workflow_map.update_node_config(fork, {"branch_count": 3})
+    merge = workflow_map.add_node("merge_node")
+    target = workflow_map.add_node("no_op_node")
+    first = workflow_map.add_node("sleep_node")
+    second = workflow_map.add_node("sleep_node")
+    workflow_map.update_node_config(first, {"duration": 0.02})
+    workflow_map.update_node_config(second, {"duration": 0.04})
+    workflow_map.connect(start, "default", fork, "input")
+    workflow_map.connect(fork, "path_a", first, "input")
+    workflow_map.connect(fork, "path_b", second, "input")
+    workflow_map.connect(first, "default", merge, "path_a")
+    workflow_map.connect(second, "default", merge, "path_b")
+    workflow_map.connect(merge, "default", target, "input")
+    waiter = _waiter_on(workflow_map, first, fork, "path_c")
+
+    assert await master.start_workflow()
+    await _finish(master)
+
+    assert recoveries == []
+    assert (waiter, "done") in events
+    assert (target, "done") in events
+
+
+async def test_wait_on_a_target_reached_on_a_later_loop_iteration():
+    """A real loop: the target is only reached once the loop exits."""
+    bus, workflow_map, master = _services()
+    events = _statuses(bus)
+    recoveries = _recoveries(bus, master)
+    fork, path_a, path_b = _fork(workflow_map)
+    counter = workflow_map.add_node("counter_node")
+    check = workflow_map.add_node("conditional_node")
+    pause = workflow_map.add_node("sleep_node")
+    target = workflow_map.add_node("no_op_node")
+    workflow_map.update_node_config(pause, {"duration": 0.01})
+    workflow_map.connect(fork, path_b, counter, "input")
+    workflow_map.connect(counter, "default", check, "input")
+    workflow_map.connect(check, "false", pause, "input")
+    workflow_map.connect(pause, "default", counter, "input")
+    workflow_map.connect(check, "true", target, "input")
+    waiter = _waiter_on(workflow_map, target, fork, path_a)
+    # The conditional matches once the counter's Vault variable reaches 3.
+    workflow_map.update_node_config(check, {
+        "condition_type": "equals", "left_value_source": "variable",
+        "variable_name": "counter", "right_value": "3"})
+
+    assert await master.start_workflow()
+    await _finish(master)
+
+    assert recoveries == []
+    assert (waiter, "done") in events
+    assert (target, "done") in events
+
+
 # ---------------------------------------------------------------------------
 # The rule itself, on a real WorkflowMap with stand-in supervisors
 # ---------------------------------------------------------------------------
@@ -315,11 +445,19 @@ def test_a_delivering_source_keeps_the_target_reachable():
     assert run.unreachable_reason(t, workflow_map) is None
 
 
-def test_a_source_that_has_not_finished_keeps_the_target_reachable():
-    """Never a timeout: an unfinished, unreached source is not final."""
+def test_a_source_that_a_live_supervisor_can_still_run_keeps_the_target_reachable():
+    """Never a timeout: however long it takes, a reachable source may deliver."""
     workflow_map, a, b, t = _loop_map()
     run = _context()
+    run.live_supervisors["slow"] = _At(a)
     assert run.unreachable_reason(t, workflow_map) is None
+
+
+def test_a_source_that_never_ran_and_cannot_run_settles_the_target():
+    """A dead source never routes to the target (D9 will mark it skipped)."""
+    workflow_map, a, b, t = _loop_map()
+    run = _context()
+    assert run.unreachable_reason(t, workflow_map) is not None
 
 
 def test_a_completed_target_is_never_unreachable():

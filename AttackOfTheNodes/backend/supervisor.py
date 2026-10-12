@@ -283,9 +283,9 @@ class Supervisor:
             if result.payload:
                 self.current_node_id = self._handle_payload(result.payload)
 
-            self._report_outcome(completed_node_id, "completed", self._last_delivered)
             if completed_node_id and self._mark_node_completed is not None:
                 await self._mark_node_completed(completed_node_id)
+            self._report_outcome(completed_node_id, "completed", self._last_delivered)
 
             if result.payload:
                 self._node_phase = "queued"
@@ -589,13 +589,13 @@ class Supervisor:
                     output_port,
                 )
                 continue
-            self._last_delivered.append(start_node_id)
             self._event_bus.publish(
                 SUPERVISOR_REQUEST_BRANCH,
                 {
                     "parent_branch_id": self.branch_id,
                     "parent_depth": self.depth,
                     "run_id": self.run_id,
+                    "source_node_id": self.current_node_id,
                     "start_node_id": start_node_id,
                     "initial_data": branch.get("initial_data", {}),
                 },

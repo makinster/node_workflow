@@ -79,6 +79,11 @@ class RunContext:
         if targets:
             self.deliveries.setdefault(node_id, set()).update(targets)
 
+    def record_delivery(self, source_id: str, target_id: str) -> None:
+        """Record one routed connection (e.g. a branch actually spawned)."""
+        if source_id and target_id:
+            self.deliveries.setdefault(source_id, set()).add(target_id)
+
     def delivered(self, source_id: str, target_id: str) -> bool:
         return target_id in self.deliveries.get(source_id, set())
 
@@ -111,6 +116,10 @@ class RunContext:
         - (D5) every incoming connection's source is final, none of them
           routed to it, and no live supervisor can still reach those sources.
           A node with no incoming connections is therefore unreachable at once.
+
+        A source that has not run and that no live supervisor can reach can
+        never become final any other way than being skipped (D9 marks it so
+        in step 3), so it is settled now: it will never route to the target.
         """
         if node_id in self.completed_nodes:
             return None
@@ -134,10 +143,8 @@ class RunContext:
         if not sources:
             return "it has no incoming connections"
         for source_id in sources:
-            if self.node_final.get(source_id) not in FINAL_STATES:
+            if source_id in reach:
                 return None
             if self.delivered(source_id, node_id):
                 return None
-            if source_id in reach:
-                return None
-        return "every upstream source finished without routing to it"
+        return "no upstream source routed to it and none can still run"

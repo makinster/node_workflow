@@ -272,11 +272,16 @@ WaitUntil coordination (`backend/wait_registry.py`):
 - Structural unreachable rule (D5), re-evaluated whenever a node finishes, a
   supervisor terminates or a wait is registered, and never on a timeout. A
   target can no longer complete when no live supervisor is at it or can reach
-  it, and either its own latest visit failed or was skipped, or every incoming
-  connection's source is final, none routed to it, and no live supervisor can
-  still reach those sources. A target with no incoming connections is
+  it, and either its own latest visit failed or was skipped, or none of its
+  incoming connections' sources routed to it and no live supervisor can still
+  reach any of them. A source that never ran and cannot be reached is settled
+  (step 3's D9 marks it skipped). A target with no incoming connections is
   therefore unreachable at once. A required input that is never delivered
   stays a data error, not unreachability.
+- Known limits (not deadlock detection): a target reachable only through the
+  parked waiter itself, or behind a Merge whose group includes the waiter's
+  branch, still waits forever. A Merge plus waiter deadlock also exists on
+  earlier code.
 - Merge keeps its own barrier (now held in the `RunContext`); it already
   releases when a sibling branch ends.
 
