@@ -43,6 +43,12 @@ from .screens.user_input import UserInputScreen
 from .screens.workflow_library import PathPromptScreen, WorkflowLibraryScreen
 
 
+# Run telemetry (node/supervisor/timing/memory updates) only marks the active
+# screen dirty; one refresh runs per interval instead of one per event. Events
+# that need the user, or that change the run state, refresh at once.
+REFRESH_COALESCE_SECONDS = 0.075
+
+
 class AttackOfTheNodesApp(TextualApp):
     """Main Textual app shell.
 
@@ -102,6 +108,8 @@ class AttackOfTheNodesApp(TextualApp):
         self._file_view_requests = deque()
         self._editor_deleted_nodes = {}
         self.cursor_state = CursorState()
+        self._refresh_dirty = False
+        self._refresh_timer = None
         self._subscribe_to_backend_events()
 
     async def on_mount(self) -> None:
@@ -143,7 +151,7 @@ class AttackOfTheNodesApp(TextualApp):
     def _subscribe_to_backend_events(self) -> None:
         """Attach event handlers used by current and future TUI screens."""
         subscriptions = {
-            WORKFLOW_DIRTY: self._on_backend_event,
+            WORKFLOW_DIRTY: self.flush_refresh,
             WORKFLOW_STATE_UPDATE: self._on_workflow_state_update,
             NODE_EXECUTION_UPDATE: self._on_node_execution_update,
             NODE_TIMING_UPDATE: self._on_node_timing_update,
@@ -152,13 +160,39 @@ class AttackOfTheNodesApp(TextualApp):
             SUPERVISOR_TERMINATING: self._on_supervisor_terminating,
             USER_INPUT_NEEDED: self._on_user_input_needed,
             FILE_VIEW_REQUESTED: self._on_file_view_requested,
-            ERROR_OCCURRED: self._on_backend_event,
-            ERROR_LOGGED: self._on_backend_event,
+            ERROR_OCCURRED: self.flush_refresh,
+            ERROR_LOGGED: self.flush_refresh,
             RECOVERY_OPTIONS_AVAILABLE: self._on_recovery_options_available,
-            MEMORY_UPDATE: self._on_backend_event,
+            MEMORY_UPDATE: self.schedule_refresh,
         }
         for event_name, callback in subscriptions.items():
             self.event_bus.subscribe(event_name, callback)
+
+    def schedule_refresh(self, _payload=None) -> None:
+        """Mark the active screen dirty; refresh it on the coalescing timer."""
+        self._refresh_dirty = True
+        if self._refresh_timer is not None:
+            return
+        if not self.is_running:
+            # No event loop driving timers (handlers called directly).
+            self.flush_refresh()
+            return
+        self._refresh_timer = self.set_timer(
+            REFRESH_COALESCE_SECONDS, self._on_refresh_timer
+        )
+
+    def _on_refresh_timer(self) -> None:
+        self._refresh_timer = None
+        if self._refresh_dirty:
+            self.flush_refresh()
+
+    def flush_refresh(self, _payload=None) -> None:
+        """Refresh the active screen now and drop any pending coalesced refresh."""
+        if self._refresh_timer is not None:
+            self._refresh_timer.stop()
+            self._refresh_timer = None
+        self._refresh_dirty = False
+        self._on_backend_event()
 
     def _on_backend_event(self, _payload=None) -> None:
         """Ask the active screen to refresh itself after backend changes."""
@@ -189,14 +223,14 @@ class AttackOfTheNodesApp(TextualApp):
         self.workflow_state = state
         if state == "IDLE":
             self._reset_run_display_state()
-        self._on_backend_event(payload)
+        self.flush_refresh()
 
     def _on_supervisor_register(self, payload=None) -> None:
         payload = payload or {}
         if not self.execution_state.accepts(payload):
             return
         self.execution_state.register(payload)
-        self._on_backend_event(payload)
+        self.schedule_refresh()
 
     def _on_supervisor_state_update(self, payload=None) -> None:
         payload = payload or {}
@@ -204,7 +238,7 @@ class AttackOfTheNodesApp(TextualApp):
             return
         self.execution_state.supervisor(payload)
         self._branch_current_nodes[payload["branch_id"]] = payload.get("current_node_id")
-        self._on_backend_event(payload)
+        self.schedule_refresh()
 
     def _on_node_execution_update(self, payload=None) -> None:
         payload = payload or {}
@@ -212,7 +246,7 @@ class AttackOfTheNodesApp(TextualApp):
             return
         self.execution_state.node(payload)
         self.node_statuses = self.execution_state.node_statuses()
-        self._on_backend_event(payload)
+        self.schedule_refresh()
 
     def _on_node_timing_update(self, payload=None) -> None:
         payload = payload or {}
@@ -223,14 +257,14 @@ class AttackOfTheNodesApp(TextualApp):
             seconds = float(payload.get("seconds") or 0.0)
             self.node_timings[node_id] = self.node_timings.get(node_id, 0.0) + seconds
             self.execution_state.timing(payload)
-        self._on_backend_event(payload)
+        self.schedule_refresh()
 
     def _on_supervisor_terminating(self, payload=None) -> None:
         payload = payload or {}
         if not self.execution_state.accepts(payload):
             return
         self.execution_state.supervisor(payload, terminated=True)
-        self._on_backend_event(payload)
+        self.schedule_refresh()
 
     def _on_user_input_needed(self, payload=None) -> None:
         payload = payload or {}
@@ -246,7 +280,7 @@ class AttackOfTheNodesApp(TextualApp):
                 ),
                 self._submit_user_input_from_modal,
             )
-        self._on_backend_event(payload)
+        self.flush_refresh()
 
     def _on_file_view_requested(self, payload=None) -> None:
         """Queue displays for the active run; execution does not wait on them."""
@@ -285,7 +319,7 @@ class AttackOfTheNodesApp(TextualApp):
                 ErrorDetailsScreen(payload),
                 self._submit_recovery_from_modal,
             )
-        self._on_backend_event(payload)
+        self.flush_refresh()
 
     def _submit_user_input_from_modal(self, result) -> None:
         self._user_input_modal_open = False

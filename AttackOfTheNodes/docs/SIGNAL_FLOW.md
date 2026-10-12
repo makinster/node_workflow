@@ -274,24 +274,32 @@ Responsibilities:
 - Root Textual application; manages screen stack.
 - Subscribe to backend events on startup.
 - Route backend events to the active screen (`refresh_from_backend`).
+- Coalesce run telemetry: those events update App display state and mark the
+  screen dirty; one refresh runs per `REFRESH_COALESCE_SECONDS` (75 ms).
+  Events that need the user or change the run state refresh at once and
+  flush any pending refresh (`App.flush_refresh()`, also the test hook).
 - Route user key commands to backend services.
 - Open/close modals for user input, recovery, and settings.
 
 Signals consumed (subscribed once at startup):
 
-- `WORKFLOW_DIRTY` → refresh editor
-- `WORKFLOW_STATE_UPDATE` → update `workflow_state`, trigger resets
-- `NODE_TIMING_UPDATE` → update live node timings
-- `SUPERVISOR_REGISTER` → track supervisor in `supervisors` dict
-- `SUPERVISOR_STATE_UPDATE` → update `node_statuses`
-- `SUPERVISOR_TERMINATING` → mark supervisor as done
-- `USER_INPUT_NEEDED` → open `UserInputScreen` modal
+- `WORKFLOW_DIRTY` → refresh editor (immediate)
+- `WORKFLOW_STATE_UPDATE` → update `workflow_state`, trigger resets (immediate)
+- `NODE_EXECUTION_UPDATE` → update node statuses (coalesced)
+- `NODE_TIMING_UPDATE` → update live node timings (coalesced)
+- `SUPERVISOR_REGISTER` → track supervisor in `supervisors` dict (coalesced)
+- `SUPERVISOR_STATE_UPDATE` → update branch positions (coalesced)
+- `SUPERVISOR_TERMINATING` → mark supervisor as done (coalesced)
+- `USER_INPUT_NEEDED` → open `UserInputScreen` modal (immediate)
 - `FILE_VIEW_REQUESTED` → open `FileViewerScreen` modal (ignored while one
   is already open; execution does not wait)
-- `ERROR_OCCURRED` → refresh
-- `ERROR_LOGGED` → refresh
-- `RECOVERY_OPTIONS_AVAILABLE` → open `ErrorDetailsScreen` modal
-- `MEMORY_UPDATE` → refresh
+- `ERROR_OCCURRED` → refresh (immediate)
+- `ERROR_LOGGED` → refresh (immediate)
+- `RECOVERY_OPTIONS_AVAILABLE` → open `ErrorDetailsScreen` modal (immediate)
+- `MEMORY_UPDATE` → refresh (coalesced)
+
+A linear run publishes about 5 events per node; before coalescing each one
+rebuilt the execution screen synchronously inside the engine's publish call.
 
 ## Scenario Flows
 
