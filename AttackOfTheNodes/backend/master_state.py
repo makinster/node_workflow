@@ -35,7 +35,13 @@ from .run_context import RunContext
 from .run_history import RunHistory
 from .run_session import RunSession
 from .secrets_manager import SecretsManager
-from .supervisor import UNATTENDED_ACTIONS, Supervisor
+from .run_policies import (
+    UNATTENDED_ACTIONS,
+    InputProvider,
+    RecoveryPolicy,
+    unattended_policies,
+)
+from .supervisor import Supervisor
 from .wait_registry import (
     TargetUnreachableError,
     WaitStatus,
@@ -122,20 +128,40 @@ class MasterState:
 
     # -- run control -----------------------------------------------------------
 
-    async def start_workflow(self, unattended: Optional[str] = None) -> bool:
+    async def start_workflow(
+        self,
+        unattended: Optional[str] = None,
+        *,
+        recovery_policy: Optional[RecoveryPolicy] = None,
+        input_provider: Optional[InputProvider] = None,
+        inputs: Optional[Dict[str, Any]] = None,
+    ) -> bool:
         """Begin executing the loaded workflow.
 
-        ``unattended`` is ``None`` (a client answers recovery and input
-        requests), ``"terminate_branch"`` or ``"terminate_workflow"``. When set,
-        errors and input requests follow that policy without waiting, and
-        breakpoints are skipped.
+        With no policy the run is attended: a client answers recovery and
+        input requests through this object. ``recovery_policy`` and
+        ``input_provider`` (D1) answer them instead; a policy that does not
+        pause at breakpoints also skips them. ``unattended`` is shorthand for
+        ``TerminatePolicy(unattended)`` plus ``NoInputProvider``.
         """
-        if unattended is not None and unattended not in UNATTENDED_ACTIONS:
-            raise ValueError(f"Unknown unattended policy: {unattended!r}")
+        if unattended is not None:
+            if unattended not in UNATTENDED_ACTIONS:
+                raise ValueError(f"Unknown unattended policy: {unattended!r}")
+            default_policy, default_provider = unattended_policies(unattended)
+            recovery_policy = recovery_policy or default_policy
+            input_provider = input_provider or default_provider
         async with self._start_lock:
-            return await self._start_workflow_locked(unattended)
+            return await self._start_workflow_locked(
+                unattended, recovery_policy, input_provider, dict(inputs or {})
+            )
 
-    async def _start_workflow_locked(self, unattended: Optional[str]) -> bool:
+    async def _start_workflow_locked(
+        self,
+        unattended: Optional[str],
+        recovery_policy: Optional[RecoveryPolicy],
+        input_provider: Optional[InputProvider],
+        inputs: Dict[str, Any],
+    ) -> bool:
         if not self._workflow_map.is_loaded:
             logger.error("Cannot start: no workflow loaded")
             return False
@@ -163,6 +189,9 @@ class MasterState:
             memory_bank=self._memory_bank,
             run_session=RunSession(run_id),
             unattended=unattended,
+            recovery_policy=recovery_policy,
+            input_provider=input_provider,
+            inputs=inputs,
             started_at=datetime.now(timezone.utc).isoformat(),
         )
         self._set_state(WorkflowState.RUNNING)
@@ -220,7 +249,8 @@ class MasterState:
             ),
             run_session=run.run_session,
             secrets_manager=self._secrets_manager,
-            unattended=run.unattended,
+            recovery_policy=run.recovery_policy,
+            input_provider=run.input_provider,
             report_node_outcome=report_outcome,
             **kwargs,
         )

@@ -6,21 +6,40 @@ schema interpretation or workflow logic.
 """
 
 import json
+import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
-WORKFLOWS_DIR = _PROJECT_ROOT / "workflows"
-RUN_HISTORY_DIR = _PROJECT_ROOT / "run_history"
-RUN_ERRORS_DIR = _PROJECT_ROOT / "run_errors"
-SETTINGS_DIR = _PROJECT_ROOT / "settings"
-RUN_OUTPUTS_DIR = _PROJECT_ROOT / "run_outputs"
+
+# Set this environment variable (or `aotn run --data-dir`) before the backend
+# is imported to keep workflows, settings, secrets, logs and run records
+# somewhere other than the project folder. Unset, nothing moves.
+DATA_DIR_ENV = "AOTN_DATA_DIR"
+
+
+def resolve_data_dir() -> Path:
+    """Return the data directory: ``$AOTN_DATA_DIR`` or the project folder."""
+    configured = os.environ.get(DATA_DIR_ENV, "").strip()
+    if configured:
+        return Path(configured).expanduser().resolve()
+    return _PROJECT_ROOT
+
+
+DATA_DIR = resolve_data_dir()
+WORKFLOWS_DIR = DATA_DIR / "workflows"
+RUN_HISTORY_DIR = DATA_DIR / "run_history"
+RUN_ERRORS_DIR = DATA_DIR / "run_errors"
+SETTINGS_DIR = DATA_DIR / "settings"
+RUN_OUTPUTS_DIR = DATA_DIR / "run_outputs"
+SECRETS_DIR = DATA_DIR / "secrets"
+LOGS_DIR = DATA_DIR / "logs"
 
 
 def save_workflow(workflow_id: str, workflow_data: Dict[str, Any]) -> None:
     """Save a workflow to workflows/{workflow_id}.json."""
-    WORKFLOWS_DIR.mkdir(exist_ok=True)
+    WORKFLOWS_DIR.mkdir(parents=True, exist_ok=True)
     file_path = WORKFLOWS_DIR / f"{workflow_id}.json"
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(workflow_data, f, indent=2, ensure_ascii=False)
@@ -41,7 +60,7 @@ def load_workflow(workflow_id: str) -> Optional[Dict[str, Any]]:
 
 def list_workflows() -> List[Dict[str, str]]:
     """List available workflows as {id, name} dictionaries sorted by name."""
-    WORKFLOWS_DIR.mkdir(exist_ok=True)
+    WORKFLOWS_DIR.mkdir(parents=True, exist_ok=True)
     workflows: List[Dict[str, str]] = []
     for file_path in WORKFLOWS_DIR.glob("*.json"):
         workflow_id = file_path.stem
@@ -74,7 +93,7 @@ def workflow_exists(workflow_id: str) -> bool:
 
 def save_json_record(directory: Path, record_id: str, data: Dict[str, Any]) -> None:
     """Save an arbitrary JSON record under a project data directory."""
-    directory.mkdir(exist_ok=True)
+    directory.mkdir(parents=True, exist_ok=True)
     file_path = directory / f"{record_id}.json"
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
@@ -95,7 +114,7 @@ def load_json_record(directory: Path, record_id: str) -> Optional[Dict[str, Any]
 
 def list_json_records(directory: Path) -> List[Dict[str, Any]]:
     """List arbitrary JSON records in a project data directory."""
-    directory.mkdir(exist_ok=True)
+    directory.mkdir(parents=True, exist_ok=True)
     records: List[Dict[str, Any]] = []
     for file_path in directory.glob("*.json"):
         try:

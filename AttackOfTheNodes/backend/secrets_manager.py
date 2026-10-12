@@ -39,7 +39,9 @@ class SecretsManager:
 
     def __init__(self, storage_dir: Optional[Path] = None) -> None:
         if storage_dir is None:
-            storage_dir = Path(__file__).parent.parent / "secrets"
+            from .persistence import SECRETS_DIR
+
+            storage_dir = SECRETS_DIR
         self._storage_dir = Path(storage_dir)
         self._secrets: Dict[str, str] = {}
         self._loaded = False

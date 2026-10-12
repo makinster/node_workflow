@@ -21,6 +21,7 @@ from .wait_registry import WaitRegistry, node_key
 
 if TYPE_CHECKING:
     from .memory_bank import MemoryBank
+    from .run_policies import InputProvider, RecoveryPolicy
     from .workflow_map import WorkflowMap
 
 
@@ -39,6 +40,11 @@ class RunContext:
     run_session: RunSession
     parent_run_id: Optional[str] = None
     unattended: Optional[str] = None
+    recovery_policy: Optional["RecoveryPolicy"] = None
+    input_provider: Optional["InputProvider"] = None
+    # Values supplied when the run started. Recorded now; the Start contract
+    # that consumes them arrives with step 4.
+    inputs: Dict[str, Any] = field(default_factory=dict)
     started_at: Optional[str] = None
     wait_registry: WaitRegistry = field(default_factory=WaitRegistry)
     node_timings: Dict[str, float] = field(default_factory=dict)
