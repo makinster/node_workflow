@@ -107,6 +107,11 @@ Update this section at the end of every session.
   from `main`; start by recording the "before" numbers with
   `aotn_review43_perf.py` and the Branch timings in `aotn_review43_probe.py`.
   UX3 part 3 needs Q3 (default: the largest saved workflow, read-only).
+- **2026-10-13 (UX3 done):** merged in PR #45. Q3 answered: a synthetic
+  wide graph (the saved workflows are 5–10 nodes). The owner accepted the
+  64-branch open at ~0.6 s and moved lighter Branch rows into UX6. **Next:**
+  UX4 (recovery flow from the originating node), branch from `main`. It
+  needs Q5 (show both widget placements as samples) and Q6/Q7 when reached.
 - Owner answers (2026-10-13): Q1, Q9, Q10, Q11 take the defaults (check in
   after UX6; keep 64; leave the `dist/*` branches; leave history). The owner
   also said the saved workflows under `workflows/` are unimportant and need

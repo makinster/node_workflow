@@ -24,6 +24,7 @@ class NodeFactory:
 
     def __init__(self) -> None:
         self._node_registry: Dict[str, Type[Node]] = {}
+        self._metadata_by_type: Optional[Dict[str, Dict[str, Any]]] = None
         self._register_node_types()
 
     def _register_node_types(self) -> None:
@@ -130,6 +131,20 @@ class NodeFactory:
         if node_class is None:
             return None
         return node_class.default_alias or node_class.display_name or node_type
+
+    def metadata_for_type(self, node_type: str) -> Optional[Dict[str, Any]]:
+        """One type's metadata, built once and shared; callers must not modify it.
+
+        Types are fixed once the factory exists, so the editor can look up a
+        type per row and per key press without rebuilding the metadata of
+        every type each time (UX3). ``get_node_types_metadata`` still returns
+        fresh copies.
+        """
+        if self._metadata_by_type is None:
+            self._metadata_by_type = {
+                item["type"]: item for item in self.get_node_types_metadata()
+            }
+        return self._metadata_by_type.get(node_type)
 
     def get_node_types_metadata(self) -> List[Dict[str, Any]]:
         """Return UI-ready metadata for every registered node type."""

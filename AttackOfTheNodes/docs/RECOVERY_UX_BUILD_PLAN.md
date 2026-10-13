@@ -57,7 +57,7 @@ listed per phase.
 |---|---|---|---|
 | UX1 | Merge branch identity and the never-silently-drop backstop | `main` | Done in PR #44 |
 | UX2 | #43 fixes: legacy pass-along, route draft record, no-edit-save invariant; then merge #43 | `dist/p4-inline-error-mux`, merged with main | Done in PR #43 |
-| UX3 | Measured performance: Branch rows, topology scan | `main` | Not started |
+| UX3 | Measured performance: Branch rows, topology scan | `main` | Done in PR #45 |
 | UX4 | Recovery flow: friendly Errors list, spawn/open mux widget, unpick confirmation, insert/cancel | `main` | Not started |
 | UX5 | Connections tab with jumps, Ctrl+Space, Save/Discard/Stay | `main` | Not started |
 | UX6 | Friendly node labels, then a presentation pass (sample screens first) | `main` | Not started |
@@ -254,6 +254,8 @@ numbers in `SESSION_LOG.md`.
   characters of the ID. Use it in cards, Connections, pickers and modals.
   Keep the raw ID in details.
 - **Presentation:**
+  - lighter Branch payload rows (fewer widgets per row), so a 64-path
+    Branch opens under 0.5 s (UX3 left it at ~0.6 s; owner-approved move);
   - compact tab labels (`1) Source  2) Config  3) Payloads  4) Connections`,
     named per node);
   - remove the duplicate top shortcut line;

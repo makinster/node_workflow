@@ -4,6 +4,68 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-13 — UX3: Measured Performance (Branch Rows, Topology Scan, Editor)
+
+Branch `dist/ux3-measured-performance`, from `main` at `79776c3` (PR #43).
+Before: 1124 passed. After: 1191 passed (67 new in
+`tests/test_branch_topology_scan.py`; the timing, row-map, debounce and
+metadata tests fail on the old code).
+
+All numbers are from this machine, `frontend/styles.tcss`, 100×40, using the
+review probes (`aotn_review43_probe.py`, `aotn_review43_perf.py`) and two
+session scripts (a Branch-open profile and a wide-editor navigation profile).
+The plan's "before" column was measured on another run (1.48 s / 0.42 s);
+here the same code measured 2.006 s / 0.364 s.
+
+| Measurement | Before | After | Target |
+|---|---|---|---|
+| 64-branch config open | 2.006 s | 0.58–0.65 s | under 0.5 s (owner accepted, see below) |
+| 64-branch row sync | 0.364 s | 0.009–0.010 s | under 0.03 s |
+| 12 fork/rejoin pairs scan | 0.0277 s | 0.0001 s | under 5 ms |
+| Wide editor open (340 nodes) | 0.782 s | 0.18 s | (profile first) |
+| Wide editor key press, median / p90 | 0.588 / 0.633 s | 0.139 / 0.156 s | (profile first) |
+
+1. **Branch rows.** `NodeConfigScreen._branch_rows` maps each port to its
+   row, label input and source select, filled as rows are built; the sync
+   and `_branch_config_values` use it instead of three whole-screen queries
+   per port. Options go through `_set_select_options_preserving_value`, which
+   skips unchanged options. New rows mount in one batch. Typing in the count
+   field syncs 150 ms after the last keystroke (`BRANCH_COUNT_DEBOUNCE_SECONDS`).
+   UX2's open-time snapshot made `_transient_config_values` run two queries
+   per output port (1.2 s of a profiled open); it now walks the screen once.
+   **Open stays at ~0.6 s:** what remains is Textual applying CSS to ~700
+   widgets (64 rows × ~10). The owner accepted ~0.6 s for now; lighter Branch
+   rows (fewer labels per row) move into UX6's presentation pass.
+2. **Topology scan.** `_branch_contexts_by_node` keeps one visited set keyed
+   by (node, branch_id, branch_port) for the whole scan instead of copying it
+   per edge. A node reached by several routes in the same context keeps the
+   first route's `branch_path` display text (documented in the docstring).
+   Identical results to the old scan (kept as a reference copy in the test)
+   on fork/rejoin chains, 60 random graphs with Branches, Conditionals,
+   beacons, rejoins and cycles, and every saved workflow (read-only).
+3. **Main editor (Q3: the owner chose a synthetic wide graph).** 340 nodes:
+   Branch(64) → HTTP Request → No Op per path, eight paths with a nested
+   Branch(4) of 3-node paths, beacons and Merges; 58 navigation keys (`s`,
+   `w`, `d`, `a`). The profile showed 87 of 102 profiled seconds in
+   `metadata_for_type`, which rebuilt every type's metadata (including the
+   64-port tables) on each of 152,188 calls. `NodeFactory.metadata_for_type`
+   now builds the per-type table once (types are fixed after construction;
+   the result is shared and must not be modified) and
+   `node_io_display.metadata_for_type` uses it; `get_node_types_metadata`
+   still returns fresh copies. Left as is: the remaining per-key cost is
+   spread over port display names (`node_output_port_metadata`, ~1.9 s of a
+   12 s profiled run) and Textual layout.
+
+**Self-review:** the metadata cache must not leak edits between callers;
+nothing in `frontend/` or `backend/` writes into looked-up metadata (checked by
+search), and the list API is unchanged. The Branch-row map is filled where
+rows are built, so a row mounted later is found too (debounce test). Timing
+assertions are limited to the topology scan (best of five runs, 50× margin);
+the row tests count queries and `set_options` calls instead of timing.
+
+**Behavior changes:** Branch count edits apply after a 150 ms pause in typing.
+No functional change otherwise.
+
 ## 2026-10-13 — UX2: PR #43 Made Safe (Pass-Along, Route Draft, No-Edit Save)
 
 Branch `dist/p4-inline-error-mux` (PR #43), with `main` at `acc8e2f` (UX1, PR
