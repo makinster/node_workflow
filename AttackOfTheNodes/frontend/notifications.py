@@ -17,6 +17,15 @@ def notify_error(app: Any, message: str) -> None:
     restore_editor_focus(app)
 
 
+def merge_settings_kept(app: Any, count: int) -> None:
+    """A Merge kept saved settings that no longer match a branch."""
+    app.notify(
+        f"Merge kept {count} saved setting(s) that no longer match a branch; open the Merge to review them.",
+        severity="warning",
+    )
+    restore_editor_focus(app)
+
+
 def restore_editor_focus(app: Any) -> None:
     """Restore editor list focus after transient notifications."""
     def restore() -> None:

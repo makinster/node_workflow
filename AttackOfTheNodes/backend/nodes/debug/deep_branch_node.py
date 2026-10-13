@@ -15,6 +15,7 @@ class DeepBranchNode(Node):
     category: ClassVar[str] = NodeCategory.DEBUG
     input_ports: ClassVar[List[str]] = ["input"]
     output_ports: ClassVar[List[str]] = ["default", "branch"]
+    spawns_branches: ClassVar[bool] = True
     default_config: ClassVar[Dict[str, Any]] = {}
     config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {}
 

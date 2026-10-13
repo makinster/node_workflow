@@ -22,6 +22,7 @@ from frontend.screens.node_config import (
     NodeConfigScreen,
     merge_input_options,
     selected_merge_ports,
+    unmatched_merge_values,
     upstream_branch_info,
 )
 from frontend.screens.node_selector import NodeSelectorScreen
@@ -630,6 +631,13 @@ class EditorScreen(Screen):
         }
         options = merge_input_options(self.workflow_map, merge_node_id)
         assignments = selected_merge_ports(self.workflow_map, merge_node_id, options, selected)
+        kept_close, kept_carry = unmatched_merge_values(options, config)
+        if reconcile_unselected and (kept_close or kept_carry) and self.is_mounted:
+            notifications.merge_settings_kept(self.app, len(kept_close) + bool(kept_carry))
+        if kept_close:
+            # Backstop: while a saved closure matches no current option we
+            # cannot tell which beacon it meant, so no beacon is disconnected.
+            reconcile_unselected = False
         for option in options:
             option_value = f"{option['branch_id']}:{option['branch_port']}"
             source_id = option.get("branch_end_id", "")
