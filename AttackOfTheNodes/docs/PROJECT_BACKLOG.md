@@ -7,6 +7,34 @@ headless-export and always-running watcher sections below carry superseded
 banners. Their text is kept for history. Execution of steps 1–3 plus the
 ESP32 slice was authorized on 2026-10-12.
 
+## Owner live-test findings — 2026-10-13 (noted, not yet investigated)
+
+Reported by the owner after using the app during UX5. Several are old. Each
+needs a reproduction before any fix is claimed; investigate when the
+affected area is next touched.
+
+1. **Older nodes are out of date.** Some do not work well together; port
+   expectations look mismatched between neighbours (the data type one side
+   offers versus what the other expects).
+2. **Window placement in the file nodes does not work.** The owner wants
+   window management taken out of the file I/O nodes (File Write's "Open
+   after write" placement, File Manager) and given to dedicated window
+   nodes. `window_control_node` / `backend/window_manager.py` (FO6, see
+   "Deferred — File/Window Output Follow-Ups") were a start but have not
+   been live tested.
+3. **Pass-through missing.** Some nodes the owner expects to forward their
+   incoming payload have no pass-through option. List which ones first.
+4. **Vault payload config UI is outdated on many nodes**: not on the
+   current shared Vault read/write controls.
+5. **Reveal does not autoscroll.** When a toggle reveals dependent controls,
+   the new widget appears below the viewport. The agreed rule is to scroll
+   just enough to show the whole revealed widget; it keeps getting lost in
+   new node UIs (see `NODE_CONFIG_VISIBILITY_SCROLL_AUDIT.md`,
+   `UI_QUICK_REFERENCE.md`). A shared helper or a `check_ui` test would stop
+   it regressing.
+6. **Error UI keyboard navigation does not work while a workflow runs**
+   (the error/recovery modals during execution).
+
 ## Payload/file implementation — 2026-10-07
 
 The requested payload/file build is implemented locally on `main` at `1211e68`

@@ -4,6 +4,72 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-13 — UX5: Connections Tab With Jumps, Ctrl+S Save and Stay
+
+Branch `dist/ux5-connections-and-saving`, from `main` at `4bb89cd` (PR #50).
+Before: 1212 passed. After: 1230 passed (18 new in
+`tests/test_connections_and_saving.py`; all fail on the old code).
+
+**Owner decisions in this phase (replace Q2 and revise U3):** the key check
+in the app's terminal panel showed Ctrl+Space arriving as `ctrl+@`, and F2
+never arrived (it is a volume key on the owner's keyboard). The owner then
+chose: **Ctrl+S saves and stays** (also commits a text field being edited),
+**Ctrl+Enter does the same**, **Esc closes** and asks Save / Discard / Stay
+when there are unsaved changes. No Ctrl+Space or F2 binding.
+
+1. **Connections tab** (`frontend/connection_rows.py`, node config tab 4,
+   Wait Until tab 2): Incoming and Outgoing rows name the node at the other
+   end, both port display names and what flows (the producer's payload name,
+   or "No payload" when the source publishes nothing). Vault reads (declared
+   `membank_inputs` and `<port>_source: Vault` keys) are listed separately
+   with their writer, or "no node writes it". A row whose node exists is a
+   compact button; Enter opens that node's editor. Rows refresh after a save
+   and after Error Resolver picks (the "removed on save" note moved here). It
+   replaces the `#connection-summary` text; the Errors section stays below.
+2. **Save and stay**: `NodeConfigScreen(on_save=…)`; the editor applies the
+   save at once (`EditorScreen._save_and_stay`) and the screen takes a new
+   no-edit snapshot. Without `on_save` the last saved result is returned on
+   close. The Save button still saves and closes. Ctrl+S / Ctrl+Enter are
+   priority bindings so they work while a field is being edited.
+3. **Save / Discard / Stay** (U9, `screens/unsaved_changes.py`) on Esc,
+   Cancel, Ctrl+Q and Connections jumps. "Unsaved" compares the widgets with
+   the snapshot (UX2) and the alias. A fresh Error Resolver saved with Ctrl+S
+   is kept when its editor closes (U8 revert only for a never-saved one).
+4. The editor opens node editors through `_open_node_config(node_id)`: saves
+   and jumps go to that node, not to whatever the editor has selected.
+
+**Tests updated (behaviour the owner changed):** seven test cases pressed Ctrl+S
+and expected the editor to close
+(`test_file_writer_configured_content_has_visible_keyboard_editor`,
+`test_node_config_saves_transient_output_overrides_and_vertical_buttons`,
+both `test_viewer_payload_ui_saves_vault_option_with_or_without_forwarding`
+cases, the three `test_wait_layout_navigation_and_clean_save` widths); they
+now assert the editor stays open, then press Esc and check the same saved
+config. The five `test_wait_timeout_validation_and_cancel` cases expected
+Cancel to discard an edit silently; they now assert the prompt appears and
+press Discard. `test_mux_connections_summary_follows_the_picks` reads the
+new rows instead of the removed summary.
+
+**Self-review / found while probing:** (a) the editor's refresh after a
+stay-save moved focus to the node list behind the modal, so Esc did nothing;
+the screen now restores its own focus. (b) a jump to a node the editor view
+does not show (a second target on the same port) opened and would have saved
+the *selected* node; fixed by item 4 and covered by a test. (c) the rows'
+container had the default `1fr` height and the Errors section was drawn over
+them; it is `height: auto` now. Sample SVGs were sent to the owner.
+
+**Manual check (owner, 2026-10-13, app terminal panel):** Ctrl+S saves and
+stays, the Save/Discard prompt on a Connections jump works, key bindings as
+expected.
+
+**Also recorded:** the owner's live-test findings (outdated older nodes,
+window placement in file nodes, missing pass-through, outdated Vault UI,
+reveal without autoscroll, error UI keys during runs) as a new section in
+`PROJECT_BACKLOG.md`; to be investigated when relevant.
+
+**Behavior changes:** Ctrl+S in a node editor no longer closes it; Esc and
+Cancel ask before discarding edits; the Connections tab is rows with jumps.
+
 ## 2026-10-13 — Session Handoff After UX4
 
 Docs only (`RECOVERY_UX_EXECUTION_PROMPT.md`): environment notes now use the

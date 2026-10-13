@@ -5349,7 +5349,11 @@ async def _test_file_writer_configured_content_has_visible_keyboard_editor():
             assert not content.editing and content.read_only
             await pilot.press("s")
             assert app.focused is not content
+            # UX5: Ctrl+S saves and stays open; closing returns the save.
             await pilot.press("ctrl+s")
+            await pilot.pause()
+            assert not saved and app.screen is screen
+            await pilot.press("escape")
             await pilot.pause()
             assert saved[0]["config"]["content"] == "hi\nwsad2"
             assert saved[0]["config"]["content_source"] == "Configured"
@@ -5621,7 +5625,11 @@ async def _test_node_config_saves_transient_output_overrides_and_vertical_button
 
         results = []
         screen.dismiss = results.append
+        # UX5: Ctrl+S saves and stays open; Esc then closes with the save.
         await pilot.press("ctrl+s")
+        await pilot.pause()
+        assert not results
+        await pilot.press("escape")
         await pilot.pause()
 
     outputs = results[-1]["config"]["transient_outputs"]

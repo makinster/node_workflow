@@ -375,18 +375,45 @@ class EditorScreen(Screen):
                 self._replace_tombstone_from_modal,
             )
             return
+        self._open_node_config(self.selected_node_id)
+
+    def _open_node_config(self, node_id: str) -> None:
+        """Open a node's editor. Saves go to ``node_id`` whatever the
+        selection is by then (a jump can open a node the view does not show)."""
         self.app.push_screen(
             NodeConfigScreen(
                 self.factory,
                 self.workflow_map,
-                self.selected_node_id,
-                node,
+                node_id,
+                self.workflow_map.get_node_data(node_id),
                 memory_bank=getattr(self.app, "memory_bank", None),
                 secrets_manager=self.secrets_manager,
                 workflow_adapter=self.workflow_adapter,
+                on_save=lambda result: self._save_and_stay(node_id, result),
             ),
-            self._save_node_config_from_modal,
+            lambda result: self._node_config_closed(node_id, result),
         )
+
+    def _save_and_stay(self, node_id: str, result: Dict[str, Any]) -> None:
+        """Ctrl+S in a node editor: apply the save, the editor stays open."""
+        self._apply_node_config_result(node_id, result)
+        self.refresh_from_backend()
+        notifications.node_updated(self.app)
+
+    def _jump_to_node_config(self, node_id: str) -> None:
+        """A Connections row's jump (UX5): show the node, then open its editor."""
+        if self.workflow_map.get_node_data(node_id) is None:
+            notifications.notify_error(self.app, f"Node {node_id} no longer exists.")
+            return
+        for ancestor_id, ancestor_port in self._branch_choices_to_node(node_id):
+            self.active_branch_ports[ancestor_id] = ancestor_port
+        self.selected_node_id = node_id
+        self.selected_row = {"kind": "node", "node_id": node_id}
+        self.refresh_from_backend()
+        if self.workflow_adapter.is_placeholder(node_id):
+            notifications.notify_info(self.app, "That node was deleted; it is selected in the editor.")
+            return
+        self._open_node_config(node_id)
 
     def action_undo_delete(self) -> None:
         self._restore_node_list_focus()
@@ -586,14 +613,20 @@ class EditorScreen(Screen):
         notifications.node_added(self.app, inserted=insert_mode)
 
     def _save_node_config_from_modal(self, result: Dict[str, Any] | None) -> None:
-        if not result or self.selected_node_id is None:
+        if self.selected_node_id is not None:
+            self._node_config_closed(self.selected_node_id, result)
+
+    def _node_config_closed(self, node_id: str, result: Dict[str, Any] | None) -> None:
+        if not result or self.workflow_map.get_node_data(node_id) is None:
             return
-        node_id = self.selected_node_id
-        self._apply_node_config_result(node_id, result)
-        self.refresh_from_backend()
-        notifications.node_updated(self.app)
+        if "config" in result:  # a jump after Discard (or no edits) carries none
+            self._apply_node_config_result(node_id, result)
+            self.refresh_from_backend()
+            notifications.node_updated(self.app)
         if result.get("then") == "catch_errors":
             self._catch_errors_for(node_id)
+        elif result.get("then") == "jump":
+            self._jump_to_node_config(str(result.get("jump_to") or ""))
 
     # -- U4/U7/U8: "Catch errors with an Error Mux…" from a node's Errors ----
 
@@ -612,6 +645,13 @@ class EditorScreen(Screen):
         self.selected_row = {"kind": "node", "node_id": node_id}
         self.refresh_from_backend()
         mux = self.workflow_map.get_node_data(mux_id)
+        # A save made while the mux editor stays open keeps the mux (U8).
+        pending = {"inserted": inserted}
+
+        def save_and_stay(result: Dict[str, Any]) -> None:
+            pending["inserted"] = None
+            self._save_and_stay(mux_id, result)
+
         self.app.push_screen(
             NodeConfigScreen(
                 self.factory,
@@ -621,8 +661,9 @@ class EditorScreen(Screen):
                 memory_bank=getattr(self.app, "memory_bank", None),
                 secrets_manager=self.secrets_manager,
                 workflow_adapter=self.workflow_adapter,
+                on_save=save_and_stay,
             ),
-            lambda result: self._finish_mux_config(node_id, mux_id, inserted, result),
+            lambda result: self._finish_mux_config(node_id, mux_id, pending["inserted"], result),
         )
 
     def _insert_error_mux_after(self, node_id: str) -> Optional[Dict[str, Any]]:
@@ -654,7 +695,7 @@ class EditorScreen(Screen):
         inserted: Optional[Dict[str, Any]],
         result: Optional[Dict[str, Any]],
     ) -> None:
-        if result:
+        if result and "config" in result:
             self._apply_node_config_result(mux_id, result)
         elif inserted is not None:
             # U8: cancelling the first edit of a fresh mux removes it and
@@ -663,6 +704,8 @@ class EditorScreen(Screen):
         self.selected_node_id = node_id
         self.selected_row = {"kind": "node", "node_id": node_id}
         self.refresh_from_backend()
+        if result and result.get("then") == "jump":
+            self._jump_to_node_config(str(result.get("jump_to") or ""))
 
     def _revert_inserted_mux(self, inserted: Dict[str, Any]) -> None:
         self.workflow_map.delete_node(inserted["mux_id"])

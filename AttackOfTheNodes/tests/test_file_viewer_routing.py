@@ -152,7 +152,11 @@ async def test_viewer_payload_ui_saves_vault_option_with_or_without_forwarding(f
         key = screen.query_one("#vault-output-key-default", CommandInput)
         assert key.display and not key.disabled
         key.value = "shared_file"
+        # UX5: Ctrl+S saves and stays open; Esc then closes with the save.
         await pilot.press("ctrl+s")
+        await pilot.pause()
+        assert not results
+        await pilot.press("escape")
         await pilot.pause()
         assert results[0]["config"]["vault_write"]
         assert results[0]["config"]["vault_write_key"] == "shared_file"

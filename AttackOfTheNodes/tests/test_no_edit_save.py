@@ -280,7 +280,8 @@ def test_mux_connections_summary_follows_the_picks():
     seen = {}
 
     async def unpick(screen, pilot):
-        summary = lambda: str(screen.query_one("#connection-summary").render())
+        # UX5: the Connections tab rows replaced the text summary.
+        summary = lambda: " | ".join(str(w.label) for w in screen.query(".connection-row"))
         seen["before"] = summary()
         screen.query_one("#mux-recover-from", SelectionList).deselect("timeout")
         await pilot.pause()
@@ -288,5 +289,5 @@ def test_mux_connections_summary_follows_the_picks():
         seen["after"] = summary()
 
     asyncio.run(_open_and_save(workflow_map, mux, unpick))
-    assert "slow ->" in seen["before"] and "removed on save" not in seen["before"]
-    assert "slow ->" in seen["after"] and "removed on save" in seen["after"]
+    assert "Slow →" in seen["before"] and "removed on save" not in seen["before"]
+    assert "Slow →" in seen["after"] and "removed on save" in seen["after"]

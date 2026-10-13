@@ -94,7 +94,11 @@ def test_wait_layout_navigation_and_clean_save(width):
             assert tabs.active == 'node-config-tab-core'
             await pilot.press('escape')
             assert wm.get_node_data(wait) == original
+            # UX5: Ctrl+S saves and stays open; Esc then closes with the save.
             await pilot.press('ctrl+s')
+            await pilot.pause()
+            assert not results and app.screen is screen
+            await pilot.press('escape')
             await pilot.pause()
             config = results[0]['config']
             assert config['target_node_ids'] == [target]
@@ -145,7 +149,13 @@ def test_wait_timeout_validation_and_cancel(bad_timeout):
             screen.action_save()
             assert not results
             assert 'nonnegative number' in str(screen.query_one('#wait-config-error', Static).content)
+            # UX5 (U9): closing with an edit asks first; Discard drops it.
+            from frontend.screens.unsaved_changes import UnsavedChangesScreen
             screen.action_cancel()
+            await pilot.pause()
+            assert not results
+            assert isinstance(pilot.app.screen, UnsavedChangesScreen)
+            pilot.app.screen.query_one('#unsaved-discard').press()
             await pilot.pause()
             assert results == [None]
             assert wm.get_node_data(wait) == original

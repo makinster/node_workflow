@@ -28,7 +28,7 @@ temporary data folders.
 |---|---|
 | U1 | Unpicking a caught error whose recovery branch already has nodes opens a confirmation: **Leave unlinked** (keep the nodes and drop the connection), **Delete branch** (remove the branch's nodes), or **Cancel** (re-pick the error). |
 | U2 | After a Catch errors insertion, the editor stays on the **normal path**. It does not jump to a recovery branch. |
-| U3 | **Ctrl+Space** saves and keeps the node editor open. Inside a multi-line text box it also commits the text and leaves text editing, and Enter stays a newline. **Ctrl+S** saves and closes, as it does today. |
+| U3 | **Ctrl+S** (and Ctrl+Enter) saves and keeps the node editor open. Inside a text field or multi-line box it also commits the text and leaves text editing, and Enter stays a newline. **Esc** closes and asks Save / Discard / Stay when there are unsaved changes. *(Revised by the owner on 2026-10-13, replacing Ctrl+Space with an F2 fallback: Ctrl+Space arrived as `ctrl+@`, F2 is a volume key on the owner's keyboard.)* |
 | U4 | The **Show error path** checkbox goes away. The node's Errors section keeps listing all its errors, now in friendly wording. Under that list (pick the better spot: under the header or at the bottom of the scrollable list) is one focusable widget that **spawns or opens an Error Mux** for this node. Choosing which errors to catch stays in the mux editor; passing picks from the originating node into the mux is **postponed**. |
 | U5 | Friendly node labels are display-only: the alias plus a short distinguishing suffix only when two nodes share a label. Stored IDs never change, and the raw ID stays available, for example in details or Connections. |
 | U6 | Recovery is edited in **one place**, the mux editor. The originating node shows status and an action, not a second set of editable controls. |
@@ -59,7 +59,7 @@ listed per phase.
 | UX2 | #43 fixes: legacy pass-along, route draft record, no-edit-save invariant; then merge #43 | `dist/p4-inline-error-mux`, merged with main | Done in PR #43 |
 | UX3 | Measured performance: Branch rows, topology scan | `main` | Done in PR #45 |
 | UX4 | Recovery flow: friendly Errors list, spawn/open mux widget, unpick confirmation, insert/cancel | `main` | Done in PR #47 |
-| UX5 | Connections tab with jumps, Ctrl+Space, Save/Discard/Stay | `main` | Not started |
+| UX5 | Connections tab with jumps, Ctrl+S save and stay, Save/Discard/Stay | `main` | Done in PR #51 |
 | UX6 | Friendly node labels, then a presentation pass (sample screens first) | `main` | Not started |
 
 ### UX1 — Merge branch identity (bug already on `main`)
@@ -230,10 +230,10 @@ numbers in `SESSION_LOG.md`.
   - each row is focusable and Enter jumps to that node's editor;
   - refresh the tab after edits that change ports.
 - **Saving:**
-  - Ctrl+Space saves and stays (U3), with a fallback binding;
-  - before choosing the fallback, verify how Ctrl+Space arrives in Windows
-    Terminal and in `textual serve` in a browser (often as `ctrl+@`/NUL).
-    Document both in `UI_QUICK_REFERENCE.md`;
+  - Ctrl+S saves and stays (U3 as revised); Esc closes with the prompt below.
+    Documented in `UI_QUICK_REFERENCE.md`. (The Ctrl+Space key check showed
+    `ctrl+@` in the app's terminal panel and F2 never arrived, which led the
+    owner to the simpler Ctrl+S rule);
   - jumping with unsaved changes asks Save / Discard / Stay (U9);
   - dirty detection compares against the opened config, which is why it
     relies on UX2's no-edit invariant.
@@ -244,7 +244,7 @@ numbers in `SESSION_LOG.md`.
 **Acceptance.**
 
 - Mounted tests cover jump, the dirty prompt, saving and staying, and
-  committing a text area with Ctrl+Space.
+  committing a text area with Ctrl+S.
 - Do a manual check in both terminals and record the result.
 
 ### UX6 — Labels and presentation
