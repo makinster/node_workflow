@@ -418,3 +418,53 @@ def test_mux_picker_shows_code_first_lines_with_brackets_intact():
     assert seen["lines"][0] == "[node_error] Any failure the node does not declare more precisely."
     assert "[timeout] The server did not answer within the timeout." in seen["lines"]
     assert not any("Any other error" in line for line in seen["lines"])
+
+
+# --- a/d cycling skips error recovery (owner, 2026-10-13) ---------------------
+
+
+def _resolver_with_branches():
+    """start -> HTTP -> resolver; No error -> Branch(2) -> A / B;
+    recovery 'slow' -> Branch(2) -> R1 / R2."""
+    workflow_map, http, mux, after, h1, h2 = _mux_with_branch()
+    normal_branch = workflow_map.add_node("branch_node")
+    workflow_map.connect(after, "default", normal_branch, "input")
+    for port in ("path_a", "path_b"):
+        workflow_map.connect(normal_branch, port, workflow_map.add_node("no_op_node"), "input")
+    recovery_branch = workflow_map.add_node("branch_node")
+    workflow_map.connect(h2, "default", recovery_branch, "input")
+    for port in ("path_a", "path_b"):
+        workflow_map.connect(recovery_branch, port, workflow_map.add_node("no_op_node"), "input")
+    return workflow_map, http, mux, normal_branch, recovery_branch
+
+
+def test_a_d_cycling_skips_error_paths_and_resolver_recovery_branches():
+    from frontend.screens.editor import EditorScreen
+
+    workflow_map, http, mux, normal_branch, recovery_branch = _resolver_with_branches()
+    editor = EditorScreen(FACTORY, workflow_map)
+    candidates = [(c["branch_node_id"], c["port"]) for c in editor._branch_view_candidates()]
+    assert candidates == [(normal_branch, "path_a"), (normal_branch, "path_b")]
+
+
+def test_a_d_never_switches_the_resolver_and_e_opens_its_branches():
+    from frontend.screens.branch_selector import BranchSelectorScreen
+
+    workflow_map, http, mux, normal_branch, recovery_branch = _resolver_with_branches()
+
+    async def check(app, editor, pilot):
+        for _ in range(4):
+            await pilot.press("d")
+            await pilot.pause()
+            assert editor.active_branch_ports.get(mux, "default") == "default"
+        rows = editor._build_visible_rows()
+        [mux_row] = [r for r in rows if r["kind"] == "branch_select" and r["branch_node_id"] == mux]
+        editor._open_branch_selector(mux_row)
+        await pilot.pause()
+        assert isinstance(app.screen, BranchSelectorScreen)
+        assert "slow" in app.screen.output_ports
+        app.screen.dismiss({"branch_node_id": mux, "branch_port": "slow"})
+        await pilot.pause()
+        assert editor.active_branch_ports[mux] == "slow"
+
+    asyncio.run(_with_editor(workflow_map, check))

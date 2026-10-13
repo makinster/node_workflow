@@ -12,6 +12,7 @@ from textual.widgets import Header, Label, Static
 
 from backend.branch_paths import merge_slot_count, slots_covering
 from backend.validator import validate_workflow
+from backend.node_errors import ERROR_PORT, MUX_DEFAULT_PORT
 from frontend.error_mux_ui import ERROR_MUX_NODE_TYPE, inline_mux_for
 from frontend.error_paths import editor_output_ports
 from frontend.screens.branch_keep_selector_screen import BranchKeepSelectorScreen
@@ -1052,11 +1053,24 @@ class EditorScreen(Screen):
         notifications.viewing_branch(self.app, candidate["label"])
 
     def _branch_view_candidates(self) -> list[Dict[str, Any]]:
+        """Branches a/d (and ctrl+a/d) cycle through.
+
+        Error recovery is left out (owner, 2026-10-13): a node's ``error``
+        path, an Error Resolver's recovery branches, and branches that are
+        only reached through either. Those are opened with ``e`` on the
+        resolver's branch-select row instead.
+        """
         candidates: list[Dict[str, Any]] = []
         nodes = self.workflow_map.get_all_node_data()
+        recovery_only = self._nodes_only_on_recovery_paths(nodes)
         for node_id, node in nodes.items():
+            if node_id in recovery_only:
+                continue
             metadata = self._metadata_for_type(node.get("type", ""))
-            output_ports = self._output_ports_for_node(node, metadata)
+            output_ports = [
+                port for port in self._output_ports_for_node(node, metadata)
+                if not self._is_recovery_port(node, port)
+            ]
             if len(output_ports) <= 1:
                 continue
             port_labels = self._branch_port_labels(node)
@@ -1073,6 +1087,37 @@ class EditorScreen(Screen):
                     }
                 )
         return candidates
+
+    @staticmethod
+    def _is_recovery_port(node: Dict[str, Any], port: str) -> bool:
+        """A failure path: any node's ``error`` port, or an Error Resolver
+        port other than No error."""
+        if port == ERROR_PORT:
+            return True
+        return node.get("type") == ERROR_MUX_NODE_TYPE and port != MUX_DEFAULT_PORT
+
+    def _nodes_only_on_recovery_paths(self, nodes: Dict[str, Dict[str, Any]]) -> set[str]:
+        """Nodes Start reaches, but only through a recovery port."""
+        start_id = self.workflow_map.find_start_node_id()
+        if not start_id:
+            return set()
+
+        def reach(follow_recovery: bool) -> set[str]:
+            seen: set[str] = set()
+            stack = [start_id]
+            while stack:
+                node_id = stack.pop()
+                if node_id in seen or node_id not in nodes:
+                    continue
+                seen.add(node_id)
+                node = nodes[node_id]
+                for conn in (node.get("connections") or {}).get("outputs", []):
+                    port = str(conn.get("source_port") or "default")
+                    if follow_recovery or not self._is_recovery_port(node, port):
+                        stack.append(str(conn.get("target_node_id") or ""))
+            return seen
+
+        return reach(True) - reach(False)
 
     def _branch_tail_and_closed_state(
         self, branch_node_id: str, branch_port: str

@@ -121,6 +121,11 @@ Update this section at the end of every session.
   Ctrl+Space, Save/Discard/Stay), branch from `main`. It needs Q2 (fallback
   key, after testing how Ctrl+Space arrives) and Q4 (the "missing
   connections" details) when reached.
+- **2026-10-13 (UX4 follow-ups):** PR #48 removed "Any other error" from the
+  picker and made picker lines `[code] description`; PR #49 keeps a/d off
+  error recovery (`e` on the resolver's branch-select row opens it). Q4 is
+  resolved by PR #46 (owner can no longer reproduce). Q2: bind `ctrl+space`
+  and `ctrl+@`; F2 proposed as fallback, waiting for the owner's key check.
 - Owner answers (2026-10-13): Q1, Q9, Q10, Q11 take the defaults (check in
   after UX6; keep 64; leave the `dist/*` branches; leave history). The owner
   also said the saved workflows under `workflows/` are unimportant and need
