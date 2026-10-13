@@ -112,6 +112,15 @@ Update this section at the end of every session.
   64-branch open at ~0.6 s and moved lighter Branch rows into UX6. **Next:**
   UX4 (recovery flow from the originating node), branch from `main`. It
   needs Q5 (show both widget placements as samples) and Q6/Q7 when reached.
+- **2026-10-13 (bug fix):** PR #46 fixed Branch-tombstone deletion losing
+  or stranding nodes after Output-family nodes (owner report).
+- **2026-10-13 (UX4 done):** merged in PR #47. Q5 (button under the Errors
+  header, simplified, "Add Error Resolver Node"), Q6 (default rule) and Q7
+  (insert between; downstream on No error) answered; the Error Mux's default
+  alias is now "Error Resolver". **Next:** UX5 (Connections tab with jumps,
+  Ctrl+Space, Save/Discard/Stay), branch from `main`. It needs Q2 (fallback
+  key, after testing how Ctrl+Space arrives) and Q4 (the "missing
+  connections" details) when reached.
 - Owner answers (2026-10-13): Q1, Q9, Q10, Q11 take the defaults (check in
   after UX6; keep 64; leave the `dist/*` branches; leave history). The owner
   also said the saved workflows under `workflows/` are unimportant and need

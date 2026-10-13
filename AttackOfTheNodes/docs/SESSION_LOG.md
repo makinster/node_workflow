@@ -4,6 +4,67 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-13 — UX4: Recovery Flow From the Originating Node
+
+Branch `dist/ux4-recovery-flow`, from `main` at `1ae7d82`, then `4e1090e`
+(PR #46) merged in. Before: 1195 passed. After: 1208 passed (13 new in
+`tests/test_recovery_flow.py`).
+
+Owner answers in this phase: **Q5** — the button sits under the Errors
+header; after reviewing samples the owner asked for a simpler look: one
+compact solid button, no status line, and each error as one plain line with
+its code first (`• [timeout] The server did not answer…`). The button reads
+**Add Error Resolver Node**, or **Open Error Resolver Node (N caught)** when a
+mux catches the node. The node type keeps the name "Error Mux"; its default
+alias is now **Error Resolver** (spec change, regenerated, custom body and the
+generated test's custom cases restored; `check_node` / `check_ui` pass;
+existing nodes keep their alias). **Q6** — Delete branch removes only nodes
+reached through that route, stopping at a Merge or any node Start also
+reaches another way. **Q7** — insert a new mux in between; the old
+downstream continues on No error, which the editor keeps selected.
+
+1. **Errors section** (`node_config._compose_errors_section`): the Show error
+   path checkbox is gone (U4); `_error_path_config_values` returns nothing, so
+   a stored `show_error_path` stays in the config and keeps its path (U10).
+   No button on the Error Mux itself or on nodes without outputs.
+2. **Spawn or open** (U2, U7, U8): the button saves the node and returns
+   `then: "catch_errors"`; `EditorScreen._catch_errors_for` reuses the mux the
+   node feeds directly (`error_mux_ui.inline_mux_for`, the engine's own rule)
+   or inserts one with `_connect_new_node` (old downstream moves to No
+   error), then opens the mux config. Cancelling the first edit of a fresh
+   mux deletes it and reconnects the original edges; the editor stays on the
+   originating node with the mux's No error path active. The editor's save
+   path is `_apply_node_config_result`.
+3. **Unpick confirmation** (U1): unpicking the last error of a branch whose
+   port has a connection opens `RecoveryBranchUnpickScreen`, which lists the
+   branch nodes (`error_mux_ui.branch_nodes_for_port`) with **Leave
+   unlinked**, **Delete branch**, **Cancel**. Cancel picks the error again (the
+   draft restores the branch); the other choices apply on save — leave drops
+   the connection (the existing prune), delete turns the nodes into
+   tombstones first, so undo still works.
+
+**Tests updated (behaviour the owner changed in U4):**
+`test_node_config_fixed_tabs_are_keyboard_navigable` now expects the resolver
+button as the Connections tab's first field;
+`test_errors_section_offers_the_toggle_only_where_error_is_not_listed` became
+`test_errors_section_has_no_toggle_and_offers_the_resolver_button`;
+UX2's `test_edits_are_still_saved_and_an_undone_edit_is_not` edits the URL
+field instead of the removed checkbox.
+
+**Acceptance:** mounted tests cover insertion keeping the downstream on No
+error, cancel leaving the graph identical, reopening finding the same mux,
+reuse only for a directly fed mux, the three unpick choices, delete stopping
+at a Merge and at shared nodes, and the UX1 Merge identity with an inserted
+mux.
+
+**Self-review:** the catch button saves the node first, so pending edits are
+not lost (UX5 adds Save/Discard/Stay for jumps); with UX2's invariant a
+no-edit save changes nothing. Delete branch tombstones nodes before the save
+prunes the connection, so each tombstone keeps its original wiring for undo.
+
+**Behavior changes:** no Show error path toggle; new Error Muxes are named
+"Error Resolver"; unpicking a branch with nodes asks first.
+
 ## 2026-10-13 — Fix: Deleting a Branch Tombstone Loses or Strands Nodes
 
 Branch `fix/branch-prune-output-nodes`, from `main` at `1ae7d82` (PR #45).

@@ -12,6 +12,7 @@ from textual.widgets import Header, Label, Static
 
 from backend.branch_paths import merge_slot_count, slots_covering
 from backend.validator import validate_workflow
+from frontend.error_mux_ui import ERROR_MUX_NODE_TYPE, inline_mux_for
 from frontend.error_paths import editor_output_ports
 from frontend.screens.branch_keep_selector_screen import BranchKeepSelectorScreen
 from frontend.screens.branch_selector import BranchSelectorScreen
@@ -586,12 +587,105 @@ class EditorScreen(Screen):
     def _save_node_config_from_modal(self, result: Dict[str, Any] | None) -> None:
         if not result or self.selected_node_id is None:
             return
-        self._apply_node_config_result(self.selected_node_id, result)
+        node_id = self.selected_node_id
+        self._apply_node_config_result(node_id, result)
         self.refresh_from_backend()
         notifications.node_updated(self.app)
+        if result.get("then") == "catch_errors":
+            self._catch_errors_for(node_id)
+
+    # -- U4/U7/U8: "Catch errors with an Error Mux…" from a node's Errors ----
+
+    def _catch_errors_for(self, node_id: str) -> None:
+        """Open the mux that catches this node's errors, inserting one first
+        when there is none. The selection stays on the normal path (U2)."""
+        mux_id = inline_mux_for(self.workflow_map, node_id)
+        inserted = None
+        if mux_id is None:
+            inserted = self._insert_error_mux_after(node_id)
+            if inserted is None:
+                notifications.notify_error(self.app, "This node has no output to place an Error Mux after.")
+                return
+            mux_id = inserted["mux_id"]
+        self.selected_node_id = node_id
+        self.selected_row = {"kind": "node", "node_id": node_id}
+        self.refresh_from_backend()
+        mux = self.workflow_map.get_node_data(mux_id)
+        self.app.push_screen(
+            NodeConfigScreen(
+                self.factory,
+                self.workflow_map,
+                mux_id,
+                mux,
+                memory_bank=getattr(self.app, "memory_bank", None),
+                secrets_manager=self.secrets_manager,
+                workflow_adapter=self.workflow_adapter,
+            ),
+            lambda result: self._finish_mux_config(node_id, mux_id, inserted, result),
+        )
+
+    def _insert_error_mux_after(self, node_id: str) -> Optional[Dict[str, Any]]:
+        """Insert an Error Mux inline after the node's normal output (U7): the
+        node's previous downstream continues on No error, so the run behaves
+        as before until errors are picked. Returns what a cancel must undo."""
+        node = self.workflow_map.get_node_data(node_id)
+        ports = self.factory.node_output_ports(node) if node else []
+        if not ports:
+            return None
+        port = ports[0]
+        original = [
+            dict(conn)
+            for conn in (node.get("connections") or {}).get("outputs", [])
+            if conn.get("source_port") == port
+        ]
+        mux_id = self.workflow_map.add_node(ERROR_MUX_NODE_TYPE)
+        if mux_id is None:
+            return None
+        self._connect_new_node(node_id, port, mux_id)
+        # The mux's No error output is the path the editor shows (U2).
+        self.active_branch_ports[mux_id] = "default"
+        return {"mux_id": mux_id, "source_id": node_id, "port": port, "original": original}
+
+    def _finish_mux_config(
+        self,
+        node_id: str,
+        mux_id: str,
+        inserted: Optional[Dict[str, Any]],
+        result: Optional[Dict[str, Any]],
+    ) -> None:
+        if result:
+            self._apply_node_config_result(mux_id, result)
+        elif inserted is not None:
+            # U8: cancelling the first edit of a fresh mux removes it and
+            # restores the original wiring.
+            self._revert_inserted_mux(inserted)
+        self.selected_node_id = node_id
+        self.selected_row = {"kind": "node", "node_id": node_id}
+        self.refresh_from_backend()
+
+    def _revert_inserted_mux(self, inserted: Dict[str, Any]) -> None:
+        self.workflow_map.delete_node(inserted["mux_id"])
+        self.active_branch_ports.pop(inserted["mux_id"], None)
+        source_id, port = inserted["source_id"], inserted["port"]
+        source = self.workflow_map.get_node_data(source_id) or {}
+        present = {
+            (conn.get("target_node_id"), conn.get("target_port"))
+            for conn in (source.get("connections") or {}).get("outputs", [])
+            if conn.get("source_port") == port
+        }
+        for conn in inserted["original"]:
+            key = (conn.get("target_node_id"), conn.get("target_port"))
+            if key not in present and self.workflow_map.get_node_data(key[0]) is not None:
+                self.workflow_map.connect(source_id, port, key[0], key[1])
 
     def _apply_node_config_result(self, node_id: str, result: Dict[str, Any]) -> None:
         """The graph edits a node config save makes (no screen refresh)."""
+        # U1 "Delete branch": the nodes become tombstones (undo still works)
+        # before the save prunes the unpicked branch's connection.
+        for doomed in result.get("delete_branch_nodes") or []:
+            if (self.workflow_map.get_node_data(doomed) is not None
+                    and not self.workflow_adapter.is_placeholder(doomed)):
+                self.workflow_adapter.replace_with_placeholder(doomed)
         alias = str(result.get("alias", "")).strip()
         config = result.get("config", {})
         previous_ports = self.workflow_map.output_ports(node_id)

@@ -431,3 +431,9 @@ Tab.-active {
     color: $accent;
     text-style: bold;
 }
+
+/* UX4: Errors section button (spawn or open an Error Resolver / Error Mux):
+   one compact row, no heavy border (owner). */
+.catch-errors-button {
+    margin: 1 0;
+}

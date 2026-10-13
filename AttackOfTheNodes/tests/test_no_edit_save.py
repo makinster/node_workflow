@@ -7,6 +7,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+from copy import deepcopy
 
 import pytest
 
@@ -127,25 +128,27 @@ def test_saving_without_edits_changes_nothing(node_type, config):
 
 
 def test_edits_are_still_saved_and_an_undone_edit_is_not():
-    from textual.widgets import Checkbox
+    # (UX4 removed the Show error path checkbox this test used to edit; a
+    # text field is edited instead.)
+    workflow_map, node = _line_with("http_request_node", None)
+    original_url = workflow_map.get_node_data(node)["config"].get("url", "")
 
-    workflow_map, node = _line_with("no_op_node", None)
-
-    async def toggle_on(screen, pilot):
-        screen.query_one("#show-error-path", Checkbox).value = True
+    async def edit(screen, pilot):
+        screen.query_one("#field-url").value = "http://example.test/edited"
         await pilot.pause()
 
-    async def toggle_on_and_off(screen, pilot):
-        await toggle_on(screen, pilot)
-        screen.query_one("#show-error-path", Checkbox).value = False
+    async def edit_and_undo(screen, pilot):
+        await edit(screen, pilot)
+        screen.query_one("#field-url").value = original_url
         await pilot.pause()
 
-    saved = asyncio.run(_open_and_save(workflow_map, node, toggle_on))
-    assert saved["config"]["show_error_path"] is True
+    before = deepcopy(workflow_map.get_node_data(node)["config"])
+    saved = asyncio.run(_open_and_save(workflow_map, node, edit))
+    assert saved["config"]["url"] == "http://example.test/edited"
     # An edited save is written as collected, as before UX2.
-    assert "transient_outputs" in saved["config"]
-    saved = asyncio.run(_open_and_save(workflow_map, node, toggle_on_and_off))
-    assert "show_error_path" not in saved["config"]
+    assert "transient_outputs" in saved["config"] and "transient_outputs" not in before
+    saved = asyncio.run(_open_and_save(workflow_map, node, edit_and_undo))
+    assert saved["config"] == before
 
 
 # --- Legacy pass-along (error_mux_forward_v1) -------------------------------

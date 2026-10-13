@@ -352,9 +352,13 @@ Each error and warning includes `node_id` so the UI can highlight the affected n
   through to recovery / the run's policy. `error` is accepted
   as an output port on every node by the validator. The editor always shows it
   on nodes that list it (HTTP Request, JSON Path); any other node shows its
-  error path once its Errors section's **Show error path in the editor** is on
-  (`show_error_path` in config) or once that path is wired
-  (`frontend/error_paths.py`, P3).
+  error path while a stored `show_error_path` is on or once that path is
+  wired (`frontend/error_paths.py`, P3). Since UX4 the UI no longer offers a
+  toggle for it (U10): the Errors section's **Add Error Resolver Node** button
+  inserts an Error Mux inline after the node instead (default alias "Error
+  Resolver"), or **Open Error Resolver Node** opens the mux that already
+  catches it (`error_mux_ui.inline_mux_for`). Cancelling the first edit of a
+  freshly inserted mux removes it and restores the wiring (U8).
 - **D8.** Node config keeps Connections and adds an Errors section.
 - **D9.** `RunContext.skip_candidates()` plus `MasterState._spread_skips()`
   mark nodes skipped with a reason whenever an outcome is reported or a
