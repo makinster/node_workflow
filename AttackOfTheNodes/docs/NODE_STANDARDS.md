@@ -479,8 +479,24 @@ spec.
 
 ### Connections Tab
 
-Read-only topology view showing current input and output connection wiring.
-Managed by the editor, not by the user through this tab directly.
+Read-only topology view (UX5): one row per incoming and outgoing connection
+(the node at the other end, both port names, what flows), then the node's
+Vault reads with their writers. Enter on a row opens that node's editor.
+Wiring is edited from the editor, not here.
+
+**Vault reads and writes come from one model**, `backend/vault_declarations.py`
+(`active_vault_reads` / `active_vault_writes`): declared `membank_inputs` /
+`membank_outputs`, the standard model (`<port>_source == "Vault"` +
+`<port>_vault_key`, an active `continue_session_key`, `vault_write_key`,
+session keys) and node-specific fields (Get Variable / Variable Reader /
+Conditional `variable_name`, Set Variable / Variable Setter `variable_name`,
+Counter `counter_name`, Branch `vault:` payload seeds). A new node that reads
+or writes the Vault through its own config field must be added there, with
+the activation rule (hidden slot, inactive mode) that applies. The validator
+uses the same standard-model rules.
+
+The Publish (normal output) toggle governs only the `default` port; the
+engine's `error` port carries the error payload on failure regardless.
 
 Below it, an **Errors** section (D8, step 3) lists every error code the node
 can fail with: the default generic `node_error` first, then the codes the node

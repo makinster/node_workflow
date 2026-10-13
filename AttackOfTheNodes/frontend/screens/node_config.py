@@ -668,6 +668,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         self._saved_result: Optional[Dict[str, Any]] = None
         self._opened_alias: Optional[str] = None
         self._connection_targets: Dict[str, str] = {}
+        self._connection_keys: Dict[str, tuple] = {}
         self.factory = factory
         self.workflow_map = workflow_map
         self.node_id = node_id
@@ -2000,7 +2001,12 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         result = self._save_result()
         if result is None:
             return
+        # Taken before the save: the editor's refresh behind this screen can
+        # move focus, and the row refresh replaces the row widgets.
         focused = self.focused
+        focus_key = self._focused_connection_key()
+        scroll = self._connection_scroll()
+        scroll_y = scroll.scroll_y if scroll is not None else None
         if self._on_save is not None:
             self._on_save(result)
             self._refresh_node_data()
@@ -2013,8 +2019,9 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         # What is on screen now is the saved state.
         self._opened_config = None
         self._take_opened_snapshot()
-        await self._refresh_connection_rows()
-        # The editor's refresh behind this screen may take focus; keep it here.
+        await self._refresh_connection_rows(focus_key=focus_key, scroll_y=scroll_y)
+        if focus_key is not None:
+            return  # the row refresh restored focus by connection
         if focused is not None and focused.is_attached and focused.screen is self:
             self.app.set_focus(focused, scroll_visible=False)
         else:
@@ -2977,6 +2984,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             mux_ports = {"default"} | {row["id"] for row in self._mux_rows}
         rows = connection_rows(self.workflow_map, self.factory, self.node_id, mux_ports)
         self._connection_targets = {}
+        self._connection_keys = {}
         widgets: list[Any] = []
         for section, title in (("incoming", "Incoming"), ("outgoing", "Outgoing"),
                                ("vault", "Vault reads")):
@@ -2987,6 +2995,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 widgets.append(Static("  (none)", classes="form-description"))
             for index, row in enumerate(rows[section]):
                 widget_id = f"connection-{section}-{index}"
+                self._connection_keys[widget_id] = row["key"]
                 if row["target"]:
                     self._connection_targets[widget_id] = row["target"]
                     widgets.append(Button(Text(row["text"]), id=widget_id, compact=True,
@@ -2996,10 +3005,46 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                                           classes="form-description", markup=False))
         return widgets
 
-    async def _refresh_connection_rows(self) -> None:
+    def _focused_connection_key(self) -> Optional[tuple]:
+        focused = self.focused
+        if focused is None or not focused.id:
+            return None
+        return self._connection_keys.get(focused.id)
+
+    def _connection_scroll(self) -> Any:
+        rows = self.query("#connection-rows")
+        return rows.first().parent if rows else None
+
+    async def _refresh_connection_rows(
+        self,
+        focus_key: Optional[tuple] = None,
+        scroll_y: Optional[float] = None,
+    ) -> None:
+        """Rebuild the rows. A focused row keeps focus by its connection (its
+        direction and both node/port ends, or Vault key and writer), not its
+        position; if that connection is gone the first row takes focus. The
+        tab keeps its scroll position."""
+        if focus_key is None:
+            focus_key = self._focused_connection_key()
+        scroll = self._connection_scroll()
+        if scroll_y is None and scroll is not None:
+            scroll_y = scroll.scroll_y
         for container in self.query("#connection-rows"):
             await container.remove_children()
             await container.mount(*self._connection_row_widgets())
+        if scroll is not None and scroll_y is not None:
+            scroll.scroll_to(y=scroll_y, animate=False)
+            self.call_after_refresh(scroll.scroll_to, y=scroll_y, animate=False)
+        if focus_key is None:
+            return
+        match = next((widget_id for widget_id, key in self._connection_keys.items()
+                      if key == focus_key and widget_id in self._connection_targets), None)
+        rows = list(self.query(".connection-row"))
+        target = self.query_one(f"#{match}") if match else (rows[0] if rows else None)
+        if target is not None:
+            self.app.set_focus(target, scroll_visible=False)
+        else:
+            self._focus_first()
 
     def _previous_output_text(self) -> str:
         self._refresh_node_data()

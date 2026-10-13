@@ -168,7 +168,9 @@ Update this section at the end of every session.
 - **2026-10-13 (UX5 done):** merged in PR #51 (branch
   `dist/ux5-connections-and-saving`). Q2 replaced by an owner decision:
   Ctrl+S (and Ctrl+Enter) saves and stays, Esc closes with Save / Discard /
-  Stay; no Ctrl+Space or F2. Suite: 1230 passed. The owner's live-test
+  Stay; no Ctrl+Space or F2. Four P2 review findings fixed on the branch
+  (row focus by identity, shared Vault read/write model in
+  `backend/vault_declarations.py`, error-port payload). Suite: 1239 passed. The owner's live-test
   findings are in `PROJECT_BACKLOG.md` ("Owner live-test findings —
   2026-10-13"); not part of UX6 unless the owner says so. **Next: UX6**,
   branch from `main` (`dist/ux6-labels-and-presentation`): friendly labels

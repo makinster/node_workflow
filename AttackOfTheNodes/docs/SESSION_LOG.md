@@ -70,6 +70,44 @@ reveal without autoscroll, error UI keys during runs) as a new section in
 **Behavior changes:** Ctrl+S in a node editor no longer closes it; Esc and
 Cancel ask before discarding edits; the Connections tab is rows with jumps.
 
+**Review of PR #51 (four P2 findings, all reproduced and fixed on the
+branch).** After: 1239 passed (9 new: 8 in
+`test_connections_and_saving.py`, 1 runtime test in `test_error_routing.py`;
+7 of the new tests fail on the first PR head, the other two confirm existing
+engine behaviour and a fallback).
+
+1. *Saving from a row moved the next jump.* The row refresh replaced the
+   focused button and focus fell back to the first row. Rows now carry a
+   connection identity (direction plus both node/port ends, or Vault key and
+   writer); after a refresh the same connection gets focus, or the first row
+   if it was removed, and the tab keeps its scroll position.
+2. *Active Vault reads were missing* (Branch `vault:` seeds, Get Variable,
+   Chat continuation key). New shared model in `backend/vault_declarations.py`
+   (`active_vault_reads`, `standard_vault_reads`, `config_vault_reads`); the
+   validator's standard-model rules (`continuation_selected`,
+   `repeatable_slot_active`) moved there and the validator calls them, with
+   identical results (validator suite unchanged).
+3. *An existing writer was reported as absent* (Set Variable). Writers come
+   from `active_vault_writes` (declared outputs, standard writes, Set
+   Variable / Variable Setter / Counter fields), one entry per node. When no
+   writer is declared the row says "no writer found" instead of claiming none
+   exists.
+4. *Error port described as "No payload"* when normal output is off. The
+   Publish toggle now only affects `default`; an `error` port reads "Error
+   details on failure". A runtime test routes a File Write failure with
+   normal output off and checks the error payload.
+
+**Not changed (follow-up):** `memory_registry` (Vault key pickers) and the
+validator's write checks still use `standard_vault_writes` only, so Set
+Variable keys are not yet offered in Vault pickers or used by validator
+warnings. Moving them onto `active_vault_writes` changes what pickers offer
+and what the validator warns about, so it waits for the owner. The review's
+documentation drift (README → `SESSION_SUMMARY.md`, `AGENT_HANDOFF.md`
+selector text, the README description of `NODE_STANDARDIZATION_HANDOFF.md`,
+`AGENTS.md` data-directory/RunContext lines) is reported to the owner, not
+fixed here. The plan's second-terminal manual check (Windows Terminal) was
+not done; only the app's terminal panel was checked.
+
 ## 2026-10-13 — Session Handoff After UX4
 
 Docs only (`RECOVERY_UX_EXECUTION_PROMPT.md`): environment notes now use the

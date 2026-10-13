@@ -8,7 +8,8 @@ import os
 from backend.event_bus import EventBus
 from backend.node_factory import NodeFactory
 from backend.workflow_map import WorkflowMap
-from frontend.connection_rows import NO_PAYLOAD, connection_rows, vault_read_keys
+from backend.vault_declarations import active_vault_reads, active_vault_writes
+from frontend.connection_rows import ERROR_PAYLOAD, NO_PAYLOAD, NO_WRITER, connection_rows
 
 FACTORY = NodeFactory()
 CSS = os.path.join(os.path.dirname(__file__), "..", "frontend", "styles.tcss")
@@ -92,16 +93,111 @@ def test_vault_reads_are_listed_separately_with_their_writers():
                                             "vault_write": True, "vault_write_key": "greeting_copy"})
     workflow_map.update_node_config(after, {"membank_inputs": ["greeting_copy", "missing_key"]})
     rows = connection_rows(workflow_map, FACTORY, after)
-    assert rows["vault"] == [
-        {"target": start, "text": f"greeting_copy: written by Start ({start})"},
-        {"target": None, "text": "missing_key: no node writes it"},
+    assert [(row["target"], row["text"]) for row in rows["vault"]] == [
+        (start, f"greeting_copy: written by Start ({start})"),
+        (None, f"missing_key: {NO_WRITER}"),
     ]
 
 
 def test_inputs_sourced_from_the_vault_count_as_reads():
     config = {"membank_inputs": ["a"], "content_source": "Vault", "content_vault_key": "b",
               "file_path_source": "Configured", "file_path_vault_key": "unused"}
-    assert vault_read_keys(config) == ["a", "b"]
+    assert active_vault_reads("file_output_node", config, {}) == ["a", "b"]
+
+
+# Review of #51, finding 2: every active read, from the shared model.
+
+
+def test_branch_seeds_variable_readers_and_continuations_are_reads():
+    assert active_vault_reads("branch_node", {
+        "branch_count": 2,
+        "branch_payload_sources": {"path_a": "vault:seed", "path_b": "input",
+                                   "path_c": "vault:hidden"}}, {}) == ["seed"]
+    assert active_vault_reads("get_variable_node", {"variable_name": "greeting"}, {}) == ["greeting"]
+    assert active_vault_reads("get_variable_node", {}, {}) == ["value"]  # the node's default
+    assert active_vault_reads("variable_reader_node", {"variable_name": "x"}, {}) == ["x"]
+    assert active_vault_reads("conditional_node", {"left_value_source": "variable",
+                                                   "variable_name": "flag"}, {}) == ["flag"]
+    assert active_vault_reads("conditional_node", {"left_value_source": "input",
+                                                   "variable_name": "flag"}, {}) == []
+    chat = {"prompt_source": "Continue AI session", "continue_session_key": "session"}
+    assert active_vault_reads("chat_completion_node", chat, {}) == ["session"]
+    # A continuation key kept while another prompt mode is active is not read.
+    stale = {**chat, "prompt_source": "Configured"}
+    assert active_vault_reads("chat_completion_node", stale, {}) == []
+
+
+def test_a_hidden_repeatable_slot_is_not_a_read():
+    config = {"item_input_count": 1, "item_1_source": "Vault", "item_1_vault_key": "a",
+              "item_2_source": "Vault", "item_2_vault_key": "b"}
+    assert active_vault_reads("concat_node", config, {}) == ["a"]
+
+
+def test_rows_for_the_three_reproduced_reads_point_to_their_writers():
+    workflow_map, start, fetch, after = _line()
+    setter = workflow_map.add_node("set_variable_node")
+    workflow_map.update_node_config(setter, {"variable_name": "greeting", "value_source": "literal",
+                                             "value": "hi"})
+    getter = workflow_map.add_node("get_variable_node")
+    workflow_map.update_node_config(getter, {"variable_name": "greeting"})
+    branch = workflow_map.add_node("branch_node")
+    workflow_map.update_node_config(branch, {"branch_count": 2,
+                                             "branch_payload_sources": {"path_a": "vault:greeting"}})
+    chat = workflow_map.add_node("chat_completion_node")
+    workflow_map.update_node_config(chat, {**workflow_map.get_node_data(chat)["config"],
+                                           "prompt_source": "Continue AI session",
+                                           "continue_session_key": "greeting"})
+    for reader in (getter, branch, chat):
+        rows = connection_rows(workflow_map, FACTORY, reader)["vault"]
+        assert [row["target"] for row in rows] == [setter], reader
+
+
+# Review of #51, finding 3: config-driven writers are found.
+
+
+def test_a_set_variable_writer_is_listed_and_jumpable():
+    workflow_map, start, fetch, after = _line()
+    setter = workflow_map.add_node("set_variable_node", alias="Remember")
+    workflow_map.update_node_config(setter, {"variable_name": "greeting", "value_source": "literal",
+                                             "value": "hi"})
+    output = workflow_map.add_node("text_output_node")
+    workflow_map.update_node_config(output, {**workflow_map.get_node_data(output)["config"],
+                                             "input_source": "Vault", "input_vault_key": "greeting"})
+    rows = connection_rows(workflow_map, FACTORY, output)["vault"]
+    assert rows == [{"key": ("vault", "greeting", setter), "target": setter,
+                     "text": f"greeting: written by Remember ({setter})"}]
+
+
+def test_writers_are_listed_once_and_every_writer_is_listed():
+    workflow_map, start, fetch, after = _line()
+    # Standard and legacy declarations naming the same key: one writer row.
+    workflow_map.update_node_config(start, {**workflow_map.get_node_data(start)["config"],
+                                            "vault_write": True, "vault_write_key": "k",
+                                            "membank_outputs": [{"id": "k"}]})
+    assert active_vault_writes("start_node", workflow_map.get_node_data(start)["config"], {}) == ["k"]
+    setter = workflow_map.add_node("variable_setter_node")
+    workflow_map.update_node_config(setter, {"variable_name": "k"})
+    workflow_map.update_node_config(after, {"membank_inputs": ["k"]})
+    rows = connection_rows(workflow_map, FACTORY, after)["vault"]
+    assert sorted(row["target"] for row in rows) == sorted([start, setter])
+
+
+# Review of #51, finding 4: the Publish toggle only governs the normal output.
+
+
+def test_an_error_port_still_carries_error_details_when_normal_output_is_off():
+    workflow_map, start, _fetch, _after = _line()
+    writer = workflow_map.add_node("file_output_node")
+    workflow_map.update_node_config(writer, {**workflow_map.get_node_data(writer)["config"],
+                                             "transient_output": False})
+    workflow_map.connect(start, "default", writer, "input")
+    normal = workflow_map.add_node("no_op_node", alias="Normal")
+    handler = workflow_map.add_node("no_op_node", alias="Handler")
+    workflow_map.connect(writer, "default", normal, "input")
+    workflow_map.connect(writer, "error", handler, "input")
+    rows = {row["target"]: row["text"] for row in connection_rows(workflow_map, FACTORY, writer)["outgoing"]}
+    assert rows[normal].endswith(f"({NO_PAYLOAD})")
+    assert rows[handler].endswith(f"({ERROR_PAYLOAD})")
 
 
 def test_error_mux_marks_connections_of_unpicked_branches():
@@ -160,6 +256,61 @@ def test_a_jump_to_a_node_the_view_does_not_show_opens_and_saves_that_node():
         assert workflow_map.get_node_data(after)["alias"] == "After"
 
     _run(workflow_map, fetch, check)
+
+
+# Review of #51, finding 1: a save keeps focus on the same connection.
+
+
+def test_saving_from_a_row_keeps_that_connection_focused():
+    from frontend.screens.node_config import NodeConfigScreen
+
+    workflow_map, start, fetch, after = _line()
+
+    async def check(app, editor, pilot):
+        screen = app.screen
+        await pilot.press("4")
+        await _settle(pilot)
+        screen.query_one("#connection-outgoing-0").focus()
+        _alias_input(screen).value = "Renamed"
+        await pilot.press("ctrl+s")
+        await _settle(pilot)
+        assert screen._connection_keys[app.focused.id] == ("out", "default", after, "input")
+        await pilot.press("enter")
+        await _settle(pilot)
+        assert isinstance(app.screen, NodeConfigScreen) and app.screen.node_id == after
+
+    _run(workflow_map, fetch, check)
+
+
+def test_a_save_that_removes_the_focused_connection_moves_focus_to_a_row():
+    from textual.widgets import SelectionList
+
+    workflow_map, _start, fetch, _after = _line()
+    mux = workflow_map.add_node("error_mux_node")
+    workflow_map.update_node_config(mux, {"routes": [
+        {"id": "slow", "label": "Slow", "codes": ["timeout"], "forward": "error"}]})
+    handler = workflow_map.add_node("no_op_node", alias="Handler")
+    workflow_map.connect(fetch, "default", mux, "input")
+    workflow_map.connect(mux, "slow", handler, "input")
+
+    async def check(app, editor, pilot):
+        screen = app.screen
+        await pilot.press("4")
+        await _settle(pilot)
+        screen.query_one("#mux-recover-from", SelectionList).deselect("timeout")
+        await _settle(pilot)
+        if screen is not app.screen:  # U1 prompt: leave the branch unlinked
+            app.screen.query_one("#unpick-leave").press()
+            await _settle(pilot)
+        handler_row = next(w for w in screen.query(".connection-row") if "Handler" in str(w.label))
+        handler_row.focus()
+        await pilot.press("ctrl+s")
+        await _settle(pilot)
+        assert not any("Handler" in str(w.label) for w in screen.query(".connection-row"))
+        assert app.focused is not None and app.focused.has_class("connection-row")
+        assert app.focused.screen is screen
+
+    _run(workflow_map, mux, check)
 
 
 def test_jumping_with_edits_asks_and_discard_leaves_the_node_unchanged():
