@@ -586,25 +586,27 @@ class EditorScreen(Screen):
     def _save_node_config_from_modal(self, result: Dict[str, Any] | None) -> None:
         if not result or self.selected_node_id is None:
             return
+        self._apply_node_config_result(self.selected_node_id, result)
+        self.refresh_from_backend()
+        notifications.node_updated(self.app)
+
+    def _apply_node_config_result(self, node_id: str, result: Dict[str, Any]) -> None:
+        """The graph edits a node config save makes (no screen refresh)."""
         alias = str(result.get("alias", "")).strip()
         config = result.get("config", {})
-        previous_ports = self.workflow_map.output_ports(self.selected_node_id)
-        self.workflow_map.update_node_alias(self.selected_node_id, alias)
-        self.workflow_map.update_node_config(self.selected_node_id, config)
+        previous_ports = self.workflow_map.output_ports(node_id)
+        self.workflow_map.update_node_alias(node_id, alias)
+        self.workflow_map.update_node_config(node_id, config)
         # A removed Error Mux route takes its connections with it.
-        self.workflow_map.prune_removed_output_connections(
-            self.selected_node_id, previous_ports
-        )
-        self._reassign_inactive_input_connections(self.selected_node_id)
-        node = self.workflow_map.get_node_data(self.selected_node_id) or {}
+        self.workflow_map.prune_removed_output_connections(node_id, previous_ports)
+        self._reassign_inactive_input_connections(node_id)
+        node = self.workflow_map.get_node_data(node_id) or {}
         if node.get("type") == MERGE_NODE_TYPE:
             self._sync_merge_branch_end_connections(
-                self.selected_node_id,
+                node_id,
                 config,
                 reconcile_unselected=True,
             )
-        self.refresh_from_backend()
-        notifications.node_updated(self.app)
 
     def _handle_validation_details_result(self, result: Dict[str, Any] | None) -> None:
         if not result or result.get("action") != "jump":

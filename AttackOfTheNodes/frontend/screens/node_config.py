@@ -37,7 +37,7 @@ from frontend.error_mux_ui import (
     friendly_error_name,
     guarded_node_ids,
     recovery_choices,
-    routes_for_selection,
+    MuxRouteDraft,
     selected_values,
     unmatched_route,
     upstream_error_definitions,
@@ -392,6 +392,10 @@ def _beacon_output_details(workflow_map, beacon_node: Dict[str, Any]) -> Dict[st
     return _source_output_details(beacon_node, "default")
 
 
+def _is_empty_config_value(value: Any) -> bool:
+    return value is None or value == "" or value == [] or value == {}
+
+
 def _node_spawns_branches(workflow_map, node: Dict[str, Any]) -> bool:
     node_type = str(node.get("type") or "")
     factory = getattr(workflow_map, "_factory", None)
@@ -652,6 +656,10 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         self.workflow_adapter = workflow_adapter or EditorWorkflowAdapter(workflow_map, factory)
         self._get_form_values: Optional[WidgetGetter] = None
         self._nav_widget: Any = None
+        # No-edit invariant (UX2): the stored config as opened, and what the
+        # screen's widgets produce before any edit (taken after mount).
+        self._original_config = deepcopy(node_data.get("config") or {})
+        self._opened_config: Optional[Dict[str, Any]] = None
         self._initial_membank_outputs = normalize_membank_outputs(
             node_data.get("config") or {}
         )
@@ -1345,6 +1353,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         self._sync_standard_payload_controls()
         self._apply_generated_field_rules()
         self._sync_duplicate_input_source_options()
+        self.call_after_refresh(self._take_opened_snapshot)
         if self.query("#alias-input"):
             self.call_after_refresh(
                 lambda: self.app.set_focus(self.query_one("#alias-input", CommandInput), scroll_visible=False)
@@ -1427,7 +1436,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         definitions = upstream_error_definitions(self.factory, self.workflow_map, self.node_id)
         self._mux_config = deepcopy(config)
         self._mux_choices = recovery_choices(definitions, config)
-        self._mux_removed: list[Dict[str, Any]] = []
+        self._mux_draft = MuxRouteDraft(config)
         picked = set(selected_values(config))
         self._mux_rows = self._mux_rows_for(
             [value for _, value in self._mux_choices if value in picked])
@@ -1481,8 +1490,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                     yield from self._compose_errors_section()
 
     def _mux_rows_for(self, selected: list[str]) -> list[Dict[str, Any]]:
-        known = {"routes": list(self._mux_config.get("routes") or []) + self._mux_removed}
-        rows = routes_for_selection(selected, known)
+        rows = self._mux_draft.rows(selected)
         if ANY_OTHER_ERROR in selected:
             rows.append(unmatched_route(self._mux_config))
         return rows
@@ -1533,18 +1541,16 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         """Rebuild the Parameters and Payloads rows from the Source picks."""
         self._mux_capture_edits()
         picked = set(self.query_one("#mux-recover-from", SelectionList).selected)
-        before = {row["id"]: row for row in self._mux_rows}
-        self._mux_config["routes"] = [r for r in self._mux_rows if r["id"] != UNMATCHED_ROUTE]
-        any_row = before.get(UNMATCHED_ROUTE)
-        if any_row:
-            self._mux_config.update(unmatched_label=any_row["label"],
-                                    unmatched_forward=any_row["forward"])
+        # The draft remembers every branch, so re-picking restores it.
+        self._mux_draft.record([r for r in self._mux_rows if r["id"] != UNMATCHED_ROUTE])
+        for row in self._mux_rows:
+            if row["id"] == UNMATCHED_ROUTE:
+                self._mux_config.update(unmatched_label=row["label"],
+                                        unmatched_forward=row["forward"])
         self._mux_rows = self._mux_rows_for(
             [value for _, value in self._mux_choices if value in picked])
-        kept = {row["id"] for row in self._mux_rows}
-        # Remember dropped branches so picking the error again restores them.
-        self._mux_removed.extend(r for rid, r in before.items()
-                                 if rid not in kept and rid != UNMATCHED_ROUTE)
+        for summary in self.query("#connection-summary"):
+            summary.update(self._format_connections())
         for container_id, build in (("#mux-branch-rows", self._mux_parameter_rows),
                                     ("#mux-forward-rows", self._mux_forward_rows)):
             container = self.query_one(container_id)
@@ -1889,34 +1895,48 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
     def action_save(self) -> None:
         alias_query = self.query("#alias-input")
         alias = alias_query.first().value if alias_query else self.node_data.get("alias", "")
-        config = dict(self.node_data.get("config") or {})
-        if self._get_form_values:
-            config.update(self._get_form_values())
         if self.node_data.get("type") == WAIT_UNTIL_NODE_TYPE:
             selected = self._wait_config_values()["target_node_ids"]
             eligible = {value for _, value in wait_target_options(self.workflow_map, self.node_id)}
             message = ""
             if any(target not in eligible for target in selected):
                 message = "Remove unavailable wait targets before saving."
-            timeout_field = self.query_one("#field-timeout_seconds", Input)
-            try:
-                timeout = float(timeout_field.value)
-                if not math.isfinite(timeout) or timeout < 0:
-                    raise ValueError
-            except ValueError:
+            if self._wait_timeout_value() is None:
                 message = "Timeout must be a nonnegative number; 0 waits forever."
             if message:
                 self.query_one("#wait-config-error", Static).update(message)
                 notifications.notify_error(self.app, message)
                 return
+        try:
+            config = self._collected_config()
+        except ValueError as error:
+            notifications.notify_error(self.app, str(error))
+            return
+        self.dismiss({"alias": alias, "config": self._without_untouched_defaults(config)})
+
+    def _wait_timeout_value(self) -> Optional[float]:
+        try:
+            timeout = float(self.query_one("#field-timeout_seconds", Input).value)
+        except ValueError:
+            return None
+        return timeout if math.isfinite(timeout) and timeout >= 0 else None
+
+    def _collected_config(self) -> Dict[str, Any]:
+        """The config the widgets describe now (raises ValueError on Merge overflow)."""
+        config = dict(self.node_data.get("config") or {})
+        if self._get_form_values:
+            config.update(self._get_form_values())
+        if self.node_data.get("type") == WAIT_UNTIL_NODE_TYPE:
             # Keep unrelated config, but retire declarations that falsely claim
             # this coordination node reads/writes Vault or configures outputs.
             config = dict(self.node_data.get("config") or {})
-            config.update(target_node_ids=selected, timeout_seconds=timeout,
+            timeout = self._wait_timeout_value()
+            config.update(target_node_ids=self._wait_config_values()["target_node_ids"],
+                          timeout_seconds=timeout if timeout is not None
+                          else self.query_one("#field-timeout_seconds", Input).value,
                           membank_inputs=[], membank_outputs=[], transient_outputs=[])
             config.update(self._error_path_config_values())
-            self.dismiss({"alias": alias, "config": config})
-            return
+            return config
         config.update(self._transient_config_values())
         config.update(self._membank_config_values())
         config.update(self._standard_payload_config_values())
@@ -1924,12 +1944,42 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         config.update(self._branch_config_values())
         config.update(self._error_path_config_values())
         config.update(self._error_mux_config_values())
-        try:
-            config.update(self._merge_config_values())
-        except ValueError as error:
-            notifications.notify_error(self.app, str(error))
+        config.update(self._merge_config_values())
+        return config
+
+    def _take_opened_snapshot(self) -> None:
+        if self._opened_config is not None:
             return
-        self.dismiss({"alias": alias, "config": config})
+        try:
+            self._opened_config = deepcopy(self._collected_config())
+        except Exception:
+            # A screen that cannot describe itself yet keeps every value.
+            self._opened_config = {}
+
+    def _without_untouched_defaults(self, config: Dict[str, Any]) -> Dict[str, Any]:
+        """No-edit invariant: a save without edits keeps the stored config.
+
+        When the widgets still describe exactly what the screen showed on
+        opening, a key the stored config lacked stays absent (the node keeps
+        its own fallback) and a stored empty value ("", None, [], {}) is kept.
+        Non-empty values the save corrects (migrations, retired declarations)
+        are written as collected. A save with any edit is written as
+        collected, as before, so defaults shown in widgets are materialised.
+        """
+        opened = self._opened_config
+        if opened is None:
+            # Saved before the first refresh: nothing can have been edited.
+            opened = config
+        if opened != config:
+            return config
+        original = self._original_config
+        result = dict(config)
+        for key, value in config.items():
+            if key not in original:
+                result.pop(key)
+            elif _is_empty_config_value(original[key]) and original[key] != value:
+                result[key] = deepcopy(original[key])
+        return result
 
     def action_cancel(self) -> None:
         expanded_select = self._expanded_select()
@@ -2746,6 +2796,10 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 lines.append(
                     f"    {self._node_label(source, source_node)}.{source_port} -> {target_port}"
                 )
+        # Error Mux: ports of the branches picked right now (before save).
+        mux_ports = None
+        if self.node_data.get("type") == ERROR_MUX_NODE_TYPE and hasattr(self, "_mux_rows"):
+            mux_ports = {"default"} | {row["id"] for row in self._mux_rows}
         if outputs:
             lines.append("  outputs:")
             for conn in outputs:
@@ -2753,8 +2807,11 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 target_node = self.workflow_map.get_node_data(target) or {}
                 source_port = conn.get("source_port", "default")
                 target_port = conn.get("target_port", "default")
+                note = ""
+                if mux_ports is not None and source_port not in mux_ports:
+                    note = "  (branch unpicked: removed on save)"
                 lines.append(
-                    f"    {source_port} -> {self._node_label(target, target_node)}.{target_port}"
+                    f"    {source_port} -> {self._node_label(target, target_node)}.{target_port}{note}"
                 )
         if not inputs and not outputs:
             lines.append("  -")

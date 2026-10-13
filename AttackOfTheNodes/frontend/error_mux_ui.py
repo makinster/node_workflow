@@ -126,35 +126,62 @@ def selected_values(config: Optional[Mapping[str, Any]]) -> List[str]:
     return values
 
 
-def routes_for_selection(
-    selected: Sequence[str],
-    existing: Optional[Mapping[str, Any]] = None,
-) -> List[Dict[str, Any]]:
-    """Routes for the picked codes (order kept). A code already on a route
-    stays on that route, keeping its id (so its connection survives), name
-    and pass-along choice; each newly picked code gets its own branch."""
-    owner: Dict[str, Dict[str, Any]] = {}
-    for route in mux_routes(existing):
-        for code in route["codes"]:
-            owner.setdefault(code, route)
-    routes: List[Dict[str, Any]] = []
-    by_id: Dict[str, Dict[str, Any]] = {}
-    for code in selected:
-        if code == ANY_OTHER_ERROR:
-            continue
-        kept = owner.get(code)
-        if kept is not None:
-            if kept["id"] not in by_id:
-                by_id[kept["id"]] = {**kept, "codes": []}
-                routes.append(by_id[kept["id"]])
-            by_id[kept["id"]]["codes"].append(code)
-            continue
-        route = {"id": new_route_id(), "label": friendly_error_name(code),
-                 "codes": [code], "forward": MUX_FORWARD_ERROR}
-        owner[code] = route
-        by_id[route["id"]] = route
-        routes.append(route)
-    return routes
+class MuxRouteDraft:
+    """The branches of an Error Mux while its config is open.
+
+    ``routes_by_id`` keeps every branch seen in this edit (id, label,
+    forward and its codes in their original order); ``owner_by_code`` says
+    which branch each code belongs to (the first listing wins, as in the
+    engine). Unpicking a code removes it from the rows but keeps the
+    ownership, so re-picking puts it back on the same branch with its id
+    (its connection survives), latest name and pass-along choice. A branch
+    whose codes are all unpicked leaves the rows but keeps its record, and
+    grouped branches stay grouped. Each newly picked code gets a branch.
+    """
+
+    def __init__(self, config: Optional[Mapping[str, Any]] = None) -> None:
+        self.routes_by_id: Dict[str, Dict[str, Any]] = {}
+        self.owner_by_code: Dict[str, str] = {}
+        for route in mux_routes(config):
+            self.routes_by_id[route["id"]] = {
+                "id": route["id"], "label": route["label"],
+                "forward": route["forward"], "codes": list(route["codes"]),
+            }
+            for code in route["codes"]:
+                self.owner_by_code.setdefault(code, route["id"])
+
+    def rows(self, selected: Sequence[str]) -> List[Dict[str, Any]]:
+        """Fresh route rows for the picked codes, in pick-list order."""
+        picked = [code for code in selected if code != ANY_OTHER_ERROR]
+        rows: List[Dict[str, Any]] = []
+        seen: set[str] = set()
+        for code in picked:
+            route_id = self.owner_by_code.get(code)
+            if route_id is None:
+                route_id = new_route_id()
+                self.routes_by_id[route_id] = {
+                    "id": route_id, "label": friendly_error_name(code),
+                    "forward": MUX_FORWARD_ERROR, "codes": [code],
+                }
+                self.owner_by_code[code] = route_id
+            if route_id in seen:
+                continue
+            seen.add(route_id)
+            record = self.routes_by_id[route_id]
+            rows.append({
+                "id": route_id, "label": record["label"], "forward": record["forward"],
+                "codes": [c for c in record["codes"]
+                          if c in picked and self.owner_by_code.get(c) == route_id],
+            })
+        return rows
+
+    def record(self, rows: Sequence[Mapping[str, Any]]) -> None:
+        """Keep the latest name and pass-along choice typed for each row."""
+        for row in rows:
+            record = self.routes_by_id.get(str(row.get("id")))
+            if record is not None:
+                record["label"] = row["label"]
+                record["forward"] = row["forward"]
 
 
 def unmatched_route(config: Optional[Mapping[str, Any]]) -> Dict[str, Any]:

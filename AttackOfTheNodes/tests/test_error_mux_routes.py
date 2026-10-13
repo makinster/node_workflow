@@ -96,9 +96,15 @@ def test_each_branch_chooses_what_it_passes_along():
     assert mux_forward_for(config, "a") == "failed_input"
     assert mux_forward_for(config, "b") == "error"
     assert mux_forward_for(config, UNMATCHED_ROUTE) == "failed_input"
-    # A pre-P4 node-wide `forward` is the fallback for branches without one.
+    # UX2: a pre-P4 node-wide `forward` is no longer a runtime fallback; the
+    # error_mux_forward_v1 migration copies it onto every branch instead.
+    from backend.config_migrations import normalize_node_config
+
     legacy = {"forward": "failed_input", "routes": [_route("a", ["timeout"])]}
-    assert mux_forward_for(legacy, "a") == "failed_input"
+    assert mux_forward_for(legacy, "a") == "error"
+    migrated = normalize_node_config("error_mux_node", legacy)
+    assert mux_forward_for(migrated, "a") == "failed_input"
+    assert mux_forward_for(migrated, UNMATCHED_ROUTE) == "failed_input"
 
 
 def test_first_listing_wins_then_any_other_error():
@@ -325,11 +331,11 @@ def test_errors_are_offered_in_plain_words():
 
 
 def test_picks_become_branches_that_keep_their_ids():
-    from frontend.error_mux_ui import ANY_OTHER_ERROR, routes_for_selection
+    from frontend.error_mux_ui import ANY_OTHER_ERROR, MuxRouteDraft
 
     existing = {"routes": [_route("route_keep", ["timeout"], "Slow", forward="failed_input"),
                            _route("path_a", ["a", "b"], "Legacy")]}
-    routes = routes_for_selection(["timeout", "b", "http_status", ANY_OTHER_ERROR], existing)
+    routes = MuxRouteDraft(existing).rows(["timeout", "b", "http_status", ANY_OTHER_ERROR])
 
     assert routes[0] == {"id": "route_keep", "label": "Slow", "codes": ["timeout"],
                          "forward": "failed_input"}

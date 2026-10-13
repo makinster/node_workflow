@@ -4,6 +4,76 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-13 — UX2: PR #43 Made Safe (Pass-Along, Route Draft, No-Edit Save)
+
+Branch `dist/p4-inline-error-mux` (PR #43), with `main` at `acc8e2f` (UX1, PR
+#44) merged in first; the only conflict was this log. Before: 1071 passed
+(P4 + UX1). After: 1124 passed (53 new in `tests/test_no_edit_save.py`; 50
+fail on the pre-UX2 code). `check_node` / `check_ui` pass for
+`error_mux_node`. The UX1 probe also passes with an inline Error Mux after
+HTTP Request inside the Branch path (only possible on this branch).
+
+`aotn_review43_probe.py` before → after:
+- LEGACY_SAVED: `failed_input` became `forward: error` on the route and
+  `unmatched_forward: error` → both keep `failed_input`.
+- GROUPED_RESELECT: `timeout` came back on a new `route_…` branch with
+  `error` → back on `both` with `failed_input`.
+- REPEATED_RESELECT: label reverted to `Timeout` on a new branch → `Revised`
+  on `both`.
+
+1. **Legacy pass-along.** New migration `error_mux_forward_v1`
+   (`config_migrations.py`): a node-wide `forward` is copied onto every route
+   whose own `forward` is missing or invalid and onto `unmatched_forward`
+   when that is missing or invalid, then removed and kept as evidence under
+   `_config_migrations`. This reproduces the old fallback exactly. The
+   fallback in `node_errors._forward` / `mux_routes` / `mux_forward_for` is
+   gone: one rule remains (the branch's own choice, else `error`).
+2. **Route draft record.** `frontend/error_mux_ui.MuxRouteDraft` replaces
+   `routes_for_selection` and the screen's append-only `_mux_removed`:
+   `routes_by_id` (id, label, forward, codes in original order) and
+   `owner_by_code`. Unpicking keeps ownership; re-picking restores the same
+   branch with its latest name and pass-along choice; grouped routes stay
+   grouped; a newly picked code gets a branch that is remembered too.
+3. **No-edit-save invariant.** The node config screen takes a snapshot of
+   what its widgets describe after mount (`_collected_config`, now shared with
+   `action_save`). When a save's collected config equals that snapshot (no
+   edit), a key the stored config lacked stays absent and a stored empty
+   value ("", None, [], {}) is kept; non-empty corrections (migrations,
+   retired Wait Until declarations) are still written. A save with any edit
+   is written as collected, exactly as before. This removes every noise key
+   the probe found (all 38 types added some: `show_error_path: false`, empty
+   `<port>_label`, default `transient_outputs`, `""`→`None` Vault keys, a
+   Merge `home:path_a` carry, Branch payload sources, empty mux routes, …).
+   The editor's save path is now `_apply_node_config_result(node_id,
+   result)` so the test can apply it unmounted. The mounted test covers every
+   registered type with its default config plus six representative configs,
+   and compares config, alias and every node's connections.
+4. `EXECUTION_STATUS_CONTRACT.md`: `recovered` added (statuses, priority
+   order, card text); the Skip bullet that said Skip advances to the next node
+   now matches D9 (Skip ends the branch).
+5. Mux Connections summary refreshes after each pick and marks a connection
+   whose branch is unpicked "(branch unpicked: removed on save)". UX5's
+   Connections tab replaces it.
+
+**Tests updated (behaviour the plan changed):**
+`test_each_branch_chooses_what_it_passes_along` asserted the removed runtime
+fallback; it now asserts raw legacy config gives `error` and the migrated
+config gives `failed_input` (route and catch-all).
+`test_picks_become_branches_that_keep_their_ids` uses `MuxRouteDraft` with the
+same assertions. `test_wait_target_toggle_empty_selection_and_no_options`
+expected a no-edit save to rewrite Wait Until's stored `target_node_ids: ""`
+as `[]`; it now asserts `""` is kept and that the node reads it as no targets.
+
+**Self-review:** the first version of item 3 applied the rule per key on
+every save, so an edited save (for example enabling Vault write) would have
+stored `""` instead of the prefilled default description; it now applies only
+when nothing changed. A probe command in this session hung on a stray
+`python -` waiting for stdin; it was stopped and nothing was written.
+
+**Behavior changes:** a no-edit save no longer changes config; legacy muxes
+migrate their node-wide pass-along on load; the P4 note that "node-wide
+`forward` is the fallback" is superseded by the migration.
+
 ## 2026-10-13 — UX1: Merge Branch Identity and the Never-Drop Backstop
 
 Branch `dist/ux1-merge-branch-identity`, from `main` at `09a1402` (PR #42).
@@ -59,6 +129,7 @@ the caller passes the home inputs, so the editor never flags a valid one.
 longer creates its own Merge option (existing configs that relied on the old
 identity would show as kept rows; none exist in the saved workflows). Merge
 saves never drop unmatched values silently.
+
 ## 2026-10-12 — P4: Error Mux Redesign (Inline Catch, No Error Branch)
 
 Branch `dist/p4-inline-error-mux`, from `main` at `09a1402` (P3b, PR #42).

@@ -162,8 +162,8 @@ def error_codes(raw: Any) -> List[str]:
     return codes
 
 
-def _forward(value: Any, fallback: str = MUX_FORWARD_ERROR) -> str:
-    return str(value) if value in MUX_FORWARD_OPTIONS else fallback
+def _forward(value: Any) -> str:
+    return str(value) if value in MUX_FORWARD_OPTIONS else MUX_FORWARD_ERROR
 
 
 def mux_routes(config: Optional[Mapping[str, Any]]) -> List[Dict[str, Any]]:
@@ -172,9 +172,9 @@ def mux_routes(config: Optional[Mapping[str, Any]]) -> List[Dict[str, Any]]:
     Each route's ``id`` is its output port. Entries without an id, with a
     reserved id (``error``, ``unmatched``, ``default``) or repeating an
     earlier id are ignored; ``mux_route_problems`` reports them. ``forward``
-    falls back to the pre-P4 node-wide ``forward`` setting, then ``error``.
+    is the branch's own choice, else ``error`` (the pre-P4 node-wide setting
+    is moved onto each branch by the ``error_mux_forward_v1`` migration).
     """
-    node_forward = _forward((config or {}).get("forward"))
     raw = (config or {}).get("routes")
     routes: List[Dict[str, Any]] = []
     seen: set[str] = set()
@@ -188,7 +188,7 @@ def mux_routes(config: Optional[Mapping[str, Any]]) -> List[Dict[str, Any]]:
         label = str(entry.get("label") or "").strip() or f"Route {len(routes) + 1}"
         routes.append({
             "id": route_id, "label": label, "codes": error_codes(entry.get("codes")),
-            "forward": _forward(entry.get("forward"), node_forward),
+            "forward": _forward(entry.get("forward")),
         })
     return routes
 
@@ -199,13 +199,12 @@ def mux_unmatched_label(config: Optional[Mapping[str, Any]]) -> str:
 
 def mux_forward_for(config: Optional[Mapping[str, Any]], port: str) -> str:
     """What ``port`` passes along: ``error`` or ``failed_input``."""
-    node_forward = _forward((config or {}).get("forward"))
     if port == UNMATCHED_ROUTE:
-        return _forward((config or {}).get("unmatched_forward"), node_forward)
+        return _forward((config or {}).get("unmatched_forward"))
     for route in mux_routes(config):
         if route["id"] == port:
             return route["forward"]
-    return node_forward
+    return MUX_FORWARD_ERROR
 
 
 def mux_has_unmatched_route(config: Optional[Mapping[str, Any]]) -> bool:
