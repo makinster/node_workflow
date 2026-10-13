@@ -4,6 +4,34 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-13 — UX4 Follow-up: Error Resolver Picker Without "Any Other Error"
+
+Branch `dist/ux4b-picker-cleanup`, from `main` at `1e6c8b4` (PR #47).
+Before: 1208 passed. After: 1210 passed (2 new in `tests/test_recovery_flow.py`).
+
+Owner question: why does the picker offer both "Unexpected failure" and "Any
+other error", and can both branches be reached? Answer from the code: every
+code a node can fail with is already listed (the supervisor rewrites any
+undeclared code to `node_error`, and only Wait Until and User Text Input can
+raise engine codes, which they declare), so "Any other error" only ever
+repeated the unpicked choices; with both picked, the first listing wins and
+its branch never runs. The owner chose to remove it.
+
+- `recovery_choices` no longer offers "Any other error". A mux that already
+  has `unmatched_route` still shows it, ticked and marked "Older setting …
+  Unpick to remove", and keeps working until unpicked. Engine, validator and
+  the `unmatched` port are unchanged.
+- Picker lines use the Errors-list format, `[code] description`
+  (`friendly_error_choice`, stale codes `[code] Not raised by the connected
+  node`). The picker's prompts are passed as plain `Text`, because
+  `SelectionList` read `[timeout]` as markup and dropped it.
+
+**Tests updated (behaviour the owner changed):**
+`test_errors_are_offered_in_plain_words` asserts the new line format and that
+"Any other error" is offered only for an existing setting;
+`test_config_tabs_source_picks_fill_parameters_and_payloads` no longer picks
+it and asserts it is not offered.
+
 ## 2026-10-13 — UX4: Recovery Flow From the Originating Node
 
 Branch `dist/ux4-recovery-flow`, from `main` at `1ae7d82`, then `4e1090e`

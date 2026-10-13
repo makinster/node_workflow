@@ -1492,7 +1492,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                     )
                     yield Label("Catch these errors", classes="form-label nav-section")
                     yield SelectionList(
-                        *[(text, value, value in picked) for text, value in self._mux_choices],
+                        # Plain text: "[code]" must not be read as markup.
+                        *[(Text(text), value, value in picked) for text, value in self._mux_choices],
                         id="mux-recover-from",
                     )
             with TabPane("2 - Parameters", id="node-config-tab-parameters"):

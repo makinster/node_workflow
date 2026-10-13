@@ -371,3 +371,50 @@ def test_delete_branch_stops_at_a_merge_and_at_shared_nodes():
     workflow_map.connect(h1, "default", shared, "file_path")
     workflow_map.connect(after, "default", shared, "content")
     assert branch_nodes_for_port(workflow_map, mux, "slow") == [h1, h2]
+
+
+def test_an_older_any_other_error_branch_shows_ticked_and_can_be_unpicked():
+    from frontend.error_mux_ui import ANY_OTHER_ERROR
+
+    workflow_map, http, mux, after, h1, h2 = _mux_with_branch()
+    workflow_map.update_node_config(mux, {**workflow_map.get_node_data(mux)["config"],
+                                          "unmatched_route": True})
+    seen = {}
+
+    async def unpick(screen, pilot):
+        from textual.widgets import SelectionList
+
+        picker = screen.query_one("#mux-recover-from", SelectionList)
+        seen["options"] = [o.value for o in picker._options]
+        seen["selected"] = list(picker.selected)
+        picker.deselect(ANY_OTHER_ERROR)
+        await pilot.pause()
+        await pilot.pause()
+        screen.action_save()
+        await pilot.pause()
+
+    result = asyncio.run(_config_screen(workflow_map, mux, lambda app, s, p: unpick(s, p)))
+    assert seen["options"][-1] == ANY_OTHER_ERROR
+    assert ANY_OTHER_ERROR in seen["selected"]
+    assert result["config"]["unmatched_route"] is False
+
+
+def test_mux_picker_shows_code_first_lines_with_brackets_intact():
+    from textual.widgets import SelectionList
+
+    workflow_map, start, http, after = _line()
+    mux = workflow_map.add_node("error_mux_node")
+    workflow_map.disconnect(http, "default", after, "input")
+    workflow_map.connect(http, "default", mux, "input")
+    seen = {}
+
+    async def check(app, screen, pilot):
+        picker = screen.query_one("#mux-recover-from", SelectionList)
+        seen["lines"] = [str(picker.get_option_at_index(i).prompt)
+                         for i in range(picker.option_count)]
+        app.screen.action_cancel()
+
+    asyncio.run(_config_screen(workflow_map, mux, check))
+    assert seen["lines"][0] == "[node_error] Any failure the node does not declare more precisely."
+    assert "[timeout] The server did not answer within the timeout." in seen["lines"]
+    assert not any("Any other error" in line for line in seen["lines"])
