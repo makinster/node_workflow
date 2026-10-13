@@ -65,17 +65,27 @@ gave the go-ahead in this session.
   `MSYS_NO_PATHCONV=1 wsl.exe -d Ubuntu --cd /home/makin/src/node_workflow --exec bash -c '...'`.
 - **Push:** prepend `export PATH="/mnt/c/Program Files/Git/bin:$PATH";` so
   the credential helper works.
-- **Python:** `/home/makin/src/node_workflow/.venv/bin/python`. Run pytest
-  from `AttackOfTheNodes/` with `-p no:cacheprovider`. The full suite
-  (about 1050 tests) takes about 2.5 minutes.
+- **Python:** `/home/makin/src/node_workflow/.venv/bin/python` (use the
+  absolute path; `../.venv/bin/python` prints harmless prefix warnings). Run
+  pytest from `AttackOfTheNodes/` with `-p no:cacheprovider`. The full suite
+  (1212 tests on 2026-10-13) takes about 3 minutes; run it in the background.
 - **Quoting:** inline Python inside `bash -c '...'` breaks on apostrophes.
   Write patch scripts to the scratchpad, copy them to `/tmp/<dir>/` in WSL
   (`mkdir` there through `wsl.exe` first), and run them there. New files must
   have LF line endings.
-- **PRs:** there is no `gh`. Open and merge in the built-in browser:
-  `https://github.com/makinster/node_workflow/compare/main...<branch>?quick_pull=1&title=...`,
-  fill the "Comment" textbox, click the visible "Create pull request"
-  button, then "Merge pull request" and "Confirm merge".
+- **Editing files:** the Edit/Write tools on the `\\wsl.localhost` share
+  fail intermittently (`EUNKNOWN ... ftruncate`, the file is left intact).
+  What worked all session: a small `apply.py <target> <patch.py>` script
+  that applies exact one-match `(old, new)` replacements inside WSL
+  (recreate it: for each pair assert the old text occurs exactly once,
+  replace, write back with `newline=""`). Windows
+  git shows many files as modified (CRLF noise); trust WSL `git status`.
+- **PRs:** the Windows GitHub CLI works since 2026-10-13 (logged in as
+  makinster; not installed inside WSL). From Git Bash:
+  `gh pr create --repo makinster/node_workflow --base main --head <branch> --title "..." --body-file <file>`
+  then `gh pr merge <N> --repo makinster/node_workflow --merge`. The browser
+  pane is only a fallback; its GitHub sign-in can be lost, and you must never
+  sign in for the owner.
 - **Flaky tests:** `test_refresh_coalescer`, `test_file_picker_export_and_import_paths`
   and `test_error_details_navigation` are timing-sensitive under full-suite
   load. If one fails, rerun it alone and against `main` before concluding
@@ -85,8 +95,8 @@ gave the go-ahead in this session.
   frontend/styles.tcss`. `App.save_screenshot` gives an SVG for visual
   review.
 
-Start by checking branch, HEAD, dirty state and PR #43's status, then
-reproduce the UX1 bug with the probe described in the plan.
+Start by checking branch, HEAD and dirty state, then continue from the
+last entry of **Current position** below.
 
 ## Current position
 
@@ -126,10 +136,53 @@ Update this section at the end of every session.
   error recovery (`e` on the resolver's branch-select row opens it). Q4 is
   resolved by PR #46 (owner can no longer reproduce). Q2: bind `ctrl+space`
   and `ctrl+@`; F2 proposed as fallback, waiting for the owner's key check.
+- **2026-10-13 (handoff, end of session):** `main` at the merge of this
+  docs PR, after `d820939` (PR #49). All UX work is merged; no branch is in
+  progress. Suite: 1212 passed. **Next: UX5**, branch from `main`
+  (`dist/ux5-connections-and-saving`), one PR:
+  1. Connections tab (node config tab 4): incoming and outgoing rows with
+     node names, port display names and what flows (a payload, or "No
+     payload"); Vault reads in their own list; each row focusable, Enter
+     jumps to that node's editor; refresh after edits that change ports. It
+     replaces today's `#connection-summary` text (which UX2 made refresh on
+     mux picks). The Errors section with the **Add/Open Error Resolver
+     Node** button stays on that tab.
+  2. Save and stay (U3): bind both `ctrl+space` and `ctrl+@` (Textual turns
+     the NUL byte most terminals send for Ctrl+Space into `ctrl+@`; the kitty
+     protocol sends `ctrl+space`), plus **F2** as the fallback (Q2 proposal).
+     In a `CommandTextArea` it also commits the text and leaves editing;
+     Enter stays a newline. Ctrl+S keeps saving and closing. Document both in
+     `UI_QUICK_REFERENCE.md`. The owner has not yet run the key check:
+     `wsl -d Ubuntu /home/makin/src/node_workflow/.venv/bin/textual keys`,
+     pressing Ctrl+Space and F2, in Windows Terminal and the browser
+     session; ask for the result before finalising the fallback. (The owner
+     never asked for Ctrl+@ itself; it is only how Ctrl+Space arrives.)
+  3. Save / Discard / Stay (U9) when jumping away with unsaved changes;
+     "unsaved" compares `_collected_config()` with the screen's
+     `_opened_config` snapshot (UX2).
+  4. Mounted tests: jump, the dirty prompt, save-and-stay, committing a text
+     area with the new key; record the owner's manual terminal check.
+  Then **UX6** (friendly labels U5 with Q8, and the presentation pass incl.
+  lighter Branch rows; sample screens first), then stop and check in (Q1)
+  before Step 4.
+- **Owner UI taste (learned in UX4):** plain and simple. Compact one-row
+  buttons (Textual `Button(..., compact=True)`), no extra status lines,
+  error lines code first (`• [code] description`), and the Error Mux is
+  called **Error Resolver** in the UI (type name stays Error Mux; default
+  alias "Error Resolver"). Show sample SVGs (`App.save_screenshot`, sent with
+  SendUserFile) before styling changes; the owner reviews them closely.
+- **Watch item (not reproduced):** the owner once saw a newly added Error
+  Resolver missing from the editor after tab 4 → Add Error Resolver Node →
+  pick an error → save. A mounted probe of that exact path (No Op and HTTP
+  Request) showed the resolver in the rows; the owner called it a fluke and
+  will note the steps if it happens again. Do not claim a fix without a
+  reproduction.
 - Owner answers (2026-10-13): Q1, Q9, Q10, Q11 take the defaults (check in
   after UX6; keep 64; leave the `dist/*` branches; leave history). The owner
   also said the saved workflows under `workflows/` are unimportant and need
-  not be preserved. Q2–Q8 are asked when their phase reaches them.
+  not be preserved. Answered since: Q3 (synthetic graph), Q4 (resolved by
+  PR #46), Q5, Q6, Q7 (see UX4 entries). Still open: Q2 (key check above)
+  and Q8 (label suffix, UX6).
 
 ## Continuing across sessions
 
