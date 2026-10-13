@@ -23,27 +23,26 @@ from backend.nodes.branch_node import (
     branch_count_from_config as _branch_count_from_config,
 )
 from backend.vault_declarations import standard_vault_writes
-from frontend.error_paths import (
-    SHOW_ERROR_PATH,
-    editor_output_ports,
-    has_error_connection,
-    lists_error_port,
-)
+from frontend.error_paths import editor_output_ports
 from backend.node_errors import UNMATCHED_ROUTE
 from frontend.error_mux_ui import (
     ANY_OTHER_ERROR,
     ERROR_MUX_NODE_TYPE,
     FORWARD_CHOICES,
+    caught_error_count,
     friendly_error_name,
     guarded_node_ids,
+    inline_mux_for,
     recovery_choices,
     MuxRouteDraft,
+    branch_nodes_for_port,
     selected_values,
     unmatched_route,
     upstream_error_definitions,
 )
 from frontend import notifications
 from frontend.editor_workflow_adapter import EditorWorkflowAdapter
+from frontend.screens.recovery_branch_unpick import DELETE_BRANCH, RecoveryBranchUnpickScreen
 from frontend.io_contract import TYPE_COLOR
 from frontend.node_types import (
     BRANCH_END_NODE_TYPE,
@@ -1461,6 +1460,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         self._mux_config = deepcopy(config)
         self._mux_choices = recovery_choices(definitions, config)
         self._mux_draft = MuxRouteDraft(config)
+        # U1: what to do with each unpicked branch that has nodes, by port.
+        self._mux_unpick_choices: Dict[str, str] = {}
         picked = set(selected_values(config))
         self._mux_rows = self._mux_rows_for(
             [value for _, value in self._mux_choices if value in picked])
@@ -1571,8 +1572,15 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             if row["id"] == UNMATCHED_ROUTE:
                 self._mux_config.update(unmatched_label=row["label"],
                                         unmatched_forward=row["forward"])
+        before = {row["id"]: row for row in self._mux_rows}
         self._mux_rows = self._mux_rows_for(
             [value for _, value in self._mux_choices if value in picked])
+        current = {row["id"] for row in self._mux_rows}
+        for port in current:
+            self._mux_unpick_choices.pop(port, None)
+        for port, row in before.items():
+            if port not in current:
+                self._confirm_unpicked_branch(port, row)
         for summary in self.query("#connection-summary"):
             summary.update(self._format_connections())
         for container_id, build in (("#mux-branch-rows", self._mux_parameter_rows),
@@ -1580,6 +1588,45 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             container = self.query_one(container_id)
             await container.remove_children()
             await container.mount(*build())
+
+    def _confirm_unpicked_branch(self, port: str, row: Dict[str, Any]) -> None:
+        """U1: the last error of a branch with a downstream connection was
+        unpicked; ask whether to leave its nodes unlinked or delete them."""
+        outputs = (self.workflow_map.get_node_data(self.node_id) or {}).get(
+            "connections", {}).get("outputs", [])
+        if not any(conn.get("source_port") == port for conn in outputs):
+            return
+        labels = []
+        for node_id in branch_nodes_for_port(self.workflow_map, self.node_id, port):
+            node = self.workflow_map.get_node_data(node_id) or {}
+            labels.append(f"{node.get('alias') or node.get('type')} ({node_id})")
+        self.app.push_screen(
+            RecoveryBranchUnpickScreen(row["label"], labels),
+            lambda choice: self._on_unpick_choice(port, row, choice),
+        )
+
+    def _on_unpick_choice(self, port: str, row: Dict[str, Any], choice: Optional[str]) -> None:
+        if choice is None:
+            # Cancel: pick the error(s) again; the branch comes back as it was.
+            picker = self.query_one("#mux-recover-from", SelectionList)
+            for code in ([ANY_OTHER_ERROR] if port == UNMATCHED_ROUTE else row["codes"]):
+                picker.select(code)
+            return
+        self._mux_unpick_choices[port] = choice
+
+    def _mux_branch_nodes_to_delete(self) -> list[str]:
+        """Nodes of unpicked branches the user chose to delete (applied on save)."""
+        if self.node_data.get("type") != ERROR_MUX_NODE_TYPE or not hasattr(self, "_mux_rows"):
+            return []
+        current = {row["id"] for row in self._mux_rows}
+        doomed: list[str] = []
+        for port, choice in self._mux_unpick_choices.items():
+            if choice != DELETE_BRANCH or port in current:
+                continue
+            for node_id in branch_nodes_for_port(self.workflow_map, self.node_id, port):
+                if node_id not in doomed:
+                    doomed.append(node_id)
+        return doomed
 
     def _error_mux_config_values(self) -> Dict[str, Any]:
         if self.node_data.get("type") != ERROR_MUX_NODE_TYPE or not self.query("#mux-recover-from"):
@@ -1893,6 +1940,12 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             self.action_save()
         elif event.button.id == "cancel-node-config":
             self.action_cancel()
+        elif event.button.id == "catch-errors":
+            self.action_catch_errors()
+
+    def action_catch_errors(self) -> None:
+        """Save this node, then let the editor spawn or open its Error Mux."""
+        self.action_save(then="catch_errors")
 
     def on_key(self, event: Key) -> None:
         if self._expanded_select() is None:
@@ -1916,7 +1969,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             event.stop()
             event.prevent_default()
 
-    def action_save(self) -> None:
+    def action_save(self, then: Optional[str] = None) -> None:
         alias_query = self.query("#alias-input")
         alias = alias_query.first().value if alias_query else self.node_data.get("alias", "")
         if self.node_data.get("type") == WAIT_UNTIL_NODE_TYPE:
@@ -1936,7 +1989,13 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         except ValueError as error:
             notifications.notify_error(self.app, str(error))
             return
-        self.dismiss({"alias": alias, "config": self._without_untouched_defaults(config)})
+        result = {"alias": alias, "config": self._without_untouched_defaults(config)}
+        if then:
+            result["then"] = then
+        doomed = self._mux_branch_nodes_to_delete()
+        if doomed:
+            result["delete_branch_nodes"] = doomed
+        self.dismiss(result)
 
     def _wait_timeout_value(self) -> Optional[float]:
         try:
@@ -2766,43 +2825,47 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         )
 
     def _compose_errors_section(self):
-        """D8: list declared error codes beside Connections (metadata only)."""
+        """D8/U4: the node's errors in plain words, and one widget that spawns
+        or opens the Error Mux catching them. Picking which errors to catch
+        happens in the mux editor (U6); this shows status and an action."""
         yield Label("Errors", classes="form-label nav-section")
-        yield Static(
-            "Errors this node can fail with. Place an Error Mux right after this "
-            "node and pick the ones to catch: each gets its own recovery branch. "
-            "Anything not caught stops the run for recovery.",
-            classes="form-description",
-        )
+        # The catch widget sits under the header, above the list (owner, Q5).
+        if self.node_data.get("type") != ERROR_MUX_NODE_TYPE:
+            yield from self._compose_catch_widget()
         yield Static(
             self._format_error_definitions(),
             id="error-definitions",
             classes="form-description",
-            markup=False,
         )
-        if not lists_error_port(self.factory, self.node_data):
-            # Any node can fail along `error`; this shows that path in the
-            # editor so it can be wired (it stays shown while it is wired).
-            yield Checkbox(
-                "Show error path in the editor",
-                value=bool((self.node_data.get("config") or {}).get(SHOW_ERROR_PATH))
-                or has_error_connection(self.node_data),
-                id="show-error-path",
-            )
+
+    def _compose_catch_widget(self):
+        if not self.factory.node_output_ports(self.node_data):
+            return  # nothing to place an inline Error Mux after (End, Beacon)
+        mux_id = inline_mux_for(self.workflow_map, self.node_id)
+        if mux_id:
+            count = caught_error_count(self.workflow_map, mux_id)
+            label = f"Open Error Resolver Node ({count} caught)"
+        else:
+            label = "Add Error Resolver Node"
+        # Kept plain on purpose (owner): one solid button, no status line.
+        yield Button(label, id="catch-errors", variant="primary", compact=True,
+                     classes="catch-errors-button")
 
     def _error_path_config_values(self) -> Dict[str, Any]:
-        query = self.query("#show-error-path")
-        if not query:
-            return {}
-        return {SHOW_ERROR_PATH: bool(query.first().value)}
+        # U4/U10: no editable error-path control any more; a stored
+        # show_error_path stays in the config unchanged and keeps its path.
+        return {}
 
-    def _format_error_definitions(self) -> str:
+    def _format_error_definitions(self) -> Text:
         metadata = self._metadata_for_type(str(self.node_data.get("type") or "")) or {}
-        lines = []
+        text = Text()
         for error in metadata.get("errors") or []:
-            retry = " (retryable)" if error.get("retryable") else ""
-            lines.append(f"  {error.get('code')}{retry}: {error.get('description')}")
-        return "\n".join(lines) or "  (none)"
+            if text:
+                text.append("\n")
+            # One plain line per error, code first (owner, Q5).
+            description = str(error.get("description") or "").strip()
+            text.append(f"  • [{error.get('code')}] {description}".rstrip())
+        return text if text else Text("  (none)")
 
     def _format_connections(self) -> str:
         self._refresh_node_data()

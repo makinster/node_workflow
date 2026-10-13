@@ -18,7 +18,7 @@ def test_error_mux_node_registration_and_metadata():
     assert factory.is_valid_node_type("error_mux_node")
     metadata = next(item for item in factory.get_node_types_metadata() if item["type"] == "error_mux_node")
     assert metadata["display_name"] == 'Error Mux'
-    assert metadata["default_alias"] == 'Error Mux'
+    assert metadata["default_alias"] == 'Error Resolver'
     assert metadata["input_ports"] == ['input', 'error']
     assert metadata["output_ports"] == ['default', 'unmatched']
     # Every declared port exposes the per-port I/O contract (handoff §4/§6):

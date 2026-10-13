@@ -58,7 +58,7 @@ listed per phase.
 | UX1 | Merge branch identity and the never-silently-drop backstop | `main` | Done in PR #44 |
 | UX2 | #43 fixes: legacy pass-along, route draft record, no-edit-save invariant; then merge #43 | `dist/p4-inline-error-mux`, merged with main | Done in PR #43 |
 | UX3 | Measured performance: Branch rows, topology scan | `main` | Done in PR #45 |
-| UX4 | Recovery flow: friendly Errors list, spawn/open mux widget, unpick confirmation, insert/cancel | `main` | Not started |
+| UX4 | Recovery flow: friendly Errors list, spawn/open mux widget, unpick confirmation, insert/cancel | `main` | Done in PR #47 |
 | UX5 | Connections tab with jumps, Ctrl+Space, Save/Discard/Stay | `main` | Not started |
 | UX6 | Friendly node labels, then a presentation pass (sample screens first) | `main` | Not started |
 

@@ -5,7 +5,7 @@ primary_family: Flow Control
 tags: ["Conditional"]
 icon_name: git-fork
 display_name: Error Mux
-default_alias: Error Mux
+default_alias: Error Resolver
 description: Place after a node to catch the errors you pick and send each down its own recovery branch
 input_ports: ["input", "error"]
 # Config-driven outputs (port model): "default" (No error) always, one port per

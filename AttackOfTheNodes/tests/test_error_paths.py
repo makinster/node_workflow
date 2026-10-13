@@ -112,15 +112,18 @@ def test_inserting_a_mux_after_a_node_puts_it_inline_on_no_error():
     assert not node["config"].get("routes")
 
 
-def test_errors_section_offers_the_toggle_only_where_error_is_not_listed():
+def test_errors_section_has_no_toggle_and_offers_the_resolver_button():
+    """U4 replaced P3a's "Show error path" toggle with one button that spawns
+    or opens the node's Error Mux; a stored show_error_path is left as is."""
     from textual.app import App
-    from textual.widgets import Checkbox
 
     from frontend.screens.node_config import NodeConfigScreen
 
     factory, workflow_map = _map()
     logger = workflow_map.add_node("logger_node")
     http = workflow_map.add_node("http_request_node")
+    workflow_map.update_node_config(
+        logger, {**workflow_map.get_node_data(logger)["config"], SHOW_ERROR_PATH: True})
 
     async def mounted(node_id):
         screen = NodeConfigScreen(factory, workflow_map, node_id, workflow_map.get_node_data(node_id))
@@ -132,17 +135,10 @@ def test_errors_section_offers_the_toggle_only_where_error_is_not_listed():
         app = ConfigApp()
         async with app.run_test() as pilot:
             await pilot.pause()
-            boxes = list(app.query("#show-error-path"))
-            values = screen._error_path_config_values()
-            if boxes:
-                boxes[0].value = True
-                await pilot.pause()
-                values = (values, screen._error_path_config_values())
-            return boxes, values
+            return (list(app.query("#show-error-path")), len(app.query("#catch-errors")),
+                    screen._error_path_config_values())
 
-    boxes, values = asyncio.run(mounted(logger))
-    assert len(boxes) == 1 and isinstance(boxes[0], Checkbox)
-    assert values == ({SHOW_ERROR_PATH: False}, {SHOW_ERROR_PATH: True})
-
-    boxes, values = asyncio.run(mounted(http))
-    assert boxes == [] and values == {}
+    for node_id in (logger, http):
+        boxes, buttons, values = asyncio.run(mounted(node_id))
+        assert boxes == [] and buttons == 1 and values == {}
+    assert workflow_map.get_node_data(logger)["config"][SHOW_ERROR_PATH] is True

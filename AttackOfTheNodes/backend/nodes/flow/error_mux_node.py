@@ -23,7 +23,7 @@ class ErrorMuxNode(Node):
 
     node_type: ClassVar[str] = 'error_mux_node'
     display_name: ClassVar[str] = 'Error Mux'
-    default_alias: ClassVar[str] = 'Error Mux'
+    default_alias: ClassVar[str] = 'Error Resolver'
     description: ClassVar[str] = 'Place after a node to catch the errors you pick and send each down its own recovery branch'
     category: ClassVar[str] = NodeCategory.FLOW
     primary_family: ClassVar[str] = 'Flow Control'

@@ -24,6 +24,8 @@ from backend.node_errors import (
     mux_unmatched_label,
 )
 
+from frontend.node_types import MERGE_NODE_TYPE
+
 ERROR_MUX_NODE_TYPE = "error_mux_node"
 ROUTE_ID_PREFIX = "route_"
 # Selection value for the catch-all branch ("Any other error").
@@ -81,6 +83,73 @@ def guarded_node_ids(workflow_map, mux_id: str) -> List[str]:
         if (inline or wired) and source and source not in ids:
             ids.append(source)
     return ids
+
+
+def inline_mux_for(workflow_map, node_id: str) -> Optional[str]:
+    """The Error Mux this node feeds inline, if any (U7 reuse rule).
+
+    Reused only when one of the node's outputs connects directly to a mux's
+    ``input``, which is exactly when the engine routes the node's failures
+    to that mux.
+    """
+    node = workflow_map.get_node_data(node_id) or {}
+    for conn in (node.get("connections") or {}).get("outputs", []):
+        if conn.get("target_port") != MUX_INPUT_PORT:
+            continue
+        target = str(conn.get("target_node_id") or "")
+        target_node = workflow_map.get_node_data(target) or {}
+        if target_node.get("type") == ERROR_MUX_NODE_TYPE:
+            return target
+    return None
+
+
+def branch_nodes_for_port(workflow_map, mux_id: str, port: str) -> List[str]:
+    """Nodes reached only through the mux's ``port`` (owner, Q6).
+
+    Follows the port's connections downstream and stops at a Merge and at
+    any node that Start also reaches another way; those are never part of
+    the branch. Order is breadth-first from the port.
+    """
+    nodes = workflow_map.get_all_node_data()
+    mux = nodes.get(mux_id) or {}
+    heads = [
+        str(conn.get("target_node_id") or "")
+        for conn in (mux.get("connections") or {}).get("outputs", [])
+        if conn.get("source_port") == port
+    ]
+    elsewhere: set[str] = set()
+    start = workflow_map.find_start_node_id()
+    stack = [start] if start else []
+    while stack:
+        node_id = stack.pop()
+        if node_id in elsewhere or node_id not in nodes:
+            continue
+        elsewhere.add(node_id)
+        for conn in (nodes[node_id].get("connections") or {}).get("outputs", []):
+            if node_id == mux_id and conn.get("source_port") == port:
+                continue
+            stack.append(str(conn.get("target_node_id") or ""))
+    branch: List[str] = []
+    seen: set[str] = set()
+    queue = list(heads)
+    while queue:
+        node_id = queue.pop(0)
+        if node_id in seen or node_id in elsewhere or node_id not in nodes:
+            continue
+        seen.add(node_id)
+        if nodes[node_id].get("type") == MERGE_NODE_TYPE:
+            continue
+        branch.append(node_id)
+        for conn in (nodes[node_id].get("connections") or {}).get("outputs", []):
+            queue.append(str(conn.get("target_node_id") or ""))
+    return branch
+
+
+def caught_error_count(workflow_map, mux_id: Optional[str]) -> int:
+    """How many error choices (codes, plus "Any other error") a mux catches."""
+    if not mux_id:
+        return 0
+    return len(selected_values((workflow_map.get_node_data(mux_id) or {}).get("config")))
 
 
 def upstream_error_definitions(factory, workflow_map, mux_id: str) -> List[Dict[str, Any]]:
