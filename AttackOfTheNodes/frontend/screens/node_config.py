@@ -224,6 +224,49 @@ def merge_input_options(workflow_map, current_node_id: str) -> list[Dict[str, st
     return options
 
 
+def unmatched_merge_values(
+    options: list[Dict[str, str]],
+    config: Dict[str, Any],
+    reserved_ports: Optional[set[str]] = None,
+) -> tuple[list[str], str]:
+    """Saved Merge values that match no current option: (closures, carry).
+
+    A Merge save keeps these unchanged instead of dropping them, so a change
+    in how the editor identifies a branch can never silently undo a closure
+    or disconnect its beacon. ``reserved_ports`` are the Merge's home inputs;
+    when it is None a ``home:`` carry-forward is not judged.
+    """
+    valid = {f"{option['branch_id']}:{option['branch_port']}" for option in options}
+    legacy = str(config.get("selected_branch_id") or "").strip()
+    configured = config.get("branches_to_close")
+    if isinstance(configured, list) and configured:
+        closures = [str(value) for value in configured if str(value)]
+    elif legacy and not legacy.startswith("home:"):
+        closures = [legacy]
+    else:
+        closures = []
+    kept_close = sorted({value for value in closures if value not in valid})
+    carry = str(config.get("carry_forward_branch_id") or "").strip() or legacy
+    if not carry:
+        kept_carry = ""
+    elif carry.startswith("home:"):
+        # Home inputs are only judged when the caller knows them.
+        matched = reserved_ports is None or carry.removeprefix("home:") in reserved_ports
+        kept_carry = "" if matched else carry
+    else:
+        kept_carry = "" if carry in valid else carry
+    return kept_close, kept_carry
+
+
+def merge_unmatched_warning(kept_close: list[str], kept_carry: str) -> str:
+    lines = ["Warning: saved settings no longer match a branch here. They are kept unchanged:"]
+    lines.extend(f"  closes {value}" for value in kept_close)
+    if kept_carry:
+        lines.append(f"  carries forward {kept_carry}")
+    lines.append("Uncheck or reselect them to change them.")
+    return "\n".join(lines)
+
+
 def _descendant_node_ids(workflow_map, source_id: str) -> set[str]:
     """Return every node id reachable forward from source_id."""
     descendants: set[str] = set()
@@ -271,9 +314,13 @@ def _branch_contexts_by_node(workflow_map) -> Dict[str, list[Dict[str, str]]]:
         add_context(node_id, context)
         if node.get("type") == BRANCH_END_NODE_TYPE:
             return
-        output_ports = _node_output_ports(workflow_map, node)
         outputs = node.get("connections", {}).get("outputs", [])
-        if len(output_ports) > 1:
+        # Only nodes that spawn branch supervisors start new branch contexts
+        # (as the engine does). Any other node, whatever its output count
+        # (an error path, an inline Error Mux, a Conditional), passes the
+        # current context to every connected target.
+        if _node_spawns_branches(workflow_map, node):
+            output_ports = _node_output_ports(workflow_map, node)
             for output_port in output_ports:
                 target_id = _target_for_output(node, output_port)
                 if not target_id:
@@ -343,6 +390,15 @@ def _beacon_output_details(workflow_map, beacon_node: Dict[str, Any]) -> Dict[st
         if source_node:
             return _source_output_details(source_node, source_port)
     return _source_output_details(beacon_node, "default")
+
+
+def _node_spawns_branches(workflow_map, node: Dict[str, Any]) -> bool:
+    node_type = str(node.get("type") or "")
+    factory = getattr(workflow_map, "_factory", None)
+    spawns = getattr(factory, "spawns_branches", None)
+    if callable(spawns) and factory.is_valid_node_type(node_type):
+        return bool(spawns(node_type))
+    return node_type == BRANCH_NODE_TYPE
 
 
 def _node_output_ports(workflow_map, node: Dict[str, Any]) -> list[str]:
@@ -2967,19 +3023,41 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
 
     def _compose_merge_inputs(self, config: Dict[str, Any]):
         options = merge_input_options(self.workflow_map, self.node_id)
+        # Backstop: saved values that match no current option are kept as
+        # they are (and shown), never dropped silently on save.
+        self._merge_kept_close, self._merge_kept_carry = unmatched_merge_values(
+            options, config, _reserved_merge_input_ports(self.workflow_map, self.node_id)
+        )
+        self._merge_kept_carry_config = {
+            key: config.get(key, "")
+            for key in ("carry_forward_branch_id", "selected_branch_id", "selected_input_port")
+        }
         if not options:
             yield Static("No open branches are available to close.", classes="form-description")
-            if not _reserved_merge_input_ports(self.workflow_map, self.node_id):
+            if not _reserved_merge_input_ports(self.workflow_map, self.node_id) and not (
+                self._merge_kept_close or self._merge_kept_carry
+            ):
                 return
         selected_values = self._selected_merge_close_values(options, config)
+        selected_values |= set(self._merge_kept_close)
         capacity = len(ALL_PATH_PORTS) - len(_reserved_merge_input_ports(self.workflow_map, self.node_id))
         yield Static(f"Select up to {capacity} branches to close; home inputs reserve the remaining ports.", classes="form-description")
+        if self._merge_kept_close or self._merge_kept_carry:
+            yield Static(
+                merge_unmatched_warning(self._merge_kept_close, self._merge_kept_carry),
+                id="merge-unmatched-warning",
+                classes="form-description merge-unmatched-warning",
+            )
+        rows = [
+            (option["description"], self._merge_option_value(option))
+            for option in options
+        ] + [
+            (f"Kept, no longer matches a branch: {value}", value)
+            for value in self._merge_kept_close
+        ]
         yield SelectionList(
             *dynamic_selection_rows(
-                [
-                    (option["description"], self._merge_option_value(option))
-                    for option in options
-                ],
+                rows,
                 selected_values,
                 select_all_when_empty=False,
             ),
@@ -3020,7 +3098,11 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             )
             for option in options
             if self._merge_option_value(option) in selected_values
-        ]
+        ] + (
+            [(f"Kept, no longer matches a branch: {kept}", kept)]
+            if (kept := getattr(self, "_merge_kept_carry", ""))
+            else []
+        )
 
     def _selected_merge_carry_value(
         self, carry_options: list[tuple[str, str]], config: Dict[str, Any]
@@ -3076,6 +3158,11 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         selected_value = selector_query.first().value if selector_query else ""
         selected_closures = self._selected_merge_close_values_from_widget()
         option = self._merge_option_by_value(str(selected_value or ""))
+        kept_carry = getattr(self, "_merge_kept_carry", "")
+        if kept_carry and str(selected_value) == kept_carry:
+            detail.update(f"Carry forward: kept unchanged ({kept_carry}); it no longer matches a branch.")
+            detail.display = True
+            return
         if str(selected_value).startswith("home:"):
             detail.update("Carry forward: home branch incoming payload")
             detail.display = True
@@ -3375,12 +3462,29 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         if self.node_data.get("type") != MERGE_NODE_TYPE:
             return {}
         options = merge_input_options(self.workflow_map, self.node_id)
-        branches_to_close = sorted(self._selected_merge_close_values_from_widget())
+        selection_query = self.query("#merge-branches-to-close")
+        kept_close = list(getattr(self, "_merge_kept_close", []))
+        if selection_query:
+            branches_to_close = sorted(self._selected_merge_close_values_from_widget())
+        else:
+            branches_to_close = sorted(kept_close)
         assignments = selected_merge_ports(self.workflow_map, self.node_id, options, set(branches_to_close))
         carry_value = ""
         selector_query = self.query("#merge-carry-forward-selector")
+        kept_carry = getattr(self, "_merge_kept_carry", "")
         if selector_query:
             carry_value = str(selector_query.first().value or "")
+        elif kept_carry:
+            carry_value = kept_carry
+        if kept_carry and carry_value == kept_carry:
+            # Backstop: an unmatched carry-forward stays exactly as saved.
+            kept = dict(getattr(self, "_merge_kept_carry_config", {}))
+            return {
+                "branches_to_close": branches_to_close,
+                "carry_forward_branch_id": kept.get("carry_forward_branch_id", ""),
+                "selected_branch_id": kept.get("selected_branch_id", ""),
+                "selected_input_port": kept.get("selected_input_port", ""),
+            }
         if carry_value.startswith("home:"):
             port = carry_value.removeprefix("home:")
             if port in _reserved_merge_input_ports(self.workflow_map, self.node_id):

@@ -170,6 +170,16 @@ Old File Manager/Writer completion flags are archived by
 terminal node to end such a route. New node specs must not add the retired
 optional completion checkbox.
 
+### Branch spawning
+
+A node that signals `branches` from `execute()` must set
+`spawns_branches: ClassVar[bool] = True` (today `branch_node` and
+`deep_branch_node`; a test enforces it). Factory metadata exposes the flag and
+`NodeFactory.spawns_branches(type)` reads it. Only these nodes start a new
+branch identity for Merge closure options. Having several output ports (an
+`error` path, Error Mux routes, Conditional `true`/`false`) does not make a
+node a branch point.
+
 ### Emitting Output in Code
 
 Every node signals completion through `context.signal_done(payload)`. The

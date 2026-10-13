@@ -87,6 +87,10 @@ class Node(ABC):
     input_ports: ClassVar[List[str]] = []
     output_ports: ClassVar[List[str]] = ["default"]
     terminates_branch: ClassVar[bool] = False
+    # True only for types whose execute() signals "branches", so the engine
+    # spawns branch supervisors. Having several output ports does not make a
+    # node a branch point; editors use this to trace branch identity.
+    spawns_branches: ClassVar[bool] = False
     # Per-port I/O contract metadata. Each entry may carry `name`, `description`,
     # `data_type` (from backend.data_types; absent ⇒ `any`), and `required`
     # (absent ⇒ optional/False). NodeFactory fills the defaults on exposure;

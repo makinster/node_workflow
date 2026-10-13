@@ -4,6 +4,61 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-13 — UX1: Merge Branch Identity and the Never-Drop Backstop
+
+Branch `dist/ux1-merge-branch-identity`, from `main` at `09a1402` (PR #42).
+First phase of `RECOVERY_UX_BUILD_PLAN.md`; this PR also commits that plan and
+`RECOVERY_UX_EXECUTION_PROMPT.md`.
+Before: 1053 passed. After: 1071 passed (18 new in
+`tests/test_merge_branch_identity.py`; 16 fail on the old code).
+
+- **Reproduced** with the review's `aotn_review41_probe.py` on `main`: turning
+  on Show error path for a node inside Branch path_b changed the Merge option
+  from `<branch>:path_b` to `<node>:default`; a no-edit Merge save wrote
+  `branches_to_close: []`, `carry_forward_branch_id: home:path_a`, and the
+  editor disconnected the Merge Beacon. After the fix the probe keeps all
+  three.
+- **Backend:** `Node.spawns_branches: ClassVar[bool] = False`; True on
+  `BranchNode` and `DeepBranchNode`, the only nodes that signal `branches`
+  (a test scans every registered class's source so a new one cannot be
+  missed). Factory metadata `spawns_branches` and
+  `NodeFactory.spawns_branches(type)`. No engine change.
+- **Topology:** `node_config._branch_contexts_by_node` starts new branch
+  contexts only at nodes whose type spawns branches. Every other node passes
+  the current context to all connected targets, whatever its output count.
+  Covered: Show error path on, HTTP Request (lists `error`), Error Mux
+  routes, Conditional, Random Branch (picks one path, spawns none). The
+  inline-mux variant from the plan only exists on PR #43's branch; UX4's
+  acceptance re-runs this probe with an inserted mux.
+- **Backstop:** `unmatched_merge_values(options, config, reserved_ports)` finds
+  stored `branches_to_close` / carry-forward values (including the legacy
+  `selected_branch_id`) that match no current option. The Merge config shows
+  them as checked "Kept, no longer matches a branch" rows, with a warning, and
+  a no-edit save writes them back unchanged (carry, `selected_branch_id` and
+  `selected_input_port` exactly as stored). Unchecking or reselecting drops
+  them explicitly. The editor's `_sync_merge_branch_end_connections` does not
+  disconnect any beacon while an unmatched closure remains (it cannot know
+  which beacon the value meant) and, on a Merge save, notifies the warning.
+- `NODE_STANDARDS.md`: new "Branch spawning" section.
+- Not changed: the editor's other `len(output_ports) > 1` checks (port
+  cycling, Merge slot hints, branch selector paths) are navigation, not
+  branch identity; `WorkflowMap.get_nodes("branches")` is unused by Merge.
+
+**Checked read-only:** every workflow under `workflows/` (4 files, 1 Merge in
+`wf_0d75f6241f3d`) has identical Merge options with the old and new rule and no
+unmatched values; file hashes were unchanged after the check.
+
+**Self-review:** first version computed the kept values after the "no open
+branches" early return, so a Merge whose only branch identity changed and had
+no home inputs would still have saved an empty closure; moved before it. The
+editor first notified on every whole-workflow Merge sync (load, any node
+save); now only on a Merge save. A `home:` carry-forward is judged only when
+the caller passes the home inputs, so the editor never flags a valid one.
+
+**Behavior changes:** a node with several outputs inside a Branch path no
+longer creates its own Merge option (existing configs that relied on the old
+identity would show as kept rows; none exist in the saved workflows). Merge
+saves never drop unmatched values silently.
 ## 2026-10-12 — P4: Error Mux Redesign (Inline Catch, No Error Branch)
 
 Branch `dist/p4-inline-error-mux`, from `main` at `09a1402` (P3b, PR #42).
