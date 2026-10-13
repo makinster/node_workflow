@@ -4,6 +4,37 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-13 — Fix: Deleting a Branch Tombstone Loses or Strands Nodes
+
+Branch `fix/branch-prune-output-nodes`, from `main` at `1ae7d82` (PR #45).
+Owner report, mid-UX4: deleting a Branch node's tombstone and keeping Branch 1
+lost nodes, and the validator then reported unreachable nodes. The owner's
+current save (`wf_dfe1f9277865`, read only) showed Start → File Manager → File
+Write plus a detached File Reader → Text Output. UX4 work is parked in a stash
+on `dist/ux4-recovery-flow`.
+Before: 1191 passed. After: 1195 passed (4 new in
+`tests/test_branch_prune.py`; 3 fail on the old code).
+
+- **Cause.** `EditorWorkflowAdapter._is_branch_prune_terminal` treated Text
+  Output and every Outputs-family node (File Manager, File Write) as the end
+  of a path. Since `file_io_continuation_v1` those nodes continue along their
+  connections, and `NODE_STANDARDS.md` says termination is declared only by
+  `terminates_branch`. So keeping a path whose head is File Manager cut its
+  link to File Write (`_disconnect_kept_branch_terminal_outputs`), stranding
+  File Write; and dropping such a path pruned File Manager but stopped there,
+  stranding everything after it.
+- **Fix.** A path end is a Merge Beacon or a type with `terminates_branch`
+  (End). Pruning now continues past output nodes, so one guard was added: a
+  node still reachable from Start through a surviving route (the kept path or
+  anything else) is never pruned (the same rule as UX4's planned Delete
+  branch). Merge handling is unchanged.
+- Reproduced with a probe on a temp data folder (both kept-path directions);
+  after the fix neither leaves unreachable nodes.
+
+**Behavior changes:** deleting a Branch tombstone removes the whole dropped
+path, including what follows an output node, and never deletes a node that a
+surviving route still reaches.
+
 ## 2026-10-13 — UX3: Measured Performance (Branch Rows, Topology Scan, Editor)
 
 Branch `dist/ux3-measured-performance`, from `main` at `79776c3` (PR #43).
