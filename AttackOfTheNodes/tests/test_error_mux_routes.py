@@ -320,14 +320,19 @@ def test_errors_are_offered_in_plain_words():
     assert friendly_error_name("engine.upstream_unreachable") == \
         "A node it waits for can no longer finish"
     timeout = next(d for d in definitions if d["code"] == "timeout")
+    # Same format as the node's Errors list (owner, 2026-10-13).
     assert friendly_error_choice(timeout) == \
-        "Timeout: The server did not answer within the timeout. Retrying may help."
+        "[timeout] The server did not answer within the timeout."
 
     choices = recovery_choices(definitions, {"routes": [_route("r", ["gone_code"])]})
-    texts = [text for text, _ in choices]
-    assert all("_" not in text.split(":")[0] for text in texts)
-    assert choices[-2] == ("Gone code: not raised by the connected node", "gone_code")
-    assert choices[-1][1] == ANY_OTHER_ERROR
+    assert [value for _, value in choices] == [
+        "node_error", "missing_url", "timeout", "network", "http_status", "gone_code"]
+    assert choices[-1] == ("[gone_code] Not raised by the connected node", "gone_code")
+    # "Any other error" is no longer offered; an existing one stays visible
+    # (ticked) so it can be unpicked.
+    assert ANY_OTHER_ERROR not in [value for _, value in choices]
+    legacy = recovery_choices(definitions, {"routes": [], "unmatched_route": True})
+    assert legacy[-1][1] == ANY_OTHER_ERROR and "Unpick to remove" in legacy[-1][0]
 
 
 def test_picks_become_branches_that_keep_their_ids():
@@ -396,7 +401,6 @@ def test_config_tabs_source_picks_fill_parameters_and_payloads():
             await pilot.pause()
             assert len(app.query(".mux-branch-row")) == 1
             picker.select("timeout")
-            picker.select("__any_other__")
             await pilot.pause()
             await pilot.pause()
 
@@ -406,8 +410,9 @@ def test_config_tabs_source_picks_fill_parameters_and_payloads():
             assert values["routes"][0]["label"] == "Try again"
             assert values["routes"][0]["forward"] == "failed_input"
             assert values["routes"][1]["forward"] == "error"
-            assert values["unmatched_route"] is True
-            assert values["unmatched_label"] == "Any other error"
+            # "Any other error" is not offered on a new mux (owner, 2026-10-13).
+            assert "__any_other__" not in [o.value for o in picker._options]
+            assert values["unmatched_route"] is False
 
     asyncio.run(check())
 

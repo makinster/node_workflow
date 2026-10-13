@@ -63,11 +63,10 @@ def friendly_error_name(code: str) -> str:
 
 
 def friendly_error_choice(definition: Mapping[str, Any]) -> str:
-    """One readable line for a picker: name, what it means, whether retrying helps."""
-    name = friendly_error_name(str(definition.get("code") or ""))
-    description = str(definition.get("description") or "").strip().rstrip(".")
-    retry = " Retrying may help." if definition.get("retryable") else ""
-    return f"{name}: {description}.{retry}" if description else f"{name}{retry}"
+    """One picker line, the same as the node's Errors list: ``[code] description``."""
+    code = str(definition.get("code") or "")
+    description = str(definition.get("description") or "").strip()
+    return f"[{code}] {description}".rstrip()
 
 
 def guarded_node_ids(workflow_map, mux_id: str) -> List[str]:
@@ -171,7 +170,14 @@ def recovery_choices(
     definitions: Sequence[Mapping[str, Any]], config: Optional[Mapping[str, Any]] = None
 ) -> List[tuple[str, str]]:
     """``(readable text, value)`` for the Source picker: the guarded node's
-    errors, any picked code it no longer raises, then "Any other error"."""
+    errors, then any picked code it no longer raises.
+
+    "Any other error" is not offered (owner, 2026-10-13): every code a node
+    can fail with is listed (undeclared codes become ``node_error``, and the
+    nodes that raise engine codes declare them), so it only ever repeated
+    the unpicked choices. A mux that already uses it still shows it, ticked,
+    so it can be unpicked; it keeps working until then.
+    """
     choices: List[tuple[str, str]] = []
     seen: set[str] = set()
     for definition in definitions:
@@ -183,8 +189,10 @@ def recovery_choices(
         for code in route["codes"]:
             if code not in seen:
                 seen.add(code)
-                choices.append((f"{friendly_error_name(code)}: not raised by the connected node", code))
-    choices.append(("Any other error: everything not picked above", ANY_OTHER_ERROR))
+                choices.append((f"[{code}] Not raised by the connected node", code))
+    if mux_has_unmatched_route(config):
+        choices.append(("[any other error] Older setting: everything not picked above. "
+                        "Unpick to remove.", ANY_OTHER_ERROR))
     return choices
 
 
