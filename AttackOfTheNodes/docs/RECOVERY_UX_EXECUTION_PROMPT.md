@@ -92,9 +92,18 @@ reproduce the UX1 bug with the probe described in the plan.
 
 Update this section at the end of every session.
 
-- **2026-10-13:** the plan has been written and no UX phase has started.
-  `main` is at `09a1402`. PR #43 is open on `dist/p4-inline-error-mux` at
-  `3038634`. These two plan docs are not committed yet.
+- **2026-10-13 (start):** the plan was written and no UX phase had started.
+  `main` was at `09a1402`; PR #43 open on `dist/p4-inline-error-mux` at
+  `3038634`.
+- **2026-10-13 (UX1 done):** UX1 merged in PR #44 (branch
+  `dist/ux1-merge-branch-identity`), which also committed these two plan
+  docs. Suite: 1071 passed on `main`. PR #43 is still open and unchanged.
+  **Next:** UX2. Check out `dist/p4-inline-error-mux`, merge `main` into it
+  (expect conflicts in `SESSION_LOG.md` and possibly `node_config.py`), then
+  run `aotn_review43_probe.py` to reproduce the three #43 bugs.
+- Q1, Q9, Q10 and Q11 were raised with the owner after UX1 and are not yet
+  answered; until then the defaults in the table below apply. Q2–Q8 are
+  asked when their phase reaches them.
 
 ## Continuing across sessions
 
