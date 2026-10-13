@@ -95,6 +95,8 @@ MAX_MEMBANK_OUTPUT_ROWS = 5
 # Branch config rows are composed for at least this many paths; more are
 # mounted when the count grows.
 COMPOSED_BRANCH_ROWS = 5
+# Pause after the last keystroke in the Branch count before rows sync.
+BRANCH_COUNT_DEBOUNCE_SECONDS = 0.15
 LEGACY_BRANCH_CONFIG_KEYS = {
     "condition",
     "match_value",
@@ -285,7 +287,14 @@ def _descendant_node_ids(workflow_map, source_id: str) -> set[str]:
 
 
 def _branch_contexts_by_node(workflow_map) -> Dict[str, list[Dict[str, str]]]:
-    """Map nodes to the branch path contexts that can reach them."""
+    """Map nodes to the branch path contexts that can reach them.
+
+    One depth-first scan with a single visited set keyed by (node,
+    branch_id, branch_port), so each fork/rejoin pair costs a constant
+    amount instead of doubling the work (UX3). A node reached by several
+    routes in the same context keeps the ``branch_path`` display text of the
+    first route found; which contexts reach a node is unchanged.
+    """
     contexts: Dict[str, list[Dict[str, str]]] = {}
     start_id = workflow_map.find_start_node_id()
     if not start_id:
@@ -299,7 +308,9 @@ def _branch_contexts_by_node(workflow_map) -> Dict[str, list[Dict[str, str]]]:
         if all((item["branch_id"], item["branch_port"]) != key for item in existing):
             existing.append(context)
 
-    def follow(node_id: str, context: Optional[Dict[str, str]], seen: set[tuple[str, str, str]]) -> None:
+    seen: set[tuple[str, str, str]] = set()
+
+    def follow(node_id: str, context: Optional[Dict[str, str]]) -> None:
         node = workflow_map.get_node_data(node_id) or {}
         if not node:
             return
@@ -334,14 +345,14 @@ def _branch_contexts_by_node(workflow_map) -> Dict[str, list[Dict[str, str]]]:
                     context,
                     next_context["branch_label"],
                 )
-                follow(target_id, next_context, set(seen))
+                follow(target_id, next_context)
             return
         for conn in outputs:
             target_id = str(conn.get("target_node_id") or "")
             if target_id:
-                follow(target_id, context, set(seen))
+                follow(target_id, context)
 
-    follow(start_id, None, set())
+    follow(start_id, None)
     return contexts
 
 
@@ -660,6 +671,10 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         # screen's widgets produce before any edit (taken after mount).
         self._original_config = deepcopy(node_data.get("config") or {})
         self._opened_config: Optional[Dict[str, Any]] = None
+        # Branch rows by port: (row, label input, source select), filled as
+        # rows are built so syncing never searches the whole screen (UX3).
+        self._branch_rows: Dict[str, tuple[Any, Any, Any]] = {}
+        self._branch_count_timer: Any = None
         self._initial_membank_outputs = normalize_membank_outputs(
             node_data.get("config") or {}
         )
@@ -1316,23 +1331,27 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         valid_values = {value for _, value in source_options}
         if selected_source not in valid_values:
             selected_source = "dead_drop:input"
-        return Vertical(
+        label_input = CommandInput(
+            value=label,
+            id=f"branch-label-{port}",
+            placeholder=f"Branch {index + 1}",
+        )
+        source_select = Select(
+            source_options,
+            value=selected_source,
+            id=f"branch-payload-source-{port}",
+            allow_blank=False,
+        )
+        row = Vertical(
             Label("Spawn Point:", classes="form-description"),
-            CommandInput(
-                value=label,
-                id=f"branch-label-{port}",
-                placeholder=f"Branch {index + 1}",
-            ),
+            label_input,
             Label("Start with:", classes="form-description"),
-            Select(
-                source_options,
-                value=selected_source,
-                id=f"branch-payload-source-{port}",
-                allow_blank=False,
-            ),
+            source_select,
             id=f"branch-payload-row-{port}",
             classes="branch-payload-row",
         )
+        self._branch_rows[port] = (row, label_input, source_select)
+        return row
 
     def on_mount(self) -> None:
         for scroll in self.query("#node-config-scroll"):
@@ -1413,7 +1432,12 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         if event.input.id == "membank-output-count":
             await self._refresh_membank_output_rows()
         elif event.input.id == "branch-count":
-            self._sync_branch_payload_rows()
+            # Debounced: typing "64" should not sync for "6" first.
+            if self._branch_count_timer is not None:
+                self._branch_count_timer.stop()
+            self._branch_count_timer = self.set_timer(
+                BRANCH_COUNT_DEBOUNCE_SECONDS, self._sync_branch_payload_rows
+            )
         elif event.input.id and event.input.id.startswith("field-"):
             self._apply_generated_field_rules()
         self._scroll_changed_widget(event.input)
@@ -3302,15 +3326,21 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             ).items()
             if port not in ports and (entry.get("name") or entry.get("description"))
         ]
+        # One walk of the screen, not two id searches per port (UX3).
+        fields = {
+            widget.id: widget
+            for widget in self.query("*")
+            if widget.id and widget.id.startswith("transient-output-")
+        }
         for port in ports:
             port = str(port)
-            name_query = self.query(f"#transient-output-name-{port}")
-            desc_query = self.query(f"#transient-output-desc-{port}")
-            if not name_query and not desc_query:
+            name_widget = fields.get(f"transient-output-name-{port}")
+            desc_widget = fields.get(f"transient-output-desc-{port}")
+            if name_widget is None and desc_widget is None:
                 continue
-            name = self._widget_text_value(name_query.first()) if name_query else ""
+            name = self._widget_text_value(name_widget) if name_widget is not None else ""
             description = (
-                self._widget_text_value(desc_query.first()) if desc_query else ""
+                self._widget_text_value(desc_widget) if desc_widget is not None else ""
             )
             if name or description:
                 outputs.append(
@@ -3334,17 +3364,16 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         for key in LEGACY_BRANCH_CONFIG_KEYS:
             if key in existing_config:
                 values[key] = existing_config[key]
-        composed = len(self.query(".branch-payload-row"))
+        composed = len(self._branch_rows)
         for index, port in enumerate(path_ports(max(branch_count, composed))):
-            label_query = self.query(f"#branch-label-{port}")
-            if label_query:
-                label = self._widget_text_value(label_query.first())
+            widgets = self._branch_rows.get(port)
+            if widgets is not None:
+                label = self._widget_text_value(widgets[1])
             else:
                 label = str(existing_config.get(f"{port}_label") or f"Branch {index + 1}")
             values[f"{port}_label"] = label or f"Branch {index + 1}"
-            source_query = self.query(f"#branch-payload-source-{port}")
-            if index < branch_count and source_query:
-                source = str(source_query.first().value or "dead_drop:input")
+            if index < branch_count and widgets is not None:
+                source = str(widgets[2].value or "dead_drop:input")
                 values["branch_payload_sources"][port] = source
         return values
 
@@ -3365,20 +3394,25 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         payload_sources = config.get("branch_payload_sources") or {}
         if not isinstance(payload_sources, dict):
             payload_sources = {}
-        composed = len(self.query(".branch-payload-row"))
-        for index in range(composed, branch_count):
-            # A raised count gets its rows on demand (up to MAX_BRANCH_COUNT).
-            rows.mount(self._branch_payload_row(index, source_options, payload_sources, config))
+        composed = len(self._branch_rows)
+        # A raised count gets its rows on demand (up to MAX_BRANCH_COUNT),
+        # mounted in one batch.
+        new_rows = [
+            self._branch_payload_row(index, source_options, payload_sources, config)
+            for index in range(composed, branch_count)
+        ]
+        if new_rows:
+            rows.mount(*new_rows)
         for index, port in enumerate(path_ports(max(branch_count, composed))):
-            row_query = self.query(f"#branch-payload-row-{port}")
-            if row_query:
-                row_query.first().display = index < branch_count
-            select_query = self.query(f"#branch-payload-source-{port}")
-            if select_query:
-                selector = select_query.first()
-                current_value = str(selector.value or "dead_drop:input")
-                selector.set_options(source_options)
-                selector.value = current_value if current_value in valid_values else "dead_drop:input"
+            widgets = self._branch_rows.get(port)
+            if widgets is None:
+                continue
+            row, _label_input, selector = widgets
+            row.display = index < branch_count
+            current_value = str(selector.value or "dead_drop:input")
+            self._set_select_options_preserving_value(selector, source_options, current_value)
+            if current_value not in valid_values:
+                selector.value = "dead_drop:input"
 
     def _sync_membank_input_controls(self) -> None:
         reads_query = self.query("#membank-reads")

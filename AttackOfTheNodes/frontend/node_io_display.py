@@ -59,7 +59,10 @@ def normalize_membank_inputs(config: Dict[str, Any]) -> list[str]:
 
 
 def metadata_for_type(factory, node_type: str) -> Optional[Dict[str, Any]]:
-    """Return factory metadata for a node type."""
+    """Return factory metadata for a node type (shared; do not modify)."""
+    cached = getattr(factory, "metadata_for_type", None)
+    if callable(cached):
+        return cached(node_type)
     for item in factory.get_node_types_metadata():
         if item["type"] == node_type:
             return item
