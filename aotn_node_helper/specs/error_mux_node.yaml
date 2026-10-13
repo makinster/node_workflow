@@ -6,53 +6,25 @@ tags: ["Conditional"]
 icon_name: git-fork
 display_name: Error Mux
 default_alias: Error Mux
-description: Route a failure from a node's error port to a route by its error code
-input_ports: ["error"]
-# Routes are config-driven ports (port model P2): each route's id is an output
-# port, resolved by ErrorMuxNode.resolve_output_ports. The class list holds only
-# the fixed catch-all port, shown when "Unmatched route" is on.
-output_ports: ["unmatched"]
+description: Place after a node to catch the errors you pick and send each down its own recovery branch
+input_ports: ["input", "error"]
+# Config-driven outputs (port model): "default" (No error) always, one port per
+# recovery branch (its stable route id), and "unmatched" when "Any other error"
+# is picked. Resolved by ErrorMuxNode.resolve_output_ports; the config UI is a
+# custom section in node config (routes are not generic schema fields).
+output_ports: ["default", "unmatched"]
 input_port_metadata:
+  input:
+    name: Input
+    description: "The guarded node's normal output; also how the mux catches that node's errors"
   error:
     name: Error
-    description: Versioned error payload from the failing node's error port
+    description: "Optional: a node's error port wired here directly (older layout)"
 output_port_metadata:
+  default:
+    name: No error
+    description: "The guarded node's normal output, when it succeeds"
   unmatched:
-    name: Unmatched
-    description: "The error payload (or the failed node's input, see Pass along), when no route lists its code"
-config_tabs:
-  Parameters:
-    forward:
-      type: select
-      label: "Pass along"
-      options: ["error", "failed_input"]
-      default: error
-      description: "What the chosen route receives: the error payload, or the input the failed node was given (to retry or fall back on the same data)"
-    routes:
-      type: object_list
-      label: "Routes"
-      description: "One output per route. A failure takes the first route that lists its code. Codes come from the node connected to the error input."
-      default: []
-      add_label: "Add route"
-      remove_label: "Remove route"
-      id_prefix: "route_"
-      refill_label: "Refill from upstream"
-      item_schema:
-        id:
-          type: string
-          label: "Stable id"
-        label:
-          type: string
-          label: "Route name"
-          placeholder: "Retry later"
-        codes:
-          type: multiselect
-          label: "Error codes"
-          options: ["node_error"]
-          options_source: upstream_error_codes
-    unmatched_route:
-      type: boolean
-      label: "Unmatched route"
-      default: false
-      description: "Add an output for codes no route lists, so every failure is routed"
+    name: Any other error
+    description: "Any failure no other recovery branch takes"
 execution_template: transform_stub

@@ -12,7 +12,6 @@ from textual.widgets import Header, Label, Static
 
 from backend.branch_paths import merge_slot_count, slots_covering
 from backend.validator import validate_workflow
-from frontend.error_mux_ui import autofill_mux_routes
 from frontend.error_paths import editor_output_ports
 from frontend.screens.branch_keep_selector_screen import BranchKeepSelectorScreen
 from frontend.screens.branch_selector import BranchSelectorScreen
@@ -1206,10 +1205,6 @@ class EditorScreen(Screen):
             target_node_id,
             target_port,
         )
-        # Wiring a node's error port into an empty Error Mux fills its routes
-        # from that node's declared codes (UI-only convenience).
-        if autofill_mux_routes(self.factory, self.workflow_map, target_node_id):
-            target = self.workflow_map.get_node_data(target_node_id) or target
         source_field = f"{target_port}_source"
         source_schema = (target_meta.get("config_schema") or {}).get(source_field) or {}
         if target_port != input_ports[0] and "Upstream payload" in source_schema.get("options", []):

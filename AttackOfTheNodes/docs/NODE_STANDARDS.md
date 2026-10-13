@@ -511,6 +511,9 @@ presentation of `NodeFactory` metadata only.
   it: every node can show its error path from its Errors section (P3). List
   it only when failing along `error` is part of the node's normal contract
   (HTTP Request, JSON Path), so the editor always shows it.
+- A node class may set `catches_upstream_errors = True` (Error Mux does):
+  a failure of the node feeding its `input` is routed to it when
+  `accepts_error_code(code)` is true, so it can sit inline after the node.
 - A node class may set `receives_failed_input = True` (Error Mux does). When
   a failure is routed to it along `error`, the supervisor also passes the
   failed node's input as `inputs["failed_input"]`: the value of its single

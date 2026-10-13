@@ -114,7 +114,8 @@ the real backend.
 | P1 | Port model: backend `node_output_ports()` resolves each node's ports from its config — **done** | P0 |
 | P2 | Error Mux routes: any number of named routes with stable ids; UI pickers and auto-fill — **done** | P1 |
 | P3 | Branch on the same mechanism; editor offers `error` on every node — **done** (Branch + Merge slots, owner choice) | P2 |
-| 4 | Contracts + subworkflows (Phases 19/20) | Step 3 (after P3) |
+| P4 | Error Mux redesign (owner request): inline after a node, No error branch, readable error picker, per-branch pass-along, `recovered` status — **done** | P3 |
+| 4 | Contracts + subworkflows (Phases 19/20) | Step 3 (after P4) |
 | 5 | Event sources + start triggers | Step 4 |
 | 6 | Server, API, auth, parallel runs | Step 5 |
 

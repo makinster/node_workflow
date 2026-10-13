@@ -11,6 +11,7 @@ from textual.message import Message
 from textual.widgets import Static
 
 from backend.branch_paths import path_index
+from frontend.error_mux_ui import friendly_error_name
 from frontend.node_io_display import node_display_name
 from frontend.node_types import (
     BRANCH_END_NODE_TYPE,
@@ -24,6 +25,7 @@ STATUS_ICONS = {
     "running": "▶",
     "done": "✓",
     "errored": "✗",
+    "recovered": "↪",
     "waiting": "⏸",
 }
 
@@ -145,6 +147,10 @@ class NodeCard(Static):
         outcome = f"[{self.status}] " if self.status in {"skipped", "stopped"} else ""
         if self.status == "skipped" and self.status_detail:
             outcome = f"[skipped: {self.status_detail.replace('_', ' ')}] "
+        if self.status == "recovered":
+            # A failure an error path handled (P4): not shown as an error.
+            detail = friendly_error_name(self.status_detail) if self.status_detail else ""
+            outcome = f"[recovered: {detail}] " if detail else "[recovered] "
         prefix = outcome or (f"{icon} " if icon else "")
         warning_badge = "⚠ " if self.has_warning else ""
         main_text = f"{prefix}{warning_badge}{breakpoint_marker}{alias}{id_text}{timing}"

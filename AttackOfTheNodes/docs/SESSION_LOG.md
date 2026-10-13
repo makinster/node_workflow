@@ -4,6 +4,58 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-12 — P4: Error Mux Redesign (Inline Catch, No Error Branch)
+
+Branch `dist/p4-inline-error-mux`, from `main` at `09a1402` (P3b, PR #42).
+Before: 1053 passed. After: 1053 passed (P2's route-list UI tests replaced
+by tests of the new design; see below).
+
+Owner feedback: the P2 mux was confusing. Intended use: override chosen
+error codes so a failure takes a recovery path instead of stopping with an
+error; a default No error branch for normal execution; pick errors in Source
+(readable), get one entry per pick in Parameters (scrollable), and choose per
+branch in Payloads whether to pass the error or the previous node's input.
+
+- **Engine.** The mux sits inline: the guarded node's output feeds its
+  `input`. `Supervisor._inline_error_route` routes a failure to a mux fed by
+  the failed node when the mux (`catches_upstream_errors`) accepts the code;
+  an explicit `error`-port connection still wins. Routed to the mux, the
+  supervisor passes `inputs["error"]` (the payload) and
+  `inputs["failed_input"]`; reached normally, `error` is removed so a stale
+  payload never leaks. A routed failure publishes node status `recovered`
+  (reason = code) instead of `errored`; unrouted failures stay `errored`.
+- **Error Mux** (spec change, regenerated, custom body restored; `check_node`
+  / `check_ui` pass): inputs `input`, `error` (older layout); outputs
+  `default` (No error) + one per branch + `unmatched` (Any other error). No
+  generic config fields; per-branch `forward` in `routes`, plus
+  `unmatched_label` / `unmatched_forward`. Node-wide `forward` from P2 is the
+  fallback.
+- **Config UI** (custom tabs, frontend-only): Source explains the mux, names
+  the guarded node and lists its errors in plain words (`HTTP status: The
+  server answered with an HTTP error status... `, "Retrying may help." when
+  retryable, "Unexpected failure" for `node_error`, "Any other error"); each
+  pick adds a row on Parameters (branch name, prefilled) and Payloads (pass
+  along: error details or the failed node's input). Unpicking and re-picking
+  restores the branch's id, name and choice. P2's auto-fill on wiring, route
+  list and "Refill from upstream" are removed (`ObjectListField`'s generic
+  additions stay).
+- **Execution display:** node cards show `↪ [recovered: HTTP status]`;
+  `recovered` ranks below `errored` and `stopped`.
+- Validator: a mux fed inline is valid; "Error Mux has no incoming
+  connection" replaces the error-input-only warning.
+
+**Behavior changes:** routed failures (to a mux or any `error` handler) show
+`recovered`, not `errored` (`test_routing_to_the_error_port_skips_the_default_path`
+updated); a new mux has a No error output; inserting a mux after a node wires
+it inline. **Tests replaced, not weakened:** P2's tests of auto-fill, refill
+and the route-list editor were rewritten for the new picker flow (the
+features were removed at the owner's request); `test_error_mux_routes.py`
+and the generated mux tests now cover inline catching, No error, per-branch
+pass-along, readable choices and the Source → Parameters → Payloads flow.
+`test_file_picker_export_and_import_paths` and
+`test_error_buttons_have_keyboard_focus_and_scroll[True-60]` failed once
+under full-suite load and pass alone (timing-sensitive UI tests).
+
 ## 2026-10-12 — P3b: Branch Beyond Five Paths, Merge Slots to Match
 
 Branch `dist/p3b-branch-merge-slots`, from `main` at `745fed3` (P3a, PR #41).

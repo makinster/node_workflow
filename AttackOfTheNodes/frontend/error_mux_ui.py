@@ -1,120 +1,169 @@
-"""Error Mux route entry helpers (port model P2). Frontend-only.
+"""Error Mux config helpers (frontend-only).
 
-The backend owns what a route *is* (``backend.node_errors.mux_routes``); this
-module only proposes values for the config UI: which codes the upstream node
-can raise, and a starting set of routes built from them.
+The Error Mux sits inline after a node. Its Source tab lists the errors that
+node can raise, in plain words; each one the user picks becomes a recovery
+branch, which the Parameters tab names and the Payloads tab configures. The
+backend owns what a route is (``backend.node_errors``); this module only turns
+error definitions into readable choices and selections into routes.
 """
 
 from __future__ import annotations
 
 import uuid
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 from backend.node_errors import (
-    ENGINE_ERROR_DEFINITIONS,
+    DEFAULT_ERROR_CODE,
     ERROR_PORT,
-    error_codes,
+    MUX_FORWARD_ERROR,
+    MUX_FORWARD_FAILED_INPUT,
+    MUX_INPUT_PORT,
+    UNMATCHED_ROUTE,
+    mux_has_unmatched_route,
     mux_routes,
+    mux_unmatched_label,
 )
 
 ERROR_MUX_NODE_TYPE = "error_mux_node"
 ROUTE_ID_PREFIX = "route_"
+# Selection value for the catch-all branch ("Any other error").
+ANY_OTHER_ERROR = "__any_other__"
+
+FORWARD_CHOICES = [
+    ("The error message and details", MUX_FORWARD_ERROR),
+    ("The failed node's input (retry or fall back with the same data)",
+     MUX_FORWARD_FAILED_INPUT),
+]
+
+_WORDS = {
+    "http": "HTTP", "url": "URL", "json": "JSON", "api": "API", "id": "ID",
+    "ai": "AI", "llm": "LLM", "io": "I/O", "dns": "DNS", "tls": "TLS",
+}
+_NAMES = {
+    DEFAULT_ERROR_CODE: "Unexpected failure",
+    "engine.upstream_unreachable": "A node it waits for can no longer finish",
+    "engine.unattended_input": "Needs input but nobody can answer",
+}
 
 
-def new_route_id(prefix: str = ROUTE_ID_PREFIX) -> str:
-    return f"{prefix}{uuid.uuid4().hex[:8]}"
+def new_route_id() -> str:
+    return f"{ROUTE_ID_PREFIX}{uuid.uuid4().hex[:8]}"
 
 
-def upstream_error_definitions(factory, workflow_map, node_id: str) -> List[Dict[str, Any]]:
-    """Error definitions of every node wired into ``node_id``'s ``error`` input.
+def friendly_error_name(code: str) -> str:
+    """``http_status`` -> ``HTTP status``; engine and default codes get names."""
+    code = str(code or "")
+    if code in _NAMES:
+        return _NAMES[code]
+    words = code.split(".")[-1].split("_")
+    text = " ".join(_WORDS.get(word, word) for word in words if word)
+    return text[:1].upper() + text[1:] if text else code
 
-    Codes come from each source type's declared errors (the default
-    ``node_error`` first) in connection order, without duplicates.
-    """
-    node = workflow_map.get_node_data(node_id) or {}
+
+def friendly_error_choice(definition: Mapping[str, Any]) -> str:
+    """One readable line for a picker: name, what it means, whether retrying helps."""
+    name = friendly_error_name(str(definition.get("code") or ""))
+    description = str(definition.get("description") or "").strip().rstrip(".")
+    retry = " Retrying may help." if definition.get("retryable") else ""
+    return f"{name}: {description}.{retry}" if description else f"{name}{retry}"
+
+
+def guarded_node_ids(workflow_map, mux_id: str) -> List[str]:
+    """Nodes whose failures this mux catches: the node feeding its ``input``,
+    or a node whose ``error`` port is wired to its ``error`` input."""
+    node = workflow_map.get_node_data(mux_id) or {}
+    ids: List[str] = []
+    for conn in (node.get("connections") or {}).get("inputs", []):
+        port = conn.get("target_port")
+        inline = port == MUX_INPUT_PORT
+        wired = port == ERROR_PORT and conn.get("source_port") == ERROR_PORT
+        source = str(conn.get("source_node_id") or "")
+        if (inline or wired) and source and source not in ids:
+            ids.append(source)
+    return ids
+
+
+def upstream_error_definitions(factory, workflow_map, mux_id: str) -> List[Dict[str, Any]]:
+    """Declared errors of the guarded node(s), default generic code first."""
+    by_type = {meta.get("type"): meta for meta in factory.get_node_types_metadata()}
     definitions: List[Dict[str, Any]] = []
     seen: set[str] = set()
-    for conn in (node.get("connections") or {}).get("inputs", []):
-        if conn.get("target_port") != ERROR_PORT or conn.get("source_port") != ERROR_PORT:
-            continue
-        source = workflow_map.get_node_data(str(conn.get("source_node_id") or "")) or {}
-        for meta in factory.get_node_types_metadata():
-            if meta.get("type") != source.get("type"):
-                continue
-            for definition in meta.get("errors") or []:
-                code = str(definition.get("code") or "")
-                if code and code not in seen:
-                    seen.add(code)
-                    definitions.append(dict(definition))
+    for node_id in guarded_node_ids(workflow_map, mux_id):
+        source = workflow_map.get_node_data(node_id) or {}
+        for definition in (by_type.get(source.get("type")) or {}).get("errors") or []:
+            code = str(definition.get("code") or "")
+            if code and code not in seen:
+                seen.add(code)
+                definitions.append(dict(definition))
     return definitions
 
 
-def code_options(
-    definitions: List[Mapping[str, Any]], routes: Any = None
+def recovery_choices(
+    definitions: Sequence[Mapping[str, Any]], config: Optional[Mapping[str, Any]] = None
 ) -> List[tuple[str, str]]:
-    """``(label, code)`` choices: upstream codes, engine codes, then any code a
-    route already lists (so a saved code is never dropped from the picker)."""
-    options: List[tuple[str, str]] = []
+    """``(readable text, value)`` for the Source picker: the guarded node's
+    errors, any picked code it no longer raises, then "Any other error"."""
+    choices: List[tuple[str, str]] = []
     seen: set[str] = set()
-
-    def add(code: str, description: str = "") -> None:
-        if code and code not in seen:
-            seen.add(code)
-            options.append((f"{code} - {description}" if description else code, code))
-
-    for definition in definitions:
-        add(str(definition.get("code") or ""), str(definition.get("description") or ""))
-    for code, definition in ENGINE_ERROR_DEFINITIONS.items():
-        add(code, str(definition.get("description") or ""))
-    for entry in routes if isinstance(routes, list) else []:
-        if isinstance(entry, Mapping):
-            for code in error_codes(entry.get("codes")):
-                add(code, "not raised upstream")
-    return options
-
-
-def routes_from_definitions(
-    definitions: List[Mapping[str, Any]],
-    existing: Optional[Any] = None,
-) -> List[Dict[str, Any]]:
-    """One route per upstream code, labelled by the code.
-
-    A route that already handles exactly that one code keeps its id and
-    label, so its connection survives a refill. Other existing routes are
-    dropped; the caller decides whether to refill at all.
-    """
-    by_code: Dict[str, Dict[str, Any]] = {}
-    for route in mux_routes({"routes": existing if isinstance(existing, list) else []}):
-        if len(route["codes"]) == 1:
-            by_code.setdefault(route["codes"][0], route)
-    routes: List[Dict[str, Any]] = []
     for definition in definitions:
         code = str(definition.get("code") or "")
-        if not code:
+        if code and code not in seen:
+            seen.add(code)
+            choices.append((friendly_error_choice(definition), code))
+    for route in mux_routes(config):
+        for code in route["codes"]:
+            if code not in seen:
+                seen.add(code)
+                choices.append((f"{friendly_error_name(code)}: not raised by the connected node", code))
+    choices.append(("Any other error: everything not picked above", ANY_OTHER_ERROR))
+    return choices
+
+
+def selected_values(config: Optional[Mapping[str, Any]]) -> List[str]:
+    values = [code for route in mux_routes(config) for code in route["codes"]]
+    if mux_has_unmatched_route(config):
+        values.append(ANY_OTHER_ERROR)
+    return values
+
+
+def routes_for_selection(
+    selected: Sequence[str],
+    existing: Optional[Mapping[str, Any]] = None,
+) -> List[Dict[str, Any]]:
+    """Routes for the picked codes (order kept). A code already on a route
+    stays on that route, keeping its id (so its connection survives), name
+    and pass-along choice; each newly picked code gets its own branch."""
+    owner: Dict[str, Dict[str, Any]] = {}
+    for route in mux_routes(existing):
+        for code in route["codes"]:
+            owner.setdefault(code, route)
+    routes: List[Dict[str, Any]] = []
+    by_id: Dict[str, Dict[str, Any]] = {}
+    for code in selected:
+        if code == ANY_OTHER_ERROR:
             continue
-        kept = by_code.get(code)
-        routes.append({
-            "id": kept["id"] if kept else new_route_id(),
-            "label": kept["label"] if kept else code.replace("_", " ").replace(".", " ").capitalize(),
-            "codes": [code],
-        })
+        kept = owner.get(code)
+        if kept is not None:
+            if kept["id"] not in by_id:
+                by_id[kept["id"]] = {**kept, "codes": []}
+                routes.append(by_id[kept["id"]])
+            by_id[kept["id"]]["codes"].append(code)
+            continue
+        route = {"id": new_route_id(), "label": friendly_error_name(code),
+                 "codes": [code], "forward": MUX_FORWARD_ERROR}
+        owner[code] = route
+        by_id[route["id"]] = route
+        routes.append(route)
     return routes
 
 
-def autofill_mux_routes(factory, workflow_map, node_id: str) -> bool:
-    """Give an Error Mux with no routes one route per upstream code.
-
-    Returns True when the node's config changed. A mux that already has
-    routes is never touched.
-    """
-    node = workflow_map.get_node_data(node_id) or {}
-    if node.get("type") != ERROR_MUX_NODE_TYPE:
-        return False
-    config = dict(node.get("config") or {})
-    if mux_routes(config):
-        return False
-    routes = routes_from_definitions(upstream_error_definitions(factory, workflow_map, node_id))
-    if not routes:
-        return False
-    config["routes"] = routes
-    return workflow_map.update_node_config(node_id, config)
+def unmatched_route(config: Optional[Mapping[str, Any]]) -> Dict[str, Any]:
+    """The catch-all branch shaped like a route, for the config rows."""
+    forward = (config or {}).get("unmatched_forward")
+    return {
+        "id": UNMATCHED_ROUTE,
+        "label": mux_unmatched_label(config),
+        "codes": [],
+        "forward": forward if forward in (MUX_FORWARD_ERROR, MUX_FORWARD_FAILED_INPUT)
+        else MUX_FORWARD_ERROR,
+    }

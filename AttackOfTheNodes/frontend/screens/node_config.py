@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
+
 import math
 
 from typing import Any, Dict, Optional
@@ -27,10 +29,17 @@ from frontend.error_paths import (
     has_error_connection,
     lists_error_port,
 )
+from backend.node_errors import UNMATCHED_ROUTE
 from frontend.error_mux_ui import (
+    ANY_OTHER_ERROR,
     ERROR_MUX_NODE_TYPE,
-    code_options,
-    routes_from_definitions,
+    FORWARD_CHOICES,
+    friendly_error_name,
+    guarded_node_ids,
+    recovery_choices,
+    routes_for_selection,
+    selected_values,
+    unmatched_route,
     upstream_error_definitions,
 )
 from frontend import notifications
@@ -651,9 +660,6 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             for key, value in config.items()
             if key not in excluded_config_keys
         }
-        if self.node_data.get("type") == ERROR_MUX_NODE_TYPE and not core_config.get("routes"):
-            # A new mux starts with one route per code the upstream node raises.
-            core_config["routes"] = routes_from_definitions(self._upstream_error_definitions())
         forms, getter = self._build_standard_config_forms(schema, core_config)
         self._get_form_values = getter
         self._rule_schema = (
@@ -686,6 +692,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 yield from self._compose_branch_config_tabs(metadata, config)
             elif self.node_data.get("type") == WAIT_UNTIL_NODE_TYPE:
                 yield from self._compose_wait_config_tabs(config, forms)
+            elif self.node_data.get("type") == ERROR_MUX_NODE_TYPE:
+                yield from self._compose_error_mux_config_tabs(metadata, config)
             else:
                 yield from self._compose_standard_config_tabs(
                     metadata,
@@ -925,8 +933,6 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         values: Dict[str, Any],
     ) -> tuple[Dict[str, Any], WidgetGetter]:
         schema = {key: dict(field) for key, field in schema.items()}
-        for field_name, field in schema.items():
-            self._fill_upstream_error_code_options(field, values.get(field_name))
         for field in schema.values():
             source = field.get("options_from")
             if source:
@@ -1358,31 +1364,152 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
     def on_object_list_field_changed(self, event):
         self._sync_dynamic_options()
 
-    async def on_object_list_field_refill_requested(self, event) -> None:
-        """Error Mux: one route per upstream code, keeping matching route ids."""
-        event.stop()
-        rows = routes_from_definitions(self._upstream_error_definitions(), event.field.value)
-        if not rows:
-            notifications.notify_info(self.app, "Nothing is connected to the error input")
-            return
-        await event.field.replace_rows(rows)
+    # -- Error Mux: Source picks errors, Parameters names branches, Payloads
+    # chooses what each branch passes along (frontend-only entry) ----------
 
-    def _upstream_error_definitions(self) -> list[Dict[str, Any]]:
-        return upstream_error_definitions(self.factory, self.workflow_map, self.node_id)
+    def _compose_error_mux_config_tabs(self, metadata, config: Dict[str, Any]):
+        definitions = upstream_error_definitions(self.factory, self.workflow_map, self.node_id)
+        self._mux_config = deepcopy(config)
+        self._mux_choices = recovery_choices(definitions, config)
+        self._mux_removed: list[Dict[str, Any]] = []
+        picked = set(selected_values(config))
+        self._mux_rows = self._mux_rows_for(
+            [value for _, value in self._mux_choices if value in picked])
+        guarded = [
+            str((self.workflow_map.get_node_data(node_id) or {}).get("alias") or node_id)
+            for node_id in guarded_node_ids(self.workflow_map, self.node_id)
+        ]
+        with TabbedContent(id="node-config-tabs", classes="node-config-tabs"):
+            with TabPane("1 - Source", id="node-config-tab-core"):
+                with VerticalScroll(classes="tab-scroll"):
+                    yield Horizontal(
+                        Label("Alias:", classes="form-label-inline"),
+                        CommandInput(value=self._alias_default_value(), id="alias-input"),
+                        classes="form-inline-row",
+                        id="alias-row",
+                    )
+                    yield Static(
+                        "Place this right after a node. When that node succeeds, its "
+                        "output continues on No error. Pick the errors to catch: each "
+                        "gets its own recovery branch, and the run carries on there "
+                        "instead of stopping with an error.",
+                        classes="form-description",
+                    )
+                    yield Static(
+                        f"Catching errors from: {', '.join(guarded)}" if guarded
+                        else "Connect a node into this mux to see the errors it can raise.",
+                        id="mux-guarded", classes="form-description",
+                    )
+                    yield Label("Catch these errors", classes="form-label nav-section")
+                    yield SelectionList(
+                        *[(text, value, value in picked) for text, value in self._mux_choices],
+                        id="mux-recover-from",
+                    )
+            with TabPane("2 - Parameters", id="node-config-tab-parameters"):
+                with VerticalScroll(classes="tab-scroll"):
+                    yield Label("Recovery branches", classes="form-label nav-section")
+                    yield Static("No error: the node's normal output (always present).",
+                                 classes="form-description")
+                    yield Vertical(*self._mux_parameter_rows(), id="mux-branch-rows")
+            with TabPane("3 - Payloads", id="node-config-tab-outputs"):
+                with VerticalScroll(classes="tab-scroll"):
+                    yield Label("No error", classes="form-label nav-section")
+                    yield Static("Passes the node's normal output on unchanged.",
+                                 classes="form-description")
+                    yield Vertical(*self._mux_forward_rows(), id="mux-forward-rows")
+            with TabPane("4 - Connections", id="node-config-tab-connections"):
+                with VerticalScroll(classes="tab-scroll"):
+                    yield Label("Connections", classes="form-label nav-section")
+                    yield Static("Edit connections from the editor.", classes="form-description")
+                    yield Static(self._format_connections(), id="connection-summary")
+                    yield from self._compose_errors_section()
 
-    def _fill_upstream_error_code_options(self, field: Dict[str, Any], value: Any) -> None:
-        """Options for fields marked ``options_source: upstream_error_codes``,
-        including those inside an object_list's rows (UI-only; the backend
-        validator re-checks codes against the upstream declarations)."""
-        items = field.get("item_schema")
-        if isinstance(items, dict):
-            field["item_schema"] = items = {key: dict(item) for key, item in items.items()}
-            for item in items.values():
-                if item.get("options_source") == "upstream_error_codes":
-                    item["options"] = code_options(self._upstream_error_definitions(), value)
-        elif field.get("options_source") == "upstream_error_codes":
-            routes = [{"codes": value}] if value else []
-            field["options"] = code_options(self._upstream_error_definitions(), routes)
+    def _mux_rows_for(self, selected: list[str]) -> list[Dict[str, Any]]:
+        known = {"routes": list(self._mux_config.get("routes") or []) + self._mux_removed}
+        rows = routes_for_selection(selected, known)
+        if ANY_OTHER_ERROR in selected:
+            rows.append(unmatched_route(self._mux_config))
+        return rows
+
+    def _mux_branch_title(self, row: Dict[str, Any]) -> str:
+        if row["id"] == UNMATCHED_ROUTE:
+            return "When: any other error"
+        return "When: " + ", ".join(friendly_error_name(code) for code in row["codes"])
+
+    def _mux_parameter_rows(self) -> list[Any]:
+        if not self._mux_rows:
+            return [Static("Pick errors on the Source tab to add recovery branches.",
+                           classes="form-description")]
+        return [
+            Vertical(
+                Label(self._mux_branch_title(row), classes="form-label"),
+                Label("Branch name", classes="form-description"),
+                CommandInput(value=row["label"], id=f"mux-route-label-{row['id']}"),
+                id=f"mux-param-{row['id']}", classes="mux-branch-row",
+            )
+            for row in self._mux_rows
+        ]
+
+    def _mux_forward_rows(self) -> list[Any]:
+        return [
+            Vertical(
+                Label(f"Branch for: {self._mux_branch_title(row)[6:]}",
+                      classes="form-label nav-section"),
+                Label("Pass along", classes="form-description"),
+                Select(FORWARD_CHOICES, value=row["forward"], allow_blank=False,
+                       id=f"mux-route-forward-{row['id']}"),
+                id=f"mux-out-{row['id']}", classes="mux-forward-row",
+            )
+            for row in self._mux_rows
+        ]
+
+    def _mux_capture_edits(self) -> None:
+        """Copy typed names and pass-along choices back into the row data."""
+        for row in self._mux_rows:
+            label_query = self.query(f"#mux-route-label-{row['id']}")
+            if label_query:
+                row["label"] = self._widget_text_value(label_query.first()).strip() or row["label"]
+            forward_query = self.query(f"#mux-route-forward-{row['id']}")
+            if forward_query and forward_query.first().value in {v for _, v in FORWARD_CHOICES}:
+                row["forward"] = str(forward_query.first().value)
+
+    async def _sync_error_mux_rows(self) -> None:
+        """Rebuild the Parameters and Payloads rows from the Source picks."""
+        self._mux_capture_edits()
+        picked = set(self.query_one("#mux-recover-from", SelectionList).selected)
+        before = {row["id"]: row for row in self._mux_rows}
+        self._mux_config["routes"] = [r for r in self._mux_rows if r["id"] != UNMATCHED_ROUTE]
+        any_row = before.get(UNMATCHED_ROUTE)
+        if any_row:
+            self._mux_config.update(unmatched_label=any_row["label"],
+                                    unmatched_forward=any_row["forward"])
+        self._mux_rows = self._mux_rows_for(
+            [value for _, value in self._mux_choices if value in picked])
+        kept = {row["id"] for row in self._mux_rows}
+        # Remember dropped branches so picking the error again restores them.
+        self._mux_removed.extend(r for rid, r in before.items()
+                                 if rid not in kept and rid != UNMATCHED_ROUTE)
+        for container_id, build in (("#mux-branch-rows", self._mux_parameter_rows),
+                                    ("#mux-forward-rows", self._mux_forward_rows)):
+            container = self.query_one(container_id)
+            await container.remove_children()
+            await container.mount(*build())
+
+    def _error_mux_config_values(self) -> Dict[str, Any]:
+        if self.node_data.get("type") != ERROR_MUX_NODE_TYPE or not self.query("#mux-recover-from"):
+            return {}
+        self._mux_capture_edits()
+        routes = [
+            {"id": row["id"], "label": row["label"], "codes": list(row["codes"]),
+             "forward": row["forward"]}
+            for row in self._mux_rows if row["id"] != UNMATCHED_ROUTE
+        ]
+        values: Dict[str, Any] = {"routes": routes, "unmatched_route": False}
+        for row in self._mux_rows:
+            if row["id"] == UNMATCHED_ROUTE:
+                values.update(unmatched_route=True, unmatched_label=row["label"],
+                              unmatched_forward=row["forward"])
+        return values
 
     def _sync_dynamic_options(self):
         if self._get_form_values is None:
@@ -1659,10 +1786,12 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             if value not in (None, "", Select.NULL)
         ]
 
-    def on_selection_list_selected_changed(
+    async def on_selection_list_selected_changed(
         self, event: SelectionList.SelectedChanged
     ) -> None:
-        if event.selection_list.id == "merge-branches-to-close":
+        if event.selection_list.id == "mux-recover-from":
+            await self._sync_error_mux_rows()
+        elif event.selection_list.id == "merge-branches-to-close":
             self._sync_merge_carry_forward_selector()
             self._sync_merge_input_details()
         elif event.selection_list.id == "wait-targets":
@@ -1738,6 +1867,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         config.update(self._wait_config_values())
         config.update(self._branch_config_values())
         config.update(self._error_path_config_values())
+        config.update(self._error_mux_config_values())
         try:
             config.update(self._merge_config_values())
         except ValueError as error:
@@ -2509,8 +2639,9 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         """D8: list declared error codes beside Connections (metadata only)."""
         yield Label("Errors", classes="form-label nav-section")
         yield Static(
-            "Codes this node can fail with. Connect its error port to an "
-            "Error Mux to route matching codes; anything else stops for recovery.",
+            "Errors this node can fail with. Place an Error Mux right after this "
+            "node and pick the ones to catch: each gets its own recovery branch. "
+            "Anything not caught stops the run for recovery.",
             classes="form-description",
         )
         yield Static(
