@@ -24,6 +24,7 @@ class BranchNode(Node):
     input_ports: ClassVar[List[str]] = ["input"]
     # The type's full list; one node has its first ``branch_count`` paths.
     output_ports: ClassVar[List[str]] = list(ALL_PATH_PORTS)
+    spawns_branches: ClassVar[bool] = True
 
     default_config: ClassVar[Dict[str, Any]] = {
         "branch_count": 2,

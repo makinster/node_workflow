@@ -119,6 +119,11 @@ class NodeFactory:
             declared[port] = {**dict(declared.get(port) or {}), **dict(extra or {})}
         return self._port_metadata(ports, declared, "output")
 
+    def spawns_branches(self, node_type: str) -> bool:
+        """Whether nodes of ``node_type`` start branch supervisors."""
+        node_class = self._node_registry.get(node_type)
+        return bool(node_class is not None and node_class.spawns_branches)
+
     def get_default_alias(self, node_type: str) -> Optional[str]:
         """Return the default user-facing alias for a node type."""
         node_class = self._node_registry.get(node_type)
@@ -176,6 +181,7 @@ class NodeFactory:
                     "ui_hints": dict(getattr(node_class, "ui_hints", {})),
                     "editor_only": bool(getattr(node_class, "editor_only", False)),
                     "terminates_branch": bool(node_class.terminates_branch),
+                    "spawns_branches": bool(node_class.spawns_branches),
                     # D7: declared codes plus the default generic code, which
                     # is listed first so no error is ever unmatched.
                     "errors": definitions_with_default(
