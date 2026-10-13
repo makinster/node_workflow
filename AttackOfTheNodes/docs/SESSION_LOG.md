@@ -106,7 +106,29 @@ documentation drift (README → `SESSION_SUMMARY.md`, `AGENT_HANDOFF.md`
 selector text, the README description of `NODE_STANDARDIZATION_HANDOFF.md`,
 `AGENTS.md` data-directory/RunContext lines) is reported to the owner, not
 fixed here. The plan's second-terminal manual check (Windows Terminal) was
-not done; only the app's terminal panel was checked.
+not done at that point (see below).
+
+**Node audit of PR #51 (owner chose: Vault fix in #51, rest planned).**
+After: 1240 passed (1 new end-to-end test, which fails on `4e7af7d`).
+
+- The Vault pickers (`memory_registry`, the node config's declared-writer
+  scan) and the validator's existence/type/race checks now use
+  `vault_declarations.typed_vault_writes`: standard writes with their tags
+  plus node-specific writers (Set Variable, Variable Setter, Counter) with an
+  unknown type. Before, a Set Variable key showed in Connections but was
+  missing from Text Output's Vault picker and failed preflight with
+  "Membank input source not declared". The new test checks the row, the
+  picker, preflight and a real run agree. Validator reads are unchanged
+  (node-specific reads: plan item C1).
+- `NODE_STANDARDS.md` / `AGENT_START_GUIDE.md`: `signal_done` is a plain
+  call; the examples awaited it.
+- The audit's other findings (edge type checks, HTTP mode types, forwarding
+  provenance, numeric save validation, Random Number's dead field, Deep
+  Branch continuation, spec/generator gaps, author gate) are recorded in the
+  new `NODE_CONTRACT_PLAN.md` as proposed phases C1–C12, not approved.
+
+**Manual check, second terminal (owner, 2026-10-13):** Windows Terminal,
+passed: Ctrl+S, the Esc prompt and Connections jumps behave as in the panel.
 
 ## 2026-10-13 — Session Handoff After UX4
 

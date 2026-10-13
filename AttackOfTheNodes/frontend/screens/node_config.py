@@ -22,7 +22,7 @@ from backend.nodes.branch_node import (
     MIN_BRANCH_COUNT,
     branch_count_from_config as _branch_count_from_config,
 )
-from backend.vault_declarations import standard_vault_writes
+from backend.vault_declarations import typed_vault_writes
 from frontend.error_paths import editor_output_ports
 from backend.node_errors import UNMATCHED_ROUTE
 from frontend.error_mux_ui import (
@@ -1197,7 +1197,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             for output in normalize_membank_outputs(config):
                 add(str(output["id"]), "", writer_id)
             meta = self._metadata_for_type(node_type) or {}
-            for key, tag in standard_vault_writes(node_type, config, meta).items():
+            for key, tag in typed_vault_writes(node_type, config, meta).items():
                 add(key, tag or "", writer_id)
         return declared
 

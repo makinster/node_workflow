@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
-from backend.vault_declarations import standard_vault_writes
+from backend.vault_declarations import typed_vault_writes
 
 from frontend.node_types import (
     BRANCH_END_NODE_TYPE,
@@ -200,7 +200,8 @@ def memory_registry(workflow_map) -> Dict[str, Dict[str, Any]]:
         outputs = normalize_membank_outputs(config)
         factory = getattr(workflow_map, "_factory", None)
         metadata = metadata_for_type(factory, node.get("type", "")) if factory is not None else {}
-        declarations = standard_vault_writes(node.get("type", ""), config, metadata or {})
+        # The shared model (Connections and the validator use it too).
+        declarations = typed_vault_writes(node.get("type", ""), config, metadata or {})
         for key, tag in declarations.items():
             outputs.append({"id": key, "description": str(config.get("vault_write_description") or ""), "data_type": tag or "any"})
         for output in outputs:

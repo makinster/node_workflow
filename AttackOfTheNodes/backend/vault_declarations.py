@@ -133,13 +133,22 @@ def active_vault_reads(node_type: str, config: dict[str, Any], metadata: dict[st
     return _unique(keys)
 
 
+def typed_vault_writes(node_type: str, config: dict[str, Any], metadata: dict[str, Any]) -> dict[str, str | None]:
+    """Standard writes with their type tags, plus node-specific writes whose
+    type is not known statically (None: unknown, treated as ``any``; a valid
+    writer is never dropped because its type is dynamic)."""
+    writes = dict(standard_vault_writes(node_type, config, metadata))
+    for key in config_vault_writes(node_type, config):
+        writes.setdefault(key, None)
+    return writes
+
+
 def active_vault_writes(node_type: str, config: dict[str, Any], metadata: dict[str, Any]) -> list[str]:
     """Every Vault key the node writes with this config: declared
     ``membank_outputs``, standard writes and node-specific fields."""
     outputs = config.get("membank_outputs") or []
     keys = [_entry_key(entry) for entry in outputs] if isinstance(outputs, list) else []
-    keys += list(standard_vault_writes(node_type, config, metadata))
-    keys += config_vault_writes(node_type, config)
+    keys += list(typed_vault_writes(node_type, config, metadata))
     return _unique(keys)
 
 

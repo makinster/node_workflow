@@ -555,3 +555,79 @@ def test_without_an_on_save_the_last_save_is_returned_on_close():
 
     asyncio.run(body())
     assert results and results[-1]["alias"] == "Renamed"
+
+
+# Node audit of #51, finding 1: one Vault model for every consumer. A Set
+# Variable writer must agree across the Connections row, the Vault picker,
+# preflight validation and the run itself.
+
+
+def test_a_set_variable_key_agrees_across_rows_picker_validation_and_run(tmp_path, monkeypatch):
+    from textual.app import App
+    from textual.widgets import Select
+
+    from backend import error_handler, output_manager, run_history
+    from backend.configuration_manager import ConfigurationManager
+    from backend.master_state import MasterState
+    from backend.memory_bank import MemoryBank
+    from backend.output_manager import OutputManager
+    from backend.validator import validate_workflow
+    from frontend.screens.node_config import NodeConfigScreen
+
+    monkeypatch.setattr(error_handler, "RUN_ERRORS_DIR", tmp_path / "run_errors")
+    monkeypatch.setattr(run_history, "RUN_HISTORY_DIR", tmp_path / "run_history")
+    monkeypatch.setattr(output_manager, "RUN_OUTPUTS_DIR", tmp_path / "run_outputs")
+    bus = EventBus()
+    workflow_map = WorkflowMap(FACTORY, bus)
+    workflow_map.create_new("ux5_vault")
+    start = workflow_map.add_node("start_node")
+    setter = workflow_map.add_node("set_variable_node", alias="Remember")
+    workflow_map.update_node_config(setter, {"variable_name": "greeting", "value_source": "literal",
+                                             "value": "hi"})
+    output = workflow_map.add_node("text_output_node")
+    workflow_map.connect(start, "default", setter, "input")
+    workflow_map.connect(setter, "default", output, "input")
+
+    # Picker: Text Output offers the key under its Vault source.
+    offered = {}
+
+    class ConfigApp(App):
+        CSS_PATH = CSS
+
+        def on_mount(self):
+            self.push_screen(NodeConfigScreen(FACTORY, workflow_map, output,
+                                              workflow_map.get_node_data(output)))
+
+    async def pick():
+        async with ConfigApp().run_test(size=(110, 40)) as pilot:
+            await _settle(pilot)
+            screen = pilot.app.screen
+            source = screen.query_one("#field-input_source", Select)
+            offered["sources"] = [value for _, value in source._options]
+            source.value = "Vault"
+            await _settle(pilot)
+            key = screen.query_one("#field-input_vault_key", Select)
+            offered["keys"] = [value for _, value in key._options]
+
+    asyncio.run(pick())
+    assert "Vault" in offered["sources"]
+    assert "greeting" in offered["keys"]
+
+    workflow_map.update_node_config(output, {**workflow_map.get_node_data(output)["config"],
+                                             "input_source": "Vault", "input_vault_key": "greeting"})
+    # Connections row.
+    rows = connection_rows(workflow_map, FACTORY, output)["vault"]
+    assert [row["target"] for row in rows] == [setter]
+    # Preflight.
+    result = validate_workflow(workflow_map, FACTORY)
+    assert not [e for e in result["errors"] if "greeting" in e["message"]], result["errors"]
+    # Run.
+    master = MasterState(workflow_map, MemoryBank(bus), bus, output_manager=OutputManager(),
+                         configuration_manager=ConfigurationManager())
+
+    async def run():
+        assert await master.start_workflow()
+        await asyncio.wait_for(master.wait_for_completion(), timeout=5.0)
+
+    asyncio.run(run())
+    assert "hi" in str(master._memory_bank.read_transient(output, "default"))

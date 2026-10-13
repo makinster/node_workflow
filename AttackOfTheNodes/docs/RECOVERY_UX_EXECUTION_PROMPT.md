@@ -170,7 +170,11 @@ Update this section at the end of every session.
   Ctrl+S (and Ctrl+Enter) saves and stays, Esc closes with Save / Discard /
   Stay; no Ctrl+Space or F2. Four P2 review findings fixed on the branch
   (row focus by identity, shared Vault read/write model in
-  `backend/vault_declarations.py`, error-port payload). Suite: 1239 passed. The owner's live-test
+  `backend/vault_declarations.py`, error-port payload), then the node audit's
+  Vault finding (pickers and validator on the same writer list). Suite: 1240
+  passed. Manual checks passed in the app panel and Windows Terminal. The
+  rest of the node audit is `NODE_CONTRACT_PLAN.md` (proposed; ask the owner
+  when to schedule it — after UX6 or before Step 4). The owner's live-test
   findings are in `PROJECT_BACKLOG.md` ("Owner live-test findings —
   2026-10-13"); not part of UX6 unless the owner says so. **Next: UX6**,
   branch from `main` (`dist/ux6-labels-and-presentation`): friendly labels

@@ -186,7 +186,7 @@ Every node signals completion through `context.signal_done(payload)`. The
 payload carries output under port names:
 
 ```python
-await context.signal_done({"data": {"default": value}})
+context.signal_done({"data": {"default": value}})  # a plain call, not awaited
 ```
 
 Multi-output and branching nodes use named port keys (`path_a`, `path_b`,
@@ -492,8 +492,11 @@ session keys) and node-specific fields (Get Variable / Variable Reader /
 Conditional `variable_name`, Set Variable / Variable Setter `variable_name`,
 Counter `counter_name`, Branch `vault:` payload seeds). A new node that reads
 or writes the Vault through its own config field must be added there, with
-the activation rule (hidden slot, inactive mode) that applies. The validator
-uses the same standard-model rules.
+the activation rule (hidden slot, inactive mode) that applies. The Vault
+pickers and the validator's existence/type/race checks use the same writers
+(`typed_vault_writes`); node-specific writers have an unknown type (`any`).
+The validator checks standard-model reads and `membank_inputs` only; checking
+node-specific reads is planned (`NODE_CONTRACT_PLAN.md`, C1).
 
 The Publish (normal output) toggle governs only the `default` port; the
 engine's `error` port carries the error payload on failure regardless.

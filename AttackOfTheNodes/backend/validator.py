@@ -14,7 +14,7 @@ from .vault_declarations import (
     continuation_selected as _continuation_selected,
     repeatable_slot_active as _repeatable_slot_active,
     standard_vault_reads,
-    standard_vault_writes,
+    typed_vault_writes,
 )
 from .file_paths import normalize_local_path
 from .node_errors import (
@@ -369,7 +369,7 @@ def validate_workflow(
     metadata_by_type = {
         str(item.get("type") or ""): item for item in factory.get_node_types_metadata()
     }
-    standard_vault_writes = _standard_model_vault_writes(all_nodes, metadata_by_type)
+    vault_writes = _standard_model_vault_writes(all_nodes, metadata_by_type)
     standard_vault_reads = _standard_model_vault_reads(all_nodes, metadata_by_type)
 
     # Source selectors must name a real key; missing selections cannot fall
@@ -389,7 +389,7 @@ def validate_workflow(
         errors.append(duplicate)
 
     declared_membank_outputs = _declared_membank_outputs(all_nodes)
-    for node_writes in standard_vault_writes.values():
+    for node_writes in vault_writes.values():
         for key, type_tag in node_writes.items():
             # Prefer a concrete tag over an untyped legacy declaration.
             if type_tag is not None or key not in declared_membank_outputs:
@@ -462,7 +462,7 @@ def validate_workflow(
                 k = _membank_source_id(entry)
                 if k:
                     key_writers.setdefault(k, set()).add(w_id)
-        for w_id, node_writes in standard_vault_writes.items():
+        for w_id, node_writes in vault_writes.items():
             for k in node_writes:
                 key_writers.setdefault(k, set()).add(w_id)
 
@@ -662,19 +662,22 @@ def _standard_model_vault_writes(
     all_nodes: Dict[str, Dict[str, Any]],
     metadata_by_type: Dict[str, Dict[str, Any]],
 ) -> Dict[str, Dict[str, Optional[str]]]:
-    """Vault writes implied by standard-model config, node_id -> {key: tag}.
+    """Vault writes implied by config, node_id -> {key: tag}.
 
     Standard result routing (``vault_write`` + ``vault_write_key``) declares a
     write tagged with the node's default output data type; an enabled AI
     session (``use_chat_session`` + ``session_key``) declares an ``ai_session``
-    write. This keeps the existence/type/race checks working for nodes whose
-    config UI no longer edits ``membank_outputs`` directly.
+    write; node-specific writers (Set Variable, Variable Setter, Counter)
+    declare their key with an unknown (None) tag. This keeps the
+    existence/type/race checks working for nodes whose config UI does not edit
+    ``membank_outputs`` directly, and matches the editor's Connections tab
+    and Vault pickers (``vault_declarations.typed_vault_writes``).
     """
     writes: Dict[str, Dict[str, Optional[str]]] = {}
     for node_id, data in all_nodes.items():
         config = data.get("config") or {}
         node_type = str(data.get("type") or "")
-        node_writes = standard_vault_writes(node_type, config, metadata_by_type.get(node_type) or {})
+        node_writes = typed_vault_writes(node_type, config, metadata_by_type.get(node_type) or {})
         if node_writes:
             writes[node_id] = node_writes
     return writes

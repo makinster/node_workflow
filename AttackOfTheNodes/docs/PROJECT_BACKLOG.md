@@ -35,6 +35,10 @@ affected area is next touched.
 6. **Error UI keyboard navigation does not work while a workflow runs**
    (the error/recovery modals during execution).
 
+A node audit of PR #51 (same day) confirmed several of these with
+reproductions and proposed a node contract plan:
+[NODE_CONTRACT_PLAN.md](NODE_CONTRACT_PLAN.md) (proposed, not approved).
+
 ## Payload/file implementation — 2026-10-07
 
 The requested payload/file build is implemented locally on `main` at `1211e68`
