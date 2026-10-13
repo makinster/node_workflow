@@ -501,3 +501,109 @@ def test_prune_merge_node_ignores_unreachable_loose_feed():
     assert wm.get_node_data(after_merge) is None
     assert wm.get_node_data(loose_feed) is not None
     assert wm.get_node_data(keeper) is not None
+
+
+# ---------------------------------------------------------------------------
+# Output-family nodes continue along connections (owner report 2026-10-13)
+# ---------------------------------------------------------------------------
+
+def _file_paths_graph():
+    """start -> branch; path_a: File Manager -> File Write;
+    path_b: File Reader -> Text Output -> No Op."""
+    wm, factory = _make_wm()
+    wm.create_new("prune_output_family")
+    start = wm.add_node("start_node")
+    branch = wm.add_node("branch_node")
+    manager = wm.add_node("file_view_node", alias="File Manager")
+    writer = wm.add_node("file_output_node", alias="File Write")
+    reader = wm.add_node("file_reader_node", alias="File Reader")
+    output = wm.add_node("text_output_node", alias="Text Output")
+    after = wm.add_node("no_op_node", alias="After Output")
+    wm.connect(start, "default", branch, "input")
+    wm.connect(branch, "path_a", manager, "file")
+    wm.connect(manager, "default", writer, "file_path")
+    wm.connect(branch, "path_b", reader, "input")
+    wm.connect(reader, "default", output, "input")
+    wm.connect(output, "default", after, "input")
+    return wm, factory, locals()
+
+
+def _unreachable(wm, factory):
+    from backend.validator import validate_workflow
+
+    result = validate_workflow(wm, factory)
+    return [w.get("node_id") for w in result["warnings"]
+            if "not reachable" in str(w.get("message", ""))]
+
+
+def test_keeping_a_path_that_starts_with_an_output_node_keeps_its_chain():
+    wm, factory, n = _file_paths_graph()
+    adapter = _adapter(wm, factory)
+    adapter.replace_with_placeholder(n["branch"])
+    pruned = adapter.prune_branch_tombstone(n["branch"], "path_a")
+
+    assert pruned == 3
+    assert wm.get_node_data(n["manager"])["connections"]["outputs"] == [
+        {"source_port": "default", "target_node_id": n["writer"], "target_port": "file_path"}
+    ]
+    assert wm.get_node_data(n["start"])["connections"]["outputs"] == [
+        {"source_port": "default", "target_node_id": n["manager"], "target_port": "file"}
+    ]
+    for gone in ("reader", "output", "after"):
+        assert wm.get_node_data(n[gone]) is None, gone
+    assert _unreachable(wm, factory) == []
+
+
+def test_pruning_continues_past_output_nodes_on_the_dropped_path():
+    wm, factory, n = _file_paths_graph()
+    adapter = _adapter(wm, factory)
+    adapter.replace_with_placeholder(n["branch"])
+    pruned = adapter.prune_branch_tombstone(n["branch"], "path_b")
+
+    assert pruned == 2
+    assert wm.get_node_data(n["manager"]) is None
+    assert wm.get_node_data(n["writer"]) is None
+    assert wm.get_node_data(n["after"]) is not None
+    assert _unreachable(wm, factory) == []
+
+
+def test_a_dropped_path_node_shared_with_the_kept_path_survives():
+    """path_a: No Op -> File Write.content; path_b: File Reader ->
+    File Write.file_path. Keeping path_a keeps File Write (reached from it)."""
+    wm, factory = _make_wm()
+    wm.create_new("prune_shared_node")
+    start = wm.add_node("start_node")
+    branch = wm.add_node("branch_node")
+    left = wm.add_node("no_op_node")
+    reader = wm.add_node("file_reader_node")
+    writer = wm.add_node("file_output_node")
+    wm.connect(start, "default", branch, "input")
+    wm.connect(branch, "path_a", left, "input")
+    wm.connect(left, "default", writer, "content")
+    wm.connect(branch, "path_b", reader, "input")
+    wm.connect(reader, "default", writer, "file_path")
+    adapter = _adapter(wm, factory)
+    adapter.replace_with_placeholder(branch)
+
+    pruned = adapter.prune_branch_tombstone(branch, "path_a")
+
+    assert pruned == 1
+    assert wm.get_node_data(reader) is None
+    assert wm.get_node_data(writer) is not None
+    assert _unreachable(wm, factory) == []
+
+
+def test_end_node_is_still_a_prune_boundary():
+    wm, factory = _make_wm()
+    wm.create_new("prune_end_boundary")
+    start = wm.add_node("start_node")
+    branch = wm.add_node("branch_node")
+    keep = wm.add_node("no_op_node")
+    end = wm.add_node("end_node")
+    wm.connect(start, "default", branch, "input")
+    wm.connect(branch, "path_a", keep, "input")
+    wm.connect(branch, "path_b", end, "input")
+    adapter = _adapter(wm, factory)
+    adapter.replace_with_placeholder(branch)
+    assert adapter.prune_branch_tombstone(branch, "path_a") == 1
+    assert wm.get_node_data(end) is None and wm.get_node_data(keep) is not None

@@ -8,13 +8,12 @@ from typing import Any, Dict, List, Optional
 
 from backend.node_errors import ERROR_PORT
 from backend.validator import _declared_membank_outputs, _membank_source_id
+from frontend.node_io_display import metadata_for_type
 from frontend.node_types import (
     BRANCH_END_NODE_TYPE,
     BRANCH_NODE_TYPE,
-    END_NODE_TYPE,
     MERGE_NODE_TYPE,
     START_NODE_TYPE,
-    TEXT_OUTPUT_NODE_TYPE,
     TOMBSTONE_NODE_TYPE,
 )
 
@@ -515,17 +514,15 @@ class EditorWorkflowAdapter:
         )
 
     def _is_branch_prune_terminal(self, node: Dict[str, Any]) -> bool:
+        """A node that ends its path: a Merge Beacon, or a type that declares
+        ``terminates_branch`` (End). Output-family nodes (Text Output, File
+        Manager, File Write, ...) continue along their connections
+        (file_io_continuation_v1), so they are not path ends."""
         node_type = str(node.get("type") or "")
-        if node_type in {BRANCH_END_NODE_TYPE, END_NODE_TYPE, TEXT_OUTPUT_NODE_TYPE}:
+        if node_type == BRANCH_END_NODE_TYPE:
             return True
-        for metadata in self.factory.get_node_types_metadata():
-            if metadata.get("type") != node_type:
-                continue
-            family = str(
-                metadata.get("primary_family") or metadata.get("category") or ""
-            ).lower()
-            return family == "outputs"
-        return False
+        metadata = metadata_for_type(self.factory, node_type) or {}
+        return bool(metadata.get("terminates_branch"))
 
     def prune_branch_tombstone(self, node_id: str, kept_port: str) -> int:
         """Keep one branch path when permanently deleting a branch-node tombstone.
@@ -536,10 +533,14 @@ class EditorWorkflowAdapter:
         tombstone itself.
 
         ``start_node`` is always a hard stop — it is never pruned. Terminal
-        branch nodes (Outputs-family nodes, ``end_node``, and Merge Beacons)
-        are inclusive prune boundaries: the terminal on a non-kept branch is
-        deleted, but traversal does not continue past it. Merge Beacons also
-        register their connected merge_node for orphan cleanup.
+        branch nodes (Merge Beacons and types that declare
+        ``terminates_branch``, i.e. ``end_node``) are inclusive prune
+        boundaries: the terminal on a non-kept branch is deleted, but traversal
+        does not continue past it. Output-family nodes are not terminals; they
+        continue along their connections, so pruning continues past them.
+        Merge Beacons also register their connected merge_node for orphan
+        cleanup. A node still reachable from Start through a surviving route
+        (the kept path or anything else) is never pruned.
 
         ``merge_node`` is a *conditional* stop: traversal halts there only
         while another surviving (non-pruned) branch still feeds it. If the
@@ -583,12 +584,16 @@ class EditorWorkflowAdapter:
         # conditional stop: record it as pending and resolve afterward.
         to_prune: set = set()
         pending_merges: set = set()
+        # Computed below, before any pruning: nodes still reachable from Start
+        # once the branch is gone and its upstream feeds the kept head. Such a
+        # node is shared with a surviving route and is never pruned.
+        protected: set = set()
 
         def _enqueue(start_ids: List[str]) -> None:
             queue = list(start_ids)
             while queue:
                 current = queue.pop(0)
-                if current in to_prune or current == kept_target_id:
+                if current in to_prune or current == kept_target_id or current in protected:
                     continue
                 current_node = self.workflow_map.get_node_data(current)
                 if current_node is None:
@@ -645,6 +650,11 @@ class EditorWorkflowAdapter:
                         queue.append(kept_target_id)
             return reachable
 
+        protected = {
+            candidate
+            for candidate in _future_reachable({node_id})
+            if (self.workflow_map.get_node_data(candidate) or {}).get("type") != MERGE_NODE_TYPE
+        }
         initial_starts = []
         for conn in original_outputs:
             if conn.get("source_port") == kept_port:
