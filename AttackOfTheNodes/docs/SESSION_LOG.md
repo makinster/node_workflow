@@ -4,6 +4,33 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-13 — UX4 Follow-up: a/d Cycling Skips Error Recovery
+
+Branch `dist/ux4c-resolver-branch-select`, from `main` at `7fc8e9d` (PR #48).
+Before: 1210 passed. After: 1212 passed (2 new in `tests/test_recovery_flow.py`;
+both fail on the old code).
+
+Owner request: error recovery branches should not be picked up by a/d
+cycling; they are reached by pressing `e` on the branch-select row under the
+Error Resolver node.
+
+- `EditorScreen._branch_view_candidates` (a/d and ctrl+a/d) leaves out
+  recovery ports (`_is_recovery_port`: any node's `error` port, and an Error
+  Resolver port other than No error) and nodes that Start reaches only
+  through a recovery port (`_nodes_only_on_recovery_paths`), such as a Branch
+  inside a recovery branch, because cycling to them would switch the
+  resolver off No error.
+- Unchanged: the resolver's branch-select row and `e` (BranchSelectorScreen)
+  still list every branch, including recovery ones.
+
+Also recorded: **Q4** (missing connections) — the owner reported it came
+after adding a Branch midway and deleting its tombstone, and can no longer
+reproduce it; it matches the Branch-tombstone prune bug fixed in PR #46.
+**Q2** groundwork: Textual reports Ctrl+Space as `ctrl+@` when a terminal
+sends NUL (the usual case) and as `ctrl+space` with the kitty keyboard
+protocol, so UX5 binds both; F2 arrives unambiguously and is the proposed
+fallback, pending the owner's check in Windows Terminal and the browser.
+
 ## 2026-10-13 — UX4 Follow-up: Error Resolver Picker Without "Any Other Error"
 
 Branch `dist/ux4b-picker-cleanup`, from `main` at `1e6c8b4` (PR #47).
