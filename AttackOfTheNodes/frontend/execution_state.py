@@ -79,7 +79,7 @@ class ExecutionDisplayState:
         for branch in branches:
             for node_id, status in branch["node_statuses"].items():
                 by_node.setdefault(node_id, []).append(status)
-        priority = ("running", "waiting", "errored", "stopped", "skipped", "done")
+        priority = ("running", "waiting", "errored", "stopped", "recovered", "skipped", "done")
         return {node: next(status for status in priority if status in statuses)
                 for node, statuses in by_node.items()}
 
@@ -89,7 +89,9 @@ class ExecutionDisplayState:
         reasons: dict[str, str] = {}
         for branch in self.branches.values():
             for node_id, reason in branch.get("node_reasons", {}).items():
-                if (reason and statuses.get(node_id) == "skipped"
-                        and branch["node_statuses"].get(node_id) == "skipped"):
+                # Skip reasons (D9), and the error code a recovered node hit.
+                status = statuses.get(node_id)
+                if (reason and status in {"skipped", "recovered"}
+                        and branch["node_statuses"].get(node_id) == status):
                     reasons.setdefault(node_id, reason)
         return reasons

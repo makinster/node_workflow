@@ -136,10 +136,19 @@ def declared_codes(definitions: Iterable[Mapping[str, Any]]) -> List[str]:
 
 # Port of the optional catch-all route for codes no other route lists.
 UNMATCHED_ROUTE = "unmatched"
+# The Error Mux sits inline after a node: its `input` receives that node's
+# normal output, which leaves on `default` (the "No error" branch). A failure
+# of that node with a selected code leaves on the code's route instead.
+MUX_INPUT_PORT = "input"
+MUX_DEFAULT_PORT = "default"
+# What a route passes along: the error payload, or the failed node's input.
+MUX_FORWARD_ERROR = "error"
+MUX_FORWARD_FAILED_INPUT = "failed_input"
+MUX_FORWARD_OPTIONS = (MUX_FORWARD_ERROR, MUX_FORWARD_FAILED_INPUT)
 # Pre-P2 Error Mux configs stored codes per fixed path; they migrate to
 # routes with these ids so existing connections keep working.
 LEGACY_MUX_PATHS = ("path_a", "path_b", "path_c")
-_RESERVED_ROUTE_IDS = {ERROR_PORT, UNMATCHED_ROUTE}
+_RESERVED_ROUTE_IDS = {ERROR_PORT, UNMATCHED_ROUTE, "default"}
 
 
 def error_codes(raw: Any) -> List[str]:
@@ -153,12 +162,18 @@ def error_codes(raw: Any) -> List[str]:
     return codes
 
 
+def _forward(value: Any) -> str:
+    return str(value) if value in MUX_FORWARD_OPTIONS else MUX_FORWARD_ERROR
+
+
 def mux_routes(config: Optional[Mapping[str, Any]]) -> List[Dict[str, Any]]:
-    """An Error Mux's usable routes: ``[{"id", "label", "codes"}]``, in order.
+    """An Error Mux's usable routes: ``[{"id", "label", "codes", "forward"}]``.
 
     Each route's ``id`` is its output port. Entries without an id, with a
-    reserved id (``error``, ``unmatched``) or repeating an earlier id are
-    ignored; ``mux_route_problems`` reports them.
+    reserved id (``error``, ``unmatched``, ``default``) or repeating an
+    earlier id are ignored; ``mux_route_problems`` reports them. ``forward``
+    is the branch's own choice, else ``error`` (the pre-P4 node-wide setting
+    is moved onto each branch by the ``error_mux_forward_v1`` migration).
     """
     raw = (config or {}).get("routes")
     routes: List[Dict[str, Any]] = []
@@ -171,8 +186,25 @@ def mux_routes(config: Optional[Mapping[str, Any]]) -> List[Dict[str, Any]]:
             continue
         seen.add(route_id)
         label = str(entry.get("label") or "").strip() or f"Route {len(routes) + 1}"
-        routes.append({"id": route_id, "label": label, "codes": error_codes(entry.get("codes"))})
+        routes.append({
+            "id": route_id, "label": label, "codes": error_codes(entry.get("codes")),
+            "forward": _forward(entry.get("forward")),
+        })
     return routes
+
+
+def mux_unmatched_label(config: Optional[Mapping[str, Any]]) -> str:
+    return str((config or {}).get("unmatched_label") or "").strip() or "Any other error"
+
+
+def mux_forward_for(config: Optional[Mapping[str, Any]], port: str) -> str:
+    """What ``port`` passes along: ``error`` or ``failed_input``."""
+    if port == UNMATCHED_ROUTE:
+        return _forward((config or {}).get("unmatched_forward"))
+    for route in mux_routes(config):
+        if route["id"] == port:
+            return route["forward"]
+    return MUX_FORWARD_ERROR
 
 
 def mux_has_unmatched_route(config: Optional[Mapping[str, Any]]) -> bool:
@@ -180,8 +212,8 @@ def mux_has_unmatched_route(config: Optional[Mapping[str, Any]]) -> bool:
 
 
 def mux_output_ports(config: Optional[Mapping[str, Any]]) -> List[str]:
-    """Route ids in order, then ``unmatched`` when that route is on."""
-    ports = [route["id"] for route in mux_routes(config)]
+    """``default`` (No error), route ids in order, then ``unmatched`` when on."""
+    ports = [MUX_DEFAULT_PORT] + [route["id"] for route in mux_routes(config)]
     if mux_has_unmatched_route(config):
         ports.append(UNMATCHED_ROUTE)
     return ports

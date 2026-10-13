@@ -3,7 +3,7 @@
 from copy import deepcopy
 from typing import Any
 
-from .node_errors import LEGACY_MUX_PATHS, legacy_mux_routes
+from .node_errors import LEGACY_MUX_PATHS, MUX_FORWARD_ERROR, MUX_FORWARD_OPTIONS, legacy_mux_routes
 
 
 def normalize_node_config(node_type: str, config: dict[str, Any]) -> dict[str, Any]:
@@ -66,6 +66,27 @@ def normalize_node_config(node_type: str, config: dict[str, Any]) -> dict[str, A
                 key: result.pop(key) for key in legacy_keys if key in result
             }
             result["_config_migrations"] = history
+
+    if node_type == "error_mux_node" and "forward" in result:
+        # Pre-P4 node-wide pass-along: every branch now carries its own, so
+        # one rule (per branch, else "error") remains. A branch's own valid
+        # choice wins, exactly as the old fallback behaved.
+        node_forward = result.pop("forward")
+        value = node_forward if node_forward in MUX_FORWARD_OPTIONS else MUX_FORWARD_ERROR
+        routes = result.get("routes")
+        if isinstance(routes, list):
+            result["routes"] = [
+                {**route, "forward": value}
+                if isinstance(route, dict) and route.get("forward") not in MUX_FORWARD_OPTIONS
+                else route
+                for route in routes
+            ]
+        if result.get("unmatched_forward") not in MUX_FORWARD_OPTIONS:
+            result["unmatched_forward"] = value
+        history = result.get("_config_migrations")
+        history = dict(history) if isinstance(history, dict) else {}
+        history["error_mux_forward_v1"] = {"forward": node_forward}
+        result["_config_migrations"] = history
 
     if node_type == "file_reader_node" and "input_source" not in result:
         result["input_source"] = "Configured"

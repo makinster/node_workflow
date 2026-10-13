@@ -9,7 +9,8 @@ records current code; A/D branch navigation and output-summary UI are future wor
 
 `NODE_EXECUTION_UPDATE` is published by Supervisor with JSON-serializable fields:
 `run_id`, `branch_id`, `node_id`, `visit_index`, `attempt_index`, `status`.
-Statuses are `running`, `waiting`, `done`, `errored`, `skipped`, `stopped`.
+Statuses are `running`, `waiting`, `done`, `errored`, `recovered`, `skipped`,
+`stopped`.
 
 - Visits are numbered from 1 per supervisor; attempts start at 1 per visit.
   RETRY increments the attempt, while executing the node again later increments
@@ -21,9 +22,13 @@ Statuses are `running`, `waiting`, `done`, `errored`, `skipped`, `stopped`.
   the input future, emits stopped rather than success, and prevents the input
   node from publishing an answer or entering the completion registry. A safe-point stop after
   a node succeeds keeps that node's success and leaves the queued node unvisited.
-- SKIP emits skipped for the failed attempt and advances to the next node.
-  The next node is not marked completed until it actually executes. This also
-  corrects the prior skip path's premature completion-registry update.
+- SKIP emits skipped (`recovery_skip`) for the failed attempt and ends that
+  branch; nothing downstream runs with an empty input (step 3, D9; see
+  "Skipped status" below). The skipped node never enters the completion
+  registry.
+- A failure that an error path handles (an Error Mux the failed node feeds,
+  or a connected `error` port) emits `recovered` with `reason` = the error
+  code instead of `errored`, then continues on that path (P4).
 - Terminate branch/workflow and cancellation do not turn an error into success.
   Cancellation of an active/waiting attempt emits stopped; existing failed or
   completed outcomes survive cancellation. Unexpected setup failures use the
@@ -58,7 +63,7 @@ and per-attempt elapsed seconds, and a latest status map per node.
 
 `App.execution_state.node_statuses(branch_id)` returns a branch's derived node
 statuses. With no branch ID it returns the compatibility global summary:
-`running > waiting > errored > stopped > skipped > done` across latest visits
+`running > waiting > errored > stopped > recovered > skipped > done` across latest visits
 in each branch. The latest attempt supersedes earlier attempts in that branch;
 records of earlier attempts/visits remain available. A successful retry can
 become done, while another branch's unresolved error remains visible.
@@ -81,7 +86,8 @@ refresh after updating its ordinary status/timing attributes.
 Glyph meanings stay: circle not visited, play executing, check successful,
 cross errored, pause waiting for input. Skipped/stopped use explicit text labels
 `[skipped]` and `[stopped]` and receive no checkmark. Since step 3 a skipped
-node shows its reason, e.g. `[skipped: not taken]`.
+node shows its reason, e.g. `[skipped: not taken]`. A recovered node shows
+`[recovered: <error name>]` instead of a glyph; it is not a failure and gets no cross.
 
 ## Skipped status (step 3, D9)
 

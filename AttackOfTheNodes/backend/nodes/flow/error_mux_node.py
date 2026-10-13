@@ -6,19 +6,25 @@ from ...node_base import Node, NodeContext
 from ...node_category import NodeCategory
 from ...node_errors import (
     FAILED_INPUT,
+    MUX_DEFAULT_PORT,
+    MUX_FORWARD_FAILED_INPUT,
+    MUX_INPUT_PORT,
+    UNMATCHED_ROUTE,
+    mux_forward_for,
     mux_output_ports,
     mux_route_for_code,
     mux_routes,
+    mux_unmatched_label,
 )
 
 
 class ErrorMuxNode(Node):
-    """Route a failure from a node's error port to a route by its error code."""
+    """Place after a node to catch the errors you pick and send each down its own recovery branch."""
 
     node_type: ClassVar[str] = 'error_mux_node'
     display_name: ClassVar[str] = 'Error Mux'
     default_alias: ClassVar[str] = 'Error Mux'
-    description: ClassVar[str] = "Route a failure from a node's error port to a route by its error code"
+    description: ClassVar[str] = 'Place after a node to catch the errors you pick and send each down its own recovery branch'
     category: ClassVar[str] = NodeCategory.FLOW
     primary_family: ClassVar[str] = 'Flow Control'
     tags: ClassVar[List[str]] = ['Conditional']
@@ -26,22 +32,24 @@ class ErrorMuxNode(Node):
     color_hint: ClassVar[str] = 'blue'
     group: ClassVar[Optional[str]] = None
     selector_section: ClassVar[Optional[str]] = None
-    input_ports: ClassVar[List[str]] = ['error']
-    output_ports: ClassVar[List[str]] = ['unmatched']
-    input_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {'error': {'name': 'Error', 'description': "Versioned error payload from the failing node's error port"}}
-    output_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {'unmatched': {'name': 'Unmatched', 'description': "The error payload (or the failed node's input, see Pass along), when no route lists its code"}}
-    default_config: ClassVar[Dict[str, Any]] = {'forward': 'error', 'routes': [], 'unmatched_route': False}
-    config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {'forward': {'type': 'select', 'label': 'Pass along', 'options': ['error', 'failed_input'], 'description': 'What the chosen route receives: the error payload, or the input the failed node was given (to retry or fall back on the same data)', 'tab': 'Parameters'}, 'routes': {'type': 'object_list', 'label': 'Routes', 'description': 'One output per route. A failure takes the first route that lists its code. Codes come from the node connected to the error input.', 'add_label': 'Add route', 'remove_label': 'Remove route', 'id_prefix': 'route_', 'refill_label': 'Refill from upstream', 'item_schema': {'id': {'type': 'string', 'label': 'Stable id'}, 'label': {'type': 'string', 'label': 'Route name', 'placeholder': 'Retry later'}, 'codes': {'type': 'multiselect', 'label': 'Error codes', 'options': ['node_error'], 'options_source': 'upstream_error_codes'}}, 'tab': 'Parameters'}, 'unmatched_route': {'type': 'boolean', 'label': 'Unmatched route', 'description': 'Add an output for codes no route lists, so every failure is routed', 'tab': 'Parameters'}}
+    input_ports: ClassVar[List[str]] = ['input', 'error']
+    output_ports: ClassVar[List[str]] = ['default', 'unmatched']
+    input_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {'input': {'name': 'Input', 'description': "The guarded node's normal output; also how the mux catches that node's errors"}, 'error': {'name': 'Error', 'description': "Optional: a node's error port wired here directly (older layout)"}}
+    output_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {'default': {'name': 'No error', 'description': "The guarded node's normal output, when it succeeds"}, 'unmatched': {'name': 'Any other error', 'description': 'Any failure no other recovery branch takes'}}
+    default_config: ClassVar[Dict[str, Any]] = {}
+    config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {}
     ui_hints: ClassVar[Dict[str, Any]] = {}
     error_definitions: ClassVar[List[Dict[str, Any]]] = []
 
-    # Engine hook: when a failure is routed here, the supervisor also passes
-    # the failed node's input as inputs["failed_input"].
+    # Engine hooks: a failure of the node feeding `input` may be routed here
+    # (inline catch), and when it is, the supervisor passes the error payload
+    # as inputs["error"] and the failed node's input as inputs["failed_input"].
+    catches_upstream_errors: ClassVar[bool] = True
     receives_failed_input: ClassVar[bool] = True
 
     @classmethod
     def resolve_output_ports(cls, config: Optional[Dict[str, Any]]) -> List[str]:
-        """One port per route (its stable id), then ``unmatched`` when on."""
+        """No error, one port per recovery branch, then Any other error when on."""
         return mux_output_ports(config)
 
     @classmethod
@@ -50,30 +58,36 @@ class ErrorMuxNode(Node):
     ) -> Dict[str, Dict[str, Any]]:
         described: Dict[str, Dict[str, Any]] = {}
         for route in mux_routes(config):
-            codes = ", ".join(route["codes"]) or "no codes yet"
+            codes = ", ".join(route["codes"]) or "no errors picked"
             described[route["id"]] = {
                 "name": route["label"],
-                "description": f"The error payload (or the failed node's input, see Pass along) for: {codes}",
+                "description": f"Recovery branch for: {codes}",
             }
+        described[UNMATCHED_ROUTE] = {"name": mux_unmatched_label(config)}
         return described
 
     async def execute(self, context: NodeContext) -> None:
         payload = context.inputs.get("error")
+        if payload is None:
+            # No failure: the guarded node's output continues on No error.
+            context.signal_done({
+                "data": {MUX_DEFAULT_PORT: context.inputs.get(MUX_INPUT_PORT)},
+                "output_port": MUX_DEFAULT_PORT,
+            })
+            return
         code = payload.get("code") if isinstance(payload, dict) else None
         port = self.route_for_code(code)
         if port is None:
-            # The engine only routes codes this mux accepts; reaching here
-            # means the payload did not come from an error port.
-            context.signal_error(RuntimeError(f"Error Mux has no route for code {code!r}"))
+            # The engine only routes codes this mux accepts.
+            context.signal_error(RuntimeError(f"Error Mux has no branch for error {code!r}"))
             return
         value = payload
-        if self.config.get("forward") == "failed_input":
-            # Supplied by the engine because receives_failed_input is set.
+        if mux_forward_for(self.config, port) == MUX_FORWARD_FAILED_INPUT:
             value = context.inputs.get(FAILED_INPUT)
         context.signal_done({"data": {port: value}, "output_port": port})
 
     def accepts_error_code(self, code: Optional[str]) -> bool:
-        """Engine hook (D7): route a failure here only when a route takes its code."""
+        """Engine hook (D7): catch a failure only when a branch takes its code."""
         return self.route_for_code(code) is not None
 
     def route_for_code(self, code: Optional[str]) -> Optional[str]:

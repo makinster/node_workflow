@@ -15,6 +15,7 @@ from .file_paths import normalize_local_path
 from .node_errors import (
     ENGINE_ERROR_DEFINITIONS,
     ERROR_PORT,
+    MUX_INPUT_PORT,
     UNMATCHED_ROUTE,
     mux_has_unmatched_route,
     mux_route_problems,
@@ -96,16 +97,17 @@ def _validate_error_muxes(
         if not any(routes.values()) and not mux_has_unmatched_route(config):
             warnings.append({"node_id": node_id,
                              "message": "Error Mux lists no codes, so it never routes anything"})
+        # Inline (the node's output into `input`) or wired from its `error` port.
         sources = [
             conn for conn in data.get("connections", {}).get("inputs", [])
-            if conn.get("target_port") == "error"
+            if conn.get("target_port") in {ERROR_PORT, MUX_INPUT_PORT}
         ]
         if not sources:
             warnings.append({"node_id": node_id,
-                             "message": "Error Mux has no incoming error connection"})
+                             "message": "Error Mux has no incoming connection"})
         for conn in sources:
             source_id = conn.get("source_node_id")
-            if conn.get("source_port") != ERROR_PORT:
+            if conn.get("target_port") == ERROR_PORT and conn.get("source_port") != ERROR_PORT:
                 errors.append({
                     "node_id": node_id,
                     "message": (

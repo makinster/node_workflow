@@ -31,10 +31,12 @@ Good backend responsibilities:
   `declared_input_ports`, `WorkflowMap.input_ports`. Merge's slot count
   (`input_slots`) is the only config-driven case. A connection into a slot the
   config hides is a validator warning (never read).
-- What an Error Mux route is (`node_errors.mux_routes`, ids, matching,
-  migration of old `path_*_codes`). Proposing routes — upstream code pickers,
-  auto-fill on wiring, "Refill from upstream" — is frontend-only
-  (`frontend/error_mux_ui.py`); the validator re-checks the result.
+- What an Error Mux route is (`node_errors.mux_routes`: ids, codes,
+  per-branch `forward`, matching, the `default` No error port, migration of
+  old `path_*_codes`) and how the engine catches a failure inline. The config
+  UI — readable error names, the Source picker, branch rows on Parameters and
+  Payloads — is frontend-only (`frontend/error_mux_ui.py` and node config's
+  Error Mux tabs); the validator re-checks the result.
 
 Frontend responsibilities:
 

@@ -200,7 +200,8 @@ async def test_routing_to_the_error_port_skips_the_default_path():
     assert recoveries == []
     assert master.run_context.skip_reasons == {default_next: "not_taken"}
     assert parse not in master.completed_nodes
-    assert _status(events, parse) == ["running", "errored"]
+    # A failure an error path handles is shown as recovered, not errored (P4).
+    assert _status(events, parse) == ["running", "recovered"]
     assert _status(events, handler)[-1] == "done"
     payload = master._memory_bank.read_transient(parse, "error")
     assert payload["code"] == "invalid_json"

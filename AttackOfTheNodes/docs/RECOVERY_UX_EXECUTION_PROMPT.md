@@ -101,9 +101,16 @@ Update this section at the end of every session.
   **Next:** UX2. Check out `dist/p4-inline-error-mux`, merge `main` into it
   (expect conflicts in `SESSION_LOG.md` and possibly `node_config.py`), then
   run `aotn_review43_probe.py` to reproduce the three #43 bugs.
-- Q1, Q9, Q10 and Q11 were raised with the owner after UX1 and are not yet
-  answered; until then the defaults in the table below apply. Q2–Q8 are
-  asked when their phase reaches them.
+- **2026-10-13 (UX2 done):** `main` merged into `dist/p4-inline-error-mux`,
+  the three #43 bugs fixed plus the no-edit-save invariant, and PR #43
+  merged. Suite: 1124 passed. **Next:** UX3 (measured performance), branch
+  from `main`; start by recording the "before" numbers with
+  `aotn_review43_perf.py` and the Branch timings in `aotn_review43_probe.py`.
+  UX3 part 3 needs Q3 (default: the largest saved workflow, read-only).
+- Owner answers (2026-10-13): Q1, Q9, Q10, Q11 take the defaults (check in
+  after UX6; keep 64; leave the `dist/*` branches; leave history). The owner
+  also said the saved workflows under `workflows/` are unimportant and need
+  not be preserved. Q2–Q8 are asked when their phase reaches them.
 
 ## Continuing across sessions
 

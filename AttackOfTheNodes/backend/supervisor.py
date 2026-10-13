@@ -30,6 +30,7 @@ from .error_handler import ErrorHandler
 from .memory_bank import MemoryBank
 from .node_base import Node, NodeContext
 from .node_errors import (
+    MUX_INPUT_PORT,
     DEFAULT_ERROR_CODE,
     ENGINE_ERROR_DEFINITIONS,
     ENGINE_UNATTENDED_INPUT,
@@ -287,6 +288,12 @@ class Supervisor:
             while result.error is not None:
                 failure = self._describe_failure(node, result.error)
                 target = self._error_route(failure.code)
+                # A failure an error path handles is shown as recovered, not
+                # as an error (D10); otherwise it is errored as before.
+                self._publish_node_execution(
+                    "recovered" if target is not None else "errored",
+                    reason=failure.code if target is not None else None,
+                )
                 record = self._log_failure(failure, inputs, handled=target is not None)
                 failed_node_id = self.current_node_id
                 if target is not None:
@@ -409,12 +416,17 @@ class Supervisor:
 
         if not inputs and not node.get_input_ports():
             inputs = dict(self._initial_data)
-        if (
-            getattr(node, "receives_failed_input", False)
-            and self._arrived_from is not None
-            and self._arrived_from[1] == ERROR_PORT
-        ):
-            inputs[FAILED_INPUT] = self._failed_input
+        if getattr(node, "receives_failed_input", False):
+            if self._arrived_from is not None and self._arrived_from[1] == ERROR_PORT:
+                # The failure that routed here: its payload and its input.
+                inputs[ERROR_PORT] = self._memory_bank.read_transient(
+                    self._arrived_from[0], ERROR_PORT
+                )
+                inputs[FAILED_INPUT] = self._failed_input
+            else:
+                # Reached on the normal path: no failure to report, even if a
+                # stale error payload is still in memory from an earlier visit.
+                inputs.pop(ERROR_PORT, None)
         return inputs
 
     def _input_source(self, input_port: str) -> Optional[Dict[str, str]]:
@@ -576,7 +588,9 @@ class Supervisor:
 
         if self._input_interrupted or self._stop_requested:
             self._publish_node_execution("stopped")
-        elif result.error is not None or not result.completed or result.payload is None:
+        elif result.error is not None:
+            pass  # the failure pipeline reports errored or recovered
+        elif not result.completed or result.payload is None:
             self._publish_node_execution("errored")
         else:
             self._publish_node_execution("done")
@@ -681,13 +695,27 @@ class Supervisor:
         target = self._workflow_map.find_next_node_id(
             self.current_node_id or "", output_port=ERROR_PORT
         )
-        if target is None:
-            return None
-        instance = self._workflow_map.get_node_instance(target)
-        accepts = getattr(instance, "accepts_error_code", None)
-        if callable(accepts) and not accepts(code):
-            return None
-        return target
+        if target is not None:
+            instance = self._workflow_map.get_node_instance(target)
+            accepts = getattr(instance, "accepts_error_code", None)
+            if not callable(accepts) or accepts(code):
+                return target
+        return self._inline_error_route(code)
+
+    def _inline_error_route(self, code: str) -> Optional[str]:
+        """An Error Mux placed inline after the failed node catches the codes
+        it selects: the node's normal output feeds the mux's ``input``."""
+        node = self._workflow_map.get_node_data(self.current_node_id or "") or {}
+        for conn in (node.get("connections") or {}).get("outputs", []):
+            if conn.get("target_port") != MUX_INPUT_PORT:
+                continue
+            target = str(conn.get("target_node_id") or "")
+            instance = self._workflow_map.get_node_instance(target)
+            if not getattr(instance, "catches_upstream_errors", False):
+                continue
+            if instance.accepts_error_code(code):
+                return target
+        return None
 
     async def _request_recovery(
         self, error_record: Dict[str, Any], failure: _Failure

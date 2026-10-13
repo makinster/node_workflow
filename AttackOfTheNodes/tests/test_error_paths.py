@@ -90,21 +90,26 @@ def test_a_wired_error_path_from_any_node_validates_and_restores():
         {"target_port": "input", "source_node_id": logger, "source_port": "error"}]
 
 
-def test_wiring_an_error_path_into_a_new_mux_fills_its_routes():
+def test_inserting_a_mux_after_a_node_puts_it_inline_on_no_error():
     from frontend.screens.editor import EditorScreen
 
     factory, workflow_map = _map()
     http = workflow_map.add_node("http_request_node")
+    after = workflow_map.add_node("no_op_node")
+    workflow_map.connect(http, "default", after, "input")
     mux = workflow_map.add_node("error_mux_node")
     editor = EditorScreen(factory, workflow_map)
 
-    editor._connect_new_node(http, "error", mux)
+    editor._connect_new_node(http, "default", mux)
 
     node = workflow_map.get_node_data(mux)
     assert node["connections"]["inputs"] == [
-        {"target_port": "error", "source_node_id": http, "source_port": "error"}]
-    assert [r["codes"] for r in node["config"]["routes"]] == [
-        ["node_error"], ["missing_url"], ["timeout"], ["network"], ["http_status"]]
+        {"target_port": "input", "source_node_id": http, "source_port": "default"}]
+    # What used to follow the node now follows the mux's No error branch.
+    assert node["connections"]["outputs"] == [
+        {"source_port": "default", "target_node_id": after, "target_port": "input"}]
+    # No branches are made until errors are picked in the mux's Source tab.
+    assert not node["config"].get("routes")
 
 
 def test_errors_section_offers_the_toggle_only_where_error_is_not_listed():

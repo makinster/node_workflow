@@ -181,5 +181,9 @@ def test_wait_target_toggle_empty_selection_and_no_options():
             assert not screen.query('#wait-targets')
             screen.action_save()
             await pilot.pause()
-            assert results[0]['config']['target_node_ids'] == []
+            # UX2 no-edit invariant: the stored default ("") is kept rather
+            # than rewritten as []; the node reads both as "no targets".
+            from backend.nodes.wait_until_node import WaitUntilNode
+            assert results[0]['config']['target_node_ids'] == ''
+            assert WaitUntilNode('w', results[0]['config'])._target_node_ids() == []
     asyncio.run(check())
