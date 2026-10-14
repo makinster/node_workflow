@@ -40,6 +40,18 @@ Owner requests (2026-10-14):
 `Edit Node: Logger (id)`, the details line order) or the suffix (`Merge ·1001`);
 they now assert the names and the separate `Node ID:` line.
 
+**Review of PR #53 (two crashes, both reproduced and fixed).** After: 1247
+passed (2 new in `test_node_labels.py`; both fail before the fix).
+
+1. A node name such as `Fetch [/draft]` was parsed as markup and crashed Error
+   Details and validation results. Both now render as literal text
+   (`markup=False`), which also covers brackets in messages and tracebacks.
+2. The heading reused `_branch_contexts_by_node`, which recursed once per
+   node and crashed past ~1,000 connected nodes. It now walks with an explicit
+   stack, pushing children in reverse so the visit order (and each node's
+   first branch path) is unchanged; the UX3 equivalence tests against the old
+   scan still pass.
+
 ## 2026-10-13 — UX6: Friendly Labels and Presentation Pass
 
 Branch `dist/ux6-labels-and-presentation`, from `main` at `1a92b43` (PR #51).

@@ -193,7 +193,8 @@ Update this section at the end of every session.
   for busy editors (`PROJECT_BACKLOG.md`, owner findings item 7).
 - **2026-10-14 (UX6 follow-up):** PR #53 (branch `dist/ux6b-ids-errors-keys`):
   one bottom key ribbon, A/D on branch-select rows, numbered suffix rolled
-  back, node ID on its own line, plain error headings. Suite: 1245 passed.
+  back, node ID on its own line, plain error headings; review fixes for
+  markup in names and the recursion limit. Suite: 1247 passed.
   Next is unchanged: confirm with the owner, then `NODE_CONTRACT_PLAN.md` C1
   (proposed as a warning plus a required/optional flag).
 - **Owner UI taste (learned in UX4):** plain and simple. Compact one-row

@@ -35,7 +35,7 @@ class ErrorDetailsScreen(CommandScreenMixin, ModalScreen):
         options = self.payload.get("options", [])
         with VerticalScroll(id="modal-card"):
             yield Label("Error Details", classes="modal-title")
-            yield Static(self._format_error(), id="error-details")
+            yield Static(self._format_error(), id="error-details", markup=False)
             yield Label("W/S or arrows: move · E/Enter: select · Esc: close", classes="modal-help")
             for option in options:
                 yield Button(option.replace("_", " ").title(), id=f"recovery-{option}", variant="default")
@@ -112,6 +112,7 @@ class ErrorDetailsScreen(CommandScreenMixin, ModalScreen):
                             ]
                         ),
                         classes="validation-card",
+                        markup=False,
                     )
                     if node_id:
                         button_id = f"jump-validation-{label.lower()}-{index}"

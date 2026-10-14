@@ -129,3 +129,60 @@ def test_error_details_open_with_the_plain_heading_then_the_id():
     lines = seen["text"].splitlines()
     assert lines[0] == f"Fetch (HTTP Request) · depth 1 · {MAIN_PATH}"
     assert lines[1] == f"Node ID: {fetch}"
+
+
+# Review of PR #53.
+
+
+def test_names_that_look_like_markup_are_shown_literally():
+    """Finding 1: "Fetch [/draft]" crashed Error Details and validation results."""
+    from textual.app import App
+
+    from frontend.screens.error_details import ErrorDetailsScreen
+
+    workflow_map = _map()
+    start = workflow_map.add_node("start_node")
+    fetch = workflow_map.add_node("http_request_node", alias="Fetch [/draft]")
+    workflow_map.connect(start, "default", fetch, "input")
+    seen = {}
+
+    class ErrorApp(App):
+        CSS_PATH = CSS
+
+        def __init__(self, payload):
+            super().__init__()
+            self.workflow_map = workflow_map
+            self.factory = FACTORY
+            self.payload = payload
+
+        def on_mount(self):
+            self.push_screen(ErrorDetailsScreen(self.payload))
+
+    async def body(payload, selector, key):
+        async with ErrorApp(payload).run_test(size=(110, 40)) as pilot:
+            await pilot.pause()
+            await pilot.pause()
+            seen[key] = "\n".join(str(w.render()) for w in pilot.app.screen.query(selector))
+
+    asyncio.run(body({"node_id": fetch, "branch_id": "main",
+                      "error": {"message": "bad [b]value", "traceback": "x[/y]"}},
+                     "#error-details", "error"))
+    asyncio.run(body({"validation": {"errors": [{"node_id": fetch, "message": "Loose [/end]"}],
+                                     "warnings": []}},
+                     ".validation-card", "validation"))
+    assert "Fetch [/draft] (HTTP Request)" in seen["error"]
+    assert "bad [b]value" in seen["error"] and "x[/y]" in seen["error"]
+    assert "Fetch [/draft] (HTTP Request)" in seen["validation"]
+    assert "Loose [/end]" in seen["validation"]
+
+
+def test_a_heading_for_a_very_long_workflow_does_not_hit_the_recursion_limit():
+    """Finding 2: 1,050 connected nodes crashed the recursive branch scan."""
+    workflow_map = _map()
+    previous = workflow_map.add_node("start_node")
+    for _ in range(1050):
+        node = workflow_map.add_node("no_op_node")
+        workflow_map.connect(previous, "default", node, "input")
+        previous = node
+    heading = node_heading(workflow_map, FACTORY, previous)
+    assert "· depth 1050 · " in heading and heading.endswith(MAIN_PATH)

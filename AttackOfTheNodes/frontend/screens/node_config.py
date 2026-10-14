@@ -313,30 +313,34 @@ def _branch_contexts_by_node(workflow_map) -> Dict[str, list[Dict[str, str]]]:
             existing.append(context)
 
     seen: set[tuple[str, str, str]] = set()
-
-    def follow(node_id: str, context: Optional[Dict[str, str]]) -> None:
+    # Depth-first with an explicit stack (no recursion limit on long
+    # workflows). Children are pushed in reverse so the visit order, and so
+    # each node's first branch_path, matches the recursive scan.
+    stack: list[tuple[str, Optional[Dict[str, str]]]] = [(start_id, None)]
+    while stack:
+        node_id, context = stack.pop()
         node = workflow_map.get_node_data(node_id) or {}
         if not node:
-            return
+            continue
         state = (
             node_id,
             context["branch_id"] if context else "",
             context["branch_port"] if context else "",
         )
         if state in seen:
-            return
+            continue
         seen.add(state)
         add_context(node_id, context)
         if node.get("type") == BRANCH_END_NODE_TYPE:
-            return
+            continue
         outputs = node.get("connections", {}).get("outputs", [])
+        children: list[tuple[str, Optional[Dict[str, str]]]] = []
         # Only nodes that spawn branch supervisors start new branch contexts
         # (as the engine does). Any other node, whatever its output count
         # (an error path, an inline Error Mux, a Conditional), passes the
         # current context to every connected target.
         if _node_spawns_branches(workflow_map, node):
-            output_ports = _node_output_ports(workflow_map, node)
-            for output_port in output_ports:
+            for output_port in _node_output_ports(workflow_map, node):
                 target_id = _target_for_output(node, output_port)
                 if not target_id:
                     continue
@@ -349,14 +353,13 @@ def _branch_contexts_by_node(workflow_map) -> Dict[str, list[Dict[str, str]]]:
                     context,
                     next_context["branch_label"],
                 )
-                follow(target_id, next_context)
-            return
-        for conn in outputs:
-            target_id = str(conn.get("target_node_id") or "")
-            if target_id:
-                follow(target_id, context)
-
-    follow(start_id, None)
+                children.append((target_id, next_context))
+        else:
+            for conn in outputs:
+                target_id = str(conn.get("target_node_id") or "")
+                if target_id:
+                    children.append((target_id, context))
+        stack.extend(reversed(children))
     return contexts
 
 
