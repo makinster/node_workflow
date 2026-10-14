@@ -1536,7 +1536,9 @@ async def _test_branch_config_uses_parallel_payload_ui():
         await pilot.pause(0.05)
         screen = app.query_one(NodeConfigScreen)
         summary = str(app.query_one("#node-config-summary").content)
-        help_text = str(app.query_one(".modal-help").content)
+        # UX6: the key hints show once, in the status bar.
+        from frontend.widgets.status_bar import StatusBar
+        help_text = app.query_one(StatusBar)._formatted()
         assert summary == "\n".join(
             [
                 "Node type: Parallel Branch",
@@ -1593,8 +1595,17 @@ async def _test_branch_config_uses_parallel_payload_ui():
         assert "show-payload-upstream-payload" in visited
         assert "show-payload-vault-payload" in visited
         assert "branch-label-path_e" in visited
-        assert "branch-payload-source-path_e" in visited
+        # UX6 (owner): a path row is one line; S moves row to row in the same
+        # column, D moves from the Branch ID to the row's Start Payload.
+        assert not any(name.startswith("branch-payload-source-") for name in visited)
         assert all(visited)
+        app.set_focus(app.query_one("#branch-label-path_e", CommandInput))
+        await pilot.press("d")
+        await pilot.pause(0.01)
+        assert app.focused.id == "branch-payload-source-path_e"
+        await pilot.press("w")
+        await pilot.pause(0.01)
+        assert app.focused.id == "branch-payload-source-path_d"
 
         app.query_one("#branch-label-path_c", CommandInput).value = "Review"
         app.query_one("#branch-payload-source-path_a", Select).value = "vault:session_id"
@@ -2969,10 +2980,11 @@ async def _test_merge_beacon_selector_row_jumps_without_rewiring():
         beacon_cards = [card for card in app.query(NodeCard) if card.node_id == beacon]
         assert "Merge Beacon" in beacon_cards[0].display_text.splitlines()[1]
         selector_card = app.query_one(MergeBeaconSelectCard)
-        assert selector_card.active_label == "Merge"
+        # UX6 (U5): two Merge nodes share the name, so labels carry a suffix.
+        assert selector_card.active_label == "Merge ·1001"
         assert selector_card.active_port == "path_a"
         assert selector_card.display_text.startswith("└─────")
-        assert " [ Merge ]" in selector_card.display_text
+        assert " [ Merge ·1001 ]" in selector_card.display_text
         assert "☛" not in selector_card.display_text
 
         options = screen._merge_beacon_options(beacon)

@@ -15,6 +15,7 @@ from backend.validator import validate_workflow
 from backend.node_errors import ERROR_PORT, MUX_DEFAULT_PORT
 from frontend.error_mux_ui import ERROR_MUX_NODE_TYPE, inline_mux_for
 from frontend.error_paths import editor_output_ports
+from frontend.node_labels import friendly_label, friendly_labels
 from frontend.screens.branch_keep_selector_screen import BranchKeepSelectorScreen
 from frontend.screens.branch_selector import BranchSelectorScreen
 from frontend.screens.error_details import ErrorDetailsScreen
@@ -164,6 +165,8 @@ class EditorScreen(Screen):
             self.query_one("#workflow-title", Label).update(
                 f"Workflow: {title}{dirty} [{state}]"
             )
+            # UX6: friendly labels, computed once per refresh for the cards.
+            self._friendly_labels = friendly_labels(self.workflow_map)
             rows = self._build_visible_rows()
             if self.selected_node_id and not any(
                 row["kind"] == "node" and row.get("node_id") == self.selected_node_id
@@ -1989,8 +1992,7 @@ class EditorScreen(Screen):
         connected_merge_id = self._merge_beacon_connected_merge_id(beacon_node_id)
         label = "Choose merge"
         if connected_merge_id:
-            merge_node = self.workflow_map.get_node_data(connected_merge_id) or {}
-            label = node_display_name(connected_merge_id, merge_node)
+            label = friendly_label(self.workflow_map, connected_merge_id)
         return {
             "kind": "merge_beacon_select",
             "beacon_node_id": beacon_node_id,
@@ -2037,7 +2039,7 @@ class EditorScreen(Screen):
             options.append(
                 {
                     "merge_node_id": merge_node_id,
-                    "label": self._node_label(merge_node_id, merge_node),
+                    "label": friendly_label(self.workflow_map, merge_node_id),
                 }
             )
         return options
@@ -2091,6 +2093,9 @@ class EditorScreen(Screen):
 
     def _node_for_display(self, node_id: str, node: Dict[str, Any]) -> Dict[str, Any]:
         display_node = dict(node)
+        label = getattr(self, "_friendly_labels", {}).get(node_id)
+        if label:
+            display_node["_display_label"] = label
         if self.workflow_adapter.is_placeholder(node_id):
             metadata = self.workflow_adapter.placeholder_metadata(node_id)
             display_node["_deleted_overlay"] = {

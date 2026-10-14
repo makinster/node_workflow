@@ -72,10 +72,10 @@ def test_rows_name_both_ends_and_what_flows():
     assert [row["target"] for row in rows["incoming"]] == [start]
     assert [row["target"] for row in rows["outgoing"]] == [after]
     incoming = rows["incoming"][0]["text"]
-    assert incoming.startswith(f"Start ({start}): ")
+    assert incoming.startswith("Start: ")  # UX6: friendly label, no id
     assert "→ Input" in incoming
     outgoing = rows["outgoing"][0]["text"]
-    assert f"→ After ({after}): Input" in outgoing
+    assert "→ After: Input" in outgoing
     assert rows["vault"] == []
 
 
@@ -94,7 +94,7 @@ def test_vault_reads_are_listed_separately_with_their_writers():
     workflow_map.update_node_config(after, {"membank_inputs": ["greeting_copy", "missing_key"]})
     rows = connection_rows(workflow_map, FACTORY, after)
     assert [(row["target"], row["text"]) for row in rows["vault"]] == [
-        (start, f"greeting_copy: written by Start ({start})"),
+        (start, "greeting_copy: written by Start"),
         (None, f"missing_key: {NO_WRITER}"),
     ]
 
@@ -165,7 +165,7 @@ def test_a_set_variable_writer_is_listed_and_jumpable():
                                              "input_source": "Vault", "input_vault_key": "greeting"})
     rows = connection_rows(workflow_map, FACTORY, output)["vault"]
     assert rows == [{"key": ("vault", "greeting", setter), "target": setter,
-                     "text": f"greeting: written by Remember ({setter})"}]
+                     "text": "greeting: written by Remember"}]
 
 
 def test_writers_are_listed_once_and_every_writer_is_listed():

@@ -226,7 +226,29 @@ Screen {
 
 .branch-payload-row {
     height: auto;
-    margin-bottom: 1;
+    align: left middle;
+}
+
+.branch-payload-headings {
+    height: auto;
+    margin-top: 1;
+}
+
+.branch-heading-id {
+    width: 1fr;
+}
+
+.branch-heading-source {
+    width: 2fr;
+}
+
+.branch-payload-row > CommandInput {
+    width: 1fr;
+    margin-top: 1;
+}
+
+.branch-payload-row > Select {
+    width: 2fr;
 }
 
 .generated-form {
@@ -458,5 +480,18 @@ Tab.-active {
 
 .connection-row:focus {
     background: $accent 30%;
+    text-style: bold;
+}
+
+/* UX6: an open dropdown list must not look like the closed dropdown boxes
+   around it (owner, Branch rows). A rounded accent border, a darker panel and
+   a bold highlighted option set it apart; it applies to every dropdown. */
+SelectOverlay {
+    border: round $accent;
+    background: $panel-darken-2;
+}
+
+SelectOverlay > .option-list--option-highlighted {
+    background: $accent 40%;
     text-style: bold;
 }

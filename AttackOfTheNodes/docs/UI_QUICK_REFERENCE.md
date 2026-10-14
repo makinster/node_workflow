@@ -35,7 +35,7 @@ the highlighted editor row.
 - Tabbed command-mode screens (node config, node selector) switch tabs by
   **number key** (`1`–`5`): a digit jumps directly to the Nth tab. Past the tab
   count it is a no-op; while editing a field a digit types normally. Tab headers
-  show the hotkey as `N - Label`.
+  show the hotkey as `N Label` (UX6; was `N - Label`).
 - `E` or Enter activates the highlighted control; on a `Switch`/`Checkbox` it
   toggles the value in a single press.
 - Text fields require activation unless a prompt/filter opts into
@@ -50,11 +50,11 @@ the highlighted editor row.
 
 Node configs share these section meanings (switch visible tabs with number keys):
 
-- `1 - Source`: alias, node summary, upstream/Vault preview controls, memory reads.
-- `2 - Parameters`: schema-generated fields.
-- `3 - Payloads`: payload preview controls, transient output overrides, Vault
+- `1 Source`: alias, node summary, upstream/Vault preview controls, memory reads.
+- `2 Parameters`: schema-generated fields.
+- `3 Payloads`: payload preview controls, transient output overrides, Vault
   output declarations.
-- `4 - Connections`: one row per connection (Incoming, Outgoing) naming the
+- `4 Connections`: one row per connection (Incoming, Outgoing) naming the
   node at the other end, both port names and what flows (the payload's name,
   or "No payload"), then Vault reads with the node that writes each key.
   Enter on a row opens that node's editor. Edit wiring from the editor.
@@ -65,7 +65,7 @@ Node configs share these section meanings (switch visible tabs with number keys)
   text field or multi-line box is being edited it commits the text and leaves
   editing first; Enter in a multi-line box stays a newline.
 - The Save button saves and closes.
-- `Esc` (or Cancel) closes. With unsaved changes it asks **Save / Discard /
+- `Esc` (or the Close button, formerly Cancel) closes. With unsaved changes it asks **Save / Discard /
   Stay** first; Esc in that prompt means Stay. Jumping to another node from
   the Connections tab asks the same.
 - "Unsaved" means the widgets differ from what the editor showed on opening
@@ -75,8 +75,8 @@ Node configs share these section meanings (switch visible tabs with number keys)
 
 Show only applicable sections; four tabs are not mandatory. Omit empty tabs and
 controls for unsupported capabilities, number visible tabs consecutively, and
-use a flat form when sufficient. Wait Until uses `1 - Wait` for alias/targets/
-timeout and `2 - Connections` for read-only wiring. It has no Vault or payload
+use a flat form when sufficient. Wait Until uses `1 Wait` for alias/targets/
+timeout and `2 Connections` for read-only wiring. It has no Vault or payload
 routing controls. Shared keyboard rules apply to every layout.
 
 Ordinary nodes should not require custom frontend code. Use node metadata,
@@ -98,6 +98,16 @@ programmatic changes to other fields must not move the scroll position.
 During navigation, scroll only as needed to keep the highlighted field visible;
 do not scroll to reveal its next neighbour before it is highlighted.
 
+## Friendly Node Labels (UX6)
+
+- Nodes show their alias (or a type-based name). When two or more nodes share
+  that name, each gets a counter suffix in workflow order from 1000:
+  `Step ·1000`, `Step ·1001` (`frontend/node_labels.py`). Unique names have no
+  suffix. Display only: stored IDs and aliases never change.
+- Used in editor cards, Connections rows, Wait Until targets, the Error
+  Resolver unpick list, the unsaved-changes prompt and Merge selectors. The raw
+  ID stays in the details panel and the node editor title.
+
 ## Phase 17 Node Identity
 
 Use `PHASE_17_NODE_VISUAL_IDENTITY.md` for the active plan.
@@ -110,7 +120,7 @@ Use `PHASE_17_NODE_VISUAL_IDENTITY.md` for the active plan.
   `node_selector.py` maps them to the `Inputs`/`Outputs` `primary_family` values.
   See `IO_CONTRACT_UI_DESIGN.md`. The taxonomy-reconciliation follow-up is closed.
 - Family tabs switch by number key (`1`–`5`) and show numbered headers
-  (`N - Label`).
+  (`N Label`).
 - There is no subcategory filter checkbox column. The rigid subcategory taxonomy
   was retired 2026-06-19; node `tags` survive only as freeform keywords that feed
   the string filter (see `NODE_STANDARDIZATION_HANDOFF.md` Revision 2026-06-19).

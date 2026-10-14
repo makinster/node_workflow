@@ -123,7 +123,8 @@ class NodeCard(Static):
 
     def refresh_card(self) -> None:
         self._sync_identity_classes()
-        alias = node_display_name(self.node_id, self.node_data)
+        # UX6: the editor passes the friendly label (suffix when names repeat).
+        alias = self.node_data.get("_display_label") or node_display_name(self.node_id, self.node_data)
         if (
             self.show_identity
             and not str(self.node_data.get("alias") or "").strip()
