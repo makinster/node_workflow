@@ -437,3 +437,26 @@ Tab.-active {
 .catch-errors-button {
     margin: 1 0;
 }
+
+/* UX5: Connections tab rows. Plain text lines; Enter on a row jumps to the
+   node at the other end. The focused row is highlighted. */
+#connection-rows {
+    height: auto;
+}
+
+.connection-heading {
+    margin-top: 1;
+}
+
+.connection-row {
+    width: 1fr;
+    text-align: left;
+    content-align: left middle;
+    background: transparent;
+    color: $text;
+}
+
+.connection-row:focus {
+    background: $accent 30%;
+    text-style: bold;
+}

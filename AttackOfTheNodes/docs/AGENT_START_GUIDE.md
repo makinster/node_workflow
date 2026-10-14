@@ -93,7 +93,7 @@ config_tabs:
   `context.signal_done`, `context.signal_error`, `context.signal_waiting_for_input`,
   `context.wait_for_nodes`, and `context.wait_for_merge`.
 - Output transient port data with
-  `await context.signal_done({"data": {"default": value}})` or the correct
+  `context.signal_done({"data": {"default": value}})` (a plain call; it is not awaitable) or the correct
   output port names.
 - Do not import anything from `frontend/` in node files.
 

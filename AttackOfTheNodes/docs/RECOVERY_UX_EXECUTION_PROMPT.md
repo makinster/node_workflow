@@ -165,6 +165,24 @@ Update this section at the end of every session.
   Then **UX6** (friendly labels U5 with Q8, and the presentation pass incl.
   lighter Branch rows; sample screens first), then stop and check in (Q1)
   before Step 4.
+- **2026-10-13 (UX5 done):** merged in PR #51 (branch
+  `dist/ux5-connections-and-saving`). Q2 replaced by an owner decision:
+  Ctrl+S (and Ctrl+Enter) saves and stays, Esc closes with Save / Discard /
+  Stay; no Ctrl+Space or F2. Four P2 review findings fixed on the branch
+  (row focus by identity, shared Vault read/write model in
+  `backend/vault_declarations.py`, error-port payload), then the node audit's
+  Vault finding (pickers and validator on the same writer list). Suite: 1240
+  passed. Manual checks passed in the app panel and Windows Terminal. The
+  rest of the node audit is `NODE_CONTRACT_PLAN.md` (proposed; ask the owner
+  when to schedule it — after UX6 or before Step 4). The owner's live-test
+  findings are in `PROJECT_BACKLOG.md` ("Owner live-test findings —
+  2026-10-13"); not part of UX6 unless the owner says so. **Next: UX6**,
+  branch from `main` (`dist/ux6-labels-and-presentation`): friendly labels
+  (U5) — ask Q8 (suffix format) first; then the presentation pass (lighter
+  Branch rows, compact tab labels, no duplicate shortcut line, shorter
+  Errors text, smaller Save/Cancel buttons, consistent focus styling, maybe
+  renaming Cancel to Close now that Ctrl+S stays). Show 2–3 sample SVGs
+  before styling changes. Then stop and check in (Q1) before Step 4.
 - **Owner UI taste (learned in UX4):** plain and simple. Compact one-row
   buttons (Textual `Button(..., compact=True)`), no extra status lines,
   error lines code first (`• [code] description`), and the Error Mux is
@@ -181,8 +199,8 @@ Update this section at the end of every session.
   after UX6; keep 64; leave the `dist/*` branches; leave history). The owner
   also said the saved workflows under `workflows/` are unimportant and need
   not be preserved. Answered since: Q3 (synthetic graph), Q4 (resolved by
-  PR #46), Q5, Q6, Q7 (see UX4 entries). Still open: Q2 (key check above)
-  and Q8 (label suffix, UX6).
+  PR #46), Q5, Q6, Q7 (see UX4 entries). Q2 was replaced in UX5 by
+  the Ctrl+S decision. Still open: Q8 (label suffix, UX6).
 
 ## Continuing across sessions
 

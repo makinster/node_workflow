@@ -4,6 +4,132 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-13 — UX5: Connections Tab With Jumps, Ctrl+S Save and Stay
+
+Branch `dist/ux5-connections-and-saving`, from `main` at `4bb89cd` (PR #50).
+Before: 1212 passed. After: 1230 passed (18 new in
+`tests/test_connections_and_saving.py`; all fail on the old code).
+
+**Owner decisions in this phase (replace Q2 and revise U3):** the key check
+in the app's terminal panel showed Ctrl+Space arriving as `ctrl+@`, and F2
+never arrived (it is a volume key on the owner's keyboard). The owner then
+chose: **Ctrl+S saves and stays** (also commits a text field being edited),
+**Ctrl+Enter does the same**, **Esc closes** and asks Save / Discard / Stay
+when there are unsaved changes. No Ctrl+Space or F2 binding.
+
+1. **Connections tab** (`frontend/connection_rows.py`, node config tab 4,
+   Wait Until tab 2): Incoming and Outgoing rows name the node at the other
+   end, both port display names and what flows (the producer's payload name,
+   or "No payload" when the source publishes nothing). Vault reads (declared
+   `membank_inputs` and `<port>_source: Vault` keys) are listed separately
+   with their writer, or "no node writes it". A row whose node exists is a
+   compact button; Enter opens that node's editor. Rows refresh after a save
+   and after Error Resolver picks (the "removed on save" note moved here). It
+   replaces the `#connection-summary` text; the Errors section stays below.
+2. **Save and stay**: `NodeConfigScreen(on_save=…)`; the editor applies the
+   save at once (`EditorScreen._save_and_stay`) and the screen takes a new
+   no-edit snapshot. Without `on_save` the last saved result is returned on
+   close. The Save button still saves and closes. Ctrl+S / Ctrl+Enter are
+   priority bindings so they work while a field is being edited.
+3. **Save / Discard / Stay** (U9, `screens/unsaved_changes.py`) on Esc,
+   Cancel, Ctrl+Q and Connections jumps. "Unsaved" compares the widgets with
+   the snapshot (UX2) and the alias. A fresh Error Resolver saved with Ctrl+S
+   is kept when its editor closes (U8 revert only for a never-saved one).
+4. The editor opens node editors through `_open_node_config(node_id)`: saves
+   and jumps go to that node, not to whatever the editor has selected.
+
+**Tests updated (behaviour the owner changed):** seven test cases pressed Ctrl+S
+and expected the editor to close
+(`test_file_writer_configured_content_has_visible_keyboard_editor`,
+`test_node_config_saves_transient_output_overrides_and_vertical_buttons`,
+both `test_viewer_payload_ui_saves_vault_option_with_or_without_forwarding`
+cases, the three `test_wait_layout_navigation_and_clean_save` widths); they
+now assert the editor stays open, then press Esc and check the same saved
+config. The five `test_wait_timeout_validation_and_cancel` cases expected
+Cancel to discard an edit silently; they now assert the prompt appears and
+press Discard. `test_mux_connections_summary_follows_the_picks` reads the
+new rows instead of the removed summary.
+
+**Self-review / found while probing:** (a) the editor's refresh after a
+stay-save moved focus to the node list behind the modal, so Esc did nothing;
+the screen now restores its own focus. (b) a jump to a node the editor view
+does not show (a second target on the same port) opened and would have saved
+the *selected* node; fixed by item 4 and covered by a test. (c) the rows'
+container had the default `1fr` height and the Errors section was drawn over
+them; it is `height: auto` now. Sample SVGs were sent to the owner.
+
+**Manual check (owner, 2026-10-13, app terminal panel):** Ctrl+S saves and
+stays, the Save/Discard prompt on a Connections jump works, key bindings as
+expected.
+
+**Also recorded:** the owner's live-test findings (outdated older nodes,
+window placement in file nodes, missing pass-through, outdated Vault UI,
+reveal without autoscroll, error UI keys during runs) as a new section in
+`PROJECT_BACKLOG.md`; to be investigated when relevant.
+
+**Behavior changes:** Ctrl+S in a node editor no longer closes it; Esc and
+Cancel ask before discarding edits; the Connections tab is rows with jumps.
+
+**Review of PR #51 (four P2 findings, all reproduced and fixed on the
+branch).** After: 1239 passed (9 new: 8 in
+`test_connections_and_saving.py`, 1 runtime test in `test_error_routing.py`;
+7 of the new tests fail on the first PR head, the other two confirm existing
+engine behaviour and a fallback).
+
+1. *Saving from a row moved the next jump.* The row refresh replaced the
+   focused button and focus fell back to the first row. Rows now carry a
+   connection identity (direction plus both node/port ends, or Vault key and
+   writer); after a refresh the same connection gets focus, or the first row
+   if it was removed, and the tab keeps its scroll position.
+2. *Active Vault reads were missing* (Branch `vault:` seeds, Get Variable,
+   Chat continuation key). New shared model in `backend/vault_declarations.py`
+   (`active_vault_reads`, `standard_vault_reads`, `config_vault_reads`); the
+   validator's standard-model rules (`continuation_selected`,
+   `repeatable_slot_active`) moved there and the validator calls them, with
+   identical results (validator suite unchanged).
+3. *An existing writer was reported as absent* (Set Variable). Writers come
+   from `active_vault_writes` (declared outputs, standard writes, Set
+   Variable / Variable Setter / Counter fields), one entry per node. When no
+   writer is declared the row says "no writer found" instead of claiming none
+   exists.
+4. *Error port described as "No payload"* when normal output is off. The
+   Publish toggle now only affects `default`; an `error` port reads "Error
+   details on failure". A runtime test routes a File Write failure with
+   normal output off and checks the error payload.
+
+**Not changed (follow-up):** `memory_registry` (Vault key pickers) and the
+validator's write checks still use `standard_vault_writes` only, so Set
+Variable keys are not yet offered in Vault pickers or used by validator
+warnings. Moving them onto `active_vault_writes` changes what pickers offer
+and what the validator warns about, so it waits for the owner. The review's
+documentation drift (README → `SESSION_SUMMARY.md`, `AGENT_HANDOFF.md`
+selector text, the README description of `NODE_STANDARDIZATION_HANDOFF.md`,
+`AGENTS.md` data-directory/RunContext lines) is reported to the owner, not
+fixed here. The plan's second-terminal manual check (Windows Terminal) was
+not done at that point (see below).
+
+**Node audit of PR #51 (owner chose: Vault fix in #51, rest planned).**
+After: 1240 passed (1 new end-to-end test, which fails on `4e7af7d`).
+
+- The Vault pickers (`memory_registry`, the node config's declared-writer
+  scan) and the validator's existence/type/race checks now use
+  `vault_declarations.typed_vault_writes`: standard writes with their tags
+  plus node-specific writers (Set Variable, Variable Setter, Counter) with an
+  unknown type. Before, a Set Variable key showed in Connections but was
+  missing from Text Output's Vault picker and failed preflight with
+  "Membank input source not declared". The new test checks the row, the
+  picker, preflight and a real run agree. Validator reads are unchanged
+  (node-specific reads: plan item C1).
+- `NODE_STANDARDS.md` / `AGENT_START_GUIDE.md`: `signal_done` is a plain
+  call; the examples awaited it.
+- The audit's other findings (edge type checks, HTTP mode types, forwarding
+  provenance, numeric save validation, Random Number's dead field, Deep
+  Branch continuation, spec/generator gaps, author gate) are recorded in the
+  new `NODE_CONTRACT_PLAN.md` as proposed phases C1–C12, not approved.
+
+**Manual check, second terminal (owner, 2026-10-13):** Windows Terminal,
+passed: Ctrl+S, the Esc prompt and Connections jumps behave as in the panel.
+
 ## 2026-10-13 — Session Handoff After UX4
 
 Docs only (`RECOVERY_UX_EXECUTION_PROMPT.md`): environment notes now use the

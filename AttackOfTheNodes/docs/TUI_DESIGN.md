@@ -266,8 +266,10 @@ either path returns to File.
 Opening/revealing a folder in Explorer/Finder/xdg-open is a separate convenience
 helper and must not be used as a substitute for choosing import/export paths.
 
-Node config buttons are stacked vertically for W/S navigation. `Ctrl+S` saves
-and closes. Config may expose dead-drop payload name/description overrides based
+Node config buttons are stacked vertically for W/S navigation. `Ctrl+S` and
+`Ctrl+Enter` save and keep the editor open (committing a text field being
+edited); the Save button saves and closes; Esc closes, asking Save / Discard /
+Stay when there are unsaved changes (UX5). Config may expose dead-drop payload name/description overrides based
 on node port metadata, stored in `transient_outputs`. Node configs share Source, Parameters, Payloads and Connections section meanings.
 Show only applicable sections and number visible tabs consecutively; four tabs
 are not mandatory. Omit empty tabs and unsupported capability controls. Compact

@@ -54,7 +54,24 @@ Node configs share these section meanings (switch visible tabs with number keys)
 - `2 - Parameters`: schema-generated fields.
 - `3 - Payloads`: payload preview controls, transient output overrides, Vault
   output declarations.
-- `4 - Connections`: read-only connection summary.
+- `4 - Connections`: one row per connection (Incoming, Outgoing) naming the
+  node at the other end, both port names and what flows (the payload's name,
+  or "No payload"), then Vault reads with the node that writes each key.
+  Enter on a row opens that node's editor. Edit wiring from the editor.
+
+## Node Config Saving (UX5)
+
+- `Ctrl+S` (or `Ctrl+Enter`) saves and keeps the node editor open. While a
+  text field or multi-line box is being edited it commits the text and leaves
+  editing first; Enter in a multi-line box stays a newline.
+- The Save button saves and closes.
+- `Esc` (or Cancel) closes. With unsaved changes it asks **Save / Discard /
+  Stay** first; Esc in that prompt means Stay. Jumping to another node from
+  the Connections tab asks the same.
+- "Unsaved" means the widgets differ from what the editor showed on opening
+  or at the last save (the no-edit invariant from UX2).
+- Ctrl+Space and F2 are not used: F2 is a media key on the owner's keyboard,
+  and the owner chose Ctrl+S (2026-10-13).
 
 Show only applicable sections; four tabs are not mandatory. Omit empty tabs and
 controls for unsupported capabilities, number visible tabs consecutively, and

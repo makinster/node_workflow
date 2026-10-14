@@ -449,6 +449,28 @@ async def test_any_node_can_route_failures_along_its_error_port():
     assert not [e for e in result["errors"] if "undeclared port 'error'" in e["message"]]
 
 
+async def test_error_port_payload_does_not_depend_on_the_normal_output_toggle():
+    """Review of #51: a File Write with its normal output off still sends the
+    error payload down its error port (the Connections tab says so)."""
+    bus, workflow_map, master = _services()
+    events = _events(bus)
+    start = workflow_map.add_node("start_node")
+    writer = workflow_map.add_node("file_output_node")
+    config = dict(workflow_map.get_node_data(writer)["config"])
+    config.update(transient_output=False, file_path="")  # no path: the write fails
+    workflow_map.update_node_config(writer, config)
+    handler = workflow_map.add_node("no_op_node")
+    workflow_map.connect(start, "default", writer, "input")
+    workflow_map.connect(writer, "error", handler, "input")
+
+    assert await master.start_workflow()
+    await _finish(master)
+
+    assert _status(events, handler)[-1] == "done"
+    payload = master._memory_bank.read_transient(writer, "error")
+    assert payload["node_id"] == writer and payload["code"]
+
+
 async def test_undeclared_node_error_code_falls_back_to_the_default():
     from backend.nodes.debug.error_node import ErrorNode
     from backend.supervisor import Supervisor

@@ -6,7 +6,7 @@ from copy import deepcopy
 
 import math
 
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
 from rich.text import Text
 from textual.app import ComposeResult
@@ -22,7 +22,7 @@ from backend.nodes.branch_node import (
     MIN_BRANCH_COUNT,
     branch_count_from_config as _branch_count_from_config,
 )
-from backend.vault_declarations import standard_vault_writes
+from backend.vault_declarations import typed_vault_writes
 from frontend.error_paths import editor_output_ports
 from backend.node_errors import UNMATCHED_ROUTE
 from frontend.error_mux_ui import (
@@ -43,6 +43,8 @@ from frontend.error_mux_ui import (
 from frontend import notifications
 from frontend.editor_workflow_adapter import EditorWorkflowAdapter
 from frontend.screens.recovery_branch_unpick import DELETE_BRANCH, RecoveryBranchUnpickScreen
+from frontend.screens.unsaved_changes import DISCARD, SAVE, UnsavedChangesScreen
+from frontend.connection_rows import connection_rows
 from frontend.io_contract import TYPE_COLOR
 from frontend.node_types import (
     BRANCH_END_NODE_TYPE,
@@ -633,9 +635,11 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
     """Edit-node modal powered by the schema form generator."""
 
     BINDINGS = [
-        ("escape", "cancel", "Cancel"),
-        ("ctrl+s", "save", "Save"),
-        ("ctrl+enter", "save", "Save"),
+        ("escape", "cancel", "Close"),
+        # Save and stay open (owner, 2026-10-13). Priority so they also
+        # work while a text field is being edited: they commit it first.
+        Binding("ctrl+s", "save_and_stay", "Save", priority=True),
+        Binding("ctrl+enter", "save_and_stay", "Save", priority=True),
         # Tabs switch by number key (1-5). A/D are within-row navigation,
         # supplied by CommandScreenMixin.
         Binding("1", "jump_config_tab(1)", "Tab 1", priority=True),
@@ -655,8 +659,16 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         memory_bank=None,
         secrets_manager=None,
         workflow_adapter=None,
+        on_save: Optional[Callable[[Dict[str, Any]], None]] = None,
     ) -> None:
         super().__init__()
+        # Save and stay: ``on_save`` applies a save while the screen stays
+        # open. Without it the last saved result is returned on close.
+        self._on_save = on_save
+        self._saved_result: Optional[Dict[str, Any]] = None
+        self._opened_alias: Optional[str] = None
+        self._connection_targets: Dict[str, str] = {}
+        self._connection_keys: Dict[str, tuple] = {}
         self.factory = factory
         self.workflow_map = workflow_map
         self.node_id = node_id
@@ -749,9 +761,9 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         with Vertical(id="modal-card", classes="node-config-modal"):
             title = f"{self.node_data.get('alias') or self.node_id} ({self.node_id})"
             yield Label(f"Edit Node: {title}", classes="modal-title")
-            help_text = "number keys tabs | w/s move | a/d within row | e interact | ctrl+s save | esc cancel | ctrl+q revert"
+            help_text = "number keys tabs | w/s move | a/d within row | e interact | ctrl+s save | esc close | ctrl+q revert"
             if self.node_data.get("type") == WAIT_UNTIL_NODE_TYPE:
-                help_text = "1/2 tabs | w/s move | e toggle/edit | ctrl+s save | esc cancel | ctrl+q revert"
+                help_text = "1/2 tabs | w/s move | e toggle/edit | ctrl+s save | esc close | ctrl+q revert"
             yield Static(
                 help_text,
                 classes="modal-help",
@@ -865,7 +877,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                         "Edit connections from the editor.",
                         classes="form-description",
                     )
-                    yield Static(self._format_connections(), id="connection-summary")
+                    yield from self._compose_connection_rows()
                     yield from self._compose_errors_section()
 
     def _compose_wait_config_tabs(self, config: Dict[str, Any], forms: Dict[str, Any]):
@@ -898,7 +910,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             with TabPane("2 - Connections", id="node-config-tab-connections"):
                 with VerticalScroll(classes="tab-scroll"):
                     yield Static("Edit connections from the editor.", classes="form-description")
-                    yield Static(self._format_connections(), id="connection-summary")
+                    yield from self._compose_connection_rows()
                     yield from self._compose_errors_section()
 
     def _wait_route_summary(self) -> str:
@@ -1002,7 +1014,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                         "Edit connections from the editor.",
                         classes="form-description",
                     )
-                    yield Static(self._format_connections(), id="connection-summary")
+                    yield from self._compose_connection_rows()
                     yield from self._compose_errors_section()
 
     def _build_standard_config_forms(
@@ -1185,7 +1197,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             for output in normalize_membank_outputs(config):
                 add(str(output["id"]), "", writer_id)
             meta = self._metadata_for_type(node_type) or {}
-            for key, tag in standard_vault_writes(node_type, config, meta).items():
+            for key, tag in typed_vault_writes(node_type, config, meta).items():
                 add(key, tag or "", writer_id)
         return declared
 
@@ -1512,7 +1524,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 with VerticalScroll(classes="tab-scroll"):
                     yield Label("Connections", classes="form-label nav-section")
                     yield Static("Edit connections from the editor.", classes="form-description")
-                    yield Static(self._format_connections(), id="connection-summary")
+                    yield from self._compose_connection_rows()
                     yield from self._compose_errors_section()
 
     def _mux_rows_for(self, selected: list[str]) -> list[Dict[str, Any]]:
@@ -1582,8 +1594,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         for port, row in before.items():
             if port not in current:
                 self._confirm_unpicked_branch(port, row)
-        for summary in self.query("#connection-summary"):
-            summary.update(self._format_connections())
+        await self._refresh_connection_rows()
         for container_id, build in (("#mux-branch-rows", self._mux_parameter_rows),
                                     ("#mux-forward-rows", self._mux_forward_rows)):
             container = self.query_one(container_id)
@@ -1943,6 +1954,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             self.action_cancel()
         elif event.button.id == "catch-errors":
             self.action_catch_errors()
+        elif event.button.id in self._connection_targets:
+            self._leave(jump_to=self._connection_targets[event.button.id])
 
     def action_catch_errors(self) -> None:
         """Save this node, then let the editor spawn or open its Error Mux."""
@@ -1971,8 +1984,97 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             event.prevent_default()
 
     def action_save(self, then: Optional[str] = None) -> None:
+        """Save and close (the Save button, the catch-errors button)."""
+        self._commit_text_edit()
+        result = self._save_result(then)
+        if result is not None:
+            self.dismiss(result)
+
+    async def action_save_and_stay(self) -> None:
+        """Ctrl+S / Ctrl+Enter: save and keep the editor open (owner,
+        2026-10-13). A text field being edited is committed first."""
+        expanded_select = self._expanded_select()
+        if expanded_select is not None:
+            expanded_select.expanded = False
+            expanded_select.focus()
+        self._commit_text_edit()
+        result = self._save_result()
+        if result is None:
+            return
+        # Taken before the save: the editor's refresh behind this screen can
+        # move focus, and the row refresh replaces the row widgets.
+        focused = self.focused
+        focus_key = self._focused_connection_key()
+        scroll = self._connection_scroll()
+        scroll_y = scroll.scroll_y if scroll is not None else None
+        if self._on_save is not None:
+            self._on_save(result)
+            self._refresh_node_data()
+            self._original_config = deepcopy(self.node_data.get("config") or {})
+            if hasattr(self, "_mux_unpick_choices"):
+                self._mux_unpick_choices.clear()  # applied by the save
+        else:
+            self._saved_result = result
+            self._original_config = deepcopy(result["config"])
+        # What is on screen now is the saved state.
+        self._opened_config = None
+        self._take_opened_snapshot()
+        await self._refresh_connection_rows(focus_key=focus_key, scroll_y=scroll_y)
+        if focus_key is not None:
+            return  # the row refresh restored focus by connection
+        if focused is not None and focused.is_attached and focused.screen is self:
+            self.app.set_focus(focused, scroll_visible=False)
+        else:
+            self._focus_first()
+
+    def _commit_text_edit(self) -> None:
+        for widget in (getattr(self, "_active_command_text_widget", None), self.app.focused):
+            if is_editing_text(widget):
+                widget.end_edit()
+
+    def _alias_value(self) -> str:
         alias_query = self.query("#alias-input")
-        alias = alias_query.first().value if alias_query else self.node_data.get("alias", "")
+        return alias_query.first().value if alias_query else self.node_data.get("alias", "")
+
+    def _is_dirty(self) -> bool:
+        """Edits since opening or the last save (U9; relies on UX2's no-edit invariant)."""
+        if self._opened_config is None:
+            return False
+        try:
+            collected = self._collected_config()
+        except ValueError:
+            return True
+        return collected != self._opened_config or self._alias_value() != self._opened_alias
+
+    def _leave(self, jump_to: Optional[str] = None) -> None:
+        """Close, or jump to another node's editor; ask Save / Discard / Stay
+        first when there are unsaved edits (U9)."""
+        if not self._is_dirty():
+            self._close(None, jump_to)
+            return
+
+        def answered(choice: Optional[str]) -> None:
+            if choice == SAVE:
+                result = self._save_result()
+                if result is not None:
+                    self._close(result, jump_to)
+            elif choice == DISCARD:
+                self._close(None, jump_to)
+
+        name = self._node_display_name(self.node_id, self.node_data)
+        self.app.push_screen(UnsavedChangesScreen(name), answered)
+
+    def _close(self, result: Optional[Dict[str, Any]], jump_to: Optional[str]) -> None:
+        if result is None and self._on_save is None:
+            # Nothing applied the saves made while staying open: return the last.
+            result = self._saved_result
+        if jump_to:
+            result = {**(result or {}), "then": "jump", "jump_to": jump_to}
+        self.dismiss(result)
+
+    def _save_result(self, then: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """The save the screen describes now, or None when it cannot be saved."""
+        alias = self._alias_value()
         if self.node_data.get("type") == WAIT_UNTIL_NODE_TYPE:
             selected = self._wait_config_values()["target_node_ids"]
             eligible = {value for _, value in wait_target_options(self.workflow_map, self.node_id)}
@@ -1984,19 +2086,19 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             if message:
                 self.query_one("#wait-config-error", Static).update(message)
                 notifications.notify_error(self.app, message)
-                return
+                return None
         try:
             config = self._collected_config()
         except ValueError as error:
             notifications.notify_error(self.app, str(error))
-            return
+            return None
         result = {"alias": alias, "config": self._without_untouched_defaults(config)}
         if then:
             result["then"] = then
         doomed = self._mux_branch_nodes_to_delete()
         if doomed:
             result["delete_branch_nodes"] = doomed
-        self.dismiss(result)
+        return result
 
     def _wait_timeout_value(self) -> Optional[float]:
         try:
@@ -2034,6 +2136,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
     def _take_opened_snapshot(self) -> None:
         if self._opened_config is not None:
             return
+        self._opened_alias = self._alias_value()
         try:
             self._opened_config = deepcopy(self._collected_config())
         except Exception:
@@ -2071,7 +2174,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             expanded_select.expanded = False
             expanded_select.focus()
             return
-        self.dismiss(None)
+        self._leave()
 
     def action_cursor_up(self) -> None:
         focused = self.app.focused
@@ -2868,42 +2971,80 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             text.append(f"  • [{error.get('code')}] {description}".rstrip())
         return text if text else Text("  (none)")
 
-    def _format_connections(self) -> str:
+    def _compose_connection_rows(self):
+        yield Vertical(*self._connection_row_widgets(), id="connection-rows")
+
+    def _connection_row_widgets(self) -> list[Any]:
+        """UX5: one row per connection and Vault read; Enter on a row jumps
+        to the node at the other end."""
         self._refresh_node_data()
-        connections = self.node_data.get("connections", {})
-        outputs = connections.get("outputs", [])
-        inputs = connections.get("inputs", [])
-        lines = []
-        if inputs:
-            lines.append("  inputs:")
-            for conn in inputs:
-                source = conn.get("source_node_id", "?")
-                source_node = self.workflow_map.get_node_data(source) or {}
-                source_port = conn.get("source_port", "default")
-                target_port = conn.get("target_port", "default")
-                lines.append(
-                    f"    {self._node_label(source, source_node)}.{source_port} -> {target_port}"
-                )
         # Error Mux: ports of the branches picked right now (before save).
         mux_ports = None
         if self.node_data.get("type") == ERROR_MUX_NODE_TYPE and hasattr(self, "_mux_rows"):
             mux_ports = {"default"} | {row["id"] for row in self._mux_rows}
-        if outputs:
-            lines.append("  outputs:")
-            for conn in outputs:
-                target = conn.get("target_node_id", "?")
-                target_node = self.workflow_map.get_node_data(target) or {}
-                source_port = conn.get("source_port", "default")
-                target_port = conn.get("target_port", "default")
-                note = ""
-                if mux_ports is not None and source_port not in mux_ports:
-                    note = "  (branch unpicked: removed on save)"
-                lines.append(
-                    f"    {source_port} -> {self._node_label(target, target_node)}.{target_port}{note}"
-                )
-        if not inputs and not outputs:
-            lines.append("  -")
-        return "\n".join(lines)
+        rows = connection_rows(self.workflow_map, self.factory, self.node_id, mux_ports)
+        self._connection_targets = {}
+        self._connection_keys = {}
+        widgets: list[Any] = []
+        for section, title in (("incoming", "Incoming"), ("outgoing", "Outgoing"),
+                               ("vault", "Vault reads")):
+            if section == "vault" and not rows["vault"]:
+                continue
+            widgets.append(Label(title, classes="form-label connection-heading"))
+            if not rows[section]:
+                widgets.append(Static("  (none)", classes="form-description"))
+            for index, row in enumerate(rows[section]):
+                widget_id = f"connection-{section}-{index}"
+                self._connection_keys[widget_id] = row["key"]
+                if row["target"]:
+                    self._connection_targets[widget_id] = row["target"]
+                    widgets.append(Button(Text(row["text"]), id=widget_id, compact=True,
+                                          classes="connection-row"))
+                else:
+                    widgets.append(Static(f"  {row['text']}", id=widget_id,
+                                          classes="form-description", markup=False))
+        return widgets
+
+    def _focused_connection_key(self) -> Optional[tuple]:
+        focused = self.focused
+        if focused is None or not focused.id:
+            return None
+        return self._connection_keys.get(focused.id)
+
+    def _connection_scroll(self) -> Any:
+        rows = self.query("#connection-rows")
+        return rows.first().parent if rows else None
+
+    async def _refresh_connection_rows(
+        self,
+        focus_key: Optional[tuple] = None,
+        scroll_y: Optional[float] = None,
+    ) -> None:
+        """Rebuild the rows. A focused row keeps focus by its connection (its
+        direction and both node/port ends, or Vault key and writer), not its
+        position; if that connection is gone the first row takes focus. The
+        tab keeps its scroll position."""
+        if focus_key is None:
+            focus_key = self._focused_connection_key()
+        scroll = self._connection_scroll()
+        if scroll_y is None and scroll is not None:
+            scroll_y = scroll.scroll_y
+        for container in self.query("#connection-rows"):
+            await container.remove_children()
+            await container.mount(*self._connection_row_widgets())
+        if scroll is not None and scroll_y is not None:
+            scroll.scroll_to(y=scroll_y, animate=False)
+            self.call_after_refresh(scroll.scroll_to, y=scroll_y, animate=False)
+        if focus_key is None:
+            return
+        match = next((widget_id for widget_id, key in self._connection_keys.items()
+                      if key == focus_key and widget_id in self._connection_targets), None)
+        rows = list(self.query(".connection-row"))
+        target = self.query_one(f"#{match}") if match else (rows[0] if rows else None)
+        if target is not None:
+            self.app.set_focus(target, scroll_visible=False)
+        else:
+            self._focus_first()
 
     def _previous_output_text(self) -> str:
         self._refresh_node_data()

@@ -10,7 +10,12 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
 
 from .branch_health import ENDED_UNMERGED, derive_branch_health, output_types_from_factory
 from .data_types import DataType
-from .vault_declarations import standard_vault_writes
+from .vault_declarations import (
+    continuation_selected as _continuation_selected,
+    repeatable_slot_active as _repeatable_slot_active,
+    standard_vault_reads,
+    typed_vault_writes,
+)
 from .file_paths import normalize_local_path
 from .node_errors import (
     ENGINE_ERROR_DEFINITIONS,
@@ -59,19 +64,8 @@ def derive_input_sources(
         # Standard-model vault reads: `<port>_source == "Vault"` paired with a
         # `<port>_vault_key`, plus the AI-session continuation input. These are
         # the helper-generated field names (NODE_HELPER.md input_sources).
-        for key, value in config.items():
-            if not str(key).endswith("_source") or value != "Vault":
-                continue
-            port = str(key)[: -len("_source")]
-            if not _repeatable_slot_active(config, port):
-                continue
-            vault_key = str(config.get(f"{port}_vault_key") or "").strip()
-            if vault_key:
-                sources.append({"type": "membank", "source_id": vault_key})
-        if _continuation_selected(config):
-            continue_key = str(config.get("continue_session_key") or "").strip()
-            if continue_key:
-                sources.append({"type": "membank", "source_id": continue_key})
+        for entry in standard_vault_reads(config, {}):
+            sources.append({"type": "membank", "source_id": entry["source_id"]})
         input_sources[node_id] = sources
     return input_sources
 
@@ -375,7 +369,7 @@ def validate_workflow(
     metadata_by_type = {
         str(item.get("type") or ""): item for item in factory.get_node_types_metadata()
     }
-    standard_vault_writes = _standard_model_vault_writes(all_nodes, metadata_by_type)
+    vault_writes = _standard_model_vault_writes(all_nodes, metadata_by_type)
     standard_vault_reads = _standard_model_vault_reads(all_nodes, metadata_by_type)
 
     # Source selectors must name a real key; missing selections cannot fall
@@ -395,7 +389,7 @@ def validate_workflow(
         errors.append(duplicate)
 
     declared_membank_outputs = _declared_membank_outputs(all_nodes)
-    for node_writes in standard_vault_writes.values():
+    for node_writes in vault_writes.values():
         for key, type_tag in node_writes.items():
             # Prefer a concrete tag over an untyped legacy declaration.
             if type_tag is not None or key not in declared_membank_outputs:
@@ -468,7 +462,7 @@ def validate_workflow(
                 k = _membank_source_id(entry)
                 if k:
                     key_writers.setdefault(k, set()).add(w_id)
-        for w_id, node_writes in standard_vault_writes.items():
+        for w_id, node_writes in vault_writes.items():
             for k in node_writes:
                 key_writers.setdefault(k, set()).add(w_id)
 
@@ -668,19 +662,22 @@ def _standard_model_vault_writes(
     all_nodes: Dict[str, Dict[str, Any]],
     metadata_by_type: Dict[str, Dict[str, Any]],
 ) -> Dict[str, Dict[str, Optional[str]]]:
-    """Vault writes implied by standard-model config, node_id -> {key: tag}.
+    """Vault writes implied by config, node_id -> {key: tag}.
 
     Standard result routing (``vault_write`` + ``vault_write_key``) declares a
     write tagged with the node's default output data type; an enabled AI
     session (``use_chat_session`` + ``session_key``) declares an ``ai_session``
-    write. This keeps the existence/type/race checks working for nodes whose
-    config UI no longer edits ``membank_outputs`` directly.
+    write; node-specific writers (Set Variable, Variable Setter, Counter)
+    declare their key with an unknown (None) tag. This keeps the
+    existence/type/race checks working for nodes whose config UI does not edit
+    ``membank_outputs`` directly, and matches the editor's Connections tab
+    and Vault pickers (``vault_declarations.typed_vault_writes``).
     """
     writes: Dict[str, Dict[str, Optional[str]]] = {}
     for node_id, data in all_nodes.items():
         config = data.get("config") or {}
         node_type = str(data.get("type") or "")
-        node_writes = standard_vault_writes(node_type, config, metadata_by_type.get(node_type) or {})
+        node_writes = typed_vault_writes(node_type, config, metadata_by_type.get(node_type) or {})
         if node_writes:
             writes[node_id] = node_writes
     return writes
@@ -700,39 +697,13 @@ def _standard_model_vault_reads(
     reads: Dict[str, List[Dict[str, Optional[str]]]] = {}
     for node_id, data in all_nodes.items():
         config = data.get("config") or {}
-        entries: List[Dict[str, Optional[str]]] = []
         metadata = metadata_by_type.get(str(data.get("type") or "")) or {}
-        port_meta = metadata.get("input_port_metadata") or {}
-        for key, value in config.items():
-            if not str(key).endswith("_source") or value != "Vault":
-                continue
-            port = str(key)[: -len("_source")]
-            if not _repeatable_slot_active(config, port):
-                continue
-            vault_key = str(config.get(f"{port}_vault_key") or "").strip()
-            if not vault_key:
-                continue
-            data_type = str((port_meta.get(port) or {}).get("data_type") or "") or None
-            entries.append(
-                {"source_id": vault_key, "type_tag": data_type, "target_port": port}
-            )
-        if _continuation_selected(config):
-            continue_key = str(config.get("continue_session_key") or "").strip()
-            if continue_key:
-                entries.append(
-                    {
-                        "source_id": continue_key,
-                        "type_tag": DataType.AI_SESSION.value,
-                        "target_port": "continue_session_key",
-                    }
-                )
+        entries = standard_vault_reads(config, metadata)
         if entries:
             reads[node_id] = entries
     return reads
 
 
-# Prompt-source label that resumes an AI session; mirrors
-# backend/nodes/chat_completion_node.CONTINUE_SESSION_SOURCE.
 def _window_capabilities() -> Set[str]:
     """Current platform's window-manager capabilities (D5 warning support)."""
     from .window_manager import get_window_manager
@@ -766,20 +737,6 @@ def _field_visible(
     return True
 
 
-_CONTINUE_SESSION_SOURCE = "Continue AI session"
-
-
-def _continuation_selected(config: Dict[str, Any]) -> bool:
-    """True when the node's continuation key is active.
-
-    Nodes with a prompt-source selector only read the continuation key while
-    the Continue AI session mode is selected; a stale hidden value must not
-    produce validation noise. Nodes without the selector read it whenever set.
-    """
-    prompt_source = config.get("prompt_source")
-    return prompt_source is None or prompt_source == _CONTINUE_SESSION_SOURCE
-
-
 def _standard_source_active(
     config: Dict[str, Any], target_port: str, expected_source: str
 ) -> bool:
@@ -790,21 +747,6 @@ def _standard_source_active(
     if source_key not in config:
         return True
     return config.get(source_key) == expected_source
-
-
-def _repeatable_slot_active(config: Dict[str, Any], target_port: str) -> bool:
-    """False for numbered repeatable slots hidden by their count selector."""
-    group, separator, suffix = str(target_port).rpartition("_")
-    if not separator or not suffix.isdigit():
-        return True
-    count_key = f"{group}_input_count"
-    if count_key not in config:
-        return True
-    try:
-        count = int(config.get(count_key) or 0)
-    except (TypeError, ValueError):
-        count = 0
-    return int(suffix) <= count
 
 
 def _membank_source_id(entry: Any) -> str:
