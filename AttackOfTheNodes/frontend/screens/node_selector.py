@@ -129,7 +129,7 @@ class NodeSelectorScreen(ModalScreen):
             with Horizontal(id="node-family-tabs"):
                 for index, tab in enumerate(TABS):
                     yield Button(
-                        f"{index + 1} - {tab}",
+                        f"{index + 1} {tab}",
                         id=f"node-family-{self._slug(tab)}",
                         variant="primary" if tab == self._active_tab else "default",
                     )

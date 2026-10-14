@@ -35,6 +35,12 @@ affected area is next touched.
 6. **Error UI keyboard navigation does not work while a workflow runs**
    (the error/recovery modals during execution).
 
+7. **Lazy loading for busy node editors** (owner, during UX6). A 64-path
+   Branch editor still takes ~0.55 s to open, almost all of it Textual
+   building and styling 64 dropdowns. Owner's rule for a fix: show and make
+   keyboard-navigable what is loaded first, mount the rest afterwards, and
+   queue Save / Close until everything has loaded.
+
 A node audit of PR #51 (same day) confirmed several of these with
 reproductions and proposed a node contract plan:
 [NODE_CONTRACT_PLAN.md](NODE_CONTRACT_PLAN.md) (proposed, not approved).

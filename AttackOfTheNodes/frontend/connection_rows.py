@@ -18,10 +18,10 @@ from backend.vault_declarations import active_vault_reads, active_vault_writes
 from frontend.node_io_display import (
     input_display_name,
     metadata_for_type,
-    node_label,
     output_display_name,
     trace_transient_producer,
 )
+from frontend.node_labels import friendly_labels
 
 NO_PAYLOAD = "No payload"
 ERROR_PAYLOAD = "Error details on failure"
@@ -84,6 +84,8 @@ def connection_rows(
     """
     node = workflow_map.get_node_data(node_id) or {}
     connections = node.get("connections") or {}
+    labels = friendly_labels(workflow_map)  # UX6: suffix only when a name repeats
+    name = lambda other_id: labels.get(other_id) or other_id  # noqa: E731
     incoming = []
     for conn in connections.get("inputs") or []:
         source_id = str(conn.get("source_node_id") or "")
@@ -93,7 +95,7 @@ def connection_rows(
         incoming.append({
             "key": ("in", source_id, source_port, target_port),
             "target": source_id if source else None,
-            "text": (f"{node_label(source_id, source)}: "
+            "text": (f"{name(source_id)}: "
                      f"{output_display_name(factory, source, source_port)} → "
                      f"{input_display_name(factory, node, target_port)}"
                      f" ({payload_text(workflow_map, factory, source_id, source_port)})"),
@@ -111,7 +113,7 @@ def connection_rows(
             "key": ("out", source_port, target_id, target_port),
             "target": target_id if target else None,
             "text": (f"{output_display_name(factory, node, source_port)} → "
-                     f"{node_label(target_id, target)}: "
+                     f"{name(target_id)}: "
                      f"{input_display_name(factory, target, target_port)}"
                      f" ({payload_text(workflow_map, factory, node_id, source_port)}){note}"),
         })
@@ -125,7 +127,6 @@ def connection_rows(
             vault.append({"key": ("vault", key, ""), "target": None,
                           "text": f"{key}: {NO_WRITER}"})
         for writer in writers:
-            writer_node = workflow_map.get_node_data(writer) or {}
             vault.append({"key": ("vault", key, writer), "target": writer,
-                          "text": f"{key}: written by {node_label(writer, writer_node)}"})
+                          "text": f"{key}: written by {name(writer)}"})
     return {"incoming": incoming, "outgoing": outgoing, "vault": vault}

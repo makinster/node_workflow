@@ -4,6 +4,58 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-13 — UX6: Friendly Labels and Presentation Pass
+
+Branch `dist/ux6-labels-and-presentation`, from `main` at `1a92b43` (PR #51).
+Before: 1240 passed. After: 1244 passed (4 new in `tests/test_node_labels.py`).
+Sample screens were reviewed by the owner before and after the Branch-row
+revision; the owner checked the result live and approved it.
+
+**Owner answers:** Q8 — a counter suffix from 1000 ("something simple for
+now, we can re-address this"); details below. Timing of the node contract plan
+— the owner asked for best judgement: after UX6 and before Step 4 (Step 4's
+contracts build on it), bug items C1–C7 first. Cancel is renamed Close.
+
+1. **Friendly labels** (U5, `frontend/node_labels.py`): a node's usual name,
+   plus ` ·1000`, ` ·1001`, … for every node whose name is shared, in
+   workflow order. Display only. Used in editor cards (the editor computes
+   the labels once per refresh), Connections rows (which no longer repeat the
+   node ID), Wait Until targets, the Error Resolver unpick list, the unsaved
+   prompt and Merge selectors. The details panel and editor title keep the ID.
+2. **Presentation:** tab headers `1 Source` instead of `1 - Source` on every
+   tabbed screen (node config, node selector, settings); the duplicate key
+   hint line at the top of the node editor is gone (the status bar keeps it,
+   reworded to fit 100 columns); Save / Close are compact one-row buttons.
+3. **Branch path rows:** one row per path, Branch ID beside its Start Payload
+   dropdown, with column headings. The first version used compact borderless
+   dropdowns; the owner found them indistinguishable from the names and the
+   open list indistinguishable from the rows, so the dropdowns keep their
+   border, and every open dropdown list now has a rounded accent border, a
+   darker background and a bold highlighted option (global style).
+4. **Row navigation in node editors:** W/S and up/down moved one widget at a
+   time, so in a path row they went name → its own dropdown → next name (the
+   owner saw this as an invisible stop). `NodeConfigScreen._move_keyboard_focus`
+   now moves by rows (`group_widgets_into_rows` / `row_move_target`), as
+   `UI_QUICK_REFERENCE.md` already specified, and `row_move_target` keeps the
+   column index when both rows have the same number of widgets.
+5. **64-path Branch open:** 695 → 567 widgets; 0.50–0.67 s → about 0.5–0.6 s
+   (target under 0.5 s not met: the rest is Textual building 64 dropdowns).
+   Lazy loading is logged in `PROJECT_BACKLOG.md` with the owner's rule (load
+   what is shown first, queue Save / Close until all is loaded). Errors text
+   was already shortened in UX4.
+
+**Tests updated (behaviour the owner changed):** three Connections tests and
+the Merge Beacon selector test expected labels with IDs or without a suffix
+(two Merges named "Merge" now read `Merge ·1001`);
+`test_branch_config_uses_parallel_payload_ui` read the removed top help line
+(it now reads the status bar) and expected S to visit every dropdown (it now
+checks S keeps the Branch ID column, D reaches the row's dropdown and W keeps
+the dropdown column).
+
+**Behavior changes:** suffixed labels for repeated names; `N Label` tab
+headers; Close instead of Cancel; row-wise W/S wherever widgets sit side by
+side in a node editor; open dropdown lists look different everywhere.
+
 ## 2026-10-13 — UX5: Connections Tab With Jumps, Ctrl+S Save and Stay
 
 Branch `dist/ux5-connections-and-saving`, from `main` at `4bb89cd` (PR #50).

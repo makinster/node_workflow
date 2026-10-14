@@ -183,6 +183,14 @@ Update this section at the end of every session.
   Errors text, smaller Save/Cancel buttons, consistent focus styling, maybe
   renaming Cancel to Close now that Ctrl+S stays). Show 2–3 sample SVGs
   before styling changes. Then stop and check in (Q1) before Step 4.
+- **2026-10-13 (UX6 done):** merged in PR #52 (branch
+  `dist/ux6-labels-and-presentation`). Q8 answered (suffix ` ·1000`, ` ·1001`
+  for repeated names; revisit later). Suite: 1244 passed. **The UX detour is
+  complete.** Q1 (check in before Step 4) still applies. The owner chose, by
+  best judgement, to run `NODE_CONTRACT_PLAN.md` after UX6 and before Step 4,
+  starting with C1–C7; that plan is still marked proposed, so the next session
+  confirms with the owner before starting C1. Open follow-ups: lazy loading
+  for busy editors (`PROJECT_BACKLOG.md`, owner findings item 7).
 - **Owner UI taste (learned in UX4):** plain and simple. Compact one-row
   buttons (Textual `Button(..., compact=True)`), no extra status lines,
   error lines code first (`• [code] description`), and the Error Mux is
@@ -200,7 +208,7 @@ Update this section at the end of every session.
   also said the saved workflows under `workflows/` are unimportant and need
   not be preserved. Answered since: Q3 (synthetic graph), Q4 (resolved by
   PR #46), Q5, Q6, Q7 (see UX4 entries). Q2 was replaced in UX5 by
-  the Ctrl+S decision. Still open: Q8 (label suffix, UX6).
+  the Ctrl+S decision; Q8 answered in UX6. None open.
 
 ## Continuing across sessions
 

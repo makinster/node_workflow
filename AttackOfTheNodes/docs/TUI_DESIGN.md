@@ -274,9 +274,9 @@ on node port metadata, stored in `transient_outputs`. Node configs share Source,
 Show only applicable sections and number visible tabs consecutively; four tabs
 are not mandatory. Omit empty tabs and unsupported capability controls. Compact
 nodes may use a flat form; topology-driven nodes may use a focused layout with
-shared widgets/navigation. Wait Until uses `1 - Wait` (alias, targets, timeout,
-forwarding explanation) and `2 - Connections`; it exposes no Vault controls. W/S move line-by-line through the active tab and then to
-Save/Cancel, treating a multi-widget row as one line; they do not move into the
+shared widgets/navigation. Wait Until uses `1 Wait` (alias, targets, timeout,
+forwarding explanation) and `2 Connections`; it exposes no Vault controls. W/S move line-by-line through the active tab and then to
+Save/Close, treating a multi-widget row as one line; they do not move into the
 tab header. A/D and left/right are within-row horizontal navigation: they move
 between widgets stacked on the same line, and are a no-op (caret movement on a
 focused text field) on single-widget rows. Tabs switch by **number key**

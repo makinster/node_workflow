@@ -3,8 +3,9 @@
 Status: **proposed, not approved.** Recorded on 2026-10-13 from an external
 audit of all 38 registered node types at PR #51's head (`4e7af7d`). The owner
 chose to fix only the shared Vault model inside PR #51 and to plan the rest.
-Phase order and timing (after UX6, or before `DISTRIBUTED_BUILD_PLAN.md`
-Step 4) are the owner's call. Each item needs a reproduction first; the audit
+Timing (owner, 2026-10-13, by best judgement): after UX6 and before
+`DISTRIBUTED_BUILD_PLAN.md` Step 4, bug items C1–C7 first. Confirm with the
+owner before starting C1. Each item needs a reproduction first; the audit
 gives one for each.
 
 Goal: one node contract (ports, config, effects, capabilities) that drives

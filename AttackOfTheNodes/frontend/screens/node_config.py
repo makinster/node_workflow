@@ -45,6 +45,7 @@ from frontend.editor_workflow_adapter import EditorWorkflowAdapter
 from frontend.screens.recovery_branch_unpick import DELETE_BRANCH, RecoveryBranchUnpickScreen
 from frontend.screens.unsaved_changes import DISCARD, SAVE, UnsavedChangesScreen
 from frontend.connection_rows import connection_rows
+from frontend.node_labels import friendly_label, friendly_labels
 from frontend.io_contract import TYPE_COLOR
 from frontend.node_types import (
     BRANCH_END_NODE_TYPE,
@@ -67,6 +68,8 @@ from frontend.node_io_display import (
     trace_transient_producer,
 )
 from frontend.widgets.command_navigation import (
+    group_widgets_into_rows,
+    row_move_target,
     activate_command_widget,
     focus_command_widget,
     is_editing_text,
@@ -156,12 +159,12 @@ def normalize_wait_target_ids(config: Dict[str, Any]) -> list[str]:
 def wait_target_options(workflow_map, current_node_id: str) -> list[tuple[str, str]]:
     """Return wait targets, excluding self and downstream nodes."""
     downstream = workflow_map.nodes_reachable_from(current_node_id)
+    labels = friendly_labels(workflow_map)
     options: list[tuple[str, str]] = []
     for node_id, node in sorted(workflow_map.get_all_node_data().items()):
         if node_id == current_node_id or node_id in downstream:
             continue
-        label = node.get("alias") or node.get("type") or node_id
-        options.append((f"{label} ({node_id})", node_id))
+        options.append((labels.get(node_id) or node_id, node_id))
     return options
 
 
@@ -761,13 +764,10 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         with Vertical(id="modal-card", classes="node-config-modal"):
             title = f"{self.node_data.get('alias') or self.node_id} ({self.node_id})"
             yield Label(f"Edit Node: {title}", classes="modal-title")
-            help_text = "number keys tabs | w/s move | a/d within row | e interact | ctrl+s save | esc close | ctrl+q revert"
+            help_text = "1-5 tabs | w/s move | a/d row | e edit | ctrl+s save | esc close | ctrl+q revert"
             if self.node_data.get("type") == WAIT_UNTIL_NODE_TYPE:
-                help_text = "1/2 tabs | w/s move | e toggle/edit | ctrl+s save | esc close | ctrl+q revert"
-            yield Static(
-                help_text,
-                classes="modal-help",
-            )
+                help_text = "1/2 tabs | w/s move | e edit | ctrl+s save | esc close | ctrl+q revert"
+            # UX6: the key hints show once, in the status bar at the bottom.
             if self.node_data.get("type") == MERGE_NODE_TYPE:
                 with VerticalScroll(id="node-config-scroll"):
                     yield Label("Branches To Close", classes="form-label nav-section")
@@ -791,8 +791,9 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                     forms,
                 )
             with Vertical(classes="button-row"):
-                yield Button("Save", id="save-node-config", variant="primary")
-                yield Button("Cancel", id="cancel-node-config", variant="default")
+                # UX6: compact one-row buttons; Close asks before discarding edits.
+                yield Button("Save", id="save-node-config", variant="primary", compact=True)
+                yield Button("Close", id="cancel-node-config", variant="default", compact=True)
             yield StatusBar(help_text)
 
     def _compose_standard_config_tabs(
@@ -803,7 +804,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
     ):
         standard_model = self._uses_standard_source_model(metadata)
         with TabbedContent(id="node-config-tabs", classes="node-config-tabs"):
-            with TabPane("1 - Source", id="node-config-tab-core"):
+            with TabPane("1 Source", id="node-config-tab-core"):
                 with VerticalScroll(classes="tab-scroll"):
                     yield Horizontal(
                         Label("Alias:", classes="form-label-inline"),
@@ -837,14 +838,14 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                         yield Label("Wait Targets", classes="form-label nav-section")
                         yield from self._compose_wait_targets(config)
 
-            with TabPane("2 - Parameters", id="node-config-tab-parameters"):
+            with TabPane("2 Parameters", id="node-config-tab-parameters"):
                 with VerticalScroll(classes="tab-scroll"):
                     if forms.get("parameters") is not None:
                         yield forms["parameters"]
                     else:
                         yield Static("No parameters.", classes="form-description")
 
-            with TabPane("3 - Payloads", id="node-config-tab-outputs"):
+            with TabPane("3 Payloads", id="node-config-tab-outputs"):
                 with VerticalScroll(classes="tab-scroll"):
                     if standard_model:
                         # New output model: one designated Downstream node
@@ -870,7 +871,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                             yield Label("Vault Payloads", classes="form-label nav-section")
                             yield from self._compose_membank_outputs(config)
 
-            with TabPane("4 - Connections", id="node-config-tab-connections"):
+            with TabPane("4 Connections", id="node-config-tab-connections"):
                 with VerticalScroll(classes="tab-scroll"):
                     yield Label("Connections", classes="form-label nav-section")
                     yield Static(
@@ -882,7 +883,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
 
     def _compose_wait_config_tabs(self, config: Dict[str, Any], forms: Dict[str, Any]):
         with TabbedContent(id="node-config-tabs", classes="node-config-tabs"):
-            with TabPane("1 - Wait", id="node-config-tab-core"):
+            with TabPane("1 Wait", id="node-config-tab-core"):
                 with VerticalScroll(classes="tab-scroll"):
                     yield Horizontal(
                         Label("Alias:", classes="form-label-inline"),
@@ -907,7 +908,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                         yield forms["parameters"]
                     yield Static("", id="wait-config-error", classes="form-description")
                     yield Static(self._wait_route_summary(), classes="form-description")
-            with TabPane("2 - Connections", id="node-config-tab-connections"):
+            with TabPane("2 Connections", id="node-config-tab-connections"):
                 with VerticalScroll(classes="tab-scroll"):
                     yield Static("Edit connections from the editor.", classes="form-description")
                     yield from self._compose_connection_rows()
@@ -944,7 +945,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         if not isinstance(payload_sources, dict):
             payload_sources = {}
         with TabbedContent(id="node-config-tabs", classes="node-config-tabs"):
-            with TabPane("1 - Source", id="node-config-tab-core"):
+            with TabPane("1 Source", id="node-config-tab-core"):
                 with VerticalScroll(classes="tab-scroll"):
                     yield Horizontal(
                         Label("Alias:", classes="form-label-inline"),
@@ -973,7 +974,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                     yield from self._compose_membank_inputs(config)
                     yield from self._compose_vault_payload_preview("source")
 
-            with TabPane("2 - Parameters", id="node-config-tab-parameters"):
+            with TabPane("2 Parameters", id="node-config-tab-parameters"):
                 with VerticalScroll(classes="tab-scroll"):
                     yield Label("Branches", classes="form-label nav-section")
                     yield CommandInput(
@@ -987,7 +988,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                         classes="form-description",
                     )
 
-            with TabPane("3 - Payloads", id="node-config-tab-outputs"):
+            with TabPane("3 Payloads", id="node-config-tab-outputs"):
                 with VerticalScroll(classes="tab-scroll"):
                     yield Label("Incoming Payloads", classes="form-label nav-section")
                     yield Checkbox(
@@ -997,6 +998,12 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                     )
                     yield PayloadPreview("", id="payload-upstream-payload-preview", classes="form-description")
                     yield from self._compose_vault_payload_preview("payload")
+                    # Column headings for the one-line path rows below (owner).
+                    yield Horizontal(
+                        Label("Branch ID", classes="form-label branch-heading-id"),
+                        Label("Start Payload", classes="form-label branch-heading-source"),
+                        classes="branch-payload-headings",
+                    )
                     yield Vertical(
                         *self._branch_payload_row_widgets(
                             branch_count,
@@ -1007,7 +1014,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                         id="branch-payload-rows",
                     )
 
-            with TabPane("4 - Connections", id="node-config-tab-connections"):
+            with TabPane("4 Connections", id="node-config-tab-connections"):
                 with VerticalScroll(classes="tab-scroll"):
                     yield Label("Connections", classes="form-label nav-section")
                     yield Static(
@@ -1335,7 +1342,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         source_options: list[tuple[str, str]],
         payload_sources: Dict[str, Any],
         config: Dict[str, Any],
-    ) -> Vertical:
+    ) -> Horizontal:
         port = path_port(index)
         label = str(config.get(f"{port}_label") or f"Branch {index + 1}")
         selected_source = str(payload_sources.get(port) or "dead_drop:input")
@@ -1353,10 +1360,11 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             id=f"branch-payload-source-{port}",
             allow_blank=False,
         )
-        row = Vertical(
-            Label("Spawn Point:", classes="form-description"),
+        # UX6: one line per path (name, then what it starts with); the column
+        # meaning is stated once above the rows. Fewer widgets per row keeps a
+        # 64-path Branch quick to open.
+        row = Horizontal(
             label_input,
-            Label("Start with:", classes="form-description"),
             source_select,
             id=f"branch-payload-row-{port}",
             classes="branch-payload-row",
@@ -1482,7 +1490,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             for node_id in guarded_node_ids(self.workflow_map, self.node_id)
         ]
         with TabbedContent(id="node-config-tabs", classes="node-config-tabs"):
-            with TabPane("1 - Source", id="node-config-tab-core"):
+            with TabPane("1 Source", id="node-config-tab-core"):
                 with VerticalScroll(classes="tab-scroll"):
                     yield Horizontal(
                         Label("Alias:", classes="form-label-inline"),
@@ -1508,19 +1516,19 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                         *[(Text(text), value, value in picked) for text, value in self._mux_choices],
                         id="mux-recover-from",
                     )
-            with TabPane("2 - Parameters", id="node-config-tab-parameters"):
+            with TabPane("2 Parameters", id="node-config-tab-parameters"):
                 with VerticalScroll(classes="tab-scroll"):
                     yield Label("Recovery branches", classes="form-label nav-section")
                     yield Static("No error: the node's normal output (always present).",
                                  classes="form-description")
                     yield Vertical(*self._mux_parameter_rows(), id="mux-branch-rows")
-            with TabPane("3 - Payloads", id="node-config-tab-outputs"):
+            with TabPane("3 Payloads", id="node-config-tab-outputs"):
                 with VerticalScroll(classes="tab-scroll"):
                     yield Label("No error", classes="form-label nav-section")
                     yield Static("Passes the node's normal output on unchanged.",
                                  classes="form-description")
                     yield Vertical(*self._mux_forward_rows(), id="mux-forward-rows")
-            with TabPane("4 - Connections", id="node-config-tab-connections"):
+            with TabPane("4 Connections", id="node-config-tab-connections"):
                 with VerticalScroll(classes="tab-scroll"):
                     yield Label("Connections", classes="form-label nav-section")
                     yield Static("Edit connections from the editor.", classes="form-description")
@@ -1608,10 +1616,9 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             "connections", {}).get("outputs", [])
         if not any(conn.get("source_port") == port for conn in outputs):
             return
-        labels = []
-        for node_id in branch_nodes_for_port(self.workflow_map, self.node_id, port):
-            node = self.workflow_map.get_node_data(node_id) or {}
-            labels.append(f"{node.get('alias') or node.get('type')} ({node_id})")
+        names = friendly_labels(self.workflow_map)
+        labels = [names.get(node_id) or node_id
+                  for node_id in branch_nodes_for_port(self.workflow_map, self.node_id, port)]
         self.app.push_screen(
             RecoveryBranchUnpickScreen(row["label"], labels),
             lambda choice: self._on_unpick_choice(port, row, choice),
@@ -2061,7 +2068,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             elif choice == DISCARD:
                 self._close(None, jump_to)
 
-        name = self._node_display_name(self.node_id, self.node_data)
+        name = friendly_label(self.workflow_map, self.node_id)
         self.app.push_screen(UnsavedChangesScreen(name), answered)
 
     def _close(self, result: Optional[Dict[str, Any]], jump_to: Optional[str]) -> None:
@@ -2373,12 +2380,18 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         if not widgets:
             return
         current = self._nav_widget if self._nav_widget is not None else self.app.focused
-        try:
-            current_index = widgets.index(current)
-        except ValueError:
-            current_index = 0 if direction > 0 else len(widgets) - 1
-        next_index = max(0, min(len(widgets) - 1, current_index + direction))
-        target = widgets[next_index]
+        rows = group_widgets_into_rows(widgets)
+        if current in widgets and any(len(row) > 1 for row in rows):
+            # Widgets side by side (Branch path rows) are one line: W/S move a
+            # whole row and keep the column (UI_QUICK_REFERENCE command rules).
+            target, _at_boundary = row_move_target(rows, current, direction)
+        else:
+            try:
+                current_index = widgets.index(current)
+            except ValueError:
+                current_index = 0 if direction > 0 else len(widgets) - 1
+            next_index = max(0, min(len(widgets) - 1, current_index + direction))
+            target = widgets[next_index]
 
         if self._nav_widget is not None:
             try:

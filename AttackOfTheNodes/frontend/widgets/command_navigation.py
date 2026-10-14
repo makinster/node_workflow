@@ -174,7 +174,7 @@ def row_move_target(
     """
     if not rows:
         return None, False
-    row_index, _col = _row_position(rows, current)
+    row_index, col = _row_position(rows, current)
     if row_index is None:
         first = rows[0][0]
         return first, False
@@ -182,6 +182,9 @@ def row_move_target(
     if next_index < 0 or next_index >= len(rows):
         return current, True
     destination = rows[next_index]
+    if col is not None and len(destination) == len(rows[row_index]):
+        # Same shape (a grid such as Branch path rows): keep the column.
+        return destination[col], False
     current_x = _widget_x(current)
     target = min(destination, key=lambda w: abs(_widget_x(w) - current_x))
     return target, False

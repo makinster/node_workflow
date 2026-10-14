@@ -60,7 +60,7 @@ listed per phase.
 | UX3 | Measured performance: Branch rows, topology scan | `main` | Done in PR #45 |
 | UX4 | Recovery flow: friendly Errors list, spawn/open mux widget, unpick confirmation, insert/cancel | `main` | Done in PR #47 |
 | UX5 | Connections tab with jumps, Ctrl+S save and stay, Save/Discard/Stay | `main` | Done in PR #51 |
-| UX6 | Friendly node labels, then a presentation pass (sample screens first) | `main` | Not started |
+| UX6 | Friendly node labels, then a presentation pass (sample screens first) | `main` | Done in PR #52 |
 
 ### UX1 — Merge branch identity (bug already on `main`)
 

@@ -62,7 +62,7 @@ class SettingsScreen(CommandScreenMixin, ModalScreen):
                 id="settings-tabs",
                 classes="node-config-tabs settings-tabs",
             ):
-                with TabPane("1 - General", id="settings-tab-general"):
+                with TabPane("1 General", id="settings-tab-general"):
                     with VerticalScroll(classes="tab-scroll"):
                         for key, default in DEFAULT_SETTINGS.items():
                             yield Label(key, classes="form-label")
@@ -71,7 +71,7 @@ class SettingsScreen(CommandScreenMixin, ModalScreen):
                                 yield Checkbox(value=bool(value), id=f"setting-{key}")
                             else:
                                 yield CommandInput(value=str(value), id=f"setting-{key}")
-                with TabPane("2 - Secrets", id="settings-tab-secrets"):
+                with TabPane("2 Secrets", id="settings-tab-secrets"):
                     with VerticalScroll(classes="tab-scroll"):
                         yield Label("Key", classes="form-label nav-section")
                         yield CommandInput(id="secret-key-input")
