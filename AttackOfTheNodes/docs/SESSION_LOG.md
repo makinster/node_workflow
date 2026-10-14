@@ -4,6 +4,15 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-14 — Session Handoff: UX Detour Complete
+
+Docs only. New `NODE_CONTRACT_EXECUTION_PROMPT.md` starts the next phase: what
+to read, where things stand after PRs #43–#53, the owner's direction
+(required/optional, data types, help popup, lazy loading, stable labels),
+the next step (confirm, then `NODE_CONTRACT_PLAN.md` C1 as warnings plus a
+required/optional flag), the working practice and the paste-in message.
+`RECOVERY_UX_EXECUTION_PROMPT.md` points to it. Suite unchanged: 1247 passed.
+
 ## 2026-10-14 — UX6 Follow-up: One Help Ribbon, A/D on Branch Selects, IDs on Their Own Line
 
 Branch `dist/ux6b-ids-errors-keys`, from `main` at `6f70f85` (PR #52).
