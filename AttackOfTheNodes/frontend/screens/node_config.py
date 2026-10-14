@@ -219,8 +219,8 @@ def merge_input_options(workflow_map, current_node_id: str) -> list[Dict[str, st
                 "branch_label": branch_label,
                 "branch_path": branch_path,
                 "branch_end_id": beacon_id,
-                "branch_end": f"{beacon_name} ({beacon_id})",
-                "last_node": f"{beacon_name} ({beacon_id})",
+                "branch_end": beacon_name,
+                "last_node": beacon_name,
                 "source_port": "default",
                 "description": f"Branch: {branch_path}",
                 "output_name": output["name"],
@@ -762,8 +762,11 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         )
 
         with Vertical(id="modal-card", classes="node-config-modal"):
-            title = f"{self.node_data.get('alias') or self.node_id} ({self.node_id})"
+            title = self.node_data.get("alias") or self.node_id
             yield Label(f"Edit Node: {title}", classes="modal-title")
+            # The node ID on its own line (owner, 2026-10-14), not in labels.
+            yield Static(f"Node ID: {self.node_id}", id="node-config-id",
+                         classes="form-description")
             help_text = "1-5 tabs | w/s move | a/d row | e edit | ctrl+s save | esc close | ctrl+q revert"
             if self.node_data.get("type") == WAIT_UNTIL_NODE_TYPE:
                 help_text = "1/2 tabs | w/s move | e edit | ctrl+s save | esc close | ctrl+q revert"
@@ -3822,7 +3825,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             if target_node.get("type") != MERGE_NODE_TYPE:
                 continue
             target_port = str(conn.get("target_port") or "default")
-            branch_label, branch_id = upstream_branch_info(
+            branch_label, _branch_id = upstream_branch_info(
                 self.workflow_map,
                 self.node_id,
                 target_id,
@@ -3831,15 +3834,14 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             return "\n".join(
                 [
                     "Merge Beacon has no editable fields.",
-                    f"Merges To Branch: {branch_label} ({branch_id})",
+                    f"Merges To Branch: {branch_label}",
                     f"Merge Node: {self._node_label(target_id, target_node)}",
                 ]
             )
         return "Merge Beacon has no editable fields.\nStatus: open until connected to a Merge node."
 
     def _node_label(self, node_id: str, node: Dict[str, Any]) -> str:
-        name = node.get("alias") or node.get("type") or node_id
-        return f"{name} ({node_id})"
+        return str(node.get("alias") or node.get("type") or node_id)
 
     def _node_display_name(self, node_id: str, node: Dict[str, Any]) -> str:
         return str(node.get("alias") or node.get("type") or node_id)

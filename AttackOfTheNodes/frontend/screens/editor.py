@@ -42,7 +42,6 @@ from frontend.node_io_display import (
     metadata_for_type,
     memory_registry,
     node_display_name,
-    node_label,
     normalize_membank_inputs,
     normalize_membank_outputs,
     output_display_description,
@@ -288,11 +287,40 @@ class EditorScreen(Screen):
 
     def action_cycle_branch_prev(self) -> None:
         self._restore_node_list_focus()
+        if self._cycle_selected_branch_select(-1):
+            return
         self._cycle_branch_view(incomplete_only=False, direction=-1)
 
     def action_cycle_branch_next(self) -> None:
         self._restore_node_list_focus()
+        if self._cycle_selected_branch_select(1):
+            return
         self._cycle_branch_view(incomplete_only=False, direction=1)
+
+    def _cycle_selected_branch_select(self, direction: int) -> bool:
+        """A/D on a branch-select row step through that node's own branches,
+        error recovery branches included (owner, 2026-10-14). E still opens
+        the branch selector. Elsewhere A/D cycle the workflow's branches and
+        leave error recovery out."""
+        selected = self.selected_row or {}
+        if selected.get("kind") != "branch_select":
+            return False
+        row = next(
+            (candidate for candidate in self._build_visible_rows()
+             if candidate.get("kind") == "branch_select"
+             and candidate.get("branch_node_id") == selected.get("branch_node_id")),
+            None,
+        )
+        ports = list((row or {}).get("output_ports") or [])
+        if not ports:
+            return False
+        active = row.get("active_port")
+        index = ports.index(active) if active in ports else 0
+        self._select_branch_from_modal({
+            "branch_node_id": row["branch_node_id"],
+            "branch_port": ports[(index + direction) % len(ports)],
+        })
+        return True
 
     def action_cycle_incomplete_branch_prev(self) -> None:
         self._restore_node_list_focus()
@@ -758,7 +786,7 @@ class EditorScreen(Screen):
         self.selected_node_id = node_id
         self.selected_row = {"kind": "node", "node_id": node_id}
         self.refresh_from_backend()
-        notifications.jumped_to_node(self.app, node_id)
+        notifications.jumped_to_node(self.app, friendly_label(self.workflow_map, node_id))
 
     def _sync_merge_branch_end_connections(
         self,
@@ -1076,7 +1104,7 @@ class EditorScreen(Screen):
         self.selected_node_id = merge_node_id
         self.selected_row = {"kind": "node", "node_id": merge_node_id}
         self.refresh_from_backend()
-        notifications.jumped_to_node(self.app, merge_node_id)
+        notifications.jumped_to_node(self.app, friendly_label(self.workflow_map, merge_node_id))
 
     def _cycle_branch_view(self, incomplete_only: bool, direction: int) -> None:
         candidates = self._branch_view_candidates()
@@ -1470,6 +1498,7 @@ class EditorScreen(Screen):
 
         lines = [
             f"Name: {self._node_label(node_id, node)}",
+            f"Node ID: {node_id}",
             f"Description: {description}",
             f"Family: {self._metadata_family(metadata)}",
             f"Tags: {', '.join(tags)}",
@@ -1635,14 +1664,14 @@ class EditorScreen(Screen):
             if target_node.get("type") != MERGE_NODE_TYPE:
                 continue
             target_port = str(conn.get("target_port") or "default")
-            branch_label, branch_id = upstream_branch_info(
+            branch_label, _branch_id = upstream_branch_info(
                 self.workflow_map,
                 node_id,
                 target_id,
                 target_port,
             )
             return [
-                f"Merges To Branch: {branch_label} ({branch_id})",
+                f"Merges To Branch: {branch_label}",
                 f"Merge Node: {self._node_label(target_id, target_node)}",
             ]
         return ["Merges To Branch: -", "Merge Node: -"]
@@ -1710,7 +1739,8 @@ class EditorScreen(Screen):
         return editor_output_ports(self.factory, node)
 
     def _node_label(self, node_id: str, node: Dict[str, Any]) -> str:
-        return node_label(node_id, node)
+        # Name only; the details panel shows the ID on its own line.
+        return node_display_name(node_id, node)
 
     def _branch_port_labels(self, node: Dict[str, Any]) -> Dict[str, str]:
         config = node.get("config") or {}

@@ -468,3 +468,32 @@ def test_a_d_never_switches_the_resolver_and_e_opens_its_branches():
         assert editor.active_branch_ports[mux] == "slow"
 
     asyncio.run(_with_editor(workflow_map, check))
+
+
+def test_a_d_on_the_resolvers_branch_select_row_cycles_its_branches():
+    """Owner, 2026-10-14: with the highlight on a branch-select row, A/D step
+    through that node's branches, recovery ones included; E still opens the
+    selector (previous test)."""
+    workflow_map, http, mux, normal_branch, recovery_branch = _resolver_with_branches()
+
+    async def check(app, editor, pilot):
+        rows = editor._build_visible_rows()
+        [mux_row] = [r for r in rows if r["kind"] == "branch_select" and r["branch_node_id"] == mux]
+        ports = list(mux_row["output_ports"])
+        assert "slow" in ports and mux_row["active_port"] == "default"
+        editor.selected_node_id = None
+        editor.selected_row = {"kind": "branch_select", "branch_node_id": mux,
+                               "active_port": "default"}
+        editor.refresh_from_backend()
+        await pilot.pause()
+        await pilot.press("d")
+        await pilot.pause()
+        expected = ports[(ports.index("default") + 1) % len(ports)]
+        assert editor.active_branch_ports[mux] == expected
+        assert editor.selected_row["kind"] == "branch_select"
+        assert editor.selected_row["branch_node_id"] == mux
+        await pilot.press("a")
+        await pilot.pause()
+        assert editor.active_branch_ports[mux] == "default"
+
+    asyncio.run(_with_editor(workflow_map, check))

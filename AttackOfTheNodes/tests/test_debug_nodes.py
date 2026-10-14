@@ -2911,8 +2911,9 @@ async def _test_branch_end_config_shows_merge_branch_identity():
         await pilot.pause(0.03)
         screen = app.query_one(NodeConfigScreen)
         text = screen._branch_end_status_text()
-        assert f"Merges To Branch: Approve ({branch}:path_a)" in text
-        assert f"Merge Node: Merge ({merge})" in text
+        # Owner, 2026-10-14: names only; IDs have their own line.
+        assert "Merges To Branch: Approve\n" in text
+        assert text.endswith("Merge Node: Merge") or "Merge Node: Merge\n" in text
 
     class EditorApp(App):
         def compose(self) -> ComposeResult:
@@ -2926,8 +2927,8 @@ async def _test_branch_end_config_shows_merge_branch_identity():
         screen.selected_row = {"kind": "node", "node_id": branch_end}
         screen.refresh_from_backend()
         details = screen.query_one("#node-details").display_text
-        assert f"Merges To Branch: Approve ({branch}:path_a)" in details
-        assert f"Merge Node: Merge ({merge})" in details
+        assert "Merges To Branch: Approve\n" in details
+        assert "Merge Node: Merge\n" in details
 
     print("test_branch_end_config_shows_merge_branch_identity PASSED")
 
@@ -2980,11 +2981,11 @@ async def _test_merge_beacon_selector_row_jumps_without_rewiring():
         beacon_cards = [card for card in app.query(NodeCard) if card.node_id == beacon]
         assert "Merge Beacon" in beacon_cards[0].display_text.splitlines()[1]
         selector_card = app.query_one(MergeBeaconSelectCard)
-        # UX6 (U5): two Merge nodes share the name, so labels carry a suffix.
-        assert selector_card.active_label == "Merge ·1001"
+        # The UX6 numbered suffix was rolled back (owner, 2026-10-14).
+        assert selector_card.active_label == "Merge"
         assert selector_card.active_port == "path_a"
         assert selector_card.display_text.startswith("└─────")
-        assert " [ Merge ·1001 ]" in selector_card.display_text
+        assert " [ Merge ]" in selector_card.display_text
         assert "☛" not in selector_card.display_text
 
         options = screen._merge_beacon_options(beacon)
@@ -3642,7 +3643,7 @@ async def _test_editor_depth_counter_tracks_visible_branch_distance():
         assert [row.get("depth") for row in rows if row["kind"] == "node"] == [0, 1, 2, 3]
         assert screen.selected_node_id == path_b_first
         details = screen.query_one("#node-details").display_text
-        assert details.startswith(f"Name: Logger ({path_b_first})")
+        assert details.startswith(f"Name: Logger\nNode ID: {path_b_first}")
         assert "Description: Logs the input value and passes it through" in details
         assert "Family: Utility" in details
         assert "Tags: Passive Output, Utility" in details
@@ -5926,9 +5927,10 @@ def test_editor_details_panel_uses_contract_layout():
 
     # Header block uses the new labels, in order, with the runtime block after.
     assert lines[0].startswith("Name: ")
-    assert lines[1].startswith("Description: ")
-    assert lines[2].startswith("Family: ")
-    assert lines[3].startswith("Tags: ")
+    assert lines[1] == f"Node ID: {node_id}"  # owner, 2026-10-14: own line
+    assert lines[2].startswith("Description: ")
+    assert lines[3].startswith("Family: ")
+    assert lines[4].startswith("Tags: ")
     assert "Depth: " in text
     assert "Breakpoint: off" in text
     assert "Avg Time: " in text
@@ -7175,7 +7177,7 @@ async def _test_node_config_command_inputs_require_activation():
         alias = app.query_one("#alias-input", CommandInput)
         tabs = app.query_one("#node-config-tabs", TabbedContent)
         title = str(app.query_one(".modal-title").content)
-        assert title == f"Edit Node: Logger ({node_id})"
+        assert title == "Edit Node: Logger"  # the ID has its own line now
         app.set_focus(alias)
         assert app.focused is alias
         assert alias.editing is False

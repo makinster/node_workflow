@@ -191,6 +191,11 @@ Update this section at the end of every session.
   starting with C1–C7; that plan is still marked proposed, so the next session
   confirms with the owner before starting C1. Open follow-ups: lazy loading
   for busy editors (`PROJECT_BACKLOG.md`, owner findings item 7).
+- **2026-10-14 (UX6 follow-up):** PR #53 (branch `dist/ux6b-ids-errors-keys`):
+  one bottom key ribbon, A/D on branch-select rows, numbered suffix rolled
+  back, node ID on its own line, plain error headings. Suite: 1245 passed.
+  Next is unchanged: confirm with the owner, then `NODE_CONTRACT_PLAN.md` C1
+  (proposed as a warning plus a required/optional flag).
 - **Owner UI taste (learned in UX4):** plain and simple. Compact one-row
   buttons (Textual `Button(..., compact=True)`), no extra status lines,
   error lines code first (`• [code] description`), and the Error Mux is

@@ -54,10 +54,6 @@ class SettingsScreen(CommandScreenMixin, ModalScreen):
         values = self.configuration_manager.get_all()
         with Vertical(id="modal-card", classes="settings-modal"):
             yield Label("Options", classes="modal-title")
-            yield Static(
-                "W/S move | 1 general | 2 secrets | E edit/select | X delete key | Ctrl+S save",
-                classes="modal-help",
-            )
             with TabbedContent(
                 id="settings-tabs",
                 classes="node-config-tabs settings-tabs",
@@ -86,7 +82,7 @@ class SettingsScreen(CommandScreenMixin, ModalScreen):
             with Vertical(classes="button-row"):
                 yield Button("Save", id="save-settings", variant="primary")
                 yield Button("Cancel", id="cancel-settings", variant="default")
-            yield StatusBar("W/S move | 1/2 tabs | Add/Clear | X delete key | Ctrl+S save")
+            yield StatusBar("W/S move | 1/2 tabs | E edit/select | X delete key | Ctrl+S save")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "save-settings":
