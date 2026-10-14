@@ -54,6 +54,7 @@ class NodeList(ListView):
                 node_data,
                 statuses.get(node_id, "idle"),
                 timings.get(node_id),
+                show_id=False,  # owner, 2026-10-14: names, not IDs, on cards
             )
             if reasons.get(node_id):
                 card.status_detail = reasons[node_id]

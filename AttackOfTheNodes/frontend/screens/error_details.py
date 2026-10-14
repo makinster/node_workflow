@@ -10,6 +10,7 @@ from textual.containers import VerticalScroll
 from textual.screen import ModalScreen
 from textual.widgets import Button, Label, Static
 
+from frontend.node_location import node_heading
 from frontend.widgets.command_screen_mixin import CommandScreenMixin
 
 
@@ -34,7 +35,7 @@ class ErrorDetailsScreen(CommandScreenMixin, ModalScreen):
         options = self.payload.get("options", [])
         with VerticalScroll(id="modal-card"):
             yield Label("Error Details", classes="modal-title")
-            yield Static(self._format_error(), id="error-details")
+            yield Static(self._format_error(), id="error-details", markup=False)
             yield Label("W/S or arrows: move · E/Enter: select · Esc: close", classes="modal-help")
             for option in options:
                 yield Button(option.replace("_", " ").title(), id=f"recovery-{option}", variant="default")
@@ -65,12 +66,21 @@ class ErrorDetailsScreen(CommandScreenMixin, ModalScreen):
     def action_close(self) -> None:
         self.dismiss(None)
 
+    def _heading(self, node_id: str) -> str:
+        """Plain first line: name, type, depth and branch (owner, 2026-10-14)."""
+        workflow_map = getattr(self.app, "workflow_map", None)
+        if not node_id or workflow_map is None:
+            return f"Node {node_id or '-'}"
+        return node_heading(workflow_map, getattr(self.app, "factory", None), node_id)
+
     def _format_error(self) -> str:
         error = self.payload.get("error", {})
+        node_id = str(self.payload.get("node_id") or error.get("node_id") or "")
         return "\n".join(
             [
-                f"Branch: {self.payload.get('branch_id', '-')}",
-                f"Node: {self.payload.get('node_id', '-')}",
+                self._heading(node_id),
+                f"Node ID: {node_id or '-'}",
+                f"Run branch: {self.payload.get('branch_id', '-')}",
                 f"Category: {self.payload.get('category', error.get('category', '-'))}",
                 f"Message: {self.payload.get('error_message', error.get('message', '-'))}",
                 "",
@@ -96,12 +106,13 @@ class ErrorDetailsScreen(CommandScreenMixin, ModalScreen):
                     yield Static(
                         "\n".join(
                             [
-                                f"{label}: {error_type}",
-                                f"Node: {node_id or '-'}",
-                                f"Description: {message}",
+                                f"{label}: {self._heading(node_id) if node_id else 'Workflow'}",
+                                *([f"Node ID: {node_id}"] if node_id else []),
+                                f"{error_type}: {message}",
                             ]
                         ),
                         classes="validation-card",
+                        markup=False,
                     )
                     if node_id:
                         button_id = f"jump-validation-{label.lower()}-{index}"

@@ -176,8 +176,8 @@ def node_updated(app: Any) -> None:
     notify_info(app, "Node updated")
 
 
-def jumped_to_node(app: Any, node_id: str) -> None:
-    notify_info(app, f"Jumped to {node_id}")
+def jumped_to_node(app: Any, node_name: str) -> None:
+    notify_info(app, f"Jumped to {node_name}")
 
 
 def viewing_branch(app: Any, branch_label: str) -> None:

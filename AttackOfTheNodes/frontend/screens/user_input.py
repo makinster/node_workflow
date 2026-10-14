@@ -32,7 +32,6 @@ class UserInputScreen(CommandScreenMixin, ModalScreen):
         with Vertical(id="modal-card"):
             yield Label("User Input Needed", classes="modal-title")
             yield Static(f"Node: {self.node_id}\nBranch: {self.branch_id}")
-            yield Static("Type response  Ctrl+Enter submit  Esc leaves edit/cancels", classes="modal-help")
             yield Label(self.prompt, classes="form-label")
             yield CommandInput(id="user-input-value")
             with Horizontal(classes="button-row"):

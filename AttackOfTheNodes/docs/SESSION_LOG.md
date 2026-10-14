@@ -4,6 +4,54 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-14 — UX6 Follow-up: One Help Ribbon, A/D on Branch Selects, IDs on Their Own Line
+
+Branch `dist/ux6b-ids-errors-keys`, from `main` at `6f70f85` (PR #52).
+Before: 1244 passed. After: 1245 passed (1 new A/D test; `test_node_labels.py`
+rewritten for the rolled-back suffix and the new headings: 4 tests).
+
+Owner requests (2026-10-14):
+
+1. **One key-hint ribbon, at the bottom.** Settings, User Input and the
+   workflow path prompt still showed a top copy above their status bar; the
+   top copies are gone (node editors lost theirs in UX6). Screens without a
+   status bar keep their single hint line. A per-panel `H` key-list popup is
+   planned (`NODE_CONTRACT_PLAN.md`, owner direction).
+2. **A/D on a branch-select row** steps through that node's branches, error
+   recovery included (`EditorScreen._cycle_selected_branch_select`); `E` still
+   opens the selector. Elsewhere A/D are unchanged (PR #49 rule).
+3. **Node IDs:** the UX6 numbered suffix is rolled back; names are the alias
+   or type name everywhere. The ID moved off labels onto its own line: under
+   the node editor title (`#node-config-id`) and under `Name:` in the details
+   panel; execution cards no longer show it; "Merge Node" / "Merges To
+   Branch" lines and the "Jumped to" toast use names.
+4. **Error headings:** the runtime error screen and validation results open
+   with `<name> (<type>) · depth <n> · <branch>` (`frontend/node_location.py`),
+   then `Node ID: …`; the runtime screen keeps the run branch, category,
+   message and traceback below.
+5. Recorded in `NODE_CONTRACT_PLAN.md` (owner direction): required vs
+   optional inputs/outputs will be defined when nodes are re-touched; more
+   Vault/dead-drop data types are needed for community nodes; C1 proposed as
+   a warning with a required/optional flag.
+
+**Tests updated (behaviour the owner changed):** six assertions in
+`test_debug_nodes.py` expected IDs inside names (`Merge Node: Merge (id)`,
+`Merges To Branch: Approve (id:path_a)`, `Name: Logger (id)`, the editor title
+`Edit Node: Logger (id)`, the details line order) or the suffix (`Merge ·1001`);
+they now assert the names and the separate `Node ID:` line.
+
+**Review of PR #53 (two crashes, both reproduced and fixed).** After: 1247
+passed (2 new in `test_node_labels.py`; both fail before the fix).
+
+1. A node name such as `Fetch [/draft]` was parsed as markup and crashed Error
+   Details and validation results. Both now render as literal text
+   (`markup=False`), which also covers brackets in messages and tracebacks.
+2. The heading reused `_branch_contexts_by_node`, which recursed once per
+   node and crashed past ~1,000 connected nodes. It now walks with an explicit
+   stack, pushing children in reverse so the visit order (and each node's
+   first branch path) is unchanged; the UX3 equivalence tests against the old
+   scan still pass.
+
 ## 2026-10-13 — UX6: Friendly Labels and Presentation Pass
 
 Branch `dist/ux6-labels-and-presentation`, from `main` at `1a92b43` (PR #51).

@@ -201,7 +201,6 @@ class PathPromptScreen(CommandScreenMixin, ModalScreen):
                 auto_edit_on_focus=True,
             )
             help_text = "B browse | E edit path | Tab next | Ctrl+Enter confirm | Esc cancel"
-            yield Static(help_text, classes="modal-help")
             with Vertical(classes="button-row"):
                 if self.picker_mode:
                     yield Button("Browse", id="browse-path", variant="default")

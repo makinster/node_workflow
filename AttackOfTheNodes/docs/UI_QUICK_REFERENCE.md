@@ -6,7 +6,10 @@ screen layout, command navigation internals, or detailed Textual behavior.
 ## Editor Keys
 
 - `W/S` or up/down: move through visible rows.
-- `A/D` or left/right: cycle all branch views.
+- `A/D` or left/right: cycle all branch views, leaving error recovery out.
+  With the highlight on a branch-select row, they instead step through that
+  node's own branches, error recovery branches included (owner, 2026-10-14);
+  `E` there opens the branch selector.
 - `Ctrl+A/D` or `Ctrl+left/right`: cycle incomplete branch views.
 - `E` or Enter: edit selected node or activate highlighted selector row.
 - `I`: insert after the highlighted row.
@@ -98,15 +101,20 @@ programmatic changes to other fields must not move the scroll position.
 During navigation, scroll only as needed to keep the highlighted field visible;
 do not scroll to reveal its next neighbour before it is highlighted.
 
-## Friendly Node Labels (UX6)
+## Node Names, IDs and Error Headings
 
-- Nodes show their alias (or a type-based name). When two or more nodes share
-  that name, each gets a counter suffix in workflow order from 1000:
-  `Step ·1000`, `Step ·1001` (`frontend/node_labels.py`). Unique names have no
-  suffix. Display only: stored IDs and aliases never change.
-- Used in editor cards, Connections rows, Wait Until targets, the Error
-  Resolver unpick list, the unsaved-changes prompt and Merge selectors. The raw
-  ID stays in the details panel and the node editor title.
+- Nodes are shown by alias (or type name) everywhere: cards, Connections rows,
+  pickers, prompts, Merge selectors (`frontend/node_labels.py`). The UX6
+  numbered suffix for repeated names was rolled back (owner, 2026-10-14).
+- The node ID is its own line: `Node ID: …` under the node editor's title and
+  under `Name:` in the editor's details panel. Cards do not show it.
+- Error and validation messages open with a plain line, then the ID:
+  `Fetch (HTTP Request) · depth 1 · Main path` / `Node ID: node_…`
+  (`frontend/node_location.py`; depth counts steps from Start, the branch is
+  the Branch path the node sits on).
+- Key hints: one ribbon per panel, at the bottom. A future `H` help popup will
+  list every key for the current panel, and the ribbon will shrink to the
+  basic movement keys plus `h help` (owner, 2026-10-14; not built yet).
 
 ## Phase 17 Node Identity
 
