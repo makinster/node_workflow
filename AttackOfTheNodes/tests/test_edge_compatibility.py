@@ -215,3 +215,37 @@ def test_validation_details_labels_the_warning():
     screen = ErrorDetailsScreen({"validation": {"errors": [], "warnings": []}})
     assert screen._validation_type(
         "Input 'File' expects file but Dice sends number") == "Type mismatch"
+
+
+@pytest.mark.parametrize("number_first", [True, False])
+def test_every_producer_into_a_shared_pass_through_is_checked(number_first):
+    """PR 56 review: Sleep forwards whichever source arrived, so all count."""
+    workflow_map = _workflow(f"c2_shared_sleep_{number_first}")
+    writer = workflow_map.add_node("file_output_node", alias="Save")
+    number = workflow_map.add_node("random_number_node", alias="Dice")
+    sleep = workflow_map.add_node("sleep_node")
+    reader = workflow_map.add_node("file_reader_node")
+    _set(workflow_map, writer, content_source="Configured", content="x", file_path="/tmp/out.txt")
+    sources = [number, writer] if number_first else [writer, number]
+    for source in sources:
+        workflow_map.connect(source, "default", sleep, "input")
+    workflow_map.connect(sleep, "default", reader, "input")
+    _set(workflow_map, reader, input_source="Upstream payload")
+
+    assert _edge_warnings(validate_workflow(workflow_map, FACTORY), reader) == [
+        "Input 'File' expects file but Dice sends number"
+    ]
+
+
+def test_trace_producers_lists_each_source_once_and_ends_on_cycles():
+    from backend.port_types import trace_producers
+
+    workflow_map = _workflow("c2_trace_cycle")
+    number = workflow_map.add_node("random_number_node")
+    first = workflow_map.add_node("sleep_node")
+    second = workflow_map.add_node("sleep_node")
+    workflow_map.connect(number, "default", first, "input")
+    workflow_map.connect(second, "default", first, "input")
+    workflow_map.connect(first, "default", second, "input")
+    nodes = workflow_map.get_all_node_data()
+    assert trace_producers(nodes, FACTORY, second, "default") == [(number, "number")]

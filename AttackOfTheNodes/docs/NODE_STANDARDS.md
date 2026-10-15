@@ -265,7 +265,7 @@ types must be equal. There is no implicit conversion (File Write rejects a
 number on its text input). The editor's connector choice, the Source
 dropdowns (whether "Upstream payload" and a Vault key are offered) and the
 validator all use it. `backend/port_types.py` traces the producer through
-pass-through nodes (`trace_producer`); Branch paths are `any`. An active
+pass-through nodes (`trace_producers`); Branch paths are `any`. An active
 Upstream edge whose producer type the port does not accept is a preflight
 **warning** ("Type mismatch": `Input 'File' expects file but Dice sends
 number`). A node that rejects a payload at runtime should say so with

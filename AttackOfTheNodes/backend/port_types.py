@@ -12,7 +12,7 @@ made the payload. Branch paths and anything else without a declared type are
 
 from __future__ import annotations
 
-from typing import Any, Dict, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 from .data_types import DEFAULT_TYPE, coerce_type
 
@@ -60,52 +60,62 @@ def input_port_type(factory, node: Dict[str, Any], port: str) -> str:
     return coerce_type(port_metadata(factory, node, port, "input").get("data_type"))
 
 
-def producer_type(
+def trace_producers(
     nodes: Mapping[str, Dict[str, Any]],
     factory,
     node_id: str,
     port: str,
-) -> str:
-    """Data type that leaves ``node_id``'s ``port``, traced through pass-through nodes."""
-    return trace_producer(nodes, factory, node_id, port)[1]
+) -> List[Tuple[str, str]]:
+    """Every ``(producer node id, data type)`` that can leave ``node_id``'s
+    ``port``, in connection order without repeats.
 
-
-def trace_producer(
-    nodes: Mapping[str, Dict[str, Any]],
-    factory,
-    node_id: str,
-    port: str,
-) -> tuple[str, str]:
-    """``(producer node id, data type)`` for the payload leaving ``node_id``'s
-    ``port``. A pass-through node with no connected input is its own
-    producer, typed ``any``."""
+    A pass-through node forwards whichever incoming payload triggered it, so
+    each connection into its forwarded port is followed, not just the first
+    (a Sleep fed by File Write and Random Number can forward either). A
+    pass-through node with no connected input is its own producer, typed
+    ``any``; a cycle of pass-through nodes ends without a producer.
+    """
+    producers: List[Tuple[str, str]] = []
     visited: set[tuple[str, str]] = set()
-    current_id, current_port = node_id, port or "default"
-    while (current_id, current_port) not in visited:
+    stack = [(node_id, port or "default")]
+    while stack:
+        current_id, current_port = stack.pop()
+        if (current_id, current_port) in visited:
+            continue
         visited.add((current_id, current_port))
         node = nodes.get(current_id) or {}
         if not node:
-            return current_id, DEFAULT_TYPE
-        if not is_pass_through_node(factory, node, current_port):
+            found = (current_id, DEFAULT_TYPE)
+        elif not is_pass_through_node(factory, node, current_port):
             output = port_metadata(factory, node, current_port, "output")
-            return current_id, coerce_type(output.get("data_type"))
-        upstream = _forwarded_input(factory, node)
-        if not upstream or not upstream.get("source_node_id"):
-            return current_id, DEFAULT_TYPE
-        current_id = str(upstream.get("source_node_id"))
-        current_port = str(upstream.get("source_port") or "default")
-    return current_id, DEFAULT_TYPE
+            found = (current_id, coerce_type(output.get("data_type")))
+        else:
+            upstream = [conn for conn in _forwarded_inputs(factory, node)
+                        if conn.get("source_node_id")]
+            if upstream:
+                # Reversed so the stack visits connections in their saved order.
+                stack.extend(
+                    (str(conn["source_node_id"]), str(conn.get("source_port") or "default"))
+                    for conn in reversed(upstream)
+                )
+                continue
+            found = (current_id, DEFAULT_TYPE)
+        if found not in producers:
+            producers.append(found)
+    return producers
 
 
-def _forwarded_input(factory, node: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-    """The connection a pass-through node forwards (its hinted input first)."""
+def _forwarded_inputs(factory, node: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """The connections a pass-through node may forward: all of its hinted
+    input port (else the first fallback port that has any), or every input
+    when it has no hint."""
     hints = (metadata_for_type(factory, node.get("type", "")) or {}).get("ui_hints") or {}
-    inputs = node.get("connections", {}).get("inputs", [])
+    inputs = list(node.get("connections", {}).get("inputs", []))
     forward_port = hints.get("forwarded_input_port")
     if not forward_port:
-        return inputs[0] if inputs else None
+        return inputs
     for wanted in [forward_port, *(hints.get("forwarded_input_fallbacks") or [])]:
-        for conn in inputs:
-            if str(conn.get("target_port") or "") == str(wanted):
-                return conn
-    return None
+        matches = [conn for conn in inputs if str(conn.get("target_port") or "") == str(wanted)]
+        if matches:
+            return matches
+    return []

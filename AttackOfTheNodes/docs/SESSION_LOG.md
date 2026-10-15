@@ -7,7 +7,7 @@ overhaul.
 ## 2026-10-14 — C2: Edge Compatibility Diagnostics
 
 Branch `dist/c2-edge-compatibility`, from `main` at `4d7eca2` (PR #55).
-Before: 1260 passed. After: 1283 passed (23 new tests in
+Before: 1260 passed. After: 1286 passed (26 new tests in
 `test_edge_compatibility.py`).
 
 - **One rule:** `data_types.types_compatible(actual, wanted)`: `any` or no
@@ -35,6 +35,16 @@ Before: 1260 passed. After: 1283 passed (23 new tests in
   before and failed at run time with a message naming neither port nor
   value; the new tests fail on the old code.
 - Sample screen sent to the owner before the PR.
+- **PR 56 review (fixed):** the tracer followed only the first connection
+  into a pass-through node, so File Write and Random Number both feeding a
+  Sleep before File Reader warned or not depending on connection order.
+  `port_types.trace_producers` now returns every producer a pass-through
+  chain can forward (each connection into its forwarded port, without
+  repeats, ending on cycles) and the validator checks each. Reproduced
+  first (the File-Write-first order failed). Not changed: the editor's
+  display tracer (`trace_transient_producer`, which also drives the
+  Upstream option in the Source dropdown) still follows only the first
+  connection, so with mixed producers that option depends on order.
 
 ## 2026-10-14 — C1: Preflight Warnings for Node-Specific Vault Reads
 

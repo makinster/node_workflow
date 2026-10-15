@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
 from .branch_health import ENDED_UNMERGED, derive_branch_health, output_types_from_factory
 from .branch_paths import path_index
 from .data_types import DataType, types_compatible
-from .port_types import input_port_type, metadata_for_type, port_metadata, trace_producer
+from .port_types import input_port_type, metadata_for_type, port_metadata, trace_producers
 from .vault_declarations import (
     config_vault_read_entries,
     continuation_selected as _continuation_selected,
@@ -447,19 +447,22 @@ def validate_workflow(
             ):
                 continue
             wanted = input_port_type(factory, data, target_port)
-            producer_id, actual = trace_producer(
-                all_nodes, factory, source_id, str(conn.get("source_port") or "default"))
-            if types_compatible(actual, wanted):
-                continue
-            port_name = str(port_metadata(factory, data, target_port, "input").get("name") or target_port)
-            producer = all_nodes.get(producer_id) or all_nodes[source_id]
-            warnings.append({
-                "node_id": node_id,
-                "message": (
-                    f"Input '{port_name}' expects {wanted} but "
-                    f"{_node_name(factory, producer)} sends {actual}"
-                ),
-            })
+            # Every producer a pass-through chain can forward, not only the
+            # first connection into it (PR 56 review).
+            for producer_id, actual in trace_producers(
+                all_nodes, factory, source_id, str(conn.get("source_port") or "default")
+            ):
+                if types_compatible(actual, wanted):
+                    continue
+                port_name = str(port_metadata(factory, data, target_port, "input").get("name") or target_port)
+                producer = all_nodes.get(producer_id) or all_nodes[source_id]
+                warnings.append({
+                    "node_id": node_id,
+                    "message": (
+                        f"Input '{port_name}' expects {wanted} but "
+                        f"{_node_name(factory, producer)} sends {actual}"
+                    ),
+                })
 
     # Typed vault: warn when a node reads a key typed "ai_session" but the writer
     # declared a different (or null) type_tag.  Error (key absent) is already above.
