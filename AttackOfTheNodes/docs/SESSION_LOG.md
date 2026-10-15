@@ -4,6 +4,33 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-14 — C1: Preflight Warnings for Node-Specific Vault Reads
+
+Branch `dist/c1-vault-read-warnings`, from `main` at `959eb58` (PR #54).
+Before: 1247 passed. After: 1260 passed (13 new tests in
+`test_validator_node_vault_reads.py`).
+
+Owner approved `NODE_CONTRACT_PLAN.md` C1–C7 (C8–C12 stay proposed).
+
+- **Shared model:** `vault_declarations.vault_read_entries` returns every
+  Vault read as `{source_id, target_port, required}`. `membank_inputs` and
+  standard-model reads are required; `config_vault_read_entries` (Get
+  Variable, Variable Reader, Conditional on a variable, Counter, Branch
+  `vault:` seeds) are all optional because each has a runtime fallback.
+  `config_vault_reads` and `active_vault_reads` are derived from them, so the
+  Connections tab is unchanged.
+- **Validator:** an optional node-specific read whose key no node writes is
+  a warning ("Reads Vault key 'value' but no node writes it; the node uses its
+  fallback value", or "Path 'Branch 1' seeds from Vault key ..." for Branch
+  seeds); a required one is the existing "Membank input source not declared"
+  error. Counter writes its own key, so it never warns. The parallel-branch
+  race warning now also covers node-specific reads.
+- **Validation Details** labels the warning "Unwritten Vault key". Sample
+  screen sent to the owner before the PR.
+- Reproduction: Start → Get Variable (default key `value`) validated clean
+  before; the new tests fail on the old code (missing model functions, no
+  warning).
+
 ## 2026-10-14 — Session Handoff: UX Detour Complete
 
 Docs only. New `NODE_CONTRACT_EXECUTION_PROMPT.md` starts the next phase: what

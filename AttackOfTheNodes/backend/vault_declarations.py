@@ -91,25 +91,65 @@ def standard_vault_reads(config: dict[str, Any], metadata: dict[str, Any]) -> li
     return entries
 
 
-def config_vault_reads(node_type: str, config: dict[str, Any]) -> list[str]:
-    """Reads named by node-specific config fields (not the standard model)."""
-    keys: list[str] = []
+def config_vault_read_entries(node_type: str, config: dict[str, Any]) -> list[dict[str, Any]]:
+    """Reads named by node-specific config fields (not the standard model).
+
+    Entries are ``{"source_id", "target_port", "required"}``; ``target_port``
+    is the config field (or Branch path) that names the key. Every
+    node-specific read has a runtime fallback today (Get Variable and Variable
+    Reader return their ``default``, Conditional compares against "", Counter
+    starts at 0, a Branch seed falls back to the input payload), so each is
+    optional: preflight warns when no node writes the key. A read without a
+    fallback declares ``required=True`` and is checked like a standard read.
+    """
+    entries: list[dict[str, Any]] = []
+
+    def add(key: Any, target_port: str, required: bool = False) -> None:
+        key = str(key).strip()
+        if key:
+            entries.append({"source_id": key, "target_port": target_port, "required": required})
+
     if node_type == "get_variable_node":
-        keys.append(str(config.get("variable_name", "value")))
+        add(config.get("variable_name", "value"), "variable_name")
     elif node_type == "variable_reader_node":
-        keys.append(str(config.get("variable_name") or ""))
+        add(config.get("variable_name") or "", "variable_name")
     elif node_type == "conditional_node" and config.get("left_value_source") == "variable":
-        keys.append(str(config.get("variable_name") or ""))
+        add(config.get("variable_name") or "", "variable_name")
     elif node_type == "counter_node":
-        keys.append(str(config.get("counter_name") or "counter"))
+        add(config.get("counter_name") or "counter", "counter_name")
     elif node_type == "branch_node":
         sources = config.get("branch_payload_sources") or {}
         if isinstance(sources, dict):
             for port in path_ports(branch_count_from_config(config)):
                 source = str(sources.get(port) or "").strip()
                 if source.startswith("vault:"):
-                    keys.append(source.removeprefix("vault:"))
-    return _unique(keys)
+                    add(source.removeprefix("vault:"), port)
+    return entries
+
+
+def config_vault_reads(node_type: str, config: dict[str, Any]) -> list[str]:
+    """Keys of :func:`config_vault_read_entries`."""
+    return _unique([entry["source_id"] for entry in config_vault_read_entries(node_type, config)])
+
+
+def vault_read_entries(node_type: str, config: dict[str, Any], metadata: dict[str, Any]) -> list[dict[str, Any]]:
+    """Every Vault read with its required/optional flag, in the
+    ``{"source_id", "target_port", "required"}`` shape: declared
+    ``membank_inputs`` and standard-model reads are required (no fallback;
+    a missing writer blocks the run), node-specific reads carry their own
+    flag (see :func:`config_vault_read_entries`)."""
+    inputs = config.get("membank_inputs") or []
+    entries = [
+        {"source_id": key, "target_port": "membank_inputs", "required": True}
+        for key in (_entry_key(entry).strip() for entry in (inputs if isinstance(inputs, list) else []))
+        if key
+    ]
+    entries += [
+        {"source_id": entry["source_id"], "target_port": entry["target_port"], "required": True}
+        for entry in standard_vault_reads(config, metadata)
+    ]
+    entries += config_vault_read_entries(node_type, config)
+    return entries
 
 
 def config_vault_writes(node_type: str, config: dict[str, Any]) -> list[str]:
@@ -126,11 +166,7 @@ def config_vault_writes(node_type: str, config: dict[str, Any]) -> list[str]:
 def active_vault_reads(node_type: str, config: dict[str, Any], metadata: dict[str, Any]) -> list[str]:
     """Every Vault key the node reads with this config: declared
     ``membank_inputs``, standard-model reads and node-specific fields."""
-    inputs = config.get("membank_inputs") or []
-    keys = [_entry_key(entry) for entry in inputs] if isinstance(inputs, list) else []
-    keys += [entry["source_id"] for entry in standard_vault_reads(config, metadata)]
-    keys += config_vault_reads(node_type, config)
-    return _unique(keys)
+    return _unique([entry["source_id"] for entry in vault_read_entries(node_type, config, metadata)])
 
 
 def typed_vault_writes(node_type: str, config: dict[str, Any], metadata: dict[str, Any]) -> dict[str, str | None]:

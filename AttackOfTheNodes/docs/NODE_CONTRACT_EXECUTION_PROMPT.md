@@ -22,8 +22,9 @@ When sources disagree: code first, then the recent session log, then plans.
 
 ## Where things stand (2026-10-14)
 
-- `main` at `1cd5fc1` (merge of PR #53), plus this handoff PR. No work in
-  progress. Suite: **1247 passed** (about 3.5 minutes).
+- `main` at `959eb58` (merge of PR #54). The owner approved C1–C7
+  (2026-10-14); C1 is in its PR (`dist/c1-vault-read-warnings`), C2 is next.
+  Suite: **1260 passed** (about 3.5 minutes).
 - Untracked files to leave alone: `.claude/launch.json`,
   `AttackOfTheNodes/"C:\...\test.txt"`, `AttackOfTheNodes/Workflow started`.
 
@@ -75,17 +76,13 @@ What the detour delivered, in short:
 ## Next step
 
 1. Report branch, HEAD and dirty state.
-2. Confirm with the owner that `NODE_CONTRACT_PLAN.md` starts now (the owner
-   chose "after UX6, before `DISTRIBUTED_BUILD_PLAN.md` Step 4", C1–C7 first)
-   and ask whether it should be marked approved.
-3. **C1** (proposed): preflight **warnings** for node-specific Vault reads
-   that no node writes (Get Variable, Variable Reader, Conditional, Branch
-   seeds), plus a required/optional flag on each read in the shared model so
-   it can become an error later (required + no writer + no declared workflow
-   input). Do not make them errors: Get Variable's default key `value` often
-   has no writer and existing workflows would stop running.
-4. Then C2–C7 in order, one PR each, asking the owner where a phase needs a
-   decision. Ask before starting Step 4 of `DISTRIBUTED_BUILD_PLAN.md`.
+2. Done 2026-10-14: the owner approved C1–C7 (C8–C12 stay proposed), and
+   **C1** (warnings for node-specific Vault reads with no writer, plus the
+   required/optional flag in `vault_read_entries`) is in its PR. Check it is
+   merged before branching for C2.
+3. Then C2–C7 in order, one PR each, asking the owner where a phase needs a
+   decision (C5's number policy, C6's field removal, C7's Deep Branch
+   contract). Ask before starting Step 4 of `DISTRIBUTED_BUILD_PLAN.md`.
 
 Known gaps worth a look while there: other editor graph walks may still
 recurse once per node (for example `_find_branch_choices_to_node`); the

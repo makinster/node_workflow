@@ -495,8 +495,13 @@ or writes the Vault through its own config field must be added there, with
 the activation rule (hidden slot, inactive mode) that applies. The Vault
 pickers and the validator's existence/type/race checks use the same writers
 (`typed_vault_writes`); node-specific writers have an unknown type (`any`).
-The validator checks standard-model reads and `membank_inputs` only; checking
-node-specific reads is planned (`NODE_CONTRACT_PLAN.md`, C1).
+Every read carries a **required/optional** flag (`vault_read_entries`):
+`membank_inputs` and standard-model reads are required (no writer is a
+preflight error); node-specific reads (`config_vault_read_entries`) declare
+their own flag. All of them are optional today because each has a runtime
+fallback (`default`, "", 0, the input payload), so a key nobody writes is a
+preflight **warning** ("Unwritten Vault key"). A new node-specific read
+without a fallback must declare `required=True`.
 
 The Publish (normal output) toggle governs only the `default` port; the
 engine's `error` port carries the error payload on failure regardless.

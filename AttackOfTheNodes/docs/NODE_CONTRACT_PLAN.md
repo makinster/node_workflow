@@ -1,12 +1,16 @@
 # Node Contract Plan (from the PR #51 node audit)
 
-Status: **proposed, not approved.** Recorded on 2026-10-13 from an external
-audit of all 38 registered node types at PR #51's head (`4e7af7d`). The owner
-chose to fix only the shared Vault model inside PR #51 and to plan the rest.
-Timing (owner, 2026-10-13, by best judgement): after UX6 and before
-`DISTRIBUTED_BUILD_PLAN.md` Step 4, bug items C1–C7 first. Confirm with the
-owner before starting C1. Each item needs a reproduction first; the audit
-gives one for each.
+Status: **C1–C7 approved** (owner, 2026-10-14); **C8–C12 still proposed**,
+to be approved one at a time once required/optional settles. Recorded on
+2026-10-13 from an external audit of all 38 registered node types at PR #51's
+head (`4e7af7d`). The owner chose to fix only the shared Vault model inside
+PR #51 and to plan the rest. Timing (owner): after UX6 and before
+`DISTRIBUTED_BUILD_PLAN.md` Step 4, C1–C7 in order, one PR each. Ask the
+owner where a phase needs a decision (C5's number policy, C6's field
+removal, C7's Deep Branch contract) and before Step 4. Each item needs a
+reproduction first; the audit gives one for each.
+
+Progress: C1 done (`dist/c1-vault-read-warnings`).
 
 Goal: one node contract (ports, config, effects, capabilities) that drives
 the config UI, connection matching, preflight, runtime routing and author
@@ -28,7 +32,7 @@ Keep `NodeContext` and graph-ignorant execution.
 
 | # | Item | Audit finding | Notes |
 |---|---|---|---|
-| C1 | Preflight checks for node-specific **reads** (Get Variable, Variable Reader, Conditional, Branch `vault:` seeds) | follow-up to 1 | Today only standard-model reads and `membank_inputs` are checked. Proposed: a **warning** for now (these nodes have fallbacks; Get Variable's default key `value` often has no writer), and record each read as required or optional in the shared model so it can tighten later (see "Required and optional"). |
+| C1 | Preflight checks for node-specific **reads** (Get Variable, Variable Reader, Conditional, Branch `vault:` seeds) | follow-up to 1 | **Done.** `vault_read_entries` flags every read required/optional; `config_vault_read_entries` marks all node-specific reads optional (each has a fallback). An optional read with no writer is a preflight **warning** ("Unwritten Vault key"); a required one is an error. Counter writes its own key, so it never warns. The parallel-branch race warning now covers node-specific reads too. Later: a declared workflow input (Step 4) also satisfies a read. |
 | C2 | Edge compatibility diagnostics | 2 | One shared compatibility function for connector choice, Source dropdowns and preflight. Start with warnings for known-incompatible active edges (Random Number → File Reader on Upstream); keep `any` paths working. Runtime errors name the receiving node/port and the expected/actual shape. |
 | C3 | Mode-resolved output types | 3 | HTTP Request file mode → `default:file`, text mode → `default:string` through the per-node output-metadata hook; used by previews, insertion (auto-wiring picked File Write's `content` instead of `file_path`), validation and Vault typing. |
 | C4 | Fixed-forwarding capability and provenance | 4 | Declare forwarding for No Op, Logger, Probe, Memory Snapshot, Merge Beacon, Repeat Counter (Counter and Sleep have hints). Output type follows the input; show a read-only forwarding summary, not an optional checkbox. Branch/Conditional/Merge need config-selected forwarding. |
