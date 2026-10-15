@@ -186,6 +186,9 @@ def accepts_producers(factory, node_type: str, producer_types: List[str]) -> boo
     A node with no input ports never fits; with no known producer types
     every node with an input fits. Used by the node selector's "fitting
     only" view, so it lists what the inserted connection could feed.
+    Only the upstream connection's shape counts, never Vault contents
+    (owner, 2026-10-14): a node that could read from the Vault instead
+    still does not fit.
     """
     inputs = (metadata_for_type(factory, node_type) or {}).get("input_port_metadata") or {}
     if not inputs:

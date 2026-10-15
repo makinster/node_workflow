@@ -139,6 +139,12 @@ Use `PHASE_17_NODE_VISUAL_IDENTITY.md` for the active plan.
   (number)`) and the ribbon shows `T fitting only` / `T show all`. The
   choice is remembered until the app closes. No upstream (nothing
   selected): no toggle. Typing `t` in the filter types a letter.
+  Rule (owner, 2026-10-14): the filter uses only the shape of the upstream
+  connection, never Vault contents (a large workflow's Vault holds every
+  type, so it would filter nothing). A node that could read from the Vault
+  instead is still hidden. Pass-through nodes are looked through to the
+  producer; a Vault-seeded Branch path counts as its seed key's type,
+  because that value is what the path carries.
 - The string filter is activate-to-edit; `/` can jump to it.
 - Editor rows may use two lines: alias first, family identity second.
 - Prefer an ASCII text-box border around the alias and family text. Keep the
