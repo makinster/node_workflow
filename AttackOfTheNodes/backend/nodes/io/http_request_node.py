@@ -23,11 +23,17 @@ class HttpRequestNode(Node):
     input_ports: ClassVar[List[str]] = ['input']
     output_ports: ClassVar[List[str]] = ['default', 'error']
     input_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {}
-    output_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {}
+    output_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {'default': {'name': 'Response', 'description': 'The response body: text, or a file reference when Response as is file'}}
     default_config: ClassVar[Dict[str, Any]] = {'url': '', 'method': 'GET', 'body_source': 'config', 'body': '', 'response_mode': 'text', 'keep_response_file': False, 'timeout_seconds': 10.0, 'auth_token_secret': ''}
     config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {'url': {'type': 'string', 'label': 'URL', 'placeholder': 'https://example.com/api', 'required': True, 'tab': 'Parameters'}, 'method': {'type': 'select', 'label': 'Method', 'options': ['GET', 'POST'], 'tab': 'Parameters'}, 'body_source': {'type': 'select', 'label': 'Body from (POST)', 'options': ['config', 'input'], 'description': "config sends the Request body field; input sends the node's input (text as is, anything else as JSON)", 'visible_when': {'method': 'POST'}, 'tab': 'Parameters'}, 'body': {'type': 'multiline', 'label': 'Request body (POST)', 'required': False, 'visible_when': {'method': 'POST'}, 'tab': 'Parameters'}, 'response_mode': {'type': 'select', 'label': 'Response as', 'options': ['text', 'file'], 'description': 'text decodes the body; file saves the raw bytes to a run-owned file and outputs a file reference', 'tab': 'Parameters'}, 'keep_response_file': {'type': 'boolean', 'label': 'Keep the response file after the run', 'description': 'Off: the file is deleted when the run succeeds (kept if it fails). On: always kept.', 'visible_when': {'response_mode': 'file'}, 'tab': 'Parameters'}, 'timeout_seconds': {'type': 'float', 'label': 'Timeout (seconds)', 'required': False, 'tab': 'Parameters'}, 'auth_token_secret': {'type': 'string', 'label': 'Bearer token (secrets store key)', 'secret': True, 'required': False, 'tab': 'Parameters'}}
     ui_hints: ClassVar[Dict[str, Any]] = {}
     error_definitions: ClassVar[List[Dict[str, Any]]] = [{'code': 'missing_url', 'description': 'No URL is configured.', 'retryable': False}, {'code': 'timeout', 'description': 'The server did not answer within the timeout.', 'retryable': True}, {'code': 'network', 'description': 'The request could not reach the server (DNS, refused, TLS...).', 'retryable': True}, {'code': 'http_status', 'description': 'The server answered with an HTTP error status (details carry status and body).', 'retryable': False}]
+
+    @classmethod
+    def describe_output_ports(cls, config: Optional[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+        """C3: the response is text, or a file reference in file mode."""
+        file_mode = str((config or {}).get("response_mode") or "text") == "file"
+        return {"default": {"data_type": "file" if file_mode else "string"}}
 
     async def execute(self, context: NodeContext) -> None:
         import urllib.error

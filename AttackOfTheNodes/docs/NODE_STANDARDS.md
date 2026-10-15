@@ -558,8 +558,11 @@ presentation of `NodeFactory` metadata only.
 - Match on codes, never on message text.
 - **Config-driven ports (port model).** A node whose outputs depend on its
   config overrides the classmethods `resolve_output_ports(config)` (the port
-  list) and `describe_output_ports(config)` (per-port `name` / `description`,
-  merged over `output_port_metadata`). The class `output_ports` stays the
+  list) and `describe_output_ports(config)` (per-port `name` / `description`
+  / `data_type`, merged over `output_port_metadata`). A node whose output
+  *type* depends on a setting declares it there (C3: HTTP Request returns
+  `string` or `file` by Response as); read resolved metadata through
+  `port_types.resolved_metadata` / `port_metadata`, never the static table. The class `output_ports` stays the
   type's fixed list. Branch (path count) and Error Mux (routes, keyed by
   stable ids, plus `unmatched`) do this. Everything else asks
   `NodeFactory.node_output_ports(node)` /

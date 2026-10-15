@@ -4,6 +4,38 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-15 — C3: Mode-Resolved Output Types
+
+Branch `dist/c3-mode-output-types`, from `main` at `9809a90` (PR #58).
+Before: 1314 passed. After: 1328 passed (14 new tests in
+`test_mode_output_types.py`).
+
+- **HTTP Request** (helper-generated): the spec now declares the `default`
+  port ("Response", static type `any`); regenerated with
+  `create_node.py --force`, custom body restored, and the custom hook
+  `describe_output_ports` resolves the type to `string` or `file` by
+  "Response as". The generated test file's custom cases were restored
+  unchanged (the generated part did not differ).
+- **Consumers:** the validator's type check, the Source dropdowns, the
+  selector filter, previews (`trace_transient_producer`) and auto-wiring
+  already read per-config metadata through the factory hook, so they pick
+  the type up with no change. Vault typing did not: new
+  `port_types.resolved_metadata(factory, type, config)` now feeds
+  `typed_vault_writes` in the validator, the Vault pickers
+  (`_declared_vault_writer_keys`), `memory_registry` and the Branch-seed
+  tracer.
+- **Audit:** of the nodes with a concrete output type (string, number,
+  file), HTTP Request is the only one whose type changes with a setting;
+  Random Number's integer/float mode is `number` either way, and
+  pass-through options were already handled by `is_pass_through_node`.
+  Nodes typed `any` whose real type could be known (Get Variable from its
+  key's writer, JSON Path) are later contract work.
+- **Reproduced first:** with the HTTP change reverted, 10 of the 14 new
+  tests fail, including the audit's case (file mode into File Write wired
+  `content`; now `file_path`).
+- Plan updated with the agreed order (C3 → C5 → authoring tool → C4, C6,
+  C7 → Step 4), the authoring tool's scope, and the queued naming PR.
+
 ## 2026-10-15 — Validator Issue Codes
 
 Branch `dist/validation-issue-codes`, stacked on

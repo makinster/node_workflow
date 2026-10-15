@@ -31,6 +31,23 @@ def metadata_for_type(factory, node_type: str) -> Optional[Dict[str, Any]]:
     return None
 
 
+def resolved_metadata(factory, node_type: str, config: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """Type metadata with output ports resolved for ``config`` (C3).
+
+    A node whose output type depends on its settings (HTTP Request: text or
+    file) describes it through ``describe_output_ports``; everything that
+    types a node's output (Vault writes, previews) reads it from here.
+    """
+    metadata = dict(metadata_for_type(factory, node_type) or {}) if factory is not None else {}
+    if factory is not None and hasattr(factory, "node_output_port_metadata"):
+        resolved = factory.node_output_port_metadata({"type": node_type, "config": config or {}})
+        if resolved:
+            metadata["output_port_metadata"] = {
+                **dict(metadata.get("output_port_metadata") or {}), **resolved,
+            }
+    return metadata
+
+
 def is_pass_through_node(factory, node: Dict[str, Any], port: str | None = None) -> bool:
     """Whether ``node`` forwards its input payload unchanged on ``port``."""
     metadata = metadata_for_type(factory, node.get("type", ""))
@@ -169,7 +186,7 @@ def _vault_writers(
                 if isinstance(entry, dict) else "")
             if str(entry_key).strip() == key:
                 tags.append(entry.get("type_tag") if isinstance(entry, dict) else None)
-        writes = typed_vault_writes(node_type, config, metadata_for_type(factory, node_type) or {})
+        writes = typed_vault_writes(node_type, config, resolved_metadata(factory, node_type, config))
         if key in writes:
             tags.append(writes[key])
         for tag in tags:
