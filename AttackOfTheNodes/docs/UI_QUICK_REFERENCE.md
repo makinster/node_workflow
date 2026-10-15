@@ -133,6 +133,18 @@ Use `PHASE_17_NODE_VISUAL_IDENTITY.md` for the active plan.
   was retired 2026-06-19; node `tags` survive only as freeform keywords that feed
   the string filter (see `NODE_STANDARDIZATION_HANDOFF.md` Revision 2026-06-19).
 - Initial selector focus lands on the string filter (not in typing mode).
+- `T` (2026-10-14) toggles between all nodes and only the nodes with an
+  input that takes the upstream payload (`port_types.accepts_producers`,
+  the C2 type rule). The title names the upstream (`Add Node · after Dice
+  (number)`) and the ribbon shows `T fitting only` / `T show all`. The
+  choice is remembered until the app closes. No upstream (nothing
+  selected): no toggle. Typing `t` in the filter types a letter.
+  Rule (owner, 2026-10-14): the filter uses only the shape of the upstream
+  connection, never Vault contents (a large workflow's Vault holds every
+  type, so it would filter nothing). A node that could read from the Vault
+  instead is still hidden. Pass-through nodes are looked through to the
+  producer; a Vault-seeded Branch path counts as its seed key's type,
+  because that value is what the path carries.
 - The string filter is activate-to-edit; `/` can jump to it.
 - Editor rows may use two lines: alias first, family identity second.
 - Prefer an ASCII text-box border around the alias and family text. Keep the

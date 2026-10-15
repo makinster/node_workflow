@@ -4,6 +4,29 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-14 — Node Selector: Fitting-Only Toggle (owner request)
+
+Branch `dist/selector-upstream-filter`, stacked on
+`dist/c2-edge-compatibility` (PR #56; merge that first). Before: 1292
+passed. After: 1308 passed (16 new tests in
+`test_selector_upstream_filter.py`).
+
+- Owner asked for a key in the node selector that shows either all nodes
+  or only those that can take what is upstream. `T` toggles it; default
+  is all nodes (unchanged behaviour) and the choice is remembered for the
+  app session (`NodeSelectorScreen.show_fitting_only`).
+- Backend `port_types.accepts_producers(factory, node_type, types)`: a
+  node fits when any input port takes any of the upstream types
+  (`types_compatible`); nodes without inputs never fit.
+- The editor traces the upstream of the add/insert point with
+  `trace_producers` (so Sleep after Dice counts as number) and passes
+  `{name, types}`; the title reads `Add Node · after Dice (number)`.
+- Upstream only: an insert between two nodes does not yet check that the
+  new node's output suits the downstream node. Most ports are `any`
+  today, so the filter hides few nodes (file and text ports); it gets
+  sharper as C3 and the migration declare types.
+- Sample screens (all vs fitting, inserting after Dice) sent before the PR.
+
 ## 2026-10-14 — C2: Edge Compatibility Diagnostics
 
 Branch `dist/c2-edge-compatibility`, from `main` at `4d7eca2` (PR #55).
