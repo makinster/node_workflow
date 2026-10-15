@@ -197,6 +197,11 @@ Update this section at the end of every session.
   markup in names and the recursion limit. Suite: 1247 passed.
   Next is unchanged: confirm with the owner, then `NODE_CONTRACT_PLAN.md` C1
   (proposed as a warning plus a required/optional flag).
+- **2026-10-14 (handoff, end of detour):** PR #53 merged (`main` at
+  `1cd5fc1`); suite 1247 passed. The UX detour is finished. **The next
+  session starts from `NODE_CONTRACT_EXECUTION_PROMPT.md`**, which carries
+  the paste-in message; this file's hard rules and environment notes still
+  apply.
 - **Owner UI taste (learned in UX4):** plain and simple. Compact one-row
   buttons (Textual `Button(..., compact=True)`), no extra status lines,
   error lines code first (`• [code] description`), and the Error Mux is
