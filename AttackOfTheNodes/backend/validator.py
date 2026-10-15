@@ -9,8 +9,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
 
 from .branch_health import ENDED_UNMERGED, derive_branch_health, output_types_from_factory
+from .branch_paths import path_index
 from .data_types import DataType
 from .vault_declarations import (
+    config_vault_read_entries,
     continuation_selected as _continuation_selected,
     repeatable_slot_active as _repeatable_slot_active,
     standard_vault_reads,
@@ -413,6 +415,23 @@ def validate_workflow(
                     }
                 )
 
+    # Node-specific reads (Get Variable, Variable Reader, Conditional,
+    # Counter, Branch seeds) carry a required/optional flag in the shared
+    # model. Optional reads have a runtime fallback, so a key nobody writes is
+    # a warning; a required read without a writer blocks the run.
+    for node_id, data in all_nodes.items():
+        config = data.get("config") or {}
+        for entry in config_vault_read_entries(str(data.get("type") or ""), config):
+            key = entry["source_id"]
+            if key in declared_membank_outputs:
+                continue
+            if entry["required"]:
+                errors.append({"node_id": node_id,
+                               "message": f"Membank input source not declared: {key}"})
+            else:
+                warnings.append({"node_id": node_id,
+                                 "message": _unwritten_read_message(config, entry)})
+
     # Typed vault: warn when a node reads a key typed "ai_session" but the writer
     # declared a different (or null) type_tag.  Error (key absent) is already above.
     # Type identities come from backend.data_types (the single canonical source
@@ -471,6 +490,7 @@ def validate_workflow(
             membank_inputs = config.get("membank_inputs") or []
             entries = list(membank_inputs) if isinstance(membank_inputs, list) else []
             entries.extend(standard_vault_reads.get(node_id, []))
+            entries.extend(config_vault_read_entries(str(data.get("type") or ""), config))
             for entry in entries:
                 key = _membank_source_id(entry)
                 if not key:
@@ -558,6 +578,17 @@ def validate_workflow(
         )
 
     return {"success": not errors, "errors": errors, "warnings": warnings}
+
+
+def _unwritten_read_message(config: Dict[str, Any], entry: Dict[str, Any]) -> str:
+    """Warning for an optional node-specific Vault read with no writer."""
+    key = entry["source_id"]
+    port = str(entry.get("target_port") or "")
+    if path_index(port) is not None:
+        label = str(config.get(f"{port}_label") or port)
+        return (f"Path '{label}' seeds from Vault key '{key}' but no node writes it; "
+                f"the path gets the input payload")
+    return f"Reads Vault key '{key}' but no node writes it; the node uses its fallback value"
 
 
 def _dfs_reachable(
