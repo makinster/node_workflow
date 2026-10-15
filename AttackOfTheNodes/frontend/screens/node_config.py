@@ -22,6 +22,7 @@ from backend.nodes.branch_node import (
     MIN_BRANCH_COUNT,
     branch_count_from_config as _branch_count_from_config,
 )
+from backend.data_types import types_compatible
 from backend.vault_declarations import typed_vault_writes
 from frontend.error_paths import editor_output_ports
 from backend.node_errors import UNMATCHED_ROUTE
@@ -1158,9 +1159,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 candidates[key] = tag
 
         def compatible(entry_tag: str, wanted: str) -> bool:
-            if wanted == "any" or entry_tag == wanted:
-                return True
-            return entry_tag == "" and wanted == "string"
+            # Untagged legacy entries hold text.
+            return types_compatible(entry_tag or "string", wanted)
 
         options: Dict[str, list[tuple[str, str]]] = {}
         for wanted in tags:
@@ -1246,7 +1246,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 producer = trace_transient_producer(self.workflow_map, self.factory, connection.get("source_node_id", ""), connection.get("source_port", "default"))
                 actual = producer.get("data_type", "any")
             wanted = info.get("data_type", "any")
-            if not connection or not publishes or (wanted != "any" and actual != "any" and actual != wanted):
+            if not connection or not publishes or not types_compatible(actual, wanted):
                 removals.setdefault(field, set()).add("Upstream payload")
         for field_schema in schema.values():
             if not isinstance(field_schema, dict) or not field_schema.get("vault_type"):

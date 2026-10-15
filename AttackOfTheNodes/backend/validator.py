@@ -10,7 +10,8 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
 
 from .branch_health import ENDED_UNMERGED, derive_branch_health, output_types_from_factory
 from .branch_paths import path_index
-from .data_types import DataType
+from .data_types import DataType, types_compatible
+from .port_types import input_port_type, metadata_for_type, port_metadata, trace_producer
 from .vault_declarations import (
     config_vault_read_entries,
     continuation_selected as _continuation_selected,
@@ -432,6 +433,34 @@ def validate_workflow(
                 warnings.append({"node_id": node_id,
                                  "message": _unwritten_read_message(config, entry)})
 
+    # C2: an active Upstream edge whose producer type the receiving port does
+    # not accept (port_types / data_types.types_compatible, the rule the
+    # editor's connector choice and Source dropdowns use). A warning for now;
+    # `any` on either side never warns.
+    for node_id, data in all_nodes.items():
+        config = data.get("config") or {}
+        for conn in data.get("connections", {}).get("inputs", []):
+            source_id = str(conn.get("source_node_id") or "")
+            target_port = str(conn.get("target_port") or "default")
+            if source_id not in all_nodes or not _standard_source_active(
+                config, target_port, "Upstream payload"
+            ):
+                continue
+            wanted = input_port_type(factory, data, target_port)
+            producer_id, actual = trace_producer(
+                all_nodes, factory, source_id, str(conn.get("source_port") or "default"))
+            if types_compatible(actual, wanted):
+                continue
+            port_name = str(port_metadata(factory, data, target_port, "input").get("name") or target_port)
+            producer = all_nodes.get(producer_id) or all_nodes[source_id]
+            warnings.append({
+                "node_id": node_id,
+                "message": (
+                    f"Input '{port_name}' expects {wanted} but "
+                    f"{_node_name(factory, producer)} sends {actual}"
+                ),
+            })
+
     # Typed vault: warn when a node reads a key typed "ai_session" but the writer
     # declared a different (or null) type_tag.  Error (key absent) is already above.
     # Type identities come from backend.data_types (the single canonical source
@@ -578,6 +607,15 @@ def validate_workflow(
         )
 
     return {"success": not errors, "errors": errors, "warnings": warnings}
+
+
+def _node_name(factory, node: Dict[str, Any]) -> str:
+    """Alias, else the type's display name (as the editor shows nodes)."""
+    alias = str(node.get("alias") or "").strip()
+    if alias:
+        return alias
+    metadata = metadata_for_type(factory, str(node.get("type") or "")) or {}
+    return str(metadata.get("display_name") or node.get("type") or "node")
 
 
 def _unwritten_read_message(config: Dict[str, Any], entry: Dict[str, Any]) -> str:

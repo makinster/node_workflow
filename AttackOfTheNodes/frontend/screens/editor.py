@@ -11,6 +11,7 @@ from textual.screen import Screen
 from textual.widgets import Header, Label, Static
 
 from backend.branch_paths import merge_slot_count, slots_covering
+from backend.data_types import types_compatible
 from backend.validator import validate_workflow
 from backend.node_errors import ERROR_PORT, MUX_DEFAULT_PORT
 from frontend.error_mux_ui import ERROR_MUX_NODE_TYPE, inline_mux_for
@@ -979,7 +980,12 @@ class EditorScreen(Screen):
         target = self.workflow_map.get_node_data(target_id) or {}
         target_meta = self._metadata_for_type(target.get("type", "")) or {}
         inputs = target_meta.get("input_port_metadata") or {}
-        return [port for port in ports if (inputs.get(port) or {}).get("data_type") == data_type]
+        # Only typed ports count as a match; `any` ports accept everything.
+        return [
+            port for port in ports
+            if (wanted := str((inputs.get(port) or {}).get("data_type") or "any")) != "any"
+            and types_compatible(data_type, wanted)
+        ]
 
     def _reassign_inactive_input_connections(self, node_id: str) -> None:
         """On config Save, move unused wiring to a unique typed Upstream input."""

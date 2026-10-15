@@ -10,6 +10,7 @@ import asyncio
 from pathlib import Path
 from typing import Any, ClassVar, Dict, List, Optional
 
+from ...data_types import input_mismatch_message
 from ...events import FILE_VIEW_REQUESTED
 from ...file_refs import file_reference, is_file_reference, reference_path
 from ...file_paths import normalize_local_path
@@ -88,7 +89,11 @@ class FileViewNode(Node):
                 if key:
                     keys.add(key)
                 if row_id == "primary" and self.config.get("file_source", "Upstream payload") != "Configured" and not is_file_reference(raw):
-                    raise ValueError("File source must contain a typed file reference.")
+                    source = self.config.get("file_source", "Upstream payload")
+                    origin = (f"Vault key '{str(self.config.get('file_vault_key') or '').strip()}'"
+                              if source == "Vault" else "Upstream payload")
+                    raise ValueError(input_mismatch_message(
+                        self.input_port_metadata["file"]["name"], origin, "file", raw) + ".")
                 path = await asyncio.to_thread(normalize_local_path, reference_path(raw))
                 if not await asyncio.to_thread(path.is_file):
                     raise FileNotFoundError(f"File to view was not found: {path}")

@@ -21,6 +21,7 @@ import logging
 from pathlib import Path
 from typing import Any, ClassVar, Dict, List, Optional
 
+from ...data_types import input_mismatch_message
 from ...file_refs import file_reference, is_file_reference, reference_path
 from ...file_paths import normalize_local_path
 from ...node_base import Node, NodeContext
@@ -74,7 +75,9 @@ class FileOutputNode(Node):
 
         path_value = self._resolve_path_value(context)
         if self.config.get("file_path_source", "Configured") != "Configured" and not is_file_reference(path_value):
-            context.signal_error(ValueError("File Path source must contain a typed file reference."))
+            context.signal_error(ValueError(input_mismatch_message(
+                self.input_port_metadata["file_path"]["name"],
+                self._source_label("file_path"), "file", path_value) + "."))
             return
         raw_path = reference_path(path_value)
         if not raw_path:
@@ -113,7 +116,10 @@ class FileOutputNode(Node):
                     return
         else:
             if not isinstance(content, str):
-                context.signal_error(ValueError("Content must be a text payload (string). Use File Reader to copy file contents."))
+                context.signal_error(ValueError(input_mismatch_message(
+                    self.input_port_metadata["content"]["name"],
+                    self._source_label("content"), "string", content)
+                    + ". Use File Reader to copy file contents."))
                 return
             data = content
             if self.config.get("interpret_newlines"):
@@ -197,6 +203,13 @@ class FileOutputNode(Node):
             context.run_session.register_resource(
                 f"window:{ref['ref_key']}", window_ref
             )
+
+    def _source_label(self, port: str) -> str:
+        """Where ``port``'s value came from, for error messages."""
+        source = str(self.config.get(f"{port}_source") or "")
+        if source == "Vault":
+            return f"Vault key '{str(self.config.get(f'{port}_vault_key') or '').strip()}'"
+        return source
 
     def _resolve_content(self, context: NodeContext) -> Optional[Any]:
         source = self.config.get("content_source", "Upstream payload")
