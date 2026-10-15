@@ -259,6 +259,22 @@ a type outside the canonical set warns at class-definition time via
 `data_types.validate_type`. The frontend renders this contract; the backend
 advertises it and never inspects frontend state.
 
+**Edge compatibility (C2).** One rule, `data_types.types_compatible(actual,
+wanted)`: `any` (or no type) on either side matches; otherwise the canonical
+types must be equal. There is no implicit conversion (File Write rejects a
+number on its text input). The editor's connector choice, the Source
+dropdowns (whether "Upstream payload" and a Vault key are offered) and the
+validator all use it. `backend/port_types.py` traces the producer through
+pass-through nodes to every possible producer (`trace_producers`); a Branch
+path forwards the Branch's input, or its Vault seed's writer types. The
+Upstream option is offered when any producer fits. An active Upstream
+edge with a producer type the port does not accept is a preflight
+**warning** ("Type mismatch": `Input 'File' expects file but Dice sends
+number`). A node that rejects a payload at runtime should say so with
+`data_types.input_mismatch_message(port name, source, expected, value)`:
+`Input 'File' (Upstream payload) expects a file reference but got a number
+(42)`.
+
 ## Typed Vault Outputs
 
 Vault writes can carry an explicit `type` field alongside the value. The type

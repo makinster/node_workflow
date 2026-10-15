@@ -23,8 +23,9 @@ When sources disagree: code first, then the recent session log, then plans.
 ## Where things stand (2026-10-14)
 
 - `main` at `959eb58` (merge of PR #54). The owner approved C1–C7
-  (2026-10-14); C1 is in its PR (`dist/c1-vault-read-warnings`), C2 is next.
-  Suite: **1260 passed** (about 3.5 minutes).
+  (2026-10-14). C1 merged (PR #55); C2 is in its PR
+  (`dist/c2-edge-compatibility`); C3 is next. Suite: **1292 passed**
+  (about 3.5 minutes).
 - Untracked files to leave alone: `.claude/launch.json`,
   `AttackOfTheNodes/"C:\...\test.txt"`, `AttackOfTheNodes/Workflow started`.
 
@@ -78,8 +79,10 @@ What the detour delivered, in short:
 1. Report branch, HEAD and dirty state.
 2. Done 2026-10-14: the owner approved C1–C7 (C8–C12 stay proposed), and
    **C1** (warnings for node-specific Vault reads with no writer, plus the
-   required/optional flag in `vault_read_entries`) is in its PR. Check it is
-   merged before branching for C2.
+   required/optional flag in `vault_read_entries`) merged as PR #55. **C2**
+   (one edge compatibility rule, `data_types.types_compatible`, plus
+   "Type mismatch" warnings and clearer file-node runtime errors) is in
+   its PR. Check it is merged before branching for C3.
 3. Then C2–C7 in order, one PR each, asking the owner where a phase needs a
    decision (C5's number policy, C6's field removal, C7's Deep Branch
    contract). Ask before starting Step 4 of `DISTRIBUTED_BUILD_PLAN.md`.

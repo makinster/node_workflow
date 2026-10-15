@@ -4,6 +4,7 @@ from typing import Any, ClassVar, Dict, List
 from ..node_base import Node, NodeContext
 from ..node_category import NodeCategory
 from ..file_paths import normalize_local_path
+from ..data_types import input_mismatch_message
 from ..file_refs import is_file_reference, reference_path
 
 
@@ -41,7 +42,10 @@ class FileReaderNode(Node):
             else:
                 raw = context.inputs.get("input")
             if source != "Configured" and not is_file_reference(raw):
-                raise ValueError("File source must contain a typed file reference.")
+                origin = (f"Vault key '{str(self.config.get('input_vault_key') or '').strip()}'"
+                          if source == "Vault" else "Upstream payload")
+                raise ValueError(input_mismatch_message(
+                    self.input_port_metadata["input"]["name"], origin, "file", raw) + ".")
             path = await asyncio.to_thread(normalize_local_path, reference_path(raw))
             def read():
                 if context.run_session is not None:

@@ -124,6 +124,8 @@ class ErrorDetailsScreen(CommandScreenMixin, ModalScreen):
         text = message.lower()
         if "deleted node stub" in text:
             return "Deleted node stub"
+        if text.startswith("input '") and " expects " in text:
+            return "Type mismatch"
         if "no node writes" in text:
             return "Unwritten Vault key"
         if "not reachable" in text:

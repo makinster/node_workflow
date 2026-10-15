@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
+from backend.port_types import is_pass_through_node, metadata_for_type
+from backend.port_types import port_metadata as _port_metadata
 from backend.vault_declarations import typed_vault_writes
 
 from frontend.node_types import (
@@ -58,17 +60,6 @@ def normalize_membank_inputs(config: Dict[str, Any]) -> list[str]:
     return normalized
 
 
-def metadata_for_type(factory, node_type: str) -> Optional[Dict[str, Any]]:
-    """Return factory metadata for a node type (shared; do not modify)."""
-    cached = getattr(factory, "metadata_for_type", None)
-    if callable(cached):
-        return cached(node_type)
-    for item in factory.get_node_types_metadata():
-        if item["type"] == node_type:
-            return item
-    return None
-
-
 def node_label(node_id: str, node: Dict[str, Any]) -> str:
     """Return the editor-facing node label."""
     name = node_display_name(node_id, node)
@@ -92,25 +83,6 @@ def node_display_name(node_id: str, node: Dict[str, Any]) -> str:
         )
         return f"Deleted: {original}"
     return str(node.get("alias") or node.get("type") or node_id)
-
-
-def _port_metadata(
-    factory,
-    node: Dict[str, Any],
-    port: str,
-    direction: str,
-) -> Dict[str, str]:
-    if direction == "output" and hasattr(factory, "node_output_port_metadata"):
-        # Config-driven ports (Error Mux routes) get their names here.
-        value = factory.node_output_port_metadata(node).get(port)
-        if isinstance(value, dict):
-            return value
-    metadata = metadata_for_type(factory, node.get("type", ""))
-    if not metadata:
-        return {}
-    key = "output_port_metadata" if direction == "output" else "input_port_metadata"
-    value = (metadata.get(key) or {}).get(port) or {}
-    return value if isinstance(value, dict) else {}
 
 
 def normalize_transient_outputs(config: Dict[str, Any]) -> Dict[str, Dict[str, str]]:
@@ -220,18 +192,6 @@ def memory_registry(workflow_map) -> Dict[str, Dict[str, Any]]:
                 entry["data_type"] = output["data_type"]
             entry["writers"].append(node_id)
     return registry
-
-
-def is_pass_through_node(factory, node: Dict[str, Any], port: str | None = None) -> bool:
-    """Return whether this node should be treated as display pass-through."""
-    metadata = metadata_for_type(factory, node.get("type", ""))
-    if metadata and (metadata.get("ui_hints") or {}).get("pass_through"):
-        return True
-    config = node.get("config") or {}
-    if config.get("pass_through") is True:
-        return True
-    output = ((metadata or {}).get("output_port_metadata") or {}).get(port or "default") or {}
-    return config.get("dead_drop_passthrough") is True and bool(output.get("pass_through"))
 
 
 def transient_output_details(

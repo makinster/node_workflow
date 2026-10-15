@@ -165,3 +165,60 @@ __all__ = [
     "vault_entry_types",
     "unknown_types",
 ]
+
+
+def types_compatible(actual: str | None, wanted: str | None) -> bool:
+    """Whether a value of type *actual* may feed a port or key typed *wanted*.
+
+    The one compatibility rule for connector choice, Source dropdowns and
+    preflight: ``any`` (or no type) on either side matches everything;
+    otherwise the canonical types must be equal. There is no implicit
+    conversion: File Write rejects a number on its text input at runtime, so a
+    ``number`` producer does not match a ``string`` port.
+    """
+    actual_type, wanted_type = coerce_type(actual), coerce_type(wanted)
+    if DEFAULT_TYPE in (actual_type, wanted_type):
+        return True
+    return actual_type == wanted_type
+
+
+#: How runtime messages name what a port expects.
+EXPECTED_LABELS: dict[str, str] = {
+    DataType.STRING.value: "text",
+    DataType.NUMBER.value: "a number",
+    DataType.BOOL.value: "true/false",
+    DataType.VAR.value: "a variable",
+    DataType.FILE.value: "a file reference",
+    DataType.AI_SESSION.value: "an AI session",
+    DataType.ANY.value: "any value",
+}
+
+
+def describe_value(value: object) -> str:
+    """Short, plain description of a runtime value's shape for error messages."""
+    if value is None or value == "":
+        return "nothing"
+    if isinstance(value, bool):
+        return f"true/false ({value})"
+    if isinstance(value, (int, float)):
+        return f"a number ({value})"
+    if isinstance(value, str):
+        preview = value if len(value) <= 30 else value[:27] + "..."
+        return f"text ({preview!r})"
+    if isinstance(value, dict):
+        kind = str(value.get("kind") or value.get("type") or "")
+        if kind:
+            return f"a {kind} reference" if "ref_key" in value else f"an object ({kind})"
+        return "an object"
+    if isinstance(value, (list, tuple)):
+        return f"a list of {len(value)}"
+    if isinstance(value, (bytes, bytearray)):
+        return f"binary data ({len(value)} bytes)"
+    return f"a {type(value).__name__}"
+
+
+def input_mismatch_message(port_name: str, source: str, expected: str, value: object) -> str:
+    """``Input 'File' (Upstream payload) expects a file reference but got a number (42)``."""
+    where = f" ({source})" if source else ""
+    wanted = EXPECTED_LABELS.get(coerce_type(expected), expected)
+    return f"Input '{port_name}'{where} expects {wanted} but got {describe_value(value)}"

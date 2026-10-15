@@ -4,6 +4,56 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-14 — C2: Edge Compatibility Diagnostics
+
+Branch `dist/c2-edge-compatibility`, from `main` at `4d7eca2` (PR #55).
+Before: 1260 passed. After: 1292 passed (32 new tests in
+`test_edge_compatibility.py`).
+
+- **One rule:** `data_types.types_compatible(actual, wanted)`: `any` or no
+  type on either side matches, otherwise canonical types must be equal (no
+  implicit conversion; File Write rejects a number on its text input). The
+  editor's connector choice (`_matching_typed_input_ports`), the Source
+  dropdowns (Upstream option filter, Vault key filter; untagged legacy keys
+  still count as text) and the validator use it. Dropdown behaviour is
+  unchanged.
+- **Backend tracing:** new `backend/port_types.py` (`metadata_for_type`,
+  `is_pass_through_node`, `port_metadata`, `input_port_type`,
+  `trace_producer`). `frontend/node_io_display.py` now imports the first
+  three instead of keeping its own copies.
+- **Preflight:** an active Upstream edge (`<port>_source` is Upstream
+  payload, or the port has no selector) whose traced producer type the
+  port does not accept is a warning, labelled "Type mismatch" in
+  Validation Details: `Input 'File' expects file but Dice sends number`.
+  No-op and other `any` outputs never warn. The owner's saved workflows
+  produce no new warnings (read-only check).
+- **Runtime:** `data_types.describe_value` and `input_mismatch_message`;
+  File Reader, File Write (File Path and Content) and File View now say
+  `Input 'File' (Upstream payload) expects a file reference but got a
+  number (42).` instead of "must contain a typed file reference".
+- Reproduction: Random Number → File Reader on Upstream validated clean
+  before and failed at run time with a message naming neither port nor
+  value; the new tests fail on the old code.
+- Sample screen sent to the owner before the PR.
+- **PR 56 review (fixed):** the tracer followed only the first connection
+  into a pass-through node, so File Write and Random Number both feeding a
+  Sleep before File Reader warned or not depending on connection order.
+  `port_types.trace_producers` now returns every producer a pass-through
+  chain can forward (each connection into its forwarded port, without
+  repeats, ending on cycles) and the validator checks each. Reproduced
+  first (the File-Write-first order failed).
+- **Owner follow-up (2026-10-14): Source dropdown checks every producer.**
+  The Upstream option used the display tracer, which follows only the
+  first connection, so a Sleep fed by Random Number then File Write hid
+  it from File Reader. It now uses `trace_producers` and is offered when
+  any producer fits (the validator warns about the rest). To keep the
+  dropdown's Branch behaviour, `trace_producers` now follows Branch paths
+  like the display tracer does: a path forwards the Branch's input, or a
+  Vault-seeded path carries its key's writer types. So Random Number →
+  Branch → File Reader now warns too. The display tracer
+  (`trace_transient_producer`) still names only the first producer in
+  previews; that is display, not a check.
+
 ## 2026-10-14 — C1: Preflight Warnings for Node-Specific Vault Reads
 
 Branch `dist/c1-vault-read-warnings`, from `main` at `959eb58` (PR #54).
