@@ -23,6 +23,7 @@ from backend.nodes.branch_node import (
     branch_count_from_config as _branch_count_from_config,
 )
 from backend.data_types import types_compatible
+from backend.port_types import trace_producers
 from backend.vault_declarations import typed_vault_writes
 from frontend.error_paths import editor_output_ports
 from backend.node_errors import UNMATCHED_ROUTE
@@ -1237,16 +1238,21 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             if field not in schema:
                 continue
             connection = next((conn for conn in connections if conn.get("target_port") == port), None)
-            actual = "any"
-            publishes = True
+            wanted = info.get("data_type", "any")
+            fits = publishes = True
             if connection:
                 source_node = self.workflow_map.get_node_data(connection.get("source_node_id", "")) or {}
                 source_config = source_node.get("config") or {}
                 publishes = source_config.get("transient_output", True) is not False or bool(source_config.get("dead_drop_passthrough"))
-                producer = trace_transient_producer(self.workflow_map, self.factory, connection.get("source_node_id", ""), connection.get("source_port", "default"))
-                actual = producer.get("data_type", "any")
-            wanted = info.get("data_type", "any")
-            if not connection or not publishes or not types_compatible(actual, wanted):
+                # Every payload the connection can carry (a Sleep fed by two
+                # nodes forwards either): offered when any of them fits; the
+                # validator warns about the ones that do not.
+                producers = trace_producers(
+                    self.workflow_map.get_all_node_data(), self.factory,
+                    connection.get("source_node_id", ""), connection.get("source_port", "default"),
+                )
+                fits = not producers or any(types_compatible(actual, wanted) for _, actual in producers)
+            if not connection or not publishes or not fits:
                 removals.setdefault(field, set()).add("Upstream payload")
         for field_schema in schema.values():
             if not isinstance(field_schema, dict) or not field_schema.get("vault_type"):

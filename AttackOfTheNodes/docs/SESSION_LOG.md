@@ -7,7 +7,7 @@ overhaul.
 ## 2026-10-14 — C2: Edge Compatibility Diagnostics
 
 Branch `dist/c2-edge-compatibility`, from `main` at `4d7eca2` (PR #55).
-Before: 1260 passed. After: 1286 passed (26 new tests in
+Before: 1260 passed. After: 1292 passed (32 new tests in
 `test_edge_compatibility.py`).
 
 - **One rule:** `data_types.types_compatible(actual, wanted)`: `any` or no
@@ -41,10 +41,18 @@ Before: 1260 passed. After: 1286 passed (26 new tests in
   `port_types.trace_producers` now returns every producer a pass-through
   chain can forward (each connection into its forwarded port, without
   repeats, ending on cycles) and the validator checks each. Reproduced
-  first (the File-Write-first order failed). Not changed: the editor's
-  display tracer (`trace_transient_producer`, which also drives the
-  Upstream option in the Source dropdown) still follows only the first
-  connection, so with mixed producers that option depends on order.
+  first (the File-Write-first order failed).
+- **Owner follow-up (2026-10-14): Source dropdown checks every producer.**
+  The Upstream option used the display tracer, which follows only the
+  first connection, so a Sleep fed by Random Number then File Write hid
+  it from File Reader. It now uses `trace_producers` and is offered when
+  any producer fits (the validator warns about the rest). To keep the
+  dropdown's Branch behaviour, `trace_producers` now follows Branch paths
+  like the display tracer does: a path forwards the Branch's input, or a
+  Vault-seeded path carries its key's writer types. So Random Number →
+  Branch → File Reader now warns too. The display tracer
+  (`trace_transient_producer`) still names only the first producer in
+  previews; that is display, not a check.
 
 ## 2026-10-14 — C1: Preflight Warnings for Node-Specific Vault Reads
 

@@ -24,7 +24,7 @@ When sources disagree: code first, then the recent session log, then plans.
 
 - `main` at `959eb58` (merge of PR #54). The owner approved C1–C7
   (2026-10-14). C1 merged (PR #55); C2 is in its PR
-  (`dist/c2-edge-compatibility`); C3 is next. Suite: **1286 passed**
+  (`dist/c2-edge-compatibility`); C3 is next. Suite: **1292 passed**
   (about 3.5 minutes).
 - Untracked files to leave alone: `.claude/launch.json`,
   `AttackOfTheNodes/"C:\...\test.txt"`, `AttackOfTheNodes/Workflow started`.

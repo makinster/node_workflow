@@ -249,3 +249,94 @@ def test_trace_producers_lists_each_source_once_and_ends_on_cycles():
     workflow_map.connect(first, "default", second, "input")
     nodes = workflow_map.get_all_node_data()
     assert trace_producers(nodes, FACTORY, second, "default") == [(number, "number")]
+
+
+# --- Branch paths and the Source dropdown (PR 56 follow-up) -------------------
+
+
+def test_branch_path_forwards_its_input_type():
+    workflow_map = _workflow("c2_branch_forward")
+    number = workflow_map.add_node("random_number_node", alias="Dice")
+    branch = workflow_map.add_node("branch_node")
+    reader = workflow_map.add_node("file_reader_node")
+    workflow_map.connect(number, "default", branch, "input")
+    workflow_map.connect(branch, "path_a", reader, "input")
+    _set(workflow_map, reader, input_source="Upstream payload")
+
+    assert _edge_warnings(validate_workflow(workflow_map, FACTORY), reader) == [
+        "Input 'File' expects file but Dice sends number"
+    ]
+
+
+@pytest.mark.parametrize("writer_type, warns", [
+    ("file_output_node", False),
+    ("random_number_node", True),
+])
+def test_vault_seeded_branch_path_takes_the_writer_type(writer_type, warns):
+    workflow_map = _workflow(f"c2_branch_seed_{writer_type}")
+    writer = workflow_map.add_node(writer_type, alias="Writer")
+    branch = workflow_map.add_node("branch_node")
+    reader = workflow_map.add_node("file_reader_node")
+    workflow_map.connect(writer, "default", branch, "input")
+    workflow_map.connect(branch, "path_a", reader, "input")
+    _set(workflow_map, writer, vault_write=True, vault_write_key="seed",
+         content_source="Configured", content="x", file_path="/tmp/out.txt")
+    _set(workflow_map, branch, branch_payload_sources={"path_a": "vault:seed"})
+    _set(workflow_map, reader, input_source="Upstream payload")
+
+    expected = ["Input 'File' expects file but Writer sends number"] if warns else []
+    assert _edge_warnings(validate_workflow(workflow_map, FACTORY), reader) == expected
+
+
+def _upstream_offered(workflow_map, node_id):
+    """Whether File Reader's File source offers Upstream payload."""
+    import asyncio
+
+    from textual.app import App
+    from textual.widgets import Select
+
+    from backend.memory_bank import MemoryBank
+    from frontend.screens.node_config import NodeConfigScreen
+
+    screen = NodeConfigScreen(FACTORY, workflow_map, node_id,
+                              workflow_map.get_node_data(node_id),
+                              memory_bank=MemoryBank(EventBus()))
+    seen = {}
+
+    class ConfigApp(App):
+        def on_mount(self):
+            self.push_screen(screen)
+
+    async def body():
+        async with ConfigApp().run_test(size=(110, 40)) as pilot:
+            await pilot.pause(0.1)
+            select = screen.query_one("#field-input_source", Select)
+            seen["options"] = {value for _label, value in select._options}
+
+    asyncio.run(body())
+    return "Upstream payload" in seen["options"]
+
+
+@pytest.mark.parametrize("number_first", [True, False])
+def test_dropdown_offers_upstream_when_any_producer_fits(number_first):
+    workflow_map = _workflow(f"c2_dropdown_mixed_{number_first}")
+    writer = workflow_map.add_node("file_output_node")
+    number = workflow_map.add_node("random_number_node")
+    sleep = workflow_map.add_node("sleep_node")
+    reader = workflow_map.add_node("file_reader_node")
+    for source in ([number, writer] if number_first else [writer, number]):
+        workflow_map.connect(source, "default", sleep, "input")
+    workflow_map.connect(sleep, "default", reader, "input")
+
+    assert _upstream_offered(workflow_map, reader) is True
+
+
+def test_dropdown_hides_upstream_when_no_producer_fits():
+    workflow_map = _workflow("c2_dropdown_number_only")
+    number = workflow_map.add_node("random_number_node")
+    sleep = workflow_map.add_node("sleep_node")
+    reader = workflow_map.add_node("file_reader_node")
+    workflow_map.connect(number, "default", sleep, "input")
+    workflow_map.connect(sleep, "default", reader, "input")
+
+    assert _upstream_offered(workflow_map, reader) is False

@@ -5,16 +5,19 @@ the editor's connector choice, the node editor's Source dropdowns and the
 validator's edge check, so a port the UI offers is a port preflight accepts.
 
 The producer type follows pass-through nodes (Sleep, Counter, a node with
-``pass_through`` set, a dead-drop pass-through port) back to the node that
-made the payload. Branch paths and anything else without a declared type are
-``any``: never flagged.
+``pass_through`` set, a dead-drop pass-through port) back to every node that
+can make the payload. A Branch path forwards the Branch's input, or, when
+seeded from Vault, carries whatever that key's writers store. Anything
+without a declared type is ``any``: never flagged.
 """
 
 from __future__ import annotations
 
 from typing import Any, Dict, List, Mapping, Optional, Tuple
 
+from .branch_health import BRANCH_NODE_TYPE
 from .data_types import DEFAULT_TYPE, coerce_type
+from .vault_declarations import typed_vault_writes
 
 
 def metadata_for_type(factory, node_type: str) -> Optional[Dict[str, Any]]:
@@ -86,6 +89,23 @@ def trace_producers(
         node = nodes.get(current_id) or {}
         if not node:
             found = (current_id, DEFAULT_TYPE)
+        elif node.get("type") == BRANCH_NODE_TYPE and current_port != "input":
+            seed = _branch_seed_key(node, current_port)
+            if seed is not None:
+                writers = _vault_writers(nodes, factory, seed) or [(current_id, DEFAULT_TYPE)]
+                for writer in writers:
+                    if writer not in producers:
+                        producers.append(writer)
+                continue
+            upstream = [conn for conn in node.get("connections", {}).get("inputs", [])
+                        if str(conn.get("target_port") or "") == "input" and conn.get("source_node_id")]
+            if upstream:
+                stack.extend(
+                    (str(conn["source_node_id"]), str(conn.get("source_port") or "default"))
+                    for conn in reversed(upstream)
+                )
+                continue
+            found = (current_id, DEFAULT_TYPE)
         elif not is_pass_through_node(factory, node, current_port):
             output = port_metadata(factory, node, current_port, "output")
             found = (current_id, coerce_type(output.get("data_type")))
@@ -119,3 +139,41 @@ def _forwarded_inputs(factory, node: Dict[str, Any]) -> List[Dict[str, Any]]:
         if matches:
             return matches
     return []
+
+
+def _branch_seed_key(node: Dict[str, Any], port: str) -> Optional[str]:
+    """The Vault key a Branch path is seeded from, or None when it forwards
+    the Branch's input (the default)."""
+    sources = (node.get("config") or {}).get("branch_payload_sources") or {}
+    source = str(sources.get(port) or "").strip() if isinstance(sources, dict) else ""
+    if not source.startswith("vault:"):
+        return None
+    return source.removeprefix("vault:").strip()
+
+
+def _vault_writers(
+    nodes: Mapping[str, Dict[str, Any]], factory, key: str,
+) -> List[Tuple[str, str]]:
+    """``(writer node id, type)`` for every node that writes Vault ``key``:
+    declared ``membank_outputs`` and the shared model's writes
+    (``vault_declarations.typed_vault_writes``); unknown types are ``any``."""
+    writers: List[Tuple[str, str]] = []
+    for node_id, node in nodes.items():
+        config = node.get("config") or {}
+        node_type = str(node.get("type") or "")
+        tags: List[Optional[str]] = []
+        outputs = config.get("membank_outputs") or []
+        for entry in outputs if isinstance(outputs, list) else []:
+            entry_key = entry if isinstance(entry, str) else (
+                str(entry.get("source_id") or entry.get("output") or entry.get("id") or "")
+                if isinstance(entry, dict) else "")
+            if str(entry_key).strip() == key:
+                tags.append(entry.get("type_tag") if isinstance(entry, dict) else None)
+        writes = typed_vault_writes(node_type, config, metadata_for_type(factory, node_type) or {})
+        if key in writes:
+            tags.append(writes[key])
+        for tag in tags:
+            writer = (node_id, coerce_type(tag))
+            if writer not in writers:
+                writers.append(writer)
+    return writers
