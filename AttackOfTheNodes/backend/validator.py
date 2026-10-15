@@ -90,10 +90,10 @@ def _validate_error_muxes(
         routes = {route["id"]: route["codes"] for route in mux_routes(config)}
         labels = {route["id"]: route["label"] for route in mux_routes(config)}
         for problem in mux_route_problems(config):
-            warnings.append({"node_id": node_id, "message": f"Error Mux {problem}"})
+            warnings.append({"node_id": node_id, "code": "mux_route_problem", "message": f"Error Mux {problem}"})
         if not any(routes.values()) and not mux_has_unmatched_route(config):
             warnings.append({"node_id": node_id,
-                             "message": "Error Mux lists no codes, so it never routes anything"})
+                             "code": "mux_no_codes", "message": "Error Mux lists no codes, so it never routes anything"})
         # Inline (the node's output into `input`) or wired from its `error` port.
         sources = [
             conn for conn in data.get("connections", {}).get("inputs", [])
@@ -101,13 +101,13 @@ def _validate_error_muxes(
         ]
         if not sources:
             warnings.append({"node_id": node_id,
-                             "message": "Error Mux has no incoming connection"})
+                             "code": "mux_no_input", "message": "Error Mux has no incoming connection"})
         for conn in sources:
             source_id = conn.get("source_node_id")
             if conn.get("target_port") == ERROR_PORT and conn.get("source_port") != ERROR_PORT:
                 errors.append({
                     "node_id": node_id,
-                    "message": (
+                    "code": "mux_wrong_source_port", "message": (
                         f"Error Mux input comes from port '{conn.get('source_port')}' "
                         f"of {source_id}; connect a node's '{ERROR_PORT}' port"
                     ),
@@ -122,7 +122,7 @@ def _validate_error_muxes(
                     if code not in known:
                         errors.append({
                             "node_id": node_id,
-                            "message": (
+                            "code": "mux_unknown_code", "message": (
                                 f"Error Mux route '{labels[port]}' lists code '{code}', which "
                                 f"{source.get('alias') or source_id} never raises "
                                 f"(declared: {', '.join(sorted(c for c in known if c))})"
@@ -136,12 +136,12 @@ def _validate_error_muxes(
             if codes and port not in connected:
                 warnings.append({
                     "node_id": node_id,
-                    "message": f"Error Mux route '{labels[port]}' lists codes but has no connection",
+                    "code": "mux_route_unconnected", "message": f"Error Mux route '{labels[port]}' lists codes but has no connection",
                 })
         if mux_has_unmatched_route(config) and UNMATCHED_ROUTE not in connected:
             warnings.append({
                 "node_id": node_id,
-                "message": "Error Mux unmatched route is on but has no connection",
+                "code": "mux_unmatched_unconnected", "message": "Error Mux unmatched route is on but has no connection",
             })
 
 
@@ -159,19 +159,19 @@ def validate_workflow(
         node_id for node_id, data in all_nodes.items() if data["type"] == "start_node"
     ]
     if len(start_ids) == 0:
-        errors.append({"node_id": "", "message": "Workflow has no start node"})
+        errors.append({"node_id": "", "code": "no_start_node", "message": "Workflow has no start node"})
     elif len(start_ids) > 1:
         errors.append(
             {
                 "node_id": "",
-                "message": f"Workflow has {len(start_ids)} start nodes; expected exactly 1",
+                "code": "multiple_start_nodes", "message": f"Workflow has {len(start_ids)} start nodes; expected exactly 1",
             }
         )
 
     for node_id, data in all_nodes.items():
         if not factory.is_valid_node_type(data["type"]):
             errors.append(
-                {"node_id": node_id, "message": f"Unknown node type: {data['type']}"}
+                {"node_id": node_id, "code": "unknown_node_type", "message": f"Unknown node type: {data['type']}"}
             )
 
     node_ids = set(all_nodes.keys())
@@ -182,7 +182,7 @@ def validate_workflow(
                 errors.append(
                     {
                         "node_id": node_id,
-                        "message": f"Output connection targets missing node: {target}",
+                        "code": "missing_node", "message": f"Output connection targets missing node: {target}",
                     }
                 )
         for conn in data.get("connections", {}).get("inputs", []):
@@ -191,7 +191,7 @@ def validate_workflow(
                 errors.append(
                     {
                         "node_id": node_id,
-                        "message": f"Input connection from missing node: {source}",
+                        "code": "missing_node", "message": f"Input connection from missing node: {source}",
                     }
                 )
 
@@ -213,7 +213,7 @@ def validate_workflow(
             errors.append(
                 {
                     "node_id": node_id,
-                    "message": (
+                    "code": "deleted_node_stub", "message": (
                         f"Deleted node stub (was: {original}) — replace with a valid node type"
                         f"{port_context}"
                     ),
@@ -242,7 +242,7 @@ def validate_workflow(
                 warnings.append(
                     {
                         "node_id": node_id,
-                        "message": (
+                        "code": "hidden_output_connection", "message": (
                             f"Connection on hidden output '{port}' never runs "
                             f"(this node's settings do not use that output)"
                         ),
@@ -253,7 +253,7 @@ def validate_workflow(
                 errors.append(
                     {
                         "node_id": node_id,
-                        "message": (
+                        "code": "undeclared_port", "message": (
                             f"Orphaned output connection on undeclared port '{port}' "
                             f"(node type '{node_type}' has no such output)"
                         ),
@@ -266,7 +266,7 @@ def validate_workflow(
                 warnings.append(
                     {
                         "node_id": node_id,
-                        "message": (
+                        "code": "hidden_input_connection", "message": (
                             f"Connection into hidden input '{port}' is never read "
                             f"(this node's settings do not use that input)"
                         ),
@@ -276,7 +276,7 @@ def validate_workflow(
                 errors.append(
                     {
                         "node_id": node_id,
-                        "message": (
+                        "code": "undeclared_port", "message": (
                             f"Orphaned input connection on undeclared port '{port}' "
                             f"(node type '{node_type}' has no such input)"
                         ),
@@ -308,7 +308,7 @@ def validate_workflow(
                     errors.append(
                         {
                             "node_id": node_id,
-                            "message": f"Missing file path in field '{field_name}'",
+                            "code": "missing_file_path", "message": f"Missing file path in field '{field_name}'",
                         }
                     )
                 continue
@@ -317,14 +317,14 @@ def validate_workflow(
                         if field_info.get("normalize_local_path")
                         else Path(raw_path).expanduser())
             except ValueError as exc:
-                errors.append({"node_id": node_id, "message": str(exc)})
+                errors.append({"node_id": node_id, "code": "invalid_file_path", "message": str(exc)})
                 continue
             if (field_info.get("path_mode") != "write"
                     and not path.exists()):
                 warnings.append(
                     {
                         "node_id": node_id,
-                        "message": (
+                        "code": "file_not_found", "message": (
                             f"File for field '{field_name}' was not found at "
                             f"validation time: {path}"
                         ),
@@ -352,7 +352,7 @@ def validate_workflow(
                     errors.append(
                         {
                             "node_id": node_id,
-                            "message": (
+                            "code": "secret_not_configured", "message": (
                                 f"Secret key for field '{field_name}' is required but not configured"
                             ),
                         }
@@ -362,7 +362,7 @@ def validate_workflow(
                 warnings.append(
                     {
                         "node_id": node_id,
-                        "message": (
+                        "code": "secret_missing", "message": (
                             f"Secret key '{key_name}' (field '{field_name}') "
                             f"is not present in the secrets store"
                         ),
@@ -384,9 +384,9 @@ def validate_workflow(
             if (config.get(f"{port}_source") == "Vault"
                     and _repeatable_slot_active(config, port)
                     and not str(config.get(f"{port}_vault_key") or "").strip()):
-                errors.append({"node_id": node_id, "message": f"Vault source for '{port}' requires a key"})
+                errors.append({"node_id": node_id, "code": "vault_source_key_missing", "message": f"Vault source for '{port}' requires a key"})
         if config.get("vault_write") and not str(config.get("vault_write_key") or "").strip():
-            errors.append({"node_id": node_id, "message": "Vault output requires a key"})
+            errors.append({"node_id": node_id, "code": "vault_output_key_missing", "message": "Vault output requires a key"})
 
     for duplicate in _duplicate_input_source_errors(all_nodes, standard_vault_reads):
         errors.append(duplicate)
@@ -405,14 +405,14 @@ def validate_workflow(
                 errors.append(
                     {
                         "node_id": node_id,
-                        "message": f"Input source missing node: {source_id}",
+                        "code": "missing_node", "message": f"Input source missing node: {source_id}",
                     }
                 )
             elif source_type == "membank" and source_id not in declared_membank_outputs:
                 errors.append(
                     {
                         "node_id": node_id,
-                        "message": f"Membank input source not declared: {source_id}",
+                        "code": "undeclared_vault_key", "message": f"Membank input source not declared: {source_id}",
                     }
                 )
 
@@ -428,10 +428,10 @@ def validate_workflow(
                 continue
             if entry["required"]:
                 errors.append({"node_id": node_id,
-                               "message": f"Membank input source not declared: {key}"})
+                               "code": "undeclared_vault_key", "message": f"Membank input source not declared: {key}"})
             else:
-                warnings.append({"node_id": node_id,
-                                 "message": _unwritten_read_message(config, entry)})
+                warnings.append({"node_id": node_id, "port": entry["target_port"],
+                                 "code": "unwritten_vault_key", "message": _unwritten_read_message(config, entry)})
 
     # C2: an active Upstream edge whose producer type the receiving port does
     # not accept (port_types / data_types.types_compatible, the rule the
@@ -458,7 +458,9 @@ def validate_workflow(
                 producer = all_nodes.get(producer_id) or all_nodes[source_id]
                 warnings.append({
                     "node_id": node_id,
-                    "message": (
+                    "port": target_port,
+                    "source_node_id": producer_id,
+                    "code": "type_mismatch", "message": (
                         f"Input '{port_name}' expects {wanted} but "
                         f"{_node_name(factory, producer)} sends {actual}"
                     ),
@@ -486,13 +488,13 @@ def validate_workflow(
             writer_tag = declared_membank_outputs[key]
             if reader_tag != ai_session:
                 if writer_tag and writer_tag != "any" and writer_tag != reader_tag:
-                    warnings.append({"node_id": node_id, "message": f"Vault key '{key}' has type {writer_tag}, incompatible with {reader_tag} input"})
+                    warnings.append({"node_id": node_id, "code": "vault_type_mismatch", "message": f"Vault key '{key}' has type {writer_tag}, incompatible with {reader_tag} input"})
                 continue
             if writer_tag != ai_session:
                 warnings.append(
                     {
                         "node_id": node_id,
-                        "message": (
+                        "code": "ai_session_tag_missing", "message": (
                             f"vault key '{key}' is read as ai_session but writer "
                             f"does not declare ai_session type tag"
                         ),
@@ -535,7 +537,7 @@ def validate_workflow(
                     warnings.append(
                         {
                             "node_id": node_id,
-                            "message": (
+                            "code": "vault_race", "message": (
                                 f"Node reads vault key '{key}' but all writers are on "
                                 f"parallel branches; consider adding a Wait Until node "
                                 f"before this reader"
@@ -550,7 +552,7 @@ def validate_workflow(
             warnings.append(
                 {
                     "node_id": node_id,
-                    "message": "Node has use_chat_session enabled but no session_key configured",
+                    "code": "chat_session_key_missing", "message": "Node has use_chat_session enabled but no session_key configured",
                 }
             )
 
@@ -567,7 +569,7 @@ def validate_workflow(
             warnings.append(
                 {
                     "node_id": node_id,
-                    "message": (
+                    "code": "window_placement_unsupported", "message": (
                         f"Window placement '{placement}' is not supported on "
                         f"this platform; the file will open unplaced"
                     ),
@@ -577,7 +579,7 @@ def validate_workflow(
             warnings.append(
                 {
                     "node_id": node_id,
-                    "message": (
+                    "code": "window_close_unsupported", "message": (
                         "'Close when run ends' is not supported on this "
                         "platform; the window will stay open"
                     ),
@@ -592,7 +594,7 @@ def validate_workflow(
                 warnings.append(
                     {
                         "node_id": node_id,
-                        "message": "Node is not reachable from the start node",
+                        "code": "unreachable", "message": "Node is not reachable from the start node",
                     }
                 )
 
@@ -602,7 +604,7 @@ def validate_workflow(
         warnings.append(
             {
                 "node_id": health.terminus_node_id or health.branch_node_id,
-                "message": (
+                "code": "merge_beacon_unconnected", "message": (
                     "Merge Beacon is not connected to a merge node "
                     f"for branch port '{health.port}'"
                 ),
@@ -683,7 +685,7 @@ def _duplicate_input_source_errors(
             errors.append(
                 {
                     "node_id": node_id,
-                    "message": (
+                    "code": "duplicate_input_source", "message": (
                         f"Duplicate input source {description} used by "
                         f"'{previous}' and '{label}'"
                     ),

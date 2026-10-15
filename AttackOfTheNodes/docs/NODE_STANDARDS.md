@@ -385,6 +385,15 @@ Warning plus Wait Until suggestion is the correct ceiling.
 This error/warning split applies uniformly to string, number, file, and
 ai_session vault references.
 
+**Issue codes (2026-10-15).** Every validator error and warning is
+`{node_id, code, message}`, plus `port` / `source_node_id` where they apply
+(`type_mismatch`, `unwritten_vault_key`). `code` is one of
+`backend/validation_codes.ISSUE_CODES` (each with a one-line meaning).
+Frontends label and group issues by code (`VALIDATION_LABELS` in
+`frontend/screens/error_details.py`), never by message text, so messages
+can be reworded freely. A new check adds a code there and a label in the
+table; `tests/test_validation_codes.py` fails if either is missing.
+
 ## Standard Config Tabs
 
 Use Source, Parameters, Payloads, and Connections as shared section meanings,

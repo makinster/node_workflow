@@ -4,6 +4,33 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-15 — Validator Issue Codes
+
+Branch `dist/validation-issue-codes`, stacked on
+`dist/selector-upstream-filter` (PR #57; merge that first). Before: 1308
+passed. After: 1314 passed (6 new tests in `test_validation_codes.py`).
+
+- Owner chose this small PR before C3 so labels stop depending on message
+  text (C1 and C2 had each added another text match).
+- `backend/validation_codes.py`: `ISSUE_CODES`, 34 codes with one-line
+  meanings. All 38 message sites in `validator.py` now add `code`;
+  `type_mismatch` also carries `port` and `source_node_id`,
+  `unwritten_vault_key` carries `port`. `message` is unchanged, so the CLI
+  and logs read the same.
+- Validation Details: `VALIDATION_LABELS` (code to label) replaces the
+  text matching in `_validation_type`; unknown codes fall back to
+  "Validation issue". Every issue now gets a specific label; new names:
+  "Missing node" (was "Missing connection target"), "No Start node" /
+  "Several Start nodes" (was "Start node"), plus labels for checks that
+  had none (secrets, files, Vault keys, Error Mux, unused ports).
+- Tests: codes used equal codes registered, every append carries a code,
+  every code has a label, a messy workflow yields only registered codes
+  with port/source details, labels ignore message wording. One C1 test
+  that compared a whole issue dict now includes the code (intended).
+- Wording noticed for the owner's batch: an unknown type reads "Unknown
+  node type: Unknown node type: ..." (label and message repeat).
+- Sample screen sent before the PR.
+
 ## 2026-10-14 — Node Selector: Fitting-Only Toggle (owner request)
 
 Branch `dist/selector-upstream-filter`, stacked on
