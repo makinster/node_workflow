@@ -70,6 +70,48 @@ and End's Payloads) follows C1–C9. The owner's live-test findings in
 `PROJECT_BACKLOG.md` (window nodes, missing pass-through, outdated Vault UI,
 reveal autoscroll, error UI keys during runs) overlap C4 and the migration.
 
+### Migration inventory (2026-10-14, from code)
+
+Read from each type's config schema and defaults at `main` + PR #56. "Current"
+means the shared Source selector with a Vault option (`<port>_source`) and/or
+standard Vault output routing (`vault_write`). The "Likely needs" column is a
+proposal to confirm per node when its family is migrated; never add Vault or
+forwarding controls a node does not implement (F01).
+
+**On the current model (7):** Chat Completion (prompt, document, context 1–8;
+Vault output), File Write (content, file path; Vault output), File Reader
+(file; Vault output), File Manager / `file_view_node` (file; Vault output),
+Window Control (file; no Vault output), Text Output (input; legacy key list
+for output), Start (Vault output only).
+
+| Family | Node | Today | Likely needs |
+|---|---|---|---|
+| Data | Concat | no source selector | Source control per input; Vault output |
+| Data | Text Transform | Parameters only | Source control; Vault output |
+| Data | JSON Path | Parameters only | Source control; Vault output |
+| Data | Random Number | Parameters only (+ ignored `value`, C6) | Vault output; hide Source |
+| Data | Get Variable / Variable Reader | own `variable_name` read | own field stays (no Vault picker); typed key picker later (C10) |
+| Data | Set Variable / Variable Setter | own write, pass-through option | own field stays; hide empty sections |
+| Data | Counter | own key, pass-through | own field stays; hide empty sections |
+| Data | Memory Snapshot | none | forwarding summary (C4); hide empty sections |
+| IO | HTTP Request | own body source, no Vault option | Source control with Vault; mode-typed output (C3) |
+| IO | User Text Input | legacy output keys | Vault output routing |
+| AI | Embedding, Image Generation | none (simulated) | Source control; Vault output; no inert secrets (F10) |
+| Flow | Conditional | own left-value source | own source stays; hide empty sections |
+| Flow | Parallel Branch | per-path seeds | keep focused layout (do not redesign) |
+| Flow | Random Branch, Deep Branch | none | hide empty sections; Deep Branch contract (C7) |
+| Flow | Merge, Merge Beacon, Wait Until | topology-driven | keep focused layout; Merge Beacon forwarding (C4) |
+| Flow | End | none | hide empty Payloads |
+| Flow | Error Mux | routes | keep focused layout |
+| Debug | Logger, Probe, No-Op, Repeat Counter | none | forwarding summary (C4); hide empty sections |
+| Debug | Sleep | pass-through hint | hide empty sections |
+| Debug | Echo, Error Trigger | none | truthful descriptions (F11); hide empty sections |
+
+Pass-through/forwarding today exists only on Counter, Set Variable, Sleep,
+Variable Setter, Chat Completion, File Write, File Manager and Window
+Control (answers the backlog's "which nodes lack pass-through"). Deleted
+Node (`tombstone_node`) is a backend record, not a migration target.
+
 **Do not:** redesign Branch/Merge/Wait coordination, or put forwarding/Vault
 checkboxes on nodes that do not implement those capabilities.
 
