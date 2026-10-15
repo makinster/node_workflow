@@ -13,6 +13,46 @@ from textual.widgets import Button, Label, Static
 from frontend.node_location import node_heading
 from frontend.widgets.command_screen_mixin import CommandScreenMixin
 
+#: Validation Details label per validator issue code
+#: (``backend/validation_codes.ISSUE_CODES``). The one place to change how a
+#: kind of issue is named; an unknown code falls back to "Validation issue".
+VALIDATION_LABELS: Dict[str, str] = {
+    "no_start_node": "No Start node",
+    "multiple_start_nodes": "Several Start nodes",
+    "unknown_node_type": "Unknown node type",
+    "deleted_node_stub": "Deleted node stub",
+    "missing_node": "Missing node",
+    "unreachable": "Unreachable node",
+    "merge_beacon_unconnected": "Unmerged branch",
+    "undeclared_port": "Invalid port",
+    "hidden_output_connection": "Unused output",
+    "hidden_input_connection": "Unused input",
+    "duplicate_input_source": "Duplicate source",
+    "type_mismatch": "Type mismatch",
+    "undeclared_vault_key": "Missing Vault key",
+    "unwritten_vault_key": "Unwritten Vault key",
+    "vault_source_key_missing": "Vault key not set",
+    "vault_output_key_missing": "Vault key not set",
+    "vault_type_mismatch": "Vault type mismatch",
+    "ai_session_tag_missing": "Vault type mismatch",
+    "vault_race": "Vault timing",
+    "chat_session_key_missing": "Session key not set",
+    "missing_file_path": "File path not set",
+    "invalid_file_path": "Invalid file path",
+    "file_not_found": "File not found",
+    "secret_not_configured": "Secret not set",
+    "secret_missing": "Secret missing",
+    "window_placement_unsupported": "Not supported here",
+    "window_close_unsupported": "Not supported here",
+    "mux_route_problem": "Error Mux",
+    "mux_no_codes": "Error Mux",
+    "mux_no_input": "Error Mux",
+    "mux_wrong_source_port": "Error Mux",
+    "mux_unknown_code": "Error Mux",
+    "mux_route_unconnected": "Error Mux",
+    "mux_unmatched_unconnected": "Error Mux",
+}
+
 
 class ErrorDetailsScreen(CommandScreenMixin, ModalScreen):
     """Show structured errors and recovery choices."""
@@ -102,7 +142,7 @@ class ErrorDetailsScreen(CommandScreenMixin, ModalScreen):
                 for index, item in enumerate(items):
                     node_id = item.get("node_id") or ""
                     message = item.get("message") or "-"
-                    error_type = self._validation_type(message)
+                    error_type = self._validation_type(item)
                     yield Static(
                         "\n".join(
                             [
@@ -120,22 +160,6 @@ class ErrorDetailsScreen(CommandScreenMixin, ModalScreen):
                         yield Button("Jump to node", id=button_id, variant="default")
             yield Button("Close", id="close-error", variant="default")
 
-    def _validation_type(self, message: str) -> str:
-        text = message.lower()
-        if "deleted node stub" in text:
-            return "Deleted node stub"
-        if text.startswith("input '") and " expects " in text:
-            return "Type mismatch"
-        if "no node writes" in text:
-            return "Unwritten Vault key"
-        if "not reachable" in text:
-            return "Unreachable node"
-        if "unknown node type" in text:
-            return "Unknown node type"
-        if "missing node" in text:
-            return "Missing connection target"
-        if "undeclared port" in text:
-            return "Invalid port"
-        if "start node" in text:
-            return "Start node"
-        return "Validation issue"
+    def _validation_type(self, item: Dict[str, Any]) -> str:
+        """Label for one validator issue, from its ``code``."""
+        return VALIDATION_LABELS.get(str(item.get("code") or ""), "Validation issue")

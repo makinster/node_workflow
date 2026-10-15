@@ -213,8 +213,9 @@ def test_validation_details_labels_the_warning():
     from frontend.screens.error_details import ErrorDetailsScreen
 
     screen = ErrorDetailsScreen({"validation": {"errors": [], "warnings": []}})
-    assert screen._validation_type(
-        "Input 'File' expects file but Dice sends number") == "Type mismatch"
+    assert screen._validation_type({
+        "code": "type_mismatch",
+        "message": "Input 'File' expects file but Dice sends number"}) == "Type mismatch"
 
 
 @pytest.mark.parametrize("number_first", [True, False])

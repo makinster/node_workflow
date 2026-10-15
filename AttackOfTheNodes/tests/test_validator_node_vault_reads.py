@@ -201,7 +201,8 @@ def test_required_node_specific_read_without_writer_is_an_error(monkeypatch):
 
     result = validate_workflow(wm, factory)
     assert result["success"] is False
-    assert {"node_id": reader, "message": "Membank input source not declared: must_exist"} in result["errors"]
+    assert {"node_id": reader, "code": "undeclared_vault_key",
+            "message": "Membank input source not declared: must_exist"} in result["errors"]
     assert _unwritten(result, reader) == []
 
 
@@ -210,7 +211,7 @@ def test_validation_details_labels_the_warning():
 
     screen = ErrorDetailsScreen({"validation": {"errors": [], "warnings": []}})
     message = "Reads Vault key 'value' but no node writes it; the node uses its fallback value"
-    assert screen._validation_type(message) == "Unwritten Vault key"
+    assert screen._validation_type({"code": "unwritten_vault_key", "message": message}) == "Unwritten Vault key"
 
 
 def test_node_specific_read_with_parallel_writer_gets_race_warning():
