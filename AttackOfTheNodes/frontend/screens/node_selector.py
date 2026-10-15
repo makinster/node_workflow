@@ -28,6 +28,8 @@ from textual.widgets import (
 )
 from textual.containers import VerticalScroll
 
+from backend.port_types import accepts_producers
+
 from frontend.screens.group_picker import GroupPickerScreen
 from frontend.io_contract import (
     DETAIL_WIDTH_FALLBACK,
@@ -110,11 +112,18 @@ class NodeSelectorScreen(ModalScreen):
         Binding("s", "cursor_down", "Down", priority=True),
         ("enter", "choose", "Add"),
         Binding("e", "choose", "Add", priority=True),
+        Binding("t", "toggle_fitting", "Fitting only", priority=True),
     ]
 
-    def __init__(self, factory) -> None:
+    # "Fitting only" is remembered for the rest of the app session.
+    show_fitting_only: bool = False
+
+    def __init__(self, factory, upstream: Optional[Dict[str, Any]] = None) -> None:
+        """``upstream``: ``{"name", "types"}`` of the payload the new node
+        will receive (the editor traces it); None when nothing feeds it."""
         super().__init__()
         self.factory = factory
+        self.upstream = upstream if upstream and upstream.get("types") else None
         self._all_nodes: list[Dict[str, Any]] = []
         self._entries: list[Dict[str, Any]] = []
         self._visible_nodes: list[Dict[str, Any]] = []
@@ -125,7 +134,7 @@ class NodeSelectorScreen(ModalScreen):
 
     def compose(self) -> ComposeResult:
         with Vertical(id="modal-card", classes="node-selector-modal"):
-            yield Label("Add Node", classes="modal-title")
+            yield Label(self._title_text(), id="node-selector-title", classes="modal-title")
             with Horizontal(id="node-family-tabs"):
                 for index, tab in enumerate(TABS):
                     yield Button(
@@ -144,7 +153,7 @@ class NodeSelectorScreen(ModalScreen):
                     yield ListView(id="node-quick-list", classes="node-quick-list")
                     yield Static("", id="node-detail", classes="node-detail")
             yield Static(
-                "W/S move  A/D within row  1-5 tabs  E add  / filter  ESC close",
+                self._help_text(),
                 id="selector-help",
                 classes="modal-help",
             )
@@ -194,6 +203,7 @@ class NodeSelectorScreen(ModalScreen):
                 "cursor_right",
                 "jump_tab",
                 "choose",
+                "toggle_fitting",
                 "focus_filter",
                 "focus_node_list",
                 "cancel",
@@ -323,6 +333,37 @@ class NodeSelectorScreen(ModalScreen):
     # Entry building
     # ------------------------------------------------------------------
 
+    def _filtering(self) -> bool:
+        return bool(self.upstream) and NodeSelectorScreen.show_fitting_only
+
+    def _fits(self, node: Dict[str, Any]) -> bool:
+        if not self._filtering():
+            return True
+        return accepts_producers(self.factory, str(node.get("type") or ""),
+                                 list(self.upstream["types"]))
+
+    def _types_text(self) -> str:
+        return ", ".join((self.upstream or {}).get("types") or ["any"])
+
+    def _title_text(self) -> str:
+        if not self.upstream:
+            return "Add Node"
+        return f"Add Node · after {self.upstream['name']} ({self._types_text()})"
+
+    def _help_text(self) -> str:
+        toggle = ""
+        if self.upstream:
+            toggle = "  T show all" if self._filtering() else "  T fitting only"
+        return f"W/S move  A/D within row  1-5 tabs  E add  / filter{toggle}  ESC close"
+
+    def action_toggle_fitting(self) -> None:
+        """Switch between every node and the nodes that take the upstream payload."""
+        if not self.upstream:
+            return
+        NodeSelectorScreen.show_fitting_only = not NodeSelectorScreen.show_fitting_only
+        self.query_one("#selector-help", Static).update(self._help_text())
+        self._apply_filter(self.query_one("#node-filter", CommandInput).value)
+
     def _active_family(self) -> str:
         return TAB_FAMILY.get(self._active_tab, self._active_tab)
 
@@ -333,7 +374,7 @@ class NodeSelectorScreen(ModalScreen):
         family_nodes = [
             node
             for node in self._all_nodes
-            if self._node_family(node) == family
+            if self._node_family(node) == family and self._fits(node)
         ]
         if query:
             # Search dissolves groups and hides headers: matching node types
@@ -385,7 +426,9 @@ class NodeSelectorScreen(ModalScreen):
                     )
                 )
         if not self._entries:
-            list_view.append(ListItem(Static("No matching nodes")))
+            empty = (f"Nothing here takes {self._types_text()}; T shows all"
+                     if self._filtering() else "No matching nodes")
+            list_view.append(ListItem(Static(empty)))
             self._update_detail(None)
         else:
             selectable = self._selectable_indices()

@@ -12,6 +12,7 @@ from textual.widgets import Header, Label, Static
 
 from backend.branch_paths import merge_slot_count, slots_covering
 from backend.data_types import types_compatible
+from backend.port_types import trace_producers
 from backend.validator import validate_workflow
 from backend.node_errors import ERROR_PORT, MUX_DEFAULT_PORT
 from frontend.error_mux_ui import ERROR_MUX_NODE_TYPE, inline_mux_for
@@ -269,14 +270,30 @@ class EditorScreen(Screen):
 
     def action_add_node(self) -> None:
         self._pending_node_add_mode = "add"
-        self.app.push_screen(NodeSelectorScreen(self.factory), self._add_node_from_modal)
+        upstream = self._selector_upstream(self._source_for_new_node())
+        self.app.push_screen(NodeSelectorScreen(self.factory, upstream), self._add_node_from_modal)
 
     def action_insert_node(self) -> None:
         if self._selected_insert_target_is_merge_beacon():
             notifications.notify_info(self.app, "Merge Beacon is the end of this branch")
             return
         self._pending_node_add_mode = "insert"
-        self.app.push_screen(NodeSelectorScreen(self.factory), self._add_node_from_modal)
+        upstream = self._selector_upstream(self._source_for_insert_node())
+        self.app.push_screen(NodeSelectorScreen(self.factory, upstream), self._add_node_from_modal)
+
+    def _selector_upstream(self, source: Optional[Dict[str, str]]) -> Optional[Dict[str, Any]]:
+        """The payload a new node would receive from ``source``: the source
+        node's name and every type it can carry (``trace_producers``, the
+        rule the validator and Source dropdowns use)."""
+        if not source:
+            return None
+        node = self.workflow_map.get_node_data(source["node_id"]) or {}
+        producers = trace_producers(
+            self.workflow_map.get_all_node_data(), self.factory,
+            source["node_id"], source.get("port") or "default",
+        )
+        types = list(dict.fromkeys(data_type for _, data_type in producers)) or ["any"]
+        return {"name": node_display_name(source["node_id"], node), "types": types}
 
     def _selected_insert_target_is_merge_beacon(self) -> bool:
         if self.selected_row and self.selected_row["kind"] == "merge_beacon_select":

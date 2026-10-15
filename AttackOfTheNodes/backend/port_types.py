@@ -16,7 +16,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 from .branch_health import BRANCH_NODE_TYPE
-from .data_types import DEFAULT_TYPE, coerce_type
+from .data_types import DEFAULT_TYPE, coerce_type, types_compatible
 from .vault_declarations import typed_vault_writes
 
 
@@ -177,3 +177,23 @@ def _vault_writers(
             if writer not in writers:
                 writers.append(writer)
     return writers
+
+
+def accepts_producers(factory, node_type: str, producer_types: List[str]) -> bool:
+    """Whether a new node of ``node_type`` has an input port that takes any of
+    ``producer_types`` (``types_compatible``, the editor's connection rule).
+
+    A node with no input ports never fits; with no known producer types
+    every node with an input fits. Used by the node selector's "fitting
+    only" view, so it lists what the inserted connection could feed.
+    """
+    inputs = (metadata_for_type(factory, node_type) or {}).get("input_port_metadata") or {}
+    if not inputs:
+        return False
+    if not producer_types:
+        return True
+    return any(
+        types_compatible(actual, coerce_type((info or {}).get("data_type")))
+        for info in inputs.values()
+        for actual in producer_types
+    )
