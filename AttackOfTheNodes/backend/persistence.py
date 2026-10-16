@@ -40,11 +40,21 @@ RUN_FILES_DIR = DATA_DIR / "run_files"
 
 
 def save_workflow(workflow_id: str, workflow_data: Dict[str, Any]) -> None:
-    """Save a workflow to workflows/{workflow_id}.json."""
+    """Save a workflow to workflows/{workflow_id}.json.
+
+    Atomic: the JSON is written to a temporary file next to the target and
+    renamed over it, so a failed write never leaves a partial save.
+    """
     WORKFLOWS_DIR.mkdir(parents=True, exist_ok=True)
     file_path = WORKFLOWS_DIR / f"{workflow_id}.json"
-    with open(file_path, "w", encoding="utf-8") as f:
-        json.dump(workflow_data, f, indent=2, ensure_ascii=False)
+    temp_path = file_path.with_name(f".{file_path.name}.tmp")
+    try:
+        with open(temp_path, "w", encoding="utf-8") as f:
+            json.dump(workflow_data, f, indent=2, ensure_ascii=False)
+        os.replace(temp_path, file_path)
+    finally:
+        if temp_path.exists():
+            temp_path.unlink()
 
 
 def load_workflow(workflow_id: str) -> Optional[Dict[str, Any]]:

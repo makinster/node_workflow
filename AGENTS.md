@@ -93,6 +93,9 @@ pip install -e AttackOfTheNodes/
 
 # Run
 aotn
+
+# Build a workflow from a JSON spec (see docs/WORKFLOW_AUTHORING.md)
+aotn nodes | aotn describe <node_type> | aotn build <spec.json>
 ```
 
 For the current docs map, see `AttackOfTheNodes/docs/README.md`.

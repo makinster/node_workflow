@@ -4,6 +4,39 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-16 — Workflow Authoring Tool, PR 1 (Core)
+
+Branch `dist/authoring-core`, from `main` at `4f045bd` (PR #60). The owner
+merged #59 and #60 and asked to continue. Before: 1376 passed. After:
+1394 passed (18 new tests in `test_authoring.py`).
+
+- **Reproduced first** (the proposal's findings, on main): `connect()`
+  accepts a port that does not exist; `update_node_config` replaces the
+  config; a misspelled key (`duraton`) passes validation silently; Merge
+  has five config keys and an empty schema.
+- **`backend/authoring.py`**: `list_node_types`, `describe_node_type`
+  (config-aware: resolved ports and types, field limits and visibility,
+  Vault reads/writes, declared errors, node-reference fields, keys without
+  schema reported as unchecked) and `build_workflow` (spec
+  `aotn-workflow/1`: handles, real config keys merged over defaults,
+  explicit ports, Wait Until targets as handles; every problem reported in
+  one pass; the validator's errors fail the build; SaveManager save;
+  duplicate names refused; reload into a fresh map and re-check; nothing
+  written on failure).
+- **CLI**: `aotn nodes`, `aotn describe <type> [--set k=v]`, `aotn build
+  <spec|-> [--check]`, all with `--json` and `--data-dir`
+  (`aotn_author.py`, dispatched from `main.py`; added to `py-modules`).
+- **Shared change**: `persistence.save_workflow` writes atomically (temp
+  file, then rename), for the app too.
+- **Kept as is on purpose**: `WorkflowMap.connect()` and
+  `update_node_config()` (the editor relies on both); the builder checks
+  ports and merges overrides itself.
+- Tried end to end on a temporary data folder: a bad spec listed all
+  seven problems; a good spec saved, its Wait Until target was the
+  generated id, and `aotn run` finished it.
+- New `docs/WORKFLOW_AUTHORING.md`; README, TASK_INDEX and AGENTS.md
+  point to it.
+
 ## 2026-10-15 — C5: Number Field Policy
 
 Branch `dist/c5-number-validation`, stacked on `dist/c3-mode-output-types`

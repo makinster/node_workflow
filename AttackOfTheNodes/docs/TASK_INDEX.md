@@ -252,6 +252,22 @@ Likely files:
 
 Rule: path picking belongs in the frontend; backend services accept paths.
 
+## Build Workflows From A Spec (Authoring Tool)
+
+Read:
+
+- `WORKFLOW_AUTHORING.md`
+- `NODE_CONTRACT_PLAN.md` section: Workflow authoring tool
+
+Likely files:
+
+- `backend/authoring.py`
+- `aotn_author.py`
+- `tests/test_authoring.py`
+
+Rule: the tool is a client of the shared backend (factory, WorkflowMap,
+validator, SaveManager); node rules belong in shared helpers, not here.
+
 ## Change File Output, File Viewer, Or OS Window Behavior
 
 Read:

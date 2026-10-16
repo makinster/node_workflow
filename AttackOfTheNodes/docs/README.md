@@ -57,6 +57,7 @@ Read these before adding, changing, or designing nodes.
 
 | File | What it contains | When to open it |
 |---|---|---|
+| `WORKFLOW_AUTHORING.md` | `aotn nodes` / `describe` / `build`: the JSON spec format and what a build checks | Building preconfigured workflows (people, scripts, agents) |
 | `NODE_STANDARDS.md` | Node classification rule (group/separate/mode-select/direct-add), I/O source and routing model, config tab layout, authoring checklist | Before defining any new node type or changing an existing node's I/O |
 | `AGENT_START_GUIDE.md` | Step-by-step checklists for adding nodes, making config render correctly, keyboard/modal rules, file I/O patterns | When adding a node or fixing config UI and you want the quickest correct path |
 | `NODE_HELPER.md` | YAML spec format, `create_node.py` / `check_node.py` / `check_ui.py` commands, and what the generator produces | When using `aotn_node_helper` to generate a node, or adding a new spec section |
