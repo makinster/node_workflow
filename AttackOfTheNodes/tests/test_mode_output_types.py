@@ -115,3 +115,35 @@ def test_resolved_metadata_without_hook_is_the_static_metadata():
     resolved = resolved_metadata(FACTORY, "random_number_node", {"mode": "float"})
     assert resolved["output_port_metadata"]["default"]["data_type"] == "number"
     assert resolved["input_port_metadata"] == static["input_port_metadata"]
+
+
+@pytest.mark.parametrize("mode, expected", [("file", "file"), ("text", "string")])
+def test_details_panel_shows_the_mode_type(mode, expected):
+    """PR 59 review: the editor's details panel showed Response [any]."""
+    import asyncio
+
+    from textual.app import App
+
+    from frontend.screens.editor import EditorScreen
+
+    workflow_map = _workflow(f"c3_details_{mode}")
+    start = workflow_map.add_node("start_node")
+    fetch = _http(workflow_map, mode)
+    workflow_map.connect(start, "default", fetch, "input")
+    editor = EditorScreen(FACTORY, workflow_map)
+
+    class EditorApp(App):
+        def on_mount(self):
+            self.push_screen(editor)
+
+    seen = {}
+
+    async def run():
+        async with EditorApp().run_test(size=(120, 40)) as pilot:
+            await pilot.pause(0.1)
+            node = workflow_map.get_node_data(fetch)
+            lines = editor._detail_output_lines(node, editor._metadata_for_type("http_request_node"))
+            seen["first"] = str(lines[0])
+
+    asyncio.run(run())
+    assert seen["first"] == f"  Response  \\[[#4EC9B0]{expected}[/]]"
