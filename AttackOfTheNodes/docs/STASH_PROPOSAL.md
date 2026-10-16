@@ -194,3 +194,42 @@ bindings; CLI `@stash:` references; validation before the run starts.
 - **Focus edge cases:** `ctrl+p` during an active edit must commit cleanly
   (follow the save-and-stay pattern) and must not fight the focus-drift guard
   in `command_input.py`.
+
+## 9. Review notes and fit with the plan (2026-10-17)
+
+Reviewed against the code at `8815bcd` (PR #61 merged). The claims in
+section 3 hold: Textual's command palette is on and uses `ctrl+p`;
+`path_hint` is read only by the validator; nothing handles paste events;
+`aotn run --input` exists and nothing consumes it yet. The owner agreed with
+the notes below.
+
+**Design notes**
+
+1. **Hidden fields cannot be focused.** A path field hidden behind
+   `<port>_source != "Configured"` can never be highlighted, so `ctrl+p` on
+   the port's *Source* selector row offers file entries, switches the source
+   to Configured, fills the value and says so. This answers open question 4.
+2. **Declare what a field accepts.** Rather than inferring from `path_hint`,
+   schema fields declare a canonical `data_type` (`file`, `string`, ...);
+   `accepted_types()` reads the declaration, and `path_hint` keeps driving the
+   file picker. S3's audit sets the declarations.
+3. **The insert key is tested in the owner's terminals first** (Windows
+   Terminal, tmux, the Claude app's terminal panel; VS Code's terminal is known
+   to intercept `ctrl+p`). Turning the command palette off is fine; the planned
+   per-panel `H` help popup covers discoverability. Deferred until S3 (owner,
+   2026-10-17: no PC access to test now).
+4. **Windows drops into WSL** paste Windows paths: every candidate goes
+   through `normalize_local_path`, and the parser's fixtures include quoted
+   Windows paths (the stray `"C:\...\test.txt"` file in the owner's checkout
+   is one that was mishandled).
+5. **Paste is collected only inside the Stash panel.** Ordinary text fields
+   keep receiving pastes as text, exactly as today; nothing intercepts paste
+   app-wide.
+6. Agreed as written: generated entry ids, per-machine bindings outside the
+   workflow JSON, secrets stay in `SecretsManager`, folder import refuses with
+   counts.
+
+**Order (owner, 2026-10-17):** authoring tool PR 2 → C4, C6, C7 → workflow
+naming PR → **Stash S1–S3** (S3b CLI can ride with S1) → `DISTRIBUTED_BUILD_PLAN.md`
+Step 4 with **S5 designed in** → S4 folder import when wanted. S6 stays
+exploratory.
