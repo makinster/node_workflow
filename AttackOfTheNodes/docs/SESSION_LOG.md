@@ -7,7 +7,7 @@ overhaul.
 ## 2026-10-15 — C5: Number Field Policy
 
 Branch `dist/c5-number-validation`, stacked on `dist/c3-mode-output-types`
-(PR #59; merge that first). Before: 1328 passed. After: 1362 passed
+(PR #59; merge that first). Before: 1328 passed. After: 1374 passed
 (new `test_number_policy.py`; `test_form_generator.py`'s coercion test
 rewritten).
 
@@ -41,6 +41,25 @@ per field, blank means default, the same check in the validator.
   defaults_to_zero` encoded the old coercion; now
   `test_numeric_fields_keep_unparseable_text`.
 - Sample screen (Sleep with -2) sent before the PR.
+- **PR 60 review (four findings, all reproduced, fixed on the branch):**
+  1. Integers went through float (9007199254740993 became …992) and a
+     saved 10**400 crashed with OverflowError. Integer fields now parse
+     exactly (`_whole_number`); float overflow reports "Number is too
+     large".
+  2. Preflight accepted values execution could not use (Sleep `""`,
+     Repeat Counter `"3.0"` raised at run time). `Node.__init__` now
+     stores number fields through `field_types.normalize_numbers`, so
+     every node receives exactly what preflight checked.
+  3. Custom controls bypassed the policy: Branch count 65 saved as 64 and
+     `abc` as 2; Wait Until still rejected a blank timeout. The editor now
+     checks the type's whole schema, including custom controls
+     (`CUSTOM_NUMBER_CONTROLS`: Branch count), and Wait Until's timeout
+     uses `check_number` (blank = 0, wait forever). Its own "nonnegative
+     number" message is gone; `test_wait_timeout_validation_and_cancel`
+     was updated deliberately to assert the shared inline error.
+  4. An untouched save of a partial config (Sleep `{}`) added keys; the
+     no-edit comparison now runs before checked numbers are written.
+  12 new tests fail on the first PR head.
 
 ## 2026-10-15 — C3: Mode-Resolved Output Types
 

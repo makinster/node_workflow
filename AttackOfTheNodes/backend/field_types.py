@@ -96,18 +96,19 @@ def check_number(field_info: Dict[str, Any], raw: Any, default: Any = None) -> T
         return check_number(field_info, default)
     if isinstance(text, bool):
         return None, "Enter a whole number" if integer else "Enter a number"
-    try:
-        number = float(text)
-    except (TypeError, ValueError):
-        return None, "Enter a whole number" if integer else "Enter a number"
-    if not math.isfinite(number):
-        return None, "Enter a finite number"
     if integer:
-        if not number.is_integer():
-            return None, "Enter a whole number"
-        value: Any = int(number)
+        value, problem = _whole_number(text)
+        if problem:
+            return None, problem
     else:
-        value = number
+        try:
+            value = float(text)
+        except (TypeError, ValueError):
+            return None, "Enter a number"
+        except OverflowError:
+            return None, "Number is too large"
+        if not math.isfinite(value):
+            return None, "Enter a finite number"
     minimum, maximum = field_info.get("min"), field_info.get("max")
     if minimum is not None:
         if field_info.get("min_exclusive") and value <= minimum:
@@ -117,3 +118,43 @@ def check_number(field_info: Dict[str, Any], raw: Any, default: Any = None) -> T
     if maximum is not None and value > maximum:
         return None, f"Must be at most {maximum:g}"
     return value, ""
+
+
+def _whole_number(text: Any) -> Tuple[Any, str]:
+    """An exact ``int`` for an integer field (never via float when the text
+    is already whole: 9007199254740993 stays exact)."""
+    if isinstance(text, int):
+        return text, ""
+    if isinstance(text, str):
+        try:
+            return int(text), ""
+        except ValueError:
+            pass
+    try:
+        number = float(text)
+    except (TypeError, ValueError):
+        return None, "Enter a whole number"
+    except OverflowError:
+        return None, "Number is too large"
+    if not math.isfinite(number):
+        return None, "Enter a finite number"
+    if not number.is_integer():
+        return None, "Enter a whole number"
+    return int(number), ""
+
+
+def normalize_numbers(
+    schema: Dict[str, Dict[str, Any]], defaults: Dict[str, Any], config: Dict[str, Any],
+) -> Dict[str, Any]:
+    """``config`` with every number field that passes ``check_number`` stored
+    as its checked value, so execution reads exactly what preflight accepted
+    (blank becomes the default, "3.0" becomes 3). Missing keys stay missing;
+    values that fail are left as they are (preflight blocks the run)."""
+    result = dict(config)
+    for name, info in number_fields(schema):
+        if name not in result:
+            continue
+        value, problem = check_number(info, result[name], defaults.get(name))
+        if not problem:
+            result[name] = value
+    return result

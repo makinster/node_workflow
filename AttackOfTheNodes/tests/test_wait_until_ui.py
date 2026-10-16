@@ -136,8 +136,16 @@ def test_unavailable_wait_target_requires_explicit_removal(invalid_kind):
     asyncio.run(check())
 
 
-@pytest.mark.parametrize('bad_timeout', ['oops', '-1', 'nan', 'inf', ''])
-def test_wait_timeout_validation_and_cancel(bad_timeout):
+@pytest.mark.parametrize('bad_timeout, problem', [
+    ('oops', 'Enter a number'),
+    ('-1', 'Must be at least 0'),
+    ('nan', 'Enter a finite number'),
+    ('inf', 'Enter a finite number'),
+])
+def test_wait_timeout_validation_and_cancel(bad_timeout, problem):
+    """C5 (owner, 2026-10-15): the shared number policy replaced Wait Until's
+    own timeout message: the problem shows under the field and the save is
+    blocked. A blank timeout now saves the default (next test)."""
     async def check():
         wm, wait, _, _ = make_screen()
         original = deepcopy(wm.get_node_data(wait))
@@ -147,8 +155,9 @@ def test_wait_timeout_validation_and_cancel(bad_timeout):
             await pilot.pause()
             screen.query_one('#field-timeout_seconds', Input).value = bad_timeout
             screen.action_save()
+            await pilot.pause()
             assert not results
-            assert 'nonnegative number' in str(screen.query_one('#wait-config-error', Static).content)
+            assert str(screen.query_one('#field-error-timeout_seconds', Static).render()) == problem
             # UX5 (U9): closing with an edit asks first; Discard drops it.
             from frontend.screens.unsaved_changes import UnsavedChangesScreen
             screen.action_cancel()
@@ -196,4 +205,19 @@ def test_wait_target_toggle_empty_selection_and_no_options():
             from backend.nodes.wait_until_node import WaitUntilNode
             assert results[0]['config']['target_node_ids'] == ''
             assert WaitUntilNode('w', results[0]['config'])._target_node_ids() == []
+    asyncio.run(check())
+
+
+def test_wait_blank_timeout_saves_the_default():
+    """C5: blank means the default (0 = wait forever), no longer an error."""
+    async def check():
+        wm, wait, _, _ = make_screen()
+        screen = NodeConfigScreen(wm._factory, wm, wait, wm.get_node_data(wait))
+        results = []
+        async with ConfigApp(screen, results).run_test() as pilot:
+            await pilot.pause()
+            screen.query_one('#field-timeout_seconds', Input).value = ''
+            screen.action_save()
+            await pilot.pause()
+            assert results and results[0]['config']['timeout_seconds'] == 0.0
     asyncio.run(check())

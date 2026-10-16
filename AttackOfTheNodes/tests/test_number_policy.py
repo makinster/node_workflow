@@ -212,3 +212,99 @@ def test_editor_blank_saves_the_default():
         assert result["config"].get("max_visits", 3) == 3
 
     _editor("repeat_counter_node", body)
+
+
+# --- PR 60 review ------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("raw, expected", [
+    ("9007199254740993", (9007199254740993, "")),
+    (9007199254740993, (9007199254740993, "")),
+    (10 ** 400, (10 ** 400, "")),
+    ("1e400", (None, "Enter a finite number")),
+])
+def test_integers_stay_exact(raw, expected):
+    assert check_number({"type": "integer"}, raw) == expected
+
+
+def test_float_overflow_is_a_problem_not_a_crash():
+    assert check_number({"type": "float"}, 10 ** 400) == (None, "Number is too large")
+    workflow_map, _ = _single("sleep_node", duration=10 ** 400)
+    messages = [e["message"] for e in _number_errors(workflow_map)]
+    assert len(messages) == 1
+    assert messages[0].startswith("Duration (seconds): Number is too large (saved value ")
+
+
+@pytest.mark.parametrize("node_type, field, saved, expected", [
+    ("sleep_node", "duration", "", 0.1),
+    ("sleep_node", "duration", "2", 2.0),
+    ("repeat_counter_node", "max_visits", "3.0", 3),
+    ("repeat_counter_node", "max_visits", "", 3),
+])
+def test_execution_reads_the_checked_value(node_type, field, saved, expected):
+    """Preflight passes these, so the node must receive the same values."""
+    workflow_map, node_id = _single(node_type, **{field: saved})
+    assert _number_errors(workflow_map) == []
+    node = FACTORY.create_node(node_type, node_id, workflow_map.get_node_data(node_id)["config"])
+    assert node.config[field] == expected
+    assert type(node.config[field]) is type(expected)
+
+
+async def test_sleep_with_blank_duration_runs():
+    from types import SimpleNamespace
+
+    node = FACTORY.create_node("sleep_node", "s", {"duration": ""})
+    done, errors = [], []
+    context = SimpleNamespace(inputs={"input": "x"}, signal_done=done.append,
+                              signal_error=errors.append, memory_bank=None)
+    await node.execute(context)
+    assert not errors and done
+
+
+def test_branch_count_uses_the_policy():
+    async def body(pilot, screen):
+        from textual.widgets import Input
+
+        count = screen.query_one("#branch-count", Input)
+        for bad, problem in [("65", "Must be at most 64"), ("abc", "Enter a whole number"),
+                             ("1", "Must be at least 2")]:
+            count.value = bad
+            assert screen._save_result() is None
+            await pilot.pause(0.05)
+            assert _error_text(screen, "branch_count") == problem
+            assert count.value == bad
+        count.value = "5"
+        result = screen._save_result()
+        assert result is not None and result["config"]["branch_count"] == 5
+
+    _editor("branch_node", body)
+
+
+def test_save_without_edits_keeps_a_partial_config():
+    """A Sleep stored as {} stays {} when saved untouched (as on main)."""
+    from textual.app import App
+
+    from backend.memory_bank import MemoryBank
+    from frontend.screens.node_config import NodeConfigScreen
+
+    workflow_map, node = _single("sleep_node")
+    data = workflow_map.get_workflow_data_for_save()
+    data["nodes"][node]["config"] = {}
+    workflow_map.load_data(data)
+    screen = NodeConfigScreen(FACTORY, workflow_map, node, workflow_map.get_node_data(node),
+                              memory_bank=MemoryBank(EventBus()))
+    seen = {}
+
+    class ConfigApp(App):
+        CSS_PATH = CSS
+
+        def on_mount(self):
+            self.push_screen(screen)
+
+    async def run():
+        async with ConfigApp().run_test(size=(110, 40)) as pilot:
+            await pilot.pause(0.1)
+            seen["result"] = screen._save_result()
+
+    asyncio.run(run())
+    assert seen["result"]["config"] == {}

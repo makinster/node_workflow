@@ -252,6 +252,12 @@ Schema fields typed `integer`, `float` or `number` follow one policy
   keeps the typed text; the validator reports a saved bad value as
   `invalid_number`, which blocks the run. Nothing is coerced to 0.
 - Hidden fields (`visible_when` not met) are not checked.
+- Integer fields parse exactly (no float round trip); a float too large
+  to represent reports "Number is too large".
+- Nodes receive number fields already normalized (`Node.__init__` uses
+  `normalize_numbers`): read `self.config[...]` without re-parsing.
+- A number drawn by a custom control is checked too: register its widget
+  in `CUSTOM_NUMBER_CONTROLS` (`frontend/screens/node_config.py`).
 
 ## Per-Port Contract Metadata
 

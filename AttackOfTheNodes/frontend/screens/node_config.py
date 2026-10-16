@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from copy import deepcopy
 
-import math
 
 from typing import Any, Callable, Dict, Optional
 
@@ -24,6 +23,9 @@ from backend.nodes.branch_node import (
 )
 from backend.data_types import types_compatible
 from backend.field_types import check_number, field_visible, number_fields
+
+# Number fields drawn by custom controls instead of the generated form.
+CUSTOM_NUMBER_CONTROLS = {"branch_count": "#branch-count"}
 from backend.port_types import resolved_metadata, trace_producers
 from backend.vault_declarations import typed_vault_writes
 from frontend.error_paths import editor_output_ports
@@ -2101,8 +2103,6 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             message = ""
             if any(target not in eligible for target in selected):
                 message = "Remove unavailable wait targets before saving."
-            if self._wait_timeout_value() is None:
-                message = "Timeout must be a nonnegative number; 0 waits forever."
             if message:
                 self.query_one("#wait-config-error", Static).update(message)
                 notifications.notify_error(self.app, message)
@@ -2118,8 +2118,11 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             notifications.notify_error(
                 self.app, f"Fix {count} number field{'s' if count > 1 else ''} before saving")
             return None
-        config.update(numbers)
-        result = {"alias": alias, "config": self._without_untouched_defaults(config)}
+        # The no-edit comparison runs on what the widgets showed; checked
+        # numbers then replace only the keys that are being written.
+        saved = self._without_untouched_defaults(config)
+        saved.update({key: value for key, value in numbers.items() if key in saved})
+        result = {"alias": alias, "config": saved}
         if then:
             result["then"] = then
         doomed = self._mux_branch_nodes_to_delete()
@@ -2134,12 +2137,14 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         field, the typed text stays, and the first bad field gets focus."""
         metadata = self._metadata_for_type(self.node_data.get("type", "")) or {}
         defaults = metadata.get("default_config") or {}
-        schema = self._generated_config_schema or {}
+        # The type's whole schema: custom controls (Branch count) count too.
+        schema = metadata.get("config_schema") or {}
         numbers: Dict[str, Any] = {}
         problems: Dict[str, str] = {}
         first_bad = None
         for name, info in number_fields(schema):
-            widgets = list(self.query(f"#field-{name}"))
+            widgets = list(self.query(f"#field-{name}")) or list(
+                self.query(CUSTOM_NUMBER_CONTROLS.get(name, "#none")))
             if not widgets or not field_visible(config, defaults, info):
                 continue
             raw = getattr(widgets[0], "value", config.get(name))
@@ -2172,11 +2177,13 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         )
 
     def _wait_timeout_value(self) -> Optional[float]:
-        try:
-            timeout = float(self.query_one("#field-timeout_seconds", Input).value)
-        except ValueError:
-            return None
-        return timeout if math.isfinite(timeout) and timeout >= 0 else None
+        """Wait Until's timeout under the C5 policy (blank = default 0)."""
+        metadata = self._metadata_for_type(self.node_data.get("type", "")) or {}
+        info = (metadata.get("config_schema") or {}).get("timeout_seconds") or {}
+        default = (metadata.get("default_config") or {}).get("timeout_seconds")
+        value, problem = check_number(
+            info, self.query_one("#field-timeout_seconds", Input).value, default)
+        return None if problem else value
 
     def _collected_config(self) -> Dict[str, Any]:
         """The config the widgets describe now (raises ValueError on Merge overflow)."""
