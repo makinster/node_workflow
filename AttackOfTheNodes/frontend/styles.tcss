@@ -349,6 +349,12 @@ Screen {
     color: $text-muted;
 }
 
+/* C5: a number field's problem, shown under the field until fixed. */
+.field-error {
+    color: $error;
+    height: auto;
+}
+
 .payload-preview:focus {
     background: $boost;
     color: $foreground;

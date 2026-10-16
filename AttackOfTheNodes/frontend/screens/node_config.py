@@ -23,6 +23,7 @@ from backend.nodes.branch_node import (
     branch_count_from_config as _branch_count_from_config,
 )
 from backend.data_types import types_compatible
+from backend.field_types import check_number, field_visible, number_fields
 from backend.port_types import resolved_metadata, trace_producers
 from backend.vault_declarations import typed_vault_writes
 from frontend.error_paths import editor_output_ports
@@ -2111,6 +2112,13 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         except ValueError as error:
             notifications.notify_error(self.app, str(error))
             return None
+        numbers, problems = self._checked_numbers(config)
+        if problems:
+            count = len(problems)
+            notifications.notify_error(
+                self.app, f"Fix {count} number field{'s' if count > 1 else ''} before saving")
+            return None
+        config.update(numbers)
         result = {"alias": alias, "config": self._without_untouched_defaults(config)}
         if then:
             result["then"] = then
@@ -2118,6 +2126,50 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         if doomed:
             result["delete_branch_nodes"] = doomed
         return result
+
+    def _checked_numbers(self, config: Dict[str, Any]) -> tuple[Dict[str, Any], Dict[str, str]]:
+        """C5: check every visible number field (``field_types.check_number``,
+        the validator's rule). Returns the parsed values (blank becomes the
+        default) and ``{field: problem}``; each problem is shown under its
+        field, the typed text stays, and the first bad field gets focus."""
+        metadata = self._metadata_for_type(self.node_data.get("type", "")) or {}
+        defaults = metadata.get("default_config") or {}
+        schema = self._generated_config_schema or {}
+        numbers: Dict[str, Any] = {}
+        problems: Dict[str, str] = {}
+        first_bad = None
+        for name, info in number_fields(schema):
+            widgets = list(self.query(f"#field-{name}"))
+            if not widgets or not field_visible(config, defaults, info):
+                continue
+            raw = getattr(widgets[0], "value", config.get(name))
+            value, problem = check_number(info, raw, defaults.get(name))
+            self._show_field_error(widgets[0], name, problem)
+            if problem:
+                problems[name] = problem
+                first_bad = first_bad or widgets[0]
+            else:
+                numbers[name] = value
+        if first_bad is not None:
+            self.set_focus(first_bad)
+        return numbers, problems
+
+    def _show_field_error(self, widget: Any, name: str, problem: str) -> None:
+        """Show (or clear) a one-line problem under a field."""
+        existing = list(self.query(f"#field-error-{name}"))
+        if not problem:
+            for item in existing:
+                item.remove()
+            return
+        if existing:
+            existing[0].update(problem)
+            return
+        # Under the whole row when the input shares a line with its label.
+        anchor = widget.parent if widget.parent.has_class("form-inline-row") else widget
+        anchor.parent.mount(
+            Static(problem, id=f"field-error-{name}", classes="field-error", markup=False),
+            after=anchor,
+        )
 
     def _wait_timeout_value(self) -> Optional[float]:
         try:

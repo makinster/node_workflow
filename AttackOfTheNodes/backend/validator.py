@@ -21,6 +21,7 @@ from .vault_declarations import (
     standard_vault_reads,
     typed_vault_writes,
 )
+from .field_types import check_number, field_visible as _field_visible, number_fields
 from .file_paths import normalize_local_path
 from .node_errors import (
     ENGINE_ERROR_DEFINITIONS,
@@ -286,6 +287,28 @@ def validate_workflow(
                 )
 
     _validate_error_muxes(all_nodes, _type_meta_cache, errors, warnings)
+
+    # C5: number fields hold a finite number inside the field's declared range
+    # (field_types.check_number, the rule the node editor enforces on save).
+    # A saved value that breaks it blocks the run; nothing is coerced.
+    for node_id, data in all_nodes.items():
+        meta = _type_meta_cache.get(data.get("type", ""))
+        if meta is None:
+            continue
+        config = data.get("config") or {}
+        defaults = meta.get("default_config") or {}
+        for field_name, field_info in number_fields(meta.get("config_schema") or {}):
+            if not _field_visible(config, defaults, field_info):
+                continue
+            raw = config.get(field_name, defaults.get(field_name))
+            _, problem = check_number(field_info, raw, defaults.get(field_name))
+            if problem:
+                label = str(field_info.get("label") or field_name)
+                errors.append({
+                    "node_id": node_id,
+                    "port": field_name,
+                    "code": "invalid_number", "message": f"{label}: {problem} (saved value {raw!r})",
+                })
 
     # File-path fields: schema fields hinted with path_hint == "file".
     # An empty required path is an error; a path missing on disk is only a
@@ -785,32 +808,6 @@ def _window_capabilities() -> Set[str]:
     from .window_manager import get_window_manager
 
     return get_window_manager().capabilities()
-
-
-def _field_visible(
-    config: Dict[str, Any],
-    defaults: Dict[str, Any],
-    field_info: Dict[str, Any],
-) -> bool:
-    """Whether a schema field's visible_when condition currently holds.
-
-    Mirrors the form generator's rule semantics: every entry must match
-    (AND); a list value matches any listed entry (OR within one field).
-    Unset config keys fall back to the node type's default_config, the same
-    value the config screen renders. Fields with no visible_when are always
-    visible.
-    """
-    condition = field_info.get("visible_when")
-    if not isinstance(condition, dict):
-        return True
-    for key, expected in condition.items():
-        actual = config.get(key, defaults.get(key))
-        if isinstance(expected, list):
-            if actual not in expected:
-                return False
-        elif actual != expected:
-            return False
-    return True
 
 
 def _standard_source_active(

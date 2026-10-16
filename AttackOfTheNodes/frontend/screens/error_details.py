@@ -39,6 +39,7 @@ VALIDATION_LABELS: Dict[str, str] = {
     "chat_session_key_missing": "Session key not set",
     "missing_file_path": "File path not set",
     "invalid_file_path": "Invalid file path",
+    "invalid_number": "Invalid number",
     "file_not_found": "File not found",
     "secret_not_configured": "Secret not set",
     "secret_missing": "Secret missing",

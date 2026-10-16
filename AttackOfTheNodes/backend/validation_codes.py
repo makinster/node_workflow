@@ -38,6 +38,7 @@ ISSUE_CODES: Dict[str, str] = {
     # Files, secrets, platform
     "missing_file_path": "A required file path is empty.",
     "invalid_file_path": "A file path cannot be interpreted.",
+    "invalid_number": "A number field is not a finite number inside its allowed range.",
     "file_not_found": "A file to read does not exist at validation time.",
     "secret_not_configured": "A required secret field names no key.",
     "secret_missing": "The named secret is not in the secrets store.",

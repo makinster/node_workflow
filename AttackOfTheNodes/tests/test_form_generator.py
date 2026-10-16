@@ -294,11 +294,14 @@ async def _test_code_field_sets_language():
     print("test_code_field_sets_language PASSED")
 
 
-def test_numeric_coercion_on_invalid_input_defaults_to_zero():
-    asyncio.run(_test_numeric_coercion_on_invalid_input_defaults_to_zero())
+def test_numeric_fields_keep_unparseable_text():
+    asyncio.run(_test_numeric_fields_keep_unparseable_text())
 
 
-async def _test_numeric_coercion_on_invalid_input_defaults_to_zero():
+async def _test_numeric_fields_keep_unparseable_text():
+    """C5 (owner, 2026-10-15): unparseable or blank numbers are no longer
+    coerced to 0. The getter returns the typed text; the node editor's save
+    check reports it (and blank saves the default)."""
     from textual.widgets import Input
 
     schema = {
@@ -307,9 +310,15 @@ async def _test_numeric_coercion_on_invalid_input_defaults_to_zero():
     }
     app, holder = _mount_form(schema, {"count": 2, "ratio": 0.5})
     async with app.run_test():
+        assert app.query_one("#field-count", Input).placeholder == "blank = default"
         app.query_one("#field-count", Input).value = ""
-        app.query_one("#field-ratio", Input).value = ""
+        app.query_one("#field-ratio", Input).value = "abc"
         values = holder["getter"]()
-        assert values["count"] == 0
-        assert values["ratio"] == 0.0
-    print("test_numeric_coercion_on_invalid_input_defaults_to_zero PASSED")
+        assert values["count"] == ""
+        assert values["ratio"] == "abc"
+        app.query_one("#field-count", Input).value = "7"
+        app.query_one("#field-ratio", Input).value = "0.25"
+        values = holder["getter"]()
+        assert values["count"] == 7
+        assert values["ratio"] == 0.25
+    print("test_numeric_fields_keep_unparseable_text PASSED")

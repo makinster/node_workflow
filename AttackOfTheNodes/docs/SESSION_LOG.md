@@ -4,6 +4,44 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-15 — C5: Number Field Policy
+
+Branch `dist/c5-number-validation`, stacked on `dist/c3-mode-output-types`
+(PR #59; merge that first). Before: 1328 passed. After: 1362 passed
+(new `test_number_policy.py`; `test_form_generator.py`'s coercion test
+rewritten).
+
+Owner approved the policy: block save with an inline error, limits declared
+per field, blank means default, the same check in the validator.
+
+- **Reproduced first:** on main the validator passed Sleep durations
+  `'definitely not a number'`, `-1` and `'inf'`; the form turned unparseable
+  or blank numbers into 0.
+- **Shared check:** `field_types.check_number(field, raw, default)` returns
+  `(value, problem)`; `number_fields`, and `field_visible` (moved from the
+  validator so the editor and validator share it).
+- **Editor:** `NodeConfigScreen._checked_numbers` runs on every save;
+  problems show in red under the field (under the whole row for inline
+  fields), the typed text stays, focus goes to the first bad field, and
+  a toast says how many to fix. Blank saves the default. Number inputs
+  show the placeholder `blank = default`.
+- **Validator:** `invalid_number` (label "Invalid number") for a visible
+  saved value that fails; it blocks the run. The owner's saved workflows
+  have none (read-only check).
+- **Limits:** Chat Completion max tokens ≥ 1 and temperature 0–1 (the
+  provider's range); HTTP timeout > 0 (`min_exclusive`); Repeat Counter
+  max visits ≥ 1. Existing: Sleep 0–60, Branch count 2–64, wrap width ≥ 0,
+  Wait Until timeout ≥ 0. A test checks every default passes its field.
+- **Helper specs:** HTTP Request changed through its spec and regenerated
+  (custom body and test cases restored). Chat Completion's spec has
+  drifted from its class (512 differing lines, plan item C8), so a
+  regenerate would destroy the node: its class and spec fields were edited
+  by hand to match.
+- **Test changed deliberately:** `test_numeric_coercion_on_invalid_input_
+  defaults_to_zero` encoded the old coercion; now
+  `test_numeric_fields_keep_unparseable_text`.
+- Sample screen (Sleep with -2) sent before the PR.
+
 ## 2026-10-15 — C3: Mode-Resolved Output Types
 
 Branch `dist/c3-mode-output-types`, from `main` at `9809a90` (PR #58).

@@ -17,7 +17,7 @@ class RepeatCounterNode(Node):
     output_ports: ClassVar[List[str]] = ["default"]
     default_config: ClassVar[Dict[str, Any]] = {"max_visits": 3}
     config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {
-        "max_visits": {"type": "integer", "label": "Max Visits", "required": True},
+        "max_visits": {"type": "integer", "label": "Max Visits", "required": True, "min": 1},
     }
 
     async def execute(self, context: NodeContext) -> None:
