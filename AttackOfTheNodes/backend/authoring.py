@@ -72,6 +72,10 @@ NODE_REFERENCE_FIELDS: Dict[str, Tuple[str, ...]] = {
     "wait_until_node": ("target_node_ids",),
 }
 
+#: Validator warnings that fail a build (an authored spec should not
+#: produce them on purpose).
+BUILD_ERROR_CODES = frozenset({"ignored_fan_out"})
+
 #: Build diagnostic codes (validator issues keep their own codes).
 AUTHORING_CODES: Dict[str, str] = {
     "spec_invalid": "The spec is not shaped like aotn-workflow/1.",
@@ -275,7 +279,9 @@ def build_workflow(factory: NodeFactory, spec: Any, *, write: bool = True) -> Di
     if not write:
         return report(True, workflow_id=workflow_map.workflow_id, name=name, nodes=ids)
 
-    if any(entry.get("name") == name for entry in persistence.list_workflows()):
+    # Case-insensitive, like `aotn run <name>` resolves names.
+    if any(str(entry.get("name") or "").casefold() == name.casefold()
+           for entry in persistence.list_workflows()):
         add("error", "duplicate_name", f"A saved workflow is already named {name!r}; choose another name")
         return report(False)
     workflow_id = workflow_map.workflow_id
@@ -384,6 +390,9 @@ def _add_validation(workflow_map: WorkflowMap, factory: NodeFactory, handles: Di
             handle = handles.get(str(issue.get("node_id") or ""))
             if (code, handle) in reported:
                 continue
+            # A spec that wires one output twice is a mistake, not a choice.
+            if code in BUILD_ERROR_CODES:
+                level = "error"
             add(level, code, str(issue.get("message") or ""), handle)
 
 

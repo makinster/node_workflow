@@ -25,7 +25,7 @@ When sources disagree: code first, then the recent session log, then plans.
 - `main` at `9809a90` (merge of PR #58). C1 (#55), C2 (#56), the selector
   toggle (#57), issue codes (#58), C3 (#59) and C5 (#60) are merged; the
   authoring tool's PR 1 (`dist/authoring-core`) is in its PR. Suite:
-  **1394 passed** (about 3.5 minutes). Agreed order: C3 → C5 → authoring tool → C4, C6, C7 → Step 4
+  **1400 passed** (about 3.5 minutes). Agreed order: C3 → C5 → authoring tool → C4, C6, C7 → Step 4
   (see `NODE_CONTRACT_PLAN.md`).
 - Untracked files to leave alone: `.claude/launch.json`,
   `AttackOfTheNodes/"C:\...\test.txt"`, `AttackOfTheNodes/Workflow started`.

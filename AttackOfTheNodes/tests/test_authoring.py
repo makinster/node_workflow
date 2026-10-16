@@ -227,3 +227,91 @@ def test_main_dispatches_authoring_commands(capsys):
 
     assert main.main(["describe", "sleep_node"]) == 0
     assert "Sleep" in capsys.readouterr().out
+
+
+# --- PR 61 review --------------------------------------------------------------------------
+
+
+def test_concurrent_saves_never_publish_partial_json(_isolated_workflows):
+    import threading
+
+    big = {"id": "wf_race", "nodes": {f"n{i}": {"x": "y" * 2000} for i in range(300)}}
+    failures = []
+
+    def save():
+        try:
+            persistence.save_workflow("wf_race", big)
+        except Exception as exc:  # noqa: BLE001
+            failures.append(exc)
+
+    threads = [threading.Thread(target=save) for _ in range(8)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    assert failures == []
+    assert json.loads((_isolated_workflows / "wf_race.json").read_text()) == big
+    assert [p.name for p in _isolated_workflows.iterdir()] == ["wf_race.json"]
+
+
+def _fan_out_spec(extra_nodes=None, extra_connections=None):
+    nodes = {"start": {"type": "start_node"}, "a": {"type": "no_op_node"}, "b": {"type": "no_op_node"}}
+    nodes.update(extra_nodes or {})
+    connections = [{"from": "start.default", "to": "a.input"}]
+    connections += extra_connections or []
+    return _spec(name="Fan out", nodes=nodes, connections=connections)
+
+
+def test_one_output_with_two_destinations_fails_the_build():
+    spec = _fan_out_spec(extra_connections=[{"from": "start.default", "to": "b.input"}])
+    report = authoring.build_workflow(FACTORY, spec, write=False)
+    assert report["ok"] is False
+    assert ("start", "ignored_fan_out") in _codes(report)
+    message = next(d["message"] for d in report["diagnostics"] if d["code"] == "ignored_fan_out")
+    assert "only the first" in message and "Parallel Branch" in message
+
+
+def test_fan_out_is_a_validator_warning_for_the_editor_too():
+    workflow_map = WorkflowMap(FACTORY, EventBus())
+    workflow_map.create_new("fan_out_editor")
+    start = workflow_map.add_node("start_node")
+    a = workflow_map.add_node("no_op_node")
+    b = workflow_map.add_node("no_op_node")
+    workflow_map.connect(start, "default", a, "input")
+    workflow_map.connect(start, "default", b, "input")
+    result = validate_workflow(workflow_map, FACTORY)
+    assert result["success"] is True
+    assert [w["code"] for w in result["warnings"] if w["node_id"] == start] == ["ignored_fan_out"]
+
+
+def test_inline_error_mux_and_error_routes_are_not_fan_out():
+    spec = _fan_out_spec(
+        extra_nodes={"mux": {"type": "error_mux_node"}, "mux2": {"type": "error_mux_node"}},
+        extra_connections=[
+            {"from": "a.default", "to": "mux.input"},
+            {"from": "a.default", "to": "b.input"},
+            {"from": "b.error", "to": "mux2.error"},
+        ],
+    )
+    report = authoring.build_workflow(FACTORY, spec, write=False)
+    assert "ignored_fan_out" not in [d["code"] for d in report["diagnostics"]]
+
+
+def test_names_differing_only_in_case_are_duplicates():
+    assert authoring.build_workflow(FACTORY, _spec(name="Example"))["ok"]
+    report = authoring.build_workflow(FACTORY, _spec(name="example"))
+    assert report["ok"] is False and _codes(report) == [(None, "duplicate_name")]
+
+
+def test_json_output_stays_parseable_with_an_unreadable_workflow(_isolated_workflows, capsys, caplog):
+    """Real stdout, as a shell pipe sees it: only the JSON report."""
+    import aotn_author
+
+    _isolated_workflows.mkdir(parents=True, exist_ok=True)
+    (_isolated_workflows / "wf_broken.json").write_text("{not json")
+    code = aotn_author.main("build", ["-", "--json"],
+                            stdin=io.StringIO(json.dumps(_spec(name="Third"))))
+    captured = capsys.readouterr()
+    assert code == 0
+    assert json.loads(captured.out)["ok"] is True
+    assert "wf_broken" in caplog.text  # a log warning (stderr), not stdout

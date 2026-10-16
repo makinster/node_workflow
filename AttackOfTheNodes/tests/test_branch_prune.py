@@ -468,7 +468,10 @@ def test_prune_merge_node_survives_when_another_branch_still_feeds_it():
 
     result = validate_workflow(wm, factory)
     assert result["errors"] == []
-    assert result["warnings"] == []
+    # The fixture wires start.default to two nodes; only the first runs, and
+    # the validator says so since PR 61's review (ignored_fan_out). Pruning
+    # itself adds no warnings.
+    assert [(w["node_id"], w["code"]) for w in result["warnings"]] == [(start, "ignored_fan_out")]
 
 
 def test_prune_merge_node_ignores_unreachable_loose_feed():

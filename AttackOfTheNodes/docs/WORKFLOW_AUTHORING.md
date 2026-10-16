@@ -58,6 +58,11 @@ with `aotn run "<name>"` or open it from the app's Workflow Library.
 - **Connections** name both ports: `"handle.port"`. The ports must exist for
   that node's config (Branch with 3 paths has `path_a`..`path_c`; every node
   also has `error`).
+- **One destination per ordinary output.** The engine follows only the first
+  connection of an output, so wiring one output to two nodes fails the build
+  (`ignored_fan_out`; the editor's validator warns about it). Use a Parallel
+  Branch to run several paths. Exceptions: the `error` port (routes by code
+  to several Error Mux nodes) and an inline Error Mux on a normal output.
 
 ## What a build checks
 
@@ -69,9 +74,13 @@ In one pass, reporting every problem at once:
 3. Node references and connection ports.
 4. The full validator (`validate_workflow`): its errors fail the build, its
    warnings are reported (codes from `backend/validation_codes.py`).
-5. Save through `SaveManager` (atomic write), refusing a name that is
-   already saved, then reload the file into a fresh map and check that it
+5. Save through `SaveManager` (atomic write, a unique temporary file per
+   save), refusing a name already saved (case-insensitive, as `aotn run`
+   matches names), then reload the file into a fresh map and check that it
    matches and validates the same.
+
+With `--json`, stdout carries only the JSON report; warnings (for example an
+unreadable saved workflow) go to stderr.
 
 Nothing is written unless all of that passes. A passing build does not run
 anything: model calls, HTTP requests and file writes happen only in a run.

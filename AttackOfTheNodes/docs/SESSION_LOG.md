@@ -8,7 +8,7 @@ overhaul.
 
 Branch `dist/authoring-core`, from `main` at `4f045bd` (PR #60). The owner
 merged #59 and #60 and asked to continue. Before: 1376 passed. After:
-1394 passed (18 new tests in `test_authoring.py`).
+1400 passed (24 new tests in `test_authoring.py`).
 
 - **Reproduced first** (the proposal's findings, on main): `connect()`
   accepts a port that does not exist; `update_node_config` replaces the
@@ -36,6 +36,26 @@ merged #59 and #60 and asked to continue. Before: 1376 passed. After:
   generated id, and `aotn run` finished it.
 - New `docs/WORKFLOW_AUTHORING.md`; README, TASK_INDEX and AGENTS.md
   point to it.
+- **PR 61 review (four P2 findings, all reproduced, fixed on the branch):**
+  1. Concurrent saves shared one temporary filename (six of eight writers
+     failed in the probe); `save_workflow` now uses `tempfile.mkstemp`.
+  2. One output wired to two nodes built cleanly but only the first runs
+     (`find_next_node_id`). New validator warning `ignored_fan_out`
+     (label "Ignored connection"; the `error` port and inline Error Mux
+     catches are exempt); the builder treats it as an error.
+  3. Duplicate names were compared case-sensitively while `aotn run`
+     matches case-insensitively; now `casefold`.
+  4. `--json` output could start with a plain-text warning: persistence
+     now logs warnings instead of printing, and the CLI sends any stray
+     stdout to stderr. Checked in a real shell pipe.
+  Five new tests fail on the first PR head; the sixth (inline Error Mux
+  exemption) guards the new rule.
+  `test_prune_merge_node_survives_when_another_branch_still_feeds_it`
+  asserted no warnings, but its fixture wires `start.default` to two nodes;
+  it now expects exactly that `ignored_fan_out` (updated deliberately).
+  Read-only check of the owner's saves: one "Untitled Workflow" has a
+  Parallel Branch `path_a` wired to two different Merge nodes; only the
+  first runs, and the editor's Validate now says so.
 
 ## 2026-10-15 — C5: Number Field Policy
 

@@ -288,6 +288,32 @@ def validate_workflow(
 
     _validate_error_muxes(all_nodes, _type_meta_cache, errors, warnings)
 
+    # An ordinary output follows its first connection only
+    # (WorkflowMap.find_next_node_id). The `error` port routes by code and an
+    # inline Error Mux on a normal output is a catch, not a second path.
+    for node_id, data in all_nodes.items():
+        by_port: Dict[str, List[str]] = {}
+        for conn in data.get("connections", {}).get("outputs", []):
+            port = str(conn.get("source_port") or "default")
+            target = str(conn.get("target_node_id") or "")
+            target_type = (all_nodes.get(target) or {}).get("type")
+            if port == ERROR_PORT or (target_type == ERROR_MUX_NODE_TYPE
+                                      and conn.get("target_port") == MUX_INPUT_PORT):
+                continue
+            by_port.setdefault(port, []).append(target)
+        for port, targets in by_port.items():
+            if len(targets) < 2:
+                continue
+            names = [_node_name(factory, all_nodes[t]) if t in all_nodes else t for t in targets]
+            warnings.append({
+                "node_id": node_id,
+                "port": port,
+                "code": "ignored_fan_out", "message": (
+                    f"Output '{port}' has {len(targets)} connections; only the first "
+                    f"({names[0]}) runs. Use a Parallel Branch to run {', '.join(names[1:])} too"
+                ),
+            })
+
     # C5: number fields hold a finite number inside the field's declared range
     # (field_types.check_number, the rule the node editor enforces on save).
     # A saved value that breaks it blocks the run; nothing is coerced.

@@ -9,6 +9,7 @@ without writing. Running a workflow stays ``aotn run``.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import os
 import sys
@@ -50,6 +51,14 @@ def main(command: str, argv: Optional[List[str]] = None,
             parser.error("--data-dir must be set before the backend is loaded")
         os.environ["AOTN_DATA_DIR"] = wanted
 
+    # stdout carries only the result (JSON stays parseable); stray backend
+    # prints and warnings go to stderr.
+    with contextlib.redirect_stdout(sys.stderr):
+        return _run(command, args, parser, out, stdin)
+
+
+def _run(command: str, args: argparse.Namespace, parser: argparse.ArgumentParser,
+         out: TextIO, stdin: Optional[TextIO]) -> int:
     from backend import authoring
     from backend.node_factory import NodeFactory
 
