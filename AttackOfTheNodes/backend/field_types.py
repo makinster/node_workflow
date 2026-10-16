@@ -1,7 +1,8 @@
 """Field type enum and config schema validation for AttackOfTheNodes."""
 
+import math
 from enum import Enum
-from typing import Any, Dict, List
+from typing import Any, Dict, Iterator, List, Tuple
 
 
 class FieldType(str, Enum):
@@ -43,3 +44,117 @@ def validate_config_schema(schema: Dict[str, Dict[str, Any]]) -> List[str]:
                 f"Field '{field_name}': type '{field_type}' requires 'options'"
             )
     return errors
+
+
+#: Schema field types holding a number.
+NUMERIC_FIELD_TYPES = frozenset({FieldType.INTEGER.value, FieldType.FLOAT.value, FieldType.NUMBER.value})
+
+
+def number_fields(schema: Dict[str, Dict[str, Any]]) -> Iterator[Tuple[str, Dict[str, Any]]]:
+    """``(field name, field schema)`` for every number field in ``schema``."""
+    for name, info in schema.items():
+        if isinstance(info, dict) and str(info.get("type") or "") in NUMERIC_FIELD_TYPES:
+            yield name, info
+
+
+def field_visible(config: Dict[str, Any], defaults: Dict[str, Any], field_info: Dict[str, Any]) -> bool:
+    """Whether a schema field's ``visible_when`` condition currently holds.
+
+    Every entry must match (AND); a list value matches any listed entry (OR
+    within one field). Unset config keys fall back to the node type's
+    default_config, the value the config screen renders. Fields with no
+    visible_when are always visible. Hidden fields are not checked.
+    """
+    condition = field_info.get("visible_when")
+    if not isinstance(condition, dict):
+        return True
+    for key, expected in condition.items():
+        actual = config.get(key, defaults.get(key))
+        if isinstance(expected, list):
+            if actual not in expected:
+                return False
+        elif actual != expected:
+            return False
+    return True
+
+
+def check_number(field_info: Dict[str, Any], raw: Any, default: Any = None) -> Tuple[Any, str]:
+    """C5 number policy (owner, 2026-10-15): ``(value, problem)``.
+
+    ``problem`` is "" when ``raw`` is a finite number inside the field's
+    declared range (``min`` / ``max``; ``min_exclusive: true`` makes ``min``
+    exclusive); the value is then an ``int`` for integer fields, else a
+    ``float``. Blank means the field's default, which is checked the same
+    way. Nothing is ever coerced to 0: callers keep the typed text and block
+    the save (editor) or the run (validator).
+    """
+    integer = str(field_info.get("type") or "") == FieldType.INTEGER.value
+    text = raw.strip() if isinstance(raw, str) else raw
+    if text is None or text == "":
+        if default is None or (isinstance(default, str) and not default.strip()):
+            return None, "Enter a number"
+        return check_number(field_info, default)
+    if isinstance(text, bool):
+        return None, "Enter a whole number" if integer else "Enter a number"
+    if integer:
+        value, problem = _whole_number(text)
+        if problem:
+            return None, problem
+    else:
+        try:
+            value = float(text)
+        except (TypeError, ValueError):
+            return None, "Enter a number"
+        except OverflowError:
+            return None, "Number is too large"
+        if not math.isfinite(value):
+            return None, "Enter a finite number"
+    minimum, maximum = field_info.get("min"), field_info.get("max")
+    if minimum is not None:
+        if field_info.get("min_exclusive") and value <= minimum:
+            return None, f"Must be more than {minimum:g}"
+        if value < minimum:
+            return None, f"Must be at least {minimum:g}"
+    if maximum is not None and value > maximum:
+        return None, f"Must be at most {maximum:g}"
+    return value, ""
+
+
+def _whole_number(text: Any) -> Tuple[Any, str]:
+    """An exact ``int`` for an integer field (never via float when the text
+    is already whole: 9007199254740993 stays exact)."""
+    if isinstance(text, int):
+        return text, ""
+    if isinstance(text, str):
+        try:
+            return int(text), ""
+        except ValueError:
+            pass
+    try:
+        number = float(text)
+    except (TypeError, ValueError):
+        return None, "Enter a whole number"
+    except OverflowError:
+        return None, "Number is too large"
+    if not math.isfinite(number):
+        return None, "Enter a finite number"
+    if not number.is_integer():
+        return None, "Enter a whole number"
+    return int(number), ""
+
+
+def normalize_numbers(
+    schema: Dict[str, Dict[str, Any]], defaults: Dict[str, Any], config: Dict[str, Any],
+) -> Dict[str, Any]:
+    """``config`` with every number field that passes ``check_number`` stored
+    as its checked value, so execution reads exactly what preflight accepted
+    (blank becomes the default, "3.0" becomes 3). Missing keys stay missing;
+    values that fail are left as they are (preflight blocks the run)."""
+    result = dict(config)
+    for name, info in number_fields(schema):
+        if name not in result:
+            continue
+        value, problem = check_number(info, result[name], defaults.get(name))
+        if not problem:
+            result[name] = value
+    return result

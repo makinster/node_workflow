@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from copy import deepcopy
 
-import math
 
 from typing import Any, Callable, Dict, Optional
 
@@ -23,6 +22,10 @@ from backend.nodes.branch_node import (
     branch_count_from_config as _branch_count_from_config,
 )
 from backend.data_types import types_compatible
+from backend.field_types import check_number, field_visible, number_fields
+
+# Number fields drawn by custom controls instead of the generated form.
+CUSTOM_NUMBER_CONTROLS = {"branch_count": "#branch-count"}
 from backend.port_types import resolved_metadata, trace_producers
 from backend.vault_declarations import typed_vault_writes
 from frontend.error_paths import editor_output_ports
@@ -2100,8 +2103,6 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             message = ""
             if any(target not in eligible for target in selected):
                 message = "Remove unavailable wait targets before saving."
-            if self._wait_timeout_value() is None:
-                message = "Timeout must be a nonnegative number; 0 waits forever."
             if message:
                 self.query_one("#wait-config-error", Static).update(message)
                 notifications.notify_error(self.app, message)
@@ -2111,7 +2112,17 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         except ValueError as error:
             notifications.notify_error(self.app, str(error))
             return None
-        result = {"alias": alias, "config": self._without_untouched_defaults(config)}
+        numbers, problems = self._checked_numbers(config)
+        if problems:
+            count = len(problems)
+            notifications.notify_error(
+                self.app, f"Fix {count} number field{'s' if count > 1 else ''} before saving")
+            return None
+        # The no-edit comparison runs on what the widgets showed; checked
+        # numbers then replace only the keys that are being written.
+        saved = self._without_untouched_defaults(config)
+        saved.update({key: value for key, value in numbers.items() if key in saved})
+        result = {"alias": alias, "config": saved}
         if then:
             result["then"] = then
         doomed = self._mux_branch_nodes_to_delete()
@@ -2119,12 +2130,60 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             result["delete_branch_nodes"] = doomed
         return result
 
+    def _checked_numbers(self, config: Dict[str, Any]) -> tuple[Dict[str, Any], Dict[str, str]]:
+        """C5: check every visible number field (``field_types.check_number``,
+        the validator's rule). Returns the parsed values (blank becomes the
+        default) and ``{field: problem}``; each problem is shown under its
+        field, the typed text stays, and the first bad field gets focus."""
+        metadata = self._metadata_for_type(self.node_data.get("type", "")) or {}
+        defaults = metadata.get("default_config") or {}
+        # The type's whole schema: custom controls (Branch count) count too.
+        schema = metadata.get("config_schema") or {}
+        numbers: Dict[str, Any] = {}
+        problems: Dict[str, str] = {}
+        first_bad = None
+        for name, info in number_fields(schema):
+            widgets = list(self.query(f"#field-{name}")) or list(
+                self.query(CUSTOM_NUMBER_CONTROLS.get(name, "#none")))
+            if not widgets or not field_visible(config, defaults, info):
+                continue
+            raw = getattr(widgets[0], "value", config.get(name))
+            value, problem = check_number(info, raw, defaults.get(name))
+            self._show_field_error(widgets[0], name, problem)
+            if problem:
+                problems[name] = problem
+                first_bad = first_bad or widgets[0]
+            else:
+                numbers[name] = value
+        if first_bad is not None:
+            self.set_focus(first_bad)
+        return numbers, problems
+
+    def _show_field_error(self, widget: Any, name: str, problem: str) -> None:
+        """Show (or clear) a one-line problem under a field."""
+        existing = list(self.query(f"#field-error-{name}"))
+        if not problem:
+            for item in existing:
+                item.remove()
+            return
+        if existing:
+            existing[0].update(problem)
+            return
+        # Under the whole row when the input shares a line with its label.
+        anchor = widget.parent if widget.parent.has_class("form-inline-row") else widget
+        anchor.parent.mount(
+            Static(problem, id=f"field-error-{name}", classes="field-error", markup=False),
+            after=anchor,
+        )
+
     def _wait_timeout_value(self) -> Optional[float]:
-        try:
-            timeout = float(self.query_one("#field-timeout_seconds", Input).value)
-        except ValueError:
-            return None
-        return timeout if math.isfinite(timeout) and timeout >= 0 else None
+        """Wait Until's timeout under the C5 policy (blank = default 0)."""
+        metadata = self._metadata_for_type(self.node_data.get("type", "")) or {}
+        info = (metadata.get("config_schema") or {}).get("timeout_seconds") or {}
+        default = (metadata.get("default_config") or {}).get("timeout_seconds")
+        value, problem = check_number(
+            info, self.query_one("#field-timeout_seconds", Input).value, default)
+        return None if problem else value
 
     def _collected_config(self) -> Dict[str, Any]:
         """The config the widgets describe now (raises ValueError on Merge overflow)."""

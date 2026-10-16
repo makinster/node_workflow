@@ -421,6 +421,9 @@ def _widget_for_field(
         input_type = "integer"
     elif field_type in {"float", "number"}:
         input_type = "number"
+    if input_type != "text" and not placeholder:
+        # C5: a blank number field saves the node's default.
+        placeholder = "blank = default"
     text_value = "" if value is None else str(value)
     return CommandInput(
         value=text_value,
@@ -645,12 +648,13 @@ def _value_from_widget(widget, field_type: str) -> Any:
             try:
                 return int(widget.value)
             except ValueError:
-                return 0
+                # C5: keep the typed text; the save check reports it.
+                return widget.value
         if field_type in {"float", "number"}:
             try:
                 return float(widget.value)
             except ValueError:
-                return 0.0
+                return widget.value
         return widget.value
     if isinstance(widget, TextArea):
         return widget.text

@@ -238,6 +238,27 @@ cached by `RunSession` at execution time so multiple nodes in a run can share
 the same file access. Files can serve as both inputs (read content into
 transient or Vault) and outputs (write Vault or transient content to disk).
 
+## Number Fields (C5)
+
+Schema fields typed `integer`, `float` or `number` follow one policy
+(`backend/field_types.check_number`, owner 2026-10-15):
+
+- The value must be a finite number; `integer` fields must be whole.
+- Declare limits on the field: `min`, `max`, and `min_exclusive: true` when
+  the minimum itself is not allowed (HTTP timeout: `min: 0` exclusive).
+  Every node's default must pass its own field (a test checks this).
+- Blank means the node's default; the input shows `blank = default`.
+- The node editor blocks the save with the problem under the field and
+  keeps the typed text; the validator reports a saved bad value as
+  `invalid_number`, which blocks the run. Nothing is coerced to 0.
+- Hidden fields (`visible_when` not met) are not checked.
+- Integer fields parse exactly (no float round trip); a float too large
+  to represent reports "Number is too large".
+- Nodes receive number fields already normalized (`Node.__init__` uses
+  `normalize_numbers`): read `self.config[...]` without re-parsing.
+- A number drawn by a custom control is checked too: register its widget
+  in `CUSTOM_NUMBER_CONTROLS` (`frontend/screens/node_config.py`).
+
 ## Per-Port Contract Metadata
 
 Each port a node declares carries I/O contract metadata in

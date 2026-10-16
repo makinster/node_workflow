@@ -68,6 +68,9 @@ Node configs share these section meanings (switch visible tabs with number keys)
   text field or multi-line box is being edited it commits the text and leaves
   editing first; Enter in a multi-line box stays a newline.
 - The Save button saves and closes.
+- Number fields (C5): a value that is not a number, not finite or out of
+  range blocks the save; the problem shows in red under the field, the
+  typed text stays and the field gets focus. Blank saves the default.
 - `Esc` (or the Close button, formerly Cancel) closes. With unsaved changes it asks **Save / Discard /
   Stay** first; Esc in that prompt means Stay. Jumping to another node from
   the Connections tab asks the same.

@@ -21,7 +21,7 @@ from typing import (
 
 from .data_types import validate_type
 from .node_errors import normalize_error_definitions
-from .field_types import validate_config_schema
+from .field_types import normalize_numbers, validate_config_schema
 
 
 if TYPE_CHECKING:
@@ -159,7 +159,11 @@ class Node(ABC):
 
     def __init__(self, node_id: str, config: Optional[Dict[str, Any]] = None) -> None:
         self.node_id = node_id
-        self.config = deepcopy(config if config is not None else self.default_config)
+        # C5: number fields reach execute() exactly as preflight checked them.
+        self.config = normalize_numbers(
+            self.config_schema, self.default_config,
+            deepcopy(config if config is not None else self.default_config),
+        )
 
     @abstractmethod
     async def execute(self, context: NodeContext) -> None:

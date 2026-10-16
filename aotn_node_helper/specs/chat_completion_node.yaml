@@ -110,11 +110,14 @@ config_tabs:
       label: Max tokens
       default: 1024
       required: true
+      min: 1
     temperature:
       type: float
       label: Temperature
       default: 1.0
       required: true
+      min: 0.0
+      max: 1.0
       description: Ignored by models that do not accept sampling parameters
     api_key_secret:
       type: string
