@@ -25,7 +25,7 @@ When sources disagree: code first, then the recent session log, then plans.
 - `main` at `9809a90` (merge of PR #58). C1 (#55), C2 (#56), the selector
   toggle (#57) and issue codes (#58) are merged; C3 is PR #59 and C5
   (`dist/c5-number-validation`, stacked on it) is next in line. Suite:
-  **1374 passed** (about 3.5 minutes). Agreed order: C3 → C5 → authoring tool → C4, C6, C7 → Step 4
+  **1376 passed** (about 3.5 minutes). Agreed order: C3 → C5 → authoring tool → C4, C6, C7 → Step 4
   (see `NODE_CONTRACT_PLAN.md`).
 - Untracked files to leave alone: `.claude/launch.json`,
   `AttackOfTheNodes/"C:\...\test.txt"`, `AttackOfTheNodes/Workflow started`.

@@ -7,7 +7,7 @@ overhaul.
 ## 2026-10-15 — C5: Number Field Policy
 
 Branch `dist/c5-number-validation`, stacked on `dist/c3-mode-output-types`
-(PR #59; merge that first). Before: 1328 passed. After: 1374 passed
+(PR #59; merge that first). Before: 1328 passed. After: 1376 passed
 (new `test_number_policy.py`; `test_form_generator.py`'s coercion test
 rewritten).
 
@@ -60,6 +60,11 @@ per field, blank means default, the same check in the validator.
   4. An untouched save of a partial config (Sleep `{}`) added keys; the
      no-edit comparison now runs before checked numbers are written.
   12 new tests fail on the first PR head.
+- **PR 58 review (maintainability):** `test_validation_codes.py` counted
+  source snippets; it now parses `validator.py` with `ast` and requires every
+  issue dict (a dict literal with a "message" key) to carry a registered
+  literal code, independent of formatting. A mutation check (one code
+  removed) fails with the line number.
 
 ## 2026-10-15 — C3: Mode-Resolved Output Types
 

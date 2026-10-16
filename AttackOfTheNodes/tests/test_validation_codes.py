@@ -4,7 +4,7 @@ Run from AttackOfTheNodes/:
     ../.venv/bin/python -m pytest tests/test_validation_codes.py -v
 """
 
-import re
+import ast
 from pathlib import Path
 
 from backend.event_bus import EventBus
@@ -17,21 +17,33 @@ FACTORY = NodeFactory()
 VALIDATOR = Path(__file__).resolve().parent.parent / "backend" / "validator.py"
 
 
-def _codes_in_validator():
-    return set(re.findall(r'"code": "([a-z_]+)"', VALIDATOR.read_text(encoding="utf-8")))
+def _issue_dicts():
+    """Every dict literal in validator.py that has a "message" key: an issue.
+
+    Parsed with ``ast``, so formatting, wrapping and helper functions do not
+    matter (PR 58 review: counting source snippets was formatting-sensitive).
+    """
+    tree = ast.parse(VALIDATOR.read_text(encoding="utf-8"))
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Dict):
+            keys = {key.value: value for key, value in zip(node.keys, node.values)
+                    if isinstance(key, ast.Constant)}
+            if "message" in keys:
+                yield node.lineno, keys
 
 
-def test_validator_uses_only_registered_codes_and_every_code_is_used():
-    used = _codes_in_validator()
-    assert used - set(ISSUE_CODES) == set(), "unregistered codes"
+def test_every_issue_carries_a_registered_literal_code():
+    issues = list(_issue_dicts())
+    assert len(issues) >= len(ISSUE_CODES)
+    for line, keys in issues:
+        code = keys.get("code")
+        assert isinstance(code, ast.Constant) and isinstance(code.value, str), f"line {line}: no literal code"
+        assert code.value in ISSUE_CODES, f"line {line}: unregistered code {code.value!r}"
+
+
+def test_every_registered_code_is_reported_somewhere():
+    used = {keys["code"].value for _, keys in _issue_dicts()}
     assert set(ISSUE_CODES) - used == set(), "registered but never reported"
-
-
-def test_every_issue_append_carries_a_code():
-    text = VALIDATOR.read_text(encoding="utf-8")
-    appends = len(re.findall(r"(?:errors|warnings)\.append\(", text))
-    # One append re-adds issues built (with codes) by _duplicate_input_source_errors.
-    assert len(re.findall(r'"code": "', text)) == appends - 1
 
 
 def test_every_code_has_a_label():
