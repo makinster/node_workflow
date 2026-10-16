@@ -10,7 +10,14 @@ owner where a phase needs a decision (C5's number policy, C6's field
 removal, C7's Deep Branch contract) and before Step 4. Each item needs a
 reproduction first; the audit gives one for each.
 
-Progress: C1 done (PR #55). C2 done (`dist/c2-edge-compatibility`).
+Progress: C1 done (PR #55). C2 done (PR #56). Owner extras: node selector
+fitting-only toggle (PR #57), validator issue codes (PR #58). C3 done
+(`dist/c3-mode-output-types`).
+
+**Agreed order (owner, 2026-10-15):** C3 → C5 → workflow authoring tool v1
+→ C4, C6, C7 → `DISTRIBUTED_BUILD_PLAN.md` Step 4 (sub-workflows). A small
+workflow naming PR (rename in the library, name prompt on New) fits
+anywhere; the backend already has `rename_current_workflow`.
 
 Goal: one node contract (ports, config, effects, capabilities) that drives
 the config UI, connection matching, preflight, runtime routing and author
@@ -34,7 +41,7 @@ Keep `NodeContext` and graph-ignorant execution.
 |---|---|---|---|
 | C1 | Preflight checks for node-specific **reads** (Get Variable, Variable Reader, Conditional, Branch `vault:` seeds) | follow-up to 1 | **Done.** `vault_read_entries` flags every read required/optional; `config_vault_read_entries` marks all node-specific reads optional (each has a fallback). An optional read with no writer is a preflight **warning** ("Unwritten Vault key"); a required one is an error. Counter writes its own key, so it never warns. The parallel-branch race warning now covers node-specific reads too. Later: a declared workflow input (Step 4) also satisfies a read. |
 | C2 | Edge compatibility diagnostics | 2 | One shared compatibility function for connector choice, Source dropdowns and preflight. Start with warnings for known-incompatible active edges (Random Number → File Reader on Upstream); keep `any` paths working. Runtime errors name the receiving node/port and the expected/actual shape. **Done:** `data_types.types_compatible` (exact match, `any` matches all) used by connector choice, Source dropdowns and the validator; `port_types.trace_producer` follows pass-through nodes; an active Upstream mismatch is a "Type mismatch" warning; File Reader, File Write and File View errors use `input_mismatch_message`. Mode-dependent output types are C3. |
-| C3 | Mode-resolved output types | 3 | HTTP Request file mode → `default:file`, text mode → `default:string` through the per-node output-metadata hook; used by previews, insertion (auto-wiring picked File Write's `content` instead of `file_path`), validation and Vault typing. |
+| C3 | Mode-resolved output types | 3 | HTTP Request file mode → `default:file`, text mode → `default:string` through the per-node output-metadata hook; used by previews, insertion (auto-wiring picked File Write's `content` instead of `file_path`), validation and Vault typing. **Done:** HTTP Request's `describe_output_ports` resolves `default` to `string` or `file` (spec declares the port, type `any` statically); `port_types.resolved_metadata` gives config-resolved metadata to Vault typing (validator, Vault pickers, previews). Audit of every node with a concrete output type: HTTP Request is the only one whose type changes with a setting. |
 | C4 | Fixed-forwarding capability and provenance | 4 | Declare forwarding for No Op, Logger, Probe, Memory Snapshot, Merge Beacon, Repeat Counter (Counter and Sleep have hints). Output type follows the input; show a read-only forwarding summary, not an optional checkbox. Branch/Conditional/Merge need config-selected forwarding. |
 | C5 | Save-time validation of numeric fields | 5 | `form_generator.py` turns unparseable numbers into `0.0`. One policy for malformed, out-of-range and non-finite values: inline error, keep the typed text, block save; same constraints in backend config validation. An existing test encodes the coercion and must be updated deliberately. |
 | C6 | Random Number's ignored `value` field | 6 | Remove the control; keep any stored key through a migration. |
@@ -63,6 +70,35 @@ Keep `NodeContext` and graph-ignorant execution.
   ribbon reduced to the basic movement keys and `h help`.
 - **Labels:** stable display identity matters once labels appear in run
   history, logs or a second frontend; the numbered suffix was dropped for now.
+
+### Workflow authoring tool (agreed 2026-10-15; after C5, before C4)
+
+Goal: build preconfigured workflows from a small JSON spec, through the same
+backend services the app uses, so agents and people can make example and
+test workflows without hand-written scripts. Core in a backend module
+(`backend/authoring.py`), the `aotn` CLI as one adapter; a future server or
+AI tool interface wraps the same functions.
+
+- **PR 1, core:** `list` and `describe` node types from the registry,
+  config-aware (a six-path Branch shows six outputs; HTTP Request in file
+  mode shows a file output). `build` from a versioned spec: named nodes
+  with real config keys merged over defaults, explicit connection ports,
+  spec-local node names mapped to generated IDs (translated only in fields
+  declared as node references, e.g. Wait Until targets), shared checks,
+  the app's save preparation, reload into a fresh map and re-check,
+  atomic write, never overwrite an existing save. JSON and readable output.
+- **PR 2, inspect + examples:** a readable report of execution paths,
+  effective config, Vault writers/readers and ordering ("reads `doc`; its
+  writer is on a parallel branch; ordering not guaranteed"), and "unchecked"
+  wherever the contract cannot tell. A checked-in folder of example specs
+  for real use cases, built and validated by the test suite; they double
+  as owner test benches and as the Step 4 test corpus.
+- **First, reproduce and fix in shared helpers** (so the TUI benefits):
+  `connect()` accepting undeclared ports, unknown config keys passing
+  silently, `update_node_config()` replacing instead of merging, empty
+  schemas (Merge). Bad numbers are C5's shared policy, reused here.
+- **Deferred:** templates, automatic graph planning, live editing of an
+  open workflow, a server/MCP transport. Running stays `aotn run`.
 
 Legacy UI migration by family (shared Source control and typed Vault picker,
 shared Payloads component, hiding empty sections such as No Op's Parameters

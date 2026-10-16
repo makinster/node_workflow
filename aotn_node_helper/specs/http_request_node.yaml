@@ -11,6 +11,11 @@ default_alias: HTTP Request
 description: Make an HTTP GET or POST request and forward the response body (as text, or saved to a run-owned file)
 input_ports: ["input"]
 output_ports: ["default", "error"]
+output_port_metadata:
+  default:
+    name: Response
+    description: "The response body: text, or a file reference when Response as is file"
+    data_type: any
 config_tabs:
   Parameters:
     url:

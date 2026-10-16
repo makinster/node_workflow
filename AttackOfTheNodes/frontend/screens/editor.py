@@ -12,7 +12,7 @@ from textual.widgets import Header, Label, Static
 
 from backend.branch_paths import merge_slot_count, slots_covering
 from backend.data_types import types_compatible
-from backend.port_types import trace_producers
+from backend.port_types import resolved_metadata, trace_producers
 from backend.validator import validate_workflow
 from backend.node_errors import ERROR_PORT, MUX_DEFAULT_PORT
 from frontend.error_mux_ui import ERROR_MUX_NODE_TYPE, inline_mux_for
@@ -1594,7 +1594,10 @@ class EditorScreen(Screen):
     def _detail_output_lines(
         self, node: Dict[str, Any], metadata: Optional[Dict[str, Any]]
     ) -> list[str]:
-        output_meta: Dict[str, Any] = (metadata or {}).get("output_port_metadata") or {}
+        # Config-resolved (C3): HTTP Request shows string or file by mode.
+        output_meta: Dict[str, Any] = resolved_metadata(
+            self.factory, str(node.get("type") or ""), node.get("config") or {},
+        ).get("output_port_metadata") or (metadata or {}).get("output_port_metadata") or {}
         by_port = self._connections_by_port(
             node.get("connections", {}).get("outputs", []), "source_port"
         )

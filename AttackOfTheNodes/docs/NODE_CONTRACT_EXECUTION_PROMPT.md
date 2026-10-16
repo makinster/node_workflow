@@ -22,10 +22,11 @@ When sources disagree: code first, then the recent session log, then plans.
 
 ## Where things stand (2026-10-14)
 
-- `main` at `959eb58` (merge of PR #54). The owner approved C1–C7
-  (2026-10-14). C1 merged (PR #55); C2 is in its PR
-  (`dist/c2-edge-compatibility`); C3 is next. Suite: **1292 passed**
-  (about 3.5 minutes).
+- `main` at `9809a90` (merge of PR #58). C1 (#55), C2 (#56), the selector
+  toggle (#57) and issue codes (#58) are merged; C3 is in its PR
+  (`dist/c3-mode-output-types`). Suite: **1328 passed** (about 3.5
+  minutes). Agreed order: C3 → C5 → authoring tool → C4, C6, C7 → Step 4
+  (see `NODE_CONTRACT_PLAN.md`).
 - Untracked files to leave alone: `.claude/launch.json`,
   `AttackOfTheNodes/"C:\...\test.txt"`, `AttackOfTheNodes/Workflow started`.
 
@@ -81,8 +82,9 @@ What the detour delivered, in short:
    **C1** (warnings for node-specific Vault reads with no writer, plus the
    required/optional flag in `vault_read_entries`) merged as PR #55. **C2**
    (one edge compatibility rule, `data_types.types_compatible`, plus
-   "Type mismatch" warnings and clearer file-node runtime errors) is in
-   its PR. Check it is merged before branching for C3.
+   "Type mismatch" warnings and clearer file-node runtime errors) merged
+   as PR #56. C3 (mode-resolved output types) is in its PR; check it is
+   merged before branching for C5.
 3. Then C2–C7 in order, one PR each, asking the owner where a phase needs a
    decision (C5's number policy, C6's field removal, C7's Deep Branch
    contract). Ask before starting Step 4 of `DISTRIBUTED_BUILD_PLAN.md`.

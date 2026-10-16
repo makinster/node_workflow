@@ -23,7 +23,7 @@ from backend.nodes.branch_node import (
     branch_count_from_config as _branch_count_from_config,
 )
 from backend.data_types import types_compatible
-from backend.port_types import trace_producers
+from backend.port_types import resolved_metadata, trace_producers
 from backend.vault_declarations import typed_vault_writes
 from frontend.error_paths import editor_output_ports
 from backend.node_errors import UNMATCHED_ROUTE
@@ -1210,7 +1210,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             writer_id = "" if deleted else str(node_id)
             for output in normalize_membank_outputs(config):
                 add(str(output["id"]), "", writer_id)
-            meta = self._metadata_for_type(node_type) or {}
+            meta = resolved_metadata(self.factory, node_type, config)
             for key, tag in typed_vault_writes(node_type, config, meta).items():
                 add(key, tag or "", writer_id)
         return declared

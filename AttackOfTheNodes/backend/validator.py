@@ -11,7 +11,9 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
 from .branch_health import ENDED_UNMERGED, derive_branch_health, output_types_from_factory
 from .branch_paths import path_index
 from .data_types import DataType, types_compatible
-from .port_types import input_port_type, metadata_for_type, port_metadata, trace_producers
+from .port_types import (
+    input_port_type, metadata_for_type, port_metadata, resolved_metadata, trace_producers,
+)
 from .vault_declarations import (
     config_vault_read_entries,
     continuation_selected as _continuation_selected,
@@ -372,7 +374,7 @@ def validate_workflow(
     metadata_by_type = {
         str(item.get("type") or ""): item for item in factory.get_node_types_metadata()
     }
-    vault_writes = _standard_model_vault_writes(all_nodes, metadata_by_type)
+    vault_writes = _standard_model_vault_writes(all_nodes, factory)
     standard_vault_reads = _standard_model_vault_reads(all_nodes, metadata_by_type)
 
     # Source selectors must name a real key; missing selections cannot fall
@@ -734,7 +736,7 @@ def _duplicate_input_source_errors(
 
 def _standard_model_vault_writes(
     all_nodes: Dict[str, Dict[str, Any]],
-    metadata_by_type: Dict[str, Dict[str, Any]],
+    factory: NodeFactory,
 ) -> Dict[str, Dict[str, Optional[str]]]:
     """Vault writes implied by config, node_id -> {key: tag}.
 
@@ -751,7 +753,7 @@ def _standard_model_vault_writes(
     for node_id, data in all_nodes.items():
         config = data.get("config") or {}
         node_type = str(data.get("type") or "")
-        node_writes = typed_vault_writes(node_type, config, metadata_by_type.get(node_type) or {})
+        node_writes = typed_vault_writes(node_type, config, resolved_metadata(factory, node_type, config))
         if node_writes:
             writes[node_id] = node_writes
     return writes
