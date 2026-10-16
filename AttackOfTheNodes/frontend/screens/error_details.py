@@ -28,6 +28,7 @@ VALIDATION_LABELS: Dict[str, str] = {
     "hidden_output_connection": "Unused output",
     "hidden_input_connection": "Unused input",
     "duplicate_input_source": "Duplicate source",
+    "ignored_fan_out": "Ignored connection",
     "type_mismatch": "Type mismatch",
     "undeclared_vault_key": "Missing Vault key",
     "unwritten_vault_key": "Unwritten Vault key",

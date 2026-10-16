@@ -25,6 +25,7 @@ ISSUE_CODES: Dict[str, str] = {
     "hidden_output_connection": "A connection leaves an output this node's settings never use.",
     "hidden_input_connection": "A connection enters an input this node's settings never read.",
     "duplicate_input_source": "One node reads the same upstream payload or Vault key twice.",
+    "ignored_fan_out": "An ordinary output has several connections; only the first runs.",
     "type_mismatch": "An active Upstream connection carries a type the input does not take.",
     # Vault
     "undeclared_vault_key": "A required Vault read names a key no node writes.",

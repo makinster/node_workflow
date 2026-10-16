@@ -4,6 +4,59 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-16 — Workflow Authoring Tool, PR 1 (Core)
+
+Branch `dist/authoring-core`, from `main` at `4f045bd` (PR #60). The owner
+merged #59 and #60 and asked to continue. Before: 1376 passed. After:
+1400 passed (24 new tests in `test_authoring.py`).
+
+- **Reproduced first** (the proposal's findings, on main): `connect()`
+  accepts a port that does not exist; `update_node_config` replaces the
+  config; a misspelled key (`duraton`) passes validation silently; Merge
+  has five config keys and an empty schema.
+- **`backend/authoring.py`**: `list_node_types`, `describe_node_type`
+  (config-aware: resolved ports and types, field limits and visibility,
+  Vault reads/writes, declared errors, node-reference fields, keys without
+  schema reported as unchecked) and `build_workflow` (spec
+  `aotn-workflow/1`: handles, real config keys merged over defaults,
+  explicit ports, Wait Until targets as handles; every problem reported in
+  one pass; the validator's errors fail the build; SaveManager save;
+  duplicate names refused; reload into a fresh map and re-check; nothing
+  written on failure).
+- **CLI**: `aotn nodes`, `aotn describe <type> [--set k=v]`, `aotn build
+  <spec|-> [--check]`, all with `--json` and `--data-dir`
+  (`aotn_author.py`, dispatched from `main.py`; added to `py-modules`).
+- **Shared change**: `persistence.save_workflow` writes atomically (temp
+  file, then rename), for the app too.
+- **Kept as is on purpose**: `WorkflowMap.connect()` and
+  `update_node_config()` (the editor relies on both); the builder checks
+  ports and merges overrides itself.
+- Tried end to end on a temporary data folder: a bad spec listed all
+  seven problems; a good spec saved, its Wait Until target was the
+  generated id, and `aotn run` finished it.
+- New `docs/WORKFLOW_AUTHORING.md`; README, TASK_INDEX and AGENTS.md
+  point to it.
+- **PR 61 review (four P2 findings, all reproduced, fixed on the branch):**
+  1. Concurrent saves shared one temporary filename (six of eight writers
+     failed in the probe); `save_workflow` now uses `tempfile.mkstemp`.
+  2. One output wired to two nodes built cleanly but only the first runs
+     (`find_next_node_id`). New validator warning `ignored_fan_out`
+     (label "Ignored connection"; the `error` port and inline Error Mux
+     catches are exempt); the builder treats it as an error.
+  3. Duplicate names were compared case-sensitively while `aotn run`
+     matches case-insensitively; now `casefold`.
+  4. `--json` output could start with a plain-text warning: persistence
+     now logs warnings instead of printing, and the CLI sends any stray
+     stdout to stderr. Checked in a real shell pipe.
+  Five new tests fail on the first PR head; the sixth (inline Error Mux
+  exemption) guards the new rule.
+  `test_prune_merge_node_survives_when_another_branch_still_feeds_it`
+  asserted no warnings, but its fixture wires `start.default` to two nodes;
+  it now expects exactly that `ignored_fan_out` (updated deliberately).
+  Read-only check of the owner's saves: one "Untitled Workflow" has a
+  Parallel Branch `path_a` wired to two different Merge nodes; only the
+  first runs, and the editor's Validate now says so.
+
 ## 2026-10-15 — C5: Number Field Policy
 
 Branch `dist/c5-number-validation`, stacked on `dist/c3-mode-output-types`

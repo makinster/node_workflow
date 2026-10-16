@@ -6,9 +6,13 @@ schema interpretation or workflow logic.
 """
 
 import json
+import logging
 import os
+import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+
+logger = logging.getLogger(__name__)
 
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -40,11 +44,23 @@ RUN_FILES_DIR = DATA_DIR / "run_files"
 
 
 def save_workflow(workflow_id: str, workflow_data: Dict[str, Any]) -> None:
-    """Save a workflow to workflows/{workflow_id}.json."""
+    """Save a workflow to workflows/{workflow_id}.json.
+
+    Atomic: the JSON is written to a temporary file next to the target and
+    renamed over it, so a failed write never leaves a partial save.
+    """
     WORKFLOWS_DIR.mkdir(parents=True, exist_ok=True)
     file_path = WORKFLOWS_DIR / f"{workflow_id}.json"
-    with open(file_path, "w", encoding="utf-8") as f:
-        json.dump(workflow_data, f, indent=2, ensure_ascii=False)
+    # Unique per write, so concurrent saves never share a temporary file.
+    handle, temp_name = tempfile.mkstemp(dir=WORKFLOWS_DIR, prefix=f".{workflow_id}.", suffix=".tmp")
+    temp_path = Path(temp_name)
+    try:
+        with os.fdopen(handle, "w", encoding="utf-8") as f:
+            json.dump(workflow_data, f, indent=2, ensure_ascii=False)
+        os.replace(temp_path, file_path)
+    finally:
+        if temp_path.exists():
+            temp_path.unlink()
 
 
 def load_workflow(workflow_id: str) -> Optional[Dict[str, Any]]:
@@ -56,7 +72,7 @@ def load_workflow(workflow_id: str) -> Optional[Dict[str, Any]]:
         with open(file_path, "r", encoding="utf-8") as f:
             return json.load(f)
     except (json.JSONDecodeError, OSError) as exc:
-        print(f"Error loading workflow {workflow_id}: {exc}")
+        logger.warning("Error loading workflow %s: %s", workflow_id, exc)
         return None
 
 
@@ -71,7 +87,7 @@ def list_workflows() -> List[Dict[str, str]]:
                 data = json.load(f)
             workflows.append({"id": workflow_id, "name": data.get("name", workflow_id)})
         except (json.JSONDecodeError, OSError) as exc:
-            print(f"Error reading workflow file {file_path}: {exc}")
+            logger.warning("Error reading workflow file %s: %s", file_path, exc)
     return sorted(workflows, key=lambda workflow: workflow["name"])
 
 
@@ -84,7 +100,7 @@ def delete_workflow(workflow_id: str) -> bool:
             return True
         return False
     except OSError as exc:
-        print(f"Error deleting workflow {workflow_id}: {exc}")
+        logger.warning("Error deleting workflow %s: %s", workflow_id, exc)
         return False
 
 
@@ -110,7 +126,7 @@ def load_json_record(directory: Path, record_id: str) -> Optional[Dict[str, Any]
         with open(file_path, "r", encoding="utf-8") as f:
             return json.load(f)
     except (json.JSONDecodeError, OSError) as exc:
-        print(f"Error loading record {file_path}: {exc}")
+        logger.warning("Error loading record %s: %s", file_path, exc)
         return None
 
 
@@ -123,5 +139,5 @@ def list_json_records(directory: Path) -> List[Dict[str, Any]]:
             with open(file_path, "r", encoding="utf-8") as f:
                 records.append(json.load(f))
         except (json.JSONDecodeError, OSError) as exc:
-            print(f"Error reading record {file_path}: {exc}")
+            logger.warning("Error reading record %s: %s", file_path, exc)
     return records
