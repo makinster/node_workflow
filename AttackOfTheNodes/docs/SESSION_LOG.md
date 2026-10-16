@@ -35,6 +35,9 @@ Before: 1314 passed. After: 1328 passed (14 new tests in
   `content`; now `file_path`).
 - Plan updated with the agreed order (C3 → C5 → authoring tool → C4, C6,
   C7 → Step 4), the authoring tool's scope, and the queued naming PR.
+- **PR 59 review (P3, fixed):** the editor's details panel still showed
+  `Response [any]` in both modes; `_detail_output_lines` now reads
+  `resolved_metadata` (2 new tests; suite 1330).
 
 ## 2026-10-15 — Validator Issue Codes
 
