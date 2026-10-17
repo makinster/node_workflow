@@ -634,7 +634,8 @@ into the `error` input (Error Mux routes are the reference). Ports driven by
 such a list are not a spec key: keep the spec's `output_ports` as the type's
 fixed list and override `resolve_output_ports` / `describe_output_ports` in
 the class by hand (see NODE_STANDARDS, config-driven ports). Regeneration
-overwrites these hooks; preserve them manually after reviewing temporary output. A select can use `options_from` to track row choices.
+overwrites these hooks; preserve them manually after reviewing temporary output.
+A select can use `options_from` to track row choices.
 File Manager's `additional_files` schema/spec is the reference. Extend the
 shared generator and widgets for structural field needs rather than adding
 node-specific screens. Regenerate into a temporary project for review when a

@@ -160,7 +160,8 @@ its data **type** is shown after it as a bracketed teal label —
 Termination is explicit node behavior, declared by `terminates_branch` metadata,
 not a generic Outputs-family checkbox. End explicitly terminates; it is
 registered and available through workflow authoring, but hidden from the TUI
-selector. See [Current State](CURRENT_STATE.md) for the open selector decision. Text Output
+selector. See [Current State](CURRENT_STATE.md) for the open selector decision.
+Text Output
 records formatted text and continues when connected; without a connection it
 ends naturally. File Manager, File Reader, File Writer and Window Control
 continue along connections.

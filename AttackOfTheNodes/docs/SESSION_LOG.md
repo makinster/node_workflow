@@ -4,6 +4,39 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+
+## 2026-10-17 — Docs A: Entry Route and S1 Corrections
+
+Branch `docs/a-entry-route`; implementation commit `77784ff`, rebased onto
+`7e3f151` (workflow naming #68). Naming's entry and integration history retained.
+Initial baseline `0d03eb2`: 1466 passed in 177.98s. Final: 1480 passed in
+178.18s on the rebased docs branch. See [Current State](CURRENT_STATE.md).
+
+- F01–F04/F14/F15: README absorbs task routing; AGENTS becomes a short pointer;
+  the copied newcomer candidate becomes a checked 180-line guide. Historical
+  banners stop old handoffs/prompts directing completed work or agent merges.
+- F05/F08/F09: use `store_persistent(..., type_tag=...)` and tagged references;
+  document Chat's actual routing defaults and File Write's error contract.
+- F06/F07/F41: explain full-file/test overwrite and legacy output type loss
+  before helper commands; give separate app/root command paths and temporary
+  generation/manual preservation instructions.
+- F10/F11: distinguish natural endings, explicit End and its hidden selector
+  status; Echo converts to text. Only its docstrings/description changed.
+- F12/F13: publish outputs before marking the saved node ID completed; preserve
+  subworkflow reuse through a separate child RunContext, as D3 specifies.
+- Copied only the surviving audit report, with unavailable evidence marked.
+  No docs moved/archived yet; PR B rebuilds vision sources before extraction.
+  The owner's untracked guide, audit prompt and workflows remain untouched.
+- Verification: all 176 relative Markdown links/anchors resolve; whitespace
+  clean; isolated guide example builds, inspects and runs to FINISHED with
+  `[Output] Hello`. Vault/resource, Chat defaults, Echo conversion, legacy type
+  loss, unified type retention and generator overwrite probes pass. AST
+  comparison confirms Echo behavior is unchanged. No tests were modified.
+- The brief's timeout shorthand was checked against Supervisor: the setting
+  supplies default waits, not a universal execute timeout. The guide states
+  that limit explicitly. Clean install/native FO7 and original audit evidence
+  remain unverified; PR B/C wait for the owner's merge sequence.
+
 ## 2026-10-17 — Workflow Naming: Rename In The Library, Name On New
 
 Branch `dist/workflow-naming`, from `main` at `95f8399` (PR #65) with
