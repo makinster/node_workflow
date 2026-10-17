@@ -193,6 +193,37 @@ async def _test_library_r_asks_to_rename_the_highlighted_workflow():
     assert results == [{"action": "rename", "workflow_id": second, "workflow_name": "Beta"}]
 
 
+def test_library_e_loads_and_o_exports():
+    asyncio.run(_test_library_e_loads_and_o_exports())
+
+
+async def _test_library_e_loads_and_o_exports():
+    from textual.app import App
+    from textual.widgets import Button
+
+    from frontend.screens.workflow_library import WorkflowLibraryScreen
+
+    _, _, first = _saved("Alpha")
+    _, _, second = _saved("Beta")
+    results = []
+
+    class LibraryApp(App):
+        def on_mount(self):
+            self.push_screen(WorkflowLibraryScreen(), results.append)
+
+    for keys in (("s", "e"), ("s", "o"), ("s", "s", "e")):
+        app = LibraryApp()
+        async with app.run_test() as pilot:
+            await pilot.pause(0.03)
+            await pilot.press(*keys)
+            await pilot.pause(0.03)
+    assert results == [
+        {"action": "load", "workflow_id": second, "workflow_name": "Beta"},
+        {"action": "export", "workflow_id": second, "workflow_name": "Beta"},
+        None,  # E on the Cancel button cancels
+    ]
+
+
 def test_new_asks_for_a_name_and_esc_creates_nothing():
     asyncio.run(_test_new_asks_for_a_name_and_esc_creates_nothing())
 

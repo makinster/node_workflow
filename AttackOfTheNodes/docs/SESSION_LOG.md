@@ -8,7 +8,7 @@ overhaul.
 
 Branch `dist/workflow-naming`, from `main` at `95f8399` (PR #65) with
 `dist/c7-deep-branch` merged in (its re-land PR #67 was still open).
-Before: 1466 passed. After: 1479 passed (13 new tests in
+Before: 1466 passed. After: 1480 passed (14 new tests in
 `test_workflow_naming.py`).
 
 - **#66 landed on the wrong branch:** it merged while its base was
@@ -31,6 +31,9 @@ Before: 1466 passed. After: 1479 passed (13 new tests in
   terminals and tmux don't send distinctly. Sample screens were sent to
   the owner before the PR.
 - Library help line and the Help screen list the library keys.
+- **Owner request:** `E` loads the highlighted workflow, as `E` chooses in
+  every other list (on the Cancel button it cancels). Export moved from
+  `E` to `O`, pairing with `I` import (in/out).
 
 ## 2026-10-17 — C7: Deep Branch Offers Only `branch`
 

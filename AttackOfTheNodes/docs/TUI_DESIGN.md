@@ -258,7 +258,9 @@ pass.
 The File menu should show workflow names without ids. Duplicate names are
 displayed as `Name`, `Name (2)`, `Name (3)`, and the currently loaded workflow
 is marked with `<-- Loaded Workflow`. Workflow actions are keyboard bindings;
-the only bottom widget is `Cancel`. `R` renames the highlighted workflow and
+the only bottom widget is `Cancel`. `E` or Enter loads the highlighted workflow
+(as `E` chooses in every list; on `Cancel` it cancels), `I`/`O` import/export
+(in/out; export was `E` until 2026-10-17). `R` renames the highlighted workflow and
 New (`N`, Ctrl+N) asks for a name first; both use one rule
 (`backend/workflow_names.py`: not blank, not another saved workflow's name
 ignoring case) and keep the prompt open with the reason when it fails. Enter

@@ -65,7 +65,7 @@ HELP_TEXT = {
         "  N           New workflow (asks for a name)",
         "  R           Rename highlighted workflow",
         "  D / X       Duplicate / delete",
-        "  E / I       Export / import",
+        "  I / O       Import / export (in / out)",
         "  Esc         Cancel",
     ],
     "settings": [

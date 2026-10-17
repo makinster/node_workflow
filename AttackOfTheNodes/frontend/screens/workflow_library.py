@@ -33,11 +33,13 @@ class WorkflowLibraryScreen(ModalScreen):
         Binding("w", "cursor_up", "Up", priority=True),
         Binding("s", "cursor_down", "Down", priority=True),
         ("enter", "load_selected", "Load"),
+        # E chooses the highlighted item, as in every other list.
+        Binding("e", "choose", "Load", priority=True),
         ("n", "new_workflow", "New"),
         ("r", "rename_selected", "Rename"),
         ("d", "duplicate_selected", "Duplicate"),
-        ("e", "export_selected", "Export"),
         ("i", "import_workflow", "Import"),
+        ("o", "export_selected", "Export"),
         ("x", "delete_selected", "Delete"),
     ]
 
@@ -51,7 +53,7 @@ class WorkflowLibraryScreen(ModalScreen):
             yield Label("Workflow Library", classes="modal-title")
             yield ListView(id="workflow-list")
             yield Static(
-                "Enter load | N new | R rename | D duplicate\nX delete | E export | I import | Esc cancel",
+                "E load | N new | R rename | D duplicate\nX delete | I import | O export | Esc cancel",
                 classes="modal-help",
             )
             yield Button("Cancel", id="cancel-workflow-library", variant="default")
@@ -71,6 +73,12 @@ class WorkflowLibraryScreen(ModalScreen):
     def action_load_selected(self) -> None:
         index = self.query_one("#workflow-list", ListView).index
         self._dismiss_action("load", index)
+
+    def action_choose(self) -> None:
+        if self.app.focused is self.query_one("#cancel-workflow-library", Button):
+            self.action_cancel()
+            return
+        self.action_load_selected()
 
     def action_new_workflow(self) -> None:
         self.dismiss({"action": "new"})
