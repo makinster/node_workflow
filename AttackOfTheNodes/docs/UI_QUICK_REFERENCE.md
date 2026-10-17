@@ -18,7 +18,7 @@ pending work. Historical layouts are in `archive/TUI_DESIGN.md`.
 - `X` or Backspace: delete selected node or tombstone.
 - `F`: File/workflow menu.
 - `O`: options/settings.
-- `P`: Stash screen (S2; see Current State for delivery status).
+- `P`: Stash screen (paste or drop paths and text; manage entries).
 - `B`: toggle the selected node breakpoint; `Ctrl+B`: clear breakpoints.
 - `Z`: undo deletion.
 - Tab / Shift+Tab: move between panels.
@@ -215,8 +215,7 @@ commands must not consume letters/digits while a text field is editing.
 
 ## Stash screen (S2)
 
-These controls were checked against the S2 PR code; [Current State](CURRENT_STATE.md)
-records whether it is merged. P in the editor opens the Paste / drop tab.
+Merged in #71. P in the editor opens the Paste / drop tab; E there types again.
 
 | Context | Controls |
 |---|---|

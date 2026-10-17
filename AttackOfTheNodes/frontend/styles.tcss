@@ -501,3 +501,31 @@ SelectOverlay > .option-list--option-highlighted {
     background: $accent 40%;
     text-style: bold;
 }
+
+/* Stash (S2): the tabs take the height left above the Close row and the
+   docked help line; lists fill their tab; rows stay on one line. */
+.stash-modal #stash-tabs {
+    height: 1fr;
+}
+
+.stash-modal #stash-tabs ContentSwitcher,
+.stash-modal #stash-tabs TabPane {
+    height: 1fr;
+}
+
+.stash-modal > .button-row {
+    margin-bottom: 1;
+}
+
+.stash-list {
+    height: 1fr;
+}
+
+.stash-row {
+    text-wrap: nowrap;
+    text-overflow: ellipsis;
+}
+
+.stash-paste {
+    height: 4;
+}

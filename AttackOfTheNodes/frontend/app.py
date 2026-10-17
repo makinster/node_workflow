@@ -40,6 +40,7 @@ from .screens.execution import ExecutionScreen
 from .screens.file_viewer import FileViewerScreen
 from .screens.help import HelpScreen
 from .screens.settings import SettingsScreen
+from .screens.stash import StashScreen
 from .screens.user_input import UserInputScreen
 from .screens.workflow_library import NamePromptScreen, PathPromptScreen, WorkflowLibraryScreen
 
@@ -82,6 +83,7 @@ class AttackOfTheNodesApp(TextualApp):
         master_state,
         save_manager=None,
         secrets_manager=None,
+        stash_manager=None,
     ) -> None:
         super().__init__()
         self.event_bus = event_bus
@@ -91,6 +93,7 @@ class AttackOfTheNodesApp(TextualApp):
         self.master_state = master_state
         self.save_manager = save_manager
         self.secrets_manager = secrets_manager
+        self.stash_manager = stash_manager
         self.configuration_manager = (
             getattr(save_manager, "configuration_manager", None)
             if save_manager is not None
@@ -435,6 +438,15 @@ class AttackOfTheNodesApp(TextualApp):
             self._handle_workflow_library_action,
         )
 
+    def action_stash(self, initial_tab: str = "add") -> None:
+        """Open the Stash (`p` in the editor). Node-config field insert (S3)
+        opens it on the Entries tab."""
+        if self.stash_manager is None:
+            from backend.stash_manager import StashManager
+
+            self.stash_manager = StashManager()
+        self.push_screen(StashScreen(self.stash_manager, initial_tab=initial_tab))
+
     def action_settings(self) -> None:
         """Open settings modal."""
         if self.configuration_manager is None:
@@ -463,6 +475,8 @@ class AttackOfTheNodesApp(TextualApp):
             return "node_config"
         if screen_name in {"WorkflowLibraryScreen", "PathPromptScreen"}:
             return "workflow_library"
+        if screen_name == "StashScreen":
+            return "stash"
         if screen_name == "SettingsScreen":
             return "settings"
         return "general"
