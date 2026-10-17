@@ -141,6 +141,33 @@ async def _test_name_prompt_keeps_a_rejected_name_open():
     assert results == ["Plan A"]
 
 
+def test_name_prompt_ctrl_s_confirms_like_save_elsewhere():
+    asyncio.run(_test_name_prompt_ctrl_s_confirms_like_save_elsewhere())
+
+
+async def _test_name_prompt_ctrl_s_confirms_like_save_elsewhere():
+    from frontend.app import AttackOfTheNodesApp
+    from frontend.screens.workflow_library import NamePromptScreen
+    from frontend.widgets.command_input import CommandInput
+
+    master, workflow_map, memory_bank, bus = _make_services()
+    original = workflow_map.create_new("Existing")
+    workflow_map.mark_saved()
+    app = AttackOfTheNodesApp(bus, workflow_map._factory, workflow_map, memory_bank, master)
+    async with app.run_test() as pilot:
+        await pilot.pause(0.03)
+        app.action_new_workflow()
+        await pilot.pause(0.03)
+        name_input = app.screen.query_one("#name-input", CommandInput)
+        name_input.value = "Saved by ctrl+s"
+        assert name_input.editing
+        await pilot.press("ctrl+s")
+        await pilot.pause(0.03)
+        assert not isinstance(app.screen, NamePromptScreen)
+        assert workflow_map.workflow_id != original
+        assert workflow_map.workflow_name == "Saved by ctrl+s"
+
+
 def test_library_r_asks_to_rename_the_highlighted_workflow():
     asyncio.run(_test_library_r_asks_to_rename_the_highlighted_workflow())
 

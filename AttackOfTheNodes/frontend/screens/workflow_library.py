@@ -201,6 +201,8 @@ class NamePromptScreen(CommandScreenMixin, ModalScreen):
     BINDINGS = [
         ("escape", "cancel", "Cancel"),
         ("ctrl+enter", "submit", "Confirm"),
+        # Ctrl+S saves everywhere else (editor, node editor, settings).
+        Binding("ctrl+s", "submit", "Confirm", priority=True),
         Binding("ctrl+q", "cancel", "Cancel", priority=True),
     ]
 
@@ -220,7 +222,7 @@ class NamePromptScreen(CommandScreenMixin, ModalScreen):
             yield Label(self.title_text, classes="modal-title")
             yield _NameInput(value=self.default_name, id="name-input")
             yield Static("", id="name-error", classes="field-error")
-            yield StatusBar("Type a name | Enter confirm | Esc cancel")
+            yield StatusBar("Type a name | Enter or Ctrl+S confirm | Esc cancel")
 
     def on_mount(self) -> None:
         self.query_one("#name-error", Static).display = False

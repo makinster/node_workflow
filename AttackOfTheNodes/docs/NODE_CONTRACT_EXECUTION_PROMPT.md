@@ -26,7 +26,7 @@ When sources disagree: code first, then the recent session log, then plans.
   toggle, issue codes, the authoring tool (#61, #63) and the Stash proposal
   docs (#62), C4 (#64), C6 (#65). C7 re-lands as #67 (#66 merged into
   the C6 branch, not `main`). The naming PR (`dist/workflow-naming`) is
-  in its PR. Suite: **1478 passed** (about 3.5 minutes).
+  in its PR. Suite: **1479 passed** (about 3.5 minutes).
   Order:
   Stash S1–S3 → Step 4 with Stash S5 (see `NODE_CONTRACT_PLAN.md`).
 - Untracked files to leave alone: `.claude/launch.json`,

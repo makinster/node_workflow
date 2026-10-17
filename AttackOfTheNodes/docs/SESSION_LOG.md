@@ -8,7 +8,7 @@ overhaul.
 
 Branch `dist/workflow-naming`, from `main` at `95f8399` (PR #65) with
 `dist/c7-deep-branch` merged in (its re-land PR #67 was still open).
-Before: 1466 passed. After: 1478 passed (12 new tests in
+Before: 1466 passed. After: 1479 passed (13 new tests in
 `test_workflow_naming.py`).
 
 - **#66 landed on the wrong branch:** it merged while its base was
@@ -26,8 +26,8 @@ Before: 1466 passed. After: 1478 passed (12 new tests in
   unused `Untitled Workflow`, `Untitled Workflow 2`, ...; Esc creates
   nothing.
 - **Name prompt:** `NamePromptScreen`, a rejected name keeps it open
-  with the reason under the field. Enter confirms whether or not the
-  field is in edit mode: other prompts need Ctrl+Enter, which many
+  with the reason under the field. Enter or Ctrl+S (owner: save, as
+  elsewhere) confirms whether or not the field is in edit mode: other prompts need Ctrl+Enter, which many
   terminals and tmux don't send distinctly. Sample screens were sent to
   the owner before the PR.
 - Library help line and the Help screen list the library keys.

@@ -262,7 +262,7 @@ the only bottom widget is `Cancel`. `R` renames the highlighted workflow and
 New (`N`, Ctrl+N) asks for a name first; both use one rule
 (`backend/workflow_names.py`: not blank, not another saved workflow's name
 ignoring case) and keep the prompt open with the reason when it fails. Enter
-confirms in the name prompt; Esc cancels (New then creates nothing). Renaming
+or Ctrl+S (save, as elsewhere) confirms in the name prompt; Esc cancels (New then creates nothing). Renaming
 writes only the name, so unsaved edits stay unsaved. Moving down from the last workflow focuses
 Cancel, and moving up from Cancel returns to the last workflow. Export/import
 tries an OS file picker first, then falls back to a typed path prompt when the
