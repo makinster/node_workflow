@@ -81,8 +81,10 @@ already-approved Step 4.
   format).
 - `backend/paste_parser.py`: turns a pasted string into a list of path
   candidates (handles quoting, escapes, several files), checks each exists, and
-  normalizes it. If every piece is an existing path, the result is file
-  entries; otherwise it is one text entry.
+  normalizes it. Outcome per paste (reconciled with 4.3, see 9.7): pieces
+  that look like paths become file entries when they exist and are
+  flagged, not stored, when they do not; only a paste with no path-like
+  piece becomes one text entry.
 - `accepted_types(field_schema) -> set[str]`: one shared rule. `path_hint:
   file` accepts `file`; a plain string field accepts `string` (and maybe
   `file`, as a raw path). The picker uses it now; contract binding reuses it
@@ -225,6 +227,19 @@ the notes below.
 5. **Paste is collected only inside the Stash panel.** Ordinary text fields
    keep receiving pastes as text, exactly as today; nothing intercepts paste
    app-wide.
+7. **Paste outcomes (review of PR #63, reconciles 4.2 with 4.3).** The
+   parser first decides whether each piece *looks like a path*: absolute
+   (`/...`, `~/...`), a Windows drive path (`C:\...`, quoted or not), a
+   `file://` URI, or a quoted or escaped token in a multi-file drop. Then:
+   - looks like a path and exists (after `normalize_local_path`): a file
+     entry;
+   - looks like a path and does not exist: listed with a warning ("not
+     found on this machine", common over SSH) and **not stored**; the
+     panel offers "add as text instead" so nothing is lost silently;
+   - no piece looks like a path: one text entry with the whole paste.
+   A mixed paste (some path-like pieces, some not) is treated as text
+   unless every piece looks like a path, so prose that mentions a path
+   stays one text entry.
 6. Agreed as written: generated entry ids, per-machine bindings outside the
    workflow JSON, secrets stay in `SecretsManager`, folder import refuses with
    counts.
