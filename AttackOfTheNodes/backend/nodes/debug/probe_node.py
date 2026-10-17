@@ -13,6 +13,13 @@ class ProbeNode(Node):
     node_type: ClassVar[str] = "probe_node"
     display_name: ClassVar[str] = "Probe"
     description: ClassVar[str] = "Inspects and logs the incoming value with type info"
+    # C4: fixed forwarding. The output is the input, so its type follows the
+    # input (port_types traces through this node) and the editor shows a
+    # read-only summary instead of an option.
+    ui_hints: ClassVar[Dict[str, Any]] = {
+        "pass_through": "Logs the payload's type and value, then forwards it unchanged.",
+        "forwarded_input_port": "input",
+    }
     category: ClassVar[str] = NodeCategory.DEBUG
     input_ports: ClassVar[List[str]] = ["input"]
     output_ports: ClassVar[List[str]] = ["default"]

@@ -115,7 +115,9 @@ def test_pass_through_chain_is_traced_to_the_producer():
 def test_any_paths_keep_working():
     workflow_map = _workflow("c2_any_path")
     number = workflow_map.add_node("random_number_node")
-    no_op = workflow_map.add_node("no_op_node")
+    # C4: No-Op now forwards (number would flow through); Echo computes its
+    # own untyped output, which is what this test needs.
+    no_op = workflow_map.add_node("echo_node")
     reader = workflow_map.add_node("file_reader_node")
     workflow_map.connect(number, "default", no_op, "input")
     workflow_map.connect(no_op, "default", reader, "input")

@@ -5881,7 +5881,7 @@ def test_node_config_previous_output_preview_reads_transient_source():
 
     _, wm, mb, _ = _make_services()
     wm.create_new("previous_output_preview")
-    source = wm.add_node("logger_node")
+    source = wm.add_node("get_variable_node")  # C4: Logger forwards its input; Get Variable produces its own output.
     target = wm.add_node("logger_node")
     wm.connect(source, "default", target, "input")
     mb.store_transient(source, "default", {"message": "hello"})
@@ -5896,7 +5896,7 @@ def test_node_config_previous_output_preview_reads_transient_source():
     text = screen._previous_output_text()
 
     assert "Source:" in text
-    assert "Logger" in text
+    assert "Get Variable" in text
     assert "Payload:" in text
     assert "Payload Description:" not in text
     assert "Payload: Output (dict, 1 items)" in text
@@ -6077,7 +6077,7 @@ def test_node_config_previous_output_preview_traces_pass_through_source():
 
     _, wm, mb, _ = _make_services()
     wm.create_new("previous_output_pass_through")
-    source = wm.add_node("logger_node")
+    source = wm.add_node("get_variable_node")  # C4: Logger forwards its input; Get Variable produces its own output.
     sleeper = wm.add_node("sleep_node")
     target = wm.add_node("logger_node")
 
@@ -6112,7 +6112,7 @@ def test_branch_payload_preview_traces_selected_dead_drop_source():
 
     _, wm, mb, _ = _make_services()
     wm.create_new("branch_payload_dead_drop_preview")
-    source = wm.add_node("logger_node")
+    source = wm.add_node("get_variable_node")  # C4: Logger forwards its input; Get Variable produces its own output.
     branch = wm.add_node("branch_node")
     target = wm.add_node("logger_node")
 
@@ -6215,7 +6215,7 @@ async def _test_node_config_payloads_tab_reveals_upstream_and_vault_payloads():
 
     _, wm, mb, _ = _make_services()
     wm.create_new("payload_tab_reveal")
-    producer = wm.add_node("logger_node")
+    producer = wm.add_node("get_variable_node")  # C4: Logger forwards its input; Get Variable produces its own output.
     vault_writer = wm.add_node("user_text_input_node")
     target = wm.add_node("branch_node")
 

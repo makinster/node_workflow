@@ -150,7 +150,7 @@ def test_data_flow_statuses():
         {"start": {"type": "start_node"},
          "dice": {"type": "random_number_node", "alias": "Dice"},
          "read": {"type": "file_reader_node", "config": {"input_source": "Upstream payload"}},
-         "noop": {"type": "no_op_node"},
+         "noop": {"type": "echo_node"},  # untyped output (No-Op forwards since C4)
          "read2": {"type": "file_reader_node", "alias": "Read 2", "config": {"input_source": "Upstream payload"}},
          "read3": {"type": "file_reader_node", "alias": "Read 3"}},
         [("start.default", "dice.input"), ("dice.default", "read.input"), ("read.default", "noop.input"),
