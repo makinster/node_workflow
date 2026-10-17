@@ -194,21 +194,62 @@ def test_deep_branch_respects_depth_limit():
 async def _test_deep_branch_respects_depth_limit():
     master, wm, mb, _ = _make_services()
     wm.create_new("test_deep_branch")
+    from backend.events import SUPERVISOR_REGISTER
+
+    master, wm, mb, bus = _make_services()
+    wm.create_new("test_deep_branch")
     start = wm.add_node("start_node")
     deep = wm.add_node("deep_branch_node")
-    end = wm.add_node("end_node")
 
-    # Only the default port connects forward; branch port has no target (rejected gracefully)
+    # Looping 'branch' back into the node nests one branch per run until the
+    # depth limit (max_branch_depth, default 5) refuses the next one.
     wm.connect(start, "default", deep, "input")
-    wm.connect(deep, "default", end, "input")
+    wm.connect(deep, "branch", deep, "input")
+
+    depths = []
+    bus.subscribe(SUPERVISOR_REGISTER, lambda payload: depths.append(payload["depth"]))
 
     await master.start_workflow()
     await master.wait_for_completion()
 
-    assert master.state.value in ("FINISHED", "ERROR"), (
-        f"Unexpected state: {master.state.value}"
-    )
-    print(f"test_deep_branch_respects_depth_limit PASSED (state={master.state.value})")
+    assert master.state.value == "FINISHED", master.state.value
+    assert sorted(depths) == [0, 1, 2, 3, 4, 5], depths
+    print("test_deep_branch_respects_depth_limit PASSED")
+
+
+def test_deep_branch_child_receives_the_payload():
+    asyncio.run(_test_deep_branch_child_receives_the_payload())
+
+
+async def _test_deep_branch_child_receives_the_payload():
+    # The child starts at a node wired to 'branch', which reads that port's
+    # stored output (as Parallel Branch stores its paths).
+    master, wm, mb, _ = _make_services()
+    wm.create_new("test_deep_branch_payload")
+    start = wm.add_node("start_node")
+    number = wm.add_node("random_number_node")
+    deep = wm.add_node("deep_branch_node")
+    probe = wm.add_node("probe_node")
+    wm.update_node_config(number, {**wm.get_node_data(number)["config"], "min_value": 7, "max_value": 7})
+    wm.connect(start, "default", number, "input")
+    wm.connect(number, "default", deep, "input")
+    wm.connect(deep, "branch", probe, "input")
+
+    await master.start_workflow()
+    await master.wait_for_completion()
+
+    assert master.state.value == "FINISHED", master.state.value
+    lines = [str(entry) for entry in mb.read_persistent("output_log", default=[])]
+    assert lines == ["[Probe] type=int value=7"], lines
+
+
+def test_deep_branch_offers_only_the_branch_port():
+    # C7: a node that spawns branches ends its own path, so a 'default'
+    # continuation port would never run.
+    from backend.node_factory import NodeFactory
+
+    factory = NodeFactory()
+    assert factory.node_output_ports({"type": "deep_branch_node"}) == ["branch"]
 
 
 # ---------------------------------------------------------------------------

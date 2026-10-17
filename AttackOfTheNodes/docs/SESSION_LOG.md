@@ -4,6 +4,29 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-17 — C7: Deep Branch Offers Only `branch`
+
+Branch `dist/c7-deep-branch`, stacked on `dist/c6-random-chat` (PR #65).
+Before: 1456 passed. After: 1457 passed.
+
+- **Owner decision (2026-10-17):** Deep Branch is a debug node for the
+  branch depth limit; narrow it rather than add engine behaviour, and keep
+  debug nodes consistent without going further.
+- A node that spawns branches ends its own supervisor, so Deep Branch's
+  `default` port was filled but never ran. It is removed; the node offers
+  only `branch`. Saved workflows that wired `default` get `undeclared_port`.
+- `test_deep_branch_respects_depth_limit` used to wire only `default` to
+  End and accept FINISHED or ERROR. It now loops `branch` into the node and
+  asserts supervisors at depths 0–5 and a FINISHED run. New
+  `test_deep_branch_offers_only_the_branch_port` fails on the old node.
+- **Review fix (payload):** the child branch's first node reads the
+  `branch` port's stored output, which Deep Branch never stored, so
+  Start → Deep Branch → Probe saw `None` (also before C7). Parallel
+  Branch stores each path itself; Deep Branch now returns
+  `data: {"branch": value}`. `test_deep_branch_child_receives_the_payload`
+  fails on the old node. With the C4 review fix merged up the stack the
+  suite is 1466 passed.
+
 ## 2026-10-17 — C6: Random Number's Payload Field; Chat Vault Output Off
 
 Branch `dist/c6-random-chat`, stacked on `dist/c4-forwarding` (PR #64).
