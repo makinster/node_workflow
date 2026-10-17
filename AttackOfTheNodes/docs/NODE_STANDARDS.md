@@ -25,7 +25,8 @@ Before defining a new node type, decide how it fits in the taxonomy:
   group with picker.
 
 Apply this rule before changing taxonomy. Groups are a frontend navigation
-concept; the backend exposes the metadata but does not use it for execution. Record every new node idea
+concept; the backend exposes the metadata but does not use it for execution.
+Record every new node idea
 in `NODE_CATALOG.md`, even concept-only ones.
 
 ---

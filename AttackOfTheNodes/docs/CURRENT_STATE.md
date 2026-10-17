@@ -24,7 +24,9 @@ This is the only live status snapshot; older logs/plans retain dated history.
 - Full suite: **1509 passed** on #70 merged with `579be24` (2026-10-17);
   1480 on `579be24` itself.
 - PR B full suite: **1509 passed in 173.22s** on `9d5455b` plus docs changes.
-  Archive-integrity and final relative-link checks are recorded before publication.
+- Final checks: **334** relative Markdown links/anchors resolve, 33 whole archive
+  bodies retained, 17 active docs, and `git diff --check` passes.
+  Fresh receipts: [PR B verification](audits/docs_audit_2026_10_17/PR_B_VERIFICATION.md).
 - Owner WSL setup: Python **3.14.4**, Textual **8.2.7**, pytest **9.1.0**;
   interpreter `/home/makin/src/node_workflow/.venv/bin/python`.
 - Docs worktree: `/home/makin/src/nw-docs`; owner checkout and other workers'

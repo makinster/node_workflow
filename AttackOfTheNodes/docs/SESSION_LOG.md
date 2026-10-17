@@ -4,6 +4,38 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+
+## 2026-10-17 — Docs B: Consolidation and Vision
+
+Branch `docs/b-consolidation-vision`, from `origin/main` at `9d5455b` (#70).
+Source map committed first as `23f96ee`; consolidation commit `2cc4f2f`.
+Full app suite: **1509 passed in 173.22s**. Runtime/tests/specs/workflows unchanged.
+
+- Rebuilt the missing vision-source map before extraction; added VISION and
+  CONTRIBUTING, with newcomer/router links. Restored the short AGENTS rules
+  list and clarified separate checkout/worktree ownership (review of #69).
+- Folded runtime references into ARCHITECTURE, correcting output/completion
+  order, shared transient addressing, resource/chat representations, validation
+  scope, direct service/callback boundaries and transport exceptions.
+- Consolidated keyboard and interaction rules in UI_QUICK_REFERENCE, including
+  64-path width, current execution keys and pending Stash S2 (#71) controls.
+- Folded authoring/standardization guidance into NODE_STANDARDS/NODE_HELPER;
+  preserved file/window D1–D12 reasons, FO7 protocol, recovery editing decisions,
+  and the complete pending branch-inspection/preview proposal in active owners.
+- Archived 32 whole documents plus the original architecture, with dated
+  supersession notes; repaired relative links and recorded every destination.
+  Exactly 17 active top-level docs remain. Session-history bounding is PR C.
+- Retained S1's approval/status/plan/log entries. #71 remains open against main;
+  its controls were checked from Git objects, not treated as delivered on main.
+- Fresh verification in [PR B receipts](audits/docs_audit_2026_10_17/PR_B_VERIFICATION.md).
+  The reproducible checker passes all relative links/anchors and compares all
+  33 archive bodies with the pinned baseline, allowing link-target changes and
+  the ledger append. Whitespace is clean. An initial pytest invocation from
+  the repository root failed collection imports; the required app-directory
+  invocation completed with the 1509 passing result above.
+- No clean-install, native FO7, external-link or live geometry claims were added.
+  Owner decisions stay explicit; the owner or an explicitly asked reviewer merges.
+
 ## 2026-10-17 — Stash S1: Core, Paste Parser, `aotn stash`
 
 Branch `dist/stash-s1` (PR #70), from `main` at `7e3f151` (PR #68), then

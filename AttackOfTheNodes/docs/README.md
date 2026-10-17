@@ -1,6 +1,6 @@
 # AttackOfTheNodes docs
 
-Start with the [Newcomer Guide](NEWCOMER_GUIDE.md) for purpose, setup,
+Start with the [Newcomer Guide](NEWCOMER_GUIDE.md) for setup,
 a first workflow and runtime traps, then [Vision](VISION.md) for the purpose
 and direction. Check [Current State](CURRENT_STATE.md)
 for the dated baseline, open PRs, verification and owner decisions.
