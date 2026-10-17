@@ -1,0 +1,28 @@
+{
+  "format": "aotn-workflow/1",
+  "name": "Example - Catch HTTP errors",
+  "nodes": {
+    "start": {"type": "start_node"},
+    "fetch": {"type": "http_request_node", "alias": "Fetch",
+              "config": {"url": "https://unreachable.invalid/data", "timeout_seconds": 5}},
+    "catch": {"type": "error_mux_node", "alias": "Catch errors",
+              "config": {"routes": [{"id": "offline", "label": "Offline", "codes": ["network", "timeout"]}],
+                         "unmatched_route": true}},
+    "ok": {"type": "text_output_node", "alias": "Fetched", "config": {"template": "Got: {input}"}},
+    "offline": {"type": "text_output_node", "alias": "Offline", "config": {"template": "Could not reach the server"}},
+    "other": {"type": "logger_node", "alias": "Other error"},
+    "end_ok": {"type": "end_node"},
+    "end_offline": {"type": "end_node"},
+    "end_other": {"type": "end_node"}
+  },
+  "connections": [
+    {"from": "start.default", "to": "fetch.input"},
+    {"from": "fetch.default", "to": "catch.input"},
+    {"from": "catch.default", "to": "ok.input"},
+    {"from": "catch.offline", "to": "offline.input"},
+    {"from": "catch.unmatched", "to": "other.input"},
+    {"from": "ok.default", "to": "end_ok.input"},
+    {"from": "offline.default", "to": "end_offline.input"},
+    {"from": "other.default", "to": "end_other.input"}
+  ]
+}

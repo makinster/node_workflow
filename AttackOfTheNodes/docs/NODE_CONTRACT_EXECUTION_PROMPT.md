@@ -23,9 +23,10 @@ When sources disagree: code first, then the recent session log, then plans.
 ## Where things stand (2026-10-14)
 
 - `main` at `9809a90` (merge of PR #58). C1 (#55), C2 (#56), the selector
-  toggle (#57), issue codes (#58), C3 (#59) and C5 (#60) are merged; the
-  authoring tool's PR 1 (`dist/authoring-core`) is in its PR. Suite:
-  **1400 passed** (about 3.5 minutes). Agreed order: C3 → C5 → authoring tool → C4, C6, C7 → Step 4
+  toggle (#57), issue codes (#58), C3 (#59), C5 (#60) and authoring PR 1
+  (#61) are merged; the Stash proposal docs (#62) and authoring PR 2
+  (`dist/authoring-inspect`, stacked on #62) are in their PRs. Suite:
+  **1424 passed** (about 3.5 minutes). Agreed order: C3 → C5 → authoring tool → C4, C6, C7 → Step 4
   (see `NODE_CONTRACT_PLAN.md`).
 - Untracked files to leave alone: `.claude/launch.json`,
   `AttackOfTheNodes/"C:\...\test.txt"`, `AttackOfTheNodes/Workflow started`.
@@ -83,9 +84,9 @@ What the detour delivered, in short:
    required/optional flag in `vault_read_entries`) merged as PR #55. **C2**
    (one edge compatibility rule, `data_types.types_compatible`, plus
    "Type mismatch" warnings and clearer file-node runtime errors) merged
-   as PR #56. C3 (#59) and C5 (#60) merged. Authoring tool PR 1 (core:
-   `aotn nodes` / `describe` / `build`) is in its PR; next is PR 2
-   (inspect report + checked-in example specs), then C4, C6, C7.
+   as PR #56. C3 (#59), C5 (#60) and authoring PR 1 (#61) merged;
+   authoring PR 2 (inspect + examples) is in its PR. Next: C4, C6, C7,
+   then the naming PR, then Stash S1–S3 (see the plan's agreed order).
 3. Then C2–C7 in order, one PR each, asking the owner where a phase needs a
    decision (C5's number policy, C6's field removal, C7's Deep Branch
    contract). Ask before starting Step 4 of `DISTRIBUTED_BUILD_PLAN.md`.

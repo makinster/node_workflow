@@ -39,6 +39,13 @@ class ErrorMuxNode(Node):
     default_config: ClassVar[Dict[str, Any]] = {}
     config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {}
     ui_hints: ClassVar[Dict[str, Any]] = {}
+    # Managed by the node editor's custom routes section (not schema fields).
+    custom_config_keys: ClassVar[Dict[str, str]] = {
+        "routes": "Recovery branches: list of {id, label, codes, forward}; each id is an output port",
+        "unmatched_route": "true adds the 'unmatched' output for any other error",
+        "unmatched_label": "Display name of the 'unmatched' output (default: Any other error)",
+        "unmatched_forward": "What the 'unmatched' output sends: 'error' or 'failed_input'",
+    }
     error_definitions: ClassVar[List[Dict[str, Any]]] = []
 
     # Engine hooks: a failure of the node feeding `input` may be routed here

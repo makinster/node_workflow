@@ -4,6 +4,49 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-17 — Workflow Authoring Tool, PR 2 (Inspect + Examples)
+
+Branch `dist/authoring-inspect`, stacked on `docs/stash-proposal` (PR #62).
+Before: 1400 passed. After: 1424 passed (24 new tests in
+`test_authoring_examples.py`).
+
+- **`authoring.inspect_workflow`** and **`aotn inspect <id|name|path>`**:
+  execution outline from Start (first-connection rule, ignored extra
+  connections, parallel splits, one-of choices, on-error paths, loops,
+  joins, nodes not reached), Vault writers/readers with ordering (before /
+  not guaranteed / no writer), data-flow statuses (ok, ok (accepts any),
+  mismatch, unchecked), unchecked config, changed-from-default config,
+  validation. Duplicate names get an id suffix (`No-Op #3f2a`).
+- **Shared lookup:** `run_service.resolve_workflow_data` (id, name
+  case-insensitive, or .json path), used by `aotn run` and `aotn inspect`.
+- **`custom_config_keys`** on node classes, published by the factory:
+  config a custom editor section manages. Error Mux declares `routes` and
+  `unmatched_route` (before this a spec could not configure a mux).
+- **`examples/`**: six specs (parallel wait, ask and branch, Vault handoff,
+  fetch and save, catch HTTP errors, summarise a file) with a README; the
+  suite builds and inspects each.
+- **Finding for the owner (not changed):** a freshly added Chat Completion
+  fails Validate: its defaults turn Vault output on with an empty key
+  (`vault_output_key_missing`), besides the expected "secret required".
+  Only File Reader/Write (path) and Chat fail with their own defaults.
+- **PR 63 review (five findings, all reproduced, fixed on the branch):**
+  1. Vault "before" was claimed for any ancestor writer, even one on a
+     Conditional branch the run can bypass. Now "before" only when every
+     path from Start to the reader passes a writer; otherwise "not
+     guaranteed" (a path skips every writer / writers on a parallel path);
+     plus "its own key" (Counter) and "not reached".
+  2. The outline walked hidden outputs (a two-path Branch with a kept
+     `path_c` connection split three ways); only active ports are walked,
+     hidden connections are listed as never running.
+  3. Wait Until targets saved as a list (the editor) showed as `?`; both
+     list and comma-string forms are read, as the engine does.
+  4. Error Mux `unmatched_label` / `unmatched_forward` were rejected;
+     declared as custom keys.
+  5. `aotn inspect` on a file that is not a workflow (`[]`) raised a
+     traceback; it now applies `aotn run`'s shape checks and exits 2.
+  9 new tests fail on the first PR head. Stash proposal: paste outcomes
+  reconciled (section 9.7) on #62's branch and merged in.
+
 ## 2026-10-17 — Stash Proposal Brought Into The Plan
 
 Docs only. The owner's `STASH_PROPOSAL.md` (written in another session on

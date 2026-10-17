@@ -1,0 +1,21 @@
+{
+  "format": "aotn-workflow/1",
+  "name": "Example - Ask and branch",
+  "nodes": {
+    "start": {"type": "start_node"},
+    "ask": {"type": "user_text_input_node", "alias": "Ask", "config": {"prompt": "Continue? (yes/no)"}},
+    "decide": {"type": "conditional_node", "alias": "Said yes?", "config": {"condition_type": "contains", "right_value": "yes"}},
+    "yes": {"type": "text_output_node", "alias": "Yes path", "config": {"template": "Continuing: {input}"}},
+    "no": {"type": "text_output_node", "alias": "No path", "config": {"template": "Stopping: {input}"}},
+    "end_yes": {"type": "end_node"},
+    "end_no": {"type": "end_node"}
+  },
+  "connections": [
+    {"from": "start.default", "to": "ask.input"},
+    {"from": "ask.default", "to": "decide.input"},
+    {"from": "decide.true", "to": "yes.input"},
+    {"from": "decide.false", "to": "no.input"},
+    {"from": "yes.default", "to": "end_yes.input"},
+    {"from": "no.default", "to": "end_no.input"}
+  ]
+}

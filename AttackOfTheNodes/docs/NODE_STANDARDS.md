@@ -238,6 +238,15 @@ cached by `RunSession` at execution time so multiple nodes in a run can share
 the same file access. Files can serve as both inputs (read content into
 transient or Vault) and outputs (write Vault or transient content to disk).
 
+## Custom Config Keys
+
+Config a custom editor section manages (not generated form fields) is
+declared on the node class: `custom_config_keys = {"routes": "meaning"}`.
+The factory publishes it; the authoring builder accepts those keys and
+`aotn describe` / `inspect` list them as unchecked (no schema). Error Mux
+declares `routes` and `unmatched_route`. A node with an undeclared custom
+key cannot be configured from a spec.
+
 ## Number Fields (C5)
 
 Schema fields typed `integer`, `float` or `number` follow one policy

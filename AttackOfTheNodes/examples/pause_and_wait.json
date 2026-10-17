@@ -1,0 +1,23 @@
+{
+  "format": "aotn-workflow/1",
+  "name": "Example - Pause and wait",
+  "nodes": {
+    "start": {"type": "start_node", "config": {"greeting": "hi"}},
+    "nap": {"type": "sleep_node", "alias": "Nap", "config": {"duration": 0.2}},
+    "fan": {"type": "branch_node", "alias": "Fan out", "config": {"branch_count": 2}},
+    "quick": {"type": "no_op_node", "alias": "Quick path"},
+    "slow": {"type": "sleep_node", "alias": "Slow path", "config": {"duration": 0.5}},
+    "wait": {"type": "wait_until_node", "alias": "Wait for quick", "config": {"target_node_ids": ["quick"]}},
+    "done": {"type": "text_output_node", "alias": "Done", "config": {"template": "Both paths finished: {input}"}},
+    "end": {"type": "end_node"}
+  },
+  "connections": [
+    {"from": "start.default", "to": "nap.input"},
+    {"from": "nap.default", "to": "fan.input"},
+    {"from": "fan.path_a", "to": "quick.input"},
+    {"from": "fan.path_b", "to": "slow.input"},
+    {"from": "slow.default", "to": "wait.input"},
+    {"from": "wait.default", "to": "done.input"},
+    {"from": "done.default", "to": "end.input"}
+  ]
+}

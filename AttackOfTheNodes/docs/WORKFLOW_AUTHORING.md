@@ -15,6 +15,7 @@ aotn describe branch_node --set branch_count=3   # describe with config override
 aotn build my_workflow.json                  # build, check, save as a new workflow
 aotn build my_workflow.json --check          # build and check only; writes nothing
 aotn build - < my_workflow.json              # spec on stdin
+aotn inspect "Pause and wait"                # explain a saved workflow (id, name or .json path)
 ```
 
 Every command takes `--json` (machine-readable) and `--data-dir` (same as
@@ -85,10 +86,45 @@ unreadable saved workflow) go to stderr.
 Nothing is written unless all of that passes. A passing build does not run
 anything: model calls, HTTP requests and file writes happen only in a run.
 
+## Inspect
+
+`aotn inspect <workflow>` explains a saved workflow the way the engine runs
+it (any workflow, not only built ones):
+
+- **Execution** from Start: an ordinary output follows its first connection
+  (extra ones are listed as never running); a Parallel Branch splits into
+  parallel paths; Conditional, Error Mux and similar take one of their used
+  outputs; `error` connections show as "on error"; loops and joins are
+  marked; nodes Start never reaches are listed.
+- **Vault**: each key's writers and readers, and for every reader whether a
+  writer is guaranteed to run first ("before"), only runs on a parallel path
+  ("not guaranteed") or does not exist ("no writer").
+- **Data flow**: each Upstream connection's types: ok, ok (accepts any),
+  mismatch, or unchecked (the port wants a type the sender does not declare).
+- **Unchecked config**: keys with no schema (custom editor sections, such as
+  Error Mux `routes`), which nothing type-checks.
+- **Validation**: the validator's issues with their codes.
+
+Nodes sharing a name get their id's last four characters (`No-Op #3f2a`).
+
+## Examples
+
+`examples/` holds specs for small real use cases (parallel wait, ask and
+branch, Vault handoff, fetch and save, catching HTTP errors, summarising a
+file); see `examples/README.md`. The test suite builds and inspects every
+one, so they stay current with the node contracts.
+
+## Custom config keys
+
+Some config is edited by a custom editor section rather than the generated
+form (Error Mux `routes` / `unmatched_route`). Nodes declare such keys in
+`custom_config_keys` (key → meaning); the builder accepts them, `describe`
+lists them, and both report them as unchecked.
+
 ## Limits (v1)
 
 - Keys a type uses but does not describe in its schema (Merge's are listed by
   `describe` as "unchecked") are accepted without type checks.
 - Building never edits an existing workflow; it always creates a new one.
-- Inspect reports, checked-in example specs, templates, automatic planning and
-  live editing of an open workflow are later work (see the plan).
+- Templates, automatic graph planning and live editing of an open workflow
+  are later work (see the plan).
