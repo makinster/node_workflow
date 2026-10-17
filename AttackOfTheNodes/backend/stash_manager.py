@@ -89,6 +89,14 @@ class StashManager:
                 return dict(entry)
         return None
 
+    def name_problem(self, name: str, exclude_id: Optional[str] = None) -> Optional[str]:
+        """Why ``name`` can't be used, or None (for a rename prompt)."""
+        try:
+            self._check_name(name, exclude_id)
+        except StashError as exc:
+            return str(exc)
+        return None
+
     def warnings_for(self, entry: Dict[str, Any]) -> List[str]:
         """Things the user should know about an entry (never blocking)."""
         if entry["type"] == "string" and looks_like_secret(str(entry["value"])):
@@ -265,6 +273,21 @@ class StashManager:
 
     def _save(self) -> None:
         persistence.write_json_atomic(self.path, {"format": FORMAT, "entries": self._load()})
+
+
+def preview(entry: Dict[str, Any], width: int = 60) -> str:
+    """One-line value preview: a path keeps its end (the file name), text
+    keeps its start. Shared by the CLI and the Stash screen."""
+    shown = reference_path(entry["value"]) if entry["type"] == "file" else str(entry["value"])
+    shown = " ".join(shown.split())
+    if len(shown) <= width:
+        return shown
+    return "..." + shown[-(width - 3):] if entry["type"] == "file" else shown[:width - 3] + "..."
+
+
+def type_word(entry_type: str) -> str:
+    """What people read for a type; JSON keeps the canonical name."""
+    return {"string": "text"}.get(entry_type, entry_type)
 
 
 def _entry_problem(raw: Any) -> Optional[str]:

@@ -96,6 +96,7 @@ class EditorScreen(Screen):
         Binding("backspace", "delete_selected", "Delete", priority=True),
         Binding("x", "delete_selected", "Delete", priority=True),
         Binding("f", "workflow_library", "File", priority=True),
+        Binding("p", "stash", "Stash", priority=True),
         Binding("o", "options", "Options", priority=True),
         Binding("h", "help", "Help", priority=True),
         Binding("?", "help", "Help", priority=True),
@@ -373,6 +374,9 @@ class EditorScreen(Screen):
 
     def action_workflow_library(self) -> None:
         self.app.action_workflow_library()
+
+    def action_stash(self) -> None:
+        self.app.action_stash()
 
     def action_options(self) -> None:
         self.app.action_settings()
