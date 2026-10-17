@@ -189,3 +189,60 @@ def test_every_action_has_a_button(stash, files):
             await pilot.pause(0.05)
             assert str(app.screen.query_one("#stash-filter", Button).label) == "Show: files"
     _run(go)
+
+
+# -- review of #71 ------------------------------------------------------------------
+
+def test_number_keys_switch_tabs_after_leaving_the_paste_box(stash):
+    async def go():
+        from frontend.screens.stash import ADD_TAB, ENTRIES_TAB
+
+        app = _app(stash)
+        async with app.run_test(size=(100, 30)) as pilot:
+            await pilot.pause(0.05)
+            app.action_stash()
+            await pilot.pause(0.05)
+            tabs = app.screen.query_one("#stash-tabs", TabbedContent)
+            await pilot.press("escape")  # leave typing; focus stays on the box
+            await pilot.press("2")
+            await pilot.pause(0.05)
+            assert tabs.active == ENTRIES_TAB
+            await pilot.press("1")
+            await pilot.pause(0.05)
+            assert tabs.active == ADD_TAB
+            await pilot.press(*"12")  # typing again: digits are text
+            await pilot.pause(0.05)
+            assert tabs.active == ADD_TAB and app.screen.query_one("#stash-paste").text == "12"
+    _run(go)
+
+
+def test_e_after_adding_types_again(stash):
+    async def go():
+        from frontend.screens.workflow_library import NamePromptScreen
+
+        app = _app(stash)
+        async with app.run_test(size=(100, 30)) as pilot:
+            await pilot.pause(0.05)
+            app.action_stash()
+            await pilot.pause(0.05)
+            await pilot.press(*"first", "enter")
+            await pilot.pause(0.05)
+            await pilot.press("e")
+            await pilot.pause(0.05)
+            assert not isinstance(app.screen, NamePromptScreen)
+            assert app.screen.query_one("#stash-paste").editing
+    _run(go)
+
+
+def test_search_matches_the_whole_value(stash):
+    async def go():
+        stash.add_text("x" * 12_000 + " needle", name="long")
+        app = _app(stash)
+        async with app.run_test(size=(100, 30)) as pilot:
+            await pilot.pause(0.05)
+            app.action_stash(initial_tab="entries")
+            await pilot.pause(0.05)
+            await pilot.press("slash", *"needle")
+            await pilot.pause(0.05)
+            assert [r.split()[0] for r in _rows(app.screen, "stash-entries")] == ["long"]
+    _run(go)

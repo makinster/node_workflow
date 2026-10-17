@@ -20,6 +20,7 @@ from textual.message import Message
 from textual.screen import ModalScreen
 from textual.widgets import Button, Input, Label, ListItem, ListView, Static, TabbedContent, TabPane
 
+from backend.file_refs import reference_path
 from backend.stash_manager import StashError, StashManager, preview, type_word
 from frontend import notifications
 from frontend.io_contract import type_label
@@ -43,6 +44,11 @@ def entry_row(entry: Dict[str, Any], prefix: str = "") -> str:
     """``name  [type]  value`` as Rich markup (the bracketed teal type)."""
     name = escape(entry["name"])
     return f"{prefix}{name:<20} {type_label(type_word(entry['type']))}  {escape(preview(entry))}"
+
+
+def _full_text(entry: Dict[str, Any]) -> str:
+    """The whole searchable value: a file's path, or all of the text."""
+    return reference_path(entry["value"]) if entry["type"] == "file" else str(entry["value"])
 
 
 class _PasteBox(CommandTextArea):
@@ -92,8 +98,10 @@ class StashScreen(ModalScreen):
         ("escape", "close", "Close"),
         ("q", "close", "Close"),
         Binding("ctrl+q", "close", "Close", priority=True),
-        ("1", "show_tab('add')", "Paste / drop"),
-        ("2", "show_tab('entries')", "Entries"),
+        # Priority: a focused text box that isn't editing would swallow the
+        # digit. check_action turns them off while typing.
+        Binding("1", "show_tab('add')", "Paste / drop", priority=True),
+        Binding("2", "show_tab('entries')", "Entries", priority=True),
         ("w", "cursor_up", "Up"),
         ("s", "cursor_down", "Down"),
         ("slash", "search", "Search"),
@@ -239,7 +247,7 @@ class StashScreen(ModalScreen):
         entries = self.stash.list_entries(self.type_filter)
         if query:
             entries = [e for e in entries
-                       if query in e["name"].casefold() or query in preview(e, 10_000).casefold()]
+                       if query in e["name"].casefold() or query in _full_text(e).casefold()]
         self.shown = entries
         listing = self.query_one("#stash-entries", ListView)
         old = listing.index
@@ -343,7 +351,7 @@ class StashScreen(ModalScreen):
         )
 
     def action_edit(self) -> None:
-        if self._active_tab() == ADD_TAB and self.app.focused is not self.query_one("#stash-added", ListView):
+        if self._active_tab() == ADD_TAB:
             self.query_one("#stash-paste", _PasteBox).begin_edit()
         else:
             self.action_rename()

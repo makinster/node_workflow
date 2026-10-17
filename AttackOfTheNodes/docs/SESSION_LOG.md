@@ -7,7 +7,7 @@ overhaul.
 ## 2026-10-17 — Stash S2: The Stash Screen
 
 Branch `dist/stash-s2`, from `main` at `9d5455b` (PR #70). Before: 1509
-passed. After: 1515 passed (6 new tests in `test_stash_screen.py`).
+passed. After: 1518 passed (9 new tests in `test_stash_screen.py`).
 
 - **Owner decisions (2026-10-17, on sample screens):** tab 1 is Paste /
   drop and tab 2 is Entries; the node-config field hotkey (S3) opens the
@@ -29,6 +29,10 @@ passed. After: 1515 passed (6 new tests in `test_stash_screen.py`).
   focus. The screen moves focus to a list instead. Mouse-button audit of the
   other modals (name prompt and group picker have no buttons; selectors
   have only Cancel; Help says Cancel for Close) is the next small PR.
+- **Review fixes (owner's review of #71):** 1/2 switch tabs even when a
+  text box has focus but isn't typing (priority bindings, off while
+  typing); E on the Paste tab always types, R renames; search matches the
+  whole value, and only the display is truncated. One test each.
 
 ## 2026-10-17 — Stash S1: Core, Paste Parser, `aotn stash`
 

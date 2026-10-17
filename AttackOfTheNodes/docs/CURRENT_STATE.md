@@ -18,7 +18,7 @@ This is the only live status snapshot; older logs/plans retain dated history.
 
 ## Verification and environment — 2026-10-17
 
-- Full suite: **1515 passed** on `dist/stash-s2` (from `9d5455b`, 2026-10-17).
+- Full suite: **1518 passed** on `dist/stash-s2` (from `9d5455b`, 2026-10-17).
 - All **176** relative Markdown links/anchors resolve; `git diff --check`
   passes. Isolated build/inspect/run and node/helper probes pass.
 - Owner WSL setup: Python **3.14.4**, Textual **8.2.7**, pytest **9.1.0**;
