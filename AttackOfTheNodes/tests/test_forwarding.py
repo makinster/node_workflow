@@ -75,6 +75,29 @@ def test_type_flows_through_and_mismatch_is_found(node_type):
     assert messages == ["Input 'File' expects file but Dice sends number"]
 
 
+@pytest.mark.parametrize("node_type", FORWARDING)
+def test_error_output_is_not_forwarded(node_type):
+    """The error port carries the failure record, not the node's input, so
+    its type does not follow the input (review of #64)."""
+    workflow_map = WorkflowMap(FACTORY, EventBus())
+    workflow_map.create_new(f"c4_err_{node_type}")
+    start = workflow_map.add_node("start_node")
+    dice = workflow_map.add_node("random_number_node", alias="Dice")
+    middle = workflow_map.add_node(node_type)
+    reader = workflow_map.add_node("file_reader_node")
+    workflow_map.connect(start, "default", dice, "input")
+    workflow_map.connect(dice, "default", middle, "input")
+    workflow_map.connect(middle, "error", reader, "input")
+    config = dict(workflow_map.get_node_data(reader)["config"])
+    config["input_source"] = "Upstream payload"
+    workflow_map.update_node_config(reader, config)
+    node = workflow_map.get_node_data(middle)
+    assert not is_pass_through_node(FACTORY, node, "error")
+    assert trace_producers(workflow_map.get_all_node_data(), FACTORY, middle, "error") == [(middle, "any")]
+    assert not [w for w in validate_workflow(workflow_map, FACTORY)["warnings"]
+                if w.get("code") == "type_mismatch"]
+
+
 def test_echo_is_not_forwarding():
     """Echo computes its output; it must not be declared as forwarding."""
     assert not is_pass_through_node(FACTORY, {"type": "echo_node", "config": {}}, "default")

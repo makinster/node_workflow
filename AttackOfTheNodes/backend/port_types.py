@@ -17,6 +17,7 @@ from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 from .branch_health import BRANCH_NODE_TYPE
 from .data_types import DEFAULT_TYPE, coerce_type, types_compatible
+from .node_errors import ERROR_PORT
 from .vault_declarations import typed_vault_writes
 
 
@@ -49,7 +50,12 @@ def resolved_metadata(factory, node_type: str, config: Optional[Dict[str, Any]])
 
 
 def is_pass_through_node(factory, node: Dict[str, Any], port: str | None = None) -> bool:
-    """Whether ``node`` forwards its input payload unchanged on ``port``."""
+    """Whether ``node`` forwards its input payload unchanged on ``port``.
+
+    Never on ``error``: that port carries the failure record.
+    """
+    if port == ERROR_PORT:
+        return False
     metadata = metadata_for_type(factory, node.get("type", ""))
     if metadata and (metadata.get("ui_hints") or {}).get("pass_through"):
         return True
