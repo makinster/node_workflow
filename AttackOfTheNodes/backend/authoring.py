@@ -511,7 +511,8 @@ def _execution_outline(factory, nodes, meta_by_type, name) -> List[str]:
     def outputs_by_port(node_id):
         """Connections grouped by output port, active ports in port order."""
         node = nodes.get(node_id) or {}
-        order = list(factory.node_output_ports(node)) + [ERROR_PORT]
+        # Some types list `error` themselves (HTTP Request): keep it once.
+        order = list(dict.fromkeys(list(factory.node_output_ports(node)) + [ERROR_PORT]))
         grouped: Dict[str, List[Dict[str, Any]]] = {}
         for conn in node.get("connections", {}).get("outputs", []):
             grouped.setdefault(str(conn.get("source_port") or "default"), []).append(conn)

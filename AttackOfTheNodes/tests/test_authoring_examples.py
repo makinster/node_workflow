@@ -308,3 +308,17 @@ def test_inspect_rejects_files_that_are_not_workflows(tmp_path, content, capsys)
         aotn_author.main("inspect", [str(path)])
     assert raised.value.code == 2
     assert "is not a workflow" in capsys.readouterr().err
+
+
+def test_error_path_listed_once_for_types_that_declare_error():
+    """HTTP Request lists `error` among its own outputs; the outline must not
+    show its error path twice (found in a final review of PR 63)."""
+    report, _ = _inspect(
+        {"start": {"type": "start_node"},
+         "fetch": {"type": "http_request_node", "alias": "Fetch", "config": {"url": "https://example.com"}},
+         "log": {"type": "logger_node", "alias": "Failed"}},
+        [("start.default", "fetch.input"), ("fetch.error", "log.input")],
+    )
+    outline = "\n".join(report["execution"])
+    assert outline.count("on error ->") == 1
+    assert outline.count("Failed (Logger)") == 1

@@ -7,7 +7,7 @@ overhaul.
 ## 2026-10-17 — Workflow Authoring Tool, PR 2 (Inspect + Examples)
 
 Branch `dist/authoring-inspect`, stacked on `docs/stash-proposal` (PR #62).
-Before: 1400 passed. After: 1423 passed (23 new tests in
+Before: 1400 passed. After: 1424 passed (24 new tests in
 `test_authoring_examples.py`).
 
 - **`authoring.inspect_workflow`** and **`aotn inspect <id|name|path>`**:
