@@ -5,14 +5,17 @@ This is the only live status snapshot; older logs/plans retain dated history.
 
 ## Baseline and open work — 2026-10-17
 
-- `origin/main`: `579be24` (docs PR A, #69). C1–C7 and workflow naming
+- `origin/main`: `9d5455b` (Stash S1, #70; docs PR A #69 also merged). C1–C7 and workflow naming
   (#68) are merged; C7 has only `branch` and publishes its child payload.
-- Open: Stash S1 [#70](https://github.com/makinster/node_workflow/pull/70)
-  (`dist/stash-s1`): `StashManager`, paste parser, `accepted_types`, and the
+- Merged: Stash S1 [#70](https://github.com/makinster/node_workflow/pull/70)
+  (`dist/stash-s1` → `main`): `StashManager`, paste parser, `accepted_types`, and the
   S3b `aotn stash` CLI. No UI yet; S2 (modal) and S3 (field insert) follow,
   with sample screens first.
-- Docs PR B (consolidation, VISION, CONTRIBUTING) waits on nothing now; PR C
-  follows B. The owner merges, or asks a reviewer to.
+- Docs PR B: `docs/b-consolidation-vision` → `main`; consolidation, VISION
+  and CONTRIBUTING. PR C follows B. Owner or explicitly requested reviewer merges.
+- Open Stash S2 [#71](https://github.com/makinster/node_workflow/pull/71):
+  `dist/stash-s2` → `main`, the Stash screen. Controls are documented as pending
+  in UI Quick Reference; S3 field insertion remains separate.
 - Work order: [Node Contract Plan](NODE_CONTRACT_PLAN.md). Long-term decisions:
   [Distributed Build Plan](DISTRIBUTED_BUILD_PLAN.md), [Stash](STASH_PROPOSAL.md).
 
@@ -20,8 +23,8 @@ This is the only live status snapshot; older logs/plans retain dated history.
 
 - Full suite: **1509 passed** on #70 merged with `579be24` (2026-10-17);
   1480 on `579be24` itself.
-- All **176** relative Markdown links/anchors resolve; `git diff --check`
-  passes. Isolated build/inspect/run and node/helper probes pass.
+- PR B full suite: **1509 passed in 173.22s** on `9d5455b` plus docs changes.
+  Archive-integrity and final relative-link checks are recorded before publication.
 - Owner WSL setup: Python **3.14.4**, Textual **8.2.7**, pytest **9.1.0**;
   interpreter `/home/makin/src/node_workflow/.venv/bin/python`.
 - Docs worktree: `/home/makin/src/nw-docs`; owner checkout and other workers'
@@ -41,5 +44,5 @@ This is the only live status snapshot; older logs/plans retain dated history.
 - **Step 4:** child-run contracts remain planned and need the owner's gate;
   `--input` is recorded but not yet consumed by those contracts.
 - Only the [audit report](audits/docs_audit_2026_10_17/MASTER_REPORT.md) survived.
-  Original evidence/CSVs are unavailable. PR A rechecks S1 against this checkout;
-  PR B must rebuild `vision_sources.md` before writing VISION or archiving docs.
+  Original evidence/CSVs are unavailable. PR B rebuilt the source map before
+  extraction; whole originals and migration notes are retained in `archive/`.

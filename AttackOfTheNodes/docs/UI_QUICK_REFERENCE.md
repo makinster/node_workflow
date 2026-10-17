@@ -1,7 +1,9 @@
 # UI Quick Reference
 
-Use this for quick frontend orientation. Open `TUI_DESIGN.md` only when changing
-screen layout, command navigation internals, or detailed Textual behavior.
+Use this as the keyboard and interaction reference. [Contributing](CONTRIBUTING.md)
+owns implementation/testing patterns; [Architecture](ARCHITECTURE.md) owns
+execution semantics. [Current State](CURRENT_STATE.md) separates delivered and
+pending work. Historical layouts are in `archive/TUI_DESIGN.md`.
 
 ## Editor Keys
 
@@ -16,7 +18,11 @@ screen layout, command navigation internals, or detailed Textual behavior.
 - `X` or Backspace: delete selected node or tombstone.
 - `F`: File/workflow menu.
 - `O`: options/settings.
-- `H`: context help.
+- `P`: Stash screen (S2; see Current State for delivery status).
+- `B`: toggle the selected node breakpoint; `Ctrl+B`: clear breakpoints.
+- `Z`: undo deletion.
+- Tab / Shift+Tab: move between panels.
+- `H` or `?`: context help.
 - `V`: validate workflow.
 - `Ctrl+S`: quick save.
 - `Ctrl+R`: execute workflow.
@@ -43,8 +49,9 @@ the highlighted editor row.
   toggles the value in a single press.
 - Text fields require activation unless a prompt/filter opts into
   `auto_edit_on_focus=True`.
-- `Esc`, Enter, and small-field Tab leave text editing while preserving typed
-  text for Save.
+- `Esc` ends text editing and preserves text. In a single-line field Enter
+  and Tab also finish editing; Enter remains a newline in CommandTextArea.
+  `Ctrl+Enter` ends multiline editing (a screen may use it to submit/save).
 - `Ctrl+Q` while editing reverts that field to its edit-start value.
 - Selection lists must not trap movement: W/S or up/down should exit to the
   previous/next widget at list boundaries.
@@ -96,7 +103,7 @@ hidden so toggling back restores the choices. For schema fields use
 state still needs explaining.
 Any visible locked control needs an explicit explanation in the UI and a
 documented convenience reason; prefer a read-only summary for inspection alone.
-See [the visibility/scrolling audit](NODE_CONFIG_VISIBILITY_SCROLL_AUDIT.md) for
+See [the visibility/scrolling audit](archive/NODE_CONFIG_VISIBILITY_SCROLL_AUDIT.md) for
 current retained displays and their purposes.
 
 Open configuration on the first field of the initial tab. Initialization and
@@ -121,7 +128,8 @@ do not scroll to reveal its next neighbour before it is highlighted.
 
 ## Phase 17 Node Identity
 
-Use `PHASE_17_NODE_VISUAL_IDENTITY.md` for the active plan.
+The selector uses portable metadata; [Node Standards](NODE_STANDARDS.md) owns
+the identity and contract rules. Older Phase 17 layouts are historical.
 
 - Selector family tabs (2026-06-22): five tabs mapping 1:1 to the five backend
   families, in this order with hotkeys `1`–`5`: `In` (Inputs), `Flow Control`,
@@ -134,7 +142,7 @@ Use `PHASE_17_NODE_VISUAL_IDENTITY.md` for the active plan.
   (`N Label`).
 - There is no subcategory filter checkbox column. The rigid subcategory taxonomy
   was retired 2026-06-19; node `tags` survive only as freeform keywords that feed
-  the string filter (see `NODE_STANDARDIZATION_HANDOFF.md` Revision 2026-06-19).
+  the string filter (see Node Standards: Portable contract and authoring boundaries).
 - Initial selector focus lands on the string filter (not in typing mode).
 - `T` (2026-10-14) toggles between all nodes and only the nodes with an
   input that takes the upstream payload (`port_types.accepts_producers`,
@@ -157,7 +165,7 @@ Use `PHASE_17_NODE_VISUAL_IDENTITY.md` for the active plan.
   Branch and merge jump widgets own that gap when present and should be
   centered under the node box.
 - Details panel should show the node's per-port I/O contract (see
-  `NODE_STANDARDIZATION_HANDOFF.md` §8).
+  Node Standards: Portable contract and authoring boundaries).
 - Preserve selection, autoscroll, validation markers, breakpoint markers,
   execution state, and Merge Beacon state indicators.
 
@@ -166,13 +174,90 @@ Use `PHASE_17_NODE_VISUAL_IDENTITY.md` for the active plan.
 - Graph-passed data is a dead-drop payload.
 - Named memory-bank data is the Vault.
 - `branch_end_node` is displayed to users as Merge Beacon.
-- Branch v1 is always-parallel with 2-5 spawn points.
+- Parallel Branch has 2–64 paths; Merge defaults to five slots and can grow.
+  Branch width and the runtime nesting-depth limit are separate.
 - A Merge Beacon's selector row and gutter color follow the branch containing
   the merge node it's connected to, not the beacon's own branch.
 - A merge node's config only offers Merge Beacons whose branch starts upstream
   of (or unrelated to) that merge — never one downstream of it.
 
-## Deep Reference
+## Execution screen
 
-Use `TUI_DESIGN.md` for detailed screen descriptions, file picker behavior,
-payload preview rules, learned Textual detours, and historical UI decisions.
+| Key | Action |
+|---|---|
+| P | Pause/resume (pause is cooperative) |
+| S / Shift+S | Stop |
+| M | Vault/memory viewer |
+| O | Run output viewer |
+| E | Latest run error details |
+| Esc / Ctrl+Q | Return to editor, stopping a live run |
+
+W/S visit navigation, A/D runtime-branch cycling and F follow mode belong to
+[a pending design](PROJECT_BACKLOG.md#execution-branch-inspection-proposal), not
+these bindings. Do not change S to navigation without resolving its Stop action.
+
+## Library, prompts and viewers
+
+| Screen | Keys beyond shared navigation |
+|---|---|
+| Workflow library | W/S or arrows move; E/Enter loads; N new; R rename; D duplicate; I import; O export; X delete; Esc/Q/Ctrl+Q close |
+| New/rename name prompt | Enter or Ctrl+S confirms; Ctrl+Enter also submits; Esc cancels |
+| User Text Input | Ordinary text editing starts on mount; W/S type letters. Ctrl+Enter submits; Esc/Ctrl+Q first leave editing, then cancel |
+| Typed import/export path | Ctrl+Enter submits; B retries Browse when available and not typing; Tab moves out; Esc/Ctrl+Q cancel after edit mode |
+| Settings | 1 General, 2 Secrets; Ctrl+S saves; X deletes selected secret when applicable; Esc/Ctrl+Q cancel after edit mode |
+| Group picker | W/S or arrows move; E/Enter adds; Esc/Ctrl+Q returns to selector |
+| Branch selector | W/S or arrows move; E/Enter (also D) chooses; Esc/Ctrl+Q cancels |
+| Memory viewer | W/S or arrows move; E/Enter activates; Esc/Ctrl+Q closes |
+| Output, file, help and error viewers | Esc/Q/Ctrl+Q closes, subject to recovery rules in the error dialog |
+
+The selector uses Tab to focus its list and `/` to focus its filter. Screen
+commands must not consume letters/digits while a text field is editing.
+
+## Stash screen (S2)
+
+These controls were checked against the S2 PR code; [Current State](CURRENT_STATE.md)
+records whether it is merged. P in the editor opens the Paste / drop tab.
+
+| Context | Controls |
+|---|---|
+| 1 Paste / drop | Paste/drop adds immediately; Enter/Add stores typed text; T/Keep as text stores a refused paste as text; R renames a just-added entry |
+| 2 Entries | W/S moves; / starts live search; T cycles all/files/text; R/E renames; X deletes with confirmation |
+| Both tabs | 1/2 switches tabs outside editing; Esc/Q/Ctrl+Q closes after text editing; buttons expose the same actions |
+
+Enter or Esc from search returns focus to the list. Typed letters remain text.
+File entries show `[file]`, text entries `[text]`; refused paths/folders show a
+reason rather than becoming file entries. Paste handling is local to this screen.
+S3 field insertion is separate planned work; manage mode does not insert values
+into a node config. An entry's own rename uses the shared name prompt.
+
+## Recovery editing
+
+Preserved UX decisions, with the later display-suffix rollback applied:
+
+- Recovery is edited once, in the mux editor. The originating node lists friendly
+  errors and offers Add/Open Error Resolver; it does not duplicate route controls.
+- Reuse a mux only when the normal output connects directly to its `input`.
+  Otherwise insert a mux and preserve the old downstream on No error. Stay on
+  the normal editor path after insertion.
+- Cancelling the first edit of a newly inserted mux removes it and restores
+  wiring. Unpicking a route containing nodes offers Leave unlinked, Delete
+  branch or Cancel; do not silently discard its graph.
+- Save is per node. Jumping with unsaved changes asks Save/Discard/Stay.
+  A no-edit save preserves unsupported config and unresolved stored choices.
+- Existing direct `error` connections still execute and display, but the UI
+  promotes inline recovery. IDs remain stable; aliases/type names are display
+  labels and raw IDs remain inspectable. The numbered suffix was rolled back.
+
+## Read-only displays and scrolling
+
+Retained convenience displays have concrete purposes: incoming payload previews
+support inspection/copy; Connections explains wiring; an empty Vault message
+explains an enabled read with no candidates. A setter's literal can still control
+its Vault write while forwarding, Text Output formatting still applies to requested
+input, and file write modes still apply when OS opening is off. Do not hide a
+still-effective control merely because a neighboring feature is disabled.
+
+Keep tab headers visible outside scrolling content. Hide inactive controls with
+their labels/messages while preserving values; do not silently reset them.
+Only the highlighted field should drive reveal scrolling. Use production-CSS
+mounts to verify focus and viewport stability, as described in Contributing.

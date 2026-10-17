@@ -2,7 +2,7 @@
 
 All 37 registered types are accounted for. The 36 editable/user-facing screens were mounted at 60/100/140 columns with production CSS; tombstone is intentionally excluded. The actual selector exposes 34 types, including members behind groups.
 
-For recommended layouts and unresolved findings, use [CONFIG_UI_BUILD_PLAN.md](../../CONFIG_UI_BUILD_PLAN.md) and the per-node policy in the [original audit](../../NODE_CONFIG_UI_AUDIT.md). The three new file/window layouts are in the [File Output review](../../FILE_OUTPUT_INTEGRATION_REVIEW.md).
+For recommended layouts and unresolved findings, use [CONFIG_UI_BUILD_PLAN.md](../../archive/CONFIG_UI_BUILD_PLAN.md) and the per-node policy in the [original audit](../../archive/NODE_CONFIG_UI_AUDIT.md). The three new file/window layouts are in the [File Output review](../../archive/FILE_OUTPUT_INTEGRATION_REVIEW.md).
 
 | Type | Selector | Current tabs | Conditional state captures | Layout recommendation |
 |---|---|---|---|---|

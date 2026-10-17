@@ -165,5 +165,5 @@ the audit report; copy the table here if a phase needs it.
 | Phase | Scope | Delivery |
 |---|---|---|
 | A | Entry route, newcomer guide and audit F01–F15/F41 | Prepared on `docs/a-entry-route`; publication/verification in [Current State](CURRENT_STATE.md) |
-| B | Rebuild vision sources, preserve reasoning, consolidate and archive | After A merges; owner merges |
+| B | Rebuild vision sources, preserve reasoning, consolidate and archive | Prepared on `docs/b-consolidation-vision`; see Current State for verification/review |
 | C | Bound session history and address remaining S2/S3 | After B merges |
