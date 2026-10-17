@@ -88,6 +88,10 @@ def workflow_load_failed(app: Any) -> None:
     notify_error(app, "Workflow could not be loaded")
 
 
+def workflow_renamed(app: Any, workflow_name: str) -> None:
+    notify_info(app, f"Renamed to {workflow_name}")
+
+
 def workflow_duplicated(app: Any) -> None:
     notify_info(app, "Workflow duplicated")
 

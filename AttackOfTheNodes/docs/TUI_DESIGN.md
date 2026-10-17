@@ -149,7 +149,8 @@ Use Textual `Screen` / `ModalScreen` classes:
 - `memory_viewer.py`: memory bank variables and transient port data.
 - `output_viewer.py`: scrollable output log.
 - `error_details.py`: structured error details and recovery options.
-- `workflow_library.py`: load, duplicate, export, and delete workflows.
+- `workflow_library.py`: load, rename, duplicate, export, and delete workflows;
+  `NamePromptScreen` asks for a name (rename, New).
 - `settings.py`: configuration form.
 - `help.py`: context-specific key reference. Screens should pass enough context
   for Help to show only the relevant bindings and keep the main UI copy short.
@@ -257,7 +258,12 @@ pass.
 The File menu should show workflow names without ids. Duplicate names are
 displayed as `Name`, `Name (2)`, `Name (3)`, and the currently loaded workflow
 is marked with `<-- Loaded Workflow`. Workflow actions are keyboard bindings;
-the only bottom widget is `Cancel`. Moving down from the last workflow focuses
+the only bottom widget is `Cancel`. `R` renames the highlighted workflow and
+New (`N`, Ctrl+N) asks for a name first; both use one rule
+(`backend/workflow_names.py`: not blank, not another saved workflow's name
+ignoring case) and keep the prompt open with the reason when it fails. Enter
+confirms in the name prompt; Esc cancels (New then creates nothing). Renaming
+writes only the name, so unsaved edits stay unsaved. Moving down from the last workflow focuses
 Cancel, and moving up from Cancel returns to the last workflow. Export/import
 tries an OS file picker first, then falls back to a typed path prompt when the
 picker is unavailable or errors. The fallback prompt includes a Browse control

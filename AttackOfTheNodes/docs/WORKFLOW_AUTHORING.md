@@ -77,7 +77,8 @@ In one pass, reporting every problem at once:
    warnings are reported (codes from `backend/validation_codes.py`).
 5. Save through `SaveManager` (atomic write, a unique temporary file per
    save), refusing a name already saved (case-insensitive, as `aotn run`
-   matches names), then reload the file into a fresh map and check that it
+   matches names; the app's rename and New use the same rule,
+   `backend/workflow_names.py`), then reload the file into a fresh map and check that it
    matches and validates the same.
 
 With `--json`, stdout carries only the JSON report; warnings (for example an

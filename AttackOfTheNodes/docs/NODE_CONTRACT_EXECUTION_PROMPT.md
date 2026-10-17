@@ -24,9 +24,10 @@ When sources disagree: code first, then the recent session log, then plans.
 
 - `main` at `105623d` (merge of PR #63). Merged: C1–C3, C5, the selector
   toggle, issue codes, the authoring tool (#61, #63) and the Stash proposal
-  docs (#62). C4 (#64), C6 (#65) and C7 (`dist/c7-deep-branch`) are
-  in stacked PRs. Suite: **1466 passed** (about 3.5 minutes).
-  Order: naming PR →
+  docs (#62), C4 (#64), C6 (#65). C7 re-lands as #67 (#66 merged into
+  the C6 branch, not `main`). The naming PR (`dist/workflow-naming`) is
+  in its PR. Suite: **1478 passed** (about 3.5 minutes).
+  Order:
   Stash S1–S3 → Step 4 with Stash S5 (see `NODE_CONTRACT_PLAN.md`).
 - Untracked files to leave alone: `.claude/launch.json`,
   `AttackOfTheNodes/"C:\...\test.txt"`, `AttackOfTheNodes/Workflow started`.
@@ -86,7 +87,9 @@ What the detour delivered, in short:
    "Type mismatch" warnings and clearer file-node runtime errors) merged
    as PR #56. C3, C5 and the authoring tool merged; C4, C6 (with
    Chat's Vault output off by default) and C7 are in their PRs. Next:
-   the naming PR, then Stash S1–S3 (see the plan's agreed order).
+   the naming PR (in its PR), then Stash S1–S3 (see the plan's agreed
+   order). A stacked PR must be retargeted to `main` before merging: the
+   repo keeps merged branches, so GitHub doesn't retarget it (#66).
 3. Then C2–C7 in order, one PR each, asking the owner where a phase needs a
    decision (C5's number policy, C6's field removal, C7's Deep Branch
    contract). Ask before starting Step 4 of `DISTRIBUTED_BUILD_PLAN.md`.

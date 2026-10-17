@@ -15,7 +15,9 @@ fitting-only toggle (PR #57), validator issue codes (PR #58). C3 done
 (PR #59). C5 done (PR #60). Authoring tool PR 1 (core) done (PR #61);
 PR 2 (inspect + examples) done (PR #63). Stash proposal docs (PR #62). C4
 done (PR #64). C6 done, with the owner's Chat Completion default change
-(PR #65). C7 done (`dist/c7-deep-branch`). C1–C7 are complete.
+(PR #65). C7 done (PR #66 merged into the C6 branch by mistake; re-landed
+as PR #67). C1–C7 are complete. Workflow naming PR done
+(`dist/workflow-naming`).
 
 **Agreed order (owner, 2026-10-15; extended 2026-10-17):** C3 → C5 →
 workflow authoring tool v1 (PR 1 done, PR 2 next) → C4, C6, C7 → workflow

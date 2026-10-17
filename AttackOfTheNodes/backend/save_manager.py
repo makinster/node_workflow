@@ -14,6 +14,7 @@ from .configuration_manager import ConfigurationManager
 from .memory_bank import MemoryBank
 from .persistence import delete_workflow, load_workflow, save_workflow
 from .validator import derive_input_sources
+from .workflow_names import name_problem, unused_name
 from .workflow_map import WorkflowMap
 
 
@@ -104,7 +105,7 @@ class SaveManager:
         new_id = f"wf_{uuid.uuid4().hex[:12]}"
         copy_data = json.loads(json.dumps(data))
         copy_data["id"] = new_id
-        copy_data["name"] = f"{copy_data.get('name', source_id)} (Copy)"
+        copy_data["name"] = unused_name(f"{copy_data.get('name', source_id)} (Copy)")
         save_workflow(new_id, copy_data)
         return new_id
 
@@ -113,6 +114,24 @@ class SaveManager:
         if not self._workflow_map.rename_current_workflow(name):
             return False
         return self.save_current_workflow()
+
+    def rename_workflow(self, workflow_id: str, name: str) -> Optional[str]:
+        """Rename a saved workflow; return why it can't be, or None.
+
+        Only the name is written: unsaved edits in an open workflow stay
+        unsaved (and dirty), so renaming never saves them by surprise.
+        """
+        problem = name_problem(name, exclude_id=workflow_id)
+        if problem:
+            return problem
+        data = load_workflow(workflow_id)
+        if data is None:
+            return "The saved workflow could not be read"
+        name = name.strip()
+        data["name"] = name
+        save_workflow(workflow_id, data)
+        self._workflow_map.set_workflow_name(workflow_id, name)
+        return None
 
     def delete_workflow(self, workflow_id: str) -> bool:
         """Delete a persisted workflow and remove it from the open cache."""

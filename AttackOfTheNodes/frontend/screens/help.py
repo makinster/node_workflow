@@ -62,6 +62,10 @@ HELP_TEXT = {
         "File",
         "  W/S or ↑/↓  Move through workflows",
         "  E or Enter  Choose highlighted item",
+        "  N           New workflow (asks for a name)",
+        "  R           Rename highlighted workflow",
+        "  D / X       Duplicate / delete",
+        "  E / I       Export / import",
         "  Esc         Cancel",
     ],
     "settings": [

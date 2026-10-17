@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import asyncio
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
+from textual import events
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Vertical
@@ -33,6 +34,7 @@ class WorkflowLibraryScreen(ModalScreen):
         Binding("s", "cursor_down", "Down", priority=True),
         ("enter", "load_selected", "Load"),
         ("n", "new_workflow", "New"),
+        ("r", "rename_selected", "Rename"),
         ("d", "duplicate_selected", "Duplicate"),
         ("e", "export_selected", "Export"),
         ("i", "import_workflow", "Import"),
@@ -49,7 +51,7 @@ class WorkflowLibraryScreen(ModalScreen):
             yield Label("Workflow Library", classes="modal-title")
             yield ListView(id="workflow-list")
             yield Static(
-                "Enter load | N new | D duplicate | X delete\nE export | I import | Esc cancel",
+                "Enter load | N new | R rename | D duplicate\nX delete | E export | I import | Esc cancel",
                 classes="modal-help",
             )
             yield Button("Cancel", id="cancel-workflow-library", variant="default")
@@ -72,6 +74,10 @@ class WorkflowLibraryScreen(ModalScreen):
 
     def action_new_workflow(self) -> None:
         self.dismiss({"action": "new"})
+
+    def action_rename_selected(self) -> None:
+        index = self.query_one("#workflow-list", ListView).index
+        self._dismiss_action("rename", index)
 
     def action_duplicate_selected(self) -> None:
         index = self.query_one("#workflow-list", ListView).index
@@ -165,6 +171,81 @@ class WorkflowLibraryScreen(ModalScreen):
                 "workflow_name": workflow["name"],
             }
         )
+
+
+class _NameInput(CommandInput):
+    """A one-field prompt: Enter confirms, in edit mode or not.
+
+    Plain CommandInputs end the edit on Enter and need Ctrl+Enter to submit,
+    which many terminals (and tmux) don't send distinctly.
+    """
+
+    async def _on_key(self, event: events.Key) -> None:
+        if event.key == "enter":
+            if self.editing:
+                self.end_edit()
+            event.stop()
+            event.prevent_default()
+            self.post_message(self.Submitted(self, self.value))
+            return
+        await super()._on_key(event)
+
+
+class NamePromptScreen(CommandScreenMixin, ModalScreen):
+    """Ask for a workflow name; ``check`` returns why a name can't be used.
+
+    A rejected name keeps the prompt open with the reason under the field.
+    Dismisses with the trimmed name, or None on Esc.
+    """
+
+    BINDINGS = [
+        ("escape", "cancel", "Cancel"),
+        ("ctrl+enter", "submit", "Confirm"),
+        Binding("ctrl+q", "cancel", "Cancel", priority=True),
+    ]
+
+    def __init__(
+        self,
+        title: str,
+        default_name: str,
+        check: Callable[[str], Optional[str]],
+    ) -> None:
+        super().__init__()
+        self.title_text = title
+        self.default_name = default_name
+        self.check = check
+
+    def compose(self) -> ComposeResult:
+        with Vertical(id="modal-card", classes="name-prompt-modal"):
+            yield Label(self.title_text, classes="modal-title")
+            yield _NameInput(value=self.default_name, id="name-input")
+            yield Static("", id="name-error", classes="field-error")
+            yield StatusBar("Type a name | Enter confirm | Esc cancel")
+
+    def on_mount(self) -> None:
+        self.query_one("#name-error", Static).display = False
+        self._focus_first()
+        # Typing starts at once; W/S are letters of the name here.
+        self.query_one("#name-input", CommandInput).begin_edit()
+
+    def on_input_submitted(self, _event: Input.Submitted) -> None:
+        self.action_submit()
+
+    def action_submit(self) -> None:
+        name = self.query_one("#name-input", Input).value
+        problem = self.check(name)
+        error = self.query_one("#name-error", Static)
+        if problem:
+            error.update(problem)
+            error.display = True
+            name_input = self.query_one("#name-input", CommandInput)
+            if not name_input.editing:
+                name_input.begin_edit()
+            return
+        self.dismiss(name.strip())
+
+    def action_cancel(self) -> None:
+        self.dismiss(None)
 
 
 class PathPromptScreen(CommandScreenMixin, ModalScreen):
