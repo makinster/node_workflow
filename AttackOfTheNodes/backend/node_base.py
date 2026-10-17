@@ -119,6 +119,11 @@ class Node(ABC):
     # Engine codes (`engine.*`) may be listed to surface them in the Errors
     # section; node codes may not use that namespace.
     error_definitions: ClassVar[List[Dict[str, Any]]] = []
+    # Config keys a custom editor section manages instead of the generated
+    # form (key -> one-line meaning). They are real config the node reads;
+    # declaring them lets tools (the authoring builder, describe) accept
+    # and explain them. Not type-checked: there is no schema for them.
+    custom_config_keys: ClassVar[Dict[str, str]] = {}
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)

@@ -12,8 +12,8 @@ reproduction first; the audit gives one for each.
 
 Progress: C1 done (PR #55). C2 done (PR #56). Owner extras: node selector
 fitting-only toggle (PR #57), validator issue codes (PR #58). C3 done
-(PR #59). C5 done (PR #60). Authoring tool PR 1 (core) done
-(`dist/authoring-core`).
+(PR #59). C5 done (PR #60). Authoring tool PR 1 (core) done (PR #61);
+PR 2 (inspect + examples) done (`dist/authoring-inspect`).
 
 **Agreed order (owner, 2026-10-15; extended 2026-10-17):** C3 → C5 →
 workflow authoring tool v1 (PR 1 done, PR 2 next) → C4, C6, C7 → workflow

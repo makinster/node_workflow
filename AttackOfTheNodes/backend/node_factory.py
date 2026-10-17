@@ -203,6 +203,7 @@ class NodeFactory:
                         getattr(node_class, "error_definitions", [])
                     ),
                     "error_port": ERROR_PORT,
+                    "custom_config_keys": dict(getattr(node_class, "custom_config_keys", {})),
                 }
             )
         return sorted(metadata, key=lambda item: item["display_name"])

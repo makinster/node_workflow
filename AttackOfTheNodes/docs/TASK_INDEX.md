@@ -263,7 +263,8 @@ Likely files:
 
 - `backend/authoring.py`
 - `aotn_author.py`
-- `tests/test_authoring.py`
+- `examples/` (specs built by `tests/test_authoring_examples.py`)
+- `tests/test_authoring.py`, `tests/test_authoring_examples.py`
 
 Rule: the tool is a client of the shared backend (factory, WorkflowMap,
 validator, SaveManager); node rules belong in shared helpers, not here.

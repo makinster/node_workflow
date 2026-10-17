@@ -1,0 +1,22 @@
+{
+  "format": "aotn-workflow/1",
+  "name": "Example - Summarise a file",
+  "nodes": {
+    "start": {"type": "start_node"},
+    "read": {"type": "file_reader_node", "alias": "Read notes",
+             "config": {"input_source": "Configured", "file_path": "/tmp/aotn_examples/notes.txt"}},
+    "summarise": {"type": "chat_completion_node", "alias": "Summarise",
+                  "config": {"prompt_source": "Configured", "prompt": "Summarise the document in three short bullet points.",
+                             "document_source": "Upstream payload", "api_key_secret": "anthropic_api_key",
+                             "vault_write_key": "summary",
+                             "max_tokens": 300}},
+    "show": {"type": "text_output_node", "alias": "Show summary", "config": {"template": "{input}"}},
+    "end": {"type": "end_node"}
+  },
+  "connections": [
+    {"from": "start.default", "to": "read.input"},
+    {"from": "read.default", "to": "summarise.document"},
+    {"from": "summarise.default", "to": "show.input"},
+    {"from": "show.default", "to": "end.input"}
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "format": "aotn-workflow/1",
+  "name": "Example - Fetch and save",
+  "nodes": {
+    "start": {"type": "start_node"},
+    "fetch": {"type": "http_request_node", "alias": "Fetch page",
+              "config": {"url": "https://example.com", "method": "GET", "response_mode": "text", "timeout_seconds": 10}},
+    "save": {"type": "file_output_node", "alias": "Save page",
+             "config": {"content_source": "Upstream payload", "file_path_source": "Configured",
+                        "file_path": "/tmp/aotn_examples/example.html", "write_mode": "Overwrite"}},
+    "show": {"type": "file_view_node", "alias": "Show page", "config": {"file_source": "Upstream payload"}},
+    "end": {"type": "end_node"}
+  },
+  "connections": [
+    {"from": "start.default", "to": "fetch.input"},
+    {"from": "fetch.default", "to": "save.content"},
+    {"from": "save.default", "to": "show.file"},
+    {"from": "show.default", "to": "end.input"}
+  ]
+}

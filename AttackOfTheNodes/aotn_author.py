@@ -1,4 +1,4 @@
-"""Command-line authoring: ``aotn nodes``, ``aotn describe``, ``aotn build``.
+"""Command-line authoring: ``aotn nodes``, ``describe``, ``build``, ``inspect``.
 
 A thin adapter over ``backend/authoring.py``. Every command prints a readable
 summary, or JSON with ``--json`` (for agents and scripts). ``build`` writes a
@@ -15,7 +15,7 @@ import os
 import sys
 from typing import Any, Dict, List, Optional, TextIO
 
-COMMANDS = ("nodes", "describe", "build")
+COMMANDS = ("nodes", "describe", "build", "inspect")
 
 
 def build_parser(command: str) -> argparse.ArgumentParser:
@@ -27,6 +27,10 @@ def build_parser(command: str) -> argparse.ArgumentParser:
         parser.add_argument("node_type", help="node type, e.g. sleep_node")
         parser.add_argument("--set", action="append", default=[], metavar="KEY=VALUE",
                             help="config override (repeatable; VALUE is JSON when it parses, else text)")
+    elif command == "inspect":
+        parser.description = ("Explain a saved workflow: execution paths, Vault writers and "
+                              "readers with ordering, data-flow types, unchecked keys, validation.")
+        parser.add_argument("workflow", help="saved workflow id or name, or a workflow .json file")
     else:
         parser.description = "Build a workflow from an aotn-workflow/1 spec and save it."
         parser.add_argument("spec", help="path to the spec .json file, or - for stdin")
@@ -74,6 +78,20 @@ def _run(command: str, args: argparse.Namespace, parser: argparse.ArgumentParser
         except ValueError as exc:
             parser.error(str(exc))
         _emit(out, args.json, description, _describe_text(description))
+        return 0
+    if command == "inspect":
+        from backend.event_bus import EventBus
+        from backend.run_service import WorkflowNotFoundError, resolve_workflow_data
+        from backend.workflow_map import WorkflowMap
+
+        try:
+            data = resolve_workflow_data(args.workflow)
+        except WorkflowNotFoundError as exc:
+            parser.error(str(exc))
+        workflow_map = WorkflowMap(factory, EventBus())
+        workflow_map.load_data(data)
+        report = authoring.inspect_workflow(factory, workflow_map)
+        _emit(out, args.json, report, _inspect_text(report))
         return 0
     try:
         text = (stdin or sys.stdin).read() if args.spec == "-" else open(args.spec, encoding="utf-8").read()
@@ -155,4 +173,32 @@ def _build_text(report: Dict[str, Any], check_only: bool) -> str:
         lines.append(f"  {diagnostic['level']}: {where}{diagnostic['code']}: {diagnostic['message']}")
     if report.get("nodes"):
         lines.append("Nodes: " + ", ".join(f"{h}={i}" for h, i in report["nodes"].items()))
+    return "\n".join(lines)
+
+
+def _inspect_text(report: Dict[str, Any]) -> str:
+    lines = [f"{report['name']} ({report['workflow_id']})", "", "Execution:"]
+    lines += [f"  {line}" for line in report["execution"]]
+    if report["vault"]:
+        lines += ["", "Vault:"]
+        for entry in report["vault"]:
+            writers = ", ".join(f"{w['name']} [{w['data_type']}]" for w in entry["writers"]) or "no writer"
+            lines.append(f"  {entry['key']}: written by {writers}")
+            for reader in entry["readers"]:
+                need = "required" if reader["required"] else "optional"
+                lines.append(f"    read by {reader['name']} ({need}): {reader['order']}")
+    flows = [f for f in report["data_flow"] if f["status"] in ("mismatch", "unchecked")]
+    if flows:
+        lines += ["", "Data flow (unchecked or mismatched):"]
+        for flow in flows:
+            lines.append(f"  {flow['from_name']} -> {flow['to_name']}.{flow['port']}: "
+                         f"sends {'/'.join(flow['sends'])}, expects {flow['expects']}: {flow['status']}")
+    if report["unchecked"]:
+        lines += ["", "Config the contract cannot check:"]
+        for item in report["unchecked"]:
+            lines.append(f"  {item['name']}: {', '.join(item['keys'])}")
+    lines += ["", "Validation:" if report["validation"] else "Validation: clean"]
+    for issue in report["validation"]:
+        where = f"{issue['name']}: " if issue.get("name") else ""
+        lines.append(f"  {issue['level']}: {where}{issue['code']}: {issue['message']}")
     return "\n".join(lines)

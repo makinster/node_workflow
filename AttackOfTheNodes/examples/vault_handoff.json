@@ -1,0 +1,23 @@
+{
+  "format": "aotn-workflow/1",
+  "name": "Example - Vault handoff",
+  "nodes": {
+    "start": {"type": "start_node", "config": {"greeting": "remember me",
+                                              "vault_write": true, "vault_write_key": "note",
+                                              "vault_write_description": "The greeting, kept for later"}},
+    "remember": {"type": "set_variable_node", "alias": "Remember topic",
+                 "config": {"variable_name": "topic", "value_source": "literal", "value": "workflows"}},
+    "recall": {"type": "get_variable_node", "alias": "Recall topic", "config": {"variable_name": "topic"}},
+    "show_topic": {"type": "text_output_node", "alias": "Show topic", "config": {"template": "Topic: {input}"}},
+    "show_note": {"type": "text_output_node", "alias": "Show note",
+                  "config": {"input_source": "Vault", "input_vault_key": "note", "template": "Note: {input}"}},
+    "end": {"type": "end_node"}
+  },
+  "connections": [
+    {"from": "start.default", "to": "remember.input"},
+    {"from": "remember.default", "to": "recall.input"},
+    {"from": "recall.default", "to": "show_topic.input"},
+    {"from": "show_topic.default", "to": "show_note.input"},
+    {"from": "show_note.default", "to": "end.input"}
+  ]
+}

@@ -182,32 +182,7 @@ class RunService:
         }
 
     def _resolve(self, reference: str) -> Dict[str, Any]:
-        reference = str(reference or "").strip()
-        if not reference:
-            raise WorkflowNotFoundError("No workflow given")
-        path = Path(reference).expanduser()
-        if path.suffix.lower() == ".json" and path.is_file():
-            try:
-                return json.loads(path.read_text(encoding="utf-8"))
-            except (OSError, json.JSONDecodeError) as exc:
-                raise WorkflowNotFoundError(f"Cannot read workflow file {path}: {exc}") from exc
-        data = load_workflow(reference)
-        if data is not None:
-            return data
-        matches = [
-            item for item in list_workflows()
-            if item["name"].casefold() == reference.casefold()
-        ]
-        if len(matches) > 1:
-            ids = ", ".join(item["id"] for item in matches)
-            raise WorkflowNotFoundError(
-                f"More than one workflow is named {reference!r} ({ids}); use an id"
-            )
-        if matches:
-            data = load_workflow(matches[0]["id"])
-            if data is not None:
-                return data
-        raise WorkflowNotFoundError(f"No workflow matches {reference!r}")
+        return resolve_workflow_data(reference)
 
     def validate(self) -> Dict[str, Any]:
         return validate_workflow(self._workflow_map, self._factory, self._secrets_manager)
@@ -292,3 +267,34 @@ class RunService:
         run_id = (payload or {}).get("run_id")
         if run_id in self._errors_by_run:
             self._errors_by_run[run_id].append(dict(payload.get("error") or {}))
+
+
+def resolve_workflow_data(reference: str) -> Dict[str, Any]:
+    """Workflow JSON for a saved id, a saved name (case-insensitive) or a
+    path to a workflow .json file; shared by ``aotn run`` and ``aotn inspect``."""
+    reference = str(reference or "").strip()
+    if not reference:
+        raise WorkflowNotFoundError("No workflow given")
+    path = Path(reference).expanduser()
+    if path.suffix.lower() == ".json" and path.is_file():
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise WorkflowNotFoundError(f"Cannot read workflow file {path}: {exc}") from exc
+    data = load_workflow(reference)
+    if data is not None:
+        return data
+    matches = [
+        item for item in list_workflows()
+        if item["name"].casefold() == reference.casefold()
+    ]
+    if len(matches) > 1:
+        ids = ", ".join(item["id"] for item in matches)
+        raise WorkflowNotFoundError(
+            f"More than one workflow is named {reference!r} ({ids}); use an id"
+        )
+    if matches:
+        data = load_workflow(matches[0]["id"])
+        if data is not None:
+            return data
+    raise WorkflowNotFoundError(f"No workflow matches {reference!r}")
