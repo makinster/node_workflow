@@ -4,6 +4,43 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-17 — Stash S1: Core, Paste Parser, `aotn stash`
+
+Branch `dist/stash-s1`, from `main` at `7e3f151` (PR #68). The owner
+approved S1 with the S3b CLI and authorised merging #68 first. Before:
+1480 passed. After: 1509 passed (29 new tests in `test_stash.py`). The
+docs reorganisation runs in parallel (another agent owns `docs/`; this
+PR only adds this entry and the plan's progress line).
+
+- **`backend/stash_manager.py`:** entries in `<data dir>/stash/entries.json`
+  (`persistence.STASH_DIR`), types `file` (a file reference) and `string`.
+  Generated ids that survive renames; names trimmed, not blank, unique
+  ignoring case (a default name counts up, a chosen one must be free).
+  Versioned export/import (`aotn-stash/1`): import skips entries already
+  present, numbers clashing names, and skips files missing on this
+  machine. Key-like text is warned about on add and export, never
+  stored silently as a secret. An unreadable Stash file is never
+  overwritten.
+- **`backend/paste_parser.py`:** the §9.7 rule. Splits drops from Windows
+  Terminal (quoted Windows paths, kept backslashes, UNC), Linux terminals
+  (single quotes, backslash escapes), `file://` URIs and newline lists;
+  every candidate goes through `normalize_local_path`. All pieces
+  path-like → existing files become entries, missing paths and folders
+  are reported, not stored; otherwise the whole paste is one text entry.
+  Narrowed from the proposal: a quoted *relative* piece is not treated
+  as path-like (nothing to resolve it against).
+- **`field_types.accepted_types`:** declared `data_type` wins, else
+  `path_hint: file` → `file`, text fields → `string`, everything else
+  nothing. A text field doesn't take a file yet (open question 1).
+- **`aotn stash list|add|rename|rm|export|import`** (`aotn_stash.py`),
+  readable output or `--json`; exit 1 when refused. Users see "text";
+  JSON keeps `string`.
+- `persistence.write_json_atomic` now serves both workflow saves and the
+  Stash (same temp-file-and-rename write as before).
+- Verified on WSL with a real Windows path (`C:\Windows\win.ini` →
+  `/mnt/c/Windows/win.ini`) and a test that converts a temp file with
+  `wslpath -w` and parses the quoted result.
+
 ## 2026-10-17 — Workflow Naming: Rename In The Library, Name On New
 
 Branch `dist/workflow-naming`, from `main` at `95f8399` (PR #65) with

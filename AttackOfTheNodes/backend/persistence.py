@@ -41,6 +41,28 @@ SECRETS_DIR = DATA_DIR / "secrets"
 LOGS_DIR = DATA_DIR / "logs"
 # Run-owned temporary files (R4): run_files/<run_id>/, created on first use.
 RUN_FILES_DIR = DATA_DIR / "run_files"
+# Machine-local reusable paths and text (Stash S1): stash/entries.json.
+STASH_DIR = DATA_DIR / "stash"
+
+
+def write_json_atomic(file_path: Path, data: Any) -> None:
+    """Write JSON to ``file_path`` through a temporary file and a rename.
+
+    A failed write never leaves a partial file, and each write gets its own
+    temporary file, so concurrent writers never share one.
+    """
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+    handle, temp_name = tempfile.mkstemp(
+        dir=file_path.parent, prefix=f".{file_path.stem}.", suffix=".tmp"
+    )
+    temp_path = Path(temp_name)
+    try:
+        with os.fdopen(handle, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        os.replace(temp_path, file_path)
+    finally:
+        if temp_path.exists():
+            temp_path.unlink()
 
 
 def save_workflow(workflow_id: str, workflow_data: Dict[str, Any]) -> None:
@@ -49,18 +71,7 @@ def save_workflow(workflow_id: str, workflow_data: Dict[str, Any]) -> None:
     Atomic: the JSON is written to a temporary file next to the target and
     renamed over it, so a failed write never leaves a partial save.
     """
-    WORKFLOWS_DIR.mkdir(parents=True, exist_ok=True)
-    file_path = WORKFLOWS_DIR / f"{workflow_id}.json"
-    # Unique per write, so concurrent saves never share a temporary file.
-    handle, temp_name = tempfile.mkstemp(dir=WORKFLOWS_DIR, prefix=f".{workflow_id}.", suffix=".tmp")
-    temp_path = Path(temp_name)
-    try:
-        with os.fdopen(handle, "w", encoding="utf-8") as f:
-            json.dump(workflow_data, f, indent=2, ensure_ascii=False)
-        os.replace(temp_path, file_path)
-    finally:
-        if temp_path.exists():
-            temp_path.unlink()
+    write_json_atomic(WORKFLOWS_DIR / f"{workflow_id}.json", workflow_data)
 
 
 def load_workflow(workflow_id: str) -> Optional[Dict[str, Any]]:

@@ -4,6 +4,8 @@ import math
 from enum import Enum
 from typing import Any, Dict, Iterator, List, Tuple
 
+from .data_types import canonicalize
+
 
 class FieldType(str, Enum):
     STRING = "string"
@@ -55,6 +57,25 @@ def number_fields(schema: Dict[str, Dict[str, Any]]) -> Iterator[Tuple[str, Dict
     for name, info in schema.items():
         if isinstance(info, dict) and str(info.get("type") or "") in NUMERIC_FIELD_TYPES:
             yield name, info
+
+
+def accepted_types(field_info: Dict[str, Any]) -> set:
+    """The value types a config field accepts from the Stash (and, later,
+    from contract bindings): one rule for every caller.
+
+    A field's declared ``data_type`` wins. Otherwise ``path_hint: file``
+    means a file, and a text field takes a string. Everything else (numbers,
+    checkboxes, selects, lists) takes nothing. Whether a text field should
+    also take a file as a raw path is open (STASH_PROPOSAL.md, question 1).
+    """
+    declared = field_info.get("data_type")
+    if declared:
+        return {canonicalize(str(declared))}
+    if field_info.get("path_hint") == "file":
+        return {"file"}
+    if field_info.get("type") in ("string", "multiline"):
+        return {"string"}
+    return set()
 
 
 def field_visible(config: Dict[str, Any], defaults: Dict[str, Any], field_info: Dict[str, Any]) -> bool:
