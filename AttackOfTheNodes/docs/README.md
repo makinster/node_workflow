@@ -1,176 +1,51 @@
-# AttackOfTheNodes Docs
+# AttackOfTheNodes docs
 
-Current project and session rundown: [SESSION_SUMMARY.md](SESSION_SUMMARY.md).
+Start with the [Newcomer Guide](NEWCOMER_GUIDE.md) for purpose, setup,
+a first workflow and runtime traps. Then check [Current State](CURRENT_STATE.md)
+for the dated baseline, open PRs, verification and owner decisions.
 
-Current session integration: [SESSION_INTEGRATION_BUILD_PLAN.md](SESSION_INTEGRATION_BUILD_PLAN.md).
-Remaining configuration work: [CONFIG_UI_BUILD_PLAN.md](CONFIG_UI_BUILD_PLAN.md).
-Long-term distributed direction (approved 2026-10-11): [DISTRIBUTED_BUILD_PLAN.md](DISTRIBUTED_BUILD_PLAN.md).
-Owner-requested payload, Vault and File I/O fixes:
-[PAYLOAD_FILE_IO_BUILD_PLAN.md](PAYLOAD_FILE_IO_BUILD_PLAN.md).
+The [Node Contract Plan](NODE_CONTRACT_PLAN.md) owns immediate delivery order;
+the [Distributed Build Plan](DISTRIBUTED_BUILD_PLAN.md) and
+[Stash proposal](STASH_PROPOSAL.md) preserve the longer-term direction.
+VISION and CONTRIBUTING will join this route in docs PR B.
 
-**Start here.** README routes you to the right document for your task.
-`TASK_INDEX.md` gives the minimum reading set, likely files, and focused test
-commands for each task type. Open deeper references only when a closer document
-points you there.
+## Choose a task
 
-The active project is the Python/Textual app in `AttackOfTheNodes/`. Historical
-tkinter/proof-of-concept material lives under `docs/archive/`.
-
----
-
-## Choose Your Task
-
-| If you need to... | Read first | Then read if needed |
+| If you need to… | Read | Likely code / focused check |
 |---|---|---|
-| Add or change a node | `NODE_STANDARDS.md`, `AGENT_START_GUIDE.md` | `NODE_HELPER.md`, `PROJECT_KNOWLEDGE.md`, `ARCHITECTURE.md` |
-| Fix frontend/UI behavior | `UI_QUICK_REFERENCE.md`, `AGENT_START_GUIDE.md` | `TUI_DESIGN.md`, `IO_CONTRACT_UI_DESIGN.md`, `BACKEND_FRONTEND_BOUNDARY.md` |
-| Investigate run-screen symbols or plan execution UI changes | `EXECUTION_STATUS_BUILD_PLAN.md`, `EXECUTION_STATUS_INVESTIGATION.md` | `SIGNAL_FLOW.md`, `TUI_DESIGN.md`, `BACKEND_FRONTEND_BOUNDARY.md` |
-| Change backend/runtime behavior | `ARCHITECTURE.md`, `SIGNAL_FLOW.md` | `PROJECT_KNOWLEDGE.md`, `BACKEND_FRONTEND_BOUNDARY.md` |
-| Design or update node taxonomy | `PHASE_17_NODE_VISUAL_IDENTITY.md`, `NODE_CATALOG.md`, `NODE_STANDARDS.md` | `TASK_INDEX.md`, `BACKEND_FRONTEND_BOUNDARY.md` |
-| Continue Phase 17 node identity | `PHASE_17_NODE_VISUAL_IDENTITY.md`, `TASK_INDEX.md` | `UI_QUICK_REFERENCE.md`, `TUI_DESIGN.md`, `BACKEND_FRONTEND_BOUNDARY.md` |
-| Continue the roadmap | `AGENT_HANDOFF.md`, `MASTER_BUILD_PLAN.md` | `DISTRIBUTED_BUILD_PLAN.md`, `SESSION_LOG.md`, `PROJECT_BACKLOG.md` |
-| Update docs | `README.md`, `TASK_INDEX.md`, `DOCS_MIGRATION_NOTES.md` | — |
-| Check what changed recently | `SESSION_LOG.md` | `archive/SESSION_LOG_HISTORY.md` |
+| Set up, run or test | [Newcomer Guide](NEWCOMER_GUIDE.md) | `main.py`, full suite below |
+| Build or inspect workflows | [Workflow Authoring](WORKFLOW_AUTHORING.md) | `backend/authoring.py`, `tests/test_authoring.py`, `tests/test_authoring_examples.py` |
+| Add/change a node | [Node Standards](NODE_STANDARDS.md), then [Node Helper](NODE_HELPER.md) | `backend/nodes/`, helper safety and commands in Node Helper |
+| Check node ideas or live capabilities | [Node Catalog](NODE_CATALOG.md), `aotn nodes` / `describe` | Catalog includes proposals; CLI reads registered contracts |
+| Fix editor/config UI | [UI Quick Reference](UI_QUICK_REFERENCE.md), [Boundary](BACKEND_FRONTEND_BOUNDARY.md) | `frontend/screens/`, `frontend/widgets/`; debug test filter below |
+| Change runtime/routing | [Architecture](ARCHITECTURE.md), [Boundary](BACKEND_FRONTEND_BOUNDARY.md) | `backend/supervisor.py`, `backend/master_state.py`; runtime test filter below |
+| Diagnose run-screen state | [Execution Status Contract](EXECUTION_STATUS_CONTRACT.md), [Architecture](ARCHITECTURE.md) | `tests/test_execution_status.py` |
+| Change file output/window behavior | [Node Standards](NODE_STANDARDS.md), [File Output decisions](FILE_OUTPUT_BUILD_PLAN.md) | `tests/test_window_manager.py`, `tests/generated/test_file_output_node.py` |
+| Continue planned work | [Current State](CURRENT_STATE.md), [Node Contract Plan](NODE_CONTRACT_PLAN.md) | Consult [Project Backlog](PROJECT_BACKLOG.md) before redesigning |
+| Trace a decision or recent change | [Session Log](SESSION_LOG.md), [Migration Notes](DOCS_MIGRATION_NOTES.md) | [Older log](archive/SESSION_LOG_HISTORY.md), `archive/` |
 
----
+## Verification
 
-## Document Directory
+From `AttackOfTheNodes/`, with a checkout-local `.venv` at the repository root:
 
-One-line purpose for every file. Use this to find the right document without
-opening the wrong ones. Scan the section headings first, then the table in that
-section.
+```bash
+../.venv/bin/python -m pytest -q
+../.venv/bin/python -m pytest tests/test_debug_nodes.py -q -k 'node_config or command_input or selection'
+../.venv/bin/python -m pytest tests/test_debug_nodes.py -q -k '<runtime_behavior_name>'
+../.venv/bin/python -m pytest tests/test_execution_status.py -q
+../.venv/bin/python -m pytest tests/test_forwarding.py -q
+```
 
-### Roadmap and Session State
+In the owner's separate worktrees, substitute the shared interpreter documented
+in [Current State](CURRENT_STATE.md). Run `git diff --check` for documentation.
+Choose tests for the changed behavior; a focused command is not the full suite.
 
-Read these to orient on current project status before starting any substantial
-work.
+## Documentation transition
 
-| File | What it contains | When to open it |
-|---|---|---|
-| `AGENT_HANDOFF.md` | Current active phase, key recent design decisions, and agent entry checklist | Start of a session when you need a fast current-state summary |
-| `MASTER_BUILD_PLAN.md` | Full roadmap phase list with status, current phase detail (done/remaining/todo), and later phase sketches | Continuing the roadmap or checking whether work belongs in the current phase |
-| `SESSION_LOG.md` | What changed in the most recent sessions; one entry per completed work block | Checking what was done before you arrived, or logging your own completed changes |
-
-### Node Authoring
-
-Read these before adding, changing, or designing nodes.
-
-| File | What it contains | When to open it |
-|---|---|---|
-| `WORKFLOW_AUTHORING.md` | `aotn nodes` / `describe` / `build`: the JSON spec format and what a build checks | Building preconfigured workflows (people, scripts, agents) |
-| `NODE_STANDARDS.md` | Node classification rule (group/separate/mode-select/direct-add), I/O source and routing model, config tab layout, authoring checklist | Before defining any new node type or changing an existing node's I/O |
-| `AGENT_START_GUIDE.md` | Step-by-step checklists for adding nodes, making config render correctly, keyboard/modal rules, file I/O patterns | When adding a node or fixing config UI and you want the quickest correct path |
-| `NODE_HELPER.md` | YAML spec format, `create_node.py` / `check_node.py` / `check_ui.py` commands, and what the generator produces | When using `aotn_node_helper` to generate a node, or adding a new spec section |
-| `NODE_CATALOG.md` | Complete node inventory — every implemented, planned, deferred, and concept node with status, group, and mapping from current registered types | Checking whether a node idea already exists, recording a new node idea, or planning overhaul scope |
-| `PHASE_17_NODE_VISUAL_IDENTITY.md` | Core simplification rule, five-family taxonomy with I/O switch and section headers, two-level group picker design, keyboard flows, `group`/`selector_section` metadata fields, AI model approach | Designing where a node lives in the taxonomy, implementing the selector restructure or group picker, or adding Phase 17 identity metadata |
-| `NODE_STANDARDIZATION_HANDOFF.md` | Adopted implementation plan: per-node I/O contract exposed via `NodeFactory`, Category > Family > Type terminology rename (canonical `category` key), canonical data-type vocabulary, unified `inputs:`/`outputs:` helper spec, master-detail selector with drill-in family nav, work split (Track A backend/helper, Track B frontend) | Before implementing the node-standardization work; folds into `NODE_STANDARDS.md`, `PHASE_17_NODE_VISUAL_IDENTITY.md`, and `NODE_HELPER.md` |
-
-### Architecture and Boundaries
-
-Read these before changing how components talk to each other, before adding
-backend code driven by a UI need, or when diagnosing a runtime bug.
-
-| File | What it contains | When to open it |
-|---|---|---|
-| `BACKEND_FRONTEND_BOUNDARY.md` | What backend owns vs frontend owns; tombstone design decision; Phase B migration plan | Before any backend change motivated by UI behavior, or before moving UI logic to backend services |
-| `ARCHITECTURE.md` | Component responsibilities, execution pipeline, MasterState, supervisor/branch model, MemoryBank, persistence | When you need to understand how the runtime hangs together before changing it |
-| `SIGNAL_FLOW.md` | Runtime event and data flow: EventBus, supervisor execution path, OutputManager, screen subscriptions | When diagnosing an event not arriving, or tracing data through the execution chain |
-| `PROJECT_KNOWLEDGE.md` | Current-state reference: Python 3.14, Textual 8.2.7, asyncio, entry point, test conventions, registered node families | Quick fact-check on versions, file conventions, or data-flow patterns |
-
-### Frontend Reference
-
-Read these for frontend work. Start with `UI_QUICK_REFERENCE.md`; open
-`TUI_DESIGN.md` only when you need full screen/widget detail.
-
-| File | What it contains | When to open it |
-|---|---|---|
-| `UI_QUICK_REFERENCE.md` | Editor keybindings, command-mode rules, and modal navigation summary | Start here for any frontend or keyboard-flow fix |
-| `EXECUTION_STATUS_INVESTIGATION.md` | Reproduced symbol defects, current event/cache/render logic, and correctness-first execution UI plan | Before execution-status fixes or run-screen redesign |
-| `EXECUTION_STATUS_BUILD_PLAN.md` | ES0–ES4 correctness stages and future branch-view requirements | Before fixing execution symbols or building branch navigation/output summaries |
-| `NODE_CONFIG_UI_AUDIT.md` | All 35 registered types, mounted controls/variants, capability/save/geometry findings and staged implementation plan | Before broad node configuration UI changes; audit evidence under `docs/audits/` |
-| `NODE_CONFIG_VISIBILITY_SCROLL_AUDIT.md` | All editable node types audited for toggle/source visibility and scroll behavior, repairs and convenience-display reasons | Before changing dependent controls or config scrolling |
-| `WAIT_UNTIL_UI_PLAN.md` | Implemented focused Wait Until layout, navigation, target selection and save cleanup | Before simplifying Wait Until configuration |
-| `WAIT_UNTIL_INVESTIGATION.md` | Cross-branch gate reproduction and missing User Text Input Vault write evidence | Investigating Wait Until/shared-memory failures |
-| `EXECUTION_BRANCH_UI_DESIGN.md` | Proposed branch cycling, visit lists, responsive details and bounded output-preview contract | Before implementing the execution branch UI |
-| `EXECUTION_STATUS_CONTRACT.md` | Implemented node lifecycle, branch cache and run-screen rendering contract | Before changing execution reporting or building branch views |
-| `PENDING_CHANGES_REVIEW.md` | Review of local runtime/Wait Until changes and unmerged File Output impact | Before turning the configuration audit into a build plan |
-| `NEXT_CHAT_HANDOFF.md` | Completed session work, verification/publication state and next tasks | Continue this execution fix or begin its UI follow-up |
-| `TUI_DESIGN.md` | Full Textual conventions: async setup, screen lifecycle, widget layout, keyboard handling, modal patterns, field type mapping | When the quick reference isn't enough — full screen or widget design work |
-| `IO_CONTRACT_UI_DESIGN.md` | Track B design spec: master-detail selector layout with file-tree I/O contract panel, tab-sticking fix (scroll inside TabPane), vault conditional dropdown, upstream description hint, ⚠ badge, drill-in navigation. All design decisions resolved. | Before implementing any Track B frontend work; replaces ad-hoc design notes |
-| `FILE_TREE.md` | Tracked file map for the current workspace | Finding where a file lives or verifying the directory structure is still current |
-
-### Planning and Backlog
-
-Read these before starting a new major project or moving/archiving docs.
-
-| File | What it contains | When to open it |
-|---|---|---|
-| `DISTRIBUTED_BUILD_PLAN.md` | Approved long-term direction (2026-10-11): decision record D1–D4/R1–R4, step 1 bug fixes through step 6 server, trigger concurrency modes, run-owned temp files, open wait-for-event question | Before any headless, trigger, subworkflow, `[error]` routing, WaitRegistry or server work |
-| `DISTRIBUTED_EXECUTION_PROMPT.md` | Copy-ready prompt for the session that executes distributed plan steps 1–3 + the ESP32 slice, one PR per step | Starting that execution session |
-| `PAYLOAD_FILE_IO_BUILD_PLAN.md` | Current payload previews, typed source choices, Start/Text Output Vault behavior, multi-file Viewer, Writer modes, explicit termination and Merge branch fixes; staged agent ownership and verification | Before implementing the owner's 2026-10-07 payload/File I/O requests |
-| `STASH_PROPOSAL.md` | Proposal (not approved, 2026-10-16): Stash of dropped files/pasted text, `ctrl+p` insert into config fields, folder import, and Stash as a source for Step 4 contract inputs; roadmap S1–S6 | Before designing drag-and-drop, reusable entries, field insert, or contract input binding |
-| `PROJECT_BACKLOG.md` | Deferred and near-term projects with full design specs, including backend features not yet surfaced in the UI, boundary cleanup, tombstone restore, runtime resources, typed vault, toast system, and AI sessions | Before starting any work listed here — it may already be designed; check before re-designing |
-| `TASK_INDEX.md` | Task-first reading lists, likely files per task, focused `pytest -k` commands, helper tool commands | After choosing a task type — the minimum reading set and the right verification pattern |
-| `DOCS_MIGRATION_NOTES.md` | Record of documentation moves, collapses, and archives during overhauls | When moving, merging, archiving, or deleting a doc — log it here |
-
----
-
-## Archive
-
-Historical documents. Do not open these by default. Open only when you need
-context that is not covered by the active docs.
-
-| File | What it contains | When to open it |
-|---|---|---|
-| `archive/BUILD_PLAN_HISTORY.md` | Completed phase details collapsed out of `MASTER_BUILD_PLAN.md` | When you need deep history on a completed phase (0–16, FA-0–FA-5) |
-| `archive/SESSION_LOG_HISTORY.md` | Older session log entries collapsed out of `SESSION_LOG.md` | When you need context on work done before the most recent sessions |
-| `archive/V05_BUILD_PLAN.md` | Historical Python/tkinter proof-of-concept plan | Background context only — not the current implementation |
-| `archive/plans/FRONTEND_AUDIT_BUILD_PLAN.md` | Completed frontend audit plan (FA-0–FA-5); active rules now live in `AGENT_START_GUIDE.md` and `TUI_DESIGN.md` | Only if tracing why a frontend convention exists |
-| `archive/plans/RUNTIME_RESOURCE_SESSION.md` | Original design notes for the `RunSession` resource lifecycle | Core implementation is done; open if you need the extended design (hidden helpers, listening resources) |
-| `archive/plans/HEADLESS_BUILD_PLAN.md` | Completed plan (H1–H5) for backlog work needing no live-TUI: tombstone save/restore, secrets wiring, form generator label/value, branch health logic | Only if tracing why one of those changes was made; deferred UI follow-ups live in `PROJECT_BACKLOG.md` |
-| `archive/plans/USER_FRIENDLY_POLISH_BUILD_PLAN.md` | Completed visual/navigation polish plan; roadmap is now in `MASTER_BUILD_PLAN.md` | Only if tracing why a specific visual decision was made |
-
----
-
-## Documentation Rules
-
-- Keep the default read path small. Summarize in active docs; link to archives
-  for deep history.
-- Update `SESSION_LOG.md` after every completed change.
-- Update `MASTER_BUILD_PLAN.md` when roadmap status or phase order changes.
-- Update `TASK_INDEX.md` when task routes, helper commands, or focused checks
-  change.
-- Add an entry to `DOCS_MIGRATION_NOTES.md` when moving, collapsing, archiving,
-  or deleting docs.
-- Add a row to the Document Directory above when a new active doc is created.
-
----
-
-## Branch Sync Rules
-
-This project uses two agents (Claude and Codex) that may work on different
-branches concurrently. Without regular syncing, branches diverge and produce
-large merge conflicts.
-
-**Every agent, every session:**
-
-1. **Check what branch you're on.** Run `git status` and `git log --oneline -5`
-   at session start. Know your current commit.
-2. **Merge main before starting work.** Run:
-   ```
-   git fetch origin && git merge origin/main
-   ```
-   Resolve any conflicts before adding new work. Do not build on a stale base.
-3. **Do not let branches diverge by more than one session.** If you land work on
-   `main`, immediately open a PR or merge to active feature branches. Do not
-   leave them disconnected for multiple sessions.
-4. **Announce your branch in `SESSION_LOG.md`.** Log which branch and commit
-   you started from so the next agent knows the context.
-5. **Prefer small, focused commits.** Large single commits ("Wasn't liking the
-   look...") that touch 25+ files make conflicts hard to resolve. Stage and
-   commit incrementally as you complete each piece of work.
-
-**Why this matters:** In June 2026, the `codex-textual-tui-spinoff` branch
-diverged from `main` by 20+ commits across both sides, requiring manual
-resolution of 27 conflicted files. All that conflict was avoidable with a
-`git merge origin/main` at session start.
+This router absorbs the task-selection route from [Task Index](TASK_INDEX.md).
+Older handoffs and execution prompts are historical, not instructions to redo
+completed phases or merge PRs. The taxonomy rename was cancelled:
+`primary_family` and frontend `group` remain separate from legacy `category`.
+Full consolidation and archival follow in PR B, after preserving unique reasoning.
+The [retained audit report](audits/docs_audit_2026_10_17/MASTER_REPORT.md)
+records the findings; its supporting artifacts were not retained.

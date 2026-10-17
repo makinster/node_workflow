@@ -235,9 +235,16 @@ Run loop:
 5. Execute node and capture result via `perf_counter`-wrapped `node.execute(context)`.
 6. Emit `NODE_TIMING_UPDATE` with elapsed seconds.
 7. If an error, publish recovery options and await a decision (RETRY / SKIP / TERMINATE_BRANCH / TERMINATE_WORKFLOW). A payload routed to an unconnected `error` port counts as an error. In an unattended run the policy action is applied without waiting, input requests fail, and breakpoints are skipped.
-8. On success, call `mark_node_completed(node_id)`.
-9. Write outputs to transient memory; spawn branches if signaled.
-10. Advance to next node or terminate.
+8. On success, save the completed node ID before changing the current node.
+9. Handle the payload: publish transient outputs, select the route or spawn
+   branches, and update the current node ID.
+10. Only then await `mark_node_completed(saved_node_id)` and report delivery.
+    Continue or terminate as selected.
+
+**Ordering invariant:** outputs must be available before completion wakes a
+cross-branch waiter. Never mark the next node completed accidentally by reading
+the changed current-node ID. `tests/test_wait_until_vault.py` covers the wait/Vault
+ordering contract.
 
 ### `MasterState`
 

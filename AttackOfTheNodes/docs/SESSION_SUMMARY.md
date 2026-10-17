@@ -1,3 +1,7 @@
+> **Historical status:** use [Current State](CURRENT_STATE.md) for the checked
+> baseline and next work. This document retains earlier plans and reasoning;
+> its open-PR and active-phase instructions are not a current work queue.
+
 # Project rundown for the next session — 2026-10-06
 
 ## Publication and workspace

@@ -158,7 +158,10 @@ its data **type** is shown after it as a bracketed teal label —
 ### Branch termination
 
 Termination is explicit node behavior, declared by `terminates_branch` metadata,
-not a generic Outputs-family checkbox. End explicitly terminates. Text Output
+not a generic Outputs-family checkbox. End explicitly terminates; it is
+registered and available through workflow authoring, but hidden from the TUI
+selector. See [Current State](CURRENT_STATE.md) for the open selector decision.
+Text Output
 records formatted text and continues when connected; without a connection it
 ends naturally. File Manager, File Reader, File Writer and Window Control
 continue along connections.
@@ -324,22 +327,29 @@ coherent (no parallel free-string vocabularies). Canonical set: `string`,
 `string`, `number`, and `bool` entries behave as before — pure JSON values
 stored and read by name.
 
-`file` and `ai_session` entries store a type tag and a string reference key.
-The actual Python handle lives in `RunSession`, registered by the node that
-opens or creates it:
+`file` and `ai_session` entries carry tagged JSON reference objects; the Vault
+also records a separate `type_tag`. A file reference includes `type`, `ref_key`
+and `path`. A Python resource, when needed, is registered in `RunSession`.
+For example, inside a node with an existing handle and resolved path:
 
 ```python
-context.run_session.register_resource(ref_key, handle)
-# write the reference to the vault
-context.memory_bank.set(vault_key, {"type": "file", "ref_key": ref_key})
+from backend.file_refs import file_reference
+
+ref = file_reference(resolved_path)
+context.run_session.register_resource(ref["ref_key"], handle)
+context.memory_bank.store_persistent(vault_key, ref, type_tag="file")
 ```
 
-A downstream node that reads a `file` or `ai_session` vault entry retrieves
-the handle through `get_resource`, which is already implemented on `RunSession`:
+A downstream node can retrieve the registered file handle with `get_resource`
+(it returns `None` if no resource was registered):
 
 ```python
-handle = context.run_session.get_resource(ref_key)
+ref = context.memory_bank.read_persistent(vault_key)
+handle = context.run_session.get_resource(ref["ref_key"])
 ```
+
+Chat references instead identify histories accessed through RunSession's chat
+session API (`get_chat_history`), not generic resources.
 
 The type tag tells the node and the framework which lookup path to use. From
 the user's perspective this is invisible — they see `filename (file)` in the
@@ -614,48 +624,36 @@ presentation of `NodeFactory` metadata only.
 
 ---
 
-## Reference Example — File Instance Node
+## Reference Example — File Write
 
-**Purpose:** open a file at a given path and make it available for downstream
-nodes. Outputs a success/failure boolean.
+`file_output_node` (File Write) accepts content and a file path from its
+configured sources. It writes the file and publishes a `file` reference on
+`default`, with optional Vault output. Forwarding, when enabled, replaces the
+downstream result with the incoming payload. It continues along connections.
+Use `aotn describe file_output_node` for its live fields and defaults.
 
-**Source tab:**
+A successful file reference is a tagged object from `backend/file_refs.py`,
+not a boolean. File Write reports exceptions through `context.signal_error`;
+ordinary exceptions receive the generic `node_error` code. Errors travel on
+the engine's `error` route or go to recovery/policy, never a false-result route.
 
-```
-File path source
-  ( ) Upstream payload    ← receives path string from previous node
-  ( ) Vault               Key: ________
-  (x) Configured          ← default; activates path field in Parameters
-```
+For a custom node that needs a more specific error, declare the code and signal
+it (inside its class and execution method respectively):
 
-**Parameters tab:**
+```python
+from backend.node_errors import NodeError
 
-```
-File path:  [________________________]   ← hidden unless source = Configured
-```
-
-**Payloads tab:**
-
-```
-── Downstream node payload ──────────
-Open Result (bool)                     (true = opened, false = error)
-  Payload name: [Open Result__________]
-  Description:  [True when the file opened successfully]
-[ ] Forward incoming payload unchanged
-
-── Vault Payload ────────────────────
-Open Result (bool)
-[x] Disable output                     (error-log vault write is optional,
-  Vault key:    [____________________]  disabled until the user enables it)
-  Description:  [____________________]
+error_definitions = [
+    {"code": "missing_path", "description": "No path was supplied.", "retryable": False},
+]
+# Inside execute(context), after resolving the path:
+if not path:
+    context.signal_error(NodeError("missing_path", "No path was supplied."))
+    return
 ```
 
-**Notes:**
-- The bool output is the natural signal for a conditional branch placed
-  immediately after: the `true` path continues normal execution, the `false`
-  path handles the error, optionally reading the error message from the Vault
-  key configured above.
-- The path input is the only input. There is no document or context input.
+This is an authoring pattern, not a claim that File Write declares `missing_path`.
+The factory adds `node_error` to every node. Match codes, not message text.
 
 ---
 
@@ -717,8 +715,8 @@ Result  [string]                        ← the designated downstream output
 
 ── Vault Payload ────────────────────
 Result  [string]                        ← same Result, optionally duplicated
-[ ] Disable output
-  Vault key:    [chat_result___________]
+[x] Disable output                    ← Vault output is off by default
+  Vault key:    [______________________]
   Description:  [______________________]
 
 ── AI Session ───────────────────────
@@ -727,9 +725,11 @@ Result  [string]                        ← same Result, optionally duplicated
                                          when NOT continuing a session
 ```
 
-`Result  [string]` is the designated downstream payload (dead-drop off by
-default, so the Result flows to the next node) and is also duplicated to the
-Vault by default (disable via the checkbox).
+`Result [string]` goes downstream by default: `transient_output=True`,
+`dead_drop_passthrough=False`, `vault_write=False`, `vault_write_key=""`.
+To also store the result, enable Vault output and set a key. Forwarding is
+optional and independent of that write; it sends the incoming document (or
+prompt when no document arrived) downstream instead of the result.
 
 When "Keep active AI session" is checked **in Continue mode**, the resumed
 session is the one extended — no new key is asked for (the session-key field
@@ -741,20 +741,16 @@ concern: the "Continue AI session" prompt-source mode with its
 `ai_session`-filtered dropdown (see the Source tab above).
 
 **Data type:** string. Prompt, document, and LLM result are all strings.
-Incompatible data types are a validation error.
+Known incompatible Upstream edges can be validation warnings (`type_mismatch`);
+a passing preflight does not prove that every runtime value has the expected shape.
 
 **Notes:**
 - Transient payloads are JSON so an LLM result can travel as transient when
   it only needs to reach the immediately next node. Check both Transient and
   Vault write to send the result downstream AND save it for other nodes or
   branches simultaneously.
-- Dead-drop passthrough is the default because many pipeline stages want to
-  forward the original document unchanged while writing the LLM analysis to
-  the Vault separately. Useful for incremental document modification workflows
-  where the branch modifies a document pass-by-pass and does not need the
-  original preserved.
-- Vault write cannot be disabled unless Transient output is checked; otherwise
-  the LLM result would be silently discarded with no durable record.
+- To forward the original while keeping the analysis, explicitly enable
+  forwarding and Vault output and choose a Vault key. Neither is mandatory.
 
 ---
 
