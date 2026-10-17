@@ -24,9 +24,9 @@ When sources disagree: code first, then the recent session log, then plans.
 
 - `main` at `105623d` (merge of PR #63). Merged: C1–C3, C5, the selector
   toggle, issue codes, the authoring tool (#61, #63) and the Stash proposal
-  docs (#62). C4 (#64) and C6 (`dist/c6-random-chat`, stacked on #64)
-  are in their PRs. Suite: **1456 passed** (about 3.5 minutes).
-  Order: C7 → naming PR →
+  docs (#62). C4 (#64), C6 (#65) and C7 (`dist/c7-deep-branch`) are
+  in stacked PRs. Suite: **1457 passed** (about 3.5 minutes).
+  Order: naming PR →
   Stash S1–S3 → Step 4 with Stash S5 (see `NODE_CONTRACT_PLAN.md`).
 - Untracked files to leave alone: `.claude/launch.json`,
   `AttackOfTheNodes/"C:\...\test.txt"`, `AttackOfTheNodes/Workflow started`.
@@ -84,10 +84,9 @@ What the detour delivered, in short:
    required/optional flag in `vault_read_entries`) merged as PR #55. **C2**
    (one edge compatibility rule, `data_types.types_compatible`, plus
    "Type mismatch" warnings and clearer file-node runtime errors) merged
-   as PR #56. C3, C5 and the authoring tool merged; C4 and C6 (with
-   Chat's Vault output off by default) are in their PRs. Next: C7 (Deep
-   Branch continuation: needs an owner decision), then the naming PR,
-   then Stash S1–S3 (see the plan's agreed order).
+   as PR #56. C3, C5 and the authoring tool merged; C4, C6 (with
+   Chat's Vault output off by default) and C7 are in their PRs. Next:
+   the naming PR, then Stash S1–S3 (see the plan's agreed order).
 3. Then C2–C7 in order, one PR each, asking the owner where a phase needs a
    decision (C5's number policy, C6's field removal, C7's Deep Branch
    contract). Ask before starting Step 4 of `DISTRIBUTED_BUILD_PLAN.md`.
