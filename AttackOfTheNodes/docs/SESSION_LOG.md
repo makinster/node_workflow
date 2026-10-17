@@ -4,6 +4,36 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-17 — Stash S2: The Stash Screen
+
+Branch `dist/stash-s2`, from `main` at `9d5455b` (PR #70). Before: 1509
+passed. After: 1518 passed (9 new tests in `test_stash_screen.py`).
+
+- **Owner decisions (2026-10-17, on sample screens):** tab 1 is Paste /
+  drop and tab 2 is Entries; the node-config field hotkey (S3) opens the
+  Stash on tab 2 (`App.action_stash(initial_tab="entries")`). Types show
+  bracketed at a glance (`[file]`, `[text]`, the teal `type_label`). Every
+  action has a button for mouse use, including Close. Later, not now: a
+  hotkey to copy an entry and convert it to text.
+- `frontend/screens/stash.py`: `p` in the editor opens it. Pastes and drops
+  are collected only on this screen (a paste is added at once; typed text
+  on Enter or Add). After a paste, focus moves to "Just added" so T (keep
+  a refused paste as text) and R act on it; E types again. Entries: live
+  search (`/`), T cycles all/files/text, R or E renames through the
+  workflow name prompt, X deletes after a confirm. Letters typed in a box
+  are text, never shortcuts.
+- `stash_manager.preview()` / `type_word()` / `name_problem()` are shared
+  by the screen and the CLI (`aotn stash list` now shows `[file]`/`[text]`).
+- Found while building: a CommandInput or CommandTextArea that isn't
+  editing swallows letter keys, so screen shortcuts can't fire while it has
+  focus. The screen moves focus to a list instead. Mouse-button audit of the
+  other modals (name prompt and group picker have no buttons; selectors
+  have only Cancel; Help says Cancel for Close) is the next small PR.
+- **Review fixes (owner's review of #71):** 1/2 switch tabs even when a
+  text box has focus but isn't typing (priority bindings, off while
+  typing); E on the Paste tab always types, R renames; search matches the
+  whole value, and only the display is truncated. One test each.
+
 ## 2026-10-17 — Stash S1: Core, Paste Parser, `aotn stash`
 
 Branch `dist/stash-s1` (PR #70), from `main` at `7e3f151` (PR #68), then

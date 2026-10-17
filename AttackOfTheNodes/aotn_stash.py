@@ -71,11 +71,9 @@ def main(argv: Optional[List[str]] = None, stdout: Optional[TextIO] = None) -> i
     return 0 if data.get("ok", True) else 1
 
 
-# What people read; JSON keeps the canonical data type names.
-_TYPE_LABELS = {"file": "file", "string": "text"}
-
-
 def _run(stash, args: argparse.Namespace) -> tuple[Dict[str, Any], str]:
+    from backend.stash_manager import type_word
+
     if args.action == "list":
         entries = stash.list_entries({"text": "string"}.get(args.type, args.type))
         return {"ok": True, "entries": entries}, _list_text(entries)
@@ -89,7 +87,7 @@ def _run(stash, args: argparse.Namespace) -> tuple[Dict[str, Any], str]:
             entries, result = stash.add_paste(args.value)
             rejected = result.rejected
         warnings = [w for e in entries for w in stash.warnings_for(e)]
-        lines = [f"Added {_TYPE_LABELS[e['type']]} '{e['name']}' ({e['id']})" for e in entries]
+        lines = [f"Added {type_word(e['type'])} '{e['name']}' ({e['id']})" for e in entries]
         lines += [f"Not stored: {r.piece}: {r.reason}" for r in rejected]
         if rejected and not entries:
             lines.append("Use --text to store it as text instead.")
@@ -127,17 +125,10 @@ def _add_one(stash, value: str, name: str) -> Dict[str, Any]:
 def _list_text(entries: List[Dict[str, Any]]) -> str:
     if not entries:
         return "The Stash is empty. Add one with: aotn stash add <path>"
-    from backend.file_refs import reference_path
+    from backend.stash_manager import preview, type_word
 
-    lines = []
-    for entry in entries:
-        shown = reference_path(entry["value"]) if entry["type"] == "file" else entry["value"]
-        shown = " ".join(str(shown).split())
-        if len(shown) > 60:
-            # A path keeps its end (the file name); text keeps its start.
-            shown = "..." + shown[-57:] if entry["type"] == "file" else shown[:57] + "..."
-        lines.append(f"  {entry['name']:<24} {_TYPE_LABELS[entry['type']]:<5} {shown}")
-    return "\n".join(lines)
+    return "\n".join(f"  {e['name']:<24} {'[' + type_word(e['type']) + ']':<7} {preview(e)}"
+                     for e in entries)
 
 
 def _emit(out: TextIO, as_json: bool, data: Any, text: str) -> None:

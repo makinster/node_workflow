@@ -7,10 +7,10 @@ This is the only live status snapshot; older logs/plans retain dated history.
 
 - `origin/main`: `579be24` (docs PR A, #69). C1–C7 and workflow naming
   (#68) are merged; C7 has only `branch` and publishes its child payload.
-- Open: Stash S1 [#70](https://github.com/makinster/node_workflow/pull/70)
-  (`dist/stash-s1`): `StashManager`, paste parser, `accepted_types`, and the
-  S3b `aotn stash` CLI. No UI yet; S2 (modal) and S3 (field insert) follow,
-  with sample screens first.
+- Merged: Stash S1 + `aotn stash` CLI (#70). Open: Stash S2, the Stash
+  screen (`dist/stash-s2`, `p` in the editor). Next: a small PR adding
+  confirm/close buttons to every modal (owner, 2026-10-17), then S3
+  (field insert).
 - Docs PR B (consolidation, VISION, CONTRIBUTING) waits on nothing now; PR C
   follows B. The owner merges, or asks a reviewer to.
 - Work order: [Node Contract Plan](NODE_CONTRACT_PLAN.md). Long-term decisions:
@@ -18,8 +18,7 @@ This is the only live status snapshot; older logs/plans retain dated history.
 
 ## Verification and environment — 2026-10-17
 
-- Full suite: **1509 passed** on #70 merged with `579be24` (2026-10-17);
-  1480 on `579be24` itself.
+- Full suite: **1518 passed** on `dist/stash-s2` (from `9d5455b`, 2026-10-17).
 - All **176** relative Markdown links/anchors resolve; `git diff --check`
   passes. Isolated build/inspect/run and node/helper probes pass.
 - Owner WSL setup: Python **3.14.4**, Textual **8.2.7**, pytest **9.1.0**;
