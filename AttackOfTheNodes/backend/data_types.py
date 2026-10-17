@@ -5,7 +5,7 @@ port data types** and **typed vault-entry types**. Before this module the two
 sides used independent free strings, which drift and break the dropdown
 type-filtering that pairs compatible upstream ports with vault keys during
 config (see ``NODE_STANDARDS.md`` "Typed Vault Outputs" and
-``NODE_STANDARDIZATION_HANDOFF.md`` §5).
+``docs/archive/NODE_STANDARDIZATION_HANDOFF.md`` §5).
 
 Canonical set: ``string``, ``number``, ``bool``, ``var``, ``file``,
 ``ai_session``, ``any``.

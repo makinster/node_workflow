@@ -12,9 +12,9 @@ from typing import Any, Dict, List, Optional
 
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Vertical
+from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
-from textual.widgets import Label, ListItem, ListView, Static
+from textual.widgets import Button, Label, ListItem, ListView, Static
 
 
 class GroupPickerScreen(ModalScreen):
@@ -44,6 +44,9 @@ class GroupPickerScreen(ModalScreen):
                 "W/S navigate  E add  ESC back to selector",
                 classes="modal-help",
             )
+            with Horizontal(classes="button-row"):
+                yield Button("Add", id="add-group-member", variant="primary")
+                yield Button("Back", id="back-group-picker", variant="default")
 
     def on_mount(self) -> None:
         list_view = self.query_one("#group-member-list", ListView)
@@ -64,6 +67,12 @@ class GroupPickerScreen(ModalScreen):
     def on_list_view_selected(self, event: ListView.Selected) -> None:
         if event.list_view.id == "group-member-list":
             self._choose(event.list_view.index)
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "add-group-member":
+            self.action_choose()
+        elif event.button.id == "back-group-picker":
+            self.action_cancel()
 
     def action_cursor_up(self) -> None:
         self._move(-1)

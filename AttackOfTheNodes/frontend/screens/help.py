@@ -2,7 +2,7 @@
 
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Vertical
+from textual.containers import Vertical, VerticalScroll
 from textual.screen import ModalScreen
 from textual.widgets import Button, Label, Static
 
@@ -114,13 +114,15 @@ class HelpScreen(CommandScreenMixin, ModalScreen):
         self.context = context if context in HELP_TEXT else "general"
 
     def compose(self) -> ComposeResult:
-        with Vertical(id="modal-card"):
+        # The text scrolls so Close stays on screen in short terminals.
+        with Vertical(id="modal-card", classes="help-modal"):
             yield Label("Help", classes="modal-title")
-            yield Static(
-                "\n".join(HELP_TEXT[self.context]),
-                id="help-text",
-            )
-            yield Button("Cancel", id="close-help", variant="default")
+            with VerticalScroll(id="help-scroll"):
+                yield Static(
+                    "\n".join(HELP_TEXT[self.context]),
+                    id="help-text",
+                )
+            yield Button("Close", id="close-help", variant="default")
 
     def on_mount(self) -> None:
         self._focus_first()

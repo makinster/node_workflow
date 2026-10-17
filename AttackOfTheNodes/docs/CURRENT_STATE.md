@@ -9,15 +9,15 @@ This is the only live status snapshot; older logs/plans retain dated history.
   (#68) are merged; C7 has only `branch` and publishes its child payload.
 - Merged: Stash S1 + `aotn stash` CLI (#70); Stash S2, the Stash screen
   (#71, `p` in the editor); docs PR B (#72: consolidation, VISION,
-  CONTRIBUTING). Next: a small PR adding confirm/close buttons to every
-  modal (owner, 2026-10-17), then S3 (field insert). Docs PR C follows B.
+  CONTRIBUTING). Open: confirm/close buttons in every window
+  (`dist/modal-buttons`). Next: S3 (field insert). Docs PR C follows B.
   The owner merges, or explicitly asks a reviewer to.
 - Work order: [Node Contract Plan](NODE_CONTRACT_PLAN.md). Long-term decisions:
   [Distributed Build Plan](DISTRIBUTED_BUILD_PLAN.md), [Stash](STASH_PROPOSAL.md).
 
 ## Verification and environment — 2026-10-17
 
-- Full suite: **1518 passed** after #71 (2026-10-17). PR B alone: 1509 passed
+- Full suite: **1527 passed** on `dist/modal-buttons` (2026-10-17); 1518 after #71. PR B alone: 1509 passed
   in 173.22s on `9d5455b` plus docs changes.
 - PR B checks: **334** relative Markdown links/anchors resolve, 33 whole archive
   bodies retained, 17 active docs, and `git diff --check` passes.

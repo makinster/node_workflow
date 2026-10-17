@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Vertical
+from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Button, Label, ListItem, ListView, Static
 
@@ -54,7 +54,9 @@ class BranchKeepSelectorScreen(ModalScreen):
             )
             yield ListView(id="branch-keep-list")
             yield Static("↑↓ navigate  ENTER keep  ESC cancel", classes="modal-help")
-            yield Button("Cancel", id="cancel-branch-keep", variant="default")
+            with Horizontal(classes="button-row"):
+                yield Button("Keep", id="choose-branch-keep", variant="primary")
+                yield Button("Cancel", id="cancel-branch-keep", variant="default")
 
     def on_mount(self) -> None:
         list_view = self.query_one("#branch-keep-list", ListView)
@@ -67,7 +69,9 @@ class BranchKeepSelectorScreen(ModalScreen):
         self._dismiss_selected(event.list_view.index)
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
-        if event.button.id == "cancel-branch-keep":
+        if event.button.id == "choose-branch-keep":
+            self.action_choose()
+        elif event.button.id == "cancel-branch-keep":
             self.action_cancel()
 
     def action_choose(self) -> None:

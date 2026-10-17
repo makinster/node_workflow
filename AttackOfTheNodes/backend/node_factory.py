@@ -233,7 +233,7 @@ class NodeFactory:
     ) -> Dict[str, Dict[str, Any]]:
         """Return the per-port I/O contract for every declared port.
 
-        Fills the forward-compatible defaults from NODE_STANDARDIZATION_HANDOFF
+        Fills the forward-compatible defaults from docs/archive/NODE_STANDARDIZATION_HANDOFF.md
         §6: absent `data_type` ⇒ `any` (the explicit permissive type), absent
         `required` ⇒ optional (`False`). Declared types are canonicalized
         through backend.data_types so the deprecated `boolean` spelling resolves

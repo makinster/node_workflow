@@ -4066,7 +4066,8 @@ async def _test_help_screen_is_contextual_and_focuses_cancel():
         assert "Ctrl+Q" in help_text
         assert "Help" in help_text
         assert len(buttons) == 1
-        assert buttons[0].label == "Cancel"
+        # Owner, 2026-10-17: windows close with "Close" (was "Cancel").
+        assert buttons[0].label == "Close"
         assert app.focused is buttons[0]
 
     print("test_help_screen_is_contextual_and_focuses_cancel PASSED")
@@ -6818,7 +6819,8 @@ async def _test_workflow_library_uses_shared_list_navigation():
             ]
             assert "wf-" not in "\n".join(row_texts)
             button_ids = [button.id for button in app.query(Button)]
-            assert button_ids == ["cancel-workflow-library"]
+            # Owner, 2026-10-17: every window has a confirm and a close button.
+            assert button_ids == ["load-workflow-library", "cancel-workflow-library"]
 
             screen.action_cursor_down()
             assert workflow_list.index == 1
