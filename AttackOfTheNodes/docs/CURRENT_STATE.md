@@ -5,23 +5,21 @@ This is the only live status snapshot; older logs/plans retain dated history.
 
 ## Baseline and open work — 2026-10-17
 
-- `origin/main`: `7e3f151` (PR #68, workflow naming). C1–C7 are merged;
-  C7 now has only `branch` and publishes its child payload.
-- Workflow naming [#68](https://github.com/makinster/node_workflow/pull/68)
-  merged to `main`; the docs branch was rebased and retains its log entry.
-- Other open PRs: none returned by GitHub at the publication check.
-- Docs PR A: `docs/a-entry-route` → `main`, entry route and audit S1 fixes.
-  PR B waits for A to merge; PR C waits for B. The owner merges.
-- Parallel work: Stash S1 is assigned to the other worker by the docs brief;
-  no Stash PR was returned by the GitHub check. Assignment does not establish
-  the missing approval record discussed below.
+- `origin/main`: `579be24` (docs PR A, #69). C1–C7 and workflow naming
+  (#68) are merged; C7 has only `branch` and publishes its child payload.
+- Open: Stash S1 [#70](https://github.com/makinster/node_workflow/pull/70)
+  (`dist/stash-s1`): `StashManager`, paste parser, `accepted_types`, and the
+  S3b `aotn stash` CLI. No UI yet; S2 (modal) and S3 (field insert) follow,
+  with sample screens first.
+- Docs PR B (consolidation, VISION, CONTRIBUTING) waits on nothing now; PR C
+  follows B. The owner merges, or asks a reviewer to.
 - Work order: [Node Contract Plan](NODE_CONTRACT_PLAN.md). Long-term decisions:
   [Distributed Build Plan](DISTRIBUTED_BUILD_PLAN.md), [Stash](STASH_PROPOSAL.md).
 
 ## Verification and environment — 2026-10-17
 
-- Final full suite: **1480 passed in 178.18s**, docs PR A on `7e3f151`.
-  Initial baseline: 1466 passed in 177.98s on `0d03eb2`, before #68 merged.
+- Full suite: **1509 passed** on #70 merged with `579be24` (2026-10-17);
+  1480 on `579be24` itself.
 - All **176** relative Markdown links/anchors resolve; `git diff --check`
   passes. Isolated build/inspect/run and node/helper probes pass.
 - Owner WSL setup: Python **3.14.4**, Textual **8.2.7**, pytest **9.1.0**;
@@ -32,9 +30,10 @@ This is the only live status snapshot; older logs/plans retain dated history.
 
 ## Open owner decisions and limits — 2026-10-17
 
-- **Stash S1 go-ahead:** the plan records the order and the docs brief says
-  parallel S1 work is underway; a distinct S1 approval record is unverified.
-  The Stash worker/owner should reconcile this status in its PR.
+- **Stash S1:** approved by the owner in chat, 2026-10-17, with the S3b CLI.
+  S2/S3 need sample screens before UI work; open questions 1–3 of
+  `STASH_PROPOSAL.md` §7 (string fields taking files, the command palette
+  key, global-only scope) are still the owner's.
 - **End in the selector:** End is registered and CLI-authorable, but hidden
   from the TUI selector. Whether to expose it remains an owner decision.
 - **FO7:** native Windows/terminal-host verification remains unverified in

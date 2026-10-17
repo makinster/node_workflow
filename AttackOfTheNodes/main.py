@@ -17,8 +17,8 @@ def configure_logging(configuration) -> None:
 
 
 def main(argv: Optional[List[str]] = None) -> Optional[int]:
-    """Launch the TUI, or dispatch ``aotn run`` / the authoring commands
-    (``aotn nodes``, ``describe``, ``build``, ``inspect``)."""
+    """Launch the TUI, or dispatch ``aotn run``, the authoring commands
+    (``aotn nodes``, ``describe``, ``build``, ``inspect``) or ``aotn stash``."""
     args = list(sys.argv[1:] if argv is None else argv)
     if args and args[0] == "run":
         from aotn_cli import main as run_main
@@ -28,6 +28,10 @@ def main(argv: Optional[List[str]] = None) -> Optional[int]:
         from aotn_author import main as author_main
 
         return author_main(args[0], args[1:])
+    if args and args[0] == "stash":
+        from aotn_stash import main as stash_main
+
+        return stash_main(args[1:])
     run_tui()
     return None
 
