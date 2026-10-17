@@ -57,6 +57,12 @@ test before merging #62 and #63). Before: 1424 passed. After: 1449 passed
 - Not done (plan says config-selected): Conditional forwards its input or
   a Vault variable depending on its source; Merge forwards a selected
   branch.
+- **Review fix:** forwarding was applied to every port, including
+  `error`, so Random Number → Logger's error output was typed `number`
+  although it carries the failure record (false "Type mismatch";
+  wrong preview). Sleep and Counter already had this; C4 spread it.
+  `port_types.is_pass_through_node` now never forwards on `error`;
+  `test_error_output_is_not_forwarded` covers all eight forwarding nodes.
 
 ## 2026-10-17 — Workflow Authoring Tool, PR 2 (Inspect + Examples)
 
