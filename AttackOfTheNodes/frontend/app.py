@@ -25,6 +25,7 @@ from backend.events import (
     WORKFLOW_DIRTY,
     WORKFLOW_STATE_UPDATE,
 )
+from backend.workflow_names import DEFAULT_NAME, name_problem, unused_name
 
 from .execution_state import ExecutionDisplayState
 from . import file_io
@@ -40,7 +41,7 @@ from .screens.file_viewer import FileViewerScreen
 from .screens.help import HelpScreen
 from .screens.settings import SettingsScreen
 from .screens.user_input import UserInputScreen
-from .screens.workflow_library import PathPromptScreen, WorkflowLibraryScreen
+from .screens.workflow_library import NamePromptScreen, PathPromptScreen, WorkflowLibraryScreen
 
 
 # Run telemetry (node/supervisor/timing/memory updates) only marks the active
@@ -354,7 +355,7 @@ class AttackOfTheNodesApp(TextualApp):
             last_id = self.configuration_manager.get("last_active_workflow_id")
             if last_id and self.save_manager.load_workflow(last_id):
                 return
-        self.workflow_map.create_new("Untitled Workflow")
+        self.workflow_map.create_new(DEFAULT_NAME)
         self.workflow_map.add_node(START_NODE_TYPE, alias="Start")
 
     def action_save_workflow(self) -> None:
@@ -405,17 +406,24 @@ class AttackOfTheNodesApp(TextualApp):
                     yes_label="Discard",
                     no_label="Cancel",
                 ),
-                lambda confirmed: self._create_new_workflow() if confirmed else None,
+                lambda confirmed: self._prompt_new_workflow_name() if confirmed else None,
             )
             return
-        self._create_new_workflow()
+        self._prompt_new_workflow_name()
 
-    def _create_new_workflow(self) -> None:
+    def _prompt_new_workflow_name(self) -> None:
+        """Ask for the new workflow's name; Esc creates nothing."""
+        self.push_screen(
+            NamePromptScreen("New workflow", unused_name(), name_problem),
+            lambda name: self._create_new_workflow(name) if name else None,
+        )
+
+    def _create_new_workflow(self, name: str = DEFAULT_NAME) -> None:
         """Create a fresh starter workflow without additional confirmation."""
         self.stop_active_workflow()
         self._reset_run_display_state()
         self._editor_deleted_nodes = {}
-        self.workflow_map.create_new("Untitled Workflow")
+        self.workflow_map.create_new(name)
         self.workflow_map.add_node(START_NODE_TYPE, alias="Start")
         self._on_backend_event()
         notifications.workflow_created(self)
@@ -488,6 +496,8 @@ class AttackOfTheNodesApp(TextualApp):
                 )
                 return
             self._load_workflow_from_library(result)
+        elif action == "rename":
+            self._prompt_rename_workflow(result)
         elif action == "duplicate":
             if self.save_manager is None:
                 notifications.missing_service(self, "Duplicate")
@@ -513,6 +523,31 @@ class AttackOfTheNodesApp(TextualApp):
             )
         elif action == "export":
             self._prompt_export_workflow(result)
+
+    def _prompt_rename_workflow(self, result) -> None:
+        if self.save_manager is None:
+            notifications.missing_service(self, "Rename")
+            return
+        workflow_id = result["workflow_id"]
+        self.push_screen(
+            NamePromptScreen(
+                "Rename workflow",
+                str(result.get("workflow_name") or ""),
+                lambda name: name_problem(name, exclude_id=workflow_id),
+            ),
+            lambda name: self._rename_workflow(workflow_id, name),
+        )
+
+    def _rename_workflow(self, workflow_id: str, name) -> None:
+        """Apply a confirmed rename, then return to the library."""
+        if name:
+            problem = self.save_manager.rename_workflow(workflow_id, name)
+            if problem:
+                notifications.notify_info(self, problem)
+            else:
+                self._on_backend_event()
+                notifications.workflow_renamed(self, name)
+        self.action_workflow_library()
 
     def _load_workflow_from_library(self, result) -> None:
         workflow_id = result.get("workflow_id")
@@ -541,7 +576,7 @@ class AttackOfTheNodesApp(TextualApp):
             return
         if workflow_id == self.workflow_map.workflow_id:
             self._editor_deleted_nodes = {}
-            self.workflow_map.create_new("Untitled Workflow")
+            self.workflow_map.create_new(DEFAULT_NAME)
             self.workflow_map.add_node(START_NODE_TYPE, alias="Start")
         deleted = self.save_manager.delete_workflow(workflow_id)
         self.show_editor_screen()

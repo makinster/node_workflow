@@ -54,6 +54,7 @@ from .data_types import types_compatible
 from .validator import _build_ancestor_set, _build_reverse_adjacency, validate_workflow
 from .vault_declarations import typed_vault_writes, vault_read_entries
 from .workflow_map import WorkflowMap
+from .workflow_names import name_taken
 
 FORMAT = "aotn-workflow/1"
 HANDLE_PATTERN = re.compile(r"^[a-z][a-z0-9_]{0,39}$")
@@ -283,9 +284,9 @@ def build_workflow(factory: NodeFactory, spec: Any, *, write: bool = True) -> Di
     if not write:
         return report(True, workflow_id=workflow_map.workflow_id, name=name, nodes=ids)
 
-    # Case-insensitive, like `aotn run <name>` resolves names.
-    if any(str(entry.get("name") or "").casefold() == name.casefold()
-           for entry in persistence.list_workflows()):
+    # Case-insensitive, like `aotn run <name>` resolves names; the library's
+    # rename and New use the same rule (workflow_names).
+    if name_taken(name):
         add("error", "duplicate_name", f"A saved workflow is already named {name!r}; choose another name")
         return report(False)
     workflow_id = workflow_map.workflow_id

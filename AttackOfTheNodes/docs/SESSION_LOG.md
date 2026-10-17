@@ -4,6 +4,37 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-17 — Workflow Naming: Rename In The Library, Name On New
+
+Branch `dist/workflow-naming`, from `main` at `95f8399` (PR #65) with
+`dist/c7-deep-branch` merged in (its re-land PR #67 was still open).
+Before: 1466 passed. After: 1480 passed (14 new tests in
+`test_workflow_naming.py`).
+
+- **#66 landed on the wrong branch:** it merged while its base was
+  still `dist/c6-random-chat` (merged branches aren't deleted, so GitHub
+  didn't retarget it). PR #67 carries the same branch into `main`.
+- **One name rule** (`backend/workflow_names.py`): trimmed, not blank,
+  and no other saved workflow with the same name ignoring case. Used by
+  the library's rename, New, Duplicate (`X (Copy)`, then `X (Copy) 2`)
+  and `aotn build` (which had its own copy of the check).
+- **Rename (`R` in the library):** `SaveManager.rename_workflow` writes
+  only the name into the saved file, and `WorkflowMap.set_workflow_name`
+  updates an open copy without marking it dirty, so unsaved edits stay
+  unsaved. The library reopens afterwards.
+- **New (`N`, Ctrl+N):** asks for a name first, prefilled with the first
+  unused `Untitled Workflow`, `Untitled Workflow 2`, ...; Esc creates
+  nothing.
+- **Name prompt:** `NamePromptScreen`, a rejected name keeps it open
+  with the reason under the field. Enter or Ctrl+S (owner: save, as
+  elsewhere) confirms whether or not the field is in edit mode: other prompts need Ctrl+Enter, which many
+  terminals and tmux don't send distinctly. Sample screens were sent to
+  the owner before the PR.
+- Library help line and the Help screen list the library keys.
+- **Owner request:** `E` loads the highlighted workflow, as `E` chooses in
+  every other list (on the Cancel button it cancels). Export moved from
+  `E` to `O`, pairing with `I` import (in/out).
+
 ## 2026-10-17 — C7: Deep Branch Offers Only `branch`
 
 Branch `dist/c7-deep-branch`, stacked on `dist/c6-random-chat` (PR #65).

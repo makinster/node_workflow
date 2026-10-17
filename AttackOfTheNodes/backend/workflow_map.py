@@ -123,6 +123,21 @@ class WorkflowMap:
         self._mark_dirty()
         return True
 
+    def set_workflow_name(self, workflow_id: str, name: str) -> bool:
+        """Rename an open workflow whose saved file already has ``name``.
+
+        Unlike :meth:`rename_current_workflow` this does not mark the workflow
+        dirty: the caller has written the name to disk already.
+        """
+        if workflow_id == self._workflow_id:
+            self._workflow_name = name
+            return True
+        entry = self._cache.get(workflow_id)
+        if entry is None:
+            return False
+        entry["name"] = name
+        return True
+
     def get_open_workflows(self) -> List[Dict[str, Any]]:
         """Return cached workflows for a selector/list UI."""
         self._sync_active_to_cache()
