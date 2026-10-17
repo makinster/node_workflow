@@ -12,6 +12,13 @@ class BranchEndNode(Node):
     node_type: ClassVar[str] = "branch_end_node"
     display_name: ClassVar[str] = "Merge Beacon"
     description: ClassVar[str] = "Marks a branch as complete before merge"
+    # C4: fixed forwarding. The output is the input, so its type follows the
+    # input (port_types traces through this node) and the editor shows a
+    # read-only summary instead of an option.
+    ui_hints: ClassVar[Dict[str, Any]] = {
+        "pass_through": "Forwards the branch's payload unchanged to the Merge.",
+        "forwarded_input_port": "input",
+    }
     category: ClassVar[str] = NodeCategory.UTILITY
     input_ports: ClassVar[List[str]] = ["input"]
     output_ports: ClassVar[List[str]] = ["default"]

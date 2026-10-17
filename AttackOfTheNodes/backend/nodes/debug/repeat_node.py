@@ -12,6 +12,13 @@ class RepeatCounterNode(Node):
     node_type: ClassVar[str] = "repeat_counter_node"
     display_name: ClassVar[str] = "Repeat Counter"
     description: ClassVar[str] = "Signals an error when visited more than max_visits times"
+    # C4: fixed forwarding. The output is the input, so its type follows the
+    # input (port_types traces through this node) and the editor shows a
+    # read-only summary instead of an option.
+    ui_hints: ClassVar[Dict[str, Any]] = {
+        "pass_through": "Counts visits, then forwards the incoming payload unchanged.",
+        "forwarded_input_port": "input",
+    }
     category: ClassVar[str] = NodeCategory.DEBUG
     input_ports: ClassVar[List[str]] = ["input"]
     output_ports: ClassVar[List[str]] = ["default"]

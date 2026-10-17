@@ -4,6 +4,39 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-17 — C4: Fixed Forwarding Declared
+
+Branch `dist/c4-forwarding`, from `main` at `105623d` (PR #63). The owner
+asked for a brief self-review of #62/#63, merge, and continue: the review
+found HTTP Request's error path listed twice in `inspect` (fixed with a
+test before merging #62 and #63). Before: 1424 passed. After: 1449 passed
+(new `test_forwarding.py`).
+
+- No-Op, Logger, Probe, Memory Snapshot, Merge Beacon and Repeat Counter
+  return their input unchanged (read in their `execute`); they now declare
+  `ui_hints` `pass_through` (one-line summary, shown read-only in the node
+  editor as "Dead drop payload: ...") and `forwarded_input_port: input`,
+  like Sleep and Counter. `test_forwarding.py` runs each node and checks
+  the payload comes out as the same object.
+- Effect: types flow through them. Random Number → Logger → File Reader now
+  warns "Type mismatch"; the Source dropdowns, the selector filter and
+  `aotn inspect` see the producer's type.
+- Tests changed deliberately: four preview tests in `test_debug_nodes.py`
+  used a standalone Logger as a named producer; with forwarding a Logger
+  with nothing connected passes nothing on, so they now use Get Variable
+  (same "Output" port, produces its own value). `test_any_paths_keep_working`
+  (C2) and `test_data_flow_statuses` (inspect) used No-Op as an untyped
+  node; they now use Echo, which computes its output.
+- Not done (plan says config-selected): Conditional forwards its input or
+  a Vault variable depending on its source; Merge forwards a selected
+  branch.
+- **Review fix:** forwarding was applied to every port, including
+  `error`, so Random Number → Logger's error output was typed `number`
+  although it carries the failure record (false "Type mismatch";
+  wrong preview). Sleep and Counter already had this; C4 spread it.
+  `port_types.is_pass_through_node` now never forwards on `error`;
+  `test_error_output_is_not_forwarded` covers all eight forwarding nodes.
+
 ## 2026-10-17 — Workflow Authoring Tool, PR 2 (Inspect + Examples)
 
 Branch `dist/authoring-inspect`, stacked on `docs/stash-proposal` (PR #62).
