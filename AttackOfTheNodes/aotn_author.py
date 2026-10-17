@@ -88,8 +88,14 @@ def _run(command: str, args: argparse.Namespace, parser: argparse.ArgumentParser
             data = resolve_workflow_data(args.workflow)
         except WorkflowNotFoundError as exc:
             parser.error(str(exc))
+        # The shape checks `aotn run` applies (RunService.load).
+        if not isinstance(data, dict) or not data.get("id") or not isinstance(data.get("nodes"), dict):
+            parser.error(f"{args.workflow!r} is not a workflow (needs an id and a nodes object)")
         workflow_map = WorkflowMap(factory, EventBus())
-        workflow_map.load_data(data)
+        try:
+            workflow_map.load_data(data)
+        except (KeyError, TypeError, ValueError, AttributeError) as exc:
+            parser.error(f"Cannot load workflow {args.workflow!r}: {exc!r}")
         report = authoring.inspect_workflow(factory, workflow_map)
         _emit(out, args.json, report, _inspect_text(report))
         return 0

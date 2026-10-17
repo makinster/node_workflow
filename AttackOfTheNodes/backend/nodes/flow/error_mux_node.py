@@ -43,6 +43,8 @@ class ErrorMuxNode(Node):
     custom_config_keys: ClassVar[Dict[str, str]] = {
         "routes": "Recovery branches: list of {id, label, codes, forward}; each id is an output port",
         "unmatched_route": "true adds the 'unmatched' output for any other error",
+        "unmatched_label": "Display name of the 'unmatched' output (default: Any other error)",
+        "unmatched_forward": "What the 'unmatched' output sends: 'error' or 'failed_input'",
     }
     error_definitions: ClassVar[List[Dict[str, Any]]] = []
 

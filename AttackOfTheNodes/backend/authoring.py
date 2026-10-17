@@ -436,9 +436,11 @@ def inspect_workflow(factory: NodeFactory, workflow_map: WorkflowMap) -> Dict[st
       first connection; a branching node (Parallel Branch) splits into parallel
       paths; a node with several used outputs (Conditional, Error Mux routes)
       takes one of them at run time; ``error`` connections run on failure.
-    - ``vault``: per key, its writers and readers, and for each reader whether
-      a writer is guaranteed to run first ("before"), only runs on a parallel
-      path ("not guaranteed"), or does not exist ("no writer").
+    - ``vault``: per key, its writers and readers, and for each reader
+      "before" only when every path from Start to it passes a writer;
+      otherwise "not guaranteed" (a path skips every writer, or writers run
+      on a parallel path), "no writer", "its own key" or "not reached".
+      Wait Until synchronisation is not counted as a guarantee.
     - ``data_flow``: each Upstream connection, the types its producers can
       send, and "ok", "ok (accepts any)", "mismatch", or "unchecked"
       (the port wants a specific type but a sender's type is undeclared).
@@ -507,13 +509,20 @@ def _execution_outline(factory, nodes, meta_by_type, name) -> List[str]:
     printed: set = set()
 
     def outputs_by_port(node_id):
+        """Connections grouped by output port, active ports in port order."""
         node = nodes.get(node_id) or {}
-        order = list(factory.node_output_ports(node))
+        order = list(factory.node_output_ports(node)) + [ERROR_PORT]
         grouped: Dict[str, List[Dict[str, Any]]] = {}
         for conn in node.get("connections", {}).get("outputs", []):
             grouped.setdefault(str(conn.get("source_port") or "default"), []).append(conn)
-        ordered = [p for p in order if p in grouped] + [p for p in grouped if p not in order]
-        return [(port, grouped[port]) for port in ordered]
+        return [(port, grouped[port]) for port in order if port in grouped]
+
+    def hidden_connections(node_id):
+        """Connections on outputs this node's config does not have."""
+        node = nodes.get(node_id) or {}
+        active = set(factory.node_output_ports(node)) | {ERROR_PORT}
+        return [c for c in node.get("connections", {}).get("outputs", [])
+                if str(c.get("source_port") or "default") not in active]
 
     def walk(node_id: str, indent: str, on_path: tuple) -> None:
         while node_id:
@@ -532,9 +541,12 @@ def _execution_outline(factory, nodes, meta_by_type, name) -> List[str]:
             node_type = str(node.get("type") or "")
             extra = ""
             if node_type == "wait_until_node":
-                targets = [t.strip() for t in str((node.get("config") or {}).get("target_node_ids") or "").split(",") if t.strip()]
+                targets = _wait_targets((node.get("config") or {}).get("target_node_ids"))
                 extra = f"; waits for {', '.join(name(t) for t in targets) or 'nothing'}"
             lines.append(f"{indent}{name(node_id)}{extra}")
+            for conn in hidden_connections(node_id):
+                lines.append(f"{indent}  ({conn.get('source_port')} -> {name(str(conn.get('target_node_id')))}: "
+                             f"hidden output, never runs)")
             ports = outputs_by_port(node_id)
             errors = [c for p, conns in ports if p == ERROR_PORT for c in conns]
             normal = [(p, conns) for p, conns in ports if p != ERROR_PORT]
@@ -571,8 +583,36 @@ def _execution_outline(factory, nodes, meta_by_type, name) -> List[str]:
     return lines
 
 
+def _wait_targets(raw: Any) -> List[str]:
+    """Wait Until targets, saved as a list (the editor) or a comma string."""
+    items = raw if isinstance(raw, list) else str(raw or "").replace("\n", ",").split(",")
+    return [str(item).strip() for item in items if str(item).strip()]
+
+
+def _reachable(factory, nodes, starts, blocked=frozenset()) -> set:
+    """Nodes reachable from ``starts`` over active outputs (any port may
+    fire), never continuing past a node in ``blocked``."""
+    seen: set = set()
+    stack = list(starts)
+    while stack:
+        node_id = stack.pop()
+        if node_id in seen or node_id not in nodes:
+            continue
+        seen.add(node_id)
+        if node_id in blocked:
+            continue
+        node = nodes[node_id]
+        active = set(factory.node_output_ports(node)) | {ERROR_PORT}
+        for conn in node.get("connections", {}).get("outputs", []):
+            if str(conn.get("source_port") or "default") in active:
+                stack.append(str(conn.get("target_node_id") or ""))
+    return seen
+
+
 def _vault_report(factory, nodes, meta_by_type, name) -> List[Dict[str, Any]]:
     reverse = _build_reverse_adjacency(nodes)
+    starts = [node_id for node_id, node in nodes.items() if node.get("type") == "start_node"]
+    reached = _reachable(factory, nodes, starts)
     readers: Dict[str, List[Dict[str, Any]]] = {}
     for node_id, node in nodes.items():
         node_type = str(node.get("type") or "")
@@ -594,12 +634,21 @@ def _vault_report(factory, nodes, meta_by_type, name) -> List[Dict[str, Any]]:
         writers = _vault_writers(nodes, factory, key)
         writer_ids = {w for w, _ in writers}
         reads = []
+        # "before" only when proven: every path from Start to the reader
+        # passes a writer (PR 63 review). Anything else is uncertain.
+        around_writers = _reachable(factory, nodes, starts, frozenset(writer_ids))
         for reader in readers.get(key, []):
             ancestors = _build_ancestor_set(reader["node"], nodes, reverse)
             if not writer_ids:
                 order = "no writer"
-            elif reader["node"] in writer_ids or writer_ids & ancestors:
+            elif reader["node"] in writer_ids:
+                order = "its own key (the first visit reads the fallback)"
+            elif reader["node"] not in reached:
+                order = "not reached from Start"
+            elif reader["node"] not in around_writers:
                 order = "before"
+            elif writer_ids & ancestors:
+                order = "not guaranteed (a path reaches it without passing a writer)"
             else:
                 order = "not guaranteed (writers on a parallel path)"
             reads.append({"node": reader["node"], "name": name(reader["node"]),

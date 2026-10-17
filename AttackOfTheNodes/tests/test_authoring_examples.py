@@ -181,8 +181,9 @@ def test_unchecked_and_changed_config_are_reported():
 
 def test_declared_custom_keys_are_accepted_and_described():
     described = authoring.describe_node_type(FACTORY, "error_mux_node")
-    assert set(described["custom_keys"]) == {"routes", "unmatched_route"}
-    assert {"routes", "unmatched_route"} <= set(described["unchecked_keys"])
+    mux_keys = {"routes", "unmatched_route", "unmatched_label", "unmatched_forward"}
+    assert set(described["custom_keys"]) == mux_keys
+    assert mux_keys <= set(described["unchecked_keys"])
     spec = _spec({"start": {"type": "start_node"},
                   "catch": {"type": "error_mux_node", "config": {"routes": [], "unmatched_route": True,
                                                                  "bogus": 1}}},
@@ -208,3 +209,102 @@ def test_cli_inspect_by_name_path_and_json(tmp_path, capsys):
     assert json.loads(capsys.readouterr().out)["name"] == "Example - Pause and wait"
     with pytest.raises(SystemExit):
         aotn_author.main("inspect", ["No such workflow"])
+
+
+# --- PR 63 review ---------------------------------------------------------------------------
+
+
+def test_writer_on_one_conditional_branch_is_not_a_guarantee():
+    report, _ = _inspect(
+        {"start": {"type": "start_node"},
+         "cond": {"type": "conditional_node", "config": {"right_value": "x"}},
+         "set": {"type": "set_variable_node", "alias": "Writer", "config": {"variable_name": "k"}},
+         "get": {"type": "get_variable_node", "alias": "Reader", "config": {"variable_name": "k"}}},
+        [("start.default", "cond.input"), ("cond.true", "set.input"), ("set.default", "get.input"),
+         ("cond.false", "get.input")],
+    )
+    order = next(r["order"] for e in report["vault"] if e["key"] == "k" for r in e["readers"])
+    assert order == "not guaranteed (a path reaches it without passing a writer)"
+
+
+def test_writer_on_every_path_is_before_and_self_reads_are_named():
+    report, _ = _inspect(
+        {"start": {"type": "start_node"},
+         "set": {"type": "set_variable_node", "config": {"variable_name": "k"}},
+         "cond": {"type": "conditional_node", "config": {"right_value": "x"}},
+         "a": {"type": "get_variable_node", "alias": "A", "config": {"variable_name": "k"}},
+         "b": {"type": "get_variable_node", "alias": "B", "config": {"variable_name": "k"}},
+         "count": {"type": "counter_node", "config": {"counter_name": "n"}}},
+        [("start.default", "set.input"), ("set.default", "cond.input"), ("cond.true", "a.input"),
+         ("cond.false", "b.input"), ("a.default", "count.input")],
+    )
+    orders = {e["key"]: [r["order"] for r in e["readers"]] for e in report["vault"]}
+    assert orders["k"] == ["before", "before"]
+    assert orders["n"] == ["its own key (the first visit reads the fallback)"]
+
+
+def test_hidden_branch_outputs_are_not_executed():
+    report, ids = _inspect(
+        {"start": {"type": "start_node"}, "fan": {"type": "branch_node", "config": {"branch_count": 3}},
+         "a": {"type": "no_op_node", "alias": "A"}, "b": {"type": "no_op_node", "alias": "B"},
+         "c": {"type": "no_op_node", "alias": "C"}},
+        [("start.default", "fan.input"), ("fan.path_a", "a.input"), ("fan.path_b", "b.input"),
+         ("fan.path_c", "c.input")],
+    )
+    # Reconfigure to two paths, keeping the path_c connection (as the editor can).
+    workflow_map = WorkflowMap(FACTORY, EventBus())
+    workflow_map.create_new("hidden")
+    start = workflow_map.add_node("start_node")
+    fan = workflow_map.add_node("branch_node")
+    nodes = [workflow_map.add_node("no_op_node", alias=alias) for alias in ("A", "B", "C")]
+    config = dict(workflow_map.get_node_data(fan)["config"])
+    config["branch_count"] = 3
+    workflow_map.update_node_config(fan, config)
+    workflow_map.connect(start, "default", fan, "input")
+    for port, node in zip(("path_a", "path_b", "path_c"), nodes):
+        workflow_map.connect(fan, port, node, "input")
+    config["branch_count"] = 2
+    workflow_map.update_node_config(fan, config)
+    outline = "\n".join(authoring.inspect_workflow(FACTORY, workflow_map)["execution"])
+    assert "splits into 2 parallel paths:" in outline
+    assert "(path_c -> C (No-Op): hidden output, never runs)" in outline
+    assert "Not reached from Start: C (No-Op)" in outline
+
+
+def test_wait_until_targets_saved_as_a_list():
+    workflow_map = WorkflowMap(FACTORY, EventBus())
+    workflow_map.create_new("wait_list")
+    start = workflow_map.add_node("start_node")
+    a = workflow_map.add_node("no_op_node", alias="A")
+    wait = workflow_map.add_node("wait_until_node")
+    workflow_map.connect(start, "default", a, "input")
+    workflow_map.connect(a, "default", wait, "input")
+    config = dict(workflow_map.get_node_data(wait)["config"])
+    config["target_node_ids"] = [a]
+    workflow_map.update_node_config(wait, config)
+    outline = "\n".join(authoring.inspect_workflow(FACTORY, workflow_map)["execution"])
+    assert "Wait Until; waits for A (No-Op)" in outline
+
+
+def test_error_mux_catch_all_settings_build():
+    spec = _spec({"start": {"type": "start_node"},
+                  "catch": {"type": "error_mux_node",
+                            "config": {"unmatched_route": True, "unmatched_label": "Other",
+                                       "unmatched_forward": "failed_input"}},
+                  "log": {"type": "logger_node"}},
+                 [{"from": "start.default", "to": "catch.input"},
+                  {"from": "catch.unmatched", "to": "log.input"}])
+    report = authoring.build_workflow(FACTORY, spec, write=False)
+    assert report["ok"], report["diagnostics"]
+
+
+@pytest.mark.parametrize("content", ["[]", "{}", '{"id": "x", "nodes": []}', '"text"'])
+def test_inspect_rejects_files_that_are_not_workflows(tmp_path, content, capsys):
+    import aotn_author
+
+    path = tmp_path / "bad.json"
+    path.write_text(content)
+    with pytest.raises(SystemExit) as raised:
+        aotn_author.main("inspect", [str(path)])
+    assert raised.value.code == 2
+    assert "is not a workflow" in capsys.readouterr().err
