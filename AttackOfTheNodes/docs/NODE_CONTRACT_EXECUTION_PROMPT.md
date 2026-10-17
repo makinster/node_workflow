@@ -1,3 +1,8 @@
+> **Historical — superseded on 2026-10-17 by [Current State](CURRENT_STATE.md)
+> and the [newcomer process rules](NEWCOMER_GUIDE.md#process-and-environment).**
+> Do not paste or execute the instructions below. Completed phases and old
+> merge permissions are historical; the owner merges. Retained whole for PR B extraction.
+
 # Prompt for the next agent session (node contract work)
 
 The Recovery/Editor UX detour (UX1–UX6 plus follow-ups, PRs #43–#53) is

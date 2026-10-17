@@ -17,7 +17,24 @@ aotn_node_helper/
 └── specs/
 ```
 
-Run helper commands from `AttackOfTheNodes/` with the workspace venv:
+## Before generating
+
+Generation writes the entire node class and generated test files. `--force`
+allows replacement of an existing node; it does **not** preserve `execute()`,
+custom `resolve_output_ports` / `describe_output_ports` hooks, or edited tests.
+Existing specs can differ from hand-maintained classes. In particular, legacy
+`output_port_metadata` retains only name and description: `data_type` is lost.
+Reviewed unified `outputs:` blocks preserve their declared `type`; absence means
+`any`. Do not treat the existing spec inventory as safe regeneration sources.
+
+For an existing node, generate into a temporary app directory using
+`--project-root /tmp/aotn-node-review/AttackOfTheNodes`, compare the whole class,
+registration and tests, then manually retain custom execution, hooks and tests
+in the intended checkout. Review types, routing and UI hints before applying
+anything. Structural-UI notes still use the helper's own `generated_notes/`
+directory; review those too. Generated smoke tests do not prove execution.
+
+Run helper commands from `AttackOfTheNodes/` with a checkout-local venv:
 
 ```bash
 ../.venv/bin/python ../aotn_node_helper/create_node.py ../aotn_node_helper/specs/<node_type>.yaml
@@ -25,7 +42,16 @@ Run helper commands from `AttackOfTheNodes/` with the workspace venv:
 ../.venv/bin/python ../aotn_node_helper/check_ui.py <node_type>
 ```
 
-Or run them from the workspace root by passing the same script paths.
+From the repository root instead:
+
+```bash
+.venv/bin/python aotn_node_helper/create_node.py aotn_node_helper/specs/<node_type>.yaml
+.venv/bin/python aotn_node_helper/check_node.py <node_type>
+.venv/bin/python aotn_node_helper/check_ui.py <node_type>
+```
+
+Separate worktrees may use the shared interpreter in [Current State](CURRENT_STATE.md);
+script/spec paths still follow the working directory shown above.
 
 ## What It Generates
 
@@ -247,10 +273,11 @@ rejected.
 The unified blocks (NODE_STANDARDIZATION_HANDOFF.md §7) let an author declare a
 port's full I/O contract in one place. `inputs:` replaces the split
 `input_sources` + `input_port_metadata` sections; `outputs:` replaces
-`output_port_metadata`. They are additive — the legacy sections still work, and
-the separate `output_routing` block supplies the default routing state either
-way (the Payloads tab itself is composed from the `outputs:` contract). The
-generated reference node is `specs/file_output_node.yaml`.
+`output_port_metadata`. Legacy sections are accepted but are not lossless:
+legacy output metadata drops `data_type` and contract fields beyond name and
+description. Use reviewed unified blocks for typed outputs. The separate
+`output_routing` block supplies routing defaults. Existing specs require diff
+review against their classes before generation.
 
 Each key under `inputs:` / `outputs:` is a **port name**. The port list
 (`input_ports` / `output_ports`) is derived from the keys, so do not also
@@ -272,12 +299,12 @@ inputs:
       placeholder: /path/to/file
 outputs:
   default:
-    name: Open Result
-    type: bool                       # 'boolean' is accepted as a deprecated alias
+    name: Written file
+    type: file                       # tagged file reference, not a success boolean
     required: true
     to: ["downstream", "vault"]      # routing destinations for the detail panel
     pass_through: true               # advertises the dead-drop passthrough line
-    description: True when the file opened successfully, false on error
+    description: Reference to the written file; failures use the engine error route
 ```
 
 Per-port keys:
@@ -606,8 +633,9 @@ upstream_error_codes` so the config UI fills its options from the node wired
 into the `error` input (Error Mux routes are the reference). Ports driven by
 such a list are not a spec key: keep the spec's `output_ports` as the type's
 fixed list and override `resolve_output_ports` / `describe_output_ports` in
-the custom runtime body, which regeneration preserves (see NODE_STANDARDS,
-config-driven ports). A select can use `options_from` to track row choices.
+the class by hand (see NODE_STANDARDS, config-driven ports). Regeneration
+overwrites these hooks; preserve them manually after reviewing temporary output.
+A select can use `options_from` to track row choices.
 File Manager's `additional_files` schema/spec is the reference. Extend the
 shared generator and widgets for structural field needs rather than adding
 node-specific screens. Regenerate into a temporary project for review when a

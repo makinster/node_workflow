@@ -1,6 +1,10 @@
 # Task Index
 
-Current session integration: [SESSION_INTEGRATION_BUILD_PLAN.md](SESSION_INTEGRATION_BUILD_PLAN.md).
+**Task routing moved to [README](README.md).** For the checked baseline,
+remaining gates and work order, read [Current State](CURRENT_STATE.md).
+The detailed lists below are transitional reference material for PR B.
+
+Historical session integration: [SESSION_INTEGRATION_BUILD_PLAN.md](SESSION_INTEGRATION_BUILD_PLAN.md).
 Remaining configuration work: [CONFIG_UI_BUILD_PLAN.md](CONFIG_UI_BUILD_PLAN.md).
 Payload previews, typed sources and File I/O follow-up:
 [PAYLOAD_FILE_IO_BUILD_PLAN.md](PAYLOAD_FILE_IO_BUILD_PLAN.md) — current evidence,
@@ -195,12 +199,11 @@ Focused checks:
 
 Implementation direction:
 
-- Five backend families: `Inputs`, `Outputs`, `Flow Control`, `Utility`,
-  `Complex`. Four selector tabs: `I/O` (Input/Output switch), `Flow Control`,
-  `Utility`, `Complex`. AI is a subcategory tag, not a family.
+- Five selector tabs: `In`, `Flow Control`, `Utility`, `Out`, `Complex`.
+  Backend families use `Inputs` / `Outputs`; AI is a tag, not a family.
 - `group` and `selector_section` are frontend-only navigation metadata; no
   backend component should branch on them.
-- Use metadata subcategories for filters; nodes may have multiple.
+- Tags are search keywords; the old subcategory checkbox filters are retired.
 - Keep selector filters and editor row identity frontend-owned, but expose
   portable family/tag/icon/color/group/section metadata through `NodeFactory`.
 - Preserve keyboard-first focus, autoscroll, cursor/highlight stability,
@@ -332,20 +335,21 @@ Focused checks:
 
 Read:
 
-- `AGENT_HANDOFF.md`
-- `MASTER_BUILD_PLAN.md`
+- [Current State](CURRENT_STATE.md)
+- [Node Contract Plan](NODE_CONTRACT_PLAN.md)
 - `SESSION_LOG.md`
 - `DISTRIBUTED_BUILD_PLAN.md` for headless runs, triggers, subworkflows,
-  `[error]` routing, WaitRegistry/RunContext or server work. Step 1 waits on
-  the owner's read of the plan.
+  `[error]` routing, WaitRegistry/RunContext or server design. Steps 1–3
+  and the ESP32 slice are historical implementation work. Consult Current
+  State for remaining gates; do not restart Step 1.
 
 Optional deep history:
 
 - `archive/BUILD_PLAN_HISTORY.md`
 - `archive/SESSION_LOG_HISTORY.md`
 
-Update `MASTER_BUILD_PLAN.md` and `SESSION_LOG.md` when a phase starts or
-finishes.
+Update `CURRENT_STATE.md`, the owning plan row and `SESSION_LOG.md` when a
+phase starts or finishes. The owner merges.
 
 ## Update Documentation
 

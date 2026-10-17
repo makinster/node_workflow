@@ -10,17 +10,13 @@ owner where a phase needs a decision (C5's number policy, C6's field
 removal, C7's Deep Branch contract) and before Step 4. Each item needs a
 reproduction first; the audit gives one for each.
 
-Progress: C1 done (PR #55). C2 done (PR #56). Owner extras: node selector
-fitting-only toggle (PR #57), validator issue codes (PR #58). C3 done
-(PR #59). C5 done (PR #60). Authoring tool PR 1 (core) done (PR #61);
-PR 2 (inspect + examples) done (PR #63). Stash proposal docs (PR #62). C4
-done (PR #64). C6 done, with the owner's Chat Completion default change
-(PR #65). C7 done (PR #66 merged into the C6 branch by mistake; re-landed
-as PR #67). C1–C7 are complete. Workflow naming PR done
-(`dist/workflow-naming`).
+For the checked implementation baseline, open PRs and owner gates, see
+[Current State](CURRENT_STATE.md). Phase rows below retain completion details.
+Historical integration note (2026-10-17): C7's #66 merged to the C6 branch;
+#67 re-landed it on main. Workflow naming followed in #68 (see Session Log).
 
 **Agreed order (owner, 2026-10-15; extended 2026-10-17):** C3 → C5 →
-workflow authoring tool v1 (PR 1 done, PR 2 next) → C4, C6, C7 → workflow
+workflow authoring tool v1 → C4, C6, C7 → workflow
 naming PR (rename in the library, name prompt on New; the backend already
 has `rename_current_workflow`) → Stash S1–S3 (`STASH_PROPOSAL.md`,
 proposal) → `DISTRIBUTED_BUILD_PLAN.md` Step 4 (sub-workflows) with Stash
@@ -161,3 +157,11 @@ checkboxes on nodes that do not implement those capabilities.
 
 The audit's per-node table and probe files live outside the repository with
 the audit report; copy the table here if a phase needs it.
+
+## Documentation reorganisation (2026-10-17)
+
+| Phase | Scope | Delivery |
+|---|---|---|
+| A | Entry route, newcomer guide and audit F01–F15/F41 | Prepared on `docs/a-entry-route`; publication/verification in [Current State](CURRENT_STATE.md) |
+| B | Rebuild vision sources, preserve reasoning, consolidate and archive | After A merges; owner merges |
+| C | Bound session history and address remaining S2/S3 | After B merges |

@@ -56,3 +56,20 @@ untracked unrelated files.
 | `MASTER_BUILD_PLAN.md` Phase N / N+1 / N+2 roadmap bullets | same file, "Superseded roadmap entries" | Kept under a superseded heading; the step table was added above them | Same reason |
 | `AGENT_HANDOFF.md` Long-Range Direction | same file | Superseded pointer added | Same reason |
 | `NODE_CATALOG.md` Wait Until row | same file | Corrected | The row said Wait Until waits on a Vault key; the code waits on node completion |
+
+## 2026-10-17 — Entry route and S1 corrections (PR A)
+
+| Source | Destination | Action |
+|---|---|---|
+| Root `AGENTS.md` and README directory | `README.md`, `NEWCOMER_GUIDE.md`, `CURRENT_STATE.md` | Replace competing entry/status routes with a short router |
+| `TASK_INDEX.md` task routing and focused checks | `README.md` | Fold route into README; retain detailed source until PR B extraction |
+| Owner's untracked newcomer candidate | `NEWCOMER_GUIDE.md` | Copy, correct against code, shorten; original untouched |
+| Three execution prompts | Same files | Historical banners; no moves yet; owner merges overrides old procedure |
+| Session summary, integration plan, handoffs, master plan | Same files | Historical status banners; preserve reasoning for PR B |
+| External audit report | `audits/docs_audit_2026_10_17/MASTER_REPORT.md` | Copy report only; mark missing evidence references as unavailable |
+
+No files moved or archived in A. VISION and CONTRIBUTING arrive in B after
+rebuilding the missing vision-source map. F01–F04/F14/F15 repair routes;
+F05/F08/F09 repair node examples; F06/F07/F41 repair helper safety and commands;
+F10/F11 correct termination and Echo; F12 fixes output-before-completion order;
+F13 preserves reuse with the approved child-run mechanism.

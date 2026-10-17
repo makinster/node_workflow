@@ -1,3 +1,7 @@
+> **Historical status:** use [Current State](CURRENT_STATE.md) for the checked
+> baseline and next work. This document retains earlier plans and reasoning;
+> its open-PR and active-phase instructions are not a current work queue.
+
 # AttackOfTheNodes Master Build Plan
 
 ## Distributed direction approved — 2026-10-11
@@ -329,8 +333,11 @@ Focused checks:
 
 - **Phase 18 — Acceleration + help rewrite.** Hold-to-accelerate navigation,
   context-aware help polish, and a sweep for non-interactive nav stops.
-- **Phase 19 — Built-in subworkflow node.** Run a saved workflow as a child
-  supervisor from one node.
+- **Phase 19 — Built-in subworkflow node.** Reuse a saved workflow through
+  its own child `RunContext`, linked by `parent_run_id`, with separate memory,
+  run identity and resource lifetime. This is the approved Step 4 design in
+  `DISTRIBUTED_BUILD_PLAN.md` (D3), not nesting another supervisor in the parent
+  run. The context field exists; child-run execution remains planned.
 - **Phase 20 — User-created subworkflow nodes.** Publish workflows as reusable
   nodes with dependency/export policy.
 - **Typed vault entries and AI session handles.** Backend foundation done

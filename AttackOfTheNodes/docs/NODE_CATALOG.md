@@ -74,9 +74,12 @@ and/or to Vault. The existing `file_reader_node` preserves old graphs; see
 
 ## I/O — Output Side (`primary_family: Outputs`)
 
-All output nodes carry the standard **"Terminate branch after completion"**
-config option (see `NODE_STANDARDS.md`). Branches end through outputs, merges,
-or an End Branch node — there is no standalone End node.
+Output family membership does not imply termination or a completion checkbox.
+Text Output, File Write and File Manager continue when connected; a route with
+no next connection ends naturally. The registered `end_node` explicitly ends
+its branch and can be placed with workflow authoring. The TUI selector hides
+End (and Start); see [Current State](CURRENT_STATE.md) for the owner decision.
+End Branch below is a proposal, not a substitute already available in the app.
 
 ### Group: Text Output
 
@@ -178,7 +181,7 @@ Variants have different port shapes, so they must be separate types
 | Node | Status | Notes |
 |---|---|---|
 | Start | Removed | `start_node` exists in the runtime but is auto-generated — never user-addable |
-| End | Removed | `end_node` exists in the runtime; replaced by terminate-branch config on outputs, merges, and the End Branch node |
+| End | Live; hidden in TUI selector | `end_node` explicitly terminates its branch; workflow authoring can place it |
 
 ---
 
@@ -239,7 +242,7 @@ inspection, and pacing.
 
 | Node | Status | Notes / Maps from |
 |---|---|---|
-| Echo | Live | `echo_node` — pass input through unchanged, optionally log it. Tags: Utility |
+| Echo | Live | `echo_node` — converts input to text, optionally prefixes `[label] `. Use No-Op for unchanged payload identity. Tags: Utility |
 | Probe | Live | `probe_node` — inspect current payload, write to run output. Tags: Utility |
 | Logger | Live | `logger_node` — append to a running log. Tags: Utility, Passive Output |
 | Sleep / Delay | Live | `sleep_node` — pause a fixed duration (also Wait/Timer "Fixed Delay" candidate; settle one home during the overhaul). Tags: Utility |
