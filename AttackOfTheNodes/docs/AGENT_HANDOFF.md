@@ -1,3 +1,7 @@
+> **Historical status:** use [Current State](CURRENT_STATE.md) for the checked
+> baseline and next work. This document retains earlier plans and reasoning;
+> its open-PR and active-phase instructions are not a current work queue.
+
 # AttackOfTheNodes Agent Handoff
 
 ## Saved workflow follow-up — 2026-10-08

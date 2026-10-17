@@ -1,4 +1,4 @@
-"""Echo node — passes its input through unchanged."""
+"""Echo node — converts its input to text with an optional label."""
 
 from typing import Any, ClassVar, Dict, List
 
@@ -7,11 +7,11 @@ from ...node_category import NodeCategory
 
 
 class EchoNode(Node):
-    """Re-emits the incoming value on the default port."""
+    """Emits str(input), optionally prefixed with [label], on the default port."""
 
     node_type: ClassVar[str] = "echo_node"
     display_name: ClassVar[str] = "Echo"
-    description: ClassVar[str] = "Passes input through unchanged"
+    description: ClassVar[str] = "Converts input to text with an optional label prefix"
     category: ClassVar[str] = NodeCategory.DEBUG
     input_ports: ClassVar[List[str]] = ["input"]
     output_ports: ClassVar[List[str]] = ["default"]

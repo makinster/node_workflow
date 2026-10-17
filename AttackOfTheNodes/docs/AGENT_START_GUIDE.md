@@ -19,7 +19,9 @@ the links in `docs/README.md`.
 - Read `NODE_STANDARDS.md` first. It defines the standard input source model
   (Upstream / Vault / Configured), output routing model (Transient / Dead-drop /
   Vault write), dynamic form rules, data type scope, and includes reference
-  examples for a File instance node and a Basic LLM node.
+  examples for File Write and a Basic LLM node.
+- Read [helper overwrite/type-loss precautions](NODE_HELPER.md#before-generating)
+  before the first generation command; preserve custom code/tests manually.
 - Prefer the helper-first flow for ordinary nodes:
   - Write a spec in `aotn_node_helper/specs/<node_type>.yaml`.
   - Use `input_sources` and `output_routing` spec sections to expand the
@@ -27,7 +29,9 @@ the links in `docs/README.md`.
     dynamic greying rules. See `NODE_HELPER.md` and
     `aotn_node_helper/specs/file_output_node.yaml`.
   - Run `../.venv/bin/python ../aotn_node_helper/create_node.py ../aotn_node_helper/specs/<node_type>.yaml`
-    from `AttackOfTheNodes/`, or run the same script from the workspace root.
+    from `AttackOfTheNodes/`. From the root use `.venv/bin/python
+    aotn_node_helper/create_node.py aotn_node_helper/specs/<node_type>.yaml`.
+    See NODE_HELPER for complete command blocks and separate-worktree setup.
   - Run `../.venv/bin/python ../aotn_node_helper/check_node.py <node_type>`
     for the focused compile/registration/execution check.
   - Run `../.venv/bin/python ../aotn_node_helper/check_ui.py <node_type>` to
