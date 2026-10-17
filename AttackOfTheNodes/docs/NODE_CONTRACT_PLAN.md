@@ -15,10 +15,12 @@ fitting-only toggle (PR #57), validator issue codes (PR #58). C3 done
 (PR #59). C5 done (PR #60). Authoring tool PR 1 (core) done
 (`dist/authoring-core`).
 
-**Agreed order (owner, 2026-10-15):** C3 → C5 → workflow authoring tool v1
-→ C4, C6, C7 → `DISTRIBUTED_BUILD_PLAN.md` Step 4 (sub-workflows). A small
-workflow naming PR (rename in the library, name prompt on New) fits
-anywhere; the backend already has `rename_current_workflow`.
+**Agreed order (owner, 2026-10-15; extended 2026-10-17):** C3 → C5 →
+workflow authoring tool v1 (PR 1 done, PR 2 next) → C4, C6, C7 → workflow
+naming PR (rename in the library, name prompt on New; the backend already
+has `rename_current_workflow`) → Stash S1–S3 (`STASH_PROPOSAL.md`,
+proposal) → `DISTRIBUTED_BUILD_PLAN.md` Step 4 (sub-workflows) with Stash
+S5 designed in.
 
 Goal: one node contract (ports, config, effects, capabilities) that drives
 the config UI, connection matching, preflight, runtime routing and author

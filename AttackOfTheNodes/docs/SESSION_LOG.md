@@ -4,6 +4,16 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-17 — Stash Proposal Brought Into The Plan
+
+Docs only. The owner's `STASH_PROPOSAL.md` (written in another session on
+`claude/drag-drop-file-paths-j7o5r1`, cut from an older main) was
+cherry-picked onto `main` as `docs/stash-proposal`, its commit message
+reworded to drop a model-name attribution line (owner rule). Added
+section 9 (review notes the owner agreed with, and the order) and put
+Stash S1–S3 into `NODE_CONTRACT_PLAN.md`'s agreed order, before Step 4.
+Still a proposal, not approved. The `ctrl+p` terminal test waits until S3.
+
 ## 2026-10-16 — Workflow Authoring Tool, PR 1 (Core)
 
 Branch `dist/authoring-core`, from `main` at `4f045bd` (PR #60). The owner
