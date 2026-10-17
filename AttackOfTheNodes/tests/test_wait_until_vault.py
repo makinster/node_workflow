@@ -28,7 +28,8 @@ def test_wait_until_releases_llm_after_answer_is_published(monkeypatch, target_f
         config.update({'prompt_source': 'Continue AI session' if continue_session else 'Configured',
                        'prompt': 'Respond to the user', 'api_key_secret': 'test_key',
                        'document_source': 'Vault', 'document_vault_key': 'user_text',
-                       'continue_session_key': 'session', 'vault_write_key': 'llm_reply'})
+                       'continue_session_key': 'session', 'vault_write': True,
+                       'vault_write_key': 'llm_reply'})  # Vault output is off by default since C6
         wm.update_node_config(chat, config)
         for source, port, target, target_port in [
             (start, 'default', fork, 'input'), (fork, 'path_a', wait, 'input'),

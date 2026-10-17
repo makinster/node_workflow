@@ -121,4 +121,5 @@ def test_chat_completion_node_session_and_routing_fields():
     # duplicated to the vault by default.
     assert node.config["dead_drop_passthrough"] is False
     assert node.config["transient_output"] is True
-    assert node.config["vault_write"] is True
+    # Owner, 2026-10-17: Vault output is off until a key is set (C6 PR).
+    assert node.config["vault_write"] is False

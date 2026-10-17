@@ -4,6 +4,33 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-17 — C6: Random Number's Payload Field; Chat Vault Output Off
+
+Branch `dist/c6-random-chat`, stacked on `dist/c4-forwarding` (PR #64).
+Before: 1449 passed. After: 1456 passed (7 new tests in
+`test_c6_payload_and_chat_defaults.py`).
+
+- **C6 root cause:** the helper generator's `producer` template adds a
+  "Payload" (`value`) field to every producer; Random Number computes its
+  output and never read it. New spec option `payload_field: false`
+  (generator, NODE_HELPER.md); Random Number's spec sets it.
+- **Regeneration refused:** regenerating Random Number from its spec also
+  changed its family (Complex → Utility), colour and group, and dropped
+  the output's `data_type: number` (the generator's `_port_metadata` keeps
+  only name/description). Reverted; the field was removed from the class
+  by hand. Both recorded under C8.
+- **Saved `value` keys** stay in the config and are ignored; no migration
+  is needed (nothing transforms them; the editor and loader keep unknown
+  keys). Tested through load, the node editor's save, and a run. A spec
+  for `aotn build` that sets `value` now gets `unknown_config_key`.
+- **Owner decision (2026-10-17):** Chat Completion's Vault output defaults
+  to off; a fresh Chat node now fails Validate only for its secret.
+  `examples/summarise_file.json` turns Vault output on explicitly. Two tests
+  encoded the old default and were updated deliberately: the generated
+  `test_chat_completion_node_session_and_routing_fields` now asserts
+  `vault_write is False`; `test_wait_until_releases_llm_after_answer_is_published`
+  sets `vault_write: True` with its key.
+
 ## 2026-10-17 — C4: Fixed Forwarding Declared
 
 Branch `dist/c4-forwarding`, from `main` at `105623d` (PR #63). The owner

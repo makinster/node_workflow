@@ -38,3 +38,5 @@ config_tabs:
       default: ""
       required: false
 execution_template: producer
+# The node computes its output; no template Payload field (C6).
+payload_field: false
