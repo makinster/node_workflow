@@ -217,6 +217,32 @@ async def _test_deep_branch_respects_depth_limit():
     print("test_deep_branch_respects_depth_limit PASSED")
 
 
+def test_deep_branch_child_receives_the_payload():
+    asyncio.run(_test_deep_branch_child_receives_the_payload())
+
+
+async def _test_deep_branch_child_receives_the_payload():
+    # The child starts at a node wired to 'branch', which reads that port's
+    # stored output (as Parallel Branch stores its paths).
+    master, wm, mb, _ = _make_services()
+    wm.create_new("test_deep_branch_payload")
+    start = wm.add_node("start_node")
+    number = wm.add_node("random_number_node")
+    deep = wm.add_node("deep_branch_node")
+    probe = wm.add_node("probe_node")
+    wm.update_node_config(number, {**wm.get_node_data(number)["config"], "min_value": 7, "max_value": 7})
+    wm.connect(start, "default", number, "input")
+    wm.connect(number, "default", deep, "input")
+    wm.connect(deep, "branch", probe, "input")
+
+    await master.start_workflow()
+    await master.wait_for_completion()
+
+    assert master.state.value == "FINISHED", master.state.value
+    lines = [str(entry) for entry in mb.read_persistent("output_log", default=[])]
+    assert lines == ["[Probe] type=int value=7"], lines
+
+
 def test_deep_branch_offers_only_the_branch_port():
     # C7: a node that spawns branches ends its own path, so a 'default'
     # continuation port would never run.

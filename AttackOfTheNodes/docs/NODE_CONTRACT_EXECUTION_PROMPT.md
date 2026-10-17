@@ -25,7 +25,7 @@ When sources disagree: code first, then the recent session log, then plans.
 - `main` at `105623d` (merge of PR #63). Merged: C1–C3, C5, the selector
   toggle, issue codes, the authoring tool (#61, #63) and the Stash proposal
   docs (#62). C4 (#64), C6 (#65) and C7 (`dist/c7-deep-branch`) are
-  in stacked PRs. Suite: **1457 passed** (about 3.5 minutes).
+  in stacked PRs. Suite: **1466 passed** (about 3.5 minutes).
   Order: naming PR →
   Stash S1–S3 → Step 4 with Stash S5 (see `NODE_CONTRACT_PLAN.md`).
 - Untracked files to leave alone: `.claude/launch.json`,

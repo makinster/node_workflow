@@ -32,4 +32,6 @@ class DeepBranchNode(Node):
             "branches": [
                 {"output_port": "branch", "initial_data": {"input": value}},
             ],
+            # The child's first node reads the 'branch' port's stored output.
+            "data": {"branch": value},
         })

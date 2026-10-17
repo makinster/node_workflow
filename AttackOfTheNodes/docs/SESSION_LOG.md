@@ -19,6 +19,13 @@ Before: 1456 passed. After: 1457 passed.
   End and accept FINISHED or ERROR. It now loops `branch` into the node and
   asserts supervisors at depths 0–5 and a FINISHED run. New
   `test_deep_branch_offers_only_the_branch_port` fails on the old node.
+- **Review fix (payload):** the child branch's first node reads the
+  `branch` port's stored output, which Deep Branch never stored, so
+  Start → Deep Branch → Probe saw `None` (also before C7). Parallel
+  Branch stores each path itself; Deep Branch now returns
+  `data: {"branch": value}`. `test_deep_branch_child_receives_the_payload`
+  fails on the old node. With the C4 review fix merged up the stack the
+  suite is 1466 passed.
 
 ## 2026-10-17 — C6: Random Number's Payload Field; Chat Vault Output Off
 
