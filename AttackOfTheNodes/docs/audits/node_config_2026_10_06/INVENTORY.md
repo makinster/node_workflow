@@ -1,6 +1,6 @@
 # Mounted configuration control inventory
 
-Generated from production-CSS mounts. Read with [the audit](../../NODE_CONFIG_UI_AUDIT.md).
+Generated from production-CSS mounts. Read with [the audit](../../archive/NODE_CONFIG_UI_AUDIT.md).
 Each default table inventories the 100-column composition, including hidden controls,
 static labels, previews and buttons. Three-width regions, keyboard traces, full schemas,
 defaults, ports and all alternate-state snapshots are in `evidence.json.gz`.

@@ -4,8 +4,7 @@ AttackOfTheNodes is for long, predictable, complex workflows.
 A workflow is a recipe of small machines; the terminal UI is its control room.
 The aim is to see what ran, supply input, inspect results and recover from errors.
 Explicit node contracts keep the editor and engine describing the same behavior.
-The [distributed direction](DISTRIBUTED_BUILD_PLAN.md) and [Stash design](STASH_PROPOSAL.md)
-preserve that vision; a dedicated VISION document follows in docs PR B.
+Read [Vision](VISION.md) for the purpose, distributed direction and Stash design.
 
 Use [README](README.md) to choose a task reference and [Current State](CURRENT_STATE.md)
 to check the baseline, open PRs, owner decisions and verification limits.
@@ -166,15 +165,9 @@ The owner's preference is plain, compact UI with sample screens before changes.
 
 ## Process and environment
 
-One PR per plan phase; **the owner merges**. No model names in commits or PRs.
-For a behavior fix, reproduce with a failing test first. Keep tests meaningful,
-explain deliberate changes to old expectations, and preserve unrelated edits.
-Every PR updates Current State, a Session Log entry and its owning plan row.
-Check the base of a formerly stacked PR and retarget it to `main` before merge.
-Old execution prompts are historical, not live authorization.
-
-The owner's setup uses WSL git and a Linux venv. Separate worktrees share the
-interpreter above; never edit another worker's checkout. Pushes need
-`/mnt/c/Program Files/Git/bin` on `PATH` for the credential manager. The Windows
-`gh.exe` needs `--repo makinster/node_workflow`. These are local setup notes,
-not platform requirements. CONTRIBUTING will own them after docs PR B.
+Work in your own checkout or worktree; never edit another worker's. Preserve
+owner workflows and unrelated changes. One PR per phase; the owner or an
+explicitly requested reviewer merges. Reproduce behavior bugs before fixes.
+Update Current State, Session Log and the owning plan row in each PR.
+[Contributing](CONTRIBUTING.md) owns the full process, testing habits and the
+owner's WSL/shared-venv setup. Old execution prompts are historical.

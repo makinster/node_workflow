@@ -3,7 +3,7 @@
 Authoritative checkout `/home/makin/src/node_workflow`, branch `main`, base
 `1211e68`. Implementation is uncommitted. OneDrive recovery files and unrelated
 untracked files were preserved. This audit covers the combined changes in
-[the build plan](../../PAYLOAD_FILE_IO_BUILD_PLAN.md).
+[the build plan](../../archive/PAYLOAD_FILE_IO_BUILD_PLAN.md).
 
 ## Evidence and scope
 

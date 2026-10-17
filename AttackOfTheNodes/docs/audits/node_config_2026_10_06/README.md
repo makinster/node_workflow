@@ -1,6 +1,6 @@
 # Node configuration audit evidence
 
-Read [the audit and plan](../../NODE_CONFIG_UI_AUDIT.md) first, then the
+Read [the audit and plan](../../archive/NODE_CONFIG_UI_AUDIT.md) first, then the
 [complete mounted control inventory](INVENTORY.md).
 
 Baseline: authoritative WSL checkout, `codex/wait-until-vault-fix` at `7161ef2`

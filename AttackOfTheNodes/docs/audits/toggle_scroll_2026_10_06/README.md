@@ -23,7 +23,7 @@ changes remain; omit it when collecting a diagnostic baseline with known gaps.
   60/100/140-column scan.
 
 The source review, repairs, convenience decisions, and verification limitations
-are in [the audit report](../../NODE_CONFIG_VISIBILITY_SCROLL_AUDIT.md).
+are in [the audit report](../../archive/NODE_CONFIG_VISIBILITY_SCROLL_AUDIT.md).
 
 ## Final coverage
 

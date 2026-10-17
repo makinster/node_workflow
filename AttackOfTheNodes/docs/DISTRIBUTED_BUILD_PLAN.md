@@ -4,7 +4,7 @@
 and step 3 open decisions were resolved on 2026-10-12 (D5–D9). On 2026-10-12
 the owner authorized execution of steps 1, 1b, the refresh coalescer, 2, 3 and
 the ESP32 proof slice, using one PR per step; see
-[DISTRIBUTED_EXECUTION_PROMPT.md](DISTRIBUTED_EXECUTION_PROMPT.md). **Step 4
+[DISTRIBUTED_EXECUTION_PROMPT.md](archive/DISTRIBUTED_EXECUTION_PROMPT.md). **Step 4
 onward needs a new go-ahead.**
 
 **Sources:**
@@ -473,7 +473,7 @@ event-source layer as start triggers.
 
 - `PROJECT_BACKLOG.md`: the claim "cycles are currently rejected" is wrong
   (noted in place).
-- `ARCHITECTURE.md` / `SIGNAL_FLOW.md`: describe what `node_timeout_seconds`
+- `ARCHITECTURE.md`: describe what `node_timeout_seconds`
   actually covers, `RunContext` and the WaitRegistry (step 1b), the coalescer,
   and the lane rules.
 - `NODE_CATALOG.md`: Wait Until description (corrected with this plan).

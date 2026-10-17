@@ -48,7 +48,7 @@ reproductions and proposed a node contract plan:
 ## Payload/file implementation — 2026-10-07
 
 The requested payload/file build is implemented locally on `main` at `1211e68`
-(uncommitted changes). See [the completed contract and migration notes](PAYLOAD_FILE_IO_BUILD_PLAN.md)
+(uncommitted changes). See [the completed contract and migration notes](archive/PAYLOAD_FILE_IO_BUILD_PLAN.md)
 and [verification evidence](audits/payload_file_io_2026_10_07/README.md).
 Includes File Manager multi-file references, Reader text routing, Writer
 prepend/append/newline options, typed source selection, forwarding previews,
@@ -59,7 +59,7 @@ This status supersedes older planned descriptions below.
 
 ## Owner-requested Payload And File I/O Follow-up (2026-10-07)
 
-See [PAYLOAD_FILE_IO_BUILD_PLAN.md](PAYLOAD_FILE_IO_BUILD_PLAN.md) for the
+See [PAYLOAD_FILE_IO_BUILD_PLAN.md](archive/PAYLOAD_FILE_IO_BUILD_PLAN.md) for the
 ordered implementation and agent ownership of forwarding previews, typed
 Upstream/Vault choices, Start/Text Output Vault behavior, multi-file Viewer,
 Writer newline/Prepend/Append, optional termination-control removal and Merge
@@ -74,7 +74,7 @@ P0a also investigates the owner's quoted Windows Copy as path example and
 apparent user/host prefix, separating expected WSL normalization from config
 mutation/display defects and hardening path syntax/runtime classification.
 
-Current configuration/UI follow-up: [CONFIG_UI_BUILD_PLAN.md](CONFIG_UI_BUILD_PLAN.md)
+Current configuration/UI follow-up: [CONFIG_UI_BUILD_PLAN.md](archive/CONFIG_UI_BUILD_PLAN.md)
 records unresolved F01/F05–F12 and FO-R5 with priorities and verification stages.
 File Output is now integrated on the session PR branch; the original audit and
 review retain their before-fix findings. Windows FO7 remains live-owner work.
@@ -103,7 +103,7 @@ The owner confirmed File Reader's copied Windows-path handling works under WSL.
 Apply the same environment-aware principle to future node work. Existing Windows
 FO7 live verification and deferred macOS/Linux window adapters remain open;
 this direction does not imply every OS exposes identical window capabilities.
-See [Development Environment And OS Support Direction](PROJECT_KNOWLEDGE.md#development-environment-and-os-support-direction).
+See [Development Environment And OS Support Direction](archive/PROJECT_KNOWLEDGE.md#development-environment-and-os-support-direction).
 
 ## Completed Project — Documentation Modernization
 
@@ -183,42 +183,21 @@ Recommended cleanup:
 - When a gap is closed, move its bullet to `SESSION_LOG.md` and the relevant
   completed/near-term section below.
 
-## Next Implementation Task — Capability-Driven Node Configuration UI
+## Capability-driven node configuration follow-up
 
-Stage 0 is implemented in [PR #29](https://github.com/makinster/node_workflow/pull/29):
-File Output integration and focused runtime/save/geometry fixes. The current
-37-type baseline and stages 1–5 are in [CONFIG_UI_BUILD_PLAN.md](CONFIG_UI_BUILD_PLAN.md).
-Start with truthful capability gating for shared legacy Vault controls, then
-applicable sections/navigation. The original audit retains before-fix evidence.
-Keep execution-branch UI design separate; Windows FO7 still requires live review.
+The completed integration/audit evidence remains in archive. Active contract
+requirements live in Node Standards and Node Contract Plan; the remaining
+[configuration follow-ups](#configuration-and-inspection-follow-ups-preserved-from-audits)
+require fresh code checks before work. Preserve runtime capability truth and
+unknown saved config rather than assuming old audit defects remain unfixed.
 
 ## Planned Project — Execution Screen Branch View
 
-PR #28 merged as `7161ef2`; owner confirmed the symbol fix. Proposed follow-up:
-[EXECUTION_BRANCH_UI_DESIGN.md](EXECUTION_BRANCH_UI_DESIGN.md). It settles recommended
-navigation/layout and safe preview defaults; implementation remains pending.
-
-Owner direction recorded 2026-10-06: show execution per branch, use A/D to
-cycle branches, and provide a scrollable node list with output-summary UI.
-Root and completed branches should remain inspectable. Preserve selection and
-scroll per branch across live updates. Execution supervisors and editor graph
-branch selectors are different identities; use runtime parent/depth provenance.
-
-Prerequisite: [EXECUTION_STATUS_BUILD_PLAN.md](EXECUTION_STATUS_BUILD_PLAN.md),
-ES0–ES4, repairs missing node transitions, false completion after errors, and
-stale modal-resume rendering. Prepare run/branch/node visit state now; implement
-navigation/layout afterward in a separate task/PR. ES0–ES3 now implemented;
-ES4's execution symbols were owner-confirmed and merged via PR #28. Current contract:
-`EXECUTION_STATUS_CONTRACT.md`.
-
-Future design must settle branch labels/order, repeated-visit presentation,
-upcoming versus actually visited rows, wait/pause/skip/stop presentation, and
-output-summary attribution/retention. Existing output-node records and shared
-transient payloads do not provide a complete per-node/per-visit output history.
-Do not add arbitrary payload capture to status events. Preserve backend
-execution/recovery semantics and existing symbol meanings unless a deliberate
-UI decision changes them. This is separate from the persistent run-history
-browser and the Phase 17 editor/selector work.
+Owner direction (2026-10-06) is branch inspection, A/D navigation and stable
+selection/scroll. The [preserved proposal](#execution-branch-inspection-proposal)
+contains the full recommendations, preview budgets and acceptance cases.
+[Architecture](ARCHITECTURE.md#execution-display-contract) owns the delivered
+lifecycle/cache contract; the branch navigation/layout remains future work.
 
 ## Planned Project — Backend / Frontend Boundary Cleanup
 
@@ -1214,3 +1193,239 @@ refcounting (re-visited nodes in loops re-read upstream outputs; fan-out/merge
 creates late reads) and would change the live Memory Viewer, which shows the
 full transient store. Revisit only if run memory footprint becomes a real
 constraint, and gate any implementation behind a config flag.
+
+## Execution branch inspection proposal
+
+Preserved from the 2026-10-06 branch UI proposal. This is future design, not
+implemented bindings or approved new scope. Owner direction is branch-level
+inspection with A/D, stable selection/scroll and output summaries; the detailed
+labels, layout, key change and budgets below are recommendations to review.
+The current implementation contract is in [Architecture](ARCHITECTURE.md).
+
+### Branch navigation
+
+Use `app.execution_state.branches` and its stable insertion order. Select the
+first registered root initially. Labels are `Root`, `Root 2` for additional
+roots, and `Branch N` for child supervisors, with child numbers assigned once
+in registration order. Show parent label, depth, start-node alias and a shortened
+branch ID in details. Do not infer graph port names from supervisor IDs.
+
+A/left selects the previous runtime branch; D/right selects the next; wrap at
+both ends. Include ended branches. With zero branches show “Waiting for branch
+registration”; with one branch cycling is a no-op. New registrations append
+without changing the selection. A branch completing never selects its parent
+or sibling automatically. A header shows `Branch 2 of 5`, state, parent and
+visited-node count; it does not need a horizontally scrolling tab strip.
+
+Navigation is owned by ExecutionScreen: `selected_branch_id` and, per branch,
+`selected_row_key`, list scroll offset, detail scroll offset, and `follow_live`.
+Reset navigation on a new run or workflow replacement, preserve it through
+modal resume and resizing. Restore selection before scroll after layout, clamp
+scroll after resize, and ignore superseded asynchronous list rebuilds.
+
+### Rows describe actual execution
+
+Use one row per visit in ascending visit_index. Identity is
+`(branch_id, visit_index)`, not node_id. Repeated execution of the same node
+produces separate rows. Use the visit's latest attempt status and total visit
+seconds; details list every attempt and its own status/timing. Attempt 0 is
+shown as setup failure where present. A successful retry reads `done · attempt
+2`, while the failed first attempt remains in details.
+
+`node_statuses(branch_id)` remains useful for branch-local aggregate badges,
+but must not supply every visit row: it describes the latest visit of a node.
+Never use global `app.node_statuses` or global timing totals for these rows.
+
+At most one additional `Next: alias [not started]` row appears when branch
+position has node_phase queued and no corresponding active visit. Its key is
+`(branch_id, "queued", node_id)`; replace it with the actual visit on entry.
+Follow mode transfers selection to that visit. Inspect mode keeps its prior
+visit selected, or transfers a selected queued row to its replacement.
+No speculative walk through conditional/fork/merge paths. Parent visits are
+not copied into children; provenance points back to the parent. Disconnected
+and never-selected graph nodes do not appear in a branch's visit list.
+Missing graph metadata falls back to node ID without dropping history.
+
+W/S and up/down move rows; PageUp/PageDown scroll pages, Home selects the first
+row, End selects the newest row and resumes follow mode. Initial selection
+follows the current visit. Manual movement or mouse selection disables follow;
+F toggles it. Each branch remembers its own follow setting. Inspect mode never
+jumps when visits append or timings/status change. Only the selected branch
+updates visible cards; keyed reconciliation preserves mounted rows.
+
+**Keyboard conflict:** current execution S stops the workflow. Proposed design
+moves stop to X, makes W/S navigation consistent with the editor, and updates
+bindings, on_key, help and footer together. P remains pause/resume, M opens
+Vault, O opens existing run output, E opens errors, Esc/Ctrl+Q preserve their
+existing stop-and-editor behavior. The stop key change must be visibly called
+out in the delivered UI. Do not bind S to both actions.
+
+### Outcomes and branch state
+
+Keep the established node glyphs: executing, success, error and waiting for
+input. Keep explicit [skipped]/[stopped] labels. A branch's ended state must
+not recolor all its visit rows as successful. Branch header and node outcomes
+are separate; use state and stop_requested without inventing a success count
+from supervisor termination.
+
+Paused branch headers use the supervisor's confirmed state. While global pause
+is requested and branches still run, show “Pause requested” in the run header.
+Queued breakpoint nodes stay not started. Running merge/WaitUntil visits stay
+running; details may say “Coordination node executing”, but must not claim a
+confirmed barrier wait because the existing feed has no barrier-enter/exit
+facts. New pause/barrier glyphs are unnecessary for this version.
+
+### Layout and output scope
+
+At 100+ columns show a visit list on the left and selected-visit details on the
+right. At narrower widths stack the list above a bounded details panel. Keep
+run header, branch header and footer outside scrolling regions. The visit list
+gets remaining height; details scroll independently with Tab to focus and
+standard arrow/page controls. Branch A/D remain screen commands. Keep at least
+five visible visit rows at a 60x24 terminal; short terminals prioritize the list
+and compact details. Escape from detail focus retains existing screen behavior.
+
+Example wide layout (illustrative text, not a rendered implementation):
+
+```text
+Workflow: Example [RUNNING]
+< Branch 2 of 3 > Branch 1 | parent Root | depth 1
+Visits                          Selected visit #3: Text Output
+  1 Start        done  0.01s     Attempt 1: done 0.02s
+  2 Transform    done  0.04s     Dead-drop payloads
+> 3 Text Output  done  0.02s       default: text (120 chars) “Result...”
+  4 Next: Sleep  not started    Branch summary: 3 visits; 1 preview
+A/D branch | W/S visit | F follow | P pause | X stop | O run output
+```
+
+Details describe the selected visit and attempt, including produced dead-drop
+ports. A compact branch summary shows visit/outcome counts and preview counts
+for that branch; it does not concatenate every value. Vault remains shared
+run state accessible through M and is never labeled branch-owned. O continues
+to open run-wide durable output records, explicitly titled “Run output”.
+
+### Preview attribution and bounded retention
+
+Existing OutputManager stores run/node/value records; MasterState finalization
+rebuilds them from shared output_log. These are not an attribution source.
+Do not guess a branch from node ID, timestamps or the last active supervisor,
+and do not inspect shared transient memory to reconstruct older visit values.
+
+Introduce a separate opt-in observational preview feed, independent of
+NODE_EXECUTION_UPDATE and durable output persistence. Every preview identifies
+run_id, branch_id, node_id, visit_index, attempt_index, port_name and kind
+(`dead_drop` initially). Capture from the successful attempt's result.payload
+`data` immediately after execute returns, before any awaited handoff or reuse;
+the current _handle_payload stores data before terminate_branch returns,
+but preview capture must still preserve attempt identity and success semantics. Observe without modifying the result, routing or Vault.
+Exclude routing control entries such as _route_via_port. Failed/cancelled
+attempts have no success preview. Retry previews are scoped to their attempt.
+
+This feed describes successful reported port data, not every side effect or
+output_log write. Durable output-node records remain run-wide. A later explicit
+output-record attribution hook may add an `output_record` kind; it needs real
+execution identity at write time and must preserve legacy finalization behavior.
+Do not put an unattributed durable record into a branch summary.
+
+The backend emits only bounded JSON-safe descriptors: type, known safe size,
+short preview text, truncation/omission reason and identity. Never emit payload
+objects, resource handles, secret configuration or inputs. No arbitrary repr,
+str, iteration, serializer or resource dereference. Restrict formatting to
+built-in primitive values and shallow built-in containers. Binary data shows
+byte count; resources/custom objects show an opaque type descriptor, no open,
+read, network fetch, thumbnail creation or copying. Escape terminal controls
+and render as plain text. Text outputs may themselves contain sensitive user
+data, so previews are off by default; enabling affects future attempts only.
+Disabling clears retained previews immediately and suppresses later capture.
+
+Proposed configurable ceilings: 512 characters of preview text per port,
+8 ports per attempt, 4 KiB serialized descriptor budget per attempt, 256 KiB
+per run and 200 retained attempt-preview groups, whichever is reached first.
+Bound inspection work too: depth 2 and 16 inspected items total per attempt;
+do not serialize a whole value before truncation. If a group exceeds budget,
+retain omission metadata within the same budget. Evict oldest groups; no duplicate
+branch payload cache. Missing summary states distinguish disabled, not captured,
+no reported ports, truncated and evicted. Counts are capped/aggregate metadata,
+not an unbounded index of omitted records. Reset at the next run/replacement;
+retain through natural FINISHED/ERROR while the display run remains available.
+
+Scope limitation: current App clears execution state on backend IDLE, including
+explicit workflow stop. This version preserves that reset and stale-run guard;
+branch-local stopped attempts remain inspectable while their run is retained.
+Post-workflow-stop inspection requires a separate snapshot/retirement decision.
+Do not accidentally resurrect the stopped run to satisfy the new layout.
+
+### Delivery stages and acceptance
+
+1. Implement branch/visit list and navigation using existing facts. Use an
+   execution-specific list with visit-keyed rows; NodeList.refresh_nodes is
+   node-ID keyed and cannot represent repeats. Reuse NodeCard appearance and
+   shared navigation helpers without changing editor row behavior. Add details
+   for attempts/timing and honest unavailable-preview messages.
+2. Add opt-in bounded preview descriptors and an App-owned reducer/cache.
+   Keep subscriptions session-scoped and apply current run/retired-run guards.
+   Formatter failures are contained and cannot alter node execution/recovery.
+3. Wire selected-visit previews and branch counts, then verify live at multiple
+   terminal widths. Keep this work in a separate feature PR from PR #28.
+
+Tests should cover wrap/zero/one/many branches, nested provenance, retained ended
+branches, independent shared-node visits, repeated visits and retries, queued
+row replacement, per-branch scroll/selection/follow, modal resume and resize.
+Verify S navigates without stopping and X stops, plus existing recovery keys.
+Mounted checks at 60/100/140 columns must assert selection and scroll stability
+while events arrive, narrow details access and terminal-control escaping.
+
+Preview tests must cover overwritten shared ports, successful terminate-branch
+payloads, stale runs, disabled/enable/disable transitions, resource/custom-object
+formatting without invoking methods, oversized/deep values, all retention limits
+and explicit evicted/unavailable states. Existing run-output persistence and
+run-output contracts must remain intact; use Current State for the test baseline. Before runtime delivery run focused
+execution tests, full tests/, compileall and git diff --check. Design-only
+verification checks links and whitespace; runtime delivery needs the tests above.
+
+## Native file/window verification (FO7)
+
+Preserved from File Output FO7. Native results remain an owner verification gate;
+[Current State](CURRENT_STATE.md) owns its status. Check the actual Windows
+machine and record host, monitors, apps, results and degraded behavior:
+
+1. Single monitor: Markdown file with Right of AOTN; verify position and size.
+2. Multiple/mixed-resolution monitors: image with Other monitor; verify placement.
+3. Existing single-process app/window (for example a workbook): discovery must
+   not steal an unrelated pre-existing window; inspect fallback behavior.
+4. Close when run ends on/off, and Window Control close during a run.
+5. Slow launch/discovery timeout: warning and bounded wait, not a hang.
+6. Repeat placement in Windows Terminal and legacy conhost; terminal-window
+   identification differs. Inspect fallback when the visible terminal is unknown.
+7. Write/open immediately before User Text Input: verify focus can return to
+   the prompt; record whether a refocus option is needed rather than guessing.
+
+Keep HWND reuse, ambiguous discovery, application window reuse and parent-process
+handle resolution in the review. Deferred: virtual desktops, native macOS/Linux
+placement adapters, line-number insertion, rich terminal image previews and
+cross-run window adoption. Keep pywin32 optional; no speculative adapter stubs.
+File/window reasoning D1–D12 now lives in Node Standards.
+
+## Configuration and inspection follow-ups preserved from audits
+
+These are directions/limitations to recheck against code before implementation,
+not instructions to repeat completed numeric, Random Number or Echo fixes:
+
+- Audit legacy controls by actual runtime capability. Do not implement fake
+  Vault behavior to justify a generic checkbox; retain unrelated saved config.
+- Continue compact/applicable section composition and conformance across source,
+  routing and mode variants, using production CSS at multiple widths.
+- Clarify simulated AI capabilities and inert secret controls; do not advertise
+  a real provider call merely because a schema has a secret field.
+- Explain unsupported window actions at configuration/preflight boundaries.
+- Viewer requests use a FIFO run-scoped queue; search/history, queue bounds and
+  content snapshots are separate product decisions. Large viewer reads and
+  synchronous writes merit measured performance work, not presumed fixes.
+- A reported user/host path prefix and execution-screen F-key issue were not
+  reproduced by this docs work. Preserve them as reports requiring evidence.
+- Lazy loading for large forms should show usable content early and queue
+  Save/Close until loading completes; this is a proposal needing UI review.
+- Keep live output-display node ambitions distinct from the existing run output
+  log: user-facing interactive outputs deserve clear capability and lifecycle
+  contracts. Reusable subworkflow/node libraries follow child-run contracts,
+  not hidden state in a parent supervisor.

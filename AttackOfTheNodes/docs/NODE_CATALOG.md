@@ -6,9 +6,8 @@ planned, deferred, and concept-only. Nothing gets lost here. When the node
 overhaul implements, defers, or rejects a node, update its status — do not
 delete the row.
 
-Taxonomy structure, selector behavior, and metadata fields live in
-`PHASE_17_NODE_VISUAL_IDENTITY.md`. I/O design rules for authoring any of
-these nodes live in `NODE_STANDARDS.md`.
+Node Standards owns taxonomy, metadata and I/O authoring rules;
+UI Quick Reference owns selector behavior. Use Current State for delivery status.
 
 ## Status Legend
 
@@ -52,7 +51,7 @@ currently registered node type a row absorbs, where one exists.
 File Reader accepts a file reference from Upstream/Vault or
 a configured path, then emits the file contents as a typed `string` downstream
 and/or to Vault. The existing `file_reader_node` preserves old graphs; see
-[PAYLOAD_FILE_IO_BUILD_PLAN.md](PAYLOAD_FILE_IO_BUILD_PLAN.md), P2a.
+[PAYLOAD_FILE_IO_BUILD_PLAN.md](archive/PAYLOAD_FILE_IO_BUILD_PLAN.md), P2a.
 
 ### Group: Data Source
 
@@ -340,7 +339,19 @@ workflow execution model around trigger timing.
 - Add every new node idea here first, even if it is Concept-only.
 - When the overhaul renames or absorbs a Live node, update `Maps from` rather
   than deleting history.
-- Keep status changes in sync with `MASTER_BUILD_PLAN.md` phases and
+- Keep status changes in sync with `CURRENT_STATE.md`, the owning plan and
   `PROJECT_BACKLOG.md` design entries.
 - Taxonomy placement questions (which family, group, or section) are decided
-  by the Core Simplification Rule in `PHASE_17_NODE_VISUAL_IDENTITY.md`.
+  by the Core Simplification Rule in `NODE_STANDARDS.md`.
+
+## Taxonomy intent retained from Phase 17
+
+The five families should help a user recognize data entry, user-facing output,
+flow structure, quiet utility work and structurally complex behavior quickly.
+Group by port/config shape as Node Standards describes; avoid base nodes placed
+on the canvas, per-group bespoke UI and artificial Overwrite/Append node splits.
+AI nodes are grouped by capability, with curated supported models; a future
+per-model split needs real capability pressure, not speculation. Output-display
+nodes and reusable workflow libraries remain ambitions, not an assertion that
+every concept in this catalog is implemented. Use `aotn nodes` / `describe` for
+live contracts and Current State for delivery status.

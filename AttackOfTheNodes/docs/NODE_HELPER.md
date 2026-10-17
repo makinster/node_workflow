@@ -270,7 +270,7 @@ rejected.
 
 ## Unified `inputs:` / `outputs:` Blocks
 
-The unified blocks (NODE_STANDARDIZATION_HANDOFF.md §7) let an author declare a
+The unified blocks (Node Standards: Portable contract and authoring boundaries) let an author declare a
 port's full I/O contract in one place. `inputs:` replaces the split
 `input_sources` + `input_port_metadata` sections; `outputs:` replaces
 `output_port_metadata`. Legacy sections are accepted but are not lossless:
@@ -412,15 +412,15 @@ Phase 17 identity (required since 2026-06-12; keep in sync with
 
 - `primary_family` (required): `Inputs`, `Outputs`, `Flow Control`, `Utility`,
   or `Complex`. This is the user-facing selector family; `category` remains
-  the legacy backend grouping. `Inputs` and `Outputs` share the selector's
-  `I/O` tab behind an Input/Output switch — that mapping is frontend-only.
+  the legacy backend grouping. The selector has five numbered tabs: In,
+  Flow Control, Utility, Out and Complex; In/Out map to Inputs/Outputs.
 - `tags` (optional): freeform keyword strings used only for node **search** in
   the selector. The rigid subcategory taxonomy and its filter checkboxes were
   retired 2026-06-19, so there is no fixed vocabulary and no validation — pick
   whatever keywords help discovery (e.g. `File I/O`, `Internet`, `AI`).
 - `group` (optional): frontend navigation group name (e.g. `Send / Notify`).
   Nodes sharing a group appear behind one Group Picker entry in the selector.
-  See `PHASE_17_NODE_VISUAL_IDENTITY.md` and `NODE_CATALOG.md` for the group
+  See `NODE_STANDARDS.md` and `NODE_CATALOG.md` for the group
   layout.
 - `selector_section` (optional): section header the entry renders under in
   the selector list (e.g. `Transform`). All members of one `group` must
@@ -654,3 +654,33 @@ exposes Text Output's selected source and configured format without duplicate
 output editors. `forwarded_input_fallbacks` lists connected input ports to use
 only when the preferred `forwarded_input_port` is absent; runtime must use the
 same precedence (Writer: Content, then File Path).
+
+## Authoring and review checklist
+
+Consolidated from the agent start guide. Read Node Standards before choosing
+ports, grouping or modes; check the idea catalog and live `aotn describe` output
+before introducing a duplicate node. Declare metadata, defaults/schema, ports,
+config-dependent hooks, error codes and real routing/Vault effects together.
+The [generation precautions](#before-generating) apply before any command.
+
+1. Describe the machine's input/output contract and which config changes ports.
+   Use reviewed unified `inputs:`/`outputs:` blocks for types; use
+   `config_tabs`, `visible_when`, `enabled_when` and exclusion rules for fields.
+2. Generate in an isolated review directory. Compare the entire class,
+   registration and tests against the intended contract. Manually preserve
+   custom `execute` and dynamic-port hooks; the generator cannot merge them.
+3. Implement actual source selection, routing, writes and errors. Generated
+   starter code and smoke tests do not establish runtime conformance.
+4. Run `check_node.py` and `check_ui.py` with the working-directory paths above,
+   then behavior tests covering sources, routing, non-string values, errors,
+   save/reopen and Cancel. Use production CSS for mounted geometry/navigation.
+5. If ordinary fields need special rendering, improve the shared form generator;
+   use custom screen sections only for topology-derived structure. Raise a
+   structural-UI TODO for design review instead of improvising screen code.
+6. Update the relevant reference, Current State, Session Log and plan row.
+   [Contributing](CONTRIBUTING.md) owns review, test scope and PR rules.
+
+Use `primary_family` for portable family identity, legacy `category` for the
+node package/category, and `group`/`selector_section` only for frontend navigation.
+The old handoff's terminology rename was cancelled; do not generate its example
+literally. The UI reference owns numbered tabs and command-mode key behavior.

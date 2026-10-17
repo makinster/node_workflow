@@ -24,9 +24,9 @@ Before defining a new node type, decide how it fits in the taxonomy:
 - Email vs Webhook vs OS notification → same ports, radically different config →
   group with picker.
 
-Apply this rule before touching the taxonomy in
-`PHASE_17_NODE_VISUAL_IDENTITY.md`. Groups are a frontend-only navigation
-concept — the backend never knows a group exists. Record every new node idea
+Apply this rule before changing taxonomy. Groups are a frontend navigation
+concept; the backend exposes the metadata but does not use it for execution.
+Record every new node idea
 in `NODE_CATALOG.md`, even concept-only ones.
 
 ---
@@ -206,14 +206,12 @@ all branches and readable via the Vault in node config.
 booleans, numbers, strings, objects, and arrays. This includes LLM responses
 and other large text values — payload size is not the limiting factor.
 
-The practical reason to prefer Vault for large or shared data is **scope and
-timing**, not size:
+Choose transient or Vault addressing for the workflow's data flow and timing:
 
-- A transient key is path-scoped. It is written by one node and consumed by
-  the immediately downstream node that knows the source ID and port name.
-  A parallel branch running concurrently will not have access to another
-  branch's transient keys, and timing may not be correct if the write has not
-  yet occurred.
+- A transient key identifies the source node and port, not a branch. The
+  supervisor resolves connected inputs from this shared run store. A later
+  write to the same node/port replaces the prior value, and a read before the
+  write has no delivered value. Do not assume branch or per-visit isolation.
 - A named Vault key is accessible by any node in the run that declares the
   key, regardless of branch or position in the graph.
 
@@ -318,7 +316,7 @@ coherent (no parallel free-string vocabularies). Canonical set: `string`,
 `number`, `bool`, `var`, `file`, `ai_session`, `any`.
 
 > **Reconciliation (2026-06-19):** this list previously spelled the boolean
-> type `boolean`. Per `NODE_STANDARDIZATION_HANDOFF.md` §5 the canonical
+> type `boolean`. Per the shared data-type vocabulary the canonical
 > spelling is now **`bool`**. `boolean` is accepted only as a deprecated alias
 > (`data_types.canonicalize("boolean") == "bool"`) so older specs and saved
 > workflows still resolve. `any` is the explicit permissive type — there is no
@@ -361,29 +359,21 @@ shows only `ai_session` entries.
 
 ## AI Session Config-Driven Output (LLM Nodes)
 
-There is no separate Chat Session Node. Any LLM node can opt into session
-persistence via a config checkbox ("keep active AI session") and a
-user-supplied session key.
+There is no separate Chat Session node. Chat Completion implements the
+"Keep active AI session" option; this is the pattern for future LLM nodes,
+not a claim that simulated AI nodes already support it.
 
-When the checkbox is set and the node executes:
+On a successful kept-session call, Chat Completion extends a message history
+in RunSession using `get_or_create_chat_session` / `append_chat_message`, then
+writes `{"type": "ai_session", "ref_key": session_key}` to the Vault with
+`type_tag="ai_session"`. The history is a list of messages, not a provider client
+registered as a generic resource. Failed calls do not persist the new turn.
 
-1. The node opens or retrieves a session handle (provider client + message
-   history list) from `RunSession` under the session key.
-2. It appends the current turn and runs inference.
-3. It registers the updated session handle back in `RunSession`.
-4. It writes `{"type": "ai_session", "ref_key": <session_key>}` to the vault
-   under the session key.
-
-The first LLM node with a given session key starts the session. All subsequent
-nodes that select the same vault key from their source dropdown continue it.
-Message history lives in the session object in `RunSession`; `MemoryBank`
-holds only the type tag and reference key.
-
-Downstream LLM nodes that want to continue a session:
-- Select the vault source for their chat input.
-- See `chat_name (ai_session)` in the type-filtered dropdown.
-- Retrieve the session via `context.run_session.get_resource(session_key)`,
-  append their turn, and re-register the handle.
+A downstream Chat Completion selects Continue AI session and the typed Vault
+key. It resolves `ref_key` and reads `get_chat_history(ref_key)`. With Keep active
+AI session enabled in Continue mode it extends the same history rather than
+asking for a second key. Vault contains the tagged reference; history lives in
+RunSession and expires with the run. `get_resource` is not this lookup API.
 
 ### AI Input Pattern (session seeding)
 
@@ -405,7 +395,7 @@ needed:
 AI nodes declare a curated supported-model list, not an open-ended model
 field. Structured-decision AI nodes (AI Conditional Branch, AI Tool Call)
 require models with dependable structured output and carry stricter lists.
-See the AI Model Approach section of `PHASE_17_NODE_VISUAL_IDENTITY.md`.
+See the capability-based AI direction in `NODE_CATALOG.md`.
 
 ## Validator Rules for Typed Vault References
 
@@ -452,7 +442,7 @@ Do not introduce per-node navigation behavior to compensate for layout choices.
 Configuration controls must match execution. Wait Until coordinates completion
 and forwards its incoming dead-drop unchanged; it never reads or writes the
 Vault. Its downstream node selects any Vault input. Timeout 0.0 means wait forever.
-See [WAIT_UNTIL_UI_PLAN.md](WAIT_UNTIL_UI_PLAN.md) for implementation details.
+See [WAIT_UNTIL_UI_PLAN.md](archive/WAIT_UNTIL_UI_PLAN.md) for implementation details.
 
 ### Source Tab
 
@@ -701,8 +691,8 @@ Model *:        [ claude-opus-4-8 ▼ ]  ← curated dropdown, always editable
 
 The model field is a **curated dropdown**, never free text. Options come from
 the node's declared supported-model list, exposed through node metadata so the
-frontend renders — never defines — the list. See the AI Model Approach section
-of `PHASE_17_NODE_VISUAL_IDENTITY.md`.
+frontend renders — never defines — the list. See the capability-based AI direction
+in `NODE_CATALOG.md`.
 
 **Payloads tab:**
 
@@ -796,3 +786,76 @@ is printed as a reference, not dereferenced; use File Reader to obtain file
 contents. Payloads shows source, label/template, a captured-value preview when
 available, and connection-dependent continuation. No value is invented before
 execution. End remains the explicit stop node.
+
+## Portable contract and authoring boundaries
+
+Consolidated from the standardization handoff and agent checklist. The owner
+cancelled the proposed `category`/`family` rename on 2026-06-19: keep
+`primary_family`, legacy class `category`, frontend `group` and
+`selector_section`. Factory metadata provides compatibility aliases; don't
+rewrite stored identity because an old example used the rejected vocabulary.
+Five families are Inputs, Outputs, Flow Control, Utility and Complex. AI is a
+search tag/capability, not a sixth family; rigid subcategory filters are retired.
+
+Expose ports, data types, descriptions, required flags, supported sources,
+routing destinations and capabilities through NodeFactory. Missing `data_type`
+means `any`; missing `required` means optional. These describe capabilities,
+not simultaneous actions or a guarantee that all validation is enforced today.
+The selector shows the type's contract, while editor details show the configured
+instance: actual producers/targets, port overrides and declared Vault effects.
+One required/optional declaration should serve UI and validator, not separate
+client guesses; see the Node Contract Plan for remaining conformance work.
+
+Ordinary fields use `config_schema` and shared form rules. Structural sections
+may derive Merge/Wait targets from topology, but nodes remain graph-ignorant.
+Use backend `port_types` for producer/type tracing and `vault_declarations` for
+reads/writes. Fixed forwarding must name its input and exclude the error port.
+Multiple output ports alone do not imply `spawns_branches`; Merge ownership
+must use the explicit capability. Dynamic ports use shared factory resolution.
+
+The selector's master/detail contract and configured editor detail use shared
+type/description helpers. Navigation groups are derived from metadata; a new
+group member does not justify per-group screen code. Single-member groups can
+be direct-add entries. Keep inspection read-only; path selection belongs in the
+frontend and normalization/IO belongs at backend execution/validation boundaries.
+Source, Parameters, Payloads and Connections are meanings, not four mandatory
+tabs. Only expose operations the node actually implements. The UI reference
+owns keyboard behavior and visibility/scrolling rules.
+
+## File and window design decisions
+
+Preserved from File Output D1–D12 (2026-07-11), with current representation
+clarified. These are design constraints and reasons, not native verification.
+
+| Decision | Rule and reason |
+|---|---|
+| D1 | Reuse RunSession for files/windows and cleanup; a second resource manager would duplicate ownership. |
+| D2 | Pass tagged `file` reference objects, not handles. The path supports reconstruction in a later run; the live registration does not survive. JSON-safe identity keeps workflows portable. |
+| D3 | Use semantic position/size presets rather than pixel coordinates, so monitor changes and future adapters do not require schema changes. Windows Terminal's pseudo-console is not the visible terminal; use real-host resolution or a warned monitor-relative fallback. |
+| D4 | Discover at launch using visible-window differences, with a conservative unique-title fallback. Store the result once; do not repeatedly search by title. Ambiguity/discovery failure leaves the file opened but unplaced with a warning, never an arbitrary target. |
+| D5 | Keep pywin32 optional and lazily guarded. It was chosen over verbose raw ctypes for maintainability of cold, native-only code. Unsupported placement degrades visibly; native support needs FO7, not Linux mocks. |
+| D6 | Target the window for this file identity, never any window of an application. App-wide targeting can grab unrelated files/runs. |
+| D7 | No virtual desktop integration in v1; undocumented OS internals add maintenance risk without serving the side-by-side/other-monitor use case. |
+| D8 | Prefer the TUI viewer for text/Markdown; OS opening serves formats the terminal does not render. This yields a portable, testable path before native choreography. |
+| D9 | Common write/open placement is declarative configuration. A separate small Window Control node handles mid-run focus/minimize/close; avoid five separate imperative node types. |
+| D10 | OS opening/placement is an execution side effect behind a backend adapter, not Textual logic. Frontend supplies picker/preset affordances. |
+| D11 | Window actions are local-display capabilities. A future remote backend needs a local effector behind a JSON event boundary; keep the adapter free of MasterState coupling so it can move. Do not open windows on a remote server and call them user output. |
+| D12 | Windows left open at run end are handed to the user. Their registrations expire; later runs cannot adopt/control them without a separately designed rediscovery policy. |
+
+File Manager displays files and passes references; File Reader copies file
+contents into text; File Write writes content. Preserve those separate purposes
+and existing internal type identifiers. References retain same-file identity;
+forwarding changes downstream routing, not independent Vault writes. Quoted
+copied paths remain configuration text, while `file_paths` normalizes at use
+time; slash direction alone does not identify the runtime OS.
+
+Migration reasons from the payload/file plan: preserve unknown keys, let explicit
+new source choices win, archive retired completion flags rather than changing
+meaning silently, and require correction where multiple legacy Text Output
+Vault sources cannot be mapped to a single source. Do not repair loaded graphs
+by inventing behavior in a rendering refresh. Shared config-migration code is
+the authority for exact precedence and saved forms.
+
+[Project Backlog](PROJECT_BACKLOG.md#native-filewindow-verification-fo7) retains
+the manual FO7 protocol and deferred platform work. User-facing controls must
+explain unsupported capabilities rather than promise silent success.

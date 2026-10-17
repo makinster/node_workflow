@@ -46,7 +46,7 @@ Frontend responsibilities:
   registries, and command-navigation helpers.
 - Hiding, dimming, grouping, and naming UI controls.
 
-## Current Audit
+## Historical boundary audit
 
 Backend changes that should stay:
 
@@ -81,7 +81,10 @@ Already migrated (audit refreshed 2026-06-10):
 
 ## Migration Plan
 
-### Boundary Phase A — Frontend Tombstone Adapter (done)
+### Boundary Phase A — Frontend Tombstone Adapter (historical)
+
+This intermediate save model is superseded by the intentional tombstone
+contract below. Do not implement its decommission instructions as new work.
 
 `frontend/editor_workflow_adapter.py` exists and owns placeholder behavior:
 `is_placeholder()`, `replace_with_placeholder()`, `remove_placeholder()`,

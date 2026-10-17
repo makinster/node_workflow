@@ -1,0 +1,378 @@
+> Superseded by [README](../README.md), [NODE_HELPER](../NODE_HELPER.md), [CONTRIBUTING](../CONTRIBUTING.md) on 2026-10-17.
+> Historical document retained whole; old status, permissions and designs below
+> are not current instructions. See [Current State](../CURRENT_STATE.md).
+
+# Task Index
+
+**Task routing moved to [README](../README.md).** For the checked baseline,
+remaining gates and work order, read [Current State](../CURRENT_STATE.md).
+The detailed lists below are transitional reference material for PR B.
+
+Historical session integration: [SESSION_INTEGRATION_BUILD_PLAN.md](SESSION_INTEGRATION_BUILD_PLAN.md).
+Remaining configuration work: [CONFIG_UI_BUILD_PLAN.md](CONFIG_UI_BUILD_PLAN.md).
+Payload previews, typed sources and File I/O follow-up:
+[PAYLOAD_FILE_IO_BUILD_PLAN.md](PAYLOAD_FILE_IO_BUILD_PLAN.md) — current evidence,
+P0–P6 implementation order, agent ownership, migrations and verification.
+
+File Output compatibility and integration order: [FILE_OUTPUT_INTEGRATION_REVIEW.md](FILE_OUTPUT_INTEGRATION_REVIEW.md).
+
+`README.md` routes you to this file. This file gives the minimum reading set,
+likely code files, and the focused `pytest -k` or helper commands for each task
+type. Open the docs listed here, then open deeper references only if those docs
+point you further.
+
+## Design Or Update Node Taxonomy
+
+Read:
+
+- `PHASE_17_NODE_VISUAL_IDENTITY.md` — Core Simplification Rule, full expanded
+  taxonomy, group picker UI design, keyboard flows, metadata conventions
+- `NODE_STANDARDS.md` — Node Type Classification rule (when to group vs
+  separate vs mode-select)
+- `BACKEND_FRONTEND_BOUNDARY.md` — the `group` field is a frontend-only
+  navigation concept; no backend component should branch on it
+
+Likely files:
+
+- `backend/node_identity.py`
+- `backend/node_factory.py`
+- `frontend/screens/node_selector.py`
+
+Note: adding a node to an existing group requires only declaring the `group`
+field on the node class. No selector code changes are needed. Single-member
+groups auto-promote to direct-add entries.
+
+## Add Or Change A Node
+
+Read:
+
+- `NODE_STANDARDS.md` — input source model, output routing model, dynamic form
+  rules, and reference examples. Read this first before defining any new node.
+- `AGENT_START_GUIDE.md`
+- `NODE_HELPER.md` for helper spec details and generated-file behavior
+- `PROJECT_KNOWLEDGE.md` sections: Node Metadata Contract, Data Flow Patterns,
+  Registered Node Families
+
+Likely files:
+
+- `../aotn_node_helper/specs/<node_type>.yaml`
+- `backend/nodes/<category>/<name>_node.py`
+- `backend/nodes/__init__.py`
+- `tests/generated/test_<node_type>.py`
+
+Preferred path:
+
+```bash
+../.venv/bin/python ../aotn_node_helper/create_node.py ../aotn_node_helper/specs/<node_type>.yaml
+../.venv/bin/python ../aotn_node_helper/check_node.py <node_type>
+```
+
+Use frontend edits only when the node needs structural UI derived from workflow
+topology. Ordinary node fields should render from metadata and `config_schema`.
+
+## Change LLM Node Execution Or AI Sessions
+
+Read:
+
+- `NODE_STANDARDS.md` — Basic LLM Node reference example, AI Session
+  Config-Driven Output, Typed Vault Outputs
+- `PROJECT_BACKLOG.md` → "Typed Vault Entries and AI Session Handles"
+
+Likely files:
+
+- `backend/llm_provider.py` — curated model list (`SUPPORTED_MODELS`),
+  Anthropic client, provider registry (`get_client`)
+- `backend/nodes/chat_completion_node.py`
+- `backend/run_session.py` (chat session API)
+- `../aotn_node_helper/specs/chat_completion_node.yaml` (contract doc — the
+  node's execute is hand-written; do not regenerate blindly)
+
+Focused checks:
+
+```bash
+../.venv/bin/python -m pytest tests/test_llm_provider.py tests/test_chat_completion_node.py -v
+../.venv/bin/python ../aotn_node_helper/check_node.py chat_completion_node
+../.venv/bin/python ../aotn_node_helper/check_ui.py chat_completion_node
+```
+
+Notes: the model dropdown options come from `SUPPORTED_MODELS` — update the
+constant only, never frontend code. Some models reject sampling parameters;
+`ModelInfo.supports_temperature` controls whether `temperature` is sent.
+
+## Audit Or Simplify Node Configuration UI
+
+For toggle-dependent visibility and scrolling, start with
+`NODE_CONFIG_VISIBILITY_SCROLL_AUDIT.md` and its reproducible before/after
+evidence under `docs/audits/toggle_scroll_2026_10_06/`. Keep the convenience
+reasons for visible read-only information explicit.
+
+Read `PENDING_CHANGES_REVIEW.md` for pending fixes and the unmerged File Output
+branch impact, then `NODE_CONFIG_UI_AUDIT.md` and its mounted control inventory. The audit
+covers all 35 registered types, including selector groups and intentional hidden
+types, against the 2026-10-06 dirty Wait Until baseline. Start with shared save
+preservation, production-CSS field sizing and capability truth before a broad
+layout pass. The proposed stages are not implemented. Keep runtime changes
+separate and preserve unsupported legacy keys until an explicit migration.
+
+Reproduce with the scripts under `docs/audits/node_config_2026_10_06/`; use their
+README for commands and limitations. UI checks must load `frontend/styles.tcss`.
+
+## Simplify Wait Until Configuration
+
+Read `WAIT_UNTIL_UI_PLAN.md`, `WAIT_UNTIL_INVESTIGATION.md`, and
+`UI_QUICK_REFERENCE.md`. The implemented UI contains Wait and Connections tabs;
+Wait Until never reads or writes the Vault. Target selection is graph-derived
+frontend behavior. Reuse NodeConfigScreen command/tab/list helpers.
+
+## Fix Frontend Or UI Behavior
+
+Read:
+
+- `UI_QUICK_REFERENCE.md`
+- `AGENT_START_GUIDE.md` sections: Keyboard And Modal Rules, When Frontend Edits
+  Are Needed
+- `BACKEND_FRONTEND_BOUNDARY.md` if the fix is tempting you toward backend code
+
+Likely files:
+
+- `frontend/screens/`
+- `frontend/widgets/`
+- `frontend/styles.tcss`
+- `frontend/node_io_display.py`
+- `tests/test_debug_nodes.py`
+
+Focused checks:
+
+```bash
+../.venv/bin/python -m compileall -q .
+../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "<focused_behavior_name>"
+```
+
+Use shared helpers before per-screen code: command navigation, list navigation,
+dynamic sections, notifications, and form generation.
+
+Open `TUI_DESIGN.md` only when you need full screen details, Textual detours, or
+layout-level conventions.
+
+## Investigate Execution Symbols Or Redesign The Run Screen
+
+Read `NEXT_CHAT_HANDOFF.md` for current session results and next steps.
+Read `EXECUTION_BRANCH_UI_DESIGN.md` for the proposed branch UI and preview contract.
+Read `EXECUTION_STATUS_CONTRACT.md` for implemented state/rendering semantics.
+Read `EXECUTION_STATUS_BUILD_PLAN.md` for ES0–ES4 and future A/D branch-view
+requirements. Read `EXECUTION_STATUS_INVESTIGATION.md` for the reproduced defects, current
+symbol and event semantics, and the proposed correctness-first plan. Then use
+`SIGNAL_FLOW.md`, `TUI_DESIGN.md`, and `BACKEND_FRONTEND_BOUNDARY.md`.
+
+Likely files: `backend/supervisor.py`, `backend/master_state.py`,
+`backend/events.py`, `frontend/app.py`, `frontend/screens/execution.py`,
+`frontend/widgets/node_list.py`, and `frontend/widgets/node_card.py`.
+
+Backend execution success does not establish correct frontend symbols. Keep
+status-cache and mounted run-screen assertions in `tests/test_execution_status.py`.
+Run `../.venv/bin/python -m pytest tests/test_execution_status.py -q` from the app.
+
+## Continue Phase 17 Node Visual Identity
+
+Read:
+
+- `PHASE_17_NODE_VISUAL_IDENTITY.md`
+- `UI_QUICK_REFERENCE.md`
+- `TUI_DESIGN.md` sections: Modal Screens, Editor bindings/node rows, Command
+  Navigation
+- `BACKEND_FRONTEND_BOUNDARY.md` before changing backend metadata shape for UI
+  needs
+
+Likely files:
+
+- `backend/node_base.py`
+- `backend/node_factory.py`
+- `frontend/screens/node_selector.py`
+- `frontend/widgets/node_card.py`
+- `frontend/widgets/node_list.py`
+- `frontend/styles.tcss`
+- `frontend/screens/editor.py`
+- `tests/test_debug_nodes.py`
+
+Focused checks:
+
+```bash
+../.venv/bin/python -m compileall -q .
+../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "node_selector or node_card or editor_depth or branch_end"
+```
+
+Implementation direction:
+
+- Five selector tabs: `In`, `Flow Control`, `Utility`, `Out`, `Complex`.
+  Backend families use `Inputs` / `Outputs`; AI is a tag, not a family.
+- `group` and `selector_section` are frontend-only navigation metadata; no
+  backend component should branch on them.
+- Tags are search keywords; the old subcategory checkbox filters are retired.
+- Keep selector filters and editor row identity frontend-owned, but expose
+  portable family/tag/icon/color/group/section metadata through `NodeFactory`.
+- Preserve keyboard-first focus, autoscroll, cursor/highlight stability,
+  validation markers, and Merge Beacon state indicators.
+
+## Change Backend Or Runtime Behavior
+
+Read:
+
+- `ARCHITECTURE.md`
+- `SIGNAL_FLOW.md`
+- `PROJECT_KNOWLEDGE.md`
+- `BACKEND_FRONTEND_BOUNDARY.md` when the change is requested by the UI
+
+Likely files:
+
+- `backend/workflow_map.py`
+- `backend/master_state.py`
+- `backend/supervisor.py`
+- `backend/memory_bank.py`
+- `backend/validator.py`
+- `backend/save_manager.py`
+- `tests/test_debug_nodes.py`
+
+Focused checks:
+
+```bash
+../.venv/bin/python -m compileall -q .
+../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "<runtime_behavior_name>"
+```
+
+Before committing broad runtime changes, run the full debug suite.
+
+## Change File I/O Or Workflow Persistence
+
+Read:
+
+- `AGENT_START_GUIDE.md` section: File I/O UI Pattern
+- `ARCHITECTURE.md` sections: persistence, SaveManager, WorkflowMap
+- `BACKEND_FRONTEND_BOUNDARY.md`
+
+Likely files:
+
+- `frontend/file_io.py`
+- `frontend/screens/workflow_library.py`
+- `frontend/screens/user_input.py`
+- `backend/save_manager.py`
+- `backend/persistence.py`
+
+Rule: path picking belongs in the frontend; backend services accept paths.
+
+## Build Workflows From A Spec (Authoring Tool)
+
+Read:
+
+- `WORKFLOW_AUTHORING.md`
+- `NODE_CONTRACT_PLAN.md` section: Workflow authoring tool
+
+Likely files:
+
+- `backend/authoring.py`
+- `aotn_author.py`
+- `examples/` (specs built by `tests/test_authoring_examples.py`)
+- `tests/test_authoring.py`, `tests/test_authoring_examples.py`
+
+Rule: the tool is a client of the shared backend (factory, WorkflowMap,
+validator, SaveManager); node rules belong in shared helpers, not here.
+
+## Change File Output, File Viewer, Or OS Window Behavior
+
+Read:
+
+- `FILE_OUTPUT_BUILD_PLAN.md` — design decisions D1–D12 (typed `file`
+  references, placement presets, discovery rules, degraded modes); do not
+  re-litigate them
+- `NODE_STANDARDS.md` — Typed Vault Outputs, output routing model
+
+Likely files:
+
+- `backend/nodes/io/file_output_node.py`, `backend/nodes/io/file_view_node.py`,
+  `backend/nodes/io/window_control_node.py`, `backend/nodes/io/window_support.py`
+- `backend/file_refs.py` — the `file` reference dict shape
+- `backend/window_manager.py` — adapter protocol, preset geometry, platform
+  implementations (pywin32 branch is manual-verify only, FO7 protocol)
+- `backend/text_format.py` — markdown formatting
+- `frontend/screens/file_viewer.py`, `frontend/app.py` (FILE_VIEW_REQUESTED)
+
+Focused checks:
+
+```bash
+../.venv/bin/python -m pytest tests/generated/test_file_output_node.py \
+    tests/generated/test_file_view_node.py \
+    tests/generated/test_window_control_node.py \
+    tests/test_window_manager.py tests/test_text_format.py -v
+../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "file_view"
+```
+
+Rules: window discovery failure is never a node error (D4); windows are
+targeted by file identity, never app type (D6); the adapter must stay free
+of run-state coupling (D11).
+
+## Update Config UI Or Form Generation
+
+Read:
+
+- `AGENT_START_GUIDE.md` sections: Make Node Config Render Correctly, Keyboard
+  And Modal Rules
+- `UI_QUICK_REFERENCE.md`
+- `NODE_HELPER.md` section: Direction: UI Standardization Helper, when adding
+  helper support for config UI tests or screen scaffolds
+- `TUI_DESIGN.md` sections: Field Type Mapping, Command Navigation, only when
+  changing detailed renderer behavior
+
+Likely files:
+
+- `frontend/screens/node_config.py`
+- `frontend/widgets/form_generator.py`
+- `frontend/widgets/command_input.py`
+- `frontend/widgets/command_navigation.py`
+- `tests/test_debug_nodes.py`
+
+Focused checks:
+
+```bash
+../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "node_config or command_input or selection"
+```
+
+## Continue The Roadmap
+
+Read:
+
+- [Current State](../CURRENT_STATE.md)
+- [Node Contract Plan](../NODE_CONTRACT_PLAN.md)
+- `SESSION_LOG.md`
+- `DISTRIBUTED_BUILD_PLAN.md` for headless runs, triggers, subworkflows,
+  `[error]` routing, WaitRegistry/RunContext or server design. Steps 1–3
+  and the ESP32 slice are historical implementation work. Consult Current
+  State for remaining gates; do not restart Step 1.
+
+Optional deep history:
+
+- `archive/BUILD_PLAN_HISTORY.md`
+- `archive/SESSION_LOG_HISTORY.md`
+
+Update `CURRENT_STATE.md`, the owning plan row and `SESSION_LOG.md` when a
+phase starts or finishes. The owner merges.
+
+## Update Documentation
+
+Read:
+
+- `README.md`
+- `TASK_INDEX.md`
+- `DOCS_MIGRATION_NOTES.md`
+
+Likely files:
+
+- `docs/*.md`
+- `docs/archive/*.md`
+- `docs/archive/plans/*.md`
+
+Verification:
+
+```bash
+git diff --check
+rg -n "<stale-folder-or-phase-pattern>" AttackOfTheNodes/docs AGENTS.md
+find AttackOfTheNodes/docs -type f -name '*.md' | sort
+```

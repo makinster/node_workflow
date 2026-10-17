@@ -5,22 +5,23 @@ This is the only live status snapshot; older logs/plans retain dated history.
 
 ## Baseline and open work — 2026-10-17
 
-- `origin/main`: `579be24` (docs PR A, #69). C1–C7 and workflow naming
+- `origin/main`: `9d5455b` (Stash S1, #70; docs PR A #69 also merged). C1–C7 and workflow naming
   (#68) are merged; C7 has only `branch` and publishes its child payload.
-- Merged: Stash S1 + `aotn stash` CLI (#70). Open: Stash S2, the Stash
-  screen (`dist/stash-s2`, `p` in the editor). Next: a small PR adding
-  confirm/close buttons to every modal (owner, 2026-10-17), then S3
-  (field insert).
-- Docs PR B (consolidation, VISION, CONTRIBUTING) waits on nothing now; PR C
-  follows B. The owner merges, or asks a reviewer to.
+- Merged: Stash S1 + `aotn stash` CLI (#70); Stash S2, the Stash screen
+  (#71, `p` in the editor); docs PR B (#72: consolidation, VISION,
+  CONTRIBUTING). Next: a small PR adding confirm/close buttons to every
+  modal (owner, 2026-10-17), then S3 (field insert). Docs PR C follows B.
+  The owner merges, or explicitly asks a reviewer to.
 - Work order: [Node Contract Plan](NODE_CONTRACT_PLAN.md). Long-term decisions:
   [Distributed Build Plan](DISTRIBUTED_BUILD_PLAN.md), [Stash](STASH_PROPOSAL.md).
 
 ## Verification and environment — 2026-10-17
 
-- Full suite: **1518 passed** on `dist/stash-s2` (from `9d5455b`, 2026-10-17).
-- All **176** relative Markdown links/anchors resolve; `git diff --check`
-  passes. Isolated build/inspect/run and node/helper probes pass.
+- Full suite: **1518 passed** after #71 (2026-10-17). PR B alone: 1509 passed
+  in 173.22s on `9d5455b` plus docs changes.
+- PR B checks: **334** relative Markdown links/anchors resolve, 33 whole archive
+  bodies retained, 17 active docs, and `git diff --check` passes.
+  Fresh receipts: [PR B verification](audits/docs_audit_2026_10_17/PR_B_VERIFICATION.md).
 - Owner WSL setup: Python **3.14.4**, Textual **8.2.7**, pytest **9.1.0**;
   interpreter `/home/makin/src/node_workflow/.venv/bin/python`.
 - Docs worktree: `/home/makin/src/nw-docs`; owner checkout and other workers'
@@ -40,5 +41,5 @@ This is the only live status snapshot; older logs/plans retain dated history.
 - **Step 4:** child-run contracts remain planned and need the owner's gate;
   `--input` is recorded but not yet consumed by those contracts.
 - Only the [audit report](audits/docs_audit_2026_10_17/MASTER_REPORT.md) survived.
-  Original evidence/CSVs are unavailable. PR A rechecks S1 against this checkout;
-  PR B must rebuild `vision_sources.md` before writing VISION or archiving docs.
+  Original evidence/CSVs are unavailable. PR B rebuilt the source map before
+  extraction; whole originals and migration notes are retained in `archive/`.
