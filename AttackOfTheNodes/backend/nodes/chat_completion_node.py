@@ -149,10 +149,11 @@ class ChatCompletionNode(Node):
         "use_chat_session": False,
         "session_key": "",
         # Output routing: the Result is the designated downstream payload
-        # (dead-drop off by default), also duplicated to the Vault by default.
+        # (dead-drop off by default). Vault output is off until a key is set
+        # (owner, 2026-10-17): on with an empty key, a fresh node failed Validate.
         "transient_output": True,
         "dead_drop_passthrough": False,
-        "vault_write": True,
+        "vault_write": False,
         "vault_write_key": "",
         "vault_write_description": "",
         "transient_outputs": [],

@@ -281,7 +281,9 @@ def normalize_spec(spec: dict[str, Any]) -> dict[str, Any]:
             info["vault_required"] = True
         output_metadata[target] = info
 
-    if template == "producer" and "value" not in default_config:
+    # `payload_field: false`: the node computes its output (Random Number),
+    # so the template's Payload field would be an ignored control (C6).
+    if template == "producer" and spec.get("payload_field", True) and "value" not in default_config:
         default_config["value"] = spec.get("default_payload", "")
         config_schema.setdefault(
             "value",

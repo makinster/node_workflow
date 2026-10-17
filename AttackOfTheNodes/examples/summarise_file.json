@@ -8,7 +8,7 @@
     "summarise": {"type": "chat_completion_node", "alias": "Summarise",
                   "config": {"prompt_source": "Configured", "prompt": "Summarise the document in three short bullet points.",
                              "document_source": "Upstream payload", "api_key_secret": "anthropic_api_key",
-                             "vault_write_key": "summary",
+                             "vault_write": true, "vault_write_key": "summary",
                              "max_tokens": 300}},
     "show": {"type": "text_output_node", "alias": "Show summary", "config": {"template": "{input}"}},
     "end": {"type": "end_node"}

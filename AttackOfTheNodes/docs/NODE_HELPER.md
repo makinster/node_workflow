@@ -410,7 +410,9 @@ whenever `group` is set (except on the flat-rendered Outputs side), and emits
 Execution templates:
 
 - `pass_through`: forwards `context.inputs["input"]` to the first output port.
-- `producer`: emits `config["value"]`.
+- `producer`: emits `config["value"]` (a "Payload" field the template adds).
+  A producer that computes its own output sets `payload_field: false` in its
+  spec so no ignored Payload control is generated (C6: Random Number).
 - `transform_stub`: forwards input with a placeholder transform body.
 - `output_sink`: records input in the memory bank `output_log`.
 - `async_wait`: sleeps for `config["duration"]`, then forwards input.
