@@ -1,12 +1,12 @@
 # Subworkflows and Contracts — Step 4 Design Proposal
 
-**Status:** proposal for owner review, revision 2 (2026-10-18). Revision 2
-answers the review of revision 1: how a branched child produces one result,
-how the parent continues, simultaneous calls, file hand-over timing, the
-call tree's prompts and cancellation, and contract compatibility. Nothing
-here is built. Once approved, the decisions move into
-[DISTRIBUTED_BUILD_PLAN.md](DISTRIBUTED_BUILD_PLAN.md) Step 4 and this file is
-archived. Stash S5 (contract inputs bound to Stash entries) is designed in.
+**Status:** **approved design** (owner, 2026-10-18), revision 3. Revision 2
+answered the review of revision 1; revision 3 records the owner's answers
+(§7) and two design changes they led to: the Start node overhaul (C1, C2)
+and an Execution screen overhaul before the subworkflow UI. The summary and
+order live in [DISTRIBUTED_BUILD_PLAN.md](DISTRIBUTED_BUILD_PLAN.md) Step 4;
+this file holds the detailed decisions until Step 4 is complete, then it is
+archived. Stash S5 is designed in.
 
 ## 1. Why this step matters
 
@@ -61,8 +61,8 @@ decided. Revision-2 changes are marked **(r2)**.
 
 | # | Decision | Proposed | Rejected | Why |
 |---|---|---|---|---|
-| C1 | Where the contract lives | **(r2)** One workflow contract, edited on **Start**: input rows (name, type, required, default, description) **and** output rows (name, type, required, description) | Outputs declared per End | One authoritative schema; End nodes fulfil it rather than each defining their own |
-| C2 | How inner nodes read an input | Start writes each input into the **Vault** under its name when the run starts; nodes read it with the existing `Source = Vault` | A new per-port source | No new routing concept; the validator and dropdowns already understand Vault keys and types |
+| C1 | Where the contract lives | **(r3)** One workflow contract, edited on **Start**. Start is overhauled: its **rows are its typed outputs** (name, data type, required, value, description); these rows *are* the contract's inputs. Output rows for the result (name, type, required, description) sit beside them | A separate contract editor; outputs declared per End | Owner, 2026-10-18: Start becomes the one place where a caller's inputs arrive and are routed. End nodes fulfil the output schema rather than defining their own |
+| C2 | How a Start row reaches inner nodes | **(r3)** Each row uses the routing model other nodes already have: **downstream payload**, **Vault** (under the row's name, or a chosen key), or both. Start keeps **one continuation**: one routed row passes as itself, several as one object (as C11). Run directly, a row's configured value is its default; called as a subworkflow, the caller fills it. The old greeting becomes a default first row `greeting [string]`, migrated when a workflow loads (no file rewrite) | Start writing every input to the Vault only; one port per row | Reuses a model the editor, validator and dropdowns already understand; keeps today's workflows working |
 | C3 | How outputs are produced | **(r2)** Exactly **one End is the Return End** (a checkbox). It maps each output to a Vault key or its incoming payload. Version 1 requires branches to **merge before** the Return End; the validator rejects a contract workflow with zero or several Return Ends, or a Return End on one side of an unmerged branch | Any End may return; last write wins | Branches that each return would give intermittent results; a merged single return is predictable and can be relaxed later |
 | C4 | When a result exists | **(r2)** Only after the child run has **finished** (every supervisor ended), the Return End ran, and every required output is present and type-checked. A second visit to the Return End (a loop) fails the child with `child_output_conflict` | Publishing at the moment End runs | The caller must never see a partial or changing result |
 | C5 | What a run returns | `RunResult` gains **`values`** (named, typed outputs). The output log is unchanged | Replacing the output log | Today's CLI and TUI output keep working |
@@ -76,7 +76,7 @@ decided. Revision-2 changes are marked **(r2)**.
 
 | # | Decision | Proposed | Rejected | Why |
 |---|---|---|---|---|
-| C11 | How the parent continues | **(r2)** The Subworkflow node has **one success continuation**, `default`, plus `error`. Results are not ports: an **output mapping** writes each result into a parent Vault key (default key `<node alias>.<output>`), and `default` carries the first declared output as its payload. Branching after the call stays explicit (Parallel Branch, Conditional) | One port per output | Execution follows one port; per-output ports would look like they launch several paths, or stop the parent when none is "selected" |
+| C11 | How the parent continues | **(r2)** The Subworkflow node has **one success continuation**, `default`, plus `error`. Results are not ports: an **output mapping** writes each result into a parent Vault key (default key `<node alias>.<output>`), and **(r3)** `default` carries the result: a single output passes as itself, several as one object. Branching after the call stays explicit (Parallel Branch, Conditional) | One port per output | Execution follows one port; per-output ports would look like they launch several paths, or stop the parent when none is "selected" |
 | C12 | How the parent refers to the child | By **workflow id** (rename-safe), shown by name | By name | Renames (#68) must not break callers; a deleted child is a blocking validation error |
 | C13 | Files across the boundary | **(r2)** Hand-over is part of **child finalization**, in this order: (1) the run finishes, (2) outputs are collected and validated (C4), (3) each returned run-owned file is **released** from the child's session (removed from its delete list) and **adopted** by the caller's session, (4) the child's remaining resources close (R4 deletes its other run files on success), (5) the call completes. A file the parent passes **into** a child stays the parent's; a child deletes only files it created. A grandchild's file is handed up one level at a time. If the caller is cancelled before step 3, nothing is adopted and the stopped child keeps its files (R4: kept when not successful) | Adopting after `wait()` returns; copying files | `_record_run` deletes on success before `wait()` returns, so hand-over must happen inside finalization, with exactly one owner at every moment |
 | C14 | Calling mode | Call and wait first. Fire-and-forget later on the same mechanism | Both at once | Fire-and-forget needs Step 5's run records to be useful |
@@ -96,9 +96,10 @@ decided. Revision-2 changes are marked **(r2)**.
 |---|---|---|---|---|
 | C19 | Prompts and recovery | **(r2)** A **run-aware bridge** forwards a child's input and recovery requests to the root's client (the TUI, or the CLI/API providers), each tagged with its **invocation id** and a readable **call path** ("Main › Extract › Helper #2"). Answers go back by invocation id. Requests queue: one prompt is shown at a time, in arrival order | Children always unattended; matching by workflow name | Two simultaneous calls to the same child must be answerable separately |
 | C20 | Cancellation | **(r2)** Root Stop cancels every descendant and **waits for each to acknowledge** it has stopped and cleaned up before the root reports STOPPED. Terminating one branch cancels only that branch's pending calls. A cancelled call ends the node as *stopped*, never as an ordinary recoverable error. A child's handled failure is routed on the node's `error` port and sibling work continues. Pause applies to the **whole tree**; a breakpoint in a child pauses the whole tree like one in the root | Fire-and-forget cancellation | Requesting cancellation is not the same as having stopped; cleanup must finish first |
-| C21 | Watching a child | Drill in from the Subworkflow row with **breadcrumbs** (Main › Extract); **Esc changes the view only** and never stops anything | A separate run tab | Matches how people think about nested calls |
+| C21 | Watching a child | Drill in from the Subworkflow row with **breadcrumbs** (Main › Extract); **Esc changes the view only** and never stops anything. **(r3)** Built on the Execution screen overhaul (stage EX): a keyboard-navigable node map like the Editor's, the memory view scoped to the highlighted node (`M` for the whole log), A/D cycling branches. Enter on a call row opens the child's map | A separate run tab; drill-in on today's Execution screen | Owner's direction for the Execution screen; drill-in should use it, not be bolted on |
 | C22 | Run records | **(r2)** Every child run records: `root_run_id`, `parent_run_id`, the call-site node id and alias, the parent branch id and visit/attempt, the child workflow id and **revision**, and its invocation id | `parent_run_id` only | "Which of these twenty Summarise runs failed?" must have an answer |
 | C24 | Shared memory (owner, 2026-10-18) | **(r2)** A child may declare **shared entries** in its contract (`shared: job_progress [number], read` or `read-write`). The caller maps each to one of its own Vault keys, as with inputs; run standalone (CLI, trigger), the entry is simply local. Permissions only narrow on the way down: a child can pass on what it was granted, never more. Read-write offers only safe operations (increment, append, set-if-unchanged); there is no rollback, so a failed child's writes stay visible. The validator warns when parallel calls map the same read-write key. Live progress uses a separate **progress signal** shown in the run view, not memory writes. The contract format reserves the `shared` row kind in 4a; behaviour ships in 4e (read, plus the progress signal) and 4f (read-write) | Children reading the parent's Vault by key name; implicit access to the root's memory | A child that knows its parent's key names only works under that parent and can't run alone; declaring the entry keeps it reusable, testable and visible in its contract |
+| C25 | Prompting children (owner, 2026-10-18) | **(r3)** The norm is a **prompt-free child**. A child's contract shows **"may ask for input"** when it contains a User Input node or an attended recovery point, so a caller sees it before calling. A headless caller (CLI, trigger) fails fast with an error naming the prompting node instead of waiting. The C19 bridge stays for children that do prompt | Forbidding prompts in children | Owner's design philosophy: avoid prompts in subworkflows, but support them when needed |
 | C23 | Stash bindings (S5) | Per machine, per workflow: `stash/bindings/<workflow_id>.json` maps input name → Stash entry id; never in the workflow JSON. The CLI also accepts `--input key=@stash:name` | Bindings inside the workflow | Portability |
 
 ## 4. How it fits together
@@ -131,13 +132,14 @@ if it grows: lifecycle first, then concurrency and the bridge.
 
 | PR | Contents | Done when |
 |---|---|---|
-| 4a — Contracts | C1–C10 and C5 (and the reserved `shared` row kind from C24): the contract on Start, the Return End and its validation (one, after merges), result-on-finish with type checks, missing/invalid semantics, boundary types, compatibility errors, revision recording; `aotn run` consumes `--input`/`--inputs-file` with fail-fast | A contract workflow runs from the CLI with typed inputs and prints its `values`; conditional and parallel paths produce one validated result |
+| 4a — Start overhaul and contracts | **(r3)** The Start overhaul (C1, C2: typed rows with routing, greeting migration), then C3–C10 and C5 (and the reserved `shared` row kind from C24): the contract on Start, the Return End and its validation (one, after merges), result-on-finish with type checks, missing/invalid semantics, boundary types, compatibility errors, revision recording; `aotn run` consumes `--input`/`--inputs-file` with fail-fast | A contract workflow runs from the CLI with typed inputs and prints its `values`; conditional and parallel paths produce one validated result |
 | 4b — Child runs | C11–C20, C22: Subworkflow node backend with one continuation and output mapping, per-call stacks sharing read-only services, finalization with file hand-over, simultaneous calls, depth and capacity limits, recursion check, the prompt bridge with invocation ids, tree cancellation with acknowledgement, tree-wide pause, run records, the stack-cost benchmark | Every acceptance scenario in §6 passes |
-| 4c — UI | Workflow picker, input mapping and result rows in node config; contract rows on Start; the Return End checkbox; drill-in with breadcrumbs (C21); prompts labelled by call path | You can build, run and watch a parent/child workflow in the TUI |
+| EX — Execution screen overhaul | **(r3)** Its own design and sample screens first: the run shown as a keyboard-navigable node map like the Editor's, the memory view scoped to the highlighted node (`M` for the whole log), A/D cycling branches. May need the memory bank to record which node wrote each entry | You can follow a running workflow on its map, node by node |
+| 4c — UI | Workflow picker, input mapping and result rows in node config; the Return End checkbox; "may ask for input" on the contract (C25); drill-in with breadcrumbs on the EX screen (C21); prompts labelled by call path | You can build, run and watch a parent/child workflow in the TUI |
 | 4d — Stash bindings (S5) | C23: bind inputs from Start's contract and a Subworkflow node's inputs with `P`; `--input key=@stash:name`; C10 step 3 | Set up once in the TUI, then `aotn run wf` works unattended on this machine |
 | 4e — Shared read and progress (C24) | Shared entries with live read; the progress signal in the run view | A child reads a parent value that changes during the call; progress shows live |
 | 4f — Shared read-write (C24) | Increment, append and set-if-unchanged on shared entries; validator warning for parallel writers | Concurrent increments from two calls are exact; the warning fires |
-| later | Fire-and-forget; relaxing C3 to several Return Ends with a defined merge rule; version pinning | After Step 5 |
+| later | Fire-and-forget; a **family of Return Merge nodes** (first result wins, all required, collect into a list) to relax C3's single Return End; version pinning | After Step 5 |
 
 ## 6. Acceptance scenarios
 
@@ -181,32 +183,18 @@ if it grows: lifecycle first, then concurrency and the bridge.
 - Terminating one branch cancels only that branch's calls.
 - Esc from a child's view returns to the parent's view; the run continues.
 
-## 7. Questions for the owner
+## 7. Owner answers (2026-10-18)
 
-The review of revision 1 recommended an answer for each of the first five;
-those are now the proposals.
-
-1. **Child prompts:** through the run-aware bridge with call-path labels and
-   a queue (C19). Agree?
-2. **Watching children:** drill-in with breadcrumbs; Esc changes the view
-   only (C21). Agree?
-3. **Limits:** depth 4 (configurable, counted below the root) plus a
-   live-run limit of 16 per root run, both failing fast (C16). Agree with
-   the defaults?
-4. **Start's greeting:** kept for compatibility, separate from contract
-   inputs. Agree?
-5. **Call-and-wait first,** with simultaneous calls from parallel branches
-   supported from the start (C14, C15). Agree?
-6. **New:** version 1 allows exactly one Return End, after branches merge
-   (C3). Acceptable as a starting limit?
-7. **New:** results go into parent Vault keys (`<alias>.<output>` by
-   default), with `default` carrying the first output (C11). Is that the
-   continuation you want, or should `default` carry all results as one
-   object?
-
-8. **New:** shared memory (C24) is in: declared shared entries, read first
-   (4e, with a progress signal), read-write later (4f). Agreed in chat
-   2026-10-18; listed here so the plan records it.
+| # | Question | Answer | Effect |
+|---|---|---|---|
+| 1 | Child prompts | Agreed, through the bridge. Philosophy: avoid prompts in subworkflows, but support them | C19 stays; C25 makes prompt-free the norm and prompting visible |
+| 2 | Watching children | Drill-down, on an overhauled Execution screen: a node map like the Editor's, keyboard-navigable; memory scoped to the highlighted node, `M` for the whole log; A/D cycles branches | New stage EX before 4c; C21 builds on it |
+| 3 | Limits | Configurable in Settings. Philosophy: do a lot quickly and merge early, but keep wide workflows possible | C16 defaults (4 deep, 16 live) as settings |
+| 4 | Start's greeting | Keep a default greeting; overhaul Start into flexible typed outputs, the central place to route a caller's inputs | C1/C2 rewritten; the greeting becomes a default row |
+| 5 | Call-and-wait first | As recommended | C14, C15 |
+| 6 | One Return End | As recommended for now; later, a family of merge nodes with different return behaviour | C3 stands; Return Merge family in "later" |
+| 7 | Success output | As recommended: one result as itself, several as one object, plus Vault mapping | C11 |
+| 8 | Shared memory | As recommended | C24, stages 4e/4f |
 
 ## 8. Out of scope for Step 4
 

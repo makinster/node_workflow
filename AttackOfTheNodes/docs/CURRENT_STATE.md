@@ -32,9 +32,9 @@ This is the only live status snapshot; older logs/plans retain dated history.
 
 ## Open owner decisions and limits — 2026-10-17
 
-- **Step 4 design:** [Subworkflows proposal](SUBWORKFLOWS_PROPOSAL.md)
-  awaits review (`docs/step4-subworkflows`); its §7 lists five questions.
-  No Step 4 code before approval.
+- **Step 4:** design approved with the owner's answers (2026-10-18;
+  [Subworkflows proposal](SUBWORKFLOWS_PROPOSAL.md) rev. 3). Next: 4a, the Start
+  overhaul and contracts, with sample screens first.
 
 - **Stash:** S1 approved with the CLI (2026-10-17). Answered 2026-10-18:
   the field-insert key is `P`; a text field takes text entries only, not

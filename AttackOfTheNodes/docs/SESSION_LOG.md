@@ -30,6 +30,14 @@ and to the keymap work running in parallel (Codex, frontend).
   errors and revision recording; missing-versus-empty and boundary types;
   shared read-only services per child stack (`RunHistory` reads all
   history on construction). Seven owner questions.
+- **Revision 3 (owner answers, 2026-10-18):** approved. Start overhaul:
+  rows become typed, routed outputs and are the contract's inputs (C1, C2);
+  prompt-free children are the norm and prompting is visible (C25); a new
+  Execution screen overhaul stage (EX) comes before the subworkflow UI;
+  limits are Settings; one Return End now, a Return Merge family later;
+  shared memory as C24. Step 4 in DISTRIBUTED_BUILD_PLAN now summarises the
+  design and order; the backlog records the Return Merge family and
+  merge-early guidance.
 
 ## 2026-10-18 — Stash S3: Insert an Entry Into a Node Config Field
 

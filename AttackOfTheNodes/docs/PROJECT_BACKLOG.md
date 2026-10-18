@@ -193,11 +193,28 @@ unknown saved config rather than assuming old audit defects remain unfixed.
 
 ## Planned Project — Execution Screen Branch View
 
+**Scheduled as Step 4 stage EX (2026-10-18).** Owner direction then: the run
+shown as a keyboard-navigable node map like the Editor's, the memory view
+scoped to the highlighted node (`M` for the whole log), A/D cycling branches,
+and drill-in to subworkflow calls. Design and sample screens come first.
+
 Owner direction (2026-10-06) is branch inspection, A/D navigation and stable
 selection/scroll. The [preserved proposal](#execution-branch-inspection-proposal)
 contains the full recommendations, preview budgets and acceptance cases.
 [Architecture](ARCHITECTURE.md#execution-display-contract) owns the delivered
 lifecycle/cache contract; the branch navigation/layout remains future work.
+
+## Later Project — Return Merge Family and Merge-Early Guidance
+
+Owner ideas, 2026-10-18, from the Step 4 review:
+
+- **Return Merge nodes** with different return behaviour (first result wins,
+  all required, collect into a list), to relax Step 4's single Return End
+  (C3) with defined rules instead of last-write-wins.
+- **Merge-early guidance:** the owner's style is to fan out quickly and
+  merge as soon as a branch's purpose is done. The validator could gently
+  suggest merging long-lived parallel branches. Guidance, never a rule; wide
+  workflows stay possible.
 
 ## Planned Project — Backend / Frontend Boundary Cleanup
 
@@ -492,6 +509,8 @@ redirects output to a file path. No configuration required at export time.
 > provider model (D1), and `TriggerStartNode` by start triggers that launch runs
 > through a workflow contract (D2). `NestedStartNode` becomes the typed Start
 > contract of [DISTRIBUTED_BUILD_PLAN.md](DISTRIBUTED_BUILD_PLAN.md) step 4.
+> **Superseded (2026-10-18):** one Start node with typed, routed rows replaces
+> the variants; see [SUBWORKFLOWS_PROPOSAL.md](SUBWORKFLOWS_PROPOSAL.md) C1/C2.
 
 The `StartNode` is currently auto-generated and functionally minimal — it is
 hidden in the editor by default and carries no user-facing config. The redesign
