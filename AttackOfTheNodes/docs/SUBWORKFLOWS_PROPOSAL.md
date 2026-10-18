@@ -98,6 +98,7 @@ decided. Revision-2 changes are marked **(r2)**.
 | C20 | Cancellation | **(r2)** Root Stop cancels every descendant and **waits for each to acknowledge** it has stopped and cleaned up before the root reports STOPPED. Terminating one branch cancels only that branch's pending calls. A cancelled call ends the node as *stopped*, never as an ordinary recoverable error. A child's handled failure is routed on the node's `error` port and sibling work continues. Pause applies to the **whole tree**; a breakpoint in a child pauses the whole tree like one in the root | Fire-and-forget cancellation | Requesting cancellation is not the same as having stopped; cleanup must finish first |
 | C21 | Watching a child | Drill in from the Subworkflow row with **breadcrumbs** (Main › Extract); **Esc changes the view only** and never stops anything | A separate run tab | Matches how people think about nested calls |
 | C22 | Run records | **(r2)** Every child run records: `root_run_id`, `parent_run_id`, the call-site node id and alias, the parent branch id and visit/attempt, the child workflow id and **revision**, and its invocation id | `parent_run_id` only | "Which of these twenty Summarise runs failed?" must have an answer |
+| C24 | Shared memory (owner, 2026-10-18) | **(r2)** A child may declare **shared entries** in its contract (`shared: job_progress [number], read` or `read-write`). The caller maps each to one of its own Vault keys, as with inputs; run standalone (CLI, trigger), the entry is simply local. Permissions only narrow on the way down: a child can pass on what it was granted, never more. Read-write offers only safe operations (increment, append, set-if-unchanged); there is no rollback, so a failed child's writes stay visible. The validator warns when parallel calls map the same read-write key. Live progress uses a separate **progress signal** shown in the run view, not memory writes. The contract format reserves the `shared` row kind in 4a; behaviour ships in 4e (read, plus the progress signal) and 4f (read-write) | Children reading the parent's Vault by key name; implicit access to the root's memory | A child that knows its parent's key names only works under that parent and can't run alone; declaring the entry keeps it reusable, testable and visible in its contract |
 | C23 | Stash bindings (S5) | Per machine, per workflow: `stash/bindings/<workflow_id>.json` maps input name → Stash entry id; never in the workflow JSON. The CLI also accepts `--input key=@stash:name` | Bindings inside the workflow | Portability |
 
 ## 4. How it fits together
@@ -130,10 +131,12 @@ if it grows: lifecycle first, then concurrency and the bridge.
 
 | PR | Contents | Done when |
 |---|---|---|
-| 4a — Contracts | C1–C10 and C5: the contract on Start, the Return End and its validation (one, after merges), result-on-finish with type checks, missing/invalid semantics, boundary types, compatibility errors, revision recording; `aotn run` consumes `--input`/`--inputs-file` with fail-fast | A contract workflow runs from the CLI with typed inputs and prints its `values`; conditional and parallel paths produce one validated result |
+| 4a — Contracts | C1–C10 and C5 (and the reserved `shared` row kind from C24): the contract on Start, the Return End and its validation (one, after merges), result-on-finish with type checks, missing/invalid semantics, boundary types, compatibility errors, revision recording; `aotn run` consumes `--input`/`--inputs-file` with fail-fast | A contract workflow runs from the CLI with typed inputs and prints its `values`; conditional and parallel paths produce one validated result |
 | 4b — Child runs | C11–C20, C22: Subworkflow node backend with one continuation and output mapping, per-call stacks sharing read-only services, finalization with file hand-over, simultaneous calls, depth and capacity limits, recursion check, the prompt bridge with invocation ids, tree cancellation with acknowledgement, tree-wide pause, run records, the stack-cost benchmark | Every acceptance scenario in §6 passes |
 | 4c — UI | Workflow picker, input mapping and result rows in node config; contract rows on Start; the Return End checkbox; drill-in with breadcrumbs (C21); prompts labelled by call path | You can build, run and watch a parent/child workflow in the TUI |
 | 4d — Stash bindings (S5) | C23: bind inputs from Start's contract and a Subworkflow node's inputs with `P`; `--input key=@stash:name`; C10 step 3 | Set up once in the TUI, then `aotn run wf` works unattended on this machine |
+| 4e — Shared read and progress (C24) | Shared entries with live read; the progress signal in the run view | A child reads a parent value that changes during the call; progress shows live |
+| 4f — Shared read-write (C24) | Increment, append and set-if-unchanged on shared entries; validator warning for parallel writers | Concurrent increments from two calls are exact; the warning fires |
 | later | Fire-and-forget; relaxing C3 to several Return Ends with a defined merge rule; version pinning | After Step 5 |
 
 ## 6. Acceptance scenarios
@@ -200,6 +203,10 @@ those are now the proposals.
    default), with `default` carrying the first output (C11). Is that the
    continuation you want, or should `default` carry all results as one
    object?
+
+8. **New:** shared memory (C24) is in: declared shared entries, read first
+   (4e, with a progress signal), read-write later (4f). Agreed in chat
+   2026-10-18; listed here so the plan records it.
 
 ## 8. Out of scope for Step 4
 
