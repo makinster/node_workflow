@@ -7,7 +7,7 @@ overhaul.
 ## 2026-10-17 — Confirm and Close Buttons in Every Window
 
 Branch `dist/modal-buttons`, from `main` at `9032151` (docs PR B, #72).
-Before: 1518 passed. After: 1527 passed (9 new tests in
+Before: 1518 passed. After: 1532 passed (14 new tests in
 `test_modal_buttons.py`).
 
 - **Owner request (2026-10-17):** every window offers its main action and
@@ -25,6 +25,11 @@ Before: 1518 passed. After: 1527 passed (9 new tests in
   `test_workflow_library_uses_shared_list_navigation` (Load + Close).
 - Code comments citing docs that #72 archived now point at
   `docs/archive/` (review note on #72).
+- **Review fixes (owner's review of #73):** the node selector's Add acts on
+  the list that last had focus, so leaving a group's quick list for the
+  main list no longer adds the stale quick-list node; E/Enter on a focused
+  Back/Cancel button presses it in the group picker and the three branch
+  pickers instead of choosing. One test each.
 
 ## 2026-10-17 — Stash S2: The Stash Screen
 

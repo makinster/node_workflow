@@ -60,11 +60,18 @@ class MergeBeaconSelectorScreen(ModalScreen):
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "choose-merge-beacon":
-            self.action_choose()
+            self._choose_highlighted()
         elif event.button.id == "cancel-merge-beacon":
             self.action_cancel()
 
     def action_choose(self) -> None:
+        # E/Enter on a focused button presses it (Back/Cancel must not choose).
+        if isinstance(self.app.focused, Button):
+            self.app.focused.press()
+            return
+        self._choose_highlighted()
+
+    def _choose_highlighted(self) -> None:
         list_view = self.query_one("#merge-beacon-list", ListView)
         self._dismiss_selected(list_view.index)
 

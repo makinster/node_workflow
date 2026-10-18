@@ -70,7 +70,7 @@ class GroupPickerScreen(ModalScreen):
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "add-group-member":
-            self.action_choose()
+            self._choose_highlighted()
         elif event.button.id == "back-group-picker":
             self.action_cancel()
 
@@ -81,6 +81,13 @@ class GroupPickerScreen(ModalScreen):
         self._move(1)
 
     def action_choose(self) -> None:
+        # E/Enter on a focused button presses it (Back/Cancel must not choose).
+        if isinstance(self.app.focused, Button):
+            self.app.focused.press()
+            return
+        self._choose_highlighted()
+
+    def _choose_highlighted(self) -> None:
         list_view = self.query_one("#group-member-list", ListView)
         self._choose(list_view.index)
 

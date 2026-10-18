@@ -131,6 +131,9 @@ class NodeSelectorScreen(ModalScreen):
         self._drilled_in = False
         self._quick_list_members: List[str] = []
         self._quick_list_nodes: List[Dict[str, Any]] = []
+        # Which list holds the selection the Add button acts on: a click
+        # moves focus to the button, so remember the last list focused.
+        self._selection_list_id = "node-type-list"
 
     def compose(self) -> ComposeResult:
         with Vertical(id="modal-card", classes="node-selector-modal"):
@@ -276,11 +279,15 @@ class NodeSelectorScreen(ModalScreen):
         list_view = self.query_one("#node-type-list", ListView)
         self._activate_entry(list_view.index)
 
+    def on_descendant_focus(self, event) -> None:
+        if getattr(event.widget, "id", None) in ("node-type-list", "node-quick-list"):
+            self._selection_list_id = event.widget.id
+
     def _add_highlighted(self) -> None:
         """The Add button: what Enter on the highlighted entry would do
         (a click moves focus to the button, so it can't follow focus)."""
         quick_list = self.query_one("#node-quick-list", ListView)
-        if self._drilled_in:
+        if self._drilled_in and self._selection_list_id == "node-quick-list":
             index = quick_list.index
             if index is not None and 0 <= index < len(self._quick_list_members):
                 self.dismiss(self._quick_list_members[index])

@@ -17,7 +17,7 @@ This is the only live status snapshot; older logs/plans retain dated history.
 
 ## Verification and environment — 2026-10-17
 
-- Full suite: **1527 passed** on `dist/modal-buttons` (2026-10-17); 1518 after #71. PR B alone: 1509 passed
+- Full suite: **1532 passed** on `dist/modal-buttons` (2026-10-17); 1518 after #71. PR B alone: 1509 passed
   in 173.22s on `9d5455b` plus docs changes.
 - PR B checks: **334** relative Markdown links/anchors resolve, 33 whole archive
   bodies retained, 17 active docs, and `git diff --check` passes.

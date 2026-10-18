@@ -124,3 +124,80 @@ def test_node_selector_add_button_adds_the_highlighted_node():
             await pilot.pause(0.1)
             assert results == [expected]
     asyncio.run(go())
+
+
+# -- review of #73 ------------------------------------------------------------------
+
+def _press_on(screen_factory, button_id, *keys):
+    """Focus ``button_id`` and press ``keys``; return what the screen dismissed with."""
+    results = []
+
+    class Host(App):
+        CSS_PATH = "../frontend/styles.tcss"
+
+        def on_mount(self):
+            self.push_screen(screen_factory(), results.append)
+
+    async def go():
+        app = Host()
+        async with app.run_test(size=(100, 30)) as pilot:
+            await pilot.pause(0.05)
+            app.set_focus(app.screen.query_one(f"#{button_id}", Button))
+            await pilot.pause(0.05)
+            await pilot.press(*keys)
+            await pilot.pause(0.05)
+    asyncio.run(go())
+    return results
+
+
+@pytest.mark.parametrize("factory, cancel_id", [
+    (_group_picker, "back-group-picker"),
+    (_branch_selector, "cancel-branch-select"),
+    (_merge_beacon, "cancel-merge-beacon"),
+    (_branch_keep, "cancel-branch-keep"),
+], ids=["group-picker", "branch", "merge-beacon", "branch-keep"])
+def test_e_on_a_focused_close_button_closes(factory, cancel_id):
+    assert _press_on(factory, cancel_id, "e") == [None]
+
+
+def test_node_selector_add_after_leaving_the_quick_list_adds_the_main_list_node():
+    from backend.node_factory import NodeFactory
+    from frontend.screens.node_selector import NodeSelectorScreen
+
+    results = []
+
+    class Host(App):
+        CSS_PATH = "../frontend/styles.tcss"
+
+        def on_mount(self):
+            self.push_screen(NodeSelectorScreen(NodeFactory()), results.append)
+
+    async def go():
+        app = Host()
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause(0.1)
+            screen = app.screen
+            node_list = screen.query_one("#node-type-list")
+            group = next((i for i, e in enumerate(screen._entries) if e["kind"] == "group"), None)
+            if group is None:  # find a tab with a group
+                for number in "2345":
+                    await pilot.press(number)
+                    await pilot.pause(0.05)
+                    group = next((i for i, e in enumerate(screen._entries) if e["kind"] == "group"), None)
+                    if group is not None:
+                        break
+            assert group is not None, "no tab has a group"
+            node_list.index = group
+            app.set_focus(node_list)
+            await pilot.press("d")  # drill into the group's quick list
+            await pilot.pause(0.05)
+            assert screen._drilled_in
+            app.set_focus(node_list)  # back to the main list (Tab in the app)
+            await pilot.pause(0.05)
+            target = next(i for i, e in enumerate(screen._entries) if e["kind"] == "node")
+            node_list.index = target
+            expected = screen._entries[target]["node"]["type"]
+            assert await pilot.click("#add-node-select")
+            await pilot.pause(0.1)
+            assert results == [expected]
+    asyncio.run(go())
