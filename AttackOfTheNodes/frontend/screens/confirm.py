@@ -3,24 +3,21 @@
 from __future__ import annotations
 
 from textual.app import ComposeResult
-from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Button, Label
 
+from frontend.keymap import CONFIRM, bindings_for, hint_for
+from frontend.keymap_runtime import KeymapScreenMixin
 from frontend.widgets.command_navigation import command_focus_widgets
 from frontend.widgets.command_screen_mixin import CommandScreenMixin
 
 
-class ConfirmScreen(CommandScreenMixin, ModalScreen):
+class ConfirmScreen(KeymapScreenMixin, CommandScreenMixin, ModalScreen):
     """Modal that asks the user to confirm or cancel a destructive action."""
 
-    BINDINGS = [
-        ("y", "confirm_yes", "Yes"),
-        ("n", "confirm_no", "No"),
-        ("escape", "confirm_no", "No"),
-        Binding("ctrl+q", "confirm_no", "Cancel", priority=True),
-    ]
+    KEYMAP = CONFIRM
+    BINDINGS = bindings_for(KEYMAP)
 
     def __init__(self, message: str, yes_label: str = "Yes", no_label: str = "No") -> None:
         super().__init__()
@@ -31,7 +28,7 @@ class ConfirmScreen(CommandScreenMixin, ModalScreen):
     def compose(self) -> ComposeResult:
         with Vertical(id="modal-card", classes="confirm-modal"):
             yield Label(self._message, classes="modal-title")
-            yield Label("Y confirm  N / Esc cancel", classes="modal-help")
+            yield Label(hint_for(self.KEYMAP), classes="modal-help")
             with Horizontal(classes="button-row"):
                 yield Button(self._yes_label, id="confirm-yes", variant="warning")
                 yield Button(self._no_label, id="confirm-no", variant="default")

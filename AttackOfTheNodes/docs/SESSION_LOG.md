@@ -4,6 +4,35 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-18 — Keymap Phase 1: Registry and Confirm Profile
+
+Branch `codex/keymap-foundation`, fresh from `origin/main` at `714f190`,
+after Stash S3 #75 merged. Owner adopted three keymap PRs, one at a time;
+this implements only the foundation. The Step 4 proposal proceeds separately.
+
+- `frontend/keymap.py`: immutable typed commands/profiles, stable semantic IDs,
+  class-time native Binding compilation and compact hint generation.
+  `keymap_runtime.py`: pure NAV/TEXT/Select, active-screen and application/modal
+  availability; no second dispatcher. Availability reads never change focus,
+  close overlays or commit text.
+- Confirm is the first complete profile: registry supplies all its commands,
+  navigation aliases and unchanged `Y confirm  N / Esc cancel` hint. Existing
+  action methods, buttons and focus mechanics remain. No visible text/layout
+  changes. All other screens/root guards and shared adapters await phase 2.
+- Characterized Confirm's nine actual key routes before migration. Added
+  registry/native-map contracts and mounted tests for nonediting text focus,
+  Input/TextArea typing and retained edit ownership, expanded Select navigation,
+  side-effect-free availability reads, and modal/root scope. Test hosts suppress
+  Textual's default root Quit when isolating modal Ctrl+Q; this does not claim
+  production root bindings have migrated.
+- Post-S3 inventory corrects the research: insertion uses plain **P**, priority
+  and off while typing. **Ctrl+P and the command palette are untouched**;
+  there is no palette migration hazard. Inventory, three-phase scope and
+  deferrals are in Project Backlog; Contributing explains adding a command.
+- Verification: focused **57 passed**; full suite **1605 passed** in 196.94s;
+  compilation and `git diff --check` pass. Docs check: 336 relative links/anchors,
+  33 whole archive bodies, 17 active docs. No native terminal verification.
+
 ## 2026-10-18 — Step 4 Design Proposal: Subworkflows and Contracts
 
 Branch `docs/step4-subworkflows`, from `main` at `714f190` (#75). Docs

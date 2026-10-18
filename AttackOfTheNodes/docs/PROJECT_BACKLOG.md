@@ -803,12 +803,39 @@ only serializable representations.
 
 ## Near-Term Project — Frontend Command UI Toolkit
 
-Current config and modal UX should converge on small shared helpers instead of
-per-screen key handling. `frontend/widgets/command_navigation.py` is the first
-step and currently supports command-mode screens. The completed frontend audit
-plan is archived at `archive/plans/FRONTEND_AUDIT_BUILD_PLAN.md`; active rules
-live in `AGENT_START_GUIDE.md`, `NODE_HELPER.md`, `TASK_INDEX.md`, and
-`TUI_DESIGN.md`.
+**Adopted scope (owner, 2026-10-18):** a typed Python registry compiled into
+native Textual bindings owns keys, stable command IDs and pure NAV/TEXT/Select
+and modal availability. It supplies generated presentation; Textual remains
+responsible for dispatch. One authoritative route/display source per migrated
+command. Preserve defaults except the listed defects; show samples for any
+visible text/layout change. Three PRs, one at a time, each against main, then
+stop for the owner/reviewer:
+
+| Phase | Scope | Status |
+|---|---|---|
+| 1 | Registry/runtime, stable IDs, class-time compilation, pure shared availability and characterization; one simple profile end to end | Awaiting review on `codex/keymap-foundation`: Confirm, including its unchanged generated hint and navigation |
+| 2 | Shared mixin/navigation policies, retire duplicated action-name lists; Input/TextArea and Select adapters; Stash, Node Config (P insert), Editor, Workflow Library and list pickers | After phase 1 merges. First reproduce each listed defect: mutating Node Config availability, Execution's duplicate Stop route, Settings' duplicate digit route |
+| 3 | Generated Help/hints for migrated screens; replace handwritten key text and stale A/D-tab descriptions in Node Config/selector | After phase 2 merges |
+
+Deferred: remaining read-only viewers until next touched, generated
+`UI_QUICK_REFERENCE.md` tables/source checks, Settings rebinding UI. Keep IDs
+stable for those follow-ups. No backend/workflow format changes.
+
+**Post-S3 re-inventory:** baseline `714f190` (merged #75, 2026-10-18), Textual
+8.2.7. Still 22 screen classes in 20 modules; 182 literal app/screen binding
+rows before this migration, plus 10 shared navigation rows and raw widget/key
+handlers. S3 adds `p -> stash_insert` as a priority binding in Node Config,
+disabled while typing; target capture/accepted types/source switching and
+focus return are covered in `test_stash_insert.py`. **Plain P, not Ctrl+P**:
+the command palette and Ctrl+P are untouched. The earlier research's claim
+that S3 requires disabling/moving the palette is withdrawn; it is not a
+migration hazard or a reserved-key change.
+
+Phase 1 compiles every Confirm alias before Textual's class merge and reuses
+the existing focus mechanics. Other screens, root App policy, the Select
+compatibility patch and legacy guard lists remain unchanged until phase 2.
+Foundation test hosts exercise shared policies without claiming those legacy
+screens have already migrated. See [Contributing](CONTRIBUTING.md#adding-a-registered-command).
 
 Recommended cleanup:
 
