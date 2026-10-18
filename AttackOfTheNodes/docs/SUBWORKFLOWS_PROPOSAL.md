@@ -1,133 +1,211 @@
 # Subworkflows and Contracts — Step 4 Design Proposal
 
-**Status:** proposal for owner review (2026-10-18). Nothing here is built.
-Once approved, the decisions move into
+**Status:** proposal for owner review, revision 2 (2026-10-18). Revision 2
+answers the review of revision 1: how a branched child produces one result,
+how the parent continues, simultaneous calls, file hand-over timing, the
+call tree's prompts and cancellation, and contract compatibility. Nothing
+here is built. Once approved, the decisions move into
 [DISTRIBUTED_BUILD_PLAN.md](DISTRIBUTED_BUILD_PLAN.md) Step 4 and this file is
-archived. Stash S5 (contract inputs bound to Stash entries) is designed in
-here, as agreed.
+archived. Stash S5 (contract inputs bound to Stash entries) is designed in.
 
 ## 1. Why this step matters
 
 Step 4 is where AttackOfTheNodes stops being "one long graph" and becomes a
-tool for **long, complex workflows built from smaller, trusted pieces**:
+tool for **long, complex workflows built from smaller, trusted pieces**. A
+parent can call "Extract documents", "Analyse results" and "Publish report";
+each child has its own branches and helpers. The caller only needs to know a
+child's inputs, outputs and failures. The CLI, future triggers and the
+server fill the same contract.
 
-- a workflow says what it needs and what it returns (its **contract**);
-- another workflow calls it like a node (a **subworkflow**);
-- the CLI, a future trigger or the server fills the same contract.
+The structure quickly becomes a tree with repeated calls:
 
-Everything after this (triggers in Step 5, the server in Step 6) assumes it.
+```
+Main run ── Branch A calls ──► Extract (child run) ──► Helper (invocation 1)
+         └─ Branch B calls ──► Enrich  (child run) ──► Helper (invocation 2)
+```
+
+Both branches can wait on their children at the same time, and each helper
+invocation needs its own identity, state and lifetime even though both run
+the same saved workflow. The design below is built around that picture.
 
 ## 2. What exists today (checked against `main` at `714f190`)
 
 - **One run per backend stack.** `MasterState` holds a single `_run`;
   starting a run cancels leftover tasks and clears the memory bank. A child
-  run therefore **cannot share the parent's stack**. It needs its own.
-- `RunService.create()` already builds a complete headless stack (EventBus,
-  WorkflowMap, MemoryBank, MasterState, settings, secrets).
-- `RunContext` already has `parent_run_id` and `inputs`. `inputs` is recorded
-  but nothing reads it yet. `aotn run --input KEY=VALUE` fills it.
-- Start has no inputs: it emits a configurable greeting. End terminates a
-  branch and writes a completion message to the output log.
-- `RunResult.outputs` is the output log (a list of text lines), not named
-  values.
-- Run-owned temporary files (`lifetime: "run"`) are deleted when a run closes
-  successfully and kept when it fails.
-- The `object_list` field type (File Manager's extra files) already renders
-  editable rows from an `item_schema`, so contract rows need no new widget.
+  run therefore cannot share the parent's stack.
+- `RunService.create()` builds a complete headless stack. Its `RunHistory`
+  reads **every saved history record from disk** when constructed, so a stack
+  per call has a real cost.
+- **Run files are deleted inside the engine.** `MasterState._record_run`
+  calls `run_session.close_all(delete_run_files=succeeded)` before
+  `RunService.wait()` returns. Anything that must survive a child (a
+  returned file) has to be handled **before** that point.
+- **The TUI runs attended with no input provider object.** It answers
+  prompts through events and `MasterState.submit_user_input`. A child has
+  nothing to "inherit" there; it needs an explicit bridge.
+- `RunContext` already has `parent_run_id` and `inputs` (recorded, unused).
+  `aotn run --input KEY=VALUE` fills `inputs`.
+- **End terminates one branch**, and a workflow can have several Ends,
+  including on mutually exclusive paths. Ordinary execution follows **one
+  output port** of a node (its first connection), not every port.
+- `RunResult.outputs` is the output log (text lines), not named values.
+- The `object_list` field type already renders editable rows, so contract
+  rows need no new widget.
 
 ## 3. Decisions to adopt
 
 D3 (a subworkflow is its own run, linked by `parent_run_id`) is already
-decided. These build on it.
+decided. Revision-2 changes are marked **(r2)**.
+
+### Contracts
 
 | # | Decision | Proposed | Rejected | Why |
 |---|---|---|---|---|
-| C1 | Where inputs are declared | On **Start**, as a list of rows: name, type, required, default, description | A separate "Input" node per value | One place to read a workflow's needs; the same list drives the CLI, the subworkflow node and Stash bindings |
-| C2 | How inner nodes read an input | Start writes each input into the **Vault** under its name when the run starts; nodes read it with the existing `Source = Vault` | A new per-port "contract input" source | No new routing concept; validator and dropdowns already understand Vault keys and types |
-| C3 | Where outputs are declared | On **End**, as rows: name, type, and where the value comes from (a Vault key, or End's incoming payload) | Collecting every Vault key | A child returns only what it promises; the parent sees typed ports |
-| C4 | What a run returns | `RunResult` gains **`values`**: the named, typed outputs. The output log stays as it is | Replacing the output log | Keeps today's CLI and TUI output unchanged |
-| C5 | How a child runs | A **fresh backend stack per child run** (as `RunService.create()` builds), with `parent_run_id` set | Making `MasterState` hold several runs now | Isolation by construction, no rewrite of the engine's run handling; concurrent runs are Step 6's problem |
-| C6 | How the parent refers to the child | By **workflow id** (rename-safe), shown by name | By name | Renames (now possible, #68) must not break callers; a deleted child is a clear validation error |
-| C7 | Calling mode | **Call and wait** first. Fire-and-forget later on the same mechanism | Both at once | Call-and-wait covers reuse; fire-and-forget needs Step 5's run records to be useful |
-| C8 | Input fill order (every caller) | 1. explicit value (subworkflow mapping, `--input`, API, trigger) → 2. inputs file (`--inputs-file`) → 3. **Stash binding on this machine** (S5) → 4. the input's default → 5. still empty and required: **fail before the run starts**, listing what's missing | Failing mid-run | From `STASH_PROPOSAL.md` §4.5; a run never starts half-supplied |
-| C9 | Recursion | Validation rejects a workflow that can reach itself through subworkflow nodes; at run time a `max_subworkflow_depth` setting (default **4**) is a backstop | No limit | A loop of calls would otherwise spawn runs without end |
-| C10 | Stop and failure | Stopping the parent stops its children. A child that fails, is stopped, or is missing inputs fails the subworkflow node with a **declared error code**, routable on its `error` port (D7) | Letting the child keep running | Predictable cleanup; failures handled like any other node error |
-| C11 | Files a child returns | A file output with `lifetime: "run"` is **handed to the parent run** (re-registered there) before the child closes, so it survives the child's cleanup | Copying the file; keeping all child files | A returned file must outlive the child; everything else follows R4 |
-| C12 | Prompts and recovery inside a child | The child **inherits the parent's** input provider and recovery policy. In the TUI, a child's question appears like the parent's, labelled with the child workflow's name | Children always unattended | A child that asks for input must still work interactively; headless parents stay headless |
-| C13 | Stash bindings (S5) | Per machine, per workflow: `stash/bindings/<workflow_id>.json` maps input name → Stash entry id. Never stored in the workflow JSON. The CLI also accepts `--input key=@stash:name` | Bindings inside the workflow | Portability: the same workflow file runs on another machine after rebinding |
+| C1 | Where the contract lives | **(r2)** One workflow contract, edited on **Start**: input rows (name, type, required, default, description) **and** output rows (name, type, required, description) | Outputs declared per End | One authoritative schema; End nodes fulfil it rather than each defining their own |
+| C2 | How inner nodes read an input | Start writes each input into the **Vault** under its name when the run starts; nodes read it with the existing `Source = Vault` | A new per-port source | No new routing concept; the validator and dropdowns already understand Vault keys and types |
+| C3 | How outputs are produced | **(r2)** Exactly **one End is the Return End** (a checkbox). It maps each output to a Vault key or its incoming payload. Version 1 requires branches to **merge before** the Return End; the validator rejects a contract workflow with zero or several Return Ends, or a Return End on one side of an unmerged branch | Any End may return; last write wins | Branches that each return would give intermittent results; a merged single return is predictable and can be relaxed later |
+| C4 | When a result exists | **(r2)** Only after the child run has **finished** (every supervisor ended), the Return End ran, and every required output is present and type-checked. A second visit to the Return End (a loop) fails the child with `child_output_conflict` | Publishing at the moment End runs | The caller must never see a partial or changing result |
+| C5 | What a run returns | `RunResult` gains **`values`** (named, typed outputs). The output log is unchanged | Replacing the output log | Today's CLI and TUI output keep working |
+| C6 | Missing versus empty | **(r2)** An input is *missing* only when it is absent or `None`. `False`, `0`, `""` and empty lists are values. An explicit value that fails its type check is an error (`child_input_invalid`); it never falls through to a Stash binding or default | Truthiness | A deliberate `0` or empty string must not silently become the default |
+| C7 | Types allowed across the boundary | **(r2)** Version 1: `string`, `number`, `bool`, JSON `object`/`list` (copied by JSON round-trip, so neither side can mutate the other's value) and `file` refs (see C13). Run-local references such as `ai_session` are **rejected by the validator** in a contract | Passing any value | A run-local handle cannot resolve in another run's session |
+| C8 | Contract changes | **(r2)** A child change that breaks an existing mapping or connection (removed or retyped input in use, removed output in use, a new required input not mapped) is a **blocking validation error**; additive changes (a new optional input or output) are warnings. Each run records the child's **revision** (a hash of the saved definition) | Warnings only; full version pinning now | Broken calls must not start; the revision makes "which version ran?" answerable without pinning |
+| C9 | Child edited mid-run | **(r2)** Each call loads the child's saved definition **at call time** and records its revision. A long parent can therefore run an edited child on a later call; the run record shows it | Snapshotting every child when the root starts | Simple and visible; snapshotting can come with pinning later |
+| C10 | Input fill order (every caller) | 1. explicit value (mapping, `--input`, API, trigger) → 2. inputs file (`--inputs-file`) → 3. **Stash binding on this machine** (S5) → 4. the input's default → 5. still missing and required: **fail before the run starts**, listing every missing name | Failing mid-run | From `STASH_PROPOSAL.md` §4.5 |
+
+### Calls and the parent graph
+
+| # | Decision | Proposed | Rejected | Why |
+|---|---|---|---|---|
+| C11 | How the parent continues | **(r2)** The Subworkflow node has **one success continuation**, `default`, plus `error`. Results are not ports: an **output mapping** writes each result into a parent Vault key (default key `<node alias>.<output>`), and `default` carries the first declared output as its payload. Branching after the call stays explicit (Parallel Branch, Conditional) | One port per output | Execution follows one port; per-output ports would look like they launch several paths, or stop the parent when none is "selected" |
+| C12 | How the parent refers to the child | By **workflow id** (rename-safe), shown by name | By name | Renames (#68) must not break callers; a deleted child is a blocking validation error |
+| C13 | Files across the boundary | **(r2)** Hand-over is part of **child finalization**, in this order: (1) the run finishes, (2) outputs are collected and validated (C4), (3) each returned run-owned file is **released** from the child's session (removed from its delete list) and **adopted** by the caller's session, (4) the child's remaining resources close (R4 deletes its other run files on success), (5) the call completes. A file the parent passes **into** a child stays the parent's; a child deletes only files it created. A grandchild's file is handed up one level at a time. If the caller is cancelled before step 3, nothing is adopted and the stopped child keeps its files (R4: kept when not successful) | Adopting after `wait()` returns; copying files | `_record_run` deletes on success before `wait()` returns, so hand-over must happen inside finalization, with exactly one owner at every moment |
+| C14 | Calling mode | Call and wait first. Fire-and-forget later on the same mechanism | Both at once | Fire-and-forget needs Step 5's run records to be useful |
+
+### Many calls at once
+
+| # | Decision | Proposed | Rejected | Why |
+|---|---|---|---|---|
+| C15 | Simultaneous calls | **(r2)** Allowed: two Parallel Branch paths that each reach a Subworkflow node run their children **at the same time**, each in its own stack. "Call and wait" blocks only the calling branch | Serializing all calls | Existing branching already produces this; serializing would make parallel parents slower than their own design |
+| C16 | Load limits | **(r2)** Per root run: `max_subworkflow_depth` (default **4**, counted as calls below the root) and `max_live_subworkflow_runs` (default **16**, every child and grandchild that has started and not finished). A call that would exceed either **fails at once** with `depth_limit` or `capacity_limit`, routable on `error`. It never waits for capacity | A queue that waits for free slots | Waiting parents hold slots their descendants need, so a waiting queue can deadlock; failing fast is predictable and visible |
+| C17 | Recursion | The validator rejects a workflow that can reach itself through Subworkflow nodes; C16's depth limit is the run-time backstop. Reuse of one helper by different children (a diamond) is allowed | Rejecting all repeated use | Shared helpers are the point of reuse |
+| C18 | Stack cost | **(r2)** A child stack shares the process's read-only parts (node factory, settings, secrets, one run-history writer) and builds only per-run parts (bus, workflow map, memory, master state). A benchmark (`benchmarks/bench_subworkflow_calls.py`) measures many short calls with a large saved history before any further optimisation | A fresh `RunService.create()` per call | `RunHistory` re-reads all history from disk on construction |
+
+### The call tree: prompts, cancellation, observability
+
+| # | Decision | Proposed | Rejected | Why |
+|---|---|---|---|---|
+| C19 | Prompts and recovery | **(r2)** A **run-aware bridge** forwards a child's input and recovery requests to the root's client (the TUI, or the CLI/API providers), each tagged with its **invocation id** and a readable **call path** ("Main › Extract › Helper #2"). Answers go back by invocation id. Requests queue: one prompt is shown at a time, in arrival order | Children always unattended; matching by workflow name | Two simultaneous calls to the same child must be answerable separately |
+| C20 | Cancellation | **(r2)** Root Stop cancels every descendant and **waits for each to acknowledge** it has stopped and cleaned up before the root reports STOPPED. Terminating one branch cancels only that branch's pending calls. A cancelled call ends the node as *stopped*, never as an ordinary recoverable error. A child's handled failure is routed on the node's `error` port and sibling work continues. Pause applies to the **whole tree**; a breakpoint in a child pauses the whole tree like one in the root | Fire-and-forget cancellation | Requesting cancellation is not the same as having stopped; cleanup must finish first |
+| C21 | Watching a child | Drill in from the Subworkflow row with **breadcrumbs** (Main › Extract); **Esc changes the view only** and never stops anything | A separate run tab | Matches how people think about nested calls |
+| C22 | Run records | **(r2)** Every child run records: `root_run_id`, `parent_run_id`, the call-site node id and alias, the parent branch id and visit/attempt, the child workflow id and **revision**, and its invocation id | `parent_run_id` only | "Which of these twenty Summarise runs failed?" must have an answer |
+| C23 | Stash bindings (S5) | Per machine, per workflow: `stash/bindings/<workflow_id>.json` maps input name → Stash entry id; never in the workflow JSON. The CLI also accepts `--input key=@stash:name` | Bindings inside the workflow | Portability |
 
 ## 4. How it fits together
 
 ```
-Parent run                                   Child run (own stack, parent_run_id)
-  ... → [Subworkflow: "Summarise file"] ──►  Start (inputs: file [file], tone [string])
-            inputs: file ← Upstream payload        writes Vault: file, tone
-                    tone ← Configured "plain"     ... nodes read Vault ...
-                                                 End (outputs: summary [string] ← Vault "summary")
-        ◄── ports: summary [string]          RunResult.values = {"summary": "..."}
-            error: child_failed / child_input_missing / child_not_found / depth_limit
+Parent run                                        Child run (own stack, invocation id)
+ ... → [Subworkflow: "Summarise file"] ───────►  Start · contract
+         inputs:  file ← Upstream payload            in:  file [file], tone [string]
+                  tone ← Configured "plain"          out: summary [string] (required)
+         results: summary → Vault "Summarise.summary"  ... branches ... → Merge
+       ◄── default (payload = summary) / error   Return End: summary ← Vault "summary"
+           codes: child_failed, child_input_missing, child_input_invalid,
+                  child_output_conflict, child_not_found, depth_limit, capacity_limit
 ```
 
-- The **subworkflow node's ports come from the child's contract**: one output
-  port per End output, typed (the port model from P1 already resolves ports
-  from config). Each input is a mapping row: Upstream payload, Vault key or
-  Configured value, the same sources other nodes use.
-- The **validator** loads the child's contract to type-check each mapping and
-  each downstream connection. It warns when the child's contract has changed
-  since the mapping was made (a removed input, a changed type).
-- **`aotn run`** reads Start's contract: `--input` values are checked and
-  typed, `--inputs-file` fills the rest, and Stash bindings and defaults
-  follow (C8). A missing required input exits before the run with a new
-  exit code and a list.
-- **Run records:** each child run is recorded with its `parent_run_id`, so
-  run history and errors can show the call tree.
+- The **validator** loads each child's contract: it type-checks input
+  mappings and result keys, applies C8, rejects recursion (C17) and
+  unsupported boundary types (C7), and checks the Return End rule (C3).
+  Existing race warnings cover two parallel calls writing the same parent
+  Vault key.
+- **`aotn run`** reads Start's contract: `--input` values are typed (C6),
+  `--inputs-file`, Stash bindings and defaults follow (C10). A missing or
+  invalid input exits before the run with a new exit code and a list. The
+  printed result includes `values`.
 
-## 5. Delivery: four PRs, then S5
+## 5. Delivery
 
-Each PR is usable on its own and comes with sample screens before any UI.
+Four stages as before, with the foundations widened. 4b may ship as two PRs
+if it grows: lifecycle first, then concurrency and the bridge.
 
 | PR | Contents | Done when |
 |---|---|---|
-| 4a — Contracts | Start inputs and End outputs (object_list rows, C1–C4); Start writes inputs to the Vault; End collects `values`; `aotn run` consumes `--input`/`--inputs-file` with typing and fail-fast (C8 steps 1, 2, 4, 5); validator checks contract rows | A workflow with a contract runs from the CLI with typed inputs and prints its `values` |
-| 4b — Child runs | `SubworkflowRunner` (fresh stack, C5), call-and-wait, the subworkflow node backend (C6, C7), recursion check and depth limit (C9), stop cascade and error codes (C10), file hand-over (C11), inherited providers (C12) | A parent calls a child and receives typed outputs; stop, failure, missing input and recursion are all tested |
-| 4c — Subworkflow node UI | Workflow picker, input mapping rows and contract-driven ports in node config; in the Execution screen, the subworkflow row shows the child's progress and opens it (drill in, Esc back) | You can build and watch a parent/child workflow in the TUI |
-| 4d — Stash bindings (S5) | `stash/bindings/<workflow_id>.json` (C13); bind inputs from Start's contract panel and from a subworkflow node's inputs with `P` (S3's picker); `--input key=@stash:name`; C8 step 3 | Set up once in the TUI, then `aotn run wf` works unattended on this machine |
-| later | Fire-and-forget calls; parallel children | After Step 5's run records |
+| 4a — Contracts | C1–C10 and C5: the contract on Start, the Return End and its validation (one, after merges), result-on-finish with type checks, missing/invalid semantics, boundary types, compatibility errors, revision recording; `aotn run` consumes `--input`/`--inputs-file` with fail-fast | A contract workflow runs from the CLI with typed inputs and prints its `values`; conditional and parallel paths produce one validated result |
+| 4b — Child runs | C11–C20, C22: Subworkflow node backend with one continuation and output mapping, per-call stacks sharing read-only services, finalization with file hand-over, simultaneous calls, depth and capacity limits, recursion check, the prompt bridge with invocation ids, tree cancellation with acknowledgement, tree-wide pause, run records, the stack-cost benchmark | Every acceptance scenario in §6 passes |
+| 4c — UI | Workflow picker, input mapping and result rows in node config; contract rows on Start; the Return End checkbox; drill-in with breadcrumbs (C21); prompts labelled by call path | You can build, run and watch a parent/child workflow in the TUI |
+| 4d — Stash bindings (S5) | C23: bind inputs from Start's contract and a Subworkflow node's inputs with `P`; `--input key=@stash:name`; C10 step 3 | Set up once in the TUI, then `aotn run wf` works unattended on this machine |
+| later | Fire-and-forget; relaxing C3 to several Return Ends with a defined merge rule; version pinning | After Step 5 |
 
-## 6. Tests that prove it
+## 6. Acceptance scenarios
 
-- A contract input arrives in the child's Vault, typed; a missing required
-  input fails before the run starts, listing every missing name.
-- The parent receives exactly the declared outputs, typed, on matching ports.
-- Child memory is isolated: the child never sees the parent's Vault, and the
-  parent sees only returned values.
-- Stopping the parent stops the child; a failed or stopped child fails the
-  node with the right code, routable on `error`.
-- A self-calling chain is rejected by validation; a deeper-than-limit chain
-  fails at run time with `depth_limit`.
-- A returned run-owned file survives the child's cleanup; unreturned child
-  files follow R4.
-- A child's input prompt reaches the TUI (attended) and the provider
-  (headless).
-- Renaming the child keeps the call working; deleting it is a validation
-  error.
+**Contracts and results**
+- A required input that is missing fails before the run starts, listing
+  every missing name; `0`, `False` and `""` are accepted as values; a
+  wrongly typed explicit value fails with `child_input_invalid`.
+- A child with Conditional and Parallel paths that merge before the Return
+  End returns one result, typed; a loop that reaches the Return End twice
+  fails with `child_output_conflict`.
+- An object passed in or returned is a copy: mutating it on one side never
+  changes the other.
+- Removing an input the parent maps blocks the parent's validation; adding
+  an optional input only warns.
+
+**Calls and concurrency**
+- Two branches call the same child with different inputs at the same time;
+  each gets its own result, memory and invocation id.
+- Two different children both call one shared helper; validation accepts it.
+- One child fails through a handled error path while its sibling succeeds;
+  the sibling's result is used and the parent continues.
+- A call beyond the depth or live-run limit fails at once with the right
+  code; no call ever waits for capacity.
+- Many repeated calls release every completed child stack and bus
+  subscription (no growth in live objects or subscriptions).
+
+**Files**
+- A returned run-owned file survives the child's cleanup and is deleted
+  with the **parent** when the parent succeeds.
+- A file returned through a grandchild reaches the root intact.
+- A parent-owned file passed into a child is never deleted by the child.
+- Root Stop during hand-over leaves exactly one owner (the stopped child
+  keeps it), never zero or two.
+
+**Prompts and cancellation**
+- A grandchild prompts while another child is already waiting for input;
+  both prompts are shown in turn, labelled by call path, and each answer
+  reaches the right invocation.
+- Root Stop while children are starting, waiting, or handing over files
+  ends with every descendant acknowledged as stopped.
+- Terminating one branch cancels only that branch's calls.
+- Esc from a child's view returns to the parent's view; the run continues.
 
 ## 7. Questions for the owner
 
-1. **Child prompts in the TUI (C12):** is it right that a child's input
-   question appears like the parent's, labelled with the child's name? The
-   alternative is running every child unattended.
-2. **Watching a child (4c):** a drill-in from the subworkflow row (Enter opens
-   the child's run, Esc returns) is proposed. The alternative is a separate
-   run tab.
-3. **Depth limit:** is 4 nested calls a sensible default?
-4. **Start's greeting:** keep it as Start's default output alongside the
-   contract (proposed), or retire it once contracts exist?
-5. **Scope check:** is call-and-wait-first (C7) the right first slice?
+The review of revision 1 recommended an answer for each of the first five;
+those are now the proposals.
+
+1. **Child prompts:** through the run-aware bridge with call-path labels and
+   a queue (C19). Agree?
+2. **Watching children:** drill-in with breadcrumbs; Esc changes the view
+   only (C21). Agree?
+3. **Limits:** depth 4 (configurable, counted below the root) plus a
+   live-run limit of 16 per root run, both failing fast (C16). Agree with
+   the defaults?
+4. **Start's greeting:** kept for compatibility, separate from contract
+   inputs. Agree?
+5. **Call-and-wait first,** with simultaneous calls from parallel branches
+   supported from the start (C14, C15). Agree?
+6. **New:** version 1 allows exactly one Return End, after branches merge
+   (C3). Acceptable as a starting limit?
+7. **New:** results go into parent Vault keys (`<alias>.<output>` by
+   default), with `default` carrying the first output (C11). Is that the
+   continuation you want, or should `default` carry all results as one
+   object?
 
 ## 8. Out of scope for Step 4
 
-Concurrent independent runs in one process, triggers and event sources
-(Step 5), the server and authentication (Step 6), per-node keymaps, sharing or
-importing other people's workflows, and version pinning of child workflows
-(a changed contract is caught by validation instead).
+- Checkpoint and resume after a process crash. Child relationships help
+  diagnosis but do not make runs resumable.
+- Concurrent independent root runs in one process, triggers and event
+  sources (Step 5), the server and authentication (Step 6).
+- Version pinning of child workflows (C8's revision recording comes first).
+- Sharing or importing other people's workflows.

@@ -19,6 +19,17 @@ and to the keymap work running in parallel (Codex, frontend).
 - Checked against the code: `MasterState` holds one run, so a child needs
   its own stack; `RunContext.inputs` and `parent_run_id` exist but are
   unused; `RunResult.outputs` is the output log, not named values.
+- **Revision 2 (review of #76):** one contract on Start with a single
+  Return End after merges; results only after the child finishes; one
+  `default` continuation with results in parent Vault keys; simultaneous
+  calls with fail-fast depth and live-run limits (no waiting queue);
+  file hand-over inside child finalization (`_record_run` deletes run
+  files before `wait()` returns); a run-aware prompt bridge with
+  invocation ids (the TUI has no input provider to inherit); tree
+  cancellation with acknowledgement; blocking contract-compatibility
+  errors and revision recording; missing-versus-empty and boundary types;
+  shared read-only services per child stack (`RunHistory` reads all
+  history on construction). Seven owner questions.
 
 ## 2026-10-18 — Stash S3: Insert an Entry Into a Node Config Field
 
