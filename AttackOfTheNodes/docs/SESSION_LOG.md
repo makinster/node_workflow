@@ -4,6 +4,25 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-18 — Step 4 Proposal Revision 4: Follow-Up Decisions
+
+Branch `docs/step4-r4`, docs only. Owner decisions in chat, 2026-10-18:
+
+- Results are defined on the **Return End** (opt-in), mirrored read-only on
+  Start; no auto-results from output nodes (C1, C3).
+- Result routing per result (downstream / Vault / both) in the
+  Subworkflow node's Payloads tab, with indented result lines in the
+  editor, instead of an auto-added handler node (C11).
+- **Return to caller** toggle on Vault outputs (C26); **callable**
+  workflows with Make callable as the primary path (C27); a `folder`
+  type (C28); exclusive leases for shared read-write entries that fail
+  fast (C24).
+- Nesting yes, recursion not intended (C17); a concurrency benchmark in
+  4b sets the live-run default (C16). Correction: boundary types use
+  `var`, not `object`/`list` (C7).
+- Later: run the validator on Make callable with suggestions (for
+  example, fold User Input nodes into Start's inputs).
+
 ## 2026-10-18 — Keymap Phase 1: Registry and Confirm Profile
 
 Branch `codex/keymap-foundation`, fresh from `origin/main` at `714f190`,
