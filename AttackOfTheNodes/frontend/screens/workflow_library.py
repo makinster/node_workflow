@@ -6,42 +6,27 @@ import asyncio
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional
 
-from textual import events
 from textual.app import ComposeResult
-from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Button, Input, Label, ListItem, ListView, Static
 
 from backend.persistence import list_workflows
 from frontend import file_io, notifications
+from frontend.keymap import NAME_INPUT, WORKFLOW_LIBRARY, NAME_PROMPT, PATH_PROMPT, bindings_for
+from frontend.keymap_runtime import KeymapScreenMixin
+
 from frontend.widgets.command_input import CommandInput
 from frontend.widgets.command_screen_mixin import CommandScreenMixin
 from frontend.widgets.list_navigation import focus_list, move_list_highlight
 from frontend.widgets.status_bar import StatusBar
 
 
-class WorkflowLibraryScreen(ModalScreen):
+class WorkflowLibraryScreen(KeymapScreenMixin, ModalScreen):
     """Open, duplicate, export, and delete saved workflows."""
 
-    BINDINGS = [
-        ("escape", "cancel", "Cancel"),
-        ("q", "cancel", "Cancel"),
-        Binding("ctrl+q", "cancel", "Cancel", priority=True),
-        Binding("up", "cursor_up", "Up", priority=True),
-        Binding("down", "cursor_down", "Down", priority=True),
-        Binding("w", "cursor_up", "Up", priority=True),
-        Binding("s", "cursor_down", "Down", priority=True),
-        ("enter", "load_selected", "Load"),
-        # E chooses the highlighted item, as in every other list.
-        Binding("e", "choose", "Load", priority=True),
-        ("n", "new_workflow", "New"),
-        ("r", "rename_selected", "Rename"),
-        ("d", "duplicate_selected", "Duplicate"),
-        ("i", "import_workflow", "Import"),
-        ("o", "export_selected", "Export"),
-        ("x", "delete_selected", "Delete"),
-    ]
+    KEYMAP = WORKFLOW_LIBRARY
+    BINDINGS = bindings_for(KEYMAP)
 
     def __init__(self, current_workflow_id: str | None = None) -> None:
         super().__init__()
@@ -192,15 +177,13 @@ class _NameInput(CommandInput):
     which many terminals (and tmux) don't send distinctly.
     """
 
-    async def _on_key(self, event: events.Key) -> None:
-        if event.key == "enter":
-            if self.editing:
-                self.end_edit()
-            event.stop()
-            event.prevent_default()
-            self.post_message(self.Submitted(self, self.value))
-            return
-        await super()._on_key(event)
+    KEYMAP = NAME_INPUT
+    BINDINGS = bindings_for(KEYMAP)
+
+    def action_submit_name(self) -> None:
+        if self.editing:
+            self.end_edit()
+        self.post_message(self.Submitted(self, self.value))
 
 
 class NamePromptScreen(CommandScreenMixin, ModalScreen):
@@ -210,13 +193,8 @@ class NamePromptScreen(CommandScreenMixin, ModalScreen):
     Dismisses with the trimmed name, or None on Esc.
     """
 
-    BINDINGS = [
-        ("escape", "cancel", "Cancel"),
-        ("ctrl+enter", "submit", "Confirm"),
-        # Ctrl+S saves everywhere else (editor, node editor, settings).
-        Binding("ctrl+s", "submit", "Confirm", priority=True),
-        Binding("ctrl+q", "cancel", "Cancel", priority=True),
-    ]
+    KEYMAP = NAME_PROMPT
+    BINDINGS = bindings_for(KEYMAP)
 
     def __init__(
         self,
@@ -274,13 +252,8 @@ class NamePromptScreen(CommandScreenMixin, ModalScreen):
 class PathPromptScreen(CommandScreenMixin, ModalScreen):
     """Ask for an import/export filesystem path."""
 
-    BINDINGS = [
-        ("escape", "cancel", "Cancel"),
-        ("ctrl+enter", "submit", "Submit"),
-        Binding("b", "browse", "Browse", priority=True),
-        Binding("tab", "tab_out", "Next", priority=True),
-        Binding("ctrl+q", "cancel", "Cancel", priority=True),
-    ]
+    KEYMAP = PATH_PROMPT
+    BINDINGS = bindings_for(KEYMAP)
 
     def __init__(
         self,

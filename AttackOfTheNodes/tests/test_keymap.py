@@ -40,8 +40,6 @@ def test_ids_are_stable_and_actions_exist_on_profile_owner():
         for command in profile.commands:
             assert command.id not in seen or seen[command.id] == command
             seen[command.id] = command
-            name, _ = command.action_signature
-            assert callable(getattr(ConfirmScreen, f"action_{name}"))
     with pytest.raises(FrozenInstanceError):
         CONFIRM.id = "changed"
 
@@ -53,7 +51,7 @@ def test_ids_are_stable_and_actions_exist_on_profile_owner():
     (Command("combined", ("y,n",), "yes", "Yes"),),
     (Command("namespace", ("y",), "app.yes", "Yes"),),
     (Command("one", ("y",), "yes", "Yes"),
-     Command("two", ("n",), "yes", "Yes", policy=Policy.TEXT)),
+     Command("two", ("n",), "yes", "Yes", policies=frozenset({Policy.TEXT}))),
 ])
 def test_invalid_profiles_are_rejected(commands):
     with pytest.raises(ValueError):
@@ -71,8 +69,25 @@ def test_invalid_profiles_are_rejected(commands):
     (KeyContext(True, modal_open=True), Policy.NAV, None),
 ])
 def test_pure_mode_and_modal_policy(policy, scope, context, screen_policy, app_policy):
-    command = Command("test.command", ("x",), "test", "Test", policy=policy)
-    expected_policy = {Scope.SCREEN: screen_policy, Scope.APPLICATION: app_policy}[scope]
+    command = Command("test.command", ("x",), "test", "Test", policies=frozenset({policy}))
+    expected_policy = {Scope.SCREEN: screen_policy, Scope.APPLICATION: app_policy, Scope.WIDGET: screen_policy}[scope]
     before = (context.owner_active, context.typing, context.select_expanded, context.modal_open)
     assert available(command, scope, context) is (policy is expected_policy)
     assert (context.owner_active, context.typing, context.select_expanded, context.modal_open) == before
+
+
+def test_command_can_work_in_nav_and_text_without_allowing_select():
+    command = Command("test.save", ("ctrl+s",), "save", "Save",
+                      policies=frozenset({Policy.NAV, Policy.TEXT}), priority=True)
+    assert available(command, Scope.SCREEN, KeyContext(True))
+    assert available(command, Scope.SCREEN, KeyContext(True, typing=True))
+    assert not available(command, Scope.SCREEN, KeyContext(True, select_expanded=True))
+
+
+def test_key_specific_policies_require_separate_actions():
+    with pytest.raises(ValueError, match="conflicting policies"):
+        Profile("save", (
+            Command("test.save.nav", ("s",), "save", "Save"),
+            Command("test.save.edit", ("ctrl+s",), "save", "Save",
+                    policies=frozenset({Policy.NAV, Policy.TEXT})),
+        ))

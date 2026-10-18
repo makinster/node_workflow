@@ -7,7 +7,6 @@ from collections import deque
 from pathlib import Path
 
 from textual.app import App as TextualApp, ScreenStackError
-from textual.binding import Binding
 from textual.css.query import NoMatches
 
 from backend.events import (
@@ -33,6 +32,8 @@ from . import notifications
 from .editor_workflow_adapter import EditorWorkflowAdapter
 from .node_types import START_NODE_TYPE
 from .widgets.cursor_state import CursorState
+from frontend.keymap import APP, bindings_for
+from frontend.keymap_runtime import KeymapScreenMixin
 from .screens.editor import EditorScreen
 from .screens.confirm import ConfirmScreen
 from .screens.error_details import ErrorDetailsScreen
@@ -51,7 +52,7 @@ from .screens.workflow_library import NamePromptScreen, PathPromptScreen, Workfl
 REFRESH_COALESCE_SECONDS = 0.075
 
 
-class AttackOfTheNodesApp(TextualApp):
+class AttackOfTheNodesApp(KeymapScreenMixin, TextualApp):
     """Main Textual app shell.
 
     The backend stack is injected by ``main.py`` exactly as the tkinter app was.
@@ -62,17 +63,8 @@ class AttackOfTheNodesApp(TextualApp):
     TITLE = "AttackOfTheNodes"
     SUB_TITLE = "Textual TUI"
 
-    BINDINGS = [
-        ("ctrl+s", "save_workflow", "Save"),
-        ("ctrl+r", "run_workflow", "Run"),
-        ("ctrl+n", "new_workflow", "New"),
-        ("ctrl+o", "workflow_library", "Open"),
-        ("ctrl+e", "settings", "Settings"),
-        ("h", "help", "Help"),
-        ("?", "help", "Help"),
-        ("q", "back", "Back"),
-        Binding("ctrl+q", "back", "Back", priority=True),
-    ]
+    KEYMAP = APP
+    BINDINGS = bindings_for(KEYMAP)
 
     def __init__(
         self,
@@ -134,17 +126,6 @@ class AttackOfTheNodesApp(TextualApp):
         """Return to the editor view."""
         self.stop_active_workflow()
         self.switch_screen(self._build_editor_screen())
-
-    def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
-        from frontend.widgets.command_input import CommandInput, CommandTextArea
-        if action == "back":
-            if isinstance(self.screen, ErrorDetailsScreen):
-                # Let the modal dismiss itself so its recovery callback runs.
-                return False
-            focused = self.focused
-            if isinstance(focused, (CommandInput, CommandTextArea)) and getattr(focused, "editing", False):
-                return False
-        return True
 
     def action_back(self) -> None:
         """Go back from secondary screens, or quit from the editor."""

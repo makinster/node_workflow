@@ -40,8 +40,54 @@ the known file-picker flake failed once in one full run and passes alone.
   re-parsed; Return End results are enforced only in callable workflows
   (the engine offers `publish_result` only there). One test each.
 - Frontend touched only for the five issue labels and the TUI's
-  can't-start message (`error_details.py`, `app.py`); both also change in
-  #78, so whichever merges second resolves.
+  can't-start message (`error_details.py`, `app.py`); merged with #78
+  (keymap phase 2) without conflicts in either file.
+
+## 2026-10-18 — Keymap Phase 2: Shared Policies and Native Adapters
+
+Branch `codex/keymap-policies`, fresh from `origin/main` at `4cb246e`.
+Merged reviewed #77 on the owner's explicit instruction, integrating #76's
+approved Step 4 docs and keeping both sets of log/status entries first.
+
+- `Command.policies` is a nonempty frozenset of allowed NAV/TEXT/SELECT states.
+  Key-specific exceptions use separate actions; conflicting policy sets for
+  one action signature are rejected. NAV printable commands compile as priority
+  bindings. Confirm's existing IDs and visible hint remain unchanged.
+- App and the high-traffic screens now compile their native bindings from the
+  registry: Editor, Execution, Node Config (plain P insert), selector, Stash,
+  Settings, Workflow Library/prompts and list pickers. Shared command-mode
+  Help/recovery/confirmation/input modals receive mechanical profile integration;
+  their wording/layout stays unchanged. Memory/Output/File viewers are deferred.
+- Retired duplicate typing action-name lists and the raw Select dispatcher.
+  Input/TextArea edit transitions and NAV caret aliases are native widget
+  commands; focus rescue and standalone fallbacks use effective registered
+  roles/keys. Ctrl+Q reverts before leaving; root registered commands yield
+  to modals. Normal editing/caret/clipboard behavior remains Textual-owned.
+- `widgets/select_keymap.py` isolates the private Textual 8.2 compatibility:
+  focused Select and overlay share one native profile, with pure availability.
+  Both pushed-screen and embedded-screen focus paths are tested. No second
+  dispatcher or screen-level raw Select key list remains.
+- Failing-first receipts: three regressions failed before fixes in
+  `tests/test_keymap_regressions.py`: reading Node Config availability closed
+  a Select; Execution's old S route survived removing its bindings; Settings'
+  bubbled digit handler bypassed rebinding. All now pass through native routes.
+- New actual-keypress tests cover Input and multiline save-and-stay, retained
+  editor ownership, literal typing/digits/P, modal scope, Select remapping,
+  screen-navigation and caret remapping, and native compiled IDs/actions.
+  Two old direct `_on_key` tests now press Escape through the pilot; behavior
+  assertions are retained. Ctrl+Q's static test checks its registered wrapper
+  and Back fallback. No backend/CLI files or workflow data changed.
+- Contributing documents command addition and custom-section integration for
+  4a-2. Phase 3 owns generated Help/hints/tab labels; reference-table/source
+  checks, Settings rebinding and read-only viewer migration remain deferred.
+- Final verification: **1666 passed** in 212.52s, compilation and whitespace
+  checks pass. Actual-keypress cases include Input and TextArea commits,
+  dropdown/screen/caret rebinding, modes, focus and cancellation. An intermediate
+  full run hit the known `HeaderTitle` file-picker teardown flake; its isolated
+  rerun passed. That separate fix is not folded into this PR. The old docs
+  audit finds all 342 links/anchors and 33 archive bodies intact, but reports
+  18 active docs versus its historical 17 expectation (already true on main
+  after #76 added the proposal). No native terminal verification was performed.
 
 ## 2026-10-18 — Step 4 Proposal Revision 4: Follow-Up Decisions
 

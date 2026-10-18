@@ -5,11 +5,11 @@ from __future__ import annotations
 from typing import Any, Dict
 
 from textual.app import ComposeResult
-from textual.binding import Binding
 from textual.containers import VerticalScroll
 from textual.screen import ModalScreen
 from textual.widgets import Button, Label, Static
 
+from frontend.keymap import ERROR_DETAILS, bindings_for
 from frontend.node_location import node_heading
 from frontend.widgets.command_screen_mixin import CommandScreenMixin
 
@@ -64,11 +64,8 @@ VALIDATION_LABELS: Dict[str, str] = {
 class ErrorDetailsScreen(CommandScreenMixin, ModalScreen):
     """Show structured errors and recovery choices."""
 
-    BINDINGS = [
-        ("escape", "close", "Close"),
-        ("q", "close", "Close"),
-        Binding("ctrl+q", "close", "Close", priority=True),
-    ]
+    KEYMAP = ERROR_DETAILS
+    BINDINGS = bindings_for(KEYMAP)
 
     def __init__(self, payload: Dict[str, Any]) -> None:
         super().__init__()

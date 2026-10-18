@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from typing import Any, Iterable
 
-from textual import events
-from textual.binding import Binding
 from textual.containers import Horizontal
 from textual.widgets import Button, Checkbox, ListView, Select, SelectionList, Switch
 from textual.widgets._select import SelectOverlay
@@ -24,56 +22,9 @@ DEFAULT_COMMAND_FOCUS_TYPES = (
 )
 
 
-def _install_select_overlay_command_bindings() -> None:
-    existing_keys = {
-        binding.key if isinstance(binding, Binding) else binding[0]
-        for binding in SelectOverlay.BINDINGS
-    }
-    additions = [
-        Binding("w", "cursor_up", "Up", priority=True),
-        Binding("s", "cursor_down", "Down", priority=True),
-        Binding("up", "cursor_up", "Up", priority=True),
-        Binding("down", "cursor_down", "Down", priority=True),
-        Binding("e", "select", "Select", priority=True),
-        Binding("enter", "select", "Select", priority=True),
-        Binding("ctrl+q", "dismiss", "Dismiss menu", priority=True),
-    ]
-    SelectOverlay.BINDINGS = [
-        *SelectOverlay.BINDINGS,
-        *[binding for binding in additions if binding.key not in existing_keys],
-    ]
-    if getattr(SelectOverlay, "_command_navigation_key_patch", False):
-        return
-    original_on_key = SelectOverlay._on_key
+from frontend.widgets.select_keymap import install_select_keymap
 
-    async def _on_key(self: SelectOverlay, event: events.Key) -> None:
-        if event.key in {"w", "up"}:
-            self.action_cursor_up()
-            event.stop()
-            event.prevent_default()
-            return
-        if event.key in {"s", "down"}:
-            self.action_cursor_down()
-            event.stop()
-            event.prevent_default()
-            return
-        if event.key in {"e", "enter"}:
-            self.action_select()
-            event.stop()
-            event.prevent_default()
-            return
-        if event.key == "ctrl+q":
-            self.action_dismiss()
-            event.stop()
-            event.prevent_default()
-            return
-        await original_on_key(self, event)
-
-    SelectOverlay._on_key = _on_key
-    SelectOverlay._command_navigation_key_patch = True
-
-
-_install_select_overlay_command_bindings()
+install_select_keymap()
 
 
 def is_editing_text(widget: Any) -> bool:
@@ -81,20 +32,6 @@ def is_editing_text(widget: Any) -> bool:
     return isinstance(widget, (CommandInput, CommandTextArea)) and bool(
         getattr(widget, "editing", False)
     )
-
-
-def blocks_command_action(widget: Any, action: str) -> bool:
-    """Return True when a text editor should own the key action."""
-    return is_editing_text(widget) and action in {
-        "cursor_up",
-        "cursor_down",
-        "activate_focused",
-        "choose",
-        "focus_filter",
-        "focus_node_list",
-        "cancel",
-        "browse",
-    }
 
 
 def command_focus_widgets(
