@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from textual.app import ComposeResult
-from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Button, Label, Static
@@ -12,7 +11,10 @@ LEAVE_UNLINKED = "leave"
 DELETE_BRANCH = "delete"
 
 
-class RecoveryBranchUnpickScreen(ModalScreen):
+from frontend.keymap import RECOVERY_BRANCH_UNPICK, bindings_for
+from frontend.keymap_runtime import KeymapScreenMixin
+
+class RecoveryBranchUnpickScreen(KeymapScreenMixin, ModalScreen):
     """Ask what happens to a recovery branch whose last error was unpicked.
 
     Dismisses with ``"leave"`` (keep the nodes, drop the connection),
@@ -20,10 +22,8 @@ class RecoveryBranchUnpickScreen(ModalScreen):
     the error is picked again).
     """
 
-    BINDINGS = [
-        ("escape", "cancel", "Cancel"),
-        Binding("ctrl+q", "cancel", "Cancel", priority=True),
-    ]
+    KEYMAP = RECOVERY_BRANCH_UNPICK
+    BINDINGS = bindings_for(KEYMAP)
 
     def __init__(self, branch_label: str, node_labels: list[str]) -> None:
         super().__init__()

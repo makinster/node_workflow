@@ -9,9 +9,7 @@ from typing import Any, Callable, Dict, Optional
 
 from rich.text import Text
 from textual.app import ComposeResult
-from textual.binding import Binding
 from textual.containers import Horizontal, Vertical, VerticalScroll
-from textual.events import Key
 from textual.screen import ModalScreen
 from textual.widgets import Button, Checkbox, Input, Label, Select, SelectionList, Static, TabbedContent, TabPane, TextArea
 
@@ -28,6 +26,8 @@ from backend.field_types import check_number, field_visible, number_fields
 CUSTOM_NUMBER_CONTROLS = {"branch_count": "#branch-count"}
 from backend.port_types import resolved_metadata, trace_producers
 from backend.vault_declarations import typed_vault_writes
+from frontend.keymap import NODE_CONFIG, bindings_for
+
 from frontend.error_paths import editor_output_ports
 from backend.node_errors import UNMATCHED_ROUTE
 from frontend.error_mux_ui import (
@@ -645,24 +645,8 @@ def upstream_branch_info(
 class NodeConfigScreen(CommandScreenMixin, ModalScreen):
     """Edit-node modal powered by the schema form generator."""
 
-    BINDINGS = [
-        ("escape", "cancel", "Close"),
-        # Save and stay open (owner, 2026-10-13). Priority so they also
-        # work while a text field is being edited: they commit it first.
-        Binding("ctrl+s", "save_and_stay", "Save", priority=True),
-        Binding("ctrl+enter", "save_and_stay", "Save", priority=True),
-        # Tabs switch by number key (1-5). A/D are within-row navigation,
-        # supplied by CommandScreenMixin.
-        Binding("1", "jump_config_tab(1)", "Tab 1", priority=True),
-        Binding("2", "jump_config_tab(2)", "Tab 2", priority=True),
-        Binding("3", "jump_config_tab(3)", "Tab 3", priority=True),
-        Binding("4", "jump_config_tab(4)", "Tab 4", priority=True),
-        Binding("5", "jump_config_tab(5)", "Tab 5", priority=True),
-        Binding("ctrl+q", "cancel", "Cancel", priority=True),
-        # Stash S3: insert an entry into the highlighted field. Priority so a
-        # focused field that isn't editing can't swallow it; off while typing.
-        Binding("p", "stash_insert", "Insert from Stash", priority=True),
-    ]
+    KEYMAP = NODE_CONFIG
+    BINDINGS = bindings_for(KEYMAP)
 
     def __init__(
         self,
@@ -1421,28 +1405,6 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 lambda: self.app.set_focus(self.query_one("#alias-input", CommandInput), scroll_visible=False),
             )
 
-    def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
-        expanded_select = self._expanded_select()
-        if expanded_select is not None and action in {"back", "cancel"}:
-            expanded_select.expanded = False
-            expanded_select.focus()
-            return False
-        if action == "stash_insert":
-            active_text = getattr(self, "_active_command_text_widget", None)
-            if is_editing_text(self.app.focused) or is_editing_text(active_text) or expanded_select is not None:
-                return False
-        if action == "jump_config_tab":
-            # Digits type normally while editing a field or with a Select
-            # overlay open; only switch tabs in nav mode.
-            active_text = getattr(self, "_active_command_text_widget", None)
-            if (
-                is_editing_text(self.app.focused)
-                or is_editing_text(active_text)
-                or expanded_select is not None
-            ):
-                return False
-        return super().check_action(action, parameters)
-
     async def on_checkbox_changed(self, event: Checkbox.Changed) -> None:
         if event.checkbox.id == "membank-writes":
             await self._refresh_membank_output_rows()
@@ -1994,28 +1956,6 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
     def action_catch_errors(self) -> None:
         """Save this node, then let the editor spawn or open its Error Mux."""
         self.action_save(then="catch_errors")
-
-    def on_key(self, event: Key) -> None:
-        if self._expanded_select() is None:
-            # A/D within-row navigation is handled by CommandScreenMixin
-            # bindings; tab switching is via number keys.
-            return
-        if event.key in {"up", "w"}:
-            self.action_cursor_up()
-            event.stop()
-            event.prevent_default()
-        elif event.key in {"down", "s"}:
-            self.action_cursor_down()
-            event.stop()
-            event.prevent_default()
-        elif event.key in {"e", "enter"}:
-            self.action_activate_focused()
-            event.stop()
-            event.prevent_default()
-        elif event.key == "ctrl+q":
-            self._expanded_select().expanded = False
-            event.stop()
-            event.prevent_default()
 
     def action_save(self, then: Optional[str] = None) -> None:
         """Save and close (the Save button, the catch-errors button)."""

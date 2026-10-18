@@ -77,42 +77,77 @@ keyboard behavior; avoid maintaining another binding list here.
 
 ### Adding a registered command
 
-Keymap phase 1 migrates `ConfirmScreen` only. Its typed definitions live in
-`frontend/keymap.py`; `keymap_runtime.py` supplies pure availability guards.
-Other screens keep their current routes until phase 2. Do not add a second
-handler for a registered command.
+The typed definitions in `frontend/keymap.py` now own App, the command-mode
+screens and their text/Select adapters. `keymap_runtime.py` supplies pure
+availability. Memory/Output/File viewers retain their legacy maps until next
+touched. Keep existing semantic IDs, including Confirm's phase-1 IDs.
 
-1. Add a `Command` to the owning `Profile`: a stable semantic ID, native key
-   aliases, action, description, NAV/TEXT/Select policy and intentional priority.
-   Reuse the shared navigation definitions instead of copying their keys.
-   IDs survive key/action renames; do not reuse an old ID for a different operation.
-2. Implement the screen's `action_...` method. Declare `KEYMAP` and
-   `BINDINGS = bindings_for(KEYMAP)` in the class body so Textual compiles the
-   map at class creation. Put `KeymapScreenMixin` before `CommandScreenMixin`.
-   Keep the existing focus/activation helpers.
-3. Keep availability queries free of effects: no focus changes, Select closing,
-   editor commits or dispatch in `check_action`. NAV commands yield to typing
-   and expanded Selects; inactive screen owners and application commands under
-   a modal are unavailable. Screen-specific conditions can further restrict
-   availability; effects belong in action handlers.
-4. For compact hints use the command's `hint` metadata and `hint_for(profile)`;
-   never copy keys into a label or raw `on_key` route. This first renderer keeps
-   Confirm's text unchanged. Full contextual Help/hints follow in phase 3;
-   generated Quick Reference tables and Settings rebinding remain deferred.
-5. Add actual-keypress tests with production CSS: native compiled IDs/aliases,
-   focused controls, NAV/TEXT/Select ownership, modal scope and button activation.
-   Run `tests/test_keymap.py`, `tests/test_keymap_routing.py`, affected screen
-   tests and the full suite. Test a behavior defect failing before fixing it.
+1. Add a `Command` to its `Profile`: stable ID, native key aliases, action and
+   description. `policies` is a **frozenset of allowed states**, default `{NAV}`.
+   Use `{NAV, TEXT}` for a command deliberately available while typing. Node
+   Config's save-and-stay also includes `SELECT` because its action explicitly
+   commits/closes the dropdown before saving. Ordinary navigation excludes both
+   TEXT and SELECT. NAV printable keys compile as priority bindings so a focused
+   nonediting text field cannot swallow them; special control keys declare
+   priority explicitly.
+2. **A key-specific rule needs a separate action.** `check_action` sees actions
+   and parameters, not the triggering key. For example, plain S allowed only in
+   NAV and Ctrl+S allowed in NAV/TEXT must call different wrapper actions, which
+   may share a save implementation. A profile rejects conflicting policy sets
+   for one action signature. Disjoint NAV/TEXT meanings for one widget key use
+   separate actions too (Enter begins editing in NAV, finishes it in TEXT).
+3. Implement the action and declare `KEYMAP` and
+   `BINDINGS = bindings_for(KEYMAP)` in the class body, before Textual merges
+   bindings. `CommandScreenMixin` already inherits `KeymapScreenMixin`; do not
+   add that base twice. Non-command screens/App use `KeymapScreenMixin` directly.
+   Reuse existing focus/activation helpers. Movement/activation roles in command
+   metadata let widget fallbacks and focus rescue follow effective keys rather
+   than keeping old W/S/E routes alive after an override. Single-field A/D
+   positioning has its own `text.caret_left/right` commands; their row fallback
+   yields to an available screen movement command.
+4. Availability queries must not change focus, close Selects, commit text or
+   dispatch. Registered application commands yield to modals; inactive screen
+   owners are unavailable. Screen-specific pure conditions may further restrict
+   commands. Native text editing (caret, deletion, clipboard) remains Textual's.
+   Edit transitions are registered widget actions; ordinary typing reaches them
+   through native dispatch, never a second raw-key shortcut map.
+5. `revert_or_cancel` first reverts a retained active editor, then uses the
+   profile's `cancel_action` on a later press. Preserve screen-specific exit
+   behavior (unsaved Save/Discard/Stay, User Input cancellation stopping a run).
+   The focused text widget owns its own Ctrl+Q revert, preventing root Quit
+   leakage in simple hosts. Keep Escape's edit-exit and modal-exit sequence.
+6. Select compatibility belongs in `widgets/select_keymap.py`, the only place
+   that patches Textual's private overlay/native class binding caches. Expanded
+   Select and overlay use one profile; only the focused owner is enabled. Test
+   both focus paths, including screen embedding. Do not add raw Select handlers
+   to Node Config or new custom sections.
+7. Full contextual Help/hints and tab labels follow in phase 3. Confirm's compact
+   hint already uses `hint_for(profile)`. Other current display strings stay
+   unchanged until that migration; generated Quick Reference tables, source
+   checks and Settings rebinding remain deferred.
+8. Add actual-keypress tests with production CSS: compiled IDs/aliases, focused
+   controls, NAV/TEXT/Select ownership, modal scope and button activation. Test
+   rebinding through `App.set_keymap` (without adding a preferences UI): the new
+   key works, the old key does not survive in widget/overlay/rescue fallbacks,
+   and typing stays literal. Run the `test_keymap*` modules, affected screen
+   tests and full suite. Reproduce defects failing before fixing them.
+
+For new Node Config custom sections, keep the existing compose/build, generated
+field and `_nav_widgets()` integration. Ordinary fields inherit these policies
+through CommandInput/CommandTextArea. New keyboard commands belong in the
+NODE_CONFIG profile; a mode exception belongs in their declared policies and a
+pure guard, not a new screen `on_key` branch. Observe the active editor and
+preserve selection/focus when rebuilding rows.
 
 Lessons retained from the TUI design and investigations:
 
 - Non-editing CommandInput/CommandTextArea widgets can consume letter keys
   before a screen shortcut sees them. Verify the focused-widget path; the Stash
   S2 screen returns focus to a list after search/paste for this reason.
-- Select's overlay owns focus while expanded. Reuse the guarded overlay patch
-  and selection helpers in `command_navigation.py`; screen-level bindings alone
-  cannot reliably implement its W/S/E behavior. Private Textual internals make
-  this a regression-test target when dependencies change.
+- Expanded Select navigation uses the shared native profile and the isolated
+  compatibility adapter in `widgets/select_keymap.py`; selection/focus helpers
+  remain in `command_navigation.py`. Private Textual internals make this a
+  regression-test target when dependencies change.
 - Keep tab headers outside scrolling form content; preserve selected tab and
   focus when rebuilding fields. Scroll only enough to reveal the current field.
 - Run/display events can arrive while a screen mounts, switches or sits under a

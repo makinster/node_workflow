@@ -7117,9 +7117,10 @@ def test_ctrl_c_uses_screen_copy_and_ctrl_q_stays_contextual():
     )
     assert any(
         "ctrl+q" in binding_key(binding)
-        and binding_action(binding) == "back"
+        and binding_action(binding) == "revert_or_cancel"
         for binding in app_bindings
     )
+    assert AttackOfTheNodesApp.KEYMAP.cancel_action == "back"
     assert any(
         "ctrl+c" in binding_key(binding)
         and binding_action(binding) == "screen.copy_text"
@@ -7353,7 +7354,7 @@ async def _test_simple_command_modals_use_shared_navigation_helpers():
             assert screen.check_action("cancel", ()) is False
             assert screen.check_action("jump_settings_tab", (2,)) is False
 
-            await max_depth._on_key(events.Key("escape", None))
+            await pilot.press("escape")
             assert max_depth.editing is False
             await pilot.press("2")
             await pilot.pause(0.1)
@@ -7548,7 +7549,7 @@ async def _test_prompt_modals_use_shared_command_activation():
         await pilot.press("ctrl+enter")
         await pilot.pause()
         assert submitted_paths == ["abc"]
-        await path_input._on_key(events.Key("escape", None))
+        await pilot.press("escape")
         assert path_input.editing is False
 
     original_open = file_io.pick_open_file

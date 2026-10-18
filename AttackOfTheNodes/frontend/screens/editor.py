@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import Any, Dict, Optional
 
 from textual.app import ComposeResult
-from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.screen import Screen
 from textual.widgets import Header, Label, Static
@@ -15,6 +14,8 @@ from backend.data_types import types_compatible
 from backend.port_types import resolved_metadata, trace_producers
 from backend.validator import validate_workflow
 from backend.node_errors import ERROR_PORT, MUX_DEFAULT_PORT
+from frontend.keymap import EDITOR, bindings_for
+from frontend.keymap_runtime import KeymapScreenMixin
 from frontend.error_mux_ui import ERROR_MUX_NODE_TYPE, inline_mux_for
 from frontend.error_paths import editor_output_ports
 from frontend.node_labels import friendly_label, friendly_labels
@@ -68,40 +69,11 @@ from frontend.widgets.node_list import NodeList
 from frontend.widgets.status_bar import StatusBar
 
 
-class EditorScreen(Screen):
+class EditorScreen(KeymapScreenMixin, Screen):
     """Workflow editor view: node list on the left, details on the right."""
 
-    BINDINGS = [
-        ("tab", "focus_next", "Next panel"),
-        ("shift+tab", "focus_previous", "Previous panel"),
-        Binding("w", "cursor_up", "Up", priority=True),
-        Binding("up", "cursor_up", "Up", priority=True),
-        Binding("s", "cursor_down", "Down", priority=True),
-        Binding("down", "cursor_down", "Down", priority=True),
-        Binding("left", "cycle_branch_prev", "Previous branch", priority=True),
-        Binding("right", "cycle_branch_next", "Next branch", priority=True),
-        ("enter", "edit_selected", "Edit"),
-        Binding("e", "edit_selected", "Edit", priority=True),
-        Binding("a", "cycle_branch_prev", "Previous branch", priority=True),
-        Binding("d", "cycle_branch_next", "Next branch", priority=True),
-        Binding("ctrl+a", "cycle_incomplete_branch_prev", "Previous incomplete branch", priority=True),
-        Binding("ctrl+d", "cycle_incomplete_branch_next", "Next incomplete branch", priority=True),
-        Binding("ctrl+left", "cycle_incomplete_branch_prev", "Previous incomplete branch", priority=True),
-        Binding("ctrl+right", "cycle_incomplete_branch_next", "Next incomplete branch", priority=True),
-        Binding("i", "insert_node", "Insert node", priority=True),
-        Binding("v", "validate_workflow", "Validate", priority=True),
-        Binding("b", "toggle_breakpoint", "Breakpoint", priority=True),
-        Binding("ctrl+b", "clear_breakpoints", "Clear breakpoints", priority=True),
-        Binding("z", "undo_delete", "Undo delete", priority=True),
-        Binding("backspace", "delete_selected", "Delete", priority=True),
-        Binding("x", "delete_selected", "Delete", priority=True),
-        Binding("f", "workflow_library", "File", priority=True),
-        Binding("p", "stash", "Stash", priority=True),
-        Binding("o", "options", "Options", priority=True),
-        Binding("h", "help", "Help", priority=True),
-        Binding("?", "help", "Help", priority=True),
-        Binding("ctrl+s", "save_workflow", "Save", priority=True),
-    ]
+    KEYMAP = EDITOR
+    BINDINGS = bindings_for(KEYMAP)
 
     def __init__(self, factory, workflow_map, save_manager=None, secrets_manager=None) -> None:
         super().__init__()

@@ -8,12 +8,11 @@ from textual.screen import ModalScreen
 from textual.widgets import Button, Label
 
 from frontend.keymap import CONFIRM, bindings_for, hint_for
-from frontend.keymap_runtime import KeymapScreenMixin
 from frontend.widgets.command_navigation import command_focus_widgets
 from frontend.widgets.command_screen_mixin import CommandScreenMixin
 
 
-class ConfirmScreen(KeymapScreenMixin, CommandScreenMixin, ModalScreen):
+class ConfirmScreen(CommandScreenMixin, ModalScreen):
     """Modal that asks the user to confirm or cancel a destructive action."""
 
     KEYMAP = CONFIRM

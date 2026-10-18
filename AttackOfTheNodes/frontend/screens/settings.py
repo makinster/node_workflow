@@ -4,9 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
-from textual import events
 from textual.app import ComposeResult
-from textual.binding import Binding
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.screen import ModalScreen
 from textual.widgets import (
@@ -21,6 +19,8 @@ from textual.widgets import (
 )
 
 from backend.configuration_manager import DEFAULT_SETTINGS
+from frontend.keymap import SETTINGS, bindings_for
+
 from frontend.screens.confirm import ConfirmScreen
 from frontend.widgets.command_navigation import (
     command_focus_widgets,
@@ -36,14 +36,8 @@ from frontend.widgets.status_bar import StatusBar
 class SettingsScreen(CommandScreenMixin, ModalScreen):
     """Configuration and secrets management form."""
 
-    BINDINGS = [
-        ("escape", "cancel", "Cancel"),
-        ("ctrl+s", "save", "Save"),
-        Binding("1", "settings_tab_general", "General", priority=True),
-        Binding("2", "settings_tab_secrets", "Secrets", priority=True),
-        Binding("x", "delete_secret", "Delete secret", priority=True),
-        Binding("ctrl+q", "cancel", "Cancel", priority=True),
-    ]
+    KEYMAP = SETTINGS
+    BINDINGS = bindings_for(KEYMAP)
 
     def __init__(self, configuration_manager, secrets_manager=None) -> None:
         super().__init__()
@@ -97,28 +91,6 @@ class SettingsScreen(CommandScreenMixin, ModalScreen):
     def on_mount(self) -> None:
         self._refresh_secret_key_list()
         self._focus_first()
-
-    def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
-        active_text = getattr(self, "_active_command_text_widget", None)
-        if action in {
-            "settings_tab_general",
-            "settings_tab_secrets",
-            "jump_settings_tab",
-            "delete_secret",
-        } and (
-            is_editing_text(self.app.focused) or is_editing_text(active_text)
-        ):
-            return False
-        return super().check_action(action, parameters)
-
-    def on_key(self, event: events.Key) -> None:
-        action = "settings_tab_general" if event.key == "1" else "settings_tab_secrets"
-        if event.key in {"1", "2"} and self.check_action(action, ()) is not False:
-            self.action_jump_settings_tab(int(event.key))
-            event.stop()
-            event.prevent_default()
-            return
-        super().on_key(event)
 
     def _nav_widgets(self) -> list[Any]:
         inactive_pane_ids = {

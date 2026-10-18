@@ -3,31 +3,24 @@
 from __future__ import annotations
 
 from textual.app import ComposeResult
-from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Button, Label, ListItem, ListView, Static
 
+from frontend.keymap import BRANCH_KEEP_SELECTOR, bindings_for
+from frontend.keymap_runtime import KeymapScreenMixin
 from frontend.widgets.list_navigation import focus_list, move_list_highlight
 
 
-class BranchKeepSelectorScreen(ModalScreen):
+class BranchKeepSelectorScreen(KeymapScreenMixin, ModalScreen):
     """Pick which branch to keep when permanently deleting a branch-node tombstone.
 
     All other branches and their downstream nodes will be pruned.
     Dismisses with ``{"kept_port": <port_name>}`` or ``None`` on cancel.
     """
 
-    BINDINGS = [
-        ("escape", "cancel", "Cancel"),
-        Binding("ctrl+q", "cancel", "Cancel", priority=True),
-        Binding("up", "cursor_up", "Up", priority=True),
-        Binding("down", "cursor_down", "Down", priority=True),
-        Binding("w", "cursor_up", "Up", priority=True),
-        Binding("s", "cursor_down", "Down", priority=True),
-        ("enter", "choose", "Choose"),
-        Binding("e", "choose", "Choose", priority=True),
-    ]
+    KEYMAP = BRANCH_KEEP_SELECTOR
+    BINDINGS = bindings_for(KEYMAP)
 
     def __init__(
         self,

@@ -11,25 +11,19 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 from textual.app import ComposeResult
-from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Button, Label, ListItem, ListView, Static
 
 
-class GroupPickerScreen(ModalScreen):
+from frontend.keymap import GROUP_PICKER, bindings_for
+from frontend.keymap_runtime import KeymapScreenMixin
+
+class GroupPickerScreen(KeymapScreenMixin, ModalScreen):
     """Pick one node type from a group's members."""
 
-    BINDINGS = [
-        ("escape", "cancel", "Back"),
-        Binding("ctrl+q", "cancel", "Back", priority=True),
-        Binding("up", "cursor_up", "Up", priority=True),
-        Binding("down", "cursor_down", "Down", priority=True),
-        Binding("w", "cursor_up", "Up", priority=True),
-        Binding("s", "cursor_down", "Down", priority=True),
-        ("enter", "choose", "Add"),
-        Binding("e", "choose", "Add", priority=True),
-    ]
+    KEYMAP = GROUP_PICKER
+    BINDINGS = bindings_for(KEYMAP)
 
     def __init__(self, group_name: str, members: List[Dict[str, Any]]) -> None:
         super().__init__()

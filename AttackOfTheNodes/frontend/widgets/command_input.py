@@ -8,6 +8,9 @@ import time
 from textual import events
 from textual.widgets import Input, TextArea
 
+from frontend.keymap import TEXT_INPUT, TEXT_AREA, bindings_for
+from frontend.keymap_runtime import KeymapScreenMixin, screen_owns_key, navigation_keys
+
 _DEBUG_LOG = os.environ.get("CI_EDIT_DEBUG")
 
 
@@ -53,9 +56,9 @@ def _move_text_area_cursor_to_end(widget: TextArea) -> None:
 
 
 def _move_command_input_cursor(widget: Input, key: str) -> bool:
-    if key in {"a", "left"}:
+    if key == "left":
         widget.cursor_position = max(0, widget.cursor_position - 1)
-    elif key in {"d", "right"}:
+    elif key == "right":
         widget.cursor_position = min(len(widget.value), widget.cursor_position + 1)
     elif key == "home":
         widget.cursor_position = 0
@@ -68,8 +71,6 @@ def _move_command_input_cursor(widget: Input, key: str) -> bool:
 
 def _move_command_text_area_cursor(widget: TextArea, key: str) -> bool:
     actions = {
-        "a": widget.action_cursor_left,
-        "d": widget.action_cursor_right,
         "left": widget.action_cursor_left,
         "right": widget.action_cursor_right,
         "up": widget.action_cursor_up,
@@ -93,10 +94,85 @@ def _sync_screen_cursor_mode(widget) -> None:
         return
     if sync is not None:
         sync()
+    widget.screen.refresh_bindings()
 
 
-class CommandInput(Input):
+class CommandTextMixin(KeymapScreenMixin):
+    """Native widget actions for edit transitions; no raw shortcut dispatcher."""
+
+    def check_action(self, action: str, parameters: tuple) -> bool | None:
+        if not self.auto_edit_on_focus and any(
+            command.auto_edit_only and command.action_signature == (action, parameters)
+            for command in self.KEYMAP.commands
+        ):
+            return False
+        # Screen navigation is authoritative, including after a key override.
+        # Only standalone controls use the widget's fallback navigation map.
+        screen_profile = getattr(self.screen, "KEYMAP", None)
+        if screen_profile is not None:
+            for command in self.KEYMAP.commands:
+                if command.action_signature != (action, parameters) or not command.navigation:
+                    continue
+                for other in screen_profile.commands:
+                    if other.navigation != command.navigation or not set(other.keys) & set(command.keys):
+                        continue
+                    if command.row_fallback and self.screen.check_action(*other.action_signature) is False:
+                        continue
+                    return False
+        return super().check_action(action, parameters)
+
+    def action_begin_edit(self) -> None:
+        self.begin_edit()
+
+    def action_enter_edit(self) -> None:
+        self.begin_edit()
+
+    def action_caret_left(self) -> None:
+        self._position_nav_caret("left")
+
+    def action_caret_right(self) -> None:
+        self._position_nav_caret("right")
+
+    def _position_nav_caret(self, direction: str) -> None:
+        move = _move_command_input_cursor if isinstance(self, Input) else _move_command_text_area_cursor
+        move(self, direction)
+        self._nav_cursor_positioned = True
+
+    def action_finish_edit(self) -> None:
+        self.end_edit()
+
+    def action_revert_edit(self) -> None:
+        self.end_edit(revert=True)
+
+    def action_finish_enter(self) -> None:
+        self.end_edit()
+
+    def action_screen_up(self) -> None:
+        self._run_screen_action("cursor_up")
+
+    def action_screen_down(self) -> None:
+        self._run_screen_action("cursor_down")
+
+    def action_previous_field(self) -> None:
+        self._run_screen_action("cursor_up")
+
+    def action_next_field(self) -> None:
+        self._run_screen_action("cursor_down")
+
+    def action_auto_up(self) -> None:
+        self.end_edit()
+        self._run_screen_action("cursor_up")
+
+    def action_auto_down(self) -> None:
+        self.end_edit()
+        self._run_screen_action("cursor_down")
+
+
+class CommandInput(CommandTextMixin, Input):
     """Input that requires explicit activation before printable keys edit text."""
+
+    KEYMAP = TEXT_INPUT
+    BINDINGS = bindings_for(KEYMAP)
 
     def __init__(
         self,
@@ -158,10 +234,14 @@ class CommandInput(Input):
             "delete_right_all",
         }:
             return False
-        return True
+        return super().check_action(action, parameters)
 
     def check_consume_key(self, key: str, character: str | None) -> bool:
         if not self.editing:
+            return False
+        if key == "ctrl+q":
+            return True  # editor owns revert, including hosts with App's Quit
+        if screen_owns_key(self, key, priority_only=True):
             return False
         if character is not None and len(character) == 1 and character.isprintable():
             return True
@@ -182,45 +262,10 @@ class CommandInput(Input):
 
     async def _on_key(self, event: events.Key) -> None:
         if self.editing:
-            if event.key == "escape":
-                self.end_edit()
-                event.stop()
-                event.prevent_default()
-                return
-            if event.key == "ctrl+q":
-                self.end_edit(revert=True)
-                event.stop()
-                event.prevent_default()
-                return
-            if event.key in ("tab", "shift+tab"):
-                # Exit editing only; don't navigate. A second Tab will navigate.
-                self.end_edit()
-                event.stop()
-                event.prevent_default()
-                return
-            if event.key == "enter":
-                self.end_edit()
-                await super()._on_key(event)
-                event.stop()
-                return
             if event.key in EDITING_NAV_KEYS and _move_command_input_cursor(self, event.key):
                 event.stop()
                 event.prevent_default()
                 return
-            # For auto-edit fields, w/s/up/down commit the value and navigate.
-            if self.auto_edit_on_focus:
-                if event.key in ("w", "up"):
-                    self.end_edit()
-                    self._run_screen_action("cursor_up")
-                    event.stop()
-                    event.prevent_default()
-                    return
-                if event.key in ("s", "down"):
-                    self.end_edit()
-                    self._run_screen_action("cursor_down")
-                    event.stop()
-                    event.prevent_default()
-                    return
             await super()._on_key(event)
             if event.key in EDITING_NAV_KEYS or event.is_printable:
                 event.stop()
@@ -239,7 +284,7 @@ class CommandInput(Input):
             and isinstance(_drift_active, (CommandInput, CommandTextArea))
             and _drift_active.editing
         ):
-            if event.key in ("e", "enter"):
+            if event.key in navigation_keys(self.screen if hasattr(self.screen, "KEYMAP") else self, role="activate"):
                 # Re-focus the correct editing widget instead of taking over.
                 self.app.set_focus(_drift_active)
                 event.stop()
@@ -251,43 +296,10 @@ class CommandInput(Input):
             # editing is active).
             return
 
-        if event.key in ("e", "enter"):
-            self.begin_edit()
-            event.stop()
-            event.prevent_default()
-            return
-
-        if event.key in ("w", "up"):
-            self._run_screen_action("cursor_up")
-            event.stop()
-            event.prevent_default()
-            return
-
-        if event.key in ("s", "down"):
-            self._run_screen_action("cursor_down")
-            event.stop()
-            event.prevent_default()
-            return
-
-        if event.key == "tab":
-            self._run_screen_action("cursor_down")
-            event.stop()
-            event.prevent_default()
-            return
-
-        if event.key == "shift+tab":
-            self._run_screen_action("cursor_up")
-            event.stop()
-            event.prevent_default()
-            return
+        if screen_owns_key(self, event.key):
+            return  # bubble to Textual's native screen binding
 
         if event.key in EDITING_NAV_KEYS:
-            event.stop()
-            event.prevent_default()
-            return
-
-        if _move_command_input_cursor(self, event.key):
-            self._nav_cursor_positioned = True
             event.stop()
             event.prevent_default()
             return
@@ -303,8 +315,11 @@ class CommandInput(Input):
             action()
 
 
-class CommandTextArea(TextArea):
+class CommandTextArea(CommandTextMixin, TextArea):
     """Text area with the same command-before-edit behavior as CommandInput."""
+
+    KEYMAP = TEXT_AREA
+    BINDINGS = bindings_for(KEYMAP)
 
     def __init__(
         self,
@@ -356,6 +371,10 @@ class CommandTextArea(TextArea):
         self.begin_edit(place_cursor_at_end=False)
 
     def check_consume_key(self, key: str, character: str | None) -> bool:
+        if self.editing and key == "ctrl+q":
+            return True
+        if screen_owns_key(self, key, priority_only=True):
+            return False
         return self.editing and key in {
             "escape",
             "ctrl+q",
@@ -368,21 +387,6 @@ class CommandTextArea(TextArea):
 
     async def _on_key(self, event: events.Key) -> None:
         if self.editing:
-            if event.key == "escape":
-                self.end_edit()
-                event.stop()
-                event.prevent_default()
-                return
-            if event.key == "ctrl+q":
-                self.end_edit(revert=True)
-                event.stop()
-                event.prevent_default()
-                return
-            if event.key == "ctrl+enter":
-                self.end_edit()
-                event.stop()
-                event.prevent_default()
-                return
             if event.key in EDITING_NAV_KEYS and _move_command_text_area_cursor(self, event.key):
                 event.stop()
                 event.prevent_default()
@@ -403,38 +407,17 @@ class CommandTextArea(TextArea):
             and isinstance(_drift_active, (CommandInput, CommandTextArea))
             and _drift_active.editing
         ):
-            if event.key in ("e", "enter"):
+            if event.key in navigation_keys(self.screen if hasattr(self.screen, "KEYMAP") else self, role="activate"):
                 self.app.set_focus(_drift_active)
                 event.stop()
                 event.prevent_default()
                 return
             return  # Let printable/delete keys bubble to screen rescue handler
 
-        if event.key in ("e", "enter"):
-            self.begin_edit()
-            event.stop()
-            event.prevent_default()
-            return
-
-        if event.key in ("w", "up"):
-            self._run_screen_action("cursor_up")
-            event.stop()
-            event.prevent_default()
-            return
-
-        if event.key in ("s", "down"):
-            self._run_screen_action("cursor_down")
-            event.stop()
-            event.prevent_default()
-            return
+        if screen_owns_key(self, event.key):
+            return  # bubble to Textual's native screen binding
 
         if event.key in EDITING_NAV_KEYS:
-            event.stop()
-            event.prevent_default()
-            return
-
-        if _move_command_text_area_cursor(self, event.key):
-            self._nav_cursor_positioned = True
             event.stop()
             event.prevent_default()
             return

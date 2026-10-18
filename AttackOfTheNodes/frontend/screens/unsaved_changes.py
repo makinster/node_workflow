@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 from textual.app import ComposeResult
-from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Button, Label
+
+from frontend.keymap import UNSAVED_CHANGES, bindings_for
 
 from frontend.widgets.command_navigation import command_focus_widgets
 from frontend.widgets.command_screen_mixin import CommandScreenMixin
@@ -18,10 +19,8 @@ DISCARD = "discard"
 class UnsavedChangesScreen(CommandScreenMixin, ModalScreen):
     """Dismisses with ``"save"``, ``"discard"`` or ``None`` (stay)."""
 
-    BINDINGS = [
-        ("escape", "stay", "Stay"),
-        Binding("ctrl+q", "stay", "Stay", priority=True),
-    ]
+    KEYMAP = UNSAVED_CHANGES
+    BINDINGS = bindings_for(KEYMAP)
 
     def __init__(self, node_name: str) -> None:
         super().__init__()

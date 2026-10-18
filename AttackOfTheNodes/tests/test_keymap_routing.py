@@ -83,7 +83,7 @@ def test_priority_command_yields_to_typing_and_active_editor(widget_kind):
         *NAVIGATION,
     ))
 
-    class Probe(KeymapScreenMixin, CommandScreenMixin, Screen):
+    class Probe(CommandScreenMixin, Screen):
         KEYMAP = profile
         BINDINGS = bindings_for(KEYMAP)
 
@@ -131,11 +131,11 @@ def test_select_queries_are_pure_and_own_navigation_keys():
 
     profile = Profile("select-probe", (
         Command("probe.nav", ("y",), "probe", "Probe", priority=True),
-        Command("probe.overlay", ("f6",), "overlay", "Overlay", Policy.SELECT, True),
+        Command("probe.overlay", ("f6",), "overlay", "Overlay", frozenset({Policy.SELECT}), True),
         *NAVIGATION,
     ))
 
-    class Probe(KeymapScreenMixin, CommandScreenMixin, Screen):
+    class Probe(CommandScreenMixin, Screen):
         KEYMAP = profile
         BINDINGS = bindings_for(KEYMAP)
 
