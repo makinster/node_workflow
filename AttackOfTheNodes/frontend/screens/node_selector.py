@@ -8,7 +8,7 @@ nodes during workflow execution). Tab display labels (`In`/`Out`) are
 abbreviated; `TAB_FAMILY` maps each to its backend `primary_family` value.
 Lists are organized by group entries (which open the Group Picker) and
 non-selectable section headers that keyboard navigation skips. See
-docs/PHASE_17_NODE_VISUAL_IDENTITY.md.
+docs/archive/PHASE_17_NODE_VISUAL_IDENTITY.md.
 """
 
 from __future__ import annotations
@@ -131,6 +131,9 @@ class NodeSelectorScreen(ModalScreen):
         self._drilled_in = False
         self._quick_list_members: List[str] = []
         self._quick_list_nodes: List[Dict[str, Any]] = []
+        # Which list holds the selection the Add button acts on: a click
+        # moves focus to the button, so remember the last list focused.
+        self._selection_list_id = "node-type-list"
 
     def compose(self) -> ComposeResult:
         with Vertical(id="modal-card", classes="node-selector-modal"):
@@ -157,7 +160,9 @@ class NodeSelectorScreen(ModalScreen):
                 id="selector-help",
                 classes="modal-help",
             )
-            yield Button("Cancel", id="cancel-node-select", variant="default")
+            with Horizontal(classes="button-row"):
+                yield Button("Add", id="add-node-select", variant="primary")
+                yield Button("Cancel", id="cancel-node-select", variant="default")
 
     def on_mount(self) -> None:
         self._all_nodes = [
@@ -239,6 +244,8 @@ class NodeSelectorScreen(ModalScreen):
         button_id = event.button.id or ""
         if button_id == "cancel-node-select":
             self.dismiss(None)
+        elif button_id == "add-node-select":
+            self._add_highlighted()
         elif button_id.startswith("node-family-"):
             tab = self._tab_for_button_id(button_id)
             if tab:
@@ -271,6 +278,21 @@ class NodeSelectorScreen(ModalScreen):
             return
         list_view = self.query_one("#node-type-list", ListView)
         self._activate_entry(list_view.index)
+
+    def on_descendant_focus(self, event) -> None:
+        if getattr(event.widget, "id", None) in ("node-type-list", "node-quick-list"):
+            self._selection_list_id = event.widget.id
+
+    def _add_highlighted(self) -> None:
+        """The Add button: what Enter on the highlighted entry would do
+        (a click moves focus to the button, so it can't follow focus)."""
+        quick_list = self.query_one("#node-quick-list", ListView)
+        if self._drilled_in and self._selection_list_id == "node-quick-list":
+            index = quick_list.index
+            if index is not None and 0 <= index < len(self._quick_list_members):
+                self.dismiss(self._quick_list_members[index])
+            return
+        self._activate_entry(self.query_one("#node-type-list", ListView).index)
 
     def action_cancel(self) -> None:
         self.dismiss(None)
@@ -839,6 +861,7 @@ class NodeSelectorScreen(ModalScreen):
         ]
         widgets.append(self.query_one("#node-filter", CommandInput))
         widgets.append(self.query_one("#node-type-list", ListView))
+        widgets.append(self.query_one("#add-node-select", Button))
         widgets.append(self.query_one("#cancel-node-select", Button))
         return widgets
 

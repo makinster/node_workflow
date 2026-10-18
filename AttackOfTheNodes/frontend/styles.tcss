@@ -529,3 +529,12 @@ SelectOverlay > .option-list--option-highlighted {
 .stash-paste {
     height: 4;
 }
+
+/* Help: the text scrolls inside a bounded card so Close stays reachable. */
+#modal-card.help-modal {
+    height: 90%;
+}
+
+#help-scroll {
+    height: 1fr;
+}

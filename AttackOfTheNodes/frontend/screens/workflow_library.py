@@ -9,7 +9,7 @@ from typing import Any, Callable, Dict, Optional
 from textual import events
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Vertical
+from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Button, Input, Label, ListItem, ListView, Static
 
@@ -56,7 +56,9 @@ class WorkflowLibraryScreen(ModalScreen):
                 "E load | N new | R rename | D duplicate\nX delete | I import | O export | Esc cancel",
                 classes="modal-help",
             )
-            yield Button("Cancel", id="cancel-workflow-library", variant="default")
+            with Horizontal(classes="button-row"):
+                yield Button("Load", id="load-workflow-library", variant="primary")
+                yield Button("Close", id="cancel-workflow-library", variant="default")
 
     def on_mount(self) -> None:
         self._refresh_workflows()
@@ -69,6 +71,8 @@ class WorkflowLibraryScreen(ModalScreen):
         button_id = event.button.id
         if button_id == "cancel-workflow-library":
             self.action_cancel()
+        elif button_id == "load-workflow-library":
+            self.action_load_selected()
 
     def action_load_selected(self) -> None:
         index = self.query_one("#workflow-list", ListView).index
@@ -230,6 +234,9 @@ class NamePromptScreen(CommandScreenMixin, ModalScreen):
             yield Label(self.title_text, classes="modal-title")
             yield _NameInput(value=self.default_name, id="name-input")
             yield Static("", id="name-error", classes="field-error")
+            with Horizontal(classes="button-row"):
+                yield Button("Confirm", id="confirm-name", variant="primary")
+                yield Button("Cancel", id="cancel-name", variant="default")
             yield StatusBar("Type a name | Enter or Ctrl+S confirm | Esc cancel")
 
     def on_mount(self) -> None:
@@ -240,6 +247,12 @@ class NamePromptScreen(CommandScreenMixin, ModalScreen):
 
     def on_input_submitted(self, _event: Input.Submitted) -> None:
         self.action_submit()
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "confirm-name":
+            self.action_submit()
+        elif event.button.id == "cancel-name":
+            self.action_cancel()
 
     def action_submit(self) -> None:
         name = self.query_one("#name-input", Input).value

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Vertical
+from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Button, Label, ListItem, ListView, Static
 
@@ -46,7 +46,9 @@ class BranchSelectorScreen(ModalScreen):
             yield Label(f"Branch Select: {self.branch_node_label}", classes="modal-title")
             yield ListView(id="branch-port-list")
             yield Static("↑↓ navigate  ENTER select  ESC close", classes="modal-help")
-            yield Button("Cancel", id="cancel-branch-select", variant="default")
+            with Horizontal(classes="button-row"):
+                yield Button("Choose", id="choose-branch-select", variant="primary")
+                yield Button("Cancel", id="cancel-branch-select", variant="default")
 
     def on_mount(self) -> None:
         list_view = self.query_one("#branch-port-list", ListView)
@@ -62,10 +64,19 @@ class BranchSelectorScreen(ModalScreen):
         self._dismiss_selected(event.list_view.index)
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
-        if event.button.id == "cancel-branch-select":
+        if event.button.id == "choose-branch-select":
+            self._choose_highlighted()
+        elif event.button.id == "cancel-branch-select":
             self.action_cancel()
 
     def action_choose(self) -> None:
+        # E/Enter on a focused button presses it (Back/Cancel must not choose).
+        if isinstance(self.app.focused, Button):
+            self.app.focused.press()
+            return
+        self._choose_highlighted()
+
+    def _choose_highlighted(self) -> None:
         list_view = self.query_one("#branch-port-list", ListView)
         self._dismiss_selected(list_view.index)
 

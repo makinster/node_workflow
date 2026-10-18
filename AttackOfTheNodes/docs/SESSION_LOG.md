@@ -6,8 +6,8 @@ overhaul.
 
 ## 2026-10-17 — Stash: Duplicates Are Not Stashed Twice
 
-Branch `dist/stash-duplicates`, from `main` at `9032151`. Before: 1518
-passed. After: 1525 passed (7 new tests).
+Branch `dist/stash-duplicates` (PR #74), from `main` at `9032151`, then merged
+with `main` after #73. After: 1539 passed (7 new tests).
 
 - **Owner decision (2026-10-17):** the same file is the same reference, so
   adding it again creates no entry; a toast says "Duplicate found" (the
@@ -20,6 +20,33 @@ passed. After: 1525 passed (7 new tests).
 - A *different* file with a name already used is named after its folder,
   `march (archive)`, instead of `march 2`. A name you choose must still be
   free.
+
+## 2026-10-17 — Confirm and Close Buttons in Every Window
+
+Branch `dist/modal-buttons`, from `main` at `9032151` (docs PR B, #72).
+Before: 1518 passed. After: 1532 passed (14 new tests in
+`test_modal_buttons.py`).
+
+- **Owner request (2026-10-17):** every window offers its main action and
+  a way out as buttons, for mouse use. Added: Choose/Cancel (branch
+  selector), Go to/Cancel (merge beacon), Keep/Cancel (keep-branch),
+  Add/Back (group picker, which had no buttons), Add/Cancel (node
+  selector; Add does what Enter does on the highlighted entry, since a
+  click moves focus), Load/Close (workflow library), Confirm/Cancel (the
+  name prompt, which had none). Help's button says Close.
+- **Found by the new test:** Help's Close was off-screen in a 30-row
+  terminal (long help text, no scroll). The text now scrolls inside a
+  bounded card.
+- Two tests encoded the old buttons and were updated deliberately:
+  `test_help_screen_is_contextual_and_focuses_cancel` (label Close) and
+  `test_workflow_library_uses_shared_list_navigation` (Load + Close).
+- Code comments citing docs that #72 archived now point at
+  `docs/archive/` (review note on #72).
+- **Review fixes (owner's review of #73):** the node selector's Add acts on
+  the list that last had focus, so leaving a group's quick list for the
+  main list no longer adds the stale quick-list node; E/Enter on a focused
+  Back/Cancel button presses it in the group picker and the three branch
+  pickers instead of choosing. One test each.
 
 ## 2026-10-17 — Stash S2: The Stash Screen
 

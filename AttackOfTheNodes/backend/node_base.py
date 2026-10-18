@@ -94,7 +94,7 @@ class Node(ABC):
     # Per-port I/O contract metadata. Each entry may carry `name`, `description`,
     # `data_type` (from backend.data_types; absent ⇒ `any`), and `required`
     # (absent ⇒ optional/False). NodeFactory fills the defaults on exposure;
-    # see NODE_STANDARDIZATION_HANDOFF.md §4/§6.
+    # see docs/archive/NODE_STANDARDIZATION_HANDOFF.md §4/§6.
     input_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {}
     output_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {}
 

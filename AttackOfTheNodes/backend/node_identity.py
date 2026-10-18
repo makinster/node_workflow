@@ -3,7 +3,7 @@
 Families, groups, and sections follow the 2026-06-12 taxonomy revision:
 five families (Inputs, Outputs, Flow Control, Utility, Complex), frontend
 `group` entries that open a Group Picker, and `selector_section` headers
-inside each selector tab. See docs/PHASE_17_NODE_VISUAL_IDENTITY.md and
+inside each selector tab. See docs/archive/PHASE_17_NODE_VISUAL_IDENTITY.md and
 docs/NODE_CATALOG.md.
 """
 
