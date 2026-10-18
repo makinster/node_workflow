@@ -120,11 +120,11 @@ def test_add_file_refuses_missing_paths_and_folders(stash, tmp_path):
 def test_names_are_unique_ignoring_case(stash, files):
     plain, _ = files
     stash.add_file(str(plain))
-    assert stash.add_file(str(plain))["name"] == "march 2"  # default names count up
+    assert stash.add_text("x", name="march 2")["name"] == "march 2"
     with pytest.raises(StashError, match="already named 'MARCH'"):
-        stash.add_text("x", name="MARCH")  # a chosen name must be free
+        stash.add_text("y", name="MARCH")  # a chosen name must be free
     with pytest.raises(StashError, match="can't be blank"):
-        stash.add_text("x", name="  ")
+        stash.add_text("z", name="  ")
 
 
 def test_rename_keeps_the_id_and_remove_by_name(stash, files):
@@ -303,3 +303,66 @@ def test_windows_drop_into_wsl_resolves(tmp_path, stash):
                              text=True, check=True).stdout.strip()
     result = parse_paste(f'"{windows}"')
     assert result.files and result.files[0].resolve() == target.resolve()
+
+
+# -- duplicates (owner, 2026-10-17: same reference, no second entry) ---------------
+
+def test_the_same_file_is_not_added_twice(stash, files):
+    from backend.stash_manager import StashDuplicate
+
+    plain, _ = files
+    first = stash.add_file(str(plain))
+    with pytest.raises(StashDuplicate) as caught:
+        stash.add_file(f"'{plain}'")  # same file, other spelling
+    assert caught.value.entry["id"] == first["id"]
+    assert str(caught.value) == "Duplicate found: already in the Stash as 'march'"
+    assert len(stash.list_entries()) == 1
+
+
+def test_the_same_text_is_not_added_twice(stash):
+    from backend.stash_manager import StashDuplicate
+
+    stash.add_text("Plain British English", name="tone")
+    with pytest.raises(StashDuplicate):
+        stash.add_text("  Plain British English \n", name="voice")
+    assert [e["name"] for e in stash.list_entries()] == ["tone"]
+
+
+def test_a_paste_reports_duplicates_and_adds_the_rest(stash, files):
+    from backend.stash_manager import duplicates_message
+
+    plain, spaced = files
+    existing = stash.add_file(str(plain))
+    entries, result = stash.add_paste(f"'{spaced}' {plain}")
+    assert [e["name"] for e in entries] == ["q1 notes"]
+    assert [e["id"] for e in result.duplicates] == [existing["id"]]
+    assert duplicates_message(result.duplicates) == "Duplicate found: 'march'"
+    _, again = stash.add_paste(f"'{spaced}' {plain}")
+    assert duplicates_message(again.duplicates) == "2 duplicates found: 'q1 notes', 'march'"
+
+
+def test_a_different_file_with_the_same_name_is_named_after_its_folder(stash, tmp_path):
+    first = tmp_path / "reports" / "march.csv"
+    second = tmp_path / "archive" / "march.csv"
+    for path in (first, second):
+        path.parent.mkdir()
+        path.write_text("x")
+    assert stash.add_file(str(first))["name"] == "march"
+    assert stash.add_file(str(second))["name"] == "march (archive)"
+
+
+def test_import_skips_values_already_in_the_stash(stash, tmp_path):
+    stash.add_text("fine", name="mine")
+    doc = {"format": FORMAT, "entries": [
+        {"id": "stash_dddddddddddd", "name": "theirs", "type": "string", "value": "fine"}]}
+    (tmp_path / "in.json").write_text(json.dumps(doc))
+    report = stash.import_from(tmp_path / "in.json")
+    assert report == {"added": [], "skipped": ["theirs: duplicate of 'mine'"]}
+
+
+def test_cli_reports_a_duplicate_without_failing(stash, files):
+    plain, _ = files
+    _cli("add", str(plain))
+    code, text = _cli("add", str(plain))
+    assert code == 0 and text.strip() == "Duplicate found: 'march'"
+    assert len(stash.list_entries()) == 1

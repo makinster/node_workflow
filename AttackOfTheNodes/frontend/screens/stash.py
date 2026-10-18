@@ -21,7 +21,9 @@ from textual.screen import ModalScreen
 from textual.widgets import Button, Input, Label, ListItem, ListView, Static, TabbedContent, TabPane
 
 from backend.file_refs import reference_path
-from backend.stash_manager import StashError, StashManager, preview, type_word
+from backend.stash_manager import (
+    StashDuplicate, StashError, StashManager, duplicates_message, preview, type_word,
+)
 from frontend import notifications
 from frontend.io_contract import type_label
 from frontend.screens.confirm import ConfirmScreen
@@ -210,6 +212,9 @@ class StashScreen(ModalScreen):
             box.end_edit()
         # Keys now act on what was just added (T, R, W/S); E types again.
         listing = self.query_one("#stash-added", ListView)
+        if result.duplicates:
+            # The same reference is never stashed twice; say so briefly.
+            notifications.notify_info(self.app, duplicates_message(result.duplicates))
         warnings = [w for e in entries for w in self.stash.warnings_for(e)]
         for warning in warnings:
             notifications.notify_info(self.app, warning)
@@ -221,8 +226,13 @@ class StashScreen(ModalScreen):
     def action_keep_as_text(self) -> None:
         if self.rejected_paste is None:
             return
-        entry = self.stash.add_text(self.rejected_paste)
-        self.added.insert(0, entry)
+        try:
+            entry = self.stash.add_text(self.rejected_paste)
+        except StashDuplicate as duplicate:
+            notifications.notify_info(self.app, duplicates_message([duplicate.entry]))
+            entry = None
+        if entry is not None:
+            self.added.insert(0, entry)
         self.rejected_paste = None
         self._rejected = []
         self.query_one("#stash-keep-text", Button).display = False

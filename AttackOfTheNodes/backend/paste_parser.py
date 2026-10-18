@@ -50,6 +50,8 @@ class PasteResult:
     files: List[Path] = field(default_factory=list)
     rejected: List[Rejected] = field(default_factory=list)
     text: Optional[str] = None
+    # Filled by StashManager.add_paste: entries the paste would have duplicated.
+    duplicates: List[dict] = field(default_factory=list)
 
     @property
     def empty(self) -> bool:

@@ -10,7 +10,8 @@ This is the only live status snapshot; older logs/plans retain dated history.
 - Merged: Stash S1 + `aotn stash` CLI (#70); Stash S2, the Stash screen
   (#71, `p` in the editor); docs PR B (#72: consolidation, VISION,
   CONTRIBUTING). Next: a small PR adding confirm/close buttons to every
-  modal (owner, 2026-10-17), then S3 (field insert). Docs PR C follows B.
+  modal (owner, 2026-10-17), then S3 (field insert). Also open: Stash duplicates are not stashed twice
+  (`dist/stash-duplicates`). Docs PR C follows B.
   The owner merges, or explicitly asks a reviewer to.
 - Work order: [Node Contract Plan](NODE_CONTRACT_PLAN.md). Long-term decisions:
   [Distributed Build Plan](DISTRIBUTED_BUILD_PLAN.md), [Stash](STASH_PROPOSAL.md).

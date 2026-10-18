@@ -50,6 +50,26 @@ class StashError(ValueError):
     """A Stash request that can't be done; the message says why."""
 
 
+class StashDuplicate(StashError):
+    """The value is already stashed; ``entry`` is the existing entry.
+
+    Owner, 2026-10-17: the same file (or text) is the same reference, so it
+    never gets a second entry; callers show "Duplicate found" instead.
+    """
+
+    def __init__(self, entry: Dict[str, Any]) -> None:
+        super().__init__(f"Duplicate found: already in the Stash as '{entry['name']}'")
+        self.entry = entry
+
+
+def duplicates_message(entries: List[Dict[str, Any]]) -> str:
+    """The short notice for a paste that found entries already stashed."""
+    names = ", ".join(f"'{e['name']}'" for e in entries)
+    if len(entries) == 1:
+        return f"Duplicate found: {names}"
+    return f"{len(entries)} duplicates found: {names}"
+
+
 def looks_like_secret(text: str) -> bool:
     """A cheap guess that ``text`` holds a key or password."""
     return any(pattern.search(text) for pattern in _SECRET_PATTERNS)
@@ -128,21 +148,32 @@ class StashManager:
             raise StashError(f"{resolved}: is a folder; folder import comes later (S4)")
         if not resolved.is_file():
             raise StashError(f"{resolved}: not found on this machine")
-        return self._add("file", file_reference(str(resolved)), name, default=resolved.stem)
+        self._refuse_duplicate("file", str(resolved))
+        # Another file with the same name is told apart by its folder.
+        default = resolved.stem
+        if self._name_taken(default):
+            default = f"{resolved.stem} ({resolved.parent.name})"
+        return self._add("file", file_reference(str(resolved)), name, default=default)
 
     def add_text(self, text: str, name: Optional[str] = None) -> Dict[str, Any]:
         """Add a piece of reusable text."""
         if not text.strip():
             raise StashError("Text can't be blank")
+        self._refuse_duplicate("string", text)
         return self._add("string", text, name, default=_default_text_name(text))
 
     def add_paste(self, text: str) -> tuple[List[Dict[str, Any]], PasteResult]:
         """Store what a paste turns into: one entry per existing file, or one
         text entry. Rejected paths are returned, never stored."""
         result = parse_paste(text)
-        if result.text is not None:
-            return [self.add_text(result.text)], result
-        return [self.add_file(path) for path in result.files], result
+        added: List[Dict[str, Any]] = []
+        values = [("string", result.text)] if result.text is not None else [("file", p) for p in result.files]
+        for kind, value in values:
+            try:
+                added.append(self.add_text(value) if kind == "string" else self.add_file(value))
+            except StashDuplicate as duplicate:
+                result.duplicates.append(duplicate.entry)
+        return added, result
 
     def rename(self, id_or_name: str, new_name: str) -> Dict[str, Any]:
         entry = self._require(id_or_name)
@@ -193,6 +224,10 @@ class StashManager:
             if any(e["id"] == raw["id"] for e in self._load()):
                 skipped.append(f"{raw['name']}: already in the Stash")
                 continue
+            same = self.find_same(raw["type"], raw["value"])
+            if same is not None:
+                skipped.append(f"{raw['name']}: duplicate of '{same['name']}'")
+                continue
             if raw["type"] == "file" and not Path(reference_path(raw["value"])).is_file():
                 skipped.append(f"{raw['name']}: {reference_path(raw['value'])} is not on this machine")
                 continue
@@ -233,6 +268,20 @@ class StashManager:
                 self._save()
                 return dict(entry)
         raise StashError(f"No Stash entry {entry_id!r}")
+
+    def find_same(self, entry_type: str, value: Any) -> Optional[Dict[str, Any]]:
+        """The entry already holding this value: the same file path, or the
+        same text ignoring surrounding whitespace."""
+        wanted = _comparable(entry_type, value)
+        for entry in self._load():
+            if entry["type"] == entry_type and _comparable(entry_type, entry["value"]) == wanted:
+                return dict(entry)
+        return None
+
+    def _refuse_duplicate(self, entry_type: str, value: Any) -> None:
+        same = self.find_same(entry_type, value)
+        if same is not None:
+            raise StashDuplicate(same)
 
     def _require(self, id_or_name: str) -> Dict[str, Any]:
         entry = self.get(id_or_name)
@@ -306,6 +355,12 @@ def _entry_problem(raw: Any) -> Optional[str]:
     if raw["type"] == "string" and not isinstance(raw.get("value"), str):
         return f"{name}: text entry without text"
     return None
+
+
+def _comparable(entry_type: str, value: Any) -> str:
+    if entry_type == "file":
+        return reference_path(value) if not isinstance(value, str) else value.strip()
+    return str(value).strip()
 
 
 def _whole_path(value: str) -> Optional[Path]:

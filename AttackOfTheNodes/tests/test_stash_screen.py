@@ -246,3 +246,24 @@ def test_search_matches_the_whole_value(stash):
             await pilot.pause(0.05)
             assert [r.split()[0] for r in _rows(app.screen, "stash-entries")] == ["long"]
     _run(go)
+
+
+def test_a_duplicate_paste_shows_a_toast_and_adds_nothing(stash, files, monkeypatch):
+    async def go():
+        from frontend import notifications
+
+        plain, _ = files
+        stash.add_file(str(plain))
+        shown = []
+        monkeypatch.setattr(notifications, "notify_info", lambda app, message: shown.append(message))
+        app = _app(stash)
+        async with app.run_test(size=(100, 30)) as pilot:
+            await pilot.pause(0.05)
+            app.action_stash()
+            await pilot.pause(0.05)
+            app.screen.query_one("#stash-paste").post_message(events.Paste(str(plain)))
+            await pilot.pause(0.05)
+            assert shown == ["Duplicate found: 'march'"]
+            assert len(stash.list_entries()) == 1
+            assert _rows(app.screen, "stash-added") == []
+    _run(go)
