@@ -21,7 +21,8 @@ Stash S3, inserting an entry into a node config field with `P`, followed
 (merged #75, `714f190`, 2026-10-18). The owner then adopted three keymap
 PRs: foundation, shared policies/high-traffic screens, generated Help/hints;
 see [Frontend Command UI Toolkit](PROJECT_BACKLOG.md#near-term-project--frontend-command-ui-toolkit).
-Phase 1 is awaiting review; Step 4 design proceeds separately.
+Phase 1 merged as #77; phase 2 is awaiting review. Step 4 stage 4a-1
+(backend/CLI) proceeds separately; the 4a-2 screens follow keymap phase 2.
 
 **Agreed order (owner, 2026-10-15; extended 2026-10-17):** C3 → C5 →
 workflow authoring tool v1 → C4, C6, C7 → workflow

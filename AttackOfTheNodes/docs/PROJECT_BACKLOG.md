@@ -813,8 +813,8 @@ stop for the owner/reviewer:
 
 | Phase | Scope | Status |
 |---|---|---|
-| 1 | Registry/runtime, stable IDs, class-time compilation, pure shared availability and characterization; one simple profile end to end | Awaiting review on `codex/keymap-foundation`: Confirm, including its unchanged generated hint and navigation |
-| 2 | Shared mixin/navigation policies, retire duplicated action-name lists; Input/TextArea and Select adapters; Stash, Node Config (P insert), Editor, Workflow Library and list pickers | After phase 1 merges. First reproduce each listed defect: mutating Node Config availability, Execution's duplicate Stop route, Settings' duplicate digit route |
+| 1 | Registry/runtime, stable IDs, class-time compilation, pure shared availability and characterization; one simple profile end to end | Merged #77: Confirm, including its unchanged generated hint and navigation |
+| 2 | Shared mixin/navigation policies, retire duplicated action-name lists; Input/TextArea and Select adapters; Stash, Node Config (P insert), Editor, Workflow Library and list pickers | Awaiting review on `codex/keymap-policies`; each listed defect reproduced failing first and fixed. Multi-state policies and native adapters installed; current display text remains for phase 3 |
 | 3 | Generated Help/hints for migrated screens; replace handwritten key text and stale A/D-tab descriptions in Node Config/selector | After phase 2 merges |
 
 Deferred: remaining read-only viewers until next touched, generated
@@ -834,8 +834,10 @@ migration hazard or a reserved-key change.
 Phase 1 compiles every Confirm alias before Textual's class merge and reuses
 the existing focus mechanics. Other screens, root App policy, the Select
 compatibility patch and legacy guard lists remain unchanged until phase 2.
-Foundation test hosts exercise shared policies without claiming those legacy
-screens have already migrated. See [Contributing](CONTRIBUTING.md#adding-a-registered-command).
+Phase 1's isolated hosts established the policies; phase 2 migrates their
+production owners. Help/Error Details/unsaved and input prompts receive the
+same mechanical profile integration because they share CommandScreenMixin.
+Memory/Output/File viewers remain deferred. See [Contributing](CONTRIBUTING.md#adding-a-registered-command).
 
 Recommended cleanup:
 

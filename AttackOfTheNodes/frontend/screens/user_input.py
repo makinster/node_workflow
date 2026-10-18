@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 from textual.app import ComposeResult
-from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Button, Input, Label, Static
+
+from frontend.keymap import USER_INPUT, bindings_for
 
 from frontend.widgets.command_screen_mixin import CommandScreenMixin
 from frontend.widgets.command_input import CommandInput
@@ -16,11 +17,8 @@ from frontend.widgets.status_bar import StatusBar
 class UserInputScreen(CommandScreenMixin, ModalScreen):
     """Prompt shown when a user-input node suspends a supervisor."""
 
-    BINDINGS = [
-        ("escape", "cancel", "Cancel"),
-        ("ctrl+enter", "submit", "Submit"),
-        Binding("ctrl+q", "cancel", "Cancel", priority=True),
-    ]
+    KEYMAP = USER_INPUT
+    BINDINGS = bindings_for(KEYMAP)
 
     def __init__(self, branch_id: str, node_id: str, prompt: str) -> None:
         super().__init__()

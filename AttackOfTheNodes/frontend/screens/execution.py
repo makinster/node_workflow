@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 from textual.app import ComposeResult
-from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
-from textual.events import Key
 from textual.screen import Screen
 from textual.widgets import Header, Label, RichLog, Static
 from rich.text import Text
 
 from frontend import notifications
+from frontend.keymap import EXECUTION, bindings_for
+from frontend.keymap_runtime import KeymapScreenMixin
 from frontend.screens.error_details import ErrorDetailsScreen
 from frontend.screens.memory_viewer import MemoryViewerScreen
 from frontend.screens.output_viewer import OutputViewerScreen
@@ -19,19 +19,11 @@ from frontend.widgets.node_list import NodeList
 from frontend.widgets.status_bar import StatusBar
 
 
-class ExecutionScreen(Screen):
+class ExecutionScreen(KeymapScreenMixin, Screen):
     """Live workflow execution view."""
 
-    BINDINGS = [
-        ("p", "pause_resume", "Pause/resume"),
-        ("s", "stop", "Stop"),
-        ("S", "stop", "Stop"),
-        ("m", "memory", "Memory"),
-        ("o", "output", "Output"),
-        ("e", "errors", "Errors"),
-        ("escape", "back_to_editor", "Editor"),
-        Binding("ctrl+q", "back_to_editor", "Editor", priority=True),
-    ]
+    KEYMAP = EXECUTION
+    BINDINGS = bindings_for(KEYMAP)
 
     def __init__(self, workflow_map, memory_bank, master_state) -> None:
         super().__init__()
@@ -69,11 +61,6 @@ class ExecutionScreen(Screen):
     def on_screen_resume(self) -> None:
         if self.is_mounted:
             self.refresh_from_backend()
-
-    def on_key(self, event: Key) -> None:
-        if event.key.lower() == "s":
-            event.stop()
-            self.action_stop()
 
     def refresh_from_backend(self) -> None:
         app = self.app

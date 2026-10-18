@@ -14,7 +14,6 @@ from typing import Any, Dict, List, Optional
 from rich.markup import escape
 from textual import events, on
 from textual.app import ComposeResult
-from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.message import Message
 from textual.screen import ModalScreen
@@ -25,6 +24,9 @@ from backend.stash_manager import (
     StashDuplicate, StashError, StashManager, duplicates_message, preview, type_word,
 )
 from frontend import notifications
+from frontend.keymap import STASH_PASTE, STASH_SEARCH, STASH, bindings_for
+from frontend.keymap_runtime import KeymapScreenMixin
+
 from frontend.io_contract import type_label
 from frontend.screens.confirm import ConfirmScreen
 from frontend.screens.workflow_library import NamePromptScreen
@@ -68,13 +70,11 @@ class _PasteBox(CommandTextArea):
         event.prevent_default()
         self.post_message(self.Submitted(event.text))
 
-    async def _on_key(self, event: events.Key) -> None:
-        if event.key == "enter":
-            event.stop()
-            event.prevent_default()
-            self.post_message(self.Submitted(self.text))
-            return
-        await super()._on_key(event)
+    KEYMAP = STASH_PASTE
+    BINDINGS = bindings_for(KEYMAP)
+
+    def action_submit_paste(self) -> None:
+        self.post_message(self.Submitted(self.text))
 
 
 class _SearchInput(CommandInput):
@@ -84,17 +84,15 @@ class _SearchInput(CommandInput):
     class Done(Message):
         pass
 
-    async def _on_key(self, event: events.Key) -> None:
-        if self.editing and event.key in ("enter", "escape"):
-            self.end_edit()
-            event.stop()
-            event.prevent_default()
-            self.post_message(self.Done())
-            return
-        await super()._on_key(event)
+    KEYMAP = STASH_SEARCH
+    BINDINGS = bindings_for(KEYMAP)
+
+    def action_finish_search(self) -> None:
+        self.end_edit()
+        self.post_message(self.Done())
 
 
-class StashScreen(ModalScreen):
+class StashScreen(KeymapScreenMixin, ModalScreen):
     """Manage the Stash, or pick an entry to insert into a field.
 
     Manage mode dismisses with None. Insert mode (``insert_into`` set, from
@@ -102,22 +100,8 @@ class StashScreen(ModalScreen):
     the chosen entry.
     """
 
-    BINDINGS = [
-        ("escape", "close", "Close"),
-        ("q", "close", "Close"),
-        Binding("ctrl+q", "close", "Close", priority=True),
-        # Priority: a focused text box that isn't editing would swallow the
-        # digit. check_action turns them off while typing.
-        Binding("1", "show_tab('add')", "Paste / drop", priority=True),
-        Binding("2", "show_tab('entries')", "Entries", priority=True),
-        ("w", "cursor_up", "Up"),
-        ("s", "cursor_down", "Down"),
-        ("slash", "search", "Search"),
-        ("t", "toggle", "Filter / keep as text"),
-        ("r", "rename", "Rename"),
-        ("x", "delete", "Delete"),
-        ("e", "edit", "Edit"),
-    ]
+    KEYMAP = STASH
+    BINDINGS = bindings_for(KEYMAP)
 
     def __init__(
         self,
@@ -177,11 +161,6 @@ class StashScreen(ModalScreen):
         self._refresh_entries()
         self._focus_tab(self.initial_tab)
 
-    def check_action(self, action: str, parameters: tuple) -> bool | None:
-        # While a text box is being typed in, letters and digits are text.
-        if getattr(self.app.focused, "editing", False):
-            return False
-        return True
 
     # -- tabs ------------------------------------------------------------------
 
@@ -392,6 +371,9 @@ class StashScreen(ModalScreen):
         )
 
     def action_edit(self) -> None:
+        if isinstance(self.app.focused, (CommandInput, CommandTextArea)):
+            self.app.focused.begin_edit()
+            return
         if self._active_tab() == ADD_TAB:
             self.query_one("#stash-paste", _PasteBox).begin_edit()
         elif self.insert_into:

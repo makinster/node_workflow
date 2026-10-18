@@ -17,12 +17,10 @@ from __future__ import annotations
 from typing import Any, Optional
 
 from textual import events
-from textual.binding import Binding
 from textual.css.query import NoMatches
 
 from frontend.widgets.command_navigation import (
     activate_command_widget,
-    blocks_command_action,
     command_focus_widgets,
     focus_command_widget,
     group_widgets_into_rows,
@@ -31,49 +29,23 @@ from frontend.widgets.command_navigation import (
     within_row_target,
 )
 from frontend.widgets.status_bar import StatusBar
+from frontend.keymap import NAVIGATION, Profile, bindings_for
+from frontend.keymap_runtime import KeymapScreenMixin, navigation_keys
 
 
-_NAV_BINDINGS = [
-    Binding("w", "cursor_up", "Up", priority=True),
-    Binding("s", "cursor_down", "Down", priority=True),
-    Binding("up", "cursor_up", "Up", priority=True),
-    Binding("down", "cursor_down", "Down", priority=True),
-    # A/D and left/right move within the current row (2D navigation); a no-op
-    # on single-widget rows, which is the common single-column case.
-    Binding("a", "cursor_left", "Left", priority=True),
-    Binding("d", "cursor_right", "Right", priority=True),
-    Binding("left", "cursor_left", "Left", priority=True),
-    Binding("right", "cursor_right", "Right", priority=True),
-    Binding("e", "activate_focused", "Activate", priority=True),
-    Binding("enter", "activate_focused", "Activate", priority=True),
-]
-
-
-class CommandScreenMixin:
+class CommandScreenMixin(KeymapScreenMixin):
     """Mixin providing standard command-mode navigation for Textual screens."""
 
-    BINDINGS = _NAV_BINDINGS
+    KEYMAP = Profile("command_navigation", NAVIGATION)
+    BINDINGS = bindings_for(KEYMAP)
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
-        # Inject nav bindings BEFORE super() so DOMNode._merge_bindings sees them.
-        try:
-            from textual.dom import DOMNode
-            if issubclass(cls, DOMNode):
-                own = list(cls.__dict__.get("BINDINGS", []))
-                own_keys: set[str] = set()
-                for b in own:
-                    key = b.key if hasattr(b, "key") else (b[0] if isinstance(b, tuple) else None)
-                    if key:
-                        own_keys.add(key)
-                injected = False
-                for binding in _NAV_BINDINGS:
-                    if binding.key not in own_keys:
-                        own.append(binding)
-                        injected = True
-                if injected or "BINDINGS" not in cls.__dict__:
-                    cls.BINDINGS = own
-        except ImportError:
-            pass
+        # Small legacy/test hosts can inherit the shared profile. Production
+        # migrated screens declare their complete profile in the class body.
+        if "KEYMAP" not in cls.__dict__:
+            own = list(cls.__dict__.get("BINDINGS", []))
+            keys = {b.key if hasattr(b, "key") else b[0] for b in own}
+            cls.BINDINGS = own + [b for b in bindings_for(cls.KEYMAP) if b.key not in keys]
         super().__init_subclass__(**kwargs)
 
     def _nav_widgets(self) -> list[Any]:
@@ -91,22 +63,10 @@ class CommandScreenMixin:
             focus_command_widget(self, widgets[0], self._scroll_container())
 
     def check_action(self, action: str, parameters: tuple) -> bool | None:
-        active_text = getattr(self, "_active_command_text_widget", None)
-        if blocks_command_action(active_text, action):
+        if action in {"cursor_left", "cursor_right"} and not self._focused_in_multi_widget_row():
+            # A single field retains its native caret positioning in NAV.
             return False
-        if blocks_command_action(self.app.focused, action):
-            return False
-        if action in {"cursor_left", "cursor_right"}:
-            # While editing, A/D type/move the caret in the field.
-            if is_editing_text(active_text) or is_editing_text(self.app.focused):
-                return False
-            # Within-row movement only applies when the focused widget shares a
-            # row with another widget. On a single-widget row (the common case,
-            # e.g. a lone CommandInput) fall through so the key reaches the
-            # widget for caret positioning.
-            if not self._focused_in_multi_widget_row():
-                return False
-        return True
+        return super().check_action(action, parameters)
 
     def _focused_in_multi_widget_row(self) -> bool:
         rows = group_widgets_into_rows(self._nav_widgets())
@@ -203,7 +163,7 @@ class CommandScreenMixin:
         # arrows/enter) are intentionally blocked by check_action while editing;
         # they must NOT force focus back to the editing field when focus has been
         # legitimately moved to another widget (e.g., a Button).
-        _NAV_BINDING_KEYS = {b.key for b in _NAV_BINDINGS}
+        _NAV_BINDING_KEYS = navigation_keys(self)
         _TEXT_EDIT_KEYS = {"backspace", "delete", "ctrl+h", "ctrl+w", "ctrl+u", "ctrl+k"}
         if not (event.is_printable or event.key in _TEXT_EDIT_KEYS):
             return

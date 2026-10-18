@@ -3,28 +3,20 @@
 from __future__ import annotations
 
 from textual.app import ComposeResult
-from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Button, Label, ListItem, ListView, Static
 
+from frontend.keymap import BRANCH_SELECTOR, bindings_for
+from frontend.keymap_runtime import KeymapScreenMixin
 from frontend.widgets.list_navigation import focus_list, move_list_highlight
 
 
-class BranchSelectorScreen(ModalScreen):
+class BranchSelectorScreen(KeymapScreenMixin, ModalScreen):
     """Select which output branch is visible below a branch node."""
 
-    BINDINGS = [
-        ("escape", "cancel", "Cancel"),
-        Binding("ctrl+q", "cancel", "Cancel", priority=True),
-        Binding("up", "cursor_up", "Up", priority=True),
-        Binding("down", "cursor_down", "Down", priority=True),
-        Binding("w", "cursor_up", "Up", priority=True),
-        Binding("s", "cursor_down", "Down", priority=True),
-        ("enter", "choose", "Choose"),
-        Binding("e", "choose", "Choose", priority=True),
-        ("d", "choose", "Choose"),
-    ]
+    KEYMAP = BRANCH_SELECTOR
+    BINDINGS = bindings_for(KEYMAP)
 
     def __init__(
         self,

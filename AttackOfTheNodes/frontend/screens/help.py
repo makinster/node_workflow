@@ -1,10 +1,12 @@
 """Help modal."""
 
+
 from textual.app import ComposeResult
-from textual.binding import Binding
 from textual.containers import Vertical, VerticalScroll
 from textual.screen import ModalScreen
 from textual.widgets import Button, Label, Static
+
+from frontend.keymap import HELP, bindings_for
 
 from frontend.widgets.command_screen_mixin import CommandScreenMixin
 
@@ -104,11 +106,8 @@ HELP_TEXT = {
 class HelpScreen(CommandScreenMixin, ModalScreen):
     """Keyboard reference and short TUI usage guide."""
 
-    BINDINGS = [
-        ("escape", "close", "Close"),
-        ("q", "close", "Close"),
-        Binding("ctrl+q", "close", "Close", priority=True),
-    ]
+    KEYMAP = HELP
+    BINDINGS = bindings_for(KEYMAP)
 
     def __init__(self, context: str = "general") -> None:
         super().__init__()

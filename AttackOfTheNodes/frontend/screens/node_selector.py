@@ -16,7 +16,6 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 from textual.app import ComposeResult
-from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
 from textual.widgets import (
@@ -29,6 +28,9 @@ from textual.widgets import (
 from textual.containers import VerticalScroll
 
 from backend.port_types import accepts_producers
+
+from frontend.keymap import NODE_SELECTOR, bindings_for
+from frontend.keymap_runtime import KeymapScreenMixin
 
 from frontend.screens.group_picker import GroupPickerScreen
 from frontend.io_contract import (
@@ -88,32 +90,11 @@ SECTION_ORDER: Dict[str, List[str]] = {
 HEADER_RULE_WIDTH = 44
 
 
-class NodeSelectorScreen(ModalScreen):
+class NodeSelectorScreen(KeymapScreenMixin, ModalScreen):
     """Add-node modal, backed entirely by NodeFactory metadata."""
 
-    BINDINGS = [
-        ("escape", "cancel", "Cancel"),
-        Binding("ctrl+q", "cancel", "Cancel", priority=True),
-        ("/", "focus_filter", "Filter"),
-        Binding("tab", "focus_node_list", "List", priority=True),
-        # Tabs switch by number key (1-5); A/D move within the current row.
-        Binding("1", "jump_tab(1)", "Tab 1", priority=True),
-        Binding("2", "jump_tab(2)", "Tab 2", priority=True),
-        Binding("3", "jump_tab(3)", "Tab 3", priority=True),
-        Binding("4", "jump_tab(4)", "Tab 4", priority=True),
-        Binding("5", "jump_tab(5)", "Tab 5", priority=True),
-        Binding("a", "cursor_left", "Left", priority=True),
-        Binding("d", "cursor_right", "Right", priority=True),
-        Binding("left", "cursor_left", "Left", priority=True),
-        Binding("right", "cursor_right", "Right", priority=True),
-        Binding("up", "cursor_up", "Up", priority=True),
-        Binding("down", "cursor_down", "Down", priority=True),
-        Binding("w", "cursor_up", "Up", priority=True),
-        Binding("s", "cursor_down", "Down", priority=True),
-        ("enter", "choose", "Add"),
-        Binding("e", "choose", "Add", priority=True),
-        Binding("t", "toggle_fitting", "Fitting only", priority=True),
-    ]
+    KEYMAP = NODE_SELECTOR
+    BINDINGS = bindings_for(KEYMAP)
 
     # "Fitting only" is remembered for the rest of the app session.
     show_fitting_only: bool = False
@@ -196,25 +177,6 @@ class NodeSelectorScreen(ModalScreen):
         except Exception:
             return
         self._update_detail(node_list.index)
-
-    def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
-        focused = self.focused
-        if isinstance(focused, CommandInput) and focused.editing:
-            # While typing in the filter, nav keys and digits act as text.
-            if action in {
-                "cursor_up",
-                "cursor_down",
-                "cursor_left",
-                "cursor_right",
-                "jump_tab",
-                "choose",
-                "toggle_fitting",
-                "focus_filter",
-                "focus_node_list",
-                "cancel",
-            }:
-                return False
-        return True
 
     def on_input_changed(self, event: CommandInput.Changed) -> None:
         if event.input.id == "node-filter":
