@@ -78,6 +78,29 @@ def accepted_types(field_info: Dict[str, Any]) -> set:
     return set()
 
 
+def stash_insert_target(schema: Dict[str, Dict[str, Any]], field_name: str) -> Dict[str, Any] | None:
+    """What a Stash insert from ``field_name`` fills (Stash S3), or None.
+
+    A field that accepts entries (``accepted_types``) is filled itself. A
+    port's Source select whose path field is hidden until it reads
+    ``Configured`` fills that field and switches the source (STASH_PROPOSAL.md
+    §9 note 1). Everything else takes nothing.
+    """
+    info = schema.get(field_name) or {}
+    accepts = accepted_types(info)
+    if accepts:
+        return {"field": field_name, "label": str(info.get("label") or field_name),
+                "accepts": accepts, "set_source": None, "source_label": None}
+    if info.get("type") == "select" and "Configured" in (info.get("options") or []):
+        for name, other in schema.items():
+            other_accepts = accepted_types(other)
+            if other.get("visible_when") == {field_name: "Configured"} and other_accepts:
+                return {"field": name, "label": str(other.get("label") or name),
+                        "accepts": other_accepts, "set_source": (field_name, "Configured"),
+                        "source_label": str(info.get("label") or field_name)}
+    return None
+
+
 def field_visible(config: Dict[str, Any], defaults: Dict[str, Any], field_info: Dict[str, Any]) -> bool:
     """Whether a schema field's ``visible_when`` condition currently holds.
 

@@ -17,6 +17,8 @@ Historical integration note (2026-10-17): C7's #66 merged to the C6 branch;
 Stash S1 (core, paste parser, `accepted_types`) with the S3b `aotn stash` CLI
 followed in #70 (owner approved S1 with the CLI, 2026-10-17). Stash S2, the
 Stash screen, followed (`dist/stash-s2`; owner approved the sample screens).
+Stash S3, inserting an entry into a node config field with `P`, followed
+(`dist/stash-s3`).
 
 **Agreed order (owner, 2026-10-15; extended 2026-10-17):** C3 → C5 →
 workflow authoring tool v1 → C4, C6, C7 → workflow

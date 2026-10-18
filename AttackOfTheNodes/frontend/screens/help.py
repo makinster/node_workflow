@@ -46,6 +46,7 @@ HELP_TEXT = {
         "  W/S or ↑/↓  Move through fields",
         "  A/D or ←/→  Switch tabs",
         "  E or Enter  Edit / choose",
+        "  P           Insert from Stash into the field",
         "  Ctrl+S      Save",
         "  Ctrl+Enter  Save multiline text",
         "  Esc         Leave field or cancel",

@@ -10,15 +10,15 @@ This is the only live status snapshot; older logs/plans retain dated history.
 - Merged: Stash S1 + `aotn stash` CLI (#70); Stash S2, the Stash screen
   (#71, `p` in the editor); docs PR B (#72: consolidation, VISION,
   CONTRIBUTING), confirm/close buttons in every window (#73), and Stash
-  duplicates (#74: the same file or text is never stashed twice). Next: S3
-  (field insert). Docs PR C follows B.
+  duplicates (#74: the same file or text is never stashed twice). Open: S3, field insert
+  (`dist/stash-s3`). Next: owner's pick (keymap table proposed). Docs PR C follows B.
   The owner merges, or explicitly asks a reviewer to.
 - Work order: [Node Contract Plan](NODE_CONTRACT_PLAN.md). Long-term decisions:
   [Distributed Build Plan](DISTRIBUTED_BUILD_PLAN.md), [Stash](STASH_PROPOSAL.md).
 
 ## Verification and environment — 2026-10-17
 
-- Full suite: **1539 passed** with #73 and #74 merged (2026-10-17).
+- Full suite: **1548 passed** on `dist/stash-s3` (2026-10-18).
   in 173.22s on `9d5455b` plus docs changes.
 - PR B checks: **334** relative Markdown links/anchors resolve, 33 whole archive
   bodies retained, 17 active docs, and `git diff --check` passes.
@@ -31,10 +31,10 @@ This is the only live status snapshot; older logs/plans retain dated history.
 
 ## Open owner decisions and limits — 2026-10-17
 
-- **Stash S1:** approved by the owner in chat, 2026-10-17, with the S3b CLI.
-  S2/S3 need sample screens before UI work; open questions 1–3 of
-  `STASH_PROPOSAL.md` §7 (string fields taking files, the command palette
-  key, global-only scope) are still the owner's.
+- **Stash:** S1 approved with the CLI (2026-10-17). Answered 2026-10-18:
+  the field-insert key is `P`; a text field takes text entries only, not
+  a file path (`STASH_PROPOSAL.md` §7 questions 1 and 2). Still the
+  owner's: question 3, global-only Stash or per-workflow pinning.
 - **End in the selector:** End is registered and CLI-authorable, but hidden
   from the TUI selector. Whether to expose it remains an owner decision.
 - **FO7:** native Windows/terminal-host verification remains unverified in

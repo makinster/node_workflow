@@ -438,14 +438,17 @@ class AttackOfTheNodesApp(TextualApp):
             self._handle_workflow_library_action,
         )
 
-    def action_stash(self, initial_tab: str = "add") -> None:
-        """Open the Stash (`p` in the editor). Node-config field insert (S3)
-        opens it on the Entries tab."""
+    def action_stash(self, initial_tab: str = "add", insert_into=None, callback=None) -> None:
+        """Open the Stash (`p` in the editor). Node config's field insert (S3)
+        opens it on Entries in insert mode; ``callback`` gets the chosen entry."""
         if self.stash_manager is None:
             from backend.stash_manager import StashManager
 
             self.stash_manager = StashManager()
-        self.push_screen(StashScreen(self.stash_manager, initial_tab=initial_tab))
+        self.push_screen(
+            StashScreen(self.stash_manager, initial_tab=initial_tab, insert_into=insert_into),
+            callback,
+        )
 
     def action_settings(self) -> None:
         """Open settings modal."""

@@ -4,6 +4,28 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-18 — Stash S3: Insert an Entry Into a Node Config Field
+
+Branch `dist/stash-s3`, from `main` at `e4fd25d` (#74). Before: 1539
+passed. After: 1548 passed (9 new tests in `test_stash_insert.py`).
+
+- **Owner decisions (2026-10-18):** the insert key is `P` (Ctrl+P clashes
+  with the command palette and VS Code's terminal); a text field takes only
+  `[text]` entries, not a file path (proposal question 1: no, for now).
+- `P`, or the new **Insert from Stash** button, on a highlighted field
+  opens the Stash on Entries in insert mode: titled "insert into <field>",
+  only entries the field accepts, **E/Enter** or **Insert** fills the field.
+  A field that takes nothing gets a toast. `P` is off while typing.
+- On a port's Source row, the insert fills the path field that row hides
+  and switches the source to Configured (proposal §9 note 1); the toast
+  says so. `field_types.stash_insert_target()` is the shared rule, read
+  from the schema's `visible_when`.
+- The button is last in node config's button column, so W/S from the
+  fields still reaches Save first. The hint line and Help list `p stash`.
+- Found: Help says A/D switches node-config tabs, but A/D moves within a
+  row there; left for the proposed keymap-table PR, which keeps Help and
+  bindings in sync.
+
 ## 2026-10-17 — Stash: Duplicates Are Not Stashed Twice
 
 Branch `dist/stash-duplicates` (PR #74), from `main` at `9032151`, then merged

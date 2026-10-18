@@ -659,6 +659,9 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         Binding("4", "jump_config_tab(4)", "Tab 4", priority=True),
         Binding("5", "jump_config_tab(5)", "Tab 5", priority=True),
         Binding("ctrl+q", "cancel", "Cancel", priority=True),
+        # Stash S3: insert an entry into the highlighted field. Priority so a
+        # focused field that isn't editing can't swallow it; off while typing.
+        Binding("p", "stash_insert", "Insert from Stash", priority=True),
     ]
 
     def __init__(
@@ -775,9 +778,9 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             # The node ID on its own line (owner, 2026-10-14), not in labels.
             yield Static(f"Node ID: {self.node_id}", id="node-config-id",
                          classes="form-description")
-            help_text = "1-5 tabs | w/s move | a/d row | e edit | ctrl+s save | esc close | ctrl+q revert"
+            help_text = "1-5 tabs | w/s move | e edit | p stash | ctrl+s save | esc close | ctrl+q revert"
             if self.node_data.get("type") == WAIT_UNTIL_NODE_TYPE:
-                help_text = "1/2 tabs | w/s move | e edit | ctrl+s save | esc close | ctrl+q revert"
+                help_text = "1/2 tabs | w/s move | e edit | p stash | ctrl+s save | esc close | ctrl+q revert"
             # UX6: the key hints show once, in the status bar at the bottom.
             if self.node_data.get("type") == MERGE_NODE_TYPE:
                 with VerticalScroll(id="node-config-scroll"):
@@ -805,6 +808,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 # UX6: compact one-row buttons; Close asks before discarding edits.
                 yield Button("Save", id="save-node-config", variant="primary", compact=True)
                 yield Button("Close", id="cancel-node-config", variant="default", compact=True)
+                # Last, so W/S from the fields still reaches Save first.
+                yield Button("Insert from Stash", id="stash-insert-node-config", variant="default", compact=True)
             yield StatusBar(help_text)
 
     def _compose_standard_config_tabs(
@@ -1422,6 +1427,10 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             expanded_select.expanded = False
             expanded_select.focus()
             return False
+        if action == "stash_insert":
+            active_text = getattr(self, "_active_command_text_widget", None)
+            if is_editing_text(self.app.focused) or is_editing_text(active_text) or expanded_select is not None:
+                return False
         if action == "jump_config_tab":
             # Digits type normally while editing a field or with a Select
             # overlay open; only switch tabs in nav mode.
@@ -1970,6 +1979,9 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         self._scroll_changed_widget(event.selection_list)
 
     async def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "stash-insert-node-config":
+            self.action_stash_insert()
+            return
         if event.button.id == "save-node-config":
             self.action_save()
         elif event.button.id == "cancel-node-config":
@@ -2048,6 +2060,55 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             self.app.set_focus(focused, scroll_visible=False)
         else:
             self._focus_first()
+
+    # -- Stash S3: insert an entry into a field ---------------------------------
+
+    def on_descendant_focus(self, event) -> None:
+        widget_id = str(getattr(event.widget, "id", "") or "")
+        if widget_id.startswith("field-") and not widget_id.startswith(("field-row-", "field-label-", "field-desc-")):
+            # The button click moves focus, so remember the field it acts on.
+            self._stash_field = widget_id.removeprefix("field-")
+
+    def action_stash_insert(self) -> None:
+        """P / Insert from Stash: open the Stash on Entries for the highlighted
+        field; a file field (or its Source row) takes [file], a text field [text]."""
+        from backend.field_types import stash_insert_target
+
+        field = getattr(self, "_stash_field", None)
+        metadata = self.factory.metadata_for_type(self.node_data.get("type", "")) or {}
+        target = stash_insert_target(metadata.get("config_schema") or {}, field) if field else None
+        if target is None:
+            notifications.notify_info(self.app, "This field doesn't take Stash entries")
+            return
+        self.app.action_stash(
+            "entries",
+            insert_into={"label": target["label"], "accepts": target["accepts"]},
+            callback=lambda entry: self._insert_stash_entry(target, entry),
+        )
+
+    def _insert_stash_entry(self, target: Dict[str, Any], entry: Optional[Dict[str, Any]]) -> None:
+        if not entry:
+            return
+        from backend.file_refs import reference_path
+
+        value = reference_path(entry["value"]) if entry["type"] == "file" else str(entry["value"])
+        note = ""
+        if target["set_source"]:
+            source_field, source_value = target["set_source"]
+            source = self.query(f"#field-{source_field}")
+            if source and getattr(source.first(), "value", None) != source_value:
+                source.first().value = source_value
+                note = f"; {target['source_label']} set to {source_value}"
+        widget_query = self.query(f"#field-{target['field']}")
+        if not widget_query:
+            return
+        widget = widget_query.first()
+        if hasattr(widget, "text") and not isinstance(widget, Input):
+            widget.text = value
+        else:
+            widget.value = value
+        self._apply_generated_field_rules()
+        notifications.notify_info(self.app, f"Inserted '{entry['name']}' into {target['label']}{note}")
 
     def _commit_text_edit(self) -> None:
         for widget in (getattr(self, "_active_command_text_widget", None), self.app.focused):
