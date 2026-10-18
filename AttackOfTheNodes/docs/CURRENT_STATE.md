@@ -31,10 +31,10 @@ This is the only live status snapshot; older logs/plans retain dated history.
 
 ## Open owner decisions and limits — 2026-10-17
 
-- **Stash S1:** approved by the owner in chat, 2026-10-17, with the S3b CLI.
-  S2/S3 need sample screens before UI work; open questions 1–3 of
-  `STASH_PROPOSAL.md` §7 (string fields taking files, the command palette
-  key, global-only scope) are still the owner's.
+- **Stash:** S1 approved with the CLI (2026-10-17). Answered 2026-10-18:
+  the field-insert key is `P`; a text field takes text entries only, not
+  a file path (`STASH_PROPOSAL.md` §7 questions 1 and 2). Still the
+  owner's: question 3, global-only Stash or per-workflow pinning.
 - **End in the selector:** End is registered and CLI-authorable, but hidden
   from the TUI selector. Whether to expose it remains an owner decision.
 - **FO7:** native Windows/terminal-host verification remains unverified in
