@@ -5,7 +5,8 @@ This is the only live status snapshot; older logs/plans retain dated history.
 
 ## Baseline and open work — 2026-10-18
 
-- Implementation base: `origin/main` at `714f190` (Stash S3, #75 merged). C1–C7 and workflow naming
+- Implementation base: `714f190` (Stash S3, #75), integrated with
+  `origin/main` at `fa93b50` (approved Step 4 design, #76). C1–C7 and workflow naming
   (#68) are merged; C7 has only `branch` and publishes its child payload.
 - Merged: Stash S1 + `aotn stash` CLI (#70); Stash S2, the Stash screen
   (#71, `p` in the editor); docs PR B (#72: consolidation, VISION,
@@ -18,7 +19,8 @@ This is the only live status snapshot; older logs/plans retain dated history.
   time: foundation, shared policies/high-traffic screens, generated Help/hints.
   Read-only viewers, generated reference tables/source checks and rebinding UI
   are deferred. [Scope and post-S3 inventory](PROJECT_BACKLOG.md#near-term-project--frontend-command-ui-toolkit).
-  Step 4 has a parallel docs-only design proposal. Docs PR C follows B.
+  Step 4 design revision 3 is approved and merged in #76; backend/CLI
+  stage 4a-1 proceeds separately. Docs PR C follows B.
   The owner merges, or explicitly asks a reviewer to.
 - Work order: [Node Contract Plan](NODE_CONTRACT_PLAN.md). Long-term decisions:
   [Distributed Build Plan](DISTRIBUTED_BUILD_PLAN.md), [Stash](STASH_PROPOSAL.md).
@@ -42,6 +44,10 @@ This is the only live status snapshot; older logs/plans retain dated history.
 
 ## Open owner decisions and limits — 2026-10-17
 
+- **Step 4:** design approved with the owner's answers (2026-10-18;
+  [Subworkflows proposal](SUBWORKFLOWS_PROPOSAL.md) rev. 3). Next: 4a, the Start
+  overhaul and contracts, with sample screens first.
+
 - **Stash:** S1 approved with the CLI (2026-10-17). Answered 2026-10-18:
   the field-insert key is `P`; a text field takes text entries only, not
   a file path (`STASH_PROPOSAL.md` §7 questions 1 and 2). Still the
@@ -50,8 +56,9 @@ This is the only live status snapshot; older logs/plans retain dated history.
   from the TUI selector. Whether to expose it remains an owner decision.
 - **FO7:** native Windows/terminal-host verification remains unverified in
   this session; owner results are needed before claiming native coverage.
-- **Step 4:** child-run contracts remain planned and need the owner's gate;
-  `--input` is recorded but not yet consumed by those contracts.
+- **Step 4 implementation:** the approved contracts remain unbuilt; `--input`
+  is recorded but not yet consumed. Stage 4a-1 is backend/CLI only; config
+  screens follow keymap phase 2.
 - Only the [audit report](audits/docs_audit_2026_10_17/MASTER_REPORT.md) survived.
   Original evidence/CSVs are unavailable. PR B rebuilt the source map before
   extraction; whole originals and migration notes are retained in `archive/`.

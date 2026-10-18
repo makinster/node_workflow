@@ -33,6 +33,41 @@ this implements only the foundation. The Step 4 proposal proceeds separately.
   compilation and `git diff --check` pass. Docs check: 336 relative links/anchors,
   33 whole archive bodies, 17 active docs. No native terminal verification.
 
+## 2026-10-18 — Step 4 Design Proposal: Subworkflows and Contracts
+
+Branch `docs/step4-subworkflows`, from `main` at `714f190` (#75). Docs
+only. The owner agreed to a design-first Step 4 with Stash S5 designed in,
+and to the keymap work running in parallel (Codex, frontend).
+
+- New [SUBWORKFLOWS_PROPOSAL.md](SUBWORKFLOWS_PROPOSAL.md): decisions
+  C1–C13 (contracts on Start/End, inputs via the Vault, a fresh backend
+  stack per child run, workflow-id references, call-and-wait first, one
+  input fill order, recursion limits, stop cascade, returned-file
+  hand-over, inherited prompts, per-machine Stash bindings), four PRs
+  (4a–4d) and five owner questions.
+- Checked against the code: `MasterState` holds one run, so a child needs
+  its own stack; `RunContext.inputs` and `parent_run_id` exist but are
+  unused; `RunResult.outputs` is the output log, not named values.
+- **Revision 2 (review of #76):** one contract on Start with a single
+  Return End after merges; results only after the child finishes; one
+  `default` continuation with results in parent Vault keys; simultaneous
+  calls with fail-fast depth and live-run limits (no waiting queue);
+  file hand-over inside child finalization (`_record_run` deletes run
+  files before `wait()` returns); a run-aware prompt bridge with
+  invocation ids (the TUI has no input provider to inherit); tree
+  cancellation with acknowledgement; blocking contract-compatibility
+  errors and revision recording; missing-versus-empty and boundary types;
+  shared read-only services per child stack (`RunHistory` reads all
+  history on construction). Seven owner questions.
+- **Revision 3 (owner answers, 2026-10-18):** approved. Start overhaul:
+  rows become typed, routed outputs and are the contract's inputs (C1, C2);
+  prompt-free children are the norm and prompting is visible (C25); a new
+  Execution screen overhaul stage (EX) comes before the subworkflow UI;
+  limits are Settings; one Return End now, a Return Merge family later;
+  shared memory as C24. Step 4 in DISTRIBUTED_BUILD_PLAN now summarises the
+  design and order; the backlog records the Return Merge family and
+  merge-early guidance.
+
 ## 2026-10-18 — Stash S3: Insert an Entry Into a Node Config Field
 
 Branch `dist/stash-s3`, from `main` at `e4fd25d` (#74). Before: 1539

@@ -387,13 +387,33 @@ field entry.
 
 ### Step 4 — Contracts and subworkflows (Phases 19/20)
 
-- **Contracts:** typed declared inputs on Start and outputs on End, built on
-  port metadata and `backend/data_types.py`.
-- **Subworkflows (D3):** a child is its own `RunContext` linked by
-  `parent_run_id`. The Phase 19 subworkflow node uses call-and-wait;
-  fire-and-forget uses the same mechanism.
+**Status: design approved (owner, 2026-10-18); go-ahead given.** The detailed
+decisions C1–C25, acceptance scenarios and owner answers are in
+[SUBWORKFLOWS_PROPOSAL.md](SUBWORKFLOWS_PROPOSAL.md) (revision 3), archived when
+Step 4 completes.
+
+- **Start overhaul and contracts:** Start's rows become its typed outputs
+  (name, type, required, value), routed downstream and/or to the Vault; they
+  are the contract's inputs. One continuation: one row passes as itself,
+  several as one object. The greeting becomes a default row.
+- **One result:** exactly one Return End, reached after branches merge; the
+  result exists only after the child finishes and is type-checked.
+- **Subworkflows (D3):** a child is its own run in its own backend stack,
+  linked by `parent_run_id`, referenced by workflow id. Call-and-wait first;
+  simultaneous calls from parallel branches are supported, with fail-fast
+  depth (4) and live-run (16) limits in Settings. One `default`
+  continuation carries the result; results also map into parent Vault keys.
+- **Lifecycle:** returned files are handed over during child finalization;
+  root Stop waits for every descendant; prompts reach the root's client
+  through a run-aware bridge (prompt-free children are the norm).
 - **One contract for every caller:** the subworkflow node, trigger payloads,
-  CLI arguments and API calls all use the same contract.
+  CLI arguments and API calls all use the same contract and fill order.
+- **Order:** 4a Start overhaul and contracts → 4b child runs → EX Execution
+  screen overhaul (node map like the Editor's, per-node memory, A/D branches;
+  builds on the preserved branch-inspection proposal in
+  [PROJECT_BACKLOG.md](PROJECT_BACKLOG.md#execution-branch-inspection-proposal))
+  → 4c subworkflow UI and drill-in → 4d Stash bindings (S5) → 4e shared read
+  and progress → 4f shared read-write.
 
 ### Step 5 — Event sources and start triggers
 
