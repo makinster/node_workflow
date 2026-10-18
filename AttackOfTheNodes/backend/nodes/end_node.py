@@ -78,7 +78,8 @@ class EndNode(Node):
         )
         context.memory_bank.store_persistent("output_log", log)
 
-        if self.config.get("return_end"):
+        # The engine offers publish_result only in a callable workflow.
+        if self.config.get("return_end") and context.publish_result is not None:
             values, missing, invalid = collect_results(
                 return_rows(self.config),
                 lambda key: context.memory_bank.read_persistent(key),
@@ -92,7 +93,7 @@ class EndNode(Node):
                 context.signal_error(NodeError(
                     "result_invalid", "; ".join(f"result '{n}': {why}" for n, why in invalid.items())))
                 return
-            if context.publish_result is not None and not context.publish_result(values):
+            if not context.publish_result(values):
                 context.signal_error(NodeError(
                     "result_conflict", "The Return End ran a second time; a run returns one result"))
                 return

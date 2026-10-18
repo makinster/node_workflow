@@ -13,7 +13,7 @@ import pytest
 
 from backend import persistence
 from backend.contracts import (
-    ContractError, ContractInputError, coerce, downstream_payload, resolve_inputs,
+    ContractError, ContractInputError, check, downstream_payload, parse_text, resolve_inputs,
     start_rows, workflow_revision,
 )
 from backend.event_bus import EventBus
@@ -80,25 +80,32 @@ def run(wm, inputs=None):
 # -- values -------------------------------------------------------------------------
 
 @pytest.mark.parametrize("kind, raw, expected", [
-    ("number", "3", 3), ("number", "2.5", 2.5), ("number", 0, 0),
-    ("bool", "true", True), ("bool", "no", False), ("bool", False, False),
-    ("string", "", ""), ("string", 7, "7"),
+    ("number", "3", 3), ("number", "2.5", 2.5),
+    ("bool", "true", True), ("bool", "no", False),
+    ("string", "", ""), ("string", "7", "7"),
     ("var", '{"a": [1, 2]}', {"a": [1, 2]}), ("var", "plain text", "plain text"),
 ])
-def test_coerce(kind, raw, expected):
-    assert coerce(kind, raw) == expected
+def test_parse_text(kind, raw, expected):
+    assert parse_text(kind, raw) == expected
 
 
-@pytest.mark.parametrize("kind, raw", [("number", "ten"), ("number", True), ("bool", "maybe"),
-                                       ("string", {"a": 1}), ("file", "/nowhere/x.txt")])
-def test_coerce_rejects(kind, raw):
+@pytest.mark.parametrize("kind, value", [("number", 0), ("bool", False), ("string", ""),
+                                         ("var", "false"), ("var", {"a": 1})])
+def test_check_keeps_typed_values(kind, value):
+    assert check(kind, value) == value
+
+
+@pytest.mark.parametrize("parse, kind, raw", [
+    (True, "number", "ten"), (False, "number", True), (False, "number", "3"), (True, "bool", "maybe"),
+    (False, "string", {"a": 1}), (False, "string", 7), (True, "file", "/nowhere/x.txt")])
+def test_rejects(parse, kind, raw):
     with pytest.raises(ContractError):
-        coerce(kind, raw)
+        (parse_text if parse else check)(kind, raw)
 
 
 def test_var_values_are_copies():
     original = {"items": [1]}
-    copy = coerce("var", original)
+    copy = check("var", original)
     copy["items"].append(2)
     assert original == {"items": [1]}
 
@@ -107,7 +114,7 @@ def test_fill_order_and_missing_versus_empty():
     rows = [row("tone", value="plain"), row("count", "number", value="", required=True),
             row("flag", "bool", required=True), row("note")]
     # Supplied beats default; 0, False and "" are values, not "missing".
-    assert resolve_inputs(rows, {"tone": "", "count": "0", "flag": False}, strict=False) == {
+    assert resolve_inputs(rows, {"tone": "", "count": 0, "flag": False}, strict=False) == {
         "tone": "", "count": 0, "flag": False}
     # A stored "" means "no default" for every type, so it is missing.
     with pytest.raises(ContractInputError) as caught:
@@ -123,7 +130,7 @@ def test_invalid_explicit_value_never_falls_back_and_unknown_is_strict():
     rows = [row("count", "number", value="5")]
     with pytest.raises(ContractInputError) as caught:
         resolve_inputs(rows, {"count": "lots", "extra": 1}, strict=True)
-    assert caught.value.invalid == {"count": "expects a number, got 'lots'"}
+    assert caught.value.invalid == {"count": "expects a number, got str"}
     assert caught.value.unknown == ["extra"]
     assert resolve_inputs(rows, {"extra": 1}, strict=False) == {"count": 5}  # standard workflows
 
@@ -160,7 +167,7 @@ def test_a_contract_workflow_returns_typed_values():
         [row("tone", value="plain"), row("limit", "number", required=True)],
         [result("tone_out", vault_key="tone"), result("limit_out", "number", vault_key="limit")],
     )
-    outcome = run(wm, {"limit": "3"})
+    outcome = run(wm, {"limit": 3})
     assert outcome.final_state == "FINISHED" and outcome.exit_code == EXIT_OK
     assert outcome.values == {"tone_out": "plain", "limit_out": 3}
     # The revision is of what ran: the saved definition as loaded.
@@ -322,3 +329,68 @@ def test_cli_typed_inputs_inputs_file_and_values(tmp_path, capsys):
     code = aotn_cli.main([wm.workflow_id])
     assert code == EXIT_INVALID_INPUT
     assert "missing required input(s): limit" in capsys.readouterr().err
+
+
+# -- review of #80 ------------------------------------------------------------------
+
+def test_start_vault_rows_are_declared_writers():
+    """A node reading a Start row's Vault key passes preflight (finding 1)."""
+    from backend.vault_declarations import typed_vault_writes
+
+    config = {"rows": [row("message", "string", value="hi", to="Vault"),
+                       row("count", "number", value="2", to="Both", vault_key="n"),
+                       row("only_down", to="Downstream", value="x")]}
+    meta = next(m for m in FACTORY.get_node_types_metadata() if m["type"] == "start_node")
+    assert typed_vault_writes("start_node", config, meta) == {"message": "string", "n": "number"}
+
+    wm = WorkflowMap(FACTORY, EventBus())
+    wm.create_new("reads a start row")
+    start = wm.add_node("start_node")
+    out = wm.add_node("text_output_node")
+    wm.update_node_config(start, {**wm.get_node_data(start)["config"], **config})
+    wm.update_node_config(out, {**wm.get_node_data(out)["config"],
+                                "input_source": "Vault", "input_vault_key": "message"})
+    wm.connect(start, "default", out, "input")
+    report = validate_workflow(wm, FACTORY)
+    assert not [e for e in report["errors"] if e["code"] == "undeclared_vault_key"], report["errors"]
+
+
+def test_var_never_reparses_an_already_typed_value():
+    """An inputs-file string stays a string; only CLI text is parsed (finding 2)."""
+    from backend.contracts import parse_text, collect_results
+
+    rows = [row("data", "var", required=True)]
+    assert resolve_inputs(rows, {"data": "false"}, strict=True) == {"data": "false"}
+    assert resolve_inputs(rows, {"data": "null"}, strict=True) == {"data": "null"}
+    assert resolve_inputs(rows, {"data": {"a": 1}}, strict=True) == {"data": {"a": 1}}
+    # Text from the command line (or an editor default) is parsed by type.
+    assert parse_text("var", "false") is False and parse_text("var", "hello") == "hello"
+    assert parse_text("number", "3") == 3
+    # A number input from a file must already be a number.
+    with pytest.raises(ContractInputError):
+        resolve_inputs([row("n", "number", required=True)], {"n": "3"}, strict=True)
+    # Results are checked, never parsed: a stored "null" string is a value.
+    values, missing, invalid = collect_results([result("r", "var")], lambda key: "null", None)
+    assert (values, missing, invalid) == ({"r": "null"}, [], {})
+
+
+def test_cli_parses_input_text_by_row_type(tmp_path, capsys):
+    import aotn_cli
+    from backend.save_manager import SaveManager
+
+    wm, _, _ = build([row("data", "var", required=True), row("label", required=True)],
+                     [result("data_out", "var", vault_key="data"), result("label_out", vault_key="label")])
+    SaveManager(wm).save_current_workflow()
+    inputs_file = tmp_path / "inputs.json"
+    inputs_file.write_text(json.dumps({"label": "false"}))
+    code = aotn_cli.main([wm.workflow_id, "--input", "data=false", "--inputs-file", str(inputs_file), "--json"])
+    out = json.loads(capsys.readouterr().out)
+    assert code == EXIT_OK
+    assert out["values"] == {"data_out": False, "label_out": "false"}
+
+
+def test_an_ordinary_workflow_does_not_enforce_return_end_results():
+    """Results are ignored unless the workflow is callable, as the validator says (finding 3)."""
+    wm, _, _ = build([row("tone", value="plain")], [result("never_written")], callable_=False)
+    outcome = run(wm)
+    assert outcome.exit_code == EXIT_OK and outcome.errors == [] and outcome.values == {}

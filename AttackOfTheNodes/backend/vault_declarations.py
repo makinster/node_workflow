@@ -21,6 +21,13 @@ def standard_vault_writes(node_type: str, config: dict[str, Any], metadata: dict
     if node_type in {"user_text_input_node", "start_node", "text_output_node"}:
         for key in legacy_output_keys(config):
             writes[key] = "string"
+    if node_type == "start_node":
+        # Step 4a: each Start row sent to the Vault writes its key, typed.
+        from .contracts import sends_to_vault, start_rows, vault_key_for
+
+        for row in start_rows(config):
+            if not row.get("_legacy") and sends_to_vault(row) and row["name"]:
+                writes[vault_key_for(row)] = row["type"]
     if config.get("vault_write"):
         key = str(config.get("vault_write_key") or "").strip()
         if key:

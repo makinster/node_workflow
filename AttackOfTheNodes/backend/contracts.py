@@ -147,39 +147,56 @@ def is_missing(value: Any) -> bool:
     return value is None
 
 
-def coerce(row_type: str, value: Any) -> Any:
-    """``value`` as ``row_type``, or ContractError. Strings (from the CLI) are
-    parsed; JSON values (from an inputs file) are checked."""
+def parse_text(row_type: str, text: Any) -> Any:
+    """Typed value from *text*: an ``aotn run --input`` value or a row's
+    default as the editor stores it. Only text is parsed; anything else is
+    checked as an already-typed value."""
+    if not isinstance(text, str):
+        return check(row_type, text)
     if row_type == "string":
-        if isinstance(value, (dict, list)):
-            raise ContractError("expects text, got a structured value")
-        return value if isinstance(value, str) else str(value)
+        return text
     if row_type == "number":
-        if isinstance(value, bool):
-            raise ContractError("expects a number, got true/false")
-        if isinstance(value, (int, float)):
-            return value
-        text = str(value).strip()
+        stripped = text.strip()
         try:
-            number = float(text)
+            number = float(stripped)
         except ValueError:
-            raise ContractError(f"expects a number, got {text!r}") from None
-        return int(number) if number.is_integer() and "." not in text and "e" not in text.lower() else number
+            raise ContractError(f"expects a number, got {stripped!r}") from None
+        integral = number.is_integer() and "." not in stripped and "e" not in stripped.lower()
+        return int(number) if integral else number
     if row_type == "bool":
-        if isinstance(value, bool):
-            return value
-        text = str(value).strip().lower()
-        if text in ("true", "yes", "1", "on"):
+        word = text.strip().lower()
+        if word in ("true", "yes", "1", "on"):
             return True
-        if text in ("false", "no", "0", "off"):
+        if word in ("false", "no", "0", "off"):
             return False
-        raise ContractError(f"expects true or false, got {value!r}")
+        raise ContractError(f"expects true or false, got {text!r}")
     if row_type == "var":
-        if isinstance(value, str):
-            try:
-                value = json.loads(value)
-            except json.JSONDecodeError:
-                pass  # plain text is a valid JSON string value
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError:
+            return text  # plain text is a valid JSON string value
+    return check(row_type, text)
+
+
+def check(row_type: str, value: Any) -> Any:
+    """``value`` if it already is ``row_type`` (copied), else ContractError.
+
+    Used for typed values: an inputs file, a caller's mapping, a Vault
+    entry. Never re-parses: the string "false" stays a string.
+    """
+    if row_type == "string":
+        if not isinstance(value, str):
+            raise ContractError(f"expects text, got {type(value).__name__}")
+        return value
+    if row_type == "number":
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            raise ContractError(f"expects a number, got {type(value).__name__}")
+        return value
+    if row_type == "bool":
+        if not isinstance(value, bool):
+            raise ContractError(f"expects true or false, got {type(value).__name__}")
+        return value
+    if row_type == "var":
         try:
             # A copy, so neither side of a call can change the other's value.
             return json.loads(json.dumps(value))
@@ -209,6 +226,10 @@ def resolve_inputs(
     """Fill each row (C10): a supplied value, else the row's value (its
     default), else missing. Raises ContractInputError listing every problem.
 
+    Supplied values are already typed (an inputs file, a caller, text the
+    CLI parsed by row) and are only checked; a row's stored default is text
+    from the editor and is parsed.
+
     A row's *stored* value of ``""`` means "no default", for every type:
     the editor can't tell an intentional empty value from an unset one, and
     a required row must not quietly start with ``""``. A *supplied* ``""``
@@ -221,7 +242,8 @@ def resolve_inputs(
     names = {row["name"] for row in rows}
     for row in rows:
         name = row["name"]
-        if name in supplied and not is_missing(supplied[name]):
+        supplied_value = name in supplied and not is_missing(supplied[name])
+        if supplied_value:
             raw = supplied[name]
         else:
             raw = row.get("value")
@@ -232,7 +254,7 @@ def resolve_inputs(
                 missing.append(name)
             continue
         try:
-            values[name] = coerce(row["type"], raw)
+            values[name] = check(row["type"], raw) if supplied_value else parse_text(row["type"], raw)
         except ContractError as exc:
             invalid[name] = str(exc)
     unknown = sorted(name for name in supplied if name not in names) if strict else []
@@ -274,7 +296,7 @@ def collect_results(
                 missing.append(row["name"])
             continue
         try:
-            values[row["name"]] = coerce(row["type"], raw)
+            values[row["name"]] = check(row["type"], raw)
         except ContractError as exc:
             invalid[row["name"]] = str(exc)
     return values, missing, invalid

@@ -77,6 +77,30 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _typed_cli_inputs(service: Any, pairs: Dict[str, str]) -> Dict[str, Any]:
+    """Parse each --input text by the Start row it names; unknown names stay
+    text (a callable workflow rejects them when the run starts)."""
+    from backend.contracts import ContractError, ContractInputError, parse_text, start_rows
+
+    workflow_map = service.workflow_map
+    start_id = workflow_map.find_start_node_id()
+    config = (workflow_map.get_node_data(start_id) or {}).get("config") or {} if start_id else {}
+    types = {row["name"]: row["type"] for row in start_rows(config)}
+    typed: Dict[str, Any] = {}
+    invalid: Dict[str, str] = {}
+    for name, text in pairs.items():
+        if name not in types:
+            typed[name] = text
+            continue
+        try:
+            typed[name] = parse_text(types[name], text)
+        except ContractError as exc:
+            invalid[name] = str(exc)
+    if invalid:
+        raise ContractInputError([], invalid, [])
+    return typed
+
+
 def _inputs_from_file(path: Optional[str]) -> Dict[str, Any]:
     """The --inputs-file values (typed JSON); {} without the option."""
     if not path:
@@ -248,7 +272,13 @@ async def _run(args: argparse.Namespace, stdin: TextIO, stdout: TextIO, stderr: 
         stderr.write(f"aotn run: {exc}\n")
         return EXIT_INVALID_INPUT
     # Fill order (C10): --input, then --inputs-file, then each row's default.
-    inputs.update(_parse_inputs(args.input))
+    # --input is text, so it is parsed by its row's type here; file values
+    # are already typed and only checked when the run starts.
+    try:
+        inputs.update(_typed_cli_inputs(service, _parse_inputs(args.input)))
+    except ContractInputError as exc:
+        stderr.write(f"aotn run: {loaded['name']} cannot start: {exc}\n")
+        return EXIT_INVALID_INPUT
 
     try:
         await service.start(

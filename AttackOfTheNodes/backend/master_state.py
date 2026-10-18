@@ -281,7 +281,10 @@ class MasterState:
             input_provider=run.input_provider,
             report_node_outcome=report_outcome,
             run_inputs=run.resolved_inputs,
-            publish_result=lambda values: self._publish_result(run, values),
+            # Only a callable workflow returns results; elsewhere a Return
+            # End is ignored, as the validator warns (C27).
+            publish_result=(lambda values: self._publish_result(run, values))
+            if self._workflow_map.callable else None,
             **kwargs,
         )
         run.live_supervisors[supervisor.branch_id] = supervisor

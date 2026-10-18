@@ -7,7 +7,7 @@ overhaul.
 ## 2026-10-18 — Step 4a-1: Contracts (Backend and CLI)
 
 Branch `dist/step4a1-contracts`, from `main` at `15742b0` (#79). Before:
-1605 passed (#77). After: 1638 passed (33 new tests in `test_contracts.py`);
+1605 passed (#77). After: 1647 passed (42 new tests in `test_contracts.py`);
 the known file-picker flake failed once in one full run and passes alone.
 
 - `backend/contracts.py` (pure): Start rows (the inputs) and Return End
@@ -32,6 +32,13 @@ the known file-picker flake failed once in one full run and passes alone.
   `"callable": true`. The TUI shows why a run can't start.
 - Found by the CLI smoke test: a required text row stored blank started
   with `""`; a stored blank now means "no default" for every type (C6).
+- **Review fixes (owner's review of #80):** Start's Vault rows are declared
+  writers in `vault_declarations.standard_vault_writes`, so readers pass
+  preflight; text parsing (`parse_text`, for `--input` and editor
+  defaults) is separate from typed checks (`check`, for inputs files,
+  callers and results), so a `var` string like "false" or "null" is never
+  re-parsed; Return End results are enforced only in callable workflows
+  (the engine offers `publish_result` only there). One test each.
 - Frontend touched only for the five issue labels and the TUI's
   can't-start message (`error_details.py`, `app.py`); both also change in
   #78, so whichever merges second resolves.

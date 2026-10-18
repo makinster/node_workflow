@@ -101,10 +101,12 @@ whose `results` are what it returns. See
   it must come after any Parallel Branch has merged.
 - **`callable`** (top level, default false) marks a workflow as callable.
 
-Running one: `aotn run <workflow> --input who=Kim --input times=3` types each
-value by its row (numbers, `true`/`false`, JSON for `var`, a path for `file`).
-`--inputs-file run.json` supplies a JSON object of values; `--input` wins
-over it, and a row's value fills anything left. Missing (absent, or a stored
+Running one: `aotn run <workflow> --input who=Kim --input times=3` parses
+each value by its row (numbers, `true`/`false`, JSON for `var`, a path for
+`file`). `--inputs-file run.json` supplies a JSON object of **already-typed**
+values (a number must be a JSON number; a `var` string stays a string);
+`--input` wins over it, and a row's value fills anything left. Return End
+results are enforced only when the workflow is callable. Missing (absent, or a stored
 blank) means not supplied; an explicit `""`, `0` or `false` is a value. A run
 with a missing required input, a wrongly typed value, or (callable only) an
 undeclared input stops before it starts with **exit code 5**. Results print
