@@ -73,6 +73,7 @@ class WorkflowMap:
         self._sync_active_to_cache()
         self._workflow_id = data["id"]
         self._workflow_name = data.get("name", self._workflow_id)
+        self._callable = bool(data.get("callable", False))
         self._nodes = deepcopy(data.get("nodes", {}))
         for node in self._nodes.values():
             node["config"] = normalize_node_config(node.get("type", ""), node.get("config") or {})
@@ -84,20 +85,34 @@ class WorkflowMap:
         if not self.is_loaded:
             logger.warning("Cannot save: no workflow loaded")
             return
-        save_workflow(
-            self._workflow_id,
-            {"id": self._workflow_id, "name": self._workflow_name, "nodes": self._nodes},
-        )
+        save_workflow(self._workflow_id, self._save_payload(self._nodes))
         self._is_dirty = False
         self._event_bus.publish(WORKFLOW_DIRTY, False)
 
     def get_workflow_data_for_save(self) -> Dict[str, Any]:
         """Return the serializable current workflow structure."""
-        return {
-            "id": self._workflow_id,
-            "name": self._workflow_name,
-            "nodes": deepcopy(self._nodes),
-        }
+        return self._save_payload(deepcopy(self._nodes))
+
+    def _save_payload(self, nodes: Dict[str, Any]) -> Dict[str, Any]:
+        data = {"id": self._workflow_id, "name": self._workflow_name, "nodes": nodes}
+        # Only callable workflows carry the flag, so other saves are unchanged.
+        if self._callable:
+            data["callable"] = True
+        return data
+
+    @property
+    def callable(self) -> bool:
+        """Whether this workflow is callable as a subworkflow (Step 4, C27)."""
+        return bool(getattr(self, "_callable", False))
+
+    def set_callable(self, value: bool) -> bool:
+        """Make the active workflow callable (or not); marks it dirty."""
+        if not self.is_loaded:
+            return False
+        if self.callable != bool(value):
+            self._callable = bool(value)
+            self._mark_dirty()
+        return True
 
     def mark_saved(self) -> None:
         """Clear dirty state after an external save."""
@@ -111,6 +126,7 @@ class WorkflowMap:
         workflow_id = f"wf_{uuid.uuid4().hex[:12]}"
         self._workflow_id = workflow_id
         self._workflow_name = name
+        self._callable = False
         self._nodes = {}
         self._mark_dirty()
         return workflow_id
@@ -161,6 +177,7 @@ class WorkflowMap:
             return False
         self._workflow_id = workflow_id
         self._workflow_name = entry.get("name", workflow_id)
+        self._callable = bool(entry.get("callable", False))
         self._nodes = deepcopy(entry.get("nodes", {}))
         self._is_dirty = bool(entry.get("is_dirty", False))
         self._event_bus.publish(WORKFLOW_DIRTY, self._is_dirty)
@@ -571,6 +588,7 @@ class WorkflowMap:
         self._cache[self._workflow_id] = {
             "id": self._workflow_id,
             "name": self._workflow_name,
+            "callable": self.callable,
             "nodes": deepcopy(self._nodes),
             "is_dirty": self._is_dirty,
         }

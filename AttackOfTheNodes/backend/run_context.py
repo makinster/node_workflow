@@ -54,6 +54,12 @@ class RunContext:
     # Values supplied when the run started. Recorded now; the Start contract
     # that consumes them arrives with step 4.
     inputs: Dict[str, Any] = field(default_factory=dict)
+    # Step 4a: Start's rows filled from ``inputs`` and their defaults, the
+    # Return End's published result (None until it runs), and the revision
+    # of the workflow definition this run executes.
+    resolved_inputs: Dict[str, Any] = field(default_factory=dict)
+    return_values: Optional[Dict[str, Any]] = None
+    revision: Optional[str] = None
     started_at: Optional[str] = None
     wait_registry: WaitRegistry = field(default_factory=WaitRegistry)
     node_timings: Dict[str, float] = field(default_factory=dict)

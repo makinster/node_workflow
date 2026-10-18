@@ -59,6 +59,11 @@ class NodeContext:
     # Publish a JSON-serializable event to the run's EventBus. Wired by the
     # supervisor (which stamps run_id/branch_id/node_id); None outside a run.
     publish_event: Optional[Callable[[str, Dict[str, Any]], None]] = None
+    # Contracts (Step 4a): the run's resolved Start inputs, and the Return
+    # End's way to hand back the workflow result (returns False when a
+    # result was already published in this run). None outside a run.
+    run_inputs: Optional[Dict[str, Any]] = None
+    publish_result: Optional[Callable[[Dict[str, Any]], bool]] = None
 
     def emit_event(self, event_name: str, payload: Dict[str, Any]) -> bool:
         """Publish an event if a bus is wired in; return whether it was sent."""

@@ -231,6 +231,12 @@ def build_workflow(factory: NodeFactory, spec: Any, *, write: bool = True) -> Di
 
     workflow_map = WorkflowMap(factory, EventBus())
     workflow_map.create_new(name)
+    if "callable" in spec:
+        # Step 4 (C27): a callable workflow can be run as a subworkflow.
+        if isinstance(spec["callable"], bool):
+            workflow_map.set_callable(spec["callable"])
+        else:
+            add("error", "spec_invalid", "\"callable\" must be true or false")
     ids: Dict[str, str] = {}
     configs: Dict[str, Dict[str, Any]] = {}
     for handle, node_spec in nodes_spec.items():

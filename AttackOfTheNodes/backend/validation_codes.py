@@ -27,6 +27,12 @@ ISSUE_CODES: Dict[str, str] = {
     "duplicate_input_source": "One node reads the same upstream payload or Vault key twice.",
     "ignored_fan_out": "An ordinary output has several connections; only the first runs.",
     "type_mismatch": "An active Upstream connection carries a type the input does not take.",
+    # Workflow contracts (Step 4a)
+    "contract_row_invalid": "A Start input or Return End result row has no name, a repeated name or an unsupported type.",
+    "input_required_no_value": "A required Start input has no value, so a direct run needs it supplied.",
+    "return_end_not_callable": "An End is a Return End in a workflow that isn't callable.",
+    "multiple_return_ends": "A callable workflow has more than one Return End.",
+    "return_end_unmerged": "A Return End can be reached inside an unmerged Parallel Branch.",
     # Vault
     "undeclared_vault_key": "A required Vault read names a key no node writes.",
     "unwritten_vault_key": "An optional Vault read names a key no node writes (fallback used).",

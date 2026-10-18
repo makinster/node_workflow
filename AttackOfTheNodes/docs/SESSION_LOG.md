@@ -4,6 +4,45 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-18 — Step 4a-1: Contracts (Backend and CLI)
+
+Branch `dist/step4a1-contracts`, from `main` at `15742b0` (#79). Before:
+1605 passed (#77). After: 1647 passed (42 new tests in `test_contracts.py`);
+the known file-picker flake failed once in one full run and passes alone.
+
+- `backend/contracts.py` (pure): Start rows (the inputs) and Return End
+  rows (the results), typing (`string`, `number`, `bool`, `var`, `file`),
+  the fill order, missing-versus-empty, one downstream row as itself or
+  several as an object, and a revision hash of the definition.
+- **Start** routes its rows downstream and/or to the Vault; with no rows
+  it keeps its greeting exactly as before (no migration needed). Its
+  output type follows the routed rows.
+- **End** gains `return_end` and `results`; a Return End collects its
+  results and publishes them once (`result_missing`, `result_invalid`,
+  `result_conflict`). A callable workflow whose Return End never ran logs
+  `result_missing` at finish.
+- **Engine:** inputs resolve before the run resets anything, so a run
+  with missing or invalid inputs never starts (`ContractInputError`);
+  `RunResult` gains `values` and `revision`; run history records the
+  revision. `WorkflowMap` carries `callable` (saved only when true).
+- **Validator:** `contract_row_invalid`, `input_required_no_value`,
+  `return_end_not_callable`, `multiple_return_ends`, `return_end_unmerged`.
+- **CLI:** `--input` typed by row, `--inputs-file`, exit code 5 for bad
+  inputs, results printed as `name = value`. `aotn build` accepts
+  `"callable": true`. The TUI shows why a run can't start.
+- Found by the CLI smoke test: a required text row stored blank started
+  with `""`; a stored blank now means "no default" for every type (C6).
+- **Review fixes (owner's review of #80):** Start's Vault rows are declared
+  writers in `vault_declarations.standard_vault_writes`, so readers pass
+  preflight; text parsing (`parse_text`, for `--input` and editor
+  defaults) is separate from typed checks (`check`, for inputs files,
+  callers and results), so a `var` string like "false" or "null" is never
+  re-parsed; Return End results are enforced only in callable workflows
+  (the engine offers `publish_result` only there). One test each.
+- Frontend touched only for the five issue labels and the TUI's
+  can't-start message (`error_details.py`, `app.py`); merged with #78
+  (keymap phase 2) without conflicts in either file.
+
 ## 2026-10-18 — Keymap Phase 2: Shared Policies and Native Adapters
 
 Branch `codex/keymap-policies`, fresh from `origin/main` at `4cb246e`.

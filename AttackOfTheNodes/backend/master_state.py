@@ -28,6 +28,7 @@ from .events import (
     WORKFLOW_STATE_UPDATE,
     WorkflowState,
 )
+from .contracts import ContractError, resolve_inputs, return_rows, start_rows, workflow_revision
 from .error_handler import ErrorHandler, unhandled_errors
 from .memory_bank import MemoryBank
 from .configuration_manager import ConfigurationManager
@@ -172,6 +173,14 @@ class MasterState:
             logger.error("Cannot start: workflow has no start node")
             return False
 
+        # Contract inputs (Step 4a) are filled before anything is reset, so
+        # a run with missing or invalid inputs never starts (C10).
+        start_data = self._workflow_map.get_node_data(start_node_id) or {}
+        resolved_inputs = resolve_inputs(
+            start_rows(start_data.get("config") or {}), inputs,
+            strict=self._workflow_map.callable,
+        )
+
         # Leftover tasks would otherwise wake inside the new run and write
         # into its memory, so they are cancelled before any state is reset.
         await self._cancel_leftover_tasks()
@@ -193,6 +202,8 @@ class MasterState:
             recovery_policy=recovery_policy,
             input_provider=input_provider,
             inputs=inputs,
+            resolved_inputs=resolved_inputs,
+            revision=workflow_revision(self._workflow_map.get_workflow_data_for_save()),
             started_at=datetime.now(timezone.utc).isoformat(),
         )
         self._set_state(WorkflowState.RUNNING)
@@ -269,6 +280,11 @@ class MasterState:
             recovery_policy=run.recovery_policy,
             input_provider=run.input_provider,
             report_node_outcome=report_outcome,
+            run_inputs=run.resolved_inputs,
+            # Only a callable workflow returns results; elsewhere a Return
+            # End is ignored, as the validator warns (C27).
+            publish_result=(lambda values: self._publish_result(run, values))
+            if self._workflow_map.callable else None,
             **kwargs,
         )
         run.live_supervisors[supervisor.branch_id] = supervisor
@@ -682,11 +698,40 @@ class MasterState:
         self._capture_outputs()
         self._record_run("ERROR")
 
+    def _publish_result(self, run: RunContext, values: Dict[str, Any]) -> bool:
+        """The Return End hands back the result once per run (C4)."""
+        if run.return_values is not None:
+            return False
+        run.return_values = dict(values)
+        return True
+
+    def _check_required_results(self) -> None:
+        """A callable workflow whose Return End never ran (a path without
+        it finished) has not produced its required results (C4)."""
+        run = self._run
+        if run is None or run.return_values is not None or not self._workflow_map.callable:
+            return
+        required = [
+            row["name"]
+            for data in self._workflow_map.get_all_node_data().values()
+            if data.get("type") == "end_node"
+            for row in return_rows(data.get("config") or {})
+            if row["required"]
+        ]
+        if required:
+            self._error_handler.log_error(
+                ContractError("The Return End did not run; required result(s) not produced: "
+                              + ", ".join(required)),
+                context={"run_id": run.run_id},
+                code="result_missing",
+            )
+
     def _check_run_completion(self) -> None:
         if self._supervisors or self._supervisor_tasks:
             return
         if self.state == WorkflowState.ERROR:
             return
+        self._check_required_results()
         self._capture_outputs()
         self._set_state(WorkflowState.FINISHED)
         self._record_run("FINISHED")
@@ -731,6 +776,7 @@ class MasterState:
                 "run_id": self.current_run_id,
                 "workflow_id": self._workflow_map.workflow_id,
                 "workflow_name": self._workflow_map.workflow_name,
+                "workflow_revision": self._run.revision if self._run is not None else None,
                 "started_at": self._started_at,
                 "final_state": final_state,
                 "error_count": len(errors),

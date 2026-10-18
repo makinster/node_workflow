@@ -58,9 +58,9 @@ This is the only live status snapshot; older logs/plans retain dated history.
 
 ## Open owner decisions and limits — 2026-10-17
 
-- **Step 4:** design approved with the owner's answers (2026-10-18;
-  [Subworkflows proposal](SUBWORKFLOWS_PROPOSAL.md) rev. 3). Next: 4a, the Start
-  overhaul and contracts, with sample screens first.
+- **Step 4:** design approved (2026-10-18; [Subworkflows proposal](SUBWORKFLOWS_PROPOSAL.md)
+  rev. 4). 4a-1 (contracts, backend and CLI) is in its PR (`dist/step4a1-contracts`);
+  4a-2 (the Start and Return End screens; sample screens shown) follows keymap phase 2 (#78).
 
 - **Stash:** S1 approved with the CLI (2026-10-17). Answered 2026-10-18:
   the field-insert key is `P`; a text field takes text entries only, not

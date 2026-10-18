@@ -19,6 +19,7 @@ import os
 import signal
 import sys
 import threading
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, TextIO
 
 
@@ -55,8 +56,13 @@ def build_parser() -> argparse.ArgumentParser:
         action="append",
         default=[],
         metavar="KEY=VALUE",
-        help="run input (repeatable); recorded for the run, consumed by "
-        "workflow contracts once they exist",
+        help="run input for a Start input row (repeatable), typed by the row: "
+        "number, true/false, JSON for var, a path for file; wins over --inputs-file",
+    )
+    parser.add_argument(
+        "--inputs-file",
+        metavar="PATH",
+        help="JSON object of input values (used where --input gives none)",
     )
     parser.add_argument(
         "--no-validate",
@@ -69,6 +75,43 @@ def build_parser() -> argparse.ArgumentParser:
         help="print the run result as JSON on stdout instead of the outputs",
     )
     return parser
+
+
+def _typed_cli_inputs(service: Any, pairs: Dict[str, str]) -> Dict[str, Any]:
+    """Parse each --input text by the Start row it names; unknown names stay
+    text (a callable workflow rejects them when the run starts)."""
+    from backend.contracts import ContractError, ContractInputError, parse_text, start_rows
+
+    workflow_map = service.workflow_map
+    start_id = workflow_map.find_start_node_id()
+    config = (workflow_map.get_node_data(start_id) or {}).get("config") or {} if start_id else {}
+    types = {row["name"]: row["type"] for row in start_rows(config)}
+    typed: Dict[str, Any] = {}
+    invalid: Dict[str, str] = {}
+    for name, text in pairs.items():
+        if name not in types:
+            typed[name] = text
+            continue
+        try:
+            typed[name] = parse_text(types[name], text)
+        except ContractError as exc:
+            invalid[name] = str(exc)
+    if invalid:
+        raise ContractInputError([], invalid, [])
+    return typed
+
+
+def _inputs_from_file(path: Optional[str]) -> Dict[str, Any]:
+    """The --inputs-file values (typed JSON); {} without the option."""
+    if not path:
+        return {}
+    try:
+        data = json.loads(Path(path).expanduser().read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"cannot read --inputs-file {path}: {exc}") from exc
+    if not isinstance(data, dict):
+        raise ValueError(f"--inputs-file {path} must hold a JSON object of input values")
+    return data
 
 
 def _parse_inputs(pairs: Sequence[str]) -> Dict[str, str]:
@@ -167,8 +210,10 @@ async def _run(args: argparse.Namespace, stdin: TextIO, stdout: TextIO, stderr: 
     from backend.events import ERROR_LOGGED
     from backend.logging_setup import configure_logging
     from backend.run_policies import unattended_policies
+    from backend.contracts import ContractInputError, display_value
     from backend.run_service import (
         EXIT_INTERRUPTED,
+        EXIT_INVALID_INPUT,
         EXIT_INVALID_WORKFLOW,
         EXIT_NOT_FOUND,
         RunService,
@@ -222,12 +267,29 @@ async def _run(args: argparse.Namespace, stdin: TextIO, stdout: TextIO, stderr: 
         pass  # Windows event loops: Ctrl+C ends the process instead.
 
     try:
+        inputs = _inputs_from_file(args.inputs_file)
+    except ValueError as exc:
+        stderr.write(f"aotn run: {exc}\n")
+        return EXIT_INVALID_INPUT
+    # Fill order (C10): --input, then --inputs-file, then each row's default.
+    # --input is text, so it is parsed by its row's type here; file values
+    # are already typed and only checked when the run starts.
+    try:
+        inputs.update(_typed_cli_inputs(service, _parse_inputs(args.input)))
+    except ContractInputError as exc:
+        stderr.write(f"aotn run: {loaded['name']} cannot start: {exc}\n")
+        return EXIT_INVALID_INPUT
+
+    try:
         await service.start(
-            inputs=_parse_inputs(args.input),
+            inputs=inputs,
             recovery_policy=recovery_policy,
             input_provider=input_provider,
             validate=not args.no_validate,
         )
+    except ContractInputError as exc:
+        stderr.write(f"aotn run: {loaded['name']} cannot start: {exc}\n")
+        return EXIT_INVALID_INPUT
     except WorkflowValidationError as exc:
         stderr.write(f"aotn run: {loaded['name']} failed validation:\n")
         for error in exc.result.get("errors") or []:
@@ -246,6 +308,8 @@ async def _run(args: argparse.Namespace, stdin: TextIO, stdout: TextIO, stderr: 
     else:
         for value in result.outputs:
             stdout.write(f"{_display(value)}\n")
+        for name, value in result.values.items():
+            stdout.write(f"{name} = {display_value(value)}\n")
     stdout.flush()
     stderr.write(
         f"aotn run: {result.workflow_name} {result.final_state.lower()}"
