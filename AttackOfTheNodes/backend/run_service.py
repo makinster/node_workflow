@@ -35,6 +35,7 @@ EXIT_FINISHED_WITH_ERRORS = 1
 EXIT_RUN_FAILED = 2
 EXIT_INVALID_WORKFLOW = 3  # also: the workflow could not be started
 EXIT_NOT_FOUND = 4
+EXIT_INVALID_INPUT = 5  # contract inputs missing, invalid or unknown
 EXIT_USAGE = 64
 EXIT_INTERRUPTED = 130
 
@@ -67,6 +68,10 @@ class RunResult:
     errors: List[Dict[str, Any]] = field(default_factory=list)
     outputs: List[Any] = field(default_factory=list)
     node_timings: Dict[str, float] = field(default_factory=dict)
+    # Step 4a: the Return End's named, typed results, and the revision of the
+    # workflow definition the run executed.
+    values: Dict[str, Any] = field(default_factory=dict)
+    revision: Optional[str] = None
 
     @property
     def unhandled_errors(self) -> List[Dict[str, Any]]:
@@ -91,6 +96,8 @@ class RunResult:
             "unhandled_error_count": len(self.unhandled_errors),
             "outputs": list(self.outputs),
             "node_timings": dict(self.node_timings),
+            "values": dict(self.values),
+            "revision": self.revision,
             "exit_code": self.exit_code,
         }
 
@@ -258,6 +265,8 @@ class RunService:
             errors=list(self._errors_by_run.get(run_id or "", [])),
             outputs=list(self._master.run_outputs),
             node_timings=dict(self._master.node_timings),
+            values=dict((run.return_values or {}) if (run := self._master.run_context) else {}),
+            revision=run.revision if run else None,
         )
 
     def close(self) -> None:

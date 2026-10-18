@@ -33,6 +33,7 @@ from .node_errors import (
     mux_routes,
 )
 from .node_factory import NodeFactory
+from .contracts import return_rows, row_problems, start_rows
 from .workflow_map import WorkflowMap
 
 if TYPE_CHECKING:
@@ -662,7 +663,85 @@ def validate_workflow(
             }
         )
 
+    # A stand-in map (tests, previews) without the flag is a standard workflow.
+    _check_contract(all_nodes, factory, bool(getattr(workflow_map, "callable", False)),
+                    errors, warnings)
+
     return {"success": not errors, "errors": errors, "warnings": warnings}
+
+
+def _check_contract(all_nodes, factory, callable_workflow: bool, errors, warnings) -> None:
+    """Step 4a: Start rows and the Return End (SUBWORKFLOWS_PROPOSAL C1-C7)."""
+    for node_id, data in all_nodes.items():
+        config = data.get("config") or {}
+        if data.get("type") == "start_node":
+            rows = start_rows(config)
+            for problem in row_problems(rows, "Input"):
+                errors.append({"node_id": node_id, "code": "contract_row_invalid", "message": problem})
+            for row in rows:
+                raw = row.get("value")
+                no_value = raw is None or raw == ""
+                if row["required"] and no_value:
+                    warnings.append({
+                        "node_id": node_id, "code": "input_required_no_value",
+                        "message": f"Input '{row['name']}' is required and has no value: a direct run "
+                                   "stops before starting unless it is supplied (--input)",
+                    })
+        if data.get("type") == "end_node":
+            rows = return_rows(config)
+            for problem in row_problems(rows, "Result"):
+                errors.append({"node_id": node_id, "code": "contract_row_invalid", "message": problem})
+            if config.get("return_end") and not callable_workflow:
+                warnings.append({
+                    "node_id": node_id, "code": "return_end_not_callable",
+                    "message": f"{_node_name(factory, data)} is a Return End, but the workflow isn't "
+                               "callable; its results are ignored",
+                })
+    if not callable_workflow:
+        return
+    returns = [node_id for node_id, data in all_nodes.items()
+               if data.get("type") == "end_node" and (data.get("config") or {}).get("return_end")]
+    if len(returns) > 1:
+        for node_id in returns:
+            errors.append({
+                "node_id": node_id, "code": "multiple_return_ends",
+                "message": f"{len(returns)} Ends are Return Ends; a callable workflow returns from exactly one",
+            })
+        return
+    if returns and _reached_with_open_branch(all_nodes, returns[0]):
+        errors.append({
+            "node_id": returns[0], "code": "return_end_unmerged",
+            "message": f"{_node_name(factory, all_nodes[returns[0]])} can be reached inside a Parallel "
+                       "Branch that hasn't merged; merge the branches before the Return End",
+        })
+
+
+def _reached_with_open_branch(all_nodes, target: str) -> bool:
+    """Whether some path from Start reaches ``target`` inside an unmerged
+    Parallel Branch (Branch opens a level, Merge closes one)."""
+    starts = [nid for nid, data in all_nodes.items() if data.get("type") == "start_node"]
+    seen = set()
+    stack = [(nid, 0) for nid in starts]
+    while stack:
+        node_id, open_branches = stack.pop()
+        if (node_id, open_branches) in seen or open_branches > len(all_nodes):
+            continue
+        seen.add((node_id, open_branches))
+        data = all_nodes.get(node_id) or {}
+        kind = data.get("type")
+        if kind == "merge_node":
+            open_branches = max(0, open_branches - 1)
+        if node_id == target:
+            if open_branches > 0:
+                return True
+            continue
+        if kind == "branch_node":
+            open_branches += 1
+        for conn in data.get("connections", {}).get("outputs", []):
+            nxt = conn.get("target_node_id")
+            if nxt in all_nodes:
+                stack.append((nxt, open_branches))
+    return False
 
 
 def _node_name(factory, node: Dict[str, Any]) -> str:

@@ -387,7 +387,15 @@ class AttackOfTheNodesApp(TextualApp):
         self.set_timer(0.1, lambda: asyncio.create_task(self._start_workflow()))
 
     async def _start_workflow(self) -> None:
-        started = await self.master_state.start_workflow()
+        from backend.contracts import ContractInputError
+
+        try:
+            started = await self.master_state.start_workflow()
+        except ContractInputError as exc:
+            # Step 4a: a required Start input with no value stops the run
+            # before it starts (C10).
+            notifications.notify_error(self, f"Can't start: {exc}")
+            return
         if not started:
             notifications.workflow_start_failed(self)
 

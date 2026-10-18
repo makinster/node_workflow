@@ -4,6 +4,38 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-18 — Step 4a-1: Contracts (Backend and CLI)
+
+Branch `dist/step4a1-contracts`, from `main` at `15742b0` (#79). Before:
+1605 passed (#77). After: 1638 passed (33 new tests in `test_contracts.py`);
+the known file-picker flake failed once in one full run and passes alone.
+
+- `backend/contracts.py` (pure): Start rows (the inputs) and Return End
+  rows (the results), typing (`string`, `number`, `bool`, `var`, `file`),
+  the fill order, missing-versus-empty, one downstream row as itself or
+  several as an object, and a revision hash of the definition.
+- **Start** routes its rows downstream and/or to the Vault; with no rows
+  it keeps its greeting exactly as before (no migration needed). Its
+  output type follows the routed rows.
+- **End** gains `return_end` and `results`; a Return End collects its
+  results and publishes them once (`result_missing`, `result_invalid`,
+  `result_conflict`). A callable workflow whose Return End never ran logs
+  `result_missing` at finish.
+- **Engine:** inputs resolve before the run resets anything, so a run
+  with missing or invalid inputs never starts (`ContractInputError`);
+  `RunResult` gains `values` and `revision`; run history records the
+  revision. `WorkflowMap` carries `callable` (saved only when true).
+- **Validator:** `contract_row_invalid`, `input_required_no_value`,
+  `return_end_not_callable`, `multiple_return_ends`, `return_end_unmerged`.
+- **CLI:** `--input` typed by row, `--inputs-file`, exit code 5 for bad
+  inputs, results printed as `name = value`. `aotn build` accepts
+  `"callable": true`. The TUI shows why a run can't start.
+- Found by the CLI smoke test: a required text row stored blank started
+  with `""`; a stored blank now means "no default" for every type (C6).
+- Frontend touched only for the five issue labels and the TUI's
+  can't-start message (`error_details.py`, `app.py`); both also change in
+  #78, so whichever merges second resolves.
+
 ## 2026-10-18 — Step 4 Proposal Revision 4: Follow-Up Decisions
 
 Branch `docs/step4-r4`, docs only. Owner decisions in chat, 2026-10-18:

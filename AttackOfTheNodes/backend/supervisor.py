@@ -120,6 +120,8 @@ class Supervisor:
         ] = None,
         recovery_policy: Optional[RecoveryPolicy] = None,
         input_provider: Optional[InputProvider] = None,
+        run_inputs: Optional[Dict[str, Any]] = None,
+        publish_result: Optional[Callable[[Dict[str, Any]], bool]] = None,
     ) -> None:
         if unattended is not None:
             if unattended not in UNATTENDED_ACTIONS:
@@ -165,6 +167,8 @@ class Supervisor:
         self._recovery_policy = recovery_policy
         self._input_provider = input_provider
         self._report_node_outcome = report_node_outcome
+        self._run_inputs = run_inputs
+        self._publish_result = publish_result
         self._last_delivered: List[str] = []
         self._visit_index = 0
         self._attempt_index = 0
@@ -562,6 +566,8 @@ class Supervisor:
             run_session=self._run_session,
             secrets_manager=self._secrets_manager,
             publish_event=publish_event,
+            run_inputs=self._run_inputs,
+            publish_result=self._publish_result,
         )
 
         started_at = perf_counter()

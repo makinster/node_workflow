@@ -65,6 +65,52 @@ with `aotn run "<name>"` or open it from the app's Workflow Library.
   Branch to run several paths. Exceptions: the `error` port (routes by code
   to several Error Mux nodes) and an inline Error Mux on a normal output.
 
+## Contracts: inputs, results and callable workflows
+
+A workflow's **inputs** are Start's `rows`; a **callable** workflow (one that
+another workflow can call as a subworkflow, Step 4) also has a **Return End**
+whose `results` are what it returns. See
+[SUBWORKFLOWS_PROPOSAL.md](SUBWORKFLOWS_PROPOSAL.md) for the design.
+
+```json
+{
+  "format": "aotn-workflow/1",
+  "name": "Greeter helper",
+  "callable": true,
+  "nodes": {
+    "start": {"type": "start_node", "config": {"rows": [
+      {"name": "who",   "type": "string", "required": true, "to": "Vault"},
+      {"name": "times", "type": "number", "value": "2",     "to": "Vault"}
+    ]}},
+    "end": {"type": "end_node", "config": {"return_end": true, "results": [
+      {"name": "greeted", "type": "string", "source": "Vault key", "vault_key": "who"}
+    ]}}
+  },
+  "connections": [{"from": "start.default", "to": "end.input"}]
+}
+```
+
+- **Start rows**: `name`, `type` (`string`, `number`, `bool`, `var` for any
+  JSON value, `file`), `value` (the default when run directly; blank means
+  none), `required`, `to` (`Downstream`, `Vault` or `Both`) and `vault_key`
+  (blank means the row's name). One downstream row is sent as itself,
+  several as one object. A Start with no rows keeps its `greeting`.
+- **Return End** (`end_node` with `return_end: true`): each result has
+  `name`, `type`, `required` (default true) and `source` (`Vault key` or
+  `Incoming payload`). A callable workflow has at most one Return End, and
+  it must come after any Parallel Branch has merged.
+- **`callable`** (top level, default false) marks a workflow as callable.
+
+Running one: `aotn run <workflow> --input who=Kim --input times=3` types each
+value by its row (numbers, `true`/`false`, JSON for `var`, a path for `file`).
+`--inputs-file run.json` supplies a JSON object of values; `--input` wins
+over it, and a row's value fills anything left. Missing (absent, or a stored
+blank) means not supplied; an explicit `""`, `0` or `false` is a value. A run
+with a missing required input, a wrongly typed value, or (callable only) an
+undeclared input stops before it starts with **exit code 5**. Results print
+as `name = value` after the outputs, and in `--json` output as `values`, with
+the `revision` of the definition that ran.
+
 ## What a build checks
 
 In one pass, reporting every problem at once:
