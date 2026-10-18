@@ -4,6 +4,22 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-18 — Step 4 Design Proposal: Subworkflows and Contracts
+
+Branch `docs/step4-subworkflows`, from `main` at `714f190` (#75). Docs
+only. The owner agreed to a design-first Step 4 with Stash S5 designed in,
+and to the keymap work running in parallel (Codex, frontend).
+
+- New [SUBWORKFLOWS_PROPOSAL.md](SUBWORKFLOWS_PROPOSAL.md): decisions
+  C1–C13 (contracts on Start/End, inputs via the Vault, a fresh backend
+  stack per child run, workflow-id references, call-and-wait first, one
+  input fill order, recursion limits, stop cascade, returned-file
+  hand-over, inherited prompts, per-machine Stash bindings), four PRs
+  (4a–4d) and five owner questions.
+- Checked against the code: `MasterState` holds one run, so a child needs
+  its own stack; `RunContext.inputs` and `parent_run_id` exist but are
+  unused; `RunResult.outputs` is the output log, not named values.
+
 ## 2026-10-18 — Stash S3: Insert an Entry Into a Node Config Field
 
 Branch `dist/stash-s3`, from `main` at `e4fd25d` (#74). Before: 1539

@@ -10,8 +10,8 @@ This is the only live status snapshot; older logs/plans retain dated history.
 - Merged: Stash S1 + `aotn stash` CLI (#70); Stash S2, the Stash screen
   (#71, `p` in the editor); docs PR B (#72: consolidation, VISION,
   CONTRIBUTING), confirm/close buttons in every window (#73), and Stash
-  duplicates (#74: the same file or text is never stashed twice). Open: S3, field insert
-  (`dist/stash-s3`). Next: owner's pick (keymap table proposed). Docs PR C follows B.
+  duplicates (#74: the same file or text is never stashed twice). Stash S3, field insert with `P` (#75), merged. In progress: keymap
+  registry (Codex) and the Step 4 design proposal (Claude). Docs PR C follows B.
   The owner merges, or explicitly asks a reviewer to.
 - Work order: [Node Contract Plan](NODE_CONTRACT_PLAN.md). Long-term decisions:
   [Distributed Build Plan](DISTRIBUTED_BUILD_PLAN.md), [Stash](STASH_PROPOSAL.md).
@@ -30,6 +30,10 @@ This is the only live status snapshot; older logs/plans retain dated history.
 - Clean dependency installation and native Windows FO7 checks were not run.
 
 ## Open owner decisions and limits — 2026-10-17
+
+- **Step 4 design:** [Subworkflows proposal](SUBWORKFLOWS_PROPOSAL.md)
+  awaits review (`docs/step4-subworkflows`); its §7 lists five questions.
+  No Step 4 code before approval.
 
 - **Stash:** S1 approved with the CLI (2026-10-17). Answered 2026-10-18:
   the field-insert key is `P`; a text field takes text entries only, not
