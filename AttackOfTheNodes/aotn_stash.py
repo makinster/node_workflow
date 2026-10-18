@@ -59,11 +59,15 @@ def main(argv: Optional[List[str]] = None, stdout: Optional[TextIO] = None) -> i
             parser.error("--data-dir must be set before the backend is loaded")
         os.environ["AOTN_DATA_DIR"] = wanted
 
-    from backend.stash_manager import StashError, StashManager
+    from backend.stash_manager import StashDuplicate, StashError, StashManager, duplicates_message
 
     stash = StashManager()
     try:
         data, text = _run(stash, args)
+    except StashDuplicate as exc:
+        message = duplicates_message([exc.entry])
+        _emit(out, args.json, {"ok": True, "added": [], "duplicates": [exc.entry]}, message)
+        return 0
     except StashError as exc:
         _emit(out, args.json, {"ok": False, "error": str(exc)}, f"Refused: {exc}")
         return 1
@@ -78,6 +82,7 @@ def _run(stash, args: argparse.Namespace) -> tuple[Dict[str, Any], str]:
         entries = stash.list_entries({"text": "string"}.get(args.type, args.type))
         return {"ok": True, "entries": entries}, _list_text(entries)
     if args.action == "add":
+        result = None
         if args.text:
             entries, rejected = [stash.add_text(args.value, args.name)], []
         elif args.name:
@@ -86,13 +91,19 @@ def _run(stash, args: argparse.Namespace) -> tuple[Dict[str, Any], str]:
         else:
             entries, result = stash.add_paste(args.value)
             rejected = result.rejected
+        from backend.stash_manager import duplicates_message
+
+        duplicates = result.duplicates if not (args.text or args.name) else []
         warnings = [w for e in entries for w in stash.warnings_for(e)]
         lines = [f"Added {type_word(e['type'])} '{e['name']}' ({e['id']})" for e in entries]
+        if duplicates:
+            lines.append(duplicates_message(duplicates))
         lines += [f"Not stored: {r.piece}: {r.reason}" for r in rejected]
         if rejected and not entries:
             lines.append("Use --text to store it as text instead.")
         lines += [f"Warning: {w}" for w in warnings]
-        data = {"ok": bool(entries), "added": entries, "warnings": warnings,
+        data = {"ok": bool(entries or duplicates), "added": entries, "duplicates": duplicates,
+                "warnings": warnings,
                 "rejected": [{"piece": r.piece, "reason": r.reason} for r in rejected]}
         return data, "\n".join(lines)
     if args.action == "rename":

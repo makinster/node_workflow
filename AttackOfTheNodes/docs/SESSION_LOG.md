@@ -4,6 +4,23 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-17 — Stash: Duplicates Are Not Stashed Twice
+
+Branch `dist/stash-duplicates` (PR #74), from `main` at `9032151`, then merged
+with `main` after #73. After: 1539 passed (7 new tests).
+
+- **Owner decision (2026-10-17):** the same file is the same reference, so
+  adding it again creates no entry; a toast says "Duplicate found" (the
+  bottom-right notification). Same for identical text (ignoring
+  surrounding whitespace) and for imports (`theirs: duplicate of 'mine'`).
+- `StashDuplicate` (a `StashError`) carries the existing entry;
+  `add_paste` collects them in `PasteResult.duplicates`, and
+  `duplicates_message()` writes the notice for the screen and the CLI
+  (`aotn stash add` exits 0 on a duplicate).
+- A *different* file with a name already used is named after its folder,
+  `march (archive)`, instead of `march 2`. A name you choose must still be
+  free.
+
 ## 2026-10-17 — Confirm and Close Buttons in Every Window
 
 Branch `dist/modal-buttons`, from `main` at `9032151` (docs PR B, #72).
