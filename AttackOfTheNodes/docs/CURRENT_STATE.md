@@ -5,13 +5,14 @@ This is the only live status snapshot; older logs/plans retain dated history.
 
 ## Baseline and open work — 2026-10-17
 
-- `origin/main`: `9d5455b` (Stash S1, #70; docs PR A #69 also merged). C1–C7 and workflow naming
-  (#68) are merged; C7 has only `branch` and publishes its child payload.
+- `origin/main`: `714f190` (Stash S3, #75), 2026-10-18. C1–C7 and workflow
+  naming (#68) are merged; C7 has only `branch` and publishes its child payload.
 - Merged: Stash S1 + `aotn stash` CLI (#70); Stash S2, the Stash screen
   (#71, `p` in the editor); docs PR B (#72: consolidation, VISION,
   CONTRIBUTING), confirm/close buttons in every window (#73), and Stash
-  duplicates (#74: the same file or text is never stashed twice). Stash S3, field insert with `P` (#75), merged. In progress: keymap
-  registry (Codex) and the Step 4 design proposal (Claude). Docs PR C follows B.
+  duplicates (#74: the same file or text is never stashed twice), Stash S3
+  (#75: field insert with `P`). In progress: keymap registry (Codex) and the
+  Step 4 design proposal (Claude). Docs PR C follows B.
   The owner merges, or explicitly asks a reviewer to.
 - Work order: [Node Contract Plan](NODE_CONTRACT_PLAN.md). Long-term decisions:
   [Distributed Build Plan](DISTRIBUTED_BUILD_PLAN.md), [Stash](STASH_PROPOSAL.md).
