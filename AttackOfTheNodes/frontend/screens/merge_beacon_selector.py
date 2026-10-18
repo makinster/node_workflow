@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Vertical
+from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Button, Label, ListItem, ListView, Static
 
@@ -41,7 +41,9 @@ class MergeBeaconSelectorScreen(ModalScreen):
             yield Label("Merge Beacon", classes="modal-title")
             yield ListView(id="merge-beacon-list")
             yield Static("↑↓ navigate  ENTER select  ESC close", classes="modal-help")
-            yield Button("Cancel", id="cancel-merge-beacon", variant="default")
+            with Horizontal(classes="button-row"):
+                yield Button("Go to", id="choose-merge-beacon", variant="primary")
+                yield Button("Cancel", id="cancel-merge-beacon", variant="default")
 
     def on_mount(self) -> None:
         list_view = self.query_one("#merge-beacon-list", ListView)
@@ -57,10 +59,19 @@ class MergeBeaconSelectorScreen(ModalScreen):
         self._dismiss_selected(event.list_view.index)
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
-        if event.button.id == "cancel-merge-beacon":
+        if event.button.id == "choose-merge-beacon":
+            self._choose_highlighted()
+        elif event.button.id == "cancel-merge-beacon":
             self.action_cancel()
 
     def action_choose(self) -> None:
+        # E/Enter on a focused button presses it (Back/Cancel must not choose).
+        if isinstance(self.app.focused, Button):
+            self.app.focused.press()
+            return
+        self._choose_highlighted()
+
+    def _choose_highlighted(self) -> None:
         list_view = self.query_one("#merge-beacon-list", ListView)
         self._dismiss_selected(list_view.index)
 

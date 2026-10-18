@@ -1099,7 +1099,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         """Selectable `(label, key)` vault options per type tag.
 
         Fields declaring a ``vault_type`` schema key render as a dropdown over
-        these options (IO_CONTRACT_UI_DESIGN.md §3). Keys come from persisted
+        these options (docs/archive/IO_CONTRACT_UI_DESIGN.md §3). Keys come from persisted
         vault entries of a compatible tag plus keys declared by workflow-node
         writers, so wiring works before the first run. Compatibility: exact
         tag match always; untagged (legacy) entries also satisfy ``string``;
@@ -2660,7 +2660,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         Standard-model nodes get the redesigned config layout: auto incoming
         payload summary, per-input typed vault dropdowns, and no legacy
         membank/reveal sections. Legacy nodes keep the old flat layout
-        (IO_CONTRACT_UI_DESIGN.md fallback rule).
+        (docs/archive/IO_CONTRACT_UI_DESIGN.md fallback rule).
         """
         if metadata is None:
             return False
