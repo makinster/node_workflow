@@ -36,6 +36,7 @@ ADD_TAB = "stash-tab-add"
 ENTRIES_TAB = "stash-tab-entries"
 _TABS = {"add": ADD_TAB, "entries": ENTRIES_TAB}
 _FILTERS = [None, "file", "string"]  # T cycles: all → files → text
+_INSERT_HELP = "E/Enter insert | W/S move | / search | R rename | Esc close"
 _HELP = {  # short enough for a 100-column terminal; tab labels show 1/2
     ADD_TAB: "E type, Enter add | T keep as text | R rename | Esc close",
     ENTRIES_TAB: "W/S move | / search | T filter | R rename | X delete | Esc close",
@@ -94,7 +95,12 @@ class _SearchInput(CommandInput):
 
 
 class StashScreen(ModalScreen):
-    """Manage the Stash. Dismisses with None (manage mode inserts nothing)."""
+    """Manage the Stash, or pick an entry to insert into a field.
+
+    Manage mode dismisses with None. Insert mode (``insert_into`` set, from
+    node config's P) shows only entries the field accepts and dismisses with
+    the chosen entry.
+    """
 
     BINDINGS = [
         ("escape", "close", "Close"),
@@ -113,13 +119,22 @@ class StashScreen(ModalScreen):
         ("e", "edit", "Edit"),
     ]
 
-    def __init__(self, stash: Optional[StashManager] = None, initial_tab: str = "add") -> None:
+    def __init__(
+        self,
+        stash: Optional[StashManager] = None,
+        initial_tab: str = "add",
+        insert_into: Optional[Dict[str, Any]] = None,
+    ) -> None:
         super().__init__()
         self.stash = stash or StashManager()
         self.initial_tab = _TABS.get(initial_tab, ADD_TAB)
+        # {"label": field label, "accepts": {"file"} or {"string"}} in insert mode.
+        self.insert_into = insert_into
+        self.allowed = sorted(insert_into["accepts"]) if insert_into else None
         self.added: List[Dict[str, Any]] = []
         self.rejected_paste: Optional[str] = None
-        self.type_filter: Optional[str] = None
+        self.type_filter: Optional[str] = (
+            self.allowed[0] if self.allowed and len(self.allowed) == 1 else None)
         self.shown: List[Dict[str, Any]] = []
         self._rejected: List[Any] = []
 
@@ -127,7 +142,10 @@ class StashScreen(ModalScreen):
 
     def compose(self) -> ComposeResult:
         with Vertical(id="modal-card", classes="fill-modal stash-modal"):
-            yield Label("Stash", classes="modal-title")
+            title = "Stash"
+            if self.insert_into:
+                title = f"Stash · insert into {escape(self.insert_into['label'])}"
+            yield Label(title, classes="modal-title")
             with TabbedContent(id="stash-tabs", initial=self.initial_tab, classes="node-config-tabs"):
                 with TabPane("1 Paste / drop", id=ADD_TAB):
                     yield Label("Paste or drop files here, or type text and press Enter",
@@ -144,12 +162,14 @@ class StashScreen(ModalScreen):
                     yield Static("", id="stash-count", classes="form-label")
                     yield ListView(id="stash-entries", classes="stash-list")
                     with Horizontal(classes="button-row"):
+                        if self.insert_into:
+                            yield Button("Insert", id="stash-insert", variant="primary")
                         yield Button("Rename", id="stash-rename", variant="default")
                         yield Button("Delete", id="stash-delete", variant="warning")
                         yield Button("Show: all", id="stash-filter", variant="default")
             with Horizontal(classes="button-row"):
                 yield Button("Close", id="stash-close", variant="default")
-            yield StatusBar(_HELP[self.initial_tab])
+            yield StatusBar(self._help_for(self.initial_tab))
 
     def on_mount(self) -> None:
         self.query_one("#stash-keep-text", Button).display = False
@@ -173,8 +193,11 @@ class StashScreen(ModalScreen):
         self.query_one("#stash-tabs", TabbedContent).active = tab_id
         self._focus_tab(tab_id)
 
+    def _help_for(self, tab_id: str) -> str:
+        return _INSERT_HELP if self.insert_into and tab_id == ENTRIES_TAB else _HELP[tab_id]
+
     def on_tabbed_content_tab_activated(self, _event: TabbedContent.TabActivated) -> None:
-        self.query_one(StatusBar).set_bindings_text(_HELP[self._active_tab()])
+        self.query_one(StatusBar).set_bindings_text(self._help_for(self._active_tab()))
 
     def _focus_tab(self, tab_id: str) -> None:
         if tab_id == ADD_TAB:
@@ -255,6 +278,8 @@ class StashScreen(ModalScreen):
     def _refresh_entries(self, keep_id: Optional[str] = None) -> None:
         query = self.query_one("#stash-search", CommandInput).value.strip().casefold()
         entries = self.stash.list_entries(self.type_filter)
+        if self.allowed:
+            entries = [e for e in entries if e["type"] in self.allowed]
         if query:
             entries = [e for e in entries
                        if query in e["name"].casefold() or query in _full_text(e).casefold()]
@@ -268,7 +293,8 @@ class StashScreen(ModalScreen):
             listing.append(ListItem(Static(
                 "The Stash is empty: paste or drop on tab 1" if not self.stash.list_entries()
                 else "Nothing matches", classes="stash-row")))
-        total = len(self.stash.list_entries())
+        total = len([e for e in self.stash.list_entries()
+                     if not self.allowed or e["type"] in self.allowed])
         label = {None: "All", "file": "Files", "string": "Text"}[self.type_filter]
         self.query_one("#stash-count", Static).update(f"{label} · {len(entries)} of {total}")
         self.query_one("#stash-filter", Button).label = f"Show: {label.lower()}"
@@ -319,7 +345,12 @@ class StashScreen(ModalScreen):
         if self._active_tab() == ADD_TAB:
             self.action_keep_as_text()
             return
-        self.type_filter = _FILTERS[(_FILTERS.index(self.type_filter) + 1) % len(_FILTERS)]
+        filters = _FILTERS
+        if self.allowed:
+            # Insert mode only ever shows types the field accepts.
+            filters = [None, *self.allowed] if len(self.allowed) > 1 else list(self.allowed)
+        self.type_filter = filters[(filters.index(self.type_filter) + 1) % len(filters)] \
+            if self.type_filter in filters else filters[0]
         self._refresh_entries()
 
     def action_rename(self) -> None:
@@ -363,16 +394,33 @@ class StashScreen(ModalScreen):
     def action_edit(self) -> None:
         if self._active_tab() == ADD_TAB:
             self.query_one("#stash-paste", _PasteBox).begin_edit()
+        elif self.insert_into:
+            self.action_insert()
         else:
             self.action_rename()
 
     def action_close(self) -> None:
         self.dismiss(None)
 
+    def action_insert(self) -> None:
+        """Insert mode: dismiss with the highlighted entry if the field takes it."""
+        entry = self._highlighted()
+        if entry is None or not self.insert_into:
+            return
+        if entry["type"] not in self.insert_into["accepts"]:
+            wanted = " or ".join(f"[{type_word(t)}]" for t in sorted(self.insert_into["accepts"]))
+            notifications.notify_info(
+                self.app, f"'{entry['name']}' is [{type_word(entry['type'])}]; this field takes {wanted}")
+            return
+        self.dismiss(entry)
+
     def on_list_view_selected(self, event: ListView.Selected) -> None:
-        # Enter/E on an entry edits it: in manage mode that is a rename.
+        # Enter/E on an entry: insert it (insert mode) or rename it (manage mode).
         if event.list_view.id == "stash-entries":
-            self.action_rename()
+            if self.insert_into:
+                self.action_insert()
+            else:
+                self.action_rename()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         handlers = {
@@ -383,6 +431,7 @@ class StashScreen(ModalScreen):
             "stash-delete": self.action_delete,
             "stash-filter": self.action_toggle,
             "stash-close": self.action_close,
+            "stash-insert": self.action_insert,
         }
         handler = handlers.get(event.button.id or "")
         if handler is not None:

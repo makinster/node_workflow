@@ -10,15 +10,15 @@ This is the only live status snapshot; older logs/plans retain dated history.
 - Merged: Stash S1 + `aotn stash` CLI (#70); Stash S2, the Stash screen
   (#71, `p` in the editor); docs PR B (#72: consolidation, VISION,
   CONTRIBUTING), confirm/close buttons in every window (#73), and Stash
-  duplicates (#74: the same file or text is never stashed twice). Next: S3
-  (field insert). Docs PR C follows B.
+  duplicates (#74: the same file or text is never stashed twice). Open: S3, field insert
+  (`dist/stash-s3`). Next: owner's pick (keymap table proposed). Docs PR C follows B.
   The owner merges, or explicitly asks a reviewer to.
 - Work order: [Node Contract Plan](NODE_CONTRACT_PLAN.md). Long-term decisions:
   [Distributed Build Plan](DISTRIBUTED_BUILD_PLAN.md), [Stash](STASH_PROPOSAL.md).
 
 ## Verification and environment — 2026-10-17
 
-- Full suite: **1539 passed** with #73 and #74 merged (2026-10-17).
+- Full suite: **1548 passed** on `dist/stash-s3` (2026-10-18).
   in 173.22s on `9d5455b` plus docs changes.
 - PR B checks: **334** relative Markdown links/anchors resolve, 33 whole archive
   bodies retained, 17 active docs, and `git diff --check` passes.
