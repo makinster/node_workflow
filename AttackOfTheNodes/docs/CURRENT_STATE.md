@@ -1,25 +1,36 @@
 # Current State
 
-Snapshot checked **2026-10-17**. Code and fresh GitHub checks take precedence.
+Snapshot checked **2026-10-18**. Code and fresh GitHub checks take precedence.
 This is the only live status snapshot; older logs/plans retain dated history.
 
-## Baseline and open work — 2026-10-17
+## Baseline and open work — 2026-10-18
 
-- `origin/main`: `9d5455b` (Stash S1, #70; docs PR A #69 also merged). C1–C7 and workflow naming
+- Implementation base: `origin/main` at `714f190` (Stash S3, #75 merged). C1–C7 and workflow naming
   (#68) are merged; C7 has only `branch` and publishes its child payload.
 - Merged: Stash S1 + `aotn stash` CLI (#70); Stash S2, the Stash screen
   (#71, `p` in the editor); docs PR B (#72: consolidation, VISION,
   CONTRIBUTING), confirm/close buttons in every window (#73), and Stash
-  duplicates (#74: the same file or text is never stashed twice). Open: S3, field insert
-  (`dist/stash-s3`). Next: owner's pick (keymap table proposed). Docs PR C follows B.
+  duplicates (#74: the same file or text is never stashed twice), and S3 field
+  insert (#75: plain `P`, off while typing; Ctrl+P/palette unchanged).
+- Awaiting review: keymap phase 1 (`codex/keymap-foundation`), typed
+  registry/runtime and pure availability; Confirm is the first migrated profile,
+  with its original keys and hint text. The owner adopted three PRs, one at a
+  time: foundation, shared policies/high-traffic screens, generated Help/hints.
+  Read-only viewers, generated reference tables/source checks and rebinding UI
+  are deferred. [Scope and post-S3 inventory](PROJECT_BACKLOG.md#near-term-project--frontend-command-ui-toolkit).
+  Step 4 has a parallel docs-only design proposal. Docs PR C follows B.
   The owner merges, or explicitly asks a reviewer to.
 - Work order: [Node Contract Plan](NODE_CONTRACT_PLAN.md). Long-term decisions:
   [Distributed Build Plan](DISTRIBUTED_BUILD_PLAN.md), [Stash](STASH_PROPOSAL.md).
 
-## Verification and environment — 2026-10-17
+## Verification and environment — 2026-10-18
 
-- Full suite: **1548 passed** on `dist/stash-s3` (2026-10-18).
-  in 173.22s on `9d5455b` plus docs changes.
+- Previous full suite: **1548 passed** on `dist/stash-s3` (2026-10-18).
+- Keymap phase 1: **1605 passed** in 196.94s; focused registry/routing tests
+  **57 passed**. Compilation and `git diff --check` pass. Documentation check:
+  336 relative links/anchors resolve; 33 archive bodies and 17 active docs.
+  Actual-keypress tests use headless Textual with production CSS; native
+  terminal verification was not performed. Confirm's visible text/layout is unchanged.
 - PR B checks: **334** relative Markdown links/anchors resolve, 33 whole archive
   bodies retained, 17 active docs, and `git diff --check` passes.
   Fresh receipts: [PR B verification](audits/docs_audit_2026_10_17/PR_B_VERIFICATION.md).

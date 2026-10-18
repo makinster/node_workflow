@@ -75,6 +75,35 @@ dynamic sections, form generation, payload display helpers and
 `frontend/notifications.py`. [UI Quick Reference](UI_QUICK_REFERENCE.md) owns
 keyboard behavior; avoid maintaining another binding list here.
 
+### Adding a registered command
+
+Keymap phase 1 migrates `ConfirmScreen` only. Its typed definitions live in
+`frontend/keymap.py`; `keymap_runtime.py` supplies pure availability guards.
+Other screens keep their current routes until phase 2. Do not add a second
+handler for a registered command.
+
+1. Add a `Command` to the owning `Profile`: a stable semantic ID, native key
+   aliases, action, description, NAV/TEXT/Select policy and intentional priority.
+   Reuse the shared navigation definitions instead of copying their keys.
+   IDs survive key/action renames; do not reuse an old ID for a different operation.
+2. Implement the screen's `action_...` method. Declare `KEYMAP` and
+   `BINDINGS = bindings_for(KEYMAP)` in the class body so Textual compiles the
+   map at class creation. Put `KeymapScreenMixin` before `CommandScreenMixin`.
+   Keep the existing focus/activation helpers.
+3. Keep availability queries free of effects: no focus changes, Select closing,
+   editor commits or dispatch in `check_action`. NAV commands yield to typing
+   and expanded Selects; inactive screen owners and application commands under
+   a modal are unavailable. Screen-specific conditions can further restrict
+   availability; effects belong in action handlers.
+4. For compact hints use the command's `hint` metadata and `hint_for(profile)`;
+   never copy keys into a label or raw `on_key` route. This first renderer keeps
+   Confirm's text unchanged. Full contextual Help/hints follow in phase 3;
+   generated Quick Reference tables and Settings rebinding remain deferred.
+5. Add actual-keypress tests with production CSS: native compiled IDs/aliases,
+   focused controls, NAV/TEXT/Select ownership, modal scope and button activation.
+   Run `tests/test_keymap.py`, `tests/test_keymap_routing.py`, affected screen
+   tests and the full suite. Test a behavior defect failing before fixing it.
+
 Lessons retained from the TUI design and investigations:
 
 - Non-editing CommandInput/CommandTextArea widgets can consume letter keys
