@@ -1,10 +1,40 @@
 # AttackOfTheNodes Session Log
 
-This log keeps roughly the last two weeks: entries dated October 4–18, 2026
+This log keeps roughly the last two weeks: entries dated October 4–19, 2026
 (the earliest existing entry is October 6). Every October 18 entry is retained.
 Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.md).
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
+
+## 2026-10-19 — Deletion owner answers and recovery-window samples
+
+Branch `codex/deletion-owner-answers`, fresh from `origin/main` at `1addbf9`,
+in `/home/makin/src/nw-docs` (clean at start). The owner checkout remains at
+`105623d` on `docs/newcomer-guide` with its unrelated edits preserved.
+
+- Recorded the five owner answers from the shared NOTES: all Beacons previously
+  connected to a deleted Merge stay and reset to unconnected; deleting a Beacon
+  ends its branch; conflicted undo previews what cannot return, then restores
+  what fits; reduced paths stay saved under the live Branch; warning levels stay.
+- Checked `validator.py`: `merge_beacon_unconnected` is a warning and does not
+  block running. Keep that level; unreachable warnings and blocking tombstone
+  errors also keep their levels.
+- Added compact samples for the recover prompt and optional which-paths picker.
+  Recover relinks to new ports; zero choices leave them empty. Unchosen paths
+  remain saved. No expiry until the owner decides the retention window.
+- Phase 2 waits for owner approval of this update and #85 merging, then uses
+  fresh main and the agreed Editor/adapter/error-mux/keep-picker files. Include
+  the editor's ` [sub]` header; no `node_config.py` edits. Open each PR and stop.
+- Findings-only #85 re-review at `afe98cd` in `/home/makin/src/nw-review85`:
+  the five original cases pass; **53 focused tests passed in 13.24s** and the
+  full suite **1759 passed in 230.79s**. One additional mounted-screen probe
+  fails: confirming a typed file-reference default unchanged saves JSON text,
+  which file input resolution mistakes for a path. No source/test edits or
+  review comments posted. Temporary probe uses an isolated temporary file.
+- This PR changes documentation only; behavior regressions must fail first in
+  phase 2. Verification: **1729 passed in 228.35s**; docs link/archive checks and
+  `git diff --check` pass. Prior log entries and archive bodies are retained.
+  Samples are plain text; no live-terminal or new rendered-UI claim.
 
 ## 2026-10-18 — Docs C integrated with #81, #82 and #84
 
