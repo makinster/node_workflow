@@ -292,12 +292,12 @@ diverge in capability, AI Processing may split into per-model groups (a group
 per model family, since each has its own capabilities). Capability-based
 grouping is the contract until that pressure is real.
 
-#### Group: Subworkflow *(reserved — phases 19/20)*
+#### Group: Subworkflow *(Step 4 design)*
 
 | Node | Status | Notes |
 |---|---|---|
-| Run Subworkflow | Planned (Phase 19) | Execute a saved workflow as an inline step |
-| Parallel Subworkflow | Planned (Phase 20) | Run multiple saved workflows concurrently, collect outputs. Tags: Parallel |
+| Run Subworkflow | Planned (Step 4b) | Call a saved callable workflow as a separate child run with typed inputs/results; see [Subworkflows proposal](SUBWORKFLOWS_PROPOSAL.md). |
+| Parallel Subworkflow | Concept | Separate node not required by the approved design: Run Subworkflow calls may overlap on ordinary parallel branches (C15). Retained as a library idea. |
 | Conditional Subworkflow | Concept | Run a workflow only if a condition passes. Tags: Conditional |
 
 ### Section: Triggers

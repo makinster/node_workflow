@@ -4,8 +4,11 @@
 and step 3 open decisions were resolved on 2026-10-12 (D5–D9). On 2026-10-12
 the owner authorized execution of steps 1, 1b, the refresh coalescer, 2, 3 and
 the ESP32 proof slice, using one PR per step; see
-[DISTRIBUTED_EXECUTION_PROMPT.md](archive/DISTRIBUTED_EXECUTION_PROMPT.md). **Step 4
-onward needs a new go-ahead.**
+[DISTRIBUTED_EXECUTION_PROMPT.md](archive/DISTRIBUTED_EXECUTION_PROMPT.md).
+Step 4's design was approved on 2026-10-18 in
+[the subworkflows proposal](SUBWORKFLOWS_PROPOSAL.md); its staged build order
+is below. [Current State](CURRENT_STATE.md) owns delivery and open work.
+Steps 5 onward still require a new go-ahead.
 
 **Sources:**
 

@@ -1,118 +1,66 @@
 # Current State
 
 Snapshot checked **2026-10-18**. Code and fresh GitHub checks take precedence.
-This is the only live status snapshot; older logs/plans retain dated history.
-
-## Deletion review — checked 2026-10-18
-
-- Fresh main remains `90182f0`; #78 keymap phase 2 and #80 contracts are
-  merged. Open PRs: #81 file-picker fix, #82 editor hotfixes (head `531e4c1`)
-  and #83 docs C. Their entries must all survive integration.
-- Phase 1: [Deletion Review Proposal](DELETION_REVIEW_PROPOSAL.md),
-  `codex/deletion-proposal`, docs only. Current-case evidence is checked on
-  #82's branch; it is not presented as merged main. Includes compact samples,
-  grouped undo, exact-count keep picker, Merge/Beacon choices and session history.
-- Phase 2 waits for owner approval and #82's merge, then starts on fresh main.
-  Editor, adapter, error-mux helpers and keep picker are this worker's; Node
-  Config, library, Help and App remain with 4a-2. Count reduction is intercepted
-  in Editor. The save-and-stay completion contract needs an integration check.
-- Verification: main full suite **1708 passed in 217.06s**; source/probe checks
-  include saved versus unsaved Beacon removal; #82's later review fixes were
-  rechecked on `531e4c1` (**92 focused tests passed in 5.47s**), including
-  soft-deleted peer guards, mixed recovery tails and both halves of stale
-  original/gained inputs. Full suite at that #82 head: **1728 passed in
-  212.11s**. No application/tests changed.
-  Link checks pass; the historical docs count needs the temporary proposal
-  registered when #83's allowlist is integrated. Native UI was not checked.
-
-The phase-2 snapshot below predates #78/#80 merging and is retained pending
-#83's status cleanup. Use the checked status above for this task; preserve the
-owner decisions and verification entries when integrating both PRs.
+This is the live status snapshot; plans and logs preserve dated decisions.
 
 ## Baseline and open work — 2026-10-18
 
-- Current implementation base: fresh `origin/main` at `90182f0`; keymap
-  phase 2 (#78) and Step 4a-1 contracts (#80) are merged (1708-test baseline).
-  File-picker test synchronization is on `codex/file-picker-teardown`.
-  Step 4a-2 screens proceed separately; their frontend files are not edited here.
-- Phase-2 implementation base: fresh `origin/main` at `4cb246e` (keymap
-  foundation #77, merged after approved Step 4 design #76). C1–C7 and workflow naming
-  (#68) are merged; C7 has only `branch` and publishes its child payload.
-- Merged: Stash S1 + `aotn stash` CLI (#70); Stash S2, the Stash screen
-  (#71, `p` in the editor); docs PR B (#72: consolidation, VISION,
-  CONTRIBUTING), confirm/close buttons in every window (#73), and Stash
-  duplicates (#74: the same file or text is never stashed twice), and S3 field
-  insert (#75: plain `P`, off while typing; Ctrl+P/palette unchanged).
-- Keymap phase 1 is merged (#77). Phase 2 merged in #78 from
-  `codex/keymap-policies`: multi-state command policies, native text/Select
-  adapters and migrated App/high-traffic screens. The three listed defects have
-  failing-first regressions and fixes: Node Config availability mutation,
-  Execution's duplicate Stop route, Settings' duplicate digit route.
-  Phase 3 generates Help/hints/tab labels; current visible text/layout is
-  unchanged. Memory/Output/File viewers, generated reference tables/source
-  checks and rebinding UI remain deferred.
-  [Scope](PROJECT_BACKLOG.md#near-term-project--frontend-command-ui-toolkit).
-  Step 4 design revision 4 is approved (#76/#79); backend/CLI stage
-  4a-1 is merged (#80), with 4a-2 config screens in progress separately.
-  Docs PR C follows B.
+- Fresh `origin/main` after this PR: C1–C7, workflow naming (#68), docs A/B
+  (#69/#72), Stash S1–S3 (#70/#71/#75), window buttons (#73), duplicate
+  prevention (#74), keymap phases 1/2 (#77/#78), contracts (#80), the
+  file-picker test fix (#81), editor hotfixes (#82), the deletion proposal
+  (#84) and docs C (#83) are merged.
+  S3 uses plain P, off while typing; Ctrl+P and the palette are unchanged.
+- **Editor hotfixes (#82):** insert before a node with two parents keeps it;
+  HTTP Request and JSON Path get no error path by default; failure paths keep
+  the normal path's colour; deleting a node with an error handler asks, then
+  removes the handler; undo and stub removal never give an output a second
+  target. [Session log](SESSION_LOG.md).
+- **Deletion review:** [proposal](DELETION_REVIEW_PROPOSAL.md) merged (#84).
+  Phase 2 (grouped delete, the keep-branches picker, branch-count reduction)
+  is Codex's in Editor, the editor adapter, the error-mux helpers and the keep
+  picker, from fresh main. Node Config, Workflow Library, Help and App stay
+  with 4a-2.
+- **Step 4:** design rev. 4 approved (#76/#79); 4a-1 backend/CLI contracts
+  built (#80). 4a-2 screens are in progress on `dist/step4a2-screens`
+  (owner-approved samples, 2026-10-18: plain short wording; the File window
+  gets Workflows and Subworkflows tabs; C copies a workflow to Subworkflows,
+  numbering a repeat copy "(2)" with a warning toast). Child-workflow calls
+  remain later work. [Proposal](SUBWORKFLOWS_PROPOSAL.md).
+- Keymap phase 3 is next for Stash, Settings, Execution, list pickers, Confirm
+  hints, Unsaved Changes, User Input and Recovery. Editor, Node Config,
+  Node Selector, Workflow Library and Help topics follow after 4a-2 merges.
+  Read-only viewers, generated reference tables/source checks and Settings
+  rebinding UI remain deferred. [Scope](PROJECT_BACKLOG.md#near-term-project--frontend-command-ui-toolkit).
+- Work order: [Node Contract Plan](NODE_CONTRACT_PLAN.md). Long-term direction:
+  [Distributed Plan](DISTRIBUTED_BUILD_PLAN.md), [Stash](STASH_PROPOSAL.md).
   The owner merges, or explicitly asks a reviewer to.
-- Awaiting review: editor fixes on `fix/insert-fan-in-error-path` (insert
-  before a node with two parents keeps it; HTTP Request and JSON Path get no
-  error path by default; failure paths keep the normal path's colour;
-  deleting a node with an error handler asks, then removes the handler too).
-  Branch-count reduction and a deletion review are in the backlog.
-- Work order: [Node Contract Plan](NODE_CONTRACT_PLAN.md). Long-term decisions:
-  [Distributed Build Plan](DISTRIBUTED_BUILD_PLAN.md), [Stash](STASH_PROPOSAL.md).
 
 ## Verification and environment — 2026-10-18
 
-- File-picker synchronization: **1709 passed** in 216.57s. The slow-mount
-  regression first failed with `NoMatches: HeaderTitle`; after the fix all
-  three picker tests passed in ten consecutive runs (30 tests). The original
-  full suite also passed (1708 in 216.99s). Changed-test compilation and
-  `git diff --check` pass. Test-only; no application or visible UI changes.
-- Keymap phase 2: **1666 passed** in 212.52s on the final code, including
-  actual-keypress coverage for the three regressions, NAV/TEXT saves, multiline
-  Ctrl+S/Ctrl+Enter, modal scope, dropdown and navigation/caret remapping.
-  Compilation and `git diff --check` pass. An earlier full run hit the known
-  file-picker `HeaderTitle` teardown flake; its isolated rerun and final full
-  run pass. The separate test synchronization fix is now under review.
-  Native terminal checks were not performed; visible wording/layout is unchanged.
-- Docs audit: all **342 relative links/anchors** and **33 archive bodies** pass;
-  its historical 17-active-doc assertion reports **18**, already the main
-  baseline after #76 added the proposal. This phase does not change that count.
-- Previous full suite: **1548 passed** on `dist/stash-s3` (2026-10-18).
-- Keymap phase 1: **1605 passed** in 196.94s; focused registry/routing tests
-  **57 passed**. Compilation and `git diff --check` pass. Documentation check:
-  336 relative links/anchors resolve; 33 archive bodies and 17 active docs.
-  Actual-keypress tests use headless Textual with production CSS; native
-  terminal verification was not performed. Confirm's visible text/layout is unchanged.
-- PR B checks: **334** relative Markdown links/anchors resolve, 33 whole archive
-  bodies retained, 17 active docs, and `git diff --check` passes.
-  Fresh receipts: [PR B verification](audits/docs_audit_2026_10_17/PR_B_VERIFICATION.md).
-- Owner WSL setup: Python **3.14.4**, Textual **8.2.7**, pytest **9.1.0**;
-  interpreter `/home/makin/src/node_workflow/.venv/bin/python`.
-- Docs worktree: `/home/makin/src/nw-docs`; owner checkout and other workers'
-  worktrees are not edited. The OneDrive checkout is recovery-only.
-- Clean dependency installation and native Windows FO7 checks were not run.
+- Main with #81, #82 and #84: full suite **1729 passed**. Docs C merged on top
+  of it: see the receipt below and the session log.
+- Link/anchor, whole-archive and session-transfer checks: see
+  [PR C verification](audits/docs_audit_2026_10_17/PR_C_VERIFICATION.md).
+  The active set is 17 core docs plus SUBWORKFLOWS_PROPOSAL and
+  DELETION_REVIEW_PROPOSAL, each archived when its work completes.
+- Prior receipts: keymap phase 2, 1666 passed with actual-keypress tests;
+  phase 1, 1605 passed (57 focused); Stash S3, 1548 passed. Docs B retained
+  33 archive bodies. These are historical counts, not the current suite.
+- Python **3.14.4**, Textual **8.2.7**, pytest **9.1.0**; shared interpreter
+  `/home/makin/src/node_workflow/.venv/bin/python`. Other workers' checkouts and
+  owner workflows are not edited; the OneDrive checkout is recovery-only.
+- Clean installation, native terminal/live geometry, native Windows FO7 and
+  external web links were not reverified. Owner FO7 results are still needed.
 
-## Open owner decisions and limits — 2026-10-17
+## Open owner decisions and evidence limits — 2026-10-18
 
-- **Step 4:** design approved (2026-10-18; [Subworkflows proposal](SUBWORKFLOWS_PROPOSAL.md)
-  rev. 4). 4a-1 (contracts, backend and CLI) is merged (#80);
-  4a-2 (the Start and Return End screens; sample screens shown) is in progress.
-
-- **Stash:** S1 approved with the CLI (2026-10-17). Answered 2026-10-18:
-  the field-insert key is `P`; a text field takes text entries only, not
-  a file path (`STASH_PROPOSAL.md` §7 questions 1 and 2). Still the
-  owner's: question 3, global-only Stash or per-workflow pinning.
-- **End in the selector:** End is registered and CLI-authorable, but hidden
-  from the TUI selector. Whether to expose it remains an owner decision.
-- **FO7:** native Windows/terminal-host verification remains unverified in
-  this session; owner results are needed before claiming native coverage.
-- **Step 4 implementation:** backend/CLI contracts, typed `--input` and
-  `--inputs-file` are built in #80. Stage 4a-2 adds their config screens;
-  child-workflow calls remain later work.
-- Only the [audit report](audits/docs_audit_2026_10_17/MASTER_REPORT.md) survived.
-  Original evidence/CSVs are unavailable. PR B rebuilt the source map before
-  extraction; whole originals and migration notes are retained in `archive/`.
+- Stash: file fields accept file entries; text fields accept text only.
+  Global-only versus per-workflow pinning remains open (proposal question 3).
+- End is CLI-authorable but hidden in the current selector. Exposure is part
+  of the 4a-2 UI work.
+- Deletion review owner choices (proposal): Merge/Beacon effects, group
+  restore on drift, persistent undo for count reduction, warning severity.
+- Only the retained audit report survived; original CSVs/evidence are absent.
+  The rebuilt source map and whole archives preserve the migration trail.
+  [Recent log](SESSION_LOG.md); [older history](archive/SESSION_LOG_HISTORY.md).

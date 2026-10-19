@@ -1346,3 +1346,2776 @@ Verification:
 - Verification:
   - `python -m compileall -q .`
   - `python -m pytest tests/test_debug_nodes.py -v`
+
+## Entries archived on 2026-10-18
+
+Transferred whole from `SESSION_LOG.md` at `90182f0`: July 11 back through
+June 9, 2026, after checking the owner-decision destinations recorded in
+[the extraction map](../audits/docs_audit_2026_10_17/vision_sources.md#session-decisions-extracted-before-pr-c).
+Earlier archive content above remains unchanged. Repeated June 9 entries
+are retained as they appeared in the active log; no history was deduplicated.
+
+## 2026-07-11 — FO7 Prep: Two Windows-Environment Fixes
+
+Branch: `claude/file-output-pywin32-32tnv9`
+
+Found while preparing the FO7 manual run on the owner's Windows machine —
+both would have made the verification measure the wrong thing.
+
+- **`run_windows.cmd` never installed pywin32.** It ran `pip install -e .`
+  without the `[windows]` extra, and `requirements.lock` carries no
+  pywin32, so the standard Windows launch path silently produced the
+  degraded open-only manager. Now installs `-e ".[windows]"`. The
+  dependency short-circuit check also gained `win32gui`, so an existing
+  `.venv-win` created before the extra existed reinstalls instead of
+  skipping straight to launch.
+- **`test_windows_manager_without_pywin32_degrades` asserted a
+  Linux-only truth** (`_win32 is None`) and would have failed on Windows
+  once pywin32 was installed. Rewritten as
+  `test_windows_manager_capabilities_track_pywin32_availability`: the
+  invariant is that `capabilities()` matches whatever actually imported —
+  open-only without pywin32, the full five with it. Both branches were
+  executed before commit (the pywin32-present branch by injecting stub
+  `win32gui`/`win32api`/`win32con` modules), so neither side ships
+  unrun.
+
+Verification: `tests/test_window_manager.py` 22 passed on Linux; the
+pywin32-present branch passes under stubbed modules.
+
+## 2026-07-11 — FO7 (docs half): File-Output Plan Reconciliation
+
+Branch: `claude/file-output-pywin32-32tnv9`
+
+The docs-reconciliation half of FO7. The live-verification half (the 7-step
+manual Windows protocol in `FILE_OUTPUT_BUILD_PLAN.md`) needs the owner's
+Windows machine and stays open; the plan is NOT archived until it runs.
+
+- `MASTER_BUILD_PLAN.md`: FO row in the Phase Status table; FO1–FO6 summary
+  under Recently Completed.
+- `PROJECT_BACKLOG.md`: new "Deferred — File/Window Output Follow-Ups"
+  section (pyvda per D7, macOS/Linux adapters, loop open-after-write
+  validator warning, cross-run window adoption non-goal per D12, possible
+  refocus-after-prompt follow-up pending FO7's focus-fight check, D11
+  remote-backend effector).
+- `TASK_INDEX.md`: new "Change File Output, File Viewer, Or OS Window
+  Behavior" route with the focused pytest slices.
+- `AGENT_HANDOFF.md`: current-state paragraph for the landed FO work.
+- `NODE_CATALOG.md` Window Focus supersession was already resolved in the
+  FO6 entry below.
+
+## 2026-07-11 — FO6: `window_control_node` (Focus / Minimize / Close by File)
+
+Branch: `claude/file-output-pywin32-32tnv9`
+
+Phase FO6 of `FILE_OUTPUT_BUILD_PLAN.md` implemented — mid-run window
+choreography.
+
+- **New node `window_control_node` ("Window Control", Utility family,
+  section `Windows`)**: action select (Focus / Minimize / Close), target =
+  a `file` reference from **upstream or vault only** (a window target is
+  always a workflow-owned file, never hand-typed — D6). Resolves the stored
+  `WindowRef` from RunSession under `window:<ref_key>`; raw path strings
+  resolve to the same identity key the writer registered.
+- **Soft-error rule**: a window that was never opened, never discovered
+  (D4), lost to a race, or a run without a session ⇒ logged warning +
+  pass-through of the file reference — never a node error. Only a missing
+  file input errors.
+- **New `backend/nodes/io/window_support.py`** — the shared
+  RunSession↔window-manager lookup (`WINDOW_MANAGER_RESOURCE`,
+  `run_window_manager`), extracted from `file_output_node` so both nodes
+  and their tests use one injection point (the adapter itself stays
+  run-state free per D11).
+- `NODE_CATALOG.md`: Window Control added under a new Utility `Windows`
+  section; the deferred **Window Focus** concept marked Superseded by it.
+
+Verification: 9 focused tests in
+`tests/generated/test_window_control_node.py` (parametrized action
+dispatch, vault-sourced and raw-path targeting, missing-window /
+no-session / failed-action soft paths, empty-input error) with
+`FakeWindowManager`; `check_ui.py window_control_node` passes; full suite
+green.
+
+## 2026-07-11 — FO5: Open After Write + Placement on `file_output_node`
+
+Branch: `claude/file-output-pywin32-32tnv9`
+
+Phase FO5 of `FILE_OUTPUT_BUILD_PLAN.md` implemented — "write this md/image
+and open it to the right of AOTN."
+
+- **Config (Parameters tab, `OS Window` section):** `Open after write`
+  checkbox; `Open at` placement preset select (options =
+  `window_manager.PLACEMENT_PRESETS`, visible when open is on); `Close when
+  run ends` toggle, default **off** (run-end cleanup is opt-in, unlike file
+  handles — D12). Spec and class updated together; the loop-multiplied
+  windows behavior is documented on the field and in `NODE_CATALOG.md`
+  (validator warning for loops stays backlog).
+- **Execute path:** after writing, the node resolves the run's window
+  manager — injected/cached under the RunSession resource key
+  `window_manager` (tests register `FakeWindowManager` there), else the
+  platform factory — and calls `open_path(path, placement)`. A discovered
+  `WindowRef` registers under `window:<ref_key>`, with a `manager.close`
+  hook only when `Close when run ends` is on. Discovery failure logs a
+  warning and registers nothing; the node stays successful (D4).
+- **Validator (D5):** warns — never errors — when `open_after_write` is
+  configured with a non-default placement and the platform lacks the
+  `place` capability, or with `close_on_run_end` and no `close` capability.
+
+Verification: four new FakeWindowManager node tests (open+place+register,
+close-at-`close_all` only when configured, discovery-failure degraded
+success, manager untouched when open is off) plus a validator capability
+warning test; `check_ui.py file_output_node` passes; full suite green.
+
+## 2026-07-11 — FO4: `backend/window_manager.py` Platform Adapter
+
+Branch: `claude/file-output-pywin32-32tnv9`
+
+Phase FO4 of `FILE_OUTPUT_BUILD_PLAN.md` implemented — the OS window
+abstraction, no node wiring yet (that is FO5/FO6).
+
+- **Protocol** (small per D9): `open_path(path, placement) → WindowRef |
+  None`, `focus`/`minimize`/`close(ref) → bool`, `capabilities() → set[str]`
+  (`open`/`place`/`focus`/`minimize`/`close` — the D5 validator warning's
+  vocabulary). Discovery failure returns `None`, never raises (D4). The
+  module imports only stdlib + logging — no MasterState/RunSession/Textual
+  coupling (D11 liftability).
+- **`placement_rect(preset, monitors, own_rect)`** — pure preset→rect math
+  (D3: every preset yields position AND size). Presets: `OS default`,
+  `Right of AOTN`, `Left of AOTN`, `Other monitor`, `Same monitor, right
+  half`. Side slivers under 200px degrade to monitor halves; unresolvable
+  own rect degrades AOTN-relative presets to monitor-relative (D3 Windows
+  Terminal caveat); single-monitor `Other monitor` degrades to the current
+  monitor. All with logged warnings.
+- **`WindowsWindowManager`** — pywin32 guarded per the D5 decision record
+  (recorded 2026-07-11: pywin32 over raw ctypes): `os.startfile` launch,
+  snapshot-diff discovery with a 5s poll + title-contains-filename fallback
+  (D4), `EnumDisplayMonitors` geometry, own-rect resolution via a
+  parent-process walk (`NtQueryInformationProcess` ancestor chain → visible
+  ancestor-owned top-level window) with a visible-`GetConsoleWindow`
+  fallback for legacy conhost, `MoveWindow` placement, `WM_CLOSE` close.
+  Without pywin32 it degrades to open-only. This branch is FO7
+  manual-verification territory, not CI.
+- **`FallbackWindowManager`** (`xdg-open`/`open`, placement no-op with
+  warning), **`FakeWindowManager`** (records calls; `discovery_fails` mode
+  for D4 tests — the FO5/FO6 node-test double), and the
+  `get_window_manager()` platform factory.
+- **`pyproject.toml`**: optional `windows` extra
+  (`pywin32>=306; platform_system == "Windows"`).
+
+Verification: new `tests/test_window_manager.py` (22 tests: factory,
+fallback soft-fail launch/control, fake double, full preset geometry
+matrix incl. mixed-resolution other-monitor and degraded modes, and
+`WindowsWindowManager` degrading cleanly with no pywin32 on Linux);
+`compileall` clean.
+
+## 2026-07-11 — FO3: In-TUI File Viewer (`file_view_node` + `FileViewerScreen`)
+
+Branch: `claude/file-output-pywin32-32tnv9`
+
+Phase FO3 of `FILE_OUTPUT_BUILD_PLAN.md` implemented — the zero-OS-dependency
+"open the file" path (D8).
+
+- **Node-emitted EventBus events.** `NodeContext` gains an optional
+  `publish_event` callback plus an `emit_event(name, payload)` helper that
+  no-ops (returns False) when unwired. The supervisor wires it and stamps
+  `run_id`/`branch_id`/`node_id` into every payload, keeping the standing
+  JSON+run_id rule without giving nodes the bus itself. Fire-and-forget:
+  execution never waits on a subscriber; headless runs have none and the
+  event is inert.
+- **New `backend/file_refs.py`** — shared typed-`file`-reference helpers
+  (`file_reference`, `is_file_reference`, `reference_path`, `reference_key`);
+  `file_output_node` now imports these instead of its module-local builder.
+- **New node `file_view_node` ("File Viewer", Outputs family, direct-add)**
+  from a unified helper spec + hand-written `execute()`: resolves its `file`
+  input (reference dict or path; upstream/vault/configured), errors when the
+  file is missing, emits `FILE_VIEW_REQUESTED` (`path`, `ref_key`, `render`),
+  and forwards the file reference downstream (dead-drop and
+  terminate-branch options as on File Write). Render hint: Auto by extension
+  (`.md`/`.markdown` → markdown) with Markdown / Plain text overrides.
+- **New `frontend/screens/file_viewer.py`** (`FileViewerScreen`, fill-modal):
+  renders via Textual `Markdown` or plain `Static`, reads the file at
+  display time (the event never carries contents), ESC/q/Close dismisses.
+  `app.py` subscribes `FILE_VIEW_REQUESTED` → pushes the screen, ignoring
+  requests while one viewer is already open.
+
+Verification: 9 focused node tests in
+`tests/generated/test_file_view_node.py`; two pilot tests in
+`tests/test_debug_nodes.py -k file_view` (full workflow start→echo→File
+Write→File Viewer→end opens the viewer rendering the md, ESC closes;
+open-guard ignores a second request and re-opens after close);
+`check_node.py`/`check_ui.py file_view_node` pass; full suite 439 passed
+(same known settings-screen flake only). `SIGNAL_FLOW.md`, `FILE_TREE.md`,
+`NODE_CATALOG.md` updated.
+
+## 2026-07-11 — FO2: Markdown Formatting as a Text Transform Mode
+
+Branch: `claude/file-output-pywin32-32tnv9`
+
+Phase FO2 of `FILE_OUTPUT_BUILD_PLAN.md` implemented. Per the
+`NODE_STANDARDS.md` classification rule the plan anticipated, this is a
+**mode-select on `text_transform_node`** (same ports, one extra conditional
+field), not a new node type.
+
+- **New `backend/text_format.py`** — pure `format_markdown(text, wrap_width)`
+  with no node/runtime coupling: normalizes line endings and trailing
+  whitespace, ATX heading spacing (`##Title` → `## Title`, closing hashes
+  dropped, blank line before/after), bullet markers to `- ` and ordered
+  markers to `N. `, aligns table columns (preserving `:` alignment markers,
+  inserting a blank line when a table butts against preceding text), collapses
+  blank-line runs, and — when `wrap_width > 0` — re-flows plain paragraphs
+  only (headings/lists/tables/blockquotes/code never wrap). Fenced code
+  blocks pass through untouched. Deliberately conservative; not a full
+  CommonMark canonicalizer.
+- **`text_transform_node`**: new `markdown format` operation + `wrap_width`
+  integer field (`visible_when` the markdown operation is selected; 0 keeps
+  existing breaks). Spec and class updated together.
+
+Verification: new `tests/test_text_format.py` (16 tests, including a messy
+LLM-output end-to-end case) plus markdown-mode cases in the generated
+transform tests; `check_node.py text_transform_node` and `check_ui.py
+text_transform_node` pass.
+
+## 2026-07-11 — FO1: `file_output_node` (File Write) + Typed File Reference
+
+Branch: `claude/file-output-pywin32-32tnv9` (started from `main` @ `af04c5f`)
+
+Phase FO1 of `FILE_OUTPUT_BUILD_PLAN.md` implemented.
+
+- **New node `file_output_node` ("File Write", Outputs family, group
+  `File Write`)** generated from the unified `inputs:`/`outputs:` spec
+  `aotn_node_helper/specs/file_output_node.yaml` with a hand-written
+  `execute()`. Content and file path use the standard three-source model
+  (`content` accepts `any`; `file_path` is `file`-typed and also accepts an
+  upstream/vault file reference dict, resolving its `path`). Write modes:
+  Overwrite / Append / Create unique (numeric ` (n)` suffix); Base64 binary
+  toggle; parent directories are created. Writes go through
+  `context.run_session.open_file` when in a run (cached `"w"` handles are
+  seek(0)+truncated so overwrite stays deterministic; writes flushed so the
+  file is readable mid-run), direct `Path` I/O otherwise.
+- **Typed `file` reference (D2)** emitted downstream and optionally to the
+  vault (`type_tag="file"`): `{"type": "file", "ref_key": "file:<resolved>",
+  "path": <resolved>}`; the open handle registers in `RunSession` under
+  `ref_key` (keyed by file identity, per D6) and closes at `close_all()`.
+  Dead-drop passthrough forwards the incoming content unchanged.
+- **Standard "Terminate branch after completion"** (`terminate_branch`,
+  Payloads tab) — first Outputs-family node to carry the NODE_STANDARDS
+  branch-termination option; rides the `signal_done` payload the supervisor
+  already honors.
+- **Validator: source-gated field awareness.** The `path_hint: "file"` and
+  `secret: true` checks now skip fields whose `visible_when` doesn't hold
+  (new `_field_visible`, defaults-aware) — a required Configured path no
+  longer false-errors when the input reads from Upstream/Vault. Empty
+  required path with Configured selected stays an error; missing-on-disk
+  stays a warning (an earlier node may create the file mid-run).
+- **Retired `example_file_instance_node`** (spec, node, generated tests,
+  registration) per FO1 task 4 — `file_output_node`'s spec absorbed its
+  unified-spec reference role. Repointed `test_node_contract.py`, the editor
+  details-panel test, and node-selector expected sets; updated
+  `NODE_HELPER.md`, `NODE_STANDARDS.md`, `AGENT_START_GUIDE.md`,
+  `FILE_TREE.md`, and `NODE_CATALOG.md` (File Instance row removed; File
+  Write now Live).
+
+Verification: `check_node.py file_output_node` and `check_ui.py
+file_output_node` pass; new focused tests in
+`tests/generated/test_file_output_node.py` (17) plus run-lifecycle and
+validator-gating tests in `tests/test_run_session.py`; full suite 409 passed
+with one pre-existing settings-screen pilot-timing flake
+(`test_simple_command_modals_use_shared_navigation_helpers`) that fails only
+under full-suite load, on the untouched baseline too, and passes in
+isolation.
+
+## 2026-07-11 — File Output Build Plan: Design-Review Amendments
+
+Branch: `main` (plan merged from `claude/output-nodes-file-windows-wq07q6`
+earlier today)
+
+Reviewed `FILE_OUTPUT_BUILD_PLAN.md` against the project vision docs
+(`PROJECT_KNOWLEDGE.md`, `MASTER_BUILD_PLAN.md`, `PROJECT_BACKLOG.md` future
+directions) and amended the plan. No scope change; no phase started.
+
+- **New D11 — window management is a local-execution capability.** Records
+  the tension between D10 (backend window manager) and the Multi-Frontend
+  Expansion direction (backend as a standalone server, where the backend
+  host and the user's display diverge). Migration path: window actions move
+  behind the EventBus to a local effector — the same pattern FO3 uses —
+  with `capabilities()` declaring display access. FO4 exit criteria now
+  require the adapter to be free of run-state coupling so it can be lifted
+  behind an event boundary unchanged.
+- **New D12 — windows that outlive the run are unmanaged orphans.** With
+  `Close when run ends` off, the `WindowRef` dies with `RunSession`; later
+  runs cannot target the window. Documented as intentional.
+- **D3 caveats:** presets define position *and* size (full target rect);
+  Windows Terminal/ConPTY makes `GetConsoleWindow()` return a hidden
+  pseudo-console window, so FO4 must resolve the real terminal window via a
+  parent-process walk with conhost fallback, degrading AOTN-relative presets
+  to monitor-relative with a warning when unresolvable.
+- **D4 rule:** discovery failure is never a node error — file opens,
+  placement degrades to "opened but unplaced" warning, no `WindowRef`
+  registered. Mirrored in FO5 test expectations.
+- **D5 decision record:** pywin32 stays (as an optional extra) over raw
+  ctypes despite the `llm_provider.py` no-dependency precedent — the window
+  adapter is cold, optional, and only manually verifiable, so hand-rolled
+  ctypes maintenance risk outweighs zero-dep purism.
+- **FO5:** documented loop-multiplied windows (validator warning is backlog,
+  not FO5 scope). **FO7:** added Windows Terminal vs conhost host coverage
+  and a focus-fight check (open-after-write directly upstream of
+  `user_text_input_node`); docs reconciliation now explicitly resolves the
+  deferred `NODE_CATALOG.md` **Window Focus** entry as superseded by the
+  file-scoped `window_control_node`.
+
+Verification: docs-only change; `git diff --check` clean.
+
+## 2026-07-08 — Helper Generator Aligned with the Standardized Node UI
+
+Branch: `llm-node`
+
+Owner direction: the Chat Completion UI work is the standard for future nodes;
+the node helper must get new nodes as close as possible automatically.
+
+- **Generator emits the new output model.** `output_routing` no longer
+  produces the retired Payloads checkbox fields (`transient_output` /
+  `dead_drop_passthrough` / `vault_write*` schema entries). It now emits
+  routing **defaults** into `default_config` and maps the vault mode onto the
+  default output port's metadata (`to` gains `vault`;
+  `required_unless_transient` sets `vault_required`). Mode mapping: `optional`
+  → Disable output starts checked; `default_on` → unchecked;
+  `required_unless_transient` → always writes, no Disable checkbox. Legacy
+  label keys accepted and ignored; routing config key names reserved.
+- **Forwarding checkbox is capability-gated**: `Forward incoming payload
+  unchanged` renders only when a downstream port declares
+  `pass_through: true`.
+- **Stale-schema guard**: standard-model nodes exclude any leftover routing
+  schema fields from rendering, so pre-redesign generated nodes cannot
+  double-render routing controls.
+- **Reference node regenerated**: `example_file_instance_node` rebuilt with
+  the new generator (no routing schema fields; `to: [downstream, vault]`;
+  vault optional/disabled by default). Both specs' `output_routing` blocks
+  simplified.
+- **Docs standardized**: new `NODE_HELPER.md` section **"What the Config UI
+  Renders Automatically"** — the full standardization contract (Source
+  incoming-payload block, Required/Optional sections, typed vault dropdowns +
+  eligibility/pruning, composed Payloads tab, dynamic rule keys, validator
+  derivation) that every standard-model node gets with zero frontend edits;
+  rewritten `output_routing` reference; NODE_STANDARDS helper note, File
+  Instance example, and Authoring Checklist updated to the new model (with
+  `chat_completion_node` named as the reference `execute()` implementation).
+
+Verified: full pytest suite green, `check_ui` OK for both
+`example_file_instance_node` and `chat_completion_node`, helper tests updated
+to the new expansion (46 passed).
+
+---
+
+## 2026-07-08 — Fix: a node cannot continue its own AI session
+
+Branch: `llm-node`
+
+Bug: after a workflow with a self-declared AI session was saved and run, the
+session key persisted to the vault. Reopening that node's config then offered
+"Continue AI session" and let the node select its own session key. Root cause:
+`_vault_key_options` added **persisted** vault entries unconditionally, bypassing
+the same-node/downstream eligibility filter that only gated *declared writers*.
+
+Fix: the eligibility check (`writers - {self}` non-empty and not
+downstream-only) now gates **every** candidate — persisted entries included.
+Keys with no workflow writer stay allowed (external/legacy). With no eligible
+`ai_session` key, `_prune_unavailable_source_options` drops the "Continue AI
+session" prompt-source option entirely. New regression test
+`test_node_config_own_session_not_continuable`. Full suite 378 passed.
+
+---
+
+## 2026-07-08 — Output Model Redesign: Downstream Payload + Keyed Vault Payloads
+
+Branch: `llm-node`
+
+Owner-directed reconception of the node output model plus a Continue-mode fix.
+
+- **Source fix**: Continue AI session no longer locks `document_source` to
+  Configured — the input becomes required (section retitles Optional →
+  Required) but the user still picks Upstream / Vault / Configured.
+  `force_value_when` removed from the chat schema.
+- **New output model** (NODE_STANDARDS): every node has one designated
+  **Downstream node payload** and any other outputs are **keyed Vault
+  payloads**. The standard-model Payloads tab is now composed from
+  `output_port_metadata.to` by `NodeConfigScreen._compose_standard_payloads`:
+  - Downstream node payload at the top: `Name (type)` header + editable
+    payload name and description (seed from metadata, overwritable).
+  - Single `Forward incoming payload unchanged` checkbox beneath it (greys the
+    downstream fields when checked).
+  - `Vault Payload(s)`: editable key + description per vault-routed output,
+    with a `Disable output` checkbox for optional ones (greys key/desc).
+  - AI Session section stays at the bottom.
+  - The per-output `Send to next node` / `Save to Vault` checkboxes and the
+    compact Outgoing summary are gone.
+- Data **type shown in parentheses** wherever a payload name appears (incoming
+  block and the downstream/vault headers).
+- **Chat node**: routing/vault schema fields removed (composed instead);
+  defaults flipped so `Result (string)` is the downstream payload
+  (`dead_drop_passthrough` default False) and duplicated to the vault
+  (`vault_write` default True); `execute()` routes on `dead_drop_passthrough`;
+  added `vault_write_description`.
+- Tests: new `_compose_standard_payloads` save/greying test; updated
+  standard-model layout, continue-mode, and schema tests. Full suite 377
+  passed; `check_node`/`check_ui` OK.
+- Docs: NODE_STANDARDS (output routing model + Payloads tab + Basic LLM
+  example), IO_CONTRACT_UI_DESIGN (three decision rows), helper spec.
+
+---
+
+## 2026-07-08 — Continue-Session Document Turn + Generic Mode-Driven Rule Keys
+
+Branch: `llm-node`
+
+Owner feedback: in Continue AI session mode the Document input must carry the
+new turn's text, and a real bug — continue mode read only the document port and
+silently sent a bare "Continue." nudge, producing responses unrelated to the
+user's actual input.
+
+- **New generic form rule keys** (`form_generator.apply_field_rules`): so
+  future nodes get this behavior declaratively, not via node-specific code.
+  - `required_when` — adds the `*` marker live when a condition holds.
+  - `section_when` — retitles a field's section header (`{title: condition}`).
+  - `force_value_when` — locks a `select` to a value while a condition holds
+    (`{value: condition}`); re-enabled otherwise. `NodeConfigScreen` guards
+    reentrancy since forcing a value re-fires `Select.Changed`.
+  - Generator `_validate_field_rules` accepts and validates the new keys.
+- **Chat node Continue-mode edge case**: `document_source` gains
+  `required_when` / `section_when` (Optional → Required Inputs) /
+  `force_value_when` (→ Configured) keyed to `prompt_source == Continue AI
+  session`; a `document` multiline param textbox (visible_when
+  document_source == Configured) mirrors the prompt textbox; document sources
+  gain "Configured".
+- **Bug fix**: continue mode now requires and sends the resolved Document text
+  as the new user turn (errors clearly when empty) instead of the silent
+  nudge. Fixes unrelated responses when the upstream landed on the prompt port.
+- **Session reuse**: checking "Keep active AI session" while continuing extends
+  the resumed session in place (onward key = the resumed ref); the session-key
+  field is hidden in continue mode (`visible_when` list-OR of non-continue
+  prompt sources). `_persist_session` now takes the resolved `onward_key`.
+- Docs: `NODE_HELPER.md` (three new rule keys), `NODE_STANDARDS.md` (Basic LLM
+  continue-mode edge case + session reuse), `IO_CONTRACT_UI_DESIGN.md`
+  (decision row), helper spec refreshed.
+
+Verified: full pytest suite (376 passed), `check_node`/`check_ui` OK,
+`compileall` clean.
+
+---
+
+## 2026-07-07 — Dropdown Eligibility, Option Pruning, Nav-Skip Payload Summary
+
+Branch: `llm-node`
+
+Owner feedback round 3:
+
+- **Incoming Payload block is skipped by keyboard navigation** — rendered as a
+  plain read-only `Static` instead of a focusable `PayloadPreview`.
+- **Vault/session dropdown eligibility**: declared keys whose only writers sit
+  downstream of the configured node on the same branch (or are the node
+  itself) are excluded — they cannot exist when the node runs. Parallel-branch
+  writers stay listed since static analysis cannot order branch timing (the
+  validator race warning covers that). Implemented in
+  `NodeConfigScreen._vault_key_options` via `nodes_reachable_from`.
+- **Source option pruning**: a source option that would reveal an empty typed
+  vault dropdown (`Vault`, `Continue AI session`) is dropped from the source
+  selector; a previously saved selection stays selectable so old configs
+  display faithfully (`_prune_unavailable_source_options`).
+- Docs reviewed per `README.md` routing table; updated `NODE_STANDARDS.md`
+  (eligibility bullets, File Instance hidden-field wording),
+  `IO_CONTRACT_UI_DESIGN.md` (§3 eligibility/pruning, §4 nav-skip),
+  `NODE_HELPER.md` (`vault_type` eligibility), `AGENT_START_GUIDE.md` and
+  `TUI_DESIGN.md` (payload preview shapes: auto block vs legacy reveal
+  checkboxes).
+
+Verified: full pytest suite (374 passed), `check_ui` contract OK,
+`compileall` clean.
+
+---
+
+## 2026-07-07 — Config UI Polish Round 2 + Continue-Session Prompt Mode
+
+Branch: `llm-node`
+
+Owner feedback on the first redesign pass (live screenshots):
+
+- **Incoming Payload block** reformatted and made portless — showing
+  `prompt <- Start` confused when the prompt source was Configured. Now:
+  `Node source: Start node` / `Payload: Output (string)` /
+  `Payload desc: ...` / `Value: ...` (desc/value lines only when present;
+  an `Input:` line is added only when several inputs are wired).
+- **Dropdown layout**: dropdowns were offset by varying label widths. They
+  now render full-width under a `label: description` header line
+  (description inline with the header, not below the widget). Single-line
+  inputs keep the inline row, with descriptions inline; checkbox
+  descriptions ride on the checkbox row.
+- **Continue AI session is a prompt-source mode**: the prompt source
+  dropdown gains a fourth option that reveals an `ai_session`-filtered
+  Session dropdown and replaces the prompt. Runtime: resumes the selected
+  session's history; the document input (when wired) becomes the next user
+  turn, else a bare "Continue." nudge; errors cleanly when no session is
+  selected or it has no history. `continue_session_key` moved from the
+  Payloads AI Session section back to Source under this mode; the validator
+  derives its vault read only while the mode is selected (stale hidden
+  values stay quiet).
+
+Verified: full pytest suite (372 passed), `check_ui` contract OK,
+`compileall` clean.
+
+---
+
+## 2026-07-07 — Node Config UI Redesign (standard-model layout)
+
+Branch: `llm-node` (continuing from the Chat Completion build)
+
+Owner feedback on the Chat Completion config screens drove a general config-UI
+simplification. All changes are schema/composition-driven; legacy nodes keep
+the old flat layout.
+
+- **Form primitives** (`form_generator.py`, `styles.tcss`): checkboxes carry
+  their own label (single row); descriptions render below their own field;
+  selects/dropdowns join inputs as inline `Label: [widget]` rows; new generic
+  `section` schema key renders bold section headers; inline rows are
+  height-auto so bordered widgets (Select/secret dropdowns) no longer clip.
+- **Gating**: irrelevant fields are now *hidden* (`visible_when`) — vault
+  keys until Vault is selected, the configured prompt until Configured, the
+  session key until the checkbox is on. Grey-out (`enabled_when`) is reserved
+  for the locked vault-write checkbox.
+- **Source tab** (standard-model nodes): inline alias row; auto-revealed
+  Incoming Payload block (producer chain, `[type]`, description, last value —
+  replaces the reveal checkboxes); Required/Optional Inputs sections;
+  per-input vault key dropdowns filtered by port data type (untagged legacy
+  entries satisfy `string`; declared workflow writer keys included pre-run).
+  Legacy Vault selection list removed.
+- **Payloads tab** (standard-model nodes): Result Routing section (checkbox +
+  key rows); AI Session section — `use_chat_session`, `session_key`, and the
+  `continue_session_key` dropdown all moved here; compact read-only Outgoing
+  contract line; legacy Write to Vault rows and reveal checkboxes removed.
+- **Validator** derives vault declarations from standard-model config:
+  `vault_write_key` (typed by default output port) and `session_key`
+  (`ai_session`) as writers; `<port>_vault_key` (typed by port) and
+  `continue_session_key` (`ai_session`) as readers — existence error,
+  ai_session mismatch warning, and parallel-race warning all covered
+  (`tests/test_validator_standard_model_vault.py`).
+- **Helper generator** emits the new pattern (`visible_when`, `vault_type`,
+  Required/Optional + Result Routing sections). Docs updated:
+  `NODE_STANDARDS.md` (hidden-not-greyed, tab layouts, Basic LLM example),
+  `IO_CONTRACT_UI_DESIGN.md` (§3/§4 done, new decisions),
+  `NODE_HELPER.md`, `PROJECT_BACKLOG.md` (Track B 4b dropdowns done).
+
+Verified:
+
+```bash
+../.venv/bin/python -m compileall -q .
+../.venv/bin/python -m pytest tests/ -q                      # full suite green
+../.venv/bin/python ../aotn_node_helper/check_node.py chat_completion_node
+../.venv/bin/python ../aotn_node_helper/check_ui.py chat_completion_node
+git diff --check
+```
+
+---
+
+## 2026-07-04 — Chat Completion Real Execution + AI Sessions (Phases 0–6)
+
+Branch: `llm-node` (from `main` @ 6a7c51e)
+
+Full approved build plan executed in phase-sized commits.
+
+- **Phase 0 (docs):** `NODE_STANDARDS.md` Basic LLM example's `Model:` field is
+  now a curated dropdown (was stale free text), citing Phase 17 AI Model
+  Approach.
+- **Phase 1:** new `backend/llm_provider.py` — raw stdlib HTTPS Anthropic
+  Messages client (no SDK dependency), `SUPPORTED_MODELS` as the single curated
+  list constant (`claude-opus-4-8` default, `claude-sonnet-5`,
+  `claude-sonnet-4-6`, `claude-haiku-4-5`; verified current 2026-07-04),
+  `CompletionResult`, `get_client()` provider seam. `ModelInfo.supports_temperature`
+  omits `temperature` for models that 400 on sampling params (Opus 4.8,
+  Sonnet 5). Mocked-transport tests; API key never logged.
+- **Phases 2–3:** `chat_completion_node` executes for real. Standard
+  prompt/document input sources (ports renamed `input` → `prompt`/`document`),
+  secrets-store API key (now `required`), dead-drop passthrough default with
+  locked-on vault write, "Keep active AI session" + `session_key` persisting
+  history in `RunSession` and an `ai_session`-tagged vault reference, and a
+  `continue_session_key` continuation input. Failures use the node-error path:
+  no vault write, no history mutation. Client call runs via
+  `asyncio.to_thread` so the TUI event loop never blocks.
+- **Phase 4:** `build_form` gained `vault_keys_by_type`; string fields
+  declaring `vault_type` render as key dropdowns (persisted entries of that
+  tag + workflow-declared session keys). Model dropdown and session-key gating
+  render from schema alone.
+- **Phase 5:** `specs/chat_completion_node.yaml` (unified `inputs:`/`outputs:`
+  contract; execute is hand-written — do not regenerate blindly), generated
+  contract + UI smoke tests; `check_node.py` and `check_ui.py` pass. Also
+  fixed the missing Configured-prompt Parameters field.
+- **Phase 6 (docs):** `NODE_CATALOG.md` Chat Completion → Live;
+  `PROJECT_BACKLOG.md` typed-vault items ticked (general 4b type-filtered
+  source dropdowns remain deferred); `MASTER_BUILD_PLAN.md` roadmap lines;
+  `TASK_INDEX.md` route "Change LLM Node Execution Or AI Sessions".
+
+Flagged decisions (per plan, for Kelly): (1) raw HTTP chosen — the stdlib path
+was sufficient, no SDK dependency added; (2) curated list seeded as above —
+note Opus 4.8/Sonnet 5 reject `temperature`, handled per-model; (3) node-local
+`vault_type` dropdown shipped instead of the general 4b widget, gap logged in
+`PROJECT_BACKLOG.md`.
+
+Verified:
+
+```bash
+../.venv/bin/python -m compileall -q .
+../.venv/bin/python -m pytest tests/test_debug_nodes.py -q          # 140 passed
+../.venv/bin/python -m pytest tests/test_llm_provider.py tests/test_chat_completion_node.py tests/test_validator_secrets.py -q
+../.venv/bin/python ../aotn_node_helper/check_node.py chat_completion_node
+../.venv/bin/python ../aotn_node_helper/check_ui.py chat_completion_node
+git diff --check
+```
+
+---
+
+## 2026-06-25 — Settings Secrets Manager UI
+
+Branch: `codex/node-type-constants`
+
+Implemented the user-facing secrets manager workflow from Editor → `O` Options.
+
+- `SettingsScreen` is now a numbered tab modal with `1 - General` for existing
+  app settings and `2 - Secrets` for saved secret keys.
+- Secrets tab includes Key and API-key fields, an Add/Clear button row, a saved
+  key dropdown, and `X` deletion with `ConfirmScreen` confirmation.
+- `App.action_settings()` passes the existing `SecretsManager` into settings;
+  `EditorScreen` passes it into `NodeConfigScreen`.
+- `build_form()` accepts stored secret key names, and schema fields marked
+  `"secret": True` render as dropdowns in node config when a manager is wired.
+  Existing configured key names that are not in the store remain selectable as
+  `(not stored)` legacy values.
+- Focused tests added for settings tab navigation, secrets add/clear/delete,
+  and node-config secret dropdown population.
+
+Verified:
+
+```bash
+../.venv/bin/python -m pytest tests/test_debug_nodes.py -q -k "simple_command_modals or settings_secrets_manager or node_config_secret_fields or migrated_command_screens or node_config_fixed_tabs"
+../.venv/bin/python -m pytest tests/test_secrets_manager.py tests/test_validator_secrets.py tests/test_form_generator.py -q
+../.venv/bin/python -m compileall -q .
+git diff --check
+```
+
+Results: focused debug slice 5 passed; related secrets/form suite 47 passed;
+compile and whitespace checks clean.
+
+---
+
+## 2026-06-24 — Architecture Direction: Start Node Redesign, Metadata Conditionals, Nested Headless Validation
+
+Branch: `claude/readme-review-main-sync-mtzc25`
+
+Planning session extending the headless CLI design with three additional concepts.
+No code changes.
+
+- **Start node redesign.** `StartNode` stays hidden by default. Context-specific
+  variants are revealed when the user declares an execution context: `HeadlessStartNode`
+  (exposed on "Save for headless" export — configures CLI preamble: banner,
+  global session prompts, pre-flight setup), `NestedStartNode` (workflow
+  callable as sub-workflow, Phases 19/20), `TriggerStartNode` (always-running
+  watcher, far future). All variants share the same downstream port shape so the
+  rest of the graph is unaffected.
+- **Nested workflows as headless black boxes.** The headless validator does not
+  re-traverse a nested workflow's internal graph. It checks two things only: the
+  nested workflow's `headless_valid` flag (set when that workflow passed its own
+  headless validation) and port compatibility. Each validation level trusts its
+  children's flags — the compiled-library trust model.
+- **Metadata conditional nodes.** New node group (Flow Control → Context
+  Branching): `ExecutionModeConditionalNode` branches on `tui`/`headless`/
+  `nested`/`triggered`; `RunMetadataConditionalNode` branches on arbitrary
+  context keys. Enables one workflow to route correctly across execution modes
+  without a separate export. Validator softening rule: TUI-only node behind a
+  correct context gate → warning; TUI-only node ungated in a headless-flagged
+  workflow → error. Structural errors (broken connections) remain errors in all
+  modes regardless of gating. Context is read-only, set once at run start by
+  `MasterState`/CLI entrypoint, immutable mid-run.
+
+Updated: `PROJECT_BACKLOG.md` (start node, nested validation, metadata
+conditional sections added to headless future direction; new metadata conditional
+future direction section), `AGENT_HANDOFF.md` (expanded long-range summary).
+
+---
+
+## 2026-06-24 — Architecture Direction: Headless CLI, Trigger Watcher, Multi-Frontend
+
+Branch: `claude/readme-review-main-sync-mtzc25`
+
+Planning session to establish long-range architecture direction and ensure
+current build decisions do not close off future expansion goals. No code
+changes.
+
+Three future directions documented in `PROJECT_BACKLOG.md`:
+
+- **Headless CLI execution (`aotn`).** "Save for headless" exports a duplicate
+  file — the TUI workflow stays the editable source of truth. The export swaps
+  TUI I/O nodes for headless twins with identical port shapes so all graph
+  connections transfer unchanged. Twins default to stdin-prompted interaction;
+  format is inherited from node type (free text / single-index / comma-separated
+  multi-index). Optional `headless_input_mode` per node: `prompted` (default),
+  `cli_arg`, or `static_default`. Nodes with no declared twin block export with
+  a clear error. Configurable data directory required before CLI entrypoint.
+  Full design in `PROJECT_BACKLOG.md` → "Future Direction — Headless CLI Execution".
+- **Always-running trigger watcher.** A non-terminating headless workflow that
+  monitors for external events and dispatches sub-workflows when conditions fire.
+  Requires: trigger node primitives that block on external events (exempt from
+  `node_timeout_seconds`), deliberate loop/cycle support in the workflow model,
+  a resource lifecycle that does not assume terminal-path cleanup, and sub-workflow
+  execution isolation so dispatched runs do not share `MasterState` context with
+  the watcher. Depends on headless CLI and nested workflows (Phases 19/20).
+- **Multi-frontend expansion.** TUI, Chrome extension, and desktop GUI all as
+  thin clients to a shared backend HTTP + WebSocket server. The backend has no
+  frontend imports today — the load-bearing separation holds. The eventual
+  structural shift is extracting the backend into a standalone process; the TUI
+  either becomes a thin client or keeps a direct in-process path.
+
+Key invariants to enforce from now on, added to `AGENT_HANDOFF.md` and
+`MASTER_BUILD_PLAN.md` standing rules:
+
+1. No frontend imports in backend code.
+2. EventBus payloads must remain JSON-serializable — no Python objects, Textual
+   widgets, or reactive references.
+3. No non-serializable Textual state stored on `MasterState`.
+4. All new event payloads carry `run_id` for future multi-run and multi-frontend
+   isolation.
+
+Updated: `PROJECT_BACKLOG.md` (three new Future Direction sections),
+`AGENT_HANDOFF.md` (Long-Range Direction section + invariants),
+`MASTER_BUILD_PLAN.md` (three far-future roadmap phases + two standing rules).
+
+---
+
+## 2026-06-23 — Editor Details Panel: Configured Contract Layout
+
+Branch: `claude/attackofthenodes-frontend-design-nn6put`
+
+Reformatted the editor's right-hand `#node-details` panel to use the node
+selector's contract layout and labeling conventions, specialized to how the
+node instance is wired and configured.
+
+**`frontend/io_contract.py` (new):** Shared `TYPE_COLOR`, `type_label()`, and
+`wrap_dim()` (hanging-indent wrap) used by both the selector and the editor.
+
+**`frontend/screens/node_selector.py`:** Now imports the shared helpers;
+`_wrap_dim` delegates to `io_contract.wrap_dim`, `_fmt_port` uses `type_label`.
+Dropped the local `textwrap` import.
+
+**`frontend/screens/editor.py`:**
+- Rewrote `_format_node_details` to the new header (Name / Description /
+  Family / Tags), a runtime block (Depth / Breakpoint / Avg Time), then
+  `Inputs:` / `Outputs:` sections in the selector's 3-line port style.
+- Per-port `└─<` / `└─>` lines name the configured producer/target node(s)
+  when connected; otherwise fall back to allowed source/destination kinds, or
+  bold `↔ pass-thru` for pass-through outputs.
+- Vault reads/writes render as `key [vault]` entries.
+- Added `_detail_width`/`_wrap_detail` + `on_resize` so the panel re-wraps to
+  its column width; port names honor config overrides via the existing
+  `input_display_name`/`output_display_name` helpers.
+- Removed the now-dead `_metadata_subcategories`, `_format_io_summary`,
+  `_format_transient_input_lines`, `_format_transient_output_lines`,
+  `_format_memory_lines`, and the `Kind:`/`Step:`/`About:` labels.
+
+**`tests/test_debug_nodes.py`:** Added
+`test_editor_details_panel_uses_contract_layout`; updated the editor quick-view
+and depth-counter assertions to the new format.
+
+**`docs/IO_CONTRACT_UI_DESIGN.md`:** Documented the editor details layout and
+marked the phase Done (2026-06-23).
+
+---
+
+## 2026-06-22 — Track B Phase 3: Selector Drill-in Navigation
+
+Branch: `claude/attackofthenodes-frontend-design-nn6put`
+
+`D`/`→` on a group row in the node selector now drills into a quick-list
+that appears at the top of the right detail panel (up to 6 members, sorted
+alphabetically). Navigating the quick list with `W`/`S` updates the I/O
+contract below. `E` adds the highlighted node directly. `A`/`←` returns
+focus to the left list. Tab switching and filter typing auto-exit.
+The full `GroupBrowserScreen` remains deferred.
+
+**`frontend/screens/node_selector.py`:**
+- `__init__`: Added `_drilled_in`, `_quick_list_members`, `_quick_list_nodes`.
+- `compose()`: Added `ListView(id="node-quick-list")` before the contract
+  `Static` in the detail panel; added `id="selector-help"` to help text.
+- New methods: `_enter_quick_list`, `_exit_quick_list`, `_reset_drill_in`,
+  `_move_quick_list`, `_update_quick_detail`, `_sync_help_text`.
+- `action_cursor_right`: Drills in when list focus is on a group entry.
+- `action_cursor_left`: Exits drill-in when `_drilled_in`.
+- `action_cursor_up/down`: Delegates to `_move_quick_list` when in quick list.
+- `action_choose`: Adds the quick-list-selected type when drilled in.
+- `on_list_view_highlighted/selected`: Updated for quick list events.
+- `_render_group_detail`: Added `D/→ = quick list` hint.
+- `_apply_filter`, `_set_active_tab`: Call `_reset_drill_in` on state change.
+
+**`frontend/styles.tcss`:** Added `.node-quick-list` and
+`.node-quick-list ListItem` rules.
+
+**`tests/test_debug_nodes.py`:** Added `test_node_selector_group_drill_in`.
+
+**`docs/IO_CONTRACT_UI_DESIGN.md`:** Updated phase table — Drill-in nav
+marked Done (2026-06-22).
+
+---
+
+## 2026-06-22 — Track B Phase 4c: ⚠ Badge on Editor Node Cards
+
+Branch: `claude/attackofthenodes-frontend-design-nn6put`
+
+Node cards in the editor now show a `⚠` glyph when the last `V`
+(validate) run flagged that node with errors or warnings. The badge clears
+when validation runs clean. Driven by last-run result (Option A from the
+design); continuous background checking remains a backlog item.
+
+**`frontend/widgets/node_card.py`:**
+- `NodeCard.__init__` accepts `has_warning: bool = False`.
+- `refresh_card()` prepends `"⚠ "` to `main_text` when set — visible in
+  both the simple single-line and the 4-line identity-box display paths.
+
+**`frontend/widgets/node_list.py`:**
+- `refresh_rows()` accepts `flagged_node_ids: set | None` and passes
+  `has_warning=node_id in flagged_node_ids` when constructing each `NodeCard`.
+- `_append_row()` receives `flagged_node_ids` as an optional parameter.
+
+**`frontend/screens/editor.py`:**
+- `EditorScreen.__init__` initialises `self._flagged_node_ids: set[str] = set()`.
+- `action_validate_workflow()` computes the flagged set from the union of
+  error and warning `node_id` fields, stores it, then calls
+  `refresh_from_backend()` so badges appear immediately.
+- `refresh_from_backend()` passes `flagged_node_ids=self._flagged_node_ids`
+  to `node_list.refresh_rows()`.
+
+**`tests/test_debug_nodes.py`:** added `test_node_card_warning_badge_appears_when_flagged`.
+
+**`docs/IO_CONTRACT_UI_DESIGN.md`:** updated phase table — Tab fix, Selector
+panel, and ⚠ badge marked Done (2026-06-22).
+
+---
+
+## 2026-06-22 — Selector Taxonomy: Five Family Tabs (retire I/O toggle)
+
+Branch: `claude/attackofthenodes-frontend-design-nn6put`
+
+Owner decision: split the combined `I/O` tab into separate Inputs and Outputs
+tabs so the Outputs family can grow its own identity (live UI-display nodes that
+render data on screen during workflow execution; richer user-input nodes less
+commonly on the Inputs side).
+
+**`frontend/screens/node_selector.py`:**
+- `TABS = ["In", "Flow Control", "Utility", "Out", "Complex"]` — five tabs,
+  hotkeys 1–5, ordered to read like data flow (in → process → out).
+- Added `TAB_FAMILY` mapping so abbreviated `In`/`Out` display labels resolve to
+  the `Inputs`/`Outputs` backend `primary_family` values; the other three are 1:1.
+- Removed the entire I/O segmented toggle: `IO_TAB`, `_io_output_side`,
+  `_sync_io_toggle`, `_set_io_side`, `_active_io_button`, `_focus_active_io_button`,
+  the `io-direction-row`/`io-side-input`/`io-side-output` widgets, and their
+  branches in `on_button_pressed`, `action_choose`, and `_nav_widgets`.
+- `_active_family()` simplified to `TAB_FAMILY.get(...)`. Added `jump_tab(5)`
+  binding. Help text `1-4 tabs` → `1-5 tabs`.
+- Now maps 1:1 to the five backend families — closes the "Selector Family
+  Taxonomy Reconciliation" backlog item.
+
+**`frontend/styles.tcss`:** removed dead `#io-direction-row` and
+`.segmented-toggle` rules.
+
+**Tests (`tests/test_debug_nodes.py`):**
+- Rewrote `test_node_selector_io_toggle_keyboard_contract` →
+  `test_node_selector_tab_keyboard_contract` (number-key tab switching across
+  the five tabs; added to the script runner list).
+- Updated `test_node_selector_uses_family_tabs` (default tab `In`/Inputs, `Out`
+  tab for Outputs, explicit `_set_active_tab` for the new order).
+- Updated `test_node_selector_layout_is_compact` (no I/O toggle row; list sits
+  below the filter).
+- Updated `test_node_selector_rows_are_one_line_with_detail` to assert the new
+  master-detail contract panel render (was asserting the old single-line detail).
+
+**Docs:** `IO_CONTRACT_UI_DESIGN.md` (mockup + taxonomy note),
+`UI_QUICK_REFERENCE.md`, `PHASE_17_NODE_VISUAL_IDENTITY.md` (2026-06-22 revision
+callout), `PROJECT_BACKLOG.md` (closed reconciliation item, added Outputs
+UI-display future direction).
+
+**Verified:** installed `rich`/`textual`/`pytest-asyncio` in the session env and
+ran the real UI suite — **full `tests/` suite 331 passed**. (Earlier in the
+session these were uncollectable due to missing packages.)
+
+## 2026-06-22 — Track B Phase 1: Tab Fix + Selector Master-Detail
+
+Branch: `claude/attackofthenodes-frontend-design-nn6put`
+
+**Design decisions finalized (from Track B planning session):**
+- Type mismatch display: Option B (amber `[type]` label) as fallback; primary prevention is dropdown type filtering.
+- Vault incompatibles: hidden entirely from dropdown (no divider).
+- Legacy nodes (no `inputs:` block): silent fallback to flat Source tab.
+- ⚠ badge: driven by last `V` (validate) run (Option A); Option B (continuous) is backlog.
+- Spec written to `docs/IO_CONTRACT_UI_DESIGN.md`.
+
+**Tab-sticking fix (`frontend/screens/node_config.py` + `frontend/styles.tcss`):**
+- Removed the outer `VerticalScroll(id="node-config-scroll")` that wrapped `TabbedContent` in `NodeConfigScreen.compose()`. When the form scrolled, the tab bar scrolled away with it.
+- `TabbedContent` is now a direct child of the modal `Vertical` — pinned at the top.
+- Each `TabPane` (`1-Source`, `2-Parameters`, `3-Payloads`, `4-Connections`) contains its own `VerticalScroll(classes="tab-scroll")`. Same fix applied to `_compose_branch_config_tabs`.
+- Non-tabbed modal paths (Merge node, Branch End) keep a flat `VerticalScroll(id="node-config-scroll")` so legacy scroll-helper code still falls back correctly.
+- `_scroll_container()` updated: tries to find the active pane's `.tab-scroll` first, falls back to `#node-config-scroll`.
+- `on_mount()` updated: disables focus on all `.tab-scroll` and `#node-config-scroll` containers.
+- `_move_keyboard_focus()`, `_scroll_config_widget_into_view()`, `_focus_first_config_tab_widget()` all updated to use `_scroll_container()` instead of direct `#node-config-scroll` query.
+- CSS: added `.tab-scroll { height: 1fr; overflow-y: auto; }` and `#node-config-tabs { height: 1fr; }`.
+- **This fixes the critical tab-disappearing bug on dense config forms.**
+
+**Selector master-detail (`frontend/screens/node_selector.py` + `frontend/styles.tcss`):**
+- Replaced the single-line `Static("", id="node-detail")` with a horizontal split: `ListView` (40%) + `VerticalScroll(id="node-detail-panel")` (60%) inside a `Horizontal(id="node-selector-body")`.
+- `_update_detail()` now renders a full multi-line I/O contract instead of a truncated one-liner.
+- Added `_render_node_contract()`: displays display name + description + Required Inputs / Optional Inputs / Required Outputs / Optional Outputs sections in 3-line-per-port format (`name* [type]` / description / `└─< sources` or `└─> dests`). Type labels use VS Code Dark+ teal `#4EC9B0` via Rich markup.
+- Added `_render_group_detail()`: shows group name, description, member list, and hint text.
+- Added `_fmt_port()` helper for per-port Rich markup formatting.
+- CSS: `#node-selector-body { height: 1fr }`, `#node-type-list` narrowed to 40% width, `#node-detail-panel` 60% width with left border. `.node-detail` changed from single-line `height: 1` to expanding content style.
+
+**Test baseline verified:** 138 failed / 189 passed before and after (all failures are pre-existing environment issues: missing `rich` and `pytest-asyncio` packages in system Python; no regressions introduced).
+
+## 2026-06-19 — Docs: Reconcile Removed Subcategory Filter
+
+- Follow-up to step 4: updated the UI docs that still described the removed
+  subcategory filter-checkbox column. `UI_QUICK_REFERENCE.md` and `TUI_DESIGN.md`
+  fully reconciled — no subcategory checkboxes, focus lands on the string filter,
+  `tags` are freeform search keywords, details panel shows the per-port contract.
+- `PHASE_17_NODE_VISUAL_IDENTITY.md` (the authoritative selector/visual-identity
+  design doc, woven through with the subcategory concept): added a prominent
+  "Revision — 2026-06-19" callout superseding the subcategory-filter design, and
+  surgically fixed the most concrete false-existence claims (the per-tab filter
+  table, the `tags` metadata description, the editor-row identity line, the
+  details-panel statement). The deeper narrative rewrite is deliberately folded
+  into the upcoming selector UI redesign rather than duplicated here.
+- Branch `codex/docs-subcategory-reconcile` → fast-forwarded into `main`.
+
+## 2026-06-19 — Track A Step 4 (owner-revised): Retire Subcategory Filter
+
+- Continued on `codex/canonical-data-types` (after step 3). **Owner revised the
+  adopted handoff:** the Category > Family > Type rename (§2.1/§3) is
+  **cancelled** — the top tier keeps `primary_family` ("family") and the variant
+  grouping keeps `group`. Instead, step 4 became **retiring the subcategory
+  taxonomy** (`tags`), "never utilized correctly." Chosen scope (owner): remove
+  the subcategory filter UI, keep `tags` as freeform search keywords.
+- Frontend: removed the subcategory **filter-checkbox column** and all its
+  machinery from `frontend/screens/node_selector.py` — the
+  `#node-subcategory-filters` block, the `_selected_subcategories` filtering in
+  `_apply_filter`, `on_checkbox_changed`, `_sync_subcategory_filter_visibility`,
+  `_sync_selected_subcategories`, `_visible_subcategory_checkboxes`, the
+  `TAB_FILTER_TAGS`/`ALL_FILTER_TAGS` constants, and the `Checkbox` import.
+  `tags` still feed `_matches_query` (search). Dropped the matching
+  `#node-subcategory-filters` rule from `styles.tcss`.
+- Helper: dropped the rigid `VALID_TAGS` enforcement in
+  `aotn_node_helper/generator.py`; tags are now freeform (any non-empty string).
+- Tests: reworked the three selector tests in `test_debug_nodes.py` that
+  depended on the filter checkboxes — renamed to drop "checkboxes/subcategory"
+  and re-pointed navigation through the filter input; updated the runner list.
+  Updated `test_node_helper.py` to assert freeform tags are accepted (was
+  asserting rejection).
+- Verified: `compileall -q .` clean; **full suite 331 passed**.
+- Scope held: NO rename of `primary_family`/`group`/`category` (cancelled by
+  owner); `tags` retained for search only. Docs: handoff Revision callout,
+  `PROJECT_KNOWLEDGE.md`, `NODE_HELPER.md`. **Follow-up:** `PHASE_17_NODE_VISUAL_
+  IDENTITY.md`, `TUI_DESIGN.md`, and `UI_QUICK_REFERENCE.md` still describe the
+  removed subcategory filter UI and need a reconciliation pass.
+
+## 2026-06-19 — Track A Step 3: Unified inputs:/outputs: Helper Spec
+
+- Continued on `codex/canonical-data-types` (after step 2). Track A step 3 (§7):
+  unified `inputs:` / `outputs:` helper-spec blocks carrying the full per-port
+  contract, plus generator/check/test updates and one regenerated reference
+  node. Read §7 precisely: it replaces `input_sources` + `input_port_metadata`
+  (→ `inputs:`) and `output_port_metadata` (→ `outputs:`); node-level
+  `output_routing` (Payloads config) is unchanged. Implemented additively so the
+  six existing legacy specs keep generating.
+- `aotn_node_helper/generator.py`: added `_expand_inputs_block` /
+  `_expand_outputs_block` / `_contract_metadata`, and refactored the per-input
+  source expansion into a shared `_input_source_fields` so the unified `inputs:`
+  block and the legacy `input_sources` section emit byte-identical
+  Source/Parameters fields. Port lists derive from the block keys; declaring a
+  block alongside its legacy section (or `input_ports`/`output_ports`) is
+  rejected. Port metadata now carries `data_type` / `required` / `sources`
+  (inputs) and `data_type` / `required` / `to` / `pass_through` (outputs).
+  Unknown port types **warn** (stderr), matching §5's soft-convention intent;
+  `boolean` canonicalizes to `bool`. Added a local `CANONICAL_DATA_TYPES` mirror
+  (kept in sync with `backend/data_types.py`, same pattern as `VALID_FAMILIES`).
+  Render type hints for port metadata widened to `Dict[str, Dict[str, Any]]`;
+  the generated focused test now asserts the per-port contract is exposed.
+- Regenerated the reference node `example_file_instance_node` from the rewritten
+  unified spec (`--force`). Diff confirms `config_schema` is **byte-for-byte
+  unchanged** (round-trip equivalence — the `file_path_*` selectors are
+  identical) while the port metadata gains the contract (`data_type` file/bool,
+  `required`, `sources`/`to`, `pass_through`). Its input port is renamed
+  `input → file_path` so the port name and source-field prefix are one name (the
+  point of the unified model). `check_node` and `check_ui` both pass.
+- Updated `tests/test_node_contract.py` (the step-2 assertion that the reference
+  node had no declared type now asserts the declared bool/file contract).
+  Added `tests/test_node_helper.py` cases: unified block emits the same
+  selectors + adds contract, rejects legacy-section mix, rejects unknown `to`
+  destinations, and warns (without raising) on an unknown port type.
+- Verified: `compileall -q .` clean; helper + contract + data-type tests 26
+  passed; **full suite 331 passed** (was 328; +3 new helper tests).
+- Scope held: only ONE node regenerated (mass regeneration deferred, §11);
+  Payloads routing still per-node via `output_routing` (per-port routing config
+  is Track B step 7); no rename of `primary_family→category` / `group→family`
+  (step 4). Docs: `NODE_HELPER.md` (new Unified inputs:/outputs: Blocks section).
+
+## 2026-06-19 — Track A Step 2: Per-Port I/O Contract Fields
+
+- Continued on `codex/canonical-data-types` (after the step 1 commit). Track A
+  step 2 (§4/§6): add the per-port contract fields to node classes and expose
+  them through `NodeFactory`, additive with documented defaults.
+- `node_base.py`: documented the `input_port_metadata` / `output_port_metadata`
+  contract (now `Dict[str, Dict[str, Any]]`) and added
+  `_validate_port_data_types()`, called from `__init_subclass__`, which warns
+  (not raises) via `data_types.validate_type` when a declared port `data_type`
+  is outside the canonical set. This is the helper-facing validation surface the
+  step 1 note promised, wired at class-definition time.
+- `node_factory.py` `_port_metadata`: fills the §6 forward-compat defaults on
+  exposure — absent `data_type` ⇒ `any`, absent `required` ⇒ `False` — and
+  canonicalizes declared types (deprecated `boolean` ⇒ `bool`) via
+  `coerce_type`. Existing nodes (which declare neither field) now expose
+  `data_type: "any"` / `required: false` on every port with no node-file edits.
+- Tests: `tests/test_node_contract.py` (defaults on every registered port,
+  absent ⇒ any/optional, canonicalize+coerce, declared metadata survives
+  exposure, unknown port type warns at class definition, canonical/alias types
+  stay quiet). Verified: `compileall -q .` clean; `test_node_contract.py` +
+  `test_data_types.py` 15 passed; `test_debug_nodes.py` + `test_node_helper.py`
+  + `test_typed_vault.py` 150 passed; **full suite 328 passed**.
+- Scope held: no node files regenerated (defaults are filled at exposure, so no
+  per-node `required`/`data_type` were authored — that reference-node pass is
+  step 3); `from:` / `to:` routing destinations are **not** exposed yet (they
+  belong to the unified helper-spec step 3); validator does not yet consume
+  `required` for incomplete-input detection (deferred with the frontend
+  coloring per §6). No rename (step 4). Docs: `NODE_STANDARDS.md` (new Per-Port
+  Contract Metadata section), `PROJECT_KNOWLEDGE.md` (metadata-exposure note).
+
+## 2026-06-19 — Track A Step 1: Canonical Data-Type Module
+
+- Branched `codex/canonical-data-types` from `main` @ `872ae66` (Add adopted
+  Node Standardization Handoff doc). `git fetch` left the local base as the
+  freshest reachable commit (SSL trust issue, per repo norm).
+- Implemented `NODE_STANDARDIZATION_HANDOFF.md` Track A step 1 (§5): new
+  `backend/data_types.py` is the single source of truth for the coarse
+  data-type vocabulary shared by node port data types **and** typed vault-entry
+  tags. Canonical set: `string`, `number`, `bool`, `var`, `file`, `ai_session`,
+  `any`. `file`/`ai_session` are RunSession-backed reference types; `any` is the
+  explicit permissive default (no silent untyped).
+- **Reconciled** the vault-vs-port spelling conflict the handoff flagged: the
+  typed-vault docs spelled boolean `boolean`; §5 (authoritative) uses `bool`.
+  Canonical is now `bool`; `boolean` survives only as a deprecated alias that
+  `canonicalize()` maps to `bool`, so older specs / saved workflows still
+  resolve. No code stored the `boolean` literal (only docs + the `ai_session`
+  literal in the validator), so the reconciliation is doc + alias only.
+- Routed the one existing typed-vault consumer through the module: `validator.py`
+  now compares against `DataType.AI_SESSION.value` instead of a free `"ai_session"`
+  string. MemoryBank stores free `type_tag`s and is unchanged (no validation
+  there); the validator is the meaningful single consumer today.
+- Public surface: `DataType` enum, `CANONICAL_TYPES`, `REFERENCE_TYPES`,
+  `DEFAULT_TYPE`, `LEGACY_ALIASES`, `UnknownDataTypeWarning`, and functions
+  `is_valid_type`, `validate_type` (helper-facing — warns on unknown),
+  `is_reference_type`, `canonicalize`, `coerce_type`, `port_data_types`,
+  `vault_entry_types`, `unknown_types`.
+- Tests: `tests/test_data_types.py` (canonical set, membership/validation,
+  bool-not-boolean, reference types, explicit-`any` default, unknown-type
+  warning, canonical-types-do-not-warn, vault/port lists agree). Verified:
+  `compileall -q .` clean; `test_data_types.py` + `test_typed_vault.py` 18
+  passed; `test_debug_nodes.py` 133 passed.
+- Stayed in scope: no contract schema fields on node classes (step 2), no
+  `primary_family→category` / `group→family` rename (step 4), no node
+  regeneration or frontend selector edits. Docs touched: `NODE_STANDARDS.md`
+  (Typed Vault Outputs), `PROJECT_KNOWLEDGE.md` (vault paragraph + Backend
+  Components). Nothing required owner escalation — the only conflict (`boolean`
+  vs `bool`) was resolved by the handoff itself.
+
+## 2026-06-19 — Node Standardization Handoff Adopted
+
+- Added `NODE_STANDARDIZATION_HANDOFF.md` (status: Adopted) — the design handoff
+  consolidating the per-node I/O contract, Category > Family > Type rename,
+  canonical data-type vocabulary, unified `inputs:`/`outputs:` helper spec, and
+  master-detail selector into one implementation plan.
+- Owner signed off the four §2 open decisions: (1) terminology rename approved,
+  reusing the existing `category` key as canonical and retiring the
+  `primary_family`/`legacy_category` aliases (`group → family`, `type`
+  untouched); (2) drill-in family navigation; (3) one-line-per-port `to:`
+  display in the detail panel; (4) no behavior badge — description carries
+  behavior. Folded these into §2 (locked) and the affected body sections.
+- Wired the router: README Document Directory row under Node Authoring + a
+  `DOCS_MIGRATION_NOTES.md` "added" entry. Whitespace/LF clean.
+- Not yet implemented — this is the plan. Next: Track A step 1 (canonical
+  data-type module, §5). Track A step 4 (rename) runs after the contract schema
+  work to avoid double-churning the same files.
+
+## 2026-06-19 — Docs Audit: Taxonomy + Catalog Drift Fixes
+
+- Ran the docs audit (active docs only) on `main` @ `2b681f2`. Verified
+  environment: Python 3.14.4, Textual 8.2.7; registry has 35 nodes across 5
+  families (Inputs, Outputs, Flow Control, Utility, Complex); backend has no
+  `frontend` imports; `test_debug_nodes.py` 133 passed. Router integrity OK
+  (all 19 active docs + 7 archive entries resolve).
+- DRIFT (doc-vs-doc, Known Finding #1): `PROJECT_KNOWLEDGE.md` "Planned Node
+  Taxonomy" listed four families with Utility as a subcategory. Reconciled to
+  Phase 17's five families (Utility promoted) + four-tab / I/O-switch note.
+  PHASE_17 is authoritative. Left the subcategory/`tags` concept intact
+  (Known Finding #3 retirement still awaits owner decision).
+- DRIFT (doc-vs-code): `NODE_CATALOG.md` omitted/mis-statused 4 live registered
+  nodes. Added `http_request_node` (HTTP Request, Live) under Data Source;
+  marked `text_transform_node` and `json_path_node` rows Live with `Maps from`;
+  added `random_number_node` (Random Number, Live) under Data Transform.
+- Did not edit `primary_family`/`tags` terminology in PROJECT_KNOWLEDGE or
+  PHASE_17 (Known Findings #2 and #3 await owner decision).
+
+## 2026-06-17 — Tabbed UI Keyboard Navigation Rework
+
+- Branched `codex/keyboard-nav-rework` from `codex/textual-ui-overhaul`
+  (commit `0bba5f6`, the just-committed Phase 17 visual overhaul), which is
+  `main` + node-type-constants + the overhaul. `git fetch` is blocked by a
+  local SSL trust issue, so the freshest reachable base was the local commit.
+- WS1 — Row-based 2D navigation in the shared modules: added
+  `group_widgets_into_rows` / `row_move_target` / `within_row_target` to
+  `command_navigation.py` (rows grouped by nearest `Horizontal` ancestor, then
+  by visual line, else one-per-row). `CommandScreenMixin` now moves W/S between
+  rows (preserving column) and A/D within a row, gated so single-widget rows
+  fall through to caret movement.
+- WS1-apply — `node_config` and `node_selector` dropped A/D-as-tab-switch
+  (including `CommandInput`'s `_run_screen_tab_action`); A/D is within-row. The
+  selector I/O control is a two-button row (A/D between sides, E selects).
+- WS2 — Number keys `1`–`5` jump tabs (gated to nav mode, no-op past the count);
+  tab headers numbered `N - Label` in config and selector.
+- WS3 — Verified the execution input prompt already uses `auto_edit_on_focus`.
+- WS4 — `activate_command_widget` single-press toggles `Checkbox`/`Switch`.
+- Stacked-widget audit (one-line rows of focusable widgets in command-mode
+  screens): `node_selector` `node-family-tabs` (4 tab buttons) and
+  `io-direction-row` (2-button I/O toggle). The simple modals
+  (`confirm`/`error_details`/`user_input`) have `button-row` Horizontals but
+  drive them with dedicated letter keys; the row model now also makes those
+  navigable. `node_config` has no horizontal rows.
+- Tests updated to the new contract and new tests added (row nav, within-row
+  A/D, number jumps, digit-types-while-editing, single-press toggle). Full
+  suite green: 311 passed.
+- Flagged the selector family-taxonomy discrepancy (docs say Inputs/Outputs;
+  code uses I/O + Utility) as a separate follow-up in `PROJECT_BACKLOG.md`.
+
+## 2026-06-17 — Frontend Node-Type Constants Pass
+
+- Started from branch `codex/node-type-constants` at `64dfb52`, after
+  fast-forwarding `main` from `origin/main`.
+- Added `frontend.node_types` as the frontend-owned home for structural node
+  type identifiers used by editor/control-room behavior:
+  `start_node`, `end_node`, `branch_node`, `branch_end_node`, `merge_node`,
+  `text_output_node`, `tombstone_node`, and `wait_until_node`.
+- Replaced repeated frontend literals in app startup, editor traversal/delete
+  logic, editor workflow adapter tombstone/branch pruning logic, node config
+  merge/wait/branch handling, node selector hiding, node card rendering, and
+  node I/O display helpers.
+- Preserved persisted workflow data shape: node `type` values remain the same
+  strings. No branch pruning, merge deletion, tombstone restore, selector, or
+  runtime logic was intentionally changed.
+- Left test workflow fixture literals in place unless production imports
+  benefited directly; those fixtures document saved/workflow data shapes.
+- Deferred membank-registry consolidation and branch-port list consolidation
+  to their separate passes.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "tombstone or branch_end or merge_node or node_selector or editor"` (41 passed)
+  - `../.venv/bin/python -m pytest tests/test_branch_prune.py tests/test_branch_health.py tests/test_tombstone_restore.py tests/test_tombstone_migration.py tests/test_tombstone_phase_b.py -v` (58 passed)
+  - `../.venv/bin/python -m pytest -q` (308 passed)
+
+## 2026-06-16 — Frontend Review Cleanup Pass
+
+- Started from branch `codex/frontend-review-cleanups` at `03e6432`, aligned
+  with `origin/main` after PR #20.
+- Continued the frontend convention review from the Pass 1/2/3 inventory.
+- `EditorScreen._metadata_for_type()` and `NodeConfigScreen._metadata_for_type()`
+  now delegate to the shared `frontend.node_io_display.metadata_for_type()`
+  helper.
+- `NodeConfigScreen` now uses the shared membank normalizers from
+  `frontend.node_io_display` instead of maintaining duplicate definitions.
+- Removed unused `EditorScreen._format_input_ports()` and
+  `_format_output_ports()`.
+- Deferred wider follow-ups to separate passes: node-type constants,
+  membank-registry consolidation, branch-port list consolidation, and selector
+  tab-name docs drift.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "node_config or editor_identity_rows or quick_view or payloads_tab or command_inputs"` (20 passed)
+  - `../.venv/bin/python -m pytest tests -v` (308 passed)
+
+## 2026-06-16 — Branch Pruning Ignores Unreachable Merge Feeds
+
+- Continued debugging on branch `delete_branch_bug` after pulling
+  `origin/delete_branch_bug`.
+- Found a remaining branch-prune gap: `prune_branch_tombstone()` preserved a
+  `merge_node` whenever any input source existed outside the pruned set, even
+  if that source was itself unreachable from `start` after the branch tombstone
+  was removed. That could leave merge tails alive in `_nodes`, and the
+  validator would still report them as unreachable after the editor appeared to
+  have pruned the branch.
+- Fixed merge preservation to use post-prune reachability: simulate removing
+  the branch tombstone and current prune set, add the kept-path upstream
+  rewire, and only count merge input sources reachable in that future graph.
+  Reachable alternate feeds still preserve the merge; loose/unreachable feeds
+  no longer do.
+- Added focused coverage for both cases in `tests/test_branch_prune.py`,
+  including a validation assertion for the surviving-feed path.
+- Verification:
+  - `../.venv/bin/python -m pytest tests/test_branch_prune.py -v` (15 passed)
+
+## 2026-06-16 — Merge Delete Rewires Home Branch and Flags Open Beacons
+
+- Reported as: deleting a `merge_node` made downstream nodes disappear from
+  the usable path. Desired behavior is to delete only the merge node, bridge
+  the branch where the merge lived to the immediate downstream node when ports
+  are compatible, and disconnect Merge Beacon inputs from other branches so
+  the user can rewire them manually.
+- Fixed `EditorWorkflowAdapter.remove_placeholder()` with a merge-specific
+  reconnect path: after `WorkflowMap.delete_node()` removes the merge and all
+  beacon→merge references, the adapter reconnects the non-`branch_end_node`
+  upstream input to the merge's direct downstream output if both ports are
+  declared and currently open. Beacon branches are intentionally not rewired.
+- `validate_workflow()` now uses backend branch-health derivation to warn when
+  a branch reaches a Merge Beacon that is not connected to a merge node, so
+  disconnected beacons left by merge deletion surface as repair work.
+- Updated editor and branch-health tests for the new contract.
+- Verification:
+  - `.venv/bin/python -m pytest AttackOfTheNodes/tests/test_debug_nodes.py -v -k "merge_node_delete or merge_beacon or branch_end or branch_keep"` (11 passed)
+  - `.venv/bin/python -m pytest AttackOfTheNodes/tests/test_branch_health.py -v` (15 passed)
+  - `.venv/bin/python -m pytest AttackOfTheNodes/tests/test_branch_prune.py -v` (15 passed)
+
+## 2026-06-16 — Branch Pruning Treats Output Nodes as Terminal Boundaries
+
+- Reported as: deleting a branch could leave a `text_output_node` from the
+  pruned branch alive in validation even though the editor no longer showed a
+  reachable path to it.
+- Decided against a mutable `valid_branch_end` config flag. The boundary is a
+  node-type contract, so pruning now derives terminal behavior from node
+  semantics: Outputs-family nodes, `text_output_node`, `end_node`, and Merge
+  Beacons are inclusive branch-prune boundaries.
+- Updated `prune_branch_tombstone()` so terminal nodes on non-kept branches are
+  deleted but traversal does not continue past them. Merge Beacons remain a
+  special terminal: they are deleted and any connected `merge_node` is still
+  evaluated for orphan cleanup.
+- Added a regression proving a pruned branch ending at `text_output_node`
+  removes that output node and validation no longer reports it.
+- Verification:
+  - `.venv/bin/python -m pytest AttackOfTheNodes/tests/test_branch_prune.py -v` (16 passed)
+  - `.venv/bin/python -m pytest AttackOfTheNodes/tests/test_branch_health.py -v` (15 passed)
+  - `.venv/bin/python -m pytest AttackOfTheNodes/tests/test_debug_nodes.py -v -k "merge_node_delete or merge_beacon or branch_end or branch_keep"` (11 passed)
+
+## 2026-06-16 — Kept Merge Beacon Branch Drops Old Merge Output
+
+- Reported as: simple branch workflow with path A containing a `merge_node` and
+  path B containing a Merge Beacon connected to that merge. Deleting the branch
+  node, keeping the Merge Beacon branch, and pruning the merge branch left the
+  old merge connection in the kept beacon's later tombstone metadata; deleting
+  the beacon then rendered the pruned merge below the tombstone.
+- Root cause: branch-prune survival checks simulated future reachability by
+  following the kept branch head's current outputs. For a kept Merge Beacon,
+  that meant following its pre-prune output into the merge and treating the
+  merge as still live.
+- Fixed: Merge Beacons are now included in `_is_branch_prune_terminal()`.
+  `prune_branch_tombstone()` disconnects outputs from the kept branch terminal
+  before resolving pending merges, and the future-reachability simulation stops
+  at terminal nodes. The kept beacon remains as an open terminal, while the
+  old merge is pruned and cannot be captured in later tombstone
+  `original_outputs`.
+- Added a regression covering the exact keep-beacon/prune-merge sequence and
+  later beacon tombstone materialization.
+- Verification:
+  - `.venv/bin/python -m pytest tests/test_branch_prune.py -v` (17 passed)
+  - `.venv/bin/python -m pytest tests/test_branch_health.py -v` (15 passed)
+  - `.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "merge_node_delete or merge_beacon or branch_end or branch_keep"` (11 passed)
+  - `.venv/bin/python -m compileall -q .`
+
+## 2026-06-16 — Kept Merge Branch Preserves Merge Downstream Nodes
+
+- Reported as the mirror case of the kept-beacon fix: path A contains a
+  `merge_node` and downstream output node, path B contains a Merge Beacon
+  connected to that merge. Deleting the branch node and keeping path A pruned
+  the beacon branch, but also pruned the merge's downstream nodes.
+- Root cause: pending merge cleanup only considered the merge's old input
+  sources. In the kept-merge case, the old input source is the deleted branch
+  node, but the future graph rewires the branch node's upstream directly into
+  the merge. The cleanup therefore misclassified the kept merge as orphaned
+  and cascaded into its downstream nodes.
+- Fixed pending merge resolution to treat the kept branch head as live when it
+  is the pending `merge_node` and it is reachable in the simulated future graph.
+  The pruned Merge Beacon branch is still deleted; the kept merge and its
+  downstream output chain remain intact.
+- Added a regression for path A `merge_node -> text_output_node`, path B
+  `Merge Beacon -> same merge`, keep path A.
+- Verification:
+  - `.venv/bin/python -m pytest tests/test_branch_prune.py -v` (18 passed)
+  - `.venv/bin/python -m pytest tests/test_branch_health.py -v` (15 passed)
+  - `.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "merge_node_delete or merge_beacon or branch_end or branch_keep"` (11 passed)
+  - `.venv/bin/python -m compileall -q .`
+
+## 2026-06-16 — Insert Into Empty Branch Now Targets the Branch Being Viewed
+
+- Reported as: switch to an empty parallel branch (`d`), insert a node — it
+  visually shows up there, but switching away and back makes it disappear
+  from that branch and reappear on a different one (whichever branch's port
+  is declared first on the `branch_node`).
+- Root cause: when the active branch path is empty, there is no node to
+  select yet, so the selected row falls back to the `branch_node` itself with
+  `kind: "node"` rather than `kind: "branch_select"`. `_source_for_insert_node()`
+  has a correct `branch_select`-specific case that reads `active_branch_ports`,
+  but the generic `kind: "node"` fallback just used the branch node's first
+  declared output port unconditionally — ignoring which branch was actually
+  being viewed.
+- Fixed: in that fallback, when the selected node has multiple output ports
+  (i.e. it's a branch node) and an active branch port is recorded for it, use
+  that active port instead of always taking the first one.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest -q` (303 passed, includes new
+    `test_editor_insert_into_empty_branch_uses_active_branch_port`)
+  - Reproduced via a standalone Textual pilot script matching the reported key
+    sequence exactly (create branch, fill path_a, `d` to path_b, insert, `a`
+    back to path_a, `a` again) before and after the fix.
+
+## 2026-06-16 — Branch Pruning No Longer Leaves Orphaned Merge Beacons or Merge Nodes
+
+- Reported as: deleting a branch whose non-kept path fed a Merge Beacon (which
+  in turn fed a `merge_node`) left a node behind that the validator flagged as
+  unreachable, even after the workflow looked fully repaired in the editor.
+- Root cause #1: `prune_branch_tombstone()`'s stop-type set included
+  `branch_end_node`, treating Merge Beacons as permanent structure. A beacon
+  belongs exclusively to the one branch it closes, so a beacon reached while
+  pruning a non-kept branch must be deleted along with the rest of that
+  branch, not preserved.
+- Root cause #2 (cascading orphan): `merge_node` was an *unconditional* stop
+  type. If the branch being pruned was a `merge_node`'s only remaining input,
+  the merge_node was left behind fully disconnected from upstream — alive in
+  the workflow but unreachable from start, with no way to fix it short of a
+  manual node delete (re-typing it via the node selector keeps the same
+  disconnected node, since type-swap doesn't restore connections).
+- Fixed: `branch_end_node` removed from the stop-type set entirely. `merge_node`
+  is now a *conditional* stop — pruning resolves each encountered merge_node by
+  checking whether any of its current inputs come from a source outside the
+  pruned set (and outside the branch tombstone itself). If none remain, the
+  merge_node is pruned too, and pruning cascades through its own downstream
+  nodes (re-applying the same check to any further merge_node reached that
+  way). A merge_node with a genuinely surviving feed (another live branch)
+  is still preserved untouched.
+- Confirms the broader guarantee: pruned nodes go through
+  `WorkflowMap.delete_node()`, which removes them from the same `_nodes` dict
+  that gets serialized on save — a pruned node cannot reappear in a save file
+  or in any validator output once `prune_branch_tombstone()` correctly
+  identifies it for pruning.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest -q` (302 passed)
+  - End-to-end repro matching the reported scenario (branch → kept path into
+    merge_node path_a, pruned path → Merge Beacon → merge_node path_b → output):
+    validator returns `{"success": true, "errors": [], "warnings": []}` after
+    pruning, with only 3 nodes left in the workflow.
+
+## 2026-06-16 — Merge Config No Longer Offers Downstream Branches to Close
+
+- `merge_input_options()` listed every `branch_end_node` in the workflow as a
+  candidate to close, including beacons whose owning branch point only starts
+  *after* passing through the merge node being configured. Closing such a
+  branch is structurally backwards (the branch doesn't exist yet at the point
+  the merge runs).
+- Root cause: `_branch_contexts_by_node()`'s DFS stops at every Merge Beacon,
+  so neither a merge node nor anything downstream of it is ever assigned a
+  branch context — `merge_input_options` had no signal to exclude beacons
+  whose branch point is downstream of the merge.
+- Fixed by computing the forward-reachable descendant set of the merge node
+  being configured (`_descendant_node_ids`) and excluding any beacon whose
+  context `branch_id` (the originating branch node) falls in that set.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest -q` (299 passed)
+
+## 2026-06-16 — Merge Beacon Selector Colors Match Connected Merge Branch
+
+- When a Merge Beacon (`branch_end_node`) is connected to a `merge_node`, the
+  beacon's selector row text/connector line and its own gutter/numline color
+  now match the branch that contains the merge node, instead of the beacon's
+  own branch color.
+- Added `_merge_node_branch_color_key()`, which reuses
+  `_branch_choices_to_node()` to find the branch-port decisions leading to the
+  merge node; the last decision's port plus `len(choices) - 1` reproduces the
+  same `branch_path_color_key` that `_build_visible_rows` would assign if that
+  branch were the active view.
+- `_build_visible_rows` now resolves this key for non-placeholder beacons with
+  a connected merge node, stores it on the node dict
+  (`_editor_branch_color_key`) so `NodeCard` picks it up for the gutter, and
+  passes it into `_merge_beacon_select_row` as the row's `active_color_key`.
+  Falls back to `current_branch_color_key` when the beacon has no connected
+  merge node.
+- Merged cleanly on top of the same-session "Merge Node Delete +
+  Stranded-Beacon Visibility Fix" change below, which restructured the same
+  `branch_end_node` block; the manual resolution preserves both the
+  placeholder fall-through fix and this color-key override.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "merge_beacon_selector or node_selector or node_card or editor_depth or branch_end or branch_keep or tombstone"` (18 passed)
+
+## 2026-06-16 — Merge Node Delete + Stranded-Beacon Visibility Fix
+
+Branch: `claude/editor-keyboard-focus-highlight-9fp46y`.
+
+- **`merge_node` is now deletable:** removed `_is_protected_structural_node`
+  (it only ever blocked `merge_node`). Deletion follows the plain single-node
+  rule — `WorkflowMap.delete_node()` already scrubs connection references on
+  both sides, so every Merge Beacon that fed the deleted merge node (and
+  anything downstream of it) simply becomes disconnected. Nothing is
+  auto-rewired; the user reconnects each beacon manually. Dropped the now-dead
+  `cannot_delete_structural_node` notification.
+- **Merge Beacon delete already matched spec:** verified
+  `_prune_merge_config_for_beacon` / `_disconnect_beacon_merge_outputs` only
+  severs the one beacon→merge connection (and that beacon's stale entry in
+  `branches_to_close`), leaving other branches and the merge node untouched.
+- **Fixed the "stranded node" bug:** `_build_visible_rows` had an unconditional
+  `break` on `branch_end_node` rows, even when the beacon was only
+  soft-tombstoned (first delete press). Soft-delete never touches backend
+  connections, so this made everything past the beacon — including the
+  `merge_node` and its downstream — disappear from the editor despite still
+  being fully connected. Once the user then saved or validated,
+  `materialize_deleted_nodes()` converted the beacon into a real tombstone and
+  *did* drop its connection, so what looked like a pre-existing problem turned
+  into an actual disconnect, with the tombstone flagged by the validator and
+  the editor still not showing any of it. Fixed by only taking the
+  beacon-select-row-and-break path when the beacon is not currently a
+  placeholder; a soft-deleted beacon now falls through to normal single-port
+  traversal so downstream nodes stay visible until the delete is made
+  permanent (at which point the node is actually gone and stops showing up in
+  validation, as expected).
+- Tests: replaced `test_editor_merge_node_delete_stays_blocked` with
+  `test_editor_merge_node_delete_disconnects_beacons`; added
+  `test_editor_soft_deleted_beacon_keeps_downstream_visible`. Full suite: 299
+  passed (`python -m pytest -q`).
+- Updated `BACKEND_FRONTEND_BOUNDARY.md` and `PROJECT_KNOWLEDGE.md` to describe
+  the Merge Beacon / `merge_node` delete contract instead of "stays blocked."
+
+## 2026-06-16 — Editor Delete Fixes: Keyboard Focus, Gap Shift-Up, Branch Delete
+
+Branch: `claude/editor-keyboard-focus-highlight-9fp46y`.
+
+- **Keyboard focus highlight:** added `up`/`down` editor bindings (priority)
+  routed through `_move_selection` so arrow keys skip non-selectable gap rows
+  like `W`/`S` already did; added a `NodeList.watch_index` safety net that snaps
+  off any gap row. Arrow-key navigation no longer loses the focus highlight on
+  the `▼`/`➥` gap lines between node cards.
+- **Delete no longer hides downstream nodes:** `_build_visible_rows` was breaking
+  the moment it hit a placeholder, discarding the rest of the chain. Soft-deleted
+  nodes keep their live connections, so they now fall through to normal port
+  traversal; materialized tombstones (outgoing connections dropped on save)
+  continue via `original_outputs`.
+- **Permanent delete shifts downstream up:** `remove_placeholder` now captures the
+  tombstone's upstream/downstream connections before `delete_node` and rewires
+  upstream → downstream so the gap closes instead of orphaning the tail. Branch /
+  start / merge tombstones are excluded (they have structural reconnection paths).
+- **Branch-node delete now reachable:** `_is_protected_structural_node` no longer
+  blocks `branch_node` (only `merge_node`). A connected branch now soft-tombstones
+  on first delete and opens `BranchKeepSelectorScreen` on the second, wiring the
+  previously-dead `prune_branch_tombstone()` flow into the UI. Documented the
+  branch-delete exception to the single-node rule in `BACKEND_FRONTEND_BOUNDARY.md`
+  and `PROJECT_KNOWLEDGE.md`.
+- **Tombstone label** shortened from `Deleted node:` to `Deleted:` in the editor
+  card.
+- Tests: added `test_editor_branch_node_deletes_through_keep_selector` and
+  `test_editor_merge_node_delete_stays_blocked`; updated label and shift-up
+  assertions in `test_debug_nodes.py`. Full suite: 298 passed
+  (`python -m pytest -q`, with `pytest-asyncio` for the generated async tests).
+
+## 2026-06-15 — Editor Branch Connectors: Branch Border Coloring (explored, reverted)
+
+- Attempted to color the ASCII box borders (`+`, `-`, `|`) of branching nodes
+  and branch-end (merge beacon) nodes to mirror the branch path colors already
+  used on branch-select cards and numline gutters.
+- Branching node border was set to `active_color_key` (the downstream branch
+  color); merge beacon border was set to a stable hash-derived color from the
+  connected merge node's ID; `BranchSelectCard` and `MergeBeaconSelectCard`
+  foregrounds were switched to the merge-node color when connected.
+- Reverted (commit `b55b38fb5`) because the approach has a fundamental design
+  mismatch: the branching node is a single static card in the editor, but the
+  active branch color changes every time the user switches which branch is
+  visible. Coloring the box border with the currently-active branch would make
+  it flicker on every branch switch rather than conveying stable structural
+  identity.
+- **Design note for future attempts:** border color on a branching node can only
+  work if it conveys something that does not change per branch switch — for
+  example, the node's own family color, a depth-level color, or a color derived
+  from the branching node's own identity rather than from the active branch port.
+  The downstream numline and branch-select colors are per-path and are not
+  suitable as a static node-box border color.
+
+## 2026-06-15 — Editor Branch Connectors: Ten-Color Branch Paths
+
+- Fast-forwarded local `main` from `899c155` to `3139181` before starting,
+  per the session sync rule.
+- Replaced the five-entry branch path color map with a ten-color palette tuned
+  for the dark Textual editor background / `ansi-dark` style usage.
+- Branch path rendering now uses frontend-only color keys so each branch node
+  consumes the palette in sequence: five-path branch one uses colors 1-5,
+  branch two uses colors 6-10, then the next branch cycles back.
+- Kept raw port-name color lookup (`path_a`-`path_e`) working for existing
+  manual rows and tests while editor-built rows use the richer sequence keys.
+- Threaded the sequence color key through node gutters, gap arrows, branch
+  selector rows, and Merge Beacon selector rows so one visible path segment
+  stays consistently colored from branch start through branch end.
+
+## 2026-06-15 — Editor Branch Connectors: Path Colors
+
+- Added branch path coloring for up to five Branch outputs in editor selector
+  connector rows. Rich renders the requested CSS colors via hex equivalents:
+  lightseagreen, lightblue, steelblue, turquoise, turquoise.
+- Branch and merge selector rows now draw `├──` / `└──` from the depth gutter
+  into a node-column `─` line that ends with `⟶ [ Branch name ]`, with no
+  pointer symbol.
+- Connector stems align under the node-row `|` continuation marker, connector
+  tails extend to the node-column line, and branch selector labels are centered
+  under the node box while accounting for the arrow/bracket prefix.
+- The connector gutter and node-column line are styled with the same branch
+  path foreground color; selected-row backgrounds still begin after the depth
+  gutter.
+- Selector lines stop at the branch/merge label instead of continuing on the
+  far side of the widget text.
+- Downstream node rows carry the visible branch path as frontend-only display
+  metadata so number-column numbers and `|` symbols use the branch path color.
+- The initial visible path now starts as `path_a`, giving the start/first branch
+  segment the same branch color treatment as Branch path 1.
+- Branch and merge selector labels use square brackets instead of a right-side
+  `|` because the closing bar read poorly in the terminal.
+- Depth-number rows use standard non-zero-padded numbers left-aligned in the
+  number/gutter column; branch symbols and `|` continuation markers are also
+  left-justified there.
+- Gap rows between nodes carry branch path color so the `|` immediately before
+  a branch node matches the active branch path.
+- Merge incoming `┤` now renders on the first continuation line of the merge
+  node itself, so a merge directly after a Branch selector no longer collides
+  with the Branch selector connector.
+- Branch-colored `|` continuation markers render bold to better match branch
+  path connector weight.
+- Gap markers now reflect source-node outputs: `↓` for transient output,
+  `↳` for one configured Vault output, or `➥N` for multiple Vault outputs,
+  centered under the node box.
+- Continued the gutter rule from the boxed node rows: numbered top rows show
+  the depth number, while node box continuation rows use `|` in the number
+  column.
+- Focused checks: `../.venv/bin/python -m compileall -q .` and
+  `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "node_selector
+  or node_card or editor_depth or branch_end or editor_identity_rows or
+  merge_beacon_selector"` (17 passed).
+
+## 2026-06-15 — Editor Node Rows: Gutter, Default Background, Gap Arrows
+
+- Moved the depth number/gutter outside the node text box by drawing the ASCII
+  border inside `NodeCard` instead of using a whole-widget border.
+- Moved the visible selection highlight off the full `ListItem` row and onto
+  the node/jump box text area only, so the depth gutter does not get covered by
+  the selected-row background.
+- Removed decorative family color fills from node rows; node interiors now
+  render on the default editor background.
+- Added centered non-focusable `↓`/`↓↓` markers in the existing insertion gap
+  between ordinary node rows. They are disabled ListView rows, so selection
+  jumps over them.
+- Centered branch and merge jump widgets under the node box; these replace the
+  down-arrow gap marker when present.
+- Focused checks: `../.venv/bin/python -m compileall -q .` and
+  `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "node_selector
+  or node_card or editor_depth or branch_end or editor_identity_rows"` (15
+  passed).
+
+## 2026-06-15 — Editor Node Rows: Textual ASCII Borders
+
+- Fixed the Phase 17 editor node rows on `main`: the previous merge still had
+  the older family bracket/frame rendering (`[ ]`, `< >`, `{ }`) in
+  `frontend/widgets/node_card.py`.
+- `NodeCard` identity rows render plain alias and family/subcategory text
+  inside an ASCII text box. Deleted-node rows use the same plain-text-in-box
+  treatment. Later same-day follow-up moved the depth gutter outside the box.
+- Removed the old bracket-specific branch selector indent so branch selector
+  labels line up with node text again.
+- Updated active UI docs to prefer Textual ASCII node-card borders instead of
+  fixed bracket columns.
+- Focused checks: `../.venv/bin/python -m compileall -q .` and
+  `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "node_card or
+  editor_depth or editor_identity_rows"` (4 passed).
+
+## 2026-06-15 — Documentation Sync: Backend/UI Gap List
+
+- Fast-forwarded local `main` to `origin/main` after confirming the previous
+  docs work had landed remotely through the `codex-textual-tui-spinoff` merge.
+- Confirmed `README.md` routes Phase 17 and active docs correctly, and
+  `MASTER_BUILD_PLAN.md` still marks Phase 17 in progress.
+- Added an explicit `PROJECT_BACKLOG.md` section for backend features not yet
+  surfaced in the Textual UI: run history browser, secrets management UI,
+  tombstone restore report alerts, branch-health visualization, schema-driven
+  file pickers for node config, memory snapshot save/load choices, workflow
+  rename/bookmark controls, and error clearing controls.
+- Linked that gap list from `MASTER_BUILD_PLAN.md`, `AGENT_HANDOFF.md`, and
+  the README document directory so future agents do not need to rediscover it.
+
+## 2026-06-13 — Backend & edit-time performance: two O(n^2) fixes
+
+- Audit context: a backend execution-overhead study measured per-node cost
+  over the real Supervisor/MasterState/EventBus/MemoryBank stack and found it
+  small and linear (~15 us/node) relative to real node I/O — so rewriting the
+  execution manager in C is not warranted. Two O(n^2) hot spots were found and
+  fixed; remaining lower-leverage items are deferred to `PROJECT_BACKLOG.md`.
+- `backend/memory_bank.py`: `MEMORY_UPDATE` now publishes a lightweight delta
+  (e.g. `{"change": "set", "key": ...}`) instead of `get_state()`. Each
+  persistent write previously deep-copied both the persistent and transient
+  stores; since both grow over a run, per-write cost scaled with run size
+  (O(n^2) overall). The sole subscriber (`app._on_backend_event`) ignores the
+  payload and re-pulls `get_state()` on demand, so the live Memory Viewer and
+  dead-drop preview are unchanged. Measured vault-writing chain (us/node):
+  24.4/28.8/36.2 at n=500/1000/2000 → flat 16.9/15.1/15.3.
+- `backend/workflow_map.py`: `_mark_dirty()` no longer calls
+  `_sync_active_to_cache()`. That sync deep-copied the entire `_nodes` graph
+  into the open-workflow cache on every editor mutation (add/connect/config/
+  delete), making building/editing an N-node workflow O(n^2) — a 4000-node
+  graph never finished constructing. The active workflow's live state is
+  `self._nodes`; the cache is refreshed lazily before every path that reads it
+  (switch/close/list) or replaces the active workflow (load/create/save), all
+  of which already sync. Editing is now O(n): build ~2.5 us/edit and flat
+  (1000/2000/4000/8000 nodes → 5.4/9.8/20.2/46.1 ms); a 4000-node workflow now
+  builds (34ms) and runs to FINISHED (50ms).
+- Diagnosis used a throwaway microbenchmark and a `faulthandler` stack dump
+  (which pinned the edit-time deepcopy); benchmark scripts were not committed.
+  Full suite: 284 passed.
+
+## 2026-06-13 — Headless Plan H6: docs reconciliation + plan archived
+
+- Updated `PROJECT_BACKLOG.md`: tombstone save (H1) and restore (H2) marked
+  done under boundary cleanup (only the restore-alert UI remains, deferred);
+  Secrets project reduced to the `SettingsScreen` tab (schema fields +
+  validator wiring done, H3); branch-health derivation marked done with the
+  editor colour pass remaining (H5); form-generator label/value and schema-key
+  tests marked done (H4).
+- `MASTER_BUILD_PLAN.md`: phase 10.6 → Done (restore-alert UI + Phase C
+  metadata deferred); added an H1–H5 entry to Recently Completed.
+- Archived `HEADLESS_BUILD_PLAN.md` → `archive/plans/`; moved its README
+  directory row to the Archive table; logged the move in
+  `DOCS_MIGRATION_NOTES.md`.
+- Headless plan complete: H1–H6 done, full suite 284 passed. Remaining backlog
+  work from this plan is UI-only and needs live-TUI verification.
+
+## 2026-06-13 — Headless Plan H5: backend branch health derivation
+
+- New `backend/branch_health.py`: pure-logic `derive_branch_health(all_nodes,
+  output_node_types=None)` classifies each `branch_node` outgoing edge (one
+  spawned parallel path) into `valid` / `ended_unmerged` / `floating` by
+  walking the path forward — `merge_node` or output/end node or
+  merge-connected Merge Beacon → valid; Merge Beacon not wired to a merge →
+  ended_unmerged; dead end / cycle / unconnected port → floating. Nested
+  `branch_node`s count as valid for the outer path and are classified on
+  their own merits. Returns frozen `BranchHealth` dataclasses; states are
+  module constants (`VALID`, `ENDED_UNMERGED`, `FLOATING`).
+- `branch_health_by_port()` keys results by `(branch_node_id, port)` to match
+  how editor branch rows are keyed, so the deferred FA-7 visual pass can map
+  states to colours with O(1) lookups and no re-derivation.
+- `output_types_from_factory(factory)` builds the valid-output-type set from
+  node metadata (Outputs family + `end_node`, plus `text_output_node`), so
+  the policy tracks the taxonomy; the function also works with no factory via
+  `DEFAULT_OUTPUT_NODE_TYPES`. No frontend imports — backend stays UI-agnostic.
+- Tests: `tests/test_branch_health.py` (14 tests) — one fixture per state,
+  chain-to-output, direct-merge, mixed multi-port branch, nested branches,
+  unconnected port, cycle, no-branch empty, the by-port mapping, and the
+  factory/default output-type paths. Full suite: 284 passed.
+- Visual surfacing in the editor (branch-health colours, FA-7 pass) stays
+  deferred — it needs live-TUI verification.
+
+## 2026-06-13 — Headless Plan H4: form generator label/value selects + key coverage
+
+- `frontend/widgets/form_generator.py`: `_select_options()` now normalizes
+  option entries — plain scalars (label == value, unchanged),
+  `{"label": ..., "value": ...}` mappings, and 2-item sequences — so the
+  backend reads stable machine values while the dropdown shows display
+  labels. Applied to `select`, option-bearing string fields, and
+  `multiselect` (initial selection matches by machine value). Value
+  read-back needed no change: `Select.value` / `SelectionList.selected`
+  already return the value half.
+- Helper specs need no changes: `aotn_node_helper` copies field schemas
+  verbatim, so YAML specs can declare label/value option dicts today.
+- Tests: new `tests/test_form_generator.py` (12 tests) — option
+  normalization shapes, label/value round-trips per widget type, and the
+  previously untested schema keys: `label`/`required` star, `description`,
+  `default`, `boolean` round-trip, integer `min`/`max` validator, string
+  `min_length`/`max_length` validator, `code` `language`, and numeric
+  coercion fallback. Full suite: 270 passed.
+
+## 2026-06-13 — Headless Plan H3: secrets schema flags + editor wiring
+
+- Secret-ref schema fields added (`"secret": True`, optional while execution
+  is stubbed): `api_key_secret` on `chat_completion_node`, `embedding_node`,
+  `image_generation_node`; `auth_token_secret` on `http_request_node`. The
+  HTTP node actually uses it: when configured, the request sends
+  `Authorization: Bearer <secret>` resolved via `context.get_secret()`. The
+  helper spec `aotn_node_helper/specs/http_request_node.yaml` carries the
+  field so regeneration keeps it.
+- `main.py` now constructs a `SecretsManager` and passes it to `MasterState`
+  (runtime path was previously unwired) and to the app.
+- `frontend/app.py` / `EditorScreen` accept `secrets_manager`;
+  `action_validate_workflow` forwards it to `validate_workflow`, so
+  editor-triggered validation surfaces missing-key warnings live.
+- Tests appended to `test_validator_secrets.py`: all four nodes declare the
+  secret field, per-node missing-store-key warning, and a pilot test proving
+  the editor wiring (details screen opens with a manager, clean without).
+  Full suite: 258 passed.
+
+## 2026-06-13 — Headless Plan H2: tombstone restore engine
+
+- `frontend/editor_workflow_adapter.py`: new
+  `EditorWorkflowAdapter.restore_tombstone(node_id)` implements the
+  connection-validated restore procedure from `BACKEND_FRONTEND_BOUNDARY.md`.
+  Node type/alias/config always come back; each stored input connection is
+  reconnected only when the source node exists and still declares the output
+  port; each stored output connection only when the target exists, declares
+  the input port, and that port is not occupied by a different source;
+  membank input declarations are restored with the config and flagged when no
+  surviving node declares the variable.
+- Returns a `TombstoneRestoreReport` dataclass (input_errors, output_errors,
+  membank_warnings with node id/alias/port/reason) — plain data for the
+  deferred frontend alert; no UI copy in the adapter.
+- `undo_placeholder()` and `replace_placeholder()` (restore-original path)
+  now route through `restore_tombstone()`, so editor undo also validates
+  drift instead of blindly reconnecting; `replace_placeholder()` returns the
+  report under `restore_report`. The blind `_restore_downstream_inputs`
+  helper was removed.
+- Tests: `tests/test_tombstone_restore.py` (11 tests) covers the clean path,
+  every drift category (source gone, source port gone, target gone, target
+  port occupied, membank source missing), rejection paths, the replace-modal
+  report, and that a partial restore clears the validator's tombstone error.
+  Full suite: 252 passed.
+
+## 2026-06-13 — Headless Plan H1: tombstone direct save
+
+- `frontend/editor_workflow_adapter.py`: `materialize_deleted_nodes()` now
+  writes `tombstone_node` with the full original-data config (contract shape
+  from `BACKEND_FRONTEND_BOUNDARY.md`: `original_type/display_name/alias/
+  config/inputs/outputs` plus the port lists the validator reads). No save
+  path writes `branch_end_node + _system_role` anymore.
+- New module helpers `tombstone_config_from_metadata()` /
+  `metadata_from_tombstone_config()` define the config↔metadata mapping in
+  one place; `migrate_legacy_deleted_node()` now carries full restore data
+  (alias, config, connections) instead of ports only, so legacy saves keep
+  undo-after-reload.
+- `is_materialized_placeholder()` recognizes `tombstone_node` (legacy marker
+  still recognized until load migration runs); `placeholder_metadata()` reads
+  tombstone config directly — editor rendering, undo, and replace flows work
+  on the new format unchanged.
+- Tests: tombstone round-trip + undo-after-materialize-with-fresh-adapter in
+  `test_tombstone_phase_b.py`; full-data migration carry in
+  `test_tombstone_migration.py`; materialize/save/loaded-marker tests in
+  `test_debug_nodes.py` updated to the tombstone format, with a
+  tombstone-format loaded-row render check added. Full suite: 241 passed.
+
+## 2026-06-13 — Headless Build Plan created
+
+- Added `docs/HEADLESS_BUILD_PLAN.md`: phased plan (H1–H6) covering the
+  backlog work that is fully verifiable with `compileall` + `pytest`, with
+  no live-TUI verification required — tombstone direct save (H1), tombstone
+  restore engine per the 2026-06-11 design spec (H2), secrets schema flags +
+  editor validator wiring (H3), form generator label/value selects + schema
+  key test coverage (H4), backend branch health derivation (H5), and docs
+  reconciliation (H6).
+- Each phase lists tasks, likely files, focused pytest checks, and exit
+  criteria; live-app work (Phase 17 verification, Secrets settings tab, AI
+  session config UI, branch health indicators) is explicitly deferred and stays
+  in `PROJECT_BACKLOG.md`.
+- Added the new doc to the `README.md` Document Directory.
+
+## 2026-06-12 — SecretsManager + Backend Build Plan (Phases 1–6)
+
+### SecretsManager module
+
+- Added `backend/secrets_manager.py`: plain-text JSON store at
+  `secrets/secrets.json` (gitignored). Public API: `get_secret`, `set_secret`,
+  `delete_secret`, `list_keys`, `has_key`, `reload`. Lazy-load with single
+  trust boundary — only this module changes when encryption is added.
+- Extended `NodeContext` in `node_base.py` with `secrets_manager` field and
+  `context.get_secret(key)` convenience wrapper (returns `None` when no manager
+  wired in).
+- Wired `SecretsManager` through `MasterState.__init__` → both `Supervisor`
+  creation sites → `NodeContext` kwargs. Nodes never call the manager directly;
+  they call `context.get_secret(key_name)`.
+- Created `secrets/` directory with `.gitkeep`; added
+  `AttackOfTheNodes/secrets/secrets.json` to `.gitignore`.
+- 18 tests in `tests/test_secrets_manager.py` (CRUD, persistence, lazy-load,
+  reload, invalid-JSON fallback, NodeContext integration).
+
+### Backend Build Plan Phases 1–6
+
+**Phase 1 — Tombstone `editor_only` + validator port context**
+- `node_identity.py`: added `"editor_only": True` to tombstone entry;
+  `apply_transitional_node_identity` copies flag onto node class.
+- `node_factory.py`: `get_node_types_metadata` exposes `editor_only` key.
+- `validator.py`: tombstone error message appends
+  `"(orphaned inputs: X; outputs: Y)"` when port config is present.
+- Tests: `tests/test_tombstone_phase_b.py` (4 tests).
+
+**Phase 2 — Legacy save migration**
+- `frontend/editor_workflow_adapter.py`: added `migrate_legacy_deleted_node()`
+  (pure function) and `EditorWorkflowAdapter.migrate_workflow_on_load()`.
+  Converts `branch_end_node + _system_role: deleted_node_branch_end` to
+  `tombstone_node` in-place without touching plain Merge Beacons.
+- Tests: `tests/test_tombstone_migration.py` (7 tests).
+
+**Phase 3 — Typed vault entries**
+- `memory_bank.py`: `store_persistent` accepts `type_tag=None`;
+  `read_persistent_by_type(type_tag)` added; state snapshot includes
+  `persistent_type_tags`; backward compatible with old snapshots.
+- `validator.py`: `_declared_membank_outputs` returns `Dict[str, Optional[str]]`
+  (key → type_tag); warns on ai_session type mismatch.
+- Tests: `tests/test_typed_vault.py` (9 tests).
+
+**Phase 4 — LLM chat session in RunSession**
+- `run_session.py`: `get_or_create_chat_session`, `append_chat_message`,
+  `get_chat_history` (deep copy), `close_all` clears sessions.
+- `validator.py`: warns when `use_chat_session: True` but `session_key` absent.
+- Tests: appended to `tests/test_run_session.py` (8 new tests).
+
+**Phase 5 — Parallel-branch vault race warnings**
+- `validator.py`: added `_build_reverse_adjacency` and `_build_ancestor_set`
+  (backward BFS). When all writers of a vault key are on parallel branches
+  (none is an ancestor of the reader), emits a warning — not an error — to
+  recommend a Wait Until node.
+- Tests: `tests/test_validator_race_warnings.py` (6 tests).
+
+**Phase 6 — Four utility nodes via aotn_node_helper**
+- `backend/nodes/data/text_transform_node.py`: uppercase/lowercase/strip/title/reverse.
+- `backend/nodes/data/json_path_node.py`: dot-path JSON extraction, `error` port.
+- `backend/nodes/data/random_number_node.py`: integer/float in range, optional seed.
+- `backend/nodes/io/http_request_node.py`: GET/POST via stdlib `urllib`, `error` port.
+- Spec YAML files added to `aotn_node_helper/specs/`.
+- `node_identity.py` extended with entries for all four nodes.
+- Tests: `tests/generated/` (4 generated suites, mocked network for HTTP node).
+
+---
+
+## 2026-06-12 — Taxonomy Revision Implementation: Selector Restructure, Group Picker, Metadata
+
+Code session implementing the taxonomy revision documented below.
+
+- `Node` base: new frontend-only ClassVars `group: Optional[str]` and
+  `selector_section: Optional[str]`; `NodeFactory.get_node_types_metadata()`
+  exposes both (None when unset).
+- `node_identity.py`: five-family remap. Debug/data nodes moved to the new
+  `Utility` family (Transform / Debug / Loop Helpers sections); Flow Control
+  entries gained Branch/Merge/Wait-Timer groups under Branching/Timing
+  sections; I/O-side and Complex entries gained their groups and sections per
+  `NODE_CATALOG.md`. `FAMILY_COLOR_HINTS` gained `Utility: grey`.
+- `node_card.py`: `Utility` family frame (`|`/`|`) and row background
+  (the existing quiet `#9aa7b3`).
+- `NodeSelectorScreen` restructured to the four-tab design:
+  - Tabs `I/O`, `Flow Control`, `Utility`, `Complex`; the I/O tab has a
+    Textual `Switch` row (Input/Output) above the filter that selects which
+    family fills the list. Filters checked on one side no longer constrain
+    the other side.
+  - Filter checkboxes reduced to I/O (`File I/O`/`Internet`/`AI`) and
+    Complex (`AI`); shown only when the active side actually has the tag.
+  - The list renders three entry kinds: non-selectable section headers
+    (skipped by W/S navigation, hidden while searching), single-line group
+    entries with member counts, and two-line node rows. Single-member groups
+    auto-promote to direct node rows.
+  - `start_node` and `end_node` are hidden from the selector alongside
+    `tombstone_node`.
+  - String search dissolves groups and headers; matching node types render
+    directly and the grouped view returns when the filter clears.
+- New `frontend/screens/group_picker.py`: generic `GroupPickerScreen` modal
+  parameterized by group name and member metadata; one node per line with the
+  highlighted member's description below; `E`/Enter dismisses with the chosen
+  type (selector then dismisses too), `ESC` pops only the picker.
+- `aotn_node_helper/generator.py`: validates the five families, accepts
+  `group` / `selector_section` spec fields (requiring a section when a group
+  is declared, except on the flat Outputs side), and emits both as class
+  metadata on generated nodes.
+- `styles.tcss`: `#io-direction-row`, `.node-select-header`,
+  `.node-select-group`, and group-picker styles.
+- Tests: rewrote the selector taxonomy test for the new structure; added
+  `test_node_selector_group_picker_flow` (open picker, ESC back, choose
+  member closes both) and
+  `test_node_selector_navigation_skips_section_headers`; updated the layout
+  test for the switch row and family expectations in editor identity tests.
+- Verification:
+  - `python3 -m compileall -q . ../aotn_node_helper`
+  - `python3 -m pytest tests/ -q` (147 passed; 1 pre-existing
+    environment-only failure: generated example UI smoke test requires
+    pytest-asyncio, absent in this container)
+  - `../aotn_node_helper/check_ui.py echo_node` OK
+- Remaining before Phase 17 close: live-TUI manual verification of the new
+  selector and editor rows at several terminal widths.
+
+## 2026-06-12 — Taxonomy Revision: Five Families, I/O Switch, Section Headers, Node Catalog
+
+Design + documentation session (code implemented the same day — see the
+entry above).
+
+- Revised the Phase 17 taxonomy to five backend families — `Inputs`,
+  `Outputs`, `Flow Control`, `Utility`, `Complex` — mapped onto four selector
+  tabs. `Inputs`/`Outputs` share one `I/O` tab behind a Textual `Switch`
+  (Input on one side, Output on the other) above the list; the switch is
+  frontend-only presentation, so backend family metadata stays semantic.
+- `Utility` is the new action-node family: UI Automation group (click, type,
+  key press; screen-read variants deferred), Script Runner group (deferred,
+  security gated — hidden from list and search until an explicit "allow
+  script execution" setting is on), Data Transform group (set/get variable,
+  concat, text ops, JSON, math, format text), Debug direct-adds (echo, probe,
+  logger, sleep), and Loop Helper direct-adds (counter, accumulator, repeat
+  limiter).
+- AI became a subcategory tag, not a family. AI-flavored variants live in
+  their natural groups (AI Conditional Branch under Flow Control → Branch,
+  AI-Guided Read under File Reader); dedicated AI tools stay in Complex →
+  AI Processing where the `AI` filter surfaces them.
+- Filter checkboxes reduced to two tabs: I/O (`File I/O`/`Internet`/`AI`)
+  and Complex (`AI`). Groups and in-list section headers do the organizing
+  elsewhere. Headers are non-selectable rows keyboard navigation skips,
+  hidden while a string filter is active or when empty.
+- Removed Start/End from the user-facing taxonomy: Start is auto-generated;
+  branches end through outputs (new standard "Terminate branch after
+  completion" config option in `NODE_STANDARDS.md`), through merges, or
+  through a new silent **End Branch** direct-add node in Flow Control.
+- Designed the **AI Input** node (I/O Input side): seeds a chat session under
+  a vault session key before the response is needed; default dead-drop
+  passthrough with optional "Output AI response"; prompt can be customized
+  mid-workflow before being passed in. Pattern documented in
+  `NODE_STANDARDS.md`.
+- Documented the AI model approach: capability-based AI nodes with curated
+  supported-model lists (strictest for structured-output nodes such as AI
+  Conditional Branch); a future fork point to per-model groups if supported
+  models diverge.
+- Added `selector_section: str | None` to the metadata direction alongside
+  `group` — both frontend-only, exposed through `NodeFactory`.
+- Created `NODE_CATALOG.md`: complete node inventory (Live / Planned /
+  Deferred / Concept) with mappings from currently registered types, so no
+  node idea is lost while non-critical nodes are deferred.
+- Updated: `PHASE_17_NODE_VISUAL_IDENTITY.md` (rewritten for the revision),
+  `NODE_STANDARDS.md` (terminate-branch standard, AI Input pattern),
+  `NODE_HELPER.md` (five families, `group`/`selector_section` spec fields),
+  `MASTER_BUILD_PLAN.md` (Phase 17 remaining work), `AGENT_HANDOFF.md`
+  (direction summary), `README.md` (catalog directory row + task table).
+- Verification:
+  - `git diff --check`
+  - `python3 -m pytest tests/ -q` (145 passed + 1 pre-existing generated-node
+    flake, unchanged from before the docs edit)
+
+## 2026-06-12 — Docs: README Document Directory Overhaul
+
+- Rewrote `README.md` to give every document a clear "what it contains" and
+  "when to open it" entry in a structured Document Directory table. Replaced
+  the previous flat Read-First / Reference lists (which had overlapping entries
+  and imprecise descriptions) with four organized sections: Roadmap and Session
+  State, Node Authoring, Architecture and Boundaries, Frontend Reference, and
+  Planning and Backlog.
+- Archive section now explains when to open each archived file rather than just
+  listing them.
+- Documentation Rules in README now includes "add a row to the Document
+  Directory when a new active doc is created."
+- Added orienting intro to `TASK_INDEX.md` clarifying its role relative to
+  README (README routes; TASK_INDEX gives the minimum reading set, likely files,
+  and focused test commands).
+
+## 2026-06-12 — Node Taxonomy: Core Simplification Rule, Full Expanded Taxonomy, Group Picker Design
+
+- Documented the Core Simplification Rule for deciding node placement: variants
+  with different port shapes → separate types; same ports + very different config
+  → group with picker; minor config differences, same ports → one node + mode
+  select; unique standalone node → direct-add. Rule is in both
+  `PHASE_17_NODE_VISUAL_IDENTITY.md` and `NODE_STANDARDS.md`.
+- Added Full Expanded Taxonomy to `PHASE_17_NODE_VISUAL_IDENTITY.md`:
+  - INPUTS: Text Input group, File Reader group, Data Source group, Trigger group
+    (with architecture note: triggers need a persistent listener process outside
+    the supervisor model; config-only for now).
+  - FLOW CONTROL: Branch group (separate types because port shapes differ),
+    Merge group, Wait/Timer group, Loop Utility group, Merge Beacon (direct-add),
+    Start/End (direct-add).
+  - OUTPUTS: Text Output group, File Write group (File Write is one node with
+    mode select — not separate Overwrite/Append types), Send/Notify group,
+    User-Facing Prompt group.
+  - COMPLEX: AI Processing group, Subworkflow group (reserved, phases 19/20),
+    Data Transform group, Script Runner group (deferred; security gate required).
+- Documented two-level group picker design in `PHASE_17_NODE_VISUAL_IDENTITY.md`:
+  - Main selector shows group entries with member counts; counts reflect active
+    subcategory filters; groups with filtered count 0 are hidden.
+  - Group Picker second modal: generic/reusable, `ESC` returns to main selector,
+    `E` adds and closes both modals, no filter input in the picker.
+  - Auto-promotion: single-member groups become direct-add entries, no picker.
+  - Search behavior: string filter dissolves groups; individual node types appear
+    directly; groups re-form when filter is cleared.
+- Added Keyboard Flows section: group-add flow, direct-add flow, search-first flow.
+- Added Problems and Solutions Summary table.
+- Added What Doesn't Need to Exist section.
+- Added `group: str | None` metadata field design to Metadata Direction.
+- Updated Completion Shape to include group picker criteria.
+- Added "Design Or Update Node Taxonomy" task route to `TASK_INDEX.md`.
+- Added taxonomy task row to `README.md` Choose Your Task table.
+- Updated `MASTER_BUILD_PLAN.md` Phase 17 Done and Remaining sections.
+
+## 2026-06-12 — Node Helper: Dynamic Forms, Standard Model Expansion, Config-UI Checks
+
+- Implemented the dynamic-form schema keys planned in the Helper-Backed UI
+  Standardization backlog:
+  - `enabled_when`: field greys out unless a condition on other field values
+    holds (mapping of field name to expected value; AND across entries, list
+    values match any).
+  - `visible_when`: hides the field, its label, and its description unless the
+    condition holds.
+  - `mutually_exclusive_with`: checking one boolean unchecks its declared
+    partners; declarations are symmetric.
+  - Implemented in `frontend/widgets/form_generator.py`
+    (`evaluate_field_condition`, `apply_field_rules`,
+    `mutual_exclusion_targets`, `schema_has_field_rules`); generated field
+    labels/descriptions now carry `field-label-<name>` / `field-desc-<name>`
+    ids so visibility rules can hide the whole block.
+  - `NodeConfigScreen` applies rules at mount and on every generated-field
+    change. Rules work across tabs: a Source tab selector can grey out a
+    Parameters tab field, matching the NODE_STANDARDS greying behavior.
+- Expanded `aotn_node_helper` with standard-model spec sections:
+  - `input_sources`: expands each input into a `<name>_source` selector
+    (Upstream payload / Vault / Configured), a gated `<name>_vault_key` field,
+    and a gated Configured parameter field in the Parameters tab.
+  - `output_routing`: expands into the mutually exclusive
+    `transient_output` / `dead_drop_passthrough` pair plus optional
+    `vault_write` / `vault_write_key` fields. Vault modes: `optional`,
+    `default_on`, and `required_unless_transient` (locked on until transient
+    output is checked — the Basic LLM node pattern).
+  - Spec-time validation for rule keys: referenced fields must exist,
+    mutual-exclusion participants must be booleans, standard fields must not
+    collide with hand-written ones.
+- Added `aotn_node_helper/check_ui.py <node_type>` and shared
+  `aotn_node_helper/ui_checks.py`: mounts `NodeConfigScreen` and verifies
+  every schema field renders, lands in its declared tab, participates in
+  keyboard focus, and has correct rule state at mount. Structural nodes
+  (branch/merge/branch-end) are rejected with a clear message.
+- `create_node.py` now also emits `tests/generated/test_<node_type>_ui.py`
+  (config-UI smoke test backed by `ui_checks`) when a spec uses `config_tabs`,
+  `input_sources`, or `output_routing`.
+- Added `aotn_node_helper/specs/example_file_instance_node.yaml` — the
+  NODE_STANDARDS File Instance reference example expressed as a helper spec.
+  Verified end-to-end: generated, check_node + check_ui + generated UI test
+  all green. The generated node is REGISTERED in the project
+  (`backend/nodes/io/example_file_instance_node.py`) for a live TUI pass of
+  the dynamic config forms; remove it after the UI review if not kept.
+- Registering the node surfaced a helper gap: generated nodes lacked Phase 17
+  identity metadata, failing `test_node_factory_exposes_phase_17_identity_metadata`.
+  Helper specs now require `primary_family` (Inputs / Flow Control / Outputs /
+  Complex) and accept optional `tags` (validated against the Phase 17
+  subcategory taxonomy), `icon_name`, and `color_hint` (defaults from the
+  family color map). Generated nodes emit these as class metadata directly —
+  no entry in the transitional `node_identity.py` table needed.
+- Updated the node selector taxonomy test to include the registered example
+  node in the Inputs family and File I/O filter expectations.
+- Tests: new `tests/test_form_rules.py` (rule helpers + mounted
+  NodeConfigScreen integration covering greying, visibility, and mutual
+  exclusion both directions); extended `tests/test_node_helper.py` with
+  standard-model expansion and validation cases. 11 focused tests pass.
+- Known pre-existing flake (not from this change):
+  `test_file_picker_export_and_import_paths` fails in a full-suite run but
+  passes in isolation; reproduced identically on the clean tree.
+- Docs updated: NODE_HELPER.md (standard sections, rule keys, check_ui,
+  limitations/direction refresh), AGENT_START_GUIDE.md, NODE_STANDARDS.md
+  (helper support note), PROJECT_BACKLOG.md (marked done items),
+  PROJECT_KNOWLEDGE.md (form generator capabilities), FILE_TREE.md.
+- Verification:
+  - `../.venv/bin/python -m pytest tests/test_node_helper.py tests/test_form_rules.py -v`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py` (121 passed +
+    1 pre-existing flake)
+  - `../.venv/bin/python -m compileall -q . ../aotn_node_helper`
+  - `../aotn_node_helper/check_ui.py echo_node` / `logger_node` OK;
+    `branch_node` correctly rejected as structural.
+
+## 2026-06-11 — Node Standards Corrections: MemoryBank Model, Mutual Exclusion, JSON Payloads
+
+- Corrected NODE_STANDARDS.md and PROJECT_KNOWLEDGE.md on three points:
+  1. MemoryBank is always the underlying store for both transient and vault
+     data. Transient uses ephemeral `(source_node_id, port_name)` keys; vault
+     uses stable user-defined keys. The distinction is addressing scope, not
+     separate storage systems.
+  2. Transient output and vault write are not mutually exclusive. A node can
+     write the same result to both simultaneously. The only mutual exclusion is
+     "send my result as transient" vs "forward incoming transient unchanged
+     (dead-drop passthrough)" — only one can occupy the transient port.
+  3. Transient payloads are JSON and can carry any serializable value including
+     large strings and LLM responses. The constraint is scope (path-scoped,
+     not cross-branch), not size. Mentioned incremental document modification
+     as a valid transient use case for LLM output.
+- Clarified that active file I/O sessions are managed by the backend RunSession;
+  files can serve as both inputs and outputs.
+- Added "Later Project — Backend LLM Chat Session Persistence" to
+  PROJECT_BACKLOG.md: session handles in RunSession, opt-in via session_key,
+  shared history across nodes with the same key, validator warning if session
+  not available.
+- Updated docs: NODE_STANDARDS.md (input model note, output model mutual
+  exclusion, data type scope, payloads tab diagram, LLM example notes,
+  authoring checklist), PROJECT_KNOWLEDGE.md (Data Flow Patterns rewrite),
+  PROJECT_BACKLOG.md (new LLM chat session backlog entry).
+- No code changes — documentation only.
+- Verification:
+  - `git diff --check`
+
+## 2026-06-11 — Node Design Standards Document
+
+- Created `NODE_STANDARDS.md` as the authoritative reference for node I/O
+  design before authoring any new node type.
+- Documents the standard input source model: three mutually exclusive options
+  per input (Upstream/transient, Vault, Configured). Selecting one greys out
+  the other two in the form. Configured activates the matching Parameters tab
+  field; Upstream or Vault selection greys that field out.
+- Documents the standard output routing model: Transient output (send result
+  downstream), Dead-drop passthrough (forward incoming payload unchanged,
+  default for most nodes), and Vault write (save result under a named key,
+  independent of transient/dead-drop choice). Transient and dead-drop are
+  mutually exclusive per port; Vault write is independent.
+- Documents data type scope: transient payloads carry only lightweight
+  conditional data (bools, counters, flags); large strings, document text, and
+  AI responses travel through the Vault or file I/O.
+- Documents the standard Source / Parameters / Payloads / Connections tab
+  structure with UI behavior rules for conditional field greying.
+- Includes two reference examples:
+  - File instance node: file path from upstream/vault/configured (mutually
+    exclusive); bool transient output (success/failure); optional Vault write
+    for error messages.
+  - Basic LLM node: prompt from upstream/vault/configured (mutually exclusive);
+    document/context from upstream or vault only (no configured option);
+    dead-drop passthrough on by default; Vault write on by default and cannot
+    be disabled unless transient output is active.
+- Includes an authoring checklist: inputs, outputs, conditional fields, data
+  types, mutual-exclusion rules, required vs optional Vault writes, and
+  expected downstream pattern.
+- Wired into `README.md` (task table and Read-First Files), `TASK_INDEX.md`
+  (Add Or Change A Node route), and `AGENT_START_GUIDE.md` (Add A New Node
+  section).
+- No code changes — documentation only.
+- Verification:
+  - `git diff --check`
+
+## 2026-06-11 — Tombstone Delete Semantics And Payload Design Context
+
+- Clarified that node deletion is always single-node and non-cascading.
+  Downstream nodes are never automatically deleted or modified. The tombstone
+  sits in place as a swap-out and insert-staging placeholder; the graph beyond
+  it remains intact. This is an editor-adapter invariant.
+- Documented the transient payload vs vault (MemoryBank) design intent:
+  transient payloads are primarily for conditional logic (booleans, counters,
+  branch-decision flags); large strings, file contents, and shared data travel
+  through the vault or file I/O. Many nodes consume from the vault directly and
+  do not depend on the immediately upstream node's transient output.
+- Added dead-drop context: the dead-drop option lets a node write a small
+  conditional payload that a downstream node picks up without requiring a live
+  transient connection through every intermediate node.
+- Added restore severity context: because most data travels through the vault,
+  tombstone restore-validation failures on transient ports are usually minor
+  repairs, not broken workflows. The frontend alert should be informative but
+  not alarming.
+- Updated `PROJECT_KNOWLEDGE.md` (new "Data Flow Patterns" section, corrected
+  Open Cleanup Areas entry) and `BACKEND_FRONTEND_BOUNDARY.md` (single-node
+  delete rule and restore severity context added before the restore procedure).
+- No code changes — documentation only.
+- Verification:
+  - `git diff --check`
+
+## 2026-06-11 — Tombstone Restore Edge Cases And Connection Validation
+
+- Specified tombstone restore validation rules for three categories of workflow
+  drift that can occur between a node being deleted and a user triggering restore:
+  (1) upstream output drift — source node removed or output port renamed/removed;
+  (2) downstream input drift — target node removed, input port renamed/removed,
+  or port now occupied by a different source; (3) memory bank drift — membank
+  variables the deleted node depended on (`membank_inputs`) may no longer be
+  declared by any surviving node.
+- Restore procedure: always restore node type, alias, and config (never blocked).
+  Validate each stored input connection and output connection before re-wiring.
+  Leave failed connections unconnected. Surface a frontend alert after restore
+  with named sections for input connection errors, output connection errors, and
+  memory input warnings — each naming the original peer node alias, port, and
+  failure reason. A partial restore is always preferred over leaving a tombstone.
+- Edge case called out: branch-start nodes are particularly sensitive because the
+  upstream branch node holds the dead-drop payload that seeds the branch. If the
+  branch node's output port was renamed or its payload type changed since the
+  delete, the connection will fail validation and the branch effectively remains
+  broken until the user rewires it — the alert makes this visible.
+- Updated `BACKEND_FRONTEND_BOUNDARY.md` (added "Tombstone restore — connection
+  validation and partial restore" subsection) and `PROJECT_BACKLOG.md` (added
+  restore validation spec to Phase B work items).
+- No code changes — documentation only.
+- Verification:
+  - `git diff --check`
+
+## 2026-06-11 — Tombstone Design Decision: Backend Type Stays
+
+- Reviewed the Phase B tombstone decommission plan and decided to reverse it.
+  `tombstone_node` will remain an intentional registered backend type, not a
+  cleanup target.
+- **What we had:** Phase A (done) moved frontend deletes to a visual-overlay
+  model where saves materialized deleted nodes into `branch_end_node` records
+  with a `_system_role: "deleted_node_branch_end"` marker. This worked with
+  zero backend changes but had a key limitation: it is session-scoped. Saving
+  after a delete, closing, and reopening loses undo context. The
+  `branch_end_node` port shape also limits how much original connection data
+  the validator can surface.
+- **Why we switched:** The save file is the only persistence layer. Keeping
+  full original node data (type, alias, config, input connections, output
+  connections) in a `tombstone_node` record gives: (1) undo that survives
+  save/reload, (2) validator errors that name the original node and describe
+  its original connections as a repair guide, (3) meaningful port-validity
+  errors from the stored original port shape.
+- **New contract:** tombstone config stores `original_type`, `original_alias`,
+  `original_config`, `original_inputs`, `original_outputs`. The validator
+  tombstone error block should be extended to surface the original connection
+  context. The node selector already excludes tombstone. Execution is already
+  blocked on workflows containing tombstones.
+- **Phase B redefined:** instead of decommissioning tombstone, Phase B now
+  updates `editor_workflow_adapter.py` to write `tombstone_node` on save
+  (not `branch_end_node`), migrates existing `_system_role` marked records on
+  load, extends the validator error block, and confirms `editor_only` flagging
+  in `node_identity.py`.
+- Updated docs: `BACKEND_FRONTEND_BOUNDARY.md` (major rewrite of Phase B and
+  Deleted-Node Save Contract sections), `PROJECT_BACKLOG.md` (Phase B
+  redefined), `MASTER_BUILD_PLAN.md` (added Phase 10.6), `ARCHITECTURE.md`
+  (tombstone table row and description), `AGENTS.md` (tombstone footnote).
+- No code changes in this session — documentation only.
+- Verification:
+  - `git diff --check`
+
+## 2026-06-11 — Typed Vault Entries and AI Session Architecture
+
+Architecture design session only. No runtime, frontend, or test changes.
+
+- **Typed vault entries.** Decided that `MemoryBank` vault entries will carry
+  a `type` field alongside their value. Types: `string`, `number`, `boolean`,
+  `file`, `ai_session`. Simple types remain pure JSON. `file` and `ai_session`
+  entries store a type tag and a string reference key; the actual Python handle
+  lives in `RunSession` and is retrieved via `context.run_session.get_resource
+  (ref_key)`.
+- **RunSession as handle owner.** File handles and AI session objects are not
+  JSON-serializable and must live in `RunSession`, not `MemoryBank`. `RunSession`
+  already exists; the only addition needed is `get_resource(key)` to complement
+  `register_resource(key, handle)`.
+- **AI session as config-driven LLM node output.** No separate Chat Session
+  Node. Any LLM node can opt into session persistence via a "keep active AI
+  session" checkbox and a user-supplied session key. The first node with a given
+  key starts the session and writes `(type: ai_session, ref_key)` to the vault;
+  downstream nodes that select the same vault key continue the session. Message
+  history stays in the session object in `RunSession`.
+- **Input dropdown type filtering.** Config dropdowns that select a vault source
+  filter by declared input type. Only `file` entries appear for file inputs;
+  only `ai_session` entries appear for LLM continuation inputs.
+- **Validator error/warning split for vault key ordering.** Error when no node
+  in the workflow declares the key at all. Warning when the key is declared on
+  a parallel branch with unguaranteed execution order. The validator must not
+  infer timing from node count, type, or branch depth. Applies uniformly across
+  all vault types.
+- **Docs updated:** `PROJECT_BACKLOG.md` (new Near-Term section, extended
+  RunSession remaining notes), `PROJECT_KNOWLEDGE.md` (RunSession backend
+  component entry, new Data Flow Patterns section), `NODE_STANDARDS.md`
+  (created; typed vault outputs, AI session config-driven pattern, validator
+  rules), `MASTER_BUILD_PLAN.md` (new Later Roadmap bullet), `ARCHITECTURE.md`
+  (RunSession subsection).
+
+## 2026-06-10 — Two-Line Selector Rows, Editor Selector Spacing
+
+- Node selector rows are now two lines: line one is the display name plus the
+  subcategories in parentheses (the family is omitted as redundant with the
+  active tab), line two is the node description indented four spaces (truncated
+  past 76 chars) for clear visual separation between nodes. Added
+  `_node_row_text`, a `.node-select-row` height-2 style, and
+  `#node-type-list ListItem { height: auto }`.
+- Editor: removed the blank line below branch/merge selector rows. The
+  trailing spacer (`node-row-spaced`) now only applies to node rows that are
+  not immediately followed by a selector; selector rows never add a blank
+  line below themselves. The next node hugs the selector.
+- Tests: added
+  `test_node_selector_rows_are_two_lines_with_indented_description`; extended
+  `test_editor_identity_rows_fit_rendered_panel_width` with a node after the
+  branch selector to assert no blank line below the selector.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/ -v` (134 passed)
+  - `git diff --check`
+
+## 2026-06-10 — Node Selector/Config Layout And Navigation Audit
+
+Focused pass on the Node Selector and Node Config modals.
+
+- Selector headspace: `Horizontal`/`Vertical` containers default to
+  `height: 1fr`, so `#node-family-tabs` and `#node-subcategory-filters`
+  stretched and left dead space between the tab row and filter bar, and the
+  stretch clipped the last subcategory checkbox on short terminals. Added
+  explicit `height: auto` for the tab row, filter, and subcategory block, and
+  `height: 1fr; min-height: 4` for `#node-type-list` so the node list absorbs
+  the remaining space and every checkbox renders fully.
+- Config phantom-focus / "two presses, highlight vanished": the hidden payload
+  preview widgets (collapsed `PayloadPreview`s with their own
+  `display: false`) were still keyboard-focus stops because
+  `_keyboard_focus_widgets` only checked ancestor visibility, not the widget's
+  own display. Focusing a hidden widget shows no cursor, so it read as a lost
+  highlight needing a second key press. Now skips widgets whose own
+  `display` is False; revealed previews remain real stops.
+- Selector list highlight: re-entering the node list with an unchanged index
+  left no visible cursor because `ListView.watch_index` only fires on a
+  changed value. `focus_list` now re-asserts the highlight (None then index)
+  so stepping down from the last subcategory checkbox lands on the first node
+  with a visible highlight.
+- Tests: added `test_node_config_keyboard_skips_hidden_payload_previews`,
+  `test_node_selector_layout_is_compact_and_checkboxes_fit` (asserts no
+  tabs->filter gap and no clipped checkboxes at 30- and 22-row terminals), and
+  `test_node_selector_down_from_last_checkbox_highlights_first_node`.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/ -v` (133 passed)
+  - `git diff --check`
+
+## 2026-06-10 — Blank Editor Fix, Selector Row Placement, No-Alias Rows
+
+- Fixed the blank editor: the family-background change defined
+  `NodeCard._render_content`, which silently shadowed Textual's internal
+  `Widget._render_content` paint method (textual/widget.py), making every
+  card render blank while still holding correct content. Renamed to
+  `_card_content` with a warning comment. The regression test now asserts
+  actual painted output via `render_line`, not just stored content —
+  content-only assertions completely missed this bug.
+- Branch selector and merge-beacon jump rows now sit directly below their
+  node: `NodeList.refresh_rows` places the spacer line after each node's
+  full row group (after the node row, or after its trailing selector rows)
+  instead of unconditionally after every node row.
+- Selector rows gained two leading spaces so their label column lines up
+  with the framed node text above; updated the editor-depth test's pinned
+  selector string.
+- Identity rows with an empty alias now render `No alias` on the first
+  line instead of falling back to the raw node type string (Merge Beacon
+  and legacy tombstone naming keep their special-cased names).
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -k "identity_rows or node_card or branch_end or deleted"` (3 passed in slice)
+  - `../.venv/bin/python -m pytest tests/ -v` (130 passed)
+  - `git diff --check`
+
+## 2026-06-10 — Identity Row Family Backgrounds
+
+- Editor node rows now fill the framed segment (between and including the
+  brackets) with the family color previously used for the font, and flip
+  the segment font to dark high-contrast `#0d1117`:
+  Inputs `#7ee787`, Flow Control `#8ab4f8`, Outputs `#f2cc60`,
+  Complex `#c586c0`, Utility-tagged rows `#9aa7b3`.
+- The gutter (depth number) stays unstyled, so the depth column and the
+  right inset still show selection highlight. Merge Beacon health rows and
+  deleted-node rows keep their existing color priority and get no family
+  background.
+- Styled rendering only applies to mounted cards; unmounted cards (unit
+  tests) fall back to plain text because Rich content requires the app
+  console.
+- Extended the identity-row regression test to assert the framed spans
+  carry the family background and dark foreground while gutter columns
+  stay unstyled.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -k "identity_rows or node_card or branch_end or deleted"` (3 passed in slice)
+  - `../.venv/bin/python -m pytest tests/ -v` (130 passed)
+  - `git diff --check`
+
+## 2026-06-10 — Identity Row Polish: Right Inset And Row Spacing
+
+- Closing frames now sit `FRAME_RIGHT_INSET` (2) columns in from the right
+  edge of the node-list panel instead of touching it.
+- Editor node rows get one blank spacer line below them: `NodeList`
+  tags node-row `ListItem`s with `node-row-spaced` (margin-bottom in
+  `styles.tcss`). Branch select and merge beacon rows keep their
+  single-line height with no spacer. The margin lives on the `ListItem`
+  because item auto-height clips a child card's own margin.
+- `NodeCard.on_mount` re-fits once after first layout via
+  `call_after_refresh`, fixing rows that rendered at the unmounted
+  fallback width inside `ListView`s when no Resize event fired.
+- Extended `test_editor_identity_rows_fit_rendered_panel_width` to run the
+  real `NodeList.refresh_rows` path with the real `styles.tcss`, asserting
+  the right inset, the one-line spacer between node rows, and the
+  unspaced single-line branch selector row.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -k "identity_rows"` (3 passed)
+  - `../.venv/bin/python -m pytest tests/ -v` (130 passed)
+  - `git diff --check`
+
+## 2026-06-10 — Phase 17 Reopened: Identity Row Width Fix
+
+- Live-TUI verification showed Phase 17 editor rows were broken in real
+  panels: identity rows padded text to a fixed 48-char width, so the
+  node-list panel (narrower than ~58 columns with gutter and frames)
+  soft-wrapped each row — the closing frame landed alone at column 0 of the
+  next visual line and the family/subcategory identity line was pushed out
+  of the two-line row entirely.
+- Fixed `NodeCard` to fit framed text to the rendered card width:
+  `_identity_text_width()` derives the text column from `content_size`
+  (fallback to the old fixed width for unmounted cards), `_fit_text` takes
+  the width as a parameter, and `on_resize` re-renders rows so frames track
+  panel-width changes. Applies to identity rows and deleted-overlay rows.
+- Added `test_editor_identity_rows_fit_rendered_panel_width`: mounts a
+  `NodeCard` in a 40-column panel and asserts two lines, no line wider than
+  the panel, aligned closing frames, and a visible family identity line.
+- Reverted the premature Phase 17 completion claims in
+  `MASTER_BUILD_PLAN.md`: phase status back to In progress with a
+  live-TUI verification todo (manual editor check at several terminal
+  widths) before the phase can close.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -k "identity_rows or node_card or editor_depth or deleted"` (3 passed in slice)
+  - `../.venv/bin/python -m pytest tests/ -v` (130 passed)
+  - `git diff --check`
+
+## 2026-06-10 — Working-Tree Port From OneDrive Checkout
+
+- Discovered that this date's agent sessions had been editing a second
+  checkout of the repo under OneDrive
+  (`C:\users\makin\onedrive\documents\node_workflow`) instead of the
+  WSL-local tree. Both trees shared the same HEAD commit.
+- Ported all session source changes (backend RunSession + validation,
+  Phase 17 frontend identity/selector/deleted-node work, tests, and docs)
+  from the OneDrive working tree into this tree.
+- Hand-merged the five docs that had independent local changes
+  (`FILE_TREE.md`, `PROJECT_BACKLOG.md`, `README.md`, `SESSION_LOG.md`,
+  `TASK_INDEX.md`) so the local `NODE_HELPER.md` documentation work and
+  the ported entries both survive. Local `.gitignore` and `NODE_HELPER.md`
+  were kept as-is. Runtime artifacts (`run_errors/`, `run_history/`,
+  `run_outputs/`) were not ported.
+- Pre-merge copies of the locally dirty files are saved at
+  `~/src/node_workflow_port_backup/`.
+- Verification (run from this tree):
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/ -v`
+  - `git diff --check`
+
+## 2026-06-10 — Frontend Deleted-Node Model
+
+- Reworked editor delete behavior so a normal delete is visual-only: the
+  original node stays in `WorkflowMap` while the editor stores deleted-row
+  overlay state keyed by node id.
+- Added deleted-row rendering in the Phase 17 two-line bracket style, with
+  restore-aware controls (`x delete | z undo | e new node`) and a no-restore
+  variant that hides `z undo`.
+- Added editor actions for deleted rows: `z` undo restores the visual original,
+  `e`/Enter opens replacement through the node selector, and a second `x`
+  permanently removes the node and prunes merge-beacon config when needed.
+- Before save/validate/run, soft-deleted rows materialize to `branch_end_node`
+  with `_system_role: "deleted_node_branch_end"` and nested `deleted_node`
+  restore metadata; materialization drops outgoing connections so execution
+  stops safely at the placeholder.
+- Saved/loaded marked branch-end placeholders render as friendly deleted rows,
+  and original connections/config can be restored when restore data exists.
+- Refreshed `BACKEND_FRONTEND_BOUNDARY.md` and `PROJECT_BACKLOG.md` to note
+  that new deletes no longer write `tombstone_node`; legacy registration remains
+  a future old-save compatibility cleanup.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "deleting_merge_beacon_prunes or deleted or tombstone or node_card or editor_depth or node_selector"` (11 passed)
+  - `../.venv/bin/python -m pytest tests/ -v` (129 passed)
+  - `git diff --check`
+
+## 2026-06-10 — Deleted-Node Save Contract Audit (no code changes)
+
+- Audited whether the visual-deleted-node model (frontend-only delete while
+  editing; save materializes deleted rows into `branch_end_node` with a
+  `_system_role: "deleted_node_branch_end"` + `deleted_node` config marker)
+  works against today's backend. Result: yes, with zero backend changes.
+- Wrote the contract into `BACKEND_FRONTEND_BOUNDARY.md` ("Deleted-Node
+  Save Contract"). Key findings:
+  - SaveManager save/export/duplicate and WorkflowMap load/save preserve
+    arbitrary JSON-serializable node config unchanged; import rewrites only
+    id/name.
+  - The marker must live in node config: top-level save keys are dropped by
+    `WorkflowMap.save`/`get_workflow_data_for_save()`.
+  - The validator ignores extra config keys, but original
+    `membank_inputs`/`membank_outputs` must be nested inside `deleted_node`
+    or they will be validated at top level.
+  - Execution stops cleanly at a materialized beacon with no outgoing
+    connection (supervisor advances to `None`; merge groups discard
+    terminated branches). Materialization must drop outgoing connections or
+    execution silently continues downstream.
+  - Port-shape caveat: `branch_end_node` declares only `input`/`default`;
+    surviving connections on other port names produce blocking
+    port-validity errors.
+  - Optional future hardening: ~8-line validator warning for marked nodes.
+- Verification:
+  - `git diff --check`
+
+## 2026-06-10 — Phase 17 Tombstone Selector Follow-Up
+
+- Hid editor-only `tombstone_node` metadata from `NodeSelectorScreen` so users
+  cannot add a "Deleted Node" placeholder while backend tombstone
+  decommission remains gated.
+- Kept the filter frontend-owned: `NodeFactory` may still expose transitional
+  tombstone metadata because the editor adapter still needs the registered
+  type until Phase B cleanup.
+- Extended selector coverage to assert `tombstone_node` is absent from the
+  selector source set and from search results.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "node_selector"` (1 passed)
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "node_selector or node_card or editor_depth or branch_end"` (8 passed)
+  - `git diff --check`
+
+## 2026-06-10 — Tombstone Boundary Audit Refresh (planning only)
+
+- Audited the actual tombstone footprint against
+  `BACKEND_FRONTEND_BOUNDARY.md` and found the doc stale: Phase A is done.
+  `frontend/editor_workflow_adapter.py` owns placeholder create/remove/
+  replace, and `replace_with_tombstone()`, tombstone-specific
+  `replace_node_type()`, and backend-written `_timing_invalidated` are
+  already gone from the backend.
+- Rewrote the boundary doc's audit and migration plan: Phase A marked done
+  with its one transitional dependency (the adapter still writes
+  `type: "tombstone_node"`, so backend registration is still required), and
+  Phase B reduced to a concrete five-step decommission list covering
+  `backend/nodes/debug/tombstone_node.py`, `backend/nodes/__init__.py`,
+  the validator's tombstone error block, the `node_identity.py` entry, and
+  an old-save loading decision.
+- Added an explicit coordination gate: Phase B must not start while Phase 17
+  selector/editor work is in flight, because it touches Phase 17 metadata,
+  the selector's metadata source, and ~26 tombstone test references.
+- Noted the known wart that `tombstone_node` currently appears in node-type
+  metadata as an addable "Deleted Node".
+- Synced the boundary cleanup section of `PROJECT_BACKLOG.md` to the
+  refreshed audit. No code changes.
+- Verification:
+  - `git diff --check`
+
+## 2026-06-10 — RunSession Edge-Case Audit
+
+- Audited the RunSession integration paths and added focused tests for three
+  previously untested load-bearing behaviors in `tests/test_run_session.py`:
+  - two file readers of the same path in one run share the cached handle and
+    both receive full contents (guards the `seek(0)` re-read behavior);
+  - back-to-back runs each get a fresh session with the new run's id, and
+    both sessions end up closed;
+  - `open_file` transparently replaces a cached handle that was closed
+    externally.
+- Documented a write-mode caveat in `RUNTIME_RESOURCE_SESSION.md`: a cached
+  `"w"` handle only flushes at run end, so a future file writer node should
+  flush after writes (or the session should flush before serving a same-path
+  read handle).
+- No runtime, frontend, or save-format changes.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_run_session.py -v` (10 passed)
+  - `git diff --check`
+
+## 2026-06-10 — RunSession Implementation
+
+- Implemented the per-run resource session from
+  `archive/plans/RUNTIME_RESOURCE_SESSION.md`:
+  - New `backend/run_session.py`: `RunSession` with `open_file` (cached by
+    resolved path + mode), `register_resource`/`get_resource` with optional
+    close hooks, `validate_path`, and idempotent `close_all`.
+  - `MasterState` creates the session in `start_workflow()`, passes it to
+    root and branch supervisors, and closes it in `_record_run` so FINISHED,
+    supervisor-error, and forced-termination paths all release resources.
+  - `Supervisor` accepts `run_session` and passes it into `NodeContext`;
+    `NodeContext.run_session` defaults to `None` so existing direct
+    constructions keep working.
+  - `Validator` gained a file-path pass for schema fields hinted with
+    `path_hint: "file"`: empty required path is an error; a path missing on
+    disk is a warning (an earlier node may create it during the run).
+  - `FileReaderNode` is the first consumer: its `file_path` field carries
+    `path_hint: "file"` and it reads through `context.run_session` when
+    available.
+- No frontend, persistence, or save-format changes. Workflow saves still
+  store plain path strings.
+- Updated `RUNTIME_RESOURCE_SESSION.md` status/implemented-files and the
+  backlog entry.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_run_session.py -v` (7 passed)
+  - `../.venv/bin/python -m pytest tests/ -v` (121 passed)
+  - `git diff --check`
+
+## 2026-06-10 — Phase 17 Editor Row Identity
+
+- Implemented editor row visual identity for normal node rows:
+  - Editor rows now opt into two-line `NodeCard` rendering with fixed
+    left/right frame columns.
+  - The first line keeps the editable alias as the primary text.
+  - The second line shows primary family plus one or two high-signal
+    subcategories, truncating long identity text with an ellipsis.
+  - Utility-tagged rows are visually quieter, while Merge Beacon open/connected
+    state indicators still take priority over decorative styling.
+- The editor attaches frontend-only identity display metadata from
+  `NodeFactory.get_node_types_metadata()` to row display copies. Runtime node
+  data and backend execution behavior were not changed.
+- The right-side details panel now shows full `Family` and `Subcategories`
+  lines for the selected node.
+- Added focused coverage for:
+  - row frame alignment and truncation;
+  - full details-panel identity;
+  - keyboard selection stability across taller editor rows and backend refresh;
+  - existing Merge Beacon health, branch selector rows, and selector behavior.
+- Verification:
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "node_card or editor_depth or editor_identity_rows"` (3 passed)
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "node_selector or node_card or editor_depth or branch_end"` (8 passed)
+  - `../.venv/bin/python -m pytest tests/ -v` (126 passed)
+
+## 2026-06-10 — Runtime Resource Session Design Note
+
+- Created `archive/plans/RUNTIME_RESOURCE_SESSION.md`: backend-only design
+  plan for a per-run `RunSession` object that holds file handles, streams,
+  and future resource types during one workflow execution.
+- Design covers: `RunSession` interface, lifecycle owned by `MasterState`
+  (create at run start, `close_all()` before finalization), `NodeContext`
+  receives session reference, file paths remain portable config strings in
+  saves, validation rules for missing/inaccessible paths, why frontend file
+  picking stays frontend-owned, and forward-compatibility for streams,
+  browser sessions, and listeners.
+- Likely new files when implemented: `backend/run_session.py`,
+  `tests/test_run_session.py`; modified: `master_state.py`, `supervisor.py`,
+  `node_base.py`, `validator.py`. No frontend or persistence changes.
+- Updated `PROJECT_BACKLOG.md` "Later Project — Runtime Resources And Hidden
+  Helper Nodes" to reference the new design doc and summarize `RunSession`.
+- Verification:
+  - `git diff --check`
+
+## 2026-06-10 — Phase 17 Direction Alignment
+
+- Added `PHASE_17_NODE_VISUAL_IDENTITY.md` as the active plan for node visual
+  identity, selector taxonomy, subcategory filters, and editor row direction.
+- Recorded follow-up design decisions: subcategory filters are `AND`
+  checkboxes, selector search is activate-to-edit, filter lists differ per tab,
+  editor rows should use aligned bracket columns with ellipsis truncation, and
+  file access should eventually be owned by a run-scoped resource helper/session
+  coordinated by `MasterState`.
+- Marked the task-first docs overhaul complete and Phase 17 active in
+  `MASTER_BUILD_PLAN.md`.
+- Updated the task router, handoff, UI quick reference, TUI design notes,
+  project knowledge, backlog, README, and file tree to point at the Phase 17
+  taxonomy.
+- Captured the metadata gap: `Node` has optional identity fields, but
+  `NodeFactory.get_node_types_metadata()` must expose category/tag/icon/color
+  metadata before the selector can depend on it.
+- Verification:
+  - `git diff --check`
+  - stale active-status `rg` scan for docs-overhaul-in-progress wording (no
+    matches)
+  - Phase 17 reference `rg` scan across active docs
+  - `find AttackOfTheNodes/docs -type f -name '*.md' | sort`
+
+## 2026-06-10 — Phase 17 Metadata Exposure
+
+- Added transitional Phase 17 identity metadata for the registered node library:
+  primary family, subcategory tags, icon name, and color hint.
+- `NodeFactory.get_node_types_metadata()` now exposes `category`,
+  `primary_family`, `legacy_category`, `tags`, `icon_name`, and `color_hint`
+  without changing runtime execution behavior.
+- Clarified the current saved `branch_node` as the user-facing **Parallel
+  Branch** node: it duplicates incoming payloads across multiple branch paths,
+  carries the `Parallel` subcategory, and does not claim the `Conditional`
+  subcategory reserved for a later dedicated node.
+- Added focused coverage proving the metadata contract for all registered nodes
+  plus representative Inputs, Flow Control, Outputs, and Complex nodes.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "node_factory_exposes_phase_17_identity_metadata or node_selector or node_card or editor_depth or branch_end"`
+  - `git diff --check`
+
+## 2026-06-10 — Phase 17 Selector Taxonomy Slice
+
+- Updated `NodeSelectorScreen` to use Phase 17 family tabs: Inputs,
+  Flow Control, Outputs, and Complex.
+- Added tab-specific subcategory checkbox filters derived from factory metadata.
+  Multiple checked subcategories use `AND` semantics.
+- Changed selector search to command-mode activation: opening the selector and
+  `/` focus the field without auto-editing; `E`/Enter activates text editing.
+- Initial selector focus now lands on the first visible subcategory checkbox
+  for the active family, falling back to the node list if a family has no
+  filters.
+- Added focused selector coverage for family switching, tab-specific filter
+  visibility, `AND` filtering, string-plus-subcategory filtering, and
+  activate-to-edit search behavior.
+- Updated `MASTER_BUILD_PLAN.md` with current RunSession state, completed
+  Phase 17 selector/metadata work, remaining editor-row/details-panel work, and
+  the next focused todo list.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "node_selector or node_factory_exposes_phase_17_identity_metadata or branch_config_uses_parallel or branch_node_parallel or branch_node_default_labels"`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "node_selector or node_card or editor_depth or branch_end"`
+  - `../.venv/bin/python -m pytest tests/ -v` (121 passed)
+  - `git diff --check`
+
+## 2026-06-10 — Node Helper Documentation And UI Standardization Notes
+
+- Added `NODE_HELPER.md` as the detailed guide for `aotn_node_helper` specs,
+  generated files, supported templates, config tabs, structural UI guardrails,
+  and current limitations.
+- Linked the helper guide from `README.md` and `TASK_INDEX.md` so node work can
+  start from the short docs and dive into the helper details only when needed.
+- Added a backlog project for helper-backed UI standardization: generated
+  config UI checks, keyboard smoke tests, dynamic-section schema support, screen
+  scaffolds, and screen/UI manifests.
+- Verification:
+  - `git diff --check`
+  - `rg -n "NODE_HELPER|aotn_node_helper|Pending in this session|docs/README.md|docs/TASK_INDEX.md" AttackOfTheNodes/docs AGENTS.md`
+  - `./.venv/bin/python -m pytest AttackOfTheNodes/tests/test_node_helper.py -q`
+  - `./.venv/bin/python -m compileall -q AttackOfTheNodes`
+  - `./.venv/bin/python -m compileall -q aotn_node_helper`
+
+## 2026-06-09 — Documentation Overhaul
+
+- Rebuilt the docs entry path around task-first reading from `README.md` and
+  `TASK_INDEX.md`.
+- Collapsed oversized active docs and archived full historical content under
+  `docs/archive/`.
+- Moved historical proof-of-concept and completed planning docs out of the
+  default read path.
+- Added `UI_QUICK_REFERENCE.md` as the short current UI/keybinding summary for
+  routine frontend work, leaving `TUI_DESIGN.md` as the detailed reference.
+- Corrected stale active-doc keybinding references and updated `AGENTS.md` to
+  point agents at the task router.
+- Added `DOCS_MIGRATION_NOTES.md` to explain moved/collapsed docs and archive
+  decisions.
+- Verification:
+  - `git diff --check`
+  - stale-reference `rg` scan from the implementation plan (no matches)
+  - active-doc stale keybinding scan for old add/library shortcuts (no matches)
+  - `find AttackOfTheNodes/docs -type f -name '*.md' | sort`
+  - `wc -l AttackOfTheNodes/docs/*.md AttackOfTheNodes/docs/archive/*.md AttackOfTheNodes/docs/archive/plans/*.md`
+
+## 2026-06-09 — Node Helper Generator And Focused Checks
+
+- Added standalone developer tooling at `../aotn_node_helper/` for generating
+  ordinary metadata-driven node files from JSON/YAML specs.
+- Helper specs support `config_tabs`, matching the workflow where a node is
+  described first and then fields are listed under tab headers such as `Source`,
+  `Parameters`, and `Payloads`.
+- Generated nodes update backend registration, create a node-specific focused
+  test under `tests/generated/`, and can be checked with
+  `../aotn_node_helper/check_node.py <node_type>`.
+- Node Config honors schema `tab` hints, so generated fields can land in the
+  fixed Source / Parameters / Payloads tabs without per-node frontend code.
+- Verification:
+  - `../.venv/bin/python -m pytest tests/test_node_helper.py -v` (3 passed)
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "schema_tab_hints"` (1 passed, 109 deselected)
+  - `../.venv/bin/python -m compileall -q .`
+  - `./.venv/bin/python -m compileall -q aotn_node_helper`
+
+## 2026-06-09 — Payload Reveal Consistency
+
+- Added opt-in `Reveal upstream payload` controls to the Payloads tab and
+  matching `Reveal Vault payload` previews for selected Vault inputs.
+- Made revealed payload previews read-only command stops, standardized preview
+  copy, and fixed long-tab scrolling back to the tab header.
+- Verification:
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "payloads_tab_reveals or fixed_tabs_are_keyboard or branch_config_uses_parallel or previous_output_preview or branch_payload_preview or selection_lists_exit"` (8 passed)
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v` (109 passed)
+
+## 2026-06-09 — Node Config Copy, Scroll, And Payload Polish
+
+- Polished Branch config copy and command text editing semantics.
+- Improved Branch Payloads navigation/scrolling for 4-5 branch rows.
+- Made inline selection lists exit at top/bottom with W/S or up/down.
+- Branch seed display now treats the selected upstream dead-drop or Vault value
+  as the branch port's visible payload.
+- Verification:
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "selection_lists_exit or previous_output_preview or quick_view or branch_payload_preview or branch_config_uses_parallel or command_inputs_require_activation or click_edit_and_textarea or editor_ctrl_s"` (13 passed)
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v` (108 passed)
+
+## 2026-06-09 — Branch Config Payload Polish
+
+- Shifted `branch_node` to the current Branch v1 UI: always-parallel branching,
+  2-5 active spawn points, and per-branch payload seed selection.
+- Kept legacy conditional Branch config keys readable/preserved for old saves
+  but hidden from the current Branch config UI.
+- Verification:
+  - `../.venv/bin/python -m compileall -q .`
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v -k "membank_registry or select_activates or previous_output_preview or click_edit_and_textarea or branch_config_uses_parallel or branch_node_parallel"` (7 passed)
+  - `../.venv/bin/python -m pytest tests/test_debug_nodes.py -v` (104 passed)

@@ -124,3 +124,15 @@ are changed. Session-history bounding remains PR C.
 
 New active files: VISION and CONTRIBUTING. Exactly 17 active top-level docs
 remain. README routes by task; CURRENT_STATE owns the dated snapshot.
+
+## 2026-10-18 — PR C session-history window
+
+| Source | Destination | Preservation |
+|---|---|---|
+| `SESSION_LOG.md` at `90182f0`, 96 entries before October 4 | [SESSION_LOG_HISTORY.md](SESSION_LOG_HISTORY.md) | Whole entries appended; only relative link targets rebased. Existing archive body retained. |
+| Owner decisions in those entries | [Extraction map](../audits/docs_audit_2026_10_17/vision_sources.md#session-decisions-extracted-before-pr-c) → owning references | Existing references checked before transfer; missing badge/fallback intent retained in UI reference/backlog. |
+| October entries | [Active Session Log](../SESSION_LOG.md) | All 86 existing entries retained whole, including every October 18 entry. |
+
+The active window is October 4–18; the first existing entry is October 6.
+[PR C verification](../audits/docs_audit_2026_10_17/PR_C_VERIFICATION.md) records
+checks and evidence limits. This ledger remains append-only.

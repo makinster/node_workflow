@@ -16,6 +16,7 @@ the [Distributed Build Plan](DISTRIBUTED_BUILD_PLAN.md) and
 |---|---|---|
 | Set up, run or test | [Newcomer Guide](NEWCOMER_GUIDE.md) | `main.py`, full suite below |
 | Build or inspect workflows | [Workflow Authoring](WORKFLOW_AUTHORING.md) | `backend/authoring.py`, `tests/test_authoring.py`, `tests/test_authoring_examples.py` |
+| Declare workflow inputs/results or pass run inputs | [Workflow contracts](WORKFLOW_AUTHORING.md#contracts-inputs-results-and-callable-workflows) | `backend/contracts.py`, `tests/test_contracts.py` |
 | Add/change a node | [Node Standards](NODE_STANDARDS.md), then [Node Helper](NODE_HELPER.md) | `backend/nodes/`, helper safety and commands in Node Helper |
 | Check node ideas or live capabilities | [Node Catalog](NODE_CATALOG.md), `aotn nodes` / `describe` | Catalog includes proposals; CLI reads registered contracts |
 | Fix editor/config UI | [UI Quick Reference](UI_QUICK_REFERENCE.md), [Boundary](BACKEND_FRONTEND_BOUNDARY.md) | `frontend/screens/`, `frontend/widgets/`; debug test filter below |
@@ -48,10 +49,13 @@ Older handoffs and execution prompts are historical, not instructions to redo
 completed phases or merge PRs. The taxonomy rename was cancelled:
 `primary_family` and frontend `group` remain separate from legacy `category`.
 The [rebuilt source map](audits/docs_audit_2026_10_17/vision_sources.md) records
-what was preserved and where. The 17 active documents own the current reading
-route; whole historical originals remain in `archive/`. Session-log bounding
-and remaining lower-priority corrections belong to PR C.
+what was preserved and where. The 17 core documents own the current reading
+route, plus the temporary [Subworkflows proposal](SUBWORKFLOWS_PROPOSAL.md),
+which moves to `archive/` when Step 4 completes. Whole historical originals
+remain in `archive/`; the [Session Log](SESSION_LOG.md) keeps about two weeks.
 The [retained audit report](audits/docs_audit_2026_10_17/MASTER_REPORT.md)
 records the findings; its supporting artifacts were not retained.
 [PR B verification](audits/docs_audit_2026_10_17/PR_B_VERIFICATION.md) records
 the fresh checks and archive-preservation method.
+[PR C verification](audits/docs_audit_2026_10_17/PR_C_VERIFICATION.md) records
+the session-history transfer, decision extraction and remaining-finding review.

@@ -856,7 +856,11 @@ stop for the owner/reviewer:
 |---|---|---|
 | 1 | Registry/runtime, stable IDs, class-time compilation, pure shared availability and characterization; one simple profile end to end | Merged #77: Confirm, including its unchanged generated hint and navigation |
 | 2 | Shared mixin/navigation policies, retire duplicated action-name lists; Input/TextArea and Select adapters; Stash, Node Config (P insert), Editor, Workflow Library and list pickers | Merged #78; each listed defect reproduced failing first and fixed. Multi-state policies and native adapters installed; current display text remains for phase 3 |
-| 3 | Generated Help/hints for migrated screens; replace handwritten key text and stale A/D-tab descriptions in Node Config/selector | After phase 2 merges |
+| 3 | Generated Help/hints for migrated screens; replace handwritten key text and stale A/D-tab descriptions | Next PR: Stash, Settings, Execution, list pickers, Confirm hints, Unsaved Changes, User Input and Recovery. Editor, Node Config, Node Selector, Workflow Library and Help topics follow after 4a-2 merges. |
+
+Docs cleanup PR C (`codex/docs-c`) bounds the session log after owner-decision
+extraction and verifies the active reading route. Delivery status lives in
+[Current State](CURRENT_STATE.md).
 
 Deferred: remaining read-only viewers until next touched, generated
 `UI_QUICK_REFERENCE.md` tables/source checks, Settings rebinding UI. Keep IDs
@@ -1505,6 +1509,13 @@ File/window reasoning D1–D12 now lives in Node Standards.
 
 These are directions/limitations to recheck against code before implementation,
 not instructions to repeat completed numeric, Random Number or Echo fixes:
+
+Retained owner design choice (2026-06-22): prevent type mismatches through
+typed dropdown filtering; use an amber `[type]` fallback where filtering cannot
+prevent one, and hide incompatible Vault choices rather than adding a divider.
+The fallback styling remains a design target to recheck, not a claim that every
+current mismatched port is coloured. Validation badges represent the last manual
+V check; continuous validation remains separate work.
 
 - Audit legacy controls by actual runtime capability. Do not implement fake
   Vault behavior to justify a generic checkbox; retain unrelated saved config.

@@ -1,16 +1,17 @@
 # Stash Proposal — Drag-and-Drop Entries, Field Insert, and Contract Inputs
 
-> **Status: proposal, not approved (2026-10-16).** Owner discussion only; no
-> code. Nothing here changes an approved decision in
-> [DISTRIBUTED_BUILD_PLAN.md](DISTRIBUTED_BUILD_PLAN.md). "Stash" is a working
-> name.
+> Design and staged scope. [Current State](CURRENT_STATE.md) owns approvals
+> and delivery; [UI Quick Reference](UI_QUICK_REFERENCE.md#stash-screen-s2) owns the
+> current controls. S1–S3 are implemented. Folder import (S4), contract
+> bindings (S5) and any later extensions remain separate work. Sections 8–9
+> retain historical review context, superseded where the decisions below differ.
 
 ## 1. Summary
 
 A **Stash** is a durable, per-machine store of named values (file paths and
 text snippets) that lives outside any workflow graph. You fill it by dropping
 files or pasting text into a full-screen panel, and you use it by inserting
-entries into node config fields with `ctrl+p`.
+entries into node config fields with `P`.
 
 It grows in three stages:
 
@@ -41,18 +42,18 @@ Stage 3 is why the backend pieces must be headless-safe from day one.
 |---|---|---|
 | Vault (`backend/memory_bank.py`) | Per-run `MemoryBank`; persistent dict plus transient `(node_id, port)` data; filled only by nodes during a run | **Not** a home for Stash entries: they would trip `undeclared_vault_key` (`validation_codes.py:30`), and transient data needs a source node. The Stash must be its own store. |
 | Out-of-graph store precedent (`backend/secrets_manager.py`) | `SecretsManager`: get/set/delete/list keyed values under `DATA_DIR/secrets`, reachable through `NodeContext` | The template for a `StashManager` (non-secret, typed entries). |
-| Persistence (`backend/persistence.py`) | Data dirs anchored at `resolve_data_dir()` (`$AOTN_DATA_DIR` / `--data-dir`); `save_json_record` / `load_json_record` / `list_json_records` | Add `STASH_DIR = DATA_DIR / "stash"`. Using the existing record helpers means headless and server data dirs work for free. |
+| Persistence (`backend/persistence.py`) | Storage is rooted at `resolve_data_dir()` (`AOTN_DATA_DIR` / `--data-dir`); `STASH_DIR` exists | `StashManager` uses the shared JSON-record helpers. |
 | Data types (`backend/data_types.py`) | Canonical `string`, `number`, `bool`, `var`, `file`, `ai_session`, `any` | Entry types use this vocabulary, so filtering and contract matching need no translation. |
-| File refs (`backend/file_refs.py`) | `file_reference(path)` gives `{"type": "file", "ref_key", "path"}`; `reference_path()` accepts a ref or a raw path | A file entry stores a `file_reference`. Copy-insert writes `reference_path()` into the field. (Known doc conflict C11: `data_types.py` still calls refs strings.) |
+| File refs (`backend/file_refs.py`) | `file_reference(path)` creates a tagged JSON object; `reference_path()` resolves its path | File entries store that object; copy-insert writes its path into an accepting configured field. |
 | Path normalization (`backend/file_paths.py`) | `normalize_local_path`; used by the validator for fields with `normalize_local_path: True` | Dropped paths are normalized when stored, so inserted values match hand-typed ones. |
-| Field hints in schemas | Path fields declare `"path_hint": "file"` (`file_reader_node.py:31`, `file_view_node.py:51`, `file_output_node.py`); the validator checks them (`validator.py:288-317`). The frontend does not read the hint yet. | `path_hint` is the main signal for filtering the picker. An audit is needed for path fields missing it. |
+| Field hints in schemas | `accepted_types()` in `backend/field_types.py` uses explicit `data_type`, otherwise `path_hint: file`, otherwise text-field type | File fields take file entries; ordinary text fields take text only. `path_hint` still describes file/path semantics. |
 | Source selectors | Ports declare `sources: [upstream, vault, configured]` with a `configured_field`; config holds `<port>_source` plus `<port>_vault_key` (`vault_declarations.py`) | Copy-insert into a field hidden behind `input_source != "Configured"` should switch the source to `Configured`. |
 | Config form (`frontend/widgets/form_generator.py`, `frontend/screens/node_config.py`) | Widgets have id `field-<name>`; `node_config.py` already maps ids back to schema fields | Insert target = the focused `field-*` widget; read its schema entry, then filter and write. |
-| Edit widgets (`frontend/widgets/command_input.py`) | `CommandInput` / `CommandTextArea` with `editing` mode and `begin_edit` / `end_edit` | `ctrl+p` as a priority binding: commit the active edit first (same pattern as `ctrl+s` save-and-stay), then open the picker. |
-| Key bindings | Editor: `p` unused. Node config: `ctrl+p` unused. App: Textual's command palette is **on by default and uses `ctrl+p`**. | Turn the palette off (`ENABLE_COMMAND_PALETTE = False`) or move it to another key. |
-| Paste handling | No `events.Paste` handler anywhere in `frontend/` | New. Drops arrive as bracketed paste. Parse quoting per terminal (Windows Terminal `"..."`, macOS `\ `, several files separated by spaces). |
-| Headless (`aotn_cli.py`, `backend/run_service.py`) | `aotn run` with `--input KEY=VALUE`, which is "recorded for the run, consumed by workflow contracts once they exist"; `RunService.start(inputs=...)` passes them to `MasterState` | The hook for stage 3 already exists. Nothing consumes the inputs yet. |
-| Contracts (`DISTRIBUTED_BUILD_PLAN.md` Step 4; `NODE_CONTRACT_PLAN.md` owner direction 2026-10-14) | Planned: typed declared inputs on Start; "one contract for every caller"; a required read with no writer and no declared workflow input is an error | The "exposed inputs" idea **is** the Step 4 contract. The Stash should not invent a parallel manifest. |
+| Edit widgets (`frontend/widgets/command_input.py`) | CommandInput / CommandTextArea distinguish navigation and editing | Plain `P` opens insert only outside editing; typing remains literal. |
+| Key bindings (`frontend/keymap.py`) | Editor `P` opens manage mode; Node Config `P` opens insert; the command palette keeps Ctrl+P | No command-palette change. |
+| Paste handling (`frontend/screens/stash.py`) | The Stash handles bracketed paste through `parse_paste` / `StashManager` | Paste elsewhere stays normal text input; there is no app-wide interception. |
+| Headless (`aotn_cli.py`, `backend/run_service.py`) | Typed `--input` and `--inputs-file` bind Start rows through `backend/contracts.py` | Stash input bindings and `@stash:` remain S5; there is no second contract manifest. |
+| Contracts (`backend/contracts.py`) | Start rows and Return End results define the workflow contract | The approved Step 4 design extends that contract to child calls and future Stash bindings. |
 
 **Boundary check** ([BACKEND_FRONTEND_BOUNDARY.md](BACKEND_FRONTEND_BOUNDARY.md)):
 stages 1–2 add one small backend service (store, paste parser, field-type
@@ -98,7 +99,7 @@ already-approved Step 4.
   - *Entries*: search, rename, delete, filter by type, folder groups that
     expand.
 - **Open:** `p` from the Editor screen (manage mode, no insert).
-- **Insert:** in node config, highlight a field, press `ctrl+p`. The list shows
+- **Insert:** in node config, highlight a field, press `P`. The list shows
   only entries that fit, `e`/Enter inserts, the modal closes and the field is
   filled. If the field accepts nothing (checkbox, select), show a short notice.
 - **Warnings:** a dropped path that doesn't exist (common over SSH) is flagged
@@ -134,7 +135,7 @@ Order for filling each input, the same for every caller:
 
 Plus: `--input key=@stash:name` on the command line, and `file`-typed inputs
 coerced through `file_reference()` with a check that the file exists.
-Bindings are set in the TUI with the same `ctrl+p` picker, from the
+Proposed S5 bindings use a field picker from the
 Start/contract panel or a subworkflow node's "required inputs" section.
 
 Result: set a workflow up once in the TUI, then `aotn run wf` works
@@ -146,14 +147,14 @@ unattended. On another machine you bind once and the same file runs unchanged.
 |---|---|---|---|
 | **S1 — Stash core** | `StashManager`, `STASH_DIR`, paste parser, `accepted_types`, JSON export/import, unit tests | — | S |
 | **S2 — Stash modal** | Full-screen modal (Drop/Paste + Entries), `p` from Editor, name/rename/delete | S1 | M |
-| **S3 — Field insert** | `ctrl+p` in node config (palette turned off/moved), filtered picker, write to focused field, switch source to `Configured`, `path_hint` audit | S1, S2 | M |
+| **S3 — Field insert** | plain `P` in node config, off while typing (palette unchanged), filtered picker, write to focused field, switch source to `Configured`, `path_hint` audit | S1, S2 | M |
 | **S3b — CLI (optional)** | `aotn stash list/add/rm/export/import` | S1 | S |
 | **S4 — Folder import** | Count/limits, refusal with numbers, grouped entries | S2 | S–M |
 | **S5 — Contract integration** | Fill order, per-machine bindings, `@stash:`, fail-fast on missing inputs, binding UI on Start/subworkflow node | DISTRIBUTED Step 4 | L (most of it shared with Step 4 itself) |
 | **S6 — Presets / sharing (exploratory)** | Bundle of values matched to a contract version; preview before applying; data only, never code | S5 | Undefined: design when needed |
 
 S1–S4 are independent of the distributed roadmap and could slot in after
-Phase 17 work. S5 should be designed **as part of** Step 4, not after it.
+frontend work. S5 should be designed **as part of** Step 4, not after it.
 
 ## 6. Hypothetical scope
 
@@ -186,7 +187,7 @@ bindings; CLI `@stash:` references; validation before the run starts.
    does the run record capture which inputs came from the Stash?
 6. Folder-import defaults (file count / total size / depth).
 
-## 8. Risks
+## 8. Historical risks
 
 - **Terminal variance:** drop quoting differs by terminal and OS; the parser
   needs a fixture table per terminal.
@@ -199,8 +200,12 @@ bindings; CLI `@stash:` references; validation before the run starts.
 
 ## 9. Review notes and fit with the plan (2026-10-17)
 
-Reviewed against the code at `8815bcd` (PR #61 merged). The claims in
-section 3 hold: Textual's command palette is on and uses `ctrl+p`;
+Historical review at the commit below: the original Ctrl+P proposal and
+recorded-only run inputs have since been replaced by plain P and typed
+Start-row binding. The command palette remains unchanged.
+
+Reviewed against the code at `8815bcd` (PR #61 merged). At that baseline:
+Textual's command palette was on and used `ctrl+p`;
 `path_hint` is read only by the validator; nothing handles paste events;
 `aotn run --input` exists and nothing consumes it yet. The owner agreed with
 the notes below.
