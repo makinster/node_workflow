@@ -33,6 +33,12 @@ ISSUE_CODES: Dict[str, str] = {
     "return_end_not_callable": "An End is a Return End in a workflow that isn't callable.",
     "multiple_return_ends": "A callable workflow has more than one Return End.",
     "return_end_unmerged": "A Return End can be reached inside an unmerged Parallel Branch.",
+    "subworkflow_not_found": "A Subworkflow node calls nothing, or a subworkflow that no longer exists.",
+    "subworkflow_not_callable": "A Subworkflow node calls a standard workflow, not a subworkflow.",
+    "subworkflow_recursion": "A chain of subworkflow calls leads back to the calling workflow.",
+    "subworkflow_input_unknown": "A Subworkflow node fills an input the subworkflow doesn't have.",
+    "subworkflow_input_missing": "A required subworkflow input with no default is not filled.",
+    "subworkflow_input_unmapped": "A subworkflow input is not filled, so its default is used.",
     # Vault
     "undeclared_vault_key": "A required Vault read names a key no node writes.",
     "unwritten_vault_key": "An optional Vault read names a key no node writes (fallback used).",

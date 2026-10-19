@@ -76,6 +76,9 @@ class RunContext:
     live_supervisors: Dict[str, Any] = field(default_factory=dict)
     # Set by a user Stop (not by a failure terminating the workflow).
     stop_requested: bool = False
+    # Step 4b (C22): how many subworkflow calls each call-site node has made
+    # in this run (the "visit" a child record names).
+    call_counts: Dict[str, int] = field(default_factory=dict)
 
     # -- completions ---------------------------------------------------------
 
@@ -86,6 +89,11 @@ class RunContext:
             for key in self.wait_registry.completed_keys
             if len(key) == 2 and key[0] == "node"
         }
+
+    def count_call(self, node_id: str) -> int:
+        """Count one more subworkflow call from ``node_id``; return its number."""
+        self.call_counts[node_id] = self.call_counts.get(node_id, 0) + 1
+        return self.call_counts[node_id]
 
     def mark_completed(self, node_id: str) -> None:
         self.wait_registry.mark_completed(node_key(node_id))

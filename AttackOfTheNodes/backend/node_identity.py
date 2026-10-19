@@ -53,6 +53,12 @@ TRANSITIONAL_NODE_IDENTITY: Dict[str, Dict[str, Any]] = {
         "tags": [UTILITY],
         "icon_name": "circle-stop",
     },
+    # Step 4b: backend and CLI only until 4c adds its config screen.
+    "subworkflow_node": {
+        "primary_family": FLOW_CONTROL,
+        "tags": [UTILITY],
+        "icon_name": "workflow",
+    },
     # Flow Control — Branching section
     "branch_node": {
         "primary_family": FLOW_CONTROL,

@@ -122,6 +122,7 @@ class Supervisor:
         input_provider: Optional[InputProvider] = None,
         run_inputs: Optional[Dict[str, Any]] = None,
         publish_result: Optional[Callable[[Dict[str, Any]], bool]] = None,
+        call_subworkflow: Optional[Callable[..., Any]] = None,
     ) -> None:
         if unattended is not None:
             if unattended not in UNATTENDED_ACTIONS:
@@ -169,12 +170,23 @@ class Supervisor:
         self._report_node_outcome = report_node_outcome
         self._run_inputs = run_inputs
         self._publish_result = publish_result
+        self._call_subworkflow = call_subworkflow
         self._last_delivered: List[str] = []
         self._visit_index = 0
         self._attempt_index = 0
         self._input_interrupted = False
         self._last_node_status: Optional[str] = None
         self._node_phase = "queued"
+
+    def _call_for(self, node_id: str):
+        """The subworkflow call bound to the node being executed (Step 4b)."""
+        if self._call_subworkflow is None:
+            return None
+        call = self._call_subworkflow
+
+        async def call_here(workflow_id, inputs, text_inputs=()):
+            return await call(node_id, workflow_id, inputs, text_inputs)
+        return call_here
 
     async def run(self) -> None:
         """Run this supervisor until its path ends or errors."""
@@ -568,6 +580,8 @@ class Supervisor:
             publish_event=publish_event,
             run_inputs=self._run_inputs,
             publish_result=self._publish_result,
+            call_subworkflow=self._call_for(self.current_node_id or ""),
+            node_alias=str((self._workflow_map.get_node_data(self.current_node_id or "") or {}).get("alias") or ""),
         )
 
         started_at = perf_counter()

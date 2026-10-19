@@ -673,10 +673,86 @@ def validate_workflow(
         )
 
     # A stand-in map (tests, previews) without the flag is a standard workflow.
+    _check_subworkflow_calls(all_nodes, str(getattr(workflow_map, "workflow_id", "") or ""),
+                             errors, warnings)
     _check_contract(all_nodes, factory, bool(getattr(workflow_map, "callable", False)),
                     errors, warnings)
 
     return {"success": not errors, "errors": errors, "warnings": warnings}
+
+
+SUBWORKFLOW_NODE_TYPE = "subworkflow_node"
+
+
+def _check_subworkflow_calls(all_nodes, workflow_id, errors, warnings) -> None:
+    """Step 4b: each Subworkflow node's child exists and is a subworkflow
+    (C12), its input mapping fits the child's Start, and no chain of calls
+    reaches this workflow again (C17: recursion is rejected in v1)."""
+    from .persistence import load_workflow
+
+    cache: Dict[str, Optional[Dict[str, Any]]] = {}
+
+    def load(child_id: str) -> Optional[Dict[str, Any]]:
+        if child_id not in cache:
+            cache[child_id] = load_workflow(child_id) if child_id else None
+        return cache[child_id]
+
+    def callees(data: Optional[Dict[str, Any]]) -> List[str]:
+        return [str((node.get("config") or {}).get("workflow_id") or "")
+                for node in ((data or {}).get("nodes") or {}).values()
+                if isinstance(node, dict) and node.get("type") == SUBWORKFLOW_NODE_TYPE]
+
+    def reaches_self(child_id: str) -> bool:
+        seen, stack = set(), [child_id]
+        while stack:
+            current = stack.pop()
+            if current == workflow_id:
+                return True
+            if current in seen:
+                continue
+            seen.add(current)
+            stack.extend(callees(load(current)))
+        return False
+
+    for node_id, data in all_nodes.items():
+        if data.get("type") != SUBWORKFLOW_NODE_TYPE:
+            continue
+        config = data.get("config") or {}
+        child_id = str(config.get("workflow_id") or "").strip()
+        child = load(child_id)
+        if not child_id or child is None:
+            errors.append({"node_id": node_id, "code": "subworkflow_not_found",
+                           "message": "Pick a saved subworkflow to call" if not child_id
+                           else f"The subworkflow {child_id!r} no longer exists"})
+            continue
+        name = str(child.get("name") or child_id)
+        if not child.get("callable"):
+            errors.append({"node_id": node_id, "code": "subworkflow_not_callable",
+                           "message": f"{name!r} is a standard workflow, not a subworkflow"})
+            continue
+        if workflow_id and reaches_self(child_id):
+            errors.append({"node_id": node_id, "code": "subworkflow_recursion",
+                           "message": f"Calling {name!r} leads back to this workflow; "
+                                      "a workflow can't call itself"})
+        starts = [node for node in (child.get("nodes") or {}).values()
+                  if isinstance(node, dict) and node.get("type") == "start_node"]
+        rows = [row for row in start_rows((starts[0].get("config") or {}) if starts else {})
+                if not row.get("_legacy")]
+        by_name = {row["name"].casefold(): row for row in rows}
+        mapped = {str(row.get("name") or "").strip().casefold()
+                  for row in config.get("inputs") or [] if isinstance(row, dict)}
+        for key in sorted(mapped - set(by_name) - {""}):
+            errors.append({"node_id": node_id, "code": "subworkflow_input_unknown",
+                           "message": f"{name!r} has no input named {key!r}"})
+        for row in rows:
+            if row["name"].casefold() in mapped:
+                continue
+            if row["required"] and (row.get("value") is None or row.get("value") == ""):
+                errors.append({"node_id": node_id, "code": "subworkflow_input_missing",
+                               "message": f"{name!r} needs input {row['name']!r} and nothing fills it"})
+            else:
+                warnings.append({"node_id": node_id, "code": "subworkflow_input_unmapped",
+                                 "message": f"{name!r} input {row['name']!r} uses its own default"})
 
 
 def _check_contract(all_nodes, factory, callable_workflow: bool, errors, warnings) -> None:

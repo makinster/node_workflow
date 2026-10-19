@@ -43,9 +43,11 @@ from .io.file_output_node import FileOutputNode
 from .io.file_view_node import FileViewNode
 from .io.window_control_node import WindowControlNode
 from .flow.error_mux_node import ErrorMuxNode
+from .flow.subworkflow_node import SubworkflowNode
 
 ALL_NODE_CLASSES = [
     ErrorMuxNode,
+    SubworkflowNode,
     WindowControlNode,
     FileViewNode,
     FileOutputNode,

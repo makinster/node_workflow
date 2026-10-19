@@ -143,6 +143,18 @@ class RunSession:
         resolved = str(Path(reference_path(value) or str(value)).resolve())
         return self._run_files.get(resolved)
 
+    def release_file(self, value: Any) -> Optional[str]:
+        """Stop owning a run-owned file (C13 hand-over); return its lifetime,
+        or None when this run does not own it (it then never deletes it)."""
+        resolved = str(Path(reference_path(value) or str(value)).resolve())
+        return self._run_files.pop(resolved, None)
+
+    def adopt_file(self, value: Any, lifetime: str) -> None:
+        """Own a file another run released; it is deleted with this run."""
+        self._ensure_open()
+        resolved = str(Path(reference_path(value) or str(value)).resolve())
+        self._run_files[resolved] = lifetime
+
     def _delete_run_files(self) -> None:
         for path, lifetime in self._run_files.items():
             if lifetime != LIFETIME_RUN:
@@ -151,12 +163,14 @@ class RunSession:
                 Path(path).unlink(missing_ok=True)
             except OSError:
                 logger.exception("Could not delete run file %s (run %s)", path, self._run_id)
-        directory = self.run_files_dir
-        try:
-            if directory.is_dir() and not any(directory.iterdir()):
-                directory.rmdir()
-        except OSError:
-            logger.exception("Could not remove run files directory %s", directory)
+        # Adopted files live in the run that made them; empty folders go too.
+        directories = {self.run_files_dir} | {Path(path).parent for path in self._run_files}
+        for directory in directories:
+            try:
+                if directory.is_dir() and not any(directory.iterdir()):
+                    directory.rmdir()
+            except OSError:
+                logger.exception("Could not remove run files directory %s", directory)
 
     def validate_path(self, path: str) -> Tuple[bool, str]:
         """Return (ok, reason) for a path without opening it."""

@@ -115,6 +115,36 @@ undeclared input stops before it starts with **exit code 5**. Results print
 as `name = value` after the outputs, and in `--json` output as `values`, with
 the `revision` of the definition that ran.
 
+### Calling a subworkflow
+
+A `subworkflow_node` runs a saved subworkflow by id as a child run and waits
+for its results (Step 4b; the TUI picker comes in 4c):
+
+```json
+"call": {"type": "subworkflow_node", "alias": "Greet", "config": {
+  "workflow_id": "wf_3f2a...",
+  "inputs":  [{"name": "who", "source": "Configured", "value": "Kim"},
+              {"name": "times", "source": "Vault", "vault_key": "count"}],
+  "results": [{"name": "greeted", "to": "Vault", "vault_key": "greeting"}]
+}}
+```
+
+- **inputs**: `source` is `Configured` (`value` is text, parsed by the
+  child's row type), `Upstream payload` (the node's input) or `Vault`
+  (`vault_key`). Unlisted inputs use the child's defaults.
+- **results**: `to` is `Downstream` (the default for unlisted results),
+  `Vault` or `Both`; a blank `vault_key` means `<alias>.<result>`. The
+  `default` output carries the downstream results: one as itself, several
+  as one object.
+- Failures are coded and routable on `error`: `child_not_found`,
+  `child_input_missing`, `child_input_invalid`, `child_failed`,
+  `child_output_conflict`, `depth_limit`, `capacity_limit`. Settings
+  `max_subworkflow_depth` (default 4) and `max_live_subworkflow_runs`
+  (default 64) limit a root run; a call past either fails at once.
+- The validator rejects a missing child, a standard workflow as the child,
+  calls that lead back to the calling workflow, and inputs the child doesn't
+  have or needs; it warns when an input keeps its default.
+
 ## What a build checks
 
 In one pass, reporting every problem at once:

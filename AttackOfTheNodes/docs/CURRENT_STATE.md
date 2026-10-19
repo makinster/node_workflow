@@ -25,8 +25,10 @@ This is the live status snapshot; plans and logs preserve dated decisions.
   built (#80). 4a-2 screens are in progress on `dist/step4a2-screens`
   (owner-approved samples, 2026-10-18: plain short wording; the File window
   gets Workflows and Subworkflows tabs; C copies a workflow to Subworkflows,
-  numbering a repeat copy "(2)" with a warning toast). Child-workflow calls
-  remain later work. [Proposal](SUBWORKFLOWS_PROPOSAL.md).
+  numbering a repeat copy "(2)" with a warning toast). 4b child runs are
+  awaiting review on `dist/step4b-child-runs` (backend and CLI: the
+  Subworkflow node, call tree, limits, file hand-over, prompts, pause and
+  stop, run records, validation, benchmark). [Proposal](SUBWORKFLOWS_PROPOSAL.md).
 - Keymap phase 3 is next for Stash, Settings, Execution, list pickers, Confirm
   hints, Unsaved Changes, User Input and Recovery. Editor, Node Config,
   Node Selector, Workflow Library and Help topics follow after 4a-2 merges.
