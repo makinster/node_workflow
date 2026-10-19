@@ -345,3 +345,116 @@ def test_validator_warns_when_a_resolvers_no_error_path_never_runs():
     workflow_map.disconnect(mux, "default", pause, "input")
     result = validate_workflow(workflow_map, factory)
     assert not [w for w in result["warnings"] if w.get("code") == "ignored_fan_out"]
+
+
+# -- Removing a deleted node's stub (owner "user test" report, 2026-10-18):
+# removing a Resolver's stub joined HTTP to every path after it, so a
+# successful run went down the old error branch.
+
+def _resolver_with_branches(shared=False):
+    """Start → HTTP → Resolver; No error → Ask → Done;
+    Missing URL → Note → Note end (or → Done when ``shared``)."""
+    factory, workflow_map = _map()
+    start = workflow_map.add_node("start_node")
+    http = workflow_map.add_node("http_request_node")
+    mux = workflow_map.add_node("error_mux_node")
+    ask = workflow_map.add_node("no_op_node")
+    done = workflow_map.add_node("end_node")
+    note = workflow_map.add_node("text_output_node")
+    note_end = workflow_map.add_node("end_node")
+    workflow_map.update_node_config(mux, {"routes": [
+        {"id": "r_url", "label": "Missing URL", "codes": ["missing_url"]}]})
+    workflow_map.connect(start, "default", http, "input")
+    workflow_map.connect(http, "default", mux, "input")
+    workflow_map.connect(mux, "default", ask, "input")
+    workflow_map.connect(ask, "default", done, "input")
+    workflow_map.connect(mux, "r_url", note, "input")
+    if shared:
+        workflow_map.connect(note, "default", ask, "input")
+    else:
+        workflow_map.connect(note, "default", note_end, "input")
+    return factory, workflow_map, dict(
+        start=start, http=http, mux=mux, ask=ask, done=done, note=note, note_end=note_end)
+
+
+def _remove_stub_in_editor(factory, workflow_map, node_id, button="#confirm-yes", save=False):
+    """Delete the node, optionally save, then delete its stub."""
+    from textual.app import App
+
+    from frontend.screens.confirm import ConfirmScreen
+    from frontend.screens.editor import EditorScreen
+
+    class EditorApp(App):
+        def compose(self):
+            yield EditorScreen(factory, workflow_map)
+
+    async def run():
+        app = EditorApp()
+        async with app.run_test() as pilot:
+            await pilot.pause(0.03)
+            editor = app.query_one(EditorScreen)
+            asked = []
+            for step in range(2):
+                editor.selected_node_id = node_id
+                editor.selected_row = {"kind": "node", "node_id": node_id}
+                editor.action_delete_selected()
+                await pilot.pause(0.03)
+                if isinstance(app.screen, ConfirmScreen):
+                    asked.append(str(app.screen._message))
+                    await pilot.click(button)
+                    await pilot.pause(0.03)
+                if step == 0 and save:
+                    editor.workflow_adapter.materialize_deleted_nodes()
+            return asked
+
+    return asyncio.run(run())
+
+
+def test_removing_a_resolver_stub_keeps_only_the_no_error_path():
+    for save in (False, True):
+        factory, workflow_map, ids = _resolver_with_branches()
+
+        asked = _remove_stub_in_editor(factory, workflow_map, ids["mux"], save=save)
+
+        assert len(asked) == 1 and "No error path is kept" in asked[0], save
+        assert workflow_map.get_node_data(ids["mux"]) is None
+        assert _targets(workflow_map, ids["http"]) == [ids["ask"]], save
+        for gone in ("note", "note_end"):
+            assert workflow_map.get_node_data(ids[gone]) is None, (save, gone)
+        assert _targets(workflow_map, ids["ask"]) == [ids["done"]]
+
+
+def test_cancelling_the_resolver_stub_removal_keeps_everything():
+    factory, workflow_map, ids = _resolver_with_branches()
+
+    asked = _remove_stub_in_editor(factory, workflow_map, ids["mux"], button="#confirm-no")
+
+    assert len(asked) == 1
+    for kept in ("mux", "note", "note_end"):
+        assert workflow_map.get_node_data(ids[kept]) is not None, kept
+
+
+def test_a_node_the_no_error_path_also_reaches_is_kept():
+    factory, workflow_map, ids = _resolver_with_branches(shared=True)
+
+    _remove_stub_in_editor(factory, workflow_map, ids["mux"])
+
+    assert workflow_map.get_node_data(ids["note"]) is None
+    assert workflow_map.get_node_data(ids["ask"]) is not None
+    assert _targets(workflow_map, ids["http"]) == [ids["ask"]]
+
+
+def test_removing_a_conditional_stub_never_gives_an_output_two_targets():
+    factory, workflow_map = _map()
+    start = workflow_map.add_node("start_node")
+    check = workflow_map.add_node("conditional_node")
+    yes = workflow_map.add_node("no_op_node")
+    no = workflow_map.add_node("logger_node")
+    workflow_map.connect(start, "default", check, "input")
+    workflow_map.connect(check, "true", yes, "input")
+    workflow_map.connect(check, "false", no, "input")
+
+    asked = _remove_stub_in_editor(factory, workflow_map, check)
+
+    assert asked == []
+    assert _targets(workflow_map, start) == [yes]

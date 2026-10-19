@@ -6,7 +6,7 @@ from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
-from backend.node_errors import ERROR_PORT
+from backend.node_errors import ERROR_PORT, MUX_DEFAULT_PORT
 from backend.validator import _declared_membank_outputs, _membank_source_id
 from frontend.node_io_display import metadata_for_type
 from frontend.node_types import (
@@ -18,6 +18,7 @@ from frontend.node_types import (
 )
 
 
+ERROR_MUX_TYPE = "error_mux_node"
 DELETED_NODE_SYSTEM_ROLE = "deleted_node_branch_end"
 DELETED_NODE_ALIAS = "Deleted node"
 DELETED_NODE_STATE_ATTR = "_editor_deleted_nodes"
@@ -440,6 +441,54 @@ class EditorWorkflowAdapter:
                 )
             ]
 
+    def _stub_parts(self, node_id: str):
+        node = self.workflow_map.get_node_data(node_id) or {}
+        upstream = list(node.get("connections", {}).get("inputs", []))
+        downstream = list(node.get("connections", {}).get("outputs", []))
+        if self.is_materialized_placeholder(node):
+            config = node.get("config") or {}
+            original_type = str(config.get("original_type") or "")
+            if not downstream:
+                downstream = list(config.get("original_outputs") or [])
+        else:
+            original_type = str(node.get("type") or "")
+        return original_type, upstream, downstream
+
+    def stub_removal_plan(self, node_id: str) -> Dict[str, List[Any]]:
+        """What removing a deleted node's stub reconnects and deletes.
+
+        The gap is bridged to one target only, so no output gets two. An
+        Error Resolver keeps its No error path and takes the nodes only its
+        error branches reach with it (owner, 2026-10-18). Other paths of a
+        multi-path node are left for the deletion review.
+        """
+        original_type, _, downstream = self._stub_parts(node_id)
+        if original_type in {BRANCH_NODE_TYPE, START_NODE_TYPE, MERGE_NODE_TYPE}:
+            return {"keep": [], "doomed": []}
+        live = [
+            conn for conn in downstream
+            if self.workflow_map.get_node_data(str(conn.get("target_node_id") or ""))
+        ]
+        if original_type == ERROR_MUX_TYPE:
+            keep_port = MUX_DEFAULT_PORT
+        else:
+            ports = self.factory.output_ports_for(
+                original_type, self.placeholder_metadata(node_id).get("original_config") or {})
+            used = [str(conn.get("source_port") or "default") for conn in live
+                    if conn.get("source_port") != ERROR_PORT]
+            keep_port = next((port for port in ports if port in used), used[0] if used else None)
+        keep = [conn for conn in live if str(conn.get("source_port") or "default") == keep_port][:1]
+        doomed: List[str] = []
+        if original_type == ERROR_MUX_TYPE:
+            from frontend.error_mux_ui import nodes_only_reached_from
+
+            heads = [str(conn.get("target_node_id")) for conn in live
+                     if str(conn.get("source_port") or "default") != MUX_DEFAULT_PORT]
+            doomed = nodes_only_reached_from(
+                self.workflow_map, heads, node_id,
+                extra_roots=[str(conn.get("target_node_id")) for conn in keep])
+        return {"keep": keep, "doomed": doomed}
+
     def remove_placeholder(self, node_id: str, reconnect_gap: bool = True) -> bool:
         if not self.is_placeholder(node_id):
             return False
@@ -448,34 +497,29 @@ class EditorWorkflowAdapter:
             self._deleted_nodes.pop(node_id, None)
             return False
 
-        upstream_connections = list(node.get("connections", {}).get("inputs", []))
-        downstream_connections = list(node.get("connections", {}).get("outputs", []))
-        original_type = ""
-
-        if self.is_materialized_placeholder(node):
-            config = node.get("config") or {}
-            original_type = str(config.get("original_type") or "")
-            if not downstream_connections:
-                downstream_connections = list(config.get("original_outputs") or [])
-        else:
-            original_type = str(node.get("type") or "")
+        original_type, upstream_connections, downstream_connections = self._stub_parts(node_id)
+        plan = self.stub_removal_plan(node_id) if reconnect_gap else {"keep": [], "doomed": []}
 
         self._deleted_nodes.pop(node_id, None)
         result = self.workflow_map.delete_node(node_id)
 
-        _NO_SHIFT_TYPES = {BRANCH_NODE_TYPE, START_NODE_TYPE, MERGE_NODE_TYPE}
         if result and reconnect_gap and original_type == MERGE_NODE_TYPE:
             self._reconnect_merge_gap(upstream_connections, downstream_connections)
-        if result and reconnect_gap and original_type not in _NO_SHIFT_TYPES:
+        if result:
+            for doomed in plan["doomed"]:
+                if self.is_placeholder(doomed):
+                    self.remove_placeholder(doomed, reconnect_gap=False)
+                else:
+                    self.workflow_map.delete_node(doomed)
             for in_conn in upstream_connections:
                 source_id = str(in_conn.get("source_node_id") or "")
                 source_port = str(in_conn.get("source_port") or "default")
                 if not source_id or self.workflow_map.get_node_data(source_id) is None:
                     continue
-                for out_conn in downstream_connections:
+                for out_conn in plan["keep"]:
                     target_id = str(out_conn.get("target_node_id") or "")
                     target_port = str(out_conn.get("target_port") or "input")
-                    if not target_id or self.workflow_map.get_node_data(target_id) is None:
+                    if self.workflow_map.get_node_data(target_id) is None:
                         continue
                     self.workflow_map.connect(source_id, source_port, target_id, target_port)
 

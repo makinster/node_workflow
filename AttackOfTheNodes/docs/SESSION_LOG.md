@@ -35,8 +35,15 @@ Tests are in `test_insert_fan_in_error_path.py`.
   an ordinary input again. The validator warns (`ignored_fan_out`) when a
   Resolver's No error path can never run because its node also leads
   elsewhere; that is the state the owner's saved C1/C2 file is in.
+- **Removing a deleted node's stub** (owner, "user test"): removing an
+  Error Resolver's stub joined its parent to every path after it, so a
+  successful run went down the old error branch. The gap is now bridged to
+  one target only. An Error Resolver keeps its No error path and, after a
+  confirm, deletes the nodes only its error branches reach. Other paths of
+  a multi-path node (Conditional's second path) are left loose for the
+  deletion review. Branch nodes keep their keep-one picker.
 - Logged for later in the backlog: reducing a Branch node's path count,
-  and a deletion review with the owner. After: 1721 passed (13 new tests).
+  and a deletion review with the owner. After: 1725 passed (17 new tests).
 
 ## 2026-10-18 — Step 4a-1: Contracts (Backend and CLI)
 

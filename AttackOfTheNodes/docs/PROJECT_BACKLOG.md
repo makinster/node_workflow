@@ -49,7 +49,18 @@ reproductions and proposed a node contract plan:
 
 The owner sees deletion bugs as mostly cases never designed, not broken code.
 #82 handled deleting a node that has an error handler (it asks, then removes
-the Error Mux and its error branches and keeps the No error path). Still open:
+the Error Mux and its error branches and keeps the No error path), and made
+removing a stub bridge one path only (a Resolver stub drops its error
+branches after a confirm). Still open, approved direction 2026-10-18:
+
+- **Grouped delete:** a node that owns branches is deleted with the nodes
+  only its dropped branches reach, as one action. One undo restores all of
+  it; after a save the group is one stub that stores the branch nodes, and
+  removing the stub removes the group. The validator stays strict about
+  unlinked nodes. Error Resolver keeps No error automatically; Branch and
+  Conditional ask which paths to keep (the same picker as below).
+- **Session undo history** (later): in-memory, multi-step Ctrl+Z for every
+  edit, cleared when the app closes. Grouped deletes move onto it then.
 
 - **Reducing a Branch node's path count** in Node Config after its paths
   are filled leaves the removed paths' nodes behind. Wanted: a picker

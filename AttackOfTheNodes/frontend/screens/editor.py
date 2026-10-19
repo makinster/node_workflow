@@ -565,16 +565,37 @@ class EditorScreen(KeymapScreenMixin, Screen):
             ):
                 self._open_branch_keep_selector(self.selected_node_id, metadata)
                 return
-            removed = self.workflow_adapter.remove_placeholder(self.selected_node_id)
-            if removed:
-                self.selected_node_id = None
-                self.selected_row = None
-                self.refresh_from_backend()
-                notifications.tombstone_removed(self.app)
+            doomed = self.workflow_adapter.stub_removal_plan(self.selected_node_id)["doomed"]
+            if doomed:
+                node_id = self.selected_node_id
+                count = len(doomed)
+                self.app.push_screen(
+                    ConfirmScreen(
+                        f"Remove the deleted Error Resolver? {count} node"
+                        f"{'s' if count != 1 else ''} on its error branches will be "
+                        "deleted too. The No error path is kept. This can't be undone.",
+                        yes_label="Delete", no_label="Cancel"),
+                    lambda confirmed: self._remove_stub(node_id, doomed) if confirmed else None,
+                )
+                return
+            self._remove_stub(self.selected_node_id, [])
             return
         self.workflow_adapter.replace_with_placeholder(self.selected_node_id)
         self.refresh_from_backend()
         notifications.node_deleted(self.app)
+
+    def _remove_stub(self, node_id: str, doomed: list) -> None:
+        for doomed_id in doomed:
+            doomed_node = self.workflow_map.get_node_data(doomed_id) or {}
+            if doomed_node.get("type") == BRANCH_END_NODE_TYPE:
+                self._prune_merge_config_for_beacon(doomed_id)
+            self.active_branch_ports.pop(doomed_id, None)
+        self.active_branch_ports.pop(node_id, None)
+        if self.workflow_adapter.remove_placeholder(node_id):
+            self.selected_node_id = None
+            self.selected_row = None
+            self.refresh_from_backend()
+            notifications.tombstone_removed(self.app)
 
     def _open_branch_keep_selector(
         self, node_id: str, metadata: dict

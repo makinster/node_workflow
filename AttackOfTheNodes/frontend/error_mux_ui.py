@@ -109,23 +109,37 @@ def branch_nodes_for_port(workflow_map, mux_id: str, port: str) -> List[str]:
     any node that Start also reaches another way; those are never part of
     the branch. Order is breadth-first from the port.
     """
-    nodes = workflow_map.get_all_node_data()
-    mux = nodes.get(mux_id) or {}
+    mux = workflow_map.get_node_data(mux_id) or {}
     heads = [
         str(conn.get("target_node_id") or "")
         for conn in (mux.get("connections") or {}).get("outputs", [])
         if conn.get("source_port") == port
     ]
+    return nodes_only_reached_from(workflow_map, heads, mux_id, {port})
+
+
+def nodes_only_reached_from(
+    workflow_map,
+    heads: Sequence[str],
+    skip_node: str,
+    skip_ports: Optional[set] = None,
+    extra_roots: Sequence[str] = (),
+) -> List[str]:
+    """Nodes reached from ``heads`` that Start (or ``extra_roots``) does not
+    also reach without ``skip_node``'s ``skip_ports`` (all its outputs when
+    None). Stops at a Merge. Order is breadth-first from the heads."""
+    nodes = workflow_map.get_all_node_data()
     elsewhere: set[str] = set()
     start = workflow_map.find_start_node_id()
-    stack = [start] if start else []
+    stack = ([start] if start else []) + [root for root in extra_roots if root]
     while stack:
         node_id = stack.pop()
         if node_id in elsewhere or node_id not in nodes:
             continue
         elsewhere.add(node_id)
         for conn in (nodes[node_id].get("connections") or {}).get("outputs", []):
-            if node_id == mux_id and conn.get("source_port") == port:
+            if node_id == skip_node and (
+                    skip_ports is None or conn.get("source_port") in skip_ports):
                 continue
             stack.append(str(conn.get("target_node_id") or ""))
     branch: List[str] = []
