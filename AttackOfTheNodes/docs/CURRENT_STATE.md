@@ -26,13 +26,10 @@ This is the live status snapshot; plans and logs preserve dated decisions.
   Editor (including ` [sub]` header), editor adapter, error-mux helpers and keep
   picker; no `node_config.py` edits.
 - **Step 4:** design rev. 4 approved (#76/#79); 4a-1 backend/CLI contracts
-  built (#80). 4a-2 screens are open as #85 at `afe98cd` on
-  `dist/step4a2-screens`: File window tabs and copying, Start inputs, Return End
-  results and send-back controls. Re-review: 53 focused tests and the full suite
-  (1759 tests) pass. One additional finding: confirming a typed file-reference
-  default unchanged turns it into JSON text, breaking input resolution.
-  Findings only; no #85 code edits. Child-workflow calls remain later work.
-  [Proposal](SUBWORKFLOWS_PROPOSAL.md).
+  built (#80). 4a-2 screens merged in #85: File window Workflows/Subworkflows
+  tabs, copy to Subworkflows, Start Inputs and Results tabs, the End Results
+  tab, "Send back to calling workflow"; all review findings fixed, including
+  file defaults. 4b child runs (backend and CLI) are #87. [Proposal](SUBWORKFLOWS_PROPOSAL.md).
 - Keymap phase 3 is next for Stash, Settings, Execution, list pickers, Confirm
   hints, Unsaved Changes, User Input and Recovery. Editor, Node Config,
   Node Selector, Workflow Library and Help topics follow after 4a-2 merges.

@@ -388,42 +388,50 @@ class AttackOfTheNodesApp(KeymapScreenMixin, TextualApp):
             self._reset_run_display_state()
             notifications.workflow_stopped(self)
 
-    def action_new_workflow(self) -> None:
-        """Create a fresh starter workflow."""
+    def action_new_workflow(self, callable_: bool = False) -> None:
+        """Create a fresh starter workflow (a subworkflow from tab 2)."""
         if self.workflow_map.is_dirty:
+            kind = "subworkflow" if callable_ else "workflow"
             self.push_screen(
                 ConfirmScreen(
                     "The current workflow has unsaved changes.\n"
-                    "Create a new workflow and discard them?",
+                    f"Create a new {kind} and discard them?",
                     yes_label="Discard",
                     no_label="Cancel",
                 ),
-                lambda confirmed: self._prompt_new_workflow_name() if confirmed else None,
+                lambda confirmed: self._prompt_new_workflow_name(callable_) if confirmed else None,
             )
             return
-        self._prompt_new_workflow_name()
+        self._prompt_new_workflow_name(callable_)
 
-    def _prompt_new_workflow_name(self) -> None:
+    def _prompt_new_workflow_name(self, callable_: bool = False) -> None:
         """Ask for the new workflow's name; Esc creates nothing."""
+        title = "New subworkflow" if callable_ else "New workflow"
         self.push_screen(
-            NamePromptScreen("New workflow", unused_name(), name_problem),
-            lambda name: self._create_new_workflow(name) if name else None,
+            NamePromptScreen(title, unused_name(callable_=callable_),
+                             lambda name: name_problem(name, callable_=callable_)),
+            lambda name: self._create_new_workflow(name, callable_) if name else None,
         )
 
-    def _create_new_workflow(self, name: str = DEFAULT_NAME) -> None:
+    def _create_new_workflow(self, name: str = DEFAULT_NAME, callable_: bool = False) -> None:
         """Create a fresh starter workflow without additional confirmation."""
         self.stop_active_workflow()
         self._reset_run_display_state()
         self._editor_deleted_nodes = {}
         self.workflow_map.create_new(name)
         self.workflow_map.add_node(START_NODE_TYPE, alias="Start")
+        if callable_:
+            self.workflow_map.set_callable(True)
         self._on_backend_event()
-        notifications.workflow_created(self)
+        if callable_:
+            notifications.subworkflow_created(self)
+        else:
+            notifications.workflow_created(self)
 
-    def action_workflow_library(self) -> None:
+    def action_workflow_library(self, initial_tab: str | None = None) -> None:
         """Open the workflow library modal."""
         self.push_screen(
-            WorkflowLibraryScreen(self.workflow_map.workflow_id),
+            WorkflowLibraryScreen(self.workflow_map.workflow_id, initial_tab=initial_tab),
             self._handle_workflow_library_action,
         )
 
@@ -478,7 +486,7 @@ class AttackOfTheNodesApp(KeymapScreenMixin, TextualApp):
             return
         action = result.get("action")
         if action == "new":
-            self.action_new_workflow()
+            self.action_new_workflow(bool(result.get("callable")))
             return
         if action == "import":
             self._prompt_import_workflow()
@@ -504,6 +512,8 @@ class AttackOfTheNodesApp(KeymapScreenMixin, TextualApp):
             self._load_workflow_from_library(result)
         elif action == "rename":
             self._prompt_rename_workflow(result)
+        elif action == "copy_to_subworkflows":
+            self._confirm_copy_to_subworkflows(result)
         elif action == "duplicate":
             if self.save_manager is None:
                 notifications.missing_service(self, "Duplicate")
@@ -530,21 +540,51 @@ class AttackOfTheNodesApp(KeymapScreenMixin, TextualApp):
         elif action == "export":
             self._prompt_export_workflow(result)
 
+    def _confirm_copy_to_subworkflows(self, result) -> None:
+        """C on the Workflows tab: copy it as a subworkflow (owner, 2026-10-18)."""
+        if self.save_manager is None:
+            notifications.missing_service(self, "Copy")
+            return
+        from backend.persistence import load_workflow
+
+        workflow_id = result["workflow_id"]
+        name = str(result.get("workflow_name") or workflow_id)
+        data = load_workflow(workflow_id) or {}
+        ends = sum(1 for node in (data.get("nodes") or {}).values()
+                   if isinstance(node, dict) and node.get("type") == "end_node")
+        message = f'Copy "{name}" as [sub]?\nThe original stays unchanged.'
+        if ends > 1:
+            message += f"\nIt has {ends} End nodes; pick one to send results back."
+        self.push_screen(
+            ConfirmScreen(message, yes_label="Copy", no_label="Cancel"),
+            lambda confirmed: self._copy_to_subworkflows(workflow_id, name)
+            if confirmed else self.action_workflow_library("library-tab-workflows"),
+        )
+
+    def _copy_to_subworkflows(self, workflow_id: str, name: str) -> None:
+        copied = self.save_manager.copy_as_subworkflow(workflow_id)
+        if copied is None:
+            notifications.notify_error(self, "The workflow could not be read")
+        else:
+            notifications.copied_to_subworkflows(self, copied["name"], name, copied["renamed"])
+        self.action_workflow_library("library-tab-workflows")
+
     def _prompt_rename_workflow(self, result) -> None:
         if self.save_manager is None:
             notifications.missing_service(self, "Rename")
             return
         workflow_id = result["workflow_id"]
+        callable_ = bool(result.get("callable"))
         self.push_screen(
             NamePromptScreen(
-                "Rename workflow",
+                "Rename subworkflow" if callable_ else "Rename workflow",
                 str(result.get("workflow_name") or ""),
-                lambda name: name_problem(name, exclude_id=workflow_id),
+                lambda name: name_problem(name, exclude_id=workflow_id, callable_=callable_),
             ),
-            lambda name: self._rename_workflow(workflow_id, name),
+            lambda name: self._rename_workflow(workflow_id, name, callable_),
         )
 
-    def _rename_workflow(self, workflow_id: str, name) -> None:
+    def _rename_workflow(self, workflow_id: str, name, callable_: bool = False) -> None:
         """Apply a confirmed rename, then return to the library."""
         if name:
             problem = self.save_manager.rename_workflow(workflow_id, name)
@@ -553,7 +593,7 @@ class AttackOfTheNodesApp(KeymapScreenMixin, TextualApp):
             else:
                 self._on_backend_event()
                 notifications.workflow_renamed(self, name)
-        self.action_workflow_library()
+        self.action_workflow_library("library-tab-subworkflows" if callable_ else "library-tab-workflows")
 
     def _load_workflow_from_library(self, result) -> None:
         workflow_id = result.get("workflow_id")

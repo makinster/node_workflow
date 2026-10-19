@@ -55,21 +55,29 @@ async def test_start_value_has_one_editor_and_routing_preview_updates(width):
     assert output_display_name(wm._factory, wm.get_node_data(start), 'default') == 'Greeting'
     screen = NodeConfigScreen(wm._factory, wm, start, wm.get_node_data(start), memory_bank=mb)
     results = []
+    # Step 4a-2: the value is edited in one place, its Start input row; Start
+    # has no Payloads tab and no payload name fields.
+    from frontend.widgets.command_input import CommandInput
+    from frontend.widgets.contract_rows import ContractRowEditor
     async with ConfigApp(screen, results).run_test(size=(width, 30)) as pilot:
         await pilot.pause()
-        await pilot.press('3')
-        await pilot.pause()
-        assert screen.query_one('#configured-output-preview-default', Static).region.height >= 2
+        assert not screen.query('#field-greeting')
+        assert not screen.query('#node-config-tab-outputs')
         assert not screen.query('#transient-output-name-default')
-        assert not screen.query('#transient-output-desc-default')
-        assert 'real value' in str(screen.query_one('#configured-output-preview-default', Static).content)
-        screen.query_one('#field-greeting', Input).value = 'edited once'
+        row = screen.query_one('#start-inputs-row-0')
+        assert 'real value' in str(row.label)
+        row.press()
         await pilot.pause()
-        assert 'edited once' in str(screen.query_one('#configured-output-preview-default', Static).content)
+        editor = pilot.app.screen
+        assert isinstance(editor, ContractRowEditor)
+        editor.query_one('#row-value', CommandInput).value = 'edited once'
+        editor.action_submit()
+        await pilot.pause()
+        assert 'edited once' in str(screen.query_one('#start-inputs-row-0').label)
         screen.action_save()
         await pilot.pause()
-        assert results[0]['config']['greeting'] == 'edited once'
-        assert results[0]['config']['transient_outputs'] == []
+        rows = results[0]['config']['rows']
+        assert [(r['name'], r['value'], r['to']) for r in rows] == [('greeting', 'edited once', 'Downstream')]
 
 
 @pytest.mark.parametrize('width', [60, 100, 140])

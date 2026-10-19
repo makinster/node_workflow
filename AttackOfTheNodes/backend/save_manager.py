@@ -14,7 +14,7 @@ from .configuration_manager import ConfigurationManager
 from .memory_bank import MemoryBank
 from .persistence import delete_workflow, load_workflow, save_workflow
 from .validator import derive_input_sources
-from .workflow_names import name_problem, unused_name
+from .workflow_names import name_problem, unused_copy_name, unused_name
 from .workflow_map import WorkflowMap
 
 
@@ -88,26 +88,52 @@ class SaveManager:
         save_workflow(workflow_id, data)
         return workflow_id
 
+    def _source_data(self, source_id: str) -> Optional[Dict[str, Any]]:
+        if source_id == self._workflow_map.workflow_id:
+            return self._workflow_data_with_input_sources(
+                self._workflow_map.get_workflow_data_for_save()
+            )
+        data = load_workflow(source_id)
+        return None if data is None else self._workflow_data_with_input_sources(data)
+
     def duplicate_workflow(self, workflow_id: Optional[str] = None) -> Optional[str]:
         """Create a persisted copy of a workflow and return the new id."""
         source_id = workflow_id or self._workflow_map.workflow_id
         if source_id is None:
             return None
-        if source_id == self._workflow_map.workflow_id:
-            data = self._workflow_data_with_input_sources(
-                self._workflow_map.get_workflow_data_for_save()
-            )
-        else:
-            data = load_workflow(source_id)
-            if data is None:
-                return None
-            data = self._workflow_data_with_input_sources(data)
+        data = self._source_data(source_id)
+        if data is None:
+            return None
         new_id = f"wf_{uuid.uuid4().hex[:12]}"
         copy_data = json.loads(json.dumps(data))
         copy_data["id"] = new_id
-        copy_data["name"] = unused_name(f"{copy_data.get('name', source_id)} (Copy)")
+        copy_data["name"] = unused_name(
+            f"{copy_data.get('name', source_id)} (Copy)", callable_=bool(copy_data.get("callable")))
         save_workflow(new_id, copy_data)
         return new_id
+
+    def copy_as_subworkflow(self, workflow_id: str) -> Optional[Dict[str, Any]]:
+        """Save a subworkflow copy of a standard workflow (owner, 2026-10-18).
+
+        The copy keeps the name, numbered ``(2)``, ``(3)``... when a
+        subworkflow already uses it; the original is not touched. A single
+        End becomes the Return End (C27). Returns ``{"id", "name",
+        "renamed", "ends"}``, or None when the source can't be read.
+        """
+        data = self._source_data(workflow_id)
+        if data is None:
+            return None
+        copy_data = json.loads(json.dumps(data))
+        base = str(copy_data.get("name") or workflow_id).strip()
+        name = unused_copy_name(base, callable_=True)
+        new_id = f"wf_{uuid.uuid4().hex[:12]}"
+        copy_data.update(id=new_id, name=name, callable=True)
+        ends = [node for node in (copy_data.get("nodes") or {}).values()
+                if isinstance(node, dict) and node.get("type") == "end_node"]
+        if len(ends) == 1:
+            ends[0].setdefault("config", {})["return_end"] = True
+        save_workflow(new_id, copy_data)
+        return {"id": new_id, "name": name, "renamed": name != base, "ends": len(ends)}
 
     def rename_current_workflow(self, name: str) -> bool:
         """Rename and save the active workflow."""
@@ -121,12 +147,12 @@ class SaveManager:
         Only the name is written: unsaved edits in an open workflow stay
         unsaved (and dirty), so renaming never saves them by surprise.
         """
-        problem = name_problem(name, exclude_id=workflow_id)
-        if problem:
-            return problem
         data = load_workflow(workflow_id)
         if data is None:
             return "The saved workflow could not be read"
+        problem = name_problem(name, exclude_id=workflow_id, callable_=bool(data.get("callable")))
+        if problem:
+            return problem
         name = name.strip()
         data["name"] = name
         save_workflow(workflow_id, data)

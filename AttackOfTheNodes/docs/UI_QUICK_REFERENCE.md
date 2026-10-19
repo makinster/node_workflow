@@ -202,7 +202,7 @@ these bindings. Do not change S to navigation without resolving its Stop action.
 
 | Screen | Keys beyond shared navigation |
 |---|---|
-| Workflow library | W/S or arrows move; E/Enter loads; N new; R rename; D duplicate; I import; O export; X delete; Esc/Q/Ctrl+Q close |
+| Workflow library | 1/2 Workflows / Subworkflows tab; W/S or arrows move; E/Enter opens; N new (a subworkflow on tab 2); C copies a workflow to Subworkflows (tab 1); R rename; D duplicate; I import; O export; X delete; ? key list; Esc/Q/Ctrl+Q close |
 | New/rename name prompt | Enter or Ctrl+S confirms; Ctrl+Enter also submits; Esc cancels |
 | User Text Input | Ordinary text editing starts on mount; W/S type letters. Ctrl+Enter submits; Esc/Ctrl+Q first leave editing, then cancel |
 | Typed import/export path | Ctrl+Enter submits; B retries Browse when available and not typing; Tab moves out; Esc/Ctrl+Q cancel after edit mode |
