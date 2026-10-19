@@ -98,6 +98,9 @@ class NodeCard(Static):
         self.show_id = show_id
         self.show_identity = show_identity
         self.has_warning = has_warning
+        # EX: the Execution screen's map shows the run status on the card's
+        # second line instead of family and tags (owner samples, 2026-10-19).
+        self.run_status_text: Optional[str] = None
         branch_color_key = node_data.get("_editor_branch_color_key")
         branch_port = node_data.get("_editor_branch_port")
         self.gutter_color = branch_path_color(
@@ -156,7 +159,10 @@ class NodeCard(Static):
         warning_badge = "⚠ " if self.has_warning else ""
         main_text = f"{prefix}{warning_badge}{breakpoint_marker}{alias}{id_text}{timing}"
         gutter = depth_number_gutter(depth) if isinstance(depth, int) else DEPTH_GUTTER
-        if self.show_identity:
+        if self.show_identity and self.run_status_text is not None:
+            self.display_text = self._boxed_display_text(
+                gutter, f"{breakpoint_marker}{alias}", self.run_status_text)
+        elif self.show_identity:
             if isinstance(deleted_overlay, dict) and deleted_overlay:
                 self.display_text = self._deleted_overlay_display_text(
                     gutter,

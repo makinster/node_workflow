@@ -200,18 +200,27 @@ the identity and contract rules. Older Phase 17 layouts are historical.
 
 ## Execution screen
 
+The run is shown on the editor's map; each card's second line says how that
+node is doing. The right pane shows the highlighted node (Got, Sent, Wrote
+to the Vault). When a node needs a recovery choice, the error panel opens at
+the top of the right pane.
+
 | Key | Action |
 |---|---|
-| P | Pause/resume (pause is cooperative) |
-| S / Shift+S | Stop |
-| M | Vault/memory viewer |
+| W/S or ↑/↓ | Move the highlight (stops following the run) |
+| A/D or ←/→ | Show another path at the branch above the highlight |
+| F | Follow the running node again |
+| V | Hide / show the error panel (the branch still waits for a choice) |
+| P | Pause/resume the whole run, subworkflows included |
+| X / Shift+X | Stop (moved from S on 2026-10-19) |
+| M | Vault log: Time, Key, Type, Value, Source (`S3B2 Save note`); E opens an entry, A/D its earlier/later writes, / filters |
 | O | Run output viewer |
 | E | Latest run error details |
 | Esc / Ctrl+Q | Return to editor, stopping a live run |
 
-W/S visit navigation, A/D runtime-branch cycling and F follow mode belong to
-[a pending design](PROJECT_BACKLOG.md#execution-branch-inspection-proposal), not
-these bindings. Do not change S to navigation without resolving its Stop action.
+The error panel's buttons: Retry, Skip, Stop branch, Go to node (hides the
+panel and highlights the failed node, switching paths if needed), Stop run,
+Details. Under 80 columns the details sit below the map.
 
 ## Library, prompts and viewers
 

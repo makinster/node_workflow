@@ -300,6 +300,12 @@ class AttackOfTheNodesApp(KeymapScreenMixin, TextualApp):
         payload = payload or {}
         if not self.execution_state.accepts(payload):
             return
+        # EX: on the Execution screen the choice is made in its error panel.
+        add_recovery = getattr(self.screen, "add_recovery", None)
+        if add_recovery is not None:
+            add_recovery(payload)
+            self.flush_refresh()
+            return
         if not self._error_modal_open:
             self._error_modal_open = True
             self.push_screen(

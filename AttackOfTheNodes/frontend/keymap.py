@@ -165,7 +165,14 @@ ERROR_DETAILS = Profile('error_details', (
 
 EXECUTION = Profile('execution', (
     Command('execution.pause_resume', ('p',), 'pause_resume', 'Pause/resume', policies=NAV, priority=False),
-    Command('execution.stop', ('s', 'S'), 'stop', 'Stop', policies=NAV, priority=False),
+    # EX (owner, 2026-10-19): Stop moves to X so W/S move as in the editor.
+    Command('execution.stop', ('x', 'X'), 'stop', 'Stop', policies=NAV, priority=False),
+    Command('execution.cursor_up', ('w', 'up'), 'cursor_up', 'Up', policies=NAV, priority=True, navigation='up'),
+    Command('execution.cursor_down', ('s', 'down'), 'cursor_down', 'Down', policies=NAV, priority=True, navigation='down'),
+    Command('execution.branch_prev', ('a', 'left'), 'branch(-1)', 'Previous branch', policies=NAV, priority=True),
+    Command('execution.branch_next', ('d', 'right'), 'branch(1)', 'Next branch', policies=NAV, priority=True),
+    Command('execution.follow', ('f',), 'follow', 'Follow', policies=NAV, priority=False),
+    Command('execution.error_panel', ('v',), 'error_panel', 'Show/hide error', policies=NAV, priority=False),
     Command('execution.memory', ('m',), 'memory', 'Memory', policies=NAV, priority=False),
     Command('execution.output', ('o',), 'output', 'Output', policies=NAV, priority=False),
     Command('execution.errors', ('e',), 'errors', 'Errors', policies=NAV, priority=False),

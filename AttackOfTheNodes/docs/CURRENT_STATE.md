@@ -33,8 +33,9 @@ This is the live status snapshot; plans and logs preserve dated decisions.
   tab, "Send back to calling workflow". 4b child runs (backend and CLI) merged
   in #87: the Subworkflow node (hidden in the selector until 4c), call tree,
   limits (depth 4, 64 live), file hand-over, prompts, pause and stop, run
-  records, validation and benchmark. Next: EX design, then 4c (TUI).
-  [Proposal](SUBWORKFLOWS_PROPOSAL.md).
+  records, validation and benchmark. EX (the Execution screen overhaul) is
+  awaiting review on `dist/ex-execution-screen`; 4c (the TUI for subworkflow
+  calls) follows. [Proposal](SUBWORKFLOWS_PROPOSAL.md).
 - Keymap phase 3 follows the deletion PR: Node Config, Node Selector,
   Workflow Library and Help, now that 4a-2 is merged. Keep visible wording
   unchanged unless correcting a confirmed mismatch, with before/after text.

@@ -51,7 +51,9 @@ def test_linear_symbols_follow_actual_execution():
             assert [app.node_statuses.get(n, "idle") for n in ids] == ["done"] * 4
             assert [cards[n].status for n in ids] == ["done"] * 4
             assert all("✓" in cards[n].display_text for n in ids)
-            assert cards[untouched].status == "idle"
+            # EX: the run map shows the path from Start, like the editor's map;
+            # a node nothing connects to is not on it.
+            assert untouched not in cards
     asyncio.run(asyncio.wait_for(check(), timeout=15))
 
 
@@ -297,8 +299,14 @@ def test_render_updates_preserve_cards_highlight_and_scroll(width):
         from backend.events import NODE_EXECUTION_UPDATE
         app, master, wm, memory, bus = make_app()
         ids = linear(wm)
+        # A long map (EX shows the path from Start), so there is something to scroll.
+        previous = ids[2]
+        wm.disconnect(ids[2], "default", ids[3], "input")
         for _ in range(25):
-            wm.add_node("sleep_node")
+            node = wm.add_node("no_op_node")
+            wm.connect(previous, "default", node, "input")
+            previous = node
+        wm.connect(previous, "default", ids[3], "input")
         async with app.run_test(size=(width, 24)) as pilot:
             screen = ExecutionScreen(wm, memory, master)
             await app.switch_screen(screen)
@@ -322,7 +330,7 @@ def test_render_updates_preserve_cards_highlight_and_scroll(width):
             assert node_list.index == 20
             assert node_list.scroll_y == scroll
             card = next(c for c in cards if c.node_id == ids[1])
-            assert "[skipped]" in card.display_text
+            assert "skipped" in card.display_text
             assert "✓" not in card.display_text
     asyncio.run(asyncio.wait_for(check(), timeout=15))
 

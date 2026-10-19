@@ -6,6 +6,43 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-19 — EX: Execution Screen Overhaul
+
+Branch `dist/ex-execution-screen`, from main `b5426ab` (#88). Owner-approved
+samples, three revisions. Before: 1848 passed.
+
+- **Map:** the run is drawn with the editor's own row code (an editor screen
+  that is never shown builds the rows), so it matches the editor exactly.
+  Cards in run mode show the status on their second line (`✓ done 0.42s`,
+  `▶ running`, `⏸ waiting for you`, `✗ Unexpected failure`, `skipped:
+  upstream failed`, `· 2 tries`, `· 3 runs`). Rows update in place, so the
+  highlight and scroll survive every run event. Only the path from Start is
+  shown, as in the editor.
+- **Details:** the highlighted node's name, step and branch, status and tries,
+  what it got, what it sent and what it wrote to the Vault; for a Subworkflow
+  node, the call and where it is.
+- **Follow:** the highlight follows the node that needs you, then a waiting
+  one, then the running one, switching paths to show an error or prompt.
+  W/S stops following, F follows again. A/D switch the path at the nearest
+  branch above the highlight. Stop moves from S to X.
+- **Error panel:** on this screen a recovery choice opens in the right pane
+  (Retry, Skip, Stop branch, Go to node, Stop run, Details) instead of the
+  pop-up; V hides and shows it, and the title then reads "⚠ 1 error waiting
+  · v to choose". Other screens keep the pop-up.
+- **Vault log (M):** `MemoryBank.writes()` records every Vault write with the
+  writing node, branch and visit (the supervisor sets a context variable each
+  step; no node changes). Columns Time, Key, Type (coloured), Value
+  (shortened), Source (`S2B1 Keep`: step from Start, branch number, node; the
+  main path has no branch number). E opens the whole entry; A/D move between
+  writes of the same key; / filters.
+- Narrow terminals (under 80 columns) stack the details under the map.
+- Backlog: the Editor Validation Panel (V opens it; Run validation button;
+  Go to node), as the owner asked.
+- After: 1858 passed (10 new tests in `test_execution_screen.py`; two older
+  tests now build a connected chain, since unconnected nodes are not on the
+  map). The old memory viewer stays in the code for its tests and is no
+  longer opened from this screen.
+
 ## 2026-10-19 — Deletion review phase 2
 
 Branch `codex/deletion-phase2`, from freshly fetched `origin/main` `a31d721`

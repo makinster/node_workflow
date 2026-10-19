@@ -20,6 +20,7 @@ class NodeList(ListView):
     def __init__(self) -> None:
         super().__init__(id="node-list")
         self._rows: list[Dict[str, Any]] = []
+        self._run_status: Optional[Dict[str, str]] = None
 
     def refresh_nodes(
         self,
@@ -69,11 +70,20 @@ class NodeList(ListView):
         statuses: Optional[Dict[str, str]] = None,
         timings: Optional[Dict[str, float]] = None,
         flagged_node_ids: Optional[set] = None,
+        run_status: Optional[Dict[str, str]] = None,
     ) -> None:
-        """Replace the list contents with node and branch selector rows."""
+        """Replace the list contents with node and branch selector rows.
+
+        ``run_status`` (EX) puts each node's run status on its card's second
+        line; with it, a refresh whose rows are unchanged updates the cards in
+        place, so the highlight and scroll survive every run event."""
         statuses = statuses or {}
         timings = timings or {}
         flagged_node_ids = flagged_node_ids or set()
+        self._run_status = run_status
+        if run_status is not None and self._same_rows(rows):
+            self.update_run_status(statuses, run_status)
+            return
         self.clear()
         self._rows = []
         for index, row in enumerate(rows):
@@ -138,6 +148,9 @@ class NodeList(ListView):
                 show_identity=True,
                 has_warning=node_id in (flagged_node_ids or set()),
             )
+            run_status = getattr(self, "_run_status", None)
+            if run_status is not None:
+                card.run_status_text = run_status.get(node_id, "not started")
         elif row["kind"] == "branch_select":
             card = BranchSelectCard(
                 row["branch_node_id"],
@@ -155,6 +168,23 @@ class NodeList(ListView):
                 row.get("active_color_key"),
             )
         self.append(ListItem(card))
+
+    def _row_key(self, row: Dict[str, Any]) -> tuple:
+        return (row.get("kind"), row.get("node_id"), row.get("branch_node_id"),
+                row.get("active_port"), row.get("beacon_node_id"))
+
+    def _same_rows(self, rows: list[Dict[str, Any]]) -> bool:
+        current = [self._row_key(row) for row in self._rows if row.get("kind") != "gap_arrow"]
+        return bool(current) and current == [self._row_key(row) for row in rows]
+
+    def update_run_status(self, statuses: Dict[str, str], run_status: Dict[str, str]) -> None:
+        """Refresh each card's status line in place (EX)."""
+        for card in self.query(NodeCard):
+            card.status = statuses.get(card.node_id, "idle")
+            text = run_status.get(card.node_id, "not started")
+            if card.run_status_text != text:
+                card.run_status_text = text
+                card.refresh_card()
 
     def node_id_for_index(self, index: int | None) -> Optional[str]:
         """Return the node id matching a ListView index."""

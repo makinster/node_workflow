@@ -549,3 +549,55 @@ SelectOverlay > .option-list--option-highlighted {
 #help-scroll {
     height: 1fr;
 }
+
+/* Execution screen (EX): the run map on the left, the highlighted node on the
+   right; under 80 columns the details go below the map. */
+#execution-title {
+    height: 1;
+    padding: 0 1;
+}
+
+#execution-columns {
+    height: 1fr;
+}
+
+#execution-panel {
+    width: 52;
+}
+
+#execution-side {
+    width: 1fr;
+}
+
+#execution-details {
+    height: 1fr;
+    overflow-y: auto;
+}
+
+#execution-output {
+    height: 4;
+    color: $text-muted;
+}
+
+#execution-error {
+    height: auto;
+    border: round $error;
+    padding: 0 1;
+}
+
+#execution-error .button-row {
+    height: auto;
+}
+
+ExecutionScreen.narrow #execution-columns {
+    layout: vertical;
+}
+
+ExecutionScreen.narrow #execution-panel {
+    width: 1fr;
+    height: 2fr;
+}
+
+ExecutionScreen.narrow #execution-side {
+    height: 1fr;
+}
