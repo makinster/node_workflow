@@ -343,3 +343,31 @@ def test_an_object_default_survives_an_unchanged_confirm():
 
     saved = _open(factory, workflow_map, ids["start"], steps)["config"]["rows"][0]["value"]
     assert parse_text("var", saved) == {"limit": 3}
+
+
+def test_a_file_default_survives_an_unchanged_confirm(tmp_path):
+    """Review of #85: a typed file reference used to save back as JSON text,
+    which a run then read as a file name."""
+    from backend.contracts import parse_text
+    from backend.file_refs import file_reference
+
+    real = tmp_path / "report.txt"
+    real.write_text("x")
+    reference = file_reference(str(real))
+    factory, workflow_map, ids = _map()
+    rows = [{"id": "in_1", "name": "report", "type": "file", "value": reference, "to": "Vault"}]
+    _set(workflow_map, ids["start"], rows=rows)
+
+    async def steps(app, screen, pilot):
+        screen.query_one("#start-inputs-row-0").press()
+        await pilot.pause(0.1)
+        shown = app.screen.query_one("#row-value", CommandInput).value
+        app.screen.action_submit()
+        await pilot.pause(0.1)
+        return shown, screen._save_result()
+
+    shown, result = _open(factory, workflow_map, ids["start"], steps)
+    assert shown == str(real)  # a path, not JSON
+    saved = result["config"]["rows"][0]["value"]
+    assert saved == reference  # unchanged text keeps the typed value
+    assert parse_text("file", saved) == parse_text("file", reference)

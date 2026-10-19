@@ -43,6 +43,9 @@ Branch `dist/step4a2-screens`, from main `1addbf9`. Owner-approved samples
   shows as JSON, so confirming it unchanged keeps its type; `aotn build`
   applies the full name rule (`name_invalid` for a name ending in `[sub]`).
   After: 1759 passed.
+- **Review of afe98cd:** a file default shows as its path, and an input row
+  confirmed without changes keeps its stored value, so a typed file
+  reference no longer saves back as JSON text. After: 1760 passed.
 
 ## 2026-10-18 — Docs C integrated with #81, #82 and #84
 

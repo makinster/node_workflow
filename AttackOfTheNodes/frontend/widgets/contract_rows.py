@@ -32,10 +32,15 @@ FROM = (("Vault", "Vault key"), ("Incoming value", "Incoming payload"))
 
 
 def default_text(value: Any) -> str:
-    """A stored default as editable text: JSON for objects, lists, numbers
-    and true/false, so an unchanged confirm keeps the same value."""
+    """A stored default as editable text: a file reference as its path, JSON
+    for objects, lists, numbers and true/false. The editor keeps the stored
+    value itself when this text comes back unchanged."""
+    from backend.file_refs import is_file_reference, reference_path
+
     if value is None:
         return ""
+    if is_file_reference(value):
+        return str(reference_path(value) or "")
     return value if isinstance(value, str) else json.dumps(value)
 
 
@@ -269,8 +274,11 @@ class ContractRowEditor(CommandScreenMixin, ModalScreen):
             "description": self._text("row-description"),
         }
         if self.kind == INPUT:
-            value = self._text("row-value")
-            if not problem and value.strip() and row_type != "file":
+            value: Any = self._text("row-value")
+            original = self.row.get("value")
+            if value == default_text(original) and row_type == self.row.get("type"):
+                value = original  # unchanged: keep the typed value as stored
+            elif not problem and value.strip() and row_type != "file":
                 try:
                     parse_text(row_type, value)
                 except ContractError as error:
