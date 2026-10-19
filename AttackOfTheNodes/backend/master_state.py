@@ -327,11 +327,12 @@ class MasterState:
 
         async def call_subworkflow_here(
             node_id: str, workflow_id: str, inputs: Dict[str, Any], text_inputs: Any = (),
+            visit: int = 0, attempt: int = 0,
         ) -> Dict[str, Any]:
             from .subworkflow_calls import call_subworkflow
 
             return await call_subworkflow(
-                self, run, branch_id, node_id, workflow_id, inputs, text_inputs)
+                self, run, branch_id, node_id, workflow_id, inputs, text_inputs, visit, attempt)
 
         def report_outcome(
             node_id: str,
@@ -380,8 +381,9 @@ class MasterState:
         return supervisor
 
     def pause(self) -> None:
-        """Request all active supervisors to pause."""
-        if self.state != WorkflowState.RUNNING:
+        """Request all active supervisors to pause (a supervisor waiting for
+        input pauses before its next node)."""
+        if self.state not in (WorkflowState.RUNNING, WorkflowState.WAITING_FOR_INPUT):
             return
         for supervisor in self._supervisors.values():
             supervisor.request_pause()
@@ -766,6 +768,7 @@ class MasterState:
             self._set_state(WorkflowState.WAITING_FOR_INPUT)
         elif self.state == WorkflowState.WAITING_FOR_INPUT and payload["state"] == "RUNNING":
             self._set_state(WorkflowState.RUNNING)
+        # (A PAUSED run stays paused when a prompt is answered.)
 
     def _on_supervisor_error(self, payload: Dict[str, Any]) -> None:
         self._set_state(WorkflowState.ERROR)
@@ -777,8 +780,11 @@ class MasterState:
         for supervisor in self._supervisors.values():
             supervisor.request_pause()
         self._set_state(WorkflowState.PAUSED)
+        # The whole call tree pauses (C20): from a child, through the root.
         if not self._owns_call_tree and self._call_tree is not None:
             self._call_tree.pause_all()
+        for child in list(self._children):
+            child.pause()
 
     def _on_node_timing_update(self, payload: Dict[str, Any]) -> None:
         if self._run is None or payload.get("run_id") != self._run.run_id:

@@ -45,6 +45,15 @@ Before: 1729 passed.
   the new tests do. Not done here: the TUI (4c), the EX screen, prompt
   queueing in the TUI, fire-and-forget.
 - After: 1752 passed (22 new tests in `test_subworkflow_calls.py`).
+- **Review of 974af31** (seven findings, each reproduced failing first):
+  the call waits on one shielded completion task, so cancellation stops the
+  child before its tasks are cancelled and a second Stop can't cut its
+  cleanup short; pause holds a child waiting for input and a root
+  breakpoint pauses the children; the validator walks the whole reachable
+  call graph for loops (Root → A → B → A), matches names exactly as a run
+  does, parses configured values by type (`subworkflow_input_invalid`) and
+  checks result routes (`subworkflow_result_unknown`); child records add
+  `parent_visit` and `parent_attempt`. After: 1762 passed.
 
 ## 2026-10-18 — Docs C integrated with #81, #82 and #84
 

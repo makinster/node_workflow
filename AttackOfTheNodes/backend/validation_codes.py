@@ -37,6 +37,8 @@ ISSUE_CODES: Dict[str, str] = {
     "subworkflow_not_callable": "A Subworkflow node calls a standard workflow, not a subworkflow.",
     "subworkflow_recursion": "A chain of subworkflow calls leads back to the calling workflow.",
     "subworkflow_input_unknown": "A Subworkflow node fills an input the subworkflow doesn't have.",
+    "subworkflow_input_invalid": "A configured subworkflow input doesn't match the input's type.",
+    "subworkflow_result_unknown": "A Subworkflow node routes a result the subworkflow doesn't send back.",
     "subworkflow_input_missing": "A required subworkflow input with no default is not filled.",
     "subworkflow_input_unmapped": "A subworkflow input is not filled, so its default is used.",
     # Vault

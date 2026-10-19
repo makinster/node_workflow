@@ -500,3 +500,214 @@ def test_validation_checks_the_target_and_the_mapping():
     errors, warnings = _validate(caller(child, [configured("who", "Kim")]))
     assert not [code for code in errors if code.startswith("subworkflow")]
     assert warnings == ["subworkflow_input_unmapped"]  # tone keeps its default
+
+
+# -- Review of #87 at 974af31 -----------------------------------------------------------
+
+def _file_after_wait_child(seconds):
+    """Saves a run-owned file, then waits; returns the file."""
+    return (Flow("Keeps a file", callable_=True)
+            .node("start", "start_node")
+            .node("http", "http_request_node", url="http://example.invalid/x", response_mode="file")
+            .node("nap", "sleep_node", duration=seconds)
+            .node("end", "end_node", return_end=True, results=[res("body", "file", source="Incoming payload")])
+            .link("start", "http", "nap", "end").save())
+
+
+def test_stop_reaches_the_child_before_its_tasks_are_cancelled():
+    child = _file_after_wait_child(5)
+    parent = (Flow("Parent").node("start", "start_node")
+              .node("call", "subworkflow_node", workflow_id=child)
+              .node("end", "end_node").link("start", "call", "end").save())
+    seen = {}
+
+    async def stop(service):
+        await asyncio.sleep(0.2)
+        child_master = service.master_state.call_tree.live_masters()[0]
+        seen["dir"] = child_master.run_context.run_session.run_files_dir
+        service.stop()
+        await asyncio.sleep(0)
+        service.stop()  # a second Stop must not cut the child's cleanup short
+        seen["child"] = child_master
+
+    with patch("urllib.request.urlopen", return_value=_fake_response()):
+        result, service = run(parent, during=stop, timeout=5)
+    assert result.final_state == "STOPPED"
+    assert seen["child"].run_context.stop_requested
+    assert not seen["child"]._supervisor_tasks
+    # A stopped run keeps its run files (R4); success would have deleted them.
+    assert any(seen["dir"].iterdir())
+
+
+def test_a_root_breakpoint_pauses_running_children():
+    parent = (Flow("Parent")
+              .node("start", "start_node")
+              .node("fan", "branch_node", branch_count=2)
+              .node("call", "subworkflow_node", workflow_id=slow_greeter(0.6),
+                    inputs=[configured("who", "Kim")])
+              .node("nap", "sleep_node", duration=0.1)
+              .node("stop_here", "no_op_node")
+              .node("end_a", "end_node").node("end_b", "end_node")
+              .link("start", "fan")
+              .link("fan", "call", port="path_a").link("call", "end_a")
+              .link("fan", "nap", port="path_b").link("nap", "stop_here", "end_b"))
+    parent.map.get_node_data(parent.ids["stop_here"])["breakpoint"] = True
+    parent_id = parent.save()
+    seen = {}
+
+    async def watch(service):
+        for _ in range(100):
+            await asyncio.sleep(0.02)
+            if service.master_state.state.value == "PAUSED":
+                children = service.master_state.call_tree.live_masters()
+                seen["child"] = children[0].state.value if children else "gone"
+                service.resume()
+                return
+
+    result, _ = run(parent_id, attended=True, during=watch)
+    assert seen["child"] == "PAUSED"
+
+
+def test_pause_holds_a_child_that_is_waiting_for_input():
+    child = (Flow("Asks", callable_=True)
+             .node("start", "start_node")
+             .node("ask", "user_text_input_node", prompt="Name?")
+             .node("keep", "set_variable_node", variable_name="who")
+             .node("nap", "sleep_node", duration=0.05)
+             .node("end", "end_node", return_end=True, results=[res("greeted", vault_key="who")])
+             .link("start", "ask", "keep", "nap", "end").save())
+    parent = caller(child, [])
+    prompts, seen = [], {}
+
+    async def flow(service):
+        service.subscribe(USER_INPUT_NEEDED, prompts.append)
+        for _ in range(100):
+            await asyncio.sleep(0.01)
+            if prompts:
+                break
+        service.pause()
+        child_master = service.master_state.call_tree.live_masters()[0]
+        seen["paused"] = child_master.state.value
+        service.submit_input(prompts[0]["branch_id"], "Kim")
+        await asyncio.sleep(0.3)
+        seen["still_live"] = service.master_state.call_tree.live
+        service.resume()
+
+    result, _ = run(parent, attended=True, during=flow)
+    assert seen["paused"] == "PAUSED"
+    assert seen["still_live"] == 1  # it did not finish while the root was paused
+    assert result.values == {"got": "Kim"}
+
+
+def test_validation_finds_a_cycle_below_the_root():
+    a = Flow("A", callable_=True).node("start", "start_node").save()
+    b = caller(a, [], name="B")
+    flow = Flow("A", callable_=True)
+    flow.map.load_data(persistence.load_workflow(a))
+    call = flow.map.add_node("subworkflow_node", alias="Call B")
+    flow.map.update_node_config(call, {**flow.map.get_node_data(call)["config"], "workflow_id": b})
+    flow.map.connect(flow.map.find_start_node_id(), "default", call, "input")
+    SaveManager(flow.map).save_current_workflow()
+    root = caller(a, [], name="Root")  # Root → A → B → A
+    assert "subworkflow_recursion" in _validate(root)[0]
+
+
+def test_validation_checks_result_mappings():
+    child = greeter()
+    parent = (Flow("Parent").node("start", "start_node")
+              .node("call", "subworkflow_node", workflow_id=child, inputs=[configured("who", "x")],
+                    results=[{"name": "removed", "to": "Vault", "vault_key": "r"}])
+              .node("end", "end_node").link("start", "call", "end").save())
+    assert "subworkflow_result_unknown" in _validate(parent)[0]
+
+
+def test_validation_matches_input_names_exactly_like_a_run():
+    errors, _ = _validate(caller(greeter(), [configured("WHO", "Kim")]))
+    assert "subworkflow_input_unknown" in errors and "subworkflow_input_missing" in errors
+
+
+def test_validation_parses_configured_values_by_type():
+    child = greeter(extra_rows=[row("times", "number", required=True)])
+    errors, _ = _validate(caller(child, [configured("who", "Kim"), configured("times", "letters")]))
+    assert "subworkflow_input_invalid" in errors
+
+
+def test_a_child_record_names_the_parent_visit_and_attempt():
+    result, service = run(caller(greeter(), [configured("who", "Kim")]))
+    record = [r for r in service.master_state.run_history.list_runs()
+              if r.get("parent_run_id") == result.run_id][0]
+    # The calling branch's counters: Start was visit 1, the call is visit 2,
+    # its first attempt.
+    assert record["parent_visit"] == 2 and record["parent_attempt"] == 1
+
+
+def test_a_stopped_child_is_told_it_was_stopped_when_it_closes():
+    from backend.run_session import RunSession
+
+    closes = []
+    original = RunSession.close_all
+
+    def spy(self, delete_run_files=False):
+        closes.append((self.run_id, delete_run_files))
+        return original(self, delete_run_files)
+
+    child = slow_greeter(5)
+    parent = caller(child, [configured("who", "Kim")])
+    seen = {}
+
+    async def stop(service):
+        await asyncio.sleep(0.2)
+        seen["child"] = service.master_state.call_tree.live_masters()[0].current_run_id
+        service.stop()
+
+    with patch.object(RunSession, "close_all", spy):
+        result, _ = run(parent, during=stop, timeout=5)
+    assert result.final_state == "STOPPED"
+    assert (seen["child"], False) in closes and (seen["child"], True) not in closes
+
+
+def test_cancelling_the_call_stops_the_child_before_it_closes():
+    """Review of #87: the caller's cancellation used to reach the child's
+    tasks before child.stop(), so the child closed as if it had succeeded."""
+    from backend.master_state import MasterState
+    from backend.subworkflow_calls import call_subworkflow
+
+    holder = (Flow("Holder").node("start", "start_node")
+              .node("nap", "sleep_node", duration=10).node("end", "end_node")
+              .link("start", "nap", "end").save())
+    child = slow_greeter(5)
+    closed = []
+    original = MasterState._record_run
+
+    def spy(self, final_state):
+        if self.call_depth:
+            closed.append(bool(self._run and self._run.stop_requested))
+        return original(self, final_state)
+
+    async def go():
+        service = RunService.create()
+        service.load(holder)
+        policy, provider = unattended_policies("terminate_branch")
+        await service.start(recovery_policy=policy, input_provider=provider, validate=False)
+        master = service.master_state
+        call = asyncio.ensure_future(call_subworkflow(
+            master, master.run_context, "b", master.workflow_map.find_start_node_id(),
+            child, {"who": "Kim"}))
+        await asyncio.sleep(0.2)
+        call.cancel()
+        await asyncio.sleep(0)
+        call.cancel()  # a second cancel must not cut the child's cleanup short
+        try:
+            await call
+        except asyncio.CancelledError:
+            pass
+        live = master.call_tree.live
+        service.stop()
+        await service.wait()
+        service.close()
+        return live
+
+    with patch.object(MasterState, "_record_run", spy):
+        live = asyncio.run(go())
+    assert closed == [True]
+    assert live == 0

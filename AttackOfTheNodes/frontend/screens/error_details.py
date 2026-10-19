@@ -39,6 +39,8 @@ VALIDATION_LABELS: Dict[str, str] = {
     "subworkflow_not_callable": "Not a subworkflow",
     "subworkflow_recursion": "Calls itself",
     "subworkflow_input_unknown": "Unknown input",
+    "subworkflow_input_invalid": "Input type mismatch",
+    "subworkflow_result_unknown": "Unknown result",
     "subworkflow_input_missing": "Input not filled",
     "subworkflow_input_unmapped": "Input uses default",
     "undeclared_vault_key": "Missing Vault key",

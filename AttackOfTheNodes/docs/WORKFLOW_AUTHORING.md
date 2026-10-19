@@ -142,8 +142,9 @@ for its results (Step 4b; the TUI picker comes in 4c):
   `max_subworkflow_depth` (default 4) and `max_live_subworkflow_runs`
   (default 64) limit a root run; a call past either fails at once.
 - The validator rejects a missing child, a standard workflow as the child,
-  calls that lead back to the calling workflow, and inputs the child doesn't
-  have or needs; it warns when an input keeps its default.
+  any loop of calls, inputs the child doesn't have or needs (names match
+  exactly), configured values of the wrong type, and result routes the child
+  doesn't send back; it warns when an input keeps its default.
 
 ## What a build checks
 

@@ -185,7 +185,8 @@ class Supervisor:
         call = self._call_subworkflow
 
         async def call_here(workflow_id, inputs, text_inputs=()):
-            return await call(node_id, workflow_id, inputs, text_inputs)
+            return await call(node_id, workflow_id, inputs, text_inputs,
+                              self._visit_index, self._attempt_index)
         return call_here
 
     async def run(self) -> None:

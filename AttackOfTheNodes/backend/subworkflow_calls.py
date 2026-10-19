@@ -140,8 +140,13 @@ async def call_subworkflow(
     workflow_id: str,
     inputs: Dict[str, Any],
     text_inputs: Iterable[str] = (),
+    visit: int = 0,
+    attempt: int = 0,
 ) -> Dict[str, Any]:
     """Run ``workflow_id`` as a child of ``run`` and return its results.
+
+    ``visit`` and ``attempt`` are the calling supervisor's counters for this
+    node, recorded on the child's run (C22).
 
     Raises ``NodeError`` with one of ``CALL_ERROR_DEFINITIONS``' codes. A
     cancellation stops the child and waits for it before propagating.
@@ -189,6 +194,8 @@ async def call_subworkflow(
             "call_site_alias": str(node.get("alias") or ""),
             "parent_branch_id": branch_id,
             "call_number": run.count_call(node_id),
+            "parent_visit": int(visit),
+            "parent_attempt": int(attempt),
         },
         call_path=call_path,
     )
@@ -254,19 +261,21 @@ async def call_subworkflow(
             raise NodeError("child_failed", "The subworkflow could not be started")
         if parent.is_paused:
             child.pause()
+        # One completion task for the whole call, shielded: a cancellation
+        # of the caller never reaches the child's tasks directly, so the
+        # child is stopped first (its run then knows it was stopped) and
+        # its cleanup always finishes (C20 acknowledgement).
+        done = asyncio.ensure_future(child.wait_for_completion())
         try:
-            await child.wait_for_completion()
+            await asyncio.shield(done)
         except asyncio.CancelledError:
             outcome["cancelled"] = True
             child.stop()
-            # Acknowledge: the child has stopped and cleaned up before the
-            # caller's cancellation goes on (C20).
-            while True:
+            while not done.done():
                 try:
-                    await asyncio.shield(child.wait_for_completion())
-                    break
+                    await asyncio.shield(done)
                 except asyncio.CancelledError:
-                    continue
+                    child.stop()
             raise
         final_state = outcome.get("final_state") or child.state.value
         errors = outcome.get("errors") or []
