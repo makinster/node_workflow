@@ -458,3 +458,73 @@ def test_removing_a_conditional_stub_never_gives_an_output_two_targets():
 
     assert asked == []
     assert _targets(workflow_map, start) == [yes]
+
+
+# -- Review of #82 at 47e7580.
+
+def test_deleting_one_node_keeps_a_resolver_another_node_still_uses():
+    factory, workflow_map = _map()
+    start = workflow_map.add_node("start_node")
+    fan = workflow_map.add_node("branch_node")
+    first = workflow_map.add_node("http_request_node")
+    second = workflow_map.add_node("http_request_node")
+    mux = workflow_map.add_node("error_mux_node")
+    after = workflow_map.add_node("no_op_node")
+    fix = workflow_map.add_node("logger_node")
+    workflow_map.update_node_config(mux, {"routes": [
+        {"id": "r_url", "label": "Missing URL", "codes": ["missing_url"]}]})
+    workflow_map.connect(start, "default", fan, "input")
+    workflow_map.connect(fan, "path_a", first, "input")
+    workflow_map.connect(fan, "path_b", second, "input")
+    workflow_map.connect(first, "default", mux, "input")
+    workflow_map.connect(second, "default", mux, "input")
+    workflow_map.connect(mux, "default", after, "input")
+    workflow_map.connect(mux, "r_url", fix, "input")
+
+    asked, _, deleted = _delete_in_editor(factory, workflow_map, first, "#confirm-yes")
+
+    assert deleted and not asked
+    for kept in (mux, fix, after):
+        assert workflow_map.get_node_data(kept) is not None, kept
+    assert _targets(workflow_map, second) == [mux]
+
+
+def test_error_routes_that_share_a_tail_are_deleted_together():
+    factory, workflow_map, ids = _handled_http()
+    mux, fix, fix_end = ids["mux"], ids["fix"], ids["fix_end"]
+    other = workflow_map.add_node("logger_node")
+    workflow_map.update_node_config(mux, {"routes": [
+        {"id": "r_timeout", "label": "Timeout", "codes": ["timeout"]},
+        {"id": "r_url", "label": "Missing URL", "codes": ["missing_url"]}]})
+    workflow_map.connect(mux, "r_url", other, "input")
+    workflow_map.connect(other, "default", fix_end, "input")  # both routes end at fix_end
+
+    asked, _, deleted = _delete_in_editor(factory, workflow_map, ids["http"], "#confirm-yes")
+
+    assert asked and deleted
+    for gone in (mux, fix, other, fix_end):
+        assert workflow_map.get_node_data(gone) is None, gone
+    assert _targets(workflow_map, ids["http"]) == [ids["after"]]
+
+
+def test_undo_drops_an_input_from_a_path_that_no_longer_exists():
+    from frontend.screens.editor import EditorScreen
+
+    factory, workflow_map = _map()
+    start = workflow_map.add_node("start_node")
+    fan = workflow_map.add_node("branch_node")
+    third = workflow_map.add_node("logger_node")
+    workflow_map.update_node_config(fan, {"branch_count": 3})
+    workflow_map.connect(start, "default", fan, "input")
+    workflow_map.connect(fan, "path_c", third, "input")
+    editor = EditorScreen(factory, workflow_map)
+    editor.workflow_adapter.replace_with_placeholder(third)
+    editor.workflow_adapter.materialize_deleted_nodes()
+    config = dict(workflow_map.get_node_data(fan)["config"], branch_count=2)
+    editor._apply_node_config_result(fan, {"alias": "", "config": config})
+
+    report = editor.workflow_adapter.restore_tombstone(third)
+
+    assert [error["reason"] for error in report.input_errors] == ["source_port_missing"]
+    assert workflow_map.get_node_data(third)["connections"]["inputs"] == []
+    assert third not in _targets(workflow_map, fan, "path_c")

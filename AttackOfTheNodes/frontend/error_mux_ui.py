@@ -121,13 +121,19 @@ def branch_nodes_for_port(workflow_map, mux_id: str, port: str) -> List[str]:
 def nodes_only_reached_from(
     workflow_map,
     heads: Sequence[str],
-    skip_node: str,
+    skip_node: str = "",
     skip_ports: Optional[set] = None,
     extra_roots: Sequence[str] = (),
+    skip_edges: Optional[Mapping[str, Optional[set]]] = None,
 ) -> List[str]:
     """Nodes reached from ``heads`` that Start (or ``extra_roots``) does not
-    also reach without ``skip_node``'s ``skip_ports`` (all its outputs when
-    None). Stops at a Merge. Order is breadth-first from the heads."""
+    also reach without the skipped outputs: ``skip_node``'s ``skip_ports``
+    (all its outputs when None), and each ``skip_edges`` node's ports the
+    same way. All heads are walked together, so a tail two of them share
+    goes too. Stops at a Merge. Order is breadth-first from the heads."""
+    skips: Dict[str, Optional[set]] = dict(skip_edges or {})
+    if skip_node:
+        skips[skip_node] = skip_ports
     nodes = workflow_map.get_all_node_data()
     elsewhere: set[str] = set()
     start = workflow_map.find_start_node_id()
@@ -138,8 +144,8 @@ def nodes_only_reached_from(
             continue
         elsewhere.add(node_id)
         for conn in (nodes[node_id].get("connections") or {}).get("outputs", []):
-            if node_id == skip_node and (
-                    skip_ports is None or conn.get("source_port") in skip_ports):
+            if node_id in skips and (
+                    skips[node_id] is None or conn.get("source_port") in skips[node_id]):
                 continue
             stack.append(str(conn.get("target_node_id") or ""))
     branch: List[str] = []

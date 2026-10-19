@@ -42,8 +42,14 @@ Tests are in `test_insert_fan_in_error_path.py`.
   confirm, deletes the nodes only its error branches reach. Other paths of
   a multi-path node (Conditional's second path) are left loose for the
   deletion review. Branch nodes keep their keep-one picker.
+- **Review of 47e7580** (three more cases, each reproduced failing first):
+  deleting one of two nodes that share a Resolver keeps the Resolver and
+  its branches for the other; error routes that share a tail are walked
+  together, so the tail goes too; undo drops an input from a path that no
+  longer exists (a Branch reduced from three paths to two) instead of
+  keeping half an edge.
 - Logged for later in the backlog: reducing a Branch node's path count,
-  and a deletion review with the owner. After: 1725 passed (17 new tests).
+  and a deletion review with the owner. After: 1728 passed (20 new tests).
 
 ## 2026-10-18 — Step 4a-1: Contracts (Backend and CLI)
 

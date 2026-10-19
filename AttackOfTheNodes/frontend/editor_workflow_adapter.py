@@ -224,11 +224,21 @@ class EditorWorkflowAdapter:
         restored_inputs: list[Dict[str, Any]] = []
         for conn in node.get("connections", {}).get("inputs", []):
             source_node = self.workflow_map.get_node_data(str(conn.get("source_node_id") or ""))
-            if source_node is not None and {
+            if source_node is None:
+                continue
+            record = {
                 "source_port": conn.get("source_port", "default"),
                 "target_node_id": node_id,
                 "target_port": conn.get("target_port", "input"),
-            } in source_node.get("connections", {}).get("outputs", []):
+            }
+            source_outputs = source_node.get("connections", {}).get("outputs", [])
+            if not self._declares_output_port(source_node, record["source_port"]):
+                # The path is gone (a Branch lost it): drop both halves; the
+                # stored-input check below reports it.
+                if record in source_outputs:
+                    source_outputs.remove(record)
+                continue
+            if record in source_outputs:
                 restored_inputs.append(deepcopy(conn))
         for conn in metadata.get("original_input_connections") or []:
             source_id = str(conn.get("source_node_id") or "")

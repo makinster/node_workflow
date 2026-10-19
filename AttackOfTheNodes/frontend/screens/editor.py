@@ -16,7 +16,12 @@ from backend.validator import validate_workflow
 from backend.node_errors import ERROR_PORT, MUX_DEFAULT_PORT
 from frontend.keymap import EDITOR, bindings_for
 from frontend.keymap_runtime import KeymapScreenMixin
-from frontend.error_mux_ui import ERROR_MUX_NODE_TYPE, branch_nodes_for_port, inline_mux_for
+from frontend.error_mux_ui import (
+    ERROR_MUX_NODE_TYPE,
+    guarded_node_ids,
+    inline_mux_for,
+    nodes_only_reached_from,
+)
 from frontend.error_paths import SHOW_ERROR_PATH, editor_output_ports
 from frontend.node_labels import friendly_label, friendly_labels
 from frontend.screens.branch_keep_selector_screen import BranchKeepSelectorScreen
@@ -483,13 +488,33 @@ class EditorScreen(KeymapScreenMixin, Screen):
         nodes only its error branches reach (its own ``error`` path and the
         mux's recovery branches). The mux's No error path is not included."""
         mux_id = inline_mux_for(self.workflow_map, node_id)
-        branch_nodes = list(branch_nodes_for_port(self.workflow_map, node_id, ERROR_PORT))
+        if mux_id and any(
+            other != node_id
+            and self.workflow_map.get_node_data(other) is not None
+            and not self.workflow_adapter.is_placeholder(other)
+            for other in guarded_node_ids(self.workflow_map, mux_id)
+        ):
+            mux_id = None  # another live node still uses this Resolver
+        node = self.workflow_map.get_node_data(node_id) or {}
+        heads = [
+            str(conn.get("target_node_id") or "")
+            for conn in (node.get("connections") or {}).get("outputs", [])
+            if conn.get("source_port") == ERROR_PORT
+        ]
+        skip: Dict[str, Optional[set]] = {node_id: {ERROR_PORT}}
         if mux_id:
-            for port in self.workflow_map.output_ports(mux_id):
-                if port != MUX_DEFAULT_PORT:
-                    branch_nodes += branch_nodes_for_port(self.workflow_map, mux_id, port)
-        branch_nodes = [
-            other for other in dict.fromkeys(branch_nodes) if other not in (node_id, mux_id)]
+            routes = {port for port in self.workflow_map.output_ports(mux_id)
+                      if port != MUX_DEFAULT_PORT}
+            mux = self.workflow_map.get_node_data(mux_id) or {}
+            heads += [
+                str(conn.get("target_node_id") or "")
+                for conn in (mux.get("connections") or {}).get("outputs", [])
+                if conn.get("source_port") in routes
+            ]
+            skip[mux_id] = routes
+        # All error branches are walked together, so a shared tail goes too.
+        branch_nodes = nodes_only_reached_from(self.workflow_map, heads, skip_edges=skip)
+        branch_nodes = [other for other in branch_nodes if other not in (node_id, mux_id)]
         return {"mux_id": mux_id, "branch_nodes": branch_nodes}
 
     def _error_handler_delete_message(self, node_id: str, handler: Dict[str, Any]) -> str:
