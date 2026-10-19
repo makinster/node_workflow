@@ -39,8 +39,17 @@ it is not an eighteenth permanent core reference.
 Source checks for this review: the 20 current hotfix tests plus three
 independent review reproductions pass on 531e4c1 (**23 passed in 3.51s**).
 The saved/unsaved Beacon probe still produces the different outcomes below.
+A subsequent re-review passed **92 focused tests in 5.47s**, including the
+three independent reproductions, the new hotfix tests and nearby restore/error
+routing tests. Additional cases cover another guard being soft-deleted or saved
+as a tombstone, restoring that guard before deletion, a tail shared by a
+Resolver route and the node's own wired error path, and that tail also being
+reachable from No error. Both halves of a removed original or newly gained
+input were also checked without relying on Editor's prior edge pruning. No
+remaining finding in those cases. The full suite on that same #82 head passed
+**1728 tests in 212.11s**.
 This docs branch's main suite passed **1708 tests in 217.06s**; no application
-change is being tested or shipped by the proposal.
+change is shipped by the proposal.
 
 ## Decisions to review
 
@@ -160,6 +169,9 @@ wired `error` path is included. In 531e4c1, all dropped error heads are walked
 together and a Resolver with another live guarded parent is preserved. The
 three earlier shared-handler/shared-tail/retained-edge review gaps are fixed
 at this head; they remain regression requirements, not current defects.
+Only another **live** guard preserves the shared Resolver. A soft-deleted or
+saved deleted guard does not count as live, and restoring it before the next
+delete makes it count again; those nearby cases were independently checked.
 
 **Proposed:** collect the selected node, its **exclusive** handler(s), and the
 union of exclusively dropped recovery descendants as one group. Include direct
@@ -589,8 +601,9 @@ here. In phase 2, reproduce each changed behavior with a failing test first:
   orphan Merges, surviving Merges/Beacons and terminals. Start is never collateral.
 - Keep the regressions fixed by #82's 531e4c1: shared handler deletion,
   error-only shared tails and retained input edges whose source port vanished.
-  Independently replayed checks now pass. Re-inventory merged main; do not
-  rebuild these fixes as though they were still absent.
+  Independently replayed checks now pass, including soft-deleted/saved/restored
+  peer guards, mixed direct-error/Resolver tails and protection by No error.
+  Re-inventory merged main; do not rebuild these fixes as though still absent.
 - Saved/unsaved Beacon removal produces the same approved topology and config.
   Merge cases follow Q1/Q2, with no accidental fan-out or occupied Merge slot.
 - Count reductions keep arbitrary old slots (for example A/D) with correct

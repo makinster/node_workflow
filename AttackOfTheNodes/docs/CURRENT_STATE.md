@@ -18,7 +18,10 @@ This is the only live status snapshot; older logs/plans retain dated history.
   in Editor. The save-and-stay completion contract needs an integration check.
 - Verification: main full suite **1708 passed in 217.06s**; source/probe checks
   include saved versus unsaved Beacon removal; #82's later review fixes were
-  rechecked on `531e4c1` (**23 passed in 3.51s**). No application/tests changed.
+  rechecked on `531e4c1` (**92 focused tests passed in 5.47s**), including
+  soft-deleted peer guards, mixed recovery tails and both halves of stale
+  original/gained inputs. Full suite at that #82 head: **1728 passed in
+  212.11s**. No application/tests changed.
   Link checks pass; the historical docs count needs the temporary proposal
   registered when #83's allowlist is integrated. Native UI was not checked.
 

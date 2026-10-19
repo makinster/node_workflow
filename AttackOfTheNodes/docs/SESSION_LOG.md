@@ -4,6 +4,26 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-18 — Editor Hotfix Re-review and Proposal Evidence
+
+Branch `codex/deletion-proposal`; docs-only follow-up to #84. Re-reviewed
+#82 at `531e4c1` after its three review fixes, without application changes.
+
+- The original shared-Resolver, shared recovery-tail and missing source-port
+  reproductions pass. Nearby cases pass for soft-deleted/materialized peer
+  guards, a guard restored before deletion, tails shared between a Resolver
+  route and the guarded node's wired error path, and protection when No error
+  also reaches the tail. Stale original and newly gained input edges lose both
+  halves without relying on Editor's prior pruning. No remaining finding in
+  these cases; this is not a claim about untested deletion cases.
+- Verification on #82: **92 focused tests passed in 5.47s** and the full suite
+  **1728 passed in 212.11s**. Updated the proposal's current-behavior evidence
+  and regression requirements; phase 2 still requires owner approval and #82's
+  merge. No source/test changes or review comments posted.
+- Docs: **352 relative links/anchors**, **33 archive bodies**, existing October
+  18 entries retained, and `git diff --check` pass. The historical active-doc
+  count still needs the temporary proposal allowance when #83 integrates.
+
 ## 2026-10-18 — Editor Deletion Review: Phase 1 Proposal
 
 Branch `codex/deletion-proposal`, fresh from main `90182f0`. Docs only;
