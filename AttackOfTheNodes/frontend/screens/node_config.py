@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import uuid
 from copy import deepcopy
 
 
@@ -57,6 +58,7 @@ from frontend.node_types import (
     BRANCH_NODE_TYPE,
     END_NODE_TYPE,
     MERGE_NODE_TYPE,
+    START_NODE_TYPE,
     TEXT_OUTPUT_NODE_TYPE,
     WAIT_UNTIL_NODE_TYPE,
 )
@@ -96,6 +98,7 @@ from frontend.widgets.form_generator import (
     schema_has_field_rules,
 )
 from frontend.widgets.status_bar import StatusBar
+from frontend.widgets.contract_rows import INPUT, RESULT, ContractRowsField, next_node_summary, row_line
 
 
 _MISSING_PAYLOAD = object()
@@ -727,6 +730,13 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             )
         if self.node_data.get("type") == WAIT_UNTIL_NODE_TYPE:
             excluded_config_keys.add("target_node_ids")
+        if self.node_data.get("type") == START_NODE_TYPE:
+            # Step 4a-2: the rows (the old greeting is shown as one) replace
+            # the greeting field and its routing.
+            excluded_config_keys.update({"greeting", "rows", "transient_output", "transient_outputs",
+                                         "vault_write", "vault_write_key", "vault_write_description"})
+        if self.node_data.get("type") == END_NODE_TYPE:
+            excluded_config_keys.update({"return_end", "results"})
         if self.node_data.get("type") == MERGE_NODE_TYPE:
             excluded_config_keys.update(
                 {
@@ -758,7 +768,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
 
         with Vertical(id="modal-card", classes="node-config-modal"):
             title = self.node_data.get("alias") or self.node_id
-            yield Label(f"Edit Node: {title}", classes="modal-title")
+            sub_mark = "   \\[sub]" if self._is_subworkflow() else ""
+            yield Label(f"Edit Node: {title}{sub_mark}", classes="modal-title")
             # The node ID on its own line (owner, 2026-10-14), not in labels.
             yield Static(f"Node ID: {self.node_id}", id="node-config-id",
                          classes="form-description")
@@ -782,6 +793,13 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 yield from self._compose_wait_config_tabs(config, forms)
             elif self.node_data.get("type") == ERROR_MUX_NODE_TYPE:
                 yield from self._compose_error_mux_config_tabs(metadata, config)
+            elif self.node_data.get("type") == START_NODE_TYPE:
+                help_text = ("1-3 tabs" if self._is_subworkflow() else "1/2 tabs") + \
+                    " | w/s move | e edit | ctrl+s save | esc close | ctrl+q revert"
+                yield from self._compose_start_config_tabs(config)
+            elif self.node_data.get("type") == END_NODE_TYPE and self._is_subworkflow():
+                help_text = "1-3 tabs | w/s move | e edit | ctrl+s save | esc close | ctrl+q revert"
+                yield from self._compose_end_config_tabs(config, forms)
             else:
                 yield from self._compose_standard_config_tabs(
                     metadata,
@@ -880,6 +898,157 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                     )
                     yield from self._compose_connection_rows()
                     yield from self._compose_errors_section()
+
+    # -- Step 4a-2: Start inputs, Return End results (owner samples, 2026-10-18) --
+
+    def _is_subworkflow(self) -> bool:
+        return bool(getattr(self.workflow_map, "callable", False))
+
+    def _return_end(self) -> Optional[tuple[str, Dict[str, Any]]]:
+        """The End that sends results back (the first one ticked), if any."""
+        for node_id, node in self.workflow_map.get_all_node_data().items():
+            if node.get("type") == END_NODE_TYPE and (node.get("config") or {}).get("return_end"):
+                return node_id, node
+        return None
+
+    def _alias_row(self):
+        return Horizontal(
+            Label("Alias:", classes="form-label-inline"),
+            CommandInput(value=self._alias_default_value(), id="alias-input"),
+            classes="form-inline-row", id="alias-row",
+        )
+
+    def _compose_start_config_tabs(self, config: Dict[str, Any]):
+        from backend.contracts import start_rows
+
+        rows = config.get("rows") if isinstance(config.get("rows"), list) and config.get("rows") else start_rows(config)
+        sub = self._is_subworkflow()
+        with TabbedContent(id="node-config-tabs", classes="node-config-tabs"):
+            with TabPane("1 Inputs", id="node-config-tab-core"):
+                with VerticalScroll(classes="tab-scroll"):
+                    yield self._alias_row()
+                    text = "Values the workflow starts with."
+                    if sub:
+                        text += " A calling workflow can fill them in."
+                    yield Static(text, classes="form-description")
+                    yield ContractRowsField(INPUT, rows, id="start-inputs")
+                    yield Static(next_node_summary(rows), id="start-next-summary",
+                                 classes="form-description", markup=False)
+            if sub:
+                with TabPane("2 Results", id="node-config-tab-results"):
+                    with VerticalScroll(classes="tab-scroll"):
+                        yield from self._compose_start_results()
+            with TabPane("3 Connections" if sub else "2 Connections", id="node-config-tab-connections"):
+                with VerticalScroll(classes="tab-scroll"):
+                    yield Static("Edit connections from the editor.", classes="form-description")
+                    yield from self._compose_connection_rows()
+                    yield from self._compose_errors_section()
+
+    def _compose_start_results(self):
+        from backend.contracts import return_rows
+
+        found = self._return_end()
+        if found is None:
+            yield Static('Nothing sent back yet. Tick "Send results back" on an End node.',
+                         classes="form-description", markup=False)
+            return
+        end_id, end = found
+        name = friendly_label(self.workflow_map, end_id)
+        rows = return_rows(end.get("config") or {})
+        if not rows:
+            yield Static(f'Nothing sent back yet. Add results on End "{name}".',
+                         classes="form-description", markup=False)
+            return
+        yield Static(f'Sent back when called. Edit on End "{name}".', classes="form-description", markup=False)
+        yield Static("\n".join(row_line(RESULT, row) for row in rows), id="start-results",
+                     classes="form-description", markup=False)
+
+    def _compose_end_config_tabs(self, config: Dict[str, Any], forms: Dict[str, Any]):
+        returning = bool(config.get("return_end"))
+        with TabbedContent(id="node-config-tabs", classes="node-config-tabs"):
+            with TabPane("1 Results", id="node-config-tab-results"):
+                with VerticalScroll(classes="tab-scroll"):
+                    yield self._alias_row()
+                    yield Checkbox("Send results back", value=returning, id="return-end")
+                    yield Static("Only one End can do this, after branches merge.",
+                                 classes="form-description", markup=False)
+                    rows = config.get("results") if isinstance(config.get("results"), list) else []
+                    field = ContractRowsField(RESULT, rows, id="end-results")
+                    field.display = returning
+                    yield field
+            with TabPane("2 Parameters", id="node-config-tab-parameters"):
+                with VerticalScroll(classes="tab-scroll"):
+                    if forms.get("parameters") is not None:
+                        yield forms["parameters"]
+            with TabPane("3 Connections", id="node-config-tab-connections"):
+                with VerticalScroll(classes="tab-scroll"):
+                    yield Static("Edit connections from the editor.", classes="form-description")
+                    yield from self._compose_connection_rows()
+                    yield from self._compose_errors_section()
+
+    def on_contract_rows_field_changed(self, event: ContractRowsField.Changed) -> None:
+        for summary in self.query("#start-next-summary"):
+            summary.update(next_node_summary(self.query_one("#start-inputs", ContractRowsField).rows))
+
+    def _contract_config_values(self) -> Dict[str, Any]:
+        values: Dict[str, Any] = {}
+        start = self.query("#start-inputs")
+        if start and not start.first().untouched_legacy:
+            values["rows"] = start.first().value
+        if self.query("#return-end"):
+            values["return_end"] = bool(self.query_one("#return-end", Checkbox).value)
+            values["results"] = self.query_one("#end-results", ContractRowsField).value
+        return values
+
+    # "Send back to calling workflow" on a Vault payload (C26).
+
+    def _send_back_key(self, port: str) -> str:
+        key_query = self.query(f"#vault-output-key-{port}")
+        return self._widget_text_value(key_query.first()).strip() if key_query else ""
+
+    def _sent_back_keys(self) -> set:
+        from backend.contracts import return_rows
+
+        found = self._return_end()
+        if found is None:
+            return set()
+        return {row["vault_key"] or row["name"] for row in return_rows(found[1].get("config") or {})
+                if row["source"] == "Vault key"}
+
+    def _send_back_choices(self) -> Dict[str, bool]:
+        return {port: bool(box.first().value)
+                for port in self._vault_output_ports(self._metadata_for_type(self.node_data.get("type", "")))
+                for box in [self.query(f"#send-back-{port}")] if box}
+
+    def _apply_send_back(self) -> None:
+        """Add or remove this node's Vault value in the Return End's results."""
+        choices = self._send_back_choices()
+        found = self._return_end()
+        if not choices or found is None or choices == getattr(self, "_send_back_opened", {}):
+            return
+        end_id, end = found
+        config = deepcopy(end.get("config") or {})
+        results = [row for row in config.get("results") or [] if isinstance(row, dict)]
+        metadata = self._metadata_for_type(self.node_data.get("type", "")) or {}
+        for port, wanted in choices.items():
+            key = self._send_back_key(port)
+            if not key:
+                continue
+            present = [row for row in results if (row.get("source") or "Vault key") == "Vault key"
+                       and (row.get("vault_key") or row.get("name")) == key]
+            if wanted and not present:
+                data_type = str(((metadata.get("output_port_metadata") or {}).get(port) or {}).get("data_type") or "var")
+                from backend.contracts import ROW_TYPES
+
+                results.append({"id": f"out_{uuid.uuid4().hex[:8]}", "name": key,
+                                "type": data_type if data_type in ROW_TYPES else "var",
+                                "required": True, "source": "Vault key", "vault_key": key,
+                                "description": ""})
+            elif not wanted and present:
+                results = [row for row in results if row not in present]
+        config["results"] = results
+        self.workflow_map.update_node_config(end_id, config)
+        self._send_back_opened = choices
 
     def _compose_wait_config_tabs(self, config: Dict[str, Any], forms: Dict[str, Any]):
         with TabbedContent(id="node-config-tabs", classes="node-config-tabs"):
@@ -1406,6 +1575,9 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             )
 
     async def on_checkbox_changed(self, event: Checkbox.Changed) -> None:
+        if event.checkbox.id == "return-end":
+            self.query_one("#end-results", ContractRowsField).display = bool(event.checkbox.value)
+            return
         if event.checkbox.id == "membank-writes":
             await self._refresh_membank_output_rows()
         elif event.checkbox.id == "membank-reads":
@@ -2067,7 +2239,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             collected = self._collected_config()
         except ValueError:
             return True
-        return collected != self._opened_config or self._alias_value() != self._opened_alias
+        return (collected != self._opened_config or self._alias_value() != self._opened_alias
+                or self._send_back_choices() != getattr(self, "_send_back_opened", {}))
 
     def _leave(self, jump_to: Optional[str] = None) -> None:
         """Close, or jump to another node's editor; ask Save / Discard / Stay
@@ -2129,6 +2302,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         doomed = self._mux_branch_nodes_to_delete()
         if doomed:
             result["delete_branch_nodes"] = doomed
+        self._apply_send_back()
         return result
 
     def _checked_numbers(self, config: Dict[str, Any]) -> tuple[Dict[str, Any], Dict[str, str]]:
@@ -2202,6 +2376,12 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                           membank_inputs=[], membank_outputs=[], transient_outputs=[])
             config.update(self._error_path_config_values())
             return config
+        if self.query("#start-inputs") or self.query("#return-end"):
+            # Start and a subworkflow's End have no Payloads tab: their
+            # routing lives in the rows, so nothing else is collected.
+            config.update(self._error_path_config_values())
+            config.update(self._contract_config_values())
+            return config
         config.update(self._transient_config_values())
         config.update(self._membank_config_values())
         config.update(self._standard_payload_config_values())
@@ -2210,6 +2390,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         config.update(self._error_path_config_values())
         config.update(self._error_mux_config_values())
         config.update(self._merge_config_values())
+        config.update(self._contract_config_values())
         return config
 
     def _take_opened_snapshot(self) -> None:
@@ -2990,6 +3171,14 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                     classes="form-inline-row",
                     id=f"vault-desc-row-{port}",
                 )
+                if self._is_subworkflow():
+                    if self._return_end() is None:
+                        yield Static('To send it back, tick "Send results back" on an End node.',
+                                     classes="form-description", markup=False)
+                    else:
+                        sent = (default_key or "") in self._sent_back_keys() if default_key else False
+                        self._send_back_opened = {**getattr(self, "_send_back_opened", {}), port: sent}
+                        yield Checkbox("Send back to calling workflow", value=sent, id=f"send-back-{port}")
 
     def _pass_through_note(self, metadata: Optional[Dict[str, Any]]) -> str:
         if metadata is None:

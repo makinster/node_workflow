@@ -6,6 +6,36 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-18 — Step 4a-2: Subworkflow Screens
+
+Branch `dist/step4a2-screens`, from main `1addbf9`. Owner-approved samples
+(three wording passes, then File window tabs). Before: 1729 passed.
+
+- **File window:** Workflows and Subworkflows tabs (1/2). The key line keeps
+  the common keys and `?` opens the grouped key list; Open replaces Load.
+  **C** on tab 1 copies a workflow to Subworkflows with the same name; a
+  repeat copy is numbered "(2)" with a warning toast; the original is not
+  touched; a single End becomes the Return End. **N** on tab 2 makes a
+  subworkflow. Names are unique per tab (`workflow_names`, `list_workflows`
+  now reports `callable`); `aotn run "<name> [sub]"` picks the copy.
+- **Start:** an Inputs tab of one-line rows (the old greeting shows as one
+  row; saving it untouched changes nothing), an input editor (name, type,
+  default with P for the Stash, required, send to, Vault key, description;
+  names must be unique and defaults must parse by type), and "Next node
+  gets: ...". In a subworkflow, a read-only Results tab mirrors the Return End.
+- **End (subworkflows only):** a Results tab with "Send results back" and
+  its result rows. Standard workflows never show these controls.
+- **Payloads (subworkflows only):** "Send back to calling workflow" under a
+  Vault payload adds or removes that key on the Return End when saved.
+- Node Config titles show `[sub]` in a subworkflow. A new keymap profile,
+  `contract_row_editor`, covers the input/result editor.
+- Not in this PR: `[sub]` in the editor header (Codex owns `editor.py`),
+  "Send back" for multi-output Vault nodes (`membank_outputs`), and the
+  plain-language pass over the rest of the UI.
+- After: 1754 passed (25 new tests in `test_subworkflow_library.py` and
+  `test_contract_screens.py`; the old Start Payloads test now checks the
+  Inputs row instead).
+
 ## 2026-10-18 — Docs C integrated with #81, #82 and #84
 
 Main merged into `codex/docs-c` (owner asked for the merge). `CURRENT_STATE.md`

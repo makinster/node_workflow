@@ -22,11 +22,10 @@ This is the live status snapshot; plans and logs preserve dated decisions.
   picker, from fresh main. Node Config, Workflow Library, Help and App stay
   with 4a-2.
 - **Step 4:** design rev. 4 approved (#76/#79); 4a-1 backend/CLI contracts
-  built (#80). 4a-2 screens are in progress on `dist/step4a2-screens`
-  (owner-approved samples, 2026-10-18: plain short wording; the File window
-  gets Workflows and Subworkflows tabs; C copies a workflow to Subworkflows,
-  numbering a repeat copy "(2)" with a warning toast). Child-workflow calls
-  remain later work. [Proposal](SUBWORKFLOWS_PROPOSAL.md).
+  built (#80). 4a-2 screens awaiting review on `dist/step4a2-screens`: File
+  window Workflows/Subworkflows tabs, copy to Subworkflows, Start's Inputs and
+  Results tabs, the End's Results tab, "Send back to calling workflow".
+  Child-workflow calls (4b) remain later work. [Proposal](SUBWORKFLOWS_PROPOSAL.md).
 - Keymap phase 3 is next for Stash, Settings, Execution, list pickers, Confirm
   hints, Unsaved Changes, User Input and Recovery. Editor, Node Config,
   Node Selector, Workflow Library and Help topics follow after 4a-2 merges.

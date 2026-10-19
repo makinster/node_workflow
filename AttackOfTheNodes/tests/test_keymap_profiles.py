@@ -24,6 +24,7 @@ OWNER_TYPES = [
         ("help", "HelpScreen"), ("error_details", "ErrorDetailsScreen"),
         ("recovery_branch_unpick", "RecoveryBranchUnpickScreen"),
     ]],
+    ("frontend.widgets.contract_rows", "ContractRowEditor"),
     ("frontend.widgets.command_input", "CommandInput"),
     ("frontend.widgets.command_input", "CommandTextArea"),
     ("frontend.widgets.select_keymap", "SelectOverlay"),
