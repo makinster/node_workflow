@@ -830,6 +830,18 @@ only serializable representations.
    Ensure new event payloads always carry `run_id` so future isolation is an
    additive subscriber filter, not a breaking schema change.
 
+## Editor deletion review
+
+The approved direction is recorded on the pending #82 branch; the
+[Deletion Review Proposal](DELETION_REVIEW_PROPOSAL.md) checks that code and
+keeps proposed case semantics separate from merged behavior.
+
+| Stage | Review/delivery gate |
+|---|---|
+| 1 — proposal and samples | `codex/deletion-proposal`, 2026-10-18; docs only, owner reviews the case decisions and plain-text screens. |
+| 2 — implementation | Only after owner approval and #82 merges, fresh main; grouped deletes/undo, shared exact-count keep picker and Editor-owned count-reduction interception. Node Config remains with 4a-2. |
+| Later — session history | In-memory multi-step Ctrl+Z for edits; no run-side-effect rollback or automatic loss of saved recovery records. |
+
 ## Near-Term Project — Frontend Command UI Toolkit
 
 **Adopted scope (owner, 2026-10-18):** a typed Python registry compiled into

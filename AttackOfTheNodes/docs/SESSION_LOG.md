@@ -4,6 +4,59 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-18 — Editor Hotfix Re-review and Proposal Evidence
+
+Branch `codex/deletion-proposal`; docs-only follow-up to #84. Re-reviewed
+#82 at `531e4c1` after its three review fixes, without application changes.
+
+- The original shared-Resolver, shared recovery-tail and missing source-port
+  reproductions pass. Nearby cases pass for soft-deleted/materialized peer
+  guards, a guard restored before deletion, tails shared between a Resolver
+  route and the guarded node's wired error path, and protection when No error
+  also reaches the tail. Stale original and newly gained input edges lose both
+  halves without relying on Editor's prior pruning. No remaining finding in
+  these cases; this is not a claim about untested deletion cases.
+- Verification on #82: **92 focused tests passed in 5.47s** and the full suite
+  **1728 passed in 212.11s**. Updated the proposal's current-behavior evidence
+  and regression requirements; phase 2 still requires owner approval and #82's
+  merge. No source/test changes or review comments posted.
+- Docs: **352 relative links/anchors**, **33 archive bodies**, existing October
+  18 entries retained, and `git diff --check` pass. The historical active-doc
+  count still needs the temporary proposal allowance when #83 integrates.
+
+## 2026-10-18 — Editor Deletion Review: Phase 1 Proposal
+
+Branch `codex/deletion-proposal`, fresh from main `90182f0`. Docs only;
+#81/#82/#83 remain open. The owner/reviewer merges.
+
+- Read the evening ownership split, #82's approved backlog direction and
+  all three initial follow-up comments, then the later review-fixes comment.
+  Rechecked current behavior at #82 head `531e4c1`; hotfix behavior is not
+  claimed to be merged on main.
+- Added `DELETION_REVIEW_PROPOSAL.md`: every requested structural deletion,
+  two parents, stub removal/replacement and undo before/after save and reload.
+  Defines grouped recovery, one exact-cardinality picker, protection for shared
+  nodes, Merge cleanup, versioned stub data and later in-memory session history.
+- Included plain-text samples for pickers, destructive confirmations and
+  conflicts. Owner choices: Merge/Beacon effects, group restore on drift,
+  persistent undo for count reduction, and actual validator warning severity.
+- Code/probe checks found Beacon removal differs before/after materialization:
+  unsaved removes Merge selections and does not bypass; saved can bypass and
+  leave selections. Proposal requires one approved policy. #82 advanced during
+  drafting: `531e4c1` fixes the shared-handler/tail/restore review gaps; those
+  are retained as regression requirements, not described as current defects.
+  Twenty current hotfix tests plus three independent reproductions pass
+  (**23 passed in 3.51s**).
+- Count-reduction picker belongs in Editor's config-save path, with no Node
+  Config edits. Save-and-stay takes its own snapshot after a synchronous
+  callback; cancellation needs a real completion contract, not a false save.
+- Verification: full main suite **1708 passed in 217.06s**; **352 relative
+  links/anchors** and **33 whole archive bodies** pass. The new review is temporary; #83's active-doc allowlist
+  needs its name during integration (the old 17-count assertion was already
+  failing on the subworkflows proposal). No runtime/test/helper/workflow edits;
+  no live/native terminal verification. Phase 2 waits for owner review and
+  #82's merge. Existing log entries are retained whole.
+
 ## 2026-10-18 — Editor fixes: insert with two parents, error paths, colours
 
 Branch `fix/insert-fan-in-error-path`, from `main` at `90182f0`. Owner bug
