@@ -6845,6 +6845,21 @@ def test_file_picker_export_and_import_paths():
     asyncio.run(_test_file_picker_export_and_import_paths())
 
 
+def test_file_picker_paths_wait_for_editor_mount(monkeypatch):
+    """A slow replacement Header must finish mounting before app teardown."""
+    from textual.widgets import Header
+
+    original_mount = Header._on_mount
+
+    async def slow_mount(self, event):
+        # Model a busy event loop: the old 100 ms pause ended mid-mount.
+        await asyncio.sleep(0.25)
+        original_mount(self, event)
+
+    monkeypatch.setattr(Header, "_on_mount", slow_mount)
+    asyncio.run(_test_file_picker_export_and_import_paths())
+
+
 def test_file_picker_cancel_and_fallback_paths():
     asyncio.run(_test_file_picker_cancel_and_fallback_paths())
 
@@ -6911,6 +6926,30 @@ async def _test_export_cancel_returns_to_file_menu():
 async def _test_file_picker_export_and_import_paths():
     import frontend.file_io as file_io
     from frontend.app import AttackOfTheNodesApp
+    from frontend.screens.editor import EditorScreen
+    from textual.widgets import Header
+
+    class PickerTestApp(AttackOfTheNodesApp):
+        """Observe completion without changing the production picker routes."""
+
+        CSS_PATH = Path(__file__).resolve().parents[1] / "frontend" / "styles.tcss"
+
+        def __init__(self, *args):
+            super().__init__(*args)
+            self.picker_finished = asyncio.Event()
+            self.editor_switch = None
+
+        async def _prompt_export_workflow_with_picker(self, result):
+            await super()._prompt_export_workflow_with_picker(result)
+            self.picker_finished.set()
+
+        async def _prompt_import_workflow_with_picker(self):
+            await super()._prompt_import_workflow_with_picker()
+            self.picker_finished.set()
+
+        def switch_screen(self, screen):
+            self.editor_switch = super().switch_screen(screen)
+            return self.editor_switch
 
     class FakeSaveManager:
         configuration_manager = None
@@ -6939,25 +6978,33 @@ async def _test_file_picker_export_and_import_paths():
         file_io.pick_save_file = lambda *args, **kwargs: "/tmp/exported.json"
         master, wm, mb, bus = _make_services()
         wm.create_new("picker_export")
-        app = AttackOfTheNodesApp(bus, wm._factory, wm, mb, master, fake_save)
+        app = PickerTestApp(bus, wm._factory, wm, mb, master, fake_save)
         async with app.run_test() as pilot:
-            await pilot.pause(0.03)
             app._prompt_export_workflow({"workflow_id": "wf-export"})
-            await pilot.pause(0.1)
+            await asyncio.wait_for(app.picker_finished.wait(), timeout=5)
+            await pilot.pause()
             assert fake_save.exported == [("wf-export", "/tmp/exported.json")]
 
         fake_import = FakeSaveManager()
         file_io.pick_open_file = lambda *args, **kwargs: "/tmp/imported.json"
         master, wm, mb, bus = _make_services()
         wm.create_new("picker_import")
-        app = AttackOfTheNodesApp(bus, wm._factory, wm, mb, master, fake_import)
+        app = PickerTestApp(bus, wm._factory, wm, mb, master, fake_import)
         async with app.run_test() as pilot:
-            await pilot.pause(0.03)
+            original_editor = app.screen
             wm.mark_saved()
             app._prompt_import_workflow()
-            await pilot.pause(0.1)
+            await asyncio.wait_for(app.picker_finished.wait(), timeout=5)
+            # Import/load records precede the asynchronous editor mount. Await
+            # Textual's public switch completion, then drain its title watchers.
+            assert app.editor_switch is not None
+            await asyncio.wait_for(app.editor_switch, timeout=5)
+            await pilot.pause()
             assert fake_import.imported == ["/tmp/imported.json"]
             assert fake_import.loaded == ["wf-imported"]
+            assert isinstance(app.screen, EditorScreen)
+            assert app.screen is not original_editor
+            assert app.screen.query_one(Header).is_mounted
     finally:
         file_io.pick_save_file = original_save
         file_io.pick_open_file = original_open

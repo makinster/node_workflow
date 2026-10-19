@@ -31,6 +31,10 @@ owner decisions and verification entries when integrating both PRs.
 
 ## Baseline and open work — 2026-10-18
 
+- Current implementation base: fresh `origin/main` at `90182f0`; keymap
+  phase 2 (#78) and Step 4a-1 contracts (#80) are merged (1708-test baseline).
+  File-picker test synchronization is on `codex/file-picker-teardown`.
+  Step 4a-2 screens proceed separately; their frontend files are not edited here.
 - Phase-2 implementation base: fresh `origin/main` at `4cb246e` (keymap
   foundation #77, merged after approved Step 4 design #76). C1–C7 and workflow naming
   (#68) are merged; C7 has only `branch` and publishes its child payload.
@@ -39,7 +43,7 @@ owner decisions and verification entries when integrating both PRs.
   CONTRIBUTING), confirm/close buttons in every window (#73), and Stash
   duplicates (#74: the same file or text is never stashed twice), and S3 field
   insert (#75: plain `P`, off while typing; Ctrl+P/palette unchanged).
-- Keymap phase 1 is merged (#77). Awaiting review: phase 2 on
+- Keymap phase 1 is merged (#77). Phase 2 merged in #78 from
   `codex/keymap-policies`: multi-state command policies, native text/Select
   adapters and migrated App/high-traffic screens. The three listed defects have
   failing-first regressions and fixes: Node Config availability mutation,
@@ -48,22 +52,32 @@ owner decisions and verification entries when integrating both PRs.
   unchanged. Memory/Output/File viewers, generated reference tables/source
   checks and rebinding UI remain deferred.
   [Scope](PROJECT_BACKLOG.md#near-term-project--frontend-command-ui-toolkit).
-  Step 4 design revision 3 is approved and merged in #76; backend/CLI stage
-  4a-1 proceeds separately, with 4a-2 config screens after keymap phase 2.
+  Step 4 design revision 4 is approved (#76/#79); backend/CLI stage
+  4a-1 is merged (#80), with 4a-2 config screens in progress separately.
   Docs PR C follows B.
   The owner merges, or explicitly asks a reviewer to.
+- Awaiting review: editor fixes on `fix/insert-fan-in-error-path` (insert
+  before a node with two parents keeps it; HTTP Request and JSON Path get no
+  error path by default; failure paths keep the normal path's colour;
+  deleting a node with an error handler asks, then removes the handler too).
+  Branch-count reduction and a deletion review are in the backlog.
 - Work order: [Node Contract Plan](NODE_CONTRACT_PLAN.md). Long-term decisions:
   [Distributed Build Plan](DISTRIBUTED_BUILD_PLAN.md), [Stash](STASH_PROPOSAL.md).
 
 ## Verification and environment — 2026-10-18
 
+- File-picker synchronization: **1709 passed** in 216.57s. The slow-mount
+  regression first failed with `NoMatches: HeaderTitle`; after the fix all
+  three picker tests passed in ten consecutive runs (30 tests). The original
+  full suite also passed (1708 in 216.99s). Changed-test compilation and
+  `git diff --check` pass. Test-only; no application or visible UI changes.
 - Keymap phase 2: **1666 passed** in 212.52s on the final code, including
   actual-keypress coverage for the three regressions, NAV/TEXT saves, multiline
   Ctrl+S/Ctrl+Enter, modal scope, dropdown and navigation/caret remapping.
   Compilation and `git diff --check` pass. An earlier full run hit the known
   file-picker `HeaderTitle` teardown flake; its isolated rerun and final full
-  run pass. That separate fix remains deferred. Native terminal checks were
-  not performed; visible wording/layout is unchanged.
+  run pass. The separate test synchronization fix is now under review.
+  Native terminal checks were not performed; visible wording/layout is unchanged.
 - Docs audit: all **342 relative links/anchors** and **33 archive bodies** pass;
   its historical 17-active-doc assertion reports **18**, already the main
   baseline after #76 added the proposal. This phase does not change that count.
@@ -85,8 +99,8 @@ owner decisions and verification entries when integrating both PRs.
 ## Open owner decisions and limits — 2026-10-17
 
 - **Step 4:** design approved (2026-10-18; [Subworkflows proposal](SUBWORKFLOWS_PROPOSAL.md)
-  rev. 4). 4a-1 (contracts, backend and CLI) is in its PR (`dist/step4a1-contracts`);
-  4a-2 (the Start and Return End screens; sample screens shown) follows keymap phase 2 (#78).
+  rev. 4). 4a-1 (contracts, backend and CLI) is merged (#80);
+  4a-2 (the Start and Return End screens; sample screens shown) is in progress.
 
 - **Stash:** S1 approved with the CLI (2026-10-17). Answered 2026-10-18:
   the field-insert key is `P`; a text field takes text entries only, not
@@ -96,9 +110,9 @@ owner decisions and verification entries when integrating both PRs.
   from the TUI selector. Whether to expose it remains an owner decision.
 - **FO7:** native Windows/terminal-host verification remains unverified in
   this session; owner results are needed before claiming native coverage.
-- **Step 4 implementation:** the approved contracts remain unbuilt; `--input`
-  is recorded but not yet consumed. Stage 4a-1 is backend/CLI only; config
-  screens follow keymap phase 2.
+- **Step 4 implementation:** backend/CLI contracts, typed `--input` and
+  `--inputs-file` are built in #80. Stage 4a-2 adds their config screens;
+  child-workflow calls remain later work.
 - Only the [audit report](audits/docs_audit_2026_10_17/MASTER_REPORT.md) survived.
   Original evidence/CSVs are unavailable. PR B rebuilt the source map before
   extraction; whole originals and migration notes are retained in `archive/`.

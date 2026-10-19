@@ -20,7 +20,7 @@ def test_http_request_node_registration_and_metadata():
     assert metadata["display_name"] == 'HTTP Request'
     assert metadata["default_alias"] == 'HTTP Request'
     assert metadata["input_ports"] == ['input']
-    assert metadata["output_ports"] == ['default', 'error']
+    assert metadata["output_ports"] == ['default']
     # Every declared port exposes the per-port I/O contract (handoff §4/§6):
     # data_type defaults to "any", required defaults to False.
     for direction in ("input_port_metadata", "output_port_metadata"):
@@ -44,27 +44,27 @@ async def _run_http(url="", method="GET", body=""):
     context = NodeContext(
         node_id="n1", branch_id="b", run_id="r",
         inputs={"input": ""}, memory_bank=memory,
-        signal_done=done.append, signal_error=lambda e: None,
+        signal_done=done.append,
+        signal_error=lambda e: done.append({"error": e}),
         signal_waiting_for_input=lambda p: None,
         wait_for_nodes=lambda t, timeout: None,
         wait_for_merge=lambda n, b, p, i, timeout: None,
     )
     await node.execute(context)
-    return done[0]["data"]
+    return done[0].get("data", done[0])
 
 
 @pytest.mark.asyncio
 async def test_http_request_node_execute_template_smoke():
-    """Empty URL routes to error port without crashing."""
+    """Empty URL fails with a coded error without crashing."""
     data = await _run_http(url="")
-    assert "error" in data
+    assert data["error"].code == "missing_url"
 
 
 @pytest.mark.asyncio
 async def test_http_request_empty_url_signals_error():
     data = await _run_http(url="")
-    assert "error" in data
-    assert "URL" in data["error"] or "required" in data["error"].lower()
+    assert "URL" in str(data["error"])
 
 
 @pytest.mark.asyncio
@@ -84,12 +84,12 @@ async def test_http_request_mocked_get_success():
 
 
 @pytest.mark.asyncio
-async def test_http_request_mocked_url_error_routes_to_error_port():
+async def test_http_request_mocked_url_error_is_a_network_error():
     import urllib.error
     from unittest.mock import patch
 
     with patch("urllib.request.urlopen", side_effect=urllib.error.URLError("timeout")):
         data = await _run_http(url="http://example.com/test")
 
-    assert "error" in data
-    assert "timeout" in data["error"]
+    assert data["error"].code == "network"
+    assert "timeout" in str(data["error"])

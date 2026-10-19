@@ -57,6 +57,77 @@ Branch `codex/deletion-proposal`, fresh from main `90182f0`. Docs only;
   no live/native terminal verification. Phase 2 waits for owner review and
   #82's merge. Existing log entries are retained whole.
 
+## 2026-10-18 — Editor fixes: insert with two parents, error paths, colours
+
+Branch `fix/insert-fan-in-error-path`, from `main` at `90182f0`. Owner bug
+report on the "Test Bench - C1/C2 checks" workflow. Before: 1708 passed.
+Tests are in `test_insert_fan_in_error_path.py`.
+
+- **Insert lost the nodes below it** when the next node had a second parent
+  (Pause is fed by Dice and Save note): its input looked occupied, so the
+  new node was never connected to it. The inserted node now takes over the
+  port it was cut from.
+- **No error path by default.** HTTP Request and JSON Path no longer list
+  `error` as an output; their failures are coded `NodeError`s that go to
+  the default handler until the node's Errors tab catches them. The
+  `error` payload is now the engine's error record (code, message,
+  details), the same as every other node.
+- **Colours:** failure paths (a node's error path, an Error Mux's
+  recovery branches) no longer re-colour the node's one normal path,
+  No error included; the failure paths keep their own colours.
+- **Deleting a node with an error handler** (owner follow-up): it asks
+  first, then removes the inline Error Mux and every node only its error
+  branches reach (its wired `error` path, the mux's recovery branches).
+  The node continues on the mux's No error path. Cancel changes nothing;
+  undo restores only the node. Nodes without a handler delete as before.
+- **Error Resolver missing from the editor** (owner, C1/C2): undoing a
+  saved delete re-added the node's old input even when that output now led to
+  a new Resolver, so HTTP's output had two targets and the editor (and the
+  run) followed only the first. Restore now keeps the wiring the tombstone
+  gained, never gives an output a second target, and lets two parents share
+  an ordinary input again. The validator warns (`ignored_fan_out`) when a
+  Resolver's No error path can never run because its node also leads
+  elsewhere; that is the state the owner's saved C1/C2 file is in.
+- **Removing a deleted node's stub** (owner, "user test"): removing an
+  Error Resolver's stub joined its parent to every path after it, so a
+  successful run went down the old error branch. The gap is now bridged to
+  one target only. An Error Resolver keeps its No error path and, after a
+  confirm, deletes the nodes only its error branches reach. Other paths of
+  a multi-path node (Conditional's second path) are left loose for the
+  deletion review. Branch nodes keep their keep-one picker.
+- **Review of 47e7580** (three more cases, each reproduced failing first):
+  deleting one of two nodes that share a Resolver keeps the Resolver and
+  its branches for the other; error routes that share a tail are walked
+  together, so the tail goes too; undo drops an input from a path that no
+  longer exists (a Branch reduced from three paths to two) instead of
+  keeping half an edge.
+- Logged for later in the backlog: reducing a Branch node's path count,
+  and a deletion review with the owner. After: 1728 passed (20 new tests).
+
+## 2026-10-18 — Deterministic File-Picker Test Teardown
+
+Branch `codex/file-picker-teardown`, fresh from `origin/main` at `90182f0`
+(#78 and #80 merged). Test-only fix; no frontend/backend files changed.
+
+- Reproduced `NoMatches: HeaderTitle` before fixing the test by delaying
+  Header mounting 250 ms. The new regression failed with the same traceback:
+  the old 100 ms pause ends while the imported workflow's editor is mounting.
+- Cause: `load_workflow` records success before `show_editor_screen` finishes
+  its asynchronous switch. `pilot.pause(delay)` drains the current screen
+  before sleeping, so it can miss the replacement screen created during sleep.
+- The test now observes picker completion through a test-only App subclass,
+  awaits Textual's public screen-switch completion, then drains the new screen.
+  It retains production picker entry points, threaded OS-picker stubs, the
+  stylesheet and every original assertion. It additionally checks that import
+  reaches a new mounted editor. No increased sleep in the fix; the regression's
+  delay models slow mounting only.
+- Verification: unmodified full suite **1708 passed** in 216.99s; regression
+  failed first; focused picker tests **3 passed**, with **ten consecutive runs**
+  also passing (30 tests). Final full suite **1709 passed** in 216.57s.
+  Changed-test compilation and `git diff --check` pass.
+- Step 4a-2 frontend files are untouched. Docs PR C and the restricted keymap
+  phase 3 remain separate follow-up PRs; the owner/reviewer merges.
+
 ## 2026-10-18 — Step 4a-1: Contracts (Backend and CLI)
 
 Branch `dist/step4a1-contracts`, from `main` at `15742b0` (#79). Before:

@@ -4,6 +4,7 @@ from typing import Any, ClassVar, Dict, List, Optional
 
 from ...node_base import Node, NodeContext
 from ...node_category import NodeCategory
+from ...node_errors import NodeError
 
 
 class JsonPathNode(Node):
@@ -21,7 +22,7 @@ class JsonPathNode(Node):
     group: ClassVar[Optional[str]] = 'Data Transform'
     selector_section: ClassVar[Optional[str]] = 'Transform'
     input_ports: ClassVar[List[str]] = ['input']
-    output_ports: ClassVar[List[str]] = ['default', 'error']
+    output_ports: ClassVar[List[str]] = ['default']
     input_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {}
     output_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {}
     default_config: ClassVar[Dict[str, Any]] = {'path': '', 'default_value': ''}
@@ -39,10 +40,7 @@ class JsonPathNode(Node):
         try:
             data = json.loads(raw) if isinstance(raw, str) else raw
         except (json.JSONDecodeError, TypeError) as exc:
-            context.signal_done(
-                {"data": {"error": f"Invalid JSON: {exc}", "code": "invalid_json"},
-                 "output_port": "error"}
-            )
+            context.signal_error(NodeError("invalid_json", f"Invalid JSON: {exc}"))
             return
 
         result = data

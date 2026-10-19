@@ -508,11 +508,12 @@ async def test_http_request_failures_carry_declared_codes(failure, code):
     node = NodeFactory().create_node("http_request_node", "n1")
     node.config["url"] = "http://example.invalid/"
     done: List[Dict[str, Any]] = []
+    errors: List[Exception] = []
     with patch("urllib.request.urlopen", side_effect=failure):
-        await node.execute(_http_context(done))
-    assert done[0]["output_port"] == "error"
-    assert done[0]["data"]["code"] == code
-    assert done[0]["data"]["error"]
+        await node.execute(_http_context(done, errors))
+    assert done == []
+    assert errors[0].code == code
+    assert str(errors[0])
 
 
 # ---------------------------------------------------------------------------
