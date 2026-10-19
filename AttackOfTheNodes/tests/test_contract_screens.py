@@ -263,3 +263,83 @@ def test_keyboard_reaches_a_row_and_opens_its_editor():
     assert focused == "start-inputs-row-0"
     assert name == "greeting"
     assert back
+
+
+# -- Review of #85 at f5ca052 ----------------------------------------------------
+
+def _reader_steps(edit):
+    """Open Read config on Payloads, run ``edit``, then save. Returns the
+    save result (None when the save was refused)."""
+    async def steps(app, screen, pilot):
+        await pilot.press("3")
+        await pilot.pause(0.05)
+        await edit(screen, pilot)
+        return screen._save_result()
+    return steps
+
+
+def test_renaming_a_sent_back_key_moves_its_result():
+    factory, workflow_map, ids = _map(callable_=True)
+    _set(workflow_map, ids["reader"], vault_write=True, vault_write_key="config")
+    _set(workflow_map, ids["end"], return_end=True, results=[])
+    _reader_send_back(workflow_map, factory, ids, True)
+
+    async def rename(screen, pilot):
+        screen.query_one("#vault-output-key-default", CommandInput).value = "renamed"
+
+    _open(factory, workflow_map, ids["reader"], _reader_steps(rename))
+    results = _config(workflow_map, ids["end"])["results"]
+    assert [(row["name"], row["vault_key"]) for row in results] == [("renamed", "renamed")]
+
+
+def test_send_back_refuses_a_result_name_that_is_taken():
+    factory, workflow_map, ids = _map(callable_=True)
+    _set(workflow_map, ids["reader"], vault_write=True, vault_write_key="config")
+    taken = [{"id": "out_1", "name": "config", "type": "string", "source": "Incoming payload"}]
+    _set(workflow_map, ids["end"], return_end=True, results=taken)
+
+    async def tick(screen, pilot):
+        screen.query_one("#send-back-default", Checkbox).value = True
+
+    result = _open(factory, workflow_map, ids["reader"], _reader_steps(tick))
+    assert result is None
+    assert _config(workflow_map, ids["end"])["results"] == taken
+
+
+def test_removing_every_input_leaves_no_inputs():
+    from backend.contracts import start_rows
+
+    factory, workflow_map, ids = _map()
+
+    async def steps(app, screen, pilot):
+        screen.query_one("#start-inputs-row-0").focus()
+        screen.query_one("#start-inputs-remove").press()
+        await pilot.pause(0.1)
+        return screen._save_result()
+
+    result = _open(factory, workflow_map, ids["start"], steps)
+    assert start_rows(result["config"]) == []
+    workflow_map.update_node_config(ids["start"], result["config"])
+
+    async def reopen(app, screen, pilot):
+        return screen.query_one("#start-inputs", ContractRowsField).rows
+
+    assert _open(factory, workflow_map, ids["start"], reopen) == []
+
+
+def test_an_object_default_survives_an_unchanged_confirm():
+    from backend.contracts import parse_text
+
+    factory, workflow_map, ids = _map()
+    rows = [{"id": "in_1", "name": "options", "type": "var", "value": {"limit": 3}, "to": "Vault"}]
+    _set(workflow_map, ids["start"], rows=rows)
+
+    async def steps(app, screen, pilot):
+        screen.query_one("#start-inputs-row-0").press()
+        await pilot.pause(0.1)
+        app.screen.action_submit()
+        await pilot.pause(0.1)
+        return screen._save_result()
+
+    saved = _open(factory, workflow_map, ids["start"], steps)["config"]["rows"][0]["value"]
+    assert parse_text("var", saved) == {"limit": 3}

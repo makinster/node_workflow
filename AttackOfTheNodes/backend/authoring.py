@@ -54,7 +54,7 @@ from .data_types import types_compatible
 from .validator import _build_ancestor_set, _build_reverse_adjacency, validate_workflow
 from .vault_declarations import typed_vault_writes, vault_read_entries
 from .workflow_map import WorkflowMap
-from .workflow_names import name_taken
+from .workflow_names import name_problem, name_taken
 
 FORMAT = "aotn-workflow/1"
 HANDLE_PATTERN = re.compile(r"^[a-z][a-z0-9_]{0,39}$")
@@ -91,6 +91,7 @@ AUTHORING_CODES: Dict[str, str] = {
     "unknown_port": "A connection uses a port the node does not have with this config.",
     "duplicate_connection": "The same connection is listed twice.",
     "duplicate_name": "A saved workflow already has this name.",
+    "name_invalid": "The name breaks the shared name rule (blank, or ends with [sub]).",
     "reload_mismatch": "The saved file does not reload to the workflow that was built.",
 }
 
@@ -292,8 +293,13 @@ def build_workflow(factory: NodeFactory, spec: Any, *, write: bool = True) -> Di
 
     # Case-insensitive, like `aotn run <name>` resolves names; the library's
     # rename and New use the same rule (workflow_names).
-    if name_taken(name, callable_=bool(workflow_map.callable)):
+    callable_ = bool(workflow_map.callable)
+    if name_taken(name, callable_=callable_):
         add("error", "duplicate_name", f"A saved workflow is already named {name!r}; choose another name")
+        return report(False)
+    problem = name_problem(name, callable_=callable_)
+    if problem:
+        add("error", "name_invalid", problem)
         return report(False)
     workflow_id = workflow_map.workflow_id
     SaveManager(workflow_map).save_current_workflow()

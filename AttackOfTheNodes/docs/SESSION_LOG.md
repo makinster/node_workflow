@@ -35,6 +35,14 @@ Branch `dist/step4a2-screens`, from main `1addbf9`. Owner-approved samples
 - After: 1754 passed (25 new tests in `test_subworkflow_library.py` and
   `test_contract_screens.py`; the old Start Payloads test now checks the
   Inputs row instead).
+- **Review of f5ca052** (five findings, each reproduced failing first):
+  renaming a sent-back Vault key moves its result instead of leaving a stale
+  one; "Send back" refuses a result name the Return End already uses;
+  removing every Start input saves `no_inputs: true` (plain `rows: []` still
+  means the old greeting, as saved files expect); an object or list default
+  shows as JSON, so confirming it unchanged keeps its type; `aotn build`
+  applies the full name rule (`name_invalid` for a name ending in `[sub]`).
+  After: 1759 passed.
 
 ## 2026-10-18 — Docs C integrated with #81, #82 and #84
 

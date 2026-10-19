@@ -57,10 +57,13 @@ class ContractInputError(ContractError):
 # -- rows -----------------------------------------------------------------------
 
 def start_rows(config: Dict[str, Any]) -> List[Dict[str, Any]]:
-    """Start's rows, normalized. With no rows, the legacy greeting is one row."""
+    """Start's rows, normalized. With no rows, the legacy greeting is one row,
+    unless ``no_inputs`` says every input was removed (Step 4a-2)."""
     rows = config.get("rows")
     if isinstance(rows, list) and rows:
         return [_start_row(row) for row in rows if isinstance(row, dict)]
+    if config.get("no_inputs"):
+        return []
     to = []
     if config.get("transient_output", True):
         to.append("Downstream")

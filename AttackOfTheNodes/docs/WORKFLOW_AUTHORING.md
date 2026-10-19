@@ -95,7 +95,8 @@ Step 4 stage. See
   JSON value, `file`), `value` (the default when run directly; blank means
   none), `required`, `to` (`Downstream`, `Vault` or `Both`) and `vault_key`
   (blank means the row's name). One downstream row is sent as itself,
-  several as one object. A Start with no rows keeps its `greeting`.
+  several as one object. A Start with no rows keeps its `greeting`, unless
+  `no_inputs: true` says every input was removed (then it sends nothing).
 - **Return End** (`end_node` with `return_end: true`): each result has
   `name`, `type`, `required` (default true) and `source` (`Vault key` or
   `Incoming payload`). A callable workflow has at most one Return End, and
@@ -117,7 +118,8 @@ means missing, as does a blank stored default; an explicitly supplied `""`,
 with a missing required input, a wrongly typed value, or (callable only) an
 undeclared input stops before it starts with **exit code 5**. A workflow and
 its subworkflow copy may share a name: `aotn run "<name>"` picks the
-workflow, `aotn run "<name> [sub]"` the subworkflow. Results print
+workflow, `aotn run "<name> [sub]"` the subworkflow, so no name may end with
+`[sub]` (`aotn build` reports `name_invalid`). Results print
 as `name = value` after the outputs, and in `--json` output as `values`, with
 the `revision` of the definition that ran.
 

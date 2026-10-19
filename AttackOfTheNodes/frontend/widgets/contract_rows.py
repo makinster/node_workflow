@@ -9,6 +9,7 @@ Values follow ``backend.contracts``: a default is stored as the text typed
 
 from __future__ import annotations
 
+import json
 import uuid
 from typing import Any, Dict, List, Optional
 
@@ -30,13 +31,21 @@ SEND_TO = (("Next node", "Downstream"), ("Vault", "Vault"), ("Both", "Both"))
 FROM = (("Vault", "Vault key"), ("Incoming value", "Incoming payload"))
 
 
+def default_text(value: Any) -> str:
+    """A stored default as editable text: JSON for objects, lists, numbers
+    and true/false, so an unchanged confirm keeps the same value."""
+    if value is None:
+        return ""
+    return value if isinstance(value, str) else json.dumps(value)
+
+
 def _shown_value(value: Any, row_type: str) -> str:
     """Text defaults in quotes; numbers, true/false and files as typed."""
     if value is None or value == "":
         return ""
     if row_type == "string":
         return f'"{value}"'
-    return str(value).lower() if isinstance(value, bool) else str(value)
+    return default_text(value)
 
 
 def row_line(kind: str, row: Dict[str, Any]) -> str:
@@ -194,8 +203,7 @@ class ContractRowEditor(CommandScreenMixin, ModalScreen):
             yield field("Type:", Select([(t, t) for t in ROW_TYPES], value=row_type,
                                         allow_blank=False, id="row-type"), "row-type-row")
             if self.kind == INPUT:
-                value = row.get("value")
-                yield field("Default:", CommandInput(value="" if value is None else str(value),
+                yield field("Default:", CommandInput(value=default_text(row.get("value")),
                                                      placeholder="optional (P: Stash)", id="row-value"),
                             "row-value-row")
                 yield Checkbox("Required", value=bool(row.get("required", False)), id="row-required")

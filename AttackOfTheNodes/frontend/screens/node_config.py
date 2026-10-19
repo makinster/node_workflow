@@ -733,7 +733,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         if self.node_data.get("type") == START_NODE_TYPE:
             # Step 4a-2: the rows (the old greeting is shown as one) replace
             # the greeting field and its routing.
-            excluded_config_keys.update({"greeting", "rows", "transient_output", "transient_outputs",
+            excluded_config_keys.update({"greeting", "rows", "no_inputs", "transient_output", "transient_outputs",
                                          "vault_write", "vault_write_key", "vault_write_description"})
         if self.node_data.get("type") == END_NODE_TYPE:
             excluded_config_keys.update({"return_end", "results"})
@@ -995,6 +995,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         start = self.query("#start-inputs")
         if start and not start.first().untouched_legacy:
             values["rows"] = start.first().value
+            # rows=[] alone still means the old greeting (saved files rely on it).
+            values["no_inputs"] = not values["rows"]
         if self.query("#return-end"):
             values["return_end"] = bool(self.query_one("#return-end", Checkbox).value)
             values["results"] = self.query_one("#end-results", ContractRowsField).value
@@ -1015,40 +1017,55 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         return {row["vault_key"] or row["name"] for row in return_rows(found[1].get("config") or {})
                 if row["source"] == "Vault key"}
 
-    def _send_back_choices(self) -> Dict[str, bool]:
-        return {port: bool(box.first().value)
+    def _send_back_choices(self) -> Dict[str, tuple]:
+        """``{port: (sent back, Vault key)}`` for the checkboxes on screen."""
+        return {port: (bool(box.first().value), self._send_back_key(port))
                 for port in self._vault_output_ports(self._metadata_for_type(self.node_data.get("type", "")))
                 for box in [self.query(f"#send-back-{port}")] if box}
 
-    def _apply_send_back(self) -> None:
-        """Add or remove this node's Vault value in the Return End's results."""
+    def _send_back_plan(self) -> tuple[Optional[list], str]:
+        """The Return End's new results for the checkboxes, and a problem
+        that blocks the save ("" when there is none). A renamed key moves
+        its result; a name another result already uses is refused."""
         choices = self._send_back_choices()
+        opened = getattr(self, "_send_back_opened", {})
         found = self._return_end()
-        if not choices or found is None or choices == getattr(self, "_send_back_opened", {}):
-            return
+        if not choices or found is None or choices == opened:
+            return None, ""
         end_id, end = found
-        config = deepcopy(end.get("config") or {})
-        results = [row for row in config.get("results") or [] if isinstance(row, dict)]
+        results = [dict(row) for row in (end.get("config") or {}).get("results") or [] if isinstance(row, dict)]
         metadata = self._metadata_for_type(self.node_data.get("type", "")) or {}
-        for port, wanted in choices.items():
-            key = self._send_back_key(port)
-            if not key:
-                continue
-            present = [row for row in results if (row.get("source") or "Vault key") == "Vault key"
-                       and (row.get("vault_key") or row.get("name")) == key]
-            if wanted and not present:
-                data_type = str(((metadata.get("output_port_metadata") or {}).get(port) or {}).get("data_type") or "var")
-                from backend.contracts import ROW_TYPES
 
-                results.append({"id": f"out_{uuid.uuid4().hex[:8]}", "name": key,
-                                "type": data_type if data_type in ROW_TYPES else "var",
-                                "required": True, "source": "Vault key", "vault_key": key,
-                                "description": ""})
-            elif not wanted and present:
-                results = [row for row in results if row not in present]
-        config["results"] = results
-        self.workflow_map.update_node_config(end_id, config)
-        self._send_back_opened = choices
+        def reads(row, key):
+            return (row.get("source") or "Vault key") == "Vault key" and (row.get("vault_key") or row.get("name")) == key
+
+        for port, (wanted, key) in choices.items():
+            was_sent, old_key = opened.get(port, (False, ""))
+            if (wanted, key) == (was_sent, old_key):
+                continue
+            if was_sent and old_key:
+                results = [row for row in results if not reads(row, old_key)]
+            if not wanted or not key or any(reads(row, key) for row in results):
+                continue
+            if any(str(row.get("name") or "").strip().casefold() == key.casefold() for row in results):
+                name = friendly_label(self.workflow_map, end_id)
+                return None, f'End "{name}" already has a result named "{key}"'
+            from backend.contracts import ROW_TYPES
+
+            data_type = str(((metadata.get("output_port_metadata") or {}).get(port) or {}).get("data_type") or "var")
+            results.append({"id": f"out_{uuid.uuid4().hex[:8]}", "name": key,
+                            "type": data_type if data_type in ROW_TYPES else "var",
+                            "required": True, "source": "Vault key", "vault_key": key,
+                            "description": ""})
+        return results, ""
+
+    def _apply_send_back(self, results: Optional[list]) -> None:
+        """Write the planned results to the Return End (C26)."""
+        found = self._return_end()
+        if results is not None and found is not None:
+            end_id, end = found
+            self.workflow_map.update_node_config(end_id, {**deepcopy(end.get("config") or {}), "results": results})
+        self._send_back_opened = self._send_back_choices()
 
     def _compose_wait_config_tabs(self, config: Dict[str, Any], forms: Dict[str, Any]):
         with TabbedContent(id="node-config-tabs", classes="node-config-tabs"):
@@ -2286,6 +2303,10 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         except ValueError as error:
             notifications.notify_error(self.app, str(error))
             return None
+        send_back, send_back_problem = self._send_back_plan()
+        if send_back_problem:
+            notifications.notify_error(self.app, send_back_problem)
+            return None
         numbers, problems = self._checked_numbers(config)
         if problems:
             count = len(problems)
@@ -2302,7 +2323,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         doomed = self._mux_branch_nodes_to_delete()
         if doomed:
             result["delete_branch_nodes"] = doomed
-        self._apply_send_back()
+        self._apply_send_back(send_back)
         return result
 
     def _checked_numbers(self, config: Dict[str, Any]) -> tuple[Dict[str, Any], Dict[str, str]]:
@@ -3177,7 +3198,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                                      classes="form-description", markup=False)
                     else:
                         sent = (default_key or "") in self._sent_back_keys() if default_key else False
-                        self._send_back_opened = {**getattr(self, "_send_back_opened", {}), port: sent}
+                        self._send_back_opened = {**getattr(self, "_send_back_opened", {}),
+                                                  port: (sent, default_key or "")}
                         yield Checkbox("Send back to calling workflow", value=sent, id=f"send-back-{port}")
 
     def _pass_through_note(self, metadata: Optional[Dict[str, Any]]) -> str:
