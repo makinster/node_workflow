@@ -1,15 +1,19 @@
 # Editor deletion review proposal
 
-**2026-10-18 — phase 1, for owner review. No implementation in this PR.**
-The grouped-delete direction is approved; the case-specific choices below are
-proposals. Phase 2 starts only after this review is approved **and #82 merges**,
-from fresh `origin/main`. [Current State](CURRENT_STATE.md) owns delivery status.
+**2026-10-19 — owner answers recorded; revised screens await review.**
+No implementation in this PR. The answers below supersede the original Q1–Q5
+alternatives. Phase 2 starts only after the owner approves this update **and
+#85 merges**, from fresh `origin/main`. #82 is already merged.
+[Current State](CURRENT_STATE.md) owns delivery status.
 
 ## Basis and ownership
 
-This proposal branch starts at main **90182f0**. “Current” below means the
-pending **#82 head 531e4c1**, not a claim that its hotfixes have merged.
-Re-inventory after #82 merges, including any changes since that head.
+This update starts at fresh main **1addbf9** on `codex/deletion-owner-answers`.
+The original proposal started at **90182f0**; its dated “Current” observations
+below describe **#82 head 531e4c1**, now merged. Re-inventory fresh main after
+#85 merges before implementation. Owner answers are recorded verbatim in
+`/home/makin/src/agent_channel/NOTES.md`, under
+“Owner answers to the deletion proposal questions” (2026-10-19).
 
 Read first:
 
@@ -30,10 +34,10 @@ keep picker or a new picker screen. Required registry entries and tests follow
 [Contributing](CONTRIBUTING.md#adding-a-registered-command); no raw key dispatcher.
 Do not edit Node Config, Workflow Library, Help or App during the parallel 4a-2
 work. Coordinate any needed interface change rather than reaching into new
-Start/End controls. This proposal changes no frontend or backend code. It is a temporary review
-document: after delivery, extract durable rules to the boundary/UI references
-and archive it. When integrating the open docs C PR (#83), register this name
-alongside the temporary subworkflows proposal in its active-doc allowlist;
+Start/End controls. Add ` [sub]` to the editor header when
+`workflow_map.callable`, after #85 merges. This proposal changes no frontend
+or backend code. After delivery, extract durable rules to the boundary/UI
+references and archive it. Docs C (#83) already allows this temporary proposal;
 it is not an eighteenth permanent core reference.
 
 Source checks for this review: the 20 current hotfix tests plus three
@@ -48,23 +52,27 @@ reachable from No error. Both halves of a removed original or newly gained
 input were also checked without relying on Editor's prior edge pruning. No
 remaining finding in those cases. The full suite on that same #82 head passed
 **1728 tests in 212.11s**.
-This docs branch's main suite passed **1708 tests in 217.06s**; no application
+The original proposal's main suite passed **1708 tests in 217.06s**; no application
 change is shipped by the proposal.
 
-## Decisions to review
+## Owner answers — 2026-10-19
 
-| Question | Recommended default | Detail |
+| Question | Owner decision | Detail |
 |---|---|---|
-| Q1: Merge's other Beacons | Preserve them as visible repair work | [Merge](#merge) |
-| Q2: Beacon removal | End its branch and remove its Merge selection | [Merge Beacon](#merge-beacon) |
-| Q3: group undo after conflicting edits | Refuse the whole restore, list conflicts | [Undo](#undo-before-save-after-save-after-reload) |
-| Q4: reduction recovery while Branch stays live | One saved, non-executable recovery row | [Count reduction](#branch-count-reduction-and-the-shared-picker) |
-| Q5: strict validation | Preserve existing severities; do not hide leftovers | [Validation](#group-record-reachability-and-validation) |
+| Q1: deleting a Merge | Keep every previously connected Beacon; reset each to unconnected | [Merge](#merge) |
+| Q2: deleting a Merge Beacon | Its branch ends; no bypass into Merge | [Merge Beacon](#merge-beacon) |
+| Q3: undo after other edits | Show what cannot return, then restore what still fits | [Undo](#undo-before-save-after-save-after-reload) |
+| Q4: lowering Branch path count | Save removed paths under the live Branch; offer recovery when its count rises | [Count reduction](#branch-count-reduction-and-the-shared-picker) |
+| Q5: warnings | Keep current levels; unreachable nodes remain warnings | [Validation](#group-record-reachability-and-validation) |
 
-The required exact-count picker, keeping No error and grouped undo are already
-approved. These questions concern gaps in case semantics, not a new approval
-request for that direction. Moving the Branch picker to first delete is a
-recommended interaction change included in these samples.
+An unconnected Merge Beacon currently produces `merge_beacon_unconnected` as a
+**warning**, so that flag **does not block a run**. Retain that level, consistent
+with Q5. Tombstones remain errors that block runs; unrelated errors still block.
+The expiry window for saved paths is undecided: **keep them until the owner
+sets it**. The revised wording and recovery windows below await owner approval.
+
+The exact-count keep picker, keeping No error and grouped undo remain the
+agreed direction. First-delete picker placement remains part of this review.
 
 ## The agreed model
 
@@ -199,12 +207,14 @@ stop for repair/explicit selection. Store every changed edge and Merge-related
 config in the undo group. Never reconnect all Beacon parents to the home path.
 No hidden deletion of another live branch is permitted.
 
-**Q1 — genuine choice:** keep those other Beacons as explicit repair work
-(recommended, least destructive and closest to current behavior), or remove
-Beacons that point **only** to this Merge as group members and end their
-branches at the preceding node? The latter changes more than the selected
-Merge. Shared Beacons/branches must survive either choice. Validation must
-continue to explain any remaining unjoined branches.
+**Q1 — owner answer:** keep **every Beacon previously connected to this
+Merge**, including a Beacon that also had another target. Return each to the
+default unconnected state: clear its Merge links and associated selections,
+including links to other Merges. Do not leave another target as a fallback.
+Record all affected edges/settings in the group so undo can restore them.
+Keep the Beacon and its branch nodes. Each Beacon needs reconnection to a
+valid target; validation flags it until then. The flag is a **warning** and
+does **not** block running. Do not introduce a new error level here.
 
 ### Merge Beacon
 
@@ -221,12 +231,10 @@ affected closure/carry-forward/selected-input field and connection as a group.
 Undo restores those changes together. Do not delete Merge or its other parents
 simply because one Beacon disappears.
 
-**Q2 — genuine choice:** end the deleted Beacon's branch at its preceding node
-and remove its Merge selection (recommended, matches today's unsaved removal),
-or bypass the Beacon and feed Merge directly? The second changes home-input
-inference and needs explicit semantics; it must not happen merely because Save
-was pressed. If no valid Merge data source remains, show existing diagnostics
-rather than silently choosing another branch's payload.
+**Q2 — owner answer:** the branch ends at the deleted Beacon's preceding
+node. Remove the Beacon's Merge selection; **never bypass into Merge**, before
+or after save/reload. If no valid Merge data source remains, show existing
+diagnostics rather than choosing another branch's payload.
 
 ### Two parents, convergence, nested branches and loops
 
@@ -289,8 +297,9 @@ inputs whose source port disappeared, reporting `source_port_missing`. The
 previous failure on a three-to-two Branch reduction is fixed. Permanent stub
 removal has no undo.
 
-**Proposed:** Z on a group stub restores the complete owner/member/config/edge
-operation once, before or after Save and after reload. Revalidate **retained
+**Proposed:** Z on a group stub restores the owner/member/config/edge operation
+once, before or after Save and after reload. When parts conflict, show them
+first and offer the partial restore described in Q3. Revalidate **retained
 and original** wiring: valid current rewiring may survive; invalid ports may
 not. Never overwrite a replacement node or a surviving parent's newer edge.
 Mark the workflow dirty; undo is not an automatic disk save or rollback of a run.
@@ -299,11 +308,13 @@ retain that valid current input instead of re-adding the old parent's second
 target. Validation can materialize a stub before a disk save, so the rule
 depends on its representation, not just on whether Save was pressed.
 
-**Q3 — genuine choice:** for conflicts after subsequent graph edits, use
-all-or-nothing group restore with a clear conflict list (recommended), or allow
-an explicitly confirmed partial group restore? Current single-node partial
-restore should remain available for legacy records; “Undo restored” must not
-hide a partially missing new group.
+**Q3 — owner answer:** show what cannot return, then offer to restore what
+still fits. Do not refuse the entire group because one part conflicts. The
+preview names unavailable nodes, links and settings; only apply after the
+owner chooses Restore. Cancel changes nothing. Never overwrite newer work.
+Keep unresolved recovery data for another attempt and report partial success
+plainly; do not say the whole group returned. Legacy partial restore remains
+available.
 
 ## Branch-count reduction and the shared picker
 
@@ -318,8 +329,9 @@ Proposed editor flow:
    old M and requested N using the node's resolved ports. On a reduction, retain
    the result as a draft; do not prune or commit its lower count first.
 2. From `editor.py`'s `_node_config_closed` / `_apply_node_config_result`, open
-   the shared picker over **all old M paths**. Require exactly N picks. Increasing
-   a count, an unchanged count, and non-Branch saves take the ordinary route.
+   the shared picker over **all old M paths**. Require exactly N picks. An
+   unchanged count and non-Branch saves take the ordinary route. A count increase
+   checks for saved paths before applying; see the recovery flow below.
 3. Keep selected paths in their old relative order and map them to the new
    contiguous slots. Copy names and `branch_payload_sources`; rewrite both
    sides of edges, Merge branch-key references and affected editor selections.
@@ -332,26 +344,37 @@ Proposed editor flow:
    preview if the affected set/kept destinations changed. Do not apply stale
    confirmation to a larger group.
 
-**Q4 — where a reduction's recovery stub lives:** the Branch remains live,
-so it cannot itself become a tombstone. Both options retain one saved group and
-one restore action; neither quietly discards persistent group undo:
+**Q4 — owner answer:** save the removed paths as recovery data under the
+still-live Branch, with a collapsed “Saved paths (2)” row. These are archive
+records, not live nodes or extra output ports. They never run and do not block
+the reduced workflow. Keep them through save/reload and import/export. Do not
+expire or silently delete them until the owner sets the retention window.
+Existing unknown-config preservation must be tested through Node Config;
+do not assume it. No blocking tombstone is added before the surviving Branch.
 
-- **Recommended:** store versioned recovery data on the still-live Branch and
-  show one collapsed “Deleted 2 branches” recovery row under it in the editor.
-  This is an archive record, not an executable node or an extra output port.
-  Z on that row restores the old count/mapping and members; X removes the
-  stored group. The new reduced graph remains runnable. No loose live member
-  is exempted from validation. Existing unknown-config preservation must be
-  tested through Node Config, save/reload and import/export; do not assume it.
-- **Alternative:** insert one actual blocking tombstone before the surviving
-  Branch. Restoring it restores that Branch's old config and members, without
-  creating a second Branch; removing it bridges to the live Branch. This matches
-  the existing deleted-owner stub model, but running requires an extra Remove
-  action after an otherwise ordinary config save.
+When the count rises from N to M:
 
-The approved deleted-owner stub does not settle representation for an owner
-that remains live. Settle this UX/format distinction before implementing
-reductions. No detached executable branch or validator exception is proposed.
+1. Check the Branch for saved paths. If there are none, add empty paths normally.
+   Otherwise show the recover prompt before changing the graph/config.
+2. **Recover** offers saved paths for the M−N new ports. If there are more saved
+   paths than new ports, open the which-paths picker. It permits **zero through
+   M−N** choices, not an exact count. Picking nothing is valid.
+3. If all saved paths fit, Recover restores those paths; any extra new ports stay
+   empty. **Leave empty** raises the count without recovering paths. **Cancel**
+   returns to the config draft without saving the count change.
+4. Relink recovered heads to the new Branch ports, preserving their names,
+   payload sources and valid Merge references. Map chosen paths in saved order
+   to new ports in port order. Preview conflicts before partial recovery, as
+   in Q3; never overwrite surviving nodes or their newer wiring.
+5. Consume only successfully restored recovery data. Unchosen paths and parts
+   that cannot return remain saved for later; prevent duplicate restoration.
+   Repeated reductions keep distinct path identities. Shared live nodes stay
+   live and are relinked only where safe, never copied into a second live node.
+
+The same preview/commit/cancel rules apply to reducing and increasing the
+count. A saved recovery row is not the deleted-owner stub: it needs no Remove
+step before running. Explicit removal discards its stored paths, with the live
+Branch left in place; future silent expiry remains undecided.
 
 **Save-and-stay integration risk:** Node Config's synchronous `on_save` callback
 is followed by its own saved-state snapshot and row refresh. Simply opening an
@@ -373,13 +396,15 @@ on toggling the last checkbox. Under/over-selection disables Apply with a
 visible count. W/S/arrows move; Space/E toggle; Enter applies when valid, except
 on a focused button, where it activates that button (including Cancel).
 Header/count/buttons stay outside the scroll area; all 64 paths remain usable.
+These exact-count rules apply to **keeping** paths. The recovery picker allows
+zero up to the number of new ports; only overflow disables Apply.
 
 ## Group record, reachability and validation
 
 Use a versioned JSON-safe `delete_group` payload on the existing tombstone
-config for a deleted owner. Q4 determines the container for a still-live
-Branch's reduction record. Neither needs another MemoryBank or a new executable
-node type. It records:
+config for a deleted owner. A still-live Branch holds its reduction recovery
+records separately, as decided in Q4. Neither needs another MemoryBank or a
+new executable node type. It records:
 
 - operation kind/ID and root; original owner plus every removed member's full
   saved node data (IDs, types, aliases, configs, ports and connection records);
@@ -417,15 +442,16 @@ Undo uses before/after comparisons so it cannot replace unrelated newer config.
 
 **Strict validation:** never suppress loose-node, port, Merge or tombstone
 checks to disguise incomplete pruning. Removed members are archive data, not
-unlinked live nodes. An actual tombstone remains blocking until restored or removed. Under the
-recommended Q4 option, a recovery row is saved archive data on a live Branch,
-not a node whose execution/validation is being skipped. Current `unreachable` and unjoined-Beacon findings are
-**warnings**; tombstones block runs. Preserve those actual severities.
+unlinked live nodes. An actual tombstone remains blocking until restored or
+removed. Under Q4, a recovery row is saved archive data on a live Branch, not a
+node whose execution/validation is being skipped. Current `unreachable` and
+unjoined-Beacon findings are **warnings**; tombstones block runs. Preserve
+those actual severities.
 
-**Q5 — validator wording:** if “strict about unlinked nodes” means changing all
-current unreachable warnings into errors, that is a separate backend policy
-change, outside the frontend ownership above. Recommended here: preserve current
-severity, ensure no accidental leftovers, and continue reporting existing drift.
+**Q5 — owner answer:** preserve today's levels. Unreachable nodes remain
+warnings and do not block a run. Unconnected Beacon warnings also remain
+warnings; active tombstones remain blocking errors. Archive members are not
+live unreachable nodes. Do not hide accidental leftovers or suppress findings.
 
 ## Compact sample screens
 
@@ -468,13 +494,32 @@ Dispatch: 4 branches → 2                    Selected 2 / 2
 [ ] Retry
 Removes 5 exclusive nodes. Shared nodes stay.
 Selected branches keep their names, payloads and destinations.
-One recovery row stores the deleted branches; Z restores the group.
+Removed paths stay saved under Dispatch. They never run.
 [Apply]   [Cancel]
 ```
 
-This sample uses the recommended Q4 recovery row. If the owner chooses a
-blocking stub instead, say “A deleted-group stub remains before Dispatch;
-remove it to run” before implementing that variant.
+The live Branch shows “Saved paths (2)”. Increasing its count offers recovery:
+
+```text
+Dispatch: 2 paths → 3
+2 saved paths. Recover any for the new path?
+[Recover]   [Leave empty]   [Cancel]
+```
+
+When more paths are saved than are being added, Recover opens this picker:
+
+```text
+Recover paths for Dispatch                 Pick up to 1
+[ ] Cache       3 nodes
+[ ] Retry       2 nodes
+Pick none to leave the new path empty. Others stay saved.
+Space/E toggle   W/S move   Enter apply   Esc cancel
+[Apply]   [Cancel]
+```
+
+Apply is valid with zero picks; more than one pick disables it in this example.
+If two ports are added, the limit is two. Cancel returns to the unchanged draft.
+No expiry date or silent cleanup is implied by either window.
 
 Resolver deletion:
 
@@ -513,17 +558,18 @@ Z restores Pause and both incoming connections.
 [Delete]   [Cancel]
 ```
 
-Merge deletion, Q1 recommendation:
+Merge deletion, Q1 owner answer:
 
 ```text
 Delete Join?
 Home path continues to Show report without waiting here.
-2 Merge Beacons stay, disconnected from Join; validation will warn.
+2 Merge Beacons stay, unconnected. Reconnect them to a valid target.
+Validation warns; this warning does not block a run.
 Z restores Join, its links and affected settings.
 [Delete]   [Cancel]
 ```
 
-Merge Beacon deletion, Q2 recommendation:
+Merge Beacon deletion, Q2 owner answer:
 
 ```text
 Delete Report ready?
@@ -554,14 +600,17 @@ This cannot be undone. Restore Fetch instead to recover the group.
 [Replace]   [Cancel]
 ```
 
-Conflicted group undo, Q3 recommendation:
+Conflicted group undo, Q3 owner answer:
 
 ```text
-Cannot restore Dispatch's group
-Read cache's input changed after this deletion.
-No changes made. Resolve the conflict, then restore the group.
-[Close]
+Restore Dispatch?
+Cannot restore: Read cache's old input. It changed after deletion.
+The other 4 nodes and their valid links can return.
+[Restore]   [Cancel]
 ```
+
+After a partial restore, say what returned and what remains saved. The same
+preview applies when recovering saved paths after other graph edits.
 
 No confirmation is added for the ordinary single-node soft delete. Start uses
 its existing refusal. Cancellation of every proposed destructive dialog leaves
@@ -586,12 +635,17 @@ history; JSON snapshots refer to files rather than duplicating their contents.
 
 ## Phase-2 acceptance and delivery gate
 
-No behavior is changed in phase 1, so no application regression test is added
-here. In phase 2, reproduce each changed behavior with a failing test first:
+No behavior changes in this docs update, so no application regression test is
+added here. Run the full suite and docs checks for this PR as the owner
+requested. In phase 2, reproduce each changed behavior with a failing test first:
 
 - Branch/Conditional picker: exact 1; count reduction exact N from old M;
   zero/too many picks, empty slots, 64 paths, scroll/focus, Space/E/Enter,
   Enter on Cancel, Escape/Ctrl+Q, cancellation and unchanged-count saves.
+- Count increase: saved-path prompt, Recover/Leave empty/Cancel, zero picks,
+  fewer picks than new ports, overflow, more saved paths than ports, correct
+  relinking, repeated reductions/recoveries, and preservation of unchosen or
+  conflicted entries. No archive member runs; no expiry before owner decision.
 - Preview and actual changed IDs agree. One Z restores owner, all dropped
   members, both sides of edges, Merge selections and branch seed/name mappings.
 - Restore before Save, after Save, after Validate and after reload; final stub
@@ -606,9 +660,12 @@ here. In phase 2, reproduce each changed behavior with a failing test first:
   Re-inventory merged main; do not rebuild these fixes as though still absent.
 - Saved/unsaved Beacon removal produces the same approved topology and config.
   Merge cases follow Q1/Q2, with no accidental fan-out or occupied Merge slot.
+  Every previously connected Beacon resets, even one with another target; its
+  warning does not block a run. Beacon deletion never bypasses into Merge.
 - Count reductions keep arbitrary old slots (for example A/D) with correct
   names, payload sources, destinations and Merge references. Undo reverses
-  that mapping. Save-and-stay cancellation does not falsely mark the draft saved.
+  that mapping where safe, showing conflicts first and retaining unresolved
+  recovery data. Save-and-stay cancellation does not falsely mark the draft saved.
 - Changed graph while a picker is open, restore conflicts, missing members,
   replacement IDs, unknown group versions, nested pending stubs and error
   rollback preserve user data. Saved group stubs show one kept continuation,
@@ -621,10 +678,12 @@ full suite. Show rendered
 samples if implementation changes the proposed visible text/layout. Update
 Current State, Session Log, owning backlog/boundary rules and command guidance,
 retaining other workers' entries. Recheck #82, #83 and 4a-2 integration at the
-actual implementation base. Any backend-format or Node Config interface change
+actual implementation base. Verify the editor header adds ` [sub]` only for
+callable workflows. Any backend-format or Node Config interface change
 requires explicit scope coordination; the owned frontend files are not a license
 to change the engine contract.
 
-**Stop after opening this docs PR.** The owner reviews Q1–Q5 and the sample
-screens. Phase 2 is not authorized by this document alone or by #82 merging;
-it also needs the owner's approval of this review.
+**Stop after opening this docs PR.** The owner reviews the recorded answers
+and revised sample screens. Phase 2 waits for that approval **and #85 merging**;
+then start from fresh `origin/main` within the ownership above. Open the phase-2
+PR and stop for the owner too. Neither PR is permission to merge.
