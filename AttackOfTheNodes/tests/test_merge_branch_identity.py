@@ -2,7 +2,7 @@
 
 Only nodes that spawn branch supervisors (``spawns_branches``) start a new
 branch context. Before UX1 any node with more than one output did, so a node
-inside a Branch path that lists ``error`` (HTTP Request), shows an error path,
+inside a Branch path that shows an error path (HTTP Request then listed it),
 routes errors (Error Mux) or chooses a path (Conditional) changed the Merge
 option from ``<branch>:path_b`` to ``<node>:<port>``; a no-edit Merge save then
 emptied ``branches_to_close`` and the editor disconnected the Merge Beacon.
@@ -40,7 +40,7 @@ def _option_values(workflow_map, merge_id):
 # (node type, config, input port, output port feeding the beacon)
 PATH_NODES = {
     "error_path_toggle": ("no_op_node", {"show_error_path": True}, "input", "default"),
-    "http_request": ("http_request_node", {}, "input", "default"),
+    "http_request": ("http_request_node", {"show_error_path": True}, "input", "default"),
     "error_mux": (
         "error_mux_node",
         {
@@ -68,7 +68,7 @@ def _branch_with_path_node(case):
     beacon = wm.add_node("branch_end_node")
     if config:
         wm.update_node_config(node, config)
-    assert len(factory.node_output_ports(wm.get_node_data(node))) > 1 or case == "error_path_toggle"
+    assert len(factory.node_output_ports(wm.get_node_data(node))) > 1 or "show_error_path" in config
     wm.connect(start, "default", branch, "input")
     wm.connect(branch, "path_a", merge, "path_a")
     wm.connect(branch, "path_b", node, input_port)

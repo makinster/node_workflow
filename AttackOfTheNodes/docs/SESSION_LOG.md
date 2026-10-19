@@ -6,6 +6,14 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-18 — Docs C integrated with #81, #82 and #84
+
+Main merged into `codex/docs-c` (owner asked for the merge). `CURRENT_STATE.md`
+was rewritten from docs C's bounded version to today's state; the backlog
+keymap row keeps docs C's wording; the audit allows
+`DELETION_REVIEW_PROPOSAL.md` as a second temporary doc. Every 2026-10-18
+log entry is kept.
+
 ## 2026-10-18 — Docs C: Bounded History and Remaining Audit Cleanup
 
 Branch `codex/docs-c`, fresh from `origin/main` at `90182f0`. Docs only;
@@ -42,6 +50,130 @@ Branch `codex/docs-c`, fresh from `origin/main` at `90182f0`. Docs only;
 - Original S2/S3 CSVs remain unavailable. No native FO7/live terminal, clean
   install or external-link claim was added. Restricted keymap phase 3 follows
   as its own PR; Editor/Node Config/selector/library/Help follow after 4a-2.
+
+## 2026-10-18 — Editor Hotfix Re-review and Proposal Evidence
+
+Branch `codex/deletion-proposal`; docs-only follow-up to #84. Re-reviewed
+#82 at `531e4c1` after its three review fixes, without application changes.
+
+- The original shared-Resolver, shared recovery-tail and missing source-port
+  reproductions pass. Nearby cases pass for soft-deleted/materialized peer
+  guards, a guard restored before deletion, tails shared between a Resolver
+  route and the guarded node's wired error path, and protection when No error
+  also reaches the tail. Stale original and newly gained input edges lose both
+  halves without relying on Editor's prior pruning. No remaining finding in
+  these cases; this is not a claim about untested deletion cases.
+- Verification on #82: **92 focused tests passed in 5.47s** and the full suite
+  **1728 passed in 212.11s**. Updated the proposal's current-behavior evidence
+  and regression requirements; phase 2 still requires owner approval and #82's
+  merge. No source/test changes or review comments posted.
+- Docs: **352 relative links/anchors**, **33 archive bodies**, existing October
+  18 entries retained, and `git diff --check` pass. The historical active-doc
+  count still needs the temporary proposal allowance when #83 integrates.
+
+## 2026-10-18 — Editor Deletion Review: Phase 1 Proposal
+
+Branch `codex/deletion-proposal`, fresh from main `90182f0`. Docs only;
+#81/#82/#83 remain open. The owner/reviewer merges.
+
+- Read the evening ownership split, #82's approved backlog direction and
+  all three initial follow-up comments, then the later review-fixes comment.
+  Rechecked current behavior at #82 head `531e4c1`; hotfix behavior is not
+  claimed to be merged on main.
+- Added `DELETION_REVIEW_PROPOSAL.md`: every requested structural deletion,
+  two parents, stub removal/replacement and undo before/after save and reload.
+  Defines grouped recovery, one exact-cardinality picker, protection for shared
+  nodes, Merge cleanup, versioned stub data and later in-memory session history.
+- Included plain-text samples for pickers, destructive confirmations and
+  conflicts. Owner choices: Merge/Beacon effects, group restore on drift,
+  persistent undo for count reduction, and actual validator warning severity.
+- Code/probe checks found Beacon removal differs before/after materialization:
+  unsaved removes Merge selections and does not bypass; saved can bypass and
+  leave selections. Proposal requires one approved policy. #82 advanced during
+  drafting: `531e4c1` fixes the shared-handler/tail/restore review gaps; those
+  are retained as regression requirements, not described as current defects.
+  Twenty current hotfix tests plus three independent reproductions pass
+  (**23 passed in 3.51s**).
+- Count-reduction picker belongs in Editor's config-save path, with no Node
+  Config edits. Save-and-stay takes its own snapshot after a synchronous
+  callback; cancellation needs a real completion contract, not a false save.
+- Verification: full main suite **1708 passed in 217.06s**; **352 relative
+  links/anchors** and **33 whole archive bodies** pass. The new review is temporary; #83's active-doc allowlist
+  needs its name during integration (the old 17-count assertion was already
+  failing on the subworkflows proposal). No runtime/test/helper/workflow edits;
+  no live/native terminal verification. Phase 2 waits for owner review and
+  #82's merge. Existing log entries are retained whole.
+
+## 2026-10-18 — Editor fixes: insert with two parents, error paths, colours
+
+Branch `fix/insert-fan-in-error-path`, from `main` at `90182f0`. Owner bug
+report on the "Test Bench - C1/C2 checks" workflow. Before: 1708 passed.
+Tests are in `test_insert_fan_in_error_path.py`.
+
+- **Insert lost the nodes below it** when the next node had a second parent
+  (Pause is fed by Dice and Save note): its input looked occupied, so the
+  new node was never connected to it. The inserted node now takes over the
+  port it was cut from.
+- **No error path by default.** HTTP Request and JSON Path no longer list
+  `error` as an output; their failures are coded `NodeError`s that go to
+  the default handler until the node's Errors tab catches them. The
+  `error` payload is now the engine's error record (code, message,
+  details), the same as every other node.
+- **Colours:** failure paths (a node's error path, an Error Mux's
+  recovery branches) no longer re-colour the node's one normal path,
+  No error included; the failure paths keep their own colours.
+- **Deleting a node with an error handler** (owner follow-up): it asks
+  first, then removes the inline Error Mux and every node only its error
+  branches reach (its wired `error` path, the mux's recovery branches).
+  The node continues on the mux's No error path. Cancel changes nothing;
+  undo restores only the node. Nodes without a handler delete as before.
+- **Error Resolver missing from the editor** (owner, C1/C2): undoing a
+  saved delete re-added the node's old input even when that output now led to
+  a new Resolver, so HTTP's output had two targets and the editor (and the
+  run) followed only the first. Restore now keeps the wiring the tombstone
+  gained, never gives an output a second target, and lets two parents share
+  an ordinary input again. The validator warns (`ignored_fan_out`) when a
+  Resolver's No error path can never run because its node also leads
+  elsewhere; that is the state the owner's saved C1/C2 file is in.
+- **Removing a deleted node's stub** (owner, "user test"): removing an
+  Error Resolver's stub joined its parent to every path after it, so a
+  successful run went down the old error branch. The gap is now bridged to
+  one target only. An Error Resolver keeps its No error path and, after a
+  confirm, deletes the nodes only its error branches reach. Other paths of
+  a multi-path node (Conditional's second path) are left loose for the
+  deletion review. Branch nodes keep their keep-one picker.
+- **Review of 47e7580** (three more cases, each reproduced failing first):
+  deleting one of two nodes that share a Resolver keeps the Resolver and
+  its branches for the other; error routes that share a tail are walked
+  together, so the tail goes too; undo drops an input from a path that no
+  longer exists (a Branch reduced from three paths to two) instead of
+  keeping half an edge.
+- Logged for later in the backlog: reducing a Branch node's path count,
+  and a deletion review with the owner. After: 1728 passed (20 new tests).
+
+## 2026-10-18 — Deterministic File-Picker Test Teardown
+
+Branch `codex/file-picker-teardown`, fresh from `origin/main` at `90182f0`
+(#78 and #80 merged). Test-only fix; no frontend/backend files changed.
+
+- Reproduced `NoMatches: HeaderTitle` before fixing the test by delaying
+  Header mounting 250 ms. The new regression failed with the same traceback:
+  the old 100 ms pause ends while the imported workflow's editor is mounting.
+- Cause: `load_workflow` records success before `show_editor_screen` finishes
+  its asynchronous switch. `pilot.pause(delay)` drains the current screen
+  before sleeping, so it can miss the replacement screen created during sleep.
+- The test now observes picker completion through a test-only App subclass,
+  awaits Textual's public screen-switch completion, then drains the new screen.
+  It retains production picker entry points, threaded OS-picker stubs, the
+  stylesheet and every original assertion. It additionally checks that import
+  reaches a new mounted editor. No increased sleep in the fix; the regression's
+  delay models slow mounting only.
+- Verification: unmodified full suite **1708 passed** in 216.99s; regression
+  failed first; focused picker tests **3 passed**, with **ten consecutive runs**
+  also passing (30 tests). Final full suite **1709 passed** in 216.57s.
+  Changed-test compilation and `git diff --check` pass.
+- Step 4a-2 frontend files are untouched. Docs PR C and the restricted keymap
+  phase 3 remain separate follow-up PRs; the owner/reviewer merges.
 
 ## 2026-10-18 — Step 4a-1: Contracts (Backend and CLI)
 

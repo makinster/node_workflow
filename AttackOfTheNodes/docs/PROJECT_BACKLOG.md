@@ -45,6 +45,35 @@ A node audit of PR #51 (same day) confirmed several of these with
 reproductions and proposed a node contract plan:
 [NODE_CONTRACT_PLAN.md](NODE_CONTRACT_PLAN.md) (proposed, not approved).
 
+## Owner live-test findings — 2026-10-18 (editor deletion and branch count)
+
+The owner sees deletion bugs as mostly cases never designed, not broken code.
+#82 handled deleting a node that has an error handler (it asks, then removes
+the Error Mux and its error branches and keeps the No error path), and made
+removing a stub bridge one path only (a Resolver stub drops its error
+branches after a confirm). Still open, approved direction 2026-10-18:
+
+- **Grouped delete:** a node that owns branches is deleted with the nodes
+  only its dropped branches reach, as one action. One undo restores all of
+  it; after a save the group is one stub that stores the branch nodes, and
+  removing the stub removes the group. The validator stays strict about
+  unlinked nodes. Error Resolver keeps No error automatically; Branch and
+  Conditional ask which paths to keep (the same picker as below).
+- **Session undo history** (later): in-memory, multi-step Ctrl+Z for every
+  edit, cleared when the app closes. Grouped deletes move onto it then.
+
+- **Reducing a Branch node's path count** in Node Config after its paths
+  are filled leaves the removed paths' nodes behind. Wanted: a picker
+  that asks which branches to keep. Choosing is mandatory, and it is a
+  multiselect with exactly as many picks as the new count. Unpicked branches
+  are deleted the same way as U1's "Delete branch". Show sample screens
+  first. This reuses `BranchKeepSelectorScreen` (single pick today) and
+  `prune_branch_tombstone`.
+- **Deletion review:** go through the delete cases (Branch, Merge and Merge
+  Beacon, Error Mux itself, Conditional, nodes shared by two parents,
+  tombstone removal and undo) and decide each one with the owner before
+  coding.
+
 ## Payload/file implementation — 2026-10-07
 
 The requested payload/file build is implemented locally on `main` at `1211e68`
@@ -801,6 +830,18 @@ only serializable representations.
    Ensure new event payloads always carry `run_id` so future isolation is an
    additive subscriber filter, not a breaking schema change.
 
+## Editor deletion review
+
+The approved direction is recorded on the pending #82 branch; the
+[Deletion Review Proposal](DELETION_REVIEW_PROPOSAL.md) checks that code and
+keeps proposed case semantics separate from merged behavior.
+
+| Stage | Review/delivery gate |
+|---|---|
+| 1 — proposal and samples | `codex/deletion-proposal`, 2026-10-18; docs only, owner reviews the case decisions and plain-text screens. |
+| 2 — implementation | Only after owner approval and #82 merges, fresh main; grouped deletes/undo, shared exact-count keep picker and Editor-owned count-reduction interception. Node Config remains with 4a-2. |
+| Later — session history | In-memory multi-step Ctrl+Z for edits; no run-side-effect rollback or automatic loss of saved recovery records. |
+
 ## Near-Term Project — Frontend Command UI Toolkit
 
 **Adopted scope (owner, 2026-10-18):** a typed Python registry compiled into
@@ -824,6 +865,12 @@ extraction and verifies the active reading route. Delivery status lives in
 Deferred: remaining read-only viewers until next touched, generated
 `UI_QUICK_REFERENCE.md` tables/source checks, Settings rebinding UI. Keep IDs
 stable for those follow-ups. No backend/workflow format changes.
+
+Verification prerequisite (2026-10-18): `codex/file-picker-teardown` fixes the
+file-picker test's HeaderTitle teardown race by awaiting picker and editor
+switch completion, with a failing-first slow-mount regression. Test-only;
+no frontend files overlap Step 4a-2. Docs PR C, then the non-overlapping
+phase-3 screens follow as separate PRs.
 
 **Post-S3 re-inventory:** baseline `714f190` (merged #75, 2026-10-18), Textual
 8.2.7. Still 22 screen classes in 20 modules; 182 literal app/screen binding

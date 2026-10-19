@@ -5,23 +5,28 @@ This is the live status snapshot; plans and logs preserve dated decisions.
 
 ## Baseline and open work — 2026-10-18
 
-- Fresh `origin/main`: **90182f0**. C1–C7, workflow naming (#68), docs A/B
+- Fresh `origin/main` after this PR: C1–C7, workflow naming (#68), docs A/B
   (#69/#72), Stash S1–S3 (#70/#71/#75), window buttons (#73), duplicate
-  prevention (#74), keymap phases 1/2 (#77/#78) and contracts (#80) are merged.
+  prevention (#74), keymap phases 1/2 (#77/#78), contracts (#80), the
+  file-picker test fix (#81), editor hotfixes (#82), the deletion proposal
+  (#84) and docs C (#83) are merged.
   S3 uses plain P, off while typing; Ctrl+P and the palette are unchanged.
-- Open against main: **#81**, file-picker test teardown synchronization
-  (`codex/file-picker-teardown`, reviewed OK per owner), and **#82**, editor
-  fan-in/error-path fixes (`fix/insert-fan-in-error-path`). Both require their
-  log/status entries retained by whoever integrates second. The owner or an
-  explicitly requested reviewer merges.
-- Docs PR C: `codex/docs-c`, based on 90182f0, in `/home/makin/src/nw-docs`.
-  Bounds the active log after decision extraction; updates the reading route,
-  audit check, Stash and contract documentation. #82's error-port bullet,
-  HTTP/JSON Path catalog rows and owner-findings backlog section are preserved.
-- Step 4 design rev. 4 is approved (#76/#79); 4a-1 backend/CLI contracts are
-  built (#80), including typed --input and --inputs-file. 4a-2 screens are in
-  progress separately in Node Config, Workflow Library, Editor, Help and App.
-  Child-workflow calls remain later work. [Proposal](SUBWORKFLOWS_PROPOSAL.md).
+- **Editor hotfixes (#82):** insert before a node with two parents keeps it;
+  HTTP Request and JSON Path get no error path by default; failure paths keep
+  the normal path's colour; deleting a node with an error handler asks, then
+  removes the handler; undo and stub removal never give an output a second
+  target. [Session log](SESSION_LOG.md).
+- **Deletion review:** [proposal](DELETION_REVIEW_PROPOSAL.md) merged (#84).
+  Phase 2 (grouped delete, the keep-branches picker, branch-count reduction)
+  is Codex's in Editor, the editor adapter, the error-mux helpers and the keep
+  picker, from fresh main. Node Config, Workflow Library, Help and App stay
+  with 4a-2.
+- **Step 4:** design rev. 4 approved (#76/#79); 4a-1 backend/CLI contracts
+  built (#80). 4a-2 screens are in progress on `dist/step4a2-screens`
+  (owner-approved samples, 2026-10-18: plain short wording; the File window
+  gets Workflows and Subworkflows tabs; C copies a workflow to Subworkflows,
+  numbering a repeat copy "(2)" with a warning toast). Child-workflow calls
+  remain later work. [Proposal](SUBWORKFLOWS_PROPOSAL.md).
 - Keymap phase 3 is next for Stash, Settings, Execution, list pickers, Confirm
   hints, Unsaved Changes, User Input and Recovery. Editor, Node Config,
   Node Selector, Workflow Library and Help topics follow after 4a-2 merges.
@@ -29,16 +34,16 @@ This is the live status snapshot; plans and logs preserve dated decisions.
   rebinding UI remain deferred. [Scope](PROJECT_BACKLOG.md#near-term-project--frontend-command-ui-toolkit).
 - Work order: [Node Contract Plan](NODE_CONTRACT_PLAN.md). Long-term direction:
   [Distributed Plan](DISTRIBUTED_BUILD_PLAN.md), [Stash](STASH_PROPOSAL.md).
+  The owner merges, or explicitly asks a reviewer to.
 
 ## Verification and environment — 2026-10-18
 
-- Docs C full suite: **1708 passed in 223.15s** on 90182f0 plus docs changes.
-  The known HeaderTitle flake did not occur in this run; its fix is still #81.
-  Two authoring-doc specs build in isolated storage; the contract example
-  returns `greeted = Kim` with typed CLI inputs. No application/tests changed.
+- Main with #81, #82 and #84: full suite **1729 passed**. Docs C merged on top
+  of it: see the receipt below and the session log.
 - Link/anchor, whole-archive and session-transfer checks: see
   [PR C verification](audits/docs_audit_2026_10_17/PR_C_VERIFICATION.md).
-  The active set is 17 core docs plus SUBWORKFLOWS_PROPOSAL, archived after Step 4.
+  The active set is 17 core docs plus SUBWORKFLOWS_PROPOSAL and
+  DELETION_REVIEW_PROPOSAL, each archived when its work completes.
 - Prior receipts: keymap phase 2, 1666 passed with actual-keypress tests;
   phase 1, 1605 passed (57 focused); Stash S3, 1548 passed. Docs B retained
   33 archive bodies. These are historical counts, not the current suite.
@@ -53,7 +58,9 @@ This is the live status snapshot; plans and logs preserve dated decisions.
 - Stash: file fields accept file entries; text fields accept text only.
   Global-only versus per-workflow pinning remains open (proposal question 3).
 - End is CLI-authorable but hidden in the current selector. Exposure is part
-  of the separate 4a-2 UI work; this docs PR does not change it.
+  of the 4a-2 UI work.
+- Deletion review owner choices (proposal): Merge/Beacon effects, group
+  restore on drift, persistent undo for count reduction, warning severity.
 - Only the retained audit report survived; original CSVs/evidence are absent.
   The rebuilt source map and whole archives preserve the migration trail.
   [Recent log](SESSION_LOG.md); [older history](archive/SESSION_LOG_HISTORY.md).

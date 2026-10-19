@@ -57,7 +57,7 @@ and/or to Vault. The existing `file_reader_node` preserves old graphs; see
 
 | Node | Status | Notes / Maps from |
 |---|---|---|
-| HTTP Request | Live | `http_request_node` — make an HTTP GET or POST request and forward the response body. **Response as** `file` saves the raw bytes (binary-safe) to a run-owned file and outputs a `file` ref (deleted when the run succeeds unless **Keep the response file** is on; kept when the run fails). **Body from** `input` POSTs the node's input (text as is, anything else as JSON), e.g. an error payload to a notification service. Failures (including socket timeouts) route to the `error` port; with `error` unconnected they stop for recovery. Group `Web Request`, section `Web`. Tags: Internet |
+| HTTP Request | Live | `http_request_node` — make an HTTP GET or POST request and forward the response body. **Response as** `file` saves the raw bytes (binary-safe) to a run-owned file and outputs a `file` ref (deleted when the run succeeds unless **Keep the response file** is on; kept when the run fails). **Body from** `input` POSTs the node's input (text as is, anything else as JSON), e.g. an error payload to a notification service. Failures (including socket timeouts) carry a code (`missing_url`, `timeout`, `network`, `http_status`) and go to the default error handler, unless the node's Errors tab catches them. Group `Web Request`, section `Web`. Tags: Internet |
 | API Read | Concept | GET request to a REST API, returns response body. Tags: Internet |
 | Database Query | Concept | Read query against SQL/NoSQL, returns result set |
 | System State | Concept | Read OS metrics: disk, memory, running processes |
@@ -229,7 +229,7 @@ decided.
 | Get Variable | Live | `get_variable_node` — read a named Vault entry. Duplicate `variable_reader_node` is also registered; consolidate to one type during the overhaul |
 | Concat | Live | `concat_node` — join multiple text strings |
 | Text Transform | Live | `text_transform_node` — uppercase, lowercase, strip, title, reverse, markdown format (FO2: heading/list/table tidy + optional paragraph re-flow via `backend/text_format.py`). Regex/find-replace/split still concept-stage |
-| JSON / Object Transform | Live | `json_path_node` — extract a value from a JSON string by dot-path (e.g. `user.name`). Invalid JSON routes to the `error` port, or stops for recovery when it is unconnected. Broader reshape/multi-field extraction still concept-stage |
+| JSON / Object Transform | Live | `json_path_node` — extract a value from a JSON string by dot-path (e.g. `user.name`). Invalid JSON fails with code `invalid_json` and goes to the default error handler, unless the node's Errors tab catches it. Broader reshape/multi-field extraction still concept-stage |
 | Random Number | Live | `random_number_node` — produce a random integer or float within a configured range |
 | Math / Comparison | Concept | Arithmetic or comparison; output: value or bool |
 | Format Text | Concept | Interpolate vault/transient values into a template string (lives in this group, not direct-add) |

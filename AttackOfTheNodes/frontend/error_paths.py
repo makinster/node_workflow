@@ -1,10 +1,9 @@
 """Which output paths the editor shows for a node (port model P3). Frontend-only.
 
-Every node can fail along the engine-level ``error`` port (D7). Nodes that
-list ``error`` among their outputs (HTTP Request, JSON Path) always show it.
-Any other node shows its error path once the user asks for it in the node's
-Errors section (``show_error_path``) or once that path is wired, so a single-
-output node does not turn into a two-path node by default.
+Every node can fail along the engine-level ``error`` port (D7). A node
+shows its error path once the user asks for it in the node's Errors section
+(``show_error_path``) or once that path is wired; until then its errors go
+to the default handler, so no node gets an error path by default.
 """
 
 from __future__ import annotations

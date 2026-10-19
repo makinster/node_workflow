@@ -7,7 +7,7 @@ leak into the next run (1b-fix), and the unattended policy (1c).
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from unittest.mock import patch
 
 import pytest
@@ -148,7 +148,7 @@ async def test_retry_after_unconnected_error_port_reruns_the_node():
     assert len(recoveries) == 2
 
 
-def _http_context(done: List[Dict[str, Any]]) -> NodeContext:
+def _http_context(done: List[Dict[str, Any]], errors: Optional[List[Exception]] = None) -> NodeContext:
     return NodeContext(
         node_id="n1",
         branch_id="b",
@@ -156,7 +156,7 @@ def _http_context(done: List[Dict[str, Any]]) -> NodeContext:
         inputs={"input": ""},
         memory_bank=MemoryBank(EventBus()),
         signal_done=done.append,
-        signal_error=lambda exc: None,
+        signal_error=(errors.append if errors is not None else lambda exc: None),
         signal_waiting_for_input=lambda prompt: None,
         wait_for_nodes=lambda targets, timeout: None,
         wait_for_merge=lambda node_id, branch_id, port, inputs, timeout: None,
@@ -168,22 +168,24 @@ def _http_context(done: List[Dict[str, Any]]) -> NodeContext:
     [TimeoutError("timed out"), __import__("urllib.error").error.URLError("refused")],
     ids=["socket-timeout", "url-error"],
 )
-async def test_http_request_failures_signal_the_error_port(failure):
+async def test_http_request_failures_signal_an_error(failure):
     node = NodeFactory().create_node("http_request_node", "n1")
     node.config["url"] = "http://example.invalid/"
     done: List[Dict[str, Any]] = []
+    errors: List[Exception] = []
     with patch("urllib.request.urlopen", side_effect=failure):
-        await node.execute(_http_context(done))
-    assert done[0]["output_port"] == "error"
-    assert done[0]["data"]["error"]
+        await node.execute(_http_context(done, errors))
+    assert done == []
+    assert str(errors[0])
 
 
-async def test_http_request_missing_url_signals_the_error_port():
+async def test_http_request_missing_url_signals_an_error():
     node = NodeFactory().create_node("http_request_node", "n1")
     done: List[Dict[str, Any]] = []
-    await node.execute(_http_context(done))
-    assert done[0]["output_port"] == "error"
-    assert "URL" in done[0]["data"]["error"]
+    errors: List[Exception] = []
+    await node.execute(_http_context(done, errors))
+    assert done == []
+    assert "URL" in str(errors[0])
 
 
 async def test_json_path_success_still_routes_default():
