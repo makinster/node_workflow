@@ -169,8 +169,8 @@ unknown saved config rather than assuming old audit defects remain unfixed.
 ## Delivered — Execution Screen Overhaul (EX, 2026-10-19)
 
 Built from owner-approved samples (three revisions): the run on the editor's
-map with a status line per card, the highlighted node's Got / Sent / Wrote to
-the Vault, follow mode (F; W/S stops following), A/D path switching, Stop on
+map with a status line per card, what the highlighted node received, sent and
+saved to the Vault, follow mode (F; W/S stops following), A/D path switching, Stop on
 X, the error panel (V hides/shows it; Go to node), and the Vault log with each
 write's source. The 2026-10-06 [branch inspection proposal](#execution-branch-inspection-proposal)
 below is superseded where it differs (it proposed a visit list per branch);

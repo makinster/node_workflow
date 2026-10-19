@@ -401,11 +401,11 @@ class ExecutionScreen(KeymapScreenMixin, Screen):
         if call:
             text.append("\nCalls\n", style="bold")
             text.append(f"  {call}\n")
-        text.append("\nGot\n", style="bold")
+        text.append("\nReceived from the previous node\n", style="bold")
         self._append_values(text, self._inputs_of(node))
-        text.append("Sent\n", style="bold")
+        text.append("Sent to the next node\n", style="bold")
         self._append_values(text, self._outputs_of(node_id))
-        text.append("Wrote to the Vault\n", style="bold")
+        text.append("Saved to the Vault\n", style="bold")
         writes = [w for w in self.memory_bank.writes() if w.get("node_id") == node_id]
         for write in writes[-4:]:
             text.append(f"  {write.get('key')} = {shorten(value_text(write.get('value')), 36)}  ")

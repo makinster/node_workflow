@@ -108,7 +108,8 @@ def test_cards_show_the_run_status_and_the_highlight_follows_the_running_node():
     assert followed == ids["Pause"]
     assert "▶ running" in running_text
     assert details.startswith("Pause · step 3 · Branch 1")
-    assert "Got" in details and "Sent" in details and "Wrote to the Vault" in details
+    assert "Received from the previous node" in details and "Sent to the next node" in details
+    assert "Saved to the Vault" in details
     assert moved == ids["Keep"] and following is False
     assert "✓ done" in done_text
 
