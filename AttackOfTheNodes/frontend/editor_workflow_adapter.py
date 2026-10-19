@@ -216,8 +216,19 @@ class EditorWorkflowAdapter:
         node["alias"] = str(metadata.get("original_alias") or "")
         node["config"] = deepcopy(metadata.get("original_config") or {})
 
-        # Step 2: input connections — source must exist and still declare the port.
+        # Step 2: input connections — source must exist and still declare the
+        # port. Wiring the node gained while deleted (an insert placed it after
+        # a new node) is kept, and an original source whose port now leads
+        # elsewhere is not re-added: one output never gets a second target.
         restored_inputs: list[Dict[str, Any]] = []
+        for conn in node.get("connections", {}).get("inputs", []):
+            source_node = self.workflow_map.get_node_data(str(conn.get("source_node_id") or ""))
+            if source_node is not None and {
+                "source_port": conn.get("source_port", "default"),
+                "target_node_id": node_id,
+                "target_port": conn.get("target_port", "input"),
+            } in source_node.get("connections", {}).get("outputs", []):
+                restored_inputs.append(deepcopy(conn))
         for conn in metadata.get("original_input_connections") or []:
             source_id = str(conn.get("source_node_id") or "")
             source_port = conn.get("source_port", "default")
@@ -243,6 +254,25 @@ class EditorWorkflowAdapter:
                     }
                 )
                 continue
+            if conn in restored_inputs:
+                continue
+            taken = [
+                out for out in source_node.get("connections", {}).get("outputs", [])
+                if out.get("source_port", "default") == source_port
+                and out.get("target_node_id") != node_id
+            ]
+            if taken:
+                if restored_inputs:
+                    continue  # already back in place through its new wiring
+                report.input_errors.append(
+                    {
+                        "source_node_id": source_id,
+                        "source_alias": str(source_node.get("alias") or ""),
+                        "port": source_port,
+                        "reason": "source_port_taken",
+                    }
+                )
+                continue
             restored_inputs.append(deepcopy(conn))
             source_outputs = source_node.setdefault("connections", {}).setdefault(
                 "outputs",
@@ -257,8 +287,8 @@ class EditorWorkflowAdapter:
                 source_outputs.append(source_record)
         node["connections"] = {"inputs": restored_inputs, "outputs": []}
 
-        # Step 3: output connections — target must exist, declare the port,
-        # and the port must not be occupied by a different source.
+        # Step 3: output connections — target must exist and declare the port.
+        own_sources = {str(conn.get("source_node_id") or "") for conn in restored_inputs}
         for conn in metadata.get("original_output_connections") or []:
             target_id = str(conn.get("target_node_id") or "")
             target_port = conn.get("target_port", "input")
@@ -289,13 +319,22 @@ class EditorWorkflowAdapter:
                 "inputs",
                 [],
             )
-            occupied = any(
-                input_conn.get("target_port", "input") == target_port
+            others = [
+                str(input_conn.get("source_node_id") or "")
+                for input_conn in target_inputs
+                if input_conn.get("target_port", "input") == target_port
                 and not (
                     input_conn.get("source_node_id") == node_id
                     and input_conn.get("source_port", "default") == source_port
                 )
-                for input_conn in target_inputs
+            ]
+            # Another parent may share an ordinary input (a fan-in), unless it
+            # took this node's place: it is fed by one of this node's inputs,
+            # or the node has no input back. A Merge slot takes one source.
+            occupied = bool(others) and (
+                target_node.get("type") == MERGE_NODE_TYPE
+                or not restored_inputs
+                or any(self._fed_by(other, own_sources) for other in others)
             )
             if occupied:
                 report.output_errors.append(
@@ -493,6 +532,13 @@ class EditorWorkflowAdapter:
             if str(conn.get("source_port") or "default") == "default":
                 return conn
         return downstream_connections[0] if downstream_connections else None
+
+    def _fed_by(self, node_id: str, sources: set) -> bool:
+        node = self.workflow_map.get_node_data(node_id) or {}
+        return any(
+            str(conn.get("source_node_id") or "") in sources
+            for conn in node.get("connections", {}).get("inputs", [])
+        )
 
     def _declares_output_port(self, node: Dict[str, Any], port: str) -> bool:
         # `error` is the engine-level failure port every node has (D7).

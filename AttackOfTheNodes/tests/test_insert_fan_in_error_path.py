@@ -254,3 +254,94 @@ def test_a_wired_error_path_is_deleted_with_its_node():
     assert asked and deleted
     assert workflow_map.get_node_data(handler) is None
     assert workflow_map.get_node_data(after) is not None
+
+
+def _deleted_text_output_then_resolver():
+    """Start → HTTP → Text → Pause (Pause also fed by Note). Text Output is
+    deleted, an Error Resolver is added after HTTP, and the workflow saved."""
+    from frontend.screens.editor import EditorScreen
+
+    factory, workflow_map = _map()
+    start = workflow_map.add_node("start_node")
+    http = workflow_map.add_node("http_request_node")
+    text = workflow_map.add_node("text_output_node")
+    note = workflow_map.add_node("no_op_node")
+    pause = workflow_map.add_node("sleep_node")
+    workflow_map.connect(start, "default", http, "input")
+    workflow_map.connect(http, "default", text, "input")
+    workflow_map.connect(text, "default", pause, "input")
+    workflow_map.connect(note, "default", pause, "input")
+    editor = EditorScreen(factory, workflow_map)
+    editor.workflow_adapter.replace_with_placeholder(text)
+    mux = editor._insert_error_mux_after(http)["mux_id"]
+    editor.workflow_adapter.materialize_deleted_nodes()
+    return factory, workflow_map, editor, dict(
+        http=http, text=text, note=note, pause=pause, mux=mux)
+
+
+def test_undo_after_save_never_gives_an_output_a_second_target():
+    """Owner report: the Error Resolver vanished from the editor because
+    HTTP's output led to both the Resolver and a restored Text Output."""
+    from backend.validator import validate_workflow
+
+    factory, workflow_map, editor, ids = _deleted_text_output_then_resolver()
+
+    report = editor.workflow_adapter.restore_tombstone(ids["text"])
+
+    assert report.restored and not report.input_errors and not report.output_errors
+    assert _targets(workflow_map, ids["http"]) == [ids["mux"]]
+    assert _targets(workflow_map, ids["mux"]) == [ids["text"]]
+    # Two parents may share Pause's input again, as before the delete.
+    assert _targets(workflow_map, ids["text"]) == [ids["pause"]]
+    assert _targets(workflow_map, ids["note"]) == [ids["pause"]]
+    rows = [row["node_id"] for row in editor._build_visible_rows() if row["kind"] == "node"]
+    assert rows.index(ids["http"]) < rows.index(ids["mux"]) < rows.index(ids["text"])
+    result = validate_workflow(workflow_map, factory)
+    assert not [w for w in result["warnings"] if w.get("code") == "ignored_fan_out"]
+
+
+def test_undo_reports_an_input_it_cannot_put_back():
+    factory, workflow_map = _map()
+    from frontend.screens.editor import EditorScreen
+
+    start = workflow_map.add_node("start_node")
+    first = workflow_map.add_node("no_op_node")
+    later = workflow_map.add_node("logger_node")
+    workflow_map.connect(start, "default", first, "input")
+    editor = EditorScreen(factory, workflow_map)
+    editor.workflow_adapter.replace_with_placeholder(first)
+    editor.workflow_adapter.materialize_deleted_nodes()
+    # Start's output now leads somewhere else.
+    workflow_map.disconnect(start, "default", first, "input")
+    workflow_map.connect(start, "default", later, "input")
+
+    report = editor.workflow_adapter.restore_tombstone(first)
+
+    assert [error["reason"] for error in report.input_errors] == ["source_port_taken"]
+    assert _targets(workflow_map, start) == [later]
+
+
+def test_validator_warns_when_a_resolvers_no_error_path_never_runs():
+    """The owner's saved shape: HTTP → Text Output and HTTP → Resolver →
+    Pause. Only Text Output runs after a success."""
+    from backend.validator import validate_workflow
+
+    factory, workflow_map = _map()
+    start = workflow_map.add_node("start_node")
+    http = workflow_map.add_node("http_request_node")
+    text = workflow_map.add_node("text_output_node")
+    mux = workflow_map.add_node("error_mux_node")
+    pause = workflow_map.add_node("sleep_node")
+    workflow_map.connect(start, "default", http, "input")
+    workflow_map.connect(http, "default", text, "input")
+    workflow_map.connect(http, "default", mux, "input")
+    workflow_map.connect(mux, "default", pause, "input")
+
+    result = validate_workflow(workflow_map, factory)
+    fan_out = [w for w in result["warnings"] if w.get("code") == "ignored_fan_out"]
+    assert [w["node_id"] for w in fan_out] == [http]
+
+    # A catch-only Resolver beside the next node is still fine.
+    workflow_map.disconnect(mux, "default", pause, "input")
+    result = validate_workflow(workflow_map, factory)
+    assert not [w for w in result["warnings"] if w.get("code") == "ignored_fan_out"]

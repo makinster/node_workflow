@@ -274,7 +274,9 @@ drifted. Three categories of drift can make stored connections invalid:
    now be occupied by a different source. The stored `original_outputs`
    connection records the target node id and port name. If the target node no
    longer exists, no longer declares that input port, or that input port already
-   has a connection from another node, the connection cannot be safely restored.
+   has a connection from another node, the connection cannot be safely restored,
+   unless the port is an ordinary input that two parents may share (a fan-in;
+   see step 3 of the procedure).
 
 3. **Memory bank drift.** The deleted node may have declared `membank_inputs`
    (variables it read). If no remaining node in the workflow now declares those
@@ -287,21 +289,29 @@ drifted. Three categories of drift can make stored connections invalid:
 
 1. Always restore the node type, alias, and config from tombstone data. The node
    itself is never blocked by connection drift.
-2. For each stored input connection (`original_inputs`): verify the source node
-   exists in the current workflow AND still declares the referenced output port.
-   If both checks pass, reconnect. If either fails, leave the input port
-   unconnected and record the failure.
+2. Keep any input the tombstone gained while deleted (an insert placed it
+   after a new node). Then, for each stored input connection
+   (`original_inputs`): verify the source node exists in the current workflow
+   AND still declares the referenced output port AND that port does not now
+   lead to another node. If all pass, reconnect. Otherwise leave it, and record
+   the failure (`source_port_taken` for the last) unless the node already has
+   an input. An output never gets a second target this way (owner report,
+   2026-10-18: the Error Resolver vanished from the editor).
 3. For each stored output connection (`original_outputs`): verify the target
-   node exists AND still declares the referenced input port AND that port is not
-   already occupied by another source connection. If all checks pass, reconnect.
-   If any check fails, leave the output port unconnected and record the failure.
+   node exists AND still declares the referenced input port AND that the port
+   is not fed by another source. Exception: an ordinary input (never a Merge
+   slot) may be shared with another parent (a fan-in) when the restored node
+   has an input back and that parent did not take its place (it is not fed by
+   one of the restored node's inputs). If all checks
+   pass, reconnect. If any check fails, leave the output port unconnected and
+   record the failure.
 4. For each stored `membank_inputs` entry: check whether any surviving node
    declares that variable in `membank_outputs`. If not, restore the declaration
    anyway (the user can repair it) but include it in the alert.
 5. After restore, if any connections could not be re-established, surface a
    frontend alert with two sections:
    - **Input connection errors:** list each failed input by original source node
-     alias/id and port name, with the reason (source gone / port gone).
+     alias/id and port name, with the reason (source gone / port gone / port now leads elsewhere).
    - **Output connection errors:** list each failed output by original target
      node alias/id and port name, with the reason (target gone / port gone /
      port already occupied).

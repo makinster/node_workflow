@@ -27,8 +27,16 @@ Tests are in `test_insert_fan_in_error_path.py`.
   branches reach (its wired `error` path, the mux's recovery branches).
   The node continues on the mux's No error path. Cancel changes nothing;
   undo restores only the node. Nodes without a handler delete as before.
+- **Error Resolver missing from the editor** (owner, C1/C2): undoing a
+  saved delete re-added the node's old input even when that output now led to
+  a new Resolver, so HTTP's output had two targets and the editor (and the
+  run) followed only the first. Restore now keeps the wiring the tombstone
+  gained, never gives an output a second target, and lets two parents share
+  an ordinary input again. The validator warns (`ignored_fan_out`) when a
+  Resolver's No error path can never run because its node also leads
+  elsewhere; that is the state the owner's saved C1/C2 file is in.
 - Logged for later in the backlog: reducing a Branch node's path count,
-  and a deletion review with the owner. After: 1718 passed (10 new tests).
+  and a deletion review with the owner. After: 1721 passed (13 new tests).
 
 ## 2026-10-18 — Step 4a-1: Contracts (Backend and CLI)
 
