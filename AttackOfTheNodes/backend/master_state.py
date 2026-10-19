@@ -11,7 +11,7 @@ import asyncio
 import logging
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Set
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
 
 from .event_bus import EventBus
 from .events import (
@@ -52,6 +52,9 @@ from .wait_registry import (
 )
 from .workflow_map import WorkflowMap
 
+if TYPE_CHECKING:
+    from .subworkflow_calls import CallTree
+
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +72,11 @@ class MasterState:
         output_manager: Optional[OutputManager] = None,
         configuration_manager: Optional[ConfigurationManager] = None,
         secrets_manager: Optional[SecretsManager] = None,
+        *,
+        call_tree: Optional["CallTree"] = None,
+        call_depth: int = 0,
+        call_info: Optional[Dict[str, Any]] = None,
+        call_path: Optional[List[str]] = None,
     ) -> None:
         self._workflow_map = workflow_map
         self._memory_bank = memory_bank
@@ -78,6 +86,15 @@ class MasterState:
         self._output_manager = output_manager or OutputManager()
         self._configuration_manager = configuration_manager or ConfigurationManager()
         self._secrets_manager: Optional[SecretsManager] = secrets_manager
+        # Step 4b: a child run shares its root's call tree; a root makes a new
+        # one per run. ``call_info`` is the child's run record (C22).
+        self._call_tree = call_tree
+        self._owns_call_tree = call_tree is None
+        self.call_depth = call_depth
+        self._call_info = dict(call_info or {})
+        self._call_path = list(call_path or [])
+        self._children: Set["MasterState"] = set()
+        self._finalize_hook: Optional[Any] = None
 
         self.state = WorkflowState.IDLE
         self.current_run_id: Optional[str] = None
@@ -127,6 +144,67 @@ class MasterState:
     @property
     def _started_at(self) -> Optional[str]:
         return self._run.started_at if self._run else None
+
+    # -- subworkflow calls (Step 4b) -------------------------------------------
+
+    @property
+    def factory(self) -> Any:
+        return self._workflow_map._factory
+
+    @property
+    def workflow_map(self) -> WorkflowMap:
+        return self._workflow_map
+
+    @property
+    def event_bus(self) -> EventBus:
+        return self._event_bus
+
+    @property
+    def configuration_manager(self) -> ConfigurationManager:
+        return self._configuration_manager
+
+    @property
+    def secrets_manager(self) -> Optional[SecretsManager]:
+        return self._secrets_manager
+
+    @property
+    def is_paused(self) -> bool:
+        return self.state == WorkflowState.PAUSED
+
+    @property
+    def call_path(self) -> List[str]:
+        """Readable names from the root to this run ("Main › Extract › Helper")."""
+        return self._call_path or [self._workflow_map.workflow_name or "Workflow"]
+
+    @property
+    def call_tree(self) -> Optional["CallTree"]:
+        return self._call_tree
+
+    def call_tree_for(self, run: RunContext) -> "CallTree":
+        """The tree this run's calls count against (C16 limits from Settings)."""
+        if self._call_tree is None:
+            from .subworkflow_calls import CallTree
+
+            self._call_tree = CallTree(
+                self,
+                max_depth=int(self._configuration_manager.get("max_subworkflow_depth")),
+                max_live=int(self._configuration_manager.get("max_live_subworkflow_runs")),
+            )
+        return self._call_tree
+
+    def owns_branch(self, branch_id: str) -> bool:
+        return branch_id in self._supervisors
+
+    def add_child(self, child: "MasterState") -> None:
+        self._children.add(child)
+
+    def remove_child(self, child: "MasterState") -> None:
+        self._children.discard(child)
+
+    def set_finalize_hook(self, hook: Any) -> None:
+        """Called as ``hook(run, final_state, errors)`` when the run is
+        recorded, before its resources close (C13 file hand-over)."""
+        self._finalize_hook = hook
 
     # -- run control -----------------------------------------------------------
 
@@ -187,6 +265,8 @@ class MasterState:
 
         run_id = f"run_{uuid.uuid4().hex[:8]}"
         self.current_run_id = run_id
+        if self._owns_call_tree:
+            self._call_tree = None
         self.run_outputs = []
         self._output_manager.clear_run(run_id)
         self._memory_bank.clear()
@@ -245,6 +325,15 @@ class MasterState:
 
         branch_id = str(kwargs.get("branch_id") or "")
 
+        async def call_subworkflow_here(
+            node_id: str, workflow_id: str, inputs: Dict[str, Any], text_inputs: Any = (),
+            visit: int = 0, attempt: int = 0,
+        ) -> Dict[str, Any]:
+            from .subworkflow_calls import call_subworkflow
+
+            return await call_subworkflow(
+                self, run, branch_id, node_id, workflow_id, inputs, text_inputs, visit, attempt)
+
         def report_outcome(
             node_id: str,
             state: str,
@@ -285,18 +374,22 @@ class MasterState:
             # End is ignored, as the validator warns (C27).
             publish_result=(lambda values: self._publish_result(run, values))
             if self._workflow_map.callable else None,
+            call_subworkflow=call_subworkflow_here,
             **kwargs,
         )
         run.live_supervisors[supervisor.branch_id] = supervisor
         return supervisor
 
     def pause(self) -> None:
-        """Request all active supervisors to pause."""
-        if self.state != WorkflowState.RUNNING:
+        """Request all active supervisors to pause (a supervisor waiting for
+        input pauses before its next node)."""
+        if self.state not in (WorkflowState.RUNNING, WorkflowState.WAITING_FOR_INPUT):
             return
         for supervisor in self._supervisors.values():
             supervisor.request_pause()
         self._set_state(WorkflowState.PAUSED)
+        for child in list(self._children):
+            child.pause()
 
     def resume(self) -> None:
         """Resume all paused supervisors."""
@@ -305,6 +398,8 @@ class MasterState:
         for supervisor in self._supervisors.values():
             supervisor.request_resume()
         self._set_state(WorkflowState.RUNNING)
+        for child in list(self._children):
+            child.resume()
 
     def stop(self) -> None:
         """Stop the run on request: unfinished nodes are stopped, not skipped."""
@@ -345,6 +440,8 @@ class MasterState:
         """Forward user input to a waiting supervisor."""
         supervisor = self._supervisors.get(branch_id)
         if supervisor is None:
+            if self._owns_call_tree and self._call_tree is not None:
+                return self._call_tree.submit_user_input(branch_id, value)
             logger.warning("No supervisor with branch_id %s", branch_id)
             return False
         supervisor.submit_user_input(value)
@@ -354,6 +451,8 @@ class MasterState:
         """Forward a recovery action to the supervisor waiting for it."""
         supervisor = self._supervisors.get(branch_id)
         if supervisor is None:
+            if self._owns_call_tree and self._call_tree is not None:
+                return self._call_tree.submit_recovery_action(branch_id, action)
             logger.warning("No supervisor with branch_id %s", branch_id)
             return False
         supervisor.submit_recovery_action(action)
@@ -669,6 +768,7 @@ class MasterState:
             self._set_state(WorkflowState.WAITING_FOR_INPUT)
         elif self.state == WorkflowState.WAITING_FOR_INPUT and payload["state"] == "RUNNING":
             self._set_state(WorkflowState.RUNNING)
+        # (A PAUSED run stays paused when a prompt is answered.)
 
     def _on_supervisor_error(self, payload: Dict[str, Any]) -> None:
         self._set_state(WorkflowState.ERROR)
@@ -680,6 +780,11 @@ class MasterState:
         for supervisor in self._supervisors.values():
             supervisor.request_pause()
         self._set_state(WorkflowState.PAUSED)
+        # The whole call tree pauses (C20): from a child, through the root.
+        if not self._owns_call_tree and self._call_tree is not None:
+            self._call_tree.pause_all()
+        for child in list(self._children):
+            child.pause()
 
     def _on_node_timing_update(self, payload: Dict[str, Any]) -> None:
         if self._run is None or payload.get("run_id") != self._run.run_id:
@@ -765,6 +870,11 @@ class MasterState:
         # no unhandled errors, not stopped); otherwise they are kept for
         # debugging. Errors routed along an error path count as handled.
         if self._run is not None:
+            if self._finalize_hook is not None:
+                try:
+                    self._finalize_hook(self._run, final_state, errors)
+                except Exception:
+                    logger.exception("Subworkflow finalization failed (run %s)", self.current_run_id)
             succeeded = (
                 final_state == "FINISHED"
                 and not unhandled
@@ -784,6 +894,8 @@ class MasterState:
                 "output_count": len(self.run_outputs),
                 "node_timings": dict(self.node_timings),
                 "skipped_nodes": dict(self._run.skip_reasons) if self._run else {},
+                # Step 4b (C22): where a child run was called from.
+                **self._call_info,
                 # "outputs" removed — values already persisted by OutputManager
             }
         )

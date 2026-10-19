@@ -20,6 +20,12 @@ DEFAULT_SETTINGS: Dict[str, Any] = {
     "log_level": "WARNING",
     "log_to_file_enabled": True,
     "log_retention_days": 7,
+    # Step 4b (C16): subworkflow limits per root run; a call past either fails
+    # at once. bench_subworkflow_calls.py (2026-10-19): a waiting child costs
+    # about 45 KB, a busy 60-node child about 0.4 MB and 10 ms of CPU, both
+    # linear; 64 busy children stay under 30 MB and a second.
+    "max_subworkflow_depth": 4,
+    "max_live_subworkflow_runs": 64,
 }
 
 

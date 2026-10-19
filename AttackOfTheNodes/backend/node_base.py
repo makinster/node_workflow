@@ -64,6 +64,12 @@ class NodeContext:
     # result was already published in this run). None outside a run.
     run_inputs: Optional[Dict[str, Any]] = None
     publish_result: Optional[Callable[[Dict[str, Any]], bool]] = None
+    # Step 4b: run a subworkflow and wait for its results,
+    # ``await call_subworkflow(workflow_id, inputs, text_inputs)``; raises
+    # NodeError with a call code. ``node_alias`` names Vault keys. None
+    # outside a run.
+    call_subworkflow: Optional[Callable[..., Awaitable[Dict[str, Any]]]] = None
+    node_alias: str = ""
 
     def emit_event(self, event_name: str, payload: Dict[str, Any]) -> bool:
         """Publish an event if a bus is wired in; return whether it was sent."""

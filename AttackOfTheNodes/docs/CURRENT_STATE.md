@@ -28,8 +28,11 @@ This is the live status snapshot; plans and logs preserve dated decisions.
 - **Step 4:** design rev. 4 approved (#76/#79); 4a-1 backend/CLI contracts
   built (#80). 4a-2 screens merged in #85: File window Workflows/Subworkflows
   tabs, copy to Subworkflows, Start Inputs and Results tabs, the End Results
-  tab, "Send back to calling workflow"; all review findings fixed, including
-  file defaults. 4b child runs (backend and CLI) are #87. [Proposal](SUBWORKFLOWS_PROPOSAL.md).
+  tab, "Send back to calling workflow". 4b child runs (backend and CLI) merged
+  in #87: the Subworkflow node (hidden in the selector until 4c), call tree,
+  limits (depth 4, 64 live), file hand-over, prompts, pause and stop, run
+  records, validation and benchmark. Next: EX design, then 4c (TUI).
+  [Proposal](SUBWORKFLOWS_PROPOSAL.md).
 - Keymap phase 3 is next for Stash, Settings, Execution, list pickers, Confirm
   hints, Unsaved Changes, User Input and Recovery. Editor, Node Config,
   Node Selector, Workflow Library and Help topics follow after 4a-2 merges.

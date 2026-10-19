@@ -6,6 +6,55 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-19 — Step 4b: Child Runs (Backend and CLI)
+
+Branch `dist/step4b-child-runs`, from main `1addbf9`. Design C11–C20, C22.
+Before: 1729 passed.
+
+- **`subworkflow_node`** (`backend/nodes/flow/`): calls a saved subworkflow by
+  id and waits. Inputs from a configured value (parsed by the child's row
+  type), the incoming payload or a Vault key; results routed downstream, to
+  the Vault (`<alias>.<result>` by default) or both; one `default` output.
+  Hidden in the selector until 4c gives it a picker.
+- **`backend/subworkflow_calls.py`**: each call builds its own bus, map,
+  memory and master state and shares the factory, settings, secrets and the
+  run-history writer (C18). A `CallTree` per root run enforces
+  `max_subworkflow_depth` (4) and `max_live_subworkflow_runs` (64), failing
+  at once (`depth_limit`, `capacity_limit`); routes prompts and answers
+  between the root's client and any child, tagged with an invocation id and a
+  call path (C19); and spreads pause, including a child's breakpoint (C20).
+- **Cancellation:** stopping the root or terminating a branch cancels the
+  calling task; the call stops its child and waits until it has stopped.
+- **Files (C13):** inside the child's finalization, returned run-owned files
+  are released by the child and adopted by the caller, so they outlive the
+  child and are deleted with the caller. A file passed in stays the caller's.
+- **Records (C22):** child history records carry `root_run_id`,
+  `parent_run_id`, `invocation_id`, the call-site node, its alias, the
+  parent branch and the call number.
+- **Validator:** `subworkflow_not_found`, `subworkflow_not_callable`,
+  `subworkflow_recursion`, `subworkflow_input_unknown`,
+  `subworkflow_input_missing` (errors), `subworkflow_input_unmapped`
+  (warning). A shared helper called by two children is fine.
+- **Benchmark** `benchmarks/bench_subworkflow_calls.py`: 200 waiting children
+  at once in 0.73 s and 9 MB; busy 60-node children about 10 ms and 0.4 MB
+  each, linear; every stack and subscription released; nesting about 0.5 ms
+  per level; 0.55 ms per short call with 2,000 saved history records. The
+  live-run default is set to 64 from these numbers.
+- Tests found that `configuration_manager` and `run_history` bind their
+  folders at import, so a test that changes Settings must patch them there;
+  the new tests do. Not done here: the TUI (4c), the EX screen, prompt
+  queueing in the TUI, fire-and-forget.
+- After: 1752 passed (22 new tests in `test_subworkflow_calls.py`).
+- **Review of 974af31** (seven findings, each reproduced failing first):
+  the call waits on one shielded completion task, so cancellation stops the
+  child before its tasks are cancelled and a second Stop can't cut its
+  cleanup short; pause holds a child waiting for input and a root
+  breakpoint pauses the children; the validator walks the whole reachable
+  call graph for loops (Root → A → B → A), matches names exactly as a run
+  does, parses configured values by type (`subworkflow_input_invalid`) and
+  checks result routes (`subworkflow_result_unknown`); child records add
+  `parent_visit` and `parent_attempt`. After: 1762 passed.
+
 ## 2026-10-19 — Deletion owner answers and recovery-window samples
 
 Branch `codex/deletion-owner-answers`, fresh from `origin/main` at `1addbf9`,
