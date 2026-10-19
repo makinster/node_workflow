@@ -71,8 +71,11 @@ python main.py run 'First workflow' --json
 ```
 
 [Workflow Authoring](WORKFLOW_AUTHORING.md) explains the spec and CLI in detail.
-`--input KEY=VALUE` records run inputs; it does not yet bind them into Start or
-Vault values. Workflow contracts are planned work, not a working input adapter.
+`--input KEY=VALUE` supplies a declared Start row, parsed by its type;
+`--inputs-file` supplies already-typed JSON values. Start routes those values
+downstream and/or into the Vault. See [workflow contracts](WORKFLOW_AUTHORING.md#contracts-inputs-results-and-callable-workflows)
+for defaults, missing inputs and Return End results. Child-workflow calls are
+later work; the checked delivery status is in Current State.
 
 ## The mental model
 

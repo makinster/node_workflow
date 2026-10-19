@@ -67,9 +67,10 @@ with `aotn run "<name>"` or open it from the app's Workflow Library.
 
 ## Contracts: inputs, results and callable workflows
 
-A workflow's **inputs** are Start's `rows`; a **callable** workflow (one that
-another workflow can call as a subworkflow, Step 4) also has a **Return End**
-whose `results` are what it returns. See
+A workflow's **inputs** are Start's `rows`; a **callable** workflow also has
+a **Return End** whose `results` are what it returns. The backend and CLI
+support these contracts now; calling one workflow from another is a later
+Step 4 stage. See
 [SUBWORKFLOWS_PROPOSAL.md](SUBWORKFLOWS_PROPOSAL.md) for the design.
 
 ```json
@@ -106,8 +107,9 @@ each value by its row (numbers, `true`/`false`, JSON for `var`, a path for
 `file`). `--inputs-file run.json` supplies a JSON object of **already-typed**
 values (a number must be a JSON number; a `var` string stays a string);
 `--input` wins over it, and a row's value fills anything left. Return End
-results are enforced only when the workflow is callable. Missing (absent, or a stored
-blank) means not supplied; an explicit `""`, `0` or `false` is a value. A run
+results are enforced only when the workflow is callable. Absent or JSON `null`
+means missing, as does a blank stored default; an explicitly supplied `""`,
+`0` or `false` is a value. A run
 with a missing required input, a wrongly typed value, or (callable only) an
 undeclared input stops before it starts with **exit code 5**. Results print
 as `name = value` after the outputs, and in `--json` output as `values`, with

@@ -35,6 +35,18 @@ code manually. Ordinary node fields render from schema; custom frontend sections
 are for topology-driven behavior. A structural-UI TODO is a design task, not
 permission to patch screens ad hoc.
 
+## Keeping the session log bounded
+
+Keep about two weeks of dated entries in `SESSION_LOG.md`; the checked window
+is written at its top. Before moving an older entry, put any unique owner
+decision, rationale or unresolved proposal in the reference that owns its topic.
+Keep proposed, superseded and implemented behavior distinct. Record source
+headings and destinations in the audit's extraction map, then transfer the
+whole entries to `archive/SESSION_LOG_HISTORY.md`, rebasing relative links.
+Retain the existing archive body and other workers' recent entries. Check moved
+text against Git and run the docs link/archive checker; do not reduce history
+to milestone summaries. Current status belongs in `CURRENT_STATE.md`.
+
 ## Verification that demonstrates the claim
 
 Use the checkout's app code and the intended interpreter. Run from

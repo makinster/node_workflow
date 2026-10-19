@@ -12,6 +12,18 @@ from urllib.parse import unquote
 ROOT = Path(__file__).resolve().parents[4]
 DOCS = ROOT / "AttackOfTheNodes" / "docs"
 BASE = "9d5455b"
+SESSION_BASE = "90182f0"
+SESSION_CUTOFF = "2026-10-04"
+ACTIVE_DOCS = {
+    "README.md", "NEWCOMER_GUIDE.md", "VISION.md", "CURRENT_STATE.md",
+    "CONTRIBUTING.md", "SESSION_LOG.md", "ARCHITECTURE.md",
+    "BACKEND_FRONTEND_BOUNDARY.md", "NODE_STANDARDS.md", "NODE_HELPER.md",
+    "NODE_CATALOG.md", "UI_QUICK_REFERENCE.md", "WORKFLOW_AUTHORING.md",
+    "NODE_CONTRACT_PLAN.md", "DISTRIBUTED_BUILD_PLAN.md", "STASH_PROPOSAL.md",
+    "PROJECT_BACKLOG.md",
+}
+# Approved Step 4 design; move to archive when Step 4 completes.
+TEMPORARY_DOCS = {"SUBWORKFLOWS_PROPOSAL.md"}
 LINK = re.compile(r"\[([^\]]*)\]\(([^)]+)\)")
 
 
@@ -68,14 +80,36 @@ def main():
             continue
         saved = path.read_text().split("\n\n", 1)[1]
         before, after = without_link_targets(original(name)), without_link_targets(saved)
-        intact = after.startswith(before) if name == "DOCS_MIGRATION_NOTES.md" else after == before
+        # PR C appends older session entries to the existing history, without
+        # replacing its original body. The migration ledger is append-only too.
+        intact = (after.startswith(before)
+                  if name in {"DOCS_MIGRATION_NOTES.md", "SESSION_LOG_HISTORY.md"}
+                  else after == before)
         if not intact:
             errors.append(f"Archive body changed beyond relative link targets: {name}")
     active = sorted(p.name for p in DOCS.glob("*.md"))
-    if len(active) != 17:
-        errors.append(f"Expected 17 active top-level docs, found {len(active)}")
+    missing = ACTIVE_DOCS - set(active)
+    unexpected = set(active) - ACTIVE_DOCS - TEMPORARY_DOCS
+    if missing or unexpected:
+        errors.append(f"Active doc set: missing {sorted(missing)}, unexpected {sorted(unexpected)}")
+    # Recheck the PR C transfer independently of its destination heading/line
+    # numbers. Link targets may change with the directory, source text may not.
+    session_before = subprocess.check_output(
+        ["git", "show", f"{SESSION_BASE}:AttackOfTheNodes/docs/SESSION_LOG.md"],
+        cwd=ROOT, text=True,
+    ).split("## Older Entries", 1)[0]
+    entries = re.split(r"(?m)(?=^## \d{4}-\d{2}-\d{2} — )", session_before)
+    transferred = []
+    for entry in entries:
+        dated = re.match(r"## (\d{4}-\d{2}-\d{2}) — ", entry)
+        if dated and dated[1] < SESSION_CUTOFF:
+            transferred.append(entry)
+    history = (DOCS / "archive" / "SESSION_LOG_HISTORY.md").read_text()
+    if without_link_targets("".join(transferred).rstrip()) not in without_link_targets(history):
+        errors.append("PR C session-history transfer differs from its complete source entries")
     print(f"{len(files)} Markdown files; {links} relative links/anchors; "
-          f"{len(moved) + 1} whole archive bodies; {len(active)} active docs")
+          f"{len(moved) + 1} whole archive bodies; {len(transferred)} transferred session entries; "
+          f"{len(active)} active docs")
     print("\n".join(errors) if errors else "PASS")
     return bool(errors)
 

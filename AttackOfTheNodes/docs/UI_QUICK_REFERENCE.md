@@ -5,6 +5,8 @@ owns implementation/testing patterns; [Architecture](ARCHITECTURE.md) owns
 execution semantics. [Current State](CURRENT_STATE.md) separates delivered and
 pending work. Historical layouts are in `archive/TUI_DESIGN.md`.
 
+Every window has a primary button for its Enter action, plus Close or Cancel; the Stash never stashes the same file or text twice.
+
 ## Editor Keys
 
 - `W/S` or up/down: move through visible rows.
@@ -23,7 +25,7 @@ pending work. Historical layouts are in `archive/TUI_DESIGN.md`.
 - `Z`: undo deletion.
 - Tab / Shift+Tab: move between panels.
 - `H` or `?`: context help.
-- `V`: validate workflow.
+- `V`: validate workflow. Warning badges reflect that last check, not continuous validation.
 - `Ctrl+S`: quick save.
 - `Ctrl+R`: execute workflow.
 - `Ctrl+Q`: quit only from the editor.

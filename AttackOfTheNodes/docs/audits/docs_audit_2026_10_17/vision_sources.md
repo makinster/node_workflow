@@ -55,3 +55,31 @@ link destinations may be rebased to keep them usable. Proposals stay proposals.
 | `TUI_DESIGN.md:529–573` | Overlay focus, screen-mount races, plain output rendering and shared insertion adapters. | `CONTRIBUTING.md` |
 | `ARCHITECTURE.md:1–465` | Preserve original runtime reference in archive; replace contradictions with checked consolidated ownership and flows. | `ARCHITECTURE.md` |
 | `SESSION_LOG.md:1–5507` | Keep complete owner-decision history in place for PR C extraction; do not bound the log in B. | `SESSION_LOG (PR C)` |
+
+## Session decisions extracted before PR C
+
+Checked against `SESSION_LOG.md` at **90182f0**, before bounding its window on
+2026-10-18. Source dates/headings below refer to that complete Git version;
+the whole transferred entries now live in
+[Session Log History](../../archive/SESSION_LOG_HISTORY.md).
+This is a new extraction record, not recovered V27/V28 evidence. Most decisions
+already had owning references after PR B; those were checked before moving the
+entries. Superseded alternatives remain whole in history rather than becoming
+new instructions.
+
+| Source entry/date at 90182f0 | Owner intent and destination | Disposition |
+|---|---|---|
+| July 11, File Output review amendments and FO1–FO7 | Run-owned file/window identity, semantic geometry, optional adapter, local effector, unmanaged windows after a run; [Node Standards](../../NODE_STANDARDS.md#file-and-window-design-decisions), [FO7 protocol](../../PROJECT_BACKLOG.md#native-filewindow-verification-fo7) | D1–D12 reasoning and native-check limits already owned there; no native verification inferred. |
+| July 8, Helper Generator Aligned with the Standardized Node UI | Shared metadata-driven forms and review before regeneration; [Node Helper](../../NODE_HELPER.md#before-generating) | Existing owning reference retains whole-class overwrite, source/routing and smoke-test limits; the old “safe spec” guarantee is removed from the contract plan. |
+| July 7–8, output model and Continue-Session document turn | Downstream payload versus keyed Vault outputs; document supplies the next turn; source remains selectable; [Node Standards](../../NODE_STANDARDS.md) | Existing source/payload sections retain the decisions. Historical default-on Vault output is superseded by C6's default-off policy. |
+| July 7–8, dropdown eligibility and own-session fix | Exclude self/downstream-only writers, retain parallel/external candidates, prune unavailable sources; [Node Standards](../../NODE_STANDARDS.md), [Node Helper](../../NODE_HELPER.md) | Existing references preserve both intent and saved-value retention. |
+| July 7, general config redesign and feedback rounds | Hide inapplicable controls, retain hidden values, read-only incoming summary skipped by navigation; [UI Quick Reference](../../UI_QUICK_REFERENCE.md#node-config-shape) | Existing visibility/navigation rules remain authoritative; retired stacked/routing layouts are history. |
+| June 24, Start redesign and nested validation | One portable callable contract; [Step 4 proposal](../../SUBWORKFLOWS_PROPOSAL.md), [backlog supersession](../../PROJECT_BACKLOG.md#start-node-redesign) | Old separate Start variants, headless export and validity flags were already explicitly superseded; not revived. |
+| June 24, metadata conditionals, CLI, trigger watcher and multiple frontends | Read-only execution context, gated validation, finite triggered runs, transport-safe events; [Project Backlog](../../PROJECT_BACKLOG.md), [Distributed Plan](../../DISTRIBUTED_BUILD_PLAN.md), [Architecture](../../ARCHITECTURE.md) | Existing plans preserve future direction and rejections; current CLI contracts are distinguished from future child calls. |
+| June 22, selector families | Five tabs, separate input/output identity, future live output displays; [Node Catalog](../../NODE_CATALOG.md#taxonomy-intent-retained-from-phase-17), [UI Quick Reference](../../UI_QUICK_REFERENCE.md) | Already extracted; retired combined I/O toggle is historical. |
+| June 22, Track B Phase 1 and warning badges | Filter typed choices first; amber fallback intent; badges reflect last V; [audit follow-ups](../../PROJECT_BACKLOG.md#configuration-and-inspection-follow-ups-preserved-from-audits), [Editor keys](../../UI_QUICK_REFERENCE.md#editor-keys) | Fallback design intent added to backlog without claiming it is implemented; manual badge semantics made explicit. |
+| June 19, owner-revised Track A | Cancel taxonomy rename and rigid subcategory filters; tags search only; [Node Standards](../../NODE_STANDARDS.md), [Node Helper](../../NODE_HELPER.md) | Already owned; earlier approval does not override the later cancellation. |
+| June 12, taxonomy/helper, secrets and backend direction | Type/group/mode classification, gated script execution, schema-driven UI, secrets through context; [Node Standards](../../NODE_STANDARDS.md), [Node Catalog](../../NODE_CATALOG.md), [Node Helper](../../NODE_HELPER.md), [Architecture](../../ARCHITECTURE.md) | Existing references retain the choices; live catalog facts come from CLI metadata. |
+| June 11, tombstone design reversal and restore edges | Tombstones remain intentional backend records; restore config and repair valid connections; [Boundary](../../BACKEND_FRONTEND_BOUNDARY.md) | Existing owning contract preserves the reversal and partial-restore rationale; old decommission tasks are not active. |
+| June 10–11, typed Vault and RunSession | Per-run memory, resource references versus Python objects, shared branch values; [Architecture](../../ARCHITECTURE.md) | Existing runtime reference owns these guarantees, not the log. |
+| June 9–10, Phase 17 direction and visual work | Compact keyboard UI, stable identity and resource ownership; [Vision](../../VISION.md), [Contributing](../../CONTRIBUTING.md), [UI Quick Reference](../../UI_QUICK_REFERENCE.md) | Existing references preserve durable intent; old subcategory AND filters and execution prompts remain historical. |
