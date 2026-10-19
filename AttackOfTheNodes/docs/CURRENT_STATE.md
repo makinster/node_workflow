@@ -5,27 +5,30 @@ This is the live status snapshot; plans and logs preserve dated decisions.
 
 ## Baseline and open work — 2026-10-19
 
-- Fetched `origin/main` at `a31d721`: C1–C7, workflow naming (#68), docs A/B
+- Fetched `origin/main` at `b5426ab`: C1–C7, workflow naming (#68), docs A/B
   (#69/#72), Stash S1–S3 (#70/#71/#75), window buttons (#73), duplicate
   prevention (#74), keymap phases 1/2 (#77/#78), contracts (#80), the
   file-picker test fix (#81), editor hotfixes (#82), the deletion proposal
-  (#84), docs C (#83), deletion answers (#86), subworkflow screens (#85)
-  and child runs (#87) are merged.
+  (#84), docs C (#83), deletion answers (#86), subworkflow screens (#85),
+  child runs (#87) and deletion phase 2 (#88) are merged.
   S3 uses plain P, off while typing; Ctrl+P and the palette are unchanged.
 - **Editor hotfixes (#82):** insert before a node with two parents keeps it;
   HTTP Request and JSON Path get no error path by default; failure paths keep
   the normal path's colour; deleting a node with an error handler asks, then
   removes the handler; undo and stub removal never give an output a second
   target. [Session log](SESSION_LOG.md).
-- **Deletion review phase 2:** implemented on `codex/deletion-phase2`, from
-  fresh main `a31d721`, awaiting owner review. First delete groups owned paths;
+- **Deletion review phase 2:** merged in #88. First delete groups owned paths;
   Z restores the group, with a preview before partial restore. Branch count
   reductions save removed paths under the live Branch; increases offer
   Recover / Leave empty / Cancel and optional path picks. Keep saved paths
   until the owner sets expiry. Every affected Beacon resets on Merge deletion;
   Beacon deletion ends its branch. Warning levels stay unchanged. The editor
   shows ` [sub]` for callable workflows. No `node_config.py` or Execution
-  screen changes. [Approved proposal](DELETION_REVIEW_PROPOSAL.md),
+  screen changes. The review follow-up on `codex/deletion-picker-polish`, from
+  fresh `b5426ab`, fits picker lists to their rows, shortens the new messages
+  and reformats the two deletion test files. It awaits owner review.
+  [Compact picker samples](audits/deletion_picker_polish_2026_10_19/README.md),
+  [approved proposal](DELETION_REVIEW_PROPOSAL.md),
   [rendered screens and verification](audits/deletion_phase2_2026_10_19/README.md).
 - **Step 4:** design rev. 4 approved (#76/#79); 4a-1 backend/CLI contracts
   built (#80). 4a-2 screens merged in #85: File window Workflows/Subworkflows
@@ -33,13 +36,16 @@ This is the live status snapshot; plans and logs preserve dated decisions.
   tab, "Send back to calling workflow". 4b child runs (backend and CLI) merged
   in #87: the Subworkflow node (hidden in the selector until 4c), call tree,
   limits (depth 4, 64 live), file hand-over, prompts, pause and stop, run
-  records, validation and benchmark. Next: EX design, then 4c (TUI).
+  records, validation and benchmark. EX is open as #89, awaiting review;
+  next is 4c (TUI). #89 owns Execution, Vault log, run cards/list, recovery
+  routing, writer labels and the Execution profile.
   [Proposal](SUBWORKFLOWS_PROPOSAL.md).
 - Keymap phase 3 follows the deletion PR: Node Config, Node Selector,
   Workflow Library and Help, now that 4a-2 is merged. Keep visible wording
   unchanged unless correcting a confirmed mismatch, with before/after text.
-  Execution design and samples are separate work; neither task edits
-  `frontend/screens/execution.py`. Other migration topics and Settings
+  Editor and Execution profile work waits for #89 to merge. The deletion
+  follow-up changes only messages in `editor.py`; it does not edit map logic,
+  Execution, Vault log or recovery screens. Other migration topics and Settings
   rebinding remain deferred. [Scope](PROJECT_BACKLOG.md#near-term-project--frontend-command-ui-toolkit).
 - Work order: [Node Contract Plan](NODE_CONTRACT_PLAN.md). Long-term direction:
   [Distributed Plan](DISTRIBUTED_BUILD_PLAN.md), [Stash](STASH_PROPOSAL.md).
@@ -47,11 +53,15 @@ This is the live status snapshot; plans and logs preserve dated decisions.
 
 ## Verification and environment — 2026-10-19
 
-- Main `a31d721`: owner-reported full suite **1793 passed**. Deletion phase 2:
-  **1848 passed in 265.69s (0:04:25)**; the 55 new tests cover topology, durable recovery,
+- Main `b5426ab` includes #88: **1848 passed in 265.69s (0:04:25)**.
+  Picker follow-up: **1856 passed in 265.73s (0:04:25)**. The 55 phase-2 tests
+  cover topology, durable recovery,
   stale plans, conflicts and mounted form/picker flows. Production CSS and
   actual keys checked at 60/100/140 columns; SVG and text captures retained.
-  Tests set `AOTN_DATA_DIR` before importing the backend.
+  The follow-up adds eight failing-first checks for compact geometry, wrapped
+  rows on resize and the requested wording. Both reformatted test files retain
+  their original assertions and setup (AST comparison). Tests set
+  `AOTN_DATA_DIR` before importing the backend.
 - Link/anchor, whole-archive and session-transfer checks: see
   [PR C verification](audits/docs_audit_2026_10_17/PR_C_VERIFICATION.md).
   The active set is 17 core docs plus SUBWORKFLOWS_PROPOSAL and
@@ -72,7 +82,8 @@ This is the live status snapshot; plans and logs preserve dated decisions.
 - Deletion Q1–Q5 answered October 19: keep/reset every affected Beacon, end a
   deleted Beacon's branch, preview partial restore, save removed Branch paths
   and offer optional recovery, preserve warning levels. Owner approved #86;
-  phase 2 awaits PR review. Saved-path expiry remains undecided, so retain
+  phase 2 merged in #88; its small review follow-up is pending. Saved-path
+  expiry remains undecided, so retain
   entries for now.
 - Only the retained audit report survived; original CSVs/evidence are absent.
   The rebuilt source map and whole archives preserve the migration trail.

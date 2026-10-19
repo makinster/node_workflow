@@ -15,9 +15,11 @@ class BranchKeepSelectorScreen(KeymapScreenMixin, ModalScreen):
     BINDINGS = bindings_for(KEYMAP)
     DEFAULT_CSS = '''
     BranchKeepSelectorScreen #modal-card.group-delete-card {
-        height: 80%; max-height: 90%; width: 76; max-width: 95%;
+        height: auto; max-height: 90%; width: 76; max-width: 95%;
     }
-    BranchKeepSelectorScreen #branch-keep-list { height: 1fr; min-height: 3; }
+    BranchKeepSelectorScreen #branch-keep-list {
+        height: auto; min-height: 1; scrollbar-gutter: stable;
+    }
     BranchKeepSelectorScreen .modal-help { height: auto; }
     '''
 
@@ -45,7 +47,7 @@ class BranchKeepSelectorScreen(KeymapScreenMixin, ModalScreen):
                                       else f'Keep which branch of: {self.branch_label}?'), classes='modal-title', markup=False)
             yield Static('', id='path-count', classes='modal-help')
             yield ListView(id='branch-keep-list')
-            yield Static(self.prompt or ('Shared nodes stay. Z restores the group.' if self.grouped else
+            yield Static(self.prompt or ('Shared nodes stay. Z brings them back.' if self.grouped else
                 'Other branches and their nodes will be permanently deleted.'), id='path-preview', classes='modal-help', markup=False)
             yield Static('Space/E toggle | W/S move | Enter apply | Esc cancel' if self.grouped else
                          '↑↓ navigate  ENTER keep  ESC cancel', classes='modal-help')
@@ -59,10 +61,33 @@ class BranchKeepSelectorScreen(KeymapScreenMixin, ModalScreen):
         focus_list(self.app, view, len(self.ports))
         self._update()
 
+    def on_resize(self):
+        self.call_after_refresh(self._fit_list)
+
+    def _fit_list(self):
+        """Fit short lists; reserve space for controls before capping long ones."""
+        if not self.is_mounted:
+            return
+        card = self.query_one('#modal-card')
+        view = self.query_one('#branch-keep-list', ListView)
+        rows_height = sum(row.outer_size.height for row in view.children)
+        controls_height = sum(
+            child.outer_size.height for child in card.children if child is not view
+        )
+        available = max(
+            1, int(self.size.height * 0.9) - card.styles.gutter.height - controls_height
+        )
+        height = min(max(1, rows_height), available)
+        if view.styles.height.is_auto or view.styles.height.value != height:
+            view.styles.height = height
+            # Recheck after layout settles: the scrollbar can change wrapping.
+            self.set_timer(0.02, self._fit_list)
+
     def _label(self, port):
         return (('[x] ' if port in self.selected else '[ ] ') if self.grouped else '') + self.port_labels.get(port, port)
 
     def _update(self):
+        self.call_after_refresh(self._fit_list)
         if not self.grouped:
             return
         count = len(self.selected)

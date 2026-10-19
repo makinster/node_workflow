@@ -1,0 +1,18 @@
+╭────────────────────────────────────────────────────╮
+│                                                    │
+│  Delete Dispatch — keep 1 path                     │
+│  Selected 1 / 1                                    │
+│  [x] Path 0                                        │
+│  [ ] Path 1                                        │
+│  [ ] Path 2                                        │
+│  [ ] Path 3                                        │
+│  Deletes 6 nodes. Shared nodes stay. Z brings      │
+│  them back.                                        │
+│  Space/E toggle | W/S move | Enter apply | Esc     │
+│  cancel                                            │
+│                                                    │
+│  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔                  │
+│       Delete          Cancel                       │
+│  ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁                  │
+│                                                    │
+╰────────────────────────────────────────────────────╯
