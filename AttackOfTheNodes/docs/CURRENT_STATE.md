@@ -30,6 +30,11 @@ This is the only live status snapshot; older logs/plans retain dated history.
   4a-1 is merged (#80), with 4a-2 config screens in progress separately.
   Docs PR C follows B.
   The owner merges, or explicitly asks a reviewer to.
+- Awaiting review: editor fixes on `fix/insert-fan-in-error-path` (insert
+  before a node with two parents keeps it; HTTP Request and JSON Path get no
+  error path by default; failure paths keep the normal path's colour;
+  deleting a node with an error handler asks, then removes the handler too).
+  Branch-count reduction and a deletion review are in the backlog.
 - Work order: [Node Contract Plan](NODE_CONTRACT_PLAN.md). Long-term decisions:
   [Distributed Build Plan](DISTRIBUTED_BUILD_PLAN.md), [Stash](STASH_PROPOSAL.md).
 

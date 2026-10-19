@@ -16,11 +16,17 @@ from backend.validator import validate_workflow
 from backend.node_errors import ERROR_PORT, MUX_DEFAULT_PORT
 from frontend.keymap import EDITOR, bindings_for
 from frontend.keymap_runtime import KeymapScreenMixin
-from frontend.error_mux_ui import ERROR_MUX_NODE_TYPE, inline_mux_for
-from frontend.error_paths import editor_output_ports
+from frontend.error_mux_ui import (
+    ERROR_MUX_NODE_TYPE,
+    guarded_node_ids,
+    inline_mux_for,
+    nodes_only_reached_from,
+)
+from frontend.error_paths import SHOW_ERROR_PATH, editor_output_ports
 from frontend.node_labels import friendly_label, friendly_labels
 from frontend.screens.branch_keep_selector_screen import BranchKeepSelectorScreen
 from frontend.screens.branch_selector import BranchSelectorScreen
+from frontend.screens.confirm import ConfirmScreen
 from frontend.screens.error_details import ErrorDetailsScreen
 from frontend.screens.merge_beacon_selector import MergeBeaconSelectorScreen
 from frontend.screens.node_config import (
@@ -464,7 +470,104 @@ class EditorScreen(KeymapScreenMixin, Screen):
         if node.get("type") == START_NODE_TYPE:
             notifications.cannot_delete_start_node(self.app)
             return
+        if not self.workflow_adapter.is_placeholder(self.selected_node_id):
+            handler = self._error_handler_for(self.selected_node_id)
+            if handler["mux_id"] or handler["branch_nodes"]:
+                node_id = self.selected_node_id
+                self.app.push_screen(
+                    ConfirmScreen(self._error_handler_delete_message(node_id, handler),
+                                  yes_label="Delete", no_label="Cancel"),
+                    lambda confirmed: self._delete_with_error_handler(node_id, bool(confirmed)),
+                )
+                return
 
+        self._do_delete(True)
+
+    def _error_handler_for(self, node_id: str) -> Dict[str, Any]:
+        """The node's attached error handling: its inline Error Mux and the
+        nodes only its error branches reach (its own ``error`` path and the
+        mux's recovery branches). The mux's No error path is not included."""
+        mux_id = inline_mux_for(self.workflow_map, node_id)
+        if mux_id and any(
+            other != node_id
+            and self.workflow_map.get_node_data(other) is not None
+            and not self.workflow_adapter.is_placeholder(other)
+            for other in guarded_node_ids(self.workflow_map, mux_id)
+        ):
+            mux_id = None  # another live node still uses this Resolver
+        node = self.workflow_map.get_node_data(node_id) or {}
+        heads = [
+            str(conn.get("target_node_id") or "")
+            for conn in (node.get("connections") or {}).get("outputs", [])
+            if conn.get("source_port") == ERROR_PORT
+        ]
+        skip: Dict[str, Optional[set]] = {node_id: {ERROR_PORT}}
+        if mux_id:
+            routes = {port for port in self.workflow_map.output_ports(mux_id)
+                      if port != MUX_DEFAULT_PORT}
+            mux = self.workflow_map.get_node_data(mux_id) or {}
+            heads += [
+                str(conn.get("target_node_id") or "")
+                for conn in (mux.get("connections") or {}).get("outputs", [])
+                if conn.get("source_port") in routes
+            ]
+            skip[mux_id] = routes
+        # All error branches are walked together, so a shared tail goes too.
+        branch_nodes = nodes_only_reached_from(self.workflow_map, heads, skip_edges=skip)
+        branch_nodes = [other for other in branch_nodes if other not in (node_id, mux_id)]
+        return {"mux_id": mux_id, "branch_nodes": branch_nodes}
+
+    def _error_handler_delete_message(self, node_id: str, handler: Dict[str, Any]) -> str:
+        name = friendly_label(self.workflow_map, node_id)
+        count = len(handler["branch_nodes"])
+        parts = []
+        if handler["mux_id"]:
+            parts.append("its error handler")
+        if count:
+            parts.append(f"{count} node{'s' if count != 1 else ''} on its error branches")
+        return (
+            f"Delete {name}? {' and '.join(parts).capitalize()} will be deleted too. "
+            "The No error path is kept. Undo restores only the node."
+        )
+
+    def _delete_with_error_handler(self, node_id: str, confirmed: bool) -> None:
+        if not confirmed or self.workflow_map.get_node_data(node_id) is None:
+            return
+        handler = self._error_handler_for(node_id)
+        mux_id = handler["mux_id"]
+        if mux_id:
+            # The node continues straight on to the mux's No error path.
+            mux = self.workflow_map.get_node_data(mux_id) or {}
+            kept = [
+                (str(conn.get("target_node_id") or ""), str(conn.get("target_port") or "input"))
+                for conn in (mux.get("connections") or {}).get("outputs", [])
+                if conn.get("source_port") == MUX_DEFAULT_PORT
+            ]
+            node_ports = self.factory.node_output_ports(self.workflow_map.get_node_data(node_id))
+            self.workflow_map.delete_node(mux_id)
+            self.active_branch_ports.pop(mux_id, None)
+            for target_id, target_port in kept:
+                if node_ports and self.workflow_map.get_node_data(target_id) is not None:
+                    self.workflow_map.connect(node_id, node_ports[0], target_id, target_port)
+        for doomed in handler["branch_nodes"]:
+            doomed_node = self.workflow_map.get_node_data(doomed)
+            if doomed_node is None:
+                continue
+            if doomed_node.get("type") == BRANCH_END_NODE_TYPE:
+                self._prune_merge_config_for_beacon(doomed)
+            if self.workflow_adapter.is_placeholder(doomed):
+                self.workflow_adapter.remove_placeholder(doomed, reconnect_gap=False)
+            else:
+                self.workflow_map.delete_node(doomed)
+            self.active_branch_ports.pop(doomed, None)
+        self.active_branch_ports.pop(node_id, None)
+        node = self.workflow_map.get_node_data(node_id) or {}
+        if (node.get("config") or {}).get(SHOW_ERROR_PATH):
+            self.workflow_map.update_node_config(
+                node_id, {key: value for key, value in node["config"].items()
+                          if key != SHOW_ERROR_PATH})
+        self.selected_node_id = node_id
+        self.selected_row = {"kind": "node", "node_id": node_id}
         self._do_delete(True)
 
     def _do_delete(self, confirmed: bool) -> None:
@@ -487,16 +590,37 @@ class EditorScreen(KeymapScreenMixin, Screen):
             ):
                 self._open_branch_keep_selector(self.selected_node_id, metadata)
                 return
-            removed = self.workflow_adapter.remove_placeholder(self.selected_node_id)
-            if removed:
-                self.selected_node_id = None
-                self.selected_row = None
-                self.refresh_from_backend()
-                notifications.tombstone_removed(self.app)
+            doomed = self.workflow_adapter.stub_removal_plan(self.selected_node_id)["doomed"]
+            if doomed:
+                node_id = self.selected_node_id
+                count = len(doomed)
+                self.app.push_screen(
+                    ConfirmScreen(
+                        f"Remove the deleted Error Resolver? {count} node"
+                        f"{'s' if count != 1 else ''} on its error branches will be "
+                        "deleted too. The No error path is kept. This can't be undone.",
+                        yes_label="Delete", no_label="Cancel"),
+                    lambda confirmed: self._remove_stub(node_id, doomed) if confirmed else None,
+                )
+                return
+            self._remove_stub(self.selected_node_id, [])
             return
         self.workflow_adapter.replace_with_placeholder(self.selected_node_id)
         self.refresh_from_backend()
         notifications.node_deleted(self.app)
+
+    def _remove_stub(self, node_id: str, doomed: list) -> None:
+        for doomed_id in doomed:
+            doomed_node = self.workflow_map.get_node_data(doomed_id) or {}
+            if doomed_node.get("type") == BRANCH_END_NODE_TYPE:
+                self._prune_merge_config_for_beacon(doomed_id)
+            self.active_branch_ports.pop(doomed_id, None)
+        self.active_branch_ports.pop(node_id, None)
+        if self.workflow_adapter.remove_placeholder(node_id):
+            self.selected_node_id = None
+            self.selected_row = None
+            self.refresh_from_backend()
+            notifications.tombstone_removed(self.app)
 
     def _open_branch_keep_selector(
         self, node_id: str, metadata: dict
@@ -1443,21 +1567,28 @@ class EditorScreen(KeymapScreenMixin, Screen):
                 self.factory.node_input_ports(existing) if existing_meta else []
             )
             if target_output_ports and existing_input_ports:
-                occupied = {
-                    conn.get("target_port")
-                    for conn in (existing.get("connections") or {}).get("inputs", [])
-                }
-                available = [port for port in existing_input_ports if port not in occupied]
-                if not available:
-                    return
+                # The new node takes over the port it was cut from, even when
+                # another parent feeds that port too (a fan-in, no merge).
+                freed = existing_connection.get("target_port", "input")
+                if freed in existing_input_ports:
+                    reconnect_port = freed
+                else:
+                    occupied = {
+                        conn.get("target_port")
+                        for conn in (existing.get("connections") or {}).get("inputs", [])
+                    }
+                    available = [port for port in existing_input_ports if port not in occupied]
+                    if not available:
+                        return
+                    reconnect_port = self._target_input_port_for_connection(
+                        target_node_id, target_output_ports[0], existing_target,
+                        available,
+                    )
                 self.workflow_map.connect(
                     target_node_id,
                     target_output_ports[0],
                     existing_target,
-                    self._target_input_port_for_connection(
-                        target_node_id, target_output_ports[0], existing_target,
-                        available,
-                    ),
+                    reconnect_port,
                 )
 
     def _refresh_details(self) -> None:
@@ -1917,7 +2048,13 @@ class EditorScreen(KeymapScreenMixin, Screen):
                     active_port = output_ports[0]
                 self.active_branch_ports[current_node_id] = active_port
                 port_labels = self._branch_port_labels(node)
-                active_color_key = branch_path_color_key(branch_index, active_port)
+                normal_ports = [
+                    port for port in output_ports if not self._is_recovery_port(node, port)]
+                if current_branch_color_key and normal_ports == [active_port]:
+                    # Failure paths do not re-colour a node's one normal path.
+                    active_color_key = current_branch_color_key
+                else:
+                    active_color_key = branch_path_color_key(branch_index, active_port)
                 rows.append(
                     {
                         "kind": "branch_select",

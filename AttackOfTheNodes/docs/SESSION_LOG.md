@@ -4,6 +4,53 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-18 — Editor fixes: insert with two parents, error paths, colours
+
+Branch `fix/insert-fan-in-error-path`, from `main` at `90182f0`. Owner bug
+report on the "Test Bench - C1/C2 checks" workflow. Before: 1708 passed.
+Tests are in `test_insert_fan_in_error_path.py`.
+
+- **Insert lost the nodes below it** when the next node had a second parent
+  (Pause is fed by Dice and Save note): its input looked occupied, so the
+  new node was never connected to it. The inserted node now takes over the
+  port it was cut from.
+- **No error path by default.** HTTP Request and JSON Path no longer list
+  `error` as an output; their failures are coded `NodeError`s that go to
+  the default handler until the node's Errors tab catches them. The
+  `error` payload is now the engine's error record (code, message,
+  details), the same as every other node.
+- **Colours:** failure paths (a node's error path, an Error Mux's
+  recovery branches) no longer re-colour the node's one normal path,
+  No error included; the failure paths keep their own colours.
+- **Deleting a node with an error handler** (owner follow-up): it asks
+  first, then removes the inline Error Mux and every node only its error
+  branches reach (its wired `error` path, the mux's recovery branches).
+  The node continues on the mux's No error path. Cancel changes nothing;
+  undo restores only the node. Nodes without a handler delete as before.
+- **Error Resolver missing from the editor** (owner, C1/C2): undoing a
+  saved delete re-added the node's old input even when that output now led to
+  a new Resolver, so HTTP's output had two targets and the editor (and the
+  run) followed only the first. Restore now keeps the wiring the tombstone
+  gained, never gives an output a second target, and lets two parents share
+  an ordinary input again. The validator warns (`ignored_fan_out`) when a
+  Resolver's No error path can never run because its node also leads
+  elsewhere; that is the state the owner's saved C1/C2 file is in.
+- **Removing a deleted node's stub** (owner, "user test"): removing an
+  Error Resolver's stub joined its parent to every path after it, so a
+  successful run went down the old error branch. The gap is now bridged to
+  one target only. An Error Resolver keeps its No error path and, after a
+  confirm, deletes the nodes only its error branches reach. Other paths of
+  a multi-path node (Conditional's second path) are left loose for the
+  deletion review. Branch nodes keep their keep-one picker.
+- **Review of 47e7580** (three more cases, each reproduced failing first):
+  deleting one of two nodes that share a Resolver keeps the Resolver and
+  its branches for the other; error routes that share a tail are walked
+  together, so the tail goes too; undo drops an input from a path that no
+  longer exists (a Branch reduced from three paths to two) instead of
+  keeping half an edge.
+- Logged for later in the backlog: reducing a Branch node's path count,
+  and a deletion review with the owner. After: 1728 passed (20 new tests).
+
 ## 2026-10-18 — Deterministic File-Picker Test Teardown
 
 Branch `codex/file-picker-teardown`, fresh from `origin/main` at `90182f0`

@@ -599,10 +599,12 @@ presentation of `NodeFactory` metadata only.
   `node_output_port_metadata(node)`; when a config save removes a port, the
   editor drops that port's connections
   (`WorkflowMap.prune_removed_output_connections`).
-- Do not add `error` to a node's `output_ports` just so the editor can wire
-  it: every node can show its error path from its Errors section (P3). List
-  it only when failing along `error` is part of the node's normal contract
-  (HTTP Request, JSON Path), so the editor always shows it.
+- Never add `error` to a node's `output_ports`: every node can show its
+  error path from its Errors section (P3), and until the user picks errors
+  to handle there, failures go to the default handler. A node fails by
+  calling `context.signal_error(NodeError(code, message, details=...))`
+  with a declared code, never by routing a payload to `error` itself
+  (owner, 2026-10-18; HTTP Request and JSON Path used to list it).
 - A node class may set `catches_upstream_errors = True` (Error Mux does):
   a failure of the node feeding its `input` is routed to it when
   `accepts_error_code(code)` is true, so it can sit inline after the node.

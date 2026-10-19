@@ -26,6 +26,7 @@ from .file_paths import normalize_local_path
 from .node_errors import (
     ENGINE_ERROR_DEFINITIONS,
     ERROR_PORT,
+    MUX_DEFAULT_PORT,
     MUX_INPUT_PORT,
     UNMATCHED_ROUTE,
     mux_has_unmatched_route,
@@ -291,15 +292,23 @@ def validate_workflow(
 
     # An ordinary output follows its first connection only
     # (WorkflowMap.find_next_node_id). The `error` port routes by code and an
-    # inline Error Mux on a normal output is a catch, not a second path.
+    # inline Error Mux on a normal output is a catch, not a second path,
+    # unless the mux has a No error path too: that path then never runs.
     for node_id, data in all_nodes.items():
         by_port: Dict[str, List[str]] = {}
         for conn in data.get("connections", {}).get("outputs", []):
             port = str(conn.get("source_port") or "default")
             target = str(conn.get("target_node_id") or "")
-            target_type = (all_nodes.get(target) or {}).get("type")
-            if port == ERROR_PORT or (target_type == ERROR_MUX_NODE_TYPE
-                                      and conn.get("target_port") == MUX_INPUT_PORT):
+            target_data = all_nodes.get(target) or {}
+            catch_only = (
+                target_data.get("type") == ERROR_MUX_NODE_TYPE
+                and conn.get("target_port") == MUX_INPUT_PORT
+                and not any(
+                    out.get("source_port") == MUX_DEFAULT_PORT
+                    for out in target_data.get("connections", {}).get("outputs", [])
+                )
+            )
+            if port == ERROR_PORT or catch_only:
                 continue
             by_port.setdefault(port, []).append(target)
         for port, targets in by_port.items():
