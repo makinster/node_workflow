@@ -127,3 +127,130 @@ def test_error_path_keeps_the_normal_path_colour():
     rows = editor._build_visible_rows()
     error_row = [row for row in rows if row["kind"] == "branch_select"][-1]
     assert error_row["active_color_key"] != keys[logger]
+
+
+def test_error_mux_no_error_path_keeps_the_normal_path_colour():
+    from frontend.screens.editor import EditorScreen
+
+    factory, workflow_map = _map()
+    start = workflow_map.add_node("start_node")
+    fan = workflow_map.add_node("branch_node")
+    http = workflow_map.add_node("http_request_node")
+    mux = workflow_map.add_node("error_mux_node")
+    after = workflow_map.add_node("no_op_node")
+    workflow_map.update_node_config(mux, {"routes": [
+        {"id": "r_timeout", "label": "Timeout", "codes": ["timeout"]}]})
+    workflow_map.connect(start, "default", fan, "input")
+    workflow_map.connect(fan, "path_a", http, "input")
+    workflow_map.connect(http, "default", mux, "input")
+    workflow_map.connect(mux, "default", after, "input")
+    editor = EditorScreen(factory, workflow_map)
+
+    rows = editor._build_visible_rows()
+    keys = {row["node_id"]: row["node"].get("_editor_branch_color_key")
+            for row in rows if row["kind"] == "node"}
+    assert keys[after] == keys[http] == keys[mux]
+    editor.active_branch_ports[mux] = "r_timeout"
+    error_row = [row for row in editor._build_visible_rows()
+                 if row["kind"] == "branch_select"][-1]
+    assert error_row["active_color_key"] != keys[http]
+
+
+def _handled_http():
+    """Start → HTTP → Mux; No error → After → End; Timeout → Fix → Fix End."""
+    factory, workflow_map = _map()
+    start = workflow_map.add_node("start_node")
+    http = workflow_map.add_node("http_request_node")
+    mux = workflow_map.add_node("error_mux_node")
+    after = workflow_map.add_node("no_op_node")
+    end = workflow_map.add_node("end_node")
+    fix = workflow_map.add_node("logger_node")
+    fix_end = workflow_map.add_node("end_node")
+    workflow_map.update_node_config(mux, {"routes": [
+        {"id": "r_timeout", "label": "Timeout", "codes": ["timeout"]}]})
+    workflow_map.connect(start, "default", http, "input")
+    workflow_map.connect(http, "default", mux, "input")
+    workflow_map.connect(mux, "default", after, "input")
+    workflow_map.connect(after, "default", end, "input")
+    workflow_map.connect(mux, "r_timeout", fix, "input")
+    workflow_map.connect(fix, "default", fix_end, "input")
+    return factory, workflow_map, dict(
+        start=start, http=http, mux=mux, after=after, end=end, fix=fix, fix_end=fix_end)
+
+
+def _delete_in_editor(factory, workflow_map, node_id, button):
+    from textual.app import App
+
+    from frontend.screens.confirm import ConfirmScreen
+    from frontend.screens.editor import EditorScreen
+
+    class EditorApp(App):
+        def compose(self):
+            yield EditorScreen(factory, workflow_map)
+
+    async def run():
+        app = EditorApp()
+        async with app.run_test() as pilot:
+            await pilot.pause(0.03)
+            editor = app.query_one(EditorScreen)
+            editor.selected_node_id = node_id
+            editor.selected_row = {"kind": "node", "node_id": node_id}
+            editor.action_delete_selected()
+            await pilot.pause(0.03)
+            asked = isinstance(app.screen, ConfirmScreen)
+            message = str(app.screen._message) if asked else ""
+            if asked:
+                await pilot.click(button)
+                await pilot.pause(0.03)
+            return asked, message, editor.workflow_adapter.is_placeholder(node_id)
+
+    return asyncio.run(run())
+
+
+def test_deleting_a_node_with_an_error_handler_asks_and_takes_it_along():
+    factory, workflow_map, ids = _handled_http()
+
+    asked, message, deleted = _delete_in_editor(factory, workflow_map, ids["http"], "#confirm-yes")
+
+    assert asked and "error handler" in message and "No error path is kept" in message
+    assert deleted
+    for gone in ("mux", "fix", "fix_end"):
+        assert workflow_map.get_node_data(ids[gone]) is None, gone
+    # The node now continues on what was the mux's No error path.
+    assert _targets(workflow_map, ids["http"]) == [ids["after"]]
+    assert _targets(workflow_map, ids["after"]) == [ids["end"]]
+
+
+def test_cancelling_the_delete_keeps_the_node_and_its_handler():
+    factory, workflow_map, ids = _handled_http()
+
+    asked, _, deleted = _delete_in_editor(factory, workflow_map, ids["http"], "#confirm-no")
+
+    assert asked and not deleted
+    for kept in ("mux", "fix", "fix_end"):
+        assert workflow_map.get_node_data(ids[kept]) is not None, kept
+
+
+def test_deleting_a_node_without_an_error_handler_does_not_ask():
+    factory, workflow_map, ids = _handled_http()
+
+    asked, _, deleted = _delete_in_editor(factory, workflow_map, ids["after"], "#confirm-yes")
+
+    assert not asked and deleted
+
+
+def test_a_wired_error_path_is_deleted_with_its_node():
+    factory, workflow_map = _map()
+    start = workflow_map.add_node("start_node")
+    logger = workflow_map.add_node("logger_node")
+    after = workflow_map.add_node("no_op_node")
+    handler = workflow_map.add_node("no_op_node")
+    workflow_map.connect(start, "default", logger, "input")
+    workflow_map.connect(logger, "default", after, "input")
+    workflow_map.connect(logger, "error", handler, "input")
+
+    asked, _, deleted = _delete_in_editor(factory, workflow_map, logger, "#confirm-yes")
+
+    assert asked and deleted
+    assert workflow_map.get_node_data(handler) is None
+    assert workflow_map.get_node_data(after) is not None

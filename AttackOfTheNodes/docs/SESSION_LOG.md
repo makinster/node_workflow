@@ -8,7 +8,7 @@ overhaul.
 
 Branch `fix/insert-fan-in-error-path`, from `main` at `90182f0`. Owner bug
 report on the "Test Bench - C1/C2 checks" workflow. Before: 1708 passed.
-After: 1713 passed (5 new tests in `test_insert_fan_in_error_path.py`).
+Tests are in `test_insert_fan_in_error_path.py`.
 
 - **Insert lost the nodes below it** when the next node had a second parent
   (Pause is fed by Dice and Save note): its input looked occupied, so the
@@ -19,8 +19,16 @@ After: 1713 passed (5 new tests in `test_insert_fan_in_error_path.py`).
   the default handler until the node's Errors tab catches them. The
   `error` payload is now the engine's error record (code, message,
   details), the same as every other node.
-- **Colours:** a node's error path no longer re-colours the normal path
-  below it; the error path keeps its own colour.
+- **Colours:** failure paths (a node's error path, an Error Mux's
+  recovery branches) no longer re-colour the node's one normal path,
+  No error included; the failure paths keep their own colours.
+- **Deleting a node with an error handler** (owner follow-up): it asks
+  first, then removes the inline Error Mux and every node only its error
+  branches reach (its wired `error` path, the mux's recovery branches).
+  The node continues on the mux's No error path. Cancel changes nothing;
+  undo restores only the node. Nodes without a handler delete as before.
+- Logged for later in the backlog: reducing a Branch node's path count,
+  and a deletion review with the owner. After: 1718 passed (10 new tests).
 
 ## 2026-10-18 — Step 4a-1: Contracts (Backend and CLI)
 
