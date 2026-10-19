@@ -1,10 +1,13 @@
 # Editor deletion review proposal
 
-**2026-10-19 — owner answers recorded; revised screens await review.**
-No implementation in this PR. The answers below supersede the original Q1–Q5
-alternatives. Phase 2 starts only after the owner approves this update **and
-#85 merges**, from fresh `origin/main`. #82 is already merged.
-[Current State](CURRENT_STATE.md) owns delivery status.
+**2026-10-19 — owner approved #86; #85 and #87 merged.**
+Phase 2 is implemented from fresh `origin/main` **a31d721** on
+`codex/deletion-phase2`, awaiting owner review. This document retains the
+approved decisions and original sample wording; dated “Current” sections
+below describe the proposal's original baseline, not the new implementation.
+See [rendered samples and verification](audits/deletion_phase2_2026_10_19/README.md)
+and [Current State](CURRENT_STATE.md) for delivery status. Global session
+Ctrl+Z remains later work; saved-path expiry remains undecided.
 
 ## Basis and ownership
 
@@ -683,7 +686,7 @@ callable workflows. Any backend-format or Node Config interface change
 requires explicit scope coordination; the owned frontend files are not a license
 to change the engine contract.
 
-**Stop after opening this docs PR.** The owner reviews the recorded answers
-and revised sample screens. Phase 2 waits for that approval **and #85 merging**;
-then start from fresh `origin/main` within the ownership above. Open the phase-2
-PR and stop for the owner too. Neither PR is permission to merge.
+**Delivery gate:** #86 was approved and merged, and #85 merged. Open the
+phase-2 implementation PR and stop for the owner. Opening it is not permission
+to merge. The original proposal samples below remain a design receipt; the
+linked captures show the implemented wording and wrapping.

@@ -1,0 +1,24 @@
+Base: origin/main a31d721
+Branch: codex/deletion-phase2
+Python: /home/makin/src/node_workflow/.venv/bin/python
+Data isolation: AOTN_DATA_DIR=/tmp/aotn-delete-phase2 before backend imports
+
+Failing-first receipts:
+Initial grouped API tests: 13 failed (missing planner API).
+Partial undo retry after reload: 1 failed, then graph suite 28 passed.
+Recovery question clipping: 3 failed at 60/100/140 columns, then passed.
+Separate saved-path/repair rows: 1 failed, then passed.
+
+Full suite: python -m pytest -q
+1848 passed in 265.69s (0:04:25)
+
+Compile: python -m compileall -q <changed Python files> — PASS
+Docs: python docs/audits/docs_audit_2026_10_17/check_consolidation.py — PASS
+72 Markdown files; 425 relative links/anchors; 33 whole archive bodies;
+96 transferred session entries; 19 active docs.
+Whitespace: git diff --cached --check — PASS
+Existing tests retained: test_debug_nodes.py 160 -> 160;
+test_insert_fan_in_error_path.py 20 -> 20.
+
+Captures: production CSS at 60/100/140 columns, 34 rows.
+Native terminal manual checks were not performed.

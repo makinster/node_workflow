@@ -212,12 +212,14 @@ def test_deleting_a_node_with_an_error_handler_asks_and_takes_it_along():
 
     asked, message, deleted = _delete_in_editor(factory, workflow_map, ids["http"], "#confirm-yes")
 
-    assert asked and "error handler" in message and "No error path is kept" in message
+    assert asked and "Error Resolver" in message and "No error continues" in message
     assert deleted
     for gone in ("mux", "fix", "fix_end"):
         assert workflow_map.get_node_data(ids[gone]) is None, gone
-    # The node now continues on what was the mux's No error path.
-    assert _targets(workflow_map, ids["http"]) == [ids["after"]]
+    # The blocking group stores its one continuation; it is not a live wire.
+    assert _targets(workflow_map, ids["http"]) == []
+    group = workflow_map.get_node_data(ids["http"])["config"]["delete_group"]
+    assert [c["target_node_id"] for c in group["keep"]] == [ids["after"]]
     assert _targets(workflow_map, ids["after"]) == [ids["end"]]
 
 
@@ -382,6 +384,7 @@ def _remove_stub_in_editor(factory, workflow_map, node_id, button="#confirm-yes"
     from textual.app import App
 
     from frontend.screens.confirm import ConfirmScreen
+    from frontend.screens.branch_keep_selector_screen import BranchKeepSelectorScreen
     from frontend.screens.editor import EditorScreen
 
     class EditorApp(App):
@@ -401,7 +404,10 @@ def _remove_stub_in_editor(factory, workflow_map, node_id, button="#confirm-yes"
                 await pilot.pause(0.03)
                 if isinstance(app.screen, ConfirmScreen):
                     asked.append(str(app.screen._message))
-                    await pilot.click(button)
+                    await pilot.click("#confirm-yes" if step == 0 else button)
+                    await pilot.pause(0.03)
+                elif isinstance(app.screen, BranchKeepSelectorScreen):
+                    await pilot.press('e', 'enter')
                     await pilot.pause(0.03)
                 if step == 0 and save:
                     editor.workflow_adapter.materialize_deleted_nodes()
@@ -416,7 +422,7 @@ def test_removing_a_resolver_stub_keeps_only_the_no_error_path():
 
         asked = _remove_stub_in_editor(factory, workflow_map, ids["mux"], save=save)
 
-        assert len(asked) == 1 and "No error path is kept" in asked[0], save
+        assert len(asked) == 2 and "No error continues" in asked[0] and "cannot be undone" in asked[1], save
         assert workflow_map.get_node_data(ids["mux"]) is None
         assert _targets(workflow_map, ids["http"]) == [ids["ask"]], save
         for gone in ("note", "note_end"):
@@ -425,13 +431,19 @@ def test_removing_a_resolver_stub_keeps_only_the_no_error_path():
 
 
 def test_cancelling_the_resolver_stub_removal_keeps_everything():
+    from copy import deepcopy
+    from frontend.editor_workflow_adapter import EditorWorkflowAdapter
     factory, workflow_map, ids = _resolver_with_branches()
-
+    before = deepcopy(workflow_map.get_all_node_data())
     asked = _remove_stub_in_editor(factory, workflow_map, ids["mux"], button="#confirm-no")
-
-    assert len(asked) == 1
-    for kept in ("mux", "note", "note_end"):
-        assert workflow_map.get_node_data(ids[kept]) is not None, kept
+    assert len(asked) == 2
+    stub = workflow_map.get_node_data(ids['mux'])
+    assert stub['type'] == 'tombstone_node'
+    assert ids['note'] in stub['config']['delete_group']['before']
+    assert workflow_map.get_node_data(ids['note']) is None
+    # Cancel preserved the whole archived group, including its original wiring.
+    EditorWorkflowAdapter(workflow_map, factory).undo_placeholder(ids['mux'])
+    assert workflow_map.get_all_node_data() == before
 
 
 def test_a_node_the_no_error_path_also_reaches_is_kept():
@@ -456,8 +468,9 @@ def test_removing_a_conditional_stub_never_gives_an_output_two_targets():
 
     asked = _remove_stub_in_editor(factory, workflow_map, check)
 
-    assert asked == []
+    assert len(asked) == 1  # the keep picker, then final-removal confirmation
     assert _targets(workflow_map, start) == [yes]
+    assert workflow_map.get_node_data(no) is None
 
 
 # -- Review of #82 at 47e7580.
@@ -481,9 +494,10 @@ def test_deleting_one_node_keeps_a_resolver_another_node_still_uses():
     workflow_map.connect(mux, "default", after, "input")
     workflow_map.connect(mux, "r_url", fix, "input")
 
-    asked, _, deleted = _delete_in_editor(factory, workflow_map, first, "#confirm-yes")
+    asked, message, deleted = _delete_in_editor(factory, workflow_map, first, "#confirm-yes")
 
-    assert deleted and not asked
+    assert deleted and asked
+    assert "another node uses it" in message
     for kept in (mux, fix, after):
         assert workflow_map.get_node_data(kept) is not None, kept
     assert _targets(workflow_map, second) == [mux]
@@ -504,7 +518,14 @@ def test_error_routes_that_share_a_tail_are_deleted_together():
     assert asked and deleted
     for gone in (mux, fix, other, fix_end):
         assert workflow_map.get_node_data(gone) is None, gone
-    assert _targets(workflow_map, ids["http"]) == [ids["after"]]
+    assert _targets(workflow_map, ids["http"]) == []
+    group = workflow_map.get_node_data(ids['http'])['config']['delete_group']
+    assert [c['target_node_id'] for c in group['keep']] == [ids['after']]
+    from frontend.editor_workflow_adapter import EditorWorkflowAdapter
+    EditorWorkflowAdapter(workflow_map, factory).undo_placeholder(ids['http'])
+    for restored in (mux, fix, other, fix_end):
+        assert workflow_map.get_node_data(restored) is not None
+    assert _targets(workflow_map, ids['http']) == [mux]
 
 
 def test_undo_drops_an_input_from_a_path_that_no_longer_exists():
