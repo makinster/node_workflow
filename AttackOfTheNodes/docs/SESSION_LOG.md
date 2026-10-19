@@ -6,6 +6,43 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-19 — Deletion review phase 2
+
+Branch `codex/deletion-phase2`, from freshly fetched `origin/main` `a31d721`
+in `/home/makin/src/nw-docs`. Owner approved #86; #85/#87 are merged.
+This PR awaits owner review; no merge or keymap phase 3 work in this change.
+
+- First deletion of Branch/Conditional asks for exactly one kept path and
+  archives the owner plus exclusive dropped paths in one blocking group stub.
+  Resolver deletion keeps No error; shared live handlers/tails survive.
+  Ownership planning reuses `stub_removal_plan` and `nodes_only_reached_from`;
+  disconnected outside parents, cycles, terminals and orphan Merges are covered.
+- Merge deletion keeps and resets every connected Beacon, including Beacons
+  with other Merge targets. Beacon deletion ends its branch before and after
+  Save; final removal does not bypass into Merge. Warning levels are unchanged.
+- Group Z restores nodes, connections and related settings after save/reload.
+  Conflicts are shown before partial restore; unresolved changes remain saved
+  and retries recognize previously restored nodes. Final removal and different-
+  type replacement confirm permanent loss and use only the stored continuation.
+- Count reductions require exactly N old paths, remap their names/seeds/edges/
+  Merge keys and save removed paths under the live Branch. Count increases
+  offer Recover / Leave empty / Cancel, with an optional zero-to-slots picker
+  when needed. Unchosen paths remain saved; a partially recovered head is not
+  offered twice. No expiry is implemented. Saved paths and unresolved repairs
+  have distinct rows, separate from live path selection and insertion targets.
+- An editor-owned Branch config subclass defers count saves; cancellation
+  preserves the draft and successful save-and-stay reopens a clean baseline
+  with the same tab/focus. `node_config.py` is unchanged. The editor header
+  adds literal ` [sub]` only for callable workflows; markup previously hid
+  `[IDLE]`, which now displays. No Execution screen or backend edits.
+- Failing tests first, then **1848 passed in 265.69s (0:04:25)**; **55 new tests** cover
+  graph/recovery and mounted form/picker behavior. Legacy regression cases
+  remain. Compile and docs link/archive checks and `git diff --check` pass.
+  Tests set `AOTN_DATA_DIR` before backend imports, keeping owner settings safe.
+  [Production CSS captures and wording comparison](audits/deletion_phase2_2026_10_19/README.md)
+  include 60/100/140-column SVG/text and header before/after text. Native
+  terminal manual checks were not performed.
+
 ## 2026-10-19 — Step 4b: Child Runs (Backend and CLI)
 
 Branch `dist/step4b-child-runs`, from main `1addbf9`. Design C11–C20, C22.

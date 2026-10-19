@@ -7,72 +7,18 @@ headless-export and always-running watcher sections below carry superseded
 banners. Their text is kept for history. Execution of steps 1–3 plus the
 ESP32 slice was authorized on 2026-10-12.
 
-## Owner live-test findings — 2026-10-13 (noted, not yet investigated)
-
-Reported by the owner after using the app during UX5. Several are old. Each
-needs a reproduction before any fix is claimed; investigate when the
-affected area is next touched.
-
-1. **Older nodes are out of date.** Some do not work well together; port
-   expectations look mismatched between neighbours (the data type one side
-   offers versus what the other expects).
-2. **Window placement in the file nodes does not work.** The owner wants
-   window management taken out of the file I/O nodes (File Write's "Open
-   after write" placement, File Manager) and given to dedicated window
-   nodes. `window_control_node` / `backend/window_manager.py` (FO6, see
-   "Deferred — File/Window Output Follow-Ups") were a start but have not
-   been live tested.
-3. **Pass-through missing.** Some nodes the owner expects to forward their
-   incoming payload have no pass-through option. List which ones first.
-4. **Vault payload config UI is outdated on many nodes**: not on the
-   current shared Vault read/write controls.
-5. **Reveal does not autoscroll.** When a toggle reveals dependent controls,
-   the new widget appears below the viewport. The agreed rule is to scroll
-   just enough to show the whole revealed widget; it keeps getting lost in
-   new node UIs (see `NODE_CONFIG_VISIBILITY_SCROLL_AUDIT.md`,
-   `UI_QUICK_REFERENCE.md`). A shared helper or a `check_ui` test would stop
-   it regressing.
-6. **Error UI keyboard navigation does not work while a workflow runs**
-   (the error/recovery modals during execution).
-
-7. **Lazy loading for busy node editors** (owner, during UX6). A 64-path
-   Branch editor still takes ~0.55 s to open, almost all of it Textual
-   building and styling 64 dropdowns. Owner's rule for a fix: show and make
-   keyboard-navigable what is loaded first, mount the rest afterwards, and
-   queue Save / Close until everything has loaded.
-
-A node audit of PR #51 (same day) confirmed several of these with
-reproductions and proposed a node contract plan:
-[NODE_CONTRACT_PLAN.md](NODE_CONTRACT_PLAN.md) (proposed, not approved).
-
 ## Owner live-test findings — 2026-10-18 (editor deletion and branch count)
 
-The owner sees deletion bugs as mostly cases never designed, not broken code.
-#82 handled deleting a node that has an error handler (it asks, then removes
-the Error Mux and its error branches and keeps the No error path), and made
-removing a stub bridge one path only (a Resolver stub drops its error
-branches after a confirm). Still open, approved direction 2026-10-18:
+#82 fixed insertion, error-path and stub-removal issues. The owner approved the
+[deletion review](DELETION_REVIEW_PROPOSAL.md) and October 19 answers (#86).
+Phase 2 is implemented on `codex/deletion-phase2` from `a31d721`, awaiting review:
+grouped delete/restore, exact-count keep picks, saved removed paths under a live
+Branch, optional recovery on count increase and unchanged warning levels.
+Saved-path expiry is undecided; keep records until the owner decides.
 
-- **Grouped delete:** a node that owns branches is deleted with the nodes
-  only its dropped branches reach, as one action. One undo restores all of
-  it; after a save the group is one stub that stores the branch nodes, and
-  removing the stub removes the group. The validator stays strict about
-  unlinked nodes. Error Resolver keeps No error automatically; Branch and
-  Conditional ask which paths to keep (the same picker as below).
-- **Session undo history** (later): in-memory, multi-step Ctrl+Z for every
-  edit, cleared when the app closes. Grouped deletes move onto it then.
-
-- **Reducing a Branch node's path count** in Node Config after its paths
-  are filled leaves the removed paths' nodes behind. Wanted: a picker
-  that asks which branches to keep. Choosing is mandatory, and it is a
-  multiselect with exactly as many picks as the new count. Unpicked branches
-  are deleted the same way as U1's "Delete branch". Show sample screens
-  first. This reuses `BranchKeepSelectorScreen` (single pick today) and
-  `prune_branch_tombstone`.
-- **Deletion review:** go through the delete cases (Branch, Merge and Merge
-  Beacon, Error Mux itself, Conditional, nodes shared by two parents,
-  tombstone removal and undo) and decide each one with the owner before
-  coding.
+Later: session undo history, in-memory multi-step Ctrl+Z for every graph edit,
+cleared when the app closes; no rollback of run effects. Existing Z restores a
+selected deleted group. [Current State](CURRENT_STATE.md) tracks delivery.
 
 ## Payload/file implementation — 2026-10-07
 
@@ -832,14 +778,13 @@ only serializable representations.
 
 ## Editor deletion review
 
-The approved direction is recorded on the pending #82 branch; the
-[Deletion Review Proposal](DELETION_REVIEW_PROPOSAL.md) checks that code and
-keeps proposed case semantics separate from merged behavior.
+The [Deletion Review Proposal](DELETION_REVIEW_PROPOSAL.md) retains the
+approved decisions and sample screens; dated baseline observations are historical.
 
 | Stage | Review/delivery gate |
 |---|---|
-| 1 — proposal and samples | `codex/deletion-proposal`, 2026-10-18; docs only, owner reviews the case decisions and plain-text screens. |
-| 2 — implementation | Only after owner approval and #82 merges, fresh main; grouped deletes/undo, shared exact-count keep picker and Editor-owned count-reduction interception. Node Config remains with 4a-2. |
+| 1 — proposal and samples | #84 and owner-approved answers #86 merged; #85 prerequisite merged. |
+| 2 — implementation | `codex/deletion-phase2`, from fresh `a31d721`, awaits owner review. Grouped deletes/partial restore, saved Branch paths, exact-count keep and optional recovery pickers; Editor-owned deferred count saves, no `node_config.py` edits. |
 | Later — session history | In-memory multi-step Ctrl+Z for edits; no run-side-effect rollback or automatic loss of saved recovery records. |
 
 ## Near-Term Project — Frontend Command UI Toolkit

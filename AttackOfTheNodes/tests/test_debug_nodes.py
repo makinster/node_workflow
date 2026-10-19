@@ -1014,6 +1014,9 @@ async def _test_editor_x_on_deleted_node_permanently_deletes():
 
         screen.action_delete_selected()
         await pilot.pause(0.03)
+        # Final removal discards durable recovery data only after confirmation.
+        await pilot.press("y")
+        await pilot.pause(0.03)
         assert wm.get_node_data(logger) is None
         assert wm.is_dirty is True
         # Permanently removing the tombstone shifts downstream nodes up: the
@@ -1062,41 +1065,25 @@ async def _test_editor_branch_node_deletes_through_keep_selector():
         screen.selected_node_id = branch
         screen.selected_row = {"kind": "node", "node_id": branch}
 
-        # First delete: connected branch node is NOT blocked; it soft-tombstones
-        # while the downstream branches stay live in the graph.
+        # The first delete previews the entire group; no graph change yet.
         screen.action_delete_selected()
         await pilot.pause(0.03)
-        assert screen.workflow_adapter.is_placeholder(branch)
-        assert wm.get_node_data(branch)["type"] == "branch_node"
-        assert wm.get_node_data(logger_a) is not None
-        assert wm.get_node_data(logger_b) is not None
-
-        # Second delete: opens the branch keep selector instead of orphaning.
-        captured = {}
-        original_push_screen = app.push_screen
-
-        def capture_push_screen(screen_to_push, *args, **kwargs):
-            captured["screen"] = screen_to_push
-            captured["callback"] = args[0] if args else kwargs.get("callback")
-            return None
-
-        app.push_screen = capture_push_screen
-        try:
-            screen.action_delete_selected()
-            await pilot.pause(0.03)
-        finally:
-            app.push_screen = original_push_screen
-
-        assert isinstance(captured.get("screen"), BranchKeepSelectorScreen)
-        assert captured.get("callback") is not None
-
-        # User keeps path_a: path_b and its node are pruned, upstream rewired.
-        captured["callback"]({"kept_port": "path_a"})
+        assert isinstance(app.screen, BranchKeepSelectorScreen)
+        assert not screen.workflow_adapter.is_placeholder(branch)
+        await pilot.press("e")  # choose path_a, without automatically applying
         await pilot.pause(0.03)
-
-        assert wm.get_node_data(branch) is None
+        assert wm.get_node_data(logger_b) is not None
+        await pilot.press("enter")
+        await pilot.pause(0.03)
+        assert wm.get_node_data(branch)["type"] == "tombstone_node"
         assert wm.get_node_data(logger_a) is not None
         assert wm.get_node_data(logger_b) is None
+        # Final removal uses that stored continuation, with no second picker.
+        screen.action_delete_selected()
+        await pilot.pause(0.03)
+        await pilot.press("y")
+        await pilot.pause(0.03)
+        assert wm.get_node_data(branch) is None
         start_outputs = wm.get_node_data(start)["connections"]["outputs"]
         assert any(c.get("target_node_id") == logger_a for c in start_outputs)
 
@@ -1141,20 +1128,19 @@ async def _test_editor_merge_node_delete_rewires_home_branch_and_disconnects_bea
         screen.selected_node_id = merge
         screen.selected_row = {"kind": "node", "node_id": merge}
 
-        # First delete: merge node is no longer protected, soft-tombstones.
+        # Confirm the grouped Merge delete before its Beacons disconnect.
         screen.action_delete_selected()
         await pilot.pause(0.03)
+        assert not screen.workflow_adapter.is_placeholder(merge)
+        await pilot.press("y")
+        await pilot.pause(0.03)
         assert screen.workflow_adapter.is_placeholder(merge)
-        assert wm.get_node_data(merge)["type"] == "merge_node"
-        assert wm.get_node_data(home) is not None
-        assert wm.get_node_data(beacon) is not None
-        assert wm.get_node_data(end) is not None
-
-        # Second delete: merge node is permanently removed. The upstream node
-        # on the branch where the merge lived rewires to the immediate
-        # downstream node; Merge Beacons from other branches disconnect and
-        # become validation-visible repair work.
+        assert wm.get_node_data(merge)["type"] == "tombstone_node"
+        assert wm.get_node_data(beacon)["connections"]["outputs"] == []
+        # Final removal bridges the one home route after its own confirmation.
         screen.action_delete_selected()
+        await pilot.pause(0.03)
+        await pilot.press("y")
         await pilot.pause(0.03)
 
         assert wm.get_node_data(merge) is None
@@ -1187,11 +1173,11 @@ async def _test_editor_merge_node_delete_rewires_home_branch_and_disconnects_bea
     print("test_editor_merge_node_delete_rewires_home_branch_and_disconnects_beacons PASSED")
 
 
-def test_editor_soft_deleted_beacon_keeps_downstream_visible():
-    asyncio.run(_test_editor_soft_deleted_beacon_keeps_downstream_visible())
+def test_editor_deleted_beacon_ends_visible_path_and_undo_restores_it():
+    asyncio.run(_test_editor_deleted_beacon_ends_visible_path_and_undo_restores_it())
 
 
-async def _test_editor_soft_deleted_beacon_keeps_downstream_visible():
+async def _test_editor_deleted_beacon_ends_visible_path_and_undo_restores_it():
     from textual.app import App, ComposeResult
 
     from frontend.screens.editor import EditorScreen
@@ -1220,21 +1206,23 @@ async def _test_editor_soft_deleted_beacon_keeps_downstream_visible():
         screen.selected_node_id = beacon
         screen.selected_row = {"kind": "node", "node_id": beacon}
 
-        # First (soft) delete: connections stay intact on the backend, so the
-        # editor must keep showing everything past the beacon instead of
-        # dead-ending the visible row list at the deleted marker.
+        # Beacon removal is explicit and ends the branch on the first delete.
         screen.action_delete_selected()
         await pilot.pause(0.03)
+        assert not screen.workflow_adapter.is_placeholder(beacon)
+        await pilot.press("y")
+        await pilot.pause(0.03)
         assert screen.workflow_adapter.is_placeholder(beacon)
+        assert wm.get_node_data(merge) is not None
+        assert wm.get_node_data(end) is not None
+        visible_ids = {row.get("node_id") for row in screen._build_visible_rows()}
+        assert merge not in visible_ids
+        assert end not in visible_ids
+        screen.action_undo_delete()
+        await pilot.pause(0.03)
+        assert wm.find_next_node_id(beacon) == merge
 
-        visible_ids = {
-            row.get("node_id") or row.get("beacon_node_id") or row.get("merge_node_id")
-            for row in screen._build_visible_rows()
-        }
-        assert merge in visible_ids
-        assert end in visible_ids
-
-    print("test_editor_soft_deleted_beacon_keeps_downstream_visible PASSED")
+    print("test_editor_deleted_beacon_ends_visible_path_and_undo_restores_it PASSED")
 
 
 async def _test_editor_save_materializes_deleted_node_and_loaded_marker_renders():
@@ -2837,17 +2825,20 @@ async def _test_deleting_merge_beacon_prunes_merge_config_selection():
         screen.action_delete_selected()
         await pilot.pause(0.03)
 
+        assert not screen.workflow_adapter.is_placeholder(beacon)
+        await pilot.press("y")
+        await pilot.pause(0.03)
         merge_config = wm.get_node_data(merge).get("config", {})
         assert screen.workflow_adapter.is_placeholder(beacon)
-        assert wm.get_node_data(beacon)["type"] == "branch_end_node"
-        assert merge_config.get("branches_to_close") == [f"{branch}:path_a"]
-        assert merge_config.get("carry_forward_branch_id") == f"{branch}:path_a"
-        assert merge_config.get("selected_branch_id") == f"{branch}:path_a"
-        assert wm.get_node_data(beacon).get("connections", {}).get("outputs", [])
-
+        assert wm.get_node_data(beacon)["type"] == "tombstone_node"
+        assert merge_config.get("branches_to_close") == []
+        assert merge_config.get("carry_forward_branch_id") == ""
+        assert merge_config.get("selected_branch_id") == ""
+        assert wm.get_node_data(beacon).get("connections", {}).get("outputs", []) == []
         screen.action_delete_selected()
         await pilot.pause(0.03)
-
+        await pilot.press("y")
+        await pilot.pause(0.03)
         merge_config = wm.get_node_data(merge).get("config", {})
         assert merge_config.get("branches_to_close") == []
         assert merge_config.get("carry_forward_branch_id") == ""
@@ -3131,12 +3122,14 @@ async def _test_connected_branch_end_deletes_to_tombstone():
         screen.action_delete_selected()
         await pilot.pause(0.03)
 
-        assert wm.get_node_data(branch_end)["type"] == "branch_end_node"
+        await pilot.press("y")
+        await pilot.pause(0.03)
+        assert wm.get_node_data(branch_end)["type"] == "tombstone_node"
         after_cards = [card for card in app.query(NodeCard) if card.node_id == branch_end]
         assert len(after_cards) == 1
         assert not after_cards[0].has_class("branch-end-open")
         assert not after_cards[0].has_class("branch-end-connected")
-        assert after_cards[0].node_data["type"] == "branch_end_node"
+        assert after_cards[0].node_data["type"] == "tombstone_node"
         assert "Deleted" in after_cards[0].display_text
         assert "z undo" in after_cards[0].display_text
 

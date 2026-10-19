@@ -291,3 +291,65 @@ def unmatched_route(config: Optional[Mapping[str, Any]]) -> Dict[str, Any]:
         "forward": forward if forward in (MUX_FORWARD_ERROR, MUX_FORWARD_FAILED_INPUT)
         else MUX_FORWARD_ERROR,
     }
+
+
+def deletion_members(workflow_map, heads, owners, kept_heads, terminal, detached_beacons=()):
+    """Plan exclusive members, including orphan Merges, without mutating the map.
+
+    Unlike Start-only reachability, an outside parent in a disconnected draft
+    also protects its route. Explicit terminals are inclusive walk boundaries.
+    """
+    from copy import deepcopy
+    from collections import deque
+
+    original = workflow_map.get_all_node_data()
+    candidates = set()
+    queue = deque(heads)
+    while queue:
+        nid = queue.popleft()
+        if nid in candidates or nid in owners or nid not in original:
+            continue
+        node = original[nid]
+        if node.get('type') == 'start_node':
+            continue
+        candidates.add(nid)
+        if terminal(node):
+            if node.get('type') == 'branch_end_node':
+                queue.extend(c.get('target_node_id') for c in node.get('connections', {}).get('outputs', [])
+                             if (original.get(c.get('target_node_id')) or {}).get('type') == MERGE_NODE_TYPE)
+            continue
+        queue.extend(c.get('target_node_id') for c in node.get('connections', {}).get('outputs', []))
+    roots = [nid for nid in original if nid not in candidates and nid not in owners]
+    nodes = deepcopy(original)
+    for node in nodes.values():
+        if terminal(node):
+            node.setdefault('connections', {})['outputs'] = []
+
+    class View:
+        def get_all_node_data(self):
+            return nodes
+        def find_start_node_id(self):
+            return workflow_map.find_start_node_id()
+
+    heads = list(heads)
+    removed = set()
+    while True:
+        found = set(nodes_only_reached_from(
+            View(), heads, extra_roots=[*roots, *kept_heads],
+            skip_edges={nid: None for nid in owners | removed}))
+        found.difference_update(owners)
+        found = {nid for nid in found if original[nid].get('type') != 'start_node'}
+        previous = set(removed)
+        removed.update(found)
+        # A Merge survives every outside input, even one in an unlinked draft.
+        for nid, node in original.items():
+            if node.get('type') != MERGE_NODE_TYPE or nid in removed or nid in owners or nid in kept_heads:
+                continue
+            inputs = node.get('connections', {}).get('inputs', [])
+            original_sources = {c.get('source_node_id') for c in inputs}
+            sources = original_sources - set(detached_beacons)
+            if original_sources and sources <= removed | owners and (nid in candidates or original_sources & removed):
+                removed.add(nid)
+                heads.extend(c.get('target_node_id') for c in node.get('connections', {}).get('outputs', []))
+        if removed == previous:
+            return sorted(removed)

@@ -116,7 +116,8 @@ BRANCH_KEEP_SELECTOR = Profile('branch_keep_selector', (
     Command('branch_keep_selector.cursor_up', ('up', 'w'), 'cursor_up', 'Up', policies=NAV, priority=True, navigation='up'),
     Command('branch_keep_selector.cursor_down', ('down', 's'), 'cursor_down', 'Down', policies=NAV, priority=True, navigation='down'),
     Command('branch_keep_selector.choose', ('enter',), 'choose', 'Choose', policies=NAV, priority=False, navigation='activate'),
-    Command('branch_keep_selector.choose.e', ('e',), 'choose', 'Choose', policies=NAV, priority=True, navigation='activate'),
+    Command('branch_keep_selector.choose.e', ('e',), 'toggle', 'Choose', policies=NAV, priority=True, navigation='activate'),
+    Command('branch_keep_selector.toggle', ('space',), 'toggle', 'Toggle', policies=NAV, priority=True),
 ), cancel_action='cancel')
 
 BRANCH_SELECTOR = Profile('branch_selector', (

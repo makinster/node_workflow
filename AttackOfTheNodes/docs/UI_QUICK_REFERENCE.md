@@ -33,6 +33,21 @@ Every window has a primary button for its Enter action, plus Close or Cancel; th
 `A` is not add-node. New nodes are introduced through insert/add flows driven by
 the highlighted editor row.
 
+## Deleting and recovering paths
+
+Branch and Conditional first delete: pick one path to keep, then Delete.
+Space/E toggles, W/S moves, Enter applies, Esc/Ctrl+Q cancels; Enter on Cancel
+cancels. Shared nodes stay. Z on the deleted group restores its members, with a
+preview before restoring what fits if the graph changed. Removing the stub
+asks before discarding its stored nodes permanently.
+
+Lowering a Branch's count asks which old paths to keep (exactly the new count).
+Removed paths stay under **Saved paths**, never run and survive save/reload.
+E opens that row; X asks before discarding it. Raising the count offers
+**Recover**, **Leave empty** or **Cancel**. If needed, the recovery picker allows
+zero through the number of new ports; unpicked paths stay saved. Cancel returns
+to the unsaved config draft. Callable workflows show ` [sub]` in the header.
+
 ## Command-Mode Rules
 
 - Command-mode screens use `CommandScreenMixin`.

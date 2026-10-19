@@ -168,58 +168,58 @@ and `original_type`. It should be extended to surface the original input
 sources and output targets from the tombstone config so the validator output
 reads as a full repair guide.
 
-**Single-node delete rule:**
+**Editor deletion groups (phase 2, 2026-10-19):**
 
-Deleting a node removes only that one node. Downstream nodes are never
-automatically deleted or modified. The tombstone occupies the deleted node's
-position as a swap-out and insert-staging placeholder. The graph beyond the
-tombstone remains intact. This is an editor invariant that the frontend adapter
-must enforce — no cascading deletes, no automatic downstream rewiring.
+An ordinary node keeps its soft-delete overlay until Save/Validate; its versioned
+`delete_group` metadata survives materialization. Structural deletes immediately
+create one blocking `tombstone_node`: the owner and all exclusively dropped
+members form one restore operation. Records contain JSON graph/config snapshots,
+never runtime resources. Existing ungrouped tombstones keep their legacy path.
 
-**Branch-node delete exception (keep selector):**
+Branch and Conditional first-delete pickers require exactly one kept path. The
+adapter reuses `stub_removal_plan` and `nodes_only_reached_from`, combining
+all dropped heads before checking ownership. Shared live nodes, including nodes
+with disconnected outside parents, survive. Start is protected. End and Merge
+Beacon are inclusive boundaries; an orphan Merge cascades only when no input
+survives. A Resolver keeps No error automatically and groups its owned recovery
+routes; a shared live Resolver survives. Soft-deleted peers are not live guards.
 
-A `branch_node` is the one case where this rule cannot apply unchanged: it fans
-out into multiple paths, so there is no single "downstream" to preserve. The
-first delete soft-tombstones the branch node like any other node (undoable, all
-paths stay live). The second (permanent) delete opens the **branch keep
-selector** modal: the user picks exactly one path to keep, and the unkept paths
-and their downstream nodes are pruned. `start_node` is the only hard stop —
-never pruned. `branch_end_node` (Merge Beacon) is not a stop at all: it belongs
-exclusively to the one branch it closes, so a beacon reached while pruning a
-non-kept branch is deleted along with it. `merge_node` is a *conditional* stop:
-it survives only while at least one of its current inputs comes from a source
-outside the pruned branch; if the pruned branch was its only remaining feed,
-the merge_node has nothing left to merge and is pruned too, with pruning
-cascading through its own downstream nodes. This prevents a merge_node (or a
-beacon feeding it) from being left behind as a disconnected, unreachable
-orphan that the validator would otherwise flag forever. The branch node's
-upstream input is rewired directly to the head of the kept path so the graph
-stays connected. This pruning is explicit, user-chosen, and confirmed by the
-modal — not an automatic cascade triggered without user action. Implemented by
-`prune_branch_tombstone()` (adapter) and `BranchKeepSelectorScreen`.
+Deleting a Merge preserves every previously connected Beacon and resets all of
+those Beacons' Merge targets, including other targets on the same Beacon.
+Related Merge selections belong to the same restore record. An ambiguous Merge
+with several non-Beacon home inputs requires repair before deletion. Deleting
+a Beacon ends its branch, including before Save; permanent removal never bridges
+its parents into the Merge. Unconnected Beacon and unreachable warnings retain
+their existing nonblocking severity; active tombstones still block execution.
 
-**Merge Beacon (`branch_end_node`) and `merge_node` deletes:**
+Z on a selected group restores compatible nodes, both halves of connections and
+related settings. Three-way comparison preserves newer wiring and config.
+Conflicts are shown before partial restore; unresolved work remains in
+`delete_recovery`, survives reload and can be retried after repair. Reused IDs,
+missing types/ports, occupied outputs and Merge inputs are reported. Compatible
+inserted Resolver inputs remain valid. Final stub removal confirms discarding
+stored members, bridges at most the recorded continuation and never rewalks the
+current graph. Different-type replacement confirms the same irreversible loss;
+original-type replacement restores the group.
 
-Both follow the plain single-node delete rule — no cascading, no auto-rewire —
-but each carries one structural side effect:
+A live Branch stores count-reduction archives in versioned `branch_recovery`
+config: entries have stable path IDs, original labels/seeds, head connections
+and member IDs; groups retain the affected graph snapshots. These archived
+members are absent from the live graph, never run and add no blocking stub.
+The editor-owned Branch config subclass defers count saves before Node Config
+can establish a saved baseline; it does not edit Node Config or its private
+snapshot state. An exact-N picker maps selected old paths to contiguous ports
+in their old order and remaps labels, seeds, edges, Merge keys and editor views.
+Cancel preserves the unsaved draft and live graph. Successful save-and-stay
+reopens from committed data with the same tab/focus.
 
-- Deleting a Merge Beacon unlinks only the branch that beacon belonged to: its
-  one connection into the `merge_node` is severed (and the beacon's branch
-  entry is dropped from the merge node's `branches_to_close` config), but the
-  merge node and every other branch feeding it are untouched. Implemented by
-  `_prune_merge_config_for_beacon()` / `_disconnect_beacon_merge_outputs()`.
-- Deleting a `merge_node` disconnects every Merge Beacon that was feeding it —
-  `WorkflowMap.delete_node()` scrubs the connection on both sides as part of
-  its normal node removal, so each beacon (and anything downstream of the
-  merge node) simply loses that one connection. Nothing is rewired
-  automatically; the user reconnects each beacon (and the merge node's old
-  downstream, if any) manually afterward.
-
-The editor's visible-row traversal must keep showing everything past a beacon
-while it is only soft-tombstoned (first delete) — connections are still fully
-intact on the backend at that point, so dead-ending the view there made
-already-connected downstream nodes look stranded even though nothing had
-actually been disconnected yet.
+Count increases offer Recover / Leave empty / Cancel. If more paths are saved
+than new ports, an optional picker accepts zero through the new-port count.
+Only selected paths are relinked; unchosen paths stay saved. A partially restored
+head is not offered twice; unresolved members remain repair data. Saved paths
+appear as a collapsed editor row, not a live port or insert target. Explicit
+removal confirms discarding recovery data. No silent expiry is implemented.
+All plan previews are pure and commits reject graph/overlay drift.
 
 **Merge candidate selection is graph-position-constrained:** `merge_input_options()`
 must only offer a Merge Beacon to close on a `merge_node` when that beacon's

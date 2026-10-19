@@ -1,0 +1,2 @@
+Before:  Workflow: Delete tests *
+After:  Workflow: Delete tests [sub] * [IDLE]

@@ -24,7 +24,12 @@ from frontend.error_mux_ui import (
 )
 from frontend.error_paths import SHOW_ERROR_PATH, editor_output_ports
 from frontend.node_labels import friendly_label, friendly_labels
-from frontend.screens.branch_keep_selector_screen import BranchKeepSelectorScreen
+from frontend.screens.branch_keep_selector_screen import (
+    BranchKeepSelectorScreen,
+    BranchRecoveryPrompt,
+    DeletionConfirmScreen,
+    SavedPathsScreen,
+)
 from frontend.screens.branch_selector import BranchSelectorScreen
 from frontend.screens.confirm import ConfirmScreen
 from frontend.screens.error_details import ErrorDetailsScreen
@@ -75,6 +80,70 @@ from frontend.widgets.node_list import NodeList
 from frontend.widgets.status_bar import StatusBar
 
 
+class BranchDraftConfigScreen(NodeConfigScreen):
+    """Editor-owned deferred saves; the shared Node Config API stays unchanged."""
+    def __init__(self, *args, editor, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.editor = editor
+        self.opened_path_sources = {}
+
+    def _branch_payload_row(self, index, source_options, payload_sources, config):
+        row = super()._branch_payload_row(index, source_options, payload_sources, config)
+        from backend.branch_paths import path_port
+        port = path_port(index)
+        self.opened_path_sources.setdefault(port, str(self._branch_rows[port][2].value))
+        return row
+
+    def _count_changed(self):
+        try:
+            config = self._collected_config()
+        except ValueError:
+            return False
+        return self.factory.output_ports_for(BRANCH_NODE_TYPE, config) != self.workflow_map.output_ports(self.node_id)
+
+    def _review_save(self, mode, then=None, jump_to=None):
+        self._commit_text_edit()
+        result = self._save_result(then)
+        if result is not None:
+            original = (self.workflow_map.get_node_data(self.node_id) or {}).get('config', {})
+            result['path_drafts'] = {}
+            for port in self.workflow_map.output_ports(self.node_id):
+                widgets = self._branch_rows.get(port)
+                if widgets is not None:
+                    source = str(widgets[2].value)
+                    if source == self.opened_path_sources.get(port):
+                        source = (original.get('branch_payload_sources') or {}).get(port, 'dead_drop:input')
+                    result['path_drafts'][port] = {'label': widgets[1].value, 'source': source}
+            self.editor._review_branch_count(self, result, mode, jump_to)
+
+    def action_save(self, then=None):
+        if self._count_changed():
+            self._review_save('close', then)
+        else:
+            super().action_save(then)
+
+    async def action_save_and_stay(self):
+        if self._count_changed():
+            expanded = self._expanded_select()
+            if expanded is not None:
+                expanded.expanded = False
+            self._review_save('stay')
+        else:
+            await super().action_save_and_stay()
+
+    def _leave(self, jump_to=None):
+        if not self._count_changed():
+            super()._leave(jump_to)
+            return
+        from frontend.screens.unsaved_changes import DISCARD, SAVE, UnsavedChangesScreen
+        def answered(choice):
+            if choice == SAVE:
+                self._review_save('close', jump_to=jump_to)
+            elif choice == DISCARD:
+                self._close(None, jump_to)
+        self.app.push_screen(UnsavedChangesScreen(friendly_label(self.workflow_map, self.node_id)), answered)
+
+
 class EditorScreen(KeymapScreenMixin, Screen):
     """Workflow editor view: node list on the left, details on the right."""
 
@@ -100,7 +169,7 @@ class EditorScreen(KeymapScreenMixin, Screen):
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
         with Vertical(id="editor-root"):
-            yield Label("", id="workflow-title")
+            yield Label("", id="workflow-title", markup=False)
             with Horizontal(id="editor-columns"):
                 with Vertical(id="nodes-panel", classes="panel"):
                     yield Label("Nodes", classes="panel-title")
@@ -140,6 +209,7 @@ class EditorScreen(KeymapScreenMixin, Screen):
         self._refreshing_from_backend = True
         try:
             title = self.workflow_map.workflow_name or "No workflow"
+            title += " [sub]" if self.workflow_map.callable else ""
             dirty = " *" if self.workflow_map.is_dirty else ""
             state = "IDLE"
             self.query_one("#workflow-title", Label).update(
@@ -248,11 +318,17 @@ class EditorScreen(KeymapScreenMixin, Screen):
             self.action_edit_selected()
 
     def action_add_node(self) -> None:
+        if (self.selected_row or {}).get('saved_paths'):
+            notifications.notify_info(self.app, 'Select a live path before inserting.')
+            return
         self._pending_node_add_mode = "add"
         upstream = self._selector_upstream(self._source_for_new_node())
         self.app.push_screen(NodeSelectorScreen(self.factory, upstream), self._add_node_from_modal)
 
     def action_insert_node(self) -> None:
+        if (self.selected_row or {}).get('saved_paths'):
+            notifications.notify_info(self.app, 'Select a live path before inserting.')
+            return
         if self._selected_insert_target_is_merge_beacon():
             notifications.notify_info(self.app, "Merge Beacon is the end of this branch")
             return
@@ -299,12 +375,14 @@ class EditorScreen(KeymapScreenMixin, Screen):
         error recovery branches included (owner, 2026-10-14). E still opens
         the branch selector. Elsewhere A/D cycle the workflow's branches and
         leave error recovery out."""
+        if (self.selected_row or {}).get("saved_paths"):
+            return True
         selected = self.selected_row or {}
         if selected.get("kind") != "branch_select":
             return False
         row = next(
             (candidate for candidate in self._build_visible_rows()
-             if candidate.get("kind") == "branch_select"
+             if candidate.get("kind") == "branch_select" and not candidate.get("saved_paths")
              and candidate.get("branch_node_id") == selected.get("branch_node_id")),
             None,
         )
@@ -385,6 +463,13 @@ class EditorScreen(KeymapScreenMixin, Screen):
         notifications.breakpoints_cleared(self.app, cleared)
 
     def action_edit_selected(self) -> None:
+        if (self.selected_row or {}).get('saved_paths'):
+            node_id = self.selected_row['branch_node_id']
+            if self.selected_row.get('pending_restore'):
+                self._restore_delete_group(node_id)
+            else:
+                self._show_saved_paths(node_id)
+            return
         self._restore_node_list_focus()
         if self.selected_row and self.selected_row["kind"] == "merge_beacon_select":
             self._open_merge_beacon_selector(self.selected_row)
@@ -411,8 +496,11 @@ class EditorScreen(KeymapScreenMixin, Screen):
     def _open_node_config(self, node_id: str) -> None:
         """Open a node's editor. Saves go to ``node_id`` whatever the
         selection is by then (a jump can open a node the view does not show)."""
+        node = self.workflow_map.get_node_data(node_id) or {}
+        branch = node.get('type') == BRANCH_NODE_TYPE
+        screen_type = BranchDraftConfigScreen if branch else NodeConfigScreen
         self.app.push_screen(
-            NodeConfigScreen(
+            screen_type(
                 self.factory,
                 self.workflow_map,
                 node_id,
@@ -420,6 +508,7 @@ class EditorScreen(KeymapScreenMixin, Screen):
                 memory_bank=getattr(self.app, "memory_bank", None),
                 secrets_manager=self.secrets_manager,
                 workflow_adapter=self.workflow_adapter,
+                **({'editor': self} if branch else {}),
                 on_save=lambda result: self._save_and_stay(node_id, result),
             ),
             lambda result: self._node_config_closed(node_id, result),
@@ -447,6 +536,11 @@ class EditorScreen(KeymapScreenMixin, Screen):
         self._open_node_config(node_id)
 
     def action_undo_delete(self) -> None:
+        nid = (self.selected_row or {}).get('branch_node_id') if (self.selected_row or {}).get('saved_paths') else self.selected_node_id
+        config = (self.workflow_map.get_node_data(nid) or {}).get('config', {})
+        if config.get('delete_group') or config.get('delete_recovery') or (nid and self.workflow_adapter.placeholder_metadata(nid).get('delete_group')):
+            self._restore_delete_group(nid)
+            return
         self._restore_node_list_focus()
         if self.selected_node_id is None:
             notifications.no_node_selected(self.app)
@@ -460,6 +554,15 @@ class EditorScreen(KeymapScreenMixin, Screen):
         notifications.notify_info(self.app, "Deleted node restored")
 
     def action_delete_selected(self) -> None:
+        if (self.selected_row or {}).get('saved_paths'):
+            self._discard_saved_paths(self.selected_row['branch_node_id'], self.selected_row.get('pending_restore', False))
+            return
+        if self.selected_node_id is not None and not self.workflow_adapter.is_placeholder(self.selected_node_id):
+            if (self.workflow_map.get_node_data(self.selected_node_id) or {}).get('type') == START_NODE_TYPE:
+                notifications.cannot_delete_start_node(self.app)
+            else:
+                self._delete_group(self.selected_node_id)
+            return
         if self.selected_node_id is None:
             notifications.no_node_selected(self.app)
             return
@@ -571,6 +674,9 @@ class EditorScreen(KeymapScreenMixin, Screen):
         self._do_delete(True)
 
     def _do_delete(self, confirmed: bool) -> None:
+        if confirmed and self.selected_node_id and self.workflow_adapter.placeholder_metadata(self.selected_node_id).get('delete_group'):
+            self._remove_delete_group(self.selected_node_id)
+            return
         if not confirmed or self.selected_node_id is None:
             return
         node = self.workflow_map.get_node_data(self.selected_node_id)
@@ -660,6 +766,29 @@ class EditorScreen(KeymapScreenMixin, Screen):
 
     def _replace_tombstone_from_modal(self, node_type: str | None) -> None:
         if not node_type or self.selected_node_id is None:
+            return
+        node_id = self.selected_node_id
+        config = (self.workflow_map.get_node_data(node_id) or {}).get('config', {})
+        metadata = self.workflow_adapter.placeholder_metadata(node_id)
+        if metadata.get('delete_group'):
+
+            if node_type == metadata.get('original_type'):
+                self._restore_delete_group(node_id)
+                return
+            try:
+                plan = self.workflow_adapter.plan_replace_group(node_id, node_type)
+                record = self.workflow_adapter._group_for(node_id)
+            except ValueError as error:
+                notifications.notify_error(self.app, str(error))
+                return
+            count = sum(n is not None and record['after'].get(nid) is None for nid, n in record['before'].items())
+            target = record.get('keep') or []
+            continuation = ('Continue to ' + friendly_label(self.workflow_map, target[0]['target_node_id']) + '.') if target else 'No continuation.'
+            name = (self._metadata_for_type(node_type) or {}).get('display_name') or node_type
+            text = f'Replace deleted {metadata.get("original_alias") or "node"} with {name}?\n'
+            text += f'Its {count} stored nodes will be discarded. {continuation}\nThis cannot be undone. Restore the original node to recover its group.'
+            self.app.push_screen(DeletionConfirmScreen(text, yes_label='Replace', no_label='Cancel'),
+                lambda yes: self._apply_reviewed_plan(plan) if yes else None)
             return
         result = self.workflow_adapter.replace_placeholder(
             self.selected_node_id,
@@ -870,6 +999,279 @@ class EditorScreen(KeymapScreenMixin, Screen):
             key = (conn.get("target_node_id"), conn.get("target_port"))
             if key not in present and self.workflow_map.get_node_data(key[0]) is not None:
                 self.workflow_map.connect(source_id, port, key[0], key[1])
+
+    # -- Reviewed delete groups and Branch count drafts -----------------------
+
+    def _apply_reviewed_plan(self, plan):
+        try:
+            self.workflow_adapter.apply_plan(plan)
+        except ValueError as error:
+            notifications.notify_error(self.app, str(error))
+            return False
+        removed = set(plan.get('removed', []))
+        root = plan['root']
+        active_port = self.active_branch_ports.get(root)
+        mapping = plan.get('port_mapping', {})
+        for nid in removed:
+            self.active_branch_ports.pop(nid, None)
+            self._clear_timing_for_node(nid)
+        if plan['kind'] in ('delete', 'remove', 'replace'):
+            self.active_branch_ports.pop(root, None)
+        elif mapping and active_port in mapping:
+            self.active_branch_ports[root] = mapping[active_port]
+        elif plan.get('preferred_port') in self.workflow_map.output_ports(root):
+            self.active_branch_ports.setdefault(root, plan['preferred_port'])
+        for key, target in list(self.last_branch_selection.items()):
+            if target in removed:
+                self.last_branch_selection.pop(key, None)
+            elif key.startswith(root + ':'):
+                old_port = key[len(root) + 1:]
+                if mapping:
+                    self.last_branch_selection.pop(key, None)
+                    if old_port in mapping:
+                        self.last_branch_selection[root + ':' + mapping[old_port]] = target
+                elif plan['kind'] in ('delete', 'remove', 'replace'):
+                    self.last_branch_selection.pop(key, None)
+        if self.selected_node_id in removed:
+            self.selected_node_id = None
+            self.selected_row = None
+        self.refresh_from_backend()
+        return True
+
+    def _delete_group(self, node_id):
+        node = self.workflow_map.get_node_data(node_id) or {}
+        ports = [p for p in self.workflow_map.output_ports(node_id) if p != ERROR_PORT]
+        if node.get('type') in (BRANCH_NODE_TYPE, 'conditional_node'):
+            basis = self.workflow_adapter._graph()
+            pending = {}
+            import uuid
+            operation_id = uuid.uuid4().hex
+            def preview(selected):
+                if len(selected) != 1:
+                    return 'Pick one path. Other paths stay saved with the deleted node.'
+                try:
+                    plan = self.workflow_adapter.plan_deletion(node_id, selected[0])
+                except ValueError as error:
+                    return str(error)
+                pending['plan'] = plan
+                return f"Stores {len(plan['removed'])} nodes with the deleted group. Shared nodes stay. Z restores the group."
+            def chosen(result):
+                if not result or result.get('operation_id') != operation_id:
+                    return
+                if self.workflow_adapter._graph() != basis:
+                    notifications.notify_error(self.app, 'The workflow changed. Review the deletion again.')
+                    return
+                plan = pending.get('plan')
+                if plan and self._apply_reviewed_plan(plan):
+                    notifications.node_deleted(self.app)
+            self.app.push_screen(BranchKeepSelectorScreen(
+                node_id, friendly_label(self.workflow_map, node_id), ports,
+                self._branch_port_labels(node), required=1, operation_id=operation_id,
+                apply_label='Delete', preview=preview), chosen)
+            return
+        try:
+            plan = self.workflow_adapter.plan_deletion(node_id)
+        except ValueError as error:
+            notifications.notify_error(self.app, str(error))
+            return
+        name = friendly_label(self.workflow_map, node_id)
+        count = len(plan['removed'])
+        message = f'Delete {name}' + (f' and {count} stored nodes?' if count else '?')
+        handlers = [nid for nid in plan['removed'] if (plan['basis'].get(nid) or {}).get('type') == ERROR_MUX_NODE_TYPE]
+        if handlers:
+            message = f'Delete {name}, its Error Resolver and {count - len(handlers)} recovery nodes?'
+        message += '\nZ restores the group.'
+        if node.get('type') == MERGE_NODE_TYPE:
+            message += '\nIts Merge Beacons stay, unconnected. Reconnect them to a valid target.\nValidation warns; this warning does not block a run.'
+        elif node.get('type') == BRANCH_END_NODE_TYPE:
+            message += '\nThis branch ends. No bypass into Merge.'
+        elif node.get('type') == ERROR_MUX_NODE_TYPE or count:
+            message += '\nNo error continues. Shared nodes stay.'
+        if plan.get('shared_handlers'):
+            message += '\nIts Error Resolver stays: another node uses it.'
+        multiple_parents = len(node.get('connections', {}).get('inputs', [])) > 1
+        def apply(confirmed=True):
+            if not confirmed:
+                return
+            if not count and not multiple_parents and not plan.get('shared_handlers') and node.get('type') not in (
+                    MERGE_NODE_TYPE, BRANCH_END_NODE_TYPE, ERROR_MUX_NODE_TYPE):
+                try:
+                    self.workflow_adapter.apply_single_delete(plan)
+                except ValueError as error:
+                    notifications.notify_error(self.app, str(error))
+                    return
+                self.refresh_from_backend()
+                notifications.node_deleted(self.app)
+            elif self._apply_reviewed_plan(plan):
+                notifications.node_deleted(self.app)
+        if count or multiple_parents or plan.get('shared_handlers') or node.get('type') in (
+                MERGE_NODE_TYPE, BRANCH_END_NODE_TYPE, ERROR_MUX_NODE_TYPE):
+            if multiple_parents:
+                names = [friendly_label(self.workflow_map, c['source_node_id'])
+                         for c in node['connections']['inputs']]
+                message += '\nUsed by ' + ', '.join(dict.fromkeys(names)) + '.'
+            self.app.push_screen(DeletionConfirmScreen(message, yes_label='Delete', no_label='Cancel'), apply)
+        else:
+            apply()
+
+    def _restore_delete_group(self, node_id):
+        try:
+            plan = self.workflow_adapter.plan_restore(node_id)
+        except ValueError as error:
+            notifications.notify_error(self.app, str(error))
+            return
+        def apply(confirmed=True):
+            if confirmed and self._apply_reviewed_plan(plan):
+                notifications.notify_info(self.app, 'Restored what fits. Other changes stay saved.'
+                    if plan['conflicts'] else 'Deleted group restored')
+        if plan['conflicts']:
+            text = f'Restore {friendly_label(self.workflow_map, node_id)}?\nCannot restore:\n'
+            text += '\n'.join(plan['conflicts'])
+            text += '\nThe other nodes and valid links can return.'
+            self.app.push_screen(DeletionConfirmScreen(text, yes_label='Restore', no_label='Cancel'), apply)
+        else:
+            apply()
+
+    def _remove_delete_group(self, node_id):
+        try:
+            plan = self.workflow_adapter.plan_remove_group(node_id)
+            record = self.workflow_adapter._group_for(node_id)
+        except ValueError as error:
+            notifications.notify_error(self.app, str(error))
+            return
+        count = sum(n is not None and record['after'].get(nid) is None for nid, n in record['before'].items())
+        keep = record.get('keep') or []
+        target = friendly_label(self.workflow_map, keep[0]['target_node_id']) if keep else None
+        text = f'Remove deleted {record["before"][node_id].get("alias") or "node"} and its {count} stored nodes?\n'
+        text += f'Continue to {target}. ' if target else 'No continuation. '
+        text += 'This cannot be undone.'
+        self.app.push_screen(DeletionConfirmScreen(text, yes_label='Remove', no_label='Cancel'),
+            lambda yes: self._apply_reviewed_plan(plan) if yes else None)
+
+    def _review_branch_count(self, screen, result, mode, jump_to=None):
+        """The existing config form stays unchanged under every pending dialog."""
+        node_id = screen.node_id
+        if getattr(self, '_branch_count_pending', False):
+            return
+        self._branch_count_pending = True
+        old_ports = [p for p in self.workflow_map.output_ports(node_id) if p != ERROR_PORT]
+        new_ports = [p for p in self.factory.output_ports_for(BRANCH_NODE_TYPE, result['config']) if p != ERROR_PORT]
+        basis = self.workflow_adapter._graph()
+        def finish(plan):
+            self._branch_count_pending = False
+            if self.workflow_adapter._graph() != basis:
+                notifications.notify_error(self.app, 'The workflow changed. Review the path count again.')
+                return
+            def commit(confirmed=True):
+                if not confirmed or not self._apply_reviewed_plan(plan):
+                    return
+                notifications.node_updated(self.app)
+                if mode == 'stay':
+                    # Reopen from committed data: use Node Config's normal mount
+                    # baseline rather than touching its private saved snapshots.
+                    focused_id = getattr(screen.focused, 'id', None)
+                    tab = screen.query_one('#node-config-tabs').active
+                    screen.dismiss(None)
+                    def reopen():
+                        self._open_node_config(node_id)
+                        def focus():
+                            form = self.app.screen
+                            form.query_one('#node-config-tabs').active = tab
+                            widgets = form.query(f'#{focused_id}') if focused_id else []
+                            if widgets:
+                                widgets.first().focus()
+                        self.app.call_after_refresh(focus)
+                    self.app.call_after_refresh(reopen)
+                else:
+                    screen.dismiss({'then': result.get('then') or ('jump' if jump_to else ''), 'jump_to': jump_to})
+            if plan['conflicts']:
+                self.app.push_screen(DeletionConfirmScreen('Cannot restore:\n' + '\n'.join(plan['conflicts']) +
+                    '\nRestore what fits?', yes_label='Restore', no_label='Cancel'), commit)
+            else:
+                commit()
+        def cancelled():
+            self._branch_count_pending = False
+        def choose_recovery(entries):
+            limit = len(new_ports) - len(old_ports)
+            def recovered(choice):
+                if choice is None:
+                    cancelled()
+                    return
+                try:
+                    finish(self.workflow_adapter.plan_recover_paths(node_id, result, choice['ports']))
+                except ValueError as error:
+                    cancelled()
+                    notifications.notify_error(self.app, str(error))
+            if len(entries) <= limit:
+                recovered({'ports': [entry['id'] for entry in entries]})
+                return
+            self.app.push_screen(BranchKeepSelectorScreen(node_id, friendly_label(self.workflow_map, node_id),
+                [entry['id'] for entry in entries], {entry['id']: entry['label'] for entry in entries},
+                maximum=limit, title=f'Recover paths for {friendly_label(self.workflow_map, node_id)}',
+                prompt='Pick none to leave new paths empty. Others stay saved.'), recovered)
+        if len(new_ports) < len(old_ports):
+            pending = {}
+            def preview(selected):
+                if len(selected) != len(new_ports):
+                    return 'Pick the paths to keep. Removed paths stay saved and never run.'
+                pending['plan'] = self.workflow_adapter.plan_branch_count(node_id, result, selected)
+                return f"Stores {len(pending['plan']['removed'])} nodes under this Branch. Shared nodes stay."
+            def kept(choice):
+                if choice is None:
+                    cancelled()
+                elif pending.get('plan'):
+                    finish(pending['plan'])
+            node = self.workflow_map.get_node_data(node_id) or {}
+            self.app.push_screen(BranchKeepSelectorScreen(node_id, friendly_label(self.workflow_map, node_id),
+                old_ports, self._branch_port_labels(node), required=len(new_ports),
+                title=f'{friendly_label(self.workflow_map, node_id)}: {len(old_ports)} paths → {len(new_ports)}',
+                preview=preview), kept)
+        else:
+            try:
+                entries = self.workflow_adapter.saved_paths(node_id)
+            except ValueError as error:
+                cancelled()
+                notifications.notify_error(self.app, str(error))
+                return
+            def asked(choice):
+                if choice is None:
+                    cancelled()
+                elif choice == 'recover':
+                    choose_recovery(entries)
+                else:
+                    finish(self.workflow_adapter.plan_recover_paths(node_id, result, []))
+            if entries:
+                self.app.push_screen(BranchRecoveryPrompt(
+                    f'{friendly_label(self.workflow_map, node_id)}: {len(old_ports)} paths → {len(new_ports)}\n'
+                    f'{len(entries)} saved paths. Recover any for the new paths?'), asked)
+            else:
+                asked('empty')
+
+    def _show_saved_paths(self, node_id):
+        try:
+            entries = self.workflow_adapter.saved_paths(node_id)
+        except ValueError as error:
+            notifications.notify_error(self.app, str(error))
+            return
+        text = '\n'.join(entry['label'] for entry in entries)
+        self.app.push_screen(SavedPathsScreen(text + '\nIncrease this Branch’s path count to recover. Saved paths never run.'))
+
+    def _discard_saved_paths(self, node_id, pending=False):
+        node = self.workflow_map.get_node_data(node_id)
+        field = 'delete_recovery' if pending else 'branch_recovery'
+        before = self.workflow_adapter._graph()
+        def apply(confirmed):
+            if not confirmed:
+                return
+            if self.workflow_adapter._graph() != before:
+                notifications.notify_error(self.app, 'The workflow changed. Review the saved paths again.')
+                return
+            config = dict(node.get('config') or {})
+            config.pop(field, None)
+            self.workflow_map.update_node_config(node_id, config)
+            self.refresh_from_backend()
+        self.app.push_screen(DeletionConfirmScreen('Remove the saved recovery data?\nThe live node stays. This cannot be undone.',
+            yes_label='Remove', no_label='Cancel'), apply)
 
     def _apply_node_config_result(self, node_id: str, result: Dict[str, Any]) -> None:
         """The graph edits a node config save makes (no screen refresh)."""
@@ -1592,6 +1994,21 @@ class EditorScreen(KeymapScreenMixin, Screen):
                 )
 
     def _refresh_details(self) -> None:
+        if (self.selected_row or {}).get('saved_paths'):
+            nid = self.selected_row['branch_node_id']
+            if self.selected_row.get('pending_restore'):
+                text = 'Unrestored changes\nZ shows what can return. X removes the stored recovery data.'
+            else:
+                try:
+                    entries = self.workflow_adapter.saved_paths(nid)
+                    text = 'Saved paths\n' + '\n'.join(entry['label'] for entry in entries)
+                    text += '\nThese paths never run. Increase the Branch count to recover. X removes the stored paths.'
+                except ValueError as error:
+                    text = str(error)
+            detail = self.query_one('#node-details', Static)
+            setattr(detail, 'display_text', text)
+            detail.update(text)
+            return
         detail = self.query_one("#node-details", Static)
         if self.selected_row and self.selected_row["kind"] == "branch_select":
             text = self._format_branch_selector_details(self.selected_row)
@@ -2000,11 +2417,21 @@ class EditorScreen(KeymapScreenMixin, Screen):
                 }
             )
 
+            config = (self.workflow_map.get_node_data(current_node_id) or {}).get('config', {})
+            archive = config.get('branch_recovery') or {}
+            count = len(archive.get('entries', []))
+            for pending in ([False] if count else []) + ([True] if config.get('delete_recovery') else []):
+                rows.append({'kind': 'branch_select', 'branch_node_id': current_node_id,
+                    'active_port': '__unrestored__' if pending else '__saved_paths__',
+                    'active_label': 'Unrestored changes' if pending else f'Saved paths ({count})',
+                    'output_ports': [], 'port_labels': {}, 'depth': depth, 'saved_paths': True,
+                    'pending_restore': pending})
+
             if self.workflow_adapter.is_placeholder(current_node_id):
                 actual_node = self.workflow_map.get_node_data(current_node_id) or {}
                 if self.workflow_adapter.is_materialized_placeholder(actual_node):
                     ph_meta = self.workflow_adapter.placeholder_metadata(current_node_id)
-                    orig_outputs = ph_meta.get("original_output_connections") or []
+                    orig_outputs = (ph_meta["delete_group"].get("keep") or []) if "delete_group" in ph_meta else (ph_meta.get("original_output_connections") or [])
                     next_node_id = None
                     for conn in orig_outputs:
                         candidate = str(conn.get("target_node_id") or "")
@@ -2303,6 +2730,8 @@ class EditorScreen(KeymapScreenMixin, Screen):
             if (
                 row["kind"] == "branch_select"
                 and row.get("branch_node_id") == selected_row.get("branch_node_id")
+                and bool(row.get("saved_paths")) == bool(selected_row.get("saved_paths"))
+                and bool(row.get("pending_restore")) == bool(selected_row.get("pending_restore"))
             ):
                 return True
             if (
@@ -2323,6 +2752,8 @@ class EditorScreen(KeymapScreenMixin, Screen):
             if (
                 row["kind"] == "branch_select"
                 and row.get("branch_node_id") == selected_row.get("branch_node_id")
+                and bool(row.get("saved_paths")) == bool(selected_row.get("saved_paths"))
+                and bool(row.get("pending_restore")) == bool(selected_row.get("pending_restore"))
             ):
                 return row
             if (
@@ -2343,6 +2774,8 @@ class EditorScreen(KeymapScreenMixin, Screen):
             if (
                 row["kind"] == "branch_select"
                 and row.get("branch_node_id") == self.selected_row.get("branch_node_id")
+                and bool(row.get("saved_paths")) == bool(self.selected_row.get("saved_paths"))
+                and bool(row.get("pending_restore")) == bool(self.selected_row.get("pending_restore"))
             ):
                 return index
             if (
