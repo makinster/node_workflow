@@ -96,6 +96,20 @@ def workflow_duplicated(app: Any) -> None:
     notify_info(app, "Workflow duplicated")
 
 
+def subworkflow_created(app: Any) -> None:
+    notify_info(app, "New subworkflow created")
+
+
+def copied_to_subworkflows(app: Any, name: str, base: str, renamed: bool) -> None:
+    """C on the Workflows tab (owner, 2026-10-18): a repeat copy is numbered
+    and the owner is warned."""
+    if renamed:
+        app.notify(f'Subworkflow "{base}" already exists. Saved as "{name}".', severity="warning")
+    else:
+        app.notify("Copied to Subworkflows")
+    restore_editor_focus(app)
+
+
 def workflow_deleted(app: Any, deleted: bool) -> None:
     notify_info(app, "Workflow deleted" if deleted else "Workflow was not found")
 

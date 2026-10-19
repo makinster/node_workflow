@@ -303,6 +303,9 @@ WORKFLOW_LIBRARY = Profile('workflow_library', (
     Command('workflow_library.import_workflow', ('i',), 'import_workflow', 'Import', policies=NAV, priority=False),
     Command('workflow_library.export_selected', ('o',), 'export_selected', 'Export', policies=NAV, priority=False),
     Command('workflow_library.delete_selected', ('x',), 'delete_selected', 'Delete', policies=NAV, priority=False),
+    Command('workflow_library.show_tab.workflows', ('1',), "show_tab('workflows')", 'Workflows', policies=NAV, priority=True),
+    Command('workflow_library.show_tab.sub', ('2',), "show_tab('sub')", 'Subworkflows', policies=NAV, priority=True),
+    Command('workflow_library.copy_to_subworkflows', ('c',), 'copy_to_subworkflows', 'Copy to subworkflows', policies=NAV, priority=False),
 ), cancel_action='cancel')
 
 NAME_PROMPT = Profile('name_prompt', (

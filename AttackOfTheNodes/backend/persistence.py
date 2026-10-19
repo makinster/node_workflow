@@ -88,7 +88,9 @@ def load_workflow(workflow_id: str) -> Optional[Dict[str, Any]]:
 
 
 def list_workflows() -> List[Dict[str, str]]:
-    """List available workflows as {id, name} dictionaries sorted by name."""
+    """List saved workflows as {id, name, callable} dictionaries sorted by name.
+
+    ``callable`` is True for a subworkflow (Step 4, C27)."""
     WORKFLOWS_DIR.mkdir(parents=True, exist_ok=True)
     workflows: List[Dict[str, str]] = []
     for file_path in WORKFLOWS_DIR.glob("*.json"):
@@ -96,7 +98,8 @@ def list_workflows() -> List[Dict[str, str]]:
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-            workflows.append({"id": workflow_id, "name": data.get("name", workflow_id)})
+            workflows.append({"id": workflow_id, "name": data.get("name", workflow_id),
+                              "callable": bool(data.get("callable"))})
         except (json.JSONDecodeError, OSError) as exc:
             logger.warning("Error reading workflow file %s: %s", file_path, exc)
     return sorted(workflows, key=lambda workflow: workflow["name"])

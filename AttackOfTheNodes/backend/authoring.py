@@ -292,7 +292,7 @@ def build_workflow(factory: NodeFactory, spec: Any, *, write: bool = True) -> Di
 
     # Case-insensitive, like `aotn run <name>` resolves names; the library's
     # rename and New use the same rule (workflow_names).
-    if name_taken(name):
+    if name_taken(name, callable_=bool(workflow_map.callable)):
         add("error", "duplicate_name", f"A saved workflow is already named {name!r}; choose another name")
         return report(False)
     workflow_id = workflow_map.workflow_id
