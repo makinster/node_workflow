@@ -303,6 +303,9 @@ WORKFLOW_LIBRARY = Profile('workflow_library', (
     Command('workflow_library.import_workflow', ('i',), 'import_workflow', 'Import', policies=NAV, priority=False),
     Command('workflow_library.export_selected', ('o',), 'export_selected', 'Export', policies=NAV, priority=False),
     Command('workflow_library.delete_selected', ('x',), 'delete_selected', 'Delete', policies=NAV, priority=False),
+    Command('workflow_library.show_tab.workflows', ('1',), "show_tab('workflows')", 'Workflows', policies=NAV, priority=True),
+    Command('workflow_library.show_tab.sub', ('2',), "show_tab('sub')", 'Subworkflows', policies=NAV, priority=True),
+    Command('workflow_library.copy_to_subworkflows', ('c',), 'copy_to_subworkflows', 'Copy to subworkflows', policies=NAV, priority=False),
 ), cancel_action='cancel')
 
 NAME_PROMPT = Profile('name_prompt', (
@@ -315,6 +318,19 @@ NAME_PROMPT = Profile('name_prompt', (
     Command('name_prompt.cursor_left', ('a', 'left'), 'cursor_left', 'Left', policies=NAV, priority=True, navigation='left'),
     Command('name_prompt.cursor_right', ('d', 'right'), 'cursor_right', 'Right', policies=NAV, priority=True, navigation='right'),
     Command('name_prompt.activate_focused', ('e', 'enter'), 'activate_focused', 'Activate', policies=NAV, priority=True, navigation='activate'),
+), cancel_action='cancel')
+
+CONTRACT_ROW_EDITOR = Profile('contract_row_editor', (
+    Command('contract_row_editor.cancel', ('escape',), 'cancel', 'Cancel', policies=NAV, priority=False),
+    Command('contract_row_editor.submit', ('ctrl+enter',), 'submit', 'Confirm', policies=NAV_TEXT, priority=False),
+    Command('contract_row_editor.submit.ctrl.s', ('ctrl+s',), 'submit', 'Confirm', policies=NAV_TEXT, priority=True),
+    Command('contract_row_editor.revert_or_cancel', ('ctrl+q',), 'revert_or_cancel', 'Cancel', policies=NAV_TEXT, priority=True),
+    Command('contract_row_editor.stash_insert', ('p',), 'stash_insert', 'Insert from Stash', policies=NAV, priority=True),
+    Command('contract_row_editor.cursor_up', ('w', 'up'), 'cursor_up', 'Up', policies=NAV, priority=True, navigation='up'),
+    Command('contract_row_editor.cursor_down', ('s', 'down'), 'cursor_down', 'Down', policies=NAV, priority=True, navigation='down'),
+    Command('contract_row_editor.cursor_left', ('a', 'left'), 'cursor_left', 'Left', policies=NAV, priority=True, navigation='left'),
+    Command('contract_row_editor.cursor_right', ('d', 'right'), 'cursor_right', 'Right', policies=NAV, priority=True, navigation='right'),
+    Command('contract_row_editor.activate_focused', ('e', 'enter'), 'activate_focused', 'Activate', policies=NAV, priority=True, navigation='activate'),
 ), cancel_action='cancel')
 
 PATH_PROMPT = Profile('path_prompt', (
@@ -394,7 +410,7 @@ SELECT_OVERLAY = Profile("select_overlay", (
 WIDGET_PROFILES = (TEXT_INPUT, TEXT_AREA, NAME_INPUT, STASH_PASTE, STASH_SEARCH, SELECT_OVERLAY)
 
 
-PROFILES = (CONFIRM, APP, BRANCH_KEEP_SELECTOR, BRANCH_SELECTOR, EDITOR, ERROR_DETAILS, EXECUTION, GROUP_PICKER, HELP, MERGE_BEACON_SELECTOR, NODE_CONFIG, NODE_SELECTOR, RECOVERY_BRANCH_UNPICK, SETTINGS, STASH, UNSAVED_CHANGES, USER_INPUT, WORKFLOW_LIBRARY, NAME_PROMPT, PATH_PROMPT,)
+PROFILES = (CONFIRM, APP, BRANCH_KEEP_SELECTOR, BRANCH_SELECTOR, EDITOR, ERROR_DETAILS, EXECUTION, GROUP_PICKER, HELP, MERGE_BEACON_SELECTOR, NODE_CONFIG, NODE_SELECTOR, RECOVERY_BRANCH_UNPICK, SETTINGS, STASH, UNSAVED_CHANGES, USER_INPUT, WORKFLOW_LIBRARY, NAME_PROMPT, PATH_PROMPT, CONTRACT_ROW_EDITOR,)
 
 
 def priority_for(command: Command, key: str) -> bool:

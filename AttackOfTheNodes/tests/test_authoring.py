@@ -315,3 +315,10 @@ def test_json_output_stays_parseable_with_an_unreadable_workflow(_isolated_workf
     assert code == 0
     assert json.loads(captured.out)["ok"] is True
     assert "wf_broken" in caplog.text  # a log warning (stderr), not stdout
+
+
+def test_build_uses_the_shared_name_rules():
+    """Review of #85: a built name ending in [sub] could never be run by name."""
+    report = authoring.build_workflow(FACTORY, _spec(name="Report [sub]"))
+    assert report["ok"] is False
+    assert [code for _, code in _codes(report)] == ["name_invalid"]

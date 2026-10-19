@@ -95,12 +95,17 @@ Step 4 stage. See
   JSON value, `file`), `value` (the default when run directly; blank means
   none), `required`, `to` (`Downstream`, `Vault` or `Both`) and `vault_key`
   (blank means the row's name). One downstream row is sent as itself,
-  several as one object. A Start with no rows keeps its `greeting`.
+  several as one object. A Start with no rows keeps its `greeting`, unless
+  `no_inputs: true` says every input was removed (then it sends nothing).
 - **Return End** (`end_node` with `return_end: true`): each result has
   `name`, `type`, `required` (default true) and `source` (`Vault key` or
   `Incoming payload`). A callable workflow has at most one Return End, and
   it must come after any Parallel Branch has merged.
-- **`callable`** (top level, default false) marks a workflow as callable.
+- **`callable`** (top level, default false) marks a workflow as callable:
+  a **subworkflow**, listed on the File window's Subworkflows tab. In the app,
+  C on the Workflows tab copies a workflow there (same name, numbered `(2)`
+  for a repeat copy); Start's Inputs tab, the End's Results tab and "Send
+  back to calling workflow" on a Vault payload edit the same keys.
 
 Running one: `aotn run <workflow> --input who=Kim --input times=3` parses
 each value by its row (numbers, `true`/`false`, JSON for `var`, a path for
@@ -111,7 +116,10 @@ results are enforced only when the workflow is callable. Absent or JSON `null`
 means missing, as does a blank stored default; an explicitly supplied `""`,
 `0` or `false` is a value. A run
 with a missing required input, a wrongly typed value, or (callable only) an
-undeclared input stops before it starts with **exit code 5**. Results print
+undeclared input stops before it starts with **exit code 5**. A workflow and
+its subworkflow copy may share a name: `aotn run "<name>"` picks the
+workflow, `aotn run "<name> [sub]"` the subworkflow, so no name may end with
+`[sub]` (`aotn build` reports `name_invalid`). Results print
 as `name = value` after the outputs, and in `--json` output as `values`, with
 the `revision` of the definition that ran.
 
@@ -157,8 +165,9 @@ In one pass, reporting every problem at once:
 4. The full validator (`validate_workflow`): its errors fail the build, its
    warnings are reported (codes from `backend/validation_codes.py`).
 5. Save through `SaveManager` (atomic write, a unique temporary file per
-   save), refusing a name already saved (case-insensitive, as `aotn run`
-   matches names; the app's rename and New use the same rule,
+   save), refusing a name already saved for the same kind of workflow
+   (case-insensitive, as `aotn run` matches names; the app's rename and New
+   use the same rule,
    `backend/workflow_names.py`), then reload the file into a fresh map and check that it
    matches and validates the same.
 

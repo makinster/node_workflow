@@ -293,10 +293,20 @@ def resolve_workflow_data(reference: str) -> Dict[str, Any]:
     data = load_workflow(reference)
     if data is not None:
         return data
+    wanted, want_sub = reference.casefold(), None
+    if wanted.endswith(" [sub]"):
+        wanted, want_sub = wanted[: -len(" [sub]")].rstrip(), True
     matches = [
         item for item in list_workflows()
-        if item["name"].casefold() == reference.casefold()
+        if item["name"].casefold() == wanted
+        and (want_sub is None or bool(item.get("callable")) == want_sub)
     ]
+    if len(matches) > 1 and want_sub is None:
+        # A workflow and its subworkflow copy share a name: the plain name
+        # means the standard workflow (owner, 2026-10-18).
+        standard = [item for item in matches if not item.get("callable")]
+        if len(standard) == 1:
+            matches = standard
     if len(matches) > 1:
         ids = ", ".join(item["id"] for item in matches)
         raise WorkflowNotFoundError(

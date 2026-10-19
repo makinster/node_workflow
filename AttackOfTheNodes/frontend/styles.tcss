@@ -126,6 +126,17 @@ Screen {
     height: 1fr;
 }
 
+/* File window tabs (Step 4a-2): the lists size to their rows so the buttons
+   and key hints stay on screen. */
+#library-tabs {
+    height: auto;
+}
+
+#library-tabs ListView {
+    height: auto;
+    max-height: 18;
+}
+
 .tab-scroll {
     height: 1fr;
     overflow-y: auto;

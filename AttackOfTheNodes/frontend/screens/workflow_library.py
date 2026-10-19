@@ -9,7 +9,7 @@ from typing import Any, Callable, Dict, Optional
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
-from textual.widgets import Button, Input, Label, ListItem, ListView, Static
+from textual.widgets import Button, Input, Label, ListItem, ListView, Static, TabbedContent, TabPane
 
 from backend.persistence import list_workflows
 from frontend import file_io, notifications
@@ -22,32 +22,73 @@ from frontend.widgets.list_navigation import focus_list, move_list_highlight
 from frontend.widgets.status_bar import StatusBar
 
 
+STANDARD_TAB = "library-tab-workflows"
+SUB_TAB = "library-tab-subworkflows"
+_LISTS = {STANDARD_TAB: "workflow-list", SUB_TAB: "subworkflow-list"}
+_HELP = {
+    STANDARD_TAB: "1-2 tabs | e open | n new | c copy to subworkflows | x delete | ? more",
+    SUB_TAB: "1-2 tabs | e open | n new | x delete | ? more",
+}
+
+
 class WorkflowLibraryScreen(KeymapScreenMixin, ModalScreen):
-    """Open, duplicate, export, and delete saved workflows."""
+    """Open, create, copy, rename, duplicate, export and delete saved
+    workflows. Tab 1 lists workflows, tab 2 subworkflows (owner, 2026-10-18)."""
 
     KEYMAP = WORKFLOW_LIBRARY
     BINDINGS = bindings_for(KEYMAP)
 
-    def __init__(self, current_workflow_id: str | None = None) -> None:
+    def __init__(self, current_workflow_id: str | None = None, initial_tab: str | None = None) -> None:
         super().__init__()
-        self.workflows: list[Dict[str, Any]] = []
         self.current_workflow_id = current_workflow_id
+        self._initial_tab = initial_tab
+        self._by_tab: Dict[str, list[Dict[str, Any]]] = {STANDARD_TAB: [], SUB_TAB: []}
+
+    @property
+    def workflows(self) -> list[Dict[str, Any]]:
+        """The workflows on the active tab."""
+        return self._by_tab[self._active_tab()]
 
     def compose(self) -> ComposeResult:
         with Vertical(id="modal-card"):
             yield Label("Workflow Library", classes="modal-title")
-            yield ListView(id="workflow-list")
-            yield Static(
-                "E load | N new | R rename | D duplicate\nX delete | I import | O export | Esc cancel",
-                classes="modal-help",
-            )
+            with TabbedContent(id="library-tabs", classes="node-config-tabs"):
+                with TabPane("1 Workflows", id=STANDARD_TAB):
+                    yield ListView(id="workflow-list")
+                with TabPane("2 Subworkflows", id=SUB_TAB):
+                    yield Static("Can run inside other workflows.", classes="form-description")
+                    yield ListView(id="subworkflow-list")
             with Horizontal(classes="button-row"):
-                yield Button("Load", id="load-workflow-library", variant="primary")
+                yield Button("Open", id="load-workflow-library", variant="primary")
                 yield Button("Close", id="cancel-workflow-library", variant="default")
+            yield StatusBar(_HELP[STANDARD_TAB])
 
     def on_mount(self) -> None:
         self._refresh_workflows()
+        tab = self._initial_tab
+        if tab is None:
+            current = next((w for w in list_workflows() if w.get("id") == self.current_workflow_id), None)
+            tab = SUB_TAB if current and current.get("callable") else STANDARD_TAB
+        self.action_show_tab("sub" if tab == SUB_TAB else "workflows")
+
+    def _active_tab(self) -> str:
+        try:
+            active = self.query_one("#library-tabs", TabbedContent).active
+        except Exception:
+            active = ""
+        return active if active in _LISTS else STANDARD_TAB
+
+    def _list(self) -> ListView:
+        return self.query_one(f"#{_LISTS[self._active_tab()]}", ListView)
+
+    def action_show_tab(self, tab: str) -> None:
+        tab_id = SUB_TAB if tab == "sub" else STANDARD_TAB
+        self.query_one("#library-tabs", TabbedContent).active = tab_id
+        self.query_one(StatusBar).set_bindings_text(_HELP[tab_id])
         self._focus_workflow_list()
+
+    def on_tabbed_content_tab_activated(self, _event: TabbedContent.TabActivated) -> None:
+        self.query_one(StatusBar).set_bindings_text(_HELP[self._active_tab()])
 
     def on_list_view_selected(self, event: ListView.Selected) -> None:
         self._dismiss_action("load", event.list_view.index)
@@ -60,8 +101,7 @@ class WorkflowLibraryScreen(KeymapScreenMixin, ModalScreen):
             self.action_load_selected()
 
     def action_load_selected(self) -> None:
-        index = self.query_one("#workflow-list", ListView).index
-        self._dismiss_action("load", index)
+        self._dismiss_action("load", self._list().index)
 
     def action_choose(self) -> None:
         if self.app.focused is self.query_one("#cancel-workflow-library", Button):
@@ -70,26 +110,29 @@ class WorkflowLibraryScreen(KeymapScreenMixin, ModalScreen):
         self.action_load_selected()
 
     def action_new_workflow(self) -> None:
-        self.dismiss({"action": "new"})
+        if self._active_tab() == SUB_TAB:
+            self.dismiss({"action": "new", "callable": True})
+        else:
+            self.dismiss({"action": "new"})
+
+    def action_copy_to_subworkflows(self) -> None:
+        if self._active_tab() == STANDARD_TAB:
+            self._dismiss_action("copy_to_subworkflows", self._list().index)
 
     def action_rename_selected(self) -> None:
-        index = self.query_one("#workflow-list", ListView).index
-        self._dismiss_action("rename", index)
+        self._dismiss_action("rename", self._list().index)
 
     def action_duplicate_selected(self) -> None:
-        index = self.query_one("#workflow-list", ListView).index
-        self._dismiss_action("duplicate", index)
+        self._dismiss_action("duplicate", self._list().index)
 
     def action_export_selected(self) -> None:
-        index = self.query_one("#workflow-list", ListView).index
-        self._dismiss_action("export", index)
+        self._dismiss_action("export", self._list().index)
 
     def action_import_workflow(self) -> None:
         self.dismiss({"action": "import"})
 
     def action_delete_selected(self) -> None:
-        index = self.query_one("#workflow-list", ListView).index
-        self._dismiss_action("delete", index)
+        self._dismiss_action("delete", self._list().index)
 
     def action_cursor_up(self) -> None:
         self._move_selection(-1)
@@ -101,31 +144,36 @@ class WorkflowLibraryScreen(KeymapScreenMixin, ModalScreen):
         self.dismiss(None)
 
     def _refresh_workflows(self) -> None:
-        self.workflows = list_workflows()
-        list_view = self.query_one("#workflow-list", ListView)
-        list_view.clear()
-        display_names = self._display_names(self.workflows)
-        for workflow, display_name in zip(self.workflows, display_names):
-            loaded = (
-                " <-- Loaded Workflow"
-                if workflow.get("id") == self.current_workflow_id
-                else ""
-            )
-            text = f"{display_name}{loaded}"
-            row = Static(text)
-            setattr(row, "display_text", text)
-            list_view.append(ListItem(row))
-        if not self.workflows:
-            list_view.append(ListItem(Static("No saved workflows")))
-        else:
-            list_view.index = 0
+        saved = list_workflows()
+        self._by_tab = {
+            STANDARD_TAB: [w for w in saved if not w.get("callable")],
+            SUB_TAB: [w for w in saved if w.get("callable")],
+        }
+        for tab_id, list_id in _LISTS.items():
+            workflows = self._by_tab[tab_id]
+            list_view = self.query_one(f"#{list_id}", ListView)
+            list_view.clear()
+            for workflow, display_name in zip(workflows, self._display_names(workflows)):
+                loaded = (
+                    " <-- Loaded Workflow"
+                    if workflow.get("id") == self.current_workflow_id
+                    else ""
+                )
+                text = f"{display_name}{loaded}"
+                row = Static(text, markup=False)
+                setattr(row, "display_text", text)
+                list_view.append(ListItem(row))
+            if not workflows:
+                empty = "No saved subworkflows" if tab_id == SUB_TAB else "No saved workflows"
+                list_view.append(ListItem(Static(empty)))
+            else:
+                list_view.index = 0
 
     def _focus_workflow_list(self) -> None:
-        list_view = self.query_one("#workflow-list", ListView)
-        focus_list(self.app, list_view, len(self.workflows))
+        focus_list(self.app, self._list(), len(self.workflows))
 
     def _move_selection(self, delta: int) -> None:
-        list_view = self.query_one("#workflow-list", ListView)
+        list_view = self._list()
         cancel = self.query_one("#cancel-workflow-library", Button)
         if self.app.focused is cancel and delta < 0:
             if self.workflows:
@@ -143,11 +191,7 @@ class WorkflowLibraryScreen(KeymapScreenMixin, ModalScreen):
         move_list_highlight(self.app, list_view, len(self.workflows), delta)
 
     def _display_names(self, workflows: list[Dict[str, Any]]) -> list[str]:
-        totals: Dict[str, int] = {}
         seen: Dict[str, int] = {}
-        for workflow in workflows:
-            name = str(workflow.get("name") or "Untitled Workflow")
-            totals[name] = totals.get(name, 0) + 1
         names = []
         for workflow in workflows:
             name = str(workflow.get("name") or "Untitled Workflow")
@@ -158,16 +202,17 @@ class WorkflowLibraryScreen(KeymapScreenMixin, ModalScreen):
     def _dismiss_action(self, action: str, index: Optional[int]) -> None:
         if index is None or index < 0 or index >= len(self.workflows):
             if action == "new":
-                self.dismiss({"action": "new"})
+                self.action_new_workflow()
             return
         workflow = self.workflows[index]
-        self.dismiss(
-            {
-                "action": action,
-                "workflow_id": workflow["id"],
-                "workflow_name": workflow["name"],
-            }
-        )
+        result = {
+            "action": action,
+            "workflow_id": workflow["id"],
+            "workflow_name": workflow["name"],
+        }
+        if workflow.get("callable"):
+            result["callable"] = True
+        self.dismiss(result)
 
 
 class _NameInput(CommandInput):

@@ -1,6 +1,6 @@
 # AttackOfTheNodes Session Log
 
-This log keeps roughly the last two weeks: entries dated October 4–18, 2026
+This log keeps roughly the last two weeks: entries dated October 4–19, 2026
 (the earliest existing entry is October 6). Every October 18 entry is retained.
 Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.md).
 Before rolling the window forward, extract owner decisions into their owning
@@ -54,6 +54,77 @@ Before: 1729 passed.
   does, parses configured values by type (`subworkflow_input_invalid`) and
   checks result routes (`subworkflow_result_unknown`); child records add
   `parent_visit` and `parent_attempt`. After: 1762 passed.
+
+## 2026-10-19 — Deletion owner answers and recovery-window samples
+
+Branch `codex/deletion-owner-answers`, fresh from `origin/main` at `1addbf9`,
+in `/home/makin/src/nw-docs` (clean at start). The owner checkout remains at
+`105623d` on `docs/newcomer-guide` with its unrelated edits preserved.
+
+- Recorded the five owner answers from the shared NOTES: all Beacons previously
+  connected to a deleted Merge stay and reset to unconnected; deleting a Beacon
+  ends its branch; conflicted undo previews what cannot return, then restores
+  what fits; reduced paths stay saved under the live Branch; warning levels stay.
+- Checked `validator.py`: `merge_beacon_unconnected` is a warning and does not
+  block running. Keep that level; unreachable warnings and blocking tombstone
+  errors also keep their levels.
+- Added compact samples for the recover prompt and optional which-paths picker.
+  Recover relinks to new ports; zero choices leave them empty. Unchosen paths
+  remain saved. No expiry until the owner decides the retention window.
+- Phase 2 waits for owner approval of this update and #85 merging, then uses
+  fresh main and the agreed Editor/adapter/error-mux/keep-picker files. Include
+  the editor's ` [sub]` header; no `node_config.py` edits. Open each PR and stop.
+- Findings-only #85 re-review at `afe98cd` in `/home/makin/src/nw-review85`:
+  the five original cases pass; **53 focused tests passed in 13.24s** and the
+  full suite **1759 passed in 230.79s**. One additional mounted-screen probe
+  fails: confirming a typed file-reference default unchanged saves JSON text,
+  which file input resolution mistakes for a path. No source/test edits or
+  review comments posted. Temporary probe uses an isolated temporary file.
+- This PR changes documentation only; behavior regressions must fail first in
+  phase 2. Verification: **1729 passed in 228.35s**; docs link/archive checks and
+  `git diff --check` pass. Prior log entries and archive bodies are retained.
+  Samples are plain text; no live-terminal or new rendered-UI claim.
+
+## 2026-10-18 — Step 4a-2: Subworkflow Screens
+
+Branch `dist/step4a2-screens`, from main `1addbf9`. Owner-approved samples
+(three wording passes, then File window tabs). Before: 1729 passed.
+
+- **File window:** Workflows and Subworkflows tabs (1/2). The key line keeps
+  the common keys and `?` opens the grouped key list; Open replaces Load.
+  **C** on tab 1 copies a workflow to Subworkflows with the same name; a
+  repeat copy is numbered "(2)" with a warning toast; the original is not
+  touched; a single End becomes the Return End. **N** on tab 2 makes a
+  subworkflow. Names are unique per tab (`workflow_names`, `list_workflows`
+  now reports `callable`); `aotn run "<name> [sub]"` picks the copy.
+- **Start:** an Inputs tab of one-line rows (the old greeting shows as one
+  row; saving it untouched changes nothing), an input editor (name, type,
+  default with P for the Stash, required, send to, Vault key, description;
+  names must be unique and defaults must parse by type), and "Next node
+  gets: ...". In a subworkflow, a read-only Results tab mirrors the Return End.
+- **End (subworkflows only):** a Results tab with "Send results back" and
+  its result rows. Standard workflows never show these controls.
+- **Payloads (subworkflows only):** "Send back to calling workflow" under a
+  Vault payload adds or removes that key on the Return End when saved.
+- Node Config titles show `[sub]` in a subworkflow. A new keymap profile,
+  `contract_row_editor`, covers the input/result editor.
+- Not in this PR: `[sub]` in the editor header (Codex owns `editor.py`),
+  "Send back" for multi-output Vault nodes (`membank_outputs`), and the
+  plain-language pass over the rest of the UI.
+- After: 1754 passed (25 new tests in `test_subworkflow_library.py` and
+  `test_contract_screens.py`; the old Start Payloads test now checks the
+  Inputs row instead).
+- **Review of f5ca052** (five findings, each reproduced failing first):
+  renaming a sent-back Vault key moves its result instead of leaving a stale
+  one; "Send back" refuses a result name the Return End already uses;
+  removing every Start input saves `no_inputs: true` (plain `rows: []` still
+  means the old greeting, as saved files expect); an object or list default
+  shows as JSON, so confirming it unchanged keeps its type; `aotn build`
+  applies the full name rule (`name_invalid` for a name ending in `[sub]`).
+  After: 1759 passed.
+- **Review of afe98cd:** a file default shows as its path, and an input row
+  confirmed without changes keeps its stored value, so a typed file
+  reference no longer saves back as JSON text. After: 1760 passed.
 
 ## 2026-10-18 — Docs C integrated with #81, #82 and #84
 
