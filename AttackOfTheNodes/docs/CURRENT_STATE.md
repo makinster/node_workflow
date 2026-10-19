@@ -3,6 +3,29 @@
 Snapshot checked **2026-10-18**. Code and fresh GitHub checks take precedence.
 This is the only live status snapshot; older logs/plans retain dated history.
 
+## Deletion review — checked 2026-10-18
+
+- Fresh main remains `90182f0`; #78 keymap phase 2 and #80 contracts are
+  merged. Open PRs: #81 file-picker fix, #82 editor hotfixes (head `531e4c1`)
+  and #83 docs C. Their entries must all survive integration.
+- Phase 1: [Deletion Review Proposal](DELETION_REVIEW_PROPOSAL.md),
+  `codex/deletion-proposal`, docs only. Current-case evidence is checked on
+  #82's branch; it is not presented as merged main. Includes compact samples,
+  grouped undo, exact-count keep picker, Merge/Beacon choices and session history.
+- Phase 2 waits for owner approval and #82's merge, then starts on fresh main.
+  Editor, adapter, error-mux helpers and keep picker are this worker's; Node
+  Config, library, Help and App remain with 4a-2. Count reduction is intercepted
+  in Editor. The save-and-stay completion contract needs an integration check.
+- Verification: main full suite **1708 passed in 217.06s**; source/probe checks
+  include saved versus unsaved Beacon removal; #82's later review fixes were
+  rechecked on `531e4c1` (**23 passed in 3.51s**). No application/tests changed.
+  Link checks pass; the historical docs count needs the temporary proposal
+  registered when #83's allowlist is integrated. Native UI was not checked.
+
+The phase-2 snapshot below predates #78/#80 merging and is retained pending
+#83's status cleanup. Use the checked status above for this task; preserve the
+owner decisions and verification entries when integrating both PRs.
+
 ## Baseline and open work — 2026-10-18
 
 - Phase-2 implementation base: fresh `origin/main` at `4cb246e` (keymap
