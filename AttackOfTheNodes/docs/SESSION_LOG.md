@@ -4,6 +4,24 @@ This active log keeps recent/current entries only. Full older history was
 collapsed into `archive/SESSION_LOG_HISTORY.md` during the documentation
 overhaul.
 
+## 2026-10-18 — Editor fixes: insert with two parents, error paths, colours
+
+Branch `fix/insert-fan-in-error-path`, from `main` at `90182f0`. Owner bug
+report on the "Test Bench - C1/C2 checks" workflow. Before: 1708 passed.
+After: 1713 passed (5 new tests in `test_insert_fan_in_error_path.py`).
+
+- **Insert lost the nodes below it** when the next node had a second parent
+  (Pause is fed by Dice and Save note): its input looked occupied, so the
+  new node was never connected to it. The inserted node now takes over the
+  port it was cut from.
+- **No error path by default.** HTTP Request and JSON Path no longer list
+  `error` as an output; their failures are coded `NodeError`s that go to
+  the default handler until the node's Errors tab catches them. The
+  `error` payload is now the engine's error record (code, message,
+  details), the same as every other node.
+- **Colours:** a node's error path no longer re-colours the normal path
+  below it; the error path keeps its own colour.
+
 ## 2026-10-18 — Step 4a-1: Contracts (Backend and CLI)
 
 Branch `dist/step4a1-contracts`, from `main` at `15742b0` (#79). Before:

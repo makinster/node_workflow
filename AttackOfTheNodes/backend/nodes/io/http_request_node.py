@@ -4,6 +4,7 @@ from typing import Any, ClassVar, Dict, List, Optional
 
 from ...node_base import Node, NodeContext
 from ...node_category import NodeCategory
+from ...node_errors import NodeError
 
 
 class HttpRequestNode(Node):
@@ -21,7 +22,7 @@ class HttpRequestNode(Node):
     group: ClassVar[Optional[str]] = 'Web Request'
     selector_section: ClassVar[Optional[str]] = 'Web'
     input_ports: ClassVar[List[str]] = ['input']
-    output_ports: ClassVar[List[str]] = ['default', 'error']
+    output_ports: ClassVar[List[str]] = ['default']
     input_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {}
     output_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {'default': {'name': 'Response', 'description': 'The response body: text, or a file reference when Response as is file'}}
     default_config: ClassVar[Dict[str, Any]] = {'url': '', 'method': 'GET', 'body_source': 'config', 'body': '', 'response_mode': 'text', 'keep_response_file': False, 'timeout_seconds': 10.0, 'auth_token_secret': ''}
@@ -41,10 +42,7 @@ class HttpRequestNode(Node):
 
         url = str(self.config.get("url") or "").strip()
         if not url:
-            context.signal_done(
-                {"data": {"error": "URL is required", "code": "missing_url"},
-                 "output_port": "error"}
-            )
+            context.signal_error(NodeError("missing_url", "URL is required"))
             return
 
         method = str(self.config.get("method") or "GET").upper()
@@ -79,17 +77,15 @@ class HttpRequestNode(Node):
                 body = exc.read(4096).decode("utf-8", errors="replace")
             except Exception:
                 body = ""
-            context.signal_done({"data": {
-                "error": str(exc), "code": "http_status",
-                "details": {"status": exc.code, "url": url, "response_body": body},
-            }, "output_port": "error"})
+            context.signal_error(NodeError(
+                "http_status", str(exc),
+                details={"status": exc.code, "url": url, "response_body": body},
+            ))
         except (urllib.error.URLError, TimeoutError) as exc:
             # Socket timeouts raise TimeoutError directly, not URLError.
             reason = getattr(exc, "reason", exc)
             code = "timeout" if isinstance(reason, TimeoutError) else "network"
-            context.signal_done({"data": {
-                "error": str(exc), "code": code, "details": {"url": url},
-            }, "output_port": "error"})
+            context.signal_error(NodeError(code, str(exc), details={"url": url}))
 
     def _request_body(self, context: NodeContext, method: str):
         """Return (body bytes or None, Content-Type or None) for the request."""

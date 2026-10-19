@@ -1,8 +1,8 @@
 """Error paths on every node in the editor (port model P3).
 
 The engine routes a failure along `error` from any node (D7). The editor
-always shows it on nodes that list it (HTTP Request, JSON Path); any other
-node shows it once its Errors section asks for it or once it is wired.
+shows it once the node's Errors section asks for it or once it is wired; no
+node lists it by default (owner, 2026-10-18).
 """
 
 from __future__ import annotations
@@ -40,10 +40,11 @@ def test_error_path_is_hidden_until_asked_for_or_wired():
     assert editor_output_ports(factory, workflow_map.get_node_data(logger)) == ["default", "error"]
 
 
-def test_nodes_that_list_error_show_it_once():
-    factory, workflow_map = _map()
-    http = workflow_map.add_node("http_request_node")
-    assert editor_output_ports(factory, workflow_map.get_node_data(http)) == ["default", "error"]
+def test_no_node_type_lists_the_error_port():
+    factory = NodeFactory()
+    listed = [meta["type"] for meta in factory.get_node_types_metadata()
+              if "error" in meta["output_ports"]]
+    assert listed == []
 
 
 def test_the_backend_port_list_never_includes_the_engine_error_port():

@@ -20,7 +20,7 @@ def test_json_path_node_registration_and_metadata():
     assert metadata["display_name"] == 'JSON Path'
     assert metadata["default_alias"] == 'JSON Path'
     assert metadata["input_ports"] == ['input']
-    assert metadata["output_ports"] == ['default', 'error']
+    assert metadata["output_ports"] == ['default']
     # Every declared port exposes the per-port I/O contract (handoff §4/§6):
     # data_type defaults to "any", required defaults to False.
     for direction in ("input_port_metadata", "output_port_metadata"):
@@ -47,13 +47,14 @@ async def _run_json_path(json_input, path: str, default_value: str = "") -> dict
     context = NodeContext(
         node_id="n1", branch_id="b", run_id="r",
         inputs={"input": raw}, memory_bank=memory,
-        signal_done=done.append, signal_error=lambda e: None,
+        signal_done=done.append,
+        signal_error=lambda e: done.append({"error": e}),
         signal_waiting_for_input=lambda p: None,
         wait_for_nodes=lambda t, timeout: None,
         wait_for_merge=lambda n, b, p, i, timeout: None,
     )
     await node.execute(context)
-    return done[0]["data"]
+    return done[0].get("data", done[0])
 
 
 @pytest.mark.asyncio
@@ -89,10 +90,10 @@ async def test_json_path_missing_key_returns_default():
 
 
 @pytest.mark.asyncio
-async def test_json_path_invalid_json_routes_to_error():
+async def test_json_path_invalid_json_is_a_coded_error():
     data = await _run_json_path("not json at all", "key")
-    assert "error" in data
-    assert "Invalid JSON" in data["error"]
+    assert data["error"].code == "invalid_json"
+    assert "Invalid JSON" in str(data["error"])
 
 
 @pytest.mark.asyncio

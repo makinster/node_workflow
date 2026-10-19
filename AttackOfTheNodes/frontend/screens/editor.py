@@ -1443,21 +1443,28 @@ class EditorScreen(KeymapScreenMixin, Screen):
                 self.factory.node_input_ports(existing) if existing_meta else []
             )
             if target_output_ports and existing_input_ports:
-                occupied = {
-                    conn.get("target_port")
-                    for conn in (existing.get("connections") or {}).get("inputs", [])
-                }
-                available = [port for port in existing_input_ports if port not in occupied]
-                if not available:
-                    return
+                # The new node takes over the port it was cut from, even when
+                # another parent feeds that port too (a fan-in, no merge).
+                freed = existing_connection.get("target_port", "input")
+                if freed in existing_input_ports:
+                    reconnect_port = freed
+                else:
+                    occupied = {
+                        conn.get("target_port")
+                        for conn in (existing.get("connections") or {}).get("inputs", [])
+                    }
+                    available = [port for port in existing_input_ports if port not in occupied]
+                    if not available:
+                        return
+                    reconnect_port = self._target_input_port_for_connection(
+                        target_node_id, target_output_ports[0], existing_target,
+                        available,
+                    )
                 self.workflow_map.connect(
                     target_node_id,
                     target_output_ports[0],
                     existing_target,
-                    self._target_input_port_for_connection(
-                        target_node_id, target_output_ports[0], existing_target,
-                        available,
-                    ),
+                    reconnect_port,
                 )
 
     def _refresh_details(self) -> None:
@@ -1917,7 +1924,12 @@ class EditorScreen(KeymapScreenMixin, Screen):
                     active_port = output_ports[0]
                 self.active_branch_ports[current_node_id] = active_port
                 port_labels = self._branch_port_labels(node)
-                active_color_key = branch_path_color_key(branch_index, active_port)
+                if (active_port != ERROR_PORT and current_branch_color_key
+                        and output_ports == [active_port, ERROR_PORT]):
+                    # A node's error path does not re-colour its normal path.
+                    active_color_key = current_branch_color_key
+                else:
+                    active_color_key = branch_path_color_key(branch_index, active_port)
                 rows.append(
                     {
                         "kind": "branch_select",
