@@ -843,12 +843,18 @@ stop for the owner/reviewer:
 | Phase | Scope | Status |
 |---|---|---|
 | 1 | Registry/runtime, stable IDs, class-time compilation, pure shared availability and characterization; one simple profile end to end | Merged #77: Confirm, including its unchanged generated hint and navigation |
-| 2 | Shared mixin/navigation policies, retire duplicated action-name lists; Input/TextArea and Select adapters; Stash, Node Config (P insert), Editor, Workflow Library and list pickers | Awaiting review on `codex/keymap-policies`; each listed defect reproduced failing first and fixed. Multi-state policies and native adapters installed; current display text remains for phase 3 |
+| 2 | Shared mixin/navigation policies, retire duplicated action-name lists; Input/TextArea and Select adapters; Stash, Node Config (P insert), Editor, Workflow Library and list pickers | Merged #78; each listed defect reproduced failing first and fixed. Multi-state policies and native adapters installed; current display text remains for phase 3 |
 | 3 | Generated Help/hints for migrated screens; replace handwritten key text and stale A/D-tab descriptions in Node Config/selector | After phase 2 merges |
 
 Deferred: remaining read-only viewers until next touched, generated
 `UI_QUICK_REFERENCE.md` tables/source checks, Settings rebinding UI. Keep IDs
 stable for those follow-ups. No backend/workflow format changes.
+
+Verification prerequisite (2026-10-18): `codex/file-picker-teardown` fixes the
+file-picker test's HeaderTitle teardown race by awaiting picker and editor
+switch completion, with a failing-first slow-mount regression. Test-only;
+no frontend files overlap Step 4a-2. Docs PR C, then the non-overlapping
+phase-3 screens follow as separate PRs.
 
 **Post-S3 re-inventory:** baseline `714f190` (merged #75, 2026-10-18), Textual
 8.2.7. Still 22 screen classes in 20 modules; 182 literal app/screen binding

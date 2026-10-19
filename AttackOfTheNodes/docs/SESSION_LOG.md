@@ -51,6 +51,30 @@ Tests are in `test_insert_fan_in_error_path.py`.
 - Logged for later in the backlog: reducing a Branch node's path count,
   and a deletion review with the owner. After: 1728 passed (20 new tests).
 
+## 2026-10-18 — Deterministic File-Picker Test Teardown
+
+Branch `codex/file-picker-teardown`, fresh from `origin/main` at `90182f0`
+(#78 and #80 merged). Test-only fix; no frontend/backend files changed.
+
+- Reproduced `NoMatches: HeaderTitle` before fixing the test by delaying
+  Header mounting 250 ms. The new regression failed with the same traceback:
+  the old 100 ms pause ends while the imported workflow's editor is mounting.
+- Cause: `load_workflow` records success before `show_editor_screen` finishes
+  its asynchronous switch. `pilot.pause(delay)` drains the current screen
+  before sleeping, so it can miss the replacement screen created during sleep.
+- The test now observes picker completion through a test-only App subclass,
+  awaits Textual's public screen-switch completion, then drains the new screen.
+  It retains production picker entry points, threaded OS-picker stubs, the
+  stylesheet and every original assertion. It additionally checks that import
+  reaches a new mounted editor. No increased sleep in the fix; the regression's
+  delay models slow mounting only.
+- Verification: unmodified full suite **1708 passed** in 216.99s; regression
+  failed first; focused picker tests **3 passed**, with **ten consecutive runs**
+  also passing (30 tests). Final full suite **1709 passed** in 216.57s.
+  Changed-test compilation and `git diff --check` pass.
+- Step 4a-2 frontend files are untouched. Docs PR C and the restricted keymap
+  phase 3 remain separate follow-up PRs; the owner/reviewer merges.
+
 ## 2026-10-18 — Step 4a-1: Contracts (Backend and CLI)
 
 Branch `dist/step4a1-contracts`, from `main` at `15742b0` (#79). Before:
