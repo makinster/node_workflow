@@ -133,10 +133,12 @@ touched. Keep existing semantic IDs, including Confirm's phase-1 IDs.
    Select and overlay use one profile; only the focused owner is enabled. Test
    both focus paths, including screen embedding. Do not add raw Select handlers
    to Node Config or new custom sections.
-7. Full contextual Help/hints and tab labels follow in phase 3. Confirm's compact
-   hint already uses `hint_for(profile)`. Other current display strings stay
-   unchanged until that migration; generated Quick Reference tables, source
-   checks and Settings rebinding remain deferred.
+7. Editor/Execution Help uses `help_for(profile)`; their compact hints use
+   `screen_hint_for(profile)`. Hint groups name stable command IDs; they do not
+   copy key strings. Both renderers use native key overrides. Keep Help labels
+   in command descriptions and provide before/after text for visible changes.
+   Confirm still uses `hint_for(profile)`. Other contexts, generated Quick
+   Reference tables and Settings rebinding UI remain deferred.
 8. Add actual-keypress tests with production CSS: compiled IDs/aliases, focused
    controls, NAV/TEXT/Select ownership, modal scope and button activation. Test
    rebinding through `App.set_keymap` (without adding a preferences UI): the new

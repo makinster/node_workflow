@@ -1,0 +1,20 @@
+Editor
+  W/S or ↑/↓            Move through nodes
+  A/D or ←/→            Switch branches
+  Ctrl+A/D or Ctrl+←/→  Switch incomplete branches
+  E or Enter            Select / edit
+  I                     Insert after selection
+  X or Backspace        Delete selection
+  Z                     Undo delete
+  B                     Toggle breakpoint
+  Ctrl+B                Clear breakpoints
+  V                     Validate workflow
+  P                     Stash (reusable paths and text)
+  H or ?                Help
+
+  Ctrl+S                Save workflow
+  Ctrl+R                Run workflow
+  Ctrl+N                New workflow
+  Ctrl+O                File
+  Ctrl+E                Options
+  Ctrl+Q                Quit

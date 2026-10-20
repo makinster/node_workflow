@@ -4048,12 +4048,12 @@ async def _test_help_screen_is_contextual_and_focuses_cancel():
         buttons = list(app.query(Button))
 
         assert "Editor" in help_text
-        assert "Move through nodes" in help_text
+        assert "Up" in help_text and "Down" in help_text
         assert "Execution" not in help_text
-        # Complete editor binding copy (Phase 17 UI overhaul).
-        assert "Validate workflow" in help_text
+        # Editor reference now uses the registry descriptions and aliases.
+        assert "Validate" in help_text
         assert "Check workflow" not in help_text
-        assert "X or Backspace" in help_text
+        assert "Backspace / X" in help_text
         assert "Ctrl+S" in help_text
         assert "Ctrl+R" in help_text
         assert "Ctrl+Q" in help_text

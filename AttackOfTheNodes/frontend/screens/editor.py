@@ -14,7 +14,7 @@ from backend.data_types import types_compatible
 from backend.port_types import resolved_metadata, trace_producers
 from backend.validator import validate_workflow
 from backend.node_errors import ERROR_PORT, MUX_DEFAULT_PORT
-from frontend.keymap import EDITOR, bindings_for
+from frontend.keymap import EDITOR, bindings_for, screen_hint_for
 from frontend.keymap_runtime import KeymapScreenMixin
 from frontend.error_mux_ui import (
     ERROR_MUX_NODE_TYPE,
@@ -178,7 +178,7 @@ class EditorScreen(KeymapScreenMixin, Screen):
                 with Vertical(id="details-panel", classes="panel"):
                     yield Label("Selected Node:", classes="panel-title")
                     yield Static("", id="node-details")
-            yield StatusBar("f file | o options | h help | ctrl+q quit")
+            yield StatusBar(screen_hint_for(self.KEYMAP, keymap=getattr(self.app, "_keymap", None)))
 
     def on_mount(self) -> None:
         self.workflow_adapter.bind_state_owner(self.app)
@@ -209,6 +209,9 @@ class EditorScreen(KeymapScreenMixin, Screen):
             return
         self._refreshing_from_backend = True
         try:
+            self.query_one(StatusBar).set_bindings_text(
+                screen_hint_for(self.KEYMAP, keymap=getattr(self.app, "_keymap", None))
+            )
             title = self.workflow_map.workflow_name or "No workflow"
             title += " [sub]" if self.workflow_map.callable else ""
             dirty = " *" if self.workflow_map.is_dirty else ""

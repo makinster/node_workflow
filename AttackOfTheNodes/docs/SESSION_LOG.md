@@ -39,6 +39,51 @@ by call path) next.
   checks every file it read).
 - Tests: `tests/test_subworkflow_screens.py`. Full suite: 1889 passed.
 
+## 2026-10-20 — Keymap phase 3: Editor and Execution
+
+Branch `codex/keymap-editor-execution`, fresh `origin/main` `106c437` after
+#89 and #90 merged. Re-read NOTES; Node Config is reserved for 4c.
+
+- Both screens already used registry bindings. Complete their presentation
+  migration: Help reads command descriptions/aliases from the profiles, and
+  compact hints use command IDs to obtain their keys. Native Textual handles
+  overrides and dispatch; no key, alias, ID, action route or policy changed.
+- Preserve the default hint wording. The error-panel prefix reads its V key
+  from the Execution profile and follows an override. Help lists inherited
+  application commands without duplicate screen-owned keys. Fix the stale
+  “S Stop” help entry; the profile says X Stop and S Down. Native punctuation
+  and control-key names display as ?, Esc and Backspace.
+- W/S or arrows scroll Help; E/Enter still closes it, with Close visible at
+  60/100/140 columns. Other Help topic text stays unchanged. No edits to
+  `frontend/screens/node_config.py`, Vault log, backend or owner workflows.
+- Failing-first: eight initial failures and one passing key characterization;
+  punctuation normalization and the default Escape hint each failed in added
+  checks before correction. Twelve new tests plus the updated existing Help
+  regression pass; full suite **1,884 passed in 277.58s**. Compile, docs and
+  whitespace checks pass. Tests set `AOTN_DATA_DIR` before backend imports.
+  [Before/after Help and hint text, mounted samples](audits/keymap_phase3_2026_10_20/README.md).
+  Native terminal manual checks were not performed.
+- Open one PR and stop for owner review. Remaining profile presentation and
+  4c proceed separately; this PR does not authorize merging.
+
+## 2026-10-20 — Modals fill the terminal
+
+Branch `dist/modal-full-size`, from main `106c437`. Owner: modals left an
+unused strip on the right and at the bottom. They sit at the top left and
+were sized 80–90%.
+
+- Node Config, the node selector, the large viewers (`fill-modal`) and Help
+  now fill the terminal (100%). Small dialogs stay sized to their content but
+  may grow to the whole terminal; so may the keep/recover pickers and the
+  deletion confirm.
+- The modal CSS comment said "centered"; it now says top left.
+- Review (#93, Codex, findings that were already on main): Options and a full
+  File window now fill the terminal with their tabs above Save/Cancel and
+  Open/Close; any other dialog taller than the terminal scrolls (W/S reach
+  its buttons); the keep/recover list fit counts the button row's margin.
+- Tests: `tests/test_modal_size.py` (each failed before its change). Full
+  suite: 1881 passed.
+
 ## 2026-10-19 — EX: Execution Screen Overhaul
 
 Branch `dist/ex-execution-screen`, from main `b5426ab` (#88). Owner-approved

@@ -1,0 +1,8 @@
+Editor before: f file | o options | h help | ctrl+q quit
+Editor after:  f file | o options | h help | ctrl+q quit
+
+Execution before: w/s move | a/d branch | f follow | m memory | o output | p pause | x stop | esc editor
+Execution after:  w/s move | a/d branch | f follow | m memory | o output | p pause | x stop | esc editor
+
+Error panel shown: v hide error | w/s move | a/d branch | f follow | m memory | o output | p pause | x stop | esc editor
+Error panel hidden: v show error | w/s move | a/d branch | f follow | m memory | o output | p pause | x stop | esc editor

@@ -23,7 +23,7 @@ from textual.widgets import Button, Label, Static
 
 from frontend import notifications
 from frontend.io_contract import TYPE_COLOR
-from frontend.keymap import EXECUTION, bindings_for
+from frontend.keymap import EXECUTION, bindings_for, screen_hint_for
 from frontend.keymap_runtime import KeymapScreenMixin
 from frontend.node_io_display import node_display_name
 from frontend.output_records import normalize_outputs
@@ -36,7 +36,6 @@ from frontend.widgets.status_bar import StatusBar
 
 GREEN, RED, YELLOW, CYAN, DIM = "green", "red", "yellow", "cyan", "grey50"
 NARROW_WIDTH = 80
-HINT = "w/s move | a/d branch | f follow | m memory | o output | p pause | x stop | esc editor"
 _MISSING = object()
 
 STATUS_TEXT = {
@@ -101,7 +100,7 @@ class ExecutionScreen(KeymapScreenMixin, Screen):
                 yield Static("", id="execution-details")
                 yield Label("Output", classes="panel-title")
                 yield Static("", id="execution-output", markup=False)
-        yield StatusBar(HINT)
+        yield StatusBar(screen_hint_for(self.KEYMAP, keymap=getattr(self.app, "_keymap", None)))
 
     def on_mount(self) -> None:
         self.query_one("#execution-error").display = False
@@ -510,10 +509,11 @@ class ExecutionScreen(KeymapScreenMixin, Screen):
         self._refresh_hint()
 
     def _refresh_hint(self) -> None:
-        hint = HINT
-        if self._recoveries:
-            hint = ("v show error | " if self._panel_hidden else "v hide error | ") + HINT
-        self.query_one(StatusBar).set_bindings_text(hint)
+        self.query_one(StatusBar).set_bindings_text(screen_hint_for(
+            self.KEYMAP,
+            keymap=getattr(self.app, "_keymap", None),
+            error_panel_hidden=self._panel_hidden if self._recoveries else None,
+        ))
 
     def action_error_panel(self) -> None:
         if not self._recoveries:
