@@ -334,6 +334,25 @@ def preview(entry: Dict[str, Any], width: int = 60) -> str:
     return "..." + shown[-(width - 3):] if entry["type"] == "file" else shown[:width - 3] + "..."
 
 
+#: ``aotn run --input key=@stash:name`` reads the value from a Stash entry (4d).
+STASH_REF_PREFIX = "@stash:"
+
+
+def stash_ref_name(text: Any) -> Optional[str]:
+    """The entry name in an ``@stash:name`` value (quotes allowed), or None."""
+    if not isinstance(text, str) or not text.startswith(STASH_REF_PREFIX):
+        return None
+    return text[len(STASH_REF_PREFIX):].strip().strip("\"'").strip()
+
+
+def input_value(entry: Dict[str, Any]) -> Any:
+    """An entry as a run input: a file reference, or its text (which the
+    caller parses by the input's type, like typed text)."""
+    if entry["type"] == "file":
+        return json.loads(json.dumps(entry["value"]))
+    return str(entry["value"])
+
+
 def type_word(entry_type: str) -> str:
     """What people read for a type; JSON keeps the canonical name."""
     return {"string": "text"}.get(entry_type, entry_type)

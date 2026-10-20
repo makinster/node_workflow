@@ -77,6 +77,8 @@ def source_text(row: Dict[str, Any], mapping: Optional[Dict[str, Any]]) -> str:
         return "the incoming payload"
     if source == "Vault":
         return f'Vault key "{mapping.get("vault_key") or ""}"'
+    if source == "Stash":
+        return f'Stash entry "{mapping.get("stash_entry") or ""}"'
     value = mapping.get("value", "")
     if row.get("type") == "string":
         return f'typed: "{value}"'

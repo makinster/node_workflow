@@ -692,7 +692,9 @@ def _check_subworkflow_calls(all_nodes, workflow_id, errors, warnings) -> None:
     fresh on every pass, once each."""
     from .contracts import ContractError, parse_text
     from .persistence import load_workflow
+    from .stash_manager import StashManager
 
+    stash = StashManager()  # read once per pass, only if a row uses it
     cache: Dict[str, Optional[Dict[str, Any]]] = {}
 
     def load(child_id: str) -> Optional[Dict[str, Any]]:
@@ -774,6 +776,14 @@ def _check_subworkflow_calls(all_nodes, workflow_id, errors, warnings) -> None:
                            "message": f"{name!r} has no input named {key!r}"})
         for mapping in mappings:
             target = by_name.get(str(mapping["name"]).strip())
+            if target is not None and mapping.get("source") == "Stash":
+                entry_name = str(mapping.get("stash_entry") or "").strip()
+                if not entry_name or stash.get(entry_name) is None:
+                    errors.append({"node_id": node_id, "code": "subworkflow_stash_missing",
+                                   "message": f"Input {target['name']!r} of {name!r}: "
+                                   + (f"no Stash entry {entry_name!r}" if entry_name
+                                      else "pick a Stash entry")})
+                continue
             value = mapping.get("value", "")
             if (target is None or (mapping.get("source") or "Configured") != "Configured"
                     or not isinstance(value, str) or value == ""):

@@ -6,7 +6,8 @@ answered the review of revision 1; revision 3 records the owner's answers
 and an Execution screen overhaul before the subworkflow UI. The summary and
 order live in [DISTRIBUTED_BUILD_PLAN.md](DISTRIBUTED_BUILD_PLAN.md) Step 4;
 this file holds the detailed decisions until Step 4 is complete, then it is
-archived. Stash S5 is designed in.
+archived. Stash S5 is designed in, simplified in 4d (owner, 2026-10-20):
+no per-machine bindings; see C10 and C23.
 
 ## 1. Why this step matters
 
@@ -70,7 +71,7 @@ decided. Revision-2 changes are marked **(r2)**.
 | C7 | Types allowed across the boundary | **(r4)** Version 1: `string`, `number`, `bool`, **`var`** (a JSON value, copied by JSON round-trip so neither side can change the other's copy) and `file` refs (see C13). The data types are those in `backend/data_types.py`; there is no `object`/`list` type (r2 was wrong). Run-local references such as `ai_session` are **rejected by the validator** in a contract. A folder is passed as a `string` path until a `folder` type exists (C28) | Passing any value | A run-local handle cannot resolve in another run's session |
 | C8 | Contract changes | **(r2)** A child change that breaks an existing mapping or connection (removed or retyped input in use, removed output in use, a new required input not mapped) is a **blocking validation error**; additive changes (a new optional input or output) are warnings. Each run records the child's **revision** (a hash of the saved definition) | Warnings only; full version pinning now | Broken calls must not start; the revision makes "which version ran?" answerable without pinning |
 | C9 | Child edited mid-run | **(r2)** Each call loads the child's saved definition **at call time** and records its revision. A long parent can therefore run an edited child on a later call; the run record shows it | Snapshotting every child when the root starts | Simple and visible; snapshotting can come with pinning later |
-| C10 | Input fill order (every caller) | 1. explicit value (mapping, `--input`, API, trigger) → 2. inputs file (`--inputs-file`) → 3. **Stash binding on this machine** (S5) → 4. the input's default → 5. still missing and required: **fail before the run starts**, listing every missing name | Failing mid-run | From `STASH_PROPOSAL.md` §4.5 |
+| C10 | Input fill order (every caller) | 1. explicit value (mapping, `--input`, API, trigger; a mapping's Stash entry or `--input key=@stash:name` counts as explicit) → 2. inputs file (`--inputs-file`) → 3. the input's default → 4. still missing and required: **fail before the run starts**, listing every missing name. **(4d, owner 2026-10-20)** The per-machine Stash binding step was dropped | Failing mid-run | From `STASH_PROPOSAL.md` §4.5 |
 
 ### Calls and the parent graph
 
@@ -103,7 +104,7 @@ decided. Revision-2 changes are marked **(r2)**.
 | C26 | Returning Vault values (owner, 2026-10-18) | **(r4)** A **Return to caller** toggle on any node's Vault output, in its Payloads tab (shown only in callable workflows). It is a shortcut: switching it on adds a Return End row (`config [file] ← Vault "config"`), switching it off removes it. The validator flags a returned key written by several unmerged branches | A separate "global Vault" mechanism | Declare where the value is made, keep one result list |
 | C27 | Callable workflows (owner, 2026-10-18) | **(4a-2 update, owner 2026-10-18:** the File window has **Workflows** and **Subworkflows** tabs instead of a `[sub]` badge; **C** on the Workflows tab saves a **copy** as a subworkflow, keeping the name (a repeat copy is numbered "(2)" with a warning) and leaving the original standard; there is no convert-back. Names are unique per tab; `aotn run "<name> [sub]"` picks the copy. Node Config titles still show `[sub]`.**)** **(r4)** **Callable** is a property of a workflow (`"callable": true` in the saved file; absent means a standard workflow, so no migration). The File window shows a `[sub]` badge, **Make callable** on a highlighted workflow (the primary path: build and test a standard workflow, then convert) and **New subworkflow**. On conversion, a single End is offered as the Return End; several Ends get a validator message (merge, or pick one). Subworkflow controls (Return to caller, Result tab, Return End checkbox, "may ask for input") appear only in callable workflows; the validator applies callable-only rules; the Subworkflow node's picker lists only callable workflows. A callable workflow still runs directly with its defaults. Converting back keeps result rows but ignores them | Separate editors for workflows and subworkflows | The owner's editor-mode idea, as a workflow property: one editor, a clean split, one switch to convert |
 | C28 | A `folder` type | **(r4)** Add a `folder` data type (typed, pickable, owned and cleaned up like run files), alongside 4b or with the Stash's folder import (S4). Until then a folder crosses as a `string` path | Treating folders as files | "Set up a file environment" children need to return folders |
-| C23 | Stash bindings (S5) | Per machine, per workflow: `stash/bindings/<workflow_id>.json` maps input name → Stash entry id; never in the workflow JSON. The CLI also accepts `--input key=@stash:name` | Bindings inside the workflow | Portability |
+| C23 | Stash entries as inputs (S5) | **(4d, owner 2026-10-20)** No Start-input bindings and no `stash/bindings/` files; `P` in Start's Default still copies a value. A Subworkflow node input can come from a **Stash entry**, saved in the workflow by entry **name**. The CLI accepts `--input key=@stash:name`. A missing entry is a validation error (`subworkflow_stash_missing`; at run time `child_input_missing`), and the CLI refuses to start, listing it with every other missing input. Originally: per-machine `stash/bindings/<workflow_id>.json` by entry id | Per-machine bindings (dropped: a separate source line and a Stash-before-Default order were more than the use case needed) | Simplicity |
 
 ## 4. How it fits together
 
@@ -124,7 +125,7 @@ Parent run                                        Child run (own stack, invocati
   Existing race warnings cover two parallel calls writing the same parent
   Vault key.
 - **`aotn run`** reads Start's contract: `--input` values are typed (C6),
-  `--inputs-file`, Stash bindings and defaults follow (C10). A missing or
+  `--inputs-file` and defaults follow (C10). A missing or
   invalid input exits before the run with a new exit code and a list. The
   printed result includes `values`.
 
@@ -139,7 +140,7 @@ if it grows: lifecycle first, then concurrency and the bridge.
 | 4b — Child runs | C11–C20, C22, **(r4)** plus a **concurrency benchmark** (10/50/100/200 children at once, waiting vs CPU-bound, deep chains; time, memory, live objects, cleanup) that sets C16's default: Subworkflow node backend with one continuation and output mapping, per-call stacks sharing read-only services, finalization with file hand-over, simultaneous calls, depth and capacity limits, recursion check, the prompt bridge with invocation ids, tree cancellation with acknowledgement, tree-wide pause, run records, the stack-cost benchmark | Every acceptance scenario in §6 passes |
 | EX — Execution screen overhaul | **(r3)** Its own design and sample screens first: the run shown as a keyboard-navigable node map like the Editor's, the memory view scoped to the highlighted node (`M` for the whole log), A/D cycling branches. May need the memory bank to record which node wrote each entry | You can follow a running workflow on its map, node by node |
 | 4c — UI | Workflow picker, input mapping and result rows in node config; the Return End checkbox; "may ask for input" on the contract (C25); drill-in with breadcrumbs on the EX screen (C21); prompts labelled by call path | You can build, run and watch a parent/child workflow in the TUI |
-| 4d — Stash bindings (S5) | C23: bind inputs from Start's contract and a Subworkflow node's inputs with `P`; `--input key=@stash:name`; C10 step 3 | Set up once in the TUI, then `aotn run wf` works unattended on this machine |
+| 4d — Stash entries as inputs (S5) | C23 as revised: a Subworkflow node input's "Value comes from: Stash entry" (picked with `P`, saved by name); `--input key=@stash:name`; `aotn run` lists where each input came from and one "Can't start" list | A workflow runs from the CLI with Stash values and no paths in its arguments |
 | 4e — Shared read and progress (C24) | Shared entries with live read; the progress signal in the run view | A child reads a parent value that changes during the call; progress shows live |
 | 4f — Shared read-write (C24) | Increment, append and set-if-unchanged on shared entries; validator warning for parallel writers | Concurrent increments from two calls are exact; the warning fires |
 | later | **(r4)** On Make callable, run the validator automatically with **suggestions** (for example, fold User Input nodes into Start's inputs); an advanced "Allow recursion" opt-in; fire-and-forget; a **family of Return Merge nodes** (first result wins, all required, collect into a list) to relax C3's single Return End; version pinning | After Step 5 |

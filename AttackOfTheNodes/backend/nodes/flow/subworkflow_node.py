@@ -2,7 +2,7 @@
 
 Design C11–C16 (``docs/SUBWORKFLOWS_PROPOSAL.md``). The node refers to the
 child by workflow id (C12), maps each child input from a configured value,
-the incoming payload or a Vault key, and continues on one ``default`` output
+the incoming payload, a Vault key or a Stash entry (by name, 4d), and continues on one ``default`` output
 (C11). Each result goes downstream, to the Vault, or both: ``default``
 carries the results marked downstream (one as itself, several as one
 object). Failures are coded (``CALL_ERROR_DEFINITIONS``) and routable on
@@ -15,9 +15,10 @@ from ...contracts import DESTINATIONS
 from ...node_base import Node, NodeContext
 from ...node_category import NodeCategory
 from ...node_errors import NodeError
+from ...stash_manager import StashManager, input_value
 from ...subworkflow_calls import CALL_ERROR_DEFINITIONS
 
-INPUT_SOURCES = ("Configured", "Upstream payload", "Vault")
+INPUT_SOURCES = ("Configured", "Upstream payload", "Vault", "Stash")
 
 
 class SubworkflowNode(Node):
@@ -50,6 +51,7 @@ class SubworkflowNode(Node):
                 "source": {"type": "select", "label": "From", "options": list(INPUT_SOURCES)},
                 "value": {"type": "string", "label": "Value (Configured)"},
                 "vault_key": {"type": "string", "label": "Vault key (Vault)"},
+                "stash_entry": {"type": "string", "label": "Stash entry name (Stash)"},
             },
         },
         "results": {
@@ -82,6 +84,15 @@ class SubworkflowNode(Node):
                 value = context.memory_bank.read_persistent(key, default=missing) if key else missing
                 if value is not missing:
                     values[name] = value
+            elif source == "Stash":
+                entry_name = str(row.get("stash_entry") or "").strip()
+                entry = StashManager().get(entry_name) if entry_name else None
+                if entry is None:
+                    raise NodeError("child_input_missing", f"Input '{name}': no Stash entry "
+                                    f"{entry_name!r}", details={"input": name, "stash_entry": entry_name})
+                values[name] = input_value(entry)
+                if entry["type"] != "file":
+                    text_names.append(name)
             else:
                 values[name] = row.get("value", "")
                 if isinstance(values[name], str):
@@ -92,8 +103,8 @@ class SubworkflowNode(Node):
         if context.call_subworkflow is None:
             context.signal_error(NodeError("child_failed", "A subworkflow can only be called during a run"))
             return
-        inputs, text_names = self._call_inputs(context)
         try:
+            inputs, text_names = self._call_inputs(context)
             results = await context.call_subworkflow(
                 str(self.config.get("workflow_id") or ""), inputs, text_names)
         except NodeError as exc:

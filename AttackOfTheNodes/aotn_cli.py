@@ -57,7 +57,8 @@ def build_parser() -> argparse.ArgumentParser:
         default=[],
         metavar="KEY=VALUE",
         help="run input for a Start input row (repeatable), typed by the row: "
-        "number, true/false, JSON for var, a path for file; wins over --inputs-file",
+        "number, true/false, JSON for var, a path for file; KEY=@stash:NAME uses "
+        "that Stash entry; wins over --inputs-file",
     )
     parser.add_argument(
         "--inputs-file",
@@ -77,28 +78,113 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _typed_cli_inputs(service: Any, pairs: Dict[str, str]) -> Dict[str, Any]:
-    """Parse each --input text by the Start row it names; unknown names stay
-    text (a callable workflow rejects them when the run starts)."""
-    from backend.contracts import ContractError, ContractInputError, parse_text, start_rows
+def _start_rows(service: Any) -> List[Dict[str, Any]]:
+    from backend.contracts import start_rows
 
     workflow_map = service.workflow_map
     start_id = workflow_map.find_start_node_id()
     config = (workflow_map.get_node_data(start_id) or {}).get("config") or {} if start_id else {}
-    types = {row["name"]: row["type"] for row in start_rows(config)}
+    return start_rows(config)
+
+
+def _typed_cli_inputs(
+    service: Any, pairs: Dict[str, str], sources: Dict[str, str], no_entry: Dict[str, str]
+) -> Dict[str, Any]:
+    """Parse each --input text by the Start row it names; unknown names stay
+    text (a callable workflow rejects them when the run starts).
+
+    ``key=@stash:name`` reads the value from that Stash entry (4d): a file
+    entry as itself, a text entry parsed like typed text. Where each value
+    came from goes into ``sources``; entries that don't exist go into
+    ``no_entry`` (input name -> entry name) and the input is left out.
+    """
+    from backend.contracts import ContractError, ContractInputError, parse_text
+    from backend.stash_manager import StashManager, input_value, stash_ref_name
+
+    types = {row["name"]: row["type"] for row in _start_rows(service)}
+    stash: Optional[StashManager] = None
     typed: Dict[str, Any] = {}
     invalid: Dict[str, str] = {}
     for name, text in pairs.items():
+        value: Any = text
+        entry_name = stash_ref_name(text)
+        if entry_name is not None:
+            stash = stash or StashManager()
+            entry = stash.get(entry_name) if entry_name else None
+            if entry is None:
+                no_entry[name] = entry_name
+                continue
+            value = input_value(entry)
+            sources[name] = f'from Stash entry "{entry["name"]}"'
+        else:
+            sources[name] = "from --input"
         if name not in types:
-            typed[name] = text
+            typed[name] = value
             continue
         try:
-            typed[name] = parse_text(types[name], text)
+            typed[name] = parse_text(types[name], value)
         except ContractError as exc:
             invalid[name] = str(exc)
     if invalid:
         raise ContractInputError([], invalid, [])
     return typed
+
+
+def _cant_start(rows: List[Dict[str, Any]], error: Any, no_entry: Dict[str, str]) -> str:
+    """The "Can't start" list (owner sample, 4d): one bullet per input with
+    the reason, so a missing Stash entry and a missing value read alike."""
+    types = {row["name"]: row["type"] for row in rows}
+    missing = list(getattr(error, "missing", []) or [])
+    invalid = dict(getattr(error, "invalid", {}) or {})
+    unknown = list(getattr(error, "unknown", []) or [])
+    lines: List[tuple] = []
+    for name in [row["name"] for row in rows] + sorted(set(no_entry) - set(types)):
+        if name in no_entry:
+            lines.append((name, f'no Stash entry "{no_entry[name]}"'))
+        elif name in missing:
+            lines.append((name, f"use --input {name}=..."))
+        elif name in invalid:
+            lines.append((name, invalid[name]))
+    lines += [(name, "not an input of this workflow") for name in unknown if name not in no_entry]
+    count = len(lines)
+    if not invalid and not unknown:
+        head = f"{count} required input{'s have' if count != 1 else ' has'} no value"
+    else:
+        head = f"{count} input{'s' if count != 1 else ''} can't be used"
+    width = max([len(name) for name, _ in lines] + [8]) + 2
+    body = "".join(f"  • {name:<{width}}{('[' + types[name] + ']') if name in types else '':<10}{reason}\n"
+                   for name, reason in lines)
+    return f"Can't start: {head}.\n{body}"
+
+
+def _inputs_block(rows: List[Dict[str, Any]], inputs: Dict[str, Any], sources: Dict[str, str]) -> str:
+    """Where each Start input's value comes from, before the run starts."""
+    from backend.contracts import ContractError, display_value, parse_text
+
+    def shown(value: Any) -> str:
+        return f'"{value}"' if isinstance(value, str) else display_value(value)
+
+    rows = [row for row in rows if not row.get("_legacy")]
+    if not rows:
+        return ""
+    lines = []
+    for row in rows:
+        name = row["name"]
+        if name in inputs:
+            where, value = sources.get(name, "from --input"), shown(inputs[name])
+        elif row.get("value") not in (None, ""):
+            try:
+                value = shown(parse_text(row["type"], row["value"]))
+            except ContractError:
+                value = str(row["value"])
+            where = "from its default"
+        else:
+            where, value = "left empty", ""
+        lines.append((name, where, value))
+    name_w = max(len(name) for name, _, _ in lines) + 2
+    where_w = max(len(where) for _, where, _ in lines) + 3
+    return "Inputs:\n" + "".join(f"  • {name:<{name_w}}{where:<{where_w}}{value}".rstrip() + "\n"
+                                 for name, where, value in lines)
 
 
 def _inputs_from_file(path: Optional[str]) -> Dict[str, Any]:
@@ -271,14 +357,31 @@ async def _run(args: argparse.Namespace, stdin: TextIO, stdout: TextIO, stderr: 
     except ValueError as exc:
         stderr.write(f"aotn run: {exc}\n")
         return EXIT_INVALID_INPUT
-    # Fill order (C10): --input, then --inputs-file, then each row's default.
-    # --input is text, so it is parsed by its row's type here; file values
-    # are already typed and only checked when the run starts.
+    # Fill order (C10): --input (or its @stash: entry), then --inputs-file,
+    # then each row's default. --input is text, so it is parsed by its row's
+    # type here; file values are already typed and only checked when the run
+    # starts.
+    rows = _start_rows(service)
+    sources = {name: "from the inputs file" for name in inputs}
+    no_entry: Dict[str, str] = {}
     try:
-        inputs.update(_typed_cli_inputs(service, _parse_inputs(args.input)))
+        inputs.update(_typed_cli_inputs(service, _parse_inputs(args.input), sources, no_entry))
     except ContractInputError as exc:
-        stderr.write(f"aotn run: {loaded['name']} cannot start: {exc}\n")
+        stderr.write(_cant_start(rows, exc, no_entry))
         return EXIT_INVALID_INPUT
+    # Check before listing the inputs, so a run that can't start shows one
+    # list with every problem (a missing Stash entry among them).
+    from backend.contracts import resolve_inputs
+
+    problems: Any = None
+    try:
+        resolve_inputs([row for row in rows if row["name"] not in no_entry], inputs, strict=False)
+    except ContractInputError as exc:
+        problems = exc
+    if no_entry or problems is not None:
+        stderr.write(_cant_start(rows, problems, no_entry))
+        return EXIT_INVALID_INPUT
+    stderr.write(_inputs_block(rows, inputs, sources))
 
     try:
         await service.start(
@@ -288,7 +391,7 @@ async def _run(args: argparse.Namespace, stdin: TextIO, stdout: TextIO, stderr: 
             validate=not args.no_validate,
         )
     except ContractInputError as exc:
-        stderr.write(f"aotn run: {loaded['name']} cannot start: {exc}\n")
+        stderr.write(_cant_start(rows, exc, {}))
         return EXIT_INVALID_INPUT
     except WorkflowValidationError as exc:
         stderr.write(f"aotn run: {loaded['name']} failed validation:\n")

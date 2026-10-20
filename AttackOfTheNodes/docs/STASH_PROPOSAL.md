@@ -2,8 +2,9 @@
 
 > Design and staged scope. [Current State](CURRENT_STATE.md) owns approvals
 > and delivery; [UI Quick Reference](UI_QUICK_REFERENCE.md#stash-screen-s2) owns the
-> current controls. S1–S3 are implemented. Folder import (S4), contract
-> bindings (S5) and any later extensions remain separate work. Sections 8–9
+> current controls. S1–S3 are implemented; S5 is implemented as simplified
+> in Step 4d (see §4.5). Folder import (S4) and any later extensions remain
+> separate work. Sections 8–9
 > retain historical review context, superseded where the decisions below differ.
 
 ## 1. Summary
@@ -52,8 +53,8 @@ Stage 3 is why the backend pieces must be headless-safe from day one.
 | Edit widgets (`frontend/widgets/command_input.py`) | CommandInput / CommandTextArea distinguish navigation and editing | Plain `P` opens insert only outside editing; typing remains literal. |
 | Key bindings (`frontend/keymap.py`) | Editor `P` opens manage mode; Node Config `P` opens insert; the command palette keeps Ctrl+P | No command-palette change. |
 | Paste handling (`frontend/screens/stash.py`) | The Stash handles bracketed paste through `parse_paste` / `StashManager` | Paste elsewhere stays normal text input; there is no app-wide interception. |
-| Headless (`aotn_cli.py`, `backend/run_service.py`) | Typed `--input` and `--inputs-file` bind Start rows through `backend/contracts.py` | Stash input bindings and `@stash:` remain S5; there is no second contract manifest. |
-| Contracts (`backend/contracts.py`) | Start rows and Return End results define the workflow contract | The approved Step 4 design extends that contract to child calls and future Stash bindings. |
+| Headless (`aotn_cli.py`, `backend/run_service.py`) | Typed `--input` and `--inputs-file` bind Start rows through `backend/contracts.py` | `--input key=@stash:name` reads a Stash entry (4d); there is no second contract manifest. |
+| Contracts (`backend/contracts.py`) | Start rows and Return End results define the workflow contract | Step 4 extends that contract to child calls; a Subworkflow node input can come from a Stash entry (4d). |
 
 **Boundary check** ([BACKEND_FRONTEND_BOUNDARY.md](BACKEND_FRONTEND_BOUNDARY.md)):
 stages 1–2 add one small backend service (store, paste parser, field-type
@@ -122,24 +123,34 @@ When a run starts, Start writes each contract input into the Vault. Inner
 nodes read it through the existing `<port>_source = Vault`. That is
 "reference mode" without a new per-port source option.
 
-Order for filling each input, the same for every caller:
+**As built (Step 4d, owner 2026-10-20).** There are no per-machine bindings
+and no `stash/bindings/` files; Start's Default keeps copy-insert with `P`.
+Stash entries reach inputs two ways, both by entry **name**:
 
-1. Explicit caller value (`--input k=v`, API body, trigger payload, the parent
-   subworkflow node)
+- A Subworkflow node input's "Value comes from: Stash entry", picked with
+  `P` and saved in the workflow.
+- `aotn run wf --input key=@stash:name` (quotes allowed around the name).
+
+A file entry is passed as its file reference; a text entry is parsed by the
+input's type like typed text. A missing entry is a validation error
+(`subworkflow_stash_missing`); the CLI refuses to start and lists it with
+every other input that has no value. Before a run, `aotn run` lists where
+each input came from (`from Stash entry "x"`, `from --input`, `from its
+default`).
+
+Order for filling each input, the same for every caller (C10):
+
+1. Explicit caller value (`--input k=v` or `k=@stash:name`, API body, trigger
+   payload, the parent subworkflow node's mapping including a Stash entry)
 2. Inputs/preset file (`--inputs-file run.json`)
-3. **Saved Stash binding on this machine** (input → entry id, stored per
-   workflow in the data dir, *not* in the workflow JSON)
-4. The contract's default
-5. Required and still empty: **fail before the run starts**, with a clear exit
+3. The contract's default
+4. Required and still empty: **fail before the run starts**, with a clear exit
    code and a list of what's missing
 
-Plus: `--input key=@stash:name` on the command line, and `file`-typed inputs
-coerced through `file_reference()` with a check that the file exists.
-Proposed S5 bindings use a field picker from the
-Start/contract panel or a subworkflow node's "required inputs" section.
-
-Result: set a workflow up once in the TUI, then `aotn run wf` works
-unattended. On another machine you bind once and the same file runs unchanged.
+Originally proposed: a third step, a saved Stash binding on this machine
+(input → entry id, stored per workflow in the data dir, not in the workflow
+JSON), set from the Start/contract panel. Dropped in 4d as more than the use
+case needed.
 
 ## 5. Roadmap (very high level)
 

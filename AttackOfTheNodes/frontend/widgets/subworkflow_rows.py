@@ -35,10 +35,11 @@ from frontend.widgets.command_screen_mixin import CommandScreenMixin
 from frontend.widgets.contract_rows import default_text
 from frontend.widgets.status_bar import StatusBar
 
+from frontend import colors  # noqa: E402
 from frontend.colors import HIGHLIGHT, SOURCE, WARNING as YELLOW  # noqa: E402
 NAME_WIDTH, TYPE_WIDTH, NEED_WIDTH = 10, 10, 11
 FROM_CHOICES = (("Typed value", "Configured"), ("The incoming payload", "Upstream payload"),
-                ("Vault key", "Vault"), ("Its default", "default"))
+                ("Vault key", "Vault"), ("Stash entry", "Stash"), ("Its default", "default"))
 GOES_TO = (("Next node", "Downstream"), ("Vault", "Vault"), ("Both", "Both"))
 #: The map's selection blue, one solid colour over the whole highlighted row.
 ROW_HIGHLIGHT = HIGHLIGHT
@@ -163,12 +164,20 @@ class SubworkflowInputsField(_RowsBase):
         return f"{self.child['name']} needs no inputs."
 
     def _lines(self) -> List[Text]:
+        from backend.stash_manager import StashManager
+
+        stash: Optional[StashManager] = None
         lines = []
         for row in self.rows:
+            mapping = self.mapping.get(row["name"])
             line = Text(_cell(row["name"], NAME_WIDTH))
             line.append_text(_type_text(row["type"]))
             line.append(_cell("yes" if row["required"] else "no", NEED_WIDTH))
-            line.append(info.source_text(row, self.mapping.get(row["name"])), style=SOURCE)
+            line.append(info.source_text(row, mapping), style=SOURCE)
+            if (mapping or {}).get("source") == "Stash":
+                stash = stash or StashManager()
+                if stash.get(str(mapping.get("stash_entry") or "")) is None:
+                    line.append("  ✗ no such Stash entry", style=colors.ERROR)
             lines.append(line)
         return lines
 
@@ -322,6 +331,9 @@ class SubworkflowInputEditor(_EditorBase):
             yield _field("Value:", CommandInput(value=typed, id="row-value"), "row-value-row")
             yield _field("Vault key:", CommandInput(value=str(mapping.get("vault_key") or ""), id="row-vault-key"),
                          "row-vault-key-row")
+            self.stash_entry = str(mapping.get("stash_entry") or "")
+            yield _field("Stash entry:", Static(self._stash_text(), id="row-stash"), "row-stash-row")
+            yield Static(Text("P picks another entry.", style=colors.MUTED), id="row-stash-hint")
             if self._has_default():
                 default = f'"{row["value"]}"' if row["type"] == "string" else default_text(row["value"])
                 yield Static(f"Its default is {default}.", classes="form-description", markup=False)
@@ -331,7 +343,26 @@ class SubworkflowInputEditor(_EditorBase):
             with Horizontal(classes="button-row"):
                 yield Button("Confirm", id="confirm-row", variant="primary")
                 yield Button("Cancel", id="cancel-row", variant="default")
-            yield StatusBar("w/s move | e edit | ctrl+s confirm | esc cancel")
+            yield StatusBar("w/s move | e edit | p stash | ctrl+s confirm | esc cancel")
+
+    def _stash_text(self) -> Text:
+        if not self.stash_entry:
+            return Text("none yet: press P", style=colors.MUTED)
+        return Text(f'Stash entry "{self.stash_entry}"', style=colors.SOURCE)
+
+    def action_stash_insert(self) -> None:
+        """P: pick the Stash entry this input comes from (by name)."""
+        accepts = ["file"] if self.row["type"] == "file" else ["string"]
+        self.app.action_stash("entries", insert_into={"label": "Stash entry", "accepts": accepts},
+                              callback=self._pick_stash_entry)
+
+    def _pick_stash_entry(self, entry: Optional[Dict[str, Any]]) -> None:
+        if not entry:
+            return
+        self.stash_entry = str(entry["name"])
+        self.query_one("#row-source", Select).value = "Stash"
+        self.query_one("#row-stash", Static).update(self._stash_text())
+        self._sync()
 
     def on_mount(self) -> None:
         self.query_one("#row-error", Static).display = False
@@ -346,6 +377,8 @@ class SubworkflowInputEditor(_EditorBase):
         source = self.query_one("#row-source", Select).value
         self.query_one("#row-value-row").display = source == "Configured"
         self.query_one("#row-vault-key-row").display = source == "Vault"
+        self.query_one("#row-stash-row").display = source == "Stash"
+        self.query_one("#row-stash-hint").display = source == "Stash"
 
     def action_submit(self) -> None:
         self._end_edits()
@@ -373,6 +406,11 @@ class SubworkflowInputEditor(_EditorBase):
                 self._problem("Give the Vault key")
                 return
             result["vault_key"] = key
+        elif source == "Stash":
+            if not self.stash_entry:
+                self._problem("Pick a Stash entry (P)")
+                return
+            result["stash_entry"] = self.stash_entry
         self.dismiss(result)
 
 
