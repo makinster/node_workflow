@@ -84,15 +84,17 @@ Screen {
     height: 1fr;
 }
 
-/* Modals are sized to their content with sane bounds and centered by the
-   ModalScreen default alignment. Data-heavy/complex modals opt into larger
-   fixed sizes via their own classes below. */
+/* Modals sit at the top left. Small ones are sized to their content and may
+   grow to the whole terminal; the large ones below fill it (owner,
+   2026-10-20: no unused strip on the right and at the bottom). */
 #modal-card {
     width: auto;
     min-width: 50;
-    max-width: 90%;
+    max-width: 100%;
     height: auto;
-    max-height: 90%;
+    max-height: 100%;
+    /* A dialog taller than the terminal scrolls; W/S scroll to its buttons. */
+    overflow-y: auto;
     padding: 1 2;
     border: round $primary;
     background: $surface;
@@ -100,20 +102,20 @@ Screen {
 
 /* The node config modal carries dense tabbed forms: keep it large. */
 #modal-card.node-config-modal {
-    width: 90%;
-    height: 90%;
+    width: 100%;
+    height: 100%;
 }
 
 /* The node selector needs room for its list and detail line. */
 #modal-card.node-selector-modal {
-    width: 80%;
-    height: 90%;
+    width: 100%;
+    height: 100%;
 }
 
 /* Data-heavy modals (e.g. the memory viewer) fill the available height. */
 #modal-card.fill-modal {
-    width: 80%;
-    height: 90%;
+    width: 100%;
+    height: 100%;
 }
 
 #node-config-scroll {
@@ -126,15 +128,21 @@ Screen {
     height: 1fr;
 }
 
-/* File window tabs (Step 4a-2): the lists size to their rows so the buttons
-   and key hints stay on screen. */
-#library-tabs {
-    height: auto;
+/* File window and Options: the tabs take the height left above the buttons
+   and key hints, and the lists scroll inside them (#93 review). */
+#modal-card.library-modal,
+#modal-card.settings-modal {
+    width: 100%;
+    height: 100%;
+}
+
+#library-tabs,
+#settings-tabs {
+    height: 1fr;
 }
 
 #library-tabs ListView {
-    height: auto;
-    max-height: 18;
+    height: 1fr;
 }
 
 .tab-scroll {
@@ -543,7 +551,7 @@ SelectOverlay > .option-list--option-highlighted {
 
 /* Help: the text scrolls inside a bounded card so Close stays reachable. */
 #modal-card.help-modal {
-    height: 90%;
+    height: 100%;
 }
 
 #help-scroll {

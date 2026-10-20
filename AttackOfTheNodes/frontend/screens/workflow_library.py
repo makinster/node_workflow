@@ -50,7 +50,7 @@ class WorkflowLibraryScreen(KeymapScreenMixin, ModalScreen):
         return self._by_tab[self._active_tab()]
 
     def compose(self) -> ComposeResult:
-        with Vertical(id="modal-card"):
+        with Vertical(id="modal-card", classes="library-modal"):
             yield Label("Workflow Library", classes="modal-title")
             with TabbedContent(id="library-tabs", classes="node-config-tabs"):
                 with TabPane("1 Workflows", id=STANDARD_TAB):

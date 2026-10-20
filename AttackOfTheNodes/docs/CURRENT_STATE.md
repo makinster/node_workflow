@@ -39,8 +39,7 @@ This is the live status snapshot; plans and logs preserve dated decisions.
   records, validation and benchmark. EX (the Execution screen overhaul)
   merged in #89, with its review fixes; next is 4c (the TUI for subworkflow
   calls). [Proposal](SUBWORKFLOWS_PROPOSAL.md).
-- **Keymap phase 3 — Editor/Execution:** implemented on
-  `codex/keymap-editor-execution` from fresh `106c437`, awaiting owner review.
+- **Keymap phase 3 — Editor/Execution:** merged in #92.
   Both screens already compiled bindings from profiles; Help and status hints
   now use those same definitions and native key overrides. Current keys and
   default compact hint wording are unchanged. Execution Help now lists X Stop,
@@ -50,6 +49,9 @@ This is the live status snapshot; plans and logs preserve dated decisions.
   Library presentation remain separate work; `node_config.py` belongs to 4c
   and is not edited here. Settings rebinding UI and generated Quick Reference
   tables remain deferred. [Scope](PROJECT_BACKLOG.md#near-term-project--frontend-command-ui-toolkit).
+- **Modals fill the terminal** (owner, 2026-10-20), merged in #93: Node
+  Config, the node selector, large viewers, Help, Options and the File
+  window use the whole terminal; taller dialogs scroll to their buttons.
 - Work order: [Node Contract Plan](NODE_CONTRACT_PLAN.md). Long-term direction:
   [Distributed Plan](DISTRIBUTED_BUILD_PLAN.md), [Stash](STASH_PROPOSAL.md).
   The owner merges, or explicitly asks a reviewer to.
