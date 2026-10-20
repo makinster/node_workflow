@@ -80,8 +80,9 @@ This is the live status snapshot; plans and logs preserve dated decisions.
   `AOTN_DATA_DIR` before importing the backend.
 - Link/anchor, whole-archive and session-transfer checks: see
   [PR C verification](audits/docs_audit_2026_10_17/PR_C_VERIFICATION.md).
-  The active set is 17 core docs plus SUBWORKFLOWS_PROPOSAL and
-  DELETION_REVIEW_PROPOSAL, each archived when its work completes.
+  The active set is 17 core docs plus SUBWORKFLOWS_PROPOSAL,
+  DELETION_REVIEW_PROPOSAL and AI_COORDINATION_PROPOSAL (not approved), each
+  archived when its work completes or is declined.
 - Prior receipts: keymap phase 2, 1666 passed with actual-keypress tests;
   phase 1, 1605 passed (57 focused); Stash S3, 1548 passed. Docs B retained
   33 archive bodies. These are historical counts, not the current suite.

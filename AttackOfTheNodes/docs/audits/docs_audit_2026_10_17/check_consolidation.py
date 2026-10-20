@@ -23,7 +23,7 @@ ACTIVE_DOCS = {
     "PROJECT_BACKLOG.md",
 }
 # Approved Step 4 design; move to archive when Step 4 completes.
-TEMPORARY_DOCS = {"SUBWORKFLOWS_PROPOSAL.md", "DELETION_REVIEW_PROPOSAL.md"}
+TEMPORARY_DOCS = {"SUBWORKFLOWS_PROPOSAL.md", "DELETION_REVIEW_PROPOSAL.md", "AI_COORDINATION_PROPOSAL.md"}
 LINK = re.compile(r"\[([^\]]*)\]\(([^)]+)\)")
 
 
