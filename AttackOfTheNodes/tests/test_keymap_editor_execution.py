@@ -40,7 +40,10 @@ def test_execution_keys_and_routes_stay_unchanged():
         "v": "error_panel",
         "m": "memory",
         "o": "output",
-        "e": "errors",
+        # 4c-2 (owner, 2026-10-20): E and Enter open a running subworkflow;
+        # elsewhere E still shows the errors.
+        "e": "open_or_errors",
+        "enter": "open_call",
         "escape": "back_to_editor",
         "ctrl+q": "revert_or_cancel",
     }

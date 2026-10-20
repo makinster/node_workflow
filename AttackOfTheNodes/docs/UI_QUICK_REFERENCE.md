@@ -204,9 +204,9 @@ the identity and contract rules. Older Phase 17 layouts are historical.
 ## Execution screen
 
 The run is shown on the editor's map; each card's second line says how that
-node is doing. The right pane shows the highlighted node (Got, Sent, Wrote
-to the Vault). When a node needs a recovery choice, the error panel opens at
-the top of the right pane.
+node is doing. The right pane shows the highlighted node (what it received,
+sent and saved to the Vault). When a node needs a recovery choice, the error
+panel opens at the top of the right pane.
 
 | Key | Action |
 |---|---|
@@ -218,8 +218,15 @@ the top of the right pane.
 | X / Shift+X | Stop (moved from S on 2026-10-19) |
 | M | Vault log: Time, Key, Type, Value, Source (`S3B2 Save note`); E opens an entry, A/D its earlier/later writes, / filters |
 | O | Run output viewer |
-| E | Latest run error details |
-| Esc / Ctrl+Q | Return to editor, stopping a live run |
+| E / Enter | On a running Subworkflow card: open that subworkflow's run (4c-2). Elsewhere E shows the latest run error details |
+| Esc / Ctrl+Q | Return to editor, stopping a live run. Inside a subworkflow, Esc goes back one level and stops nothing |
+
+Inside a subworkflow the title is a breadcrumb (`Fetch report › Greet ›
+Greeter`); a long one keeps the first name, "…" and the last names, with the
+level. A calling card reads "⏸ waiting for you" when its subworkflow waits.
+A finished call can't be opened; its results show on the calling node. A
+prompt says who asks and from where ("Greeter asks", "From Fetch report ›
+Greet › Greeter › Ask name").
 
 The error panel's buttons: Retry, Skip, Stop branch, Go to node (hides the
 panel and highlights the failed node, switching paths if needed), Stop run,

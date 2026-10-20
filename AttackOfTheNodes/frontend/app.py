@@ -17,6 +17,8 @@ from backend.events import (
     NODE_EXECUTION_UPDATE,
     NODE_TIMING_UPDATE,
     RECOVERY_OPTIONS_AVAILABLE,
+    SUBWORKFLOW_RUN_ENDED,
+    SUBWORKFLOW_RUN_UPDATE,
     SUPERVISOR_REGISTER,
     SUPERVISOR_STATE_UPDATE,
     SUPERVISOR_TERMINATING,
@@ -26,6 +28,7 @@ from backend.events import (
 )
 from backend.workflow_names import DEFAULT_NAME, name_problem, unused_name
 
+from .child_runs import ChildRuns
 from .execution_state import ExecutionDisplayState
 from . import file_io
 from . import notifications
@@ -93,6 +96,8 @@ class AttackOfTheNodesApp(KeymapScreenMixin, TextualApp):
         )
         self.workflow_state = "IDLE"
         self.execution_state = ExecutionDisplayState()
+        # Step 4c-2: each running subworkflow call, shown on request.
+        self.child_runs = ChildRuns()
         self._retired_display_run_id = None
         self.node_statuses = {}
         self.node_skip_reasons = {}
@@ -150,6 +155,8 @@ class AttackOfTheNodesApp(KeymapScreenMixin, TextualApp):
             ERROR_LOGGED: self.flush_refresh,
             RECOVERY_OPTIONS_AVAILABLE: self._on_recovery_options_available,
             MEMORY_UPDATE: self.schedule_refresh,
+            SUBWORKFLOW_RUN_UPDATE: self._on_subworkflow_run_update,
+            SUBWORKFLOW_RUN_ENDED: self._on_subworkflow_run_ended,
         }
         for event_name, callback in subscriptions.items():
             self.event_bus.subscribe(event_name, callback)
@@ -211,6 +218,40 @@ class AttackOfTheNodesApp(KeymapScreenMixin, TextualApp):
             self._reset_run_display_state()
         self.flush_refresh()
 
+    def _on_subworkflow_run_update(self, payload=None) -> None:
+        payload = payload or {}
+        if not self.execution_state.accepts(payload):
+            return
+        self.child_runs.update(payload)
+        self.schedule_refresh()
+
+    def _on_subworkflow_run_ended(self, payload=None) -> None:
+        payload = payload or {}
+        if not self.execution_state.accepts(payload):
+            return
+        self.child_runs.ended(payload)
+        self.schedule_refresh()
+
+    def _prompt_labels(self, payload) -> tuple:
+        """Who asks and from where: ("Greeter", ["Fetch report", "Greet",
+        "Greeter", "Ask name"]). A subworkflow's prompt carries its call path."""
+        path = [part for part in str(payload.get("call_path") or "").split(" › ") if part]
+        workflow_map = self.workflow_map
+        child_run_id = payload.get("child_run_id")
+        tree = getattr(self.master_state, "call_tree", None)
+        if child_run_id and tree is not None:
+            for child in tree.live_masters():
+                if child.current_run_id == child_run_id:
+                    workflow_map = child.workflow_map
+                    break
+        if not path:
+            path = [str(getattr(self.workflow_map, "workflow_name", "") or "Workflow")]
+        node_id = str(payload.get("node_id") or "")
+        from .node_io_display import node_display_name
+
+        node_name = node_display_name(node_id, workflow_map.get_node_data(node_id) or {}) if node_id else ""
+        return path[-1], path + ([node_name] if node_name else [])
+
     def _on_supervisor_register(self, payload=None) -> None:
         payload = payload or {}
         if not self.execution_state.accepts(payload):
@@ -259,11 +300,14 @@ class AttackOfTheNodesApp(KeymapScreenMixin, TextualApp):
             return
         if not self._user_input_modal_open:
             self._user_input_modal_open = True
+            asker, path = self._prompt_labels(payload)
             self.push_screen(
                 UserInputScreen(
                     branch_id=payload.get("branch_id", ""),
                     node_id=payload.get("node_id", ""),
                     prompt=payload.get("prompt", ""),
+                    asker=asker,
+                    path=path,
                 ),
                 self._submit_user_input_from_modal,
             )
@@ -336,6 +380,7 @@ class AttackOfTheNodesApp(KeymapScreenMixin, TextualApp):
         self.node_timings = {}
         self.supervisors = {}
         self._branch_current_nodes = {}
+        self.child_runs.clear()
 
     def _ensure_starter_workflow(self) -> None:
         """Load the last workflow when possible, otherwise create a starter graph."""

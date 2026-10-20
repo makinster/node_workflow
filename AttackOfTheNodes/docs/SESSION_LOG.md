@@ -6,6 +6,30 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-20 — 4c-2: watching a running subworkflow, labelled prompts
+
+Branch `dist/4c2-watch-calls`, from main `2ecd297` (#91–#93). Owner samples
+2026-10-20, with the owner's answers: E and Enter act the same, opening is
+manual, finished calls are not opened, and a long breadcrumb is shortened.
+
+- **Engine:** a call forwards its run's events (workflow state, supervisor
+  register/state/terminating, node execution, node timing) to the root run's
+  bus inside `SUBWORKFLOW_RUN_UPDATE`, tagged with the invocation id, the
+  calling run and node and the call path, so the root run's own state is
+  untouched; `SUBWORKFLOW_RUN_ENDED` follows. `MasterState.memory_bank` is
+  readable.
+- **TUI:** `frontend/child_runs.py` keeps one record per live call, built as
+  the app builds the root run's, and drops it when the call ends. The
+  Execution screen shows either the root run or one call. On a running
+  Subworkflow card, E/Enter opens it (elsewhere E still shows errors); inside,
+  the title is the breadcrumb and Esc goes back one level. Pause and X act on
+  the whole run. A calling card, the details pane and the title read "waiting
+  for you" when a call below waits.
+- **Prompt:** "Greeter asks", "From Fetch report › Greet › Greeter › Ask
+  name", Send / Cancel (it read "User Input Needed" with node and branch ids).
+- Tests: `tests/test_subworkflow_watch.py`; the pinned Execution keys test now
+  includes E/Enter.
+
 ## 2026-10-20 — 4c-1: the Subworkflow node in Node Config
 
 Branch `dist/4c-subworkflow-node`, from main `106c437` (#89, #90). Built from

@@ -41,7 +41,8 @@ This is the live status snapshot; plans and logs preserve dated decisions.
   Config: Inputs and Payloads tabs, the picker, the map's `Greet (Greeter [sub])`
   and `➥ (n)`, the details pane; the node is in the selector) merged in #91, with
   its review fixes. 4c-2 (opening a running call
-  from the Execution screen, prompts labelled by call path) follows.
+  from the Execution screen with E/Enter, breadcrumbs, prompts that say who
+  asks) is on `dist/4c2-watch-calls`, awaiting review.
   [Proposal](SUBWORKFLOWS_PROPOSAL.md).
 - **Keymap phase 3 — Editor/Execution:** merged in #92.
   Both screens already compiled bindings from profiles; Help and status hints

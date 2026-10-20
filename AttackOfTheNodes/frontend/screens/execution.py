@@ -61,11 +61,14 @@ class ExecutionScreen(KeymapScreenMixin, Screen):
     KEYMAP = EXECUTION
     BINDINGS = bindings_for(KEYMAP)
 
-    def __init__(self, workflow_map, memory_bank, master_state) -> None:
+    def __init__(self, workflow_map, memory_bank, master_state, call=None) -> None:
         super().__init__()
         self.workflow_map = workflow_map
         self.memory_bank = memory_bank
         self.master_state = master_state
+        # 4c-2: a running subworkflow call (``frontend.child_runs.ChildRun``)
+        # shown the same way; None for the root run.
+        self.call = call
         # The editor builds the map rows; an editor screen that is never shown
         # keeps the path shown at each branch node (A/D) as the editor would.
         from frontend.screens.editor import EditorScreen
@@ -116,8 +119,20 @@ class ExecutionScreen(KeymapScreenMixin, Screen):
 
     # -- refresh -------------------------------------------------------------------
 
+    @property
+    def _source(self) -> Any:
+        """Where run status comes from: the call's record, or the app."""
+        return self.call if self.call is not None else self.app
+
+    @property
+    def _run_id(self) -> Optional[str]:
+        return self.call.run_id if self.call is not None else self.master_state.current_run_id
+
+    def _root_master(self) -> Any:
+        return getattr(self.app, "master_state", None) or self.master_state
+
     def refresh_from_backend(self) -> None:
-        app = self.app
+        app = self._source
         state = str(getattr(app, "workflow_state", "IDLE"))
         if state in {"RUNNING", "PAUSED", "WAITING_FOR_INPUT"}:
             self._started = self._started or monotonic()
@@ -137,7 +152,7 @@ class ExecutionScreen(KeymapScreenMixin, Screen):
         self._refresh_output()
 
     def _execution_state(self):
-        return getattr(self.app, "execution_state", None)
+        return getattr(self._source, "execution_state", None)
 
     def _branches(self) -> Dict[str, Dict[str, Any]]:
         state = self._execution_state()
@@ -187,7 +202,7 @@ class ExecutionScreen(KeymapScreenMixin, Screen):
 
     def _status_lines(self, statuses: Dict[str, str], timings: Dict[str, float]) -> Dict[str, str]:
         lines: Dict[str, str] = {}
-        reasons = dict(getattr(self.app, "node_skip_reasons", {}) or {})
+        reasons = dict(getattr(self._source, "node_skip_reasons", {}) or {})
         for node_id, status in statuses.items():
             label, _ = STATUS_TEXT.get(status, ("not started", DIM))
             if status in {"skipped", "recovered"} and reasons.get(node_id):
@@ -195,6 +210,8 @@ class ExecutionScreen(KeymapScreenMixin, Screen):
             visits = self._visits_for(node_id)
             if status == "errored":
                 label = "✗ " + friendly_error_name(self._error_for(node_id).get("code") or "node_error")
+            if status == "running" and any(self._waits(call) for call in self._calls_at(node_id)):
+                label, status = STATUS_TEXT["waiting"][0], "waiting"
             if status not in {"running", "waiting"}:
                 timing = seconds_text(timings.get(node_id))
                 label = f"{label}  {timing}" if timing else label
@@ -240,10 +257,11 @@ class ExecutionScreen(KeymapScreenMixin, Screen):
                 # Following shows the followed node's path; A/D and W/S stop following.
                 if index is None:
                     self._show_path_to(live)
-                    node_list.refresh_rows(self._map._build_visible_rows(), dict(self.app.node_statuses or {}),
-                                           dict(self.app.node_timings or {}),
-                                           run_status=self._status_lines(dict(self.app.node_statuses or {}),
-                                                                         dict(self.app.node_timings or {})))
+                    source = self._source
+                    node_list.refresh_rows(self._map._build_visible_rows(), dict(source.node_statuses or {}),
+                                           dict(source.node_timings or {}),
+                                           run_status=self._status_lines(dict(source.node_statuses or {}),
+                                                                         dict(source.node_timings or {})))
                     index = node_list.index_for_node_id(live)
         if index is None and self._selected is not None:
             for position, row in enumerate(node_list._rows):
@@ -318,8 +336,14 @@ class ExecutionScreen(KeymapScreenMixin, Screen):
         words = {"RUNNING": ("▶ running", CYAN), "PAUSED": ("⏸ paused", YELLOW),
                  "WAITING_FOR_INPUT": ("⏸ waiting for you", YELLOW), "FINISHED": ("✓ finished", GREEN),
                  "ERROR": ("✗ failed", RED), "IDLE": ("stopped", DIM)}
+        if state == "RUNNING" and self._call_below_waits():
+            state = "WAITING_FOR_INPUT"  # a subworkflow this run called waits for you
         word, colour = words.get(state, (state.lower(), DIM))
-        title = Text(f"{self.workflow_map.workflow_name}   ")
+        if self.call is not None:
+            title = self._breadcrumbs(max(20, (self.size.width or 100) - 40))
+            title.append("   ")
+        else:
+            title = Text(f"{self.workflow_map.workflow_name}   ")
         if self._recoveries:
             if self._panel_hidden:
                 count = len(self._recoveries)
@@ -373,13 +397,16 @@ class ExecutionScreen(KeymapScreenMixin, Screen):
     def _node_details(self, row: Dict[str, Any]) -> Text:
         node_id = row["node_id"]
         node = self.workflow_map.get_node_data(node_id) or {}
-        status = (getattr(self.app, "node_statuses", {}) or {}).get(node_id, "idle")
+        status = (getattr(self._source, "node_statuses", {}) or {}).get(node_id, "idle")
         visits = self._visits_for(node_id)
         branch = f" · Branch {visits[-1][0]}" if visits and visits[-1][0] else ""
         text = Text(f"{node_display_name(node_id, node)} · step {row.get('depth', '-')}{branch}\n", style="bold")
         label, colour = STATUS_TEXT.get(status, ("not started yet", DIM))
-        timing = seconds_text((getattr(self.app, "node_timings", {}) or {}).get(node_id))
-        if status == "errored":
+        timing = seconds_text((getattr(self._source, "node_timings", {}) or {}).get(node_id))
+        call_waits = status == "running" and any(self._waits(call) for call in self._calls_at(node_id))
+        if call_waits:
+            pass  # the call details lead with "Greeter is waiting for you"
+        elif status == "errored":
             error = self._error_for(node_id)
             text.append(f"✗ {friendly_error_name(error.get('code') or 'node_error')}"
                         f"{('  ' + timing) if timing else ''}\n", style=colour)
@@ -394,10 +421,8 @@ class ExecutionScreen(KeymapScreenMixin, Screen):
                 state = attempt.get("status", "")
                 mark, tone = STATUS_TEXT.get(state, (state, DIM))
                 text.append(f"  {count}  {mark}  {seconds_text(attempt.get('seconds'))}\n", style=tone)
-        call = self._call_line(node_id)
-        if call:
-            text.append("\nCalls\n", style="bold")
-            text.append(f"  {call}\n")
+        if node.get("type") == "subworkflow_node":
+            text.append_text(self._call_details(node_id, node, status))
         text.append("\nReceived from the previous node\n", style="bold")
         self._append_values(text, self._inputs_of(node))
         text.append("Sent to the next node\n", style="bold")
@@ -435,21 +460,153 @@ class ExecutionScreen(KeymapScreenMixin, Screen):
                 found.append(("" if port == "default" else port, value))
         return found
 
-    def _call_line(self, node_id: str) -> str:
-        """For a Subworkflow node: what it calls and where that run is."""
-        node = self.workflow_map.get_node_data(node_id) or {}
-        if node.get("type") != "subworkflow_node":
-            return ""
-        tree = getattr(self.master_state, "call_tree", None)
+    # -- subworkflow calls (4c-2, owner samples 2026-10-20) ---------------------------
+
+    def _calls_at(self, node_id: str) -> list:
+        """The live calls this run's node ``node_id`` started."""
+        calls = getattr(self.app, "child_runs", None)
+        return calls.at(self._run_id, node_id) if calls is not None and self._run_id else []
+
+    def _child_master(self, call) -> Any:
+        tree = getattr(self._root_master(), "call_tree", None)
         for child in (tree.live_masters() if tree is not None else []):
-            if getattr(child, "_call_info", {}).get("call_site_node_id") != node_id:
-                continue
-            names = [node_display_name(s.current_node_id, child.workflow_map.get_node_data(s.current_node_id) or {})
-                     for s in child._supervisors.values() if s.current_node_id]
-            where = f": now at {', '.join(names)}" if names else ""
-            return f"{child.workflow_map.workflow_name} [sub]{where}"
-        workflow_id = str((node.get("config") or {}).get("workflow_id") or "")
-        return workflow_id or "nothing yet"
+            if child.current_run_id == call.run_id:
+                return child
+        return None
+
+    def _now_at(self, call) -> List[str]:
+        child = self._child_master(call)
+        if child is None:
+            return []
+        names = []
+        for branch in call.execution_state.branches.values():
+            node_id = branch.get("current_node_id")
+            if node_id and branch.get("state") not in {"TERMINATED", "IDLE", "ERROR"}:
+                name = node_display_name(node_id, child.workflow_map.get_node_data(node_id) or {})
+                if name not in names:
+                    names.append(name)
+        return names
+
+    def _call_details(self, node_id: str, node: Dict[str, Any], status: str) -> Text:
+        from frontend import subworkflow_info
+
+        text = Text()
+        calls = self._calls_at(node_id)
+        child = subworkflow_info.describe(str((node.get("config") or {}).get("workflow_id") or ""))
+        name = (calls[0].call_path[-1] if calls and calls[0].call_path else (child or {}).get("name")) or "?"
+        if calls:
+            calls.sort(key=lambda call: not self._waits(call))
+            where = ", ".join(self._now_at(calls[0]))
+            waiting = self._waiting_inside(calls[0])
+            if waiting is calls[0]:
+                text.append(f"⏸ {name} is waiting for you" + (f" at {where}" if where else "") + "\n",
+                            style=YELLOW)
+            elif waiting is not None:
+                inner = waiting.call_path[-1] if waiting.call_path else "a subworkflow"
+                at = ", ".join(self._now_at(waiting))
+                text.append(f"⏸ {name} is waiting for you (in {inner}" + (f", at {at}" if at else "") + ")\n",
+                            style=YELLOW)
+            text.append(f"\nRuns {name} [sub]\n", style="bold")
+            if where:
+                text.append(f"  now at: {where}\n")
+            text.append("  e/enter  open it\n", style=DIM)
+        elif status in {"done", "errored", "stopped", "recovered"}:
+            text.append(f"\nRan {name} [sub]\n", style="bold")
+            text.append("  finished\n" if status == "done" else "  ended\n")
+        else:
+            text.append(f"\nRuns {name} [sub]\n", style="bold")
+        return text
+
+    def _waiting_inside(self, call):
+        calls = getattr(self.app, "child_runs", None)
+        return calls.waiting_inside(call) if calls is not None else (call if call.waiting else None)
+
+    def _waits(self, call) -> bool:
+        """The call, or one it made (at any depth), waits for you."""
+        return self._waiting_inside(call) is not None
+
+    def _call_below_waits(self) -> bool:
+        """A call made from this view's run (at any depth) waits for you;
+        followed by run ids, so parallel calls with the same names stay apart."""
+        calls = getattr(self.app, "child_runs", None)
+        if calls is None or not self._run_id:
+            return False
+        return any(self._waits(call) for call in calls.children_of(self._run_id))
+
+    def _highlighted_call(self):
+        node_list = self.query_one(NodeList)
+        row = node_list.row_for_index(node_list.index)
+        if not row or row.get("kind") != "node":
+            return None, None
+        node = self.workflow_map.get_node_data(row["node_id"]) or {}
+        if node.get("type") != "subworkflow_node":
+            return None, None
+        calls = self._calls_at(row["node_id"])
+        calls.sort(key=lambda call: not self._waits(call))  # one that needs you first
+        return row["node_id"], (calls[0] if calls else None)
+
+    def action_open_call(self) -> None:
+        """Enter: open the highlighted node's running subworkflow."""
+        node_id, call = self._highlighted_call()
+        if node_id is None:
+            return
+        child = self._child_master(call) if call is not None else None
+        if child is None:
+            notifications.notify_info(self.app, "That subworkflow isn't running")
+            return
+        self.app.push_screen(ExecutionScreen(child.workflow_map, child.memory_bank, child, call=call))
+
+    def action_open_or_errors(self) -> None:
+        """E: open a running subworkflow on its card, otherwise show the errors."""
+        node_id, call = self._highlighted_call()
+        if call is not None and self._child_master(call) is not None:
+            self.action_open_call()
+        else:
+            self.action_errors()
+
+    def on_list_view_selected(self, event) -> None:
+        """Enter on the map opens a running call (the binding is not a
+        priority one, so a focused error-panel button still gets its Enter)."""
+        event.stop()
+        self.action_open_call()
+
+    def _breadcrumbs(self, width: int) -> Text:
+        """Fetch report › Greet › Greeter, shortened to fit: the first name,
+        "…", then as many of the last names as fit (owner, 2026-10-20)."""
+        path = list(self.call.call_path) if self.call is not None else [self.workflow_map.workflow_name]
+
+        def build(kept: int) -> Text:
+            names = path if kept >= len(path) - 1 else [path[0], "…"] + path[-kept:]
+            out = Text()
+            for index, name in enumerate(names):
+                if index:
+                    out.append(" › ", style=DIM)
+                out.append(str(name), style="bold" if index == len(names) - 1 else DIM)
+            if len(names) < len(path):
+                out.append(f"   (level {(len(path) - 1) // 2})", style=DIM)
+            return out
+
+        for kept in range(len(path) - 1, 0, -1):
+            text = build(kept)
+            if text.cell_len <= width:
+                return text
+        # Still too long: shorten the first and last names themselves.
+        def clip(name: str, room: int) -> str:
+            return name if len(name) <= room else name[:max(1, room - 1)] + "…"
+
+        level = f"   (level {(len(path) - 1) // 2})" if len(path) > 2 else ""
+        room = max(4, width - len(level) - (len(" › … › ") if len(path) > 2 else len(" › ")))
+        first, last = str(path[0]), str(path[-1])
+        last = clip(last, max(room // 2, room - len(first)))
+        first = clip(first, max(1, room - len(last)))
+        out = Text(first, style=DIM)
+        if len(path) > 2:
+            out.append(" › … › ", style=DIM)
+        elif len(path) == 2:
+            out.append(" › ", style=DIM)
+        out.append(last, style="bold")
+        out.append(level, style=DIM)
+        return out
 
     def _refresh_output(self) -> None:
         outputs = self._current_outputs()
@@ -513,7 +670,16 @@ class ExecutionScreen(KeymapScreenMixin, Screen):
             self.KEYMAP,
             keymap=getattr(self.app, "_keymap", None),
             error_panel_hidden=self._panel_hidden if self._recoveries else None,
+            open_call=self._highlighted_call()[1] is not None,
+            back_to=self._parent_name(),
         ))
+
+    def _parent_name(self) -> Optional[str]:
+        """The workflow Esc goes back to from a call (the one that called it)."""
+        if self.call is None:
+            return None
+        path = self.call.call_path
+        return path[-3] if len(path) >= 3 else (path[0] if path else "the workflow")
 
     def action_error_panel(self) -> None:
         if not self._recoveries:
@@ -588,13 +754,14 @@ class ExecutionScreen(KeymapScreenMixin, Screen):
 
     def action_pause_resume(self) -> None:
         state = getattr(self.app, "workflow_state", "IDLE")
+        root = self._root_master()
         if state in {"RUNNING", "WAITING_FOR_INPUT"}:
-            self.master_state.pause()
+            root.pause()
         elif state == "PAUSED":
-            self.master_state.resume()
+            root.resume()
 
     def action_stop(self) -> None:
-        self.master_state.stop()
+        self._root_master().stop()
         self._recoveries.clear()
         self.app.workflow_state = "IDLE"
         notifications.workflow_stopped(self.app)
@@ -628,4 +795,8 @@ class ExecutionScreen(KeymapScreenMixin, Screen):
         self.app.push_screen(ErrorDetailsScreen({"error": errors[-1], "options": []}))
 
     def action_back_to_editor(self) -> None:
+        if self.call is not None:
+            # Inside a call, Esc goes back one level and never stops anything.
+            self.app.pop_screen()
+            return
         self.app.show_editor_screen()
