@@ -166,18 +166,27 @@ requirements live in Node Standards and Node Contract Plan; the remaining
 require fresh code checks before work. Preserve runtime capability truth and
 unknown saved config rather than assuming old audit defects remain unfixed.
 
-## Planned Project — Execution Screen Branch View
+## Delivered — Execution Screen Overhaul (EX, 2026-10-19)
 
-**Scheduled as Step 4 stage EX (2026-10-18).** Owner direction then: the run
-shown as a keyboard-navigable node map like the Editor's, the memory view
-scoped to the highlighted node (`M` for the whole log), A/D cycling branches,
-and drill-in to subworkflow calls. Design and sample screens come first.
+Built from owner-approved samples (three revisions): the run on the editor's
+map with a status line per card, what the highlighted node received, sent and
+saved to the Vault, follow mode (F; W/S stops following), A/D path switching, Stop on
+X, the error panel (V hides/shows it; Go to node), and the Vault log with each
+write's source. The 2026-10-06 [branch inspection proposal](#execution-branch-inspection-proposal)
+below is superseded where it differs (it proposed a visit list per branch);
+its per-visit preview feed remains a later idea. Still open: drill-in to a
+subworkflow call (4c), answering prompts inside the screen instead of the
+pop-up, and Codex's keymap phase 3 for the Editor and Execution profiles.
 
-Owner direction (2026-10-06) is branch inspection, A/D navigation and stable
-selection/scroll. The [preserved proposal](#execution-branch-inspection-proposal)
-contains the full recommendations, preview budgets and acceptance cases.
-[Architecture](ARCHITECTURE.md#execution-display-contract) owns the delivered
-lifecycle/cache contract; the branch navigation/layout remains future work.
+## Planned Project — Editor Validation Panel (owner, 2026-10-19)
+
+V in the editor opens and closes a Validation panel instead of running the
+validator straight away. A **Run validation** button sits at its top; below it
+the previous run's results, newest first, one line per issue (✗ error,
+! warning, node, short message). The highlighted issue's **Go to node** (or E)
+hides the panel and highlights the node, as the Execution screen's error panel
+does. No Shift+V or Ctrl+V binding (Ctrl+V is paste in most terminals). Samples
+were shown 2026-10-19.
 
 ## Later Project — Return Merge Family and Merge-Early Guidance
 

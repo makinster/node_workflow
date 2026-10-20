@@ -27,7 +27,7 @@ from .events import (
     SupervisorState,
 )
 from .error_handler import ErrorHandler
-from .memory_bank import MemoryBank
+from .memory_bank import MemoryBank, current_writer
 from .node_base import Node, NodeContext
 from .node_errors import (
     MUX_INPUT_PORT,
@@ -289,6 +289,9 @@ class Supervisor:
 
             self._visit_index += 1
             self._attempt_index = 0
+            # EX: Vault writes during this step name it as their writer.
+            current_writer.set({"node_id": self.current_node_id, "branch_id": self.branch_id,
+                                "visit": self._visit_index})
             self._input_interrupted = False
             self._last_node_status = None
             node = self._workflow_map.get_node_instance(self.current_node_id)

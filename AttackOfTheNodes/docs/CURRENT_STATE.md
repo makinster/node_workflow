@@ -24,9 +24,8 @@ This is the live status snapshot; plans and logs preserve dated decisions.
   until the owner sets expiry. Every affected Beacon resets on Merge deletion;
   Beacon deletion ends its branch. Warning levels stay unchanged. The editor
   shows ` [sub]` for callable workflows. No `node_config.py` or Execution
-  screen changes. The review follow-up on `codex/deletion-picker-polish`, from
-  fresh `b5426ab`, fits picker lists to their rows, shortens the new messages
-  and reformats the two deletion test files. It awaits owner review.
+  screen changes. The review follow-up (#90, merged) fits picker lists to their rows,
+  shortens the new messages and reformats the two deletion test files.
   [Compact picker samples](audits/deletion_picker_polish_2026_10_19/README.md),
   [approved proposal](DELETION_REVIEW_PROPOSAL.md),
   [rendered screens and verification](audits/deletion_phase2_2026_10_19/README.md).
@@ -36,14 +35,13 @@ This is the live status snapshot; plans and logs preserve dated decisions.
   tab, "Send back to calling workflow". 4b child runs (backend and CLI) merged
   in #87: the Subworkflow node (hidden in the selector until 4c), call tree,
   limits (depth 4, 64 live), file hand-over, prompts, pause and stop, run
-  records, validation and benchmark. EX is open as #89, awaiting review;
-  next is 4c (TUI). #89 owns Execution, Vault log, run cards/list, recovery
-  routing, writer labels and the Execution profile.
-  [Proposal](SUBWORKFLOWS_PROPOSAL.md).
+  records, validation and benchmark. EX (the Execution screen overhaul)
+  merged in #89, with its review fixes; next is 4c (the TUI for subworkflow
+  calls). [Proposal](SUBWORKFLOWS_PROPOSAL.md).
 - Keymap phase 3 follows the deletion PR: Node Config, Node Selector,
   Workflow Library and Help, now that 4a-2 is merged. Keep visible wording
   unchanged unless correcting a confirmed mismatch, with before/after text.
-  Editor and Execution profile work waits for #89 to merge. The deletion
+  Editor and Execution profile work can start now that #89 is merged. The deletion
   follow-up changes only messages in `editor.py`; it does not edit map logic,
   Execution, Vault log or recovery screens. Other migration topics and Settings
   rebinding remain deferred. [Scope](PROJECT_BACKLOG.md#near-term-project--frontend-command-ui-toolkit).
@@ -54,7 +52,8 @@ This is the live status snapshot; plans and logs preserve dated decisions.
 ## Verification and environment — 2026-10-19
 
 - Main `b5426ab` includes #88: **1848 passed in 265.69s (0:04:25)**.
-  Picker follow-up: **1856 passed in 265.73s (0:04:25)**. The 55 phase-2 tests
+  Picker follow-up (#90): **1856 passed in 265.73s (0:04:25)**. EX (#89)
+  with its review fixes, merged with #90: **1872 passed in 281.21s (0:04:41)**. The 55 phase-2 tests
   cover topology, durable recovery,
   stale plans, conflicts and mounted form/picker flows. Production CSS and
   actual keys checked at 60/100/140 columns; SVG and text captures retained.

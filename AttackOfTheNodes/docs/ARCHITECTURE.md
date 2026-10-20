@@ -15,7 +15,7 @@ separate intent from delivered behavior.
 | `Node` / `NodeContext` | One machine's config and execution; prepared inputs and explicit callbacks |
 | `MasterState` | Run control, supervisor tasks, branching, waits, merge coordination and finalization |
 | `RunContext` | Run identity, policies, waits, delivery/outcome tracking, groups and timings |
-| `MemoryBank` | Named Vault values/type tags and transient port values shared within a run |
+| `MemoryBank` | Named Vault values/type tags and transient port values shared within a run; `writes()` is the run's Vault write log, each write tagged with the node, branch and visit that made it (the supervisor sets `memory_bank.current_writer` each step) |
 | `RunSession` | Open resources, chat histories and run-owned temporary files |
 | `RunService` | A backend client surface for load, validate, start, wait, input, recovery and stop |
 | `OutputManager` / `ErrorHandler` / `RunHistory` | Durable output records, errors and summaries |
