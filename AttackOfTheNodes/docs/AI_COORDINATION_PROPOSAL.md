@@ -161,6 +161,13 @@ end to end.
 
 ### 5.1 Short workflows: `aotn run` *is* the cron script
 
+H0's owner-requested [wrapper and H1/H2 specification draft](integrations/HERMES_H0_DRAFT.md)
+is ready for review. It refines direct exec into exec of an external output
+adapter, preserving the child's natural exit code while escaping/capping its
+message. Its checked JSON specs use terminal No-Op nodes: an ordinary End
+adds an output line and would defeat a silent healthy watchdog. The draft
+does not install wrappers or approve this proposal's wider build order.
+
 ```
 Hermes cron (no_agent) ──> ~/.hermes/scripts/aotn-<name>.sh
                               └─> cd project; exec <aotn venv>/aotn run <name>
@@ -352,7 +359,7 @@ now unblock the CLI and MCP items):
 
 | Order | Work | Why here | Depends on |
 |---|---|---|---|
-| H0 | H1 + H2 with Hermes wrappers | No AOTN code; proves the whole path | Nothing |
+| H0 | H1 + H2 with Hermes wrappers; [specification draft](integrations/HERMES_H0_DRAFT.md) awaiting owner review | Docs/specs checked; wrapper and live delivery still unimplemented | Nothing |
 | P1 | First-community package: install path, Hermes guide, H1/H2 specs, screenshots, known limits (section 1.2) | Something to show Hermes users | H0, C1 |
 | C1 | `hermes_notify_node` + `record_event_node` + shared folder schemas | Small, unblocks long-run notifications and receipts | H0 |
 | C4 | AOTN MCP server (stdio) | Contracts exist, so `run_workflow` takes typed inputs and returns `values`; AOTN becomes a tool for AIs | Step 4 contracts (done) |

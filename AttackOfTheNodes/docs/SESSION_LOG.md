@@ -6,6 +6,36 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-20 — H0 wrapper and workflow specification draft
+
+Branch `codex/hermes-h0-spec`, from fresh main `7227b1b` (#94–#96 merged).
+Owner requested the H0 docs draft while other sessions own Step 4d and the
+Editor Validation Panel. No changes to those files or to engine code.
+
+- Added [the draft](integrations/HERMES_H0_DRAFT.md): filename-derived wrapper
+  names, separate cron data directory, absolute interpreter/checkout entry,
+  an external JSON-output adapter preserving natural exit codes, escaped
+  and bounded stdout/stderr, timeout/signal/overlap semantics, and a later
+  activation checklist. Adapter behavior is a specification, not installed
+  or tested implementation; Hermes assumptions still require rechecking.
+- Two complete `aotn-workflow/1` JSON specs: timestamped heartbeat and HTTP
+  body watchdog with conditional silence and handled network/timeout/status
+  alerts. Real runs revealed End always adds `[END] ...`; terminal No-Op
+  nodes preserve one heartbeat message and zero-byte healthy stdout.
+- Verification: both extracted JSON specs passed CLI `build --check` and
+  build/save/reload in temporary data directories. Thirteen CLI run cases
+  passed: heartbeat text/JSON, healthy and whitespace-healthy bodies,
+  unhealthy/directive-bearing bodies, HTTP 503, timeout, healthy text with
+  empty stdout, refused connection, missing timestamp, unknown name and an
+  unhandled-error variant. HTTP used an ephemeral loopback fixture; the
+  scratch spec alone changed its URL. Required-input warnings are expected.
+- Relative links/anchors, archive/session preservation and `git diff --check`
+  passed. Full suite was not rerun for this docs-only change. No live Hermes
+  job, Telegram message, wrapper implementation or repository workflow edit.
+- No own open prompt-queue PR or Codex prompt-queue branch was present to
+  close; duplicate queue work is dropped in favor of merged #96. Other
+  workers' worktrees and the owner's dirty checkout remain untouched.
+
 ## 2026-10-20 — AI coordination proposal (docs only)
 
 Branch `docs/ai-coordination-proposal`, from main `2ecd297`. Adds
