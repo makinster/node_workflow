@@ -25,7 +25,7 @@ by call path) next.
 - **Picker:** search, a scrolling list, "12 subworkflows" / "1 of 12", and a
   preview (inputs, payloads, may ask). Changing the subworkflow keeps only
   the mappings the new one still has.
-- **Map:** the card reads "Greet  ↳ Greeter [sub]", the gap marker uses the
+- **Map:** the card reads "Greet (Greeter [sub])", the gap marker uses the
   existing `➥ (n)` for payloads sent to the Vault, and the details pane
   lists Runs, Inputs and Payloads. The node is now in the selector.
 - **Owner decision (2026-10-20):** a result's blank Vault key is its own

@@ -188,6 +188,23 @@ hides the panel and highlights the node, as the Execution screen's error panel
 does. No Shift+V or Ctrl+V binding (Ctrl+V is paste in most terminals). Samples
 were shown 2026-10-19.
 
+## Later Project — UI Consistency Pass and Theme (owner, 2026-10-20)
+
+Functionality first; a consistency pass once Step 4 (subworkflows) and the
+keymap phases are merged, so it styles screens that have stopped moving.
+Meanwhile new screens reuse the existing tokens rather than invent colours.
+
+- **Theme tokens:** one set of named colours in `styles.tcss`: the highlight
+  (the map's selection blue, `#1a3a5c`, now used by the Subworkflow rows),
+  type colours, warning, error, dim text. Replace hard-coded colours in
+  widgets with them.
+- **One highlight rule:** a highlighted row or list item is one solid colour
+  over the whole row, including coloured parts (owner, 2026-10-20: green
+  type tags under a white highlight looked wrong). Several recent screens
+  still use the white button focus.
+- **Owner's list:** collect the small UI issues the owner finds here as they
+  come up, then fix them in this pass.
+
 ## Later Project — Return Merge Family and Merge-Early Guidance
 
 Owner ideas, 2026-10-18, from the Step 4 review:

@@ -21,6 +21,7 @@ from typing import Any, Dict, List, Optional
 from rich.text import Text
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical, VerticalScroll
+from textual.content import Content
 from textual.message import Message
 from textual.screen import ModalScreen
 from textual.widgets import Button, Label, Select, Static
@@ -38,11 +39,14 @@ NAME_WIDTH, TYPE_WIDTH, NEED_WIDTH = 10, 10, 11
 FROM_CHOICES = (("Typed value", "Configured"), ("The incoming payload", "Upstream payload"),
                 ("Vault key", "Vault"), ("Its default", "default"))
 GOES_TO = (("Next node", "Downstream"), ("Vault", "Vault"), ("Both", "Both"))
+#: The map's selection blue, one solid colour over the whole highlighted row.
+ROW_HIGHLIGHT = "#1a3a5c"
 ROW_CSS = """
     {name} {{ height: auto; }}
     {name} .sub-row {{ width: 100%; height: 1; min-width: 10; border: none;
         text-align: left; content-align: left middle; }}
-"""
+    {name} .sub-row:focus {{ background: HIGHLIGHT; color: $text; text-style: bold; }}
+""".replace("HIGHLIGHT", ROW_HIGHLIGHT)
 
 
 def _cell(text: str, width: int) -> str:
@@ -61,6 +65,23 @@ def ask_warning(name: str, asks: List[str]) -> Text:
         node = "node" if len(asks) == 1 else "nodes"
         text.append(f"⚠ {name} may stop and ask you something (at its {node} {where}).", style=YELLOW)
     return text
+
+
+class RowButton(Button):
+    """A table row: coloured types normally, one plain colour when highlighted."""
+
+    def __init__(self, line: Text, **kwargs) -> None:
+        super().__init__(line, **kwargs)
+        self.coloured = Content.from_rich_text(line)
+
+    # The label reactive compares text only, so the swap is set directly.
+    def on_focus(self) -> None:
+        self.set_reactive(Button.label, Content(self.coloured.plain))
+        self.refresh()
+
+    def on_blur(self) -> None:
+        self.set_reactive(Button.label, self.coloured)
+        self.refresh()
 
 
 def _new_id(prefix: str) -> str:
@@ -93,7 +114,7 @@ class _RowsBase(Vertical):
         if not lines:
             return [Static(self._empty_text(), classes="form-description", markup=False)]
         header = Static(Text("  " + self.HEADER, style="bold underline"), classes="sub-header")
-        return [header] + [Button(line, id=f"{self.id}-row-{index}", classes="sub-row", compact=True)
+        return [header] + [RowButton(line, id=f"{self.id}-row-{index}", classes="sub-row", compact=True)
                            for index, line in enumerate(lines)]
 
     async def redraw(self, focus_index: Optional[int] = None) -> None:
@@ -403,8 +424,9 @@ class SubworkflowPicker(_EditorBase):
     SubworkflowPicker #pick-list { height: 8; border: round $foreground 20%; }
     SubworkflowPicker .pick-row { width: 100%; height: 1; min-width: 10; border: none;
         text-align: left; content-align: left middle; }
+    SubworkflowPicker .pick-row:focus { background: HIGHLIGHT; color: $text; text-style: bold; }
     SubworkflowPicker #pick-preview { height: auto; }
-    """
+    """.replace("HIGHLIGHT", ROW_HIGHLIGHT)
 
     def __init__(self, entries: List[Dict[str, Any]], current: str = "") -> None:
         super().__init__()

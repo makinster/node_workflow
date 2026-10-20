@@ -37,7 +37,7 @@ This is the live status snapshot; plans and logs preserve dated decisions.
   limits (depth 4, 64 live), file hand-over, prompts, pause and stop, run
   records, validation and benchmark. EX (the Execution screen overhaul)
   merged in #89, with its review fixes. 4c-1 (the Subworkflow node in Node
-  Config: Inputs and Payloads tabs, the picker, the map's `↳ Greeter [sub]`
+  Config: Inputs and Payloads tabs, the picker, the map's `Greet (Greeter [sub])`
   and `➥ (n)`, the details pane; the node is in the selector) is on
   `dist/4c-subworkflow-node`, awaiting review. 4c-2 (opening a running call
   from the Execution screen, prompts labelled by call path) follows.

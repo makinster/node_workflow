@@ -2732,12 +2732,14 @@ class EditorScreen(KeymapScreenMixin, Screen):
         if label:
             display_node["_display_label"] = label
         if node.get("type") == "subworkflow_node":
-            # Step 4c: the card names what it runs ("Greet  ↳ Greeter [sub]").
+            # Step 4c: the card names what it runs ("Greet (Greeter [sub])"; owner 2026-10-20: no arrow).
             from frontend import subworkflow_info
 
-            child = subworkflow_info.describe(str((node.get("config") or {}).get("workflow_id") or ""))
+            child_id = str((node.get("config") or {}).get("workflow_id") or "")
+            child = subworkflow_info.describe(child_id)
             name = label or node_display_name(node_id, node)
-            display_node["_display_label"] = f"{name}  ↳ {child['name']} [sub]" if child else f"{name}  ↳ ?"
+            display_node["_display_label"] = f"{name} ({child['name']} [sub])" if child else (
+                f"{name} (not found)" if child_id else f"{name} (not chosen)")
         if self.workflow_adapter.is_placeholder(node_id):
             metadata = self.workflow_adapter.placeholder_metadata(node_id)
             display_node["_deleted_overlay"] = {

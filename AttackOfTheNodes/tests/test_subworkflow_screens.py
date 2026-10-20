@@ -272,7 +272,7 @@ def test_map_card_names_the_call_counts_vault_payloads_and_details_list_them():
     editor = EditorScreen(FACTORY, flow.map)
     row_ = next(r for r in editor._build_visible_rows() if r.get("node_id") == flow.ids["greet"])
     details = editor._format_node_details(flow.ids["greet"], flow.map.get_node_data(flow.ids["greet"]))
-    assert row_["node"]["_display_label"] == "Greet  ↳ Greeter [sub]"
+    assert row_["node"]["_display_label"] == "Greet (Greeter [sub])"
     assert row_["node"]["_editor_gap_marker"].endswith("➥ (2)")
     assert r"Runs: Greeter \[sub]" in details and "may ask you something (Ask name)" in details
     assert r'who [#4EC9B0]\[string][/] ← typed: "Kim"' in details
@@ -283,3 +283,24 @@ def test_the_subworkflow_node_can_be_added_from_the_selector():
     from frontend.screens.node_selector import HIDDEN_NODE_TYPES
 
     assert "subworkflow_node" not in HIDDEN_NODE_TYPES
+
+
+def test_a_highlighted_row_is_one_solid_colour():
+    from frontend.widgets.subworkflow_rows import ROW_HIGHLIGHT
+
+    flow = caller(greeter())
+
+    async def steps(app, screen, pilot):
+        await pilot.press("2")
+        await pilot.pause(0.1)
+        rows = list(screen.query("#sub-payloads .sub-row"))
+        app.set_focus(rows[0])
+        await pilot.pause(0.1)
+        focused = rows[0].label.spans, rows[0].styles.background.hex.lower()
+        app.set_focus(rows[1])
+        await pilot.pause(0.1)
+        return focused, bool(rows[0].label.spans)
+
+    (spans, background), coloured_again = open_config(flow, steps)
+    assert spans == [] and background == ROW_HIGHLIGHT
+    assert coloured_again
