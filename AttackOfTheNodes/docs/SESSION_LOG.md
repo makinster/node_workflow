@@ -6,6 +6,31 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-19 — Deletion picker review follow-up
+
+Branch `codex/deletion-picker-polish`, from fresh `origin/main` `b5426ab`
+after #88 merged. Re-read the EX ownership and #89 entries in NOTES.
+
+- Keep/recover lists fit their rows. Hints and buttons follow immediately;
+  long lists still scroll within the screen. Wrapped labels refit on resize.
+- Use “Deletes 6 nodes. Shared nodes stay. Z brings them back.” and shorten
+  nearby deletion/recovery messages. Editor edits are strings only: no map,
+  profile, Execution, Vault log, backend or recovery-screen changes.
+- Reformat `test_editor_delete_groups.py` and `test_editor_delete_group_ui.py`
+  with normal spacing, multiline definitions and separate statements. Original
+  ASTs match after excluding the added tests; no original cases/assertions
+  were dropped. No semicolon-joined statements or one-line definitions remain.
+- Eight new checks failed before the fixes. Focused deletion suites:
+  **63 passed**. Full suite: **1856 passed in 265.73s (0:04:25)**. Compile, docs and
+  whitespace checks pass. Tests set `AOTN_DATA_DIR` before backend imports.
+  [Rendered samples and wording changes](audits/deletion_picker_polish_2026_10_19/README.md)
+  cover 60/100/140 columns with production CSS, short lists, wrapped rows,
+  resize and the existing 64-path keyboard/scroll checks. Native terminal
+  manual checks were not performed.
+- Open this PR and stop. #89 review is next, findings only. Keymap phase 3
+  may cover Node Config, Node Selector, Workflow Library and Help; Editor
+  and Execution profiles wait until #89 merges. Owner merges.
+
 ## 2026-10-19 — Deletion review phase 2
 
 Branch `codex/deletion-phase2`, from freshly fetched `origin/main` `a31d721`
