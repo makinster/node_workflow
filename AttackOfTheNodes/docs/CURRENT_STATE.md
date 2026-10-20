@@ -41,7 +41,10 @@ This is the live status snapshot; plans and logs preserve dated decisions.
   Config: Inputs and Payloads tabs, the picker, the map's `Greet (Greeter [sub])`
   and `➥ (n)`, the details pane; the node is in the selector) merged in #91, with
   its review fixes. 4c-2 (opening a running call
-  from the Execution screen, prompts labelled by call path) follows.
+  from the Execution screen with E/Enter, breadcrumbs, prompts that say who
+  asks) merged in #94, with its review fixes. The prompt queue (C19: a
+  second prompt waits for the first instead of being dropped) merged in #96.
+  Left in Step 4: 4d Stash bindings, 4e/4f shared memory.
   [Proposal](SUBWORKFLOWS_PROPOSAL.md).
 - **Keymap phase 3 — Editor/Execution:** merged in #92.
   Both screens already compiled bindings from profiles; Help and status hints
@@ -62,6 +65,8 @@ This is the live status snapshot; plans and logs preserve dated decisions.
 
 ## Verification and environment — 2026-10-20
 
+- Prompt queue slice: **1,918 passed in 301.82s**, three new tests in
+  `tests/test_prompt_queue.py`.
 - This keymap phase-3 slice: **1,884 passed in 277.58s**. Twelve new tests cover
   generated Help, unchanged keys/hints, punctuation/control-key spelling,
   effective rebindings, modal isolation and keyboard scrolling at

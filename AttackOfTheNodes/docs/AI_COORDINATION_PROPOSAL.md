@@ -133,7 +133,7 @@ paths are in the Hermes repo). Re-verify when Hermes is upgraded.
   `file`); `--inputs-file` supplies a JSON object; missing required inputs
   fail before the run starts (exit 5). The run's `values` come from the
   Return End. A cron wrapper can therefore pass typed inputs today.
-- **Subworkflows are built (4b #87, 4c-1 #91; 4c-2 #94 open):** the
+- **Subworkflows are built (4b #87, 4c-1 #91, 4c-2 #94):** the
   `subworkflow_node` calls a saved subworkflow and waits (call-and-wait;
   fire-and-forget is later). Depth 4 and 64 live calls by default. A
   headless caller fails fast when a called subworkflow would prompt (C25),
@@ -341,19 +341,18 @@ today. Local stdio does not need Step 6 network auth.
 ## 9. Effect on the build plan (proposed reprioritization)
 
 Where things stand (2026-10-20): Step 4's contracts (4a), child runs (4b)
-and the Subworkflow node's screens (4c-1) are merged; watching a running
-call (4c-2, #94) and a prompt queue fix are in review. Left in Step 4: 4d
+the Subworkflow node's screens (4c-1), watching a running call (4c-2, #94)
+and the prompt queue (#96) are merged. Left in Step 4: 4d
 Stash bindings and 4e/4f shared memory. Then Step 5 (event sources,
 triggers, persistent store) → Step 6 (server). Phase 17 verification is
 still open.
 
-Proposed (revised: Step 4's TUI finishes first, since it is nearly done and
-contracts now unblock the CLI and MCP items):
+Proposed (revised: Step 4's TUI is finished, #94 and #96, and contracts
+now unblock the CLI and MCP items):
 
 | Order | Work | Why here | Depends on |
 |---|---|---|---|
-| 4c | Finish Step 4's TUI: 4c-2 (#94) and the prompt queue fix | In review; the remaining Step 4 TUI work | — |
-| H0 | H1 + H2 with Hermes wrappers | No AOTN code; proves the whole path. Can start any time, alongside 4c | Nothing |
+| H0 | H1 + H2 with Hermes wrappers | No AOTN code; proves the whole path | Nothing |
 | P1 | First-community package: install path, Hermes guide, H1/H2 specs, screenshots, known limits (section 1.2) | Something to show Hermes users | H0, C1 |
 | C1 | `hermes_notify_node` + `record_event_node` + shared folder schemas | Small, unblocks long-run notifications and receipts | H0 |
 | C4 | AOTN MCP server (stdio) | Contracts exist, so `run_workflow` takes typed inputs and returns `values`; AOTN becomes a tool for AIs | Step 4 contracts (done) |
@@ -373,7 +372,7 @@ nodes, files, wrappers and a CLI-level server. They can run alongside Phase
 
 | # | Decision | Options | Suggested |
 |---|---|---|---|
-| C1 | Accept the reprioritization in section 9? | Accept / partial / keep current order | Accept: finish 4c, then H0–C3 and C4 ahead of 4d–4f and Step 5 |
+| C1 | Accept the reprioritization in section 9? | Accept / partial / keep current order | Accept: H0–C3 and C4 ahead of 4d–4f and Step 5 |
 | C2 | Shared folder location and schema owner | `~/.hermes/aotn/` owned by AOTN docs / elsewhere | `~/.hermes/aotn/`, AOTN owns |
 | C3 | Outbox drain: one digest per tick or one message per event | Digest / per event | Digest |
 | C4 | `cron.wrap_response` on or off | On (shows it came from cron) / off (clean) | Off |

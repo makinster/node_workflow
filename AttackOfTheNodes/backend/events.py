@@ -23,6 +23,13 @@ RECOVERY_OPTIONS_AVAILABLE = "RECOVERY_OPTIONS_AVAILABLE"
 TERMINATE_WORKFLOW_REQUESTED = "TERMINATE_WORKFLOW_REQUESTED"
 
 USER_INPUT_NEEDED = "USER_INPUT_NEEDED"
+# Step 4c-2: a running subworkflow's own run events, forwarded to the root
+# run's bus so a frontend can show that call. Payload: run_id (the root run),
+# invocation_id, parent_run_id, call_site_node_id, call_path (list), event
+# (the original event name) and payload (the original payload). ENDED has
+# run_id and invocation_id; the call's display state can then be dropped.
+SUBWORKFLOW_RUN_UPDATE = "SUBWORKFLOW_RUN_UPDATE"
+SUBWORKFLOW_RUN_ENDED = "SUBWORKFLOW_RUN_ENDED"
 # A node asks any listening frontend to display a file (FO3). JSON payload:
 # run_id / branch_id / node_id (stamped by the supervisor), path, ref_key,
 # render ("markdown" | "plain"). Headless runs have no subscriber and the

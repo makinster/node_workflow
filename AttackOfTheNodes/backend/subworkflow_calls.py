@@ -31,7 +31,18 @@ from .contracts import (
 )
 from .error_handler import unhandled_errors
 from .event_bus import EventBus
-from .events import RECOVERY_OPTIONS_AVAILABLE, USER_INPUT_NEEDED
+from .events import (
+    NODE_EXECUTION_UPDATE,
+    NODE_TIMING_UPDATE,
+    RECOVERY_OPTIONS_AVAILABLE,
+    SUBWORKFLOW_RUN_ENDED,
+    SUBWORKFLOW_RUN_UPDATE,
+    SUPERVISOR_REGISTER,
+    SUPERVISOR_STATE_UPDATE,
+    SUPERVISOR_TERMINATING,
+    USER_INPUT_NEEDED,
+    WORKFLOW_STATE_UPDATE,
+)
 from .file_refs import is_file_reference
 from .node_errors import NodeError
 from .persistence import load_workflow
@@ -54,6 +65,10 @@ CALL_ERROR_DEFINITIONS: List[Dict[str, Any]] = [
 ]
 
 BRIDGED_EVENTS = (USER_INPUT_NEEDED, RECOVERY_OPTIONS_AVAILABLE)
+#: A child's run events a frontend needs to show the call (4c-2), forwarded
+#: wrapped in SUBWORKFLOW_RUN_UPDATE so the root run's own state is untouched.
+WATCHED_EVENTS = (WORKFLOW_STATE_UPDATE, SUPERVISOR_REGISTER, SUPERVISOR_STATE_UPDATE,
+                  SUPERVISOR_TERMINATING, NODE_EXECUTION_UPDATE, NODE_TIMING_UPDATE)
 
 
 class CallTree:
@@ -87,6 +102,12 @@ class CallTree:
         for master in self.live_masters():
             if master.owns_branch(branch_id):
                 return master.submit_user_input(branch_id, value)
+        return False
+
+    def waiting_for_input(self, branch_id: str) -> bool:
+        for master in self.live_masters():
+            if master.owns_branch(branch_id):
+                return master.waiting_for_input(branch_id)
         return False
 
     def submit_recovery_action(self, branch_id: str, action: str) -> bool:
@@ -214,8 +235,26 @@ async def call_subworkflow(
             })
         return forward
 
+    def watch(event_name: str) -> Callable[[Dict[str, Any]], None]:
+        def forward(payload: Dict[str, Any]) -> None:
+            if root_bus is bus:
+                return
+            root_bus.publish(SUBWORKFLOW_RUN_UPDATE, {
+                "run_id": tree.root.current_run_id,
+                "invocation_id": invocation_id,
+                "parent_run_id": run.run_id,
+                "call_site_node_id": node_id,
+                "call_path": list(call_path),
+                "event": event_name,
+                "payload": dict(payload or {}),
+            })
+        return forward
+
     forwards = {name: bridge(name) for name in BRIDGED_EVENTS}
+    watchers = {name: watch(name) for name in WATCHED_EVENTS}
     for name, forward in forwards.items():
+        bus.subscribe(name, forward)
+    for name, forward in watchers.items():
         bus.subscribe(name, forward)
 
     outcome: Dict[str, Any] = {"cancelled": False}
@@ -296,5 +335,10 @@ async def call_subworkflow(
     finally:
         for name, forward in forwards.items():
             bus.unsubscribe(name, forward)
+        for name, forward in watchers.items():
+            bus.unsubscribe(name, forward)
         tree.unregister(invocation_id)
+        if root_bus is not bus:
+            root_bus.publish(SUBWORKFLOW_RUN_ENDED, {"run_id": tree.root.current_run_id,
+                                                     "invocation_id": invocation_id})
         parent.remove_child(child)

@@ -259,6 +259,11 @@ class Supervisor:
         if self._pending_recovery_future and not self._pending_recovery_future.done():
             self._pending_recovery_future.set_result("TERMINATE_BRANCH")
 
+    @property
+    def waiting_for_input(self) -> bool:
+        """True while a user-input request is still unanswered."""
+        return self._pending_input_future is not None and not self._pending_input_future.done()
+
     def submit_user_input(self, value: str) -> None:
         """Resolve a pending user-input request."""
         if self._pending_input_future and not self._pending_input_future.done():
