@@ -15,7 +15,7 @@ class BranchKeepSelectorScreen(KeymapScreenMixin, ModalScreen):
     BINDINGS = bindings_for(KEYMAP)
     DEFAULT_CSS = '''
     BranchKeepSelectorScreen #modal-card.group-delete-card {
-        height: auto; max-height: 90%; width: 76; max-width: 95%;
+        height: auto; max-height: 100%; width: 76; max-width: 100%;
     }
     BranchKeepSelectorScreen #branch-keep-list {
         height: auto; min-height: 1; scrollbar-gutter: stable;
@@ -75,7 +75,7 @@ class BranchKeepSelectorScreen(KeymapScreenMixin, ModalScreen):
             child.outer_size.height for child in card.children if child is not view
         )
         available = max(
-            1, int(self.size.height * 0.9) - card.styles.gutter.height - controls_height
+            1, self.size.height - card.styles.gutter.height - controls_height
         )
         height = min(max(1, rows_height), available)
         if view.styles.height.is_auto or view.styles.height.value != height:
@@ -170,7 +170,7 @@ class BranchKeepSelectorScreen(KeymapScreenMixin, ModalScreen):
 class DeletionConfirmScreen(ConfirmScreen):
     """Keep complete repair/loss previews readable, including wrapped lines."""
     DEFAULT_CSS = """
-    DeletionConfirmScreen #modal-card { max-height: 90%; overflow-y: auto; }
+    DeletionConfirmScreen #modal-card { max-height: 100%; overflow-y: auto; }
     DeletionConfirmScreen .modal-title { height: auto; }
     """
 

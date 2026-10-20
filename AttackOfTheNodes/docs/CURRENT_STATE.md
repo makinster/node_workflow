@@ -38,6 +38,9 @@ This is the live status snapshot; plans and logs preserve dated decisions.
   records, validation and benchmark. EX (the Execution screen overhaul)
   merged in #89, with its review fixes; next is 4c (the TUI for subworkflow
   calls). [Proposal](SUBWORKFLOWS_PROPOSAL.md).
+- **Modals fill the terminal** (owner, 2026-10-20): Node Config, the node
+  selector, large viewers and Help use the whole terminal; on
+  `dist/modal-full-size`, awaiting review.
 - Keymap phase 3 follows the deletion PR: Node Config, Node Selector,
   Workflow Library and Help, now that 4a-2 is merged. Keep visible wording
   unchanged unless correcting a confirmed mismatch, with before/after text.
