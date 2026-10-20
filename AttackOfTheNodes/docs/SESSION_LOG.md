@@ -18,7 +18,10 @@ fails on any colour literal outside `colors.py`. Then: fixed hex values for
 every role (named ANSI colours vary by terminal), `colors.PALETTES` +
 `colors.use(name)` for later theme swaps, and a 4.5:1 contrast test on the
 map, panel and highlight backgrounds (MUTED and ERROR were brightened to
-pass). 1926 passed.
+pass). Owner approved four more roles: NAME (node names), PAYLOAD (input and
+payload names), KEY (Vault key names), VALUE (literal values), applied to
+the Subworkflow tables, the editor details, the Vault log and the Execution
+details.
 
 ## 2026-10-20 — AI coordination proposal (docs only)
 
