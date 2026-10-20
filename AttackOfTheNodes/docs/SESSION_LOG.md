@@ -17,8 +17,12 @@ were sized 80–90%.
   may grow to the whole terminal; so may the keep/recover pickers and the
   deletion confirm.
 - The modal CSS comment said "centered"; it now says top left.
-- Tests: `tests/test_modal_size.py` (both failed before the change). Full
-  suite: 1874 passed.
+- Review (#93, Codex, findings that were already on main): Options and a full
+  File window now fill the terminal with their tabs above Save/Cancel and
+  Open/Close; any other dialog taller than the terminal scrolls (W/S reach
+  its buttons); the keep/recover list fit counts the button row's margin.
+- Tests: `tests/test_modal_size.py` (each failed before its change). Full
+  suite: 1881 passed.
 
 ## 2026-10-19 — EX: Execution Screen Overhaul
 

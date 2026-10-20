@@ -71,8 +71,10 @@ class BranchKeepSelectorScreen(KeymapScreenMixin, ModalScreen):
         card = self.query_one('#modal-card')
         view = self.query_one('#branch-keep-list', ListView)
         rows_height = sum(row.outer_size.height for row in view.children)
+        # outer_size leaves out margins (the button row's top margin).
         controls_height = sum(
-            child.outer_size.height for child in card.children if child is not view
+            child.outer_size.height + child.styles.margin.height
+            for child in card.children if child is not view
         )
         available = max(
             1, self.size.height - card.styles.gutter.height - controls_height

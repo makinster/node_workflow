@@ -93,6 +93,8 @@ Screen {
     max-width: 100%;
     height: auto;
     max-height: 100%;
+    /* A dialog taller than the terminal scrolls; W/S scroll to its buttons. */
+    overflow-y: auto;
     padding: 1 2;
     border: round $primary;
     background: $surface;
@@ -126,15 +128,21 @@ Screen {
     height: 1fr;
 }
 
-/* File window tabs (Step 4a-2): the lists size to their rows so the buttons
-   and key hints stay on screen. */
-#library-tabs {
-    height: auto;
+/* File window and Options: the tabs take the height left above the buttons
+   and key hints, and the lists scroll inside them (#93 review). */
+#modal-card.library-modal,
+#modal-card.settings-modal {
+    width: 100%;
+    height: 100%;
+}
+
+#library-tabs,
+#settings-tabs {
+    height: 1fr;
 }
 
 #library-tabs ListView {
-    height: auto;
-    max-height: 18;
+    height: 1fr;
 }
 
 .tab-scroll {
