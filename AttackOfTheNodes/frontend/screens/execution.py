@@ -34,7 +34,7 @@ from frontend.screens.vault_log import VaultLogScreen, kind_of, shorten, value_t
 from frontend.widgets.node_list import NodeList
 from frontend.widgets.status_bar import StatusBar
 
-GREEN, RED, YELLOW, CYAN, DIM = "green", "red", "yellow", "cyan", "grey50"
+from frontend.colors import ERROR as RED, MUTED as DIM, RUNNING as CYAN, SUCCESS as GREEN, WARNING as YELLOW  # noqa: E402
 NARROW_WIDTH = 80
 _MISSING = object()
 

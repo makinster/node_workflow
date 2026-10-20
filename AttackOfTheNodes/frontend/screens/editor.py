@@ -44,6 +44,7 @@ from frontend.screens.node_config import (
 from frontend.screens.node_selector import NodeSelectorScreen
 from frontend import notifications
 from frontend.editor_workflow_adapter import EditorWorkflowAdapter
+from frontend.colors import ERROR, SOURCE, WARNING
 from frontend.io_contract import (
     DETAIL_WIDTH_FALLBACK,
     TYPE_COLOR,
@@ -2073,12 +2074,12 @@ class EditorScreen(KeymapScreenMixin, Screen):
         lines.append("")
         lines.append("Inputs:")
         input_lines = self._detail_input_lines(node, metadata)
-        lines.extend(input_lines if input_lines else ["  [dim](none)[/dim]"])
+        lines.extend(input_lines if input_lines else ["  [grey50](none)[/]"])
 
         lines.append("")
         lines.append("Outputs:")
         output_lines = self._detail_output_lines(node, metadata)
-        lines.extend(output_lines if output_lines else ["  [dim](none)[/dim]"])
+        lines.extend(output_lines if output_lines else ["  [grey50](none)[/]"])
 
         return "\n".join(lines)
 
@@ -2092,11 +2093,11 @@ class EditorScreen(KeymapScreenMixin, Screen):
         config = node.get("config") or {}
         child = subworkflow_info.describe(str(config.get("workflow_id") or ""))
         if child is None:
-            return ["", "Runs: [dim]nothing chosen[/dim]" if not config.get("workflow_id")
-                    else "Runs: [red]subworkflow not found[/red]"]
+            return ["", "Runs: [grey50]nothing chosen[/]" if not config.get("workflow_id")
+                    else f"Runs: [{ERROR}]subworkflow not found[/]"]
         lines = ["", f"Runs: {escape(child['name'])} \\[sub]"]
         if child["asks"]:
-            lines.append(f"[yellow]⚠ may ask you something ({escape(', '.join(child['asks']))})[/yellow]")
+            lines.append(f"[{WARNING}]⚠ may ask you something ({escape(', '.join(child['asks']))})[/]")
         mapping = subworkflow_info.input_mapping(config)
         routes = subworkflow_info.result_routes(config)
         for title, rows, arrow, text in (
@@ -2105,9 +2106,10 @@ class EditorScreen(KeymapScreenMixin, Screen):
                  lambda row: subworkflow_info.route_text(row["name"], routes.get(row["name"])))):
             lines.extend(["", title])
             for row in rows:
-                lines.append(f"  {escape(row['name'])} [{TYPE_COLOR}]\\[{row['type']}][/] {arrow} {escape(text(row))}")
+                lines.append(f"  {escape(row['name'])} [{TYPE_COLOR}]\\[{row['type']}][/] {arrow} "
+                             f"[{SOURCE}]{escape(text(row))}[/]")
             if not rows:
-                lines.append("  [dim](none)[/dim]")
+                lines.append("  [grey50](none)[/]")
         return lines
 
     def _detail_width(self) -> int:
@@ -2228,7 +2230,7 @@ class EditorScreen(KeymapScreenMixin, Screen):
             ]
             arrow = "└─> vault"
         return [
-            render_port_block(key, "vault", desc, [f"  [dim]{arrow}[/dim]"], self._wrap_detail)
+            render_port_block(key, "vault", desc, [f"  [grey50]{arrow}[/]"], self._wrap_detail)
             for key, desc in entries
         ]
 

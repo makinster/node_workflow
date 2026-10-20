@@ -275,8 +275,8 @@ def test_map_card_names_the_call_counts_vault_payloads_and_details_list_them():
     assert row_["node"]["_display_label"] == "Greet (Greeter [sub])"
     assert row_["node"]["_editor_gap_marker"].endswith("➥ (2)")
     assert r"Runs: Greeter \[sub]" in details and "may ask you something (Ask name)" in details
-    assert r'who [#4EC9B0]\[string][/] ← typed: "Kim"' in details
-    assert r'greeted [#4EC9B0]\[string][/] → next node and Vault key "hello"' in details
+    assert r'who [#4EC9B0]\[string][/] ← [#9CDCFE]typed: "Kim"[/]' in details
+    assert r'greeted [#4EC9B0]\[string][/] → [#9CDCFE]next node and Vault key "hello"[/]' in details
 
 
 def test_the_subworkflow_node_can_be_added_from_the_selector():

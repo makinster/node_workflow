@@ -12,7 +12,7 @@ import textwrap
 from typing import Any, Callable, Dict, List
 
 # VS Code Dark+ teal, used for the bracketed [type] labels.
-TYPE_COLOR = "#4EC9B0"
+from frontend.colors import TYPE as TYPE_COLOR  # noqa: E402  (one colour per meaning)
 
 # Pre-layout wrap width used before a panel has been measured (and by unmounted
 # screens in tests). Both contract panels share it so they wrap identically.
@@ -79,7 +79,7 @@ def wrap_dim(text: str, width: int, indent: int = 0, prefix: str = "") -> List[s
     lines: List[str] = []
     for i, chunk in enumerate(chunks):
         if i == 0:
-            lines.append(f"{' ' * indent}[dim]{prefix}{chunk}[/dim]")
+            lines.append(f"{' ' * indent}[grey50]{prefix}{chunk}[/]")
         else:
-            lines.append(f"{' ' * (indent + len(prefix))}[dim]{chunk}[/dim]")
+            lines.append(f"{' ' * (indent + len(prefix))}[grey50]{chunk}[/]")
     return lines

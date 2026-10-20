@@ -201,6 +201,30 @@ the identity and contract rules. Older Phase 17 layouts are historical.
 - A merge node's config only offers Merge Beacons whose branch starts upstream
   of (or unrelated to) that merge — never one downstream of it.
 
+## Colours
+
+One meaning, one colour (owner, 2026-10-20). Code uses the names in
+`frontend/colors.py`, never colour literals (`tests/test_colors.py` checks).
+Colour is never the only signal: statuses keep their marks.
+
+| Name | Colour | Use for | Example |
+|---|---|---|---|
+| (normal) | theme text | Names, values, messages, headings (bold) | `who`, `"Kim"`, **Inputs** |
+| `MUTED` | grey50 | Hints, descriptions, ids, "nothing yet", separators | `e/enter  open it`, `(none)` |
+| `TYPE` | #4EC9B0 teal | Data types only | `[string]` |
+| `SOURCE` | #9CDCFE light blue | Where a value comes from or goes | `Vault key "count"`, `next node`, `S2B1 Keep` |
+| `SUCCESS` | green | Done, saved, finished | `✓ done` |
+| `RUNNING` | cyan | Running now | `▶ running` |
+| `WARNING` | yellow | Waiting for you, warnings, "may ask" | `⏸ waiting for you`, `⚠` |
+| `ERROR` | red | Errors and failures | `✗ Unexpected failure` |
+| `HIGHLIGHT` | #1a3a5c background | The highlighted row or card: one solid colour over the whole row, plain text on it | |
+| `MAP_BACKGROUND` | #101418 background | Map rows behind the cards | |
+| `BRANCH_PATHS` | ten path colours | A Branch path's gutter and label, in path order | |
+
+In `styles.tcss` use Textual's variables with the same meanings:
+`$text-muted` (MUTED), `$success`, `$warning`, `$error`, `$accent` for
+focus borders.
+
 ## Execution screen
 
 The run is shown on the editor's map; each card's second line says how that

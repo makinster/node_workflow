@@ -6,6 +6,16 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-20 — One colour per meaning
+
+Branch `dist/ui-colors`, from main `7227b1b`. Owner: text colours were all
+over the place. `frontend/colors.py` names one colour per meaning (MUTED,
+TYPE, SOURCE, SUCCESS, RUNNING, WARNING, ERROR, HIGHLIGHT, MAP_BACKGROUND,
+BRANCH_PATHS); UI_QUICK_REFERENCE "Colours" is the reference. Existing code
+moved onto it: `[dim]` became MUTED, sources and destinations (`Vault key
+"count"`, `next node`, Vault log Source) now use SOURCE. `tests/test_colors.py`
+fails on any colour literal outside `colors.py`. 1924 passed.
+
 ## 2026-10-20 — AI coordination proposal (docs only)
 
 Branch `docs/ai-coordination-proposal`, from main `2ecd297`. Adds

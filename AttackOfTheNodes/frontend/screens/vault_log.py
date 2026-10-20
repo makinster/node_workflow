@@ -19,6 +19,7 @@ from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.screen import ModalScreen
 from textual.widgets import Button, DataTable, Input, Label, Static
 
+from frontend.colors import MUTED, SOURCE
 from frontend.io_contract import TYPE_COLOR
 from frontend.widgets.status_bar import StatusBar
 
@@ -117,7 +118,7 @@ class VaultLogScreen(ModalScreen):
         for write in self.writes:
             table.add_row(clock(write.get("seconds")), Text(str(write.get("key"))),
                           type_cell(write.get("type"), write.get("value")),
-                          Text(shorten(value_text(write.get("value")))), Text(self.source_label(write)))
+                          Text(shorten(value_text(write.get("value")))), Text(self.source_label(write), style=SOURCE))
         table.move_cursor(row=len(self.writes) - 1)
 
     def on_input_changed(self, event: Input.Changed) -> None:
@@ -224,7 +225,7 @@ class VaultEntryScreen(ModalScreen):
         text.append("\n")
         if len(self.writes) > 1:
             text.append(f"\nWrite {self.index + 1} of {len(self.writes)} for this key. a/d earlier or later.",
-                        style="grey50")
+                        style=MUTED)
         self.query_one("#vault-entry", Static).update(text)
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
