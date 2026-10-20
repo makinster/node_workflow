@@ -20,6 +20,10 @@ bounded agent nodes and a proposed build order.
   table, the `notify_me` and MCP notes and the build order (finish 4c first,
   then H0–C4 ahead of 4d–4f and Step 5) follow. Hermes facts unchanged.
 - Listed as a temporary doc in README, CURRENT_STATE and the docs check.
+- Owner framing added (section 1.1): Hermes is a near-term shortcut, not a
+  dependency; each Hermes piece has an AOTN-native replacement, and nothing
+  in the engine needs Hermes. Section 1.2 and build step P1: a first
+  community of Hermes users, with the packaging it needs.
 
 ## 2026-10-20 — 4c-1: the Subworkflow node in Node Config
 

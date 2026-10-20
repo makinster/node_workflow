@@ -30,6 +30,51 @@ it sends.
 This fits the factory/control-room model in `AGENTS.md`: AI systems are
 machines on the floor, not the operator.
 
+### 1.1 Hermes is a near-term shortcut, not a dependency (owner, 2026-10-20)
+
+Hermes already has a scheduler, a Telegram bot and webhooks, so using them
+gets useful results soon. AOTN keeps the option to do each of these itself:
+
+| Hermes gives now | AOTN's own version later | When |
+|---|---|---|
+| Cron jobs that run `aotn run` | Start triggers and event sources | Step 5 |
+| Telegram delivery (stdout, outbox drain) | A notify node with its own destinations | After C1, if wanted |
+| Telegram replies and buttons | `wait_for_reply_node` with an AOTN event source | Step 5 / C6 |
+| `hermes chat -q` as an AI step | `chat_completion_node`, `claude_code_node` | C3 |
+
+Rules that keep it a shortcut:
+
+- **Nothing in the engine needs Hermes.** Hermes appears only in wrapper
+  scripts, the shared folder and optional nodes. AOTN runs and tests the
+  same without Hermes installed.
+- **Hermes nodes are optional.** They sit in their own group, report
+  clearly when Hermes is missing, and never block validation of workflows
+  that do not use them.
+- **One seam per job.** Notifications go through the outbox schema, AI steps
+  through the bounded-agent contract, and schedules through `aotn run`. Each
+  seam can switch from Hermes to an AOTN-native piece without changing
+  workflows that use it.
+- **Shared formats are AOTN's.** AOTN owns the outbox, events and proposal
+  schemas (C2), so they outlive the Hermes integration.
+
+### 1.2 A first community (owner idea, 2026-10-20)
+
+Hermes users are a natural first audience: they already run an agent with
+cron and Telegram, and the H1/H2 patterns give them a zero-token heartbeat
+or watchdog in a few minutes. Before posting (for example in the Hermes
+subreddit; check its rules on self-promotion first), have:
+
+- an install path that works from a clean machine (`pip install` from the
+  repository, the shared requirements lock);
+- a short Hermes guide: the wrapper script, one cron job, H1 and H2 as
+  ready-made workflow specs (`aotn build`);
+- a few screenshots or a short recording of the TUI and a Telegram message;
+- a plain list of what is not done yet (Step 5 triggers, no server, Linux
+  and Windows status), so early users know what to expect.
+
+This is packaging and docs work; it fits after H0 and C1, when there is
+something to show.
+
 ## 2. Principles
 
 1. **Tokens only where judgment is needed.** "AI as router, not worker": one
@@ -309,6 +354,7 @@ contracts now unblock the CLI and MCP items):
 |---|---|---|---|
 | 4c | Finish Step 4's TUI: 4c-2 (#94) and the prompt queue fix | In review; the remaining Step 4 TUI work | — |
 | H0 | H1 + H2 with Hermes wrappers | No AOTN code; proves the whole path. Can start any time, alongside 4c | Nothing |
+| P1 | First-community package: install path, Hermes guide, H1/H2 specs, screenshots, known limits (section 1.2) | Something to show Hermes users | H0, C1 |
 | C1 | `hermes_notify_node` + `record_event_node` + shared folder schemas | Small, unblocks long-run notifications and receipts | H0 |
 | C4 | AOTN MCP server (stdio) | Contracts exist, so `run_workflow` takes typed inputs and returns `values`; AOTN becomes a tool for AIs | Step 4 contracts (done) |
 | C2 | **Persistent store pulled forward from Step 5**, built on the Stash's store | Enables H3; avoids separate stores (Stash, state nodes, Step 5). The Stash already gives per-machine durable files and text | Owner decision C5 |
