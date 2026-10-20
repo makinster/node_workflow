@@ -210,7 +210,7 @@ class ExecutionScreen(KeymapScreenMixin, Screen):
             visits = self._visits_for(node_id)
             if status == "errored":
                 label = "✗ " + friendly_error_name(self._error_for(node_id).get("code") or "node_error")
-            if status == "running" and any(call.waiting for call in self._calls_at(node_id)):
+            if status == "running" and any(self._waits(call) for call in self._calls_at(node_id)):
                 label, status = STATUS_TEXT["waiting"][0], "waiting"
             if status not in {"running", "waiting"}:
                 timing = seconds_text(timings.get(node_id))
@@ -403,7 +403,7 @@ class ExecutionScreen(KeymapScreenMixin, Screen):
         text = Text(f"{node_display_name(node_id, node)} · step {row.get('depth', '-')}{branch}\n", style="bold")
         label, colour = STATUS_TEXT.get(status, ("not started yet", DIM))
         timing = seconds_text((getattr(self._source, "node_timings", {}) or {}).get(node_id))
-        call_waits = status == "running" and any(call.waiting for call in self._calls_at(node_id))
+        call_waits = status == "running" and any(self._waits(call) for call in self._calls_at(node_id))
         if call_waits:
             pass  # the call details lead with "Greeter is waiting for you"
         elif status == "errored":
@@ -495,9 +495,16 @@ class ExecutionScreen(KeymapScreenMixin, Screen):
         child = subworkflow_info.describe(str((node.get("config") or {}).get("workflow_id") or ""))
         name = (calls[0].call_path[-1] if calls and calls[0].call_path else (child or {}).get("name")) or "?"
         if calls:
+            calls.sort(key=lambda call: not self._waits(call))
             where = ", ".join(self._now_at(calls[0]))
-            if calls[0].waiting:
+            waiting = self._waiting_inside(calls[0])
+            if waiting is calls[0]:
                 text.append(f"⏸ {name} is waiting for you" + (f" at {where}" if where else "") + "\n",
+                            style=YELLOW)
+            elif waiting is not None:
+                inner = waiting.call_path[-1] if waiting.call_path else "a subworkflow"
+                at = ", ".join(self._now_at(waiting))
+                text.append(f"⏸ {name} is waiting for you (in {inner}" + (f", at {at}" if at else "") + ")\n",
                             style=YELLOW)
             text.append(f"\nRuns {name} [sub]\n", style="bold")
             if where:
@@ -510,14 +517,21 @@ class ExecutionScreen(KeymapScreenMixin, Screen):
             text.append(f"\nRuns {name} [sub]\n", style="bold")
         return text
 
-    def _call_below_waits(self) -> bool:
-        """A call made from this view's run (at any depth) waits for you."""
+    def _waiting_inside(self, call):
         calls = getattr(self.app, "child_runs", None)
-        if calls is None:
+        return calls.waiting_inside(call) if calls is not None else (call if call.waiting else None)
+
+    def _waits(self, call) -> bool:
+        """The call, or one it made (at any depth), waits for you."""
+        return self._waiting_inside(call) is not None
+
+    def _call_below_waits(self) -> bool:
+        """A call made from this view's run (at any depth) waits for you;
+        followed by run ids, so parallel calls with the same names stay apart."""
+        calls = getattr(self.app, "child_runs", None)
+        if calls is None or not self._run_id:
             return False
-        mine = list(self.call.call_path) if self.call is not None else []
-        return any(call.waiting and call.call_path[:len(mine)] == mine and len(call.call_path) > len(mine)
-                   for call in calls.calls.values())
+        return any(self._waits(call) for call in calls.children_of(self._run_id))
 
     def _highlighted_call(self):
         node_list = self.query_one(NodeList)
@@ -528,7 +542,7 @@ class ExecutionScreen(KeymapScreenMixin, Screen):
         if node.get("type") != "subworkflow_node":
             return None, None
         calls = self._calls_at(row["node_id"])
-        calls.sort(key=lambda call: not call.waiting)  # one that needs you first
+        calls.sort(key=lambda call: not self._waits(call))  # one that needs you first
         return row["node_id"], (calls[0] if calls else None)
 
     def action_open_call(self) -> None:
@@ -544,11 +558,17 @@ class ExecutionScreen(KeymapScreenMixin, Screen):
 
     def action_open_or_errors(self) -> None:
         """E: open a running subworkflow on its card, otherwise show the errors."""
-        node_id, _call = self._highlighted_call()
-        if node_id is not None:
+        node_id, call = self._highlighted_call()
+        if call is not None and self._child_master(call) is not None:
             self.action_open_call()
         else:
             self.action_errors()
+
+    def on_list_view_selected(self, event) -> None:
+        """Enter on the map opens a running call (the binding is not a
+        priority one, so a focused error-panel button still gets its Enter)."""
+        event.stop()
+        self.action_open_call()
 
     def _breadcrumbs(self, width: int) -> Text:
         """Fetch report › Greet › Greeter, shortened to fit: the first name,
@@ -570,7 +590,23 @@ class ExecutionScreen(KeymapScreenMixin, Screen):
             text = build(kept)
             if text.cell_len <= width:
                 return text
-        return build(1)
+        # Still too long: shorten the first and last names themselves.
+        def clip(name: str, room: int) -> str:
+            return name if len(name) <= room else name[:max(1, room - 1)] + "…"
+
+        level = f"   (level {(len(path) - 1) // 2})" if len(path) > 2 else ""
+        room = max(4, width - len(level) - (len(" › … › ") if len(path) > 2 else len(" › ")))
+        first, last = str(path[0]), str(path[-1])
+        last = clip(last, max(room // 2, room - len(first)))
+        first = clip(first, max(1, room - len(last)))
+        out = Text(first, style=DIM)
+        if len(path) > 2:
+            out.append(" › … › ", style=DIM)
+        elif len(path) == 2:
+            out.append(" › ", style=DIM)
+        out.append(last, style="bold")
+        out.append(level, style=DIM)
+        return out
 
     def _refresh_output(self) -> None:
         outputs = self._current_outputs()

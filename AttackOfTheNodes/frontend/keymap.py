@@ -178,7 +178,8 @@ EXECUTION = Profile('execution', (
     # 4c-2 (owner, 2026-10-20): E and Enter open a running subworkflow from
     # its Subworkflow card; elsewhere E still shows the errors.
     Command('execution.errors', ('e',), 'open_or_errors', 'Open subworkflow / Errors', policies=NAV, priority=False),
-    Command('execution.open_call', ('enter',), 'open_call', 'Open subworkflow', policies=NAV, priority=True),
+    # Not a priority binding: a focused button (the error panel's) keeps Enter.
+    Command('execution.open_call', ('enter',), 'open_call', 'Open subworkflow', policies=NAV, priority=False),
     Command('execution.back_to_editor', ('escape',), 'back_to_editor', 'Editor', policies=NAV, priority=False),
     Command('execution.revert_or_cancel', ('ctrl+q',), 'revert_or_cancel', 'Editor', policies=NAV_TEXT, priority=True),
 ), cancel_action='back_to_editor')
