@@ -1,10 +1,28 @@
 # AttackOfTheNodes Session Log
 
-This log keeps roughly the last two weeks: entries dated October 4–19, 2026
+This log keeps roughly the last two weeks: entries dated October 4–20, 2026
 (the earliest existing entry is October 6). Every October 18 entry is retained.
 Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.md).
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
+
+## 2026-10-20 — Modals fill the terminal
+
+Branch `dist/modal-full-size`, from main `106c437`. Owner: modals left an
+unused strip on the right and at the bottom. They sit at the top left and
+were sized 80–90%.
+
+- Node Config, the node selector, the large viewers (`fill-modal`) and Help
+  now fill the terminal (100%). Small dialogs stay sized to their content but
+  may grow to the whole terminal; so may the keep/recover pickers and the
+  deletion confirm.
+- The modal CSS comment said "centered"; it now says top left.
+- Review (#93, Codex, findings that were already on main): Options and a full
+  File window now fill the terminal with their tabs above Save/Cancel and
+  Open/Close; any other dialog taller than the terminal scrolls (W/S reach
+  its buttons); the keep/recover list fit counts the button row's margin.
+- Tests: `tests/test_modal_size.py` (each failed before its change). Full
+  suite: 1881 passed.
 
 ## 2026-10-19 — EX: Execution Screen Overhaul
 
