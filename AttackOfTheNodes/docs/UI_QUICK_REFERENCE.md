@@ -226,6 +226,7 @@ Details. Under 80 columns the details sit below the map.
 
 | Screen | Keys beyond shared navigation |
 |---|---|
+| Subworkflow node (Node Config) | 1 Inputs / 2 Payloads / 3 Connections. Change (on the Subworkflow row) opens the picker: type to search, W/S move, E choose. E on an input row: Value comes from Typed value / The incoming payload / Vault key / Its default. E on a payload row: Goes to Next node / Vault / Both (blank key: the payload's name). |
 | Workflow library | 1/2 Workflows / Subworkflows tab; W/S or arrows move; E/Enter opens; N new (a subworkflow on tab 2); C copies a workflow to Subworkflows (tab 1); R rename; D duplicate; I import; O export; X delete; ? key list; Esc/Q/Ctrl+Q close |
 | New/rename name prompt | Enter or Ctrl+S confirms; Ctrl+Enter also submits; Esc cancels |
 | User Text Input | Ordinary text editing starts on mount; W/S type letters. Ctrl+Enter submits; Esc/Ctrl+Q first leave editing, then cancel |

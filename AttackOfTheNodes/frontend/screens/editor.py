@@ -46,6 +46,7 @@ from frontend import notifications
 from frontend.editor_workflow_adapter import EditorWorkflowAdapter
 from frontend.io_contract import (
     DETAIL_WIDTH_FALLBACK,
+    TYPE_COLOR,
     metadata_flow_lines,
     render_port_block,
     wrap_dim,
@@ -2062,6 +2063,10 @@ class EditorScreen(KeymapScreenMixin, Screen):
             + (self._format_timing(average_timing) if average_timing is not None else "-"),
         ])
 
+        if node.get("type") == "subworkflow_node":
+            lines.extend(self._subworkflow_detail_lines(node))
+            return "\n".join(lines)
+
         lines.append("")
         lines.append("Inputs:")
         input_lines = self._detail_input_lines(node, metadata)
@@ -2073,6 +2078,34 @@ class EditorScreen(KeymapScreenMixin, Screen):
         lines.extend(output_lines if output_lines else ["  [dim](none)[/dim]"])
 
         return "\n".join(lines)
+
+    @staticmethod
+    def _subworkflow_detail_lines(node: Dict[str, Any]) -> list[str]:
+        """Step 4c: what a Subworkflow node runs, its inputs and its payloads."""
+        from rich.markup import escape
+
+        from frontend import subworkflow_info
+
+        config = node.get("config") or {}
+        child = subworkflow_info.describe(str(config.get("workflow_id") or ""))
+        if child is None:
+            return ["", "Runs: [dim]nothing chosen[/dim]" if not config.get("workflow_id")
+                    else "Runs: [red]subworkflow not found[/red]"]
+        lines = ["", f"Runs: {escape(child['name'])} \\[sub]"]
+        if child["asks"]:
+            lines.append(f"[yellow]⚠ may ask you something ({escape(', '.join(child['asks']))})[/yellow]")
+        mapping = subworkflow_info.input_mapping(config)
+        routes = subworkflow_info.result_routes(config)
+        for title, rows, arrow, text in (
+                ("Inputs:", child["inputs"], "←", lambda row: subworkflow_info.source_text(row, mapping.get(row["name"]))),
+                ("Payloads:", child["results"], "→",
+                 lambda row: subworkflow_info.route_text(row["name"], routes.get(row["name"])))):
+            lines.extend(["", title])
+            for row in rows:
+                lines.append(f"  {escape(row['name'])} [{TYPE_COLOR}]\\[{row['type']}][/] {arrow} {escape(text(row))}")
+            if not rows:
+                lines.append("  [dim](none)[/dim]")
+        return lines
 
     def _detail_width(self) -> int:
         """Wrap width for the details panel; falls back before first layout
@@ -2518,6 +2551,12 @@ class EditorScreen(KeymapScreenMixin, Screen):
         if self._output_ports_for_node(node, metadata):
             markers += "▼ "
         vault_output_count = len(normalize_membank_outputs(config))
+        if node.get("type") == "subworkflow_node":
+            # Step 4c: the payloads routed to the Vault (details on the right).
+            from frontend import subworkflow_info
+
+            vault_output_count = subworkflow_info.vault_count(
+                config, subworkflow_info.describe(str(config.get("workflow_id") or "")))
         if vault_output_count > 0:
             markers += f"➥ ({vault_output_count})"
         return markers or "▼ "
@@ -2692,6 +2731,13 @@ class EditorScreen(KeymapScreenMixin, Screen):
         label = getattr(self, "_friendly_labels", {}).get(node_id)
         if label:
             display_node["_display_label"] = label
+        if node.get("type") == "subworkflow_node":
+            # Step 4c: the card names what it runs ("Greet  ↳ Greeter [sub]").
+            from frontend import subworkflow_info
+
+            child = subworkflow_info.describe(str((node.get("config") or {}).get("workflow_id") or ""))
+            name = label or node_display_name(node_id, node)
+            display_node["_display_label"] = f"{name}  ↳ {child['name']} [sub]" if child else f"{name}  ↳ ?"
         if self.workflow_adapter.is_placeholder(node_id):
             metadata = self.workflow_adapter.placeholder_metadata(node_id)
             display_node["_deleted_overlay"] = {

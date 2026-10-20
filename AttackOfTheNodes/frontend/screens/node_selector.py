@@ -66,8 +66,7 @@ TAB_FAMILY = {
 # Hidden from the selector: tombstone is the editor-only deleted-node record;
 # start is auto-generated; end is replaced by terminate-branch output config
 # and the End Branch node.
-# Subworkflow: hidden until Step 4c gives it a workflow picker.
-HIDDEN_NODE_TYPES = {TOMBSTONE_NODE_TYPE, START_NODE_TYPE, END_NODE_TYPE, "subworkflow_node"}
+HIDDEN_NODE_TYPES = {TOMBSTONE_NODE_TYPE, START_NODE_TYPE, END_NODE_TYPE}
 
 # Short descriptions shown on group entries in the selector and picker.
 # Fallback: first member's description.

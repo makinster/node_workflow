@@ -99,6 +99,13 @@ from frontend.widgets.form_generator import (
 )
 from frontend.widgets.status_bar import StatusBar
 from frontend.widgets.contract_rows import INPUT, RESULT, ContractRowsField, next_node_summary, row_line
+from frontend import subworkflow_info
+from frontend.widgets.subworkflow_rows import (
+    SubworkflowInputsField,
+    SubworkflowPayloadsField,
+    SubworkflowPicker,
+    ask_warning,
+)
 
 
 _MISSING_PAYLOAD = object()
@@ -645,6 +652,9 @@ def upstream_branch_info(
     return target_port.replace("_", " ").title(), target_port
 
 
+SUBWORKFLOW_NODE_TYPE = "subworkflow_node"
+
+
 class NodeConfigScreen(CommandScreenMixin, ModalScreen):
     """Edit-node modal powered by the schema form generator."""
 
@@ -737,6 +747,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                                          "vault_write", "vault_write_key", "vault_write_description"})
         if self.node_data.get("type") == END_NODE_TYPE:
             excluded_config_keys.update({"return_end", "results"})
+        if self.node_data.get("type") == SUBWORKFLOW_NODE_TYPE:
+            excluded_config_keys.update({"workflow_id", "inputs", "results"})
         if self.node_data.get("type") == MERGE_NODE_TYPE:
             excluded_config_keys.update(
                 {
@@ -800,6 +812,9 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             elif self.node_data.get("type") == END_NODE_TYPE and self._is_subworkflow():
                 help_text = "1-3 tabs | w/s move | e edit | ctrl+s save | esc close | ctrl+q revert"
                 yield from self._compose_end_config_tabs(config, forms)
+            elif self.node_data.get("type") == SUBWORKFLOW_NODE_TYPE:
+                help_text = "1-3 tabs | w/s move | e edit | ctrl+s save | esc close | ctrl+q revert"
+                yield from self._compose_subworkflow_config_tabs(config)
             else:
                 yield from self._compose_standard_config_tabs(
                     metadata,
@@ -986,6 +1001,85 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                     yield from self._compose_connection_rows()
                     yield from self._compose_errors_section()
 
+    # -- Step 4c: the Subworkflow node (owner samples, 2026-10-19, revision 2) --
+
+    def _compose_subworkflow_config_tabs(self, config: Dict[str, Any]):
+        child = subworkflow_info.describe(str(config.get("workflow_id") or ""))
+        with TabbedContent(id="node-config-tabs", classes="node-config-tabs"):
+            with TabPane("1 Inputs", id="node-config-tab-core"):
+                with VerticalScroll(classes="tab-scroll"):
+                    yield self._alias_row()
+                    yield Horizontal(
+                        Label("Subworkflow:", classes="form-label-inline"),
+                        Static(self._sub_name_text(config, child), id="sub-name", markup=False),
+                        Button("Change", id="sub-change", compact=True),
+                        classes="form-inline-row", id="sub-name-row",
+                    )
+                    yield Static(ask_warning(child["name"], child["asks"]) if child else "", id="sub-asks")
+                    yield Static(self._sub_inputs_intro(child), id="sub-inputs-intro",
+                                 classes="form-description", markup=False)
+                    yield SubworkflowInputsField(child, list(config.get("inputs") or []), id="sub-inputs")
+            with TabPane("2 Payloads", id="node-config-tab-outputs"):
+                with VerticalScroll(classes="tab-scroll"):
+                    yield Static(self._sub_payloads_intro(child), id="sub-payloads-intro",
+                                 classes="form-description", markup=False)
+                    payloads = SubworkflowPayloadsField(child, list(config.get("results") or []), id="sub-payloads")
+                    yield payloads
+                    yield Static(payloads.next_node_text() if child else "", id="sub-next",
+                                 classes="form-description", markup=False)
+            with TabPane("3 Connections", id="node-config-tab-connections"):
+                with VerticalScroll(classes="tab-scroll"):
+                    yield Static("Edit connections from the editor.", classes="form-description")
+                    yield from self._compose_connection_rows()
+                    yield from self._compose_errors_section()
+
+    @staticmethod
+    def _sub_name_text(config: Dict[str, Any], child: Optional[Dict[str, Any]]) -> str:
+        if child is not None:
+            return f"{child['name']} [sub]"
+        workflow_id = str(config.get("workflow_id") or "")
+        return f"Not found: {workflow_id}" if workflow_id else "None chosen yet"
+
+    @staticmethod
+    def _sub_inputs_intro(child: Optional[Dict[str, Any]]) -> str:
+        return f"Fill in the values {child['name']} starts with:" if child and child["inputs"] else ""
+
+    @staticmethod
+    def _sub_payloads_intro(child: Optional[Dict[str, Any]]) -> str:
+        if not child or not child["results"]:
+            return ""
+        return f"Payloads {child['name']} sends back, and where each one goes:"
+
+    def _open_subworkflow_picker(self) -> None:
+        current = self._sub_workflow_id()
+        entries = subworkflow_info.subworkflows(exclude=str(getattr(self.workflow_map, "workflow_id", "") or ""))
+
+        async def chosen(workflow_id: Optional[str]) -> None:
+            if not workflow_id or workflow_id == current:
+                return
+            child = subworkflow_info.describe(workflow_id)
+            self._sub_chosen_id = workflow_id
+            await self.query_one("#sub-inputs", SubworkflowInputsField).set_child(child)
+            await self.query_one("#sub-payloads", SubworkflowPayloadsField).set_child(child)
+            self.query_one("#sub-name", Static).update(self._sub_name_text({"workflow_id": workflow_id}, child))
+            self.query_one("#sub-asks", Static).update(ask_warning(child["name"], child["asks"]) if child else "")
+            self.query_one("#sub-inputs-intro", Static).update(self._sub_inputs_intro(child))
+            self.query_one("#sub-payloads-intro", Static).update(self._sub_payloads_intro(child))
+            self._refresh_sub_next()
+
+        self.app.push_screen(SubworkflowPicker(entries, current), chosen)
+
+    def _sub_workflow_id(self) -> str:
+        chosen = getattr(self, "_sub_chosen_id", None)
+        return chosen or str((self.node_data.get("config") or {}).get("workflow_id") or "")
+
+    def _refresh_sub_next(self) -> None:
+        payloads = self.query_one("#sub-payloads", SubworkflowPayloadsField)
+        self.query_one("#sub-next", Static).update(payloads.next_node_text() if payloads.child else "")
+
+    def on_subworkflow_payloads_field_changed(self, _event) -> None:
+        self._refresh_sub_next()
+
     def on_contract_rows_field_changed(self, event: ContractRowsField.Changed) -> None:
         for summary in self.query("#start-next-summary"):
             summary.update(next_node_summary(self.query_one("#start-inputs", ContractRowsField).rows))
@@ -1000,6 +1094,10 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         if self.query("#return-end"):
             values["return_end"] = bool(self.query_one("#return-end", Checkbox).value)
             values["results"] = self.query_one("#end-results", ContractRowsField).value
+        if self.query("#sub-inputs"):
+            values["workflow_id"] = self._sub_workflow_id()
+            values["inputs"] = self.query_one("#sub-inputs", SubworkflowInputsField).value
+            values["results"] = self.query_one("#sub-payloads", SubworkflowPayloadsField).value
         return values
 
     # "Send back to calling workflow" on a Vault payload (C26).
@@ -2139,6 +2237,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             self.action_cancel()
         elif event.button.id == "catch-errors":
             self.action_catch_errors()
+        elif event.button.id == "sub-change":
+            self._open_subworkflow_picker()
         elif event.button.id in self._connection_targets:
             self._leave(jump_to=self._connection_targets[event.button.id])
 
@@ -2397,7 +2497,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                           membank_inputs=[], membank_outputs=[], transient_outputs=[])
             config.update(self._error_path_config_values())
             return config
-        if self.query("#start-inputs") or self.query("#return-end"):
+        if self.query("#start-inputs") or self.query("#return-end") or self.query("#sub-inputs"):
             # Start and a subworkflow's End have no Payloads tab: their
             # routing lives in the rows, so nothing else is collected.
             config.update(self._error_path_config_values())

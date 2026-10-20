@@ -1,10 +1,38 @@
 # AttackOfTheNodes Session Log
 
-This log keeps roughly the last two weeks: entries dated October 4–19, 2026
+This log keeps roughly the last two weeks: entries dated October 4–20, 2026
 (the earliest existing entry is October 6). Every October 18 entry is retained.
 Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.md).
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
+
+## 2026-10-20 — 4c-1: the Subworkflow node in Node Config
+
+Branch `dist/4c-subworkflow-node`, from main `106c437` (#89, #90). Built from
+the owner-approved samples (revision 2, 2026-10-19). 4c is split in two:
+4c-1 here, 4c-2 (watching a call from the Execution screen, prompts labelled
+by call path) next.
+
+- **Tabs:** 1 Inputs, 2 Payloads, 3 Connections, the words other node
+  screens use. Inputs: Alias, "Subworkflow: Greeter [sub]" with Change, a
+  warning naming the nodes that may ask ("at its node Ask name", nested calls
+  included), and a table Input / Type / Required? (yes/no) / Value comes
+  from. Payloads: Payload / Type / Goes to, and "The next node receives: …".
+- **Row editors:** an input's value comes from a Typed value, The incoming
+  payload, a Vault key or Its default (not offered for a required input
+  without one); a typed value is checked against the input's type. A
+  payload goes to the Next node, the Vault or Both.
+- **Picker:** search, a scrolling list, "12 subworkflows" / "1 of 12", and a
+  preview (inputs, payloads, may ask). Changing the subworkflow keeps only
+  the mappings the new one still has.
+- **Map:** the card reads "Greet  ↳ Greeter [sub]", the gap marker uses the
+  existing `➥ (n)` for payloads sent to the Vault, and the details pane
+  lists Runs, Inputs and Payloads. The node is now in the selector.
+- **Owner decision (2026-10-20):** a result's blank Vault key is its own
+  name, not `<alias>.<result>` (backend, docs and authoring guide updated).
+- `backend.contracts.call_contract` / `asking_nodes` describe a child as a
+  caller sees it; `frontend/subworkflow_info.py` caches that per saved file.
+- Tests: `tests/test_subworkflow_screens.py`.
 
 ## 2026-10-19 — EX: Execution Screen Overhaul
 

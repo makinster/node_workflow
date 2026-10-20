@@ -608,3 +608,9 @@ ExecutionScreen.narrow #execution-side {
 ExecutionScreen.narrow #execution-details {
     height: auto;
 }
+
+/* Step 4c: the Subworkflow row keeps its Change button beside the name. */
+#sub-name {
+    width: auto;
+    padding: 0 2 0 0;
+}

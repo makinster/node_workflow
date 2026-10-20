@@ -141,7 +141,8 @@ for its results (Step 4b; the TUI picker comes in 4c):
   child's row type), `Upstream payload` (the node's input) or `Vault`
   (`vault_key`). Unlisted inputs use the child's defaults.
 - **results**: `to` is `Downstream` (the default for unlisted results),
-  `Vault` or `Both`; a blank `vault_key` means `<alias>.<result>`. The
+  `Vault` or `Both`; a blank `vault_key` means the result's own name
+  (owner, 2026-10-20). The
   `default` output carries the downstream results: one as itself, several
   as one object.
 - Failures are coded and routable on `error`: `child_not_found`,

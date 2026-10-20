@@ -323,3 +323,47 @@ def display_value(value: Any) -> str:
     if isinstance(value, (dict, list)):
         return json.dumps(value, default=str)
     return str(value)
+
+
+# -- what a caller sees (Step 4c) ---------------------------------------------------------
+
+#: Node types that stop a run to ask the person running it (C25).
+ASKING_NODE_TYPES = ("user_text_input_node",)
+
+
+def _asks(node: Dict[str, Any]) -> bool:
+    if node.get("type") in ASKING_NODE_TYPES:
+        return True
+    return node.get("type") == "text_output_node" and bool((node.get("config") or {}).get("request_user_input"))
+
+
+def asking_nodes(data: Dict[str, Any], load: Optional[Any] = None, _seen: Optional[set] = None) -> List[str]:
+    """Names of the nodes that may stop a call to ask for input (C25),
+    including those inside subworkflows it calls (``load(workflow_id)``
+    reads a saved workflow; without it nested calls are not followed)."""
+    seen = _seen if _seen is not None else set()
+    names: List[str] = []
+    for node_id, node in (data.get("nodes") or {}).items():
+        if not isinstance(node, dict):
+            continue
+        if _asks(node):
+            names.append(str(node.get("alias") or node_id))
+        child_id = str((node.get("config") or {}).get("workflow_id") or "")
+        if node.get("type") == "subworkflow_node" and load is not None and child_id and child_id not in seen:
+            seen.add(child_id)
+            child = load(child_id)
+            if child:
+                names.extend(asking_nodes(child, load, seen))
+    return names
+
+
+def call_contract(data: Dict[str, Any], load: Optional[Any] = None) -> Dict[str, Any]:
+    """A subworkflow as its callers see it: name, inputs (Start's rows),
+    results (the Return End's rows) and the nodes that may ask for input."""
+    nodes = [node for node in (data.get("nodes") or {}).values() if isinstance(node, dict)]
+    starts = [node for node in nodes if node.get("type") == "start_node"]
+    inputs = [row for row in start_rows((starts[0].get("config") or {}) if starts else {}) if not row.get("_legacy")]
+    results = [row for node in nodes if node.get("type") == "end_node"
+               for row in return_rows(node.get("config") or {})]
+    return {"name": str(data.get("name") or ""), "callable": bool(data.get("callable")),
+            "inputs": inputs, "results": results, "asks": asking_nodes(data, load)}
