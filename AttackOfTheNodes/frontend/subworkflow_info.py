@@ -13,7 +13,8 @@ from typing import Any, Dict, List, Optional, Tuple
 from backend import persistence
 from backend.contracts import call_contract
 
-_cache: Dict[str, Tuple[float, Optional[Dict[str, Any]]]] = {}
+#: workflow id -> (saved-file times of it and every subworkflow it calls, info)
+_cache: Dict[str, Tuple[Dict[str, float], Optional[Dict[str, Any]]]] = {}
 
 
 def _stamp(workflow_id: str) -> float:
@@ -28,13 +29,20 @@ def describe(workflow_id: str) -> Optional[Dict[str, Any]]:
     workflow_id = str(workflow_id or "").strip()
     if not workflow_id:
         return None
-    stamp = _stamp(workflow_id)
     cached = _cache.get(workflow_id)
-    if cached is not None and cached[0] == stamp:
+    if cached is not None and all(_stamp(wid) == stamp for wid, stamp in cached[0].items()):
         return cached[1]
-    data = persistence.load_workflow(workflow_id) if stamp >= 0 else None
-    info = call_contract(data, persistence.load_workflow) if data else None
-    _cache[workflow_id] = (stamp, info)
+    # A nested edit (a prompt added or removed deeper down) changes "may ask",
+    # so every file read is part of the cache key.
+    stamps = {workflow_id: _stamp(workflow_id)}
+
+    def load(wid: str) -> Optional[Dict[str, Any]]:
+        stamps[wid] = _stamp(wid)
+        return persistence.load_workflow(wid)
+
+    data = persistence.load_workflow(workflow_id) if stamps[workflow_id] >= 0 else None
+    info = call_contract(data, load) if data else None
+    _cache[workflow_id] = (stamps, info)
     return info
 
 
@@ -70,7 +78,11 @@ def source_text(row: Dict[str, Any], mapping: Optional[Dict[str, Any]]) -> str:
     if source == "Vault":
         return f'Vault key "{mapping.get("vault_key") or ""}"'
     value = mapping.get("value", "")
-    return f'typed: "{value}"' if row.get("type") == "string" else f"typed: {value}"
+    if row.get("type") == "string":
+        return f'typed: "{value}"'
+    from frontend.widgets.contract_rows import default_text
+
+    return f"typed: {default_text(value)}"
 
 
 def route_text(name: str, route: Optional[Dict[str, Any]]) -> str:

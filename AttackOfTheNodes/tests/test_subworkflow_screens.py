@@ -304,3 +304,55 @@ def test_a_highlighted_row_is_one_solid_colour():
     (spans, background), coloured_again = open_config(flow, steps)
     assert spans == [] and background == ROW_HIGHLIGHT
     assert coloured_again
+
+
+# -- #91 review fixes (2026-10-20) ---------------------------------------------------------
+
+def test_confirming_an_unchanged_object_value_keeps_the_object():
+    child = Flow("Settings child", callable_=True).node(
+        "start", "start_node", rows=[row("options", "var", required=True)]).node("end", "end_node").link(
+        "start", "end").save()
+    flow = caller(child, inputs=[{"id": "m1", "name": "options", "source": "Configured",
+                                  "value": {"enabled": True}}])
+
+    async def steps(app, screen, pilot):
+        screen.query_one("#sub-inputs", SubworkflowInputsField).open_row(0)
+        await pilot.pause(0.1)
+        shown = app.screen.query_one("#row-value", CommandInput).value
+        app.screen.action_submit()
+        await pilot.pause(0.1)
+        return shown, screen._collected_config()["inputs"][0]["value"]
+
+    shown, saved = open_config(flow, steps)
+    assert shown == '{"enabled": true}' and saved == {"enabled": True}
+
+
+def test_picker_buttons_and_hints_fit_a_small_terminal():
+    child_id = greeter()
+    flow = caller(child_id)
+
+    async def steps(app, screen, pilot):
+        screen._open_subworkflow_picker()
+        await pilot.pause(0.2)
+        picker = app.screen
+        card = picker.query_one("#modal-card").content_region
+        return all(card.contains_region(picker.query_one(f"#{name}").region)
+                   for name in ("confirm-row", "cancel-row"))
+
+    assert open_config(flow, steps, size=(80, 24))
+
+
+def test_a_prompt_added_in_a_nested_subworkflow_shows_up():
+    import os
+
+    inner = Flow("Inner", callable_=True)
+    inner.node("start", "start_node").node("end", "end_node").link("start", "end")
+    inner_id = inner.save()
+    outer_id = Flow("Outer", callable_=True).node("start", "start_node") \
+        .node("call", "subworkflow_node", workflow_id=inner_id).save()
+    assert subworkflow_info.describe(outer_id)["asks"] == []
+    inner.node("ask", "user_text_input_node", alias="Ask added")
+    inner.save()
+    path = persistence.WORKFLOWS_DIR / f"{inner_id}.json"
+    os.utime(path, (path.stat().st_atime, path.stat().st_mtime + 5))
+    assert subworkflow_info.describe(outer_id)["asks"] == ["Ask added"]

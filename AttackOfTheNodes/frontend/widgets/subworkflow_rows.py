@@ -32,6 +32,7 @@ from frontend.io_contract import TYPE_COLOR
 from frontend.keymap import CONTRACT_ROW_EDITOR, bindings_for
 from frontend.widgets.command_input import CommandInput
 from frontend.widgets.command_screen_mixin import CommandScreenMixin
+from frontend.widgets.contract_rows import default_text
 from frontend.widgets.status_bar import StatusBar
 
 YELLOW = "yellow"
@@ -317,12 +318,12 @@ class SubworkflowInputEditor(_EditorBase):
             yield Label(title, classes="modal-title")
             yield _field("Value comes from:", Select(list(choices), value=current, allow_blank=False,
                                                      id="row-source"), "row-source-row")
-            yield _field("Value:", CommandInput(value=str(mapping.get("value", "") if current == "Configured" else ""),
-                                                id="row-value"), "row-value-row")
+            typed = default_text(mapping.get("value")) if current == "Configured" else ""
+            yield _field("Value:", CommandInput(value=typed, id="row-value"), "row-value-row")
             yield _field("Vault key:", CommandInput(value=str(mapping.get("vault_key") or ""), id="row-vault-key"),
                          "row-vault-key-row")
             if self._has_default():
-                default = f'"{row["value"]}"' if row["type"] == "string" else str(row["value"])
+                default = f'"{row["value"]}"' if row["type"] == "string" else default_text(row["value"])
                 yield Static(f"Its default is {default}.", classes="form-description", markup=False)
             elif not row["required"]:
                 yield Static("It has no default: left empty.", classes="form-description", markup=False)
@@ -355,8 +356,11 @@ class SubworkflowInputEditor(_EditorBase):
         result: Dict[str, Any] = {"id": self.mapping.get("id") or _new_id("map_"), "name": self.row["name"],
                                   "source": source, "value": "", "vault_key": ""}
         if source == "Configured":
-            value = self._text("row-value")
-            if value.strip() and self.row["type"] != "file":
+            value: Any = self._text("row-value")
+            original = self.mapping.get("value")
+            if self.mapping.get("source") == "Configured" and value == default_text(original):
+                value = original  # unchanged: keep the value as stored
+            elif value.strip() and self.row["type"] != "file":
                 try:
                     parse_text(self.row["type"], value)
                 except ContractError as error:
@@ -421,7 +425,7 @@ class SubworkflowPicker(_EditorBase):
     Dismisses with the chosen workflow id, or None."""
 
     DEFAULT_CSS = """
-    SubworkflowPicker #pick-list { height: 8; border: round $foreground 20%; }
+    SubworkflowPicker #pick-list { height: 1fr; min-height: 3; border: round $foreground 20%; }
     SubworkflowPicker .pick-row { width: 100%; height: 1; min-width: 10; border: none;
         text-align: left; content-align: left middle; }
     SubworkflowPicker .pick-row:focus { background: HIGHLIGHT; color: $text; text-style: bold; }
@@ -436,7 +440,7 @@ class SubworkflowPicker(_EditorBase):
         self.highlighted = current
 
     def compose(self) -> ComposeResult:
-        with Vertical(id="modal-card", classes="contract-row-modal"):
+        with Vertical(id="modal-card", classes="fill-modal"):
             yield Label("Choose a subworkflow", classes="modal-title")
             yield _field("Search:", CommandInput(value="", placeholder="type to filter", id="pick-search"),
                          "pick-search-row")

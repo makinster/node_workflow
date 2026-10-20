@@ -32,7 +32,12 @@ by call path) next.
   name, not `<alias>.<result>` (backend, docs and authoring guide updated).
 - `backend.contracts.call_contract` / `asking_nodes` describe a child as a
   caller sees it; `frontend/subworkflow_info.py` caches that per saved file.
-- Tests: `tests/test_subworkflow_screens.py`.
+- Review (#91, Codex): an unchanged typed object or list keeps its stored
+  value (it was saved back as text); the picker fills the screen with its
+  list taking the space left, so Choose/Cancel show at 80×24; a prompt
+  added or removed in a nested subworkflow updates "may ask" (the cache
+  checks every file it read).
+- Tests: `tests/test_subworkflow_screens.py`. Full suite: 1889 passed.
 
 ## 2026-10-19 — EX: Execution Screen Overhaul
 
