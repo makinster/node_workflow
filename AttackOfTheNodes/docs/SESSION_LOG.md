@@ -6,6 +6,23 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-20 — Prompts queue (C19)
+
+Branch `dist/4c3-prompt-queue`, stacked on `dist/4c2-watch-calls` (#94, not
+yet merged). A second `USER_INPUT_NEEDED` arriving while a prompt was open
+was dropped, so its branch waited forever (two parallel User Input branches,
+or a subworkflow and its caller both asking).
+
+- **TUI:** the app keeps a queue of prompts and shows the next one when the
+  open prompt closes, in arrival order, with the 4c-2 asker and path. It
+  skips a prompt whose run is no longer current or whose branch no longer
+  waits, and a run reset clears the queue.
+- **Engine:** `MasterState.waiting_for_input(branch_id)` (root branches, or a
+  subworkflow's through the call tree) and `Supervisor.waiting_for_input`.
+- Tests: `tests/test_prompt_queue.py` (two parallel prompts answered in
+  order; a stopped run's queued prompt is not shown; a new run drops the
+  queue). Full suite 1,918 passed.
+
 ## 2026-10-20 — 4c-2: watching a running subworkflow, labelled prompts
 
 Branch `dist/4c2-watch-calls`, from main `2ecd297` (#91–#93). Owner samples

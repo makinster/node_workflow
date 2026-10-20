@@ -105,6 +105,8 @@ class AttackOfTheNodesApp(KeymapScreenMixin, TextualApp):
         self.supervisors = {}
         self._branch_current_nodes = {}
         self._user_input_modal_open = False
+        # C19: prompts wait here and show one at a time, in arrival order.
+        self._user_input_requests = deque()
         self._error_modal_open = False
         self._file_viewer_open = False
         self._file_view_requests = deque()
@@ -298,20 +300,33 @@ class AttackOfTheNodesApp(KeymapScreenMixin, TextualApp):
         payload = payload or {}
         if not self.execution_state.accepts(payload):
             return
-        if not self._user_input_modal_open:
-            self._user_input_modal_open = True
-            asker, path = self._prompt_labels(payload)
-            self.push_screen(
-                UserInputScreen(
-                    branch_id=payload.get("branch_id", ""),
-                    node_id=payload.get("node_id", ""),
-                    prompt=payload.get("prompt", ""),
-                    asker=asker,
-                    path=path,
-                ),
-                self._submit_user_input_from_modal,
-            )
+        self._user_input_requests.append(dict(payload))
+        self._show_next_user_input()
         self.flush_refresh()
+
+    def _show_next_user_input(self) -> None:
+        """Show the oldest prompt whose run is current and whose branch still waits."""
+        if self._user_input_modal_open:
+            return
+        while self._user_input_requests:
+            payload = self._user_input_requests.popleft()
+            if (self.execution_state.accepts(payload)
+                    and self.master_state.waiting_for_input(payload.get("branch_id", ""))):
+                break
+        else:
+            return
+        self._user_input_modal_open = True
+        asker, path = self._prompt_labels(payload)
+        self.push_screen(
+            UserInputScreen(
+                branch_id=payload.get("branch_id", ""),
+                node_id=payload.get("node_id", ""),
+                prompt=payload.get("prompt", ""),
+                asker=asker,
+                path=path,
+            ),
+            self._submit_user_input_from_modal,
+        )
 
     def _on_file_view_requested(self, payload=None) -> None:
         """Queue displays for the active run; execution does not wait on them."""
@@ -362,6 +377,7 @@ class AttackOfTheNodesApp(KeymapScreenMixin, TextualApp):
         self._user_input_modal_open = False
         if result:
             self.master_state.submit_user_input(result["branch_id"], result["value"])
+        self._show_next_user_input()
         self._show_next_file_viewer()
 
     def _submit_recovery_from_modal(self, result) -> None:
@@ -372,6 +388,7 @@ class AttackOfTheNodesApp(KeymapScreenMixin, TextualApp):
 
     def _reset_run_display_state(self) -> None:
         self._file_view_requests.clear()
+        self._user_input_requests.clear()
         if self.execution_state.run_id is not None:
             self._retired_display_run_id = self.execution_state.run_id
         self.execution_state.reset()
