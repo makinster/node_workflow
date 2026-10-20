@@ -175,7 +175,10 @@ EXECUTION = Profile('execution', (
     Command('execution.error_panel', ('v',), 'error_panel', 'Show/hide error', policies=NAV, priority=False),
     Command('execution.memory', ('m',), 'memory', 'Memory', policies=NAV, priority=False),
     Command('execution.output', ('o',), 'output', 'Output', policies=NAV, priority=False),
-    Command('execution.errors', ('e',), 'errors', 'Errors', policies=NAV, priority=False),
+    # 4c-2 (owner, 2026-10-20): E and Enter open a running subworkflow from
+    # its Subworkflow card; elsewhere E still shows the errors.
+    Command('execution.errors', ('e',), 'open_or_errors', 'Open subworkflow / Errors', policies=NAV, priority=False),
+    Command('execution.open_call', ('enter',), 'open_call', 'Open subworkflow', policies=NAV, priority=True),
     Command('execution.back_to_editor', ('escape',), 'back_to_editor', 'Editor', policies=NAV, priority=False),
     Command('execution.revert_or_cancel', ('ctrl+q',), 'revert_or_cancel', 'Editor', policies=NAV_TEXT, priority=True),
 ), cancel_action='back_to_editor')
@@ -504,8 +507,12 @@ def screen_hint_for(
     *,
     keymap: dict[str, str] | None = None,
     error_panel_hidden: bool | None = None,
+    open_call: bool = False,
+    back_to: str | None = None,
 ) -> str:
-    """Editor/Execution compact hints, with the current effective primary keys."""
+    """Editor/Execution compact hints, with the current effective primary keys.
+    ``open_call``: the highlighted node is a running subworkflow call (4c-2).
+    ``back_to``: this view shows a call; Esc goes back to that workflow."""
     commands = {
         command.id: keys
         for owner in (APP, profile)
@@ -520,6 +527,24 @@ def screen_hint_for(
             ),
             *groups,
         )
+    if profile.id == "execution" and back_to:
+        groups = tuple(
+            HintGroup(group.command_ids, f"back to {back_to} (the run keeps going)")
+            if group.command_ids == ("execution.back_to_editor",)
+            else HintGroup(group.command_ids, "stop all") if group.command_ids == ("execution.stop",)
+            else group
+            for group in groups
+        )
+        # Owner sample (2026-10-20): back, move, memory, stop all. The other
+        # keys still work there; Help lists them.
+        kept = {("execution.back_to_editor",), ("execution.cursor_up", "execution.cursor_down"),
+                ("execution.memory",), ("execution.stop",)}
+        groups = tuple(g for g in groups if g.command_ids == ("execution.back_to_editor",)) + tuple(
+            g for g in groups if g.command_ids != ("execution.back_to_editor",) and g.command_ids in kept)
+    if profile.id == "execution" and open_call:
+        # Room for it (owner sample): output and pause still work; Help lists them.
+        groups = (HintGroup(("execution.errors", "execution.open_call"), "open subworkflow"),
+                  *(g for g in groups if g.command_ids not in {("execution.output",), ("execution.pause_resume",)}))
     hints = []
     for group in groups:
         keys = [

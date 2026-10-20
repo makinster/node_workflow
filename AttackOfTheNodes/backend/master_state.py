@@ -156,6 +156,11 @@ class MasterState:
         return self._workflow_map
 
     @property
+    def memory_bank(self) -> MemoryBank:
+        """This run's Vault (4c-2: a frontend shows a running call's writes)."""
+        return self._memory_bank
+
+    @property
     def event_bus(self) -> EventBus:
         return self._event_bus
 

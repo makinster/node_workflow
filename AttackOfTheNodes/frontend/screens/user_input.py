@@ -5,6 +5,7 @@ from __future__ import annotations
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
+from rich.text import Text
 from textual.widgets import Button, Input, Label, Static
 
 from frontend.keymap import USER_INPUT, bindings_for
@@ -20,22 +21,31 @@ class UserInputScreen(CommandScreenMixin, ModalScreen):
     KEYMAP = USER_INPUT
     BINDINGS = bindings_for(KEYMAP)
 
-    def __init__(self, branch_id: str, node_id: str, prompt: str) -> None:
+    def __init__(self, branch_id: str, node_id: str, prompt: str, asker: str = "",
+                 path: list | tuple = ()) -> None:
         super().__init__()
         self.branch_id = branch_id
         self.node_id = node_id
         self.prompt = prompt
+        # Step 4c-2 (owner samples, 2026-10-20): who asks, and from where.
+        self.asker = asker
+        self.path = list(path)
 
     def compose(self) -> ComposeResult:
         with Vertical(id="modal-card"):
-            yield Label("User Input Needed", classes="modal-title")
-            yield Static(f"Node: {self.node_id}\nBranch: {self.branch_id}")
+            yield Label(f"{self.asker} asks" if self.asker else "User Input Needed",
+                        classes="modal-title", markup=False)
+            where = Text("From ", style="grey50")
+            for index, name in enumerate(self.path or [self.node_id]):
+                where.append(" › " if index else "", style="grey50")
+                where.append(str(name), style="bold" if index == len(self.path or [1]) - 1 else "grey50")
+            yield Static(where, id="user-input-from")
             yield Label(self.prompt, classes="form-label")
             yield CommandInput(id="user-input-value")
             with Horizontal(classes="button-row"):
-                yield Button("Submit", id="submit-user-input", variant="primary")
+                yield Button("Send", id="submit-user-input", variant="primary")
                 yield Button("Cancel", id="cancel-user-input", variant="default")
-            yield StatusBar("Type response  Ctrl+Enter submit  Esc leaves edit/cancels")
+            yield StatusBar("type an answer | ctrl+enter send | esc cancel")
 
     def on_mount(self) -> None:
         self._focus_first()
