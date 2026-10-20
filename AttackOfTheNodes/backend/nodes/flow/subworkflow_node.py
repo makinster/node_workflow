@@ -59,7 +59,7 @@ class SubworkflowNode(Node):
                 "id": {"type": "string", "label": "Stable id"},
                 "name": {"type": "string", "label": "Subworkflow result"},
                 "to": {"type": "select", "label": "Send to", "options": list(DESTINATIONS)},
-                "vault_key": {"type": "string", "label": "Vault key (blank = <alias>.<result>)"},
+                "vault_key": {"type": "string", "label": "Vault key (blank = the result name)"},
             },
         },
     }
@@ -101,13 +101,12 @@ class SubworkflowNode(Node):
             return
         routes = {str(row.get("name") or ""): row for row in self.config.get("results") or []
                   if isinstance(row, dict)}
-        alias = context.node_alias or self.node_id
         downstream: Dict[str, Any] = {}
         for name, value in results.items():
             route = routes.get(name) or {}
             to = route.get("to") or "Downstream"
             if to in ("Vault", "Both"):
-                key = str(route.get("vault_key") or "").strip() or f"{alias}.{name}"
+                key = str(route.get("vault_key") or "").strip() or name
                 context.memory_bank.store_persistent(key, value)
             if to in ("Downstream", "Both"):
                 downstream[name] = value

@@ -296,7 +296,7 @@ grouping is the contract until that pressure is real.
 
 | Node | Status | Notes |
 |---|---|---|
-| Subworkflow | Live (backend and CLI; hidden in the selector until 4c) | `subworkflow_node` — calls a saved subworkflow by id as a child run and waits. Inputs come from a configured value, the incoming payload or a Vault key; each result goes to the next node, the Vault (default key `<alias>.<result>`) or both. Failures are coded (`child_not_found`, `child_input_missing`, `child_input_invalid`, `child_failed`, `child_output_conflict`, `depth_limit`, `capacity_limit`) and routable on `error`. See [Subworkflows proposal](SUBWORKFLOWS_PROPOSAL.md). |
+| Subworkflow | Live (4c-1: Node Config, picker and map; watching a call from the Execution screen is 4c-2) | `subworkflow_node` — calls a saved subworkflow by id as a child run and waits. Inputs come from a configured value, the incoming payload or a Vault key; each result goes to the next node, the Vault (default key: the result's name) or both. Failures are coded (`child_not_found`, `child_input_missing`, `child_input_invalid`, `child_failed`, `child_output_conflict`, `depth_limit`, `capacity_limit`) and routable on `error`. See [Subworkflows proposal](SUBWORKFLOWS_PROPOSAL.md). |
 | Parallel Subworkflow | Concept | Separate node not required by the approved design: Run Subworkflow calls may overlap on ordinary parallel branches (C15). Retained as a library idea. |
 | Conditional Subworkflow | Concept | Run a workflow only if a condition passes. Tags: Conditional |
 
