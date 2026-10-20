@@ -793,7 +793,8 @@ approved decisions and sample screens; dated baseline observations are historica
 | Stage | Review/delivery gate |
 |---|---|
 | 1 — proposal and samples | #84 and owner-approved answers #86 merged; #85 prerequisite merged. |
-| 2 — implementation | `codex/deletion-phase2`, from fresh `a31d721`, awaits owner review. Grouped deletes/partial restore, saved Branch paths, exact-count keep and optional recovery pickers; Editor-owned deferred count saves, no `node_config.py` edits. |
+| 2 — implementation | Merged in #88 (`b5426ab`). Grouped deletes/partial restore, saved Branch paths, exact-count keep and optional recovery pickers; Editor-owned deferred count saves, no `node_config.py` edits. |
+| Review follow-up | `codex/deletion-picker-polish`, from `b5426ab`, awaits review: compact keep/recover lists, short messages and test formatting. |
 | Later — session history | In-memory multi-step Ctrl+Z for edits; no run-side-effect rollback or automatic loss of saved recovery records. |
 
 ## Near-Term Project — Frontend Command UI Toolkit

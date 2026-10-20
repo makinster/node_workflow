@@ -1048,13 +1048,13 @@ class EditorScreen(KeymapScreenMixin, Screen):
             operation_id = uuid.uuid4().hex
             def preview(selected):
                 if len(selected) != 1:
-                    return 'Pick one path. Other paths stay saved with the deleted node.'
+                    return 'Pick one path to keep. Z brings deleted nodes back.'
                 try:
                     plan = self.workflow_adapter.plan_deletion(node_id, selected[0])
                 except ValueError as error:
                     return str(error)
                 pending['plan'] = plan
-                return f"Stores {len(plan['removed'])} nodes with the deleted group. Shared nodes stay. Z restores the group."
+                return f"Deletes {len(plan['removed'])} nodes. Shared nodes stay. Z brings them back."
             def chosen(result):
                 if not result or result.get('operation_id') != operation_id:
                     return
@@ -1080,11 +1080,11 @@ class EditorScreen(KeymapScreenMixin, Screen):
         handlers = [nid for nid in plan['removed'] if (plan['basis'].get(nid) or {}).get('type') == ERROR_MUX_NODE_TYPE]
         if handlers:
             message = f'Delete {name}, its Error Resolver and {count - len(handlers)} recovery nodes?'
-        message += '\nZ restores the group.'
+        message += '\nZ brings them back.'
         if node.get('type') == MERGE_NODE_TYPE:
-            message += '\nIts Merge Beacons stay, unconnected. Reconnect them to a valid target.\nValidation warns; this warning does not block a run.'
+            message += '\nIts Beacons stay. Reconnect them.\nUnconnected Beacons give a warning. Runs are allowed.'
         elif node.get('type') == BRANCH_END_NODE_TYPE:
-            message += '\nThis branch ends. No bypass into Merge.'
+            message += '\nThis branch ends here.'
         elif node.get('type') == ERROR_MUX_NODE_TYPE or count:
             message += '\nNo error continues. Shared nodes stay.'
         if plan.get('shared_handlers'):
@@ -1123,11 +1123,11 @@ class EditorScreen(KeymapScreenMixin, Screen):
         def apply(confirmed=True):
             if confirmed and self._apply_reviewed_plan(plan):
                 notifications.notify_info(self.app, 'Restored what fits. Other changes stay saved.'
-                    if plan['conflicts'] else 'Deleted group restored')
+                    if plan['conflicts'] else 'Nodes restored')
         if plan['conflicts']:
             text = f'Restore {friendly_label(self.workflow_map, node_id)}?\nCannot restore:\n'
             text += '\n'.join(plan['conflicts'])
-            text += '\nThe other nodes and valid links can return.'
+            text += '\nRestore the rest?'
             self.app.push_screen(DeletionConfirmScreen(text, yes_label='Restore', no_label='Cancel'), apply)
         else:
             apply()
@@ -1213,9 +1213,9 @@ class EditorScreen(KeymapScreenMixin, Screen):
             pending = {}
             def preview(selected):
                 if len(selected) != len(new_ports):
-                    return 'Pick the paths to keep. Removed paths stay saved and never run.'
+                    return 'Pick paths to keep. Others stay saved and never run.'
                 pending['plan'] = self.workflow_adapter.plan_branch_count(node_id, result, selected)
-                return f"Stores {len(pending['plan']['removed'])} nodes under this Branch. Shared nodes stay."
+                return f"Saves {len(pending['plan']['removed'])} nodes under this Branch. Shared nodes stay."
             def kept(choice):
                 if choice is None:
                     cancelled()

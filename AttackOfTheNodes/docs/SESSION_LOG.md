@@ -19,8 +19,8 @@ samples, three revisions. Before: 1848 passed.
   highlight and scroll survive every run event. Only the path from Start is
   shown, as in the editor.
 - **Details:** the highlighted node's name, step and branch, status and tries,
-  what it got, what it sent and what it wrote to the Vault; for a Subworkflow
-  node, the call and where it is.
+  what it received from the previous node, sent to the next node and saved
+  to the Vault; for a Subworkflow node, the call and where it is.
 - **Follow:** the highlight follows the node that needs you, then a waiting
   one, then the running one, switching paths to show an error or prompt.
   W/S stops following, F follows again. A/D switch the path at the nearest
@@ -42,6 +42,37 @@ samples, three revisions. Before: 1848 passed.
   tests now build a connected chain, since unconnected nodes are not on the
   map). The old memory viewer stays in the code for its tests and is no
   longer opened from this screen.
+- Review fixes (six findings on #89): Vault cells are literal text; the narrow
+  layout keeps the error panel's buttons on screen (the details pane scrolls);
+  Go to node takes one route from Start, so loops can't overwrite it; F shows
+  the followed node's path; the live path selector and its Saved paths row
+  keep separate highlights; Stop run clears every waiting choice. Six new
+  tests, each failing before its fix: 1864 passed.
+
+## 2026-10-19 — Deletion picker review follow-up
+
+Branch `codex/deletion-picker-polish`, from fresh `origin/main` `b5426ab`
+after #88 merged. Re-read the EX ownership and #89 entries in NOTES.
+
+- Keep/recover lists fit their rows. Hints and buttons follow immediately;
+  long lists still scroll within the screen. Wrapped labels refit on resize.
+- Use “Deletes 6 nodes. Shared nodes stay. Z brings them back.” and shorten
+  nearby deletion/recovery messages. Editor edits are strings only: no map,
+  profile, Execution, Vault log, backend or recovery-screen changes.
+- Reformat `test_editor_delete_groups.py` and `test_editor_delete_group_ui.py`
+  with normal spacing, multiline definitions and separate statements. Original
+  ASTs match after excluding the added tests; no original cases/assertions
+  were dropped. No semicolon-joined statements or one-line definitions remain.
+- Eight new checks failed before the fixes. Focused deletion suites:
+  **63 passed**. Full suite: **1856 passed in 265.73s (0:04:25)**. Compile, docs and
+  whitespace checks pass. Tests set `AOTN_DATA_DIR` before backend imports.
+  [Rendered samples and wording changes](audits/deletion_picker_polish_2026_10_19/README.md)
+  cover 60/100/140 columns with production CSS, short lists, wrapped rows,
+  resize and the existing 64-path keyboard/scroll checks. Native terminal
+  manual checks were not performed.
+- Open this PR and stop. #89 review is next, findings only. Keymap phase 3
+  may cover Node Config, Node Selector, Workflow Library and Help; Editor
+  and Execution profiles wait until #89 merges. Owner merges.
 
 ## 2026-10-19 — Deletion review phase 2
 
