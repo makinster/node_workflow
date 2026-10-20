@@ -6,43 +6,12 @@ from textual.containers import Vertical, VerticalScroll
 from textual.screen import ModalScreen
 from textual.widgets import Button, Label, Static
 
-from frontend.keymap import HELP, bindings_for
+from frontend.keymap import EDITOR, EXECUTION, HELP, bindings_for, help_for
 
 from frontend.widgets.command_screen_mixin import CommandScreenMixin
 
 
 HELP_TEXT = {
-    "editor": [
-        "Editor",
-        "  W/S or ↑/↓            Move through nodes",
-        "  A/D or ←/→            Switch branches",
-        "  Ctrl+A/D or Ctrl+←/→  Switch incomplete branches",
-        "  E or Enter            Select / edit",
-        "  I                     Insert after selection",
-        "  X or Backspace        Delete selection",
-        "  Z                     Undo delete",
-        "  B                     Toggle breakpoint",
-        "  Ctrl+B                Clear breakpoints",
-        "  V                     Validate workflow",
-        "  P                     Stash (reusable paths and text)",
-        "  H or ?                Help",
-        "",
-        "  Ctrl+S                Save workflow",
-        "  Ctrl+R                Run workflow",
-        "  Ctrl+N                New workflow",
-        "  Ctrl+O                File",
-        "  Ctrl+E                Options",
-        "  Ctrl+Q                Quit",
-    ],
-    "execution": [
-        "Execution",
-        "  P    Pause / resume",
-        "  S    Stop",
-        "  M    Memory",
-        "  O    Output",
-        "  E    Errors",
-        "  Esc  Stop and return to editor",
-    ],
     "node_config": [
         "Config",
         "  W/S or ↑/↓  Move through fields",
@@ -105,6 +74,9 @@ HELP_TEXT = {
 }
 
 
+PROFILE_HELP = {"editor": EDITOR, "execution": EXECUTION}
+
+
 class HelpScreen(CommandScreenMixin, ModalScreen):
     """Keyboard reference and short TUI usage guide."""
 
@@ -113,7 +85,7 @@ class HelpScreen(CommandScreenMixin, ModalScreen):
 
     def __init__(self, context: str = "general") -> None:
         super().__init__()
-        self.context = context if context in HELP_TEXT else "general"
+        self.context = context if context in HELP_TEXT or context in PROFILE_HELP else "general"
 
     def compose(self) -> ComposeResult:
         # The text scrolls so Close stays on screen in short terminals.
@@ -121,10 +93,23 @@ class HelpScreen(CommandScreenMixin, ModalScreen):
             yield Label("Help", classes="modal-title")
             with VerticalScroll(id="help-scroll"):
                 yield Static(
-                    "\n".join(HELP_TEXT[self.context]),
+                    "\n".join(self._help_lines()),
                     id="help-text",
+                    markup=False,
                 )
             yield Button("Close", id="close-help", variant="default")
+
+    def _help_lines(self) -> list[str]:
+        profile = PROFILE_HELP.get(self.context)
+        if profile is not None:
+            return help_for(profile, keymap=getattr(self.app, "_keymap", None))
+        return HELP_TEXT[self.context]
+
+    def action_cursor_up(self) -> None:
+        self.query_one("#help-scroll", VerticalScroll).scroll_relative(y=-3, animate=False)
+
+    def action_cursor_down(self) -> None:
+        self.query_one("#help-scroll", VerticalScroll).scroll_relative(y=3, animate=False)
 
     def on_mount(self) -> None:
         self._focus_first()

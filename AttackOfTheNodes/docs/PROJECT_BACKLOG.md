@@ -811,7 +811,7 @@ stop for the owner/reviewer:
 |---|---|---|
 | 1 | Registry/runtime, stable IDs, class-time compilation, pure shared availability and characterization; one simple profile end to end | Merged #77: Confirm, including its unchanged generated hint and navigation |
 | 2 | Shared mixin/navigation policies, retire duplicated action-name lists; Input/TextArea and Select adapters; Stash, Node Config (P insert), Editor, Workflow Library and list pickers | Merged #78; each listed defect reproduced failing first and fixed. Multi-state policies and native adapters installed; current display text remains for phase 3 |
-| 3 | Generated Help/hints for migrated screens; replace handwritten key text and stale A/D-tab descriptions | Next PR: Stash, Settings, Execution, list pickers, Confirm hints, Unsaved Changes, User Input and Recovery. Editor, Node Config, Node Selector, Workflow Library and Help topics follow after 4a-2 merges. |
+| 3 | Generated Help/hints for migrated screens; replace handwritten key text and stale A/D-tab descriptions | Editor/Execution slice implemented on `codex/keymap-editor-execution` from `106c437`, awaiting review: generated Help/hints, unchanged bindings, corrected Execution Stop reference, keyboard Help scrolling. Other contexts remain deferred; Node Config is reserved for 4c. |
 
 Docs cleanup PR C (`codex/docs-c`) bounds the session log after owner-decision
 extraction and verifies the active reading route. Delivery status lives in

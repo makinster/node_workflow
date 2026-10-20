@@ -1,10 +1,37 @@
 # AttackOfTheNodes Session Log
 
-This log keeps roughly the last two weeks: entries dated October 4–19, 2026
+This log keeps roughly the last two weeks: entries dated October 4–20, 2026
 (the earliest existing entry is October 6). Every October 18 entry is retained.
 Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.md).
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
+
+## 2026-10-20 — Keymap phase 3: Editor and Execution
+
+Branch `codex/keymap-editor-execution`, fresh `origin/main` `106c437` after
+#89 and #90 merged. Re-read NOTES; Node Config is reserved for 4c.
+
+- Both screens already used registry bindings. Complete their presentation
+  migration: Help reads command descriptions/aliases from the profiles, and
+  compact hints use command IDs to obtain their keys. Native Textual handles
+  overrides and dispatch; no key, alias, ID, action route or policy changed.
+- Preserve the default hint wording. The error-panel prefix reads its V key
+  from the Execution profile and follows an override. Help lists inherited
+  application commands without duplicate screen-owned keys. Fix the stale
+  “S Stop” help entry; the profile says X Stop and S Down. Native punctuation
+  and control-key names display as ?, Esc and Backspace.
+- W/S or arrows scroll Help; E/Enter still closes it, with Close visible at
+  60/100/140 columns. Other Help topic text stays unchanged. No edits to
+  `frontend/screens/node_config.py`, Vault log, backend or owner workflows.
+- Failing-first: eight initial failures and one passing key characterization;
+  punctuation normalization and the default Escape hint each failed in added
+  checks before correction. Twelve new tests plus the updated existing Help
+  regression pass; full suite **1,884 passed in 277.58s**. Compile, docs and
+  whitespace checks pass. Tests set `AOTN_DATA_DIR` before backend imports.
+  [Before/after Help and hint text, mounted samples](audits/keymap_phase3_2026_10_20/README.md).
+  Native terminal manual checks were not performed.
+- Open one PR and stop for owner review. Remaining profile presentation and
+  4c proceed separately; this PR does not authorize merging.
 
 ## 2026-10-19 — EX: Execution Screen Overhaul
 

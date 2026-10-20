@@ -7,6 +7,9 @@ pending work. Historical layouts are in `archive/TUI_DESIGN.md`.
 
 Every window has a primary button for its Enter action, plus Close or Cancel; the Stash never stashes the same file or text twice.
 
+Editor and Execution Help and compact hints come from the keymap profiles.
+In Help, W/S or up/down scrolls the text; E/Enter closes it. Close stays visible.
+
 ## Editor Keys
 
 - `W/S` or up/down: move through visible rows.

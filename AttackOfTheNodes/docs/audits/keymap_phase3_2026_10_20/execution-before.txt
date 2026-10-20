@@ -1,0 +1,7 @@
+Execution
+  P    Pause / resume
+  S    Stop
+  M    Memory
+  O    Output
+  E    Errors
+  Esc  Stop and return to editor

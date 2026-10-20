@@ -446,8 +446,144 @@ def display_key(key: str) -> str:
 
 
 def hint_for(profile: Profile) -> str:
-    """Initial compact display consumer; full contextual Help follows in PR 3."""
+    """Compact Confirm hint; full screen references use help_for()."""
     return "  ".join(
         f"{' / '.join(display_key(key) for key in command.keys)} {command.hint}"
         for command in profile.commands if command.hint is not None
     )
+
+
+@dataclass(frozen=True)
+class HintGroup:
+    """Short label plus command IDs; the profiles supply every displayed key."""
+
+    command_ids: tuple[str, ...]
+    label: str
+
+
+_SCREEN_HINTS = {
+    "editor": (
+        HintGroup(("editor.workflow_library",), "file"),
+        HintGroup(("editor.options",), "options"),
+        HintGroup(("editor.help",), "help"),
+        HintGroup(("app.revert_or_cancel",), "quit"),
+    ),
+    "execution": (
+        HintGroup(("execution.cursor_up", "execution.cursor_down"), "move"),
+        HintGroup(("execution.branch_prev", "execution.branch_next"), "branch"),
+        HintGroup(("execution.follow",), "follow"),
+        HintGroup(("execution.memory",), "memory"),
+        HintGroup(("execution.output",), "output"),
+        HintGroup(("execution.pause_resume",), "pause"),
+        HintGroup(("execution.stop",), "stop"),
+        HintGroup(("execution.back_to_editor",), "editor"),
+    ),
+}
+
+
+def _display_commands(
+    profile: Profile, keymap: dict[str, str] | None
+) -> list[tuple[Command, tuple[str, ...]]]:
+    """Use native override handling, including aliases removed by a rebind."""
+    from textual.binding import BindingsMap
+
+    bindings = BindingsMap(bindings_for(profile))
+    if keymap:
+        bindings.apply_keymap(keymap)
+    by_id: dict[str, list[str]] = {}
+    for key, rows in bindings.key_to_bindings.items():
+        for binding in rows:
+            keys = by_id.setdefault(binding.id, [])
+            if key not in keys:
+                keys.append(key)
+    return [(command, tuple(by_id.get(command.id, ()))) for command in profile.commands]
+
+
+def screen_hint_for(
+    profile: Profile,
+    *,
+    keymap: dict[str, str] | None = None,
+    error_panel_hidden: bool | None = None,
+) -> str:
+    """Editor/Execution compact hints, with the current effective primary keys."""
+    commands = {
+        command.id: keys
+        for owner in (APP, profile)
+        for command, keys in _display_commands(owner, keymap)
+    }
+    groups = _SCREEN_HINTS[profile.id]
+    if profile.id == "execution" and error_panel_hidden is not None:
+        groups = (
+            HintGroup(
+                ("execution.error_panel",),
+                "show error" if error_panel_hidden else "hide error",
+            ),
+            *groups,
+        )
+    hints = []
+    for group in groups:
+        keys = [
+            _help_key(commands[command_id][0]).lower()
+            for command_id in group.command_ids
+            if commands.get(command_id)
+        ]
+        if keys:
+            # Compact hints use the primary alias. Full Help lists all aliases.
+            hints.append(f"{'/'.join(dict.fromkeys(keys))} {group.label}")
+    return " | ".join(hints)
+
+
+def help_for(
+    profile: Profile,
+    *,
+    keymap: dict[str, str] | None = None,
+    inherited: Profile | None = APP,
+) -> list[str]:
+    """Reference rows from command descriptions and effective native aliases.
+
+    Screen-owned keys take precedence over inherited application keys. Rows
+    split solely for priority/policy share one reference entry when their
+    action and description match; dispatch remains entirely native Textual.
+    """
+    primary = _display_commands(profile, keymap)
+    claimed = {key for _, keys in primary for key in keys}
+
+    def rows(commands, exclude=()):
+        grouped = {}
+        for command, keys in commands:
+            signature = (command.action_signature, command.description)
+            values = grouped.setdefault(signature, [])
+            for key in keys:
+                label = _help_key(key)
+                if key not in exclude and label not in values:
+                    values.append(label)
+        return [
+            f"  {' / '.join(keys):<22} {description}"
+            for (_, description), keys in grouped.items()
+            if keys
+        ]
+
+    result = [profile.id.replace("_", " ").title(), *rows(primary)]
+    if inherited is not None and inherited.id != profile.id:
+        general = rows(_display_commands(inherited, keymap), claimed)
+        if general:
+            result.extend(["", "General", *general])
+    return result
+
+
+def _help_key(key: str) -> str:
+    """Match the reference's existing Ctrl/Shift spelling and arrow symbols."""
+    names = {
+        "ctrl": "Ctrl",
+        "shift": "Shift",
+        "alt": "Alt",
+        "tab": "Tab",
+        "backspace": "Backspace",
+        "space": "Space",
+    }
+    labels = []
+    for part in key.split("+"):
+        character = key_to_character(part)
+        printable = character if character and character.isprintable() else part
+        labels.append(names.get(part, display_key(printable)))
+    return "+".join(labels)

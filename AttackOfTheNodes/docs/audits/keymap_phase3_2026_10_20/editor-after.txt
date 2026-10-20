@@ -1,0 +1,29 @@
+Editor
+  Tab                    Next panel
+  Shift+Tab              Previous panel
+  W / ↑                  Up
+  S / ↓                  Down
+  ← / A                  Previous branch
+  → / D                  Next branch
+  Enter / E              Edit
+  Ctrl+A / Ctrl+←        Previous incomplete branch
+  Ctrl+D / Ctrl+→        Next incomplete branch
+  I                      Insert node
+  V                      Validate
+  B                      Breakpoint
+  Ctrl+B                 Clear breakpoints
+  Z                      Undo delete
+  Backspace / X          Delete
+  F                      File
+  P                      Stash
+  O                      Options
+  H / ?                  Help
+  Ctrl+S                 Save
+
+General
+  Ctrl+R                 Run
+  Ctrl+N                 New
+  Ctrl+O                 Open
+  Ctrl+E                 Settings
+  Q                      Back
+  Ctrl+Q                 Back

@@ -1,16 +1,17 @@
 # Current State
 
-Snapshot checked **2026-10-19**. Code and fresh GitHub checks take precedence.
+Snapshot checked **2026-10-20**. Code and fresh GitHub checks take precedence.
 This is the live status snapshot; plans and logs preserve dated decisions.
 
-## Baseline and open work — 2026-10-19
+## Baseline and open work — 2026-10-20
 
-- Fetched `origin/main` at `b5426ab`: C1–C7, workflow naming (#68), docs A/B
+- Fetched `origin/main` at `106c437`: C1–C7, workflow naming (#68), docs A/B
   (#69/#72), Stash S1–S3 (#70/#71/#75), window buttons (#73), duplicate
   prevention (#74), keymap phases 1/2 (#77/#78), contracts (#80), the
   file-picker test fix (#81), editor hotfixes (#82), the deletion proposal
   (#84), docs C (#83), deletion answers (#86), subworkflow screens (#85),
-  child runs (#87) and deletion phase 2 (#88) are merged.
+  child runs (#87), deletion phase 2 (#88), picker polish (#90) and the
+  Execution screen (#89), including its review fixes, are merged.
   S3 uses plain P, off while typing; Ctrl+P and the palette are unchanged.
 - **Editor hotfixes (#82):** insert before a node with two parents keeps it;
   HTTP Request and JSON Path get no error path by default; failure paths keep
@@ -38,18 +39,28 @@ This is the live status snapshot; plans and logs preserve dated decisions.
   records, validation and benchmark. EX (the Execution screen overhaul)
   merged in #89, with its review fixes; next is 4c (the TUI for subworkflow
   calls). [Proposal](SUBWORKFLOWS_PROPOSAL.md).
-- Keymap phase 3 follows the deletion PR: Node Config, Node Selector,
-  Workflow Library and Help, now that 4a-2 is merged. Keep visible wording
-  unchanged unless correcting a confirmed mismatch, with before/after text.
-  Editor and Execution profile work can start now that #89 is merged. The deletion
-  follow-up changes only messages in `editor.py`; it does not edit map logic,
-  Execution, Vault log or recovery screens. Other migration topics and Settings
-  rebinding remain deferred. [Scope](PROJECT_BACKLOG.md#near-term-project--frontend-command-ui-toolkit).
+- **Keymap phase 3 — Editor/Execution:** implemented on
+  `codex/keymap-editor-execution` from fresh `106c437`, awaiting owner review.
+  Both screens already compiled bindings from profiles; Help and status hints
+  now use those same definitions and native key overrides. Current keys and
+  default compact hint wording are unchanged. Execution Help now lists X Stop,
+  W/S movement, A/D paths, F Follow and V error panel. W/S scrolls Help while
+  Close stays visible. [Before/after text and verification](audits/keymap_phase3_2026_10_20/README.md).
+  Other Help contexts remain unchanged. Node Config, Node Selector and Workflow
+  Library presentation remain separate work; `node_config.py` belongs to 4c
+  and is not edited here. Settings rebinding UI and generated Quick Reference
+  tables remain deferred. [Scope](PROJECT_BACKLOG.md#near-term-project--frontend-command-ui-toolkit).
 - Work order: [Node Contract Plan](NODE_CONTRACT_PLAN.md). Long-term direction:
   [Distributed Plan](DISTRIBUTED_BUILD_PLAN.md), [Stash](STASH_PROPOSAL.md).
   The owner merges, or explicitly asks a reviewer to.
 
-## Verification and environment — 2026-10-19
+## Verification and environment — 2026-10-20
+
+- This keymap phase-3 slice: **1,884 passed in 277.58s**. Twelve new tests cover
+  generated Help, unchanged keys/hints, punctuation/control-key spelling,
+  effective rebindings, modal isolation and keyboard scrolling at
+  60/100/140 columns. Profile definitions for APP, EDITOR and EXECUTION are
+  unchanged (AST comparison). No Node Config or workflow edits.
 
 - Main `b5426ab` includes #88: **1848 passed in 265.69s (0:04:25)**.
   Picker follow-up (#90): **1856 passed in 265.73s (0:04:25)**. EX (#89)
@@ -74,7 +85,7 @@ This is the live status snapshot; plans and logs preserve dated decisions.
 - Clean installation, native terminal/live geometry, native Windows FO7 and
   external web links were not reverified. Owner FO7 results are still needed.
 
-## Open owner decisions and evidence limits — 2026-10-19
+## Open owner decisions and evidence limits — 2026-10-20
 
 - Stash: file fields accept file entries; text fields accept text only.
   Global-only versus per-workflow pinning remains open (proposal question 3).
