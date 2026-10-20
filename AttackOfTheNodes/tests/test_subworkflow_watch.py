@@ -156,3 +156,69 @@ def test_forwarded_events_reach_the_root_bus():
     events = {event for kind, event, _ in seen if kind == "update"}
     assert {WORKFLOW_STATE_UPDATE, NODE_EXECUTION_UPDATE} <= events
     assert seen[-1][0] == "ended" and len({inv for _, _, inv in seen}) == 1
+
+
+# -- #94 review fixes (2026-10-20) -------------------------------------------------------------
+
+def _call(calls, invocation, run_id, parent_run_id, node_id, path, waiting=False):
+    wrap = {"invocation_id": invocation, "parent_run_id": parent_run_id, "call_site_node_id": node_id,
+            "call_path": path}
+    calls.update({**wrap, "event": WORKFLOW_STATE_UPDATE, "payload": {"run_id": run_id, "state": "RUNNING"}})
+    if waiting:
+        from backend.events import SUPERVISOR_STATE_UPDATE
+
+        calls.update({**wrap, "event": SUPERVISOR_STATE_UPDATE, "payload": {
+            "run_id": run_id, "branch_id": f"b_{run_id}", "state": "WAITING_FOR_INPUT", "current_node_id": "ask"}})
+    return calls.calls[invocation]
+
+
+def test_waiting_follows_run_ids_through_two_levels_and_parallel_calls():
+    calls = ChildRuns()
+    outer_1 = _call(calls, "i1", "run_o1", "root", "call_a", ["Main", "Call", "Outer"])
+    outer_2 = _call(calls, "i2", "run_o2", "root", "call_b", ["Main", "Call", "Outer"])
+    greeter = _call(calls, "i3", "run_g2", "run_o2", "inner", ["Main", "Call", "Outer", "Inner", "Greeter"],
+                    waiting=True)
+    assert calls.waiting_inside(outer_2) is greeter      # two levels down
+    assert calls.waiting_inside(outer_1) is None         # same names, different run: not waiting
+    assert [c.invocation_id for c in calls.children_of("root")] == ["i1", "i2"]
+
+
+def test_enter_on_a_focused_error_panel_button_still_presses_it():
+    from tests.test_execution_screen import fan_with_failure
+
+    async def steps(app, screen, pilot, master, ids):
+        await master.start_workflow()
+        await until(lambda: bool(screen.pending_recoveries))
+        app.flush_refresh()
+        await pilot.pause(0.05)
+        screen.query_one("#recover-SKIP").focus()
+        await pilot.press("enter")
+        await master.wait_for_completion()
+        return screen.pending_recoveries
+
+    assert run_screen(fan_with_failure, steps) == []
+
+
+def test_e_shows_errors_on_a_subworkflow_card_whose_call_is_not_running():
+    shown = []
+
+    async def steps(app, screen, pilot, master, ids):
+        screen.action_errors = lambda: shown.append("errors")
+        node_list = screen.query_one(NodeList)
+        node_list.index = node_list.index_for_node_id(ids["greet"])
+        screen._selected = ("node", ids["greet"])
+        await pilot.pause(0.05)
+        await pilot.press("e")
+        return True
+
+    assert run_screen(calling("missing"), steps) and shown == ["errors"]
+
+
+def test_a_breadcrumb_that_cannot_fit_shortens_its_names():
+    from frontend.child_runs import ChildRun
+
+    screen = ExecutionScreen.__new__(ExecutionScreen)
+    screen.call = ChildRun("call_1", "r", "n", ["A very long monthly finance report workflow name", "Call",
+                                               "An equally long invoice parser subworkflow name"])
+    short = screen._breadcrumbs(40)
+    assert short.cell_len <= 40 and "(level 1)" in short.plain and "…" in short.plain

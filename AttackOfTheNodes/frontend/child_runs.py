@@ -96,6 +96,25 @@ class ChildRuns:
     def ended(self, payload: Dict[str, Any]) -> None:
         self.calls.pop(str(payload.get("invocation_id") or ""), None)
 
+    def children_of(self, run_id: Optional[str]) -> List[ChildRun]:
+        """The live calls the run ``run_id`` made directly."""
+        return [call for call in self.calls.values() if run_id and call.parent_run_id == run_id]
+
+    def waiting_inside(self, call: ChildRun, _seen: Optional[set] = None) -> Optional[ChildRun]:
+        """The call that waits for you, at or below ``call`` (followed by run
+        ids, never by display names), or None."""
+        if call.waiting:
+            return call
+        seen = _seen if _seen is not None else set()
+        if call.invocation_id in seen:
+            return None
+        seen.add(call.invocation_id)
+        for child in self.children_of(call.run_id):
+            found = self.waiting_inside(child, seen)
+            if found is not None:
+                return found
+        return None
+
     def at(self, parent_run_id: Optional[str], node_id: str) -> List[ChildRun]:
         """The live calls a node of the run ``parent_run_id`` started."""
         return [call for call in self.calls.values()
