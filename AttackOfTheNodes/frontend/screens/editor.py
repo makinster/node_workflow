@@ -15,6 +15,7 @@ from backend.port_types import resolved_metadata, trace_producers
 from backend.validator import validate_workflow
 from backend.node_errors import ERROR_PORT, MUX_DEFAULT_PORT
 from frontend.keymap import EDITOR, bindings_for, screen_hint_for
+from frontend import colors
 from frontend.keymap_runtime import KeymapScreenMixin
 from frontend.error_mux_ui import (
     ERROR_MUX_NODE_TYPE,
@@ -2074,12 +2075,12 @@ class EditorScreen(KeymapScreenMixin, Screen):
         lines.append("")
         lines.append("Inputs:")
         input_lines = self._detail_input_lines(node, metadata)
-        lines.extend(input_lines if input_lines else ["  [grey50](none)[/]"])
+        lines.extend(input_lines if input_lines else [f"  [{colors.MUTED}](none)[/]"])
 
         lines.append("")
         lines.append("Outputs:")
         output_lines = self._detail_output_lines(node, metadata)
-        lines.extend(output_lines if output_lines else ["  [grey50](none)[/]"])
+        lines.extend(output_lines if output_lines else [f"  [{colors.MUTED}](none)[/]"])
 
         return "\n".join(lines)
 
@@ -2093,7 +2094,7 @@ class EditorScreen(KeymapScreenMixin, Screen):
         config = node.get("config") or {}
         child = subworkflow_info.describe(str(config.get("workflow_id") or ""))
         if child is None:
-            return ["", "Runs: [grey50]nothing chosen[/]" if not config.get("workflow_id")
+            return ["", f"Runs: [{colors.MUTED}]nothing chosen[/]" if not config.get("workflow_id")
                     else f"Runs: [{ERROR}]subworkflow not found[/]"]
         lines = ["", f"Runs: {escape(child['name'])} \\[sub]"]
         if child["asks"]:
@@ -2109,7 +2110,7 @@ class EditorScreen(KeymapScreenMixin, Screen):
                 lines.append(f"  {escape(row['name'])} [{TYPE_COLOR}]\\[{row['type']}][/] {arrow} "
                              f"[{SOURCE}]{escape(text(row))}[/]")
             if not rows:
-                lines.append("  [grey50](none)[/]")
+                lines.append(f"  [{colors.MUTED}](none)[/]")
         return lines
 
     def _detail_width(self) -> int:
@@ -2230,7 +2231,7 @@ class EditorScreen(KeymapScreenMixin, Screen):
             ]
             arrow = "└─> vault"
         return [
-            render_port_block(key, "vault", desc, [f"  [grey50]{arrow}[/]"], self._wrap_detail)
+            render_port_block(key, "vault", desc, [f"  [{colors.MUTED}]{arrow}[/]"], self._wrap_detail)
             for key, desc in entries
         ]
 

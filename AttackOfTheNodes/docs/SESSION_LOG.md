@@ -14,7 +14,11 @@ TYPE, SOURCE, SUCCESS, RUNNING, WARNING, ERROR, HIGHLIGHT, MAP_BACKGROUND,
 BRANCH_PATHS); UI_QUICK_REFERENCE "Colours" is the reference. Existing code
 moved onto it: `[dim]` became MUTED, sources and destinations (`Vault key
 "count"`, `next node`, Vault log Source) now use SOURCE. `tests/test_colors.py`
-fails on any colour literal outside `colors.py`. 1924 passed.
+fails on any colour literal outside `colors.py`. Then: fixed hex values for
+every role (named ANSI colours vary by terminal), `colors.PALETTES` +
+`colors.use(name)` for later theme swaps, and a 4.5:1 contrast test on the
+map, panel and highlight backgrounds (MUTED and ERROR were brightened to
+pass). 1926 passed.
 
 ## 2026-10-20 — AI coordination proposal (docs only)
 

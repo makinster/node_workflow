@@ -14,18 +14,51 @@ each status also has its mark (✓ ▶ ⏸ ⚠ ✗).
 - ``HIGHLIGHT``: the background of the highlighted row or card, one solid
   colour over the whole row; text on it is plain.
 Values, names and headings use the normal text colour (headings bold).
+
+**Palettes.** Every colour is a fixed hex value, so it looks the same in
+every terminal (named ANSI colours such as "green" are redrawn by each
+terminal's own theme). ``PALETTES`` holds one set per theme; ``use(name)``
+switches the module's names. Code that should follow a switch while the app
+runs reads ``colors.NAME`` when it draws, rather than copying the value at
+import. ``tests/test_colors.py`` checks every text colour stays readable on
+the palette's backgrounds.
 """
 
-MUTED = "grey50"
-TYPE = "#4EC9B0"
-SOURCE = "#9CDCFE"
-SUCCESS = "green"
-RUNNING = "cyan"
-WARNING = "yellow"
-ERROR = "red"
-HIGHLIGHT = "#1a3a5c"
-#: The map rows behind the cards (not highlighted).
-MAP_BACKGROUND = "#101418"
+from typing import Dict
+
+PALETTES: Dict[str, Dict[str, str]] = {
+    "dark": {
+        "MUTED": "#A0A6B0",
+        "TYPE": "#4EC9B0",
+        "SOURCE": "#9CDCFE",
+        "SUCCESS": "#5FD068",
+        "RUNNING": "#56C8D8",
+        "WARNING": "#E5C07B",
+        "ERROR": "#F48A90",
+        "HIGHLIGHT": "#1a3a5c",
+        "MAP_BACKGROUND": "#101418",
+        # The panel background text sits on outside the map (Textual's dark theme).
+        "PANEL_BACKGROUND": "#1e1e1e",
+    },
+}
+#: Text colours; each must read on every background below.
+TEXT_ROLES = ("MUTED", "TYPE", "SOURCE", "SUCCESS", "RUNNING", "WARNING", "ERROR")
+BACKGROUND_ROLES = ("MAP_BACKGROUND", "PANEL_BACKGROUND", "HIGHLIGHT")
+
+MUTED = TYPE = SOURCE = SUCCESS = RUNNING = WARNING = ERROR = ""
+HIGHLIGHT = MAP_BACKGROUND = PANEL_BACKGROUND = ""
+current = ""
+
+
+def use(name: str) -> None:
+    """Switch every colour name to the palette ``name``."""
+    global current
+    palette = PALETTES[name]
+    globals().update(palette)
+    current = name
+
+
+use("dark")
 
 #: One colour per Branch path (the gutter and path labels), in path order.
 BRANCH_PATHS = (
