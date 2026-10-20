@@ -33,7 +33,6 @@ from frontend.screens.branch_keep_selector_screen import (
 )
 from frontend.screens.branch_selector import BranchSelectorScreen
 from frontend.screens.confirm import ConfirmScreen
-from frontend.screens.error_details import ErrorDetailsScreen
 from frontend.screens.merge_beacon_selector import MergeBeaconSelectorScreen
 from frontend.screens.node_config import (
     NodeConfigScreen,
@@ -45,6 +44,7 @@ from frontend.screens.node_config import (
 from frontend.screens.node_selector import NodeSelectorScreen
 from frontend import notifications
 from frontend.editor_workflow_adapter import EditorWorkflowAdapter
+from frontend.widgets.validation_panel import ValidationPanel
 from frontend.colors import ERROR, SOURCE, WARNING
 from frontend.io_contract import (
     DETAIL_WIDTH_FALLBACK,
@@ -167,6 +167,8 @@ class EditorScreen(KeymapScreenMixin, Screen):
         self._refreshing_from_backend = False
         self._pending_node_add_mode = "add"
         self._flagged_node_ids: set[str] = set()
+        #: After Go to node: the issue shown in the hint bar until you move.
+        self._issue_hint: Optional[str] = None
         self.workflow_adapter = EditorWorkflowAdapter(workflow_map, factory)
 
     def compose(self) -> ComposeResult:
@@ -178,11 +180,13 @@ class EditorScreen(KeymapScreenMixin, Screen):
                     yield Label("Nodes", classes="panel-title")
                     yield NodeList()
                 with Vertical(id="details-panel", classes="panel"):
+                    yield ValidationPanel(id="validation-panel")
                     yield Label("Selected Node:", classes="panel-title")
                     yield Static("", id="node-details")
             yield StatusBar(screen_hint_for(self.KEYMAP, keymap=getattr(self.app, "_keymap", None)))
 
     def on_mount(self) -> None:
+        self.query_one(ValidationPanel).display = False
         self.workflow_adapter.bind_state_owner(self.app)
         self._restore_editor_state_from_app()
         self.refresh_from_backend()
@@ -211,9 +215,7 @@ class EditorScreen(KeymapScreenMixin, Screen):
             return
         self._refreshing_from_backend = True
         try:
-            self.query_one(StatusBar).set_bindings_text(
-                screen_hint_for(self.KEYMAP, keymap=getattr(self.app, "_keymap", None))
-            )
+            self._refresh_hint()
             title = self.workflow_map.workflow_name or "No workflow"
             title += " [sub]" if self.workflow_map.callable else ""
             dirty = " *" if self.workflow_map.is_dirty else ""
@@ -267,12 +269,18 @@ class EditorScreen(KeymapScreenMixin, Screen):
             self._refreshing_from_backend = False
 
     def on_list_view_selected(self, event) -> None:
+        if event.list_view.id == "validation-list":
+            event.stop()
+            self._go_to_issue()
+            return
         node_list = self.query_one(NodeList)
         self._select_row(node_list.row_for_index(event.list_view.index))
         self._refresh_details()
         self.action_edit_selected()
 
     def on_list_view_highlighted(self, event) -> None:
+        if event.list_view.id == "validation-list":
+            return
         node_list = self.query_one(NodeList)
         self._select_row(node_list.row_for_index(event.list_view.index))
         self._refresh_details()
@@ -411,7 +419,51 @@ class EditorScreen(KeymapScreenMixin, Screen):
         self._restore_node_list_focus()
         self._cycle_branch_view(incomplete_only=True, direction=1)
 
+    # -- the Validation panel ------------------------------------------------------
+
+    def _refresh_hint(self) -> None:
+        bar = self.query_one(StatusBar)
+        if self._issue_hint and not self._validation_panel_focused():
+            bar.set_bindings_text(self._issue_hint + " | " + screen_hint_for(
+                self.KEYMAP, keymap=getattr(self.app, "_keymap", None), validation_panel=True,
+            ).split(" | ")[-1].replace("close", "validation"))
+            return
+        bar.set_bindings_text(screen_hint_for(
+            self.KEYMAP,
+            keymap=getattr(self.app, "_keymap", None),
+            validation_panel=self._validation_panel_focused(),
+        ))
+
+    def _validation_panel_open(self) -> bool:
+        return bool(self.query_one(ValidationPanel).display)
+
+    def _validation_panel_focused(self) -> bool:
+        panel = self.query_one(ValidationPanel)
+        return bool(panel.display) and self.focused is not None and panel in self.focused.ancestors_with_self
+
     def action_validate_workflow(self) -> None:
+        """V: open the Validation panel, or close it."""
+        panel = self.query_one(ValidationPanel)
+        if panel.display:
+            self.action_close_panel()
+            return
+        self._issue_hint = None
+        panel.display = True
+        panel.focus_button()
+        self._refresh_hint()
+
+    def action_close_panel(self) -> None:
+        if not self._validation_panel_open():
+            return
+        self.query_one(ValidationPanel).display = False
+        self._restore_node_list_focus()
+        self._refresh_hint()
+
+    def action_run_validation(self) -> None:
+        """Run validation; the panel lists the issues, errors first."""
+        panel = self.query_one(ValidationPanel)
+        if not panel.display:
+            return
         self.workflow_adapter.materialize_deleted_nodes()
         result = validate_workflow(
             self.workflow_map,
@@ -425,14 +477,56 @@ class EditorScreen(KeymapScreenMixin, Screen):
             for item in errors + warnings
             if item.get("node_id")
         }
+        panel.show_issues([
+            {
+                "level": level,
+                "node_id": str(item.get("node_id") or ""),
+                "name": friendly_label(self.workflow_map, item["node_id"]) if item.get("node_id") else "Workflow",
+                "message": str(item.get("message") or "-"),
+            }
+            for level, items in (("error", errors), ("warning", warnings))
+            for item in items
+        ])
         self.refresh_from_backend()
-        if not errors and not warnings:
-            notifications.workflow_valid(self.app)
+        if errors or warnings:
+            panel.move(1)
+        else:
+            panel.focus_button()
+        self._refresh_hint()
+
+    def on_button_pressed(self, event: Any) -> None:
+        if getattr(event.button, "id", None) == "validation-run":
+            event.stop()
+            self.action_run_validation()
+
+    def on_descendant_focus(self, event: Any) -> None:
+        if self.is_mounted:
+            self._refresh_hint()
+
+    def _go_to_issue(self) -> None:
+        """Go to node: hide the panel and highlight the issue's node."""
+        panel = self.query_one(ValidationPanel)
+        issue = panel.selected_issue
+        if issue is None:
             return
-        self.app.push_screen(
-            ErrorDetailsScreen({"validation": result}),
-            self._handle_validation_details_result,
-        )
+        node_id = issue["node_id"]
+        if not node_id:
+            notifications.notify_info(self.app, "That issue is about the whole workflow.")
+            return
+        if self.workflow_map.get_node_data(node_id) is None:
+            notifications.notify_error(self.app, f"Node {node_id} no longer exists.")
+            return
+        for ancestor_id, ancestor_port in self._branch_choices_to_node(node_id):
+            self.active_branch_ports[ancestor_id] = ancestor_port
+        panel.display = False
+        self.selected_node_id = node_id
+        self.selected_row = {"kind": "node", "node_id": node_id}
+        mark = "✗" if issue["level"] == "error" else "!"
+        self._issue_hint = f"{mark} {issue['name']}: {issue['message']}"
+        self.refresh_from_backend()
+        self._restore_node_list_focus()
+        self._refresh_details()
+        self._refresh_hint()
 
     def action_workflow_library(self) -> None:
         self.app.action_workflow_library()
@@ -469,6 +563,12 @@ class EditorScreen(KeymapScreenMixin, Screen):
         notifications.breakpoints_cleared(self.app, cleared)
 
     def action_edit_selected(self) -> None:
+        if self._validation_panel_focused():
+            if self.query_one(ValidationPanel).selected_issue is not None:
+                self._go_to_issue()
+            else:
+                self.action_run_validation()
+            return
         if (self.selected_row or {}).get('saved_paths'):
             node_id = self.selected_row['branch_node_id']
             if self.selected_row.get('pending_restore'):
@@ -869,10 +969,18 @@ class EditorScreen(KeymapScreenMixin, Screen):
             timings.pop(node_id, None)
 
     def action_cursor_up(self) -> None:
+        if self._validation_panel_focused():
+            self.query_one(ValidationPanel).move(-1)
+            return
+        self._issue_hint = None
         self._branch_cycle_anchor = None
         self._move_selection(-1)
 
     def action_cursor_down(self) -> None:
+        if self._validation_panel_focused():
+            self.query_one(ValidationPanel).move(1)
+            return
+        self._issue_hint = None
         self._branch_cycle_anchor = None
         self._move_selection(1)
 
@@ -1302,17 +1410,6 @@ class EditorScreen(KeymapScreenMixin, Screen):
                 config,
                 reconcile_unselected=True,
             )
-
-    def _handle_validation_details_result(self, result: Dict[str, Any] | None) -> None:
-        if not result or result.get("action") != "jump":
-            return
-        node_id = result.get("node_id")
-        if not node_id or self.workflow_map.get_node_data(node_id) is None:
-            return
-        self.selected_node_id = node_id
-        self.selected_row = {"kind": "node", "node_id": node_id}
-        self.refresh_from_backend()
-        notifications.jumped_to_node(self.app, friendly_label(self.workflow_map, node_id))
 
     def _sync_merge_branch_end_connections(
         self,

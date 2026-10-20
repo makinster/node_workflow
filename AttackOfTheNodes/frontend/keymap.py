@@ -141,7 +141,11 @@ EDITOR = Profile('editor', (
     Command('editor.cycle_incomplete_branch_prev', ('ctrl+a', 'ctrl+left'), 'cycle_incomplete_branch_prev', 'Previous incomplete branch', policies=NAV, priority=True),
     Command('editor.cycle_incomplete_branch_next', ('ctrl+d', 'ctrl+right'), 'cycle_incomplete_branch_next', 'Next incomplete branch', policies=NAV, priority=True),
     Command('editor.insert_node', ('i',), 'insert_node', 'Insert node', policies=NAV, priority=True),
-    Command('editor.validate_workflow', ('v',), 'validate_workflow', 'Validate', policies=NAV, priority=True),
+    # Validation panel (owner, 2026-10-19): V opens and closes it; R runs
+    # validation and Esc closes it while it is open.
+    Command('editor.validate_workflow', ('v',), 'validate_workflow', 'Validation panel', policies=NAV, priority=True),
+    Command('editor.run_validation', ('r',), 'run_validation', 'Run validation', policies=NAV, priority=True),
+    Command('editor.close_panel', ('escape',), 'close_panel', 'Close panel', policies=NAV, priority=False),
     Command('editor.toggle_breakpoint', ('b',), 'toggle_breakpoint', 'Breakpoint', policies=NAV, priority=True),
     Command('editor.clear_breakpoints', ('ctrl+b',), 'clear_breakpoints', 'Clear breakpoints', policies=NAV, priority=True),
     Command('editor.undo_delete', ('z',), 'undo_delete', 'Undo delete', policies=NAV, priority=True),
@@ -510,16 +514,25 @@ def screen_hint_for(
     error_panel_hidden: bool | None = None,
     open_call: bool = False,
     back_to: str | None = None,
+    validation_panel: bool = False,
 ) -> str:
     """Editor/Execution compact hints, with the current effective primary keys.
     ``open_call``: the highlighted node is a running subworkflow call (4c-2).
-    ``back_to``: this view shows a call; Esc goes back to that workflow."""
+    ``back_to``: this view shows a call; Esc goes back to that workflow.
+    ``validation_panel``: the editor's Validation panel has the focus."""
     commands = {
         command.id: keys
         for owner in (APP, profile)
         for command, keys in _display_commands(owner, keymap)
     }
     groups = _SCREEN_HINTS[profile.id]
+    if profile.id == "editor" and validation_panel:
+        groups = (
+            HintGroup(("editor.cursor_up", "editor.cursor_down"), "move"),
+            HintGroup(("editor.edit_selected.e",), "go to node / run"),
+            HintGroup(("editor.run_validation",), "run"),
+            HintGroup(("editor.validate_workflow",), "close"),
+        )
     if profile.id == "execution" and error_panel_hidden is not None:
         groups = (
             HintGroup(
