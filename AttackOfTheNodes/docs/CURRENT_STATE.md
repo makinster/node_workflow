@@ -42,9 +42,9 @@ This is the live status snapshot; plans and logs preserve dated decisions.
   and `➥ (n)`, the details pane; the node is in the selector) merged in #91, with
   its review fixes. 4c-2 (opening a running call
   from the Execution screen with E/Enter, breadcrumbs, prompts that say who
-  asks) is on `dist/4c2-watch-calls`, awaiting review. The prompt queue
-  (C19: a second prompt waits for the first instead of being dropped) is on
-  `dist/4c3-prompt-queue`, stacked on 4c-2, awaiting review.
+  asks) merged in #94, with its review fixes. The prompt queue (C19: a
+  second prompt waits for the first instead of being dropped) merged in #96.
+  Left in Step 4: 4d Stash bindings, 4e/4f shared memory.
   [Proposal](SUBWORKFLOWS_PROPOSAL.md).
 - **Keymap phase 3 — Editor/Execution:** merged in #92.
   Both screens already compiled bindings from profiles; Help and status hints
