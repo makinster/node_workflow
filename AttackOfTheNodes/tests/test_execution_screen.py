@@ -226,3 +226,117 @@ def test_the_vault_log_names_the_source_and_opens_an_entry():
 def test_long_values_are_shortened_and_keep_their_quote():
     assert shorten('"' + "x" * 50 + '"', 12) == '"xxxxxxxxx…"'
     assert len(shorten("y" * 50, 12)) == 12
+
+
+# -- review fixes (#89 review, 2026-10-20) ------------------------------------------------------
+
+def two_paths(wm, first="sleep_node", second="sleep_node"):
+    """Start → Fan out; path A: A → End A; path B: B → End B."""
+    ids = {}
+    for name, kind in [("Start", "start_node"), ("Fan out", "branch_node"), ("A", first), ("B", second),
+                       ("End A", "end_node"), ("End B", "end_node")]:
+        ids[name] = wm.add_node(kind, alias=name)
+    for name, kind in (("A", first), ("B", second)):
+        if kind == "sleep_node":
+            wm.update_node_config(ids[name], {"duration": 0.6})
+    for source, port, target in [("Start", "default", "Fan out"), ("Fan out", "path_a", "A"),
+                                 ("A", "default", "End A"), ("Fan out", "path_b", "B"),
+                                 ("B", "default", "End B")]:
+        wm.connect(ids[source], port, ids[target], "input")
+    return ids
+
+
+def test_vault_cells_show_markup_like_text_as_written():
+    async def steps(app, screen, pilot, master, ids):
+        writes = [{"seconds": 0, "key": "[b]answer", "type": "string", "value": "[/red]", "node_id": None}]
+        await app.push_screen(VaultLogScreen(writes, lambda write: "[i]me"))
+        await pilot.pause(0.1)
+        return [str(cell) for cell in app.screen.query_one("#vault-table").get_row_at(0)]
+
+    assert run_screen(fan_with_failure, steps) == ["0:00", "[b]answer", "[string]", '"[/red]"', "[i]me"]
+
+
+def test_narrow_error_panel_keeps_its_buttons_on_screen():
+    async def steps(app, screen, pilot, master, ids):
+        await master.start_workflow()
+        await until(lambda: bool(screen.pending_recoveries))
+        app.flush_refresh()
+        await pilot.pause(0.1)
+        side = screen.query_one("#execution-side").region
+        inside = all(side.contains_region(screen.query_one(f"#recover-{name}").region)
+                     for name in ("RETRY", "SKIP", "TERMINATE_BRANCH", "goto", "TERMINATE_WORKFLOW", "details"))
+        clicked = await pilot.click("#recover-goto")
+        await pilot.pause(0.05)
+        node_list = screen.query_one(NodeList)
+        highlighted = node_list.node_id_for_index(node_list.index)
+        master.stop()
+        return ids, inside, clicked, highlighted
+
+    ids, inside, clicked, highlighted = run_screen(fan_with_failure, steps, size=(70, 24))
+    assert inside and clicked and highlighted == ids["Boom"]
+
+
+def test_go_to_node_takes_one_route_through_a_loop():
+    def build(wm):
+        ids = {name: wm.add_node(kind, alias=name) for name, kind in
+               [("Start", "start_node"), ("Check", "conditional_node"), ("Boom", "error_node"),
+                ("Again", "no_op_node")]}
+        for source, port, target in [("Start", "default", "Check"), ("Check", "true", "Boom"),
+                                     ("Check", "false", "Again"), ("Again", "default", "Check")]:
+            wm.connect(ids[source], port, ids[target], "input")
+        return ids
+
+    async def steps(app, screen, pilot, master, ids):
+        screen._map.active_branch_ports[ids["Check"]] = "false"
+        screen.go_to_node(ids["Boom"])
+        node_list = screen.query_one(NodeList)
+        return ids, screen._map.active_branch_ports[ids["Check"]], node_list.node_id_for_index(node_list.index)
+
+    ids, port, highlighted = run_screen(build, steps)
+    assert port == "true" and highlighted == ids["Boom"]
+
+
+def test_f_follows_a_running_node_on_a_path_not_shown():
+    async def steps(app, screen, pilot, master, ids):
+        await master.start_workflow(unattended="terminate_branch")
+        await until(lambda: {app.node_statuses.get(ids["A"]), app.node_statuses.get(ids["B"])} == {"running"})
+        app.flush_refresh()
+        await pilot.pause(0.05)
+        node_list = screen.query_one(NodeList)
+        followed = node_list.node_id_for_index(node_list.index)
+        await pilot.press("d")
+        await pilot.pause(0.05)
+        hidden = followed not in [r.get("node_id") for r in node_list._rows]
+        await pilot.press("f")
+        await pilot.pause(0.05)
+        after = node_list.node_id_for_index(node_list.index)
+        master.stop()
+        return followed, hidden, after, app.node_statuses.get(after)
+
+    followed, hidden, after, status = run_screen(two_paths, steps)
+    assert hidden and after == followed and status == "running"
+
+
+def test_live_selector_and_saved_paths_row_keep_separate_highlights():
+    screen = ExecutionScreen.__new__(ExecutionScreen)
+    live = {"kind": "branch_select", "branch_node_id": "b1", "active_port": "path_a"}
+    saved = {"kind": "branch_select", "branch_node_id": "b1", "active_port": "__saved_paths__", "saved_paths": True}
+    pending = dict(saved, active_port="__unrestored__")
+    assert len({screen._row_key(live), screen._row_key(saved), screen._row_key(pending)}) == 3
+    assert screen._row_key(dict(live, active_port="path_b")) == screen._row_key(live)
+
+
+def test_stop_run_clears_every_waiting_choice():
+    async def steps(app, screen, pilot, master, ids):
+        await master.start_workflow()
+        await until(lambda: len(screen.pending_recoveries) == 2)
+        app.flush_refresh()
+        await pilot.pause(0.05)
+        screen.query_one("#recover-TERMINATE_WORKFLOW").press()
+        await master.wait_for_completion()
+        app.flush_refresh()
+        await pilot.pause(0.05)
+        return screen.pending_recoveries, str(screen.query_one("#execution-title").render())
+
+    pending, title = run_screen(lambda wm: two_paths(wm, "error_node", "error_node"), steps)
+    assert pending == [] and "needs you" not in title

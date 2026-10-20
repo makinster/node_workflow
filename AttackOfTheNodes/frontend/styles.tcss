@@ -595,9 +595,16 @@ ExecutionScreen.narrow #execution-columns {
 
 ExecutionScreen.narrow #execution-panel {
     width: 1fr;
-    height: 2fr;
+    height: 1fr;
 }
 
+/* The error panel comes first and the pane scrolls, so its buttons stay
+   reachable on a short terminal. */
 ExecutionScreen.narrow #execution-side {
     height: 1fr;
+    overflow-y: auto;
+}
+
+ExecutionScreen.narrow #execution-details {
+    height: auto;
 }

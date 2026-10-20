@@ -125,6 +125,7 @@ class ExecutionScreen(KeymapScreenMixin, Screen):
             self._ended = None
         elif self._started is not None and self._ended is None:
             self._ended = monotonic()
+        self._drop_stale_recoveries(state)
         statuses = dict(getattr(app, "node_statuses", {}) or {})
         timings = dict(getattr(app, "node_timings", {}) or {})
         rows = self._map._build_visible_rows()
@@ -214,7 +215,8 @@ class ExecutionScreen(KeymapScreenMixin, Screen):
         if row["kind"] == "node":
             return ("node", row["node_id"])
         if row["kind"] == "branch_select":
-            return ("branch", row["branch_node_id"])
+            # The live path selector and its Saved paths row share a branch node.
+            return ("branch", row["branch_node_id"], row["active_port"] if row.get("saved_paths") else "live")
         if row["kind"] == "merge_beacon_select":
             return ("beacon", row["beacon_node_id"])
         return None
@@ -230,18 +232,14 @@ class ExecutionScreen(KeymapScreenMixin, Screen):
                     return str(branch["current_node_id"])
         return None
 
-    def _needs_you(self, node_id: str) -> bool:
-        if any(p.get("node_id") == node_id for p in self._recoveries):
-            return True
-        return (getattr(self.app, "node_statuses", {}) or {}).get(node_id) == "waiting"
-
     def _place_highlight(self, node_list: NodeList) -> None:
         index = None
         if self.follow:
             live = self._live_node()
             if live is not None:
                 index = node_list.index_for_node_id(live)
-                if index is None and self._needs_you(live):
+                # Following shows the followed node's path; A/D and W/S stop following.
+                if index is None:
                     self._show_path_to(live)
                     node_list.refresh_rows(self._map._build_visible_rows(), dict(self.app.node_statuses or {}),
                                            dict(self.app.node_timings or {}),
@@ -311,7 +309,7 @@ class ExecutionScreen(KeymapScreenMixin, Screen):
                 position_in = ports.index(active) if active in ports else 0
                 self._map.active_branch_ports[row["branch_node_id"]] = ports[(position_in + int(delta)) % len(ports)]
                 self.follow = False
-                self._selected = ("branch", row["branch_node_id"])
+                self._selected = self._row_key(row)
                 self.refresh_from_backend()
                 return
 
@@ -479,6 +477,17 @@ class ExecutionScreen(KeymapScreenMixin, Screen):
         if self.is_mounted:
             self.refresh_from_backend()
 
+    def _drop_stale_recoveries(self, state: str) -> None:
+        """A finished run, or a stopped branch, no longer waits for a choice."""
+        if not self._recoveries:
+            return
+        if self._ended is not None and state in {"FINISHED", "ERROR", "IDLE"}:
+            self._recoveries.clear()
+            return
+        branches = self._branches()
+        self._recoveries = [p for p in self._recoveries
+                            if (branches.get(str(p.get("branch_id") or "")) or {}).get("state") != "TERMINATED"]
+
     @property
     def pending_recoveries(self) -> List[Dict[str, Any]]:
         return list(self._recoveries)
@@ -525,7 +534,10 @@ class ExecutionScreen(KeymapScreenMixin, Screen):
         if choice == "details":
             self.app.push_screen(ErrorDetailsScreen(dict(payload, options=[])))
             return
-        self._recoveries.pop(0)
+        if choice == "TERMINATE_WORKFLOW":
+            self._recoveries.clear()
+        else:
+            self._recoveries.pop(0)
         self._panel_hidden = False
         self.master_state.submit_recovery_action(str(payload.get("branch_id") or ""), choice)
         self.refresh_from_backend()
@@ -549,21 +561,28 @@ class ExecutionScreen(KeymapScreenMixin, Screen):
 
     def _show_path_to(self, node_id: str) -> None:
         """Pick, at each branch node, the path that leads to ``node_id``."""
+        # One route from Start (the shortest), so a loop's back edge cannot
+        # overwrite a choice made earlier on the same route.
         nodes = self.workflow_map.get_all_node_data()
-        parents: Dict[str, List[tuple]] = {}
-        for source, data in nodes.items():
-            for conn in (data.get("connections") or {}).get("outputs", []):
-                parents.setdefault(conn.get("target_node_id"), []).append((source, conn.get("source_port")))
-        seen, stack = set(), [node_id]
-        while stack:
-            current = stack.pop()
-            if current in seen:
-                continue
-            seen.add(current)
-            for source, port in parents.get(current, []):
-                if len(self._map._output_ports_for_node(nodes.get(source) or {})) > 1:
-                    self._map.active_branch_ports[source] = port
-                stack.append(source)
+        start = self.workflow_map.find_start_node_id()
+        came_from: Dict[str, tuple] = {}
+        frontier, seen = [start], {start}
+        while frontier and node_id not in seen:
+            following = []
+            for current in frontier:
+                for conn in (nodes.get(current) or {}).get("connections", {}).get("outputs", []):
+                    target = conn.get("target_node_id")
+                    if target in nodes and target not in seen:
+                        seen.add(target)
+                        came_from[target] = (current, conn.get("source_port"))
+                        following.append(target)
+            frontier = following
+        current = node_id
+        while current in came_from:
+            source, port = came_from[current]
+            if len(self._map._output_ports_for_node(nodes.get(source) or {})) > 1:
+                self._map.active_branch_ports[source] = port
+            current = source
 
     # -- commands ------------------------------------------------------------------------
 
