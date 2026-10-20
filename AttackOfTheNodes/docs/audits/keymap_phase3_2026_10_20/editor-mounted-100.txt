@@ -1,0 +1,21 @@
+╭────────────────────────────────────────────────────────────────────────────────────────╮
+│                                                                                        │
+│  Help                                                                                  │
+│  Editor                                                                                │
+│    Tab                    Next panel                                                   │
+│    Shift+Tab              Previous panel                                               │
+│    W / ↑                  Up                                                           │
+│    S / ↓                  Down                                                         │
+│    ← / A                  Previous branch                                          ▁▁  │
+│    → / D                  Next branch                                                  │
+│    Enter / E              Edit                                                         │
+│    Ctrl+A / Ctrl+←        Previous incomplete branch                                   │
+│    Ctrl+D / Ctrl+→        Next incomplete branch                                       │
+│    I                      Insert node                                                  │
+│    V                      Validate                                                     │
+│    B                      Breakpoint                                                   │
+│  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔                                                                      │
+│       Close                                                                            │
+│  ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁                                                                      │
+│                                                                                        │
+╰────────────────────────────────────────────────────────────────────────────────────────╯

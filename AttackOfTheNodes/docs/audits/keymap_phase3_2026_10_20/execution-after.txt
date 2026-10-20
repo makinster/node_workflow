@@ -1,0 +1,23 @@
+Execution
+  P                      Pause/resume
+  X                      Stop
+  W / ↑                  Up
+  S / ↓                  Down
+  A / ←                  Previous branch
+  D / →                  Next branch
+  F                      Follow
+  V                      Show/hide error
+  M                      Memory
+  O                      Output
+  E                      Errors
+  Esc                    Editor
+  Ctrl+Q                 Editor
+
+General
+  Ctrl+S                 Save
+  Ctrl+R                 Run
+  Ctrl+N                 New
+  Ctrl+O                 Open
+  Ctrl+E                 Settings
+  H / ?                  Help
+  Q                      Back
