@@ -104,6 +104,12 @@ class CallTree:
                 return master.submit_user_input(branch_id, value)
         return False
 
+    def waiting_for_input(self, branch_id: str) -> bool:
+        for master in self.live_masters():
+            if master.owns_branch(branch_id):
+                return master.waiting_for_input(branch_id)
+        return False
+
     def submit_recovery_action(self, branch_id: str, action: str) -> bool:
         for master in self.live_masters():
             if master.owns_branch(branch_id):

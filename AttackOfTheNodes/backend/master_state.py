@@ -452,6 +452,15 @@ class MasterState:
         supervisor.submit_user_input(value)
         return True
 
+    def waiting_for_input(self, branch_id: str) -> bool:
+        """Whether this branch (or a subworkflow's) still waits for an answer."""
+        supervisor = self._supervisors.get(branch_id)
+        if supervisor is None:
+            if self._owns_call_tree and self._call_tree is not None:
+                return self._call_tree.waiting_for_input(branch_id)
+            return False
+        return supervisor.waiting_for_input
+
     def submit_recovery_action(self, branch_id: str, action: str) -> bool:
         """Forward a recovery action to the supervisor waiting for it."""
         supervisor = self._supervisors.get(branch_id)
