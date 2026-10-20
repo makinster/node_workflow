@@ -6,6 +6,25 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-20 — AI coordination proposal (docs only)
+
+Branch `docs/ai-coordination-proposal`, from main `2ecd297`. Adds
+`AI_COORDINATION_PROPOSAL.md`, written in an owner planning chat (not
+approved): Hermes cron/Telegram integration through `aotn run` wrappers and
+an outbox, staged receipts, stdout escaping, deterministic tool nodes,
+bounded agent nodes and a proposed build order.
+
+- Updated the AOTN facts against main: contracts and typed `--input` are
+  built (exit 5 for bad inputs, 64 for usage), subworkflows and the Stash
+  exist, headless callers fail fast on a prompting subworkflow. The tool-gap
+  table, the `notify_me` and MCP notes and the build order (finish 4c first,
+  then H0–C4 ahead of 4d–4f and Step 5) follow. Hermes facts unchanged.
+- Listed as a temporary doc in README, CURRENT_STATE and the docs check.
+- Owner framing added (section 1.1): Hermes is a near-term shortcut, not a
+  dependency; each Hermes piece has an AOTN-native replacement, and nothing
+  in the engine needs Hermes. Section 1.2 and build step P1: a first
+  community of Hermes users, with the packaging it needs.
+
 ## 2026-10-20 — Prompts queue (C19)
 
 Branch `dist/4c3-prompt-queue`, stacked on `dist/4c2-watch-calls` (#94, not
