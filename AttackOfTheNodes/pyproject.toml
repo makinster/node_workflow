@@ -25,7 +25,7 @@ py-modules = ["main", "aotn_cli", "aotn_author", "aotn_stash"]
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["backend*", "frontend*"]
+include = ["backend*", "frontend*", "aotn_mcp*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
