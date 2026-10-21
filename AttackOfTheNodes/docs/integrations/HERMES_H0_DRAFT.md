@@ -1,11 +1,14 @@
 # H0 draft: Hermes wrappers, heartbeat and HTTP watchdog
 
-**Draft for owner review, 2026-10-20; implementation is not authorized by
-this page.** Updated against main `f86fbe8` (#98 colours and #99 quiet End merged) and
+**H0 contract, 2026-10-20; repository implementation awaiting owner review.**
+The owner authorized the [adapter and spec files](../../integrations/hermes/README.md)
+after the decisions recorded in PR #102. The contract below remains the design
+baseline; installation and job activation are separate owner actions.
+The design was updated against main `f86fbe8` (#98 colours and #99 quiet End merged) and
 [coordination proposal §5.1](../AI_COORDINATION_PROPOSAL.md#51-short-workflows-aotn-run-is-the-cron-script).
-The owner requested this H0 specification separately from the proposal's
-unapproved wider build order. The wrapper/adapter below is a proposed external
-script interface, not an installed feature. The two workflow specs use existing
+The initial specification preceded the owner decisions in #102. The
+wrapper/adapter below describes the external script interface, now versioned
+in the repository but not installed into Hermes. The two workflow specs use existing
 nodes and `aotn build`; they need no engine changes or Stash entries.
 
 H0 proves a short unattended run can produce a message, stay silent, or fail

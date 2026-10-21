@@ -1,0 +1,46 @@
+{
+  "format": "aotn-workflow/1",
+  "name": "h1-heartbeat",
+  "nodes": {
+    "start": {
+      "type": "start_node",
+      "config": {
+        "rows": [
+          {
+            "name": "checked_at",
+            "type": "string",
+            "required": true,
+            "to": "Downstream"
+          }
+        ]
+      }
+    },
+    "announce": {
+      "type": "text_output_node",
+      "alias": "Heartbeat",
+      "config": {
+        "input_source": "Upstream payload",
+        "label": "Heartbeat",
+        "template": "AOTN alive \u00b7 {input}",
+        "request_user_input": false
+      }
+    },
+    "end": {
+      "type": "end_node",
+      "alias": "Finish quietly",
+      "config": {
+        "record_line": false
+      }
+    }
+  },
+  "connections": [
+    {
+      "from": "start.default",
+      "to": "announce.input"
+    },
+    {
+      "from": "announce.default",
+      "to": "end.input"
+    }
+  ]
+}

@@ -5,13 +5,18 @@ This is the live status snapshot; plans and logs preserve dated decisions.
 
 ## Baseline and open work — 2026-10-20
 
-- **H0 specification draft:** updated against main `f86fbe8` (#98 colours, #99 quiet End merged),
-  [Hermes wrapper and H1/H2 specs](integrations/HERMES_H0_DRAFT.md) are ready
-  for owner review. Docs only: external adapter contract, checked heartbeat
-  and HTTP watchdog JSON with quiet End nodes (`record_line: false`),
-  isolated CLI receipts and activation acceptance cases. No wrapper installation, cron job, live delivery or engine changes.
-  Wider coordination priorities remain proposed. Duplicate prompt-queue work
-  is dropped; #96 supplies the merged implementation.
+- **H0 adapter implemented, awaiting owner review:** branch
+  `codex/hermes-h0-adapter`, based on main `b7e6484`. The
+  [repository integration](../integrations/hermes/README.md) supplies the shared
+  Bash function, standard-library Python subprocess/JSON adapter, entry scripts
+  and H1/H2 specs with quiet Ends. It follows the [H0 contract](integrations/HERMES_H0_DRAFT.md):
+  3,500 UTF-16 units per stream, directive escaping, preserved exits, per-slug
+  locks and 100-second deadline with process-group cleanup. C1–C7 were read
+  from owner-decisions PR #102; later capabilities remain separate work.
+  Verification: **2,016 full-suite tests passed**, including **57 adapter tests**;
+  the production deadline probe returned 124 at 100.05 seconds. Receipts are
+  in [Session Log](SESSION_LOG.md). No Hermes
+  installation, cron job, config change or live delivery occurred.
 - Fetched `origin/main` at `106c437`: C1–C7, workflow naming (#68), docs A/B
   (#69/#72), Stash S1–S3 (#70/#71/#75), window buttons (#73), duplicate
   prevention (#74), keymap phases 1/2 (#77/#78), contracts (#80), the

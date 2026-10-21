@@ -6,6 +6,41 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-20 — H0 repository adapter implementation
+
+Branch `codex/hermes-h0-adapter`, based on main `b7e6484`; read PR #102's
+owner decisions C1–C7 without merging that docs PR. The owner authorized
+implementation under `integrations/hermes/`: shared Bash function, two entry
+scripts, standard-library Python JSON/exit adapter and the H1/H2 build specs.
+No engine or repository workflow files changed. No Hermes installation,
+configuration, cron job or live delivery was performed.
+
+The function derives a validated slug from the entry filename and uses the
+absolute project/interpreter and separate cron library. The adapter supplies
+UTC `checked_at`, drains both pipes with bounded retention, renders the JSON
+report like the text CLI, leaves successful empty stdout at zero bytes, and
+escapes directives before the 3,500 UTF-16-unit cap. Ordinary lines keep their
+text; only JSON-looking lines get `| `, including after non-LF separators.
+Run IDs survive truncation and graceful stops. Per-slug locks remain held
+through process-group cleanup. Natural exits are preserved; failures/overlap/
+deadline/external INT/TERM use 70/75/124/130/143 as specified.
+
+Verification: all **57 adapter subprocess tests passed**, covering every draft
+case-table row. Real CLI builds/runs use disposable data and loopback HTTP:
+heartbeat, healthy/whitespace silence, degraded body, handled 503/refusal/timeout,
+unhandled error, missing input and missing saved name. Controlled children
+exercise malformed/oversized reports, simultaneous pipe floods, directive
+variants, emoji caps, lock lifetime, signals and lingering descendants. Timing
+tests shorten module constants only in a test subprocess launcher; production
+has no timing override. A separate unaccelerated production-deadline probe
+forced cleanup at **100.05 seconds**, exit **124**, zero stdout bytes.
+
+Full suite from `AttackOfTheNodes/`, with the shared interpreter and
+`AOTN_DATA_DIR=/tmp/hermes-h0-final-suite`: **2,016 passed in 320.17 seconds**.
+Bash syntax, adapter compilation, `git diff --check` and the documentation
+link/archive checker passed. Owner review is the next step; activation and
+all later coordination capabilities remain separate.
+
 ## 2026-10-20 — H0 quiet End update and review corrections
 
 Branch `codex/hermes-h0-spec`, PR #97; merged main `f86fbe8` in `e9f0df5`,
