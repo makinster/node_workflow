@@ -1,10 +1,121 @@
 # AttackOfTheNodes Session Log
 
-This log keeps roughly the last two weeks: entries dated October 4–20, 2026
+This log keeps roughly the last two weeks: entries dated October 4–21, 2026
 (the earliest existing entry is October 6). Every October 18 entry is retained.
 Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.md).
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
+
+## 2026-10-21 — H0 install: live checkout and copies (Hermes v0.14 check)
+
+Branch `dist/hermes-live-install`, from main `531b8d2`. Hermes inspected its
+installed scheduler before installing: it rejects any script whose real path
+is outside `$HERMES_HOME/scripts` (so no symlinks), and the planned live
+checkout did not exist yet. The owner's main checkout is on an old branch, so
+cron must not run from it.
+
+- The wrapper's project root is now `/home/makin/src/aotn-live`: a worktree on
+  branch `live` tracking main, updated on purpose with `git pull`.
+- `integrations/hermes/install.sh` copies the four files into
+  `$HERMES_HOME/scripts` (entry scripts executable, atomic replace, refuses a
+  symlink at the target); `--check` reports drift without changing anything.
+- Tests: three install tests in `tests/test_hermes_adapter.py`.
+
+## 2026-10-21 — H0 review fixes: descendant containment and entry scripts
+
+Branch `codex/hermes-h0-adapter`, original head `057ca45`; synchronized with
+main `055dfba` (#104) in merge commit `e8ffbd0`, preserving both session entries.
+
+- P2: enable Linux child-subreaper adoption via guarded `ctypes`/`prctl`, walk
+  `/proc` ancestry, kill escaped descendants and reap them before releasing the
+  slug lock. Cleanup also runs on natural exits and adapter errors. Reserve the
+  final second of the deadline/stop budget for bounded kill/reap; an unconfirmed
+  cleanup returns 70 and leaves a persistent stale marker, so later ticks return
+  75 without starting a child. A crash also leaves the marker. Other POSIX
+  platforms retain bounded process-group cleanup; Linux setup failures prevent
+  spawning. The contract and integration guide document these behavior changes.
+- P3: both actual entry scripts honor `HERMES_HOME` and run from an isolated
+  deployment with spaces. Only fixed installation path assignments in the copied
+  shared file are substituted; Bash exec, the adapter and controlled children
+  are real subprocesses. Normal calls reach the right slug; extra arguments
+  return 70 without starting a run.
+- Fail-first evidence against `057ca45`: the initial deadline/TERM and entry
+  deployment cases produced **6 failures** before implementation. Additional
+  cleanup-denied/timeout and natural-exit cases ran against the original adapter
+  extracted with `git show`, producing **3 failures**. Both logs were retained
+  under `/tmp/review103-red*.log` for this session. After fixes, **67 adapter
+  tests passed**, including retained same-group cases, escaped sessions, actual
+  reaping, denied/ineffective-kill fault injection and stale-lock rejection.
+- An unaccelerated escaped-descendant probe exited **124 at 99.06 seconds**,
+  emitted zero stdout bytes and confirmed the descendant was reaped. Removing
+  `"$@"` from each temporary deployed entry was detected by the new argument
+  test (both mutations failed as intended).
+- Combined full suite (main `055dfba` plus fixes), shared Linux interpreter,
+  disposable `AOTN_DATA_DIR`: **2,052 passed in 322.44 seconds**. Separate adapter
+  run: **67 passed in 22.66 seconds**. Compileall, Bash syntax, documentation
+  link/archive checks and `git diff --check` passed. No repository workflow edits,
+  Hermes installation, cron activation or live delivery. Owner review follows
+  the pushed fixes; no merge is authorized.
+
+## 2026-10-20 — H0 repository adapter implementation
+
+Branch `codex/hermes-h0-adapter`, based on main `b7e6484`; read PR #102's
+owner decisions C1–C7 without merging that docs PR. The owner authorized
+implementation under `integrations/hermes/`: shared Bash function, two entry
+scripts, standard-library Python JSON/exit adapter and the H1/H2 build specs.
+No engine or repository workflow files changed. No Hermes installation,
+configuration, cron job or live delivery was performed.
+
+The function derives a validated slug from the entry filename and uses the
+absolute project/interpreter and separate cron library. The adapter supplies
+UTC `checked_at`, drains both pipes with bounded retention, renders the JSON
+report like the text CLI, leaves successful empty stdout at zero bytes, and
+escapes directives before the 3,500 UTF-16-unit cap. Ordinary lines keep their
+text; only JSON-looking lines get `| `, including after non-LF separators.
+Run IDs survive truncation and graceful stops. Per-slug locks remain held
+through process-group cleanup. Natural exits are preserved; failures/overlap/
+deadline/external INT/TERM use 70/75/124/130/143 as specified.
+
+Verification: all **57 adapter subprocess tests passed**, covering every draft
+case-table row. Real CLI builds/runs use disposable data and loopback HTTP:
+heartbeat, healthy/whitespace silence, degraded body, handled 503/refusal/timeout,
+unhandled error, missing input and missing saved name. Controlled children
+exercise malformed/oversized reports, simultaneous pipe floods, directive
+variants, emoji caps, lock lifetime, signals and lingering descendants. Timing
+tests shorten module constants only in a test subprocess launcher; production
+has no timing override. A separate unaccelerated production-deadline probe
+forced cleanup at **100.05 seconds**, exit **124**, zero stdout bytes.
+
+Full suite from `AttackOfTheNodes/`, with the shared interpreter and
+`AOTN_DATA_DIR=/tmp/hermes-h0-final-suite`: **2,016 passed in 320.17 seconds**.
+Bash syntax, adapter compilation, `git diff --check` and the documentation
+link/archive checker passed. Owner review is the next step; activation and
+all later coordination capabilities remain separate.
+
+## 2026-10-20 — System nodes: Disk space, Git status, File age (C7)
+
+Branch `dist/system-nodes`, from main. Owner decision C7: specific command
+nodes first; the owner left the details to Claude, with reasons:
+
+- **Allowed folders:** a new Options value `system_node_folders` (`;`-
+  separated, default `~`). Paths outside it fail `not_allowed`, so a received
+  workflow cannot inspect the whole machine. Nodes read it through a new
+  `NodeContext.get_setting`, wired from the run's ConfigurationManager.
+- **Family/section:** Inputs family, selector section "System".
+- **One typed value per node:** the samples drew several payloads per node,
+  but the output model has one downstream output (optionally copied to the
+  Vault), so each node has a **Report** choice instead. A Conditional can
+  compare the value directly.
+- **Nodes:** Disk space and File age use the standard library (no command);
+  Git status runs only `git status --porcelain=v2 --branch`, argv, no shell,
+  15 s timeout, its output type follows Report.
+- Generated with `aotn_node_helper` (specs added); execution hand-written and
+  the generated smoke tests adjusted to expect coded refusals.
+- Tests: `tests/test_system_nodes.py` plus the generated tests.
+- Review (#104, Codex): a repository's `core.fsmonitor` (and other run-a-program settings) are off for
+  status; the repository Git finds must itself be allowed; git runs in its own process group, killed and
+  reaped on stop or timeout; status is read NUL-separated (spaces, renames, accents kept); an empty
+  `system_node_folders` allows nothing. Six tests, each failing before its fix.
 
 ## 2026-10-20 — H0 quiet End update and review corrections
 

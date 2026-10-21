@@ -37,7 +37,7 @@ from frontend.widgets.status_bar import StatusBar
 ADD_TAB = "stash-tab-add"
 ENTRIES_TAB = "stash-tab-entries"
 _TABS = {"add": ADD_TAB, "entries": ENTRIES_TAB}
-_FILTERS = [None, "file", "string"]  # T cycles: all → files → text
+_FILTERS = [None, "file", "string"]  # T cycles: all → files → strings
 _INSERT_HELP = "E/Enter insert | W/S move | / search | R rename | Esc close"
 _HELP = {  # short enough for a 100-column terminal; tab labels show 1/2
     ADD_TAB: "E type, Enter add | T keep as text | R rename | Esc close",
@@ -274,7 +274,7 @@ class StashScreen(KeymapScreenMixin, ModalScreen):
                 else "Nothing matches", classes="stash-row")))
         total = len([e for e in self.stash.list_entries()
                      if not self.allowed or e["type"] in self.allowed])
-        label = {None: "All", "file": "Files", "string": "Text"}[self.type_filter]
+        label = {None: "All", "file": "Files", "string": "Strings"}[self.type_filter]
         self.query_one("#stash-count", Static).update(f"{label} · {len(entries)} of {total}")
         self.query_one("#stash-filter", Button).label = f"Show: {label.lower()}"
         if entries:

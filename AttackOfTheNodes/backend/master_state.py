@@ -380,6 +380,7 @@ class MasterState:
             publish_result=(lambda values: self._publish_result(run, values))
             if self._workflow_map.callable else None,
             call_subworkflow=call_subworkflow_here,
+            get_setting=self._configuration_manager.get,
             **kwargs,
         )
         run.live_supervisors[supervisor.branch_id] = supervisor

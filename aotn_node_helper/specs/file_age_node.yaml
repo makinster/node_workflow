@@ -1,0 +1,44 @@
+node_type: file_age_node
+class_name: FileAgeNode
+category: io
+primary_family: Inputs
+tags: ["System"]
+group: "System"
+selector_section: "System"
+icon_name: clock
+display_name: File age
+default_alias: File age
+description: How long ago a file or folder last changed (runs no command)
+input_ports: ["input"]
+outputs:
+  default:
+    name: Age
+    type: number
+    required: true
+    to: ["downstream", "vault"]
+    description: Time since the last change, in the chosen unit
+output_routing:
+  default: transient
+  vault:
+    mode: optional
+config_tabs:
+  Parameters:
+    path:
+      type: string
+      label: File or folder
+      default: ""
+      required: true
+      description: Must be inside an allowed folder (Options: system_node_folders)
+    unit:
+      type: select
+      label: Unit
+      options: ["Minutes", "Hours", "Days"]
+      default: Hours
+errors:
+  - code: folder_missing
+    description: "The file or folder does not exist."
+    retryable: false
+  - code: not_allowed
+    description: "The path is outside the folders allowed in Options."
+    retryable: false
+execution_template: transform_stub

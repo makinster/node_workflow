@@ -291,7 +291,7 @@ notify node exists.
 | Web fetch | `http_request_node` | — |
 | Desktop control | `window_control_node` | More actions |
 | Ask the user | `user_text_input_node` | Telegram-delivered variant (7.4) |
-| Shell | — | **`run_command_node`**: highest value, highest risk |
+| Shell | System nodes: Disk space, Git status, File age (fixed operations, allowed folders; C7) | More System nodes; a generic `run_command_node` later |
 | Subagents | `subworkflow_node` (call and wait) | Fire-and-forget (later) |
 | Scheduling | — | Step 5 triggers (Hermes cron until then) |
 | Memory | Stash (files and text, per machine) | Keyed run state: Step 5 persistent store |
@@ -365,7 +365,7 @@ now unblock the CLI and MCP items):
 
 | Order | Work | Why here | Depends on |
 |---|---|---|---|
-| H0 | H1 + H2 with Hermes wrappers; [specification draft](integrations/HERMES_H0_DRAFT.md) awaiting owner review | Docs/specs checked; wrapper and live delivery still unimplemented | Nothing |
+| H0 | [Repository adapter and H1/H2 specs](../integrations/hermes/README.md) implemented for owner review under the [H0 contract](integrations/HERMES_H0_DRAFT.md) | Subprocess/loopback acceptance tests, Linux escaped-descendant containment and stale-lock blocking, real entry-script deployment tests; no installed wrapper, job or live delivery | Nothing |
 | P1 | First-community package: install path, Hermes guide, H1/H2 specs, screenshots, known limits (section 1.2) | Something to show Hermes users | H0, C1 |
 | C1 | `hermes_notify_node` + `record_event_node` + shared folder schemas | Small, unblocks long-run notifications and receipts | H0 |
 | C4 | AOTN MCP server (stdio) | Contracts exist, so `run_workflow` takes typed inputs and returns `values`; AOTN becomes a tool for AIs | Step 4 contracts (done) |
