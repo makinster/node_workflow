@@ -28,7 +28,13 @@ In Help, W/S or up/down scrolls the text; E/Enter closes it. Close stays visible
 - `Z`: undo deletion.
 - Tab / Shift+Tab: move between panels.
 - `H` or `?`: context help.
-- `V`: validate workflow. Warning badges reflect that last check, not continuous validation.
+- `V`: open or close the Validation panel (top of the right pane). Its
+  **Run validation** button (or `R`) checks the workflow; the last run's
+  issues follow, errors first, one line each (`✗` error, `!` warning, node,
+  message). `W`/`S` move, `E`/Enter on an issue goes to its node: the panel
+  hides, the node is highlighted and the hint bar shows the full message
+  until you move. `Esc` also closes the panel. Warning badges on the map
+  reflect that last run, not continuous validation.
 - `Ctrl+S`: quick save.
 - `Ctrl+R`: execute workflow.
 - `Ctrl+Q`: quit only from the editor.

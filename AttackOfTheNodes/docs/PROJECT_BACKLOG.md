@@ -178,7 +178,7 @@ its per-visit preview feed remains a later idea. Still open: drill-in to a
 subworkflow call (4c), answering prompts inside the screen instead of the
 pop-up, and Codex's keymap phase 3 for the Editor and Execution profiles.
 
-## Planned Project — Editor Validation Panel (owner, 2026-10-19)
+## Done — Editor Validation Panel (owner, 2026-10-19; built 2026-10-20)
 
 V in the editor opens and closes a Validation panel instead of running the
 validator straight away. A **Run validation** button sits at its top; below it
@@ -186,7 +186,9 @@ the previous run's results, newest first, one line per issue (✗ error,
 ! warning, node, short message). The highlighted issue's **Go to node** (or E)
 hides the panel and highlights the node, as the Execution screen's error panel
 does. No Shift+V or Ctrl+V binding (Ctrl+V is paste in most terminals). Samples
-were shown 2026-10-19.
+were shown 2026-10-19 and approved 2026-10-20: only the last run is kept,
+errors before warnings, opening the panel does not run it, R runs it while
+it is open, and after Go to node the hint bar shows the issue until you move.
 
 ## Later Project — UI Consistency Pass and Theme (owner, 2026-10-20)
 

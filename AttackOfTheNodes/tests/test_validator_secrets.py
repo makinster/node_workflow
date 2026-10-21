@@ -328,15 +328,15 @@ def test_api_key_node_missing_store_key_warns(tmp_path, node_type, field_name, i
 
 
 def test_editor_validate_passes_secrets_manager(tmp_path):
-    """With a manager wired in, the editor's validate surfaces the missing-key
-    warning (details screen opens); without one, the same workflow is clean."""
+    """With a manager wired in, the editor's Validation panel lists the
+    missing-key warning; without one, the same workflow is clean."""
     import asyncio
 
     from textual.app import App as TextualApp
     from textual.app import ComposeResult
 
     from frontend.screens.editor import EditorScreen
-    from frontend.screens.error_details import ErrorDetailsScreen
+    from frontend.widgets.validation_panel import ValidationPanel
 
     def _build_wm():
         bus = EventBus()
@@ -366,12 +366,13 @@ def test_editor_validate_passes_secrets_manager(tmp_path):
             await pilot.pause(0.03)
             screen = app.query_one(EditorScreen)
             screen.action_validate_workflow()
+            screen.action_run_validation()
             await pilot.pause(0.03)
-            return isinstance(app.screen, ErrorDetailsScreen)
+            return bool(screen.query_one(ValidationPanel).issues)
 
     sm = _sm_with_keys(tmp_path, [])
     assert asyncio.run(_run(sm)) is True, (
-        "Missing-key warning did not open the details screen"
+        "Missing-key warning not listed in the Validation panel"
     )
     assert asyncio.run(_run(None)) is False, (
         "Validation unexpectedly flagged the workflow without a manager"
