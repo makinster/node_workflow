@@ -1,10 +1,46 @@
 # AttackOfTheNodes Session Log
 
-This log keeps roughly the last two weeks: entries dated October 4–20, 2026
+This log keeps roughly the last two weeks: entries dated October 4–21, 2026
 (the earliest existing entry is October 6). Every October 18 entry is retained.
 Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.md).
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
+
+## 2026-10-21 — H0 review fixes: descendant containment and entry scripts
+
+Branch `codex/hermes-h0-adapter`, original head `057ca45`; synchronized with
+main `055dfba` (#104) in merge commit `e8ffbd0`, preserving both session entries.
+
+- P2: enable Linux child-subreaper adoption via guarded `ctypes`/`prctl`, walk
+  `/proc` ancestry, kill escaped descendants and reap them before releasing the
+  slug lock. Cleanup also runs on natural exits and adapter errors. Reserve the
+  final second of the deadline/stop budget for bounded kill/reap; an unconfirmed
+  cleanup returns 70 and leaves a persistent stale marker, so later ticks return
+  75 without starting a child. A crash also leaves the marker. Other POSIX
+  platforms retain bounded process-group cleanup; Linux setup failures prevent
+  spawning. The contract and integration guide document these behavior changes.
+- P3: both actual entry scripts honor `HERMES_HOME` and run from an isolated
+  deployment with spaces. Only fixed installation path assignments in the copied
+  shared file are substituted; Bash exec, the adapter and controlled children
+  are real subprocesses. Normal calls reach the right slug; extra arguments
+  return 70 without starting a run.
+- Fail-first evidence against `057ca45`: the initial deadline/TERM and entry
+  deployment cases produced **6 failures** before implementation. Additional
+  cleanup-denied/timeout and natural-exit cases ran against the original adapter
+  extracted with `git show`, producing **3 failures**. Both logs were retained
+  under `/tmp/review103-red*.log` for this session. After fixes, **67 adapter
+  tests passed**, including retained same-group cases, escaped sessions, actual
+  reaping, denied/ineffective-kill fault injection and stale-lock rejection.
+- An unaccelerated escaped-descendant probe exited **124 at 99.06 seconds**,
+  emitted zero stdout bytes and confirmed the descendant was reaped. Removing
+  `"$@"` from each temporary deployed entry was detected by the new argument
+  test (both mutations failed as intended).
+- Combined full suite (main `055dfba` plus fixes), shared Linux interpreter,
+  disposable `AOTN_DATA_DIR`: **2,052 passed in 322.44 seconds**. Separate adapter
+  run: **67 passed in 22.66 seconds**. Compileall, Bash syntax, documentation
+  link/archive checks and `git diff --check` passed. No repository workflow edits,
+  Hermes installation, cron activation or live delivery. Owner review follows
+  the pushed fixes; no merge is authorized.
 
 ## 2026-10-20 — H0 repository adapter implementation
 

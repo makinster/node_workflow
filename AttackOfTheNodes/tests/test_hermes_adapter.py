@@ -5,7 +5,9 @@ import json
 import os
 from pathlib import Path
 import re
+import shlex
 import signal
+import shutil
 import subprocess
 import sys
 import threading
@@ -366,16 +368,144 @@ def test_wrapper_filename_selects_exact_slug():
         '--python', '/home/makin/src/node_workflow/.venv/bin/python']
 
 
-def test_deadline_cleans_lingering_descendant(tmp_path):
+@pytest.mark.skipif(sys.platform != 'linux', reason='Linux descendant containment')
+@pytest.mark.parametrize('stop', ['deadline', 'term'])
+@pytest.mark.parametrize('detach', [False, True])
+def test_deadline_cleans_lingering_descendant(tmp_path, stop, detach):
     child_pid = tmp_path / 'descendant'
-    script = ('import os,signal,time\n'
+    script = ('import os,signal,time\n' + ('os.setsid()\n' if detach else '') +
               'signal.signal(signal.SIGINT, signal.SIG_IGN)\n'
               f'open({str(child_pid)!r}, "w").write(str(os.getpid()))\ntime.sleep(60)')
     root = fake_root(tmp_path, 'import subprocess,sys\n'
                      f'subprocess.Popen([sys.executable, "-c", {script!r}])\n')
-    result = adapter(root, tmp_path / 'data', fast=True)
-    assert result.returncode == 124 and result.stdout == ''
-    assert not alive(wait_file(child_pid))
+    process = subprocess.Popen(invocation(root, tmp_path / 'data', fast=True),
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    pid = wait_file(child_pid)
+    try:
+        if stop == 'term':
+            process.send_signal(signal.SIGTERM)
+        out, err = process.communicate(timeout=10)
+        assert process.returncode == (124 if stop == 'deadline' else 143), err
+        assert out == b''
+        # Reaping is part of the contract, not merely sending SIGKILL.
+        assert not Path(f'/proc/{pid}').exists()
+        (root / 'AttackOfTheNodes/main.py').write_text(program(report()))
+        assert adapter(root, tmp_path / 'data').returncode == 0
+    finally:
+        if alive(pid):
+            os.kill(pid, signal.SIGKILL)
+        if process.poll() is None:
+            process.kill()
+            process.communicate(timeout=10)
+
+
+@pytest.fixture
+def deployed_entries(tmp_path):
+    home = tmp_path / 'Hermes home with spaces'
+    scripts = home / 'scripts'
+    scripts.mkdir(parents=True)
+    observed = tmp_path / 'started.json'
+    root = fake_root(tmp_path, 'import sys,json\n'
+                     f'open({str(observed)!r}, "w").write(json.dumps(sys.argv))\n'
+                     + f'print({json.dumps(report(["adapter reached"]))!r})\n')
+    data = tmp_path / 'cron data with spaces'
+    for path in FILES.iterdir():
+        if path.suffix in ('.py', '.sh'):
+            shutil.copy2(path, scripts / path.name)
+    # Installation-specific absolute paths only; execute the production Bash
+    # function, exec, Python adapter and controlled child without mocking them.
+    common = scripts / '_aotn_common.sh'
+    source = common.read_text()
+    for name, value in [('root', root), ('python', sys.executable), ('data', data)]:
+        source = re.sub(rf'^    local {name}=.*$',
+                        lambda _: f'    local {name}={shlex.quote(str(value))}',
+                        source, flags=re.M)
+    common.write_text(source)
+    return scripts, {**os.environ, 'HERMES_HOME': str(home)}, observed
+
+
+@pytest.mark.parametrize('slug', ['h1-heartbeat', 'h2-http-watchdog'])
+@pytest.mark.parametrize('extra', [False, True])
+def test_shipped_entry_subprocess(deployed_entries, slug, extra):
+    scripts, env, observed = deployed_entries
+    argv = ['bash', str(scripts / f'aotn-{slug}.sh')]
+    result = subprocess.run(argv + (['unexpected argument'] if extra else []),
+                            env=env, cwd=scripts.parent, capture_output=True,
+                            text=True, timeout=10)
+    if extra:
+        assert result.returncode == 70, result.stderr
+        assert 'no arguments' in result.stderr
+        assert result.stdout == '' and not observed.exists()
+    else:
+        assert result.returncode == 0, result.stderr
+        assert result.stdout == 'adapter reached\n'
+        assert json.loads(observed.read_text())[1:3] == ['run', slug]
+
+
+@pytest.mark.skipif(sys.platform != 'linux', reason='Linux descendant containment')
+@pytest.mark.parametrize('kill_fault', ['denied', 'ignored'])
+def test_unconfirmed_cleanup_marks_stale_and_blocks_next_tick(tmp_path, kill_fault):
+    pidfile = tmp_path / 'escaped'
+    child = ('import os,signal,time\nos.setsid()\n'
+             'signal.signal(signal.SIGINT, signal.SIG_IGN)\n'
+             f'open({str(pidfile)!r}, "w").write(str(os.getpid()))\ntime.sleep(60)')
+    root = fake_root(tmp_path, 'import subprocess,sys\n'
+                     f'subprocess.Popen([sys.executable, "-c", {child!r}])\n')
+    data = tmp_path / 'data'
+    # Inject an OS permission failure, not a replacement cleanup function.
+    # Child processes and the complete adapter path remain real subprocesses.
+    fault = 'raise PermissionError(1, "kill denied")' if kill_fault == 'denied' else 'return'
+    launcher = ("import runpy,sys; m=runpy.run_path(sys.argv.pop(1)); "
+                "m['main'].__globals__.update(DEADLINE=0.8, GRACE=0.2); "
+                f"exec({'def denied(*args):' + chr(10) + ' ' + fault!r}); "
+                "m['os'].kill=denied; sys.exit(m['main']())")
+    argv = [sys.executable, '-c', launcher, str(ADAPTER)] + invocation(root, data)[2:]
+    pid = None
+    try:
+        result = subprocess.run(argv, capture_output=True, text=True, timeout=10)
+        pid = wait_file(pidfile)
+        assert result.returncode == 70 and result.stdout == '', result.stderr
+        assert 'cleanup' in result.stderr and 'stale' in result.stderr
+        if kill_fault == 'ignored':
+            assert 'timed out' in result.stderr
+        assert len(result.stderr.encode('utf-16-le')) // 2 <= 3500
+        marker = data / '.hermes-locks/h1-heartbeat.lock'
+        assert 'stale' in marker.read_text()
+        started = tmp_path / 'next started'
+        (root / 'AttackOfTheNodes/main.py').write_text(
+            f'open({str(started)!r}, "w").write("started")\n' + program(report()))
+        blocked = adapter(root, data)
+        assert blocked.returncode == 75 and blocked.stdout == ''
+        assert 'stale' in blocked.stderr and not started.exists()
+    finally:
+        if pid is None and pidfile.exists():
+            pid = int(pidfile.read_text())
+        if pid is not None and alive(pid):
+            os.kill(pid, signal.SIGKILL)
+
+
+@pytest.mark.skipif(sys.platform != 'linux', reason='Linux descendant containment')
+def test_natural_exit_reaps_detached_descendant_with_closed_pipes(tmp_path):
+    pidfile = tmp_path / 'escaped'
+    child = ('import os,time\nos.setsid()\n'
+             f'open({str(pidfile)!r}, "w").write(str(os.getpid()))\ntime.sleep(60)')
+    source = ('import subprocess,sys,time,pathlib\n'
+              f'subprocess.Popen([sys.executable,"-c",{child!r}], '
+              'stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)\n'
+              f'while not pathlib.Path({str(pidfile)!r}).exists(): time.sleep(0.01)\n'
+              + program(report(['normal output'])))
+    root = fake_root(tmp_path, source)
+    pid = None
+    try:
+        result = adapter(root, tmp_path / 'data')
+        pid = wait_file(pidfile)
+        assert result.returncode == 0 and result.stdout == 'normal output\n', result.stderr
+        assert not Path(f'/proc/{pid}').exists()
+    finally:
+        if pid is None and pidfile.exists():
+            pid = int(pidfile.read_text())
+        if pid is not None and alive(pid):
+            os.kill(pid, signal.SIGKILL)
 
 
 @pytest.mark.parametrize('data_suffix', ['', 'workflows', 'workflows/nested'])

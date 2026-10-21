@@ -1,20 +1,26 @@
 # Current State
 
-Snapshot checked **2026-10-20**. Code and fresh GitHub checks take precedence.
+Snapshot checked **2026-10-21**. Code and fresh GitHub checks take precedence.
 This is the live status snapshot; plans and logs preserve dated decisions.
 
 ## Baseline and open work — 2026-10-20
 
 - **H0 adapter implemented, awaiting owner review:** branch
-  `codex/hermes-h0-adapter`, based on main `b7e6484`. The
+  `codex/hermes-h0-adapter`, synchronized with main `055dfba` (#104). The
   [repository integration](../integrations/hermes/README.md) supplies the shared
   Bash function, standard-library Python subprocess/JSON adapter, entry scripts
   and H1/H2 specs with quiet Ends. It follows the [H0 contract](integrations/HERMES_H0_DRAFT.md):
   3,500 UTF-16 units per stream, directive escaping, preserved exits, per-slug
-  locks and 100-second deadline with process-group cleanup. C1–C7 were read
+  locks and a 100-second deadline. Linux subreaper adoption and `/proc`
+  ancestry cover descendants leaving the process group; stale markers block
+  another tick when cleanup is unconfirmed. Both shipped entry scripts are
+  tested through real subprocesses in a deployment with spaces. C1–C7 were read
   from owner-decisions PR #102; later capabilities remain separate work.
-  Verification: **2,016 full-suite tests passed**, including **57 adapter tests**;
-  the production deadline probe returned 124 at 100.05 seconds. Receipts are
+  Review fixes: **67 adapter tests passed**; new regression tests failed on
+  the original head before implementation. The combined full suite passed
+  **2,052 tests**. The revised production deadline probe returned 124 at
+  **99.06 seconds**, with the escaped descendant reaped and stdout empty.
+  The revised contract reserves its final second for kill/reap. Receipts are
   in [Session Log](SESSION_LOG.md). No Hermes
   installation, cron job, config change or live delivery occurred.
 - Fetched `origin/main` at `106c437`: C1–C7, workflow naming (#68), docs A/B

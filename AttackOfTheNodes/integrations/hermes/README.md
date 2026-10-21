@@ -12,6 +12,7 @@ These files are staged for owner review, with no installation or cron activation
   per-slug nonblocking lock, concurrent bounded pipe draining and exit handling.
 - `aotn-h1-heartbeat.sh`, `aotn-h2-http-watchdog.sh`: entry scripts for later
   copying/linking to `/home/makin/.hermes/scripts/`, alongside both shared files.
+  Entry scripts honor `HERMES_HOME` (default `/home/makin/.hermes`).
 - `h1-heartbeat.json`, `h2-http-watchdog.json`: `aotn build` definitions, with
   quiet End nodes. H2's loopback URL is an example; choose the real endpoint
   deliberately before building into the cron library.
@@ -41,10 +42,21 @@ separators. Ordinary heartbeat text is unchanged.
 
 Natural child exits are preserved (signals use 128 + signal). Adapter failures
 are 70, overlap is 75, deadline is 124, and external INT/TERM are 130/143. The
-fixed 100-second deadline sends process-group INT at 95 seconds, then KILL at
-100; an external stop permits five seconds of INT cleanup. Locks remain held
+fixed 100-second deadline sends process-group INT at 95 seconds, then starts
+KILL cleanup at 99, reserving the final second for reaping. External stops allow
+five seconds including that final cleanup budget. Linux uses subreaper adoption
+and `/proc` ancestry to kill/reap descendants even after `setsid()`; other POSIX
+systems retain bounded process-group cleanup. Linux subreaper setup failure
+prevents spawning. Locks remain held
 through cleanup; streams retain at most 1 MiB of report and 64 KiB of diagnostics.
 Full output remains in AOTN run records, not in a Telegram receipt.
+
+A persistent marker records unconfirmed cleanup before spawning. Confirmed
+cleanup clears it; a crash or failed cleanup leaves it stale. Cleanup failures
+exit 70, and subsequent ticks report 75 without starting a run. Verify/terminate
+prior descendants before clearing the stale file's contents under
+`<cron-data>/.hermes-locks/<slug>.lock`; preserve its inode and never unlink an
+actively locked file.
 
 `tests/test_hermes_adapter.py` covers every H0 acceptance-table row as adapter
 subprocesses, using the real CLI plus loopback HTTP for H1/H2 and controlled

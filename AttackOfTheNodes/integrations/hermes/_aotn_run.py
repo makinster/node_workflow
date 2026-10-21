@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Bounded, directive-safe Hermes handoff through AOTN's JSON CLI (POSIX)."""
 import argparse
+import ctypes
 from datetime import datetime, timezone
 import fcntl
 import json
@@ -15,6 +16,7 @@ import time
 
 DEADLINE = 100.0
 GRACE = 5.0
+CLEANUP_WAIT = 1.0
 REPORT_LIMIT = 1024 * 1024
 DIAGNOSTIC_LIMIT = 64 * 1024
 MESSAGE_LIMIT = 3500
@@ -93,11 +95,79 @@ def group_signal(child, sig):
         pass
 
 
+class CleanupFailure(OSError):
+    """Cleanup could not be confirmed; the persistent lock marker must remain."""
+
+
+def enable_subreaper():
+    if sys.platform != "linux":
+        return False  # Other POSIX systems retain process-group cleanup.
+    libc = ctypes.CDLL(None, use_errno=True)
+    prctl = libc.prctl
+    prctl.argtypes = [ctypes.c_int] + [ctypes.c_ulong] * 4
+    prctl.restype = ctypes.c_int
+    if prctl(36, 1, 0, 0, 0) != 0:  # PR_SET_CHILD_SUBREAPER
+        raise OSError(ctypes.get_errno(), "cannot enable child subreaper")
+    return True
+
+
+def descendants():
+    """Snapshot the adapter's descendants, including adopted session leaders."""
+    parents = {}
+    for entry in Path("/proc").iterdir():
+        if not entry.name.isdecimal():
+            continue
+        try:
+            fields = (entry / "stat").read_text().rsplit(")", 1)[1].split()
+            parents[int(entry.name)] = int(fields[1])
+        except (FileNotFoundError, ProcessLookupError):
+            continue
+    owned = {os.getpid()}
+    while True:
+        added = {pid for pid, parent in parents.items() if parent in owned} - owned
+        if not added:
+            return owned - {os.getpid()}
+        owned.update(added)
+
+
+def cleanup(child, linux, timeout):
+    """Kill and reap within a fixed budget, including escaped descendants."""
+    until = time.monotonic() + timeout
+    while True:
+        try:
+            group_signal(child, signal.SIGKILL)
+            remaining = descendants() if linux else set()
+            for pid in remaining:
+                try:
+                    os.kill(pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+            # Let Popen own its direct child's status before reaping adoptees.
+            if child.poll() is not None:
+                if linux:
+                    for _ in range(256):
+                        try:
+                            if os.waitpid(-1, os.WNOHANG)[0] == 0:
+                                break
+                        except ChildProcessError:
+                            break
+                if not linux or not descendants():
+                    return
+        except OSError as exc:
+            raise CleanupFailure(f"descendant cleanup unconfirmed: {exc}; lock marked stale") from exc
+        if time.monotonic() >= until:
+            raise CleanupFailure("descendant cleanup timed out; lock marked stale")
+        time.sleep(min(0.01, max(0, until - time.monotonic())))
+
+
 def collect(argv, cwd):
-    """Drain both pipes without unbounded storage; own the whole process group."""
+    """Drain bounded streams; own the process group and Linux descendants."""
     stopped = [None]
     old_handlers = {}
     child = None
+    cleanup_attempted = False
+    linux = enable_subreaper()
+    cleanup_budget = min(CLEANUP_WAIT, GRACE / 2)
     selector = selectors.DefaultSelector()
     stdout, stderr = bytearray(), bytearray()
     overflow = False
@@ -123,21 +193,17 @@ def collect(argv, cwd):
             now = time.monotonic()
             if stopped[0] is not None and reason != "signal":
                 reason = "signal"
-                kill_at = now + GRACE
+                kill_at = now + GRACE - cleanup_budget
                 group_signal(child, signal.SIGINT)
             if reason is None and now >= started + DEADLINE - GRACE:
                 reason = "deadline"
-                kill_at = started + DEADLINE
+                kill_at = started + DEADLINE - cleanup_budget
                 group_signal(child, signal.SIGINT)
             if overflow and reason is None:
                 reason = "overflow"
-                kill_at = now + GRACE
+                kill_at = now + GRACE - cleanup_budget
                 group_signal(child, signal.SIGINT)
             if kill_at is not None and now >= kill_at:
-                group_signal(child, signal.SIGKILL)
-                child.wait()
-                # A descendant may have escaped the group with inherited pipes.
-                # Do not let it hold this adapter or its overlap lock forever.
                 break
             for key, _ in selector.select(timeout=0.05):
                 chunk = os.read(key.fileobj.fileno(), 65536)
@@ -153,9 +219,8 @@ def collect(argv, cwd):
                         overflow = True
                     else:
                         stderr_truncated = True
-        child.wait()
-        # Clean up any lingering same-group descendants even when the leader exits.
-        group_signal(child, signal.SIGKILL)
+        cleanup_attempted = True
+        cleanup(child, linux, cleanup_budget)
         if stopped[0] is not None:
             code = 128 + stopped[0]
             reason = "signal"
@@ -172,14 +237,16 @@ def collect(argv, cwd):
         natural_code = child.returncode if child.returncode >= 0 else 128 - child.returncode
         return code, bytes(stdout), diagnostic, reason, natural_code
     finally:
-        if child is not None:
-            group_signal(child, signal.SIGKILL)
-            child.wait()
-            for stream in (child.stdout, child.stderr):
-                stream.close()
-        selector.close()
-        for sig, handler in old_handlers.items():
-            signal.signal(sig, handler)
+        try:
+            if child is not None and not cleanup_attempted:
+                cleanup(child, linux, cleanup_budget)
+        finally:
+            if child is not None:
+                for stream in (child.stdout, child.stderr):
+                    stream.close()
+            selector.close()
+            for sig, handler in old_handlers.items():
+                signal.signal(sig, handler)
 
 
 def run(args):
@@ -195,17 +262,38 @@ def run(args):
         raise ValueError("cron data directory must be separate from repository workflows")
     locks = data / ".hermes-locks"
     locks.mkdir(parents=True, exist_ok=True)
-    with (locks / (args.workflow_slug + ".lock")).open("a") as lock:
+    with (locks / (args.workflow_slug + ".lock")).open("a+") as lock:
         try:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
             sys.stderr.write(bounded("AOTN overlap: workflow already running; run unavailable\n"))
             return 75
+        lock.seek(0)
+        if lock.read(1):
+            sys.stderr.write(bounded("AOTN overlap: lock marked stale; verify prior descendants before clearing it; run unavailable\n"))
+            return 75
         stamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         argv = [args.python, str(root / "AttackOfTheNodes/main.py"), "run", args.workflow_slug,
                 "--policy", "terminate_workflow", "--data-dir", str(data),
                 "--input", "checked_at=" + stamp, "--json"]
-        code, raw, diagnostic, reason, natural_code = collect(argv, str(root))
+        # Persist before spawning: a crash or unconfirmed cleanup blocks ticks
+        # even after the OS releases flock. Clear only after confirmed cleanup.
+        lock.write(f"stale: adapter pid {os.getpid()}; descendant cleanup not confirmed\n")
+        lock.flush()
+        os.fsync(lock.fileno())
+        try:
+            code, raw, diagnostic, reason, natural_code = collect(argv, str(root))
+        except CleanupFailure:
+            raise
+        except BaseException:
+            lock.seek(0)
+            lock.truncate()
+            lock.flush()
+            raise
+        else:
+            lock.seek(0)
+            lock.truncate()
+            lock.flush()
         report = None
         try:
             report = parse_report(raw, natural_code)

@@ -37,8 +37,8 @@ are not provided in this draft):
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
-source /home/makin/.hermes/scripts/_aotn_common.sh
-aotn_cron_run "$0"
+source "${HERMES_HOME:-/home/makin/.hermes}/scripts/_aotn_common.sh"
+aotn_cron_run "$0" "$@"
 ```
 
 The shared function derives the workflow from the entry file's basename:
@@ -50,6 +50,10 @@ filesystem path. Renaming/copying a wrapper selects an existing workflow;
 it does not build or copy that workflow. Build once into the separate data
 directory first; editing a definition later requires deliberate replacement,
 since `aotn build` refuses duplicate names.
+
+`HERMES_HOME` selects the installation containing `scripts/`; when unset it
+defaults to `/home/makin/.hermes`. This does not change the fixed project,
+interpreter or cron-data paths in the shared function.
 
 `aotn_cron_run` changes to the project root and `exec`s the absolute AOTN
 interpreter with `_aotn_run.py`. Proposed adapter arguments are
@@ -130,22 +134,35 @@ Proposed adapter rules, to be implemented and tested after owner review:
    `run unavailable` only for diagnostics that lack a report. A run's full
    output stays in AOTN's isolated run records; it is not a Telegram receipt.
 6. Use a proposed **100-second** child deadline, including graceful cleanup.
-   Start the child in its own process group. At 95 seconds, signal SIGINT to
-   that group; at 100 seconds kill/reap it if it has not finished cleanup.
+   Start the child in its own process group. On Linux, enable child-subreaper
+   adoption before spawning and discover all descendants through `/proc`,
+   including children that leave the group/session. At 95 seconds, signal
+   SIGINT to the group; begin SIGKILL cleanup at 99 seconds, reserving the
+   final second of the 100-second budget to kill/reap every descendant.
    Report the deadline as exit 124 with a bounded diagnostic. For an
    external SIGINT or SIGTERM, request graceful child shutdown using SIGINT
    (AOTN handles SIGINT; forwarding SIGTERM directly skips finalization).
-   Allow up to five seconds, then kill/reap if needed; retain the adapter's
+   Allow up to five seconds including the final second reserved for kill/reap;
+   retain the adapter's
    external-signal exit status, 130 or 143 respectively.
    Natural AOTN exits (including error exits and 130) retain their codes;
    adapter failures are 70. A child killed by a signal maps to the shell
    convention `128 + signal_number`. Never turn a failure into exit 0 to suppress an
    alert. An inner HTTP timeout is five seconds in H2.
+   Cleanup also runs after natural exits and adapter errors. If Linux subreaper
+   setup fails, fail before spawning. Other POSIX platforms retain bounded
+   process-group cleanup without Linux's escaped-descendant guarantee.
 7. Serialize each slug with a nonblocking lock under the cron data directory.
    Hold it through child cleanup. An overlapping tick exits 75 on stderr,
    with no stdout; it does not start another run. Different slugs may run
    independently. Do not claim global exactly-once execution or notification
    deduplication; H0 has neither a persistent dedupe store nor an outbox.
+   Persist an unconfirmed-cleanup marker before spawning. Clear it only after
+   cleanup is confirmed. Unkillable/unreapable descendants yield adapter exit
+   70 with bounded diagnostics; the marker survives exit or a crash, and the
+   next tick exits 75 without starting a run. An operator must verify/terminate
+   prior descendants before clearing the stale lock file's contents (preserve
+   its inode; do not unlink an actively locked file).
 
 AOTN's natural exits include 0 (success), 1 (finished with unhandled errors),
 2 (failed), 3 (invalid/could not start), 4 (not found), 5 (bad contract inputs)

@@ -363,7 +363,7 @@ now unblock the CLI and MCP items):
 
 | Order | Work | Why here | Depends on |
 |---|---|---|---|
-| H0 | [Repository adapter and H1/H2 specs](../integrations/hermes/README.md) implemented for owner review under the [H0 contract](integrations/HERMES_H0_DRAFT.md) | Subprocess/loopback acceptance tests; no installed wrapper, job or live delivery | Nothing |
+| H0 | [Repository adapter and H1/H2 specs](../integrations/hermes/README.md) implemented for owner review under the [H0 contract](integrations/HERMES_H0_DRAFT.md) | Subprocess/loopback acceptance tests, Linux escaped-descendant containment and stale-lock blocking, real entry-script deployment tests; no installed wrapper, job or live delivery | Nothing |
 | P1 | First-community package: install path, Hermes guide, H1/H2 specs, screenshots, known limits (section 1.2) | Something to show Hermes users | H0, C1 |
 | C1 | `hermes_notify_node` + `record_event_node` + shared folder schemas | Small, unblocks long-run notifications and receipts | H0 |
 | C4 | AOTN MCP server (stdio) | Contracts exist, so `run_workflow` takes typed inputs and returns `values`; AOTN becomes a tool for AIs | Step 4 contracts (done) |
