@@ -26,6 +26,9 @@ DEFAULT_SETTINGS: Dict[str, Any] = {
     # linear; 64 busy children stay under 30 MB and a second.
     "max_subworkflow_depth": 4,
     "max_live_subworkflow_runs": 64,
+    # C7 (owner, 2026-10-20): folders System nodes (Disk space, Git status,
+    # File age) may look in, separated by ";". "~" is the home folder.
+    "system_node_folders": "~",
 }
 
 

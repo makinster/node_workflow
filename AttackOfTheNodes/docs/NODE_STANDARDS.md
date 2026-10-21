@@ -93,6 +93,18 @@ Some inputs may not offer all three options. For example, a document/context
 input on a basic LLM node may only offer Upstream or Vault (no hard-configured
 option — the document is always expected to come from a live data source).
 
+## System nodes (AI coordination decision C7, owner 2026-10-20)
+
+A System node reads the state of this machine with one fixed operation: the
+command (if any) is in the node's code, the workflow sets only typed
+parameters, arguments are argv with no shell, and the result is one typed
+value chosen by a **Report** parameter (routed like any output, optionally to
+the Vault). Every folder or file it touches goes through
+`backend/system_access.checked_path`, which allows only paths inside the
+Options list `system_node_folders` (`;`-separated, default `~`) and raises
+`not_allowed` or `folder_missing`. An empty setting allows nothing; only an absent one means `~`. A command must also neutralize anything the target can configure to run (Git's `core.fsmonitor`), check what the command will actually read (Git's discovered repository, not just the given folder), and own its process group so a stop or timeout kills it and its children. A generic `run_command_node` is deferred
+until needed, behind a Settings allowlist with approval on.
+
 ## Standard Output Routing Model
 
 **Design principle (revised 2026-07-08):** every node has **one designated
