@@ -6,6 +6,27 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-20 — System nodes: Disk space, Git status, File age (C7)
+
+Branch `dist/system-nodes`, from main. Owner decision C7: specific command
+nodes first; the owner left the details to Claude, with reasons:
+
+- **Allowed folders:** a new Options value `system_node_folders` (`;`-
+  separated, default `~`). Paths outside it fail `not_allowed`, so a received
+  workflow cannot inspect the whole machine. Nodes read it through a new
+  `NodeContext.get_setting`, wired from the run's ConfigurationManager.
+- **Family/section:** Inputs family, selector section "System".
+- **One typed value per node:** the samples drew several payloads per node,
+  but the output model has one downstream output (optionally copied to the
+  Vault), so each node has a **Report** choice instead. A Conditional can
+  compare the value directly.
+- **Nodes:** Disk space and File age use the standard library (no command);
+  Git status runs only `git status --porcelain=v2 --branch`, argv, no shell,
+  15 s timeout, its output type follows Report.
+- Generated with `aotn_node_helper` (specs added); execution hand-written and
+  the generated smoke tests adjusted to expect coded refusals.
+- Tests: `tests/test_system_nodes.py` plus the generated tests.
+
 ## 2026-10-20 — H0 quiet End update and review corrections
 
 Branch `codex/hermes-h0-spec`, PR #97; merged main `f86fbe8` in `e9f0df5`,

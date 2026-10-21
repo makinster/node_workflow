@@ -123,6 +123,7 @@ class Supervisor:
         run_inputs: Optional[Dict[str, Any]] = None,
         publish_result: Optional[Callable[[Dict[str, Any]], bool]] = None,
         call_subworkflow: Optional[Callable[..., Any]] = None,
+        get_setting: Optional[Callable[[str], Any]] = None,
     ) -> None:
         if unattended is not None:
             if unattended not in UNATTENDED_ACTIONS:
@@ -164,6 +165,7 @@ class Supervisor:
         self._node_timeout_seconds = float(node_timeout_seconds)
         self._run_session = run_session
         self._secrets_manager = secrets_manager
+        self._get_setting = get_setting
         # None means attended: a client answers through MasterState.
         self._recovery_policy = recovery_policy
         self._input_provider = input_provider
@@ -591,6 +593,7 @@ class Supervisor:
             publish_result=self._publish_result,
             call_subworkflow=self._call_for(self.current_node_id or ""),
             node_alias=str((self._workflow_map.get_node_data(self.current_node_id or "") or {}).get("alias") or ""),
+            get_setting=self._get_setting,
         )
 
         started_at = perf_counter()
