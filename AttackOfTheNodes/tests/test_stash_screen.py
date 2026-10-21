@@ -188,7 +188,7 @@ def test_every_action_has_a_button(stash, files):
             await pilot.click("#stash-filter")
             await pilot.pause(0.05)
             assert str(app.screen.query_one("#stash-filter", Button).label) == "Show: files"
-            await pilot.click("#stash-filter")
+            app.screen.query_one("#stash-filter", Button).press()  # a second click: a double click
             await pilot.pause(0.05)
             # The type is named "string" everywhere (owner, 2026-10-20).
             assert str(app.screen.query_one("#stash-filter", Button).label) == "Show: strings"
