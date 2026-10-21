@@ -30,6 +30,7 @@ from textual.containers import VerticalScroll
 from backend.port_types import accepts_producers
 
 from frontend.keymap import NODE_SELECTOR, bindings_for
+from frontend import colors
 from frontend.keymap_runtime import KeymapScreenMixin
 
 from frontend.screens.group_picker import GroupPickerScreen
@@ -583,7 +584,7 @@ class NodeSelectorScreen(KeymapScreenMixin, ModalScreen):
             if not ports:
                 return
             lines.append("")
-            lines.append(f"[dim]{title}:[/dim]")
+            lines.append(f"[{colors.MUTED}]{title}:[/]")
             for i, (port, meta) in enumerate(ports):
                 if i > 0:
                     lines.append("")
@@ -596,7 +597,7 @@ class NodeSelectorScreen(KeymapScreenMixin, ModalScreen):
 
         if not input_meta and not output_meta:
             lines.append("")
-            lines.append("[dim]No I/O contract declared.[/dim]")
+            lines.append(f"[{colors.MUTED}]No I/O contract declared.[/]")
 
         return "\n".join(lines)
 
@@ -625,12 +626,12 @@ class NodeSelectorScreen(KeymapScreenMixin, ModalScreen):
             lines.append(desc)
         if members:
             lines.append("")
-            lines.append(f"[dim]{len(members)} node types:[/dim]")
+            lines.append(f"[{colors.MUTED}]{len(members)} node types:[/]")
             for member in members:
                 display = str(member.get("display_name") or member.get("type") or "")
                 lines.append(f"  \\[ {display} ]")
         lines.append("")
-        lines.append("[dim]E = open picker  D/→ = quick list[/dim]")
+        lines.append(f"[{colors.MUTED}]E = open picker  D/→ = quick list[/]")
         return "\n".join(lines)
 
     # ------------------------------------------------------------------

@@ -201,6 +201,42 @@ the identity and contract rules. Older Phase 17 layouts are historical.
 - A merge node's config only offers Merge Beacons whose branch starts upstream
   of (or unrelated to) that merge — never one downstream of it.
 
+## Colours
+
+One meaning, one colour (owner, 2026-10-20). Code uses the names in
+`frontend/colors.py`, never colour literals (`tests/test_colors.py` checks).
+Colour is never the only signal: statuses keep their marks.
+
+| Name | Colour | Use for | Example |
+|---|---|---|---|
+| (normal) | theme text | Messages and headings (bold) | **Inputs**, "Choose a subworkflow" |
+| `MUTED` | #A0A6B0 grey | Hints, descriptions, ids, "nothing yet", separators | `e/enter  open it`, `(none)` |
+| `TYPE` | #4EC9B0 teal | Data types only | `[string]` |
+| `SOURCE` | #9CDCFE light blue | Where a value comes from or goes | `Vault key "count"`, `next node`, `S2B1 Keep` |
+| `NAME` | #E8E8E8 bold | Node names and aliases | **Greet**, **Greeter** |
+| `PAYLOAD` | #D7A3D3 lilac | Input and payload names | `who`, `greeted` |
+| `KEY` | #DCDCAA pale yellow | Vault key names | the `"count"` in `Vault key "count"` |
+| `VALUE` | #E0A383 soft orange | Literal values | `"Kim"`, `2` |
+| `SUCCESS` | #5FD068 green | Done, saved, finished | `✓ done` |
+| `RUNNING` | #56C8D8 cyan | Running now | `▶ running` |
+| `WARNING` | #E5C07B amber | Waiting for you, warnings, "may ask" | `⏸ waiting for you`, `⚠` |
+| `ERROR` | #F48A90 red | Errors and failures | `✗ Unexpected failure` |
+| `HIGHLIGHT` | #1a3a5c background | The highlighted row or card: one solid colour over the whole row, plain text on it | |
+| `MAP_BACKGROUND` | #101418 background | Map rows behind the cards | |
+| `BRANCH_PATHS` | ten path colours | A Branch path's gutter and label, in path order | |
+
+Every colour is a fixed hex value, so it looks the same in every terminal
+(named colours such as "green" are redrawn by each terminal's own theme).
+The values live in `colors.PALETTES` (one palette per theme; `dark` today)
+and `colors.use(name)` switches them. Each text colour must reach 4.5:1
+contrast on the map, panel and highlight backgrounds; the test checks this,
+so a new palette can't ship an unreadable colour. Code that should follow a
+palette switch reads `colors.NAME` when it draws.
+
+In `styles.tcss` use Textual's variables with the same meanings:
+`$text-muted` (MUTED), `$success`, `$warning`, `$error`, `$accent` for
+focus borders.
+
 ## Execution screen
 
 The run is shown on the editor's map; each card's second line says how that

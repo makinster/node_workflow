@@ -6,6 +6,8 @@ from typing import Any, Dict, Optional
 
 from textual.widgets import Label, ListItem, ListView
 
+from frontend.colors import MAP_BACKGROUND
+
 from .node_card import (
     BranchSelectCard,
     GapArrowCard,
@@ -255,7 +257,7 @@ class NodeList(ListView):
             if isinstance(item, ListItem):
                 is_highlighted = index == self.index
                 item.highlighted = is_highlighted
-                item.styles.background = "#101418"
+                item.styles.background = MAP_BACKGROUND
                 for card in item.children:
                     if not isinstance(
                         card,
