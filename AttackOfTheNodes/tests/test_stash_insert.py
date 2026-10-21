@@ -2,7 +2,7 @@
 
 P (or the Insert from Stash button) on a highlighted field opens the Stash on
 Entries in insert mode, showing only entries the field accepts. A file field,
-or the Source row that hides it, takes [file]; a text field takes [text].
+or the Source row that hides it, takes [file]; a text field takes [string].
 
 Run from AttackOfTheNodes/:
     ../.venv/bin/python -m pytest tests/test_stash_insert.py -v
@@ -211,7 +211,7 @@ def test_insert_mode_refuses_an_entry_the_field_does_not_take(stash):
                 screen.action_insert()
                 await pilot.pause(0.05)
                 assert app.screen is screen and results == []
-                assert shown == ["'words' is [text]; this field takes [file]"]
+                assert shown == ["'words' is [string]; this field takes [file]"]
         finally:
             notifications.notify_info = original
     asyncio.run(go())
@@ -231,3 +231,31 @@ def test_manage_mode_has_no_insert_button(stash):
             await pilot.pause(0.05)
             assert "stash-insert" not in {b.id for b in app.screen.query(Button)}
     asyncio.run(go())
+
+
+# -- Start's Default (owner, 2026-10-20: the type is "string") ---------------------------
+
+@pytest.mark.parametrize("row_type, accepts", [("string", ["string"]), ("number", ["string"]),
+                                               ("file", ["file"])])
+def test_p_in_starts_default_asks_for_the_canonical_type(row_type, accepts):
+    """P in Start's Default asked the Stash for "text", a type no entry has,
+    so no text entry could be inserted there."""
+    from textual.app import App
+
+    from frontend.widgets.contract_rows import INPUT, ContractRowEditor
+
+    asked = []
+
+    class Host(App):
+        def action_stash(self, initial_tab="add", insert_into=None, callback=None):
+            asked.append((initial_tab, insert_into))
+
+    async def go():
+        app = Host()
+        async with app.run_test(size=(100, 40)) as pilot:
+            app.push_screen(ContractRowEditor(INPUT, {"name": "who", "type": row_type}, []))
+            await pilot.pause(0.05)
+            app.screen.action_stash_insert()
+            await pilot.pause(0.05)
+    asyncio.run(go())
+    assert asked == [("entries", {"label": "Default", "accepts": accepts})]

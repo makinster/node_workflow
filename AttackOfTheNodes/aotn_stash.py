@@ -24,7 +24,7 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="action", required=True)
 
     listing = sub.add_parser("list", help="list entries")
-    listing.add_argument("--type", choices=["file", "text"], help="only one type")
+    listing.add_argument("--type", choices=["file", "string"], help="only one type")
 
     add = sub.add_parser("add", help="add a file path (or several, as a terminal drop) or text")
     add.add_argument("value", help="a path, a pasted drop of paths, or text with --text")
@@ -79,7 +79,7 @@ def _run(stash, args: argparse.Namespace) -> tuple[Dict[str, Any], str]:
     from backend.stash_manager import type_word
 
     if args.action == "list":
-        entries = stash.list_entries({"text": "string"}.get(args.type, args.type))
+        entries = stash.list_entries(args.type)
         return {"ok": True, "entries": entries}, _list_text(entries)
     if args.action == "add":
         result = None

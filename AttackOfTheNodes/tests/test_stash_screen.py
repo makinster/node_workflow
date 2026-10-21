@@ -109,7 +109,7 @@ def test_a_refused_paste_can_be_kept_as_text(stash):
             await pilot.pause(0.05)
             [entry] = stash.list_entries()
             assert entry["type"] == "string" and entry["value"] == "/nowhere/x.txt"
-            assert "[text]" in _rows(screen, "stash-added")[0]
+            assert "[string]" in _rows(screen, "stash-added")[0]
     _run(go)
 
 
@@ -188,6 +188,10 @@ def test_every_action_has_a_button(stash, files):
             await pilot.click("#stash-filter")
             await pilot.pause(0.05)
             assert str(app.screen.query_one("#stash-filter", Button).label) == "Show: files"
+            await pilot.click("#stash-filter")
+            await pilot.pause(0.05)
+            # The type is named "string" everywhere (owner, 2026-10-20).
+            assert str(app.screen.query_one("#stash-filter", Button).label) == "Show: strings"
     _run(go)
 
 
