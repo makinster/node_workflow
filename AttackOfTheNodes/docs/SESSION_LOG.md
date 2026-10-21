@@ -6,6 +6,20 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-20 — A quiet End node
+
+Branch `dist/quiet-end`, from main `7227b1b`. Found by the H0 Hermes draft
+(#97): every End adds `[END] Branch completed` to the run's output, so a
+healthy watchdog could never stay silent. Owner samples approved, on by
+default.
+
+- End's Parameters tab: "Add a line to the output" (`record_line`, on by
+  default) and "Line" (shown only when on). Off, the End adds nothing to the
+  output; saved Ends without the setting keep their line.
+- Field descriptions in Node Config are drawn as plain text (a description
+  containing `[END]` lost it to markup).
+- Tests: `tests/test_quiet_end.py`.
+
 ## 2026-10-20 — One colour per meaning
 
 Branch `dist/ui-colors`, from main `7227b1b`. Owner: text colours were all
@@ -18,7 +32,10 @@ fails on any colour literal outside `colors.py`. Then: fixed hex values for
 every role (named ANSI colours vary by terminal), `colors.PALETTES` +
 `colors.use(name)` for later theme swaps, and a 4.5:1 contrast test on the
 map, panel and highlight backgrounds (MUTED and ERROR were brightened to
-pass). 1926 passed.
+pass). Owner approved four more roles: NAME (node names), PAYLOAD (input and
+payload names), KEY (Vault key names), VALUE (literal values), applied to
+the Subworkflow tables, the editor details, the Vault log and the Execution
+details.
 
 ## 2026-10-20 — AI coordination proposal (docs only)
 

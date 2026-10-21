@@ -11,9 +11,13 @@ each status also has its mark (✓ ▶ ⏸ ⚠ ✗).
   ``next node``, ``typed: "Kim"``, a Vault log Source.
 - ``SUCCESS`` / ``RUNNING`` / ``WARNING`` / ``ERROR``: run status and
   messages of that kind. Waiting for you is a warning.
+- ``NAME``: node names and aliases (bold).
+- ``PAYLOAD``: input and payload names (``who``, ``greeted``).
+- ``KEY``: Vault key names (the ``"count"`` in ``Vault key "count"``).
+- ``VALUE``: literal values (``"Kim"``, ``2``).
 - ``HIGHLIGHT``: the background of the highlighted row or card, one solid
   colour over the whole row; text on it is plain.
-Values, names and headings use the normal text colour (headings bold).
+Messages and headings use the normal text colour (headings bold).
 
 **Palettes.** Every colour is a fixed hex value, so it looks the same in
 every terminal (named ANSI colours such as "green" are redrawn by each
@@ -35,6 +39,10 @@ PALETTES: Dict[str, Dict[str, str]] = {
         "RUNNING": "#56C8D8",
         "WARNING": "#E5C07B",
         "ERROR": "#F48A90",
+        "NAME": "#E8E8E8",
+        "PAYLOAD": "#D7A3D3",
+        "KEY": "#DCDCAA",
+        "VALUE": "#E0A383",
         "HIGHLIGHT": "#1a3a5c",
         "MAP_BACKGROUND": "#101418",
         # The panel background text sits on outside the map (Textual's dark theme).
@@ -42,10 +50,12 @@ PALETTES: Dict[str, Dict[str, str]] = {
     },
 }
 #: Text colours; each must read on every background below.
-TEXT_ROLES = ("MUTED", "TYPE", "SOURCE", "SUCCESS", "RUNNING", "WARNING", "ERROR")
+TEXT_ROLES = ("MUTED", "TYPE", "SOURCE", "SUCCESS", "RUNNING", "WARNING", "ERROR",
+              "NAME", "PAYLOAD", "KEY", "VALUE")
 BACKGROUND_ROLES = ("MAP_BACKGROUND", "PANEL_BACKGROUND", "HIGHLIGHT")
 
 MUTED = TYPE = SOURCE = SUCCESS = RUNNING = WARNING = ERROR = ""
+NAME = PAYLOAD = KEY = VALUE = ""
 HIGHLIGHT = MAP_BACKGROUND = PANEL_BACKGROUND = ""
 current = ""
 

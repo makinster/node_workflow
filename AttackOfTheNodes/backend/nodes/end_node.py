@@ -22,12 +22,21 @@ class EndNode(Node):
     input_ports: ClassVar[List[str]] = ["input"]
     output_ports: ClassVar[List[str]] = []
 
-    default_config: ClassVar[Dict[str, Any]] = {"message": "Branch completed", "return_end": False, "results": []}
+    default_config: ClassVar[Dict[str, Any]] = {
+        "record_line": True, "message": "Branch completed", "return_end": False, "results": []}
     config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {
+        # Owner, 2026-10-20: an End can stay silent, so a scheduled check that
+        # finds nothing prints nothing. On by default; saved Ends without the
+        # key keep their line.
+        "record_line": {
+            "type": "boolean", "label": "Add a line to the output",
+            "description": "Off: this End adds nothing to the output (good for runs that should stay silent)",
+        },
         "message": {
-            "type": "string",
-            "description": "Completion message recorded in the output log",
+            "type": "string", "label": "Line",
+            "description": 'The output gets "[END] <line>", plus the incoming value when there is one',
             "required": True,
+            "visible_when": {"record_line": True},
         },
         # Step 4a (C3): in a callable workflow, exactly one End is the Return
         # End; its rows are the workflow's results.
@@ -60,23 +69,24 @@ class EndNode(Node):
     ]
 
     async def execute(self, context: NodeContext) -> None:
-        message = self.config.get("message", "Branch completed")
-        input_value = context.inputs.get("input", "")
+        if self.config.get("record_line", True):
+            message = self.config.get("message", "Branch completed")
+            input_value = context.inputs.get("input", "")
 
-        if input_value:
-            full = f"[END] {message} (received: {input_value})"
-        else:
-            full = f"[END] {message}"
+            if input_value:
+                full = f"[END] {message} (received: {input_value})"
+            else:
+                full = f"[END] {message}"
 
-        log = list(context.memory_bank.read_persistent("output_log", default=[]))
-        log.append(
-            OutputLogEntry(
-                full,
-                branch_id=context.branch_id,
-                node_id=context.node_id,
+            log = list(context.memory_bank.read_persistent("output_log", default=[]))
+            log.append(
+                OutputLogEntry(
+                    full,
+                    branch_id=context.branch_id,
+                    node_id=context.node_id,
+                )
             )
-        )
-        context.memory_bank.store_persistent("output_log", log)
+            context.memory_bank.store_persistent("output_log", log)
 
         # The engine offers publish_result only in a callable workflow.
         if self.config.get("return_end") and context.publish_result is not None:

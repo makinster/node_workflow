@@ -36,7 +36,7 @@ from frontend.widgets.contract_rows import default_text
 from frontend.widgets.status_bar import StatusBar
 
 from frontend import colors  # noqa: E402
-from frontend.colors import HIGHLIGHT, SOURCE, WARNING as YELLOW  # noqa: E402
+from frontend.colors import HIGHLIGHT, WARNING as YELLOW  # noqa: E402
 NAME_WIDTH, TYPE_WIDTH, NEED_WIDTH = 10, 10, 11
 FROM_CHOICES = (("Typed value", "Configured"), ("The incoming payload", "Upstream payload"),
                 ("Vault key", "Vault"), ("Stash entry", "Stash"), ("Its default", "default"))
@@ -164,20 +164,12 @@ class SubworkflowInputsField(_RowsBase):
         return f"{self.child['name']} needs no inputs."
 
     def _lines(self) -> List[Text]:
-        from backend.stash_manager import StashManager
-
-        stash: Optional[StashManager] = None
         lines = []
         for row in self.rows:
-            mapping = self.mapping.get(row["name"])
-            line = Text(_cell(row["name"], NAME_WIDTH))
+            line = Text(_cell(row["name"], NAME_WIDTH), style=colors.PAYLOAD)
             line.append_text(_type_text(row["type"]))
             line.append(_cell("yes" if row["required"] else "no", NEED_WIDTH))
-            line.append(info.source_text(row, mapping), style=SOURCE)
-            if (mapping or {}).get("source") == "Stash":
-                stash = stash or StashManager()
-                if stash.get(str(mapping.get("stash_entry") or "")) is None:
-                    line.append("  ✗ no such Stash entry", style=colors.ERROR)
+            line.append_text(info.parts_text(info.source_parts(row, self.mapping.get(row["name"]))))
             lines.append(line)
         return lines
 
@@ -235,9 +227,9 @@ class SubworkflowPayloadsField(_RowsBase):
     def _lines(self) -> List[Text]:
         lines = []
         for row in self.rows:
-            line = Text(_cell(row["name"], NAME_WIDTH))
+            line = Text(_cell(row["name"], NAME_WIDTH), style=colors.PAYLOAD)
             line.append_text(_type_text(row["type"]))
-            line.append(info.route_text(row["name"], self.routes.get(row["name"])), style=SOURCE)
+            line.append_text(info.parts_text(info.route_parts(row["name"], self.routes.get(row["name"]))))
             lines.append(line)
         return lines
 
@@ -348,7 +340,7 @@ class SubworkflowInputEditor(_EditorBase):
     def _stash_text(self) -> Text:
         if not self.stash_entry:
             return Text("none yet: press P", style=colors.MUTED)
-        return Text(f'Stash entry "{self.stash_entry}"', style=colors.SOURCE)
+        return info.parts_text(info.stash_parts(self.stash_entry))
 
     def action_stash_insert(self) -> None:
         """P: pick the Stash entry this input comes from (by name)."""
