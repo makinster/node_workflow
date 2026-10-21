@@ -6373,11 +6373,11 @@ async def _test_node_selector_uses_family_tabs():
             "file_reader_node",
             "user_text_input_node",
             "http_request_node",
-        }
-        # Single-member groups auto-promote: no group entries on this side,
-        # and the section headers from selector_section metadata render.
-        assert group_entries(screen) == {}
-        assert header_names(screen) == ["Text & Data", "Files", "Web"]
+        }  # the three System nodes sit inside their group entry (below)
+        # Single-member groups auto-promote; the three System nodes share a
+        # group. Section headers come from selector_section metadata.
+        assert group_entries(screen) == {"System": 3}
+        assert header_names(screen) == ["Text & Data", "Files", "System", "Web"]
 
         # Out tab is its own family now (no I/O toggle): tab 4 → Outputs.
         screen._set_active_tab("Out")

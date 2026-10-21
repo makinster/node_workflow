@@ -1,0 +1,51 @@
+node_type: disk_space_node
+class_name: DiskSpaceNode
+category: io
+primary_family: Inputs
+tags: ["System"]
+group: "System"
+selector_section: "System"
+icon_name: hard-drive
+display_name: Disk space
+default_alias: Disk space
+description: Free space on the drive that holds a folder (runs no command)
+input_ports: ["input"]
+outputs:
+  default:
+    name: Disk space
+    type: number
+    required: true
+    to: ["downstream", "vault"]
+    description: The value chosen in Report, in the chosen unit
+output_routing:
+  default: transient
+  vault:
+    mode: optional
+config_tabs:
+  Parameters:
+    folder:
+      type: string
+      label: Folder
+      default: "~"
+      required: true
+      description: Must be inside an allowed folder (Options: system_node_folders)
+    report:
+      type: select
+      label: Report
+      options: ["Free space", "Used percent", "Total size"]
+      default: "Free space"
+    unit:
+      type: select
+      label: Unit
+      options: ["GB", "MB"]
+      default: GB
+      visible_when:
+        report: ["Free space", "Total size"]
+errors:
+  - code: folder_missing
+    description: "The folder does not exist."
+    retryable: false
+  - code: not_allowed
+    description: "The folder is outside the folders allowed in Options."
+    retryable: false
+execution_template: transform_stub

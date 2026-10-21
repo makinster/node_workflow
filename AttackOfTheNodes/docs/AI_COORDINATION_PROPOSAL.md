@@ -289,7 +289,7 @@ notify node exists.
 | Web fetch | `http_request_node` | — |
 | Desktop control | `window_control_node` | More actions |
 | Ask the user | `user_text_input_node` | Telegram-delivered variant (7.4) |
-| Shell | — | **`run_command_node`**: highest value, highest risk |
+| Shell | System nodes: Disk space, Git status, File age (fixed operations, allowed folders; C7) | More System nodes; a generic `run_command_node` later |
 | Subagents | `subworkflow_node` (call and wait) | Fire-and-forget (later) |
 | Scheduling | — | Step 5 triggers (Hermes cron until then) |
 | Memory | Stash (files and text, per machine) | Keyed run state: Step 5 persistent store |

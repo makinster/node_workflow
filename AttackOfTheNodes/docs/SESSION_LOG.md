@@ -41,6 +41,31 @@ Bash syntax, adapter compilation, `git diff --check` and the documentation
 link/archive checker passed. Owner review is the next step; activation and
 all later coordination capabilities remain separate.
 
+## 2026-10-20 — System nodes: Disk space, Git status, File age (C7)
+
+Branch `dist/system-nodes`, from main. Owner decision C7: specific command
+nodes first; the owner left the details to Claude, with reasons:
+
+- **Allowed folders:** a new Options value `system_node_folders` (`;`-
+  separated, default `~`). Paths outside it fail `not_allowed`, so a received
+  workflow cannot inspect the whole machine. Nodes read it through a new
+  `NodeContext.get_setting`, wired from the run's ConfigurationManager.
+- **Family/section:** Inputs family, selector section "System".
+- **One typed value per node:** the samples drew several payloads per node,
+  but the output model has one downstream output (optionally copied to the
+  Vault), so each node has a **Report** choice instead. A Conditional can
+  compare the value directly.
+- **Nodes:** Disk space and File age use the standard library (no command);
+  Git status runs only `git status --porcelain=v2 --branch`, argv, no shell,
+  15 s timeout, its output type follows Report.
+- Generated with `aotn_node_helper` (specs added); execution hand-written and
+  the generated smoke tests adjusted to expect coded refusals.
+- Tests: `tests/test_system_nodes.py` plus the generated tests.
+- Review (#104, Codex): a repository's `core.fsmonitor` (and other run-a-program settings) are off for
+  status; the repository Git finds must itself be allowed; git runs in its own process group, killed and
+  reaped on stop or timeout; status is read NUL-separated (spaces, renames, accents kept); an empty
+  `system_node_folders` allows nothing. Six tests, each failing before its fix.
+
 ## 2026-10-20 — H0 quiet End update and review corrections
 
 Branch `codex/hermes-h0-spec`, PR #97; merged main `f86fbe8` in `e9f0df5`,
