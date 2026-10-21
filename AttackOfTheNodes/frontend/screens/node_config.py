@@ -2300,7 +2300,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
 
     def action_stash_insert(self) -> None:
         """P / Insert from Stash: open the Stash on Entries for the highlighted
-        field; a file field (or its Source row) takes [file], a text field [text]."""
+        field; a file field (or its Source row) takes [file], a text field [string]."""
         from backend.field_types import stash_insert_target
 
         field = getattr(self, "_stash_field", None)

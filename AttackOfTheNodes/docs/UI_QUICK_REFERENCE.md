@@ -299,11 +299,12 @@ Merged in #71. P in the editor opens the Paste / drop tab; E there types again.
 | Context | Controls |
 |---|---|
 | 1 Paste / drop | Paste/drop adds immediately; Enter/Add stores typed text; T/Keep as text stores a refused paste as text; R renames a just-added entry |
-| 2 Entries | W/S moves; / starts live search; T cycles all/files/text; R/E renames; X deletes with confirmation |
+| 2 Entries | W/S moves; / starts live search; T cycles all/files/strings; R/E renames; X deletes with confirmation |
 | Both tabs | 1/2 switches tabs outside editing; Esc/Q/Ctrl+Q closes after text editing; buttons expose the same actions |
 
 Enter or Esc from search returns focus to the list. Typed letters remain text.
-File entries show `[file]`, text entries `[text]`; refused paths/folders show a
+File entries show `[file]`, text entries `[string]` (a type label always uses
+the type's name; `aotn stash list --type string`); refused paths/folders show a
 reason rather than becoming file entries. Paste handling is local to this screen.
 S3 field insertion is separate planned work; manage mode does not insert values
 into a node config. An entry's own rename uses the shared name prompt.

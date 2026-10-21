@@ -301,7 +301,7 @@ class ContractRowEditor(CommandScreenMixin, ModalScreen):
         if self.kind != INPUT:
             return
         row_type = str(self.query_one("#row-type", Select).value)
-        accepts = ["file"] if row_type == "file" else ["text"]
+        accepts = ["file"] if row_type == "file" else ["string"]
         self.app.action_stash("entries", insert_into={"label": "Default", "accepts": accepts},
                               callback=self._insert_stash_entry)
 

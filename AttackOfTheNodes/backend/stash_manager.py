@@ -367,8 +367,9 @@ def input_value(entry: Dict[str, Any]) -> Any:
 
 
 def type_word(entry_type: str) -> str:
-    """What people read for a type; JSON keeps the canonical name."""
-    return {"string": "text"}.get(entry_type, entry_type)
+    """What people read for a type: the canonical name, the same word as in
+    every other type label (owner, 2026-10-20: "string", never "text")."""
+    return entry_type
 
 
 def _entry_problem(raw: Any) -> Optional[str]:
