@@ -6,6 +6,25 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-20 — H0 quiet End update and review corrections
+
+Branch `codex/hermes-h0-spec`, PR #97; merged main `f86fbe8` in `e9f0df5`,
+keeping both the H0 and main session entries. H1/H2 now finish with End
+nodes using `record_line: false` from #99, rather than terminal No-Op nodes.
+The wrapper draft also incorporates the two confirmed self-review findings:
+escape every silent-marker case variant recognized by Hermes, and translate
+external SIGTERM into the child's handled SIGINT path for graceful cleanup.
+The adapter remains unimplemented; this change is documentation only.
+
+Both extracted specs passed CLI build/check and build/save/reload against
+this updated checkout. All 13 isolated CLI cases passed again, including
+one-line heartbeat output, zero-byte healthy watchdog stdout, HTTP failure
+routes and nonzero unhandled-error exits. Required-input warnings remain
+expected. Docs links/archive/session preservation and whitespace checks pass;
+no full suite rerun for this docs-only update, no live Hermes/Telegram test,
+and no repository workflow edits. Existing historical receipts below remain
+unchanged.
+
 ## 2026-10-20 — H0 wrapper and workflow specification draft
 
 Branch `codex/hermes-h0-spec`, from fresh main `7227b1b` (#94–#96 merged).

@@ -1,7 +1,7 @@
 # H0 draft: Hermes wrappers, heartbeat and HTTP watchdog
 
 **Draft for owner review, 2026-10-20; implementation is not authorized by
-this page.** Based on main `7227b1b` (#94–#96 merged) and
+this page.** Updated against main `f86fbe8` (#98 colours and #99 quiet End merged) and
 [coordination proposal §5.1](../AI_COORDINATION_PROPOSAL.md#51-short-workflows-aotn-run-is-the-cron-script).
 The owner requested this H0 specification separately from the proposal's
 unapproved wider build order. The wrapper/adapter below is a proposed external
@@ -85,10 +85,10 @@ select the newest history file (overlapping jobs make that ambiguous).
 On a normal exit, render each output as the current text CLI does: a dict
 with `value` uses that value; other dicts/lists use JSON; scalars use text.
 Render any named `values` as `name = value`, using JSON for collections.
-H1/H2 have no named return values. A terminal `no_op_node` ends naturally
-when its output has no connection. We deliberately use it instead of
-`end_node`: End always records `[END] ...`, even with a blank message, so
-using End would create an extra heartbeat line and defeat healthy silence. Validate the report shape and that its
+H1/H2 have no named return values. Each terminal `end_node` has `record_line: false` (the Parameters option
+"Add a line to the output" is off, merged in #99). It stops the branch
+without adding an `[END] ...` line. An End with the option omitted still
+records its completion line for compatibility with existing workflows. Validate the report shape and that its
 `exit_code` matches the process result; absence of JSON on a nonzero
 pre-start failure is expected, not a second adapter error.
 
@@ -110,8 +110,9 @@ Proposed adapter rules, to be implemented and tested after owner review:
    concise failure summary and the report's run ID when available. This
    leaves Hermes's failure-alert path in charge, without a second ordinary
    notification. Before-start failures may have no run ID.
-4. For both message and diagnostic text, replace every literal `[SILENT]`
-   with `［SILENT］` and every literal `MEDIA:` with `MEDIA：`. Prefix each
+4. For both message and diagnostic text, escape every case variant of `[SILENT]`
+   recognized by Hermes's uppercase-normalized gate (including `[silent]`
+   and `[SiLeNt]`), replacing the marker's brackets with fullwidth brackets and every literal `MEDIA:` with `MEDIA：`. Prefix each
    emitted line with `| ` so a final JSON-looking line cannot become a
    `wakeAgent` directive. Apply this to the final combined text, not each
    stream fragment. Empty successful output stays empty. H0 offers no
@@ -126,9 +127,11 @@ Proposed adapter rules, to be implemented and tested after owner review:
 6. Use a proposed **100-second** child deadline, including graceful cleanup.
    Start the child in its own process group. At 95 seconds, signal SIGINT to
    that group; at 100 seconds kill/reap it if it has not finished cleanup.
-   Report the deadline as exit 124 with a bounded diagnostic. Forward
-   external SIGINT/SIGTERM, allow up to five seconds for cleanup, and reap
-   the child before exiting 130/143.
+   Report the deadline as exit 124 with a bounded diagnostic. For an
+   external SIGINT or SIGTERM, request graceful child shutdown using SIGINT
+   (AOTN handles SIGINT; forwarding SIGTERM directly skips finalization).
+   Allow up to five seconds, then kill/reap if needed; retain the adapter's
+   external-signal exit status, 130 or 143 respectively.
    Natural AOTN exits (including error exits and 130) retain their codes;
    adapter failures are 70. A child killed by a signal maps to the shell
    convention `128 + signal_number`. Never turn a failure into exit 0 to suppress an
@@ -168,7 +171,7 @@ Output supports `{input}`, not a `{date}` placeholder.
       "input_source": "Upstream payload", "label": "Heartbeat",
       "template": "AOTN alive · {input}", "request_user_input": false
     }},
-    "end": {"type": "no_op_node", "alias": "Finish quietly"}
+    "end": {"type": "end_node", "alias": "Finish quietly", "config": {"record_line": false}}
   },
   "connections": [
     {"from": "start.default", "to": "announce.input"},
@@ -195,7 +198,7 @@ Replace its URL and expected body deliberately before building. It follows
 urllib's redirects; this is a **response-body health check**, not a strict
 HTTP-status/TLS/security monitor. Success means the stripped response is
 exactly lowercase `ok`. No request body, authentication, AI node or prompt.
-A healthy response takes the silent terminal No-Op path. An unexpected successful body
+A healthy response takes the quiet End path (`record_line: false`). An unexpected successful body
 emits fixed text. Timeout, network and HTTP-status failures are handled by
 an inline Error Mux and emit a different fixed message with exit 0. Other
 failures stay unhandled and reach Hermes's failure-alert path. Neither
@@ -231,9 +234,9 @@ message includes the remote response body or error details.
       "template": "Health endpoint unavailable (network, timeout or HTTP error). Inspect the run record.",
       "request_user_input": false
     }},
-    "end_ok": {"type": "no_op_node", "alias": "Healthy: no message"},
-    "end_alert": {"type": "no_op_node", "alias": "Finish alert path"},
-    "end_offline": {"type": "no_op_node", "alias": "Finish unavailable path"}
+    "end_ok": {"type": "end_node", "alias": "Healthy: no message", "config": {"record_line": false}},
+    "end_alert": {"type": "end_node", "alias": "Finish alert path", "config": {"record_line": false}},
+    "end_offline": {"type": "end_node", "alias": "Finish unavailable path", "config": {"record_line": false}}
   },
   "connections": [
     {"from": "start.default", "to": "fetch.input"},

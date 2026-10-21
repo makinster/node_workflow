@@ -164,8 +164,8 @@ end to end.
 H0's owner-requested [wrapper and H1/H2 specification draft](integrations/HERMES_H0_DRAFT.md)
 is ready for review. It refines direct exec into exec of an external output
 adapter, preserving the child's natural exit code while escaping/capping its
-message. Its checked JSON specs use terminal No-Op nodes: an ordinary End
-adds an output line and would defeat a silent healthy watchdog. The draft
+message. Its checked JSON specs use End nodes with `record_line: false` (#99):
+the End stops the branch without adding a completion output line. The draft
 does not install wrappers or approve this proposal's wider build order.
 
 ```

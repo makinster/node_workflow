@@ -5,11 +5,11 @@ This is the live status snapshot; plans and logs preserve dated decisions.
 
 ## Baseline and open work — 2026-10-20
 
-- **H0 specification draft:** based on main `7227b1b` (#94, #95, #96 merged),
+- **H0 specification draft:** updated against main `f86fbe8` (#98 colours, #99 quiet End merged),
   [Hermes wrapper and H1/H2 specs](integrations/HERMES_H0_DRAFT.md) are ready
   for owner review. Docs only: external adapter contract, checked heartbeat
-  and HTTP watchdog JSON, isolated CLI receipts and activation acceptance
-  cases. No wrapper installation, cron job, live delivery or engine changes.
+  and HTTP watchdog JSON with quiet End nodes (`record_line: false`),
+  isolated CLI receipts and activation acceptance cases. No wrapper installation, cron job, live delivery or engine changes.
   Wider coordination priorities remain proposed. Duplicate prompt-queue work
   is dropped; #96 supplies the merged implementation.
 - Fetched `origin/main` at `106c437`: C1–C7, workflow naming (#68), docs A/B
