@@ -97,7 +97,7 @@ class ValidationPanel(Vertical):
         mark_style = "bold" if highlighted else f"bold {colors.ERROR if error else colors.WARNING}"
         text = Text(no_wrap=True, overflow="ellipsis")
         text.append(("✗ " if error else "! "), style=mark_style)
-        text.append(f"{issue['name']:<{width}}  ", style="bold")
+        text.append(f"{issue['name']:<{width}}  ", style="bold" if highlighted else f"bold {colors.NAME}")
         text.append(issue["message"])
         return text
 

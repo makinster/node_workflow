@@ -215,10 +215,14 @@ Colour is never the only signal: statuses keep their marks.
 
 | Name | Colour | Use for | Example |
 |---|---|---|---|
-| (normal) | theme text | Names, values, messages, headings (bold) | `who`, `"Kim"`, **Inputs** |
+| (normal) | theme text | Messages and headings (bold) | **Inputs**, "Choose a subworkflow" |
 | `MUTED` | #A0A6B0 grey | Hints, descriptions, ids, "nothing yet", separators | `e/enter  open it`, `(none)` |
 | `TYPE` | #4EC9B0 teal | Data types only | `[string]` |
 | `SOURCE` | #9CDCFE light blue | Where a value comes from or goes | `Vault key "count"`, `next node`, `S2B1 Keep` |
+| `NAME` | #E8E8E8 bold | Node names and aliases | **Greet**, **Greeter** |
+| `PAYLOAD` | #D7A3D3 lilac | Input and payload names | `who`, `greeted` |
+| `KEY` | #DCDCAA pale yellow | Vault key names | the `"count"` in `Vault key "count"` |
+| `VALUE` | #E0A383 soft orange | Literal values | `"Kim"`, `2` |
 | `SUCCESS` | #5FD068 green | Done, saved, finished | `✓ done` |
 | `RUNNING` | #56C8D8 cyan | Running now | `▶ running` |
 | `WARNING` | #E5C07B amber | Waiting for you, warnings, "may ask" | `⏸ waiting for you`, `⚠` |

@@ -45,7 +45,7 @@ from frontend.screens.node_selector import NodeSelectorScreen
 from frontend import notifications
 from frontend.editor_workflow_adapter import EditorWorkflowAdapter
 from frontend.widgets.validation_panel import ValidationPanel
-from frontend.colors import ERROR, SOURCE, WARNING
+from frontend.colors import ERROR, WARNING
 from frontend.io_contract import (
     DETAIL_WIDTH_FALLBACK,
     TYPE_COLOR,
@@ -2193,19 +2193,19 @@ class EditorScreen(KeymapScreenMixin, Screen):
         if child is None:
             return ["", f"Runs: [{colors.MUTED}]nothing chosen[/]" if not config.get("workflow_id")
                     else f"Runs: [{ERROR}]subworkflow not found[/]"]
-        lines = ["", f"Runs: {escape(child['name'])} \\[sub]"]
+        lines = ["", f"Runs: [bold {colors.NAME}]{escape(child['name'])}[/] \\[sub]"]
         if child["asks"]:
             lines.append(f"[{WARNING}]⚠ may ask you something ({escape(', '.join(child['asks']))})[/]")
         mapping = subworkflow_info.input_mapping(config)
         routes = subworkflow_info.result_routes(config)
-        for title, rows, arrow, text in (
-                ("Inputs:", child["inputs"], "←", lambda row: subworkflow_info.source_text(row, mapping.get(row["name"]))),
+        for title, rows, arrow, parts in (
+                ("Inputs:", child["inputs"], "←", lambda row: subworkflow_info.source_parts(row, mapping.get(row["name"]))),
                 ("Payloads:", child["results"], "→",
-                 lambda row: subworkflow_info.route_text(row["name"], routes.get(row["name"])))):
+                 lambda row: subworkflow_info.route_parts(row["name"], routes.get(row["name"])))):
             lines.extend(["", title])
             for row in rows:
-                lines.append(f"  {escape(row['name'])} [{TYPE_COLOR}]\\[{row['type']}][/] {arrow} "
-                             f"[{SOURCE}]{escape(text(row))}[/]")
+                lines.append(f"  [{colors.PAYLOAD}]{escape(row['name'])}[/] [{TYPE_COLOR}]\\[{row['type']}][/] "
+                             f"{arrow} {subworkflow_info.parts_markup(parts(row))}")
             if not rows:
                 lines.append(f"  [{colors.MUTED}](none)[/]")
         return lines

@@ -19,7 +19,8 @@ from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.screen import ModalScreen
 from textual.widgets import Button, DataTable, Input, Label, Static
 
-from frontend.colors import MUTED, SOURCE
+from frontend import colors
+from frontend.colors import MUTED
 from frontend.io_contract import TYPE_COLOR
 from frontend.widgets.status_bar import StatusBar
 
@@ -116,9 +117,10 @@ class VaultLogScreen(ModalScreen):
         # Keys, values and node names are user text: Text keeps them literal
         # (a plain string cell is read as markup).
         for write in self.writes:
-            table.add_row(clock(write.get("seconds")), Text(str(write.get("key"))),
+            table.add_row(clock(write.get("seconds")), Text(str(write.get("key")), style=colors.KEY),
                           type_cell(write.get("type"), write.get("value")),
-                          Text(shorten(value_text(write.get("value")))), Text(self.source_label(write), style=SOURCE))
+                          Text(shorten(value_text(write.get("value"))), style=colors.VALUE),
+                          Text(self.source_label(write), style=colors.SOURCE))
         table.move_cursor(row=len(self.writes) - 1)
 
     def on_input_changed(self, event: Input.Changed) -> None:
