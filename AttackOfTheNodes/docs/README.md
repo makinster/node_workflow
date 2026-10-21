@@ -16,7 +16,7 @@ the [Distributed Build Plan](DISTRIBUTED_BUILD_PLAN.md) and
 |---|---|---|
 | Set up, run or test | [Newcomer Guide](NEWCOMER_GUIDE.md) | `main.py`, full suite below |
 | Build or inspect workflows | [Workflow Authoring](WORKFLOW_AUTHORING.md) | `backend/authoring.py`, `tests/test_authoring.py`, `tests/test_authoring_examples.py` |
-| Review the Hermes heartbeat/watchdog draft | [H0 wrapper and workflow specs](integrations/HERMES_H0_DRAFT.md) | Docs-only draft; two checked `aotn build` specs, no installed wrapper or cron job |
+| Review or test the Hermes H0 adapter | [H0 contract](integrations/HERMES_H0_DRAFT.md), [adapter guide](../integrations/hermes/README.md) | `integrations/hermes/`, `tests/test_hermes_adapter.py`; no installed wrapper or cron job |
 | Declare workflow inputs/results or pass run inputs | [Workflow contracts](WORKFLOW_AUTHORING.md#contracts-inputs-results-and-callable-workflows) | `backend/contracts.py`, `tests/test_contracts.py` |
 | Add/change a node | [Node Standards](NODE_STANDARDS.md), then [Node Helper](NODE_HELPER.md) | `backend/nodes/`, helper safety and commands in Node Helper |
 | Check node ideas or live capabilities | [Node Catalog](NODE_CATALOG.md), `aotn nodes` / `describe` | Catalog includes proposals; CLI reads registered contracts |

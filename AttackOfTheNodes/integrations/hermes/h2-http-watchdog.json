@@ -1,0 +1,141 @@
+{
+  "format": "aotn-workflow/1",
+  "name": "h2-http-watchdog",
+  "nodes": {
+    "start": {
+      "type": "start_node",
+      "config": {
+        "rows": [
+          {
+            "name": "checked_at",
+            "type": "string",
+            "required": true,
+            "to": "Downstream"
+          }
+        ]
+      }
+    },
+    "fetch": {
+      "type": "http_request_node",
+      "alias": "Check health",
+      "config": {
+        "url": "http://127.0.0.1:8765/health",
+        "method": "GET",
+        "response_mode": "text",
+        "timeout_seconds": 5
+      }
+    },
+    "catch": {
+      "type": "error_mux_node",
+      "alias": "Known check failures",
+      "config": {
+        "routes": [
+          {
+            "id": "offline",
+            "label": "Unavailable",
+            "codes": [
+              "network",
+              "timeout",
+              "http_status"
+            ]
+          }
+        ],
+        "unmatched_route": false
+      }
+    },
+    "strip": {
+      "type": "text_transform_node",
+      "config": {
+        "operation": "strip"
+      }
+    },
+    "unhealthy": {
+      "type": "conditional_node",
+      "alias": "Body differs from ok",
+      "config": {
+        "condition_type": "not_equals",
+        "left_value_source": "input",
+        "right_value": "ok"
+      }
+    },
+    "alert": {
+      "type": "text_output_node",
+      "alias": "Unexpected health",
+      "config": {
+        "input_source": "Upstream payload",
+        "label": "Watchdog",
+        "template": "Health check returned an unexpected body. Inspect the endpoint and run record.",
+        "request_user_input": false
+      }
+    },
+    "offline": {
+      "type": "text_output_node",
+      "alias": "Unavailable health",
+      "config": {
+        "input_source": "Upstream payload",
+        "label": "Watchdog",
+        "template": "Health endpoint unavailable (network, timeout or HTTP error). Inspect the run record.",
+        "request_user_input": false
+      }
+    },
+    "end_ok": {
+      "type": "end_node",
+      "alias": "Healthy: no message",
+      "config": {
+        "record_line": false
+      }
+    },
+    "end_alert": {
+      "type": "end_node",
+      "alias": "Finish alert path",
+      "config": {
+        "record_line": false
+      }
+    },
+    "end_offline": {
+      "type": "end_node",
+      "alias": "Finish unavailable path",
+      "config": {
+        "record_line": false
+      }
+    }
+  },
+  "connections": [
+    {
+      "from": "start.default",
+      "to": "fetch.input"
+    },
+    {
+      "from": "fetch.default",
+      "to": "catch.input"
+    },
+    {
+      "from": "catch.default",
+      "to": "strip.input"
+    },
+    {
+      "from": "catch.offline",
+      "to": "offline.input"
+    },
+    {
+      "from": "strip.default",
+      "to": "unhealthy.input"
+    },
+    {
+      "from": "unhealthy.true",
+      "to": "alert.input"
+    },
+    {
+      "from": "unhealthy.false",
+      "to": "end_ok.input"
+    },
+    {
+      "from": "alert.default",
+      "to": "end_alert.input"
+    },
+    {
+      "from": "offline.default",
+      "to": "end_offline.input"
+    }
+  ]
+}

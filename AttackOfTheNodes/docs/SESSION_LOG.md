@@ -1,10 +1,81 @@
 # AttackOfTheNodes Session Log
 
-This log keeps roughly the last two weeks: entries dated October 4–20, 2026
+This log keeps roughly the last two weeks: entries dated October 4–21, 2026
 (the earliest existing entry is October 6). Every October 18 entry is retained.
 Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.md).
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
+
+## 2026-10-21 — H0 review fixes: descendant containment and entry scripts
+
+Branch `codex/hermes-h0-adapter`, original head `057ca45`; synchronized with
+main `055dfba` (#104) in merge commit `e8ffbd0`, preserving both session entries.
+
+- P2: enable Linux child-subreaper adoption via guarded `ctypes`/`prctl`, walk
+  `/proc` ancestry, kill escaped descendants and reap them before releasing the
+  slug lock. Cleanup also runs on natural exits and adapter errors. Reserve the
+  final second of the deadline/stop budget for bounded kill/reap; an unconfirmed
+  cleanup returns 70 and leaves a persistent stale marker, so later ticks return
+  75 without starting a child. A crash also leaves the marker. Other POSIX
+  platforms retain bounded process-group cleanup; Linux setup failures prevent
+  spawning. The contract and integration guide document these behavior changes.
+- P3: both actual entry scripts honor `HERMES_HOME` and run from an isolated
+  deployment with spaces. Only fixed installation path assignments in the copied
+  shared file are substituted; Bash exec, the adapter and controlled children
+  are real subprocesses. Normal calls reach the right slug; extra arguments
+  return 70 without starting a run.
+- Fail-first evidence against `057ca45`: the initial deadline/TERM and entry
+  deployment cases produced **6 failures** before implementation. Additional
+  cleanup-denied/timeout and natural-exit cases ran against the original adapter
+  extracted with `git show`, producing **3 failures**. Both logs were retained
+  under `/tmp/review103-red*.log` for this session. After fixes, **67 adapter
+  tests passed**, including retained same-group cases, escaped sessions, actual
+  reaping, denied/ineffective-kill fault injection and stale-lock rejection.
+- An unaccelerated escaped-descendant probe exited **124 at 99.06 seconds**,
+  emitted zero stdout bytes and confirmed the descendant was reaped. Removing
+  `"$@"` from each temporary deployed entry was detected by the new argument
+  test (both mutations failed as intended).
+- Combined full suite (main `055dfba` plus fixes), shared Linux interpreter,
+  disposable `AOTN_DATA_DIR`: **2,052 passed in 322.44 seconds**. Separate adapter
+  run: **67 passed in 22.66 seconds**. Compileall, Bash syntax, documentation
+  link/archive checks and `git diff --check` passed. No repository workflow edits,
+  Hermes installation, cron activation or live delivery. Owner review follows
+  the pushed fixes; no merge is authorized.
+
+## 2026-10-20 — H0 repository adapter implementation
+
+Branch `codex/hermes-h0-adapter`, based on main `b7e6484`; read PR #102's
+owner decisions C1–C7 without merging that docs PR. The owner authorized
+implementation under `integrations/hermes/`: shared Bash function, two entry
+scripts, standard-library Python JSON/exit adapter and the H1/H2 build specs.
+No engine or repository workflow files changed. No Hermes installation,
+configuration, cron job or live delivery was performed.
+
+The function derives a validated slug from the entry filename and uses the
+absolute project/interpreter and separate cron library. The adapter supplies
+UTC `checked_at`, drains both pipes with bounded retention, renders the JSON
+report like the text CLI, leaves successful empty stdout at zero bytes, and
+escapes directives before the 3,500 UTF-16-unit cap. Ordinary lines keep their
+text; only JSON-looking lines get `| `, including after non-LF separators.
+Run IDs survive truncation and graceful stops. Per-slug locks remain held
+through process-group cleanup. Natural exits are preserved; failures/overlap/
+deadline/external INT/TERM use 70/75/124/130/143 as specified.
+
+Verification: all **57 adapter subprocess tests passed**, covering every draft
+case-table row. Real CLI builds/runs use disposable data and loopback HTTP:
+heartbeat, healthy/whitespace silence, degraded body, handled 503/refusal/timeout,
+unhandled error, missing input and missing saved name. Controlled children
+exercise malformed/oversized reports, simultaneous pipe floods, directive
+variants, emoji caps, lock lifetime, signals and lingering descendants. Timing
+tests shorten module constants only in a test subprocess launcher; production
+has no timing override. A separate unaccelerated production-deadline probe
+forced cleanup at **100.05 seconds**, exit **124**, zero stdout bytes.
+
+Full suite from `AttackOfTheNodes/`, with the shared interpreter and
+`AOTN_DATA_DIR=/tmp/hermes-h0-final-suite`: **2,016 passed in 320.17 seconds**.
+Bash syntax, adapter compilation, `git diff --check` and the documentation
+link/archive checker passed. Owner review is the next step; activation and
+all later coordination capabilities remain separate.
 
 ## 2026-10-20 — System nodes: Disk space, Git status, File age (C7)
 
