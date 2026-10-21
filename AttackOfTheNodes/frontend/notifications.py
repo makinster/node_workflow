@@ -145,10 +145,6 @@ def settings_saved(app: Any) -> None:
     notify_info(app, "Settings saved")
 
 
-def workflow_valid(app: Any) -> None:
-    notify_info(app, "Workflow is valid")
-
-
 def no_node_selected(app: Any) -> None:
     notify_info(app, "No node selected")
 
