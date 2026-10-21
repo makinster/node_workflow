@@ -169,7 +169,8 @@ Editor Validation Panel. No changes to those files or to engine code.
 ## 2026-10-20 — AI coordination decisions C1–C7
 
 Owner accepted the suggested answers for C1–C6 (build order accepted,
-`~/.hermes/aotn/` owned by AOTN, digest drain, `cron.wrap_response` off,
+`~/.hermes/aotn/` owned by AOTN, digest drain, `cron.wrap_response` off —
+revised to on for now on 2026-10-21, since Hermes applies it to every job —
 persistent store on the Stash's store, scheduling decided at Step 5). C7:
 specific command nodes first (fixed command, typed settings, argv, typed
 outputs); a generic `run_command_node` later behind a Settings allowlist with

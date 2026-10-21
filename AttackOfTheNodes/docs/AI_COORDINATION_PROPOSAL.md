@@ -388,7 +388,7 @@ nodes, files, wrappers and a CLI-level server. They can run alongside Phase
 | C1 | Reprioritization in section 9 | **Accepted:** H0, then C1 (notify/record nodes), C4 (MCP server), C2 (persistent store), C3 (bounded agent nodes), ahead of 4e–4f and Step 5 |
 | C2 | Shared folder location and schema owner | **`~/.hermes/aotn/`, schemas owned by AOTN docs** |
 | C3 | Outbox drain | **One digest per tick** |
-| C4 | `cron.wrap_response` | **Off** (clean messages) |
+| C4 | `cron.wrap_response` | **On, for now** (revised 2026-10-21: Hermes v0.14 applies it to every cron job, not just AOTN's; it adds a job-name header and a management footer. Revisit if the framing gets in the way) |
 | C5 | Persistent store | **Pulled forward, built on the Stash's store** |
 | C6 | Who schedules once Step 5 lands | **Decide at Step 5** |
 | C7 | Running commands | **Specific command nodes first; a generic `run_command_node` later** (see below) |
