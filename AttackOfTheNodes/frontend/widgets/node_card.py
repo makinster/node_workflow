@@ -39,20 +39,9 @@ BOX_HORIZONTAL = "-"
 BOX_VERTICAL = "|"
 BOX_CORNER = "+"
 DOWN_ARROW = "↓"
-SELECTED_BACKGROUND = "#1a3a5c"
+from frontend.colors import HIGHLIGHT as SELECTED_BACKGROUND  # noqa: E402
 BRANCH_PATH_PORTS = ("path_a", "path_b", "path_c", "path_d", "path_e")
-BRANCH_PATH_PALETTE = (
-    "#2dd4bf",  # teal
-    "#60a5fa",  # blue
-    "#a78bfa",  # violet
-    "#f472b6",  # pink
-    "#fb7185",  # rose
-    "#fbbf24",  # amber
-    "#a3e635",  # lime
-    "#34d399",  # emerald
-    "#22d3ee",  # cyan
-    "#c084fc",  # purple
-)
+from frontend.colors import BRANCH_PATHS as BRANCH_PATH_PALETTE  # noqa: E402
 BRANCH_PATH_COLORS = {
     port: BRANCH_PATH_PALETTE[index]
     for index, port in enumerate(BRANCH_PATH_PORTS)

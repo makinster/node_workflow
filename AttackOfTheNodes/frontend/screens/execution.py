@@ -21,7 +21,7 @@ from textual.containers import Horizontal, Vertical
 from textual.screen import Screen
 from textual.widgets import Button, Label, Static
 
-from frontend import notifications
+from frontend import colors, notifications
 from frontend.io_contract import TYPE_COLOR
 from frontend.keymap import EXECUTION, bindings_for, screen_hint_for
 from frontend.keymap_runtime import KeymapScreenMixin
@@ -34,7 +34,7 @@ from frontend.screens.vault_log import VaultLogScreen, kind_of, shorten, value_t
 from frontend.widgets.node_list import NodeList
 from frontend.widgets.status_bar import StatusBar
 
-GREEN, RED, YELLOW, CYAN, DIM = "green", "red", "yellow", "cyan", "grey50"
+from frontend.colors import ERROR as RED, MUTED as DIM, RUNNING as CYAN, SUCCESS as GREEN, WARNING as YELLOW  # noqa: E402
 NARROW_WIDTH = 80
 _MISSING = object()
 
@@ -375,9 +375,12 @@ class ExecutionScreen(KeymapScreenMixin, Screen):
         return {}
 
     def _value_line(self, label: str, value: Any) -> Text:
-        line = Text(f"  {label}  " if label else "  ")
+        line = Text("  ")
+        if label:
+            line.append(label, style=colors.PAYLOAD)
+            line.append("  ")
         line.append(f"[{kind_of(value)}]", style=TYPE_COLOR)
-        line.append(f"  {shorten(value_text(value), 46)}")
+        line.append(f"  {shorten(value_text(value), 46)}", style=colors.VALUE)
         return line
 
     def _refresh_details(self) -> None:
@@ -400,7 +403,8 @@ class ExecutionScreen(KeymapScreenMixin, Screen):
         status = (getattr(self._source, "node_statuses", {}) or {}).get(node_id, "idle")
         visits = self._visits_for(node_id)
         branch = f" · Branch {visits[-1][0]}" if visits and visits[-1][0] else ""
-        text = Text(f"{node_display_name(node_id, node)} · step {row.get('depth', '-')}{branch}\n", style="bold")
+        text = Text(node_display_name(node_id, node), style=f"bold {colors.NAME}")
+        text.append(f" · step {row.get('depth', '-')}{branch}\n", style="bold")
         label, colour = STATUS_TEXT.get(status, ("not started yet", DIM))
         timing = seconds_text((getattr(self._source, "node_timings", {}) or {}).get(node_id))
         call_waits = status == "running" and any(self._waits(call) for call in self._calls_at(node_id))

@@ -274,9 +274,15 @@ def test_map_card_names_the_call_counts_vault_payloads_and_details_list_them():
     details = editor._format_node_details(flow.ids["greet"], flow.map.get_node_data(flow.ids["greet"]))
     assert row_["node"]["_display_label"] == "Greet (Greeter [sub])"
     assert row_["node"]["_editor_gap_marker"].endswith("➥ (2)")
-    assert r"Runs: Greeter \[sub]" in details and "may ask you something (Ask name)" in details
-    assert r'who [#4EC9B0]\[string][/] ← typed: "Kim"' in details
-    assert r'greeted [#4EC9B0]\[string][/] → next node and Vault key "hello"' in details
+    # Colour roles (frontend/colors.py): NAME, PAYLOAD, TYPE, SOURCE, KEY, VALUE.
+    from frontend import colors as c
+
+    assert f"Runs: [bold {c.NAME}]Greeter[/] \\[sub]" in details
+    assert "may ask you something (Ask name)" in details
+    assert (f'[{c.PAYLOAD}]who[/] [{c.TYPE}]\\[string][/] ← [{c.SOURCE}]typed: [/][{c.VALUE}]"Kim"[/]'
+            in details)
+    assert (f'[{c.PAYLOAD}]greeted[/] [{c.TYPE}]\\[string][/] → [{c.SOURCE}]next node and Vault key [/]'
+            f'[{c.KEY}]"hello"[/]' in details)
 
 
 def test_the_subworkflow_node_can_be_added_from_the_selector():

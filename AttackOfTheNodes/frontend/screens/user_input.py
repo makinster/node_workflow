@@ -6,6 +6,8 @@ from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
 from rich.text import Text
+
+from frontend.colors import MUTED
 from textual.widgets import Button, Input, Label, Static
 
 from frontend.keymap import USER_INPUT, bindings_for
@@ -35,10 +37,10 @@ class UserInputScreen(CommandScreenMixin, ModalScreen):
         with Vertical(id="modal-card"):
             yield Label(f"{self.asker} asks" if self.asker else "User Input Needed",
                         classes="modal-title", markup=False)
-            where = Text("From ", style="grey50")
+            where = Text("From ", style=MUTED)
             for index, name in enumerate(self.path or [self.node_id]):
-                where.append(" › " if index else "", style="grey50")
-                where.append(str(name), style="bold" if index == len(self.path or [1]) - 1 else "grey50")
+                where.append(" › " if index else "", style=MUTED)
+                where.append(str(name), style="bold" if index == len(self.path or [1]) - 1 else MUTED)
             yield Static(where, id="user-input-from")
             yield Label(self.prompt, classes="form-label")
             yield CommandInput(id="user-input-value")

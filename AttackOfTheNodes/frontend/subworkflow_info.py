@@ -64,33 +64,73 @@ def result_routes(config: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
             if isinstance(row, dict) and str(row.get("name") or "").strip()}
 
 
-def source_text(row: Dict[str, Any], mapping: Optional[Dict[str, Any]]) -> str:
-    """Where an input's value comes from, in the owner-approved words."""
+Parts = List[Tuple[str, str]]
+
+
+def _shown(row: Dict[str, Any], value: Any) -> str:
+    if row.get("type") == "string":
+        return f'"{value}"'
+    from frontend.widgets.contract_rows import default_text
+
+    return default_text(value)
+
+
+def source_parts(row: Dict[str, Any], mapping: Optional[Dict[str, Any]]) -> Parts:
+    """Where an input's value comes from, as (text, colour role) parts:
+    the words in SOURCE, a Vault key name in KEY, a value in VALUE."""
     if mapping is None:
         value = row.get("value")
         if value is None or value == "":
-            return "needs a value" if row.get("required") else "left empty"
-        shown = f'"{value}"' if row.get("type") == "string" else str(value)
-        return f"its default: {shown}"
+            return [("needs a value" if row.get("required") else "left empty", "SOURCE")]
+        return [("its default: ", "SOURCE"), (_shown(row, value), "VALUE")]
     source = mapping.get("source") or "Configured"
     if source == "Upstream payload":
-        return "the incoming payload"
+        return [("the incoming payload", "SOURCE")]
     if source == "Vault":
-        return f'Vault key "{mapping.get("vault_key") or ""}"'
-    value = mapping.get("value", "")
-    if row.get("type") == "string":
-        return f'typed: "{value}"'
-    from frontend.widgets.contract_rows import default_text
+        return [("Vault key ", "SOURCE"), (f'"{mapping.get("vault_key") or ""}"', "KEY")]
+    return [("typed: ", "SOURCE"), (_shown(row, mapping.get("value", "")), "VALUE")]
 
-    return f"typed: {default_text(value)}"
+
+def route_parts(name: str, route: Optional[Dict[str, Any]]) -> Parts:
+    """Where a result goes, as (text, colour role) parts."""
+    to = (route or {}).get("to") or "Downstream"
+    key = str((route or {}).get("vault_key") or "").strip() or name
+    if to == "Vault":
+        return [("Vault key ", "SOURCE"), (f'"{key}"', "KEY")]
+    if to == "Both":
+        return [("next node and Vault key ", "SOURCE"), (f'"{key}"', "KEY")]
+    return [("next node", "SOURCE")]
+
+
+def source_text(row: Dict[str, Any], mapping: Optional[Dict[str, Any]]) -> str:
+    """Where an input's value comes from, in the owner-approved words."""
+    return "".join(text for text, _ in source_parts(row, mapping))
 
 
 def route_text(name: str, route: Optional[Dict[str, Any]]) -> str:
     """Where a result goes."""
-    to = (route or {}).get("to") or "Downstream"
-    key = str((route or {}).get("vault_key") or "").strip() or name
-    return {"Downstream": "next node", "Vault": f'Vault key "{key}"',
-            "Both": f'next node and Vault key "{key}"'}.get(to, "next node")
+    return "".join(text for text, _ in route_parts(name, route))
+
+
+def parts_text(parts: Parts) -> "Text":
+    """Coloured Rich text for parts (colours read when drawn)."""
+    from rich.text import Text
+
+    from frontend import colors
+
+    out = Text()
+    for text, role in parts:
+        out.append(text, style=getattr(colors, role))
+    return out
+
+
+def parts_markup(parts: Parts) -> str:
+    """The same parts as escaped Rich markup."""
+    from rich.markup import escape
+
+    from frontend import colors
+
+    return "".join(f"[{getattr(colors, role)}]{escape(text)}[/]" for text, role in parts)
 
 
 def next_node_text(results: List[Dict[str, Any]], routes: Dict[str, Dict[str, Any]]) -> str:

@@ -6643,15 +6643,18 @@ async def _test_node_selector_contract_hanging_indent_and_bold_passthru():
         long_prose = "alpha beta gamma delta epsilon zeta eta theta iota kappa lambda"
         lines = screen._wrap_dim(long_prose, indent=2)
         assert len(lines) >= 2, "expected the sample prose to wrap at narrow width"
+        from frontend import colors
+
         for line in lines:
-            assert line.startswith("  [dim]"), f"line not indented to col 2: {line!r}"
+            # Muted text uses the shared MUTED colour (frontend/colors.py).
+            assert line.startswith(f"  [{colors.MUTED}]"), f"line not indented to col 2: {line!r}"
 
         # Prefixed source line: the marker shows on the first line only and the
         # continuation hangs to the column immediately after it (col 6).
         prefixed = screen._wrap_dim(long_prose, indent=2, prefix="└─< ")
-        assert prefixed[0].startswith("  [dim]└─< ")
+        assert prefixed[0].startswith(f"  [{colors.MUTED}]└─< ")
         assert len(prefixed) >= 2
-        assert prefixed[1].startswith("      [dim]"), prefixed[1]
+        assert prefixed[1].startswith(f"      [{colors.MUTED}]"), prefixed[1]
         assert "└─<" not in prefixed[1]
 
         # A pass-through output port renders the marker in bold.
