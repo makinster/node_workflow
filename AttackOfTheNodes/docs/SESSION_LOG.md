@@ -20,6 +20,23 @@ default.
   containing `[END]` lost it to markup).
 - Tests: `tests/test_quiet_end.py`.
 
+## 2026-10-20 — One colour per meaning
+
+Branch `dist/ui-colors`, from main `7227b1b`. Owner: text colours were all
+over the place. `frontend/colors.py` names one colour per meaning (MUTED,
+TYPE, SOURCE, SUCCESS, RUNNING, WARNING, ERROR, HIGHLIGHT, MAP_BACKGROUND,
+BRANCH_PATHS); UI_QUICK_REFERENCE "Colours" is the reference. Existing code
+moved onto it: `[dim]` became MUTED, sources and destinations (`Vault key
+"count"`, `next node`, Vault log Source) now use SOURCE. `tests/test_colors.py`
+fails on any colour literal outside `colors.py`. Then: fixed hex values for
+every role (named ANSI colours vary by terminal), `colors.PALETTES` +
+`colors.use(name)` for later theme swaps, and a 4.5:1 contrast test on the
+map, panel and highlight backgrounds (MUTED and ERROR were brightened to
+pass). Owner approved four more roles: NAME (node names), PAYLOAD (input and
+payload names), KEY (Vault key names), VALUE (literal values), applied to
+the Subworkflow tables, the editor details, the Vault log and the Execution
+details.
+
 ## 2026-10-20 — AI coordination proposal (docs only)
 
 Branch `docs/ai-coordination-proposal`, from main `2ecd297`. Adds

@@ -15,6 +15,7 @@ from backend.port_types import resolved_metadata, trace_producers
 from backend.validator import validate_workflow
 from backend.node_errors import ERROR_PORT, MUX_DEFAULT_PORT
 from frontend.keymap import EDITOR, bindings_for, screen_hint_for
+from frontend import colors
 from frontend.keymap_runtime import KeymapScreenMixin
 from frontend.error_mux_ui import (
     ERROR_MUX_NODE_TYPE,
@@ -44,6 +45,7 @@ from frontend.screens.node_config import (
 from frontend.screens.node_selector import NodeSelectorScreen
 from frontend import notifications
 from frontend.editor_workflow_adapter import EditorWorkflowAdapter
+from frontend.colors import ERROR, WARNING
 from frontend.io_contract import (
     DETAIL_WIDTH_FALLBACK,
     TYPE_COLOR,
@@ -2073,12 +2075,12 @@ class EditorScreen(KeymapScreenMixin, Screen):
         lines.append("")
         lines.append("Inputs:")
         input_lines = self._detail_input_lines(node, metadata)
-        lines.extend(input_lines if input_lines else ["  [dim](none)[/dim]"])
+        lines.extend(input_lines if input_lines else [f"  [{colors.MUTED}](none)[/]"])
 
         lines.append("")
         lines.append("Outputs:")
         output_lines = self._detail_output_lines(node, metadata)
-        lines.extend(output_lines if output_lines else ["  [dim](none)[/dim]"])
+        lines.extend(output_lines if output_lines else [f"  [{colors.MUTED}](none)[/]"])
 
         return "\n".join(lines)
 
@@ -2092,22 +2094,23 @@ class EditorScreen(KeymapScreenMixin, Screen):
         config = node.get("config") or {}
         child = subworkflow_info.describe(str(config.get("workflow_id") or ""))
         if child is None:
-            return ["", "Runs: [dim]nothing chosen[/dim]" if not config.get("workflow_id")
-                    else "Runs: [red]subworkflow not found[/red]"]
-        lines = ["", f"Runs: {escape(child['name'])} \\[sub]"]
+            return ["", f"Runs: [{colors.MUTED}]nothing chosen[/]" if not config.get("workflow_id")
+                    else f"Runs: [{ERROR}]subworkflow not found[/]"]
+        lines = ["", f"Runs: [bold {colors.NAME}]{escape(child['name'])}[/] \\[sub]"]
         if child["asks"]:
-            lines.append(f"[yellow]⚠ may ask you something ({escape(', '.join(child['asks']))})[/yellow]")
+            lines.append(f"[{WARNING}]⚠ may ask you something ({escape(', '.join(child['asks']))})[/]")
         mapping = subworkflow_info.input_mapping(config)
         routes = subworkflow_info.result_routes(config)
-        for title, rows, arrow, text in (
-                ("Inputs:", child["inputs"], "←", lambda row: subworkflow_info.source_text(row, mapping.get(row["name"]))),
+        for title, rows, arrow, parts in (
+                ("Inputs:", child["inputs"], "←", lambda row: subworkflow_info.source_parts(row, mapping.get(row["name"]))),
                 ("Payloads:", child["results"], "→",
-                 lambda row: subworkflow_info.route_text(row["name"], routes.get(row["name"])))):
+                 lambda row: subworkflow_info.route_parts(row["name"], routes.get(row["name"])))):
             lines.extend(["", title])
             for row in rows:
-                lines.append(f"  {escape(row['name'])} [{TYPE_COLOR}]\\[{row['type']}][/] {arrow} {escape(text(row))}")
+                lines.append(f"  [{colors.PAYLOAD}]{escape(row['name'])}[/] [{TYPE_COLOR}]\\[{row['type']}][/] "
+                             f"{arrow} {subworkflow_info.parts_markup(parts(row))}")
             if not rows:
-                lines.append("  [dim](none)[/dim]")
+                lines.append(f"  [{colors.MUTED}](none)[/]")
         return lines
 
     def _detail_width(self) -> int:
@@ -2228,7 +2231,7 @@ class EditorScreen(KeymapScreenMixin, Screen):
             ]
             arrow = "└─> vault"
         return [
-            render_port_block(key, "vault", desc, [f"  [dim]{arrow}[/dim]"], self._wrap_detail)
+            render_port_block(key, "vault", desc, [f"  [{colors.MUTED}]{arrow}[/]"], self._wrap_detail)
             for key, desc in entries
         ]
 
