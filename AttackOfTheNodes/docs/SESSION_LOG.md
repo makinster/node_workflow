@@ -55,6 +55,15 @@ Editor Validation Panel. No changes to those files or to engine code.
   close; duplicate queue work is dropped in favor of merged #96. Other
   workers' worktrees and the owner's dirty checkout remain untouched.
 
+## 2026-10-20 — AI coordination decisions C1–C7
+
+Owner accepted the suggested answers for C1–C6 (build order accepted,
+`~/.hermes/aotn/` owned by AOTN, digest drain, `cron.wrap_response` off,
+persistent store on the Stash's store, scheduling decided at Step 5). C7:
+specific command nodes first (fixed command, typed settings, argv, typed
+outputs); a generic `run_command_node` later behind a Settings allowlist with
+approval on. Recorded in the proposal's section 10.
+
 ## 2026-10-20 — H0 draft review fixes (#97)
 
 Owner asked for review, fixes and merge. Ran both H1/H2 specs against main

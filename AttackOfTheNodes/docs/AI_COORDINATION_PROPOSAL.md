@@ -1,6 +1,8 @@
 # AI Coordination Proposal — Hermes Integration, Deterministic Tool Nodes, Bounded Agents
 
-> **Status: proposal, not approved (2026-10-20).** Owner discussion only; no
+> **Status: owner decisions C1–C7 recorded (2026-10-20); see section 10.**
+> Proposal text below is otherwise unchanged; Hermes facts still need
+> re-verifying before any job is enabled. Originally: owner discussion only; no
 > code. Nothing here changes an approved decision in
 > [DISTRIBUTED_BUILD_PLAN.md](DISTRIBUTED_BUILD_PLAN.md). Section 9 proposes a
 > reprioritization for the owner to accept or reject.
@@ -379,17 +381,27 @@ Nothing in H0–C4 touches `master_state.py` or the run engine; these are
 nodes, files, wrappers and a CLI-level server. They can run alongside Phase
 17 verification.
 
-## 10. Owner decisions
+## 10. Owner decisions (answered 2026-10-20)
 
-| # | Decision | Options | Suggested |
-|---|---|---|---|
-| C1 | Accept the reprioritization in section 9? | Accept / partial / keep current order | Accept: H0–C3 and C4 ahead of 4e–4f and Step 5 |
-| C2 | Shared folder location and schema owner | `~/.hermes/aotn/` owned by AOTN docs / elsewhere | `~/.hermes/aotn/`, AOTN owns |
-| C3 | Outbox drain: one digest per tick or one message per event | Digest / per event | Digest |
-| C4 | `cron.wrap_response` on or off | On (shows it came from cron) / off (clean) | Off |
-| C5 | Pull the persistent store forward and build it on the Stash's store? | Yes / keep in Step 5 | Yes |
-| C6 | Who decides Hermes or AOTN schedules once Step 5 lands | Hermes keeps cron / AOTN triggers take over | Decide at Step 5 |
-| C7 | `run_command_node`: allowlist location and approval default | Settings + approval on / node config only | Settings + approval on |
+| # | Decision | Answer |
+|---|---|---|
+| C1 | Reprioritization in section 9 | **Accepted:** H0, then C1 (notify/record nodes), C4 (MCP server), C2 (persistent store), C3 (bounded agent nodes), ahead of 4e–4f and Step 5 |
+| C2 | Shared folder location and schema owner | **`~/.hermes/aotn/`, schemas owned by AOTN docs** |
+| C3 | Outbox drain | **One digest per tick** |
+| C4 | `cron.wrap_response` | **Off** (clean messages) |
+| C5 | Persistent store | **Pulled forward, built on the Stash's store** |
+| C6 | Who schedules once Step 5 lands | **Decide at Step 5** |
+| C7 | Running commands | **Specific command nodes first; a generic `run_command_node` later** (see below) |
+
+**C7 in detail (owner, 2026-10-20).** Build nodes that each run one specific
+command, for example a Disk space node (`df`) or a Git status node: the
+command is fixed in the node's code, the workflow fills only typed settings
+(such as a folder), arguments are passed as argv with no shell, and outputs
+are typed (free space as a number, changed files as a list) with the node's
+own error codes, so a workflow can branch without an AI step. The node
+helper can generate them from a short spec. A generic `run_command_node`
+waits until it is needed, behind a command allowlist in Settings with
+approval on by default.
 
 ## 11. Open questions
 
