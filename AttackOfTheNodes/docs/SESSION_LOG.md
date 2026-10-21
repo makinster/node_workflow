@@ -55,6 +55,18 @@ Editor Validation Panel. No changes to those files or to engine code.
   close; duplicate queue work is dropped in favor of merged #96. Other
   workers' worktrees and the owner's dirty checkout remain untouched.
 
+## 2026-10-20 — H0 draft review fixes (#97)
+
+Owner asked for review, fixes and merge. Ran both H1/H2 specs against main
+`6e37909`: heartbeat one line; healthy watchdog silent; unexpected body,
+HTTP 503 and refused connection one fixed message each, exit 0; missing
+input exit 5 with the new "Can't start" list; unknown workflow exit 4.
+
+- The adapter prefixes `| ` only to a line that starts with `{` (the
+  `wakeAgent` risk); ordinary lines, such as the heartbeat, are unchanged.
+- Stale "Stash bindings" wording replaced: 4d is built as Stash entries
+  saved by name (#101), here and in the coordination proposal.
+
 ## 2026-10-20 — A quiet End node
 
 Branch `dist/quiet-end`, from main `7227b1b`. Found by the H0 Hermes draft

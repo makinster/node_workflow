@@ -6,7 +6,7 @@ this page.** Updated against main `f86fbe8` (#98 colours and #99 quiet End merge
 The owner requested this H0 specification separately from the proposal's
 unapproved wider build order. The wrapper/adapter below is a proposed external
 script interface, not an installed feature. The two workflow specs use existing
-nodes and `aotn build`; they need no engine changes or Stash bindings.
+nodes and `aotn build`; they need no engine changes or Stash entries.
 
 H0 proves a short unattended run can produce a message, stay silent, or fail
 with its exit status intact. It does not install scripts, create cron jobs,
@@ -112,10 +112,12 @@ Proposed adapter rules, to be implemented and tested after owner review:
    notification. Before-start failures may have no run ID.
 4. For both message and diagnostic text, escape every case variant of `[SILENT]`
    recognized by Hermes's uppercase-normalized gate (including `[silent]`
-   and `[SiLeNt]`), replacing the marker's brackets with fullwidth brackets and every literal `MEDIA:` with `MEDIA：`. Prefix each
-   emitted line with `| ` so a final JSON-looking line cannot become a
-   `wakeAgent` directive. Apply this to the final combined text, not each
-   stream fragment. Empty successful output stays empty. H0 offers no
+   and `[SiLeNt]`), replacing the marker's brackets with fullwidth brackets and every literal `MEDIA:` with `MEDIA：`.
+   Prefix `| ` only to a line that, after leading spaces, starts with `{`,
+   so a final JSON-looking line cannot become a `wakeAgent` directive.
+   Ordinary lines are sent unchanged (owner, 2026-10-20: plain messages such
+   as the heartbeat must not start with `| `). Apply this to the final
+   combined text, not each stream fragment. Empty successful output stays empty. H0 offers no
    directive-passthrough switch; attachment/directive policy belongs to a
    later reviewed integration.
 5. Cap each outgoing stream at **3,500 UTF-16 code units**, including line
@@ -186,7 +188,7 @@ With `checked_at=2026-10-20T12:00:00Z`, raw text CLI stdout is exactly:
 [Heartbeat] AOTN alive · 2026-10-20T12:00:00Z
 ```
 
-The adapter would hand Hermes that line with `| ` prefixed, exit 0. This
+The adapter would hand Hermes that line unchanged, exit 0. This
 checks that no status/debug line leaks into successful message output. The
 ordinary CLI's completion summary is on stderr; the JSON mode report is
 consumed by the adapter, never sent as the message.
@@ -316,7 +318,7 @@ configured global Hermes script timeout leaves at least 20 seconds beyond
 the adapter's 100-second total budget. Check final Telegram framing/size
 and no-agent execution with the owner. A stdout handoff supplies neither
 a Telegram message ID nor a delivery result. Delivery reconciliation,
-outbox/shared-folder schemas, durable dedupe, AI steps, Stash bindings and
+outbox/shared-folder schemas, durable dedupe, AI steps, Stash entries as inputs and
 engine changes remain later tasks.
 
 Review choices in this draft: the adapter refinement of direct exec; `--json`

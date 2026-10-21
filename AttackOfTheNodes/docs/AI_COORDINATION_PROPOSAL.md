@@ -139,16 +139,20 @@ paths are in the Hermes repo). Re-verify when Hermes is upgraded.
   headless caller fails fast when a called subworkflow would prompt (C25),
   so cron runs never hang on a hidden prompt.
 - **The Stash is built (S1–S3):** a durable per-machine store of files and
-  text (`stash/`), insertable into config fields. Stash bindings for
-  contract inputs (S5, Step 4d) are not built yet.
+  text (`stash/`), insertable into config fields. **Step 4d (#101):** a
+  Subworkflow node's input can come from a Stash entry, saved in the workflow
+  by name (a missing entry is a validation error), and `aotn run` accepts
+  `--input key=@stash:"name"`, so a cron wrapper can pass a per-machine file
+  or text without a path in the workflow. There are no per-machine binding
+  files (owner, 2026-10-20).
 - Existing deterministic nodes relevant here: `file_reader_node`,
   `file_view_node`, `file_output_node`, `http_request_node`,
   `window_control_node`, `json_path_node`, `text_transform_node`,
   `conditional_node`, `user_text_input_node`, `wait_until_node`,
   `subworkflow_node`, `chat_completion_node`. There is no command-execution
   node.
-- Planned work this overlaps: the rest of Step 4 (4d Stash bindings, 4e/4f
-  shared memory between caller and subworkflow); Step 5 event sources, start
+- Planned work this overlaps: the rest of Step 4 (4e/4f shared memory
+  between caller and subworkflow); Step 5 event sources, start
   triggers and a persistent store; the open wait-for-event node question;
   Step 6 server/auth.
 
@@ -349,8 +353,8 @@ today. Local stdio does not need Step 6 network auth.
 
 Where things stand (2026-10-20): Step 4's contracts (4a), child runs (4b)
 the Subworkflow node's screens (4c-1), watching a running call (4c-2, #94)
-and the prompt queue (#96) are merged. Left in Step 4: 4d
-Stash bindings and 4e/4f shared memory. Then Step 5 (event sources,
+the prompt queue (#96) and 4d Stash entries as inputs (#101) are merged.
+Left in Step 4: 4e/4f shared memory. Then Step 5 (event sources,
 triggers, persistent store) → Step 6 (server). Phase 17 verification is
 still open.
 
@@ -365,7 +369,7 @@ now unblock the CLI and MCP items):
 | C4 | AOTN MCP server (stdio) | Contracts exist, so `run_workflow` takes typed inputs and returns `values`; AOTN becomes a tool for AIs | Step 4 contracts (done) |
 | C2 | **Persistent store pulled forward from Step 5**, built on the Stash's store | Enables H3; avoids separate stores (Stash, state nodes, Step 5). The Stash already gives per-machine durable files and text | Owner decision C5 |
 | C3 | `hermes_ask_node` + `claude_code_node` (bounded agents) | Enables H4/H7; establishes the AI-node contract | C1 for receipts |
-| 4d–4f | Stash bindings, shared memory (unchanged) | 4d lets cron runs bind inputs to Stash entries | — |
+| 4e–4f | Shared memory between a caller and its subworkflow (unchanged) | 4d (Stash entries as inputs) is done | — |
 | C5 | `run_command_node` with allowlist + approval gate | High value, needs careful security design | Settings-level allowlist design |
 | 5 | Event sources + triggers (unchanged, minus the store) | Can take over scheduling from Hermes cron | Step 4 |
 | C6 | `wait_for_reply_node` (Telegram) | Resolves the wait-for-event question for one source | Step 5 event sources, Hermes handler |
@@ -379,7 +383,7 @@ nodes, files, wrappers and a CLI-level server. They can run alongside Phase
 
 | # | Decision | Options | Suggested |
 |---|---|---|---|
-| C1 | Accept the reprioritization in section 9? | Accept / partial / keep current order | Accept: H0–C3 and C4 ahead of 4d–4f and Step 5 |
+| C1 | Accept the reprioritization in section 9? | Accept / partial / keep current order | Accept: H0–C3 and C4 ahead of 4e–4f and Step 5 |
 | C2 | Shared folder location and schema owner | `~/.hermes/aotn/` owned by AOTN docs / elsewhere | `~/.hermes/aotn/`, AOTN owns |
 | C3 | Outbox drain: one digest per tick or one message per event | Digest / per event | Digest |
 | C4 | `cron.wrap_response` on or off | On (shows it came from cron) / off (clean) | Off |
