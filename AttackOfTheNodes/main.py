@@ -2,7 +2,8 @@
 """AttackOfTheNodes entry point.
 
 ``aotn`` launches the Textual TUI; ``aotn run <workflow>`` runs a workflow
-from the command line (see ``aotn_cli.py``) without importing Textual.
+from the command line. ``aotn mcp`` serves local stdio workflow tools.
+Both command-line clients avoid importing Textual.
 """
 
 import sys
@@ -20,6 +21,10 @@ def main(argv: Optional[List[str]] = None) -> Optional[int]:
     """Launch the TUI, or dispatch ``aotn run``, the authoring commands
     (``aotn nodes``, ``describe``, ``build``, ``inspect``) or ``aotn stash``."""
     args = list(sys.argv[1:] if argv is None else argv)
+    if args and args[0] == "mcp":
+        from aotn_mcp.server import main as mcp_main
+
+        return mcp_main(args[1:])
     if args and args[0] == "run":
         from aotn_cli import main as run_main
 

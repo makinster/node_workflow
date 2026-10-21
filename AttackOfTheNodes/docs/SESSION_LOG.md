@@ -6,6 +6,37 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-21 — C4 local stdio MCP server
+
+Branch `codex/mcp-stdio`, based on fetched main `6f5c216`; isolated worktree
+`/home/makin/src/nw-mcp`. No changes to the owner or cron live checkout.
+
+- Added `aotn_mcp/` and `aotn mcp`: standard-library newline-delimited JSON-RPC,
+  initialization/version negotiation, typed tool schemas, JSON text and
+  structured results, ping, cancellation and EOF/signal shutdown. The official
+  Python MCP SDK is absent from `requirements.lock`; no dependency was added.
+- Four tools list saved contracts, run unattended workflows with typed/native
+  JSON and named Stash inputs, read a persisted run summary and list recent run
+  summaries. Contract C25 rejects potential prompts, including nested calls,
+  before starting. The existing unattended provider also rejects runtime input.
+- Select data before backend import. Saved-library lookup excludes arbitrary
+  workflow paths; run IDs/arguments are validated. Only a configured repository
+  workflow library is refused; other chosen libraries remain usable. Logging
+  and incidental worker stdout go to stderr, leaving stdout to the protocol.
+- Each tool has an isolated subprocess and deadline, including queue time.
+  Timeout/cancellation/EOF/TERM kill and reap the worker; Linux subreaper and
+  `/proc` ancestry cover escaped descendants. Cleanup is bounded and blocks
+  further starts if unconfirmed. No engine or TUI changes.
+- Documented setup for local clients in `integrations/MCP.md`; packaged the new
+  module in the wheel. Wheel build/package-content check and an isolated
+  built-wheel initialize/list-workflows/EOF smoke test passed.
+- Verification with the shared Linux Python 3.14.4 interpreter: **46 MCP
+  subprocess tests passed in 7.00 seconds**; full suite with disposable
+  `AOTN_DATA_DIR`: **2,104 passed in 330.71 seconds**. Compileall, documentation
+  link/archive checks and `git diff --check` passed.
+- No client configuration, Hermes installation, cron activation or workflow
+  library edits. One PR; owner review/merge is the next gate.
+
 ## 2026-10-21 — H0 install: live checkout and copies (Hermes v0.14 check)
 
 Branch `dist/hermes-live-install`, from main `531b8d2`. Hermes inspected its
