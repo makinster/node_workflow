@@ -40,9 +40,68 @@ class GitStatusNode(Node):
         report = str((config or {}).get("report") or "Clean")
         return {"default": {"data_type": cls.REPORT_TYPES.get(report, "any")}}
 
+    # Repository config can name programs Git runs during status (an
+    # fsmonitor hook). Turn every such setting off for this read (#104 review).
+    SAFE_CONFIG: ClassVar[List[str]] = [
+        "-c", "core.fsmonitor=false", "-c", "core.untrackedCache=false",
+        "-c", "status.submoduleSummary=false", "-c", "diff.external=",
+    ]
+    TIMEOUT: ClassVar[float] = 15.0
+
+    async def _git(self, git: str, args: List[str]) -> tuple:
+        """Run one fixed git command (argv, no shell) in its own process group;
+        on timeout or cancellation the whole group is killed and reaped."""
+        import asyncio
+        import os
+        import signal
+
+        env = dict(os.environ, GIT_OPTIONAL_LOCKS="0", GIT_TERMINAL_PROMPT="0", LC_ALL="C")
+        process = await asyncio.create_subprocess_exec(
+            git, *self.SAFE_CONFIG, *args, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+            stdin=asyncio.subprocess.DEVNULL, env=env, start_new_session=True)
+        try:
+            out, err = await asyncio.wait_for(process.communicate(), timeout=self.TIMEOUT)
+            return process.returncode, out, err
+        finally:
+            if process.returncode is None:
+                try:
+                    os.killpg(process.pid, signal.SIGKILL)
+                except (ProcessLookupError, PermissionError, AttributeError):
+                    process.kill()
+                try:
+                    await asyncio.wait_for(asyncio.shield(process.wait()), timeout=2)
+                except (asyncio.TimeoutError, asyncio.CancelledError):
+                    pass
+
+    @staticmethod
+    def parse_status(out: bytes) -> tuple:
+        """Branch, commits ahead and changed paths from ``status --porcelain=v2
+        --branch -z`` (NUL-separated, so names keep spaces and are not quoted)."""
+        fields = out.decode("utf-8", "surrogateescape").split("\0")
+        branch, ahead, changed = "", 0, []
+        index = 0
+        while index < len(fields):
+            record = fields[index]
+            index += 1
+            if record.startswith("# branch.head "):
+                branch = record[len("# branch.head "):]
+            elif record.startswith("# branch.ab "):
+                ahead = int(record.split()[2].lstrip("+") or 0)
+            elif record.startswith("1 "):
+                changed.append(record.split(" ", 8)[8])
+            elif record.startswith("2 "):
+                changed.append(record.split(" ", 9)[9])
+                index += 1  # the rename's original path is the next field
+            elif record.startswith("u "):
+                changed.append(record.split(" ", 10)[10])
+            elif record.startswith("? "):
+                changed.append(record[2:])
+        return branch, ahead, changed
+
     async def execute(self, context: NodeContext) -> None:
         import asyncio
         import shutil
+        from pathlib import Path
 
         try:
             folder = checked_path(self.config.get("folder"), context.get_setting)
@@ -53,35 +112,41 @@ class GitStatusNode(Node):
         if git is None:
             context.signal_error(NodeError("git_missing", "Git is not installed or not on PATH"))
             return
-        # The command is fixed; only the folder changes. argv, no shell.
-        argv = [git, "-C", str(folder), "status", "--porcelain=v2", "--branch",
-                "--untracked-files=" + ("normal" if self.config.get("include_untracked", True) else "no")]
         try:
-            process = await asyncio.create_subprocess_exec(
-                *argv, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
-                stdin=asyncio.subprocess.DEVNULL)
-            out, err = await asyncio.wait_for(process.communicate(), timeout=15)
+            # Git looks upward for the repository and status reads the whole
+            # worktree: the repository it finds must be allowed too.
+            code, out, err = await self._git(git, ["-C", str(folder), "rev-parse", "--show-toplevel",
+                                                   "--absolute-git-dir"])
+            if code != 0:
+                self._failed(context, err, code)
+                return
+            top, git_dir = (out.decode("utf-8", "surrogateescape").splitlines() + ["", ""])[:2]
+            try:
+                checked_path(top, context.get_setting)
+                checked_path(git_dir, context.get_setting)
+            except NodeError as exc:
+                if exc.code == "not_allowed":
+                    exc = NodeError("not_allowed", f"The repository at {Path(top)} is outside the folders allowed "
+                                                   "in Options", details=getattr(exc, "details", None))
+                context.signal_error(exc)
+                return
+            untracked = "normal" if self.config.get("include_untracked", True) else "no"
+            code, out, err = await self._git(git, ["-C", top, "status", "--porcelain=v2", "--branch", "-z",
+                                                   "--ignore-submodules=all", f"--untracked-files={untracked}"])
         except asyncio.TimeoutError:
-            process.kill()
-            await process.wait()
-            context.signal_error(NodeError("timeout", "git status did not finish within 15 seconds"))
+            context.signal_error(NodeError("timeout", f"git did not finish within {self.TIMEOUT:g} seconds"))
             return
-        if process.returncode != 0:
-            message = err.decode("utf-8", "replace").strip()
-            code = "not_a_repository" if "not a git repository" in message.lower() else "git_failed"
-            context.signal_error(NodeError(code, message or f"git status exited {process.returncode}"))
+        if code != 0:
+            self._failed(context, err, code)
             return
-        branch, ahead, changed = "", 0, []
-        for line in out.decode("utf-8", "replace").splitlines():
-            if line.startswith("# branch.head "):
-                branch = line.split(" ", 2)[2]
-            elif line.startswith("# branch.ab "):
-                ahead = int(line.split()[2].lstrip("+") or 0)
-            elif line[:2] in ("1 ", "2 ", "u "):
-                changed.append(line.split(" ")[-1] if line[0] != "2" else line.split("\t")[0].split(" ")[-1])
-            elif line.startswith("? "):
-                changed.append(line[2:])
+        branch, ahead, changed = self.parse_status(out)
         report = str(self.config.get("report") or "Clean")
         value = {"Clean": not changed, "Branch": branch, "Changed files": changed,
                  "Commits ahead": ahead}.get(report, not changed)
         finish(self, context, value, self.REPORT_TYPES.get(report, "var"))
+
+    @staticmethod
+    def _failed(context: NodeContext, err: bytes, code: int) -> None:
+        message = err.decode("utf-8", "replace").strip()
+        kind = "not_a_repository" if "not a git repository" in message.lower() else "git_failed"
+        context.signal_error(NodeError(kind, message or f"git exited {code}"))

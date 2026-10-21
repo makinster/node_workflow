@@ -137,3 +137,97 @@ def test_git_status_output_type_follows_report():
     assert {report: GitStatusNode.describe_output_ports({"report": report})["default"]["data_type"]
             for report in GitStatusNode.REPORT_TYPES} == {
         "Clean": "bool", "Branch": "string", "Changed files": "var", "Commits ahead": "number"}
+
+
+# -- #104 review fixes (Codex, 2026-10-20) ------------------------------------------------------
+
+@needs_git
+def test_a_repository_cannot_run_its_own_fsmonitor_command(tmp_path):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    git(repo, "init", "-q", "-b", "main")
+    marker = tmp_path / "ran.txt"
+    hook = tmp_path / "monitor.sh"
+    hook.write_text(f"#!/bin/sh\ntouch '{marker}'\n")
+    hook.chmod(0o755)
+    git(repo, "config", "core.fsmonitor", str(hook))
+    values, codes = shown("git_status_node", {"system_node_folders": str(tmp_path)}, folder=str(repo))
+    assert codes == [] and not marker.exists()
+
+
+@needs_git
+def test_a_subfolder_of_a_repository_outside_the_allowed_folder_is_refused(tmp_path):
+    repo = tmp_path / "repo"
+    (repo / "allowed").mkdir(parents=True)
+    git(repo, "init", "-q", "-b", "main")
+    (repo / "private-name.txt").write_text("secret")
+    values, codes = shown("git_status_node", {"system_node_folders": str(repo / "allowed")},
+                          folder=str(repo / "allowed"), report="Changed files")
+    assert values == [] and "not_allowed" in codes
+
+
+def test_status_records_keep_spaces_renames_and_accents():
+    from backend.nodes.io.git_status_node import GitStatusNode
+
+    out = ("# branch.head main\0# branch.ab +2 -0\0"
+           "1 .M N... 100644 100644 100644 aaa bbb dir/a file.txt\0"
+           "2 R. N... 100644 100644 100644 ccc ddd R100 new name.txt\0old name.txt\0"
+           "? café.txt\0").encode("utf-8")
+    assert GitStatusNode.parse_status(out) == ("main", 2, ["dir/a file.txt", "new name.txt", "café.txt"])
+
+
+@needs_git
+def test_real_git_names_come_back_unquoted(tmp_path):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    git(repo, "init", "-q", "-b", "main")
+    (repo / "old name.txt").write_text("1")
+    git(repo, "add", ".")
+    git(repo, "commit", "-q", "-m", "one")
+    git(repo, "mv", "old name.txt", "new name.txt")
+    (repo / "café.txt").write_text("c")
+    values, codes = shown("git_status_node", {"system_node_folders": str(tmp_path)}, folder=str(repo),
+                          report="Changed files")
+    assert codes == [] and "new name.txt" in values[0] and "café.txt" in values[0] and "\303" not in values[0]
+
+
+def test_stopping_kills_git_and_its_children(tmp_path, monkeypatch):
+    import asyncio
+
+    from backend.nodes.io.git_status_node import GitStatusNode
+
+    slow = tmp_path / "git"
+    pid_file = tmp_path / "child.pid"
+    slow.write_text(f"#!/bin/sh\nsleep 30 &\necho $! > '{pid_file}'\nwait\n")
+    slow.chmod(0o755)
+
+    async def go():
+        node = GitStatusNode("n", {})
+        task = asyncio.ensure_future(node._git(str(slow), ["status"]))
+        for _ in range(100):
+            await asyncio.sleep(0.02)
+            if pid_file.exists() and pid_file.read_text().strip():
+                break
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+        child = int(pid_file.read_text())
+        await asyncio.sleep(0.2)
+        try:
+            os.kill(child, 0)
+            return False
+        except ProcessLookupError:
+            return True
+
+    assert asyncio.run(asyncio.wait_for(go(), timeout=10))
+
+
+def test_a_cleared_setting_allows_nothing(tmp_path):
+    assert allowed_folders(lambda key: "") == []
+    assert allowed_folders(lambda key: 5) == []
+    assert allowed_folders(lambda key: None) == allowed_folders(None)  # absent: the home default
+    with pytest.raises(NodeError) as refused:
+        checked_path(os.path.expanduser("~"), lambda key: "")
+    assert refused.value.code == "not_allowed"

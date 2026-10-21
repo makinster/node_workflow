@@ -26,6 +26,10 @@ nodes first; the owner left the details to Claude, with reasons:
 - Generated with `aotn_node_helper` (specs added); execution hand-written and
   the generated smoke tests adjusted to expect coded refusals.
 - Tests: `tests/test_system_nodes.py` plus the generated tests.
+- Review (#104, Codex): a repository's `core.fsmonitor` (and other run-a-program settings) are off for
+  status; the repository Git finds must itself be allowed; git runs in its own process group, killed and
+  reaped on stop or timeout; status is read NUL-separated (spaces, renames, accents kept); an empty
+  `system_node_folders` allows nothing. Six tests, each failing before its fix.
 
 ## 2026-10-20 — H0 quiet End update and review corrections
 

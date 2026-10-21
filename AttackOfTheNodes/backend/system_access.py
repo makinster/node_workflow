@@ -20,8 +20,15 @@ DEFAULT_FOLDERS = "~"
 
 
 def allowed_folders(get_setting: Optional[Callable[[str], Any]]) -> List[Path]:
+    """The allowed folders. An absent setting means the default (home); an
+    empty or non-text value means none (#104 review: clearing the field must
+    remove access, not restore the home folder)."""
     raw = get_setting(SETTING) if get_setting is not None else None
-    text = str(raw if raw not in (None, "") else DEFAULT_FOLDERS)
+    if raw is None:
+        raw = DEFAULT_FOLDERS
+    if not isinstance(raw, str):
+        return []
+    text = raw
     folders = []
     for part in text.split(";"):
         part = part.strip()
