@@ -100,7 +100,7 @@ def stash_parts(entry_name: str, check: bool = True) -> Parts:
     if check:
         from backend.stash_manager import StashManager
 
-        if not entry_name or StashManager().get(entry_name) is None:
+        if not entry_name or StashManager().get_by_name(entry_name) is None:
             parts += [("  ", "SOURCE"), ("✗ no such Stash entry", "ERROR")]
     return parts
 

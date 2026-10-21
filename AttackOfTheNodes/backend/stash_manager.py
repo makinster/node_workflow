@@ -109,6 +109,15 @@ class StashManager:
                 return dict(entry)
         return None
 
+    def get_by_name(self, name: str) -> Optional[Dict[str, Any]]:
+        """An entry by name only, ignoring case. Inputs refer to entries by
+        name (4d), so a name never resolves to another entry's id."""
+        wanted = name.strip().casefold()
+        for entry in self._load():
+            if entry["name"].casefold() == wanted:
+                return dict(entry)
+        return None
+
     def name_problem(self, name: str, exclude_id: Optional[str] = None) -> Optional[str]:
         """Why ``name`` can't be used, or None (for a rename prompt)."""
         try:
@@ -342,7 +351,11 @@ def stash_ref_name(text: Any) -> Optional[str]:
     """The entry name in an ``@stash:name`` value (quotes allowed), or None."""
     if not isinstance(text, str) or not text.startswith(STASH_REF_PREFIX):
         return None
-    return text[len(STASH_REF_PREFIX):].strip().strip("\"'").strip()
+    name = text[len(STASH_REF_PREFIX):].strip()
+    # Only one matching outer pair: quotes inside a name (Managers') stay.
+    if len(name) >= 2 and name[0] == name[-1] and name[0] in "\"'":
+        name = name[1:-1].strip()
+    return name
 
 
 def input_value(entry: Dict[str, Any]) -> Any:

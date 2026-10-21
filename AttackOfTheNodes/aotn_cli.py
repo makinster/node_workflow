@@ -88,29 +88,31 @@ def _start_rows(service: Any) -> List[Dict[str, Any]]:
 
 
 def _typed_cli_inputs(
-    service: Any, pairs: Dict[str, str], sources: Dict[str, str], no_entry: Dict[str, str]
+    service: Any, pairs: Dict[str, str], sources: Dict[str, str], no_entry: Dict[str, str],
+    invalid: Dict[str, str],
 ) -> Dict[str, Any]:
     """Parse each --input text by the Start row it names; unknown names stay
-    text (a callable workflow rejects them when the run starts).
+    text (the preflight in ``_run`` rejects them for a callable workflow).
 
     ``key=@stash:name`` reads the value from that Stash entry (4d): a file
     entry as itself, a text entry parsed like typed text. Where each value
-    came from goes into ``sources``; entries that don't exist go into
-    ``no_entry`` (input name -> entry name) and the input is left out.
+    came from goes into ``sources``. Nothing raises, so every problem can be
+    listed at once: entries that don't exist go into ``no_entry`` (input name
+    -> entry name), values that don't parse into ``invalid``, and either way
+    the input is left out.
     """
-    from backend.contracts import ContractError, ContractInputError, parse_text
+    from backend.contracts import ContractError, parse_text
     from backend.stash_manager import StashManager, input_value, stash_ref_name
 
     types = {row["name"]: row["type"] for row in _start_rows(service)}
     stash: Optional[StashManager] = None
     typed: Dict[str, Any] = {}
-    invalid: Dict[str, str] = {}
     for name, text in pairs.items():
         value: Any = text
         entry_name = stash_ref_name(text)
         if entry_name is not None:
             stash = stash or StashManager()
-            entry = stash.get(entry_name) if entry_name else None
+            entry = stash.get_by_name(entry_name) if entry_name else None
             if entry is None:
                 no_entry[name] = entry_name
                 continue
@@ -125,8 +127,6 @@ def _typed_cli_inputs(
             typed[name] = parse_text(types[name], value)
         except ContractError as exc:
             invalid[name] = str(exc)
-    if invalid:
-        raise ContractInputError([], invalid, [])
     return typed
 
 
@@ -364,21 +364,20 @@ async def _run(args: argparse.Namespace, stdin: TextIO, stdout: TextIO, stderr: 
     rows = _start_rows(service)
     sources = {name: "from the inputs file" for name in inputs}
     no_entry: Dict[str, str] = {}
-    try:
-        inputs.update(_typed_cli_inputs(service, _parse_inputs(args.input), sources, no_entry))
-    except ContractInputError as exc:
-        stderr.write(_cant_start(rows, exc, no_entry))
-        return EXIT_INVALID_INPUT
-    # Check before listing the inputs, so a run that can't start shows one
-    # list with every problem (a missing Stash entry among them).
+    invalid: Dict[str, str] = {}
+    inputs.update(_typed_cli_inputs(service, _parse_inputs(args.input), sources, no_entry, invalid))
+    # Check everything before listing the inputs, as the run will (a callable
+    # workflow also refuses unknown names), so a run that can't start shows
+    # one list with every problem.
     from backend.contracts import resolve_inputs
 
-    problems: Any = None
+    problems = ContractInputError([], invalid, [])
     try:
-        resolve_inputs([row for row in rows if row["name"] not in no_entry], inputs, strict=False)
+        resolve_inputs([row for row in rows if row["name"] not in no_entry and row["name"] not in invalid],
+                       inputs, strict=service.workflow_map.callable)
     except ContractInputError as exc:
-        problems = exc
-    if no_entry or problems is not None:
+        problems = ContractInputError(exc.missing, {**invalid, **exc.invalid}, exc.unknown)
+    if no_entry or problems.missing or problems.invalid or problems.unknown:
         stderr.write(_cant_start(rows, problems, no_entry))
         return EXIT_INVALID_INPUT
     stderr.write(_inputs_block(rows, inputs, sources))

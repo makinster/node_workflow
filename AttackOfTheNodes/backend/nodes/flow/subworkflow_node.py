@@ -86,7 +86,7 @@ class SubworkflowNode(Node):
                     values[name] = value
             elif source == "Stash":
                 entry_name = str(row.get("stash_entry") or "").strip()
-                entry = StashManager().get(entry_name) if entry_name else None
+                entry = StashManager().get_by_name(entry_name) if entry_name else None
                 if entry is None:
                     raise NodeError("child_input_missing", f"Input '{name}': no Stash entry "
                                     f"{entry_name!r}", details={"input": name, "stash_entry": entry_name})

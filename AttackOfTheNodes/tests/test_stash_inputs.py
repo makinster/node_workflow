@@ -46,11 +46,37 @@ def from_stash(name, entry):
 @pytest.mark.parametrize("text, name", [
     ("@stash:Q3 report", "Q3 report"),
     ('@stash:"Q4 draft"', "Q4 draft"),
+    ("@stash:'Q4 draft'", "Q4 draft"),
+    ('@stash:"Managers\'"', "Managers'"),  # review #101 finding 4: one outer pair only
+    ("@stash:Managers'", "Managers'"),
+    ("@stash:'quoted\"", "'quoted\""),     # unmatched: kept as typed
     ("plain", None),
     (3, None),
 ])
 def test_stash_ref_name(text, name):
     assert stash_ref_name(text) == name
+
+
+def test_names_never_match_another_entrys_id():
+    """Review #101 finding 1: an entry named like another entry's id is
+    found by its name, at run time, in validation and on the CLI."""
+    wrong = StashManager().add_text("Wrong value", name="first")
+    StashManager().add_text("Right value", name=wrong["id"])
+    assert StashManager().get_by_name(wrong["id"])["value"] == "Right value"
+    assert StashManager().get_by_name("FIRST")["value"] == "Wrong value"
+    parent = caller(greeter(), [from_stash("who", wrong["id"])])
+    result, _ = run(parent)
+    assert result.values == {"got": "Right value"}, result.errors
+
+
+def test_a_stash_value_the_input_type_refuses_fails_validation():
+    """Review #101 finding 2: an existing entry is type-checked like a typed value."""
+    StashManager().add_text("lots", name="count text")
+    child = greeter(extra_rows=[row("times", "number", required=True)])
+    parent = caller(child, [from_stash("who", "count text"), from_stash("times", "count text")])
+    errors, _ = _validate(parent)
+    assert errors.count("subworkflow_input_invalid") == 1  # "who" is text: fine
+    assert "subworkflow_stash_missing" not in errors
 
 
 # -- the Subworkflow node ------------------------------------------------------------
@@ -193,3 +219,34 @@ def test_cli_lists_a_missing_entry_with_every_other_missing_input(capsys):
     assert 'no Stash entry "Q4 draft"' in err
     assert "use --input api_url=..." in err
     assert "Inputs:" not in err
+
+
+def test_cli_lists_a_bad_value_with_the_missing_ones(capsys):
+    """Review #101 finding 3a: a value that doesn't parse doesn't hide the rest."""
+    import aotn_cli
+
+    workflow = (Flow("Pay", callable_=True)
+                .node("start", "start_node", rows=[row("amount", "number", required=True),
+                                                   row("who", required=True)])
+                .node("end", "end_node", return_end=True, results=[])
+                .link("start", "end").save())
+    code = aotn_cli.main([workflow, "--input", "amount=lots"])
+    err = capsys.readouterr().err
+    assert code == EXIT_INVALID_INPUT
+    assert err.startswith("Can't start: 2 inputs can't be used.\n")
+    assert "• amount" in err and "expects a number" in err
+    assert "• who" in err and "use --input who=..." in err
+
+
+def test_cli_refuses_an_unknown_input_before_listing_inputs(capsys):
+    """Review #101 finding 3b: a callable workflow's unknown name is in the
+    one list, and no Inputs list is printed first."""
+    import aotn_cli
+
+    code = aotn_cli.main([_two_input_flow(), "--input", "who=Kim", "--input", "api_url=x",
+                          "--input", "typo=bad"])
+    err = capsys.readouterr().err
+    assert code == EXIT_INVALID_INPUT
+    assert "Inputs:" not in err
+    assert err.count("Can't start") == 1
+    assert "• typo" in err and "not an input of this workflow" in err
