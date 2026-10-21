@@ -12,7 +12,18 @@ This is the live status snapshot; plans and logs preserve dated decisions.
   Options gain `hermes_folder` and `hermes_send_to_names`. No Hermes job is
   created; installing the drain job is an owner action. Follow-up: per-job
   sound needs a Hermes change (proposal Q7).
-- **H0 adapter implemented, awaiting owner review:** branch
+- **C4 MCP server merged (#107; #108 rejects regular-file stdin):** branch
+  `codex/mcp-stdio`, based on main `6f5c216`, in `/home/makin/src/nw-mcp`.
+  [Setup and tool contracts](integrations/MCP.md): `aotn mcp --data-dir ...`
+  exposes four typed tools over local stdio. It uses the standard library
+  because the MCP SDK is absent from the lockfile. Existing contract/run/history
+  services provide typed JSON and Stash inputs, unattended termination and C25
+  preflight. Isolated timed workers keep blocking nodes and incidental stdout
+  away from the protocol. Verification: **46 MCP subprocess tests passed**,
+  **2,104 full-suite tests passed**, and the built wheel passed an isolated
+  protocol/worker smoke test. No engine/TUI changes, client installation, live checkout changes
+  or repository workflow edits.
+- **H0 adapter merged (#103), live install in #106:** branch
   `codex/hermes-h0-adapter`, synchronized with main `055dfba` (#104). The
   [repository integration](../integrations/hermes/README.md) supplies the shared
   Bash function, standard-library Python subprocess/JSON adapter, entry scripts
