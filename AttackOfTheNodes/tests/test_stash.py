@@ -247,8 +247,10 @@ def test_cli_add_list_rename_rm(stash, files):
     code, text = _cli("add", f"'{spaced}' {plain} /nowhere/x.txt")
     assert code == 0
     assert "Added file 'q1 notes'" in text and "Added file 'march'" in text
-    assert _cli("add", "a sentence, not a path")[1].startswith("Added text 'a sentence, not a'")
+    assert _cli("add", "a sentence, not a path")[1].startswith("Added string 'a sentence, not a'")
     assert "a sentence" not in _cli("list", "--type", "file")[1]
+    strings = _cli("list", "--type", "string")[1]
+    assert "[string]" in strings and "[text]" not in strings and "march" not in strings
     assert "Not stored: /nowhere/x.txt: not found on this machine" in text
     code, text = _cli("list")
     assert code == 0 and "march" in text and text.count("/data/") == 2  # paths keep their end
