@@ -45,6 +45,7 @@ from frontend.screens.node_selector import NodeSelectorScreen
 from frontend import notifications
 from frontend.editor_workflow_adapter import EditorWorkflowAdapter
 from frontend.widgets.validation_panel import ValidationPanel
+from rich.markup import escape
 from frontend.colors import ERROR, WARNING
 from frontend.io_contract import (
     DETAIL_WIDTH_FALLBACK,
@@ -167,8 +168,10 @@ class EditorScreen(KeymapScreenMixin, Screen):
         self._refreshing_from_backend = False
         self._pending_node_add_mode = "add"
         self._flagged_node_ids: set[str] = set()
-        #: After Go to node: the issue shown in the hint bar until you move.
+        #: After Go to node: the issue shown in the hint bar (markup-escaped)
+        #: while its node stays selected.
         self._issue_hint: Optional[str] = None
+        self._issue_node_id: Optional[str] = None
         self.workflow_adapter = EditorWorkflowAdapter(workflow_map, factory)
 
     def compose(self) -> ComposeResult:
@@ -284,6 +287,8 @@ class EditorScreen(KeymapScreenMixin, Screen):
         node_list = self.query_one(NodeList)
         self._select_row(node_list.row_for_index(event.list_view.index))
         self._refresh_details()
+        if self._issue_hint:
+            self._refresh_hint()  # moving off the issue's node drops it
 
     def on_node_card_clicked(self, event: NodeCard.Clicked) -> None:
         """Single click selects a node; double click opens its config."""
@@ -423,6 +428,8 @@ class EditorScreen(KeymapScreenMixin, Screen):
 
     def _refresh_hint(self) -> None:
         bar = self.query_one(StatusBar)
+        if self._issue_hint and self.selected_node_id != self._issue_node_id:
+            self._issue_hint = None
         if self._issue_hint and not self._validation_panel_focused():
             bar.set_bindings_text(self._issue_hint + " | " + screen_hint_for(
                 self.KEYMAP, keymap=getattr(self.app, "_keymap", None), validation_panel=True,
@@ -522,7 +529,9 @@ class EditorScreen(KeymapScreenMixin, Screen):
         self.selected_node_id = node_id
         self.selected_row = {"kind": "node", "node_id": node_id}
         mark = "✗" if issue["level"] == "error" else "!"
-        self._issue_hint = f"{mark} {issue['name']}: {issue['message']}"
+        # Names and messages are literal text, not markup (Codex review #100).
+        self._issue_hint = f"{mark} {escape(issue['name'])}: {escape(issue['message'])}"
+        self._issue_node_id = node_id
         self.refresh_from_backend()
         self._restore_node_list_focus()
         self._refresh_details()
@@ -972,7 +981,6 @@ class EditorScreen(KeymapScreenMixin, Screen):
         if self._validation_panel_focused():
             self.query_one(ValidationPanel).move(-1)
             return
-        self._issue_hint = None
         self._branch_cycle_anchor = None
         self._move_selection(-1)
 
@@ -980,7 +988,6 @@ class EditorScreen(KeymapScreenMixin, Screen):
         if self._validation_panel_focused():
             self.query_one(ValidationPanel).move(1)
             return
-        self._issue_hint = None
         self._branch_cycle_anchor = None
         self._move_selection(1)
 

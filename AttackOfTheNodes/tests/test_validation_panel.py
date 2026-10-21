@@ -133,3 +133,41 @@ def test_rows_fit_on_one_line_at_80_columns():
         for item in editor.query_one(ValidationPanel).list_view.children:
             assert item.size.height == 1
     run(broken(), steps, width=80)
+
+
+def test_go_to_node_shows_markup_like_messages_literally():
+    """Codex review #100 (1): the hint bar must not parse issue text as markup.
+    A saved number "[/broken]" is quoted in the validator's message."""
+    g = chain()
+    nap = g.add("nap", "sleep_node")
+    g.wire("a", "nap")
+    config = dict(g.map.get_node_data(nap)["config"])
+    field = next(k for k, v in config.items() if isinstance(v, (int, float)) and not isinstance(v, bool))
+    g.map.update_node_config(nap, {**config, field: "[/broken]"})
+    async def steps(editor, pilot):
+        panel = editor.query_one(ValidationPanel)
+        await pilot.press("v", "r")
+        panel.list_view.index = next(
+            i for i, issue in enumerate(panel.issues) if issue["node_id"] == nap)
+        await pilot.press("e")
+        await pilot.pause()
+        shown = str(editor.query_one(StatusBar).render())
+        assert shown.count("[/broken]") == 1 and "✗ nap: " in shown
+    run(g, steps)
+
+
+def test_moving_after_go_to_node_clears_the_issue_from_the_hint_bar():
+    """Codex review #100 (2): W after Go to node shows the normal hints."""
+    g = broken()
+    async def steps(editor, pilot):
+        panel = editor.query_one(ValidationPanel)
+        await pilot.press("v", "r")
+        panel.list_view.index = 0
+        await pilot.press("e")
+        await pilot.pause()
+        assert hint(editor).startswith("✗ ")
+        await pilot.press("w")
+        await pilot.pause()
+        assert not hint(editor).startswith("✗ ")
+        assert hint(editor).endswith("quit")
+    run(g, steps)
