@@ -4051,7 +4051,7 @@ async def _test_help_screen_is_contextual_and_focuses_cancel():
         assert "Up" in help_text and "Down" in help_text
         assert "Execution" not in help_text
         # Editor reference now uses the registry descriptions and aliases.
-        assert "Validate" in help_text
+        assert "Validation panel" in help_text
         assert "Check workflow" not in help_text
         assert "Backspace / X" in help_text
         assert "Ctrl+S" in help_text

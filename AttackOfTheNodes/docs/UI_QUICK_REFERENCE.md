@@ -28,7 +28,13 @@ In Help, W/S or up/down scrolls the text; E/Enter closes it. Close stays visible
 - `Z`: undo deletion.
 - Tab / Shift+Tab: move between panels.
 - `H` or `?`: context help.
-- `V`: validate workflow. Warning badges reflect that last check, not continuous validation.
+- `V`: open or close the Validation panel (top of the right pane). Its
+  **Run validation** button (or `R`) checks the workflow; the last run's
+  issues follow, errors first, one line each (`✗` error, `!` warning, node,
+  message). `W`/`S` move, `E`/Enter on an issue goes to its node: the panel
+  hides, the node is highlighted and the hint bar shows the full message
+  until you move. `Esc` also closes the panel. Warning badges on the map
+  reflect that last run, not continuous validation.
 - `Ctrl+S`: quick save.
 - `Ctrl+R`: execute workflow.
 - `Ctrl+Q`: quit only from the editor.
@@ -272,7 +278,7 @@ Details. Under 80 columns the details sit below the map.
 
 | Screen | Keys beyond shared navigation |
 |---|---|
-| Subworkflow node (Node Config) | 1 Inputs / 2 Payloads / 3 Connections. Change (on the Subworkflow row) opens the picker: type to search, W/S move, E choose. E on an input row: Value comes from Typed value / The incoming payload / Vault key / Its default. E on a payload row: Goes to Next node / Vault / Both (blank key: the payload's name). |
+| Subworkflow node (Node Config) | 1 Inputs / 2 Payloads / 3 Connections. Change (on the Subworkflow row) opens the picker: type to search, W/S move, E choose. E on an input row: Value comes from Typed value / The incoming payload / Vault key / Stash entry / Its default; P picks the Stash entry (saved by name; `✗ no such Stash entry` in the row when it is gone, a validation error). E on a payload row: Goes to Next node / Vault / Both (blank key: the payload's name). |
 | Workflow library | 1/2 Workflows / Subworkflows tab; W/S or arrows move; E/Enter opens; N new (a subworkflow on tab 2); C copies a workflow to Subworkflows (tab 1); R rename; D duplicate; I import; O export; X delete; ? key list; Esc/Q/Ctrl+Q close |
 | New/rename name prompt | Enter or Ctrl+S confirms; Ctrl+Enter also submits; Esc cancels |
 | User Text Input | Ordinary text editing starts on mount; W/S type letters. Ctrl+Enter submits; Esc/Ctrl+Q first leave editing, then cancel |
