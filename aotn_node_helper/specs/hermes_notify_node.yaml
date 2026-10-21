@@ -1,0 +1,86 @@
+node_type: hermes_notify_node
+class_name: HermesNotifyNode
+category: io
+primary_family: Outputs
+tags: ["Hermes", "Telegram", "message"]
+group: "Hermes"
+icon_name: send
+display_name: Notify me
+default_alias: Notify me
+description: Queues a message that Hermes sends you on Telegram
+inputs:
+  input:
+    type: any
+    label: Input
+    description: The value {input} puts in the message
+    required: false
+    sources: ["upstream", "vault"]
+    default: upstream
+outputs:
+  default:
+    name: Receipt
+    type: var
+    to: ["downstream", "vault"]
+    pass_through: true
+    description: Receipt id, status (queued, skipped or not queued) and the message as queued
+output_routing:
+  default: dead_drop
+  vault:
+    mode: optional
+config_tabs:
+  Parameters:
+    message:
+      type: multiline
+      label: Message
+      default: ""
+      placeholder: "{input} = the incoming value. Blank sends just that"
+    send_to:
+      type: select
+      label: Send to
+      options: [["home · set up in Hermes", "home"]]
+      options_from_setting: hermes_send_to_names
+      option_summary: set up in Hermes
+      default: home
+    priority:
+      type: select
+      label: Priority
+      options: [["Normal · in the next message", "Normal"], ["Urgent · first, marked ⚠", "Urgent"]]
+      default: Normal
+    max_length:
+      type: integer
+      label: Longest message (characters)
+      default: 1000
+      minimum: 1
+      maximum: 3500
+      placeholder: "1000, up to 3500"
+    skip_repeats_minutes:
+      type: number
+      label: Skip repeats for (minutes)
+      default: 0
+      minimum: 0
+      maximum: 1440
+      placeholder: "0 = never skip"
+    repeat_key:
+      type: string
+      label: Repeat key
+      default: ""
+      placeholder: "same run + node + branch"
+    allow_hermes_commands:
+      type: boolean
+      label: "Allow Hermes commands (\\[SILENT], MEDIA:)"
+      default: false
+    if_not_queued:
+      type: select
+      label: "If it can't be queued"
+      options: [["Stop · the node fails", "Stop with an error"], ["Carry on · the run continues", "Carry on"]]
+      default: Stop with an error
+errors:
+  - code: outbox_unwritable
+    description: "The Hermes folder could not be written."
+    retryable: true
+  - code: unknown_destination
+    description: "Send to is not one of the names in Options (hermes_send_to_names)."
+    retryable: false
+execution_template: output_sink
+ui_hints:
+  forwarded_input_port: input

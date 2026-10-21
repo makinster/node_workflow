@@ -101,6 +101,14 @@ End Branch below is a proposal, not a substitute already available in the app.
 | File Delete | Concept | Remove a file; output: bool success. Tags: File I/O |
 | File Copy / Move | Concept | Duplicate or relocate a file; input: source + destination. Tags: File I/O |
 
+### Group: Hermes
+
+| Node | Status | Notes |
+|---|---|---|
+| Notify me | Live | `hermes_notify_node` (C1) — renders Message (`{input}`; blank sends the incoming value), escapes it unless Allow Hermes commands, cuts it to Longest message (default 1,000, at most 3,500) and appends it to the Hermes outbox for a Send to name from Options (never a chat id; never holds the Telegram token). Priority Normal / Urgent (first in the digest, ⚠; does not ring, see the [shared folder](integrations/HERMES_SHARED_FOLDER.md#sound)). Skip repeats for N minutes per Repeat key (default run + node + branch). Forwards its input by default; own result Receipt [var]. Codes `outbox_unwritable` (retryable), `unknown_destination`. Tags: Hermes, Telegram |
+| Record event | Live | `record_event_node` (C1) — appends one `event` line (name, one-line summary, optional value) to the Hermes events log; sends nothing. A blank Event name uses the node's name. Skip repeats as above; carries on by default if it cannot write. Forwards its input by default; own result Event id [string]. Code `events_unwritable`. Tags: Hermes |
+| Propose memory | Concept | Appends a candidate fact to `memory_proposals.jsonl` for review; never edits Hermes memory (proposal 7.1) |
+
 ### Group: Send / Notify
 
 | Node | Status | Notes |

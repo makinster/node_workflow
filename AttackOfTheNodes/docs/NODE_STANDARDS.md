@@ -513,6 +513,15 @@ source is Configured (`visible_when`; revised 2026-07-07 — previously greyed).
 Fields that are always editable (such as temperature, model name, or mode
 flags) are never affected by source selection.
 
+**Keep it light at a glance (owner, 2026-10-21).** Put a field's hint in its
+grey `placeholder` (overwritten by typing; a blank number field means the
+default) instead of a description line under it, and label each dropdown
+item `Name · what it does` (`{label, value}` or `[label, value]` options).
+Checkbox labels explain themselves. Escape `[` in labels (`\[SILENT]`): they
+are Rich markup. A select can list names kept in Options with
+`options_from_setting: <setting>` (`;`-separated) plus `option_summary`;
+Notify me's Send to does.
+
 ### Payloads Tab
 
 Built from `output_port_metadata` per the Standard Output Routing Model above:

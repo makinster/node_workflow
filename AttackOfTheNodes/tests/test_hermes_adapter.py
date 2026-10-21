@@ -567,7 +567,8 @@ def test_concurrent_pipe_floods(tmp_path):
 # -- install.sh: copies, not symlinks (Hermes v0.14 rejects symlinks out of scripts/) -------------
 
 INSTALL = Path(__file__).resolve().parent.parent / 'integrations' / 'hermes' / 'install.sh'
-INSTALLED = ('_aotn_common.sh', '_aotn_run.py', 'aotn-h1-heartbeat.sh', 'aotn-h2-http-watchdog.sh')
+INSTALLED = ('_aotn_common.sh', '_aotn_run.py', 'aotn-h1-heartbeat.sh', 'aotn-h2-http-watchdog.sh',
+             '_aotn_drain.py', 'aotn-drain-home.sh')
 
 
 def run_install(home, *args):

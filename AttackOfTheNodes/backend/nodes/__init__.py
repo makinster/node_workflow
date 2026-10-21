@@ -47,8 +47,12 @@ from .flow.subworkflow_node import SubworkflowNode
 from .io.disk_space_node import DiskSpaceNode
 from .io.git_status_node import GitStatusNode
 from .io.file_age_node import FileAgeNode
+from .io.hermes_notify_node import HermesNotifyNode
+from .io.record_event_node import RecordEventNode
 
 ALL_NODE_CLASSES = [
+    RecordEventNode,
+    HermesNotifyNode,
     FileAgeNode,
     GitStatusNode,
     DiskSpaceNode,

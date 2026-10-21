@@ -5,6 +5,13 @@ This is the live status snapshot; plans and logs preserve dated decisions.
 
 ## Baseline and open work — 2026-10-20
 
+- **C1 built, awaiting owner review (2026-10-21):** branch
+  `dist/hermes-notify` from main `6f5c216`. Notify me and Record event write
+  the [Hermes shared folder](integrations/HERMES_SHARED_FOLDER.md); the outbox
+  drain (`integrations/hermes/aotn-drain-home.sh`) prints one digest per tick.
+  Options gain `hermes_folder` and `hermes_send_to_names`. No Hermes job is
+  created; installing the drain job is an owner action. Follow-up: per-job
+  sound needs a Hermes change (proposal Q7).
 - **H0 adapter implemented, awaiting owner review:** branch
   `codex/hermes-h0-adapter`, synchronized with main `055dfba` (#104). The
   [repository integration](../integrations/hermes/README.md) supplies the shared

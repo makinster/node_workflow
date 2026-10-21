@@ -6,6 +6,32 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-21 — C1: Notify me, Record event and the outbox drain
+
+Branch `dist/hermes-notify`, from main `6f5c216`. The owner approved the
+sample screens (after asking for lighter config screens: hints inside the
+fields, `Name · what it does` dropdown items) and answered the open questions.
+
+- `backend/hermes_folder.py`: the shared folder (`~/.hermes/aotn`, Options
+  `hermes_folder`; folder 700, files 600, one `flock` for every change),
+  escaping identical to the H0 adapter's, Telegram-length cutting, repeats.
+  Formats: [Hermes shared folder](integrations/HERMES_SHARED_FOLDER.md).
+- `hermes_notify_node` (Notify me) and `record_event_node` (Record event),
+  generated from helper specs, group Hermes in Outputs. Both forward their
+  input by default. Send to lists Options `hermes_send_to_names` through a new
+  select key `options_from_setting` (Node Config).
+- `NodeContext.workflow_name`, set by the supervisor, so records say which
+  workflow sent them.
+- `integrations/hermes/_aotn_drain.py` + `aotn-drain-home.sh`: one digest per
+  tick, urgent first with ⚠, 3,500 characters, overflow waits, bad lines set
+  aside, `handed_off` receipts after printing. `install.sh` copies them too.
+- Owner answers: the Hermes folder is not limited by `system_node_folders`;
+  Urgent goes first with ⚠ and does not ring; "Quiet" dropped (Hermes has no
+  per-job silent option; follow-up Q7); drain every 5 minutes, one job per
+  name; Send to names in Options.
+- Tests: `tests/test_hermes_notify.py`, `tests/test_hermes_drain.py`, the
+  generated node tests (pointed at a temporary folder), install list updated.
+
 ## 2026-10-21 — H0 install: live checkout and copies (Hermes v0.14 check)
 
 Branch `dist/hermes-live-install`, from main `531b8d2`. Hermes inspected its

@@ -594,6 +594,7 @@ class Supervisor:
             call_subworkflow=self._call_for(self.current_node_id or ""),
             node_alias=str((self._workflow_map.get_node_data(self.current_node_id or "") or {}).get("alias") or ""),
             get_setting=self._get_setting,
+            workflow_name=str(getattr(self._workflow_map, "workflow_name", "") or ""),
         )
 
         started_at = perf_counter()

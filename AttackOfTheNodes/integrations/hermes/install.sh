@@ -17,7 +17,8 @@ fi
 
 source_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
 target_dir=${HERMES_HOME:-/home/makin/.hermes}/scripts
-files=(_aotn_common.sh _aotn_run.py aotn-h1-heartbeat.sh aotn-h2-http-watchdog.sh)
+files=(_aotn_common.sh _aotn_run.py aotn-h1-heartbeat.sh aotn-h2-http-watchdog.sh
+       _aotn_drain.py aotn-drain-home.sh)
 
 differs=0
 for name in "${files[@]}"; do

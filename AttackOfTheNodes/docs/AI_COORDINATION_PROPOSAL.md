@@ -367,7 +367,7 @@ now unblock the CLI and MCP items):
 |---|---|---|---|
 | H0 | [Repository adapter and H1/H2 specs](../integrations/hermes/README.md) implemented for owner review under the [H0 contract](integrations/HERMES_H0_DRAFT.md) | Subprocess/loopback acceptance tests, Linux escaped-descendant containment and stale-lock blocking, real entry-script deployment tests; no installed wrapper, job or live delivery | Nothing |
 | P1 | First-community package: install path, Hermes guide, H1/H2 specs, screenshots, known limits (section 1.2) | Something to show Hermes users | H0, C1 |
-| C1 | `hermes_notify_node` + `record_event_node` + shared folder schemas | Small, unblocks long-run notifications and receipts | H0 |
+| C1 | `hermes_notify_node` + `record_event_node` + shared folder schemas. **Built (2026-10-21):** Notify me, Record event, the outbox drain and the [shared folder formats](integrations/HERMES_SHARED_FOLDER.md). Owner answers: the folder is not limited by `system_node_folders`; Urgent goes first with ⚠; "Quiet" dropped (Hermes cannot send silently per job, and cron deliveries are already silent through the gateway); drain every 5 minutes, one job per Send to name; forwarding on by default; Send to names live in Options | Small, unblocks long-run notifications and receipts | H0 |
 | C4 | AOTN MCP server (stdio) | Contracts exist, so `run_workflow` takes typed inputs and returns `values`; AOTN becomes a tool for AIs | Step 4 contracts (done) |
 | C2 | **Persistent store pulled forward from Step 5**, built on the Stash's store | Enables H3; avoids separate stores (Stash, state nodes, Step 5). The Stash already gives per-machine durable files and text | Owner decision C5 |
 | C3 | `hermes_ask_node` + `claude_code_node` (bounded agents) | Enables H4/H7; establishes the AI-node contract | C1 for receipts |
@@ -417,6 +417,11 @@ approval on by default.
   outputs? (A code check found nothing; confirm end to end in H1.)
 - **Q6:** Does `hermes chat -q` run non-interactively with a timeout and
   return only the answer on stdout?
+- **Q7 (follow-up from C1, 2026-10-21):** per-job sound control. Hermes has
+  no per-job or output option for silent delivery; gateway cron deliveries are
+  already silent and its standalone fallback rings. A ringing Urgent (or a
+  real Quiet) needs a Hermes enhancement, approved by the owner through
+  Hermes. Nothing in C1 depends on it.
 
 ## 12. Risks
 

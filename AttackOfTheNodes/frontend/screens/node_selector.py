@@ -76,6 +76,7 @@ GROUP_DESCRIPTIONS: Dict[str, str] = {
     "Merge": "Waits for all parallel branches to complete and collects outputs",
     "Data Transform": "Transforms data between formats and structures",
     "AI Processing": "Sends prompts to an AI model and returns the response",
+    "Hermes": "Send yourself a message or note what happened (via Hermes)",
 }
 
 # Frontend-owned section ordering per family. Entries without a
