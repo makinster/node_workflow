@@ -180,7 +180,7 @@ Variants have different port shapes, so they must be separate types
 | Node | Status | Notes |
 |---|---|---|
 | Start | Removed | `start_node` exists in the runtime but is auto-generated — never user-addable |
-| End | Live; hidden in TUI selector | `end_node` explicitly terminates its branch; workflow authoring can place it |
+| End | Live; hidden in TUI selector | `end_node` explicitly terminates its branch; workflow authoring can place it. `record_line` ("Add a line to the output", on by default; saved Ends without it keep their line) adds `[END] <line>`; off, the End adds nothing, so a silent scheduled check prints nothing |
 
 ---
 

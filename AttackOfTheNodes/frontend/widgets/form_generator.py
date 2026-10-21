@@ -290,7 +290,7 @@ def _field_children(
         field_widgets[field_name] = widget
         children.append(widget)
         if description:
-            children.append(Label(str(description), classes="form-description",
+            children.append(Label(str(description), classes="form-description", markup=False,
                                   id=f"field-desc-{field_name}"))
         return children
 
@@ -334,7 +334,7 @@ def _field_children(
             )
         )
     if description:
-        children.append(Label(str(description), classes="form-description",
+        children.append(Label(str(description), classes="form-description", markup=False,
                               id=f"field-desc-{field_name}"))
     return children
 
