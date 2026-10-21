@@ -6,6 +6,67 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-20 — H0 quiet End update and review corrections
+
+Branch `codex/hermes-h0-spec`, PR #97; merged main `f86fbe8` in `e9f0df5`,
+keeping both the H0 and main session entries. H1/H2 now finish with End
+nodes using `record_line: false` from #99, rather than terminal No-Op nodes.
+The wrapper draft also incorporates the two confirmed self-review findings:
+escape every silent-marker case variant recognized by Hermes, and translate
+external SIGTERM into the child's handled SIGINT path for graceful cleanup.
+The adapter remains unimplemented; this change is documentation only.
+
+Both extracted specs passed CLI build/check and build/save/reload against
+this updated checkout. All 13 isolated CLI cases passed again, including
+one-line heartbeat output, zero-byte healthy watchdog stdout, HTTP failure
+routes and nonzero unhandled-error exits. Required-input warnings remain
+expected. Docs links/archive/session preservation and whitespace checks pass;
+no full suite rerun for this docs-only update, no live Hermes/Telegram test,
+and no repository workflow edits. Existing historical receipts below remain
+unchanged.
+
+## 2026-10-20 — H0 wrapper and workflow specification draft
+
+Branch `codex/hermes-h0-spec`, from fresh main `7227b1b` (#94–#96 merged).
+Owner requested the H0 docs draft while other sessions own Step 4d and the
+Editor Validation Panel. No changes to those files or to engine code.
+
+- Added [the draft](integrations/HERMES_H0_DRAFT.md): filename-derived wrapper
+  names, separate cron data directory, absolute interpreter/checkout entry,
+  an external JSON-output adapter preserving natural exit codes, escaped
+  and bounded stdout/stderr, timeout/signal/overlap semantics, and a later
+  activation checklist. Adapter behavior is a specification, not installed
+  or tested implementation; Hermes assumptions still require rechecking.
+- Two complete `aotn-workflow/1` JSON specs: timestamped heartbeat and HTTP
+  body watchdog with conditional silence and handled network/timeout/status
+  alerts. Real runs revealed End always adds `[END] ...`; terminal No-Op
+  nodes preserve one heartbeat message and zero-byte healthy stdout.
+- Verification: both extracted JSON specs passed CLI `build --check` and
+  build/save/reload in temporary data directories. Thirteen CLI run cases
+  passed: heartbeat text/JSON, healthy and whitespace-healthy bodies,
+  unhealthy/directive-bearing bodies, HTTP 503, timeout, healthy text with
+  empty stdout, refused connection, missing timestamp, unknown name and an
+  unhandled-error variant. HTTP used an ephemeral loopback fixture; the
+  scratch spec alone changed its URL. Required-input warnings are expected.
+- Relative links/anchors, archive/session preservation and `git diff --check`
+  passed. Full suite was not rerun for this docs-only change. No live Hermes
+  job, Telegram message, wrapper implementation or repository workflow edit.
+- No own open prompt-queue PR or Codex prompt-queue branch was present to
+  close; duplicate queue work is dropped in favor of merged #96. Other
+  workers' worktrees and the owner's dirty checkout remain untouched.
+
+## 2026-10-20 — H0 draft review fixes (#97)
+
+Owner asked for review, fixes and merge. Ran both H1/H2 specs against main
+`6e37909`: heartbeat one line; healthy watchdog silent; unexpected body,
+HTTP 503 and refused connection one fixed message each, exit 0; missing
+input exit 5 with the new "Can't start" list; unknown workflow exit 4.
+
+- The adapter prefixes `| ` only to a line that starts with `{` (the
+  `wakeAgent` risk); ordinary lines, such as the heartbeat, are unchanged.
+- Stale "Stash bindings" wording replaced: 4d is built as Stash entries
+  saved by name (#101), here and in the coordination proposal.
+
 ## 2026-10-20 — A quiet End node
 
 Branch `dist/quiet-end`, from main `7227b1b`. Found by the H0 Hermes draft
