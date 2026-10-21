@@ -11,7 +11,8 @@ aotn_cron_run() {
         return 70
     fi
     local slug=${BASH_REMATCH[1]}
-    local root=/home/makin/src/node_workflow
+    # The live checkout: cron runs this tree, updated on purpose (owner, 2026-10-21).
+    local root=/home/makin/src/aotn-live
     local python=/home/makin/src/node_workflow/.venv/bin/python
     local data=/home/makin/.local/share/aotn-cron
     # Resolve relative to this sourced file, so linked/copied deployments work.

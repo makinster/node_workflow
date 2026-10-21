@@ -6,6 +6,21 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-21 — H0 install: live checkout and copies (Hermes v0.14 check)
+
+Branch `dist/hermes-live-install`, from main `531b8d2`. Hermes inspected its
+installed scheduler before installing: it rejects any script whose real path
+is outside `$HERMES_HOME/scripts` (so no symlinks), and the planned live
+checkout did not exist yet. The owner's main checkout is on an old branch, so
+cron must not run from it.
+
+- The wrapper's project root is now `/home/makin/src/aotn-live`: a worktree on
+  branch `live` tracking main, updated on purpose with `git pull`.
+- `integrations/hermes/install.sh` copies the four files into
+  `$HERMES_HOME/scripts` (entry scripts executable, atomic replace, refuses a
+  symlink at the target); `--check` reports drift without changing anything.
+- Tests: three install tests in `tests/test_hermes_adapter.py`.
+
 ## 2026-10-21 — H0 review fixes: descendant containment and entry scripts
 
 Branch `codex/hermes-h0-adapter`, original head `057ca45`; synchronized with

@@ -5,6 +5,12 @@ authorized by the owner after C1–C7 in PR #102. Standard-library Python and
 Bash; POSIX process groups and `flock` require Linux/WSL. No engine changes.
 These files are staged for owner review, with no installation or cron activation.
 
+**Install (owner or Hermes, 2026-10-21):** Hermes v0.14 rejects scripts whose real path is
+outside `$HERMES_HOME/scripts`, so the files are **copies**, not symlinks. Run
+`bash /home/makin/src/aotn-live/AttackOfTheNodes/integrations/hermes/install.sh` to copy the
+four files (entry scripts executable), and `install.sh --check` to see whether the installed
+copies still match the live checkout (exit 1 when they differ). Rerun it after each `pull`.
+
 - `_aotn_common.sh`: sourceable `aotn_cron_run` function, selecting the exact
   saved workflow name from `aotn-<slug>.sh`. It rejects arguments and invalid
   names, changes to the absolute project root and execs the absolute interpreter.
@@ -17,8 +23,10 @@ These files are staged for owner review, with no installation or cron activation
   quiet End nodes. H2's loopback URL is an example; choose the real endpoint
   deliberately before building into the cron library.
 
-Production paths in the shared function are explicit:
-`/home/makin/src/node_workflow`, its `.venv/bin/python`, and the separate
+Production paths in the shared function are explicit: the live checkout
+`/home/makin/src/aotn-live` (a worktree on branch `live`, tracking main; update it on
+purpose with `git -C /home/makin/src/aotn-live pull`), the shared
+`/home/makin/src/node_workflow/.venv/bin/python`, and the separate
 `/home/makin/.local/share/aotn-cron` data directory. The adapter itself accepts
 absolute paths for checkout-local verification; it rejects the repository app
 and workflow directories as data destinations. No PATH interpreter lookup or

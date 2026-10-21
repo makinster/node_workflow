@@ -363,7 +363,7 @@ def test_wrapper_filename_selects_exact_slug():
     assert result.returncode == 0, result.stderr
     assert result.stdout.splitlines() == [
         '/home/makin/src/node_workflow/.venv/bin/python', str(ADAPTER),
-        '--workflow-slug', 'h2-http-watchdog', '--project-root', '/home/makin/src/node_workflow',
+        '--workflow-slug', 'h2-http-watchdog', '--project-root', '/home/makin/src/aotn-live',
         '--data-dir', '/home/makin/.local/share/aotn-cron',
         '--python', '/home/makin/src/node_workflow/.venv/bin/python']
 
@@ -562,3 +562,47 @@ def test_concurrent_pipe_floods(tmp_path):
     assert result.returncode == 0
     assert 'see run run_test' in result.stdout and 'truncated' in result.stderr
     assert len(result.stderr.encode('utf-16-le')) // 2 <= 3500
+
+
+# -- install.sh: copies, not symlinks (Hermes v0.14 rejects symlinks out of scripts/) -------------
+
+INSTALL = Path(__file__).resolve().parent.parent / 'integrations' / 'hermes' / 'install.sh'
+INSTALLED = ('_aotn_common.sh', '_aotn_run.py', 'aotn-h1-heartbeat.sh', 'aotn-h2-http-watchdog.sh')
+
+
+def run_install(home, *args):
+    return subprocess.run(['bash', str(INSTALL), *args], capture_output=True, text=True,
+                          env=dict(os.environ, HERMES_HOME=str(home)))
+
+
+def test_install_copies_files_with_entry_scripts_executable(tmp_path):
+    home = tmp_path / 'hermes home'
+    first = run_install(home)
+    scripts = home / 'scripts'
+    assert first.returncode == 0, first.stderr
+    for name in INSTALLED:
+        target = scripts / name
+        assert target.is_file() and not target.is_symlink()
+        assert target.read_bytes() == (INSTALL.parent / name).read_bytes()
+        assert bool(target.stat().st_mode & 0o111) == name.startswith('aotn-')
+    again = run_install(home)
+    assert again.returncode == 0 and again.stdout.count('up to date') == len(INSTALLED)
+
+
+def test_install_check_reports_drift_without_changing_anything(tmp_path):
+    home = tmp_path / 'home'
+    assert run_install(home, '--check').returncode == 1  # missing
+    run_install(home)
+    assert run_install(home, '--check').returncode == 0
+    edited = home / 'scripts' / '_aotn_run.py'
+    edited.write_text('# changed\n')
+    check = run_install(home, '--check')
+    assert check.returncode == 1 and 'differs' in check.stdout and edited.read_text() == '# changed\n'
+
+
+def test_install_refuses_symlinks_and_bad_arguments(tmp_path):
+    home = tmp_path / 'home'
+    (home / 'scripts').mkdir(parents=True)
+    (home / 'scripts' / '_aotn_run.py').symlink_to(INSTALL.parent / '_aotn_run.py')
+    assert run_install(home).returncode == 70
+    assert run_install(home, '--force').returncode == 64

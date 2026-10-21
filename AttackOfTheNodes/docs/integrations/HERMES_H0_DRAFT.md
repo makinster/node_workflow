@@ -28,7 +28,7 @@ Proposed paths on the owner's WSL machine:
 | `/home/makin/.hermes/scripts/_aotn_common.sh` | Shared Bash function `aotn_cron_run`; never scheduled |
 | `/home/makin/.hermes/scripts/_aotn_run.py` | Proposed output/exit adapter, standard library only; never scheduled |
 | `/home/makin/.local/share/aotn-cron/` | Separate AOTN data directory: saved workflows, settings, run records and outputs |
-| `/home/makin/src/node_workflow/` | Authoritative project root |
+| `/home/makin/src/aotn-live/` | Live checkout cron runs (branch `live`, tracking main; owner, 2026-10-21) |
 | `/home/makin/src/node_workflow/.venv/bin/python` | Absolute AOTN interpreter; ignore Hermes's venv on PATH |
 
 One entry file per workflow, with the same body (illustrative; dependencies
