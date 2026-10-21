@@ -7,6 +7,7 @@ import math
 import os
 from pathlib import Path
 import signal
+import stat
 import sys
 
 from .processes import kill_and_reap, subreaper
@@ -205,6 +206,9 @@ def main(argv=None):
     args = parser.parse_args(argv)
     if not math.isfinite(args.call_timeout) or args.call_timeout <= 0:
         parser.error('--call-timeout must be a positive finite number')
+    if stat.S_ISREG(os.fstat(sys.stdin.fileno()).st_mode):
+        print('aotn mcp: regular-file stdin is unsupported; connect using a pipe', file=sys.stderr)
+        return 64
     # Match persistence.resolve_data_dir(), including whitespace handling.
     raw_data = str(args.data_dir or os.environ.get('AOTN_DATA_DIR', '') or APP).strip()
     data = Path(raw_data or APP).expanduser().resolve()

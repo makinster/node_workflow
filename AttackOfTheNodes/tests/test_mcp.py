@@ -400,3 +400,16 @@ def test_history_symlink_cannot_read_outside_history(tmp_path):
         for name, args in [('get_run_status', {'run_id': 'run_link'}), ('get_recent_events', {})]:
             result = client.call(name, args)
             assert result['isError'] and 'not a run' not in json.dumps(result)
+
+
+def test_regular_file_stdin_exits_usage_without_traceback(tmp_path):
+    request_file = tmp_path / 'requests.jsonl'
+    request_file.write_text('{"jsonrpc":"2.0","id":1,"method":"ping"}\n')
+    with request_file.open('rb') as stdin:
+        result = subprocess.run(
+            [sys.executable, str(MAIN), 'mcp', '--data-dir', str(tmp_path / 'data')],
+            stdin=stdin, capture_output=True, timeout=5)
+    assert result.returncode == 64
+    assert result.stdout == b''
+    assert result.stderr.decode().splitlines() == [
+        'aotn mcp: regular-file stdin is unsupported; connect using a pipe']
