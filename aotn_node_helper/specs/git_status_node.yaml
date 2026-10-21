@@ -1,0 +1,60 @@
+node_type: git_status_node
+class_name: GitStatusNode
+category: io
+primary_family: Inputs
+tags: ["System"]
+group: "System"
+selector_section: "System"
+icon_name: git-branch
+display_name: Git status
+default_alias: Git status
+description: Branch, clean or not, and changed files of a Git repository (runs git status, nothing else)
+input_ports: ["input"]
+outputs:
+  default:
+    name: Git status
+    type: any
+    required: true
+    to: ["downstream", "vault"]
+    description: "The value chosen in Report: Clean [bool], Branch [string], Changed files [var], Commits ahead [number]"
+output_routing:
+  default: transient
+  vault:
+    mode: optional
+config_tabs:
+  Parameters:
+    folder:
+      type: string
+      label: Folder
+      default: "~"
+      required: true
+      description: Must be inside an allowed folder (Options: system_node_folders)
+    report:
+      type: select
+      label: Report
+      options: ["Clean", "Branch", "Changed files", "Commits ahead"]
+      default: Clean
+    include_untracked:
+      type: boolean
+      label: Include untracked files
+      default: true
+errors:
+  - code: folder_missing
+    description: "The folder does not exist."
+    retryable: false
+  - code: not_allowed
+    description: "The folder is outside the folders allowed in Options."
+    retryable: false
+  - code: not_a_repository
+    description: "The folder is not inside a Git repository."
+    retryable: false
+  - code: git_missing
+    description: "Git is not installed or not on PATH."
+    retryable: false
+  - code: timeout
+    description: "git status did not finish within 15 seconds."
+    retryable: true
+  - code: git_failed
+    description: "git status failed for another reason (its message is kept)."
+    retryable: false
+execution_template: transform_stub

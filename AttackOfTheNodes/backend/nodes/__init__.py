@@ -44,8 +44,14 @@ from .io.file_view_node import FileViewNode
 from .io.window_control_node import WindowControlNode
 from .flow.error_mux_node import ErrorMuxNode
 from .flow.subworkflow_node import SubworkflowNode
+from .io.disk_space_node import DiskSpaceNode
+from .io.git_status_node import GitStatusNode
+from .io.file_age_node import FileAgeNode
 
 ALL_NODE_CLASSES = [
+    FileAgeNode,
+    GitStatusNode,
+    DiskSpaceNode,
     ErrorMuxNode,
     SubworkflowNode,
     WindowControlNode,
