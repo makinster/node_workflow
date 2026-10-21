@@ -88,7 +88,21 @@ def source_parts(row: Dict[str, Any], mapping: Optional[Dict[str, Any]]) -> Part
         return [("the incoming payload", "SOURCE")]
     if source == "Vault":
         return [("Vault key ", "SOURCE"), (f'"{mapping.get("vault_key") or ""}"', "KEY")]
+    if source == "Stash":
+        return stash_parts(str(mapping.get("stash_entry") or ""))
     return [("typed: ", "SOURCE"), (_shown(row, mapping.get("value", "")), "VALUE")]
+
+
+def stash_parts(entry_name: str, check: bool = True) -> Parts:
+    """``Stash entry "name"``, plus ``✗ no such Stash entry`` when this
+    machine's Stash has no entry by that name (4d: a validation error)."""
+    parts: Parts = [("Stash entry ", "SOURCE"), (f'"{entry_name}"', "KEY")]
+    if check:
+        from backend.stash_manager import StashManager
+
+        if not entry_name or StashManager().get_by_name(entry_name) is None:
+            parts += [("  ", "SOURCE"), ("✗ no such Stash entry", "ERROR")]
+    return parts
 
 
 def route_parts(name: str, route: Optional[Dict[str, Any]]) -> Parts:

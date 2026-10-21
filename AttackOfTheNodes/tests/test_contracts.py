@@ -328,7 +328,9 @@ def test_cli_typed_inputs_inputs_file_and_values(tmp_path, capsys):
 
     code = aotn_cli.main([wm.workflow_id])
     assert code == EXIT_INVALID_INPUT
-    assert "missing required input(s): limit" in capsys.readouterr().err
+    err = capsys.readouterr().err
+    assert err.startswith("Can't start: 1 required input has no value.")
+    assert "• limit" in err and "use --input limit=..." in err
 
 
 # -- review of #80 ------------------------------------------------------------------

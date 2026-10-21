@@ -111,7 +111,11 @@ Running one: `aotn run <workflow> --input who=Kim --input times=3` parses
 each value by its row (numbers, `true`/`false`, JSON for `var`, a path for
 `file`). `--inputs-file run.json` supplies a JSON object of **already-typed**
 values (a number must be a JSON number; a `var` string stays a string);
-`--input` wins over it, and a row's value fills anything left. Return End
+`--input` wins over it, and a row's value fills anything left.
+`--input doc=@stash:"Q3 report"` takes the value from that Stash entry (a
+file entry as the file, text parsed by the row). Before the run, `aotn run`
+lists each input and where it came from; a run that can't start lists every
+input without a value, with the reason. Return End
 results are enforced only when the workflow is callable. Absent or JSON `null`
 means missing, as does a blank stored default; an explicitly supplied `""`,
 `0` or `false` is a value. A run

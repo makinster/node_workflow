@@ -42,6 +42,7 @@ VALIDATION_LABELS: Dict[str, str] = {
     "subworkflow_input_invalid": "Input type mismatch",
     "subworkflow_result_unknown": "Unknown result",
     "subworkflow_input_missing": "Input not filled",
+    "subworkflow_stash_missing": "No such Stash entry",
     "subworkflow_input_unmapped": "Input uses default",
     "undeclared_vault_key": "Missing Vault key",
     "unwritten_vault_key": "Unwritten Vault key",

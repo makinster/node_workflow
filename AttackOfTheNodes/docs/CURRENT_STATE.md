@@ -44,7 +44,9 @@ This is the live status snapshot; plans and logs preserve dated decisions.
   from the Execution screen with E/Enter, breadcrumbs, prompts that say who
   asks) merged in #94, with its review fixes. The prompt queue (C19: a
   second prompt waits for the first instead of being dropped) merged in #96.
-  Left in Step 4: 4d Stash bindings, 4e/4f shared memory.
+  4d (Stash entries as Subworkflow node inputs and `--input key=@stash:name`;
+  per-machine bindings dropped, owner 2026-10-20) is in review.
+  Left in Step 4: 4e/4f shared memory.
   [Proposal](SUBWORKFLOWS_PROPOSAL.md).
 - **Keymap phase 3 — Editor/Execution:** merged in #92.
   Both screens already compiled bindings from profiles; Help and status hints

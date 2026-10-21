@@ -39,6 +39,7 @@ ISSUE_CODES: Dict[str, str] = {
     "subworkflow_input_unknown": "A Subworkflow node fills an input the subworkflow doesn't have.",
     "subworkflow_input_invalid": "A configured subworkflow input doesn't match the input's type.",
     "subworkflow_result_unknown": "A Subworkflow node routes a result the subworkflow doesn't send back.",
+    "subworkflow_stash_missing": "A subworkflow input comes from a Stash entry that isn't in this machine's Stash.",
     "subworkflow_input_missing": "A required subworkflow input with no default is not filled.",
     "subworkflow_input_unmapped": "A subworkflow input is not filled, so its default is used.",
     # Vault
