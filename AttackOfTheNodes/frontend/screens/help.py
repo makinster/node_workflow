@@ -45,12 +45,13 @@ HELP_TEXT = {
     ],
     "stash": [
         "Stash",
-        "  1 / 2                 Paste or drop / Entries",
+        "  1 / 2 / 3             Paste or drop / Entries / Saved values",
         "  Paste, drop or Enter  Add (paths become files, else text)",
         "  T                     Keep a refused paste as text; on Entries, filter",
         "  W/S or ↑/↓            Move",
         "  / or E                Search / rename on Entries",
         "  R / X                 Rename / delete",
+        "  E / X on Saved values Change / forget a value",
         "  Esc                   Close",
     ],
     "settings": [

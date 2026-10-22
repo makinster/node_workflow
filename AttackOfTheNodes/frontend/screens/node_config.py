@@ -3185,6 +3185,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
     def _output_header(self, metadata: Optional[Dict[str, Any]], port: str) -> Text:
         """Rich `Name [type]` header for an output port."""
         info = ((metadata or {}).get("output_port_metadata") or {}).get(port) or {}
+        # A config-driven type (Recall's Type) wins over the class default.
+        info = {**info, **(self.factory.node_output_port_metadata(self.node_data).get(port) or {})}
         name = output_display_name(self.factory, self.node_data, port)
         data_type = str(info.get("data_type") or "any")
         return Text.assemble(

@@ -6,6 +6,35 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-22 — C2 re-check fixes and forwarding (#110)
+
+- An Add whose result is not a finite number (an overflowing float, or an
+  integer too large for a float) is refused as `not_a_number`; every value
+  passes one rule on write and read (plain JSON, finite numbers at any depth,
+  64 KB), so nothing written can make the store unreadable.
+- Remember and Recall use the standard Forward incoming payload unchanged
+  control (owner): the next node gets the incoming payload; the Vault output
+  still gets the node's own value.
+- Main (#111, #112) merged in; both sides' log and status entries kept.
+
+## 2026-10-22 — C2 review fixes (#110, eight findings)
+
+Each finding has a regression test that fails on `a308fa8`.
+
+1. Changes lock with `msvcrt` on Windows too; with no lock available they
+   are refused, never done unlocked.
+2. Every record is checked whole (id, name, place, times, and that the value
+   matches its type); a damaged file is `store_unreadable` and left as it is.
+3. Renaming a workflow leaves its values alone while another workflow (a
+   standard workflow and a subworkflow may share a name) still has the old name.
+4. Change and Forget show names as text (escaped markup).
+5. Change keeps the value exactly (the name prompt no longer trims it).
+6. `var` must be a JSON list or record, and numbers finite, in the CLI,
+   Change and Recall's starting value.
+7. Invalid UTF-8 is `store_unreadable`; the Stash still opens.
+8. The CLI and Stash tab group and filter by the place itself; a workflow
+   named "All workflows" shows as "All workflows (workflow)".
+
 ## 2026-10-22 — Choice-node review fixes (#112)
 
 Review head: `6c7467b`. Working branch `codex/choice-review-fixes` in
@@ -119,6 +148,26 @@ loopback fake server (including timeout, cancellation, malformed responses,
 exact matching and secret-safe failures); an actual RunService test routes
 its plain answer through Conditional and Text Output. No paid call, owner
 workflow edit, local installation or cron job. PR awaits owner review.
+
+## 2026-10-21 — C2: Saved values (persistent store on the Stash's store)
+
+Branch `dist/persistent-store` from main `cce4fc7`. Samples approved with
+eleven answers, then one change: If changed's paths are **Changed** and
+**No change**, and its first-run setting reads "First run (nothing saved
+yet): No change · save quietly / Changed · send it on". Decisions are
+recorded in [Saved values](STASH_PROPOSAL.md#saved-values-c2).
+
+- `backend/saved_values.py`: `saved.json` (`aotn-saved/1`) beside the Stash's
+  entries; places are a workflow's name or All workflows; each change is
+  lock → re-read → change one value → atomic write. A multi-process test
+  proves counters lose nothing.
+- Nodes from helper specs: `remember_node` (Replace or Add), `recall_node`
+  (strict Type, which is also the output's type; starting value or stop),
+  `if_changed_node` (compare and save in one step; paths Changed / No change,
+  with plain "path name" fields).
+- Stash tab 3 Saved values (E change, X forget); `aotn stash saved`;
+  `aotn --data-dir`; workflow renames move values; runs record where they
+  came from (`app`, `command line`, `MCP`).
 
 ## 2026-10-21 — C1 review fixes (#109, eight findings)
 

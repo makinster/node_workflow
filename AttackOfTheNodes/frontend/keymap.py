@@ -276,6 +276,7 @@ STASH = Profile('stash', (
     Command('stash.revert_or_cancel', ('ctrl+q',), 'revert_or_cancel', 'Close', policies=NAV_TEXT, priority=True),
     Command('stash.show_tab.add', ('1',), "show_tab('add')", 'Paste / drop', policies=NAV, priority=True),
     Command('stash.show_tab.entries', ('2',), "show_tab('entries')", 'Entries', policies=NAV, priority=True),
+    Command('stash.show_tab.saved', ('3',), "show_tab('saved')", 'Saved values', policies=NAV, priority=True),
     Command('stash.cursor_up', ('w', 'up'), 'cursor_up', 'Up', policies=NAV, priority=False, navigation='up'),
     Command('stash.cursor_down', ('s', 'down'), 'cursor_down', 'Down', policies=NAV, priority=False, navigation='down'),
     Command('stash.search', ('slash',), 'search', 'Search', policies=NAV, priority=False),

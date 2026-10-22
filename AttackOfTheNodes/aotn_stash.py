@@ -1,4 +1,5 @@
-"""Command-line Stash: ``aotn stash list|add|rename|rm|export|import``.
+"""Command-line Stash: ``aotn stash list|add|rename|rm|export|import``, and
+``aotn stash saved list|show|set|forget`` for saved values (C2).
 
 A thin adapter over ``backend/stash_manager.py`` (Stash S1 + S3b). Prints a
 readable summary, or JSON with ``--json``. Exit code 0 on success, 1 when
@@ -43,6 +44,25 @@ def build_parser() -> argparse.ArgumentParser:
 
     imported = sub.add_parser("import", help="merge entries from an export")
     imported.add_argument("path")
+
+    # Saved values (C2): what workflows keep for their next run.
+    saved = sub.add_parser("saved", help="values workflows keep between runs")
+    saved_sub = saved.add_subparsers(dest="saved_action", required=True)
+    saved_list = saved_sub.add_parser("list", help="list saved values")
+    only = saved_list.add_mutually_exclusive_group()
+    only.add_argument("--workflow", help="only this workflow's values")
+    only.add_argument("--all", action="store_true", help="only values kept for all workflows")
+    for verb, text in (("show", "show one value in full"), ("set", "set a value"),
+                       ("forget", "forget a value")):
+        one = saved_sub.add_parser(verb, help=text)
+        one.add_argument("name")
+        if verb == "set":
+            one.add_argument("value", help="typed as --type (JSON for var and file)")
+            one.add_argument("--type", choices=["string", "number", "bool", "var", "file"],
+                             help="default: the saved value's type, else string")
+        where = one.add_mutually_exclusive_group(required=True)
+        where.add_argument("--workflow", help="the workflow the value belongs to")
+        where.add_argument("--all", action="store_true", help="a value kept for all workflows")
     return parser
 
 
@@ -58,6 +78,17 @@ def main(argv: Optional[List[str]] = None, stdout: Optional[TextIO] = None) -> i
         if loaded is not None and os.path.realpath(loaded.DATA_DIR) != wanted:
             parser.error("--data-dir must be set before the backend is loaded")
         os.environ["AOTN_DATA_DIR"] = wanted
+
+    if args.action == "saved":
+        from backend.saved_values import SavedValuesError
+
+        try:
+            data, text = _run_saved(args)
+        except SavedValuesError as exc:
+            _emit(out, args.json, {"ok": False, "error": str(exc)}, f"Refused: {exc}")
+            return 1
+        _emit(out, args.json, data, text)
+        return 0
 
     from backend.stash_manager import StashDuplicate, StashError, StashManager, duplicates_message
 
@@ -123,6 +154,45 @@ def _run(stash, args: argparse.Namespace) -> tuple[Dict[str, Any], str]:
     lines += [f"  added: {line}" for line in report["added"]]
     lines += [f"  skipped: {line}" for line in report["skipped"]]
     return {"ok": True, **report}, "\n".join(lines)
+
+
+def _run_saved(args: argparse.Namespace) -> tuple[Dict[str, Any], str]:
+    from backend import saved_values as saved
+
+    store = saved.SavedValues()
+    if args.saved_action == "list":
+        values = store.list_values()
+        # By the place itself, never its label: a workflow may be named
+        # "All workflows".
+        if args.workflow is not None or args.all:
+            wanted = saved.place_key(saved.all_place() if args.all else saved.workflow_place(args.workflow))
+            values = [v for v in values if saved.place_key(v["place"]) == wanted]
+        if not values:
+            return {"ok": True, "values": []}, "Nothing is saved yet."
+        lines, shown = [], None
+        for value in values:
+            key = saved.place_key(value["place"])
+            if key != shown:
+                lines.append(saved.place_label(value["place"]))
+                shown = key
+            lines.append(f"  {value['name']:<22} {'[' + value['type'] + ']':<9} "
+                         f"{saved.preview(value, 36):<38} {value['updated']}")
+        return {"ok": True, "values": values}, "\n".join(lines)
+    place = saved.all_place() if args.all else saved.workflow_place(args.workflow)
+    where = saved.place_label(place)
+    if args.saved_action == "show":
+        value = store.get(place, args.name)
+        if value is None:
+            raise saved.SavedValuesError(f"Nothing is saved as '{args.name}' in {where}", "not_saved")
+        return {"ok": True, "value": value}, json.dumps(value, indent=2, ensure_ascii=False)
+    if args.saved_action == "set":
+        current = store.get(place, args.name)
+        value_type = args.type or (current["type"] if current else "string")
+        record = store.save(place, args.name, saved.parse_typed(args.value, value_type),
+                            {"node": "", "node_id": "", "run_id": "", "from": "command line"})
+        return {"ok": True, "value": record}, f"Saved '{record['name']}' in {where}"
+    record = store.forget(place, args.name)
+    return {"ok": True, "forgotten": record}, f"Forgot '{record['name']}' in {where}"
 
 
 def _add_one(stash, value: str, name: str) -> Dict[str, Any]:

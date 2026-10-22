@@ -52,6 +52,7 @@ VALIDATION_LABELS: Dict[str, str] = {
     "ai_session_tag_missing": "Vault type mismatch",
     "vault_race": "Vault timing",
     "chat_session_key_missing": "Session key not set",
+    "saved_name_missing": "Saved as not set",
     "missing_file_path": "File path not set",
     "invalid_file_path": "Invalid file path",
     "invalid_number": "Invalid number",

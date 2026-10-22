@@ -38,13 +38,12 @@ delivery; this documentation refresh did not change or rerun live jobs.
   or bridge interactive replies; adding authoring tools is a future designer
   step, not already implemented behavior.
 - **C2 open as [PR #110](https://github.com/makinster/node_workflow/pull/110):**
-  Saved values, branch `dist/persistent-store`, head `a685821`. Remember,
-  Recall and If changed, the Stash Saved values tab, CLI and store-locking/
-  validation changes remain outside main. Re-check found the original eight
-  findings fixed and a new **P1**: numeric overflow can make the whole store
-  unreadable. Its fix is pending; owner merge is still required. The author
-  reports 2,244 tests passed at that head; this documentation task did not rerun
-  that suite.
+  Saved values, branch `dist/persistent-store`, with main merged in. Remember,
+  Recall and If changed, the Stash Saved values tab, CLI and store
+  locking/validation are outside main until the owner merges. Both reviews'
+  findings (eight, then the overflow P1 and the large-integer P3) are fixed
+  with regression tests; Remember and Recall use the standard Forward incoming
+  payload unchanged control.
 - **C3a built, awaiting owner review (2026-10-22):** branch `dist/pick-one`
   from main `cce4fc7`, with `origin/main` `9470729` merged before the review
   fixes. Jev: Pick one, `backend/integrations/jev.py`, helper
