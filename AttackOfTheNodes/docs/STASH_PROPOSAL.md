@@ -311,12 +311,21 @@ saved values change every run. A value:
 
 `place` is `{"kind": "workflow", "workflow": <name>}` or `{"kind": "all"}`;
 `type` is a `data_types` name (string, number, bool, var, file; never
-ai_session); `from` is `app`, `command line` or `MCP`. Names ignore case
-within a place. An unreadable file is never overwritten.
+ai_session) and must match the value (`var` is a JSON list or record; numbers
+are finite); `from` is `app`, `command line` or `MCP`. Names ignore case
+within a place. A file that can't be read (bad JSON, bad UTF-8) or holds a
+damaged or inconsistent record is reported as `store_unreadable` and never
+overwritten or repaired by dropping records. A workflow named "All workflows"
+is its own place, shown as "All workflows (workflow)".
+
+A standard workflow and a subworkflow may share a name, and then share its
+values; renaming one of them leaves the values with the name while the other
+still has it.
 
 **Two runs at once** (cron and the app). Every read goes to the file; every
-change is one locked step (`saved.lock`, `fcntl`): re-read, change one value,
-write atomically, unlock. Different names never overwrite each other; for the
+change is one locked step (`saved.lock`: `fcntl` on Linux and macOS,
+`msvcrt` on Windows; with neither, changes are refused): re-read, change one
+value, write atomically, unlock. Different names never overwrite each other; for the
 same name the later write wins. Add and If changed compare-and-save are one
 step, so counters lose no counts and two runs can't both report one change.
 `backend/saved_values.py` owns all of this; the nodes, Stash screen and CLI

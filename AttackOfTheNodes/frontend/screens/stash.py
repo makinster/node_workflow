@@ -374,7 +374,7 @@ class StashScreen(KeymapScreenMixin, ModalScreen):
             values, problem = [], str(exc)
         else:
             problem = None
-        total, places = len(values), len({saved.place_label(v["place"]) for v in values})
+        total, places = len(values), len({saved.place_key(v["place"]) for v in values})
         if query:
             values = [v for v in values if query in v["name"].casefold()
                       or query in value_text(v).casefold()
@@ -383,11 +383,14 @@ class StashScreen(KeymapScreenMixin, ModalScreen):
         listing.clear()
         heading = None
         for record in values:
-            label = saved.place_label(record["place"])
-            if label != heading:
-                heading = label
+            # Grouped by the place itself, never its label (a workflow may be
+            # named "All workflows").
+            key = saved.place_key(record["place"])
+            if key != heading:
+                heading = key
                 self.saved_shown.append(None)
-                listing.append(ListItem(Static(Text(label, style=f"bold {colors.SOURCE}"),
+                listing.append(ListItem(Static(Text(saved.place_label(record["place"]),
+                                                    style=f"bold {colors.SOURCE}"),
                                                classes="stash-row")))
             self.saved_shown.append(record)
             listing.append(ListItem(Static(saved_row(record), classes="stash-row")))
@@ -479,8 +482,10 @@ class StashScreen(KeymapScreenMixin, ModalScreen):
             self._refresh_saved(keep_id=changed["id"])
 
         self.app.push_screen(
-            NamePromptScreen(f"Change '{record['name']}' [{record['type']}]", value_text(record), check,
-                             hint="Type the new value | Enter or Ctrl+S confirm | Esc cancel"),
+            # Titles are markup: names are escaped. The value is kept exactly.
+            NamePromptScreen(escape(f"Change '{record['name']}' [{record['type']}]"), value_text(record),
+                             check, hint="Type the new value | Enter or Ctrl+S confirm | Esc cancel",
+                             strip=False),
             done,
         )
 
@@ -500,7 +505,7 @@ class StashScreen(KeymapScreenMixin, ModalScreen):
 
         where = saved.place_label(record["place"])
         self.app.push_screen(
-            ConfirmScreen(f"Forget '{record['name']}' ({where})? The next run starts without it.",
+            ConfirmScreen(escape(f"Forget '{record['name']}' ({where})? The next run starts without it."),
                           yes_label="Forget", no_label="Cancel"),
             done,
         )

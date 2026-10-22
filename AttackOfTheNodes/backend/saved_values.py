@@ -30,6 +30,8 @@ No Textual imports: the nodes, the Stash screen and the CLI share it.
 from __future__ import annotations
 
 import json
+import math
+import time
 import uuid
 from contextlib import contextmanager
 from datetime import datetime, timezone
@@ -39,10 +41,19 @@ from typing import Any, Dict, Iterator, List, Optional, Tuple
 from . import persistence
 from .file_refs import is_file_reference
 
-try:  # Linux and macOS; elsewhere writes are still atomic, just not locked.
+# One of these locks every change; with neither, changes are refused (never an
+# unlocked read-modify-write).
+try:  # Linux and macOS
     import fcntl
 except ImportError:  # pragma: no cover - Windows
     fcntl = None  # type: ignore[assignment]
+try:  # Windows
+    import msvcrt
+except ImportError:
+    msvcrt = None  # type: ignore[assignment]
+
+#: How long a change waits for another process's lock (seconds).
+LOCK_WAIT = 10.0
 
 FORMAT = "aotn-saved/1"
 VALUES_FILE = "saved.json"
@@ -82,10 +93,21 @@ def place_for(keep_for: Any, workflow_name: str) -> Dict[str, str]:
 
 
 def place_label(place: Dict[str, Any]) -> str:
-    """What people read for a place: the workflow's name, or All workflows."""
+    """What people read for a place: the workflow's name, or All workflows.
+    A workflow that is itself named "All workflows" is told apart."""
     if place.get("kind") == ALL:
         return "All workflows"
-    return str(place.get("workflow") or "(no workflow)")
+    name = str(place.get("workflow") or "")
+    if not name:
+        return "(no workflow)"
+    return f"{name} (workflow)" if name.casefold() == "all workflows" else name
+
+
+def place_key(place: Dict[str, Any]) -> Tuple[str, str]:
+    """A place's identity, for grouping and filtering (never its label)."""
+    if place.get("kind") == ALL:
+        return (ALL, "")
+    return (WORKFLOW, str(place.get("workflow") or ""))
 
 
 def type_of(value: Any) -> str:
@@ -116,9 +138,12 @@ def parse_typed(text: str, value_type: str) -> Any:
     if value_type == "number":
         for convert in (int, float):
             try:
-                return convert(text.strip())
+                number = convert(text.strip())
             except ValueError:
-                pass
+                continue
+            if isinstance(number, float) and not math.isfinite(number):
+                break
+            return number
         raise SavedValuesError(f"{text!r} is not a number", "wrong_type")
     if value_type == "bool":
         word = text.strip().casefold()
@@ -127,12 +152,15 @@ def parse_typed(text: str, value_type: str) -> Any:
         if word in ("false", "no", "0"):
             return False
         raise SavedValuesError(f"{text!r} is not yes or no", "wrong_type")
+    if value_type not in ("var", "file"):
+        raise SavedValuesError(f"Unknown type {value_type!r}", "wrong_type")
     try:
         value = json.loads(text)
     except json.JSONDecodeError as exc:
         raise SavedValuesError(f"Not valid JSON: {exc}", "wrong_type") from None
-    if value_type == "file" and not is_file_reference(value):
-        raise SavedValuesError("Not a file reference", "wrong_type")
+    if type_of(value) != value_type:
+        wanted = "a file reference" if value_type == "file" else "a JSON list or record"
+        raise SavedValuesError(f"{text!r} is not {wanted}", "wrong_type")
     return value
 
 
@@ -207,10 +235,9 @@ class SavedValues:
 
     def list_values(self) -> List[Dict[str, Any]]:
         """Every value: All workflows first, then by workflow, then by name."""
-        def order(record: Dict[str, Any]) -> Tuple[int, str, str]:
-            place = record["place"]
-            return (0 if place.get("kind") == ALL else 1,
-                    str(place.get("workflow") or "").casefold(), record["name"].casefold())
+        def order(record: Dict[str, Any]) -> Tuple[int, str, str, str]:
+            kind, workflow = place_key(record["place"])
+            return (0 if kind == ALL else 1, workflow.casefold(), workflow, record["name"].casefold())
         return sorted(self._read(), key=order)
 
     def get(self, place: Dict[str, Any], name: str) -> Optional[Dict[str, Any]]:
@@ -269,7 +296,9 @@ class SavedValues:
 
     def move_workflow(self, old_name: str, new_name: str) -> int:
         """A renamed workflow takes its values along; returns how many moved.
-        A value whose name the new workflow already uses stays behind."""
+        A value whose name the new workflow already uses stays behind. The
+        caller must not move them while another workflow still has the old
+        name (a standard workflow and a subworkflow may share one)."""
         old, new = workflow_place(old_name), workflow_place(new_name)
         if not old["workflow"] or old["workflow"] == new["workflow"]:
             return 0
@@ -322,16 +351,28 @@ class SavedValues:
             raise SavedValuesError(f"The value is {size // 1024} KB; the limit is 64 KB", "too_big")
 
     def _read(self) -> List[Dict[str, Any]]:
+        """Every record, or ``store_unreadable``: a damaged file is reported,
+        never repaired by dropping records, and never overwritten."""
         if not self.path.exists():
             return []
         try:
             data = json.loads(self.path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError) as exc:
-            # Never overwrite a file we couldn't read.
+        except (OSError, ValueError) as exc:  # ValueError: bad JSON or bad UTF-8
             raise SavedValuesError(f"Cannot read {self.path}: {exc}", "store_unreadable") from exc
         if not isinstance(data, dict) or data.get("format") != FORMAT or not isinstance(data.get("values"), list):
             raise SavedValuesError(f"{self.path} is not a saved values file", "store_unreadable")
-        return [r for r in data["values"] if _record_ok(r)]
+        seen = set()
+        for number, raw in enumerate(data["values"], 1):
+            problem = _record_problem(raw)
+            if problem is None:
+                key = (place_key(raw["place"]), raw["name"].strip().casefold())
+                problem = "a second value with the same name and place" if key in seen else None
+                seen.add(key)
+            if problem:
+                raise SavedValuesError(
+                    f"{self.path} is damaged (value {number}: {problem}); fix or remove it",
+                    "store_unreadable")
+        return data["values"]
 
     @contextmanager
     def _changing(self) -> Iterator[List[Dict[str, Any]]]:
@@ -342,8 +383,7 @@ class SavedValues:
         except OSError as exc:
             raise SavedValuesError(f"Cannot write {self._dir}: {exc}") from exc
         with handle:
-            if fcntl is not None:
-                fcntl.flock(handle, fcntl.LOCK_EX)
+            _lock(handle)
             try:
                 values = self._read()
                 yield values
@@ -352,12 +392,62 @@ class SavedValues:
                 except OSError as exc:
                     raise SavedValuesError(f"Cannot write {self.path}: {exc}") from exc
             finally:
-                if fcntl is not None:
-                    fcntl.flock(handle, fcntl.LOCK_UN)
+                _unlock(handle)
 
 
-def _record_ok(raw: Any) -> bool:
-    return (isinstance(raw, dict) and str(raw.get("id") or "").startswith("saved_")
-            and isinstance(raw.get("name"), str) and raw["name"].strip() != ""
-            and isinstance(raw.get("place"), dict) and raw["place"].get("kind") in (ALL, WORKFLOW)
-            and raw.get("type") in SAVED_TYPES and "value" in raw)
+def _lock(handle: Any) -> None:
+    """Hold the lock file exclusively: ``fcntl`` on Linux and macOS,
+    ``msvcrt`` on Windows; with neither, refuse the change."""
+    if fcntl is not None:
+        fcntl.flock(handle, fcntl.LOCK_EX)
+        return
+    if msvcrt is not None:
+        handle.seek(0)
+        deadline = time.monotonic() + LOCK_WAIT
+        while True:
+            try:
+                msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+                return
+            except OSError:
+                if time.monotonic() >= deadline:
+                    raise SavedValuesError("Saved values are busy (another run holds the lock); "
+                                           "try again") from None
+                time.sleep(0.05)
+    raise SavedValuesError("Saved values can't be changed here: no file lock is available")
+
+
+def _unlock(handle: Any) -> None:
+    if fcntl is not None:
+        fcntl.flock(handle, fcntl.LOCK_UN)
+    elif msvcrt is not None:
+        handle.seek(0)
+        msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+
+
+def _record_problem(raw: Any) -> Optional[str]:
+    """Why ``raw`` isn't a whole, consistent saved value, or None."""
+    if not isinstance(raw, dict):
+        return "not an object"
+    if not (isinstance(raw.get("id"), str) and raw["id"].startswith("saved_")):
+        return "missing or invalid id"
+    if not (isinstance(raw.get("name"), str) and raw["name"].strip()):
+        return "blank name"
+    place = raw.get("place")
+    if not isinstance(place, dict) or place.get("kind") not in (ALL, WORKFLOW):
+        return "invalid place"
+    if place["kind"] == WORKFLOW and not isinstance(place.get("workflow"), str):
+        return "a workflow place without a workflow name"
+    if raw.get("type") not in SAVED_TYPES:
+        return f"unknown type {raw.get('type')!r}"
+    if "value" not in raw:
+        return "no value"
+    if type_of(raw["value"]) != raw["type"]:
+        return f"the value is a {type_of(raw['value'])}, not a {raw['type']}"
+    if isinstance(raw["value"], float) and not math.isfinite(raw["value"]):
+        return "a number that isn't finite"
+    for stamp in ("created", "updated"):
+        if not isinstance(raw.get(stamp), str):
+            return f"missing {stamp} time"
+    if not isinstance(raw.get("saved_by", {}), dict):
+        return "invalid saved_by"
+    return None

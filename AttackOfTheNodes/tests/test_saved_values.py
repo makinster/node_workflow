@@ -589,3 +589,225 @@ def test_a_blank_saved_as_is_a_validation_error():
     problems = [(e["node_id"], e["code"]) for e in result["errors"]]
     assert (flow.ids["keep"], "saved_name_missing") in problems
     assert (flow.ids["look"], "saved_name_missing") not in problems
+
+
+# -- review of a308fa8 (Codex, #110): one regression test per finding ------------------------
+
+class _FcntlBackedMsvcrt:
+    """msvcrt.locking's interface, backed by a real lock, so the Windows path
+    can be run (and raced) on Linux."""
+
+    LK_NBLCK, LK_UNLCK = 2, 0
+
+    def __init__(self):
+        import fcntl as real
+
+        self.real, self.calls = real, []
+
+    def locking(self, fd, mode, nbytes):
+        self.calls.append(mode)
+        if mode == self.LK_NBLCK:
+            self.real.flock(fd, self.real.LOCK_EX | self.real.LOCK_NB)  # OSError when held
+        else:
+            self.real.flock(fd, self.real.LOCK_UN)
+
+
+def test_finding_1_no_lock_available_refuses_the_change(monkeypatch, _stash_dir):
+    monkeypatch.setattr(saved, "fcntl", None)
+    monkeypatch.setattr(saved, "msvcrt", None)
+    with pytest.raises(saved.SavedValuesError) as exc:
+        saved.SavedValues().save(here(), "a", 1)
+    assert "no file lock" in str(exc.value)
+    assert not (_stash_dir / "saved.json").exists()
+
+
+def test_finding_1_windows_lock_is_taken_and_released(monkeypatch):
+    fake = _FcntlBackedMsvcrt()
+    monkeypatch.setattr(saved, "fcntl", None)
+    monkeypatch.setattr(saved, "msvcrt", fake)
+    saved.SavedValues().add(here(), "runs", 1)
+    assert fake.calls == [fake.LK_NBLCK, fake.LK_UNLCK]
+
+
+def test_finding_1_a_busy_windows_lock_times_out_without_writing(monkeypatch, _stash_dir):
+    class Busy(_FcntlBackedMsvcrt):
+        def locking(self, fd, mode, nbytes):
+            raise OSError("locked")
+
+    monkeypatch.setattr(saved, "fcntl", None)
+    monkeypatch.setattr(saved, "msvcrt", Busy())
+    monkeypatch.setattr(saved, "LOCK_WAIT", 0.1)
+    with pytest.raises(saved.SavedValuesError) as exc:
+        saved.SavedValues().save(here(), "a", 1)
+    assert "busy" in str(exc.value) and exc.value.code == "store_unwritable"
+    assert not (_stash_dir / "saved.json").exists()
+
+
+def test_finding_1_two_processes_on_the_windows_lock_lose_no_counts(monkeypatch, _stash_dir):
+    monkeypatch.setattr(saved, "fcntl", None)
+    monkeypatch.setattr(saved, "msvcrt", _FcntlBackedMsvcrt())
+    context = multiprocessing.get_context("fork")
+    workers = [context.Process(target=_count, args=(_stash_dir, 30), name=f"m{i}") for i in range(3)]
+    for worker in workers:
+        worker.start()
+    for worker in workers:
+        worker.join(30)
+    assert saved.SavedValues(_stash_dir).get(saved.all_place(), "runs")["value"] == 90
+
+
+def _write_store(folder, values):
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / "saved.json").write_text(json.dumps({"format": saved.FORMAT, "values": values}))
+    return (folder / "saved.json").read_bytes()
+
+
+def _good(name="kept", value="v1", kind="string"):
+    return {"id": f"saved_{name}", "name": name, "place": {"kind": "workflow", "workflow": "Release watch"},
+            "type": kind, "value": value, "created": "2026-10-21T00:00:00Z",
+            "updated": "2026-10-21T00:00:00Z", "saved_by": {"from": "app"}}
+
+
+@pytest.mark.parametrize("damage", [
+    lambda r: r.update(id="broken"),
+    lambda r: r.pop("updated"),
+    lambda r: r.update(type="number"),  # the value is text
+    lambda r: r.update(place={"kind": "workflow"}),
+])
+def test_finding_2_a_damaged_record_is_refused_and_never_dropped(_stash_dir, damage):
+    bad = _good("bad")
+    damage(bad)
+    before = _write_store(_stash_dir, [_good(), bad])
+    with pytest.raises(saved.SavedValuesError) as exc:
+        saved.SavedValues().save(here(), "other", 1)
+    assert exc.value.code == "store_unreadable" and "damaged" in str(exc.value)
+    assert (_stash_dir / "saved.json").read_bytes() == before
+
+
+def test_finding_2_recall_never_trusts_a_wrong_type_tag(_stash_dir):
+    _write_store(_stash_dir, [_good("runs", "12", "number")])
+    done, errors, _ = execute("recall_node", name="runs", expect="number")
+    assert not done and errors[0].code == "store_unreadable"
+
+
+def test_finding_2_two_records_for_one_name_and_place_are_damage(_stash_dir):
+    twin = _good()
+    twin["id"] = "saved_twin"
+    _write_store(_stash_dir, [_good(), twin])
+    with pytest.raises(saved.SavedValuesError):
+        saved.SavedValues().list_values()
+
+
+def test_finding_3_renaming_a_subworkflow_leaves_values_its_namesake_still_uses():
+    from backend.save_manager import SaveManager
+
+    Flow("Watch").node("start", "start_node").save()
+    child = Flow("Watch", callable_=True).node("start", "start_node")
+    child_id = child.save()
+    saved.SavedValues().save(here("Watch"), "version", "v2")
+    assert SaveManager(child.map).rename_workflow(child_id, "Watch child") is None
+    assert saved.SavedValues().get(here("Watch"), "version")["value"] == "v2"
+    assert saved.SavedValues().get(here("Watch child"), "version") is None
+
+
+def test_finding_3_renaming_the_open_workflow_checks_namesakes_too():
+    from backend.save_manager import SaveManager
+
+    Flow("Watch", callable_=True).node("start", "start_node").save()
+    regular = Flow("Watch").node("start", "start_node")
+    regular.save()
+    saved.SavedValues().save(here("Watch"), "version", "v2")
+    assert SaveManager(regular.map).rename_current_workflow("Watch 2")
+    assert saved.SavedValues().get(here("Watch"), "version")["value"] == "v2"
+
+
+def test_finding_4_markup_in_names_is_shown_as_text_in_change_and_forget():
+    from textual.widgets import Label
+
+    saved.SavedValues().save(here("Odd [/] flow"), "a[/]b [bold]x", "v")
+
+    async def change(app, pilot, seen):
+        await pilot.press("e")
+        await pilot.pause()
+        seen["change"] = str(app.screen.query(Label).first().render())
+        app.screen.action_cancel()
+
+    async def forget(app, pilot, seen):
+        await pilot.press("x")
+        await pilot.pause()
+        seen["forget"] = str(app.screen.query(Label).first().render())
+        app.screen.dismiss(False)
+
+    seen = {}
+    _stash_app(seen, [change, forget])
+    assert seen["change"] == "Change 'a[/]b [bold]x' [string]"
+    assert seen["forget"].startswith("Forget 'a[/]b [bold]x' (Odd [/] flow)?")
+
+
+def test_finding_5_confirming_an_unchanged_value_keeps_it_exactly():
+    saved.SavedValues().save(here(), "spaced", "  value with spaces  ")
+
+    async def change(app, pilot, seen):
+        await pilot.press("e")
+        await pilot.pause()
+        app.screen.action_submit()
+
+    _stash_app({}, [change])
+    assert saved.SavedValues().get(here(), "spaced")["value"] == "  value with spaces  "
+
+
+@pytest.mark.parametrize("text", ["42", '"text"', "true"])
+def test_finding_6_var_must_be_a_list_or_record(text):
+    with pytest.raises(saved.SavedValuesError):
+        saved.parse_typed(text, "var")
+
+
+def test_finding_6_cli_and_recall_check_var_the_same_way():
+    code, text = cli("set", "record", "42", "--type", "var", "--workflow", "Watch")
+    assert code == 1 and saved.SavedValues().get(here("Watch"), "record") is None
+    _, errors, _ = execute("recall_node", name="record", expect="var", starting_value="42")
+    assert errors[0].code == "wrong_type"
+    done, errors, _ = execute("recall_node", name="record", expect="var", starting_value='{"a": 1}')
+    assert not errors and done[0]["data"]["default"] == {"a": 1}
+
+
+def test_finding_6_numbers_must_be_finite():
+    with pytest.raises(saved.SavedValuesError):
+        saved.parse_typed("nan", "number")
+
+
+def test_finding_7_invalid_utf8_is_unreadable_and_left_alone(_stash_dir):
+    _stash_dir.mkdir(parents=True)
+    (_stash_dir / "saved.json").write_bytes(b'{"format": "\xff"}')
+    with pytest.raises(saved.SavedValuesError) as exc:
+        saved.SavedValues().save(here(), "a", 1)
+    assert exc.value.code == "store_unreadable"
+    code, text = cli("list")
+    assert code == 1 and "Refused" in text
+    assert (_stash_dir / "saved.json").read_bytes() == b'{"format": "\xff"}'
+
+    async def look(app, pilot, seen):
+        seen["rows"] = list(app.screen.saved_shown)
+        seen["listed"] = str(app.screen.query_one("#stash-saved").children[0].query_one(
+            "Static").render())
+
+    seen = {}
+    _stash_app(seen, [look])  # the Stash still opens
+    assert seen["rows"] == [] and "Cannot read" in seen["listed"]
+
+
+def test_finding_8_a_workflow_named_all_workflows_is_its_own_place():
+    store = saved.SavedValues()
+    store.save(saved.all_place(), "key", "global")
+    store.save(here("All workflows"), "key", "private")
+    code, text = cli("list", "--workflow", "All workflows")
+    assert code == 0 and "private" in text and "global" not in text
+    assert "All workflows (workflow)" in text
+    code, text = cli("list", "--all")
+    assert "global" in text and "private" not in text
+
+    async def look(app, pilot, seen):
+        seen["rows"] = [saved.place_label(r["place"]) if r else None for r in app.screen.saved_shown]
+
+    seen = {}
+    _stash_app(seen, [look])
+    assert seen["rows"] == [None, "All workflows", None, "All workflows (workflow)"]

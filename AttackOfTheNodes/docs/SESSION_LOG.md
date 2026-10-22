@@ -6,6 +6,24 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-22 — C2 review fixes (#110, eight findings)
+
+Each finding has a regression test that fails on `a308fa8`.
+
+1. Changes lock with `msvcrt` on Windows too; with no lock available they
+   are refused, never done unlocked.
+2. Every record is checked whole (id, name, place, times, and that the value
+   matches its type); a damaged file is `store_unreadable` and left as it is.
+3. Renaming a workflow leaves its values alone while another workflow (a
+   standard workflow and a subworkflow may share a name) still has the old name.
+4. Change and Forget show names as text (escaped markup).
+5. Change keeps the value exactly (the name prompt no longer trims it).
+6. `var` must be a JSON list or record, and numbers finite, in the CLI,
+   Change and Recall's starting value.
+7. Invalid UTF-8 is `store_unreadable`; the Stash still opens.
+8. The CLI and Stash tab group and filter by the place itself; a workflow
+   named "All workflows" shows as "All workflows (workflow)".
+
 ## 2026-10-21 — C2: Saved values (persistent store on the Stash's store)
 
 Branch `dist/persistent-store` from main `cce4fc7`. Samples approved with

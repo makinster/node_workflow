@@ -49,7 +49,9 @@ def build_parser() -> argparse.ArgumentParser:
     saved = sub.add_parser("saved", help="values workflows keep between runs")
     saved_sub = saved.add_subparsers(dest="saved_action", required=True)
     saved_list = saved_sub.add_parser("list", help="list saved values")
-    saved_list.add_argument("--workflow", help="only this workflow's values")
+    only = saved_list.add_mutually_exclusive_group()
+    only.add_argument("--workflow", help="only this workflow's values")
+    only.add_argument("--all", action="store_true", help="only values kept for all workflows")
     for verb, text in (("show", "show one value in full"), ("set", "set a value"),
                        ("forget", "forget a value")):
         one = saved_sub.add_parser(verb, help=text)
@@ -160,16 +162,19 @@ def _run_saved(args: argparse.Namespace) -> tuple[Dict[str, Any], str]:
     store = saved.SavedValues()
     if args.saved_action == "list":
         values = store.list_values()
-        if args.workflow:
-            values = [v for v in values if saved.place_label(v["place"]) == args.workflow.strip()]
+        # By the place itself, never its label: a workflow may be named
+        # "All workflows".
+        if args.workflow is not None or args.all:
+            wanted = saved.place_key(saved.all_place() if args.all else saved.workflow_place(args.workflow))
+            values = [v for v in values if saved.place_key(v["place"]) == wanted]
         if not values:
             return {"ok": True, "values": []}, "Nothing is saved yet."
         lines, shown = [], None
         for value in values:
-            label = saved.place_label(value["place"])
-            if label != shown:
-                lines.append(label)
-                shown = label
+            key = saved.place_key(value["place"])
+            if key != shown:
+                lines.append(saved.place_label(value["place"]))
+                shown = key
             lines.append(f"  {value['name']:<22} {'[' + value['type'] + ']':<9} "
                          f"{saved.preview(value, 36):<38} {value['updated']}")
         return {"ok": True, "values": values}, "\n".join(lines)
