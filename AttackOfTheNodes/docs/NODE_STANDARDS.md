@@ -132,7 +132,24 @@ has no branch-name field or editor path, and wiring it downstream is invalid.
 The helper generates these secondary routing defaults. Do not add raw keys
 or service endpoints to workflow configuration.
 
+## Saved values forwarding (C2, owner 2026-10-22)
+
+Remember and Recall use the standard **Forward incoming payload unchanged**
+checkbox on the Payloads tab. Checked sends the original upstream payload
+and hides/disables the own-output name/description controls; unchecked sends
+the saved or recalled value (including Recall's starting value). Enabled Vault
+outputs always receive the node's own value with its own type. Remember still
+saves its selected Value source, including Configured or Vault, independently
+of forwarding; forwarding always uses the incoming upstream payload.
+
 ## System nodes (AI coordination decision C7, owner 2026-10-20)
+
+Disk space, Git status and File age use the standard **Forward incoming
+payload unchanged** checkbox (owner follow-up, 2026-10-22). Checked replaces
+the downstream report with the original incoming payload and hides/disables
+the report's downstream name/description controls. Unchecked sends the report.
+An enabled Vault output always stores the computed report with its own type,
+independently of forwarding.
 
 A System node reads the state of this machine with one fixed operation: the
 command (if any) is in the node's code, the workflow sets only typed

@@ -25,10 +25,10 @@ class FileAgeNode(Node):
     input_ports: ClassVar[List[str]] = ['input']
     output_ports: ClassVar[List[str]] = ['default']
     input_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {}
-    output_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {'default': {'name': 'Age', 'description': 'Time since the last change, in the chosen unit', 'data_type': 'number', 'required': True, 'to': ['downstream', 'vault']}}
+    output_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {'default': {'name': 'Age', 'description': 'Time since the last change, in the chosen unit', 'data_type': 'number', 'required': True, 'to': ['downstream', 'vault'], 'pass_through': True}}
     default_config: ClassVar[Dict[str, Any]] = {'path': '', 'unit': 'Hours', 'transient_output': True, 'dead_drop_passthrough': False, 'transient_outputs': [], 'vault_write': False, 'vault_write_key': '', 'vault_write_description': ''}
     config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {'path': {'type': 'string', 'label': 'File or folder', 'required': True, 'description': 'Must be inside an allowed folder (Options: system_node_folders)', 'tab': 'Parameters'}, 'unit': {'type': 'select', 'label': 'Unit', 'options': ['Minutes', 'Hours', 'Days'], 'tab': 'Parameters'}}
-    ui_hints: ClassVar[Dict[str, Any]] = {}
+    ui_hints: ClassVar[Dict[str, Any]] = {'standard_output': True}
     error_definitions: ClassVar[List[Dict[str, Any]]] = [{'code': 'folder_missing', 'description': 'The file or folder does not exist.', 'retryable': False}, {'code': 'not_allowed', 'description': 'The path is outside the folders allowed in Options.', 'retryable': False}]
 
     async def execute(self, context: NodeContext) -> None:

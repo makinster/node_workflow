@@ -6,6 +6,24 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-22 — Integrate main into System forwarding (#113)
+
+Branch `codex/system-node-forwarding`, previously `a4ecc80`, merged fetched
+`origin/main` `670b3b3` after #110 and #112 landed. Retained both sides' log,
+current-state and coordination entries, ordering dated log entries newest first.
+Updated current status and the coordination order to reflect those merges;
+NODE_STANDARDS explicitly covers Remember/Recall's standard forwarding checkbox
+and independent own-value Vault outputs alongside the System report behavior.
+
+Verification from this worktree's app with the shared WSL interpreter:
+full `pytest -q`: **2,367 passed in 370.24 seconds**; no Wait Until rerun needed.
+Compilation, documentation link/archive checks and whitespace checks passed.
+An initial pytest invocation from the repository root failed collection; the
+reported full result is the subsequent run from `AttackOfTheNodes/`.
+Every existing Session Log entry from both parents was checked intact.
+No live jobs or owner workflows changed. #113 remains for the owner to merge;
+Telegram launcher work awaits the owner's next prompt.
+
 ## 2026-10-22 — C2 re-check fixes and forwarding (#110)
 
 - An Add whose result is not a finite number (an overflowing float, or an
@@ -17,23 +35,26 @@ references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
   still gets the node's own value.
 - Main (#111, #112) merged in; both sides' log and status entries kept.
 
-## 2026-10-22 — C2 review fixes (#110, eight findings)
+## 2026-10-22 — System nodes: standard forwarding control
 
-Each finding has a regression test that fails on `a308fa8`.
+Branch `codex/system-node-forwarding`, from fetched main `9470729`. The owner
+requested the same Forward incoming payload unchanged control used by the
+recent output nodes for Disk space, Git status and File age.
 
-1. Changes lock with `msvcrt` on Windows too; with no lock available they
-   are refused, never done unlocked.
-2. Every record is checked whole (id, name, place, times, and that the value
-   matches its type); a damaged file is `store_unreadable` and left as it is.
-3. Renaming a workflow leaves its values alone while another workflow (a
-   standard workflow and a subworkflow may share a name) still has the old name.
-4. Change and Forget show names as text (escaped markup).
-5. Change keeps the value exactly (the name prompt no longer trims it).
-6. `var` must be a JSON list or record, and numbers finite, in the CLI,
-   Change and Recall's starting value.
-7. Invalid UTF-8 is `store_unreadable`; the Stash still opens.
-8. The CLI and Stash tab group and filter by the place itself; a workflow
-   named "All workflows" shows as "All workflows (workflow)".
+All three declare the pass-through capability and use the existing standard
+Payloads composer. Their shared output helper stores the computed report in
+the Vault first, then chooses the original incoming payload when forwarding
+or the computed report when unchecked. No custom screen or color rules.
+Helper specs retain the flags; existing execution, path restrictions and
+Git process handling remain intact.
+
+New regressions failed before the fix and now cover non-text payload identity,
+forwarding on/off, report-specific Vault types (number, bool, string, var),
+producer tracing, and production-style keyboard toggle/save/reopen at 80×24
+and 120×40. Focused System/no-edit checks: 38 passed. All three helper specs
+match their classes; helper registration/UI checks passed.
+Full suite: **2,176 passed in 341.54 seconds** (full `pytest -q`). Docs link/archive and whitespace checks
+passed. No repository workflows edited; awaiting owner review, not merged.
 
 ## 2026-10-22 — Choice-node review fixes (#112)
 
@@ -60,46 +81,6 @@ Session Log entries, current coordination order/live status and C3a build facts.
   in 345.91 seconds** on the combined branch. Targeted compilation,
   documentation consolidation and whitespace checks passed. All provider tests
   use loopback; no paid calls, owner workflow edits or live integration changes.
-
-## 2026-10-22 — Coordination documentation review fixes (#111)
-
-Same branch, after review of `6bf9576`. Documentation only.
-
-- Updated C3a to the approved Jev-only Jev: Pick one: no provider/model
-  selectors, shared client module, samples approved October 22, and always
-  pass `unsure` below the cutoff (default 0.3), with no Stop option.
-- Recorded the Hermes `quick_commands` answer (source `556bf7c5c`): `type: exec`
-  scripts run after normal sender auth, without an agent turn, plugin or args.
-  Config is the allowlist. Each `aotn-run-<slug>.sh` needs its own deadline
-  under the 30 s reply timeout, which does not kill the script; enforce kill/reap.
-- Added the simple-purpose-node principle to the new-ideas mapping and selector
-  sorting to Project Backlog after C3a. The cancelled Category rename remains
-  cancelled. Updated the archive notice so its old command investigation is
-  clearly superseded.
-- Recorded #110's re-check: original eight findings fixed at `a685821`, with a
-  new P1 numeric-overflow/store-readability issue whose fix is pending.
-- Verification: documentation consolidation checker and `git diff --check`.
-  No application, live gateway or scheduled workflow changes.
-
-## 2026-10-22 — Coordination status refresh and owner plan reset
-
-Branch: `codex/docs-plan-reset`, based on fetched `origin/main` `cce4fc7`,
-in `/home/makin/src/nw-plan-reset`. Documentation only, at the owner's request.
-
-- Refreshed Current State: H0 live heartbeat `63968ee90ae0`; C1 merged in #109
-  and live drain `cd14afa83db9`, with owner-confirmed Telegram delivery; C4
-  merged in #107/#108; C2 open as #110 at `a685821`; H2 parked as an unscheduled
-  template. GitHub confirms the open PR; deployment evidence comes from shared
-  notes and the owner's confirmation, not a new live run in this task.
-- Recorded the October 22 owner order in AI Coordination Proposal section 9:
-  C2, C3a, thin Telegram launcher, C3b, 4e–4f, P1, Phase 17 verification,
-  C5, Step 5, C6 and Step 6. Added the short mapping of new ideas to that plan.
-- Moved the uncommitted intent/designer conversation from `nw-review109` into
-  `archive/plans/INTENT_ROUTING_AND_DESIGN_ASSISTANT.md`, rebased its local
-  links and marked its old recommendations/prompts as reference history.
-  Section 9 links it without adding another active plan document.
-- Verification: documentation consolidation checker and `git diff --check` passed.
-  No application tests, implementation, cron changes or gateway activation.
 
 ## 2026-10-22 — C3a owner correction: standard forwarding (#112)
 
@@ -148,6 +129,64 @@ loopback fake server (including timeout, cancellation, malformed responses,
 exact matching and secret-safe failures); an actual RunService test routes
 its plain answer through Conditional and Text Output. No paid call, owner
 workflow edit, local installation or cron job. PR awaits owner review.
+
+## 2026-10-22 — Coordination documentation review fixes (#111)
+
+Same branch, after review of `6bf9576`. Documentation only.
+
+- Updated C3a to the approved Jev-only Jev: Pick one: no provider/model
+  selectors, shared client module, samples approved October 22, and always
+  pass `unsure` below the cutoff (default 0.3), with no Stop option.
+- Recorded the Hermes `quick_commands` answer (source `556bf7c5c`): `type: exec`
+  scripts run after normal sender auth, without an agent turn, plugin or args.
+  Config is the allowlist. Each `aotn-run-<slug>.sh` needs its own deadline
+  under the 30 s reply timeout, which does not kill the script; enforce kill/reap.
+- Added the simple-purpose-node principle to the new-ideas mapping and selector
+  sorting to Project Backlog after C3a. The cancelled Category rename remains
+  cancelled. Updated the archive notice so its old command investigation is
+  clearly superseded.
+- Recorded #110's re-check: original eight findings fixed at `a685821`, with a
+  new P1 numeric-overflow/store-readability issue whose fix is pending.
+- Verification: documentation consolidation checker and `git diff --check`.
+  No application, live gateway or scheduled workflow changes.
+
+## 2026-10-22 — Coordination status refresh and owner plan reset
+
+Branch: `codex/docs-plan-reset`, based on fetched `origin/main` `cce4fc7`,
+in `/home/makin/src/nw-plan-reset`. Documentation only, at the owner's request.
+
+- Refreshed Current State: H0 live heartbeat `63968ee90ae0`; C1 merged in #109
+  and live drain `cd14afa83db9`, with owner-confirmed Telegram delivery; C4
+  merged in #107/#108; C2 open as #110 at `a685821`; H2 parked as an unscheduled
+  template. GitHub confirms the open PR; deployment evidence comes from shared
+  notes and the owner's confirmation, not a new live run in this task.
+- Recorded the October 22 owner order in AI Coordination Proposal section 9:
+  C2, C3a, thin Telegram launcher, C3b, 4e–4f, P1, Phase 17 verification,
+  C5, Step 5, C6 and Step 6. Added the short mapping of new ideas to that plan.
+- Moved the uncommitted intent/designer conversation from `nw-review109` into
+  `archive/plans/INTENT_ROUTING_AND_DESIGN_ASSISTANT.md`, rebased its local
+  links and marked its old recommendations/prompts as reference history.
+  Section 9 links it without adding another active plan document.
+- Verification: documentation consolidation checker and `git diff --check` passed.
+  No application tests, implementation, cron changes or gateway activation.
+
+## 2026-10-22 — C2 review fixes (#110, eight findings)
+
+Each finding has a regression test that fails on `a308fa8`.
+
+1. Changes lock with `msvcrt` on Windows too; with no lock available they
+   are refused, never done unlocked.
+2. Every record is checked whole (id, name, place, times, and that the value
+   matches its type); a damaged file is `store_unreadable` and left as it is.
+3. Renaming a workflow leaves its values alone while another workflow (a
+   standard workflow and a subworkflow may share a name) still has the old name.
+4. Change and Forget show names as text (escaped markup).
+5. Change keeps the value exactly (the name prompt no longer trims it).
+6. `var` must be a JSON list or record, and numbers finite, in the CLI,
+   Change and Recall's starting value.
+7. Invalid UTF-8 is `store_unreadable`; the Stash still opens.
+8. The CLI and Stash tab group and filter by the place itself; a workflow
+   named "All workflows" shows as "All workflows (workflow)".
 
 ## 2026-10-21 — C2: Saved values (persistent store on the Stash's store)
 
