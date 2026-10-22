@@ -30,7 +30,7 @@ def test_pick_one_node_registration_and_metadata():
             }
             assert isinstance(info["required"], bool)
     # Declared error codes (D7); the default generic code is always first.
-    assert [error["code"] for error in metadata["errors"]] == ['node_error', 'auth_failed', 'timed_out', 'provider_error', 'undeclared_choice']
+    assert [error["code"] for error in metadata["errors"]] == ['node_error', 'text_too_long', 'auth_failed', 'timed_out', 'provider_error', 'undeclared_choice']
 
 
 @pytest.mark.asyncio

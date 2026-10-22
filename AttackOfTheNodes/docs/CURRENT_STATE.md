@@ -46,7 +46,8 @@ delivery; this documentation refresh did not change or rerun live jobs.
   reports 2,244 tests passed at that head; this documentation task did not rerun
   that suite.
 - **C3a built, awaiting owner review (2026-10-22):** branch `dist/pick-one`
-  from main `cce4fc7`. Jev: Pick one, `backend/integrations/jev.py`, helper
+  from main `cce4fc7`, with `origin/main` `9470729` merged before the review
+  fixes. Jev: Pick one, `backend/integrations/jev.py`, helper
   spec/generated checks, exact answer rows, fixed `unsure` below 0.3, optional
   Vault-only details. No provider/model selectors or Stop option. Shared
   routing now preserves each Vault output and omits Vault-only branch names.
@@ -54,7 +55,10 @@ delivery; this documentation refresh did not change or rerun live jobs.
   downstream answer, preserving enabled Vault outputs.
   [Built screens](audits/pick_one_2026_10_22/README.md),
   [node contract](NODE_STANDARDS.md#bounded-choice-node-c3a-owner-2026-10-22).
-  Full suite after the forwarding correction: **2,228 passed**; helper and docs checks passed. No paid call,
+  Review fixes reserve `unsure`, reject edge whitespace in answers through form,
+  preflight and runtime checks, and cap Text at 20,000 characters before requests.
+  **89 focused tests passed; 2,245 passed in 345.91 seconds** in the full suite
+  on the combined branch; compilation, docs and whitespace checks passed. No paid call,
   owner/live data, installed wrapper, cron job or repository workflow change.
 - **Owner plan reset (2026-10-22):** C2 → C3a Jev: Pick one → thin Telegram
   launcher → C3b bounded agents → 4e–4f → P1 → Phase 17 verification → C5 →

@@ -13,6 +13,7 @@ import aiohttp
 API_URL = 'https://api.typesafe.ai/v1/systemone'
 MODEL = 'jev-latest'
 MAX_RESPONSE_BYTES = 1024 * 1024
+MAX_TEXT_CHARACTERS = 20_000
 
 
 class JevError(Exception):
@@ -75,6 +76,8 @@ def _parse_choice(data, criteria, api_key):
 
 async def pick_one(*, text, question, criteria, api_key, timeout):
     """Select one exact criterion through the fixed hosted endpoint."""
+    if len(text) > MAX_TEXT_CHARACTERS:
+        raise JevError('text_too_long')
     if (not isinstance(api_key, str) or not api_key.strip()
             or any(ord(c) < 33 or ord(c) > 126 for c in api_key)):
         raise JevError('auth_failed')

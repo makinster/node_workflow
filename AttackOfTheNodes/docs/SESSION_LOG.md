@@ -6,6 +6,32 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-22 — Choice-node review fixes (#112)
+
+Review head: `6c7467b`. Working branch `codex/choice-review-fixes` in
+`/home/makin/src/nw-choice-review`; changes publish to `dist/pick-one`.
+Merged current `origin/main` `9470729` first (`d5d2f02`), retaining both sides'
+Session Log entries, current coordination order/live status and C3a build facts.
+
+- Reserved literal `unsure` for the low-confidence result. Answer rows reject
+  that value and leading/trailing Unicode whitespace through shared opt-in
+  schema checks used by form-save, preflight and runtime. Case and internal
+  spaces remain exact; nothing is silently trimmed.
+- Added a 20,000-character text cap for Upstream, Vault and Configured sources
+  before HTTP or Vault writes, with nonretryable `text_too_long` and the clear
+  message "Text is too long for Jev". The shared client also enforces the cap.
+  Helper spec, metadata/error assertions and authoring rules describe the same
+  behavior.
+- Failing-first proof on the merged code: 16 new cases failed and the exact
+  20,000-character boundary passed. Cases cover real form-save refusal,
+  validator/runtime rejection, all text sources, loopback request prevention
+  and the shared client. The older edge-space acceptance case now checks valid
+  internal spaces, Unicode and case preservation to match the reviewed policy.
+- Verification: **89 focused tests passed**; full `pytest -q`: **2,245 passed
+  in 345.91 seconds** on the combined branch. Targeted compilation,
+  documentation consolidation and whitespace checks passed. All provider tests
+  use loopback; no paid calls, owner workflow edits or live integration changes.
+
 ## 2026-10-22 — Coordination documentation review fixes (#111)
 
 Same branch, after review of `6bf9576`. Documentation only.

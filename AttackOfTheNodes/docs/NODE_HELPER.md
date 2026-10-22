@@ -694,6 +694,13 @@ string equality; labels are not normalized. `pick_one_node.yaml` is the
 reference. Use `answer`, not the row identity field `id`, for the visible
 answer text. Required row cells must be nonblank strings.
 
+Row cells may declare `reserved_values` (an exact string list) and
+`no_edge_whitespace: true`. The same shared checks reject violations in the
+form, validator and node runtime; values are never silently normalized.
+Pick one's answer cell reserves `unsure` and rejects leading/trailing spaces,
+while preserving case and internal whitespace. These constraints are opt-in,
+so unrelated row forms retain their existing behavior.
+
 For several outputs with `to: [vault]` or `to: [downstream, vault]`, the first
 Vault output keeps legacy `vault_write*` fields. The helper initializes each
 later port's `<port>_vault_write` to false and its key/description to empty.

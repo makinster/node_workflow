@@ -14,7 +14,7 @@ inputs:
     name: Text to judge
     type: string
     label: Text
-    description: The text Jev reads before picking an answer
+    description: The text Jev reads before picking an answer; at most 20,000 characters
     required: true
     sources: ["upstream", "vault", "configured"]
     default: upstream
@@ -22,6 +22,7 @@ inputs:
       type: multiline
       label: Text
       height: 3
+      description: At most 20,000 characters
 outputs:
   default:
     name: Answer
@@ -71,6 +72,8 @@ config_tabs:
           type: string
           label: Answer (sent on)
           required: true
+          reserved_values: ["unsure"]
+          no_edge_whitespace: true
         description:
           type: string
           label: What it means
@@ -93,6 +96,9 @@ config_tabs:
       max: 1
       default: 0.3
 errors:
+  - code: text_too_long
+    description: Text is too long for Jev (maximum 20,000 characters).
+    retryable: false
   - code: auth_failed
     description: The API key is missing or was refused.
     retryable: false

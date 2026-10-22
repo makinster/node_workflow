@@ -97,8 +97,11 @@ option — the document is always expected to come from a live data source).
 
 Jev: Pick one has one purpose: read Text to judge, ask Question, and send one
 exact configured answer as plain text. Answer rows carry `answer` and
-`description` (What it means); matching is case/whitespace sensitive and
-repeated answers cannot be saved. At most 255 rows are allowed. A confidence
+`description` (What it means); matching preserves case and internal whitespace.
+The exact answer `unsure` is reserved for the low-confidence result. Reserved,
+repeated or leading/trailing-whitespace answers cannot be saved or pass
+preflight/runtime checks; answers are not silently trimmed. At most 255 rows
+are allowed. A confidence
 strictly below the cutoff (default 0.3) sends literal `unsure` without a stop
 or recovery prompt. At the cutoff, the selected answer passes through.
 
@@ -108,7 +111,10 @@ The node uses a secrets-store key reference and the shared async client
 and [Choice guide](https://docs.typesafe.ai/primitives/choice). The request has
 one question. The total deadline (default 20 seconds) covers the HTTP exchange;
 cancellation closes the connection. Redirects are refused, responses capped
-at 1 MiB, and service text is never echoed into errors. Retry is offered only
+at 1 MiB, and service text is never echoed into errors. Text to judge is capped
+at 20,000 characters for every source; oversized text fails before a request
+or Vault output with nonretryable `text_too_long` ("Text is too long for Jev").
+The shared client enforces the same cap. Retry is offered only
 for `timed_out` and `provider_error`; `auth_failed` and `undeclared_choice`
 are nonretryable. Tests use loopback HTTP; no paid call is part of verification.
 

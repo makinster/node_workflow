@@ -205,7 +205,7 @@ def normalize_numbers(
 
 
 def object_list_problems(schema: Dict[str, Dict[str, Any]], config: Dict[str, Any]) -> list[str]:
-    """Validate opted-in row counts, exact unique values and required cells."""
+    """Validate opted-in row counts, exact unique values and cell constraints."""
     problems = []
     for name, info in schema.items():
         if info.get("type") != "object_list" or not any(
@@ -228,6 +228,12 @@ def object_list_problems(schema: Dict[str, Dict[str, Any]], config: Dict[str, An
                 value = row.get(field, "")
                 if not isinstance(value, str) or (cell.get("required") and not value.strip()):
                     problems.append(f"{label}: row {index} needs {cell.get('label') or field}")
+                elif isinstance(value, str):
+                    cell_label = str(cell.get('label') or field)
+                    if value in cell.get('reserved_values', []):
+                        problems.append(f"{label}: row {index} {cell_label}: {value!r} is reserved")
+                    if cell.get('no_edge_whitespace') and value != value.strip():
+                        problems.append(f"{label}: row {index} {cell_label} must not start or end with whitespace")
             if unique and isinstance(row.get(unique), str):
                 value = row[unique]
                 if value in seen:

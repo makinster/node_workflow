@@ -121,14 +121,108 @@ async def test_unknown_answer_is_exact_nonretryable_error(server, text):
 
 
 @pytest.mark.asyncio
-async def test_whitespace_unicode_and_case_preserved(server):
-    rows = [{'answer':' A ','description':'Spaced'}, {'answer':'a','description':'Lowercase'},
+async def test_internal_whitespace_unicode_and_case_preserved(server):
+    rows = [{'answer':'A B','description':'Internal space'}, {'answer':'a','description':'Lowercase'},
             {'answer':'été','description':'French'}]
-    server.body = reply(' A ', scores={' A ': .7,'a':.2,'été':.1})
+    server.body = reply('A B', scores={'A B': .7,'a':.2,'été':.1})
     node, ctx, done, errors = node_context(choices=rows)
     await node.execute(ctx)
-    assert not errors and done[0]['data']['default'] == ' A '
-    assert list(server.calls[0][0]['questions']['pick']['criteria']) == [' A ','a','été']
+    assert not errors and done[0]['data']['default'] == 'A B'
+    assert list(server.calls[0][0]['questions']['pick']['criteria']) == ['A B','a','été']
+
+
+@pytest.mark.parametrize('answer', ['unsure', ' billing', 'billing ', '\u00a0billing\t'])
+def test_review_reserved_and_padded_answers_fail_preflight(answer):
+    factory = NodeFactory()
+    workflow = WorkflowMap(factory, EventBus())
+    workflow.create_new('Invalid answer')
+    node_id = workflow.add_node('pick_one_node')
+    config = workflow.get_node_data(node_id)['config']
+    config['choices'] = copy.deepcopy(ROWS) + [{'id': 'bad', 'answer': answer}]
+    workflow.update_node_config(node_id, config)
+    errors = validate_workflow(workflow, factory)['errors']
+    assert any(error['code'] == 'invalid_rows' for error in errors)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('answer', ['unsure', ' billing', 'billing ', '\u00a0billing\t'])
+async def test_review_reserved_and_padded_answers_block_form_save(answer):
+    from textual.app import App
+    from frontend.screens.node_config import NodeConfigScreen
+    from frontend.widgets.form_generator import ObjectListField
+    factory = NodeFactory()
+    workflow = WorkflowMap(factory, EventBus())
+    workflow.create_new('Edit answer')
+    node_id = workflow.add_node('pick_one_node')
+    config = workflow.get_node_data(node_id)['config']
+    config.update(question='Who?', choices=copy.deepcopy(ROWS), api_key_secret='service-key')
+    workflow.update_node_config(node_id, config)
+
+    class Host(App):
+        CSS_PATH = '../frontend/styles.tcss'
+
+        def on_mount(self):
+            self.push_screen(NodeConfigScreen(factory, workflow, node_id,
+                                             workflow.get_node_data(node_id)))
+
+    async with Host().run_test(size=(80, 24)) as pilot:
+        await pilot.press('2')
+        await pilot.pause()
+        screen = pilot.app.screen
+        assert screen._save_result() is not None
+        rows = screen.query_one('#field-choices', ObjectListField)
+        await rows.replace_rows(copy.deepcopy(ROWS) + [{'id': 'bad', 'answer': answer}])
+        screen.query_one('#save-node-config').focus()
+        await pilot.press('enter')
+        await pilot.pause()
+        assert pilot.app.screen is screen, 'Invalid answer closed the form as a saved config'
+        assert screen._save_result() is None
+        assert workflow.get_node_data(node_id)['config']['choices'] == ROWS
+        await rows.replace_rows(ROWS)
+        assert screen._save_result() is not None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('answer', ['unsure', ' billing', 'billing ', '\u00a0billing\t'])
+async def test_review_invalid_answers_do_not_send_a_request(server, answer):
+    node, context, done, errors = node_context(
+        choices=copy.deepcopy(ROWS) + [{'answer': answer}])
+    await node.execute(context)
+    assert errors and not done and not server.calls
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('source', ['Upstream payload', 'Vault', 'Configured'])
+async def test_review_oversized_text_fails_without_a_request_or_vault_write(server, source):
+    oversized = '😀' * 20_001
+    node, context, done, errors = node_context(
+        inputs={'input': oversized}, input_source=source, input=oversized,
+        input_vault_key='text', vault_write=True, vault_write_key='answer',
+        details_vault_write=True, details_vault_key='details')
+    context.memory_bank.store_persistent('text', oversized, type_tag='string')
+    await node.execute(context)
+    assert errors and errors[0].code == 'text_too_long'
+    assert 'Text is too long for Jev' in str(errors[0]) and not errors[0].retryable
+    assert not done and not server.calls
+    assert context.memory_bank.read_persistent('answer') is None
+    assert context.memory_bank.read_persistent('details') is None
+
+
+@pytest.mark.asyncio
+async def test_review_text_cap_is_enforced_by_shared_client(server):
+    with pytest.raises(jev.JevError) as error:
+        await jev.pick_one(text='x' * 20_001, question='q', criteria={'billing': 'B', 'bug': 'E'},
+                           api_key=SECRET, timeout=1)
+    assert error.value.code == 'text_too_long' and not server.calls
+
+
+@pytest.mark.asyncio
+async def test_review_text_cap_accepts_exact_character_boundary(server):
+    text = '😀' * 20_000
+    node, context, done, errors = node_context(inputs={'input': text})
+    await node.execute(context)
+    assert not errors and done[0]['data']['default'] == 'billing'
+    assert server.calls[0][0]['state'] == text
 
 
 @pytest.mark.asyncio
