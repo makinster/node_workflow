@@ -363,9 +363,10 @@ H2 remains an unscheduled watchdog template. Step 4 through 4d is merged;
 4e/4f shared memory and Phase 17 verification remain open. C2 (#110) and C3a
 (#112) are merged in main `670b3b3`. C2's review fixes include numeric-overflow
 and store-readability checks; Remember and Recall use the standard forwarding
-checkbox. The System-node forwarding follow-up remains under review in #113,
-now integrated with that main. The Telegram launcher awaits the owner's next
-prompt after #113 merges. [Current State](CURRENT_STATE.md) records the
+checkbox. The System-node forwarding follow-up merged in #113 (main
+`bfcdc36`). Telegram launcher v0 is built on `codex/telegram-launcher` for owner
+review: fixed-script quick commands, a 25-second run/cleanup budget and named
+installation, with no live install or Hermes config change. [Current State](CURRENT_STATE.md) records the
 deployment and review details.
 
 The owner approved the following remaining order on 2026-10-22:
@@ -374,7 +375,7 @@ The owner approved the following remaining order on 2026-10-22:
 |---|---|---|---|
 | C2 | Saved values: persistent store pulled forward from Step 5, on the Stash's store (#110). **Merged:** [Saved values](STASH_PROPOSAL.md#saved-values-c2): Remember, Recall and If changed (paths Changed / No change), `<data dir>/stash/saved.json` with locked changes, Stash tab 3, `aotn stash saved` | Merged; enables H3 without another workflow-state store | Existing Stash; owner decision C5 |
 | C3a | **Jev: Pick one, merged (#112):** Jev only, no provider/model selector; shared Jev client for later nodes; output is the choice id as plain text | Enables H7 through Conditional; below the cutoff (default 0.3), always pass `unsure`, with no Stop option | Jev API key; samples approved 2026-10-22; [built screens and verification](audits/pick_one_2026_10_22/README.md) |
-| Telegram launcher | Thin Hermes version of a Step 5 start trigger: one `quick_commands` entry of `type: exec` per allowed workflow, calling `aotn-run-<slug>.sh` | No agent turn or plugin; normal sender authorization first; Hermes config is the allowlist; full trigger remains Step 5 | Installed-source answer `556bf7c5c`: no arguments; 30 s reply timeout does not kill the script, so each entry needs its own deadline under 30 s with kill/reap |
+| Telegram launcher | **Built for owner review:** thin Hermes version of a Step 5 start trigger: one `quick_commands` entry of `type: exec` per allowed workflow, calling `aotn-run-<slug>.sh` | No agent turn or plugin; normal sender authorization first; Hermes config is the allowlist; full trigger remains Step 5 | Installed-source answer `556bf7c5c`: no arguments; 30 s reply timeout does not kill the script, so each entry needs its own deadline under 30 s with kill/reap |
 | C3b | `hermes_ask_node` / `claude_code_node`: bounded agent execution | Enables H4 and tool-using agent steps after the decision/launch slices | C1 receipts; bounded tools, turns/time and trace contract |
 | 4e–4f | Shared memory between a caller and its subworkflow | Complete the remaining Step 4 work | Step 4 through 4d (merged) |
 | P1 | First-community package: install path, Hermes guide, H1/H2 specs, screenshots and known limits (section 1.2) | Package the proven integrations; describe H2 as a template until configured | H0/C1 live; preceding delivery slices |

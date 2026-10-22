@@ -1,7 +1,7 @@
 # Current State
 
-Snapshot checked **2026-10-22**, against fetched `origin/main` `670b3b3` after
-#110 and #112 merged (owner confirmation and fetched history). Code and fresh
+Snapshot checked **2026-10-22**, against fetched `origin/main` `bfcdc36` after
+#110, #112 and #113 merged (owner confirmation and fetched history). Code and fresh
 GitHub checks take precedence.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
@@ -9,7 +9,21 @@ delivery; this documentation refresh did not change or rerun live jobs.
 
 ## Baseline and open work — 2026-10-22
 
-- **System-node forwarding follow-up built, awaiting owner review:** branch
+- **Telegram launcher v0 built for owner review:** branch
+  `codex/telegram-launcher`, from main `bfcdc36`, worktree
+  `/home/makin/src/nw-telegram-launcher`. A named `aotn-run-<slug>.sh` entry
+  selects a saved workflow by filename, refuses arguments and runs the existing
+  JSON adapter against the live checkout and separate cron data directory.
+  `--telegram-launcher` uses a 25-second run/cleanup budget, H0 escaping and
+  cap, and single-line failures. It supplies `checked_at`; other required inputs
+  need saved defaults. Named install/check and the unapplied Hermes config
+  example are in the [adapter guide](../integrations/hermes/README.md#telegram-launcher-v0-owner-requested-2026-10-22).
+  Verification: **2,388 passed in 395.97 seconds** (full `pytest -q`), no
+  timing-flake rerun; real 25-second descendant cleanup and focused H0/launcher
+  checks passed, along with compilation, Bash syntax, docs and whitespace.
+  No live installation, Hermes configuration or cron changes.
+
+- **System-node forwarding follow-up merged in #113:** branch
   `codex/system-node-forwarding`, from main `9470729`, now integrated with
   main `670b3b3` for #113. Disk space, Git status and File age use the standard Forward incoming payload unchanged checkbox.
   Checked sends the incoming payload; unchecked sends the computed report.

@@ -9,25 +9,41 @@
 set -euo pipefail
 
 check=false
-if [[ $# -gt 1 || ( $# -eq 1 && $1 != --check ) ]]; then
-    printf '%s\n' 'usage: install.sh [--check]' >&2
-    exit 64
-fi
-[[ $# -eq 1 ]] && check=true
+run_slug=
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --check) check=true; shift ;;
+        --run-command)
+            if [[ $# -lt 2 || -n $run_slug || ! $2 =~ ^[a-z0-9][a-z0-9_-]*$ ]]; then
+                printf '%s\n' 'usage: install.sh [--check] [--run-command <slug>]' >&2
+                exit 64
+            fi
+            run_slug=$2
+            shift 2 ;;
+        *) printf '%s\n' 'usage: install.sh [--check] [--run-command <slug>]' >&2
+           exit 64 ;;
+    esac
+done
 
 source_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
 target_dir=${HERMES_HOME:-/home/makin/.hermes}/scripts
 files=(_aotn_common.sh _aotn_run.py aotn-h1-heartbeat.sh aotn-h2-http-watchdog.sh
        _aotn_drain.py aotn-drain-home.sh)
+# Named launcher installation changes only the adapter and requested instance.
+if [[ -n $run_slug ]]; then
+    files=(_aotn_run.py "aotn-run-$run_slug.sh")
+fi
 
 differs=0
 for name in "${files[@]}"; do
     target=$target_dir/$name
+    source=$source_dir/$name
+    [[ $name == "aotn-run-$run_slug.sh" ]] && source="$source_dir/aotn-run-template.sh"
     if [[ -L $target ]]; then
         printf 'refusing: %s is a symlink (Hermes rejects those); remove it first\n' "$target" >&2
         exit 70
     fi
-    if [[ -f $target ]] && cmp -s -- "$source_dir/$name" "$target"; then
+    if [[ -f $target ]] && cmp -s -- "$source" "$target"; then
         printf 'up to date  %s\n' "$name"
         continue
     fi
@@ -40,7 +56,7 @@ for name in "${files[@]}"; do
     mode=644
     [[ $name == aotn-*.sh ]] && mode=755
     temp=$(mktemp -- "$target_dir/.$name.XXXXXX")
-    cp -- "$source_dir/$name" "$temp"
+    cp -- "$source" "$temp"
     chmod "$mode" -- "$temp"
     mv -f -- "$temp" "$target"
     printf 'installed   %s\n' "$name"

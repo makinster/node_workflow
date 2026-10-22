@@ -86,3 +86,76 @@ change `cron.wrap_response` (C4 says off), write to `~/.hermes`, create jobs,
 send messages, implement the later shared folder/outbox, or claim delivery.
 Recheck the installed Hermes interface and the draft's activation criteria
 before enabling any schedule.
+
+## Telegram launcher v0 (owner-requested, 2026-10-22)
+
+One fixed saved workflow per command, using the existing JSON adapter. No
+agent turn, plugin, argument passing or workflow creation. Hermes runs exec
+quick commands after normal sender authorization; its top-level config is the
+allowlist. The reply is stdout, otherwise stderr, with Hermes redaction.
+
+The repository template `aotn-run-template.sh` is installed as
+`aotn-run-<slug>.sh` under a real saved workflow slug, for example
+`aotn-run-c1-notify-test.sh`. It derives the slug from its own filename (lowercase
+letters, digits, `_` and `-`, beginning with a letter or digit), refuses arguments,
+and uses these fixed paths:
+
+- Checkout: `/home/makin/src/aotn-live`.
+- Interpreter: `/home/makin/src/node_workflow/.venv/bin/python`.
+- Data: `/home/makin/.local/share/aotn-cron`.
+
+**Installation is a separate owner action**, after updating the live checkout.
+The following example copies the adapter and only the requested named instance
+into `$HERMES_HOME/scripts` (default `/home/makin/.hermes/scripts`). It does not
+install other entry scripts, build the workflow, change config or start a job:
+
+```bash
+bash /home/makin/src/aotn-live/AttackOfTheNodes/integrations/hermes/install.sh --run-command c1-notify-test
+bash /home/makin/src/aotn-live/AttackOfTheNodes/integrations/hermes/install.sh --check --run-command c1-notify-test
+```
+
+Then the owner may add this **example, not applied** to the top level of
+`~/.hermes/config.yaml` (merge with existing quick commands):
+
+```yaml
+quick_commands:
+  aotn_test:
+    type: exec
+    command: /home/makin/.hermes/scripts/aotn-run-c1-notify-test.sh
+```
+
+`/aotn_test` launches exactly that saved workflow. Text after the command is
+not passed by Hermes; the script itself rejects any argv. Configure only
+workflows the authorized sender should be able to run.
+
+The `--telegram-launcher` adapter mode has a **25-second budget including
+cleanup**, below Hermes's 30-second reply timeout (which does not kill scripts).
+It reuses H0's process group, Linux subreaper, descendant kill/reap and persistent
+lock marker. INT starts at 20 seconds; KILL at 24, reserving the final second
+for reaping. Late external signals or pipe overflow do not extend that budget.
+Other adapter calls retain H0's 100-second budget. A stop/timeout ends the run;
+there is no background continuation or later reply. Cleanup failure leaves the
+same stale lock marker requiring operator verification as H0.
+
+V0 supplies only `checked_at`, an ISO UTC timestamp, exactly like the heartbeat.
+Other required Start inputs must have saved defaults, or the run is refused with
+`Couldn't run <slug>: required inputs are missing or invalid; v0 supplies only checked_at`.
+For example, a `sent_at` input without a default in `c1-notify-test` must be
+configured before that workflow can be used here. Optional/defaulted inputs
+use existing CLI behavior. Interactive prompts cannot be answered; the adapter
+uses the existing unattended `terminate_workflow` policy.
+
+Success returns the run's outputs and named results, with H0 escaping and a
+3,500 UTF-16-unit cap including any truncation tail. An empty successful output
+stays empty (Hermes then says “Command returned no output.”); completion
+summaries and child diagnostics are not replies. Failure produces one plain
+line, `Couldn't run <slug>: <reason>`, including a clear missing/unreadable
+workflow message for an empty data directory; a timeout says
+`Couldn't run <slug>: stopped after 25 s`. Full errors/outputs remain in run
+history where a run started. The script does not install or update the live app.
+
+`tests/test_telegram_launcher.py` exercises real subprocesses for entry naming,
+argument refusal, a real 25-second deadline including a detached descendant's
+reaping, timestamp/missing required inputs, escaping/cap, empty data/missing
+workflows, and named install/check in a temporary Hermes folder. No live install
+or Hermes configuration change is part of verification.
