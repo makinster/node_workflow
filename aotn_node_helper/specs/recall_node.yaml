@@ -16,6 +16,7 @@ outputs:
     type: any
     required: true
     to: ["downstream", "vault"]
+    pass_through: true
     description: The value saved under this name
 output_routing:
   default: transient

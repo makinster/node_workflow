@@ -28,6 +28,7 @@ outputs:
     name: Saved value
     type: any
     to: ["downstream", "vault"]
+    pass_through: true
     description: The value as saved (the new total with Add)
 output_routing:
   default: transient

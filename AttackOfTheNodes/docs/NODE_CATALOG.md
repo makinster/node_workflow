@@ -204,7 +204,9 @@ Values a workflow keeps for its next run (C2, owner 2026-10-21), in
 [Saved values](STASH_PROPOSAL.md#saved-values-c2). "Kept for" / "Look in":
 This workflow (by its name; renaming the workflow moves them) or All workflows.
 Codes `store_unwritable` and `store_unreadable` are retryable. A blank Saved
-as is a validation error (`saved_name_missing`).
+as is a validation error (`saved_name_missing`). Remember and Recall send
+their own value on by default; "Forward incoming payload unchanged" sends the
+incoming payload instead, and their Vault output still gets their own value.
 
 | Node | Status | Notes |
 |---|---|---|

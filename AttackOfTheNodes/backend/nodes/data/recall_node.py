@@ -6,7 +6,6 @@ from ... import saved_values as saved
 from ...node_base import Node, NodeContext
 from ...node_category import NodeCategory
 from ...node_errors import NodeError
-from ...system_access import finish
 
 
 class RecallNode(Node):
@@ -26,7 +25,7 @@ class RecallNode(Node):
     input_ports: ClassVar[List[str]] = ['input']
     output_ports: ClassVar[List[str]] = ['default']
     input_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {}
-    output_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {'default': {'name': 'Saved value', 'description': 'The value saved under this name', 'data_type': 'any', 'required': True, 'to': ['downstream', 'vault']}}
+    output_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {'default': {'name': 'Saved value', 'description': 'The value saved under this name', 'data_type': 'any', 'required': True, 'to': ['downstream', 'vault'], 'pass_through': True}}
     default_config: ClassVar[Dict[str, Any]] = {'name': '', 'keep_for': 'This workflow', 'expect': 'any', 'if_missing': 'Use the starting value', 'starting_value': '', 'transient_output': True, 'dead_drop_passthrough': False, 'transient_outputs': [], 'vault_write': False, 'vault_write_key': '', 'vault_write_description': ''}
     config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {'name': {'type': 'string', 'label': 'Saved as', 'required': True, 'placeholder': 'a name, like last_version', 'tab': 'Parameters'}, 'keep_for': {'type': 'select', 'label': 'Look in', 'options': [['This workflow · only this workflow sees it', 'This workflow'], ['All workflows · shared on this machine', 'All workflows']], 'tab': 'Parameters'}, 'expect': {'type': 'select', 'label': 'Type', 'options': [['any · whatever was saved', 'any'], ['string · text', 'string'], ['number', 'number'], ['bool · yes or no', 'bool'], ['var · a list or record', 'var'], ['file · a file reference', 'file']], 'tab': 'Parameters'}, 'if_missing': {'type': 'select', 'label': 'If nothing is saved yet', 'options': [['Use the starting value · below', 'Use the starting value'], ['Stop · the node fails', 'Stop with an error']], 'tab': 'Parameters'}, 'starting_value': {'type': 'string', 'label': 'Starting value', 'placeholder': 'blank = empty; read as the Type above', 'visible_when': {'if_missing': 'Use the starting value'}, 'tab': 'Parameters'}}
     ui_hints: ClassVar[Dict[str, Any]] = {'standard_output': True}
@@ -59,7 +58,7 @@ class RecallNode(Node):
         except saved.SavedValuesError as exc:
             context.signal_error(NodeError(exc.code, str(exc), retryable=exc.code in saved.RETRYABLE))
             return
-        finish(self, context, value, expect if expect != "any" else saved.type_of(value))
+        saved.finish(self, context, value, expect if expect != "any" else saved.type_of(value))
 
 
 def _starting_value(text: str, expect: str) -> Any:

@@ -844,3 +844,75 @@ def test_recheck_reading_applies_the_same_rule_to_nested_numbers(_stash_dir):
     with pytest.raises(saved.SavedValuesError) as exc:
         saved.SavedValues().list_values()
     assert exc.value.code == "store_unreadable"
+
+
+# -- Forward incoming payload unchanged (owner, 2026-10-22: as Notify me and Pick one) -------
+
+@pytest.mark.parametrize("node_type, config, own", [
+    ("remember_node", {"name": "runs", "how": "Add", "input_source": "Configured", "value": "1"}, 1),
+    ("recall_node", {"name": "runs", "expect": "number", "starting_value": "5"}, 5),
+])
+def test_forwarding_sends_the_incoming_payload_and_the_vault_still_gets_the_value(node_type, config, own):
+    incoming = {"report": ["keep", "this"]}
+    done, errors, memory = execute(node_type, {"input": incoming}, dead_drop_passthrough=True,
+                                   transient_output=False, vault_write=True, vault_write_key="own", **config)
+    assert not errors and done[0]["data"] == {"default": incoming}
+    assert memory.read_persistent("own") == own
+    done, _, _ = execute(node_type, {"input": incoming}, **{**config, "name": "fresh"})
+    assert done[0]["data"] == {"default": own}  # unchecked (the default): its own value
+
+
+@pytest.mark.parametrize("node_type", ["remember_node", "recall_node"])
+def test_forwarding_checkbox_toggles_saves_and_reopens(node_type):
+    from textual.app import App
+    from textual.widgets import Checkbox
+
+    from backend.workflow_map import WorkflowMap
+    from frontend.screens.node_config import NodeConfigScreen
+
+    workflow_map = WorkflowMap(FACTORY, EventBus())
+    workflow_map.create_new("Forward")
+    node_id = workflow_map.add_node(node_type)
+    seen = {}
+
+    class Host(App):
+        def on_mount(self):
+            self.push_screen(NodeConfigScreen(FACTORY, workflow_map, node_id,
+                                              workflow_map.get_node_data(node_id)))
+
+    async def check():
+        async with Host().run_test(size=(100, 40)) as pilot:
+            await pilot.press("3")
+            await pilot.pause()
+            screen = pilot.app.screen
+            seen["publish"] = len(screen.query("#publish-downstream"))
+            forward = screen.query_one("#dead-drop-passthrough", Checkbox)
+            seen["label"], seen["start"] = str(forward.label), forward.value
+            forward.focus()
+            await pilot.press("space")
+            await pilot.pause()
+            seen["name_disabled"] = screen.query_one("#transient-output-name-default").disabled
+            saved_config = screen._save_result()["config"]
+            seen["saved"] = (saved_config["dead_drop_passthrough"], saved_config["transient_output"])
+            workflow_map.update_node_config(node_id, saved_config)
+            pilot.app.push_screen(NodeConfigScreen(FACTORY, workflow_map, node_id,
+                                                   workflow_map.get_node_data(node_id)))
+            await pilot.pause()
+            await pilot.press("3")
+            await pilot.pause()
+            reopened = pilot.app.screen
+            box = reopened.query_one("#dead-drop-passthrough", Checkbox)
+            seen["reopened"] = box.value
+            box.focus()
+            await pilot.press("space")
+            await pilot.pause()
+            again = reopened._save_result()["config"]
+            seen["unchecked"] = (again["dead_drop_passthrough"], again["transient_output"])
+
+    asyncio.run(check())
+    assert seen["publish"] == 0
+    assert seen["label"] == "Forward incoming payload unchanged" and seen["start"] is False
+    assert seen["name_disabled"] is True
+    assert seen["saved"] == (True, False)
+    assert seen["reopened"] is True
+    assert seen["unchecked"] == (False, True)

@@ -6,7 +6,6 @@ from ... import saved_values as saved
 from ...node_base import Node, NodeContext
 from ...node_category import NodeCategory
 from ...node_errors import NodeError
-from ...system_access import finish
 
 
 class RememberNode(Node):
@@ -26,7 +25,7 @@ class RememberNode(Node):
     input_ports: ClassVar[List[str]] = ['input']
     output_ports: ClassVar[List[str]] = ['default']
     input_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {'input': {'name': 'Value', 'description': 'The value to save', 'data_type': 'any', 'required': True, 'configured_field': 'value', 'sources': ['upstream', 'vault', 'configured']}}
-    output_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {'default': {'name': 'Saved value', 'description': 'The value as saved (the new total with Add)', 'data_type': 'any', 'required': False, 'to': ['downstream', 'vault']}}
+    output_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {'default': {'name': 'Saved value', 'description': 'The value as saved (the new total with Add)', 'data_type': 'any', 'required': False, 'to': ['downstream', 'vault'], 'pass_through': True}}
     default_config: ClassVar[Dict[str, Any]] = {'input_source': 'Upstream payload', 'input_vault_key': '', 'value': '', 'name': '', 'keep_for': 'This workflow', 'how': 'Replace', 'if_not_saved': 'Stop with an error', 'transient_output': True, 'dead_drop_passthrough': False, 'transient_outputs': [], 'vault_write': False, 'vault_write_key': '', 'vault_write_description': ''}
     config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {'input_source': {'type': 'select', 'label': 'Value source', 'options': ['Upstream payload', 'Vault', 'Configured'], 'tab': 'Source', 'section': 'Required Inputs', 'description': 'The value to save'}, 'input_vault_key': {'type': 'string', 'label': 'Value Vault key', 'required': False, 'tab': 'Source', 'section': 'Required Inputs', 'vault_type': 'any', 'visible_when': {'input_source': 'Vault'}}, 'value': {'type': 'string', 'label': 'Value', 'placeholder': 'text, or a number with Add', 'tab': 'Parameters', 'visible_when': {'input_source': 'Configured'}}, 'name': {'type': 'string', 'label': 'Saved as', 'required': True, 'placeholder': 'a name, like last_version', 'tab': 'Parameters'}, 'keep_for': {'type': 'select', 'label': 'Kept for', 'options': [['This workflow · only this workflow sees it', 'This workflow'], ['All workflows · shared on this machine', 'All workflows']], 'tab': 'Parameters'}, 'how': {'type': 'select', 'label': 'How', 'options': [['Replace · keep only this value', 'Replace'], ['Add · add this number to the saved one', 'Add']], 'tab': 'Parameters'}, 'if_not_saved': {'type': 'select', 'label': "If it can't be saved", 'options': [['Stop · the node fails', 'Stop with an error'], ['Carry on · the run continues', 'Carry on']], 'tab': 'Parameters'}}
     ui_hints: ClassVar[Dict[str, Any]] = {}
@@ -46,11 +45,11 @@ class RememberNode(Node):
                 record = saved.SavedValues().save(place, name, value, saved.saved_by(context))
         except saved.SavedValuesError as exc:
             if self.config.get("if_not_saved") == "Carry on":
-                finish(self, context, value, saved.type_of(value))
+                saved.finish(self, context, value, saved.type_of(value))
                 return
             context.signal_error(_node_error(exc))
             return
-        finish(self, context, record["value"], record["type"])
+        saved.finish(self, context, record["value"], record["type"])
 
 
 def _node_error(exc: "saved.SavedValuesError") -> NodeError:

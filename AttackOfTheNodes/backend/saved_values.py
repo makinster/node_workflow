@@ -174,6 +174,23 @@ def saved_by(context: Any) -> Dict[str, str]:
     }
 
 
+def finish(node: Any, context: Any, value: Any, type_tag: str) -> None:
+    """Remember and Recall's routing: their own value to the Vault when
+    chosen; the next node gets the incoming payload unchanged when
+    forwarding, else their own value."""
+    config = node.config
+    if config.get("vault_write"):
+        key = str(config.get("vault_write_key") or "").strip()
+        if not key:
+            context.signal_error(ValueError(f"{node.display_name}: enter a Vault output key."))
+            return
+        context.memory_bank.store_persistent(key, value, type_tag=type_tag)
+    forwarding = config.get("dead_drop_passthrough")
+    payload = context.inputs.get("input") if forwarding else value
+    context.signal_done({"data": {"default": payload}
+                         if forwarding or config.get("transient_output", True) else {}})
+
+
 def node_value(node: Any, context: Any) -> Any:
     """A node's Value input: the incoming payload, a Vault key, or the
     Configured text."""
