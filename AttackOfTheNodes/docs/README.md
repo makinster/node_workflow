@@ -54,9 +54,9 @@ The [rebuilt source map](audits/docs_audit_2026_10_17/vision_sources.md) records
 what was preserved and where. The 17 core documents own the current reading
 route, plus the temporary [Subworkflows proposal](SUBWORKFLOWS_PROPOSAL.md),
 which moves to `archive/` when Step 4 completes, and the
-[AI coordination proposal](AI_COORDINATION_PROPOSAL.md) (not approved,
-2026-10-20: Hermes cron/Telegram integration, receipts, deterministic tool
-nodes, bounded agent nodes and a proposed build order). Whole historical originals
+[AI coordination proposal](AI_COORDINATION_PROPOSAL.md) (owner decisions recorded;
+section 9 carries the 2026-10-22 delivery order and links the archived
+intent/designer discussion). Whole historical originals
 remain in `archive/`; the [Session Log](SESSION_LOG.md) keeps about two weeks.
 The [retained audit report](audits/docs_audit_2026_10_17/MASTER_REPORT.md)
 records the findings; its supporting artifacts were not retained.
