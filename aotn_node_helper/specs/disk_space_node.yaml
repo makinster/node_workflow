@@ -16,6 +16,7 @@ outputs:
     type: number
     required: true
     to: ["downstream", "vault"]
+    pass_through: true
     description: The value chosen in Report, in the chosen unit
 output_routing:
   default: transient
@@ -41,6 +42,8 @@ config_tabs:
       default: GB
       visible_when:
         report: ["Free space", "Total size"]
+ui_hints:
+  standard_output: true
 errors:
   - code: folder_missing
     description: "The folder does not exist."

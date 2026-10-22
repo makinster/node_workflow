@@ -16,6 +16,7 @@ outputs:
     type: number
     required: true
     to: ["downstream", "vault"]
+    pass_through: true
     description: Time since the last change, in the chosen unit
 output_routing:
   default: transient
@@ -34,6 +35,8 @@ config_tabs:
       label: Unit
       options: ["Minutes", "Hours", "Days"]
       default: Hours
+ui_hints:
+  standard_output: true
 errors:
   - code: folder_missing
     description: "The file or folder does not exist."

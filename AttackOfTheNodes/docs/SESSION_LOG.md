@@ -6,6 +6,27 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-22 — System nodes: standard forwarding control
+
+Branch `codex/system-node-forwarding`, from fetched main `9470729`. The owner
+requested the same Forward incoming payload unchanged control used by the
+recent output nodes for Disk space, Git status and File age.
+
+All three declare the pass-through capability and use the existing standard
+Payloads composer. Their shared output helper stores the computed report in
+the Vault first, then chooses the original incoming payload when forwarding
+or the computed report when unchecked. No custom screen or color rules.
+Helper specs retain the flags; existing execution, path restrictions and
+Git process handling remain intact.
+
+New regressions failed before the fix and now cover non-text payload identity,
+forwarding on/off, report-specific Vault types (number, bool, string, var),
+producer tracing, and production-style keyboard toggle/save/reopen at 80×24
+and 120×40. Focused System/no-edit checks: 38 passed. All three helper specs
+match their classes; helper registration/UI checks passed.
+Full suite: **2,176 passed in 341.54 seconds** (full `pytest -q`). Docs link/archive and whitespace checks
+passed. No repository workflows edited; awaiting owner review, not merged.
+
 ## 2026-10-22 — Coordination documentation review fixes (#111)
 
 Same branch, after review of `6bf9576`. Documentation only.

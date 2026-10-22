@@ -8,6 +8,13 @@ delivery; this documentation refresh did not change or rerun live jobs.
 
 ## Baseline and open work — 2026-10-22
 
+- **System-node forwarding follow-up built, awaiting owner review:** branch
+  `codex/system-node-forwarding`, from main `9470729`. Disk space, Git status
+  and File age use the standard Forward incoming payload unchanged checkbox.
+  Checked sends the incoming payload; unchecked sends the computed report.
+  Enabled Vault outputs always receive the computed report with its own type.
+  Verification: **2,176 passed in 341.54 seconds** (full `pytest -q`); helper node/UI and docs checks passed.
+
 - **H0 live (#103/#106):** the adapter and installed wrappers run from
   `/home/makin/src/aotn-live` with the isolated cron library at
   `~/.local/share/aotn-cron`. Heartbeat job `63968ee90ae0` runs

@@ -16,6 +16,7 @@ outputs:
     type: any
     required: true
     to: ["downstream", "vault"]
+    pass_through: true
     description: "The value chosen in Report: Clean [bool], Branch [string], Changed files [var], Commits ahead [number]"
 output_routing:
   default: transient
@@ -38,6 +39,8 @@ config_tabs:
       type: boolean
       label: Include untracked files
       default: true
+ui_hints:
+  standard_output: true
 errors:
   - code: folder_missing
     description: "The folder does not exist."

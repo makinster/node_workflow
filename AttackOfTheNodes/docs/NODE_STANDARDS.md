@@ -95,6 +95,13 @@ option — the document is always expected to come from a live data source).
 
 ## System nodes (AI coordination decision C7, owner 2026-10-20)
 
+Disk space, Git status and File age use the standard **Forward incoming
+payload unchanged** checkbox (owner follow-up, 2026-10-22). Checked replaces
+the downstream report with the original incoming payload and hides/disables
+the report's downstream name/description controls. Unchecked sends the report.
+An enabled Vault output always stores the computed report with its own type,
+independently of forwarding.
+
 A System node reads the state of this machine with one fixed operation: the
 command (if any) is in the node's code, the workflow sets only typed
 parameters, arguments are argv with no shell, and the result is one typed

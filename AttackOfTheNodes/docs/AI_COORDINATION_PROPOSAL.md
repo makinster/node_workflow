@@ -423,7 +423,10 @@ command, for example a Disk space node (`df`) or a Git status node: the
 command is fixed in the node's code, the workflow fills only typed settings
 (such as a folder), arguments are passed as argv with no shell, and outputs
 are typed (free space as a number, changed files as a list) with the node's
-own error codes, so a workflow can branch without an AI step. The node
+own error codes, so a workflow can branch without an AI step. Owner follow-up
+(2026-10-22): these three System nodes use the standard Forward incoming
+payload unchanged checkbox; forwarding changes the downstream payload while
+an enabled Vault output retains the computed report. The node
 helper can generate them from a short spec. A generic `run_command_node`
 waits until it is needed, behind a command allowlist in Settings with
 approval on by default.

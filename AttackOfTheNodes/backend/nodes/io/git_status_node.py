@@ -25,10 +25,10 @@ class GitStatusNode(Node):
     input_ports: ClassVar[List[str]] = ['input']
     output_ports: ClassVar[List[str]] = ['default']
     input_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {}
-    output_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {'default': {'name': 'Git status', 'description': 'The value chosen in Report: Clean [bool], Branch [string], Changed files [var], Commits ahead [number]', 'data_type': 'any', 'required': True, 'to': ['downstream', 'vault']}}
+    output_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {'default': {'name': 'Git status', 'description': 'The value chosen in Report: Clean [bool], Branch [string], Changed files [var], Commits ahead [number]', 'data_type': 'any', 'required': True, 'to': ['downstream', 'vault'], 'pass_through': True}}
     default_config: ClassVar[Dict[str, Any]] = {'folder': '~', 'report': 'Clean', 'include_untracked': True, 'transient_output': True, 'dead_drop_passthrough': False, 'transient_outputs': [], 'vault_write': False, 'vault_write_key': '', 'vault_write_description': ''}
     config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {'folder': {'type': 'string', 'label': 'Folder', 'required': True, 'description': 'Must be inside an allowed folder (Options: system_node_folders)', 'tab': 'Parameters'}, 'report': {'type': 'select', 'label': 'Report', 'options': ['Clean', 'Branch', 'Changed files', 'Commits ahead'], 'tab': 'Parameters'}, 'include_untracked': {'type': 'boolean', 'label': 'Include untracked files', 'tab': 'Parameters'}}
-    ui_hints: ClassVar[Dict[str, Any]] = {}
+    ui_hints: ClassVar[Dict[str, Any]] = {'standard_output': True}
     error_definitions: ClassVar[List[Dict[str, Any]]] = [{'code': 'folder_missing', 'description': 'The folder does not exist.', 'retryable': False}, {'code': 'not_allowed', 'description': 'The folder is outside the folders allowed in Options.', 'retryable': False}, {'code': 'not_a_repository', 'description': 'The folder is not inside a Git repository.', 'retryable': False}, {'code': 'git_missing', 'description': 'Git is not installed or not on PATH.', 'retryable': False}, {'code': 'timeout', 'description': 'git status did not finish within 15 seconds.', 'retryable': True}, {'code': 'git_failed', 'description': 'git status failed for another reason (its message is kept).', 'retryable': False}]
 
     REPORT_TYPES: ClassVar[Dict[str, str]] = {

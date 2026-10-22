@@ -55,7 +55,7 @@ def checked_path(raw: Any, get_setting: Optional[Callable[[str], Any]], what: st
 
 
 def finish(node: Any, context: Any, value: Any, type_tag: str) -> None:
-    """Standard output routing: optional Vault copy, then the next node."""
+    """Store the computed report in the Vault; optionally forward incoming data."""
     config = node.config
     if config.get("vault_write"):
         key = str(config.get("vault_write_key") or "").strip()
@@ -63,4 +63,7 @@ def finish(node: Any, context: Any, value: Any, type_tag: str) -> None:
             context.signal_error(ValueError(f"{node.display_name}: enter a Vault output key."))
             return
         context.memory_bank.store_persistent(key, value, type_tag=type_tag)
-    context.signal_done({"data": {"default": value} if config.get("transient_output", True) else {}})
+    forwarding = config.get("dead_drop_passthrough")
+    payload = context.inputs.get("input") if forwarding else value
+    context.signal_done({"data": {"default": payload}
+                         if forwarding or config.get("transient_output", True) else {}})
