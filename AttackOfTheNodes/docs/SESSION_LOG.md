@@ -6,14 +6,34 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-21 — C1 review fixes (#109, eight findings)
+
+Same branch, after main was merged in (`4ad68c2`). Each finding has a
+regression test that fails on `4ad68c2` for the reported reason.
+
+1. An unfinished last line (a writer killed mid-line) is moved to
+   `<file>.bad.jsonl` and cut off before the next append, in the nodes and
+   the drain.
+2. A repeat is remembered only after its record is written.
+3. A message with Hermes commands allowed goes out alone; other messages wait
+   for the next tick, so its `[SILENT]` never hides them.
+4. The drain splits the outbox on LF only (U+2028 / U+0085 stay inside a line).
+5. The finished digest, header and notes included, fits 3,500 UTF-16 units;
+   cutting counts the same units.
+6. One folder for both sides: `$HERMES_HOME/aotn` (`HERMES_HOME` defaults to
+   `~/.hermes`). The `hermes_folder` Option is gone.
+7. Repeat times in the future count as expired.
+8. Folder 700 and files 600 are enforced on existing contents too, by the
+   nodes and the drain; symbolic links are refused.
+
 ## 2026-10-21 — C1: Notify me, Record event and the outbox drain
 
 Branch `dist/hermes-notify`, from main `6f5c216`. The owner approved the
 sample screens (after asking for lighter config screens: hints inside the
 fields, `Name · what it does` dropdown items) and answered the open questions.
 
-- `backend/hermes_folder.py`: the shared folder (`~/.hermes/aotn`, Options
-  `hermes_folder`; folder 700, files 600, one `flock` for every change),
+- `backend/hermes_folder.py`: the shared folder (`~/.hermes/aotn`, later
+  `$HERMES_HOME/aotn`; folder 700, files 600, one `flock` for every change),
   escaping identical to the H0 adapter's, Telegram-length cutting, repeats.
   Formats: [Hermes shared folder](integrations/HERMES_SHARED_FOLDER.md).
 - `hermes_notify_node` (Notify me) and `record_event_node` (Record event),

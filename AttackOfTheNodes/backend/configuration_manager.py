@@ -29,10 +29,9 @@ DEFAULT_SETTINGS: Dict[str, Any] = {
     # C7 (owner, 2026-10-20): folders System nodes (Disk space, Git status,
     # File age) may look in, separated by ";". "~" is the home folder.
     "system_node_folders": "~",
-    # C1 (owner, 2026-10-21): the folder AOTN shares with Hermes (outbox and
-    # events), and the names Notify me may send to, separated by ";". A name
-    # is set up in Hermes (a drain job per name), never a chat id.
-    "hermes_folder": "~/.hermes/aotn",
+    # C1 (owner, 2026-10-21): the names Notify me may send to, separated by
+    # ";". A name is set up in Hermes (a drain job per name), never a chat
+    # id. The shared folder itself is $HERMES_HOME/aotn (hermes_folder.py).
     "hermes_send_to_names": "home",
 }
 

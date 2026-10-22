@@ -54,7 +54,6 @@ class HermesNotifyNode(Node):
         origin = hermes.origin_of(context)
         try:
             receipt = hermes.queue_message(
-                context.get_setting,
                 origin=origin,
                 send_to=send_to,
                 priority="urgent" if self.config.get("priority") == "Urgent" else "normal",
@@ -69,7 +68,7 @@ class HermesNotifyNode(Node):
             else:
                 context.signal_error(NodeError(
                     "outbox_unwritable", f"Could not write the Hermes folder: {exc}",
-                    details={"folder": str(hermes.folder(context.get_setting))}, retryable=True,
+                    details={"folder": str(hermes.folder())}, retryable=True,
                 ))
                 return
         hermes.finish(self, context, receipt, "var")

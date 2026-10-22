@@ -1,7 +1,8 @@
 """C1: Notify me, Record event and the Hermes shared folder (owner, 2026-10-21).
 
-Every test writes to a temporary folder (Options: hermes_folder), never the
-owner's ~/.hermes/aotn.
+Every test writes to a temporary folder, never the owner's ~/.hermes/aotn:
+HERMES_HOME points into the test's own folder, and ``execute`` hands each
+node its folder directly.
 
 Run from AttackOfTheNodes/:
     ../.venv/bin/python -m pytest tests/test_hermes_notify.py -v
@@ -12,7 +13,11 @@ import importlib.util
 import json
 import os
 import stat
+import subprocess
+import sys
+import time
 from pathlib import Path
+from unittest import mock
 
 import pytest
 
@@ -25,7 +30,13 @@ from backend.node_factory import NodeFactory
 from tests.test_subworkflow_calls import Flow, _isolated, run  # noqa: F401
 
 FACTORY = NodeFactory()
-ADAPTER = Path(__file__).resolve().parent.parent / "integrations" / "hermes" / "_aotn_run.py"
+HERMES = Path(__file__).resolve().parent.parent / "integrations" / "hermes"
+ADAPTER = HERMES / "_aotn_run.py"
+
+
+@pytest.fixture(autouse=True)
+def _hermes_home(tmp_path, monkeypatch):
+    monkeypatch.setenv("HERMES_HOME", str(tmp_path / "hermes-home"))
 
 
 def lines(folder, name):
@@ -43,14 +54,15 @@ def execute(node_type, folder, inputs=None, settings=None, vault=None, **config)
     for key, value in (vault or {}).items():
         memory.store_persistent(key, value)
     done, errors = [], []
-    values = {"hermes_folder": str(folder), **(settings or {})}
+    values = dict(settings or {})
     context = NodeContext(
         node_id="n1", branch_id="S1", run_id="run_1", inputs=inputs if inputs is not None else {"input": "41 GB"},
         memory_bank=memory, signal_done=done.append, signal_error=errors.append,
         signal_waiting_for_input=lambda prompt: None, wait_for_nodes=lambda targets, timeout: None,
         wait_for_merge=lambda *args: None, get_setting=values.get, workflow_name="Nightly backup",
     )
-    asyncio.run(node.execute(context))
+    with mock.patch.object(hermes, "folder", lambda *_: Path(folder)):
+        asyncio.run(node.execute(context))
     return done, errors, memory
 
 
@@ -170,9 +182,9 @@ def test_a_repeat_key_counts_across_runs(tmp_path):
             node_id="n1", branch_id="S1", run_id=run_id, inputs={}, memory_bank=MemoryBank(EventBus()),
             signal_done=lambda payload: None, signal_error=lambda exc: None,
             signal_waiting_for_input=None, wait_for_nodes=None, wait_for_merge=None,
-            get_setting={"hermes_folder": str(tmp_path)}.get,
         )
-        asyncio.run(node.execute(context))
+        with mock.patch.object(hermes, "folder", lambda *_: tmp_path):
+            asyncio.run(node.execute(context))
     assert len(lines(tmp_path, hermes.OUTBOX)) == 1
 
 
@@ -248,18 +260,117 @@ def test_record_event_carries_on_by_default_when_it_cannot_write(tmp_path):
 # -- in a real run ---------------------------------------------------------------------------
 
 def test_a_run_stamps_the_workflow_run_and_branch(tmp_path):
-    folder = tmp_path / "aotn"
+    # The folder comes from HERMES_HOME, as the drain's does.
+    folder = tmp_path / "hermes-home" / "aotn"
     flow = (Flow("Nightly backup").node("start", "start_node")
             .node("tell", "hermes_notify_node", message="started")
             .node("note", "record_event_node", event_name="backup.started")
             .node("end", "end_node", record_line=False).link("start", "tell", "note", "end"))
-    result, _ = run(flow.save(), settings={"hermes_folder": str(folder)})
+    result, _ = run(flow.save())
     assert result.errors == []
     [message] = lines(folder, hermes.OUTBOX)
     events = lines(folder, hermes.EVENTS)
     assert message["workflow"] == "Nightly backup" and message["run_id"] and message["branch"]
     assert [e["kind"] for e in events] == ["receipt", "event"]
     assert events[1]["run_id"] == message["run_id"]
+
+
+def test_the_folder_is_hermes_home_aotn(monkeypatch, tmp_path):
+    monkeypatch.setenv("HERMES_HOME", str(tmp_path / "custom"))
+    assert hermes.folder() == tmp_path / "custom" / "aotn"
+    monkeypatch.delenv("HERMES_HOME")
+    assert hermes.folder() == Path(os.path.expanduser("~/.hermes")) / "aotn"
+
+
+# -- #109 review findings --------------------------------------------------------------------
+
+def drain(folder, send_to="home"):
+    return subprocess.run([sys.executable, str(HERMES / "_aotn_drain.py"), "--send-to", send_to,
+                           "--folder", str(folder)], capture_output=True, text=True, timeout=20)
+
+
+def test_finding_1_an_unfinished_line_is_set_aside_before_the_next_append(tmp_path):
+    folder = tmp_path / "aotn"
+    execute("hermes_notify_node", folder, message="first")
+    with open(folder / hermes.OUTBOX, "ab") as handle:  # a writer killed mid-line
+        handle.write(b'{"schema_version": 1, "receipt_id": "r_torn", "mess')
+    with open(folder / hermes.EVENTS, "ab") as handle:
+        handle.write(b'{"schema_version": 1, "kind": "rec')
+    _, errors, _ = execute("hermes_notify_node", folder, message="second")
+    assert errors == []
+    assert [line["message"] for line in lines(folder, hermes.OUTBOX)] == ["first", "second"]
+    assert [e["stage"] for e in lines(folder, hermes.EVENTS)] == ["queued", "queued"]
+    assert (folder / "outbox.bad.jsonl").read_bytes().startswith(b'{"schema_version": 1, "receipt_id": "r_torn"')
+    assert (folder / "events.bad.jsonl").read_bytes().endswith(b'"kind": "rec\n')
+    printed = drain(folder).stdout
+    assert "first" in printed and "second" in printed
+
+
+def test_finding_1_record_event_repairs_the_events_tail(tmp_path):
+    folder = tmp_path / "aotn"
+    folder.mkdir(mode=0o700)
+    (folder / hermes.EVENTS).write_bytes(b'{"kind": "event", "na')
+    execute("record_event_node", folder, event_name="after.crash")
+    assert [e["name"] for e in lines(folder, hermes.EVENTS)] == ["after.crash"]
+
+
+def test_finding_2_a_failed_write_does_not_count_as_sent(tmp_path):
+    folder = tmp_path / "aotn"
+    original = hermes.append_lines
+
+    def outbox_full(path, name, records):
+        if name in (hermes.OUTBOX, hermes.EVENTS) and records and records[0].get("kind") != "receipt":
+            raise OSError("disk full")
+        return original(path, name, records)
+
+    with mock.patch.object(hermes, "append_lines", outbox_full):
+        _, errors, _ = execute("hermes_notify_node", folder, message="disk low", skip_repeats_minutes=60)
+        _, record_errors, _ = execute("record_event_node", tmp_path / "events", event_name="x",
+                                      skip_repeats_minutes=60, if_not_recorded="Stop with an error")
+    assert errors[0].code == "outbox_unwritable" and record_errors[0].code == "events_unwritable"
+    done, errors, _ = execute("hermes_notify_node", folder, message="disk low", skip_repeats_minutes=60,
+                              dead_drop_passthrough=False, transient_output=True)
+    assert errors == [] and done[0]["data"]["default"]["status"] == "queued"
+    done, _, _ = execute("record_event_node", tmp_path / "events", event_name="x", skip_repeats_minutes=60,
+                         dead_drop_passthrough=False, transient_output=True)
+    assert done[0]["data"]["default"] != ""
+
+
+def test_finding_7_future_and_expired_repeat_times_do_not_hold_messages(tmp_path):
+    folder = tmp_path / "aotn"
+    folder.mkdir(mode=0o700)
+    now = time.time()
+    for saved, expected in [(now + 86400, "queued"), (now - 600, "queued"), (now - 60, "skipped")]:
+        (folder / hermes.REPEATS).write_text(json.dumps({"k": saved}))
+        done, _, _ = execute("hermes_notify_node", folder, message="m", skip_repeats_minutes=5, repeat_key="k",
+                             dead_drop_passthrough=False, transient_output=True)
+        assert done[0]["data"]["default"]["status"] == expected, saved
+    # A clock moved back: the future entry is gone, replaced by the real time.
+    assert json.loads((folder / hermes.REPEATS).read_text())["k"] <= time.time()
+
+
+def test_finding_8_existing_folder_and_files_become_the_owners_only(tmp_path):
+    folder = tmp_path / "aotn"
+    folder.mkdir(mode=0o755)
+    for name in (hermes.LOCK, hermes.OUTBOX, hermes.EVENTS):
+        (folder / name).write_bytes(b"")
+        os.chmod(folder / name, 0o644)
+    os.chmod(folder, 0o755)
+    _, errors, _ = execute("hermes_notify_node", folder, message="hi")
+    assert errors == []
+    assert stat.S_IMODE(folder.stat().st_mode) == 0o700
+    for name in (hermes.LOCK, hermes.OUTBOX, hermes.EVENTS):
+        assert stat.S_IMODE((folder / name).stat().st_mode) == 0o600, name
+
+
+def test_finding_8_a_symbolic_link_in_the_folder_is_refused(tmp_path):
+    folder = tmp_path / "aotn"
+    folder.mkdir(mode=0o700)
+    (tmp_path / "elsewhere").write_text("")
+    (folder / hermes.OUTBOX).symlink_to(tmp_path / "elsewhere")
+    _, errors, _ = execute("hermes_notify_node", folder, message="hi")
+    assert errors[0].code == "outbox_unwritable"
+    assert (tmp_path / "elsewhere").read_text() == ""
 
 
 # -- the editor ------------------------------------------------------------------------------

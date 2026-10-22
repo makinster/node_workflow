@@ -45,7 +45,6 @@ class RecordEventNode(Node):
         origin = hermes.origin_of(context)
         try:
             event_id = hermes.record_event(
-                context.get_setting,
                 origin=origin,
                 name=hermes.cut(hermes.escape(name), 80),
                 summary=summary,
@@ -57,7 +56,7 @@ class RecordEventNode(Node):
             if self.config.get("if_not_recorded") == "Stop with an error":
                 context.signal_error(NodeError(
                     "events_unwritable", f"Could not write the Hermes folder: {exc}",
-                    details={"folder": str(hermes.folder(context.get_setting))}, retryable=True,
+                    details={"folder": str(hermes.folder())}, retryable=True,
                 ))
                 return
             event_id = ""

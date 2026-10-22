@@ -22,8 +22,9 @@ copies still match the live checkout (exit 1 when they differ). Rerun it after e
 - `_aotn_drain.py`, `aotn-drain-home.sh` (C1/C3): the outbox drain. A no-agent
   Hermes job every 5 minutes prints one digest of the messages Notify me queued
   for the Send to name in the entry's file name (`aotn-drain-<name>.sh`; copy it
-  for another name, so `drain-` is not a workflow slug). Reads `$HERMES_HOME/aotn`,
-  which must match Options `hermes_folder` (default `~/.hermes/aotn`). Formats and
+  for another name, so `drain-` is not a workflow slug). Reads `$HERMES_HOME/aotn`
+  (`HERMES_HOME` defaults to `~/.hermes`), the same rule the nodes follow; if you
+  move Hermes, set `HERMES_HOME` for AOTN too. Formats and
   the per-tick contract: [Hermes shared folder](../../docs/integrations/HERMES_SHARED_FOLDER.md).
   Creating the Hermes job is an owner action; nothing is scheduled by this repository.
 - `h1-heartbeat.json`, `h2-http-watchdog.json`: `aotn build` definitions, with

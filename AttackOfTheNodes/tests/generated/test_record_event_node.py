@@ -34,9 +34,9 @@ def test_record_event_node_registration_and_metadata():
 
 
 @pytest.mark.asyncio
-async def test_record_event_node_execute_template_smoke(tmp_path):
+async def test_record_event_node_execute_template_smoke(tmp_path, monkeypatch):
     # Never the owner's real ~/.hermes/aotn.
-    settings = {"hermes_folder": str(tmp_path / "aotn")}
+    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
     factory = NodeFactory()
     node = factory.create_node("record_event_node", "generated")
     node.config["event_name"] = "smoke.test"
@@ -54,7 +54,6 @@ async def test_record_event_node_execute_template_smoke(tmp_path):
         signal_waiting_for_input=lambda prompt: None,
         wait_for_nodes=lambda targets, timeout: None,
         wait_for_merge=lambda node_id, branch_id, port, inputs, timeout: None,
-        get_setting=settings.get,
     )
     await node.execute(context)
     assert not errors

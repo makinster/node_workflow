@@ -7,18 +7,33 @@ know. Built in C1 (owner approved the samples on 2026-10-21).
 
 ## The folder
 
-`~/.hermes/aotn/` by default (Options: `hermes_folder`). The folder is the
-owner's only (700) and so is every file (600). The path comes from Options,
-never from a workflow, so Notify me and Record event do not use the System
-nodes' allowed folders (owner, 2026-10-21). Writers and the drain take the
-folder's `.lock` (`flock`) for every change.
+`$HERMES_HOME/aotn/`, with `HERMES_HOME` defaulting to `~/.hermes`: the one
+setting both the nodes and the drain read (#109 review; an Options value could
+point the nodes at a folder the drain never reads). The path never comes from
+a workflow, so Notify me and Record event do not use the System nodes' allowed
+folders (owner, 2026-10-21).
+
+Rules every writer follows (the nodes and the drain alike):
+
+- The folder is the owner's only (700) and every file in it (600), set on each
+  change, including folders and files that already existed with looser modes.
+  A symbolic link in their place is refused.
+- Every change holds the folder's `.lock` (`flock`).
+- Lines end with LF only. A line with no LF after it was left by a writer that
+  died mid-line: before appending, the writer moves it to
+  `<file>.bad.jsonl` and cuts it off, so the next line starts clean.
 
 | File | Written by | Read by | Purpose |
 |---|---|---|---|
 | `outbox.jsonl` | Notify me (adds), drain (removes) | drain | Messages waiting to send |
 | `events.jsonl` | Notify me, Record event, drain | Hermes, digest workflows | History, only ever appended to |
-| `repeats.json` | Notify me, Record event | the same nodes | When each repeat key last went out (a day at most) |
-| `outbox.bad.jsonl` | drain | the owner | Outbox lines the drain could not read |
+| `repeats.json` | Notify me, Record event | the same nodes | When each repeat key last went out (a day at most; times in the future count as expired) |
+| `outbox.bad.jsonl`, `events.bad.jsonl` | drain, nodes | the owner | Lines that could not be read, or were left unfinished |
+
+A repeat is remembered only after its record is written, so a failed write
+never makes a retry look like a repeat. The outbox line is the record that
+counts: once it is written the message is queued, even if its `queued`
+history line then fails.
 
 ## outbox.jsonl
 
@@ -67,13 +82,18 @@ Two kinds of line. Readers that print anything from here must escape it
 no-agent Hermes cron job, every 5 minutes, one job per Send to name (C3: one
 digest per tick). Each tick, holding the lock:
 
-1. Read the outbox. Unreadable lines, and lines of another
-   `schema_version`, move to `outbox.bad.jsonl` and are counted in the
-   digest.
-2. Take this name's messages, urgent first, then oldest first, into one
-   digest of at most 3,500 characters. What does not fit waits ("+N more next
-   time").
-3. Print the digest, escaping again any message without `hermes_commands`.
+1. Make the folder and its files the owner's only. Read the outbox line by
+   line (LF only: a message may contain U+2028 or U+0085). Unreadable or
+   unfinished lines, and lines of another `schema_version`, move to
+   `outbox.bad.jsonl` and are counted in the digest.
+2. Take this name's messages, urgent first, then oldest first. A message with
+   `hermes_commands` goes out **alone** when it is first in line: Hermes applies
+   a command such as `[SILENT]` to the whole reply, so it must never share one
+   with other nodes' messages. The others go into one digest of at most 3,500
+   UTF-16 units, counting the header, separators, notes and final newline;
+   what does not fit waits ("+N more next time"), and a single message too long
+   to fit is cut by the same count.
+3. Print it, escaping again any message without `hermes_commands`.
    Nothing waiting: print nothing, so Hermes sends nothing.
 4. After printing, add a `handed_off` receipt per message and rewrite the
    outbox without them.
