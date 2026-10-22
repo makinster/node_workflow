@@ -20,6 +20,8 @@ ISSUE_CODES: Dict[str, str] = {
     "missing_node": "A connection or input source names a node that does not exist.",
     "unreachable": "A node cannot be reached from the Start node.",
     "merge_beacon_unconnected": "A branch ends in a Merge Beacon that feeds no Merge.",
+    "invalid_rows": "A configured row list has missing, repeated or invalid entries.",
+    "vault_only_connection": "A Vault-only output cannot be connected downstream.",
     # Ports and connections
     "undeclared_port": "A connection uses a port the node type does not have.",
     "hidden_output_connection": "A connection leaves an output this node's settings never use.",

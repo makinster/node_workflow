@@ -302,6 +302,7 @@ Direct-add nodes that pair with the Loop Branch node.
 
 | Node | Status | Notes / Maps from |
 |---|---|---|
+| Jev: Pick one | Built, owner review | `pick_one_node` — one exact answer from configured rows, plain text downstream and optional Vault copy. Confidence below the cutoff sends `unsure`; optional Pick details is Vault only. Secrets-store key, bounded shared client, no provider/model selectors. |
 | Chat Completion | Live | `chat_completion_node` — real Anthropic call via `backend/llm_provider.py` (curated model dropdown, secrets-store API key). Session persistence via "Keep active AI session" + vault `ai_session` key; continuation input extends prior sessions. Tags: AI |
 | Image Generation | Live (stub) | `image_generation_node` — image from text prompt; output: image path. Tags: AI |
 | Embedding | Live (stub) | `embedding_node` — text to vector; output: float array. Tags: AI |
@@ -309,16 +310,11 @@ Direct-add nodes that pair with the Loop Branch node.
 | AI Tool Call | Concept | LLM with structured function/tool calling; output: structured result. Tags: AI |
 | AI Decision | Concept | Multi-step reasoning returning a named, categorized decision. Tags: AI |
 
-**AI model approach:** AI nodes generalize around capability (what the node
-does), not model identity. Each AI node declares a curated supported-model
-list — not an open-ended endpoint field — because prompt adherence, tool
-support, vision, and structured output vary by model and AI nodes must behave
-dependably. Nodes with structured-output requirements (AI Conditional Branch,
-AI Tool Call, AI Decision) carry stricter supported lists than conversational
-nodes. **Future fork point:** if the supported list grows large and models
-diverge in capability, AI Processing may split into per-model groups (a group
-per model family, since each has its own capabilities). Capability-based
-grouping is the contract until that pressure is real.
+**AI node direction (owner, 2026-10-22):** simple, single-purpose nodes
+with tailored fields. Jev: Pick one starts a line of Jev nodes; later Yes/No
+or Score nodes reuse `backend/integrations/jev.py`. This node has one fixed
+service/model contract; no provider or model picker. Existing Chat Completion
+keeps its curated choices. Selector sorting is a separate backlog item.
 
 #### Group: Subworkflow *(Step 4 design)*
 

@@ -37,7 +37,9 @@ def shows_error_path(factory, node: Dict[str, Any]) -> bool:
 
 def editor_output_ports(factory, node: Dict[str, Any]) -> List[str]:
     """The node's ports from the backend, plus ``error`` when it is shown."""
-    ports = list(factory.node_output_ports(node))
+    metadata = factory.node_output_port_metadata(node)
+    ports = [port for port in factory.node_output_ports(node)
+             if "to" not in metadata.get(port, {}) or "downstream" in metadata[port]["to"]]
     if ERROR_PORT not in ports and shows_error_path(factory, node):
         ports.append(ERROR_PORT)
     return ports

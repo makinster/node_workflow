@@ -52,8 +52,10 @@ from .io.record_event_node import RecordEventNode
 from .data.remember_node import RememberNode
 from .data.recall_node import RecallNode
 from .data.if_changed_node import IfChangedNode
+from .ai.pick_one_node import PickOneNode
 
 ALL_NODE_CLASSES = [
+    PickOneNode,
     IfChangedNode,
     RecallNode,
     RememberNode,

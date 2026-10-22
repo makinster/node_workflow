@@ -1,10 +1,21 @@
 # AttackOfTheNodes Session Log
 
-This log keeps roughly the last two weeks: entries dated October 4–21, 2026
+This log keeps roughly the last two weeks: entries dated October 4–22, 2026
 (the earliest existing entry is October 6). Every October 18 entry is retained.
 Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.md).
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
+
+## 2026-10-22 — C2 re-check fixes and forwarding (#110)
+
+- An Add whose result is not a finite number (an overflowing float, or an
+  integer too large for a float) is refused as `not_a_number`; every value
+  passes one rule on write and read (plain JSON, finite numbers at any depth,
+  64 KB), so nothing written can make the store unreadable.
+- Remember and Recall use the standard Forward incoming payload unchanged
+  control (owner): the next node gets the incoming payload; the Vault output
+  still gets the node's own value.
+- Main (#111, #112) merged in; both sides' log and status entries kept.
 
 ## 2026-10-22 — C2 review fixes (#110, eight findings)
 
@@ -23,6 +34,120 @@ Each finding has a regression test that fails on `a308fa8`.
 7. Invalid UTF-8 is `store_unreadable`; the Stash still opens.
 8. The CLI and Stash tab group and filter by the place itself; a workflow
    named "All workflows" shows as "All workflows (workflow)".
+
+## 2026-10-22 — Choice-node review fixes (#112)
+
+Review head: `6c7467b`. Working branch `codex/choice-review-fixes` in
+`/home/makin/src/nw-choice-review`; changes publish to `dist/pick-one`.
+Merged current `origin/main` `9470729` first (`d5d2f02`), retaining both sides'
+Session Log entries, current coordination order/live status and C3a build facts.
+
+- Reserved literal `unsure` for the low-confidence result. Answer rows reject
+  that value and leading/trailing Unicode whitespace through shared opt-in
+  schema checks used by form-save, preflight and runtime. Case and internal
+  spaces remain exact; nothing is silently trimmed.
+- Added a 20,000-character text cap for Upstream, Vault and Configured sources
+  before HTTP or Vault writes, with nonretryable `text_too_long` and the clear
+  message "Text is too long for Jev". The shared client also enforces the cap.
+  Helper spec, metadata/error assertions and authoring rules describe the same
+  behavior.
+- Failing-first proof on the merged code: 16 new cases failed and the exact
+  20,000-character boundary passed. Cases cover real form-save refusal,
+  validator/runtime rejection, all text sources, loopback request prevention
+  and the shared client. The older edge-space acceptance case now checks valid
+  internal spaces, Unicode and case preservation to match the reviewed policy.
+- Verification: **89 focused tests passed**; full `pytest -q`: **2,245 passed
+  in 345.91 seconds** on the combined branch. Targeted compilation,
+  documentation consolidation and whitespace checks passed. All provider tests
+  use loopback; no paid calls, owner workflow edits or live integration changes.
+
+## 2026-10-22 — Coordination documentation review fixes (#111)
+
+Same branch, after review of `6bf9576`. Documentation only.
+
+- Updated C3a to the approved Jev-only Jev: Pick one: no provider/model
+  selectors, shared client module, samples approved October 22, and always
+  pass `unsure` below the cutoff (default 0.3), with no Stop option.
+- Recorded the Hermes `quick_commands` answer (source `556bf7c5c`): `type: exec`
+  scripts run after normal sender auth, without an agent turn, plugin or args.
+  Config is the allowlist. Each `aotn-run-<slug>.sh` needs its own deadline
+  under the 30 s reply timeout, which does not kill the script; enforce kill/reap.
+- Added the simple-purpose-node principle to the new-ideas mapping and selector
+  sorting to Project Backlog after C3a. The cancelled Category rename remains
+  cancelled. Updated the archive notice so its old command investigation is
+  clearly superseded.
+- Recorded #110's re-check: original eight findings fixed at `a685821`, with a
+  new P1 numeric-overflow/store-readability issue whose fix is pending.
+- Verification: documentation consolidation checker and `git diff --check`.
+  No application, live gateway or scheduled workflow changes.
+
+## 2026-10-22 — Coordination status refresh and owner plan reset
+
+Branch: `codex/docs-plan-reset`, based on fetched `origin/main` `cce4fc7`,
+in `/home/makin/src/nw-plan-reset`. Documentation only, at the owner's request.
+
+- Refreshed Current State: H0 live heartbeat `63968ee90ae0`; C1 merged in #109
+  and live drain `cd14afa83db9`, with owner-confirmed Telegram delivery; C4
+  merged in #107/#108; C2 open as #110 at `a685821`; H2 parked as an unscheduled
+  template. GitHub confirms the open PR; deployment evidence comes from shared
+  notes and the owner's confirmation, not a new live run in this task.
+- Recorded the October 22 owner order in AI Coordination Proposal section 9:
+  C2, C3a, thin Telegram launcher, C3b, 4e–4f, P1, Phase 17 verification,
+  C5, Step 5, C6 and Step 6. Added the short mapping of new ideas to that plan.
+- Moved the uncommitted intent/designer conversation from `nw-review109` into
+  `archive/plans/INTENT_ROUTING_AND_DESIGN_ASSISTANT.md`, rebased its local
+  links and marked its old recommendations/prompts as reference history.
+  Section 9 links it without adding another active plan document.
+- Verification: documentation consolidation checker and `git diff --check` passed.
+  No application tests, implementation, cron changes or gateway activation.
+
+## 2026-10-22 — C3a owner correction: standard forwarding (#112)
+
+Same branch. Pick one now advertises the standard pass-through capability and
+shows **Forward incoming payload unchanged**, replacing Publish downstream
+payload. Checking it hides and disables the own-output name/description fields
+and sends
+the original upstream payload downstream; unchecking restores the answer.
+The configured text source affects what is judged, not what is forwarded.
+Enabled Vault outputs still store the answer and Pick details.
+
+Regression cases failed on the prior head, then passed after the fix: three
+text sources, non-text payload identity, keyboard toggle/save/reopen, and a
+real RunService route with forwarding on and off. Updated built screenshots
+include the checked state. Verification: **2,228 passed in 346.02 seconds** (full `pytest -q`); helper registration/UI,
+docs link/archive and whitespace checks passed.
+
+## 2026-10-22 — C3a: Pick one, built for owner review
+
+Branch `dist/pick-one`, from main `cce4fc7`. Owner-approved samples and
+revisions are implemented: one fixed service, no provider/model selectors,
+exact answer rows with duplicate-save refusal, and literal `unsure` below the
+cutoff. New helper spec, registered node and reusable async HTTP client;
+API credentials are resolved through the secrets store, never workflow config.
+The total deadline defaults to 20 seconds; transport/service errors and
+malformed replies use safe fixed errors, redirects are refused, and task
+cancellation closes the connection. Only timeout/service errors offer Retry.
+
+Answer is plain text for a following Conditional and can also be copied to
+the Vault. Pick details starts off, has an independent Vault destination, and
+never becomes a downstream path or Parameters branch-name control. Shared
+form, declaration and preflight support now preserves multiple Vault outputs.
+Payload headers use the documented `PAYLOAD` and `TYPE` color roles.
+
+[Built screens](audits/pick_one_2026_10_22/README.md) include full Parameters,
+Source, Payloads, selector and routing map, with compact 80×24 captures.
+The capture harness clears this shell's monochrome override and uses real
+registered screens with production styles. Tests exercise keyboard edit/save,
+no-edit save, duplicate refusal, reopening/Cancel and independent routing.
+Default answer rows have stable IDs so no-edit saves do not mutate config.
+The selector test's AI Processing member count intentionally rises from 3 to 4.
+
+Verification: 2,222 passed in 347.10 seconds (full `pytest -q`). Helper `check_node` and `check_ui`, docs
+link/archive consolidation, and whitespace checks pass. HTTP tests use a
+loopback fake server (including timeout, cancellation, malformed responses,
+exact matching and secret-safe failures); an actual RunService test routes
+its plain answer through Conditional and Text Output. No paid call, owner
+workflow edit, local installation or cron job. PR awaits owner review.
 
 ## 2026-10-21 — C2: Saved values (persistent store on the Stash's store)
 

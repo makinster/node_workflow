@@ -4,8 +4,12 @@
 > Proposal text below is otherwise unchanged; Hermes facts still need
 > re-verifying before any job is enabled. Originally: owner discussion only; no
 > code. Nothing here changes an approved decision in
-> [DISTRIBUTED_BUILD_PLAN.md](DISTRIBUTED_BUILD_PLAN.md). Section 9 proposes a
-> reprioritization for the owner to accept or reject.
+> [DISTRIBUTED_BUILD_PLAN.md](DISTRIBUTED_BUILD_PLAN.md). Section 9 records the
+> owner's approved delivery order, including the 2026-10-22 reset.
+
+> **Owner reset, 2026-10-22:** section 9 now records the approved remaining
+> delivery order and maps new ideas onto it. Earlier proposal text and dated
+> decisions remain context; [Current State](CURRENT_STATE.md) owns live status.
 >
 > **Updated 2026-10-20** against main `2ecd297`: the AOTN facts (section 4),
 > the tool-gap table, the MCP note and the build order now reflect that most
@@ -338,7 +342,7 @@ Telegram receiver (no second poller on the same bot).
 | H4 | Escalation ladder | check → normal: record event; known error: fixed fix + notify; unknown: `hermes_ask` → notify with diagnosis | record_event, hermes_ask |
 | H5 | Daily digest | read today's events → concat → one message | events log |
 | H6 | Teach once, replay | an agent does a task with tracing on, then writes the sequence as a spec via `aotn build` | Authoring CLI (exists) + agent guide |
-| H7 | AI as router | `claude_code_node`/`chat_completion_node` classifies → branch to deterministic sub-flows | Bounded agent node |
+| H7 | AI as router | C3a Jev: Pick one selects a choice id (or `unsure`) → Conditional routes to deterministic sub-flows | C3a; ports-per-choice router later when needed |
 | H8 | Approval gate | workflow asks "Deploy? [Yes] [No]" on Telegram, waits | wait_for_reply + Hermes handler |
 
 H1 test cases: normal message; a forced unhandled error (expect alert); a
@@ -351,35 +355,56 @@ saving tokens on the agent's side. Its inputs use the Step 4 contracts,
 which exist: `run_workflow` can take typed inputs and return `values`
 today. Local stdio does not need Step 6 network auth.
 
-## 9. Effect on the build plan (proposed reprioritization)
+## 9. Effect on the build plan (owner order, 2026-10-22)
 
-Where things stand (2026-10-20): Step 4's contracts (4a), child runs (4b)
-the Subworkflow node's screens (4c-1), watching a running call (4c-2, #94)
-the prompt queue (#96) and 4d Stash entries as inputs (#101) are merged.
-Left in Step 4: 4e/4f shared memory. Then Step 5 (event sources,
-triggers, persistent store) → Step 6 (server). Phase 17 verification is
-still open.
+H0 is live (heartbeat `63968ee90ae0`); C1 merged in #109 and is live (drain
+`cd14afa83db9`, owner-confirmed Telegram delivery); C4 merged in #107/#108.
+H2 remains an unscheduled watchdog template. Step 4 through 4d is merged;
+4e/4f shared memory and Phase 17 verification remain open. C2 is open as #110
+at `a685821`; re-check found the original eight findings fixed and a new P1
+numeric-overflow issue that can make the whole store unreadable; its fix is
+pending. [Current State](CURRENT_STATE.md)
+records the deployment and review details.
 
-Proposed (revised: Step 4's TUI is finished, #94 and #96, and contracts
-now unblock the CLI and MCP items):
+The owner approved the following remaining order on 2026-10-22:
 
 | Order | Work | Why here | Depends on |
 |---|---|---|---|
-| H0 | [Repository adapter and H1/H2 specs](../integrations/hermes/README.md) implemented for owner review under the [H0 contract](integrations/HERMES_H0_DRAFT.md) | Subprocess/loopback acceptance tests, Linux escaped-descendant containment and stale-lock blocking, real entry-script deployment tests; no installed wrapper, job or live delivery | Nothing |
-| P1 | First-community package: install path, Hermes guide, H1/H2 specs, screenshots, known limits (section 1.2) | Something to show Hermes users | H0, C1 |
-| C1 | `hermes_notify_node` + `record_event_node` + shared folder schemas. **Built (2026-10-21):** Notify me, Record event, the outbox drain and the [shared folder formats](integrations/HERMES_SHARED_FOLDER.md). Owner answers: the folder is not limited by `system_node_folders`; Urgent goes first with ⚠; "Quiet" dropped (Hermes cannot send silently per job, and cron deliveries are already silent through the gateway); drain every 5 minutes, one job per Send to name; forwarding on by default; Send to names live in Options | Small, unblocks long-run notifications and receipts | H0 |
-| C4 | [Local stdio MCP workflow server](integrations/MCP.md), merged (#107, #108) | Four typed tools, contracts/Stash inputs, C25 preflight, isolated timed workers; standard-library protocol, no added SDK dependency | Step 4 contracts (done) |
-| C2 | **Persistent store pulled forward from Step 5**, built on the Stash's store. **Built (2026-10-21):** [Saved values](STASH_PROPOSAL.md#saved-values-c2): Remember, Recall and If changed (paths Changed / No change), `<data dir>/stash/saved.json` with locked changes, Stash tab 3, `aotn stash saved` | Enables H3; avoids separate stores (Stash, state nodes, Step 5). The Stash already gives per-machine durable files and text | Owner decision C5 |
-| C3 | `hermes_ask_node` + `claude_code_node` (bounded agents) | Enables H4/H7; establishes the AI-node contract | C1 for receipts |
-| 4e–4f | Shared memory between a caller and its subworkflow (unchanged) | 4d (Stash entries as inputs) is done | — |
+| C2 | Saved values: persistent store pulled forward from Step 5, on the Stash's store (#110). **Built:** [Saved values](STASH_PROPOSAL.md#saved-values-c2): Remember, Recall and If changed (paths Changed / No change), `<data dir>/stash/saved.json` with locked changes, Stash tab 3, `aotn stash saved` | Finish the current review/merge; enables H3 without another workflow-state store | Existing Stash; owner decision C5 |
+| C3a | **Jev: Pick one, built for owner review (#112):** Jev only, no provider/model selector; shared Jev client for later nodes; output is the choice id as plain text | Enables H7 through Conditional; below the cutoff (default 0.3), always pass `unsure`, with no Stop option | Jev API key; samples approved 2026-10-22; [built screens and verification](audits/pick_one_2026_10_22/README.md) |
+| Telegram launcher | Thin Hermes version of a Step 5 start trigger: one `quick_commands` entry of `type: exec` per allowed workflow, calling `aotn-run-<slug>.sh` | No agent turn or plugin; normal sender authorization first; Hermes config is the allowlist; full trigger remains Step 5 | Installed-source answer `556bf7c5c`: no arguments; 30 s reply timeout does not kill the script, so each entry needs its own deadline under 30 s with kill/reap |
+| C3b | `hermes_ask_node` / `claude_code_node`: bounded agent execution | Enables H4 and tool-using agent steps after the decision/launch slices | C1 receipts; bounded tools, turns/time and trace contract |
+| 4e–4f | Shared memory between a caller and its subworkflow | Complete the remaining Step 4 work | Step 4 through 4d (merged) |
+| P1 | First-community package: install path, Hermes guide, H1/H2 specs, screenshots and known limits (section 1.2) | Package the proven integrations; describe H2 as a template until configured | H0/C1 live; preceding delivery slices |
+| Phase 17 | Verification of the editor/configuration work | Finish the outstanding verification before later expansion | Existing implementation and owner/native evidence |
 | C5 | `run_command_node` with allowlist + approval gate | High value, needs careful security design | Settings-level allowlist design |
-| 5 | Event sources + triggers (unchanged, minus the store) | Can take over scheduling from Hermes cron | Step 4 |
+| Step 5 | Event sources and start triggers; persistent store supplied by C2 | Full Telegram trigger and native scheduling can replace the thin Hermes seam | Step 4; C2 |
 | C6 | `wait_for_reply_node` (Telegram) | Resolves the wait-for-event question for one source | Step 5 event sources, Hermes handler |
-| 6 | Server (unchanged) | — | Step 5 |
+| Step 6 | Server | Add the planned multi-client service after event sources/triggers | Step 5 |
 
-Nothing in H0–C4 touches `master_state.py` or the run engine; these are
-nodes, files, wrappers and a CLI-level server. They can run alongside Phase
-17 verification.
+### New ideas and where they fit (owner, 2026-10-22)
+
+- **Telegram launch:** thin Step 5 trigger via Hermes `quick_commands`,
+  `type: exec`, after normal sender auth; no plugin, agent turn or arguments.
+  Config is the allowlist: one `aotn-run-<slug>.sh` per allowed workflow. Its own
+  deadline must be under the 30 s reply timeout, which does not kill the script.
+  Natural-language menus later still need a plugin or an agent turn.
+- **Jev:** C3a **Jev: Pick one** is Jev-only, without provider/model selectors,
+  using a shared Jev client. Samples are approved; below cutoff (default 0.3),
+  pass `unsure`, never Stop. Plain-text choice ids feed Conditional for H7.
+- **Simple-purpose nodes:** offer a line of tailored nodes (Pick one, Yes or no,
+  Score), so users pick the best fit; avoid one multi-mode node. Selector
+  sorting is [backlogged after C3a](PROJECT_BACKLOG.md#node-selector-sorting--after-c3a-owner-2026-10-22).
+- **Easy nodes:** follow the existing [helper rule](NODE_HELPER.md); add reusable
+  ports-per-choice support when the router needs it, not before the first node.
+- **Local models:** an experiment after C3a, comparing the same real choices.
+- **Workflow designer:** a new track after C3. Its first step is authoring tools
+  (`nodes`, `describe`, `build --check`) in `aotn mcp`; local services/commands
+  remain valid integration options. This does not move Step 6 forward.
+
+The [archived conversation reference](archive/plans/INTENT_ROUTING_AND_DESIGN_ASSISTANT.md)
+preserves the wider ideas and rationale. The order above is the current plan;
+the reference's older sequencing and handoff prompts are historical.
 
 ## 10. Owner decisions (answered 2026-10-20)
 
