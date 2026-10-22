@@ -1,10 +1,50 @@
 # Current State
 
-Snapshot checked **2026-10-21**. Code and fresh GitHub checks take precedence.
+Snapshot checked **2026-10-22**, against fetched `origin/main` `cce4fc7` and
+PR #110 on GitHub. Code and fresh GitHub checks take precedence.
 This is the live status snapshot; plans and logs preserve dated decisions.
+Live deployment facts below come from the owner's shared notes and confirmed
+delivery; this documentation refresh did not change or rerun live jobs.
 
-## Baseline and open work — 2026-10-20
+## Baseline and open work — 2026-10-22
 
+- **H0 live (#103/#106):** the adapter and installed wrappers run from
+  `/home/makin/src/aotn-live` with the isolated cron library at
+  `~/.local/share/aotn-cron`. Heartbeat job `63968ee90ae0` runs
+  `aotn-h1-heartbeat.sh`, no-agent, daily at 09:00 America/Los_Angeles,
+  delivering to Telegram's `home` alias. Installed copies were checked;
+  `cron.wrap_response` remains on. The [adapter guide](../integrations/hermes/README.md)
+  and [H0 contract](integrations/HERMES_H0_DRAFT.md) describe escaping, limits,
+  exit codes, locking and descendant cleanup. Earlier test/probe receipts are
+  retained in [Session Log](SESSION_LOG.md).
+- **H2 parked:** the watchdog remains an **unscheduled template** until the
+  owner chooses a real service and updates its URL. Throwaway adapter checks
+  exercised success/failure responses; they did not enable a watchdog job.
+- **C1 merged and live (#109):** Notify me and Record event write the
+  [Hermes shared folder](integrations/HERMES_SHARED_FOLDER.md),
+  `$HERMES_HOME/aotn` (default `~/.hermes/aotn`). The live checkout was updated
+  and the drain installed. No-agent drain job `cd14afa83db9` runs every five
+  minutes (`*/5 * * * *`) to Telegram `home`; the owner confirmed receipt of
+  the end-to-end test message. The outbox was emptied and its `handed_off`
+  receipt recorded; no reconciler supplies a `delivered` stage yet. The retained
+  `c1-notify-test` workflow is available in the cron data directory for future
+  checks. Send to names are configured in Options. Urgent sorts first with ⚠;
+  per-job notification sound still needs a Hermes change (proposal Q7).
+- **C4 merged (#107/#108):** [local stdio MCP](integrations/MCP.md) exposes
+  four typed execution/history tools using the standard library. Contracts and
+  Stash inputs, unattended termination/C25 checks and isolated timed workers
+  are implemented. The stdin-from-file follow-up exits 64 with a one-line
+  diagnostic. Current tools do not create/edit workflows, provide live progress
+  or bridge interactive replies; adding authoring tools is a future designer
+  step, not already implemented behavior.
+- **C2 open as [PR #110](https://github.com/makinster/node_workflow/pull/110):**
+  Saved values, branch `dist/persistent-store`, head `a685821`. Remember,
+  Recall and If changed, the Stash Saved values tab, CLI and store-locking/
+  validation changes remain outside main. Re-check found the original eight
+  findings fixed and a new **P1**: numeric overflow can make the whole store
+  unreadable. Its fix is pending; owner merge is still required. The author
+  reports 2,244 tests passed at that head; this documentation task did not rerun
+  that suite.
 - **C3a built, awaiting owner review (2026-10-22):** branch `dist/pick-one`
   from main `cce4fc7`. Jev: Pick one, `backend/integrations/jev.py`, helper
   spec/generated checks, exact answer rows, fixed `unsure` below 0.3, optional
@@ -16,45 +56,21 @@ This is the live status snapshot; plans and logs preserve dated decisions.
   [node contract](NODE_STANDARDS.md#bounded-choice-node-c3a-owner-2026-10-22).
   Full suite after the forwarding correction: **2,228 passed**; helper and docs checks passed. No paid call,
   owner/live data, installed wrapper, cron job or repository workflow change.
-
-- **C1 built, awaiting owner review (2026-10-21):** branch
-  `dist/hermes-notify` from main `6f5c216`. Notify me and Record event write
-  the [Hermes shared folder](integrations/HERMES_SHARED_FOLDER.md); the outbox
-  drain (`integrations/hermes/aotn-drain-home.sh`) prints one digest per tick.
-  Both read the folder from `HERMES_HOME` (`$HERMES_HOME/aotn`); Options gain
-  `hermes_send_to_names`. The eight review findings on #109 are fixed with a
-  regression test each. No Hermes job is created; installing the drain job is
-  an owner action. Follow-up: per-job sound needs a Hermes change (proposal Q7).
-- **C4 MCP server merged (#107; #108 rejects regular-file stdin):** branch
-  `codex/mcp-stdio`, based on main `6f5c216`, in `/home/makin/src/nw-mcp`.
-  [Setup and tool contracts](integrations/MCP.md): `aotn mcp --data-dir ...`
-  exposes four typed tools over local stdio. It uses the standard library
-  because the MCP SDK is absent from the lockfile. Existing contract/run/history
-  services provide typed JSON and Stash inputs, unattended termination and C25
-  preflight. Isolated timed workers keep blocking nodes and incidental stdout
-  away from the protocol. Verification: **46 MCP subprocess tests passed**,
-  **2,104 full-suite tests passed**, and the built wheel passed an isolated
-  protocol/worker smoke test. No engine/TUI changes, client installation, live checkout changes
-  or repository workflow edits.
-- **H0 adapter merged (#103), live install in #106:** branch
-  `codex/hermes-h0-adapter`, synchronized with main `055dfba` (#104). The
-  [repository integration](../integrations/hermes/README.md) supplies the shared
-  Bash function, standard-library Python subprocess/JSON adapter, entry scripts
-  and H1/H2 specs with quiet Ends. It follows the [H0 contract](integrations/HERMES_H0_DRAFT.md):
-  3,500 UTF-16 units per stream, directive escaping, preserved exits, per-slug
-  locks and a 100-second deadline. Linux subreaper adoption and `/proc`
-  ancestry cover descendants leaving the process group; stale markers block
-  another tick when cleanup is unconfirmed. Both shipped entry scripts are
-  tested through real subprocesses in a deployment with spaces. C1–C7 were read
-  from owner-decisions PR #102; later capabilities remain separate work.
-  Review fixes: **67 adapter tests passed**; new regression tests failed on
-  the original head before implementation. The combined full suite passed
-  **2,052 tests**. The revised production deadline probe returned 124 at
-  **99.06 seconds**, with the escaped descendant reaped and stdout empty.
-  The revised contract reserves its final second for kill/reap. Receipts are
-  in [Session Log](SESSION_LOG.md). No Hermes
-  installation, cron job, config change or live delivery occurred.
-- Fetched `origin/main` at `106c437`: C1–C7, workflow naming (#68), docs A/B
+- **Owner plan reset (2026-10-22):** C2 → C3a Jev: Pick one → thin Telegram
+  launcher → C3b bounded agents → 4e–4f → P1 → Phase 17 verification → C5 →
+  Step 5 → C6 → Step 6. See the
+  [approved order and idea mapping](AI_COORDINATION_PROPOSAL.md#9-effect-on-the-build-plan-owner-order-2026-10-22).
+  Hermes confirmed `quick_commands` with `type: exec` (source `556bf7c5c`):
+  fixed scripts run after normal sender authorization, with no agent turn,
+  plugin or arguments. Config is the workflow allowlist; use one
+  `aotn-run-<slug>.sh` entry per allowed workflow, deriving the slug from its
+  filename. The 30 s reply timeout does not kill the script, so the entry must
+  enforce its own deadline under 30 s and kill/reap on timeout. Natural-language
+  menus later still need a plugin or an agent turn.
+  The designer is a new track after C3; local-model comparison follows
+  C3a. The [archived discussion](archive/plans/INTENT_ROUTING_AND_DESIGN_ASSISTANT.md)
+  preserves context rather than setting a competing work order.
+- Merged baseline includes C1–C7 decisions (#102), workflow naming (#68), docs A/B
   (#69/#72), Stash S1–S3 (#70/#71/#75), window buttons (#73), duplicate
   prevention (#74), keymap phases 1/2 (#77/#78), contracts (#80), the
   file-picker test fix (#81), editor hotfixes (#82), the deletion proposal
@@ -94,7 +110,7 @@ This is the live status snapshot; plans and logs preserve dated decisions.
   asks) merged in #94, with its review fixes. The prompt queue (C19: a
   second prompt waits for the first instead of being dropped) merged in #96.
   4d (Stash entries as Subworkflow node inputs and `--input key=@stash:name`;
-  per-machine bindings dropped, owner 2026-10-20) is in review.
+  per-machine bindings dropped, owner 2026-10-20) merged in #101.
   Left in Step 4: 4e/4f shared memory.
   [Proposal](SUBWORKFLOWS_PROPOSAL.md).
 - **Keymap phase 3 — Editor/Execution:** merged in #92.
@@ -104,9 +120,9 @@ This is the live status snapshot; plans and logs preserve dated decisions.
   W/S movement, A/D paths, F Follow and V error panel. W/S scrolls Help while
   Close stays visible. [Before/after text and verification](audits/keymap_phase3_2026_10_20/README.md).
   Other Help contexts remain unchanged. Node Config, Node Selector and Workflow
-  Library presentation remain separate work; `node_config.py` belongs to 4c
-  and is not edited here. Settings rebinding UI and generated Quick Reference
-  tables remain deferred. [Scope](PROJECT_BACKLOG.md#near-term-project--frontend-command-ui-toolkit).
+  Library presentation remain separate work. Settings rebinding UI and generated
+  Quick Reference tables remain deferred.
+  [Scope](PROJECT_BACKLOG.md#near-term-project--frontend-command-ui-toolkit).
 - **Modals fill the terminal** (owner, 2026-10-20), merged in #93: Node
   Config, the node selector, large viewers, Help, Options and the File
   window use the whole terminal; taller dialogs scroll to their buttons.
@@ -114,7 +130,11 @@ This is the live status snapshot; plans and logs preserve dated decisions.
   [Distributed Plan](DISTRIBUTED_BUILD_PLAN.md), [Stash](STASH_PROPOSAL.md).
   The owner merges, or explicitly asks a reviewer to.
 
-## Verification and environment — 2026-10-20
+## Verification and environment — 2026-10-22
+
+- This refresh passed the documentation consolidation checker and
+  `git diff --check`. Full-suite figures below are historical receipts, not a
+  current-main test result. No live job or application behavior was changed.
 
 - Prompt queue slice: **1,918 passed in 301.82s**, three new tests in
   `tests/test_prompt_queue.py`.
@@ -137,8 +157,10 @@ This is the live status snapshot; plans and logs preserve dated decisions.
 - Link/anchor, whole-archive and session-transfer checks: see
   [PR C verification](audits/docs_audit_2026_10_17/PR_C_VERIFICATION.md).
   The active set is 17 core docs plus SUBWORKFLOWS_PROPOSAL,
-  DELETION_REVIEW_PROPOSAL and AI_COORDINATION_PROPOSAL (not approved), each
-  archived when its work completes or is declined.
+  DELETION_REVIEW_PROPOSAL and AI_COORDINATION_PROPOSAL, each archived when its
+  work completes or is declined. The coordination owner decisions are recorded
+  in section 10, with the October 22 work-order reset in section 9. The longer
+  intent/designer conversation is already an archived reference.
 - Prior receipts: keymap phase 2, 1666 passed with actual-keypress tests;
   phase 1, 1605 passed (57 focused); Stash S3, 1548 passed. Docs B retained
   33 archive bodies. These are historical counts, not the current suite.
@@ -148,14 +170,14 @@ This is the live status snapshot; plans and logs preserve dated decisions.
 - Clean installation, native terminal/live geometry, native Windows FO7 and
   external web links were not reverified. Owner FO7 results are still needed.
 
-## Open owner decisions and evidence limits — 2026-10-20
+## Open owner decisions and evidence limits — 2026-10-22
 
 - Stash: file fields accept file entries; text fields accept text only.
   Global-only versus per-workflow pinning remains open (proposal question 3).
 - Deletion Q1–Q5 answered October 19: keep/reset every affected Beacon, end a
   deleted Beacon's branch, preview partial restore, save removed Branch paths
   and offer optional recovery, preserve warning levels. Owner approved #86;
-  phase 2 merged in #88; its small review follow-up is pending. Saved-path
+  phase 2 merged in #88; its small review follow-up merged in #90. Saved-path
   expiry remains undecided, so retain
   entries for now.
 - Only the retained audit report survived; original CSVs/evidence are absent.
