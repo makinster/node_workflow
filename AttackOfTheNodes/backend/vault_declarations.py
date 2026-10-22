@@ -15,6 +15,15 @@ from .branch_paths import branch_count_from_config, path_ports
 CONTINUE_SESSION_SOURCE = "Continue AI session"
 
 
+def vault_output_fields(metadata: dict[str, Any]) -> dict[str, tuple[str, str, str]]:
+    """Config fields for each Vault output; keep the first port's legacy keys."""
+    ports = [port for port, info in (metadata.get("output_port_metadata") or {}).items()
+             if "vault" in (info.get("to") or [])]
+    return {port: (("vault_write", "vault_write_key", "vault_write_description") if index == 0
+                   else (f"{port}_vault_write", f"{port}_vault_key", f"{port}_vault_description"))
+            for index, port in enumerate(ports)}
+
+
 def standard_vault_writes(node_type: str, config: dict[str, Any], metadata: dict[str, Any]) -> dict[str, str | None]:
     """Return declared result/session keys without inspecting runtime resources."""
     writes: dict[str, str | None] = {}
@@ -33,6 +42,10 @@ def standard_vault_writes(node_type: str, config: dict[str, Any], metadata: dict
         if key:
             output = (metadata.get("output_port_metadata") or {}).get("default") or {}
             writes[key] = str(output.get("data_type") or "") or None
+    for port, (enabled, key_field, _) in list(vault_output_fields(metadata).items())[1:]:
+        key = str(config.get(key_field) or "").strip()
+        if config.get(enabled) and key:
+            writes[key] = str(metadata["output_port_metadata"][port].get("data_type") or "") or None
     if node_type == "file_view_node":
         for row in config.get("additional_files") or []:
             if isinstance(row, dict):

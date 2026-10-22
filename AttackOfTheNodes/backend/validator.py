@@ -15,13 +15,14 @@ from .port_types import (
     input_port_type, metadata_for_type, port_metadata, resolved_metadata, trace_producers,
 )
 from .vault_declarations import (
+    vault_output_fields,
     config_vault_read_entries,
     continuation_selected as _continuation_selected,
     repeatable_slot_active as _repeatable_slot_active,
     standard_vault_reads,
     typed_vault_writes,
 )
-from .field_types import check_number, field_visible as _field_visible, number_fields
+from .field_types import check_number, field_visible as _field_visible, number_fields, object_list_problems
 from .file_paths import normalize_local_path
 from .node_errors import (
     ENGINE_ERROR_DEFINITIONS,
@@ -241,6 +242,10 @@ def validate_workflow(
         declared_in = set(factory.node_input_ports(data))
         for conn in data.get("connections", {}).get("outputs", []):
             port = conn.get("source_port", "default")
+            routing = (factory.node_output_port_metadata(data).get(port) or {}).get("to")
+            if routing is not None and "downstream" not in routing:
+                errors.append({"node_id": node_id, "code": "vault_only_connection",
+                               "message": f"Output '{port}' can only be sent to the Vault"})
             if port in type_out and port not in declared_out:
                 # The type has this port but this node's config hides it (for
                 # example a Branch path above its count): it can never fire.
@@ -391,6 +396,17 @@ def validate_workflow(
                         ),
                     }
                 )
+
+    # Opted-in row lists share exact uniqueness/count rules with the form.
+    for node_id, data in all_nodes.items():
+        meta = _type_meta_cache.get(data.get("type", "")) or {}
+        config = {**(meta.get("default_config") or {}), **(data.get("config") or {})}
+        for problem in object_list_problems(meta.get("config_schema") or {}, config):
+            errors.append({"node_id": node_id, "code": "invalid_rows", "message": problem})
+        for port, (enabled, key_field, _) in list(vault_output_fields(meta).items())[1:]:
+            if config.get(enabled) and not str(config.get(key_field) or "").strip():
+                errors.append({"node_id": node_id, "code": "vault_output_key_missing",
+                               "message": f"{port}: enter a Vault output key"})
 
     # Secret-ref fields: schema fields annotated with "secret": True.
     # An empty required key is an error; a configured key absent from the store

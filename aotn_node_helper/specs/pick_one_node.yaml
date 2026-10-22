@@ -1,0 +1,115 @@
+node_type: pick_one_node
+class_name: PickOneNode
+category: ai
+primary_family: Complex
+tags: ["choose", "classify", "route", "Jev"]
+group: AI Processing
+selector_section: AI
+icon_name: list-check
+display_name: "Jev: Pick one"
+default_alias: Pick one
+description: Ask Jev to pick one answer from your list; low confidence sends unsure
+inputs:
+  input:
+    name: Text to judge
+    type: string
+    label: Text
+    description: The text Jev reads before picking an answer; at most 20,000 characters
+    required: true
+    sources: ["upstream", "vault", "configured"]
+    default: upstream
+    parameter:
+      type: multiline
+      label: Text
+      height: 3
+      description: At most 20,000 characters
+outputs:
+  default:
+    name: Answer
+    type: string
+    required: true
+    to: ["downstream", "vault"]
+    pass_through: true
+    description: Exactly the picked answer, or unsure below the cutoff
+  details:
+    name: Pick details
+    type: var
+    to: ["vault"]
+    description: Every answer's score, confidence, model and token usage
+output_routing:
+  default: transient
+  vault:
+    mode: optional
+config_tabs:
+  Parameters:
+    question:
+      type: string
+      label: Question
+      required: true
+      default: Which team should handle this message?
+      placeholder: Which team should handle this message?
+    choices:
+      type: object_list
+      label: Answers
+      add_label: Add answer
+      remove_label: Remove answer
+      id_prefix: answer_
+      min_items: 1
+      max_items: 255
+      unique_by: answer
+      default:
+        - id: answer_billing
+          answer: billing
+          description: Payments, refunds and invoices
+        - id: answer_bug
+          answer: bug
+          description: Something in the app is broken
+        - id: answer_other
+          answer: other
+          description: Anything else
+      item_schema:
+        answer:
+          type: string
+          label: Answer (sent on)
+          required: true
+          reserved_values: ["unsure"]
+          no_edge_whitespace: true
+        description:
+          type: string
+          label: What it means
+    api_key_secret:
+      type: string
+      label: API key (secrets store key)
+      secret: true
+      required: true
+      default: ""
+    timeout:
+      type: number
+      label: Give up after (seconds)
+      min: 1
+      max: 300
+      default: 20
+    unsure_below:
+      type: number
+      label: Unsure when sureness is under (0 to 1)
+      min: 0
+      max: 1
+      default: 0.3
+errors:
+  - code: text_too_long
+    description: Text is too long for Jev (maximum 20,000 characters).
+    retryable: false
+  - code: auth_failed
+    description: The API key is missing or was refused.
+    retryable: false
+  - code: timed_out
+    description: Jev did not answer before the deadline.
+    retryable: true
+  - code: provider_error
+    description: The AI service could not complete the request.
+    retryable: true
+  - code: undeclared_choice
+    description: The answer is not on your list (matching is exact).
+    retryable: false
+execution_template: producer
+payload_field: false

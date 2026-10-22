@@ -202,3 +202,41 @@ def normalize_numbers(
         if not problem:
             result[name] = value
     return result
+
+
+def object_list_problems(schema: Dict[str, Dict[str, Any]], config: Dict[str, Any]) -> list[str]:
+    """Validate opted-in row counts, exact unique values and cell constraints."""
+    problems = []
+    for name, info in schema.items():
+        if info.get("type") != "object_list" or not any(
+                key in info for key in ("unique_by", "min_items", "max_items")):
+            continue
+        label = str(info.get("label") or name)
+        rows = config.get(name, [])
+        if not isinstance(rows, list):
+            problems.append(f"{label} must be a list of rows")
+            continue
+        if not info.get("min_items", 0) <= len(rows) <= info.get("max_items", 10000):
+            problems.append(f"{label}: use {info.get('min_items', 0)} to {info.get('max_items', 10000)} rows")
+        seen = set()
+        unique = info.get("unique_by")
+        for index, row in enumerate(rows, 1):
+            if not isinstance(row, dict):
+                problems.append(f"{label}: row {index} must be a record")
+                continue
+            for field, cell in (info.get("item_schema") or {}).items():
+                value = row.get(field, "")
+                if not isinstance(value, str) or (cell.get("required") and not value.strip()):
+                    problems.append(f"{label}: row {index} needs {cell.get('label') or field}")
+                elif isinstance(value, str):
+                    cell_label = str(cell.get('label') or field)
+                    if value in cell.get('reserved_values', []):
+                        problems.append(f"{label}: row {index} {cell_label}: {value!r} is reserved")
+                    if cell.get('no_edge_whitespace') and value != value.strip():
+                        problems.append(f"{label}: row {index} {cell_label} must not start or end with whitespace")
+            if unique and isinstance(row.get(unique), str):
+                value = row[unique]
+                if value in seen:
+                    problems.append(f"{label}: duplicate answer in row {index} (matching is exact)")
+                seen.add(value)
+    return problems

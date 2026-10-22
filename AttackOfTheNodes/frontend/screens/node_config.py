@@ -22,12 +22,12 @@ from backend.nodes.branch_node import (
     branch_count_from_config as _branch_count_from_config,
 )
 from backend.data_types import types_compatible
-from backend.field_types import check_number, field_visible, number_fields
+from backend.field_types import check_number, field_visible, number_fields, object_list_problems
 
 # Number fields drawn by custom controls instead of the generated form.
 CUSTOM_NUMBER_CONTROLS = {"branch_count": "#branch-count"}
 from backend.port_types import resolved_metadata, trace_producers
-from backend.vault_declarations import typed_vault_writes
+from backend.vault_declarations import typed_vault_writes, vault_output_fields
 from frontend.keymap import NODE_CONFIG, bindings_for
 
 from frontend.error_paths import editor_output_ports
@@ -47,13 +47,12 @@ from frontend.error_mux_ui import (
     unmatched_route,
     upstream_error_definitions,
 )
-from frontend import notifications
+from frontend import notifications, colors
 from frontend.editor_workflow_adapter import EditorWorkflowAdapter
 from frontend.screens.recovery_branch_unpick import DELETE_BRANCH, RecoveryBranchUnpickScreen
 from frontend.screens.unsaved_changes import DISCARD, SAVE, UnsavedChangesScreen
 from frontend.connection_rows import connection_rows
 from frontend.node_labels import friendly_label, friendly_labels
-from frontend.io_contract import TYPE_COLOR
 from frontend.node_types import (
     BRANCH_END_NODE_TYPE,
     BRANCH_NODE_TYPE,
@@ -2432,6 +2431,11 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             notifications.notify_error(
                 self.app, f"Fix {count} number field{'s' if count > 1 else ''} before saving")
             return None
+        metadata = self._metadata_for_type(self.node_data.get("type", "")) or {}
+        row_problems = object_list_problems(metadata.get("config_schema") or {}, config)
+        if row_problems:
+            notifications.notify_error(self.app, row_problems[0])
+            return None
         # The no-edit comparison runs on what the widgets showed; checked
         # numbers then replace only the keys that are being written.
         saved = self._without_untouched_defaults(config)
@@ -2950,7 +2954,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         # Only the type's declared ports get generated name fields;
         # config-driven ports (Error Mux routes) are named in their own config.
         declared = set(self.factory.declared_output_ports(str(self.node_data.get("type") or "")))
-        output_ports = [port for port in self._own_output_ports(metadata) if port in declared]
+        output_ports = [port for port in self._downstream_output_ports(metadata) if port in declared]
         if len(output_ports) <= 1:
             return dict(schema)
 
@@ -3089,22 +3093,22 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             "dead_drop_passthrough": dead_drop,
             "transient_output": bool(self.query_one("#publish-downstream", Checkbox).value) if self.query("#publish-downstream") else not dead_drop,
         }
-        # A single vault output maps to the vault_write* keys the backend and
-        # validator read; the first vault port wins (multi-vault is a future
-        # extension — see NODE_STANDARDS.md).
+        # Each Vault port has independent routing state. The first keeps the
+        # established vault_write* keys for compatibility with existing nodes.
+        fields = vault_output_fields(metadata or {})
         for port in self._vault_output_ports(metadata):
+            enabled_field, key_field, desc_field = fields[port]
             disable_query = self.query(f"#vault-output-disabled-{port}")
             disabled = bool(disable_query.first().value) if disable_query else False
             key_query = self.query(f"#vault-output-key-{port}")
             desc_query = self.query(f"#vault-output-desc-{port}")
-            values["vault_write"] = not disabled
-            values["vault_write_key"] = (
+            values[enabled_field] = not disabled
+            values[key_field] = (
                 self._widget_text_value(key_query.first()) if key_query else ""
             )
-            values["vault_write_description"] = (
+            values[desc_field] = (
                 self._widget_text_value(desc_query.first()) if desc_query else ""
             )
-            break
         return values
 
     def _sync_routing_previews(self) -> None:
@@ -3184,9 +3188,9 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         name = output_display_name(self.factory, self.node_data, port)
         data_type = str(info.get("data_type") or "any")
         return Text.assemble(
-            (name, "bold"),
+            (name, f"bold {colors.PAYLOAD}"),
             "  [",
-            (data_type, f"bold {TYPE_COLOR}"),
+            (data_type, f"bold {colors.TYPE}"),
             "]",
         )
 
@@ -3277,7 +3281,9 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         if vault_ports:
             plural = "s" if len(vault_ports) > 1 else ""
             yield Label(f"Vault Payload{plural}", classes="form-label nav-section")
+            fields = vault_output_fields(metadata or {})
             for port in vault_ports:
+                enabled_field, key_field, desc_field = fields[port]
                 info = (
                     (metadata or {}).get("output_port_metadata") or {}
                 ).get(port) or {}
@@ -3290,11 +3296,11 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 if optional:
                     yield Checkbox(
                         "Disable output",
-                        value=not bool(config.get("vault_write", True)),
+                        value=not bool(config.get(enabled_field, enabled_field == "vault_write")),
                         id=f"vault-output-disabled-{port}",
                     )
-                default_key = str(config.get("vault_write_key") or "").strip()
-                default_desc = str(config.get("vault_write_description") or "").strip()
+                default_key = str(config.get(key_field) or "").strip()
+                default_desc = str(config.get(desc_field) or "").strip()
                 if not default_desc:
                     default_desc = "" if (
                         str(info.get("description") or "").strip() == OUTPUT_NOT_CONFIGURED

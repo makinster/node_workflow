@@ -6,6 +6,32 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-22 — Choice-node review fixes (#112)
+
+Review head: `6c7467b`. Working branch `codex/choice-review-fixes` in
+`/home/makin/src/nw-choice-review`; changes publish to `dist/pick-one`.
+Merged current `origin/main` `9470729` first (`d5d2f02`), retaining both sides'
+Session Log entries, current coordination order/live status and C3a build facts.
+
+- Reserved literal `unsure` for the low-confidence result. Answer rows reject
+  that value and leading/trailing Unicode whitespace through shared opt-in
+  schema checks used by form-save, preflight and runtime. Case and internal
+  spaces remain exact; nothing is silently trimmed.
+- Added a 20,000-character text cap for Upstream, Vault and Configured sources
+  before HTTP or Vault writes, with nonretryable `text_too_long` and the clear
+  message "Text is too long for Jev". The shared client also enforces the cap.
+  Helper spec, metadata/error assertions and authoring rules describe the same
+  behavior.
+- Failing-first proof on the merged code: 16 new cases failed and the exact
+  20,000-character boundary passed. Cases cover real form-save refusal,
+  validator/runtime rejection, all text sources, loopback request prevention
+  and the shared client. The older edge-space acceptance case now checks valid
+  internal spaces, Unicode and case preservation to match the reviewed policy.
+- Verification: **89 focused tests passed**; full `pytest -q`: **2,245 passed
+  in 345.91 seconds** on the combined branch. Targeted compilation,
+  documentation consolidation and whitespace checks passed. All provider tests
+  use loopback; no paid calls, owner workflow edits or live integration changes.
+
 ## 2026-10-22 — Coordination documentation review fixes (#111)
 
 Same branch, after review of `6bf9576`. Documentation only.
@@ -45,6 +71,54 @@ in `/home/makin/src/nw-plan-reset`. Documentation only, at the owner's request.
   Section 9 links it without adding another active plan document.
 - Verification: documentation consolidation checker and `git diff --check` passed.
   No application tests, implementation, cron changes or gateway activation.
+
+## 2026-10-22 — C3a owner correction: standard forwarding (#112)
+
+Same branch. Pick one now advertises the standard pass-through capability and
+shows **Forward incoming payload unchanged**, replacing Publish downstream
+payload. Checking it hides and disables the own-output name/description fields
+and sends
+the original upstream payload downstream; unchecking restores the answer.
+The configured text source affects what is judged, not what is forwarded.
+Enabled Vault outputs still store the answer and Pick details.
+
+Regression cases failed on the prior head, then passed after the fix: three
+text sources, non-text payload identity, keyboard toggle/save/reopen, and a
+real RunService route with forwarding on and off. Updated built screenshots
+include the checked state. Verification: **2,228 passed in 346.02 seconds** (full `pytest -q`); helper registration/UI,
+docs link/archive and whitespace checks passed.
+
+## 2026-10-22 — C3a: Pick one, built for owner review
+
+Branch `dist/pick-one`, from main `cce4fc7`. Owner-approved samples and
+revisions are implemented: one fixed service, no provider/model selectors,
+exact answer rows with duplicate-save refusal, and literal `unsure` below the
+cutoff. New helper spec, registered node and reusable async HTTP client;
+API credentials are resolved through the secrets store, never workflow config.
+The total deadline defaults to 20 seconds; transport/service errors and
+malformed replies use safe fixed errors, redirects are refused, and task
+cancellation closes the connection. Only timeout/service errors offer Retry.
+
+Answer is plain text for a following Conditional and can also be copied to
+the Vault. Pick details starts off, has an independent Vault destination, and
+never becomes a downstream path or Parameters branch-name control. Shared
+form, declaration and preflight support now preserves multiple Vault outputs.
+Payload headers use the documented `PAYLOAD` and `TYPE` color roles.
+
+[Built screens](audits/pick_one_2026_10_22/README.md) include full Parameters,
+Source, Payloads, selector and routing map, with compact 80×24 captures.
+The capture harness clears this shell's monochrome override and uses real
+registered screens with production styles. Tests exercise keyboard edit/save,
+no-edit save, duplicate refusal, reopening/Cancel and independent routing.
+Default answer rows have stable IDs so no-edit saves do not mutate config.
+The selector test's AI Processing member count intentionally rises from 3 to 4.
+
+Verification: 2,222 passed in 347.10 seconds (full `pytest -q`). Helper `check_node` and `check_ui`, docs
+link/archive consolidation, and whitespace checks pass. HTTP tests use a
+loopback fake server (including timeout, cancellation, malformed responses,
+exact matching and secret-safe failures); an actual RunService test routes
+its plain answer through Conditional and Text Output. No paid call, owner
+workflow edit, local installation or cron job. PR awaits owner review.
 
 ## 2026-10-21 — C1 review fixes (#109, eight findings)
 
