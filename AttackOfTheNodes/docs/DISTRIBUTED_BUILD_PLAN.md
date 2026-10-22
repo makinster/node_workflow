@@ -427,7 +427,9 @@ Step 4 completes.
 - **Start triggers (D2):** a stored trigger registry, re-armed on boot. Each
   event launches a new run through the workflow's contract.
 - **Persistent store** for state between firings (last-seen, counters),
-  separate from `MemoryBank`.
+  separate from `MemoryBank`. **Built early as C2 (2026-10-21):**
+  [Saved values](STASH_PROPOSAL.md#saved-values-c2) (Remember, Recall, If
+  changed); triggers use it as it is.
 - **Runs recorded when they start**, so a crash shows as "interrupted" rather
   than disappearing.
 - **Concurrency modes (R3), set per trigger:**

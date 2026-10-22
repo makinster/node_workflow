@@ -8,8 +8,10 @@ import sys
 
 def dispatch(name, args):
     # The launcher sets AOTN_DATA_DIR before this process imports any backend.
-    from backend import persistence
+    from backend import persistence, saved_values
     from backend.contracts import call_contract
+
+    saved_values.RUN_FROM = 'MCP'  # shown with each saved value (C2)
 
     if name == 'get_run_status':
         history = persistence.RUN_HISTORY_DIR.resolve()

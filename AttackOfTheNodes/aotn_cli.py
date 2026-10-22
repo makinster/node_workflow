@@ -458,6 +458,9 @@ def main(
         if loaded is not None and os.path.realpath(loaded.DATA_DIR) != wanted:
             parser.error("--data-dir must be set before the backend is loaded")
         os.environ["AOTN_DATA_DIR"] = wanted
+    from backend import saved_values
+
+    saved_values.RUN_FROM = "command line"  # shown with each saved value (C2)
     try:
         return asyncio.run(
             _run(args, stdin or sys.stdin, stdout or sys.stdout, stderr or sys.stderr)

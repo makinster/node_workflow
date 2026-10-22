@@ -346,6 +346,15 @@ def validate_workflow(
                     "code": "invalid_number", "message": f"{label}: {problem} (saved value {raw!r})",
                 })
 
+    # Saved values (C2): Remember, Recall and If changed need a name.
+    for node_id, data in all_nodes.items():
+        if data.get("type") in ("remember_node", "recall_node", "if_changed_node") and \
+                not str((data.get("config") or {}).get("name") or "").strip():
+            errors.append({
+                "node_id": node_id, "port": "name", "code": "saved_name_missing",
+                "message": "Saved as is blank: give the value a name, like last_version",
+            })
+
     # File-path fields: schema fields hinted with path_hint == "file".
     # An empty required path is an error; a path missing on disk is only a
     # warning because an earlier node may create the file during the run.

@@ -1,0 +1,82 @@
+node_type: if_changed_node
+class_name: IfChangedNode
+category: data
+primary_family: Utility
+tags: ["Saved values", "across runs"]
+group: "Saved values"
+selector_section: "Saved values"
+icon_name: git-compare
+display_name: If changed
+default_alias: If changed
+description: Compares a value with last time, saves it, then goes Changed or No change
+inputs:
+  input:
+    name: Value
+    type: any
+    label: Value
+    description: The value to compare and save
+    required: true
+    sources: ["upstream", "vault"]
+    default: upstream
+outputs:
+  changed:
+    name: Changed
+    type: any
+    to: ["downstream"]
+    description: The new value
+  no_change:
+    name: No change
+    type: any
+    to: ["downstream"]
+    description: The value, the same as last time
+output_routing:
+  default: transient
+config_tabs:
+  Parameters:
+    name:
+      type: string
+      label: Saved as
+      default: ""
+      required: true
+      placeholder: "a name, like last_version"
+    keep_for:
+      type: select
+      label: Kept for
+      options: [["This workflow · only this workflow sees it", "This workflow"], ["All workflows · shared on this machine", "All workflows"]]
+      default: This workflow
+    compare:
+      type: select
+      label: Compare
+      options: [["Exactly", "Exactly"], ["Ignore spaces and capitals", "Loosely"]]
+      default: Exactly
+    first_time:
+      type: select
+      label: First run (nothing saved yet)
+      options: [["No change · save quietly", "No change"], ["Changed · send it on", "Changed"]]
+      default: No change
+    if_not_saved:
+      type: select
+      label: "If it can't be saved"
+      options: [["Stop · the node fails", "Stop with an error"], ["Carry on · take No change", "Carry on"]]
+      default: Stop with an error
+    changed_label:
+      type: string
+      label: Changed path name
+      default: ""
+      placeholder: "shown on the map; blank = Changed"
+    no_change_label:
+      type: string
+      label: No change path name
+      default: ""
+      placeholder: "shown on the map; blank = No change"
+errors:
+  - code: store_unwritable
+    description: "The saved values file could not be written."
+    retryable: true
+  - code: store_unreadable
+    description: "The saved values file could not be read."
+    retryable: true
+  - code: too_big
+    description: "The value is over 64 KB, or is not plain data."
+    retryable: false
+execution_template: transform_stub

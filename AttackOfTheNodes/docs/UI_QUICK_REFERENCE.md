@@ -300,7 +300,8 @@ Merged in #71. P in the editor opens the Paste / drop tab; E there types again.
 |---|---|
 | 1 Paste / drop | Paste/drop adds immediately; Enter/Add stores typed text; T/Keep as text stores a refused paste as text; R renames a just-added entry |
 | 2 Entries | W/S moves; / starts live search; T cycles all/files/strings; R/E renames; X deletes with confirmation |
-| Both tabs | 1/2 switches tabs outside editing; Esc/Q/Ctrl+Q closes after text editing; buttons expose the same actions |
+| 3 Saved values (C2) | Values workflows keep between runs, under their workflow's name or All workflows. W/S moves (headings are skipped); / searches names, values and places; E/Enter changes a value (typed by its type); X forgets it with confirmation. The line below the list says which node saved it, when, and from where. Not shown in insert mode |
+| All tabs | 1/2/3 switches tabs outside editing; Esc/Q/Ctrl+Q closes after text editing; buttons expose the same actions |
 
 Enter or Esc from search returns focus to the list. Typed letters remain text.
 File entries show `[file]`, text entries `[string]` (a type label always uses

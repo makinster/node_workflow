@@ -264,3 +264,65 @@ the notes below.
 naming PR → **Stash S1–S3** (S3b CLI can ride with S1) → `DISTRIBUTED_BUILD_PLAN.md`
 Step 4 with **S5 designed in** → S4 folder import when wanted. S6 stays
 exploratory.
+
+## Saved values (C2)
+
+Built 2026-10-21 (AI coordination C2/C5: the persistent store pulled forward
+from Step 5, built on the Stash's store). A workflow keeps values for its next
+run with three nodes in the Utility group **Saved values** (see
+[Node Catalog](NODE_CATALOG.md#group-saved-values)): **Remember**, **Recall**
+and **If changed** (the H3 change detector: paths Changed / No change).
+
+Owner answers (2026-10-21):
+
+1. Three nodes in a "Saved values" group on the Utility tab; the name "Saved
+   values" everywhere (group, Stash tab 3, CLI).
+2. A workflow's values follow its **name**, not its id: rebuilding a cron
+   workflow from its spec keeps them, and renaming it (library or editor)
+   moves them. A value the new name already has is never overwritten.
+3. "Kept for" defaults to This workflow; All workflows is shared by every
+   workflow in the same data folder.
+4. If changed, first run (nothing saved yet): **No change · save quietly** by
+   default; **Changed · send it on** is a choice. Paths are named Changed and
+   No change.
+5. Recall with nothing saved uses its Starting value by default; Stop is a
+   choice. Recall's Type is strict: a saved string never becomes a number.
+6. Remember's Add makes counters.
+7. Stash tab 3 lists values under their places: E changes a value (typed by
+   its type), X forgets it. Saved values can't be inserted into fields, so the
+   tab is absent in insert mode.
+8. Values stay with the data folder; `aotn --data-dir <folder>` opens the app
+   on another one (for example cron's `~/.local/share/aotn-cron`).
+9. 64 KB per value. The old value isn't an output of If changed; put a Recall
+   before it when a message needs it.
+
+**Storage.** `<data dir>/stash/saved.json`, format `aotn-saved/1`, next to
+the Stash's `entries.json` but separate: Stash entries refuse duplicate values,
+saved values change every run. A value:
+
+```json
+{"id": "saved_3f9a0c1b2d4e", "name": "last_version",
+ "place": {"kind": "workflow", "workflow": "hermes-release-watch"},
+ "type": "string", "value": "v0.14.2",
+ "created": "2026-10-20T16:00:02Z", "updated": "2026-10-21T16:00:03Z",
+ "saved_by": {"node": "New version?", "node_id": "node_39e9571a",
+              "run_id": "run_8c1d…", "from": "command line"}}
+```
+
+`place` is `{"kind": "workflow", "workflow": <name>}` or `{"kind": "all"}`;
+`type` is a `data_types` name (string, number, bool, var, file; never
+ai_session); `from` is `app`, `command line` or `MCP`. Names ignore case
+within a place. An unreadable file is never overwritten.
+
+**Two runs at once** (cron and the app). Every read goes to the file; every
+change is one locked step (`saved.lock`, `fcntl`): re-read, change one value,
+write atomically, unlock. Different names never overwrite each other; for the
+same name the later write wins. Add and If changed compare-and-save are one
+step, so counters lose no counts and two runs can't both report one change.
+`backend/saved_values.py` owns all of this; the nodes, Stash screen and CLI
+share it.
+
+**CLI.** `aotn stash saved list [--workflow NAME]`,
+`aotn stash saved show|forget NAME (--workflow NAME | --all)`,
+`aotn stash saved set NAME VALUE (--workflow NAME | --all) [--type T]`; all
+take `--data-dir` (before `saved`) and `--json`.

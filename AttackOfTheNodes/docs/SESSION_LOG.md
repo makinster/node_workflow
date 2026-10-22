@@ -6,6 +6,26 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-21 — C2: Saved values (persistent store on the Stash's store)
+
+Branch `dist/persistent-store` from main `cce4fc7`. Samples approved with
+eleven answers, then one change: If changed's paths are **Changed** and
+**No change**, and its first-run setting reads "First run (nothing saved
+yet): No change · save quietly / Changed · send it on". Decisions are
+recorded in [Saved values](STASH_PROPOSAL.md#saved-values-c2).
+
+- `backend/saved_values.py`: `saved.json` (`aotn-saved/1`) beside the Stash's
+  entries; places are a workflow's name or All workflows; each change is
+  lock → re-read → change one value → atomic write. A multi-process test
+  proves counters lose nothing.
+- Nodes from helper specs: `remember_node` (Replace or Add), `recall_node`
+  (strict Type, which is also the output's type; starting value or stop),
+  `if_changed_node` (compare and save in one step; paths Changed / No change,
+  with plain "path name" fields).
+- Stash tab 3 Saved values (E change, X forget); `aotn stash saved`;
+  `aotn --data-dir`; workflow renames move values; runs record where they
+  came from (`app`, `command line`, `MCP`).
+
 ## 2026-10-21 — C1 review fixes (#109, eight findings)
 
 Same branch, after main was merged in (`4ad68c2`). Each finding has a

@@ -49,8 +49,14 @@ from .io.git_status_node import GitStatusNode
 from .io.file_age_node import FileAgeNode
 from .io.hermes_notify_node import HermesNotifyNode
 from .io.record_event_node import RecordEventNode
+from .data.remember_node import RememberNode
+from .data.recall_node import RecallNode
+from .data.if_changed_node import IfChangedNode
 
 ALL_NODE_CLASSES = [
+    IfChangedNode,
+    RecallNode,
+    RememberNode,
     RecordEventNode,
     HermesNotifyNode,
     FileAgeNode,

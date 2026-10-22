@@ -5,6 +5,16 @@ This is the live status snapshot; plans and logs preserve dated decisions.
 
 ## Baseline and open work — 2026-10-20
 
+- **C2 Saved values built, awaiting owner review (2026-10-21):** branch
+  `dist/persistent-store` from main `cce4fc7`. Remember, Recall and If changed
+  (Utility group Saved values; If changed's paths are Changed / No change)
+  keep values between runs in `<data dir>/stash/saved.json`
+  (`backend/saved_values.py`: every change is one locked step, so cron and the
+  app can run at once). Stash tab 3 lists, changes and forgets them; `aotn
+  stash saved list|show|set|forget`; `aotn --data-dir <folder>` opens the app
+  on another data folder; renaming a workflow moves its values. Owner answers
+  and the record shape: [Saved values](STASH_PROPOSAL.md#saved-values-c2).
+  H3 needs no new adapter work: a spec with If changed → Notify me is enough.
 - **C1 built, awaiting owner review (2026-10-21):** branch
   `dist/hermes-notify` from main `6f5c216`. Notify me and Record event write
   the [Hermes shared folder](integrations/HERMES_SHARED_FOLDER.md); the outbox

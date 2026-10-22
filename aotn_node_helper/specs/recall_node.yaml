@@ -1,0 +1,66 @@
+node_type: recall_node
+class_name: RecallNode
+category: data
+primary_family: Utility
+tags: ["Saved values", "across runs"]
+group: "Saved values"
+selector_section: "Saved values"
+icon_name: archive-restore
+display_name: Recall
+default_alias: Recall
+description: Reads a value saved by an earlier run
+input_ports: ["input"]
+outputs:
+  default:
+    name: Saved value
+    type: any
+    required: true
+    to: ["downstream", "vault"]
+    description: The value saved under this name
+output_routing:
+  default: transient
+  vault:
+    mode: optional
+config_tabs:
+  Parameters:
+    name:
+      type: string
+      label: Saved as
+      default: ""
+      required: true
+      placeholder: "a name, like last_version"
+    keep_for:
+      type: select
+      label: Look in
+      options: [["This workflow · only this workflow sees it", "This workflow"], ["All workflows · shared on this machine", "All workflows"]]
+      default: This workflow
+    expect:
+      type: select
+      label: Type
+      options: [["any · whatever was saved", "any"], ["string · text", "string"], ["number", "number"], ["bool · yes or no", "bool"], ["var · a list or record", "var"], ["file · a file reference", "file"]]
+      default: any
+    if_missing:
+      type: select
+      label: If nothing is saved yet
+      options: [["Use the starting value · below", "Use the starting value"], ["Stop · the node fails", "Stop with an error"]]
+      default: Use the starting value
+    starting_value:
+      type: string
+      label: Starting value
+      default: ""
+      placeholder: "blank = empty; read as the Type above"
+      visible_when:
+        if_missing: Use the starting value
+errors:
+  - code: not_saved
+    description: "Nothing is saved under this name yet."
+    retryable: false
+  - code: wrong_type
+    description: "The saved value (or the starting value) is not the chosen Type."
+    retryable: false
+  - code: store_unreadable
+    description: "The saved values file could not be read."
+    retryable: true
+execution_template: transform_stub
+ui_hints:
+  standard_output: true
