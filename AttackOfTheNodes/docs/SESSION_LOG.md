@@ -6,6 +6,22 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-22 — C3a owner correction: standard forwarding (#112)
+
+Same branch. Pick one now advertises the standard pass-through capability and
+shows **Forward incoming payload unchanged**, replacing Publish downstream
+payload. Checking it hides and disables the own-output name/description fields
+and sends
+the original upstream payload downstream; unchecking restores the answer.
+The configured text source affects what is judged, not what is forwarded.
+Enabled Vault outputs still store the answer and Pick details.
+
+Regression cases failed on the prior head, then passed after the fix: three
+text sources, non-text payload identity, keyboard toggle/save/reopen, and a
+real RunService route with forwarding on and off. Updated built screenshots
+include the checked state. Verification: **2,228 passed in 346.02 seconds** (full `pytest -q`); helper registration/UI,
+docs link/archive and whitespace checks passed.
+
 ## 2026-10-22 — C3a: Pick one, built for owner review
 
 Branch `dist/pick-one`, from main `cce4fc7`. Owner-approved samples and

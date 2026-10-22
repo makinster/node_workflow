@@ -7,7 +7,6 @@ from ...node_category import NodeCategory
 from ...node_errors import NodeError
 from ...field_types import object_list_problems, check_number
 from ...integrations import jev
-from ...system_access import finish
 
 
 class PickOneNode(Node):
@@ -27,7 +26,7 @@ class PickOneNode(Node):
     input_ports: ClassVar[List[str]] = ['input']
     output_ports: ClassVar[List[str]] = ['default', 'details']
     input_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {'input': {'name': 'Text to judge', 'description': 'The text Jev reads before picking an answer', 'data_type': 'string', 'required': True, 'sources': ['upstream', 'vault', 'configured']}}
-    output_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {'default': {'name': 'Answer', 'description': 'Exactly the picked answer, or unsure below the cutoff', 'data_type': 'string', 'required': True, 'to': ['downstream', 'vault']}, 'details': {'name': 'Pick details', 'description': "Every answer's score, confidence, model and token usage", 'data_type': 'var', 'required': False, 'to': ['vault']}}
+    output_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {'default': {'name': 'Answer', 'description': 'Exactly the picked answer, or unsure below the cutoff', 'data_type': 'string', 'required': True, 'to': ['downstream', 'vault'], 'pass_through': True}, 'details': {'name': 'Pick details', 'description': "Every answer's score, confidence, model and token usage", 'data_type': 'var', 'required': False, 'to': ['vault']}}
     default_config: ClassVar[Dict[str, Any]] = {'input_source': 'Upstream payload', 'input_vault_key': '', 'input': '', 'question': 'Which team should handle this message?', 'choices': [{'id': 'answer_billing', 'answer': 'billing', 'description': 'Payments, refunds and invoices'}, {'id': 'answer_bug', 'answer': 'bug', 'description': 'Something in the app is broken'}, {'id': 'answer_other', 'answer': 'other', 'description': 'Anything else'}], 'api_key_secret': '', 'timeout': 20, 'unsure_below': 0.3, 'transient_output': True, 'dead_drop_passthrough': False, 'transient_outputs': [], 'vault_write': False, 'vault_write_key': '', 'vault_write_description': '', 'details_vault_write': False, 'details_vault_key': '', 'details_vault_description': ''}
     config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {'input_source': {'type': 'select', 'label': 'Text source', 'options': ['Upstream payload', 'Vault', 'Configured'], 'tab': 'Source', 'section': 'Required Inputs', 'description': 'The text Jev reads before picking an answer'}, 'input_vault_key': {'type': 'string', 'label': 'Text Vault key', 'required': False, 'tab': 'Source', 'section': 'Required Inputs', 'vault_type': 'string', 'visible_when': {'input_source': 'Vault'}}, 'input': {'type': 'multiline', 'label': 'Text', 'height': 3, 'tab': 'Parameters', 'visible_when': {'input_source': 'Configured'}}, 'question': {'type': 'string', 'label': 'Question', 'required': True, 'placeholder': 'Which team should handle this message?', 'tab': 'Parameters'}, 'choices': {'type': 'object_list', 'label': 'Answers', 'add_label': 'Add answer', 'remove_label': 'Remove answer', 'id_prefix': 'answer_', 'min_items': 1, 'max_items': 255, 'unique_by': 'answer', 'item_schema': {'answer': {'type': 'string', 'label': 'Answer (sent on)', 'required': True}, 'description': {'type': 'string', 'label': 'What it means'}}, 'tab': 'Parameters'}, 'api_key_secret': {'type': 'string', 'label': 'API key (secrets store key)', 'secret': True, 'required': True, 'tab': 'Parameters'}, 'timeout': {'type': 'number', 'label': 'Give up after (seconds)', 'min': 1, 'max': 300, 'tab': 'Parameters'}, 'unsure_below': {'type': 'number', 'label': 'Unsure when sureness is under (0 to 1)', 'min': 0, 'max': 1, 'tab': 'Parameters'}}
     ui_hints: ClassVar[Dict[str, Any]] = {}
@@ -96,4 +95,10 @@ class PickOneNode(Node):
         if self.config.get("details_vault_write"):
             context.memory_bank.store_persistent(self.config["details_vault_key"].strip(),
                                                  result.details(), type_tag="var")
-        finish(self, context, answer, "string")
+        if self.config.get("vault_write"):
+            context.memory_bank.store_persistent(self.config["vault_write_key"].strip(),
+                                                 answer, type_tag="string")
+        forwarding = self.config.get("dead_drop_passthrough")
+        payload = context.inputs.get("input") if forwarding else answer
+        context.signal_done({"data": {"default": payload}
+                             if forwarding or self.config.get("transient_output", True) else {}})

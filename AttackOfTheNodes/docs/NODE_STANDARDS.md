@@ -112,8 +112,13 @@ at 1 MiB, and service text is never echoed into errors. Retry is offered only
 for `timed_out` and `provider_error`; `auth_failed` and `undeclared_choice`
 are nonretryable. Tests use loopback HTTP; no paid call is part of verification.
 
-Answer can also go to the Vault. Pick details (scores, confidence, actual model
-and token usage) is disabled by default and Vault only. Shared Payloads controls
+Answer can also go to the Vault. The standard **Forward incoming payload
+unchanged** checkbox replaces only the downstream answer with the original
+upstream payload; it hides and disables the own-output name/description controls.
+Unchecking it restores the answer downstream. This forwards the incoming
+payload even when the text to judge comes from Configured or Vault; enabled
+Vault outputs still store the answer and details. Pick details (scores,
+confidence, actual model and token usage) is disabled by default and Vault only. Shared Payloads controls
 retain `vault_write*` for the first Vault port and use `<port>_vault_write`,
 `<port>_vault_key`, `<port>_vault_description` for later ports. Each has its own
 Disable output control; declarations preserve its type. A Vault-only output

@@ -17,6 +17,7 @@ original Textual SVGs with CairoSVG in a temporary tooling environment.
 | Source | 100×34 | [PNG](source.png), [SVG](source.svg) |
 | Payloads, both Vault copies off | 120×40 | [PNG](payloads-default.png), [SVG](payloads-default.svg) |
 | Payloads, independent keys enabled | 120×48 | [PNG](payloads-enabled.png), [SVG](payloads-enabled.svg) |
+| Payloads, forwarding checked | 120×48 | [PNG](payloads-forwarding.png), [SVG](payloads-forwarding.svg) |
 | Payloads, scrolled to details key | 80×24 | [PNG](payloads-80x24.png), [SVG](payloads-80x24.svg) |
 | Complex selector | 110×30 | [PNG](selector.png), [SVG](selector.svg) |
 | Plain answer into Conditional | 120×34 | [PNG](route-map.png), [SVG](route-map.svg) |
@@ -29,3 +30,17 @@ that Save and Close remain on screen; the status bar stays below them.
 The form has no provider/model selector, configurable unsure answer, Stop
 option or unsure error. Below the cutoff, the result is literal `unsure`.
 Pick details starts disabled and has no downstream path or branch-name box.
+
+The standard **Forward incoming payload unchanged** checkbox replaces the
+answer downstream with the original upstream payload. Checking it hides and
+disables the node's own downstream name/description; unchecking it restores the answer.
+Enabled Vault destinations still receive the answer and Pick details.
+There is no Publish downstream payload checkbox on this node.
+
+A code review of PRs #103–#112 checked the payload-name/storage-key distinction.
+The relevant new outputs in #104, #109, #110 and #112 retain separate display
+names and Vault keys; #110's Saved as is a persistent-store lookup name.
+A related control inconsistency remains: #104's System nodes and #110's
+Remember/Recall use Publish downstream payload rather than the forwarding
+control used by #109 and the corrected Pick one. Those controls need a
+separate consistency follow-up; this review did not run every older PR's UI.

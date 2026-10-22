@@ -10,9 +10,11 @@ This is the live status snapshot; plans and logs preserve dated decisions.
   spec/generated checks, exact answer rows, fixed `unsure` below 0.3, optional
   Vault-only details. No provider/model selectors or Stop option. Shared
   routing now preserves each Vault output and omits Vault-only branch names.
+  The standard Forward incoming payload unchanged control replaces only the
+  downstream answer, preserving enabled Vault outputs.
   [Built screens](audits/pick_one_2026_10_22/README.md),
   [node contract](NODE_STANDARDS.md#bounded-choice-node-c3a-owner-2026-10-22).
-  Full suite: **2,222 passed**; helper and docs checks passed. No paid call,
+  Full suite after the forwarding correction: **2,228 passed**; helper and docs checks passed. No paid call,
   owner/live data, installed wrapper, cron job or repository workflow change.
 
 - **C1 built, awaiting owner review (2026-10-21):** branch

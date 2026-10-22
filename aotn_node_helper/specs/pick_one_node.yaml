@@ -28,6 +28,7 @@ outputs:
     type: string
     required: true
     to: ["downstream", "vault"]
+    pass_through: true
     description: Exactly the picked answer, or unsure below the cutoff
   details:
     name: Pick details

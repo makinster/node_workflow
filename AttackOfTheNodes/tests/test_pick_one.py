@@ -260,7 +260,8 @@ def test_types_declarations_and_editor_do_not_create_a_details_branch():
 
 
 @pytest.mark.asyncio
-async def test_saved_run_routes_plain_answer_through_conditional(server, tmp_path, monkeypatch):
+@pytest.mark.parametrize('forwarding', [False, True])
+async def test_saved_run_routes_plain_answer_through_conditional(server, tmp_path, monkeypatch, forwarding):
     from tests.test_subworkflow_calls import Flow
     from backend import persistence, configuration_manager, run_history
     from backend.run_service import RunService
@@ -273,7 +274,8 @@ async def test_saved_run_routes_plain_answer_through_conditional(server, tmp_pat
     monkeypatch.setattr(SecretsManager,'get_secret',lambda self,key:SECRET if key=='service-key' else None)
     flow=(Flow('Support router').node('s','start_node',greeting='Refund this charge')
           .node('pick','pick_one_node',question='Who should handle this?',choices=ROWS,
-                api_key_secret='service-key',details_vault_write=True,details_vault_key='pick_info')
+                api_key_secret='service-key',dead_drop_passthrough=forwarding,transient_output=not forwarding,
+                vault_write=True,vault_write_key='answer',details_vault_write=True,details_vault_key='pick_info')
           .node('billing','conditional_node',condition_type='equals',left_value_source='input',right_value='billing')
           .node('yes','text_output_node',input_source='Upstream payload',template='{input}',label='Billing')
           .node('no','text_output_node',input_source='Upstream payload',template='{input}',label='Other')
@@ -288,7 +290,9 @@ async def test_saved_run_routes_plain_answer_through_conditional(server, tmp_pat
     try:
         await service.start(validate=False)
         result=await asyncio.wait_for(service.wait(),3)
-        assert result.exit_code==0 and result.outputs==['[Billing] billing']
+        expected = '[Other] Refund this charge' if forwarding else '[Billing] billing'
+        assert result.exit_code==0 and result.outputs==[expected]
+        assert service.master_state._memory_bank.read_persistent('answer')=='billing'
         assert service.master_state._memory_bank.read_persistent('pick_info')['confidence']==.8
         assert SECRET not in json.dumps(result.to_dict())
     finally:
@@ -395,3 +399,66 @@ async def test_keyboard_save_keeps_exact_answers_and_secret_reference():
     assert seen[0]['config']['choices']==ROWS
     assert seen[0]['config']['api_key_secret']=='service-key'
     assert SECRET not in json.dumps(seen)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('source', ['Upstream payload', 'Configured', 'Vault'])
+async def test_forwarding_replaces_only_downstream_answer(server, source):
+    incoming = 'Original incoming text'
+    node, ctx, done, errors = node_context(
+        inputs={'input': incoming}, input_source=source, input='Different configured text',
+        input_vault_key='text', dead_drop_passthrough=True, transient_output=False,
+        vault_write=True, vault_write_key='answer',
+        details_vault_write=True, details_vault_key='details')
+    await node.execute(ctx)
+    assert not errors and done == [{'data': {'default': incoming}}]
+    assert ctx.memory_bank.read_persistent('answer') == 'billing'
+    assert ctx.memory_bank.read_persistent('details')['confidence'] == .8
+    judged = server.calls[0][0]['state']
+    assert judged == {'Upstream payload': incoming, 'Configured': 'Different configured text',
+                      'Vault': 'Vault message'}[source]
+
+
+@pytest.mark.asyncio
+async def test_forwarding_preserves_non_text_payload_identity(server):
+    incoming = {'report': ['keep', 'this']}
+    node, ctx, done, errors = node_context(inputs={'input': incoming},
+        input_source='Configured', input='Text to judge', dead_drop_passthrough=True,
+        transient_output=False)
+    await node.execute(ctx)
+    assert not errors and done[0]['data']['default'] is incoming
+
+
+@pytest.mark.asyncio
+async def test_ui_forwarding_control_disables_own_payload_and_survives_reopen():
+    from textual.app import App
+    from textual.widgets import Checkbox
+    from frontend.screens.node_config import NodeConfigScreen
+    factory=NodeFactory();wm=WorkflowMap(factory,EventBus());wm.create_new('Forward')
+    nid=wm.add_node('pick_one_node')
+    class Host(App):
+        CSS_PATH='../frontend/styles.tcss'
+        def on_mount(self):
+            self.push_screen(NodeConfigScreen(factory,wm,nid,wm.get_node_data(nid)))
+    async with Host().run_test(size=(80,24)) as pilot:
+        screen=pilot.app.screen
+        await pilot.press('3');await pilot.pause()
+        assert not screen.query('#publish-downstream')
+        forward=screen.query_one('#dead-drop-passthrough',Checkbox)
+        assert str(forward.label)=='Forward incoming payload unchanged'
+        assert not forward.value
+        forward.focus();await pilot.press('space');await pilot.pause()
+        assert screen.query_one('#transient-output-name-default').disabled
+        assert screen.query_one('#transient-output-desc-default').disabled
+        saved=screen._save_result()['config']
+        assert saved['dead_drop_passthrough'] and not saved['transient_output']
+        wm.update_node_config(nid,saved)
+        pilot.app.push_screen(NodeConfigScreen(factory,wm,nid,wm.get_node_data(nid)))
+        await pilot.pause();await pilot.press('3');await pilot.pause()
+        reopened=pilot.app.screen
+        assert reopened.query_one('#dead-drop-passthrough',Checkbox).value
+        reopened.query_one('#dead-drop-passthrough').focus()
+        await pilot.press('space');await pilot.pause()
+        assert not reopened.query_one('#transient-output-name-default').disabled
+        saved=reopened._save_result()['config']
+        assert not saved['dead_drop_passthrough'] and saved['transient_output']
