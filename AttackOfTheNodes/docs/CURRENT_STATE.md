@@ -5,7 +5,15 @@ This is the live status snapshot; plans and logs preserve dated decisions.
 
 ## Baseline and open work — 2026-10-20
 
-- **C4 MCP server implemented, awaiting owner review:** branch
+- **C1 built, awaiting owner review (2026-10-21):** branch
+  `dist/hermes-notify` from main `6f5c216`. Notify me and Record event write
+  the [Hermes shared folder](integrations/HERMES_SHARED_FOLDER.md); the outbox
+  drain (`integrations/hermes/aotn-drain-home.sh`) prints one digest per tick.
+  Both read the folder from `HERMES_HOME` (`$HERMES_HOME/aotn`); Options gain
+  `hermes_send_to_names`. The eight review findings on #109 are fixed with a
+  regression test each. No Hermes job is created; installing the drain job is
+  an owner action. Follow-up: per-job sound needs a Hermes change (proposal Q7).
+- **C4 MCP server merged (#107; #108 rejects regular-file stdin):** branch
   `codex/mcp-stdio`, based on main `6f5c216`, in `/home/makin/src/nw-mcp`.
   [Setup and tool contracts](integrations/MCP.md): `aotn mcp --data-dir ...`
   exposes four typed tools over local stdio. It uses the standard library

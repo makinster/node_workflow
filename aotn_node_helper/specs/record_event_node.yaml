@@ -1,0 +1,69 @@
+node_type: record_event_node
+class_name: RecordEventNode
+category: io
+primary_family: Outputs
+tags: ["Hermes", "log", "event"]
+group: "Hermes"
+icon_name: notebook-pen
+display_name: Record event
+default_alias: Record event
+description: Notes what happened for Hermes to read later; sends nothing
+inputs:
+  input:
+    type: any
+    label: Input
+    description: The value {input} puts in the summary
+    required: false
+    sources: ["upstream", "vault"]
+    default: upstream
+outputs:
+  default:
+    name: Event id
+    type: string
+    to: ["downstream", "vault"]
+    pass_through: true
+    description: The id of the recorded event ("" when skipped or not recorded)
+output_routing:
+  default: dead_drop
+  vault:
+    mode: optional
+config_tabs:
+  Parameters:
+    event_name:
+      type: string
+      label: Event name
+      default: ""
+      placeholder: "like backup.done; blank = this node's name"
+    summary:
+      type: string
+      label: Summary
+      default: ""
+      placeholder: "one line; {input} = the incoming value"
+    keep_value:
+      type: boolean
+      label: "Also keep the incoming value (up to 2000 characters)"
+      default: false
+    skip_repeats_minutes:
+      type: number
+      label: Skip repeats for (minutes)
+      default: 0
+      minimum: 0
+      maximum: 1440
+      placeholder: "0 = never skip"
+    repeat_key:
+      type: string
+      label: Repeat key
+      default: ""
+      placeholder: "same run + node + branch"
+    if_not_recorded:
+      type: select
+      label: "If it can't be recorded"
+      options: [["Carry on · the run continues", "Carry on"], ["Stop · the node fails", "Stop with an error"]]
+      default: Carry on
+errors:
+  - code: events_unwritable
+    description: "The Hermes folder could not be written."
+    retryable: true
+execution_template: output_sink
+ui_hints:
+  forwarded_input_port: input

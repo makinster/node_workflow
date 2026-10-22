@@ -73,6 +73,9 @@ class NodeContext:
     # Read one Options value (System nodes' allowed folders, C7). None outside
     # a run; callers fall back to the documented default.
     get_setting: Optional[Callable[[str], Any]] = None
+    # The running workflow's name (Hermes messages and events say where they
+    # came from, C1). "" outside a run.
+    workflow_name: str = ""
 
     def emit_event(self, event_name: str, payload: Dict[str, Any]) -> bool:
         """Publish an event if a bus is wired in; return whether it was sent."""

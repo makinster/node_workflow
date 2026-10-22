@@ -8,7 +8,7 @@ These files are staged for owner review, with no installation or cron activation
 **Install (owner or Hermes, 2026-10-21):** Hermes v0.14 rejects scripts whose real path is
 outside `$HERMES_HOME/scripts`, so the files are **copies**, not symlinks. Run
 `bash /home/makin/src/aotn-live/AttackOfTheNodes/integrations/hermes/install.sh` to copy the
-four files (entry scripts executable), and `install.sh --check` to see whether the installed
+six files (entry scripts executable), and `install.sh --check` to see whether the installed
 copies still match the live checkout (exit 1 when they differ). Rerun it after each `pull`.
 
 - `_aotn_common.sh`: sourceable `aotn_cron_run` function, selecting the exact
@@ -19,6 +19,14 @@ copies still match the live checkout (exit 1 when they differ). Rerun it after e
 - `aotn-h1-heartbeat.sh`, `aotn-h2-http-watchdog.sh`: entry scripts for later
   copying/linking to `/home/makin/.hermes/scripts/`, alongside both shared files.
   Entry scripts honor `HERMES_HOME` (default `/home/makin/.hermes`).
+- `_aotn_drain.py`, `aotn-drain-home.sh` (C1/C3): the outbox drain. A no-agent
+  Hermes job every 5 minutes prints one digest of the messages Notify me queued
+  for the Send to name in the entry's file name (`aotn-drain-<name>.sh`; copy it
+  for another name, so `drain-` is not a workflow slug). Reads `$HERMES_HOME/aotn`
+  (`HERMES_HOME` defaults to `~/.hermes`), the same rule the nodes follow; if you
+  move Hermes, set `HERMES_HOME` for AOTN too. Formats and
+  the per-tick contract: [Hermes shared folder](../../docs/integrations/HERMES_SHARED_FOLDER.md).
+  Creating the Hermes job is an owner action; nothing is scheduled by this repository.
 - `h1-heartbeat.json`, `h2-http-watchdog.json`: `aotn build` definitions, with
   quiet End nodes. H2's loopback URL is an example; choose the real endpoint
   deliberately before building into the cron library.

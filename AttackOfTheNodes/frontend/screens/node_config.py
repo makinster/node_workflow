@@ -15,6 +15,7 @@ from textual.screen import ModalScreen
 from textual.widgets import Button, Checkbox, Input, Label, Select, SelectionList, Static, TabbedContent, TabPane, TextArea
 
 from backend.branch_paths import ALL_PATH_PORTS, path_port, path_ports
+from backend.configuration_manager import DEFAULT_SETTINGS
 from backend.nodes.branch_node import (
     MAX_BRANCH_COUNT,
     MIN_BRANCH_COUNT,
@@ -1314,7 +1315,9 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         values: Dict[str, Any],
     ) -> tuple[Dict[str, Any], WidgetGetter]:
         schema = {key: dict(field) for key, field in schema.items()}
-        for field in schema.values():
+        for name, field in schema.items():
+            if field.get("options_from_setting"):
+                field["options"] = self._options_from_setting(field, values.get(name))
             source = field.get("options_from")
             if source:
                 options = list(field.get("options_include") or [])
@@ -1935,6 +1938,22 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 values.update(unmatched_route=True, unmatched_label=row["label"],
                               unmatched_forward=row["forward"])
         return values
+
+    def _options_from_setting(self, field: Dict[str, Any], current: Any) -> list:
+        """Select options listed in Options, separated by ";" (Notify me's
+        Send to names), each labelled "name · summary"."""
+        key = field["options_from_setting"]
+        manager = getattr(self.app, "configuration_manager", None)
+        try:
+            raw = manager.get(key) if manager is not None else DEFAULT_SETTINGS.get(key, "")
+        except KeyError:
+            raw = ""
+        summary = field.get("option_summary")
+        names = [part.strip() for part in str(raw or "").split(";") if part.strip()]
+        options = [(f"{name} · {summary}" if summary else name, name) for name in names]
+        if current not in (None, "") and current not in names:
+            options.append((f"{current} (unavailable)", current))
+        return options
 
     def _sync_dynamic_options(self):
         if self._get_form_values is None:
