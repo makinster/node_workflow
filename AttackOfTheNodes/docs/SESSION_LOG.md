@@ -1,10 +1,42 @@
 # AttackOfTheNodes Session Log
 
-This log keeps roughly the last two weeks: entries dated October 4–21, 2026
+This log keeps roughly the last two weeks: entries dated October 4–22, 2026
 (the earliest existing entry is October 6). Every October 18 entry is retained.
 Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.md).
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
+
+## 2026-10-22 — C3a: Pick one, built for owner review
+
+Branch `dist/pick-one`, from main `cce4fc7`. Owner-approved samples and
+revisions are implemented: one fixed service, no provider/model selectors,
+exact answer rows with duplicate-save refusal, and literal `unsure` below the
+cutoff. New helper spec, registered node and reusable async HTTP client;
+API credentials are resolved through the secrets store, never workflow config.
+The total deadline defaults to 20 seconds; transport/service errors and
+malformed replies use safe fixed errors, redirects are refused, and task
+cancellation closes the connection. Only timeout/service errors offer Retry.
+
+Answer is plain text for a following Conditional and can also be copied to
+the Vault. Pick details starts off, has an independent Vault destination, and
+never becomes a downstream path or Parameters branch-name control. Shared
+form, declaration and preflight support now preserves multiple Vault outputs.
+Payload headers use the documented `PAYLOAD` and `TYPE` color roles.
+
+[Built screens](audits/pick_one_2026_10_22/README.md) include full Parameters,
+Source, Payloads, selector and routing map, with compact 80×24 captures.
+The capture harness clears this shell's monochrome override and uses real
+registered screens with production styles. Tests exercise keyboard edit/save,
+no-edit save, duplicate refusal, reopening/Cancel and independent routing.
+Default answer rows have stable IDs so no-edit saves do not mutate config.
+The selector test's AI Processing member count intentionally rises from 3 to 4.
+
+Verification: 2,222 passed in 347.10 seconds (full `pytest -q`). Helper `check_node` and `check_ui`, docs
+link/archive consolidation, and whitespace checks pass. HTTP tests use a
+loopback fake server (including timeout, cancellation, malformed responses,
+exact matching and secret-safe failures); an actual RunService test routes
+its plain answer through Conditional and Text Output. No paid call, owner
+workflow edit, local installation or cron job. PR awaits owner review.
 
 ## 2026-10-21 — C1 review fixes (#109, eight findings)
 

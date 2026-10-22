@@ -55,6 +55,8 @@ VALIDATION_LABELS: Dict[str, str] = {
     "missing_file_path": "File path not set",
     "invalid_file_path": "Invalid file path",
     "invalid_number": "Invalid number",
+    "invalid_rows": "Invalid answer rows",
+    "vault_only_connection": "Vault-only output",
     "file_not_found": "File not found",
     "secret_not_configured": "Secret not set",
     "secret_missing": "Secret missing",

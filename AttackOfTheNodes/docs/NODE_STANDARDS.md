@@ -93,6 +93,34 @@ Some inputs may not offer all three options. For example, a document/context
 input on a basic LLM node may only offer Upstream or Vault (no hard-configured
 option — the document is always expected to come from a live data source).
 
+## Bounded choice node (C3a, owner 2026-10-22)
+
+Jev: Pick one has one purpose: read Text to judge, ask Question, and send one
+exact configured answer as plain text. Answer rows carry `answer` and
+`description` (What it means); matching is case/whitespace sensitive and
+repeated answers cannot be saved. At most 255 rows are allowed. A confidence
+strictly below the cutoff (default 0.3) sends literal `unsure` without a stop
+or recovery prompt. At the cutoff, the selected answer passes through.
+
+The node uses a secrets-store key reference and the shared async client
+`backend/integrations/jev.py`, fixed to the hosted Choice API with
+`jev-latest`. See the [official API contract](https://api.typesafe.ai/openapi.json)
+and [Choice guide](https://docs.typesafe.ai/primitives/choice). The request has
+one question. The total deadline (default 20 seconds) covers the HTTP exchange;
+cancellation closes the connection. Redirects are refused, responses capped
+at 1 MiB, and service text is never echoed into errors. Retry is offered only
+for `timed_out` and `provider_error`; `auth_failed` and `undeclared_choice`
+are nonretryable. Tests use loopback HTTP; no paid call is part of verification.
+
+Answer can also go to the Vault. Pick details (scores, confidence, actual model
+and token usage) is disabled by default and Vault only. Shared Payloads controls
+retain `vault_write*` for the first Vault port and use `<port>_vault_write`,
+`<port>_vault_key`, `<port>_vault_description` for later ports. Each has its own
+Disable output control; declarations preserve its type. A Vault-only output
+has no branch-name field or editor path, and wiring it downstream is invalid.
+The helper generates these secondary routing defaults. Do not add raw keys
+or service endpoints to workflow configuration.
+
 ## System nodes (AI coordination decision C7, owner 2026-10-20)
 
 A System node reads the state of this machine with one fixed operation: the

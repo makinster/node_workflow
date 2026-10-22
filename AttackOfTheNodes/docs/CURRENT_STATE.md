@@ -5,6 +5,16 @@ This is the live status snapshot; plans and logs preserve dated decisions.
 
 ## Baseline and open work — 2026-10-20
 
+- **C3a built, awaiting owner review (2026-10-22):** branch `dist/pick-one`
+  from main `cce4fc7`. Jev: Pick one, `backend/integrations/jev.py`, helper
+  spec/generated checks, exact answer rows, fixed `unsure` below 0.3, optional
+  Vault-only details. No provider/model selectors or Stop option. Shared
+  routing now preserves each Vault output and omits Vault-only branch names.
+  [Built screens](audits/pick_one_2026_10_22/README.md),
+  [node contract](NODE_STANDARDS.md#bounded-choice-node-c3a-owner-2026-10-22).
+  Full suite: **2,222 passed**; helper and docs checks passed. No paid call,
+  owner/live data, installed wrapper, cron job or repository workflow change.
+
 - **C1 built, awaiting owner review (2026-10-21):** branch
   `dist/hermes-notify` from main `6f5c216`. Notify me and Record event write
   the [Hermes shared folder](integrations/HERMES_SHARED_FOLDER.md); the outbox

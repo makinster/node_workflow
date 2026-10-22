@@ -281,6 +281,14 @@ def normalize_spec(spec: dict[str, Any]) -> dict[str, Any]:
             info["vault_required"] = True
         output_metadata[target] = info
 
+    # Extra Vault outputs have independent, optional routing state. The first
+    # retains the established vault_write* keys.
+    vault_ports = [port for port, info in output_metadata.items() if "vault" in info.get("to", [])]
+    for port in vault_ports[1:]:
+        default_config.setdefault(f"{port}_vault_write", False)
+        default_config.setdefault(f"{port}_vault_key", "")
+        default_config.setdefault(f"{port}_vault_description", "")
+
     # `payload_field: false`: the node computes its output (Random Number),
     # so the template's Payload field would be an ignored control (C6).
     if template == "producer" and spec.get("payload_field", True) and "value" not in default_config:
