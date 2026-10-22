@@ -846,6 +846,23 @@ def test_recheck_reading_applies_the_same_rule_to_nested_numbers(_stash_dir):
     assert exc.value.code == "store_unreadable"
 
 
+@pytest.mark.parametrize("amount", [10 ** 400 + 1, 10 ** 400])
+def test_recheck_p3_add_refuses_integers_too_large_for_a_number(_stash_dir, amount):
+    store = saved.SavedValues()
+    store.add(here(), "count", 1)
+    before = (_stash_dir / "saved.json").read_bytes()
+    with pytest.raises(saved.SavedValuesError) as exc:
+        store.add(here(), "count", amount)
+    assert exc.value.code == "not_a_number"
+    assert (_stash_dir / "saved.json").read_bytes() == before
+    with pytest.raises(saved.SavedValuesError):
+        store.save(here(), "big", amount)
+    _, errors, _ = execute("remember_node", name="count", how="Add",
+                           input_source="Configured", value=str(amount))
+    assert errors[0].code == "not_a_number"
+    assert store.get(here(), "count")["value"] == 1
+
+
 # -- Forward incoming payload unchanged (owner, 2026-10-22: as Notify me and Pick one) -------
 
 @pytest.mark.parametrize("node_type, config, own", [

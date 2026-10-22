@@ -141,7 +141,7 @@ def parse_typed(text: str, value_type: str) -> Any:
                 number = convert(text.strip())
             except ValueError:
                 continue
-            if isinstance(number, float) and not math.isfinite(number):
+            if not _finite(number):
                 break
             return number
         raise SavedValuesError(f"{text!r} is not a number", "wrong_type")
@@ -285,7 +285,7 @@ class SavedValues:
                         f"'{name}' holds a {current['type']}, not a number", "not_a_number")
                 base = current["value"]
             total = base + amount
-            if not math.isfinite(total):
+            if not (_finite(amount) and _finite(total)):
                 raise SavedValuesError(f"'{name}' would no longer be a finite number", "not_a_number")
             return self._put(values, place, name, total, saved_by)
 
@@ -442,15 +442,37 @@ def _unlock(handle: Any) -> None:
         msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
 
 
+def _finite(number: Any) -> bool:
+    """A finite number that also fits a float (a huge int doesn't)."""
+    try:
+        return math.isfinite(number)
+    except OverflowError:
+        return False
+
+
+def _all_finite(value: Any) -> bool:
+    if isinstance(value, bool):
+        return True
+    if isinstance(value, (int, float)):
+        return _finite(value)
+    if isinstance(value, list):
+        return all(_all_finite(item) for item in value)
+    if isinstance(value, dict):
+        return all(_all_finite(item) for item in value.values())
+    return True
+
+
 def _value_problem(value: Any) -> Optional[str]:
     """The one rule for a value, checked on write and on read alike: plain
-    JSON, every number finite (at any depth), at most 64 KB."""
+    JSON, every number finite and float-sized (at any depth), at most 64 KB."""
     try:
         text = json.dumps(value, ensure_ascii=False, allow_nan=False)
     except ValueError:
         return "it holds a number that isn't finite"
     except TypeError:
         return "it isn't plain data"
+    if not _all_finite(value):
+        return "it holds a number too large to use"
     size = len(text.encode("utf-8"))
     if size > MAX_BYTES:
         return f"it is {size // 1024} KB; the limit is 64 KB"
