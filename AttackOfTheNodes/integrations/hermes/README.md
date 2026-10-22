@@ -106,7 +106,11 @@ and uses these fixed paths:
 
 **Installation is a separate owner action**, after updating the live checkout.
 The following example copies the adapter and only the requested named instance
-into `$HERMES_HOME/scripts` (default `/home/makin/.hermes/scripts`). It does not
+into `$HERMES_HOME/scripts` (default `/home/makin/.hermes/scripts`). Both install
+and check refuse directories, symlinks (including dangling links) and other
+non-regular destinations. Installation uses a rename that cannot move a file
+inside a directory. Content or mode drift is reported by `--check`; reinstall
+restores entry scripts to 755 and shared files to 644. It does not
 install other entry scripts, build the workflow, change config or start a job:
 
 ```bash
@@ -137,7 +141,11 @@ Other adapter calls retain H0's 100-second budget. A stop/timeout ends the run;
 there is no background continuation or later reply. Cleanup failure leaves the
 same stale lock marker requiring operator verification as H0.
 
-V0 supplies only `checked_at`, an ISO UTC timestamp, exactly like the heartbeat.
+V0 supplies an ISO UTC timestamp as `checked_at` only when the selected
+workflow's Start contract declares that input. The CLI's opt-in
+`--input-if-declared KEY=VALUE` resolves this against the same loaded Start
+rows used for validation; the heartbeat still receives its timestamp. Callable
+workflows without that row can launch using their saved defaults.
 Other required Start inputs must have saved defaults, or the run is refused with
 `Couldn't run <slug>: required inputs are missing or invalid; v0 supplies only checked_at`.
 For example, a `sent_at` input without a default in `c1-notify-test` must be

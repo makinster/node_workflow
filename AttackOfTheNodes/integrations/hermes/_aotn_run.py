@@ -286,7 +286,8 @@ def run(args):
         stamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         argv = [args.python, str(root / "AttackOfTheNodes/main.py"), "run", args.workflow_slug,
                 "--policy", "terminate_workflow", "--data-dir", str(data),
-                "--input", "checked_at=" + stamp, "--json"]
+                "--input-if-declared" if args.telegram_launcher else "--input",
+                "checked_at=" + stamp, "--json"]
         # Persist before spawning: a crash or unconfirmed cleanup blocks ticks
         # even after the OS releases flock. Clear only after confirmed cleanup.
         lock.write(f"stale: adapter pid {os.getpid()}; descendant cleanup not confirmed\n")

@@ -204,3 +204,61 @@ def test_empty_success_and_overlap_receipts(tmp_path):
     assert blocked.returncode == 75 and blocked.stderr == ''
     assert blocked.stdout == "Couldn't run h1-heartbeat: previous run cleanup needs checking\n"
     assert lock.read_text().startswith('stale:')
+
+
+def test_review_callable_defaults_without_timestamp_contract(tmp_path):
+    workflow = spec('h1-heartbeat')
+    workflow['callable'] = True
+    workflow['nodes']['start']['config']['rows'] = [
+        {'name': 'message', 'type': 'string', 'required': True, 'value': 'hello', 'to': 'Downstream'}]
+    workflow['nodes']['end']['config'].update(return_end=True, results=[])
+    data = build(tmp_path, workflow)
+    direct = subprocess.run([sys.executable, str(ROOT / 'AttackOfTheNodes/main.py'),
+                             'run', 'h1-heartbeat', '--data-dir', str(data), '--json'],
+                            capture_output=True, text=True, timeout=15)
+    assert direct.returncode == 0, direct.stderr
+    result = launch(ROOT, data)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.stdout == '[Heartbeat] AOTN alive · hello\n' and result.stderr == ''
+
+
+@pytest.mark.parametrize('kind', ['directory', 'fifo', 'symlink', 'dangling_symlink'])
+@pytest.mark.parametrize('check', [False, True])
+def test_review_installer_refuses_non_regular_destinations(tmp_path, kind, check):
+    home = tmp_path / 'hermes'
+    scripts = home / 'scripts'
+    scripts.mkdir(parents=True)
+    # Keep the adapter up to date so the entry's refusal has no earlier writes.
+    shutil.copyfile(ADAPTER, scripts / '_aotn_run.py')
+    (scripts / '_aotn_run.py').chmod(0o644)
+    target = scripts / 'aotn-run-probe.sh'
+    if kind == 'directory':
+        target.mkdir()
+    elif kind == 'fifo':
+        os.mkfifo(target)
+    else:
+        target.symlink_to(TEMPLATE if kind == 'symlink' else tmp_path / 'absent')
+    result = run_install(home, *(['--check'] if check else []), '--run-command', 'probe')
+    assert result.returncode == 70, result.stdout + result.stderr
+    assert 'refusing' in result.stderr
+    assert set(scripts.iterdir()) == {scripts / '_aotn_run.py', target}
+    if kind == 'directory':
+        assert target.is_dir() and list(target.iterdir()) == []
+    elif kind == 'fifo':
+        import stat
+        assert stat.S_ISFIFO(target.stat().st_mode)
+    else:
+        assert target.is_symlink()
+
+
+@pytest.mark.parametrize('mode', [0o644, 0o700, 0o4755])
+@pytest.mark.parametrize('check', [False, True])
+def test_review_installer_checks_and_repairs_entry_mode(tmp_path, mode, check):
+    home = tmp_path / 'hermes'
+    assert run_install(home, '--run-command', 'probe').returncode == 0
+    target = home / 'scripts/aotn-run-probe.sh'
+    target.chmod(mode)
+    result = run_install(home, *(['--check'] if check else []), '--run-command', 'probe')
+    assert result.returncode == (1 if check else 0), result.stdout + result.stderr
+    assert target.stat().st_mode & 0o7777 == (mode if check else 0o755)
+    assert target.read_bytes() == TEMPLATE.read_bytes()

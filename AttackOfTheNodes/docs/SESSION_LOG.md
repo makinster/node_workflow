@@ -6,6 +6,32 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-22 — Telegram launcher review fixes (#114)
+
+Branch `codex/telegram-launcher`, review base `89c9d2a`, worktree
+`/home/makin/src/nw-telegram-launcher`. Fetched main remains `bfcdc36`; already
+integrated. All three findings in the PR review are fixed.
+
+1. The launcher's timestamp uses CLI `--input-if-declared checked_at=...`,
+   filtered against the loaded Start contract before typed input resolution.
+   Callable workflows without that row run with valid saved defaults; heartbeat
+   timestamp behavior is unchanged. Explicit `--input` keeps precedence.
+2. Install and check refuse directories, FIFOs, symlinks and dangling links.
+   Installation checks again before rename, uses `mv -T` to prevent moving
+   inside a directory, and cleans its temporary file on failure.
+3. Drift detection includes exact modes: 755 for entry scripts, 644 for shared
+   files. Check reports drift without writes; install repairs it atomically.
+
+Failing-first proof on `89c9d2a`: **11 failures, 4 passes** in the new review
+cases. Callable launch exited 5 while ordinary CLI succeeded; directory/FIFO
+installs were accepted; wrong modes were reported up to date. The four
+symlink cases already passed. After the fixes, all **15 review cases passed**.
+Full `pytest -q`: **2,403 passed in 395.57 seconds**, no Wait Until rerun needed.
+Compilation, Bash syntax, documentation consolidation and whitespace checks
+passed. Updated the adapter guide, CLI input reference, Current State and
+coordination status. No live install, Hermes config, cron or owner workflow
+changes. Pushed for owner re-review; #114 remains unmerged.
+
 ## 2026-10-22 — Telegram launcher v0
 
 Branch `codex/telegram-launcher`, from fetched main `bfcdc36`, in the clean

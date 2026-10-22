@@ -15,12 +15,15 @@ delivery; this documentation refresh did not change or rerun live jobs.
   selects a saved workflow by filename, refuses arguments and runs the existing
   JSON adapter against the live checkout and separate cron data directory.
   `--telegram-launcher` uses a 25-second run/cleanup budget, H0 escaping and
-  cap, and single-line failures. It supplies `checked_at`; other required inputs
-  need saved defaults. Named install/check and the unapplied Hermes config
+  cap, and single-line failures. It supplies `checked_at` only if Start declares
+  it; other required inputs need saved defaults. Review fixes for #114 refuse
+  non-regular install destinations and detect/repair mode drift (755 entries,
+  644 shared files). Named install/check and the unapplied Hermes config
   example are in the [adapter guide](../integrations/hermes/README.md#telegram-launcher-v0-owner-requested-2026-10-22).
-  Verification: **2,388 passed in 395.97 seconds** (full `pytest -q`), no
-  timing-flake rerun; real 25-second descendant cleanup and focused H0/launcher
-  checks passed, along with compilation, Bash syntax, docs and whitespace.
+  Verification: **2,403 passed in 395.57 seconds** (full `pytest -q`), no
+  timing-flake rerun; all 15 review regressions pass (11 failed on `89c9d2a`).
+  Real 25-second descendant cleanup, heartbeat and H0 checks passed, along
+  with compilation, Bash syntax, docs and whitespace.
   No live installation, Hermes configuration or cron changes.
 
 - **System-node forwarding follow-up merged in #113:** branch

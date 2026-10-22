@@ -365,8 +365,10 @@ H2 remains an unscheduled watchdog template. Step 4 through 4d is merged;
 and store-readability checks; Remember and Recall use the standard forwarding
 checkbox. The System-node forwarding follow-up merged in #113 (main
 `bfcdc36`). Telegram launcher v0 is built on `codex/telegram-launcher` for owner
-review: fixed-script quick commands, a 25-second run/cleanup budget and named
-installation, with no live install or Hermes config change. [Current State](CURRENT_STATE.md) records the
+review in #114: fixed-script quick commands, a 25-second run/cleanup budget
+and named installation. Review fixes make timestamp input conditional on the
+Start contract and validate install destination types and modes. No live
+install or Hermes config change. [Current State](CURRENT_STATE.md) records the
 deployment and review details.
 
 The owner approved the following remaining order on 2026-10-22:

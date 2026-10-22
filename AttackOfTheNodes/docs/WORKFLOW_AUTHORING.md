@@ -112,6 +112,10 @@ each value by its row (numbers, `true`/`false`, JSON for `var`, a path for
 `file`). `--inputs-file run.json` supplies a JSON object of **already-typed**
 values (a number must be a JSON number; a `var` string stays a string);
 `--input` wins over it, and a row's value fills anything left.
+`--input-if-declared KEY=VALUE` supplies a typed value only when Start declares
+that name (otherwise it is ignored). It takes precedence over the inputs file;
+explicit `--input` takes precedence over it. Fixed launchers use this for
+optional timestamp injection without adding unknown callable inputs.
 `--input doc=@stash:"Q3 report"` takes the value from that Stash entry (a
 file entry as the file, text parsed by the row). Before the run, `aotn run`
 lists each input and where it came from; a run that can't start lists every

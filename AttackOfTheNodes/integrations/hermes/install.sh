@@ -35,15 +35,20 @@ if [[ -n $run_slug ]]; then
 fi
 
 differs=0
+regular_destination() {
+    if [[ -L $1 || ( -e $1 && ! -f $1 ) ]]; then
+        printf 'refusing: %s is not a regular file; remove it first\n' "$1" >&2
+        return 70
+    fi
+}
 for name in "${files[@]}"; do
     target=$target_dir/$name
     source=$source_dir/$name
     [[ $name == "aotn-run-$run_slug.sh" ]] && source="$source_dir/aotn-run-template.sh"
-    if [[ -L $target ]]; then
-        printf 'refusing: %s is a symlink (Hermes rejects those); remove it first\n' "$target" >&2
-        exit 70
-    fi
-    if [[ -f $target ]] && cmp -s -- "$source" "$target"; then
+    regular_destination "$target"
+    mode=644
+    [[ $name == aotn-*.sh ]] && mode=755
+    if [[ -f $target && $(stat -c '%a' -- "$target") == "$mode" ]] && cmp -s -- "$source" "$target"; then
         printf 'up to date  %s\n' "$name"
         continue
     fi
@@ -53,12 +58,13 @@ for name in "${files[@]}"; do
         continue
     fi
     mkdir -p -- "$target_dir"
-    mode=644
-    [[ $name == aotn-*.sh ]] && mode=755
     temp=$(mktemp -- "$target_dir/.$name.XXXXXX")
+    trap 'rm -f -- "$temp"' EXIT
     cp -- "$source" "$temp"
     chmod "$mode" -- "$temp"
-    mv -f -- "$temp" "$target"
+    regular_destination "$target"
+    mv -fT -- "$temp" "$target"
+    trap - EXIT
     printf 'installed   %s\n' "$name"
 done
 if $check; then
