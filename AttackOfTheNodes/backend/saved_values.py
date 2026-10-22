@@ -267,7 +267,10 @@ class SavedValues:
                     raise SavedValuesError(
                         f"'{name}' holds a {current['type']}, not a number", "not_a_number")
                 base = current["value"]
-            return self._put(values, place, name, base + amount, saved_by)
+            total = base + amount
+            if not math.isfinite(total):
+                raise SavedValuesError(f"'{name}' would no longer be a finite number", "not_a_number")
+            return self._put(values, place, name, total, saved_by)
 
     def check_and_save(self, place: Dict[str, Any], name: str, value: Any,
                        saved_by: Optional[Dict[str, Any]] = None,
@@ -316,6 +319,7 @@ class SavedValues:
 
     def _put(self, values: List[Dict[str, Any]], place: Dict[str, Any], name: str, value: Any,
              saved_by: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+        self._check_value(value)  # the last guard: nothing written may be unreadable later
         stamp = _now()
         record = self._find(values, place, name)
         if record is None:
@@ -343,12 +347,9 @@ class SavedValues:
 
     @staticmethod
     def _check_value(value: Any) -> None:
-        try:
-            size = len(json.dumps(value, ensure_ascii=False).encode("utf-8"))
-        except (TypeError, ValueError):
-            raise SavedValuesError("This value can't be saved (not plain data)", "too_big") from None
-        if size > MAX_BYTES:
-            raise SavedValuesError(f"The value is {size // 1024} KB; the limit is 64 KB", "too_big")
+        problem = _value_problem(value)
+        if problem:
+            raise SavedValuesError(f"This value can't be saved: {problem}", "too_big")
 
     def _read(self) -> List[Dict[str, Any]]:
         """Every record, or ``store_unreadable``: a damaged file is reported,
@@ -424,6 +425,21 @@ def _unlock(handle: Any) -> None:
         msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
 
 
+def _value_problem(value: Any) -> Optional[str]:
+    """The one rule for a value, checked on write and on read alike: plain
+    JSON, every number finite (at any depth), at most 64 KB."""
+    try:
+        text = json.dumps(value, ensure_ascii=False, allow_nan=False)
+    except ValueError:
+        return "it holds a number that isn't finite"
+    except TypeError:
+        return "it isn't plain data"
+    size = len(text.encode("utf-8"))
+    if size > MAX_BYTES:
+        return f"it is {size // 1024} KB; the limit is 64 KB"
+    return None
+
+
 def _record_problem(raw: Any) -> Optional[str]:
     """Why ``raw`` isn't a whole, consistent saved value, or None."""
     if not isinstance(raw, dict):
@@ -443,8 +459,9 @@ def _record_problem(raw: Any) -> Optional[str]:
         return "no value"
     if type_of(raw["value"]) != raw["type"]:
         return f"the value is a {type_of(raw['value'])}, not a {raw['type']}"
-    if isinstance(raw["value"], float) and not math.isfinite(raw["value"]):
-        return "a number that isn't finite"
+    problem = _value_problem(raw["value"])
+    if problem:
+        return problem
     for stamp in ("created", "updated"):
         if not isinstance(raw.get(stamp), str):
             return f"missing {stamp} time"

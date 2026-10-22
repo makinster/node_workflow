@@ -811,3 +811,36 @@ def test_finding_8_a_workflow_named_all_workflows_is_its_own_place():
     seen = {}
     _stash_app(seen, [look])
     assert seen["rows"] == [None, "All workflows", None, "All workflows (workflow)"]
+
+
+# -- re-check of a685821 (Codex, #110): nothing written may be unreadable later -------------
+
+def test_recheck_an_overflowing_add_is_refused_and_the_store_stays_readable(_stash_dir):
+    store = saved.SavedValues()
+    store.save(here(), "other", "kept")
+    store.add(here(), "count", 1e308)
+    before = (_stash_dir / "saved.json").read_bytes()
+    with pytest.raises(saved.SavedValuesError) as exc:
+        store.add(here(), "count", 1e308)
+    assert exc.value.code == "not_a_number"
+    assert (_stash_dir / "saved.json").read_bytes() == before
+    assert {r["name"] for r in store.list_values()} == {"other", "count"}
+
+
+@pytest.mark.parametrize("value", [float("inf"), float("nan"), [1, float("inf")], {"a": {"b": float("nan")}}])
+def test_recheck_non_finite_numbers_are_never_written(_stash_dir, value):
+    with pytest.raises(saved.SavedValuesError):
+        saved.SavedValues().save(here(), "bad", value)
+    assert not (_stash_dir / "saved.json").exists()
+    done, errors, _ = execute("remember_node", {"input": value}, name="bad")
+    assert errors and not (_stash_dir / "saved.json").exists()
+
+
+def test_recheck_reading_applies_the_same_rule_to_nested_numbers(_stash_dir):
+    _stash_dir.mkdir(parents=True)
+    record = _good("deep", [1], "var")
+    text = json.dumps({"format": saved.FORMAT, "values": [record]}).replace("[1]", "[Infinity]")
+    (_stash_dir / "saved.json").write_text(text)
+    with pytest.raises(saved.SavedValuesError) as exc:
+        saved.SavedValues().list_values()
+    assert exc.value.code == "store_unreadable"
