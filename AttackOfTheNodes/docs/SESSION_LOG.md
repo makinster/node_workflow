@@ -1,10 +1,50 @@
 # AttackOfTheNodes Session Log
 
-This log keeps roughly the last two weeks: entries dated October 4–21, 2026
+This log keeps roughly the last two weeks: entries dated October 4–22, 2026
 (the earliest existing entry is October 6). Every October 18 entry is retained.
 Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.md).
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
+
+## 2026-10-22 — Coordination documentation review fixes (#111)
+
+Same branch, after review of `6bf9576`. Documentation only.
+
+- Updated C3a to the approved Jev-only Jev: Pick one: no provider/model
+  selectors, shared client module, samples approved October 22, and always
+  pass `unsure` below the cutoff (default 0.3), with no Stop option.
+- Recorded the Hermes `quick_commands` answer (source `556bf7c5c`): `type: exec`
+  scripts run after normal sender auth, without an agent turn, plugin or args.
+  Config is the allowlist. Each `aotn-run-<slug>.sh` needs its own deadline
+  under the 30 s reply timeout, which does not kill the script; enforce kill/reap.
+- Added the simple-purpose-node principle to the new-ideas mapping and selector
+  sorting to Project Backlog after C3a. The cancelled Category rename remains
+  cancelled. Updated the archive notice so its old command investigation is
+  clearly superseded.
+- Recorded #110's re-check: original eight findings fixed at `a685821`, with a
+  new P1 numeric-overflow/store-readability issue whose fix is pending.
+- Verification: documentation consolidation checker and `git diff --check`.
+  No application, live gateway or scheduled workflow changes.
+
+## 2026-10-22 — Coordination status refresh and owner plan reset
+
+Branch: `codex/docs-plan-reset`, based on fetched `origin/main` `cce4fc7`,
+in `/home/makin/src/nw-plan-reset`. Documentation only, at the owner's request.
+
+- Refreshed Current State: H0 live heartbeat `63968ee90ae0`; C1 merged in #109
+  and live drain `cd14afa83db9`, with owner-confirmed Telegram delivery; C4
+  merged in #107/#108; C2 open as #110 at `a685821`; H2 parked as an unscheduled
+  template. GitHub confirms the open PR; deployment evidence comes from shared
+  notes and the owner's confirmation, not a new live run in this task.
+- Recorded the October 22 owner order in AI Coordination Proposal section 9:
+  C2, C3a, thin Telegram launcher, C3b, 4e–4f, P1, Phase 17 verification,
+  C5, Step 5, C6 and Step 6. Added the short mapping of new ideas to that plan.
+- Moved the uncommitted intent/designer conversation from `nw-review109` into
+  `archive/plans/INTENT_ROUTING_AND_DESIGN_ASSISTANT.md`, rebased its local
+  links and marked its old recommendations/prompts as reference history.
+  Section 9 links it without adding another active plan document.
+- Verification: documentation consolidation checker and `git diff --check` passed.
+  No application tests, implementation, cron changes or gateway activation.
 
 ## 2026-10-21 — C1 review fixes (#109, eight findings)
 

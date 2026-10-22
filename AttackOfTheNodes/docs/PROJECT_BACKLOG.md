@@ -7,6 +7,20 @@ headless-export and always-running watcher sections below carry superseded
 banners. Their text is kept for history. Execution of steps 1–3 plus the
 ESP32 slice was authorized on 2026-10-12.
 
+## Node selector sorting — after C3a (owner, 2026-10-22)
+
+The owner finds the current node tab placement arbitrary and wants a better
+sorting method. Plan this after C3a, using the simple-purpose-node principle:
+users should be able to find the best-fit node among a line of tailored nodes
+without navigating a growing multi-mode form. Propose the grouping/sorting
+behavior and sample selector states before changing the UI.
+
+The earlier **Category rename was cancelled**; this request does not reinstate
+it. Preserve the distinction between backend `primary_family` and frontend
+`group`/selector navigation, and consult [Node Standards](NODE_STANDARDS.md)
+before proposing taxonomy changes. This is a backlog item, not a sorting change
+in the current documentation PR.
+
 ## Owner live-test findings — 2026-10-18 (editor deletion and branch count)
 
 #82 fixed insertion, error-path and stub-removal issues. The owner approved the
