@@ -6,6 +6,26 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-22 — Coordination documentation review fixes (#111)
+
+Same branch, after review of `6bf9576`. Documentation only.
+
+- Updated C3a to the approved Jev-only Jev: Pick one: no provider/model
+  selectors, shared client module, samples approved October 22, and always
+  pass `unsure` below the cutoff (default 0.3), with no Stop option.
+- Recorded the Hermes `quick_commands` answer (source `556bf7c5c`): `type: exec`
+  scripts run after normal sender auth, without an agent turn, plugin or args.
+  Config is the allowlist. Each `aotn-run-<slug>.sh` needs its own deadline
+  under the 30 s reply timeout, which does not kill the script; enforce kill/reap.
+- Added the simple-purpose-node principle to the new-ideas mapping and selector
+  sorting to Project Backlog after C3a. The cancelled Category rename remains
+  cancelled. Updated the archive notice so its old command investigation is
+  clearly superseded.
+- Recorded #110's re-check: original eight findings fixed at `a685821`, with a
+  new P1 numeric-overflow/store-readability issue whose fix is pending.
+- Verification: documentation consolidation checker and `git diff --check`.
+  No application, live gateway or scheduled workflow changes.
+
 ## 2026-10-22 — Coordination status refresh and owner plan reset
 
 Branch: `codex/docs-plan-reset`, based on fetched `origin/main` `cce4fc7`,

@@ -40,15 +40,28 @@ delivery; this documentation refresh did not change or rerun live jobs.
 - **C2 open as [PR #110](https://github.com/makinster/node_workflow/pull/110):**
   Saved values, branch `dist/persistent-store`, head `a685821`. Remember,
   Recall and If changed, the Stash Saved values tab, CLI and store-locking/
-  validation changes remain outside main. The review fixes are posted;
-  owner merge is still required. The author reports 2,244 tests passed at that
-  head; this documentation task did not rerun that suite.
-- **Owner plan reset (2026-10-22):** C2 → C3a Pick one → thin Telegram
+  validation changes remain outside main. Re-check found the original eight
+  findings fixed and a new **P1**: numeric overflow can make the whole store
+  unreadable. Its fix is pending; owner merge is still required. The author
+  reports 2,244 tests passed at that head; this documentation task did not rerun
+  that suite.
+- **C3a approved (2026-10-22):** **Jev: Pick one**, Jev-only, no provider or
+  model selector, with a shared Jev client for later nodes. Samples are approved
+  and implementation is in progress. Its downstream result is the choice id as
+  plain text for Conditional; below the cutoff (default 0.3), always pass
+  `unsure`, with no Stop option.
+- **Owner plan reset (2026-10-22):** C2 → C3a Jev: Pick one → thin Telegram
   launcher → C3b bounded agents → 4e–4f → P1 → Phase 17 verification → C5 →
   Step 5 → C6 → Step 6. See the
   [approved order and idea mapping](AI_COORDINATION_PROPOSAL.md#9-effect-on-the-build-plan-owner-order-2026-10-22).
-  The launcher waits on Hermes's answer about built-in no-agent commands versus
-  a plugin. The designer is a new track after C3; local-model comparison follows
+  Hermes confirmed `quick_commands` with `type: exec` (source `556bf7c5c`):
+  fixed scripts run after normal sender authorization, with no agent turn,
+  plugin or arguments. Config is the workflow allowlist; use one
+  `aotn-run-<slug>.sh` entry per allowed workflow, deriving the slug from its
+  filename. The 30 s reply timeout does not kill the script, so the entry must
+  enforce its own deadline under 30 s and kill/reap on timeout. Natural-language
+  menus later still need a plugin or an agent turn.
+  The designer is a new track after C3; local-model comparison follows
   C3a. The [archived discussion](archive/plans/INTENT_ROUTING_AND_DESIGN_ASSISTANT.md)
   preserves context rather than setting a competing work order.
 - Merged baseline includes C1–C7 decisions (#102), workflow naming (#68), docs A/B

@@ -342,7 +342,7 @@ Telegram receiver (no second poller on the same bot).
 | H4 | Escalation ladder | check → normal: record event; known error: fixed fix + notify; unknown: `hermes_ask` → notify with diagnosis | record_event, hermes_ask |
 | H5 | Daily digest | read today's events → concat → one message | events log |
 | H6 | Teach once, replay | an agent does a task with tracing on, then writes the sequence as a spec via `aotn build` | Authoring CLI (exists) + agent guide |
-| H7 | AI as router | C3a Pick one selects a choice id → Conditional routes to deterministic sub-flows | C3a; ports-per-choice router later when needed |
+| H7 | AI as router | C3a Jev: Pick one selects a choice id (or `unsure`) → Conditional routes to deterministic sub-flows | C3a; ports-per-choice router later when needed |
 | H8 | Approval gate | workflow asks "Deploy? [Yes] [No]" on Telegram, waits | wait_for_reply + Hermes handler |
 
 H1 test cases: normal message; a forced unhandled error (expect alert); a
@@ -361,7 +361,9 @@ H0 is live (heartbeat `63968ee90ae0`); C1 merged in #109 and is live (drain
 `cd14afa83db9`, owner-confirmed Telegram delivery); C4 merged in #107/#108.
 H2 remains an unscheduled watchdog template. Step 4 through 4d is merged;
 4e/4f shared memory and Phase 17 verification remain open. C2 is open as #110
-at `a685821` when this reset was checked. [Current State](CURRENT_STATE.md)
+at `a685821`; re-check found the original eight findings fixed and a new P1
+numeric-overflow issue that can make the whole store unreadable; its fix is
+pending. [Current State](CURRENT_STATE.md)
 records the deployment and review details.
 
 The owner approved the following remaining order on 2026-10-22:
@@ -369,8 +371,8 @@ The owner approved the following remaining order on 2026-10-22:
 | Order | Work | Why here | Depends on |
 |---|---|---|---|
 | C2 | Saved values: persistent store pulled forward from Step 5, on the Stash's store (#110) | Finish the current review/merge; enables H3 without another workflow-state store | Existing Stash; owner decision C5 |
-| C3a | **Pick one:** provider-neutral choice node; Jev first, Anthropic second; output is the choice id as plain text | Enables H7 with the existing Conditional node; establish the small decision contract before larger agents | Provider credentials; owner-reviewed samples first |
-| Telegram launcher | Thin Hermes version of a Step 5 start trigger: launch exposed saved workflows from Telegram and reply directly | Useful incoming path now; preserve the full event-source/start-trigger version for Step 5 | Hermes answer: built-in no-agent command versus `pre_gateway_dispatch` plugin |
+| C3a | **Jev: Pick one:** Jev only, no provider/model selector; shared Jev client for later nodes; output is the choice id as plain text | Enables H7 through Conditional; below the cutoff (default 0.3), always pass `unsure`, with no Stop option | Jev API key; samples approved 2026-10-22 |
+| Telegram launcher | Thin Hermes version of a Step 5 start trigger: one `quick_commands` entry of `type: exec` per allowed workflow, calling `aotn-run-<slug>.sh` | No agent turn or plugin; normal sender authorization first; Hermes config is the allowlist; full trigger remains Step 5 | Installed-source answer `556bf7c5c`: no arguments; 30 s reply timeout does not kill the script, so each entry needs its own deadline under 30 s with kill/reap |
 | C3b | `hermes_ask_node` / `claude_code_node`: bounded agent execution | Enables H4 and tool-using agent steps after the decision/launch slices | C1 receipts; bounded tools, turns/time and trace contract |
 | 4e–4f | Shared memory between a caller and its subworkflow | Complete the remaining Step 4 work | Step 4 through 4d (merged) |
 | P1 | First-community package: install path, Hermes guide, H1/H2 specs, screenshots and known limits (section 1.2) | Package the proven integrations; describe H2 as a template until configured | H0/C1 live; preceding delivery slices |
@@ -382,10 +384,17 @@ The owner approved the following remaining order on 2026-10-22:
 
 ### New ideas and where they fit (owner, 2026-10-22)
 
-- **Telegram launch:** a Step 5 start trigger, pulled forward as a thin Hermes
-  integration; choose a built-in no-agent command or plugin after Hermes answers.
-- **Jev:** C3a Pick one supplies H7 branch decisions; Conditional can consume the
-  plain-text choice id immediately. Anthropic is the second provider.
+- **Telegram launch:** thin Step 5 trigger via Hermes `quick_commands`,
+  `type: exec`, after normal sender auth; no plugin, agent turn or arguments.
+  Config is the allowlist: one `aotn-run-<slug>.sh` per allowed workflow. Its own
+  deadline must be under the 30 s reply timeout, which does not kill the script.
+  Natural-language menus later still need a plugin or an agent turn.
+- **Jev:** C3a **Jev: Pick one** is Jev-only, without provider/model selectors,
+  using a shared Jev client. Samples are approved; below cutoff (default 0.3),
+  pass `unsure`, never Stop. Plain-text choice ids feed Conditional for H7.
+- **Simple-purpose nodes:** offer a line of tailored nodes (Pick one, Yes or no,
+  Score), so users pick the best fit; avoid one multi-mode node. Selector
+  sorting is [backlogged after C3a](PROJECT_BACKLOG.md#node-selector-sorting--after-c3a-owner-2026-10-22).
 - **Easy nodes:** follow the existing [helper rule](NODE_HELPER.md); add reusable
   ports-per-choice support when the router needs it, not before the first node.
 - **Local models:** an experiment after C3a, comparing the same real choices.

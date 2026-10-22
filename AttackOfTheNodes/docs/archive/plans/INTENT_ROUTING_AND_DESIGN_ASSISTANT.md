@@ -8,10 +8,14 @@
 > The original recommendations, worktree paths and handoff prompt below are a
 > dated record, not a competing plan or new implementation instructions. Later
 > discussion also clarified that MCP is one interface option: local commands
-> and services may be simpler for direct integrations. First investigate Hermes's
-> built-in no-agent command support before choosing a message-interception plugin.
-> C3a's first downstream result is the plain-text choice id; richer metadata can
-> remain optional. The approved plan does not require a new server for these slices.
+> and services may be simpler for direct integrations. Hermes has since confirmed
+> `quick_commands` with `type: exec`: no agent turn, plugin or args, normal sender
+> auth first; config is the allowlist. Each `aotn-run-<slug>.sh` needs its own
+> deadline under the 30 s reply timeout, which does not kill the script.
+> C3a is now the approved Jev-only Jev: Pick one, without provider/model selectors;
+> below cutoff (default 0.3), always pass `unsure`, never Stop. Its downstream
+> result is the plain-text choice id. The approved plan does not require a new
+> server for these slices. The original discussion below is preserved unchanged.
 
 Conversation record and planning handoff, **2026-10-22**.
 
