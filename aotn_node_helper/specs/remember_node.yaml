@@ -1,0 +1,73 @@
+node_type: remember_node
+class_name: RememberNode
+category: data
+primary_family: Utility
+tags: ["Saved values", "across runs"]
+group: "Saved values"
+selector_section: "Saved values"
+icon_name: archive
+display_name: Remember
+default_alias: Remember
+description: Saves a value so later runs can read it
+inputs:
+  input:
+    name: Value
+    type: any
+    label: Value
+    description: The value to save
+    required: true
+    sources: ["upstream", "vault", "configured"]
+    default: upstream
+    configured_field: value
+    parameter:
+      type: string
+      label: Value
+      placeholder: "text, or a number with Add"
+outputs:
+  default:
+    name: Saved value
+    type: any
+    to: ["downstream", "vault"]
+    pass_through: true
+    description: The value as saved (the new total with Add)
+output_routing:
+  default: transient
+  vault:
+    mode: optional
+config_tabs:
+  Parameters:
+    name:
+      type: string
+      label: Saved as
+      default: ""
+      required: true
+      placeholder: "a name, like last_version"
+    keep_for:
+      type: select
+      label: Kept for
+      options: [["This workflow · only this workflow sees it", "This workflow"], ["All workflows · shared on this machine", "All workflows"]]
+      default: This workflow
+    how:
+      type: select
+      label: How
+      options: [["Replace · keep only this value", "Replace"], ["Add · add this number to the saved one", "Add"]]
+      default: Replace
+    if_not_saved:
+      type: select
+      label: "If it can't be saved"
+      options: [["Stop · the node fails", "Stop with an error"], ["Carry on · the run continues", "Carry on"]]
+      default: Stop with an error
+errors:
+  - code: store_unwritable
+    description: "The saved values file could not be written."
+    retryable: true
+  - code: store_unreadable
+    description: "The saved values file could not be read."
+    retryable: true
+  - code: not_a_number
+    description: "Add was chosen but the value or the saved one is not a number."
+    retryable: false
+  - code: too_big
+    description: "The value is over 64 KB, or is not plain data."
+    retryable: false
+execution_template: transform_stub

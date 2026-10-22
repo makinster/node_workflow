@@ -246,11 +246,16 @@ class NamePromptScreen(CommandScreenMixin, ModalScreen):
         title: str,
         default_name: str,
         check: Callable[[str], Optional[str]],
+        hint: str = "Type a name | Enter or Ctrl+S confirm | Esc cancel",
+        strip: bool = True,
     ) -> None:
         super().__init__()
         self.title_text = title
         self.default_name = default_name
         self.check = check
+        self.hint = hint
+        # Names are trimmed; a value being changed (Stash tab 3) is kept exactly.
+        self.strip = strip
 
     def compose(self) -> ComposeResult:
         with Vertical(id="modal-card", classes="name-prompt-modal"):
@@ -260,7 +265,7 @@ class NamePromptScreen(CommandScreenMixin, ModalScreen):
             with Horizontal(classes="button-row"):
                 yield Button("Confirm", id="confirm-name", variant="primary")
                 yield Button("Cancel", id="cancel-name", variant="default")
-            yield StatusBar("Type a name | Enter or Ctrl+S confirm | Esc cancel")
+            yield StatusBar(self.hint)
 
     def on_mount(self) -> None:
         self.query_one("#name-error", Static).display = False
@@ -288,7 +293,7 @@ class NamePromptScreen(CommandScreenMixin, ModalScreen):
             if not name_input.editing:
                 name_input.begin_edit()
             return
-        self.dismiss(name.strip())
+        self.dismiss(name.strip() if self.strip else name)
 
     def action_cancel(self) -> None:
         self.dismiss(None)

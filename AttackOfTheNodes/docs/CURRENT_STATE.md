@@ -1,7 +1,8 @@
 # Current State
 
-Snapshot checked **2026-10-22**, against fetched `origin/main` `cce4fc7` and
-PR #110 on GitHub. Code and fresh GitHub checks take precedence.
+Snapshot checked **2026-10-22**, against fetched `origin/main` `670b3b3` after
+#110 and #112 merged (owner confirmation and fetched history). Code and fresh
+GitHub checks take precedence.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
@@ -9,11 +10,13 @@ delivery; this documentation refresh did not change or rerun live jobs.
 ## Baseline and open work — 2026-10-22
 
 - **System-node forwarding follow-up built, awaiting owner review:** branch
-  `codex/system-node-forwarding`, from main `9470729`. Disk space, Git status
-  and File age use the standard Forward incoming payload unchanged checkbox.
+  `codex/system-node-forwarding`, from main `9470729`, now integrated with
+  main `670b3b3` for #113. Disk space, Git status and File age use the standard Forward incoming payload unchanged checkbox.
   Checked sends the incoming payload; unchecked sends the computed report.
   Enabled Vault outputs always receive the computed report with its own type.
-  Verification: **2,176 passed in 341.54 seconds** (full `pytest -q`); helper node/UI and docs checks passed.
+  Combined verification after the merge: **2,367 passed in 370.24 seconds**
+  (full `pytest -q`); no timing-flake rerun needed. Compilation, docs and
+  whitespace checks passed; original helper node/UI checks remain logged.
 
 - **H0 live (#103/#106):** the adapter and installed wrappers run from
   `/home/makin/src/aotn-live` with the isolated cron library at
@@ -44,19 +47,28 @@ delivery; this documentation refresh did not change or rerun live jobs.
   diagnostic. Current tools do not create/edit workflows, provide live progress
   or bridge interactive replies; adding authoring tools is a future designer
   step, not already implemented behavior.
-- **C2 open as [PR #110](https://github.com/makinster/node_workflow/pull/110):**
-  Saved values, branch `dist/persistent-store`, head `a685821`. Remember,
-  Recall and If changed, the Stash Saved values tab, CLI and store-locking/
-  validation changes remain outside main. Re-check found the original eight
-  findings fixed and a new **P1**: numeric overflow can make the whole store
-  unreadable. Its fix is pending; owner merge is still required. The author
-  reports 2,244 tests passed at that head; this documentation task did not rerun
-  that suite.
-- **C3a approved (2026-10-22):** **Jev: Pick one**, Jev-only, no provider or
-  model selector, with a shared Jev client for later nodes. Samples are approved
-  and implementation is in progress. Its downstream result is the choice id as
-  plain text for Conditional; below the cutoff (default 0.3), always pass
-  `unsure`, with no Stop option.
+- **C2 merged in [PR #110](https://github.com/makinster/node_workflow/pull/110):**
+  Saved values, branch `dist/persistent-store`, with main merged in. Remember,
+  Recall and If changed, the Stash Saved values tab, CLI and store
+  locking/validation are in main `670b3b3`. Both reviews'
+  findings (eight, then the overflow P1 and the large-integer P3) are fixed
+  with regression tests; Remember and Recall use the standard Forward incoming
+  payload unchanged control.
+- **C3a merged in #112 (2026-10-22):** branch `dist/pick-one`
+  from main `cce4fc7`, with `origin/main` `9470729` merged before the review
+  fixes. Jev: Pick one, `backend/integrations/jev.py`, helper
+  spec/generated checks, exact answer rows, fixed `unsure` below 0.3, optional
+  Vault-only details. No provider/model selectors or Stop option. Shared
+  routing now preserves each Vault output and omits Vault-only branch names.
+  The standard Forward incoming payload unchanged control replaces only the
+  downstream answer, preserving enabled Vault outputs.
+  [Built screens](audits/pick_one_2026_10_22/README.md),
+  [node contract](NODE_STANDARDS.md#bounded-choice-node-c3a-owner-2026-10-22).
+  Review fixes reserve `unsure`, reject edge whitespace in answers through form,
+  preflight and runtime checks, and cap Text at 20,000 characters before requests.
+  **89 focused tests passed; 2,245 passed in 345.91 seconds** in the full suite
+  on the combined branch; compilation, docs and whitespace checks passed. No paid call,
+  owner/live data, installed wrapper, cron job or repository workflow change.
 - **Owner plan reset (2026-10-22):** C2 → C3a Jev: Pick one → thin Telegram
   launcher → C3b bounded agents → 4e–4f → P1 → Phase 17 verification → C5 →
   Step 5 → C6 → Step 6. See the

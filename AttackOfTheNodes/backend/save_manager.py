@@ -6,16 +6,36 @@ which backend components provide structure, memory, or execution state.
 """
 
 import json
+import logging
 import uuid
 from pathlib import Path
 from typing import Any, Dict, Optional
 
 from .configuration_manager import ConfigurationManager
 from .memory_bank import MemoryBank
-from .persistence import delete_workflow, load_workflow, save_workflow
+from .persistence import delete_workflow, list_workflows, load_workflow, save_workflow
+from .saved_values import SavedValues, SavedValuesError
 from .validator import derive_input_sources
 from .workflow_names import name_problem, unused_copy_name, unused_name
 from .workflow_map import WorkflowMap
+
+logger = logging.getLogger(__name__)
+
+
+def _move_saved_values(workflow_id: Optional[str], old_name: str, new_name: str) -> None:
+    """A renamed workflow keeps its saved values (they follow the name, C2).
+
+    A standard workflow and a subworkflow may share a name, and then share
+    its values; while another workflow still has the old name the values
+    stay with it. A failure is logged; the rename itself already happened.
+    """
+    if any(item["id"] != workflow_id and str(item["name"]).strip() == old_name.strip()
+           for item in list_workflows()):
+        return
+    try:
+        SavedValues().move_workflow(old_name, new_name)
+    except SavedValuesError as exc:
+        logger.warning("Saved values stayed under '%s': %s", old_name, exc)
 
 
 class SaveManager:
@@ -137,9 +157,13 @@ class SaveManager:
 
     def rename_current_workflow(self, name: str) -> bool:
         """Rename and save the active workflow."""
+        old_name = self._workflow_map.workflow_name
         if not self._workflow_map.rename_current_workflow(name):
             return False
-        return self.save_current_workflow()
+        if not self.save_current_workflow():
+            return False
+        _move_saved_values(self._workflow_map.workflow_id, old_name, name)
+        return True
 
     def rename_workflow(self, workflow_id: str, name: str) -> Optional[str]:
         """Rename a saved workflow; return why it can't be, or None.
@@ -154,9 +178,11 @@ class SaveManager:
         if problem:
             return problem
         name = name.strip()
+        old_name = str(data.get("name") or "")
         data["name"] = name
         save_workflow(workflow_id, data)
         self._workflow_map.set_workflow_name(workflow_id, name)
+        _move_saved_values(workflow_id, old_name, name)
         return None
 
     def delete_workflow(self, workflow_id: str) -> bool:

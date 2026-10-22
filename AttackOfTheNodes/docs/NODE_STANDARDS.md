@@ -93,6 +93,55 @@ Some inputs may not offer all three options. For example, a document/context
 input on a basic LLM node may only offer Upstream or Vault (no hard-configured
 option — the document is always expected to come from a live data source).
 
+## Bounded choice node (C3a, owner 2026-10-22)
+
+Jev: Pick one has one purpose: read Text to judge, ask Question, and send one
+exact configured answer as plain text. Answer rows carry `answer` and
+`description` (What it means); matching preserves case and internal whitespace.
+The exact answer `unsure` is reserved for the low-confidence result. Reserved,
+repeated or leading/trailing-whitespace answers cannot be saved or pass
+preflight/runtime checks; answers are not silently trimmed. At most 255 rows
+are allowed. A confidence
+strictly below the cutoff (default 0.3) sends literal `unsure` without a stop
+or recovery prompt. At the cutoff, the selected answer passes through.
+
+The node uses a secrets-store key reference and the shared async client
+`backend/integrations/jev.py`, fixed to the hosted Choice API with
+`jev-latest`. See the [official API contract](https://api.typesafe.ai/openapi.json)
+and [Choice guide](https://docs.typesafe.ai/primitives/choice). The request has
+one question. The total deadline (default 20 seconds) covers the HTTP exchange;
+cancellation closes the connection. Redirects are refused, responses capped
+at 1 MiB, and service text is never echoed into errors. Text to judge is capped
+at 20,000 characters for every source; oversized text fails before a request
+or Vault output with nonretryable `text_too_long` ("Text is too long for Jev").
+The shared client enforces the same cap. Retry is offered only
+for `timed_out` and `provider_error`; `auth_failed` and `undeclared_choice`
+are nonretryable. Tests use loopback HTTP; no paid call is part of verification.
+
+Answer can also go to the Vault. The standard **Forward incoming payload
+unchanged** checkbox replaces only the downstream answer with the original
+upstream payload; it hides and disables the own-output name/description controls.
+Unchecking it restores the answer downstream. This forwards the incoming
+payload even when the text to judge comes from Configured or Vault; enabled
+Vault outputs still store the answer and details. Pick details (scores,
+confidence, actual model and token usage) is disabled by default and Vault only. Shared Payloads controls
+retain `vault_write*` for the first Vault port and use `<port>_vault_write`,
+`<port>_vault_key`, `<port>_vault_description` for later ports. Each has its own
+Disable output control; declarations preserve its type. A Vault-only output
+has no branch-name field or editor path, and wiring it downstream is invalid.
+The helper generates these secondary routing defaults. Do not add raw keys
+or service endpoints to workflow configuration.
+
+## Saved values forwarding (C2, owner 2026-10-22)
+
+Remember and Recall use the standard **Forward incoming payload unchanged**
+checkbox on the Payloads tab. Checked sends the original upstream payload
+and hides/disables the own-output name/description controls; unchecked sends
+the saved or recalled value (including Recall's starting value). Enabled Vault
+outputs always receive the node's own value with its own type. Remember still
+saves its selected Value source, including Configured or Vault, independently
+of forwarding; forwarding always uses the incoming upstream payload.
+
 ## System nodes (AI coordination decision C7, owner 2026-10-20)
 
 Disk space, Git status and File age use the standard **Forward incoming

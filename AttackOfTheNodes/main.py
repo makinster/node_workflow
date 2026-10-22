@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """AttackOfTheNodes entry point.
 
-``aotn`` launches the Textual TUI; ``aotn run <workflow>`` runs a workflow
+``aotn`` launches the Textual TUI (``aotn --data-dir <folder>`` on another data
+folder); ``aotn run <workflow>`` runs a workflow
 from the command line. ``aotn mcp`` serves local stdio workflow tools.
 Both command-line clients avoid importing Textual.
 """
@@ -37,6 +38,16 @@ def main(argv: Optional[List[str]] = None) -> Optional[int]:
         from aotn_stash import main as stash_main
 
         return stash_main(args[1:])
+    if args and (args[0] == "--data-dir" or args[0].startswith("--data-dir=")):
+        # ``aotn --data-dir <folder>`` opens the app on another data folder
+        # (for example cron's), like the other commands' --data-dir.
+        folder = args[0].partition("=")[2] or (args[1] if len(args) > 1 else "")
+        if not folder:
+            print("aotn: --data-dir needs a folder", file=sys.stderr)
+            return 2
+        import os
+
+        os.environ["AOTN_DATA_DIR"] = os.path.realpath(os.path.expanduser(folder))
     run_tui()
     return None
 

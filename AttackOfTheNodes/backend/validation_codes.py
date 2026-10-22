@@ -20,6 +20,8 @@ ISSUE_CODES: Dict[str, str] = {
     "missing_node": "A connection or input source names a node that does not exist.",
     "unreachable": "A node cannot be reached from the Start node.",
     "merge_beacon_unconnected": "A branch ends in a Merge Beacon that feeds no Merge.",
+    "invalid_rows": "A configured row list has missing, repeated or invalid entries.",
+    "vault_only_connection": "A Vault-only output cannot be connected downstream.",
     # Ports and connections
     "undeclared_port": "A connection uses a port the node type does not have.",
     "hidden_output_connection": "A connection leaves an output this node's settings never use.",
@@ -51,6 +53,8 @@ ISSUE_CODES: Dict[str, str] = {
     "ai_session_tag_missing": "A key read as an AI session is not written as one.",
     "vault_race": "Every writer of a Vault key is on a parallel branch to its reader.",
     "chat_session_key_missing": "Chat session is on but has no session key.",
+    # Saved values (C2)
+    "saved_name_missing": "A Remember, Recall or If changed node has no Saved as name.",
     # Files, secrets, platform
     "missing_file_path": "A required file path is empty.",
     "invalid_file_path": "A file path cannot be interpreted.",

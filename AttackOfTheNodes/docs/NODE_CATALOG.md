@@ -197,6 +197,23 @@ Variants have different port shapes, so they must be separate types
 
 ## Utility (`primary_family: Utility`)
 
+### Group: Saved values
+
+Values a workflow keeps for its next run (C2, owner 2026-10-21), in
+`<data dir>/stash/saved.json` next to the Stash; see
+[Saved values](STASH_PROPOSAL.md#saved-values-c2). "Kept for" / "Look in":
+This workflow (by its name; renaming the workflow moves them) or All workflows.
+Codes `store_unwritable` and `store_unreadable` are retryable. A blank Saved
+as is a validation error (`saved_name_missing`). Remember and Recall send
+their own value on by default; "Forward incoming payload unchanged" sends the
+incoming payload instead, and their Vault output still gets their own value.
+
+| Node | Status | Notes |
+|---|---|---|
+| Remember | Live | `remember_node` — saves Value (incoming payload, Vault key or Configured text) under Saved as. How: Replace, or Add (a counter; nothing saved counts as 0). Own result Saved value [any] (the new total with Add), optionally also to the Vault. If it can't be saved: Stop (default) or Carry on (the incoming value goes on). Codes `not_a_number`, `too_big` (over 64 KB or not plain data) |
+| Recall | Live | `recall_node` — reads the value saved under Saved as. Type (any, string, number, bool, var, file) is the output's type and is strict (`wrong_type`). If nothing is saved yet: the Starting value read as the Type (blank: "", 0, false or nothing), or Stop (`not_saved`) |
+| If changed | Live | `if_changed_node` — compares Value with the one saved last time (Exactly, or ignoring spaces and capitals), saves it, then takes **Changed** or **No change**, each carrying the value; compare and save are one locked step. First run (nothing saved yet): No change · save quietly (default) or Changed · send it on. If it can't be saved: Stop, or Carry on (takes No change). The H3 change detector |
+
 ### Section: Windows
 
 | Node | Status | Notes |
@@ -285,6 +302,7 @@ Direct-add nodes that pair with the Loop Branch node.
 
 | Node | Status | Notes / Maps from |
 |---|---|---|
+| Jev: Pick one | Built, owner review | `pick_one_node` — one exact answer from configured rows, plain text downstream and optional Vault copy. Confidence below the cutoff sends `unsure`; optional Pick details is Vault only. Secrets-store key, bounded shared client, no provider/model selectors. |
 | Chat Completion | Live | `chat_completion_node` — real Anthropic call via `backend/llm_provider.py` (curated model dropdown, secrets-store API key). Session persistence via "Keep active AI session" + vault `ai_session` key; continuation input extends prior sessions. Tags: AI |
 | Image Generation | Live (stub) | `image_generation_node` — image from text prompt; output: image path. Tags: AI |
 | Embedding | Live (stub) | `embedding_node` — text to vector; output: float array. Tags: AI |
@@ -292,16 +310,11 @@ Direct-add nodes that pair with the Loop Branch node.
 | AI Tool Call | Concept | LLM with structured function/tool calling; output: structured result. Tags: AI |
 | AI Decision | Concept | Multi-step reasoning returning a named, categorized decision. Tags: AI |
 
-**AI model approach:** AI nodes generalize around capability (what the node
-does), not model identity. Each AI node declares a curated supported-model
-list — not an open-ended endpoint field — because prompt adherence, tool
-support, vision, and structured output vary by model and AI nodes must behave
-dependably. Nodes with structured-output requirements (AI Conditional Branch,
-AI Tool Call, AI Decision) carry stricter supported lists than conversational
-nodes. **Future fork point:** if the supported list grows large and models
-diverge in capability, AI Processing may split into per-model groups (a group
-per model family, since each has its own capabilities). Capability-based
-grouping is the contract until that pressure is real.
+**AI node direction (owner, 2026-10-22):** simple, single-purpose nodes
+with tailored fields. Jev: Pick one starts a line of Jev nodes; later Yes/No
+or Score nodes reuse `backend/integrations/jev.py`. This node has one fixed
+service/model contract; no provider or model picker. Existing Chat Completion
+keeps its curated choices. Selector sorting is a separate backlog item.
 
 #### Group: Subworkflow *(Step 4 design)*
 
