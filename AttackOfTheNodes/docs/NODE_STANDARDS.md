@@ -93,6 +93,24 @@ Some inputs may not offer all three options. For example, a document/context
 input on a basic LLM node may only offer Upstream or Vault (no hard-configured
 option — the document is always expected to come from a live data source).
 
+## Ask Hermes (C3b part 1, owner 2026-10-22)
+
+One question (Upstream payload, Vault or Configured), text Answer and optional
+Vault-only Run details. The standard **Forward incoming payload unchanged**
+checkbox affects downstream only; enabled Vault outputs retain their values.
+No custom output-routing UI.
+
+Use an explicit Folder checked by `system_access`/`system_node_folders`, total
+60-second deadline (10–300), 20,000-character question and 256 KiB answer cap.
+Machine Options owns the dedicated profile home, executable and no-dollar-cap
+opt-in. The public CLI checks all toolsets disabled before every question, then
+runs `chat -q <question> -Q --source tool --max-turns 1 --ignore-rules`, no shell
+or Hermes internal imports. Profile isolation is not an OS sandbox. CLI usage
+is unknown rather than invented; private records, C1 receipts and Execution/run
+summaries remain independent of routing. Linux cleanup includes detached
+descendants; Stop stays cancellation. See [setup](../integrations/hermes/README.md#ask-hermes-setup)
+and the [contract/errors](integrations/ASK_HERMES.md).
+
 ## Bounded choice node (C3a, owner 2026-10-22)
 
 Jev: Pick one has one purpose: read Text to judge, ask Question, and send one

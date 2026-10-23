@@ -1,13 +1,28 @@
 # Current State
 
-Snapshot checked **2026-10-22**, against fetched `origin/main` `bfcdc36` after
-#110, #112 and #113 merged (owner confirmation and fetched history). Code and fresh
+Snapshot checked **2026-10-23**, against fetched `origin/main` `f9f5f07` after
+#114 and #115 merged (owner confirmation and fetched history). Code and fresh
 GitHub checks take precedence.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
 
 ## Baseline and open work — 2026-10-22
+
+- **C3b part 1 reworked for #116 (2026-10-23):** `codex/ask-hermes`, own
+  worktree `/home/makin/src/nw-ask-hermes`, merged fetched main `f9f5f07`
+  (already integrated). Ask Hermes now calls the public CLI in the independent
+  `aotn` profile, checking every CLI toolset disabled before each question.
+  Options owns profile home/command; Folder stays checked and the total deadline
+  covers preflight/chat/process-tree cleanup. No Hermes imports or shell command
+  string. Unknown usage stays null; forwarding/Vault/records remain standard.
+  One authorized real smoke returned **AOTN profile smoke OK** in 5.518 seconds.
+  [Setup](../integrations/hermes/README.md#ask-hermes-setup),
+  [contract](integrations/ASK_HERMES.md), [screens](audits/ask_hermes_2026_10_22/README.md).
+  Profile isolation is not an OS sandbox; no default-profile/config/live changes.
+  Verification: **2,465 passed in 408.10 seconds** (full suite), no timing-flake
+  rerun; helper node/UI, compilation, docs and whitespace pass.
+  The later task node and long-text editor remain separate.
 
 - **Later long-text UI proposal:** preview-only multiline fields and a shared
   full-screen editor, scheduled after C3b; **proposal, samples first**, not

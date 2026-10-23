@@ -14,6 +14,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
+from .agent_usage import usage_summary
 from .configuration_manager import ConfigurationManager
 from .error_handler import unhandled_errors
 from .event_bus import EventBus
@@ -68,6 +69,7 @@ class RunResult:
     errors: List[Dict[str, Any]] = field(default_factory=list)
     outputs: List[Any] = field(default_factory=list)
     node_timings: Dict[str, float] = field(default_factory=dict)
+    agent_usage: List[Dict[str, Any]] = field(default_factory=list)
     # Step 4a: the Return End's named, typed results, and the revision of the
     # workflow definition the run executed.
     values: Dict[str, Any] = field(default_factory=dict)
@@ -96,6 +98,8 @@ class RunResult:
             "unhandled_error_count": len(self.unhandled_errors),
             "outputs": list(self.outputs),
             "node_timings": dict(self.node_timings),
+            "agent_usage": list(self.agent_usage),
+            "agent_usage_summary": usage_summary(self.agent_usage),
             "values": dict(self.values),
             "revision": self.revision,
             "exit_code": self.exit_code,
@@ -265,6 +269,7 @@ class RunService:
             errors=list(self._errors_by_run.get(run_id or "", [])),
             outputs=list(self._master.run_outputs),
             node_timings=dict(self._master.node_timings),
+            agent_usage=self._master.agent_usage,
             values=dict((run.return_values or {}) if (run := self._master.run_context) else {}),
             revision=run.revision if run else None,
         )

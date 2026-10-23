@@ -1,0 +1,12 @@
+{
+  "base": "f9f5f07",
+  "refreshed": "2026-10-23",
+  "sha256": {
+    "frontend/styles.tcss": "b16c58a59dee4066706d4e0536a2418acce41ea828dc7bc31d9ee8f7fcf88abc",
+    "frontend/colors.py": "d346d3aefb11d54f79a60d99d0c6ed1a8e732c338941b5021804917881bab3f1",
+    "backend/nodes/ai/hermes_ask_node.py": "0d2e15a9d07b252d3615968289a934806bc5cc9689a4c5fa0afab5c32a8cfa4f",
+    "backend/integrations/hermes_worker.py": "1c02ee6e12b0aea6d9c7ee5f695d0f6f7ef8941cd766282aac41958596f6f48f",
+    "backend/integrations/hermes_process.py": "29ce78acdd05ef0b24090117f11189feefffa7e1934aadcb69fa6a0562aef8c1",
+    "backend/configuration_manager.py": "ed60fcc423eebe4c40b79d8b823c782def372a2d6c89c2f6f36fcbe74499baaf"
+  }
+}

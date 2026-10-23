@@ -21,6 +21,7 @@ from textual.containers import Horizontal, Vertical
 from textual.screen import Screen
 from textual.widgets import Button, Label, Static
 
+from backend.agent_usage import usage_summary
 from frontend import colors, notifications
 from frontend.io_contract import TYPE_COLOR
 from frontend.keymap import EXECUTION, bindings_for, screen_hint_for
@@ -427,6 +428,24 @@ class ExecutionScreen(KeymapScreenMixin, Screen):
                 text.append(f"  {count}  {mark}  {seconds_text(attempt.get('seconds'))}\n", style=tone)
         if node.get("type") == "subworkflow_node":
             text.append_text(self._call_details(node_id, node, status))
+        receipts = [item for item in getattr(self.call or self.master_state, "agent_usage", [])
+                    if item.get("node_id") == node_id]
+        if receipts:
+            total = usage_summary(getattr(self.call or self.master_state, "agent_usage", []))
+            total_cost = total["estimated_cost_usd"]
+            total_text = "Cost not reported" if total_cost is None else f"USD {total_cost:g} estimated"
+            if total["not_reported"] or total["partial"]:
+                total_text += " · incomplete"
+            text.append(f"\nRun total: {total_text}\n")
+            text.append("\nAgent usage\n", style="bold")
+            for item in receipts[-4:]:
+                usage = item.get("usage") or {}
+                cost = usage.get("estimated_cost_usd")
+                tokens = [usage.get("input_tokens"), usage.get("output_tokens")]
+                token_text = str(sum(tokens)) if all(type(v) is int for v in tokens) else "not reported"
+                text.append(f"  {item.get('status')} · Turns {item.get('turns') or 'not reported'}\n")
+                text.append(f"  Tokens {token_text} · " + ("Cost not reported" if cost is None else f"USD {cost:g} estimated") + "\n")
+                text.append(f"  Record: {(item.get('record') or {}).get('path', 'not available')}\n", style=DIM)
         text.append("\nReceived from the previous node\n", style="bold")
         self._append_values(text, self._inputs_of(node))
         text.append("Sent to the next node\n", style="bold")

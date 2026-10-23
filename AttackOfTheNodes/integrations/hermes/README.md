@@ -167,3 +167,83 @@ argument refusal, a real 25-second deadline including a detached descendant's
 reaping, timestamp/missing required inputs, escaping/cap, empty data/missing
 workflows, and named install/check in a temporary Hermes folder. No live install
 or Hermes configuration change is part of verification.
+
+## Ask Hermes setup
+
+Ask Hermes uses a separate Hermes profile through the public CLI. Set this up
+before adding the node; AOTN does not create profiles or copy credentials.
+The owner's existing profile is `~/.hermes/profiles/aotn`. It is an independent
+`HERMES_HOME`, not the sticky default. Its CLI toolsets are disabled, MCP is
+explicitly blocked, the resolver reports zero tools, memory is off, and it has
+its own copied credentials. The default profile, gateway and cron jobs remain
+separate.
+
+Give Hermes the owner's setup prompt (replace nothing with secrets):
+
+```text
+With my approval, please set up an isolated profile for AttackOfTheNodes, without changing my default profile, gateway, cron jobs or memory:
+1. Create a new profile named "aotn" (an independent HERMES_HOME). Don't make it the sticky default.
+2. In that profile, disable every toolset and MCP tool for the CLI platform, so a chat there has no tools at all. Use the same model/provider credentials as my default profile.
+3. Tell me exactly how to run one non-interactive question against that profile without changing the default (the env var or flag, e.g. HERMES_HOME=... or an alias wrapper), using: chat -q "<question>" -Q --source tool --max-turns 1.
+4. Prove it: show tools list for that profile (nothing enabled), then run one test question in the profile asking you to run ls ~ and to read a file. Report whether any tool was used and what the reply was.
+5. Confirm my default profile's tools, memory and cron jobs are unchanged.
+```
+
+Also confirm that the new profile's memory is off and MCP is explicitly blocked,
+and have Hermes verify the resolved inventory is zero tools. Keep credentials
+inside that profile, never in a workflow or AOTN Options. If copied credentials
+expire, sign in for the **aotn profile**, not by adding a token to a node.
+
+Verify the profile without making it the default. Each `HERMES_HOME` prefix
+applies to that command only; do not export it for the AOTN app:
+
+```bash
+HERMES_HOME="$HOME/.hermes/profiles/aotn" "$HOME/.local/bin/hermes" tools list --platform cli
+HERMES_HOME="$HOME/.hermes/profiles/aotn" "$HOME/.local/bin/hermes" chat -q "Reply with exactly: AOTN profile ready" -Q --source tool --max-turns 1 --ignore-rules
+```
+
+The listing must show **every toolset disabled**. AOTN checks before every
+question, including repeated visits; enabled, unknown, duplicate or missing
+rows and unclassified diagnostics all refuse the run. The current strict
+format has 24 built-in CLI toolsets. A changed CLI listing requires parser
+review, not silently trusting new output. There is no preflight cache.
+The second command uses the profile's account and may incur usage; it should
+return the answer only (`session_id` is metadata, normally on stderr).
+`--source tool` is currently stored by Hermes as `cli`; this is harmless.
+
+In AOTN Options, set **Hermes profile home** (`hermes_profile_home`, default
+`~/.hermes/profiles/aotn`) and **Hermes command** (`hermes_command`, default
+`~/.local/bin/hermes`). The explicit executable path works when cron's PATH
+does not include `~/.local/bin`; it may be the owner's bash launcher wrapper.
+Enable **Allow Ask Hermes without a dollar cap** only after accepting that
+limit. Defaults do not enable paid runs automatically.
+
+Add **Complex → AI Processing → Ask Hermes**. Choose Question from Configured,
+Upstream payload or Vault, and an existing **Folder** allowed by Options
+`system_node_folders`. The node runs that CLI command with an argv list, never
+a shell command string, using the checked Folder as its working directory.
+Question is one argument, limited to 20,000 characters. `--ignore-rules` prevents
+Folder AGENTS.md, SOUL and other context files from loading. The configured
+time limit covers tools preflight, chat startup, answer and process-tree cleanup;
+Stop also kills and reaps detached descendants. Default 60 seconds, range 10–300.
+
+This is **profile isolation, not an OS sandbox**. The CLI still runs as the
+owner and manages its own profile sessions/authentication. Folder containment
+checks authorize the starting directory; they do not create a filesystem or
+network jail. Keep this profile dedicated and its permissions/configuration
+under owner control. CLI/provider retries and billing behavior belong to Hermes;
+`--max-turns 1` is a CLI limit, not proof of exactly one paid API request.
+AOTN does not import Hermes internals, change its settings, enable tools, retry
+failed questions, switch accounts, or change the default profile.
+
+Missing profile: **Set up the aotn Hermes profile first**. Missing command:
+**Hermes is not installed**. Unsafe or unclassifiable tools listing:
+**This Hermes profile has tools turned on.** Expired login:
+**Sign in to Hermes (aotn profile)**. Empty, malformed or oversized output is
+`invalid_response`. Raw CLI diagnostics are never put into node errors or logs.
+Answer is text; Run details is optional and Vault only. The standard forwarding
+checkbox affects downstream only. `-Q` supplies no token/cost/turn measurements:
+usage stays null/“not reported”, with the configured limit recorded separately.
+
+[Run records, error contract and cleanup](../../docs/integrations/ASK_HERMES.md)
+· [Built screens and smoke evidence](../../docs/audits/ask_hermes_2026_10_22/README.md).

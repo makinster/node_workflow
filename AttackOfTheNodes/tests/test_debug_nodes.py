@@ -6413,10 +6413,16 @@ async def _test_node_selector_uses_family_tabs():
         utility_types = {node["type"] for node in screen._visible_nodes}
         assert {"echo_node", "probe_node", "counter_node"}.issubset(utility_types)
 
-        # Complex tab: AI Processing group of four.
+        # Complex tab: the existing four nodes plus Ask Hermes.
         screen._set_active_tab("Complex")
         assert screen._active_tab == "Complex"
-        assert group_entries(screen).get("AI Processing") == 4
+        assert group_entries(screen).get("AI Processing") == 5
+        ai_group = next(entry for entry in screen._entries
+                        if entry["kind"] == "group" and entry["name"] == "AI Processing")
+        assert {member["type"] for member in ai_group["members"]} == {
+            "chat_completion_node", "image_generation_node", "embedding_node",
+            "pick_one_node", "hermes_ask_node",
+        }
 
         # Search dissolves groups and headers: AI nodes appear directly.
         await pilot.press("/")
@@ -6440,7 +6446,7 @@ async def _test_node_selector_uses_family_tabs():
 
         filter_input.value = ""
         screen._apply_filter(filter_input.value)
-        assert group_entries(screen).get("AI Processing") == 4
+        assert group_entries(screen).get("AI Processing") == 5
 
         screen.action_focus_node_list()
         assert app.focused is node_list
