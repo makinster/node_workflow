@@ -110,7 +110,9 @@ def sync_dir(path):
 
 def atomic(path, record):
     regular(path)
-    raw = json.dumps(record, ensure_ascii=True, allow_nan=False).encode('ascii')
+    # Match C1: UTF-8 JSON without ASCII expansion; replace lone surrogates
+    # just as hermes_folder.escape does, preserving real Unicode separators.
+    raw = json.dumps(record, ensure_ascii=False, allow_nan=False).encode('utf-8', errors='replace')
     if len(raw) > MAX_RECORD:
         raise failure('request_too_large')
     temp = path.with_name('.' + path.name + '.' + secrets.token_hex(8))

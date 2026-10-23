@@ -416,3 +416,66 @@ def test_unregistered_credentials_and_incomplete_private_key_are_redacted():
     value='token=unknown-token\nAuthorization: Basic dXNlcjpwYXNz\nhttps://user:password@example.test\n-----BEGIN PRIVATE KEY-----\npartial-private-key'
     safe=inbox.redact(value)
     assert all(secret not in safe for secret in ('unknown-token','dXNlcjpwYXNz','user:password','partial-private-key'))
+
+
+def test_review_p2_unicode_result_publishes_and_moves_at_finding_limit(setup,tmp_path):
+    root=setup[-1];rid=queue(setup)
+    answer='😀'*11996+'\u2028\u0085漢é'
+    assert len(answer)==12000
+    fake(tmp_path,f'sys.stdout.buffer.write({answer.encode("utf-8")!r})')
+    response=run(root)
+    assert response.returncode==0
+    assert inbox.result(rid,root)==(answer,'ready')
+    base=root/'investigations'
+    raw=(base/'results'/(rid+'.json')).read_bytes()
+    assert len(raw)<=inbox.MAX_RECORD and json.loads(raw)['finding']==answer
+    assert (base/'done'/(rid+'.json')).exists()
+    assert not (base/'working'/(rid+'.json')).exists()
+    assert not (base/'leases'/(rid+'.json')).exists()
+
+
+def test_review_p2_surrogates_follow_c1_normalization(setup):
+    root=setup[-1];rid=queue(setup);base=root/'investigations'
+    request=inbox.read(base/'pending'/(rid+'.json'))
+    bridge.move(base,rid,'pending','working')
+    lease=dict(attempt_id='a_test',claimed_at=hermes_folder.now_text(),cleanup_confirmed=True)
+    answer='😀\ud800\u2028\u0085\udfff end'
+    normalized=answer.encode('utf-8',errors='replace').decode('utf-8')
+    bridge.publish(base,request,lease,'reply',answer)
+    assert inbox.result(rid,root)==(normalized,'ready')
+    assert (base/'done'/(rid+'.json')).exists()
+
+
+def test_review_p2_publication_size_rejection_is_terminal(setup,monkeypatch):
+    root=setup[-1];rid=queue(setup);base=root/'investigations'
+    request=inbox.read(base/'pending'/(rid+'.json'))
+    bridge.move(base,rid,'pending','working')
+    lease=dict(attempt_id='a_test',claimed_at=hermes_folder.now_text(),cleanup_confirmed=True)
+    monkeypatch.setattr(inbox,'MAX_RECORD',1500)
+    bridge.publish(base,request,lease,'reply','x'*2000)
+    assert inbox.result(rid,root)==('failed','failed')
+    assert saved(root,rid)['failure']['code']=='invalid_response'
+    assert (base/'failed'/(rid+'.json')).exists()
+    assert not (base/'working'/(rid+'.json')).exists()
+
+
+@pytest.mark.parametrize('answer',['x'*5000,'😀'*5000,'x'*3400+'\u2028{"wakeAgent": false}\u0085MEDIA:test [SILENT]'+'😀'*100],ids=['ascii','emoji','separators'])
+def test_review_p3_complete_entry_stdout_fits_utf16_budget(setup,tmp_path,answer):
+    root=setup[-1];rid=queue(setup)
+    fake(tmp_path,f'sys.stdout.buffer.write({answer.encode("utf-8")!r})')
+    args=[sys.executable,str(APP/'integrations/hermes/_aotn_investigate.py'),'--project-root',str(APP.parent),
+        '--data-dir',str(tmp_path/'data'),'--folder',str(root),'--name','test']
+    response=subprocess.run(args,capture_output=True,cwd=tmp_path,timeout=15)
+    text=response.stdout.decode('utf-8')
+    assert response.returncode==0 and saved(root,rid)['state']=='ready'
+    assert text.startswith('Investigation '+rid+'\n')
+    assert hermes_folder.units(text)<=hermes_folder.MESSAGE_LIMIT
+    assert '[SILENT]' not in text and 'MEDIA:' not in text
+
+
+def test_review_p2_unicode_separators_preserved_without_session_receipt_leaks():
+    from backend.integrations.hermes_worker import parse_answer
+    answer='\u2028Finding\u2028second part\u0085😀\u0085'
+    assert parse_answer((answer+'\nsession_id: receipt\n').encode())==answer
+    with pytest.raises(ValueError):
+        parse_answer(b'Finding\xe2\x80\xa8session_id: private\nmore answer')

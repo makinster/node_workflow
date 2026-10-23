@@ -223,6 +223,14 @@ Terminal result fields:
 | `cleanup_confirmed` | true only after process-tree cleanup is established |
 | `notification` | `handoff_unknown`; stdout is not proof of delivery |
 
+Investigation JSON is UTF-8 without ASCII expansion, so supplementary Unicode
+characters do not consume twelve serialized bytes each. Lone surrogates use the
+same UTF-8 replacement as C1 escaping; U+2028/U+0085 remain data rather than LF
+framing in the stored finding. CLI session framing is LF-only, with embedded
+receipts still refused. If a serialized finding exceeds the record budget,
+publish a terminal `invalid_response` failure immediately. The final stdout
+cap includes the entry's newline as well as every header and truncation mark.
+
 Write the result atomically before moving working to done/failed; a published
 valid result is authoritative if a crash interrupts that last rename. Recovery
 finishes the move without inference or duplicate automatic delivery. No terminal

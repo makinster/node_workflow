@@ -41,7 +41,9 @@ def block(base, rid):
 
 def publish(base, request, lease, status, answer='', manager=None):
     rid = request['request_id']
-    finding = inbox.redact(answer,manager) if status=='reply' else ''
+    # Normalize before counting, persistence and delivery, as C1 escape does.
+    finding = (inbox.redact(answer,manager).encode('utf-8', errors='replace').decode('utf-8')
+               if status=='reply' else '')
     if status=='reply' and (not finding.strip() or len(finding)>inbox.MAX_FINDING):
         status, finding = 'invalid_response',''
     message = ('Stopped after 90 seconds' if status=='timed_out' else
@@ -62,7 +64,16 @@ def publish(base, request, lease, status, answer='', manager=None):
         if result.get('attempt_id') != lease['attempt_id']:
             raise ValueError('stale attempt')
     else:
-        inbox.atomic(saved,result)
+        try:
+            inbox.atomic(saved,result)
+        except NodeError as exc:
+            if exc.code!='request_too_large':
+                raise
+            # A completed attempt must become terminal even if its serialized
+            # finding cannot fit; never leave a successful cleanup pending.
+            result.update(state='failed', finding='', failure={
+                'code':'invalid_response', 'message':MESSAGES['invalid_response']})
+            inbox.atomic(saved,result)
     move(base,rid,'working','done' if result['state']=='ready' else 'failed')
     (base/'leases'/(rid+'.json')).unlink(missing_ok=True)
     inbox.sync_dir(base/'leases')

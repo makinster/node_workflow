@@ -6,6 +6,28 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-23 — Investigation Unicode and stdout-cap review fixes (#117)
+
+Branch `codex/c3c-inbox`, own worktree `/home/makin/src/nw-c3c-inbox`, starting
+head `1329965`. Fetched and merged `origin/main` `5e7c4e3` first (already
+integrated). Fixed both findings in the review comment.
+
+- Write bounded UTF-8 JSON without ASCII expansion, so a valid 12,000-character
+  finding containing emoji fits the 128 KiB record budget. Normalize lone
+  surrogates with C1's UTF-8 replacement rule before counting/writing/reporting.
+  The shared CLI answer parser preserves U+2028/U+0085 rather than rewriting
+  them as LF; embedded session receipts are still rejected.
+- A serialized finding rejected by the record-size limit now publishes an
+  immediate `invalid_response` terminal failure and moves to failed, instead
+  of leaving working/not-ready after successful cleanup.
+- At the installed entry's final output boundary, reserve print's LF in the
+  shared 3,500 UTF-16-unit budget, including all headers/escaping/truncation.
+- Seven review regression cases fail against an isolated archive of `1329965`
+  and pass with the fixes. Fake CLI subprocesses only; no real model calls,
+  Hermes config/cron changes or live installation. Existing screens unchanged.
+
+Verification: **2,541 passed in 432.48 seconds** (full `pytest -q`), no known WaitUntil timing-flake rerun needed; all seven regressions pass and all seven fail on `1329965`. Compilation, Bash syntax and whitespace checks pass.
+
 ## 2026-10-23 — C3c simple investigation inbox
 
 Branch `codex/c3c-inbox`, worktree `/home/makin/src/nw-c3c-inbox`, clean start

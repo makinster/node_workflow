@@ -9,6 +9,12 @@ delivery; this documentation refresh did not change or rerun live jobs.
 
 ## C3c investigation inbox — 2026-10-23
 
+**#117 review follow-up:** Unicode findings publish as bounded UTF-8 JSON,
+including emoji and Unicode separators; lone surrogates follow C1 replacement.
+Record-size rejection becomes terminal failed, and the final 3,500 UTF-16-unit
+stdout budget includes the entry newline. Seven regressions fail on `1329965`
+and pass with the fixes. Verification: **2,541 passed in 432.48 seconds** (full `pytest -q`), no known WaitUntil timing-flake rerun needed; all seven regressions pass and all seven fail on `1329965`. Compilation, Bash syntax and whitespace checks pass.
+
 Built on `codex/c3c-inbox`, own worktree `/home/makin/src/nw-c3c-inbox`, from
 fetched main `5e7c4e3` (#116 merged). The owner's simple v1 decision supersedes
 the read-only-tool proposal: AOTN gathers evidence, and the investigator has

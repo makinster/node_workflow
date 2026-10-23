@@ -41,17 +41,19 @@ def parse_answer(output):
     # applies after removing its final newline/session metadata.
     if len(output) > 1024 * 1024:
         raise ValueError('CLI output too long')
-    lines = text(output).strip().splitlines()
+    # CLI framing is LF-delimited. Unicode separators inside the finding
+    # are data, as in the C1 shared-folder records, not framing to rewrite.
+    lines = text(output).strip(' \t\r\n').split('\n')
     # -Q writes session_id to stderr today. Recognise the bounded metadata
     # line at stdout's edges too; never return a session receipt as an answer.
     while lines and SESSION.fullmatch(lines[-1].strip()):
         lines.pop()
     while lines and SESSION.fullmatch(lines[0].strip()):
         lines.pop(0)
-    answer = '\n'.join(lines).strip()
+    answer = '\n'.join(lines).strip(' \t\r\n')
     # An embedded receipt in any recognised form is never answer text.
     if (not answer or len(answer.encode('utf-8')) > MAX_ANSWER
-            or any(SESSION.fullmatch(line.strip()) or re.match(r'\s*(?:session_id|Session ID):', line) for line in lines)
+            or any(SESSION.fullmatch(line.strip()) or re.match(r'\s*(?:session_id|Session ID):', line) for line in answer.splitlines())
             or answer.startswith(('Error:', 'Traceback (most recent call last):', 'Built-in toolsets ('))):
         raise ValueError('no answer')
     return answer
