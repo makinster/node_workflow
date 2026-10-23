@@ -33,6 +33,9 @@ DEFAULT_SETTINGS: Dict[str, Any] = {
     # ";". A name is set up in Hermes (a drain job per name), never a chat
     # id. The shared folder itself is $HERMES_HOME/aotn (hermes_folder.py).
     "hermes_send_to_names": "home",
+    # Ask Hermes never accepts installations/credentials from workflow config.
+    "hermes_installation_folder": "~/.hermes/hermes-agent",
+    "hermes_allow_no_budget": False,
 }
 
 

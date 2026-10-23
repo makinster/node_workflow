@@ -55,7 +55,9 @@ class SettingsScreen(CommandScreenMixin, ModalScreen):
                 with TabPane("1 General", id="settings-tab-general"):
                     with VerticalScroll(classes="tab-scroll"):
                         for key, default in DEFAULT_SETTINGS.items():
-                            yield Label(key, classes="form-label")
+                            labels = {"hermes_installation_folder": "Hermes installation folder",
+                                      "hermes_allow_no_budget": "Allow Ask Hermes without a dollar cap"}
+                            yield Label(labels.get(key, key), classes="form-label")
                             value = values.get(key, default)
                             if isinstance(default, bool):
                                 yield Checkbox(value=bool(value), id=f"setting-{key}")

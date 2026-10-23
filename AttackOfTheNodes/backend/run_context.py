@@ -63,6 +63,7 @@ class RunContext:
     started_at: Optional[str] = None
     wait_registry: WaitRegistry = field(default_factory=WaitRegistry)
     node_timings: Dict[str, float] = field(default_factory=dict)
+    agent_usage: list[dict] = field(default_factory=list)
     branch_groups: Dict[str, str] = field(default_factory=dict)
     merge_groups: Dict[str, Dict[str, Any]] = field(default_factory=dict)
     merge_condition: asyncio.Condition = field(default_factory=asyncio.Condition)

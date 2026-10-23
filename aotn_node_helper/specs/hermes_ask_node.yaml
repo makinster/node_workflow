@@ -1,0 +1,96 @@
+node_type: hermes_ask_node
+class_name: HermesAskNode
+category: ai
+primary_family: Complex
+tags: ["question", "memory", "agent"]
+group: AI Processing
+selector_section: AI
+icon_name: message-circle
+display_name: Ask Hermes
+default_alias: Ask Hermes
+description: Ask one question using Hermes memory; returns text
+inputs:
+  input:
+    name: Question
+    type: string
+    required: true
+    sources: ["upstream", "vault", "configured"]
+    default: configured
+    parameter:
+      type: multiline
+      label: Question
+      height: 5
+      description: One reply, no tools. Uses your Hermes account; no dollar cap.
+outputs:
+  default:
+    name: Answer
+    type: string
+    required: true
+    to: ["downstream", "vault"]
+    pass_through: true
+    description: The final answer as text
+  details:
+    name: Run details
+    type: var
+    to: ["vault"]
+    description: Time, turns, token use, cost and saved record
+output_routing:
+  default: transient
+  vault:
+    mode: optional
+config_tabs:
+  Parameters:
+    folder:
+      type: string
+      label: Folder
+      required: true
+      default: ''
+      placeholder: A folder allowed in Options
+    timeout:
+      type: integer
+      label: Stop after (seconds)
+      default: 60
+      min: 10
+      max: 300
+errors:
+  - code: not_installed
+    description: "Hermes is not installed."
+    retryable: false
+  - code: unsupported_runtime
+    description: "This Hermes version can't run with these limits."
+    retryable: false
+  - code: auth_failed
+    description: "Sign in to Hermes first."
+    retryable: false
+  - code: folder_missing
+    description: "Choose an existing folder."
+    retryable: false
+  - code: not_allowed
+    description: "This folder is not allowed in Options."
+    retryable: false
+  - code: text_too_long
+    description: "The question is too long."
+    retryable: false
+  - code: timed_out
+    description: "Stopped after the time limit."
+    retryable: false
+  - code: turn_limit
+    description: "Stopped after the turn limit."
+    retryable: false
+  - code: permission_denied
+    description: "Hermes requested a tool it was not given."
+    retryable: false
+  - code: agent_failed
+    description: "Hermes could not finish."
+    retryable: false
+  - code: invalid_response
+    description: "No complete answer was returned."
+    retryable: false
+  - code: record_failed
+    description: "The run record could not be saved."
+    retryable: false
+  - code: cleanup_failed
+    description: "The agent did not stop cleanly."
+    retryable: false
+execution_template: producer
+payload_field: false

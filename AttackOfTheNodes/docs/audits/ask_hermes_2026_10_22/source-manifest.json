@@ -1,0 +1,9 @@
+{
+  "base": "f9f5f07",
+  "sha256": {
+    "frontend/styles.tcss": "b16c58a59dee4066706d4e0536a2418acce41ea828dc7bc31d9ee8f7fcf88abc",
+    "frontend/colors.py": "d346d3aefb11d54f79a60d99d0c6ed1a8e732c338941b5021804917881bab3f1",
+    "backend/nodes/ai/hermes_ask_node.py": "36326441c1fc41381af019eb9ed8e36792f30b1d46701e6da89494a61b2ea773",
+    "backend/integrations/hermes_worker.py": "31dfce372ef3d654a11c47f7af88b0e207e0fcaa9451ff88a33732924b0fde4e"
+  }
+}

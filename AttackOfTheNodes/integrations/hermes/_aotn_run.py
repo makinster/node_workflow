@@ -161,7 +161,7 @@ def cleanup(child, linux, timeout):
         time.sleep(min(0.01, max(0, until - time.monotonic())))
 
 
-def collect(argv, cwd, deadline=None):
+def collect(argv, cwd, deadline=None, input_bytes=None):
     """Drain bounded streams; own the process group and Linux descendants."""
     stopped = [None]
     old_handlers = {}
@@ -186,9 +186,17 @@ def collect(argv, cwd, deadline=None):
     try:
         for sig in (signal.SIGINT, signal.SIGTERM):
             old_handlers[sig] = signal.signal(sig, interrupted)
-        child = subprocess.Popen(argv, cwd=cwd, stdin=subprocess.DEVNULL,
+        child = subprocess.Popen(argv, cwd=cwd,
+                                 stdin=subprocess.PIPE if input_bytes is not None else subprocess.DEVNULL,
                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                  start_new_session=True)
+        pending_input = memoryview(input_bytes or b"")
+        if child.stdin is not None:
+            os.set_blocking(child.stdin.fileno(), False)
+            if pending_input:
+                selector.register(child.stdin, selectors.EVENT_WRITE, "stdin")
+            else:
+                child.stdin.close()
         for stream, label in ((child.stdout, "stdout"), (child.stderr, "stderr")):
             os.set_blocking(stream.fileno(), False)
             selector.register(stream, selectors.EVENT_READ, label)
@@ -213,6 +221,16 @@ def collect(argv, cwd, deadline=None):
             if kill_at is not None and now >= kill_at:
                 break
             for key, _ in selector.select(timeout=0.05):
+                if key.data == "stdin":
+                    try:
+                        count = os.write(key.fileobj.fileno(), pending_input[:8192])
+                        pending_input = pending_input[count:]
+                    except BrokenPipeError:
+                        pending_input = memoryview(b"")
+                    if not pending_input:
+                        selector.unregister(key.fileobj)
+                        key.fileobj.close()
+                    continue
                 chunk = os.read(key.fileobj.fileno(), 65536)
                 if not chunk:
                     selector.unregister(key.fileobj)
@@ -249,8 +267,9 @@ def collect(argv, cwd, deadline=None):
                 cleanup(child, linux, cleanup_budget)
         finally:
             if child is not None:
-                for stream in (child.stdout, child.stderr):
-                    stream.close()
+                for stream in (child.stdin, child.stdout, child.stderr):
+                    if stream is not None:
+                        stream.close()
             selector.close()
             for sig, handler in old_handlers.items():
                 signal.signal(sig, handler)

@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Optional
 from backend.events import (
     NODE_EXECUTION_UPDATE,
     NODE_TIMING_UPDATE,
+    AGENT_USAGE_UPDATE,
     SUPERVISOR_REGISTER,
     SUPERVISOR_STATE_UPDATE,
     SUPERVISOR_TERMINATING,
@@ -39,6 +40,7 @@ class ChildRun:
         self.node_statuses: Dict[str, str] = {}
         self.node_skip_reasons: Dict[str, str] = {}
         self.node_timings: Dict[str, float] = {}
+        self.agent_usage: list[dict] = []
 
     def apply(self, event: str, payload: Dict[str, Any]) -> None:
         if event == WORKFLOW_STATE_UPDATE:
@@ -61,6 +63,10 @@ class ChildRun:
             state.node(payload)
             self.node_statuses = state.node_statuses()
             self.node_skip_reasons = state.skip_reasons()
+        elif event == AGENT_USAGE_UPDATE:
+            self.agent_usage = [item for item in self.agent_usage
+                                if item.get("invocation_id") != payload.get("invocation_id")]
+            self.agent_usage.append(dict(payload))
         elif event == NODE_TIMING_UPDATE and payload.get("node_id"):
             node_id = payload["node_id"]
             self.node_timings[node_id] = self.node_timings.get(node_id, 0.0) + float(payload.get("seconds") or 0.0)

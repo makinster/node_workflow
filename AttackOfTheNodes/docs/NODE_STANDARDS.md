@@ -93,6 +93,23 @@ Some inputs may not offer all three options. For example, a document/context
 input on a basic LLM node may only offer Upstream or Vault (no hard-configured
 option — the document is always expected to come from a live data source).
 
+## Ask Hermes (C3b part 1, owner 2026-10-22)
+
+One question (Upstream payload, Vault or Configured), one text Answer, optional
+Vault-only Run details; no tools or fallback. The standard **Forward incoming
+payload unchanged** checkbox affects downstream only; enabled Vault outputs
+still receive their own values. No custom output-routing UI.
+
+Use an explicit Folder checked by `system_access`/`system_node_folders`, a total
+60-second deadline (10–300), 20,000-character input and 256 KiB answer cap.
+Machine Options owns the installation and explicit no-dollar-cap opt-in.
+The isolated worker refuses unsupported versions before inference. The current
+installation cannot guarantee the approved restrictions and is refused;
+no compatible adapter is enabled. Every attempt retains private records/C1
+receipts and usage regardless of routing. Linux process-tree cleanup includes
+detached descendants; Stop remains cancellation. See the
+[Ask Hermes contract and errors](integrations/ASK_HERMES.md).
+
 ## Bounded choice node (C3a, owner 2026-10-22)
 
 Jev: Pick one has one purpose: read Text to judge, ask Question, and send one

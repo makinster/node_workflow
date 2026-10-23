@@ -53,8 +53,10 @@ from .data.remember_node import RememberNode
 from .data.recall_node import RecallNode
 from .data.if_changed_node import IfChangedNode
 from .ai.pick_one_node import PickOneNode
+from .ai.hermes_ask_node import HermesAskNode
 
 ALL_NODE_CLASSES = [
+    HermesAskNode,
     PickOneNode,
     IfChangedNode,
     RecallNode,

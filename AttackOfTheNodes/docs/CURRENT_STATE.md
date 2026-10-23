@@ -1,13 +1,26 @@
 # Current State
 
-Snapshot checked **2026-10-22**, against fetched `origin/main` `bfcdc36` after
-#110, #112 and #113 merged (owner confirmation and fetched history). Code and fresh
+Snapshot checked **2026-10-22**, against fetched `origin/main` `f9f5f07` after
+#114 and #115 merged (owner confirmation and fetched history). Code and fresh
 GitHub checks take precedence.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
 
 ## Baseline and open work — 2026-10-22
+
+- **C3b part 1 built for review:** `codex/ask-hermes`, own worktree
+  `/home/makin/src/nw-ask-hermes`, from fetched main `f9f5f07`. Ask Hermes has
+  standard sources/forwarding, a checked Folder, total deadline and detached
+  process-tree cleanup, private records/C1 receipts and visible usage. The
+  installed Hermes cannot guarantee the approved limits: it is refused before
+  inference; **no compatible adapter is enabled**. Tests use fake workers.
+  [Contract](integrations/ASK_HERMES.md),
+  [real screens](audits/ask_hermes_2026_10_22/README.md).
+  Verification: **2,445 passed in 400.74 seconds** (full `pytest -q`), no
+  timing-flake rerun; helper node/UI checks, compilation, docs and whitespace pass.
+  Claude task and the long-text editor remain later work. No live/Hermes changes.
+
 
 - **Later long-text UI proposal:** preview-only multiline fields and a shared
   full-screen editor, scheduled after C3b; **proposal, samples first**, not

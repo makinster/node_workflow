@@ -14,11 +14,13 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
 
 from .event_bus import EventBus
+from .agent_usage import usage_summary
 from .events import (
     BREAKPOINT_HIT,
     ERROR_OCCURRED,
     NODE_EXECUTION_UPDATE,
     NODE_TIMING_UPDATE,
+    AGENT_USAGE_UPDATE,
     SUPERVISOR_ERROR,
     SUPERVISOR_REGISTER,
     SUPERVISOR_REQUEST_BRANCH,
@@ -107,6 +109,7 @@ class MasterState:
         # creating its own, or an overlapping start would lose track of them.
         self._start_lock = asyncio.Lock()
 
+        self._event_bus.subscribe(AGENT_USAGE_UPDATE, self._on_agent_usage_update)
         self._event_bus.subscribe(SUPERVISOR_REGISTER, self._on_supervisor_register)
         self._event_bus.subscribe(
             SUPERVISOR_TERMINATING, self._on_supervisor_terminating
@@ -132,6 +135,19 @@ class MasterState:
     @property
     def completed_nodes(self) -> Set[str]:
         return self._run.completed_nodes if self._run else set()
+
+    @property
+    def agent_usage(self) -> List[Dict[str, Any]]:
+        return list(self._run.agent_usage) if self._run else []
+
+    def _on_agent_usage_update(self, payload: Dict[str, Any]) -> None:
+        if self._run is None or payload.get("run_id") != self.current_run_id:
+            return
+        # A terminal receipt can be updated if persisting its event failed.
+        key = payload.get("invocation_id")
+        self._run.agent_usage[:] = [item for item in self._run.agent_usage
+                                   if item.get("invocation_id") != key]
+        self._run.agent_usage.append(dict(payload))
 
     @property
     def node_timings(self) -> Dict[str, float]:
@@ -908,6 +924,8 @@ class MasterState:
                 "unhandled_error_count": len(unhandled),
                 "output_count": len(self.run_outputs),
                 "node_timings": dict(self.node_timings),
+                "agent_usage": self.agent_usage,
+                "agent_usage_summary": usage_summary(self.agent_usage),
                 "skipped_nodes": dict(self._run.skip_reasons) if self._run else {},
                 # Step 4b (C22): where a child run was called from.
                 **self._call_info,

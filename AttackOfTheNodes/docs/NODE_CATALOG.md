@@ -302,6 +302,7 @@ Direct-add nodes that pair with the Loop Branch node.
 
 | Node | Status | Notes / Maps from |
 |---|---|---|
+| Ask Hermes | Built, guarded | `hermes_ask_node` — one question, text Answer and optional Vault-only Run details, standard forwarding, private records and visible usage. Current Hermes is refused before inference; no compatible adapter enabled. [Contract](integrations/ASK_HERMES.md). |
 | Jev: Pick one | Built, owner review | `pick_one_node` — one exact answer from configured rows, plain text downstream and optional Vault copy. Confidence below the cutoff sends `unsure`; optional Pick details is Vault only. Secrets-store key, bounded shared client, no provider/model selectors. |
 | Chat Completion | Live | `chat_completion_node` — real Anthropic call via `backend/llm_provider.py` (curated model dropdown, secrets-store API key). Session persistence via "Keep active AI session" + vault `ai_session` key; continuation input extends prior sessions. Tags: AI |
 | Image Generation | Live (stub) | `image_generation_node` — image from text prompt; output: image path. Tags: AI |
