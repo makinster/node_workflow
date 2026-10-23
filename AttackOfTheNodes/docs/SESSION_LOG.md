@@ -6,6 +6,16 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-22 — Shared long-text UI backlog proposal
+
+Branch `codex/docs-long-text-proposal`, from fetched main `a58a686`.
+After the C3b samples were complete, recorded the owner's preview-only multiline
+proposal beside selector sorting in the UI consistency pass, after C3b, samples
+first and not approved for implementation. Includes full-screen Save/Cancel,
+dirty-Esc, focus return and Stash S3 paste rules; single-line editing stays inline.
+C3b shared samples illustrate previews only; no product behavior was changed.
+Verification: documentation consolidation/link checker and `git diff --check`.
+
 ## 2026-10-22 — Telegram launcher review fixes (#114)
 
 Branch `codex/telegram-launcher`, review base `89c9d2a`, worktree

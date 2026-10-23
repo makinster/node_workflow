@@ -210,6 +210,22 @@ Functionality first; a consistency pass once Step 4 (subworkflows) and the
 keymap phases are merged, so it styles screens that have stopped moving.
 Meanwhile new screens reuse the existing tokens rather than invent colours.
 
+- **Node selector sorting:** [existing proposal](#node-selector-sorting--after-c3a-owner-2026-10-22);
+  grouping/sorting samples before UI changes. Its existing schedule is unchanged.
+- **Shared long-text fields — after C3b (owner, 2026-10-22): proposal, samples first.**
+  Not approved implementation work; do not block C3b. Implement once in the
+  shared multiline widget/form generator for prompts, tasks, templates and
+  messages, with no per-node editors. Show only the first 2–3 lines plus
+  `… N more lines`; no inline multiline editing. E/Enter opens a full-screen
+  editor with wrapping, scrolling and normal text editing. Save applies;
+  Cancel restores the original; Esc with unsaved changes asks first as in
+  Node Config. Closing returns focus to the field. On the preview, P replaces
+  the whole text, asking first if nonempty. In the editor, P inserts from Stash
+  at the cursor through the existing CommandTextArea mode switch: Esc stops
+  typing, P pastes, E resumes. Plain P still types “p” while typing (Stash S3).
+  Short single-line fields stay inline. Reuse existing navigation, modal
+  behavior and `colors.py` styling; review samples at 80×24 before implementation.
+
 - **Theme tokens:** one set of named colours in `styles.tcss`: the highlight
   (the map's selection blue, `#1a3a5c`, now used by the Subworkflow rows),
   type colours, warning, error, dim text. Replace hard-coded colours in

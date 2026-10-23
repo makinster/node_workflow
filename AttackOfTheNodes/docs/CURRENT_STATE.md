@@ -9,6 +9,10 @@ delivery; this documentation refresh did not change or rerun live jobs.
 
 ## Baseline and open work — 2026-10-22
 
+- **Later long-text UI proposal:** preview-only multiline fields and a shared
+  full-screen editor, scheduled after C3b; **proposal, samples first**, not
+  approved implementation. [UI consistency backlog](PROJECT_BACKLOG.md#later-project--ui-consistency-pass-and-theme-owner-2026-10-20).
+
 - **Telegram launcher v0 built for owner review:** branch
   `codex/telegram-launcher`, from main `bfcdc36`, worktree
   `/home/makin/src/nw-telegram-launcher`. A named `aotn-run-<slug>.sh` entry
