@@ -6,6 +6,67 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-22 — Telegram launcher review fixes (#114)
+
+Branch `codex/telegram-launcher`, review base `89c9d2a`, worktree
+`/home/makin/src/nw-telegram-launcher`. Fetched main remains `bfcdc36`; already
+integrated. All three findings in the PR review are fixed.
+
+1. The launcher's timestamp uses CLI `--input-if-declared checked_at=...`,
+   filtered against the loaded Start contract before typed input resolution.
+   Callable workflows without that row run with valid saved defaults; heartbeat
+   timestamp behavior is unchanged. Explicit `--input` keeps precedence.
+2. Install and check refuse directories, FIFOs, symlinks and dangling links.
+   Installation checks again before rename, uses `mv -T` to prevent moving
+   inside a directory, and cleans its temporary file on failure.
+3. Drift detection includes exact modes: 755 for entry scripts, 644 for shared
+   files. Check reports drift without writes; install repairs it atomically.
+
+Failing-first proof on `89c9d2a`: **11 failures, 4 passes** in the new review
+cases. Callable launch exited 5 while ordinary CLI succeeded; directory/FIFO
+installs were accepted; wrong modes were reported up to date. The four
+symlink cases already passed. After the fixes, all **15 review cases passed**.
+Full `pytest -q`: **2,403 passed in 395.57 seconds**, no Wait Until rerun needed.
+Compilation, Bash syntax, documentation consolidation and whitespace checks
+passed. Updated the adapter guide, CLI input reference, Current State and
+coordination status. No live install, Hermes config, cron or owner workflow
+changes. Pushed for owner re-review; #114 remains unmerged.
+
+## 2026-10-22 — Telegram launcher v0
+
+Branch `codex/telegram-launcher`, from fetched main `bfcdc36`, in the clean
+worktree `/home/makin/src/nw-telegram-launcher`. Read the October 22 PLAN RESET
+and Hermes quick-command answer in the shared notes, adapter guide and approved
+coordination order first. #113 is now merged; this is the next requested slice.
+
+- Added repository template `aotn-run-template.sh`, installed as
+  `aotn-run-<slug>.sh`: filename selects the saved workflow,
+  arguments are refused, and production checkout/interpreter/cron-data paths
+  are fixed. No workflow is built or replaced.
+- Added `--telegram-launcher` to the existing JSON adapter: a 25-second budget
+  including cleanup, H0 escaping and 3,500 UTF-16-unit cap, outputs on success
+  and one plain failure line otherwise. INT at 20 s, KILL at 24 s, final second
+  for reaping; late signals/overflow cannot extend this budget. Existing calls
+  retain H0's 100-second mode and lock/cleanup rules.
+- V0 supplies only the heartbeat's `checked_at` UTC timestamp. Other required
+  inputs need saved defaults or get a clear refusal. Empty/missing workflow
+  data gets one line; child tracebacks/diagnostics are not Telegram replies.
+- `install.sh --run-command <slug>` installs only the adapter and named copy;
+  `--check` compares without writing. The README includes a top-level
+  `quick_commands` example and deployment/timeout/input limits, not applied.
+- Verification: **2,388 passed in 395.97 seconds** (full `pytest -q`), with no
+  timing-flake rerun. Launcher/H0 focused run: **89 passed**; the expanded
+  launcher-only run: **21 passed**. Subprocess coverage includes a real
+  25-second timeout, detached-descendant kill/reap, late signal budget,
+  slug/argument checks, input refusal, missing workflow, escaping/cap, empty
+  output, stale lock and named install/check in disposable folders.
+  After the portable template filename was finalized, launcher subprocess checks
+  passed again: **21 passed in 29.19 seconds**. Compilation, Bash syntax,
+  documentation consolidation and whitespace checks passed. No live
+  installation, Hermes config, cron or owner workflow changes.
+
+Ready for owner review; not merged. Stop here after opening the PR.
+
 ## 2026-10-22 — Integrate main into System forwarding (#113)
 
 Branch `codex/system-node-forwarding`, previously `a4ecc80`, merged fetched

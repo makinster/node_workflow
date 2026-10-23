@@ -61,6 +61,13 @@ def build_parser() -> argparse.ArgumentParser:
         "that Stash entry; wins over --inputs-file",
     )
     parser.add_argument(
+        "--input-if-declared",
+        action="append",
+        default=[],
+        metavar="KEY=VALUE",
+        help="supply a typed input only if Start declares KEY; --input wins",
+    )
+    parser.add_argument(
         "--inputs-file",
         metavar="PATH",
         help="JSON object of input values (used where --input gives none)",
@@ -365,7 +372,11 @@ async def _run(args: argparse.Namespace, stdin: TextIO, stdout: TextIO, stderr: 
     sources = {name: "from the inputs file" for name in inputs}
     no_entry: Dict[str, str] = {}
     invalid: Dict[str, str] = {}
-    inputs.update(_typed_cli_inputs(service, _parse_inputs(args.input), sources, no_entry, invalid))
+    declared = {row["name"] for row in rows}
+    pairs = {name: value for name, value in _parse_inputs(args.input_if_declared).items()
+             if name in declared}
+    pairs.update(_parse_inputs(args.input))
+    inputs.update(_typed_cli_inputs(service, pairs, sources, no_entry, invalid))
     # Check everything before listing the inputs, as the run will (a callable
     # workflow also refuses unknown names), so a run that can't start shows
     # one list with every problem.
@@ -449,6 +460,7 @@ def main(
     args = parser.parse_args(argv)
     try:
         _parse_inputs(args.input)
+        _parse_inputs(args.input_if_declared)
     except ValueError as exc:
         parser.error(str(exc))
     if args.data_dir:

@@ -15,6 +15,7 @@ import sys
 import time
 
 DEADLINE = 100.0
+LAUNCHER_DEADLINE = 25.0
 GRACE = 5.0
 CLEANUP_WAIT = 1.0
 REPORT_LIMIT = 1024 * 1024
@@ -160,7 +161,7 @@ def cleanup(child, linux, timeout):
         time.sleep(min(0.01, max(0, until - time.monotonic())))
 
 
-def collect(argv, cwd):
+def collect(argv, cwd, deadline=None):
     """Drain bounded streams; own the process group and Linux descendants."""
     stopped = [None]
     old_handlers = {}
@@ -175,6 +176,8 @@ def collect(argv, cwd):
     reason = None
     kill_at = None
     started = time.monotonic()
+    hard_deadline = deadline is not None
+    deadline = DEADLINE if deadline is None else deadline
 
     def interrupted(sig, _frame):
         if stopped[0] is None:
@@ -195,14 +198,18 @@ def collect(argv, cwd):
                 reason = "signal"
                 kill_at = now + GRACE - cleanup_budget
                 group_signal(child, signal.SIGINT)
-            if reason is None and now >= started + DEADLINE - GRACE:
+            if reason is None and now >= started + deadline - GRACE:
                 reason = "deadline"
-                kill_at = started + DEADLINE - cleanup_budget
+                kill_at = started + deadline - cleanup_budget
                 group_signal(child, signal.SIGINT)
             if overflow and reason is None:
                 reason = "overflow"
                 kill_at = now + GRACE - cleanup_budget
                 group_signal(child, signal.SIGINT)
+            if hard_deadline and kill_at is not None:
+                # Signals/overflow late in a quick command must not restart
+                # its cleanup clock beyond Hermes's reply window.
+                kill_at = min(kill_at, started + deadline - cleanup_budget)
             if kill_at is not None and now >= kill_at:
                 break
             for key, _ in selector.select(timeout=0.05):
@@ -266,23 +273,29 @@ def run(args):
         try:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
+            if args.telegram_launcher:
+                return launcher_failure(args, "workflow already running", 75)
             sys.stderr.write(bounded("AOTN overlap: workflow already running; run unavailable\n"))
             return 75
         lock.seek(0)
         if lock.read(1):
+            if args.telegram_launcher:
+                return launcher_failure(args, "previous run cleanup needs checking", 75)
             sys.stderr.write(bounded("AOTN overlap: lock marked stale; verify prior descendants before clearing it; run unavailable\n"))
             return 75
         stamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         argv = [args.python, str(root / "AttackOfTheNodes/main.py"), "run", args.workflow_slug,
                 "--policy", "terminate_workflow", "--data-dir", str(data),
-                "--input", "checked_at=" + stamp, "--json"]
+                "--input-if-declared" if args.telegram_launcher else "--input",
+                "checked_at=" + stamp, "--json"]
         # Persist before spawning: a crash or unconfirmed cleanup blocks ticks
         # even after the OS releases flock. Clear only after confirmed cleanup.
         lock.write(f"stale: adapter pid {os.getpid()}; descendant cleanup not confirmed\n")
         lock.flush()
         os.fsync(lock.fileno())
         try:
-            code, raw, diagnostic, reason, natural_code = collect(argv, str(root))
+            code, raw, diagnostic, reason, natural_code = collect(
+                argv, str(root), LAUNCHER_DEADLINE if args.telegram_launcher else None)
         except CleanupFailure:
             raise
         except BaseException:
@@ -302,8 +315,24 @@ def run(args):
                 code = 70
                 diagnostic += f"\nAOTN adapter failure: {exc}; run unavailable\n"
         identity = report["run_id"] if report else "unavailable"
+        if args.telegram_launcher:
+            if code == 0:
+                sys.stdout.write(bounded(render(report), report["run_id"]))
+                return 0
+            if reason == "deadline":
+                message = "stopped after 25 s"
+            elif reason == "signal":
+                message = "run interrupted"
+            else:
+                message = {
+                    1: "run finished with errors", 2: "run failed; see run history",
+                    3: "workflow is invalid or could not start",
+                    4: "saved workflow not found or unreadable",
+                    5: "required inputs are missing or invalid; v0 supplies only checked_at",
+                }.get(code, "adapter failed; check the installation and run history")
+            return launcher_failure(args, message, code)
         if reason == "deadline":
-            diagnostic += f"\nAOTN deadline exceeded (100 seconds); run {identity}\n"
+            diagnostic += f"\nAOTN deadline exceeded ({DEADLINE:g} seconds); run {identity}\n"
         elif reason == "signal":
             diagnostic += f"\nAOTN interrupted (exit {code}); run {identity}\n"
         elif reason == "overflow":
@@ -322,13 +351,26 @@ class AdapterParser(argparse.ArgumentParser):
         raise ValueError(message)
 
 
+def launcher_failure(args, reason, code):
+    sys.stdout.write(bounded(f"Couldn't run {args.workflow_slug}: {reason}\n"))
+    return code
+
+
 def main():
+    args = None
     try:
         parser = AdapterParser(description=__doc__)
         for option in ("workflow-slug", "project-root", "data-dir", "python"):
             parser.add_argument("--" + option, required=True)
-        return run(parser.parse_args())
+        parser.add_argument("--telegram-launcher", action="store_true",
+                            help="25-second run budget and one-line failure receipts")
+        args = parser.parse_args()
+        return run(args)
     except (OSError, ValueError, TypeError, RecursionError) as exc:
+        if args is not None and args.telegram_launcher:
+            reason = ("previous run cleanup could not be confirmed" if isinstance(exc, CleanupFailure)
+                      else "adapter failed; check the installation and data directory")
+            return launcher_failure(args, reason, 70)
         sys.stderr.write(bounded(f"AOTN adapter failure: {exc}; run unavailable\n"))
         return 70
 
