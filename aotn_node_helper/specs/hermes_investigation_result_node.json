@@ -1,0 +1,91 @@
+{
+  "category": "io",
+  "tags": [
+    "Hermes",
+    "investigation",
+    "incident"
+  ],
+  "group": "Hermes",
+  "icon_name": "search",
+  "output_routing": {
+    "default": "transient",
+    "vault": {
+      "mode": "optional"
+    }
+  },
+  "execution_template": "producer",
+  "payload_field": false,
+  "node_type": "hermes_investigation_result_node",
+  "class_name": "HermesInvestigationResultNode",
+  "primary_family": "Inputs",
+  "display_name": "Investigation result",
+  "default_alias": "Investigation result",
+  "description": "Read a finding, or check whether it is ready",
+  "inputs": {
+    "input": {
+      "name": "Request id",
+      "type": "string",
+      "required": true,
+      "sources": [
+        "upstream",
+        "vault",
+        "configured"
+      ],
+      "default": "configured",
+      "parameter": {
+        "type": "string",
+        "label": "Request id",
+        "description": "Checks once. Does not wait or start Hermes."
+      }
+    }
+  },
+  "outputs": {
+    "default": {
+      "name": "Finding",
+      "type": "string",
+      "required": true,
+      "to": [
+        "downstream",
+        "vault"
+      ],
+      "pass_through": true,
+      "description": "The finding, or not ready yet / failed"
+    },
+    "state": {
+      "name": "State",
+      "type": "string",
+      "to": [
+        "vault"
+      ],
+      "description": "ready / not ready yet / failed; for a Conditional"
+    }
+  },
+  "errors": [
+    {
+      "code": "invalid_request_id",
+      "description": "Enter a valid investigation request id.",
+      "retryable": false
+    },
+    {
+      "code": "request_not_found",
+      "description": "This investigation request was not found.",
+      "retryable": false
+    },
+    {
+      "code": "record_invalid",
+      "description": "The investigation record needs checking.",
+      "retryable": false
+    },
+    {
+      "code": "inbox_busy",
+      "description": "The investigation inbox is busy. Try later.",
+      "retryable": false
+    },
+    {
+      "code": "inbox_unreadable",
+      "description": "The investigation inbox could not be read.",
+      "retryable": false
+    }
+  ],
+  "selector_section": "Text & Data"
+}

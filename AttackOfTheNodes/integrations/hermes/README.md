@@ -247,3 +247,127 @@ usage stays null/“not reported”, with the configured limit recorded separate
 
 [Run records, error contract and cleanup](../../docs/integrations/ASK_HERMES.md)
 · [Built screens and smoke evidence](../../docs/audits/ask_hermes_2026_10_22/README.md).
+
+## Investigation inbox (C3c, simple v1)
+
+“Ask Hermes to investigate” queues an incident; “Investigation result” checks
+its request id later. **AOTN gathers the evidence. Hermes has no tools and only
+analyses the supplied excerpts.** This is report only: it cannot inspect paths,
+run commands, browse, edit files or approve a repair. The separate read-only
+evidence service from the design samples is deferred.
+
+Owner setup, after reviewing and updating the live checkout (not performed by
+this PR):
+
+1. Complete [Ask Hermes setup](#ask-hermes-setup). Keep the tool-free `aotn`
+   profile independent of the default; no memory, plugins/hooks, context files,
+   fallback models or MCP tools. Its credentials are its own. This is profile
+   isolation, not an OS sandbox. Every attempt strictly checks
+   `tools list --platform cli`; enabled, missing, duplicate or unknown output
+   refuses before chat. Do not enable tools for investigations.
+2. In AOTN Options set **Investigations per day** (default 5; 0 turns new
+   investigations off; maximum 50). **Investigation profile home** defaults to
+   `~/.hermes/profiles/aotn`, and can point to another tool-free profile later.
+   **Hermes command** is shared with Ask Hermes, default `~/.local/bin/hermes`.
+   These are owner settings, never workflow parameters. A queued request
+   publishes these three settings into the shared inbox policy. All writers
+   for one shared inbox must use the same owner Options; the last enqueue
+   refreshes that policy, including when the enqueue is a repeat/refused by cap.
+3. Install/check the named entry, as copies (no symlinks):
+
+   ```bash
+   bash /home/makin/src/aotn-live/AttackOfTheNodes/integrations/hermes/install.sh --investigate-command home
+   bash /home/makin/src/aotn-live/AttackOfTheNodes/integrations/hermes/install.sh --check --investigate-command home
+   ```
+
+   This copies `_aotn_investigate.py` and `aotn-investigate-home.sh` only. Wrong
+   content/mode is drift; entry scripts are 755 and helpers 644. Directories,
+   symlinks and other non-regular file destinations are refused. Entry names
+   follow `aotn-investigate-<name>.sh`; arguments are refused. The suffix is a
+   job label, not a queue partition: one shared investigation inbox, one worker.
+4. Ask Hermes to create a **script-only** cron job every five minutes, using
+   the installed script, `--no-agent`, and Telegram as its delivery target.
+   Equivalent example, **not applied**:
+
+   ```bash
+   hermes cron create '*/5 * * * *' --name 'AOTN investigation inbox' --script aotn-investigate-home.sh --no-agent --deliver telegram
+   ```
+
+   Keep the job in the same scheduler home as the shared folder; do not use
+   a per-job profile to relocate its scripts/inbox. The bridge independently
+   selects the tool-free child profile. Verify the effective Hermes script
+   timeout leaves at least 95 seconds: source default is 120 seconds, but a
+   configured override may be shorter. No global timeout/config is changed by
+   AOTN. Do not install a native agent job: `--no-agent` is essential to avoid
+   an extra agent turn. When empty or another attempt owns the worker, stdout
+   is exactly `{"wakeAgent": false}`. Otherwise stdout is the safe final report.
+
+The installed entry uses `/home/makin/src/aotn-live`, the shared Python at
+`/home/makin/src/node_workflow/.venv/bin/python`, and the separate data directory
+`/home/makin/.local/share/aotn-cron`. Missing code/setup gives a plain line.
+The inbox itself remains `$HERMES_HOME/aotn/investigations`, **not** inside the
+child profile. No Hermes configuration, job or live install is applied here.
+
+### Workflow and limits
+
+Use What happened plus optional Short excerpts from Upstream payload, Vault or
+Configured. Each has its own standard source selector. Gather logs/check results
+with existing nodes first; a path in an excerpt is just text and is never opened
+by this feature. What to check is configured text. Known Secrets-store values,
+labelled credentials, bearer tokens, URL passwords and private-key blocks are
+redacted before request persistence; use secret references rather than typing
+credentials into saved parameters. Unknown secrets cannot be inferred reliably;
+keep evidence deliberately small. No raw CLI diagnostics are saved or printed.
+The bridge also redacts its own Secrets-store values before saving findings.
+
+Bounds: 4,000 characters each for What happened and What to check, 8,000 for
+excerpts, 20,000 for the complete untrusted-evidence envelope, 128 KiB per JSON
+record. Oversize input is refused rather than silently truncating the task.
+When accepts a timestamp with time zone; blank means now. No project Folder
+setting/evidence access is needed: the child works in the private inbox with
+`--ignore-rules`, one turn and `--query=<envelope>` as **one argv element**.
+
+One attempt at a time, oldest first. The **90-second total attempt budget**
+includes tool preflight/chat/whole-process-tree cleanup, with time reserved for
+result publication; SIGTERM/SIGINT (Stop) cancels the attempt. Linux subreapers
+reap detached descendants too. No automatic paid retries. Starts and accepted
+new requests each have the same per-UTC-day cap across workflows. An uncertain
+start stays charged; failures/tool refusals also consume their start reservation.
+Requests already queued wait if today's start cap is used. Cap zero pauses
+starts; the new request call can still return an existing id for a repeat.
+
+The cap counts attempts, **not dollars**. The one-turn CLI does not report
+reliable token/cost/turn telemetry; result usage is null/“not reported”. Actual
+charges remain visible in the owner's Hermes account/provider billing. The
+Ask Hermes dollar-cap opt-in applies to its node, not this separately capped,
+owner-enabled cron inbox. No claimed currency budget or invented estimate.
+
+Repeat key/window match C1 semantics: blank key is run/node/branch, 0 disables,
+up to 1,440 minutes, future timestamps do not suppress. Use a stable explicit
+key for the same incident across runs. A repeat returns the original request
+id and consumes no new quota. C1 `repeats.json` is unchanged.
+
+Save Request id with Remember for a later run; the Vault alone is per-run.
+Investigation result returns Finding or plain `not ready yet` / `failed`; its
+optional Vault-only State is `ready`, `not ready yet`, or `failed`. Compare State
+in Conditional, then have Notify me read Finding from the Vault (Conditional
+forwards the compared state). Standard forwarding affects downstream only;
+enabled Vault rows retain the node's own values. There is no polling loop or
+new trigger node. Cron already sends its final reply to Telegram: a later
+Notify me is an optional follow-up, not a second automatic report.
+
+A request left working for five minutes is failed, never automatically retried.
+A never-launched attempt or a prior boot can be reconciled safely. An ambiguous
+same-boot launch leaves `cleanup-required.json` and blocks further starts;
+AOTN does not guess ownership from a reusable PID. The owner must confirm the
+old bridge and descendants have stopped, inspect the failed/working records,
+and only then remove that marker. Missing/malformed leases also block. A valid
+result published before a crash wins; recovery completes its folder move without
+another inference or automatic repeat Telegram delivery.
+
+Reports escape H0 control directives and cap stdout at 3,500 UTF-16 units; full
+finding (up to 12,000 characters) stays in the result file. Telegram delivery is
+a handoff, not a confirmed receipt: `handoff_unknown` is deliberate. Results and
+quota/request files are retained in v1; no automatic pruning. Do not delete or
+move today's accounting/request records to bypass a cap. See the versioned
+[record contract](../../docs/integrations/HERMES_SHARED_FOLDER.md#investigation-inbox-c3c).

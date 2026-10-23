@@ -6373,6 +6373,7 @@ async def _test_node_selector_uses_family_tabs():
             "file_reader_node",
             "user_text_input_node",
             "http_request_node",
+            "hermes_investigation_result_node",
         }  # the three System nodes sit inside their group entry (below)
         # Single-member groups auto-promote; the three System nodes share a
         # group. Section headers come from selector_section metadata.
@@ -6387,6 +6388,12 @@ async def _test_node_selector_uses_family_tabs():
             "text_output_node",
             "file_output_node",
             "file_view_node",
+        }
+
+        hermes_group = next(entry for entry in screen._entries
+                            if entry["kind"] == "group" and entry["name"] == "Hermes")
+        assert {member["type"] for member in hermes_group["members"]} == {
+            "hermes_notify_node", "record_event_node", "hermes_investigate_node",
         }
 
         # Flow Control: no filter checkboxes; Branch group with member count;

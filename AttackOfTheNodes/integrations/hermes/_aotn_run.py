@@ -161,7 +161,7 @@ def cleanup(child, linux, timeout):
         time.sleep(min(0.01, max(0, until - time.monotonic())))
 
 
-def collect(argv, cwd, deadline=None, input_bytes=None):
+def collect(argv, cwd, deadline=None, input_bytes=None, env=None):
     """Drain bounded streams; own the process group and Linux descendants."""
     stopped = [None]
     old_handlers = {}
@@ -186,7 +186,7 @@ def collect(argv, cwd, deadline=None, input_bytes=None):
     try:
         for sig in (signal.SIGINT, signal.SIGTERM):
             old_handlers[sig] = signal.signal(sig, interrupted)
-        child = subprocess.Popen(argv, cwd=cwd,
+        child = subprocess.Popen(argv, cwd=cwd, env=env,
                                  stdin=subprocess.PIPE if input_bytes is not None else subprocess.DEVNULL,
                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                  start_new_session=True)

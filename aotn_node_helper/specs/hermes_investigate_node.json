@@ -1,0 +1,144 @@
+{
+  "category": "io",
+  "tags": [
+    "Hermes",
+    "investigation",
+    "incident"
+  ],
+  "group": "Hermes",
+  "icon_name": "search",
+  "output_routing": {
+    "default": "transient",
+    "vault": {
+      "mode": "optional"
+    }
+  },
+  "execution_template": "producer",
+  "payload_field": false,
+  "node_type": "hermes_investigate_node",
+  "class_name": "HermesInvestigateNode",
+  "primary_family": "Outputs",
+  "display_name": "Ask Hermes to investigate",
+  "default_alias": "Ask Hermes to investigate",
+  "description": "Queue one report-only investigation of the supplied evidence",
+  "inputs": {
+    "input": {
+      "name": "What happened",
+      "type": "string",
+      "required": true,
+      "sources": [
+        "upstream",
+        "vault",
+        "configured"
+      ],
+      "default": "configured",
+      "parameter": {
+        "type": "multiline",
+        "label": "What happened",
+        "height": 4
+      }
+    },
+    "evidence": {
+      "name": "Short excerpts",
+      "type": "string",
+      "required": false,
+      "sources": [
+        "upstream",
+        "vault",
+        "configured"
+      ],
+      "default": "configured",
+      "parameter": {
+        "type": "multiline",
+        "label": "Short excerpts (optional)",
+        "height": 4,
+        "description": "Evidence gathered by the workflow. Hermes cannot read files."
+      }
+    }
+  },
+  "outputs": {
+    "default": {
+      "name": "Request id",
+      "type": "string",
+      "required": true,
+      "to": [
+        "downstream",
+        "vault"
+      ],
+      "pass_through": true,
+      "description": "The new request id, or the original id for a skipped repeat"
+    }
+  },
+  "config_tabs": {
+    "Parameters": {
+      "when": {
+        "type": "string",
+        "label": "When (optional)",
+        "default": "",
+        "placeholder": "Blank: now"
+      },
+      "investigate": {
+        "type": "multiline",
+        "label": "What to check",
+        "default": "",
+        "height": 4,
+        "description": "Report only. No tools or changes. Daily limit is in Options."
+      },
+      "repeat_key": {
+        "type": "string",
+        "label": "Repeat key",
+        "default": "",
+        "placeholder": "same run + node + branch"
+      },
+      "skip_repeats_minutes": {
+        "type": "number",
+        "label": "Skip repeats for (minutes)",
+        "default": 60,
+        "minimum": 0,
+        "maximum": 1440
+      }
+    }
+  },
+  "errors": [
+    {
+      "code": "input_missing",
+      "description": "Enter what happened and what to check.",
+      "retryable": false
+    },
+    {
+      "code": "invalid_time",
+      "description": "Enter a timestamp with a time zone, or leave When blank.",
+      "retryable": false
+    },
+    {
+      "code": "request_too_large",
+      "description": "This investigation request is too long.",
+      "retryable": false
+    },
+    {
+      "code": "daily_limit",
+      "description": "The daily investigation limit has been reached.",
+      "retryable": false
+    },
+    {
+      "code": "inbox_full",
+      "description": "The investigation inbox is full.",
+      "retryable": false
+    },
+    {
+      "code": "inbox_busy",
+      "description": "The investigation inbox is busy. Try later.",
+      "retryable": false
+    },
+    {
+      "code": "inbox_unwritable",
+      "description": "The investigation request could not be saved.",
+      "retryable": false
+    },
+    {
+      "code": "inbox_invalid",
+      "description": "The investigation inbox needs checking.",
+      "retryable": false
+    }
+  ]
+}

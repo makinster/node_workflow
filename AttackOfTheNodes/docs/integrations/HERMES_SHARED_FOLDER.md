@@ -117,3 +117,126 @@ nothing here depends on it.
 - `delivered` / `failed` receipts need a reconciler that reads Hermes's
   delivery records (proposal Q2).
 - `memory_proposals.jsonl` (proposal section 5.4) comes with the propose node.
+
+## Investigation inbox (C3c)
+
+Simple v1, owner decision 2026-10-23: AOTN supplies short excerpts; the Hermes
+investigator has **no tools**, one turn, report only. Evidence paths are inert
+text. No read-only evidence service, terminal, web, file or MCP access is added.
+Setup and the unapplied cron example are in the
+[adapter guide](../../integrations/hermes/README.md#investigation-inbox-c3c-simple-v1).
+
+Under the same shared root (not the investigator's `HERMES_HOME`):
+
+```text
+.lock                                  existing C1 mutation flock
+investigations/                         directories 700, regular files 600
+  policy.json                          owner Options, refreshed on enqueue
+  worker.lock                          one complete attempt, nonblocking flock
+  pending/<request-id>.json             immutable requests
+  working/<request-id>.json             oldest claim, atomic rename
+  done/<request-id>.json                request after ready result
+  failed/<request-id>.json              request after failed result
+  results/<request-id>.json             atomic terminal finding/failure
+  leases/<request-id>.json              attempt ownership/phase, removed on finish
+  attempts/<attempt-id>.json            durable start reservations, retained
+  cleanup-required.json                only on unconfirmed cleanup; blocks starts
+```
+
+All JSON records have integer `schema_version: 1`; unknown/malformed versions
+refuse rather than silently resetting quotas. Regular-file/no-symlink checks,
+bounded reads, private modes, same-filesystem temporary writes, file fsync,
+exact atomic rename and directory fsync protect publication. The shared `.lock`
+protects short transitions (two-second lock wait); no lock is held across
+inference except the independent worker lock. Request ids match
+`i_YYYYMMDD_HHMMSS_<32 lowercase hex>` and cannot be arbitrary filenames.
+
+Request example (synthetic id):
+
+```json
+{
+  "schema_version": 1,
+  "request_id": "i_20261023_101400_8d4ae0d12cd840f3891cc7e46ac6409b",
+  "queued_at": "2026-10-23T10:14:00Z",
+  "incident_at": "2026-10-23T10:14:00Z",
+  "mode": "report_only",
+  "what_happened": "The service returned HTTP 503 four times.",
+  "evidence": "10:14 UTC: database connection failed; password=[redacted]",
+  "what_to_check": "Find a likely cause; suggest next checks without changes.",
+  "repeat_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "repeat_minutes": 60,
+  "origin": {"workflow": "Service check", "run_id": "run_1", "node_id": "ask", "branch": "main"}
+}
+```
+
+Repeat digests are SHA-256 of the explicit key or C1 run/node/branch default;
+raw repeat keys are not saved. Canonical request files across the four stage
+folders determine repeats and today's admissions. Repeats return the same id;
+no second index or mutation of C1 `repeats.json`. Future timestamps expire for
+repeat suppression. Stored request timestamps have zones. Inputs are redacted
+before writing, not left for Hermes to sanitize. Limits: description/task 4,000
+characters each, excerpts 8,000, whole prompt 20,000, each record 128 KiB.
+
+Policy shape:
+
+```json
+{"schema_version":1,"daily_limit":5,"profile":"/home/makin/.hermes/profiles/aotn","command":"/home/makin/.local/bin/hermes"}
+```
+
+`hermes_investigations_per_day` (0–50, default 5),
+`hermes_investigation_profile_home` (default `~/.hermes/profiles/aotn`) and shared
+`hermes_command` come only from owner Options. All apps using one inbox must
+agree on these settings; last enqueue publishes them. Both admission count and
+start count are limited independently per UTC day; this is not a dollar limit.
+No silent quota reset on bad records; retained files are the accounting source.
+Pending capacity is 100. No automatic record deletion/retention sweep in v1.
+
+A start reservation is written before spawning:
+
+```json
+{"schema_version":1,"attempt_id":"a_0123456789abcdef0123456789abcdef","request_id":"i_20261023_101400_8d4ae0d12cd840f3891cc7e46ac6409b","at":"2026-10-23T10:15:00Z"}
+```
+
+Lease fields: `schema_version`, `request_id`, `attempt_id`, `claimed_at` (UTC),
+`claimed_epoch` (seconds), `boot_id`, `owner_pid` (diagnostic only),
+`phase` (`claimed`, `launching`, `finished`), `cleanup_confirmed` (boolean).
+The bridge persists `launching`/false **before** any spawn. A stale lease after
+300 seconds is never a paid retry: safe never-launched/prior-boot work becomes
+failed `interrupted`; ambiguous same-boot work becomes `cleanup_failed` and
+blocks new starts. Missing/malformed ownership also blocks. The marker shape is
+`schema_version`, `request_id`, `code: cleanup_failed`, safe `message`, and `at`.
+Only an owner who has confirmed cleanup should remove it; PID existence alone
+cannot prove detached descendants stopped.
+
+Terminal result fields:
+
+| Field | Meaning |
+|---|---|
+| `schema_version`, `request_id`, `attempt_id` | Version and correlation |
+| `state` | `ready` or `failed` |
+| `finding` | Redacted nonempty text for ready (at most 12,000 characters), empty for failed |
+| `failure` | null for ready; `{code, message}` for failed; no raw stderr |
+| `started_at`, `finished_at` | UTC timestamps |
+| `mode`, `tools` | `report_only`, `[]` |
+| `limits` | `{seconds: 90, turns: 1, budget_usd: null}` |
+| `usage` | `cost_status: not_reported`, null `estimated_cost_usd`, `input_tokens`, `output_tokens` |
+| `cleanup_confirmed` | true only after process-tree cleanup is established |
+| `notification` | `handoff_unknown`; stdout is not proof of delivery |
+
+Write the result atomically before moving working to done/failed; a published
+valid result is authoritative if a crash interrupts that last rename. Recovery
+finishes the move without inference or duplicate automatic delivery. No terminal
+result overwrite or request-id mismatch. Result reader returns the finding and
+State `ready`, otherwise literal `not ready yet` for pending/working or `failed`
+for a terminal failure. State is an optional string Vault output for Conditional;
+Finding follows standard downstream/Vault forwarding. Unknown id, corrupt record,
+wrong version and unreadable inbox are node errors, not invented pending states.
+
+Worker failure codes reuse #116: `profile_missing`, `not_installed`,
+`permission_denied` (any enabled/unknown tools), `auth_failed`, `invalid_response`,
+`agent_failed`, `timed_out`, `cleanup_failed`, plus `cancelled` and `interrupted`.
+All failures consume their start reservation; no automatic retry. Empty/locked/
+start-capped inbox emits exactly `{"wakeAgent": false}`; infrastructure/cleanup
+problems emit a plain safe line without waking an extra agent. Nonempty reports
+use H0 escaping and a 3,500 UTF-16-unit cap. A script-only cron job prints that
+report directly; it does not use a native agent-job precheck/context hook.
