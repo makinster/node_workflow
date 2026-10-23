@@ -64,7 +64,9 @@ def main():
                     except (ValueError, UnicodeError):
                         result['status'] = 'permission_denied'
                     else:
-                        argv = [str(command), 'chat', '-q', question, '-Q', '--source', 'tool',
+                        # One attached argv element: Hermes's early --profile
+                        # scan and argparse both read it as question text.
+                        argv = [str(command), 'chat', '--query=' + question, '-Q', '--source', 'tool',
                                 '--max-turns', '1', '--ignore-rules']
                         code, output, diagnostic, reason, _ = collect(argv)
                         if reason is not None:

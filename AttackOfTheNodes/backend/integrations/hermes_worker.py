@@ -49,7 +49,9 @@ def parse_answer(output):
     while lines and SESSION.fullmatch(lines[0].strip()):
         lines.pop(0)
     answer = '\n'.join(lines).strip()
-    if (not answer or len(answer.encode('utf-8')) > MAX_ANSWER or any(re.match(r'\s*(?:session_id|Session ID):', line) for line in lines)
+    # An embedded receipt in any recognised form is never answer text.
+    if (not answer or len(answer.encode('utf-8')) > MAX_ANSWER
+            or any(SESSION.fullmatch(line.strip()) or re.match(r'\s*(?:session_id|Session ID):', line) for line in lines)
             or answer.startswith(('Error:', 'Traceback (most recent call last):', 'Built-in toolsets ('))):
         raise ValueError('no answer')
     return answer

@@ -56,8 +56,8 @@ assert 'UNRELATED_API_KEY' not in os.environ
 with open({str(tmp_path/'calls.jsonl')!r},'a') as log: log.write(json.dumps(sys.argv[1:])+'\\n')
 if sys.argv[1:]==['tools','list','--platform','cli']:
  sys.stdout.write(Path({str(tmp_path/'tools.txt')!r}).read_text());sys.exit(0)
-assert sys.argv[1:3]==['chat','-q']
-assert sys.argv[4:]==['-Q','--source','tool','--max-turns','1','--ignore-rules']
+assert sys.argv[1]=='chat'
+assert sys.argv[-6:]==['-Q','--source','tool','--max-turns','1','--ignore-rules']
 '''+program+'\n')
     command.chmod(0o755)
     broker=Path(service.__file__).with_name('hermes_process.py')
@@ -176,6 +176,18 @@ async def test_empty_unparseable_or_oversized_output(setup,tmp_path,monkeypatch,
     assert not done and errors[0].code=='invalid_response'
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize('receipt',['Session: private-session','session_id: private-session',
+    'Session ID: private-session','  \x1b[2mSession: private-session\x1b[0m'])
+async def test_embedded_session_receipt_never_becomes_answer(setup,tmp_path,monkeypatch,receipt):
+    ctx,_,events,done,errors=setup
+    fake_worker(tmp_path,monkeypatch,f'print("answer one\\n"+{receipt!r}+"\\nanswer two")')
+    await node(ctx,tmp_path,vault_write=True,vault_write_key='answer').execute(ctx)
+    assert not done and errors[0].code=='invalid_response'
+    assert ctx.memory_bank.read_persistent('answer') is None
+    assert 'private-session' not in read_record(events)[1].read_text()
+
+
 async def wait_pid(path):
     until=time.monotonic()+5
     while not path.exists() or not path.read_text():
@@ -231,7 +243,31 @@ async def test_question_literal_argv_folder_and_command_without_path(setup,tmp_p
     await node(ctx,tmp_path,input=question).execute(ctx)
     assert not errors and done[0]['data']['default']=='ok' and not (tmp_path/'NEVER').exists()
     calls=[json.loads(line) for line in (tmp_path/'calls.jsonl').read_text().splitlines()]
-    assert calls[1]==['chat','-q',question,'-Q','--source','tool','--max-turns','1','--ignore-rules']
+    assert calls[1]==['chat','--query='+question,'-Q','--source','tool','--max-turns','1','--ignore-rules']
+
+
+# Mirrors installed Hermes: an early --profile/-p scan over every argv element
+# (before argparse), then the chat subparser's -q/--query option.
+HERMES_PARSERS = '''
+import argparse
+for i,arg in enumerate(sys.argv[1:]):
+ if arg in {'--profile','-p'} and i+2<len(sys.argv) or arg.startswith('--profile='):
+  print('profile switched');sys.exit(0)
+p=argparse.ArgumentParser();p.add_argument('chat');p.add_argument('-q','--query')
+p.add_argument('-Q',action='store_true');p.add_argument('--source');p.add_argument('--max-turns')
+p.add_argument('--ignore-rules',action='store_true')
+print(p.parse_args().query)
+'''
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('question',['--profile=default','--profile default','-p default','--model=x',
+    '-p','--profile','-Q','What is 2+2?','line one\n--toolsets terminal'])
+async def test_option_shaped_question_stays_question_text_in_aotn_profile(setup,tmp_path,monkeypatch,question):
+    ctx,_,events,done,errors=setup
+    fake_worker(tmp_path,monkeypatch,HERMES_PARSERS)
+    await node(ctx,tmp_path,input=question).execute(ctx)
+    assert not errors and done[0]['data']['default']==question
 
 
 @pytest.mark.asyncio
@@ -430,7 +466,7 @@ def test_coloured_tools_listing_is_classified():
 @pytest.mark.parametrize('character',['x','😀'])
 async def test_exact_question_cap_is_accepted(setup,tmp_path,monkeypatch,character):
     ctx,_,_,done,errors=setup
-    fake_worker(tmp_path,monkeypatch,'print(len(sys.argv[3]))')
+    fake_worker(tmp_path,monkeypatch,'print(len(sys.argv[2].removeprefix("--query=")))')
     await node(ctx,tmp_path,input=character*service.MAX_QUESTION).execute(ctx)
     assert not errors and done[0]['data']['default']==str(service.MAX_QUESTION)
 
