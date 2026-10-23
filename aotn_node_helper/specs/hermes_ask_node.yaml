@@ -8,7 +8,7 @@ selector_section: AI
 icon_name: message-circle
 display_name: Ask Hermes
 default_alias: Ask Hermes
-description: Ask one question using Hermes memory; returns text
+description: Ask one question through the aotn Hermes profile; returns text
 inputs:
   input:
     name: Question
@@ -20,7 +20,7 @@ inputs:
       type: multiline
       label: Question
       height: 5
-      description: One reply, no tools. Uses your Hermes account; no dollar cap.
+      description: One question, no tools. Uses the aotn profile; no dollar cap.
 outputs:
   default:
     name: Answer
@@ -54,13 +54,16 @@ config_tabs:
       max: 300
 errors:
   - code: not_installed
-    description: "Hermes is not installed."
+    description: "Hermes is not installed"
+    retryable: false
+  - code: profile_missing
+    description: "Set up the aotn Hermes profile first"
     retryable: false
   - code: unsupported_runtime
-    description: "This Hermes version can't run with these limits."
+    description: "Ask Hermes needs a native Linux runtime."
     retryable: false
   - code: auth_failed
-    description: "Sign in to Hermes first."
+    description: "Sign in to Hermes (aotn profile)"
     retryable: false
   - code: folder_missing
     description: "Choose an existing folder."
@@ -78,7 +81,7 @@ errors:
     description: "Stopped after the turn limit."
     retryable: false
   - code: permission_denied
-    description: "Hermes requested a tool it was not given."
+    description: "This Hermes profile has tools turned on."
     retryable: false
   - code: agent_failed
     description: "Hermes could not finish."

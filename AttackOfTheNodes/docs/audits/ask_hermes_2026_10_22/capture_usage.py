@@ -26,7 +26,8 @@ async def main():
     with pytest.MonkeyPatch.context() as patch:
         fake_worker(DATA,patch)
         runner=RunService.create()
-        for key,value in {'system_node_folders':str(DATA),'hermes_allow_no_budget':True}.items():
+        for key,value in {'system_node_folders':str(DATA),'hermes_allow_no_budget':True,
+                          'hermes_profile_home':str(DATA/'profile'),'hermes_command':str(DATA/'fake_hermes')}.items():
             runner.configuration.set(key,value)
         wm=runner.workflow_map
         wm.create_new('one-question')

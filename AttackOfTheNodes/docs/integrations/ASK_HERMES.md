@@ -1,104 +1,114 @@
 # Ask Hermes (C3b part 1)
 
-Ask Hermes asks one question and returns text. **The installed Hermes release
-is refused before inference:** `This Hermes version can't run with these limits.`
-This PR delivers the registered node, isolation gate, process ownership,
-records and usage presentation. It does not enable a compatible agent adapter.
-Success/error/cleanup tests use fake workers; no real account or model call
-was made. No Hermes files, configuration or live installation were changed.
+Owner route revision: 2026-10-23.
+
+Ask Hermes sends one question to the public CLI using an independent `aotn`
+profile and returns text. It imports no Hermes internals. The owner set up and
+verified the dedicated profile; AOTN checks its disabled CLI toolsets before
+every question. This replaces the original always-refuse compatibility gate.
+[New-user profile setup](../../integrations/hermes/README.md#ask-hermes-setup)
+includes the owner's prompt and verification commands.
 
 ## Configure
 
-Add **Complex → AI Processing → Ask Hermes**. Question uses the standard
-Upstream payload, Vault or Configured source; upstream/Vault values must be
-non-empty strings. The configured field uses today's shared multiline editor;
-the later preview/full-screen editor remains a proposal.
+Add **Complex → AI Processing → Ask Hermes**. Question uses Upstream payload,
+Vault or Configured; upstream/Vault values must be non-empty strings. Configured
+uses today's shared multiline editor; the later preview/editor remains separate.
 
-Choose an existing **Folder** permitted by Options `system_node_folders`.
-Links are resolved and checked again at invocation; an empty allowed list
-allows nothing. Folder is the worker's CWD, not an operating-system sandbox.
-The agent has no project-file tools. Installation selection is a machine
-option, **Hermes installation folder**, never a workflow flag or executable.
+Choose an existing **Folder** allowed by Options `system_node_folders`.
+Expand `~`, resolve links and check at invocation. Empty allowed folders permit
+nothing. The selected directory is the CLI's CWD. `--ignore-rules` prevents
+AGENTS.md, SOUL and other context files in the Folder from loading.
 
-**Stop after (seconds)** defaults to 60, range 10–300, including worker startup
-and cleanup. Question is limited to 20,000 characters; answer to 256 KiB UTF-8.
-Exactly one model turn, no tools, retries or fallback models. No dollar cap is
-verified: **Allow Ask Hermes without a dollar cap** defaults off in Options.
-This first version requires that opt-in for all runs, including unattended ones.
-It changes neither time limits nor permissions. Provider billing or remote
-computation may continue after a local process is stopped.
+Machine Options owns **Hermes profile home** (`hermes_profile_home`, default
+`~/.hermes/profiles/aotn`) and **Hermes command** (`hermes_command`, default
+`~/.local/bin/hermes`), never credentials or workflow-supplied CLI flags. Command
+is an explicit executable path, so cron need not include `~/.local/bin` in PATH.
+A wrapper may use bash; AOTN executes it directly as argv without constructing
+a shell command string.
+Only the disposable broker/CLI children receive the selected `HERMES_HOME`;
+the app's environment and default Hermes profile remain unchanged.
 
-**Answer** is text, downstream by default, optionally copied to the Vault.
+**Stop after (seconds)** defaults to 60, range 10–300, including preflight,
+startup and cleanup. Question is capped at 20,000 characters, answer at 256 KiB
+UTF-8. The command is `chat -q <question> -Q --source tool --max-turns 1
+--ignore-rules`; Question is one literal argument, not shell text.
+There is no enforceable dollar cap: **Allow Ask Hermes without a dollar cap**
+defaults off and must be enabled deliberately, for interactive and unattended
+runs alike. Remote usage/billing may continue after local processes stop.
+
+**Answer** is downstream text by default, optionally copied to the Vault.
 The standard **Forward incoming payload unchanged** checkbox substitutes the
-original incoming payload downstream, including when Question comes from
-Configured or Vault. Enabled Vault outputs still receive the answer/details.
-**Run details** is optional, off by default, and Vault only. Its key must differ
-from Answer's key. Validation happens before starting a worker.
+original upstream payload downstream, even with a Configured/Vault question.
+Enabled Vault outputs still receive the answer/details. **Run details** is
+optional, off by default and Vault only; its key must differ from Answer's.
 
-## Compatibility and isolation
+## Preflight and output
 
-The worker runs through an isolated native Linux Python interpreter (`-I -S`),
-with a fixed protocol and explicitly empty tool list. It must guarantee
-read-only identity/memory, no writeback, plugins, hooks, MCP, project context
-files, fallback, automatic retries, summarization, extraction or extra paid
-calls. No user-supplied shell command is constructed; question travels on stdin.
-Unrelated credentials and Python/plugin overrides are removed from child env.
+Each run checks profile/config existence and command executability, then runs
+`tools list --platform cli` using the selected profile and checked CWD. Strict
+UTF-8 parsing requires the known header and all 24 unique built-in toolsets,
+each marked disabled. Enabled, missing, duplicated, new or unclassified lines,
+including diagnostics, refuse with `permission_denied`. SGR colour is accepted;
+other terminal controls are refused. There is no cache. Config identity, mtime
+and size must remain unchanged across preflight. Unknown CLI formats fail closed.
 
-Installed-source audit: Hermes 0.14, source revision `556bf7c5c`. Its imports
-perform plugin discovery and its agent loop has additional retry/maintenance
-paths. CLI empty-tool selection also falls back to configured tools. These
-cannot establish the approved restrictions. The stdlib-only gate reads the
-version literal without importing Hermes, loading auth or memory, or making
-inference. **All releases remain refused until a separately source-audited,
-containment-tested adapter is added.** A version string alone never enables
-execution; there is no workflow/environment bypass. Missing installations
-report `not_installed`. Native Windows runtimes are unsupported.
+After successful preflight, run one `chat` command in the same total budget.
+The owner-verified profile blocks MCP, disables all CLI tools and has memory
+off and its own credentials. `--ignore-rules` also skips injected rules/memory.
+This is **profile isolation, not an OS sandbox**; it trusts the owner's profile
+and CLI, which run with the owner's OS access and maintain profile session data.
+AOTN does not certify internal provider retries/fallbacks or exactly one paid
+API call from `--max-turns 1`. No automatic AOTN retry or account switch occurs.
+`--source tool` currently persists as `cli` in Hermes; no behavior depends on it.
+
+`-Q` stdout is the answer; recognised bounded session-ID lines at its edges are
+removed. Stderr is never an answer. Empty, undecodable, control-bearing, known
+error-shaped or oversized output gives `invalid_response`; failed authentication
+gives the plain `auth_failed` message. Unknown CLI errors become `agent_failed`,
+without raw service text or traceback. `-Q` reports no measured turns, token use,
+provider identity or cost: those values remain null/“not reported”. Configured
+turn/time limits are separate from observations.
 
 ## Stop, records and usage
 
-An async subprocess broker reuses H0's Linux subreaper collector. Every
-invocation has a session/process group; descendants that detach with `setsid`
-are discovered, killed and reaped too. The final five seconds are reserved:
-INT at T−5, KILL at T−1, final second for reaping. Stop starts the same cleanup,
-clamped to the original deadline. Repeated Stop cannot interrupt cleanup.
-Cancellation stays cancelled and publishes no answer.
+An async subprocess broker reuses H0's Linux subreaper collector. Every CLI
+process has a session/group; descendants detaching with `setsid()` are discovered,
+killed and reaped. Preflight and chat share one absolute deadline. Final five
+seconds: INT at T−5, KILL at T−1, final second for reaping. Stop starts the same
+bounded cleanup, clamped to the original deadline; repeated Stop is shielded.
+Cancellation stays cancelled and publishes no answer. Native Windows is refused.
 
-Before dispatch, write an intent and a C1 Record event receipt. Every invocation
-gets a private file at `run_outputs/<run_id>/agents/<invocation_id>.jsonl`;
-directories are 700, files 600. Records include timestamps, IDs, resolved
-folder, limits, effective empty-tool policy, bounded answer, size/digest,
-status, time and usage. There are no tool events in this version. Cap is 4 MiB
-plus 64 KiB reserved for a terminal receipt. Recording failure prevents further
-execution and suppresses successful outputs. Failed/cancelled records remain.
+Before dispatch, write a private intent and C1 Record event receipt. Each visit
+gets `run_outputs/<run_id>/agents/<invocation_id>.jsonl`, directories 700, files
+600. Records include timestamps, IDs, checked folder, configured limits,
+profile-isolation policy, bounded answer/size/digest, status and usage. No hidden
+reasoning, credential files or raw CLI diagnostics are copied. Cap is 4 MiB plus
+64 KiB reserved for the terminal receipt. Recording failure suppresses outputs;
+failed/cancelled records remain. CLI session history stays in the selected profile.
 
-Terminal C1 receipts contain status and cost only; they never send a message.
-Execution details, JSON run results and saved run summaries retain usage even
-with forwarding or both Vault outputs off. They show turns, tokens, cost and
-record location. Reported costs are estimates; absent usage is null/“not
-reported”, never a fabricated zero. Per-run totals sum known estimates and
-mark missing/partial amounts. Account source is `agent-owned`; no billing
-account switch, pricing lookup or second login. Records are private, not an
-invoice or a complete private-memory dump.
+C1 terminal receipts contain status/cost and send no message. Execution details,
+JSON results and saved run summaries retain usage/record location regardless of
+forwarding or disabled Vault outputs. Missing cost is null, never a fabricated
+zero. Totals mark missing/partial estimates; they are not a bill.
+Unrelated credential/agent environment overrides are removed. Known AOTN secret
+values are redacted from recorded answers; unknown project text can contain
+secrets AOTN does not know. The question is visible as a local process argument,
+as required by the CLI; never put credentials into questions or workflow config.
 
-No auth values are stored in node config, argv or receipts. Raw stderr and
-unknown worker fields are discarded. Registered AOTN secret values are redacted
-from recorded answers/identity fields; a future compatible adapter must redact
-its own selected credentials before emitting events. Arbitrary project text
-may contain secrets unknown to AOTN. Credential files are never copied here.
-
-Ownership markers live in `run_outputs/.ask-hermes-workers`. An active marker
-is locked; an unlocked retained marker indicates a crash/unconfirmed cleanup
-and blocks further invocations. Confirm those processes are gone before an
-owner removes that marker; no automatic recovery or paid retry occurs.
+Ownership markers in `run_outputs/.ask-hermes-workers` remain until cleanup is
+confirmed. An unlocked retained marker blocks new calls after a crash or cleanup
+failure. An owner must verify processes are gone before removing it. No paid
+retry occurs automatically.
 
 ## Errors
 
-All are nonretryable: `not_installed`, `unsupported_runtime`, `auth_failed`,
-`folder_missing`, `not_allowed`, `text_too_long`, `timed_out`, `turn_limit`,
-`permission_denied`, `agent_failed`, `invalid_response`, `record_failed`,
-`cleanup_failed`. Standard `node_error` covers invalid input/configuration or
-the disabled cost opt-in. Stop is a cancellation receipt. Limits and malformed
-output never become a partial successful answer; errors contain plain fixed
-messages and safe run details, not a CLI traceback.
+All nonretryable: `not_installed` (“Hermes is not installed”), `profile_missing`
+(“Set up the aotn Hermes profile first”), `unsupported_runtime`, `auth_failed`
+(“Sign in to Hermes (aotn profile)”), `folder_missing`, `not_allowed`,
+`text_too_long`, `timed_out`, `turn_limit`, `permission_denied` (“This Hermes
+profile has tools turned on.”), `agent_failed`, `invalid_response`,
+`record_failed`, `cleanup_failed`. `node_error` covers bad input/configuration
+or disabled no-budget opt-in. Stop is a cancellation receipt, not an extra code.
 
-[Built screens and reproduction](../audits/ask_hermes_2026_10_22/README.md).
+[Built screens and verification](../audits/ask_hermes_2026_10_22/README.md).

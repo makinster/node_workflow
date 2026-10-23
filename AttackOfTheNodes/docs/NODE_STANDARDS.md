@@ -95,20 +95,21 @@ option — the document is always expected to come from a live data source).
 
 ## Ask Hermes (C3b part 1, owner 2026-10-22)
 
-One question (Upstream payload, Vault or Configured), one text Answer, optional
-Vault-only Run details; no tools or fallback. The standard **Forward incoming
-payload unchanged** checkbox affects downstream only; enabled Vault outputs
-still receive their own values. No custom output-routing UI.
+One question (Upstream payload, Vault or Configured), text Answer and optional
+Vault-only Run details. The standard **Forward incoming payload unchanged**
+checkbox affects downstream only; enabled Vault outputs retain their values.
+No custom output-routing UI.
 
-Use an explicit Folder checked by `system_access`/`system_node_folders`, a total
-60-second deadline (10–300), 20,000-character input and 256 KiB answer cap.
-Machine Options owns the installation and explicit no-dollar-cap opt-in.
-The isolated worker refuses unsupported versions before inference. The current
-installation cannot guarantee the approved restrictions and is refused;
-no compatible adapter is enabled. Every attempt retains private records/C1
-receipts and usage regardless of routing. Linux process-tree cleanup includes
-detached descendants; Stop remains cancellation. See the
-[Ask Hermes contract and errors](integrations/ASK_HERMES.md).
+Use an explicit Folder checked by `system_access`/`system_node_folders`, total
+60-second deadline (10–300), 20,000-character question and 256 KiB answer cap.
+Machine Options owns the dedicated profile home, executable and no-dollar-cap
+opt-in. The public CLI checks all toolsets disabled before every question, then
+runs `chat -q <question> -Q --source tool --max-turns 1 --ignore-rules`, no shell
+or Hermes internal imports. Profile isolation is not an OS sandbox. CLI usage
+is unknown rather than invented; private records, C1 receipts and Execution/run
+summaries remain independent of routing. Linux cleanup includes detached
+descendants; Stop stays cancellation. See [setup](../integrations/hermes/README.md#ask-hermes-setup)
+and the [contract/errors](integrations/ASK_HERMES.md).
 
 ## Bounded choice node (C3a, owner 2026-10-22)
 

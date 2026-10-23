@@ -1,51 +1,63 @@
-"""Isolated standard-library-only compatibility gate. Never imports Hermes.
-
-The installed 0.14 runtime cannot guarantee a tool-free, read-only, single-call
-AIAgent: imports discover plugins; its conversation loop has extra retry paths.
-There is deliberately no approved adapter for it. New versions do not opt in
-by version number alone: adding an adapter requires a separate source audit and
-containment tests. Refusal occurs before auth, memory loading or inference.
-"""
-import json
-from pathlib import Path
+"""Strict, stdlib-only parsers for the profile CLI. Never imports Hermes."""
 import re
-import sys
 
-PROTOCOL = 'aotn-hermes-worker/1'
-POLICY = {'tools': [], 'memory': 'read-only', 'memory_writeback': False,
-          'plugins': False, 'hooks': False, 'mcp': False, 'context_files': False,
-          'fallback_models': [], 'max_turns': 1, 'automatic_retries': 0}
-MAX_REQUEST = 128 * 1024
-
-
-def main():
-    status = 'unsupported_runtime'
-    try:
-        raw = sys.stdin.buffer.read(MAX_REQUEST + 1)
-        request = json.loads(raw) if len(raw) <= MAX_REQUEST else None
-        if (not isinstance(request, dict) or request.get('protocol') != PROTOCOL
-                or request.get('policy') != POLICY):
-            status = 'unsupported_runtime'
-        else:
-            root = Path(request['installation'])
-            version_file = root / 'hermes_cli/__init__.py'
-            if not version_file.is_file():
-                status = 'not_installed'
-            else:
-                # Read the literal without executing __init__, sitecustomize,
-                # plugin discovery, provider resolution or credential code.
-                with version_file.open('rb') as stream:
-                    source = stream.read(64 * 1024)
-                match = re.search(rb'^__version__\s*=\s*[\'"]([^\'"\r\n]+)', source, re.M)
-                # No installed release has an audited compatible adapter.
-                # Unknown/modified versions also remain refused, not trusted.
-                if match is not None:
-                    status = 'unsupported_runtime'
-    except (OSError, ValueError, KeyError, TypeError):
-        status = 'unsupported_runtime'
-    print(json.dumps({'protocol': PROTOCOL, 'status': status}))
-    return 0
+PROTOCOL = 'aotn-hermes-cli/2'
+POLICY = {'isolation': 'profile', 'tools': [], 'memory': 'off',
+          'context_files': False, 'max_turns': 1}
+MAX_QUESTION = 20_000
+MAX_ANSWER = 256 * 1024
+# Inventory verified against the owner's CLI. New/changed output needs review,
+# never silently accepts a truncated listing or a newly introduced toolset.
+TOOLSETS = frozenset('web browser terminal file code_execution vision video image_gen '
+    'video_gen x_search moa tts skills todo memory session_search clarify delegation '
+    'cronjob messaging homeassistant spotify yuanbao computer_use'.split())
+SGR = re.compile(r'\x1b\[[0-9;]*m')
+SESSION = re.compile(r'(?:session_id|Session|Session ID):\s*[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}')
 
 
-if __name__ == '__main__':
-    sys.exit(main())
+def text(raw):
+    value = SGR.sub('', raw.decode('utf-8'))
+    if any(ord(char) < 32 and char not in '\n\r\t' or ord(char) == 127 for char in value):
+        raise ValueError('control character')
+    return value.replace('\r\n', '\n')
+
+
+def parse_tools(output, diagnostic=b''):
+    lines = [line for line in text(output + b'\n' + diagnostic).splitlines() if line.strip()]
+    if not lines or lines.pop(0) != 'Built-in toolsets (cli):':
+        raise ValueError('unknown listing')
+    seen = set()
+    for line in lines:
+        row = re.fullmatch(r'  ✗ disabled  ([a-z][a-z0-9_]*)  \S.*', line)
+        if row is None or row[1] not in TOOLSETS or row[1] in seen:
+            raise ValueError('unclassified toolset')
+        seen.add(row[1])
+    if seen != TOOLSETS:
+        raise ValueError('incomplete listing')
+
+
+def parse_answer(output):
+    # The collector bounds the whole CLI stream to 1 MiB. The answer cap
+    # applies after removing its final newline/session metadata.
+    if len(output) > 1024 * 1024:
+        raise ValueError('CLI output too long')
+    lines = text(output).strip().splitlines()
+    # -Q writes session_id to stderr today. Recognise the bounded metadata
+    # line at stdout's edges too; never return a session receipt as an answer.
+    while lines and SESSION.fullmatch(lines[-1].strip()):
+        lines.pop()
+    while lines and SESSION.fullmatch(lines[0].strip()):
+        lines.pop(0)
+    answer = '\n'.join(lines).strip()
+    if (not answer or len(answer.encode('utf-8')) > MAX_ANSWER or any(re.match(r'\s*(?:session_id|Session ID):', line) for line in lines)
+            or answer.startswith(('Error:', 'Traceback (most recent call last):', 'Built-in toolsets ('))):
+        raise ValueError('no answer')
+    return answer
+
+
+def is_auth_failure(output, diagnostic):
+    # Only called on a failed/empty/error-shaped reply, never on successful
+    # answer prose (which may itself discuss authentication).
+    value = (output + b'\n' + diagnostic).decode('utf-8', errors='replace')
+    return bool(re.search(r'\b(?:401|403|unauthorized|unauthenticated|authentication|oauth)\b'
+        r'|(?:sign|log)\s*in|\blogin\b|credentials?|token.{0,40}expir|invalid.{0,20}api.?key', value, re.I))

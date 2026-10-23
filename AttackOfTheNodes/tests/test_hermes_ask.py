@@ -1,9 +1,9 @@
-"""No provider calls: all success/error/cleanup cases use isolated fake workers."""
+"""Public CLI integration; fake executables only, no provider calls."""
 import asyncio
-import copy
 import json
 import os
 from pathlib import Path
+import shutil
 import signal
 import sys
 import time
@@ -17,21 +17,23 @@ from backend.node_base import NodeContext
 from backend.node_errors import NodeError
 from backend.nodes.ai.hermes_ask_node import HermesAskNode
 from backend.integrations import hermes_ask as service
-from backend.integrations.hermes_worker import POLICY, PROTOCOL
+from backend.integrations.hermes_worker import POLICY, TOOLSETS, parse_tools, parse_answer
 
 SECRET = 'secret-for-unrelated-provider-never-record'
+TOOLS = 'Built-in toolsets (cli):\n'+''.join(f'  ✗ disabled  {name}  Test toolset\n' for name in sorted(TOOLSETS))
 
 
 @pytest.fixture
 def setup(tmp_path, monkeypatch):
     monkeypatch.setattr(persistence, 'RUN_OUTPUTS_DIR', tmp_path / 'outputs')
-    monkeypatch.setenv('HERMES_HOME', str(tmp_path / 'hermes-home'))
+    monkeypatch.setenv('HERMES_HOME', str(tmp_path / 'sticky-default'))
     monkeypatch.setenv('UNRELATED_API_KEY', SECRET)
+    profile=tmp_path/'profile';profile.mkdir();(profile/'config.yaml').write_text('# isolated test profile\n')
     events, done, errors = [], [], []
     memory = MemoryBank(EventBus())
     memory.store_persistent('question', 'Vault question', type_tag='string')
     settings = {'system_node_folders': str(tmp_path), 'hermes_allow_no_budget': True,
-                'hermes_installation_folder': str(tmp_path / 'installation')}
+                'hermes_profile_home':str(profile),'hermes_command':str(tmp_path/'fake_hermes')}
     context = NodeContext(node_id='ask', branch_id='S1', run_id='run-test',
         inputs={'input': 'Upstream question'}, memory_bank=memory, signal_done=done.append,
         signal_error=errors.append, signal_waiting_for_input=lambda _: None,
@@ -41,19 +43,27 @@ def setup(tmp_path, monkeypatch):
 
 
 def fake_worker(tmp_path, monkeypatch, program=None):
-    worker = tmp_path / 'fake_worker.py'
-    if program is None:
-        program = '''import json,sys,os
-request=json.load(sys.stdin)
-print(json.dumps({'protocol':request['protocol'],'status':'ok','policy':request['policy'],
- 'tool_calls':[],'turns':1,'answer':'A useful answer',
- 'provider':'local','model':'configured','usage':{'input_tokens':12,'output_tokens':3,'estimated_cost_usd':None}}))
-'''
-    worker.write_text(program)
-    broker = Path(service.__file__).with_name('hermes_process.py')
-    # Change only the private worker argv in a disposable subprocess launcher.
-    # Also accelerate H0 grace for tests; production timing has no env override.
-    code = '''import runpy,sys
+    """A fake public Hermes executable, with the real broker/collector path."""
+    profile=tmp_path/'profile';profile.mkdir(exist_ok=True)
+    (profile/'config.yaml').write_text('# isolated test profile\n')
+    (tmp_path/'tools.txt').write_text(TOOLS)
+    command=tmp_path/'fake_hermes'
+    program=program or "print('A useful answer');print('session_id: test-session',file=sys.stderr)"
+    command.write_text(f'#!{sys.executable}\n'+f'''import os,sys,json
+from pathlib import Path
+assert os.environ['HERMES_HOME']=={str(profile)!r}
+assert 'UNRELATED_API_KEY' not in os.environ
+with open({str(tmp_path/'calls.jsonl')!r},'a') as log: log.write(json.dumps(sys.argv[1:])+'\\n')
+if sys.argv[1:]==['tools','list','--platform','cli']:
+ sys.stdout.write(Path({str(tmp_path/'tools.txt')!r}).read_text());sys.exit(0)
+assert sys.argv[1:3]==['chat','-q']
+assert sys.argv[4:]==['-Q','--source','tool','--max-turns','1','--ignore-rules']
+'''+program+'\n')
+    command.chmod(0o755)
+    broker=Path(service.__file__).with_name('hermes_process.py')
+    # Accelerated cleanup only in this disposable test launcher, no production
+    # environment or workflow option bypasses the real limits.
+    code='''import runpy,sys
 original=runpy.run_path
 def loaded(path,*a,**k):
  m=original(path,*a,**k)
@@ -61,12 +71,10 @@ def loaded(path,*a,**k):
   m['collect'].__globals__.update(GRACE=.2,CLEANUP_WAIT=.05)
  return m
 runpy.run_path=loaded
-m=original(sys.argv[1])
-m['main'].__globals__['worker_command']=lambda _: [sys.executable,'-I','-S','-u',sys.argv[2]]
-sys.exit(m['main']())
+m=original(sys.argv[1]);sys.exit(m['main']())
 '''
-    monkeypatch.setattr(service, 'broker_command', lambda: [sys.executable, '-I', '-S', '-u', '-c', code, str(broker), str(worker)])
-    return worker
+    monkeypatch.setattr(service,'broker_command',lambda:[sys.executable,'-I','-S','-u','-c',code,str(broker)])
+    return command
 
 
 def node(context, folder, **config):
@@ -83,88 +91,89 @@ def read_record(events):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize('source', ['Upstream payload','Vault','Configured'])
-async def test_sources_forwarding_and_private_receipts(setup, tmp_path, monkeypatch, source):
-    ctx, settings, events, done, errors = setup
-    fake_worker(tmp_path, monkeypatch)
-    incoming = {'original':['keep', 'identity']}
-    if source != 'Upstream payload':
-        ctx.inputs['input'] = incoming
-    current = node(ctx, tmp_path, input_source=source, input_vault_key='question',
-                   dead_drop_passthrough=True, transient_output=False,
-                   vault_write=True, vault_write_key='answer',
-                   details_vault_write=True, details_vault_key='usage')
-    await current.execute(ctx)
+async def test_sources_forwarding_and_private_receipts(setup,tmp_path,monkeypatch,source):
+    ctx,settings,events,done,errors=setup
+    fake_worker(tmp_path,monkeypatch)
+    if source!='Upstream payload': ctx.inputs['input']={'original':['keep','identity']}
+    await node(ctx,tmp_path,input_source=source,input_vault_key='question',
+        dead_drop_passthrough=True,transient_output=False,vault_write=True,vault_write_key='answer',
+        details_vault_write=True,details_vault_key='usage').execute(ctx)
     assert not errors and done[0]['data']['default'] is ctx.inputs['input']
-    assert ctx.memory_bank.read_persistent('answer') == 'A useful answer'
-    details, path, lines = read_record(events)
-    assert ctx.memory_bank.read_persistent('usage') == details
-    assert details['usage']['estimated_cost_usd'] is None
-    assert details['usage']['cost_status'] == 'not_reported'
-    assert details['cleanup_confirmed'] and details['tools'] == []
-    assert [line['event'] for line in lines] == ['started','answer','finished']
-    assert lines[0]['policy'] == POLICY
-    assert path.stat().st_mode & 0o777 == 0o600
-    assert path.parent.stat().st_mode & 0o777 == 0o700
+    assert ctx.memory_bank.read_persistent('answer')=='A useful answer'
+    details,path,lines=read_record(events)
+    assert ctx.memory_bank.read_persistent('usage')==details
+    assert details['usage']['estimated_cost_usd'] is None and details['turns'] is None
+    assert details['usage']['cost_status']=='not_reported'
+    assert details['cleanup_confirmed'] and details['tools']==[]
+    assert [line['event'] for line in lines]==['started','answer','finished']
+    assert lines[0]['policy']==POLICY
+    assert path.stat().st_mode & 0o777==0o600 and path.parent.stat().st_mode & 0o777==0o700
     assert 'Configured question' not in path.read_text() and SECRET not in path.read_text()
-    assert not list((persistence.RUN_OUTPUTS_DIR / '.ask-hermes-workers').iterdir())
+    assert not list((persistence.RUN_OUTPUTS_DIR/'.ask-hermes-workers').iterdir())
+    assert os.environ['HERMES_HOME']==str(tmp_path/'sticky-default')
 
 
 @pytest.mark.asyncio
-async def test_answer_and_usage_survive_disabled_vault_and_repeated_visits(setup, tmp_path, monkeypatch):
-    ctx, _, events, done, errors = setup
-    fake_worker(tmp_path, monkeypatch)
-    current=node(ctx,tmp_path)
-    await current.execute(ctx)
-    await current.execute(ctx)
-    assert not errors and len(done)==2
-    assert done[0]['data']['default']=='A useful answer'
+async def test_preflight_every_time_even_with_same_config_mtime(setup,tmp_path,monkeypatch):
+    ctx,_,events,done,errors=setup
+    fake_worker(tmp_path,monkeypatch)
+    await node(ctx,tmp_path).execute(ctx)
+    assert done and not errors
+    (tmp_path/'tools.txt').write_text(TOOLS.replace('✗ disabled  web','✓ enabled   web'))
+    await node(ctx,tmp_path).execute(ctx)
+    assert len(done)==1 and errors[0].code=='permission_denied'
+    assert str(errors[0])=='This Hermes profile has tools turned on.'
+    calls=[json.loads(line) for line in (tmp_path/'calls.jsonl').read_text().splitlines()]
+    assert [call[0] for call in calls]==['tools','chat','tools']
     assert len({data['invocation_id'] for _,data in events})==2
     assert ctx.memory_bank.read_persistent('answer') is None
-    assert all(Path(data['record']['path']).exists() for _,data in events)
-    raw=(tmp_path/'hermes-home/aotn/events.jsonl').read_text()
-    assert raw.count('agent.ask_hermes.started')==2 and raw.count('agent.ask_hermes.completed')==2
-    assert 'A useful answer' not in raw and SECRET not in raw
+    receipts=(tmp_path/'sticky-default/aotn/events.jsonl').read_text()
+    assert receipts.count('agent.ask_hermes.started')==2
+    assert receipts.count('agent.ask_hermes.completed')==1
+    assert receipts.count('agent.ask_hermes.permission_denied')==1
+    assert 'A useful answer' not in receipts and SECRET not in receipts
+
+
+@pytest.mark.parametrize('listing', [TOOLS.replace('✗ disabled','✓ enabled',1),
+    TOOLS+'unknown output\n',TOOLS.rsplit('\n',2)[0],TOOLS+TOOLS.splitlines()[1]+'\n',
+    'Built-in toolsets (telegram):\n'+TOOLS.split('\n',1)[1],TOOLS.replace('web  Test','new_tool  Test')])
+@pytest.mark.asyncio
+async def test_tools_enabled_unknown_or_incomplete_refuses_before_chat(setup,tmp_path,monkeypatch,listing):
+    ctx,_,events,done,errors=setup
+    fake_worker(tmp_path,monkeypatch)
+    (tmp_path/'tools.txt').write_text(listing)
+    await node(ctx,tmp_path).execute(ctx)
+    assert not done and errors[0].code=='permission_denied'
+    assert all(json.loads(line)[0]=='tools' for line in (tmp_path/'calls.jsonl').read_text().splitlines())
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('code', ['auth_failed','unsupported_runtime','agent_failed'])
-async def test_safe_worker_error_without_secret_output(setup,tmp_path,monkeypatch,code):
-    ctx, _, events, done, errors=setup
-    fake_worker(tmp_path,monkeypatch,f'import json,sys; json.load(sys.stdin); sys.stderr.write({SECRET!r}); print(json.dumps({{"protocol":{PROTOCOL!r},"status":{code!r},"secret":{SECRET!r}}}))')
+@pytest.mark.parametrize('code,program', [('auth_failed',"print('Error: token expired (401)',file=sys.stderr);sys.exit(1)"),
+    ('agent_failed',"print('backend failed',file=sys.stderr);sys.exit(1)"),
+    ('auth_failed',"print('Error: please login',file=sys.stderr)")])
+async def test_safe_cli_errors(setup,tmp_path,monkeypatch,code,program):
+    ctx,_,events,done,errors=setup
+    fake_worker(tmp_path,monkeypatch,f'print({SECRET!r},file=sys.stderr);'+program)
     await node(ctx,tmp_path).execute(ctx)
     assert not done and errors[0].code==code and not errors[0].retryable
-    details,path,_=read_record(events)
-    assert details['status']==code
-    assert SECRET not in path.read_text() and SECRET not in str(errors[0].details)
+    if code=='auth_failed': assert str(errors[0])=='Sign in to Hermes (aotn profile)'
+    assert SECRET not in read_record(events)[1].read_text() and SECRET not in str(errors[0].details)
+
+
+@pytest.mark.parametrize('raw,expected', [(b'  A useful answer\n\nsession_id: test-session\n','A useful answer'),
+    (b'session_id: test-session\nHello\n','Hello'),(b'line one\nline two\n','line one\nline two'),
+    (b'401 is an HTTP status code\n','401 is an HTTP status code')])
+def test_answer_parser(raw,expected): assert parse_answer(raw)==expected
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('raw', ['not json','[]','{}','{"protocol":"bad"}'])
-async def test_bad_output_is_not_an_answer(setup,tmp_path,monkeypatch,raw):
-    ctx, _, events, done, errors=setup
-    fake_worker(tmp_path,monkeypatch,f'import sys; sys.stdin.read(); print({raw!r})')
+@pytest.mark.parametrize('raw', [b'',b'session_id: test-session\n',b'\xff',b'hello\x00world',
+    b'session_id: ???\n',b'Error: backend failed',b'x'*(service.MAX_ANSWER+1)])
+async def test_empty_unparseable_or_oversized_output(setup,tmp_path,monkeypatch,raw):
+    ctx,_,events,done,errors=setup
+    fake_worker(tmp_path,monkeypatch,f'sys.stdout.buffer.write({raw!r})')
     await node(ctx,tmp_path).execute(ctx)
     assert not done and errors[0].code=='invalid_response'
-    assert read_record(events)[0]['status']=='invalid_response'
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize('change,code', [({'tool_calls':[{'name':'shell','arguments':SECRET}]},'permission_denied'),
-                                        ({'turns':2},'turn_limit'),({'policy':{}},'unsupported_runtime'),
-                                        ({'usage':{'estimated_cost_usd':float('nan')}},'invalid_response'),
-                                        ({'answer':'x'*(service.MAX_ANSWER+1)},'invalid_response')])
-async def test_protocol_limits_checked_before_output(setup,tmp_path,monkeypatch,change,code):
-    ctx, _, events, done, errors=setup
-    program='''import json,sys
-q=json.load(sys.stdin)
-r={'protocol':q['protocol'],'status':'ok','policy':q['policy'],'tool_calls':[], 'turns':1,'answer':'ok','usage':{}}
-'''+f'r.update({change!r})\nprint(json.dumps(r))'
-    if 'nan' in program:
-        program=program.replace('nan',"float('nan')")
-    fake_worker(tmp_path,monkeypatch,program)
-    await node(ctx,tmp_path).execute(ctx)
-    assert not done and errors[0].code==code
-    assert SECRET not in read_record(events)[1].read_text()
 
 
 async def wait_pid(path):
@@ -176,30 +185,29 @@ async def wait_pid(path):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('cancel', [False,True])
-async def test_timeout_stop_and_detached_descendant_reaped(setup,tmp_path,monkeypatch,cancel):
-    ctx, _, events, _, _=setup
-    child=tmp_path/'descendant.pid'
-    parent=tmp_path/'worker.pid'
+@pytest.mark.parametrize('cancel',[False,True])
+@pytest.mark.parametrize('phase',['tools','chat'])
+async def test_timeout_stop_and_detached_descendant_reaped(setup,tmp_path,monkeypatch,cancel,phase):
+    ctx,_,events,_,_=setup
+    child=tmp_path/'descendant.pid';parent=tmp_path/'worker.pid'
     detached='import os,signal,time\nos.setsid()\nsignal.signal(signal.SIGINT,signal.SIG_IGN)\n'+f'open({str(child)!r},"w").write(str(os.getpid()))\ntime.sleep(60)'
-    program='import sys,json,os,signal,subprocess,time\njson.load(sys.stdin)\nsignal.signal(signal.SIGINT,signal.SIG_IGN)\n'+f'open({str(parent)!r},"w").write(str(os.getpid()))\nsubprocess.Popen([sys.executable,"-c",{detached!r}])\ntime.sleep(60)'
-    fake_worker(tmp_path,monkeypatch,program)
+    program='import signal,subprocess,time\nsignal.signal(signal.SIGINT,signal.SIG_IGN)\n'+f'open({str(parent)!r},"w").write(str(os.getpid()))\nsubprocess.Popen([sys.executable,"-c",{detached!r}])\ntime.sleep(60)'
+    command=fake_worker(tmp_path,monkeypatch,program)
+    if phase=='tools':
+        source=command.read_text().replace("if sys.argv[1:]==['tools','list','--platform','cli']:\n",
+            "if sys.argv[1:]==['tools','list','--platform','cli']:\n"+'\n'.join(' '+line for line in program.splitlines())+'\n')
+        command.write_text(source)
     task=asyncio.create_task(service.ask(ctx,'question',tmp_path,2 if not cancel else 10))
     pids=[await wait_pid(parent),await wait_pid(child)]
     if cancel:
-        task.cancel()
-        await asyncio.sleep(.02)
-        task.cancel()
-        with pytest.raises(asyncio.CancelledError):
-            await task
+        task.cancel();await asyncio.sleep(.02);task.cancel()
+        with pytest.raises(asyncio.CancelledError): await task
     else:
-        with pytest.raises(NodeError) as exc:
-            await task
+        with pytest.raises(NodeError) as exc: await task
         assert exc.value.code=='timed_out'
     assert all(not Path(f'/proc/{pid}').exists() for pid in pids)
     details,_,_=read_record(events)
-    assert details['status']==('cancelled' if cancel else 'timed_out')
-    assert details['cleanup_confirmed']
+    assert details['status']==('cancelled' if cancel else 'timed_out') and details['cleanup_confirmed']
 
 
 @pytest.mark.asyncio
@@ -207,38 +215,49 @@ async def test_natural_exit_still_reaps_detached_child(setup,tmp_path,monkeypatc
     ctx,_,events,_,_=setup
     pidfile=tmp_path/'escaped'
     child='import os,time\nos.setsid()\n'+f'open({str(pidfile)!r},"w").write(str(os.getpid()))\ntime.sleep(60)'
-    worker=f'import subprocess,sys,time\nsubprocess.Popen([sys.executable,"-c",{child!r}],stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)\ntime.sleep(.15)\n'
-    worker+='import json\nq=json.load(sys.stdin)\nprint(json.dumps({"protocol":q["protocol"],"status":"auth_failed"}))'
-    fake_worker(tmp_path,monkeypatch,worker)
-    with pytest.raises(NodeError): await service.ask(ctx,'question',tmp_path,3)
+    program=f'import subprocess,time\nsubprocess.Popen([sys.executable,"-c",{child!r}],stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)\ntime.sleep(.15)\nprint("A useful answer")'
+    fake_worker(tmp_path,monkeypatch,program)
+    await node(ctx,tmp_path).execute(ctx)
     assert not Path(f'/proc/{await wait_pid(pidfile)}').exists()
     assert read_record(events)[0]['cleanup_confirmed']
 
 
 @pytest.mark.asyncio
-async def test_version_refused_before_import_or_inference(setup,tmp_path):
-    ctx,settings,events,done,errors=setup
-    root=Path(settings['hermes_installation_folder'])
-    (root/'venv/bin').mkdir(parents=True)
-    (root/'venv/bin/python').symlink_to(sys.executable)
-    (root/'hermes_cli').mkdir()
-    sentinel=tmp_path/'never-import'
-    (root/'hermes_cli/__init__.py').write_text('__version__="0.14.0"\n'+f'open({str(sentinel)!r},"w").write("inference")\nraise RuntimeError("must never import")')
-    await node(ctx,tmp_path).execute(ctx)
-    assert not done and errors[0].code=='unsupported_runtime'
-    assert str(errors[0])=="This Hermes version can't run with these limits."
-    assert not sentinel.exists()
-    assert read_record(events)[0]['status']=='unsupported_runtime'
+async def test_question_literal_argv_folder_and_command_without_path(setup,tmp_path,monkeypatch):
+    ctx,_,events,done,errors=setup
+    command=fake_worker(tmp_path,monkeypatch,f'assert os.getcwd()=={str(tmp_path)!r};print("ok")')
+    question='say \"hello\"; $(touch NEVER)\n--toolsets terminal'
+    monkeypatch.setenv('PATH','/usr/bin:/bin')
+    await node(ctx,tmp_path,input=question).execute(ctx)
+    assert not errors and done[0]['data']['default']=='ok' and not (tmp_path/'NEVER').exists()
+    calls=[json.loads(line) for line in (tmp_path/'calls.jsonl').read_text().splitlines()]
+    assert calls[1]==['chat','-q',question,'-Q','--source','tool','--max-turns','1','--ignore-rules']
 
 
 @pytest.mark.asyncio
-async def test_missing_installation_and_explicit_cost_gate(setup,tmp_path):
+@pytest.mark.parametrize('missing',['profile','config','command','executable'])
+async def test_missing_profile_or_command(setup,tmp_path,monkeypatch,missing):
     ctx,settings,events,done,errors=setup
+    command=fake_worker(tmp_path,monkeypatch)
+    if missing=='profile': shutil.rmtree(Path(settings['hermes_profile_home']))
+    elif missing=='config': (Path(settings['hermes_profile_home'])/'config.yaml').unlink()
+    elif missing=='command': command.unlink()
+    else: command.chmod(0o644)
     await node(ctx,tmp_path).execute(ctx)
-    assert not done and errors[-1].code=='not_installed'
+    assert not done
+    assert errors[0].code==('profile_missing' if missing in ('profile','config') else 'not_installed')
+    assert str(errors[0])==('Set up the aotn Hermes profile first' if missing in ('profile','config') else 'Hermes is not installed')
+    assert not (tmp_path/'calls.jsonl').exists()
+
+
+@pytest.mark.asyncio
+async def test_explicit_cost_gate(setup,tmp_path,monkeypatch):
+    ctx,settings,events,done,errors=setup
+    fake_worker(tmp_path,monkeypatch)
     settings['hermes_allow_no_budget']=False
     await node(ctx,tmp_path).execute(ctx)
-    assert errors[-1].code=='node_error' and 'Options' in str(errors[-1])
+    assert not done and errors[0].code=='node_error' and 'Options' in str(errors[0])
+    assert not (tmp_path/'calls.jsonl').exists()
 
 
 @pytest.mark.asyncio
@@ -282,12 +301,7 @@ async def test_known_secrets_redacted_from_answer_and_records(setup,tmp_path,mon
     ctx,_,events,done,errors=setup
     ctx.secrets_manager=SecretsManager(tmp_path/'secrets')
     ctx.secrets_manager.set_secret('private',SECRET)
-    fake_worker(tmp_path,monkeypatch,f'''import json,sys,os
-q=json.load(sys.stdin)
-assert 'UNRELATED_API_KEY' not in os.environ
-assert os.getcwd()==q['folder']
-print(json.dumps({{'protocol':q['protocol'],'status':'ok','policy':q['policy'], 'tool_calls':[], 'turns':1,'answer':{SECRET!r},'usage':{{}}}}))
-''')
+    fake_worker(tmp_path,monkeypatch,f'print({SECRET!r})')
     await node(ctx,tmp_path).execute(ctx)
     assert not errors and done[0]['data']['default']=='[redacted]'
     assert SECRET not in read_record(events)[1].read_text()
@@ -309,7 +323,7 @@ async def test_preflight_before_process(setup,tmp_path,monkeypatch,config,code):
 @pytest.mark.asyncio
 async def test_output_flood_is_bounded_and_reaped(setup,tmp_path,monkeypatch):
     ctx,_,events,done,errors=setup
-    fake_worker(tmp_path,monkeypatch,'import sys; sys.stdin.read(); sys.stdout.write("x"*2000000); sys.stdout.flush()')
+    fake_worker(tmp_path,monkeypatch,'sys.stdout.write("x"*2000000); sys.stdout.flush()')
     await node(ctx,tmp_path).execute(ctx)
     assert not done and errors[0].code=='invalid_response'
     assert read_record(events)[0]['cleanup_confirmed']
@@ -319,9 +333,7 @@ async def test_output_flood_is_bounded_and_reaped(setup,tmp_path,monkeypatch):
 async def test_record_cap_reserves_terminal_event(setup,tmp_path,monkeypatch):
     ctx,_,events,done,errors=setup
     monkeypatch.setattr(service,'MAX_RECORD',1500)
-    fake_worker(tmp_path,monkeypatch,'''import sys,json
-q=json.load(sys.stdin)
-print(json.dumps({'protocol':q['protocol'],'status':'ok','policy':q['policy'],'tool_calls':[], 'turns':1,'answer':'x'*2000,'usage':{}}))''')
+    fake_worker(tmp_path,monkeypatch,"print('x'*2000)")
     await node(ctx,tmp_path).execute(ctx)
     details,path,lines=read_record(events)
     assert not done and errors[0].code=='record_failed'
@@ -341,7 +353,7 @@ async def test_usage_in_run_result_history_and_built_execution_screen(setup,tmp_
                         (output_manager,'RUN_OUTPUTS_DIR'),(run_history,'RUN_HISTORY_DIR')]:
         monkeypatch.setattr(module,name,tmp_path/name)
     if fail:
-        fake_worker(tmp_path,monkeypatch,f'import json,sys; json.load(sys.stdin); print(json.dumps({{"protocol":{PROTOCOL!r},"status":"auth_failed"}}))')
+        fake_worker(tmp_path,monkeypatch,"print('Error: login expired',file=sys.stderr);sys.exit(1)")
     else:
         fake_worker(tmp_path,monkeypatch)
     runner=RunService.create()
@@ -371,7 +383,7 @@ async def test_usage_in_run_result_history_and_built_execution_screen(setup,tmp_
         assert saved['agent_usage_summary']['partial']==int(fail)
         text=screen._node_details({'node_id':ask,'depth':1}).plain
         assert 'Agent usage' in text and 'Cost not reported' in text and 'Record:' in text
-        assert ('Tokens not reported' if fail else 'Tokens 15') in text
+        assert 'Tokens not reported' in text
         assert not runner.master_state._memory_bank.read_persistent('usage')
         json.dumps(result.to_dict(),allow_nan=False)
 
@@ -395,3 +407,47 @@ async def test_unconfirmed_cleanup_keeps_ownership_and_blocks_next_call(setup,tm
     monkeypatch.setattr(service,'broker_command',lambda:pytest.fail('must not spawn'))
     await node(ctx,tmp_path).execute(ctx)
     assert errors[-1].code=='cleanup_failed'
+
+
+@pytest.mark.asyncio
+async def test_changed_config_or_unknown_diagnostics_refuse(setup,tmp_path,monkeypatch):
+    ctx,_,_,done,errors=setup
+    command=fake_worker(tmp_path,monkeypatch)
+    source=command.read_text()
+    command.write_text(source.replace(' sys.stdout.write('," Path("+repr(str(tmp_path/'profile/config.yaml'))+").write_text('changed');sys.stdout.write("))
+    await node(ctx,tmp_path).execute(ctx)
+    assert not done and errors[-1].code=='permission_denied'
+    command.write_text(source.replace(' sys.stdout.write('," print('unknown warning',file=sys.stderr);sys.stdout.write("))
+    await node(ctx,tmp_path).execute(ctx)
+    assert not done and errors[-1].code=='permission_denied'
+
+
+def test_coloured_tools_listing_is_classified():
+    parse_tools(('\x1b[32m'+TOOLS+'\x1b[0m').encode())
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('character',['x','😀'])
+async def test_exact_question_cap_is_accepted(setup,tmp_path,monkeypatch,character):
+    ctx,_,_,done,errors=setup
+    fake_worker(tmp_path,monkeypatch,'print(len(sys.argv[3]))')
+    await node(ctx,tmp_path,input=character*service.MAX_QUESTION).execute(ctx)
+    assert not errors and done[0]['data']['default']==str(service.MAX_QUESTION)
+
+
+def test_answer_cap_applies_after_cli_newline_and_session_metadata():
+    answer='x'*service.MAX_ANSWER
+    assert parse_answer((answer+'\nsession_id: test-session\n').encode())==answer
+    with pytest.raises(ValueError): parse_answer((answer+'x\n').encode())
+
+
+@pytest.mark.asyncio
+async def test_invalid_unicode_does_not_leave_a_broker_or_start_chat(setup,tmp_path,monkeypatch):
+    ctx,_,events,done,errors=setup
+    fake_worker(tmp_path,monkeypatch)
+    await node(ctx,tmp_path,input='\ud800').execute(ctx)
+    assert not done and errors[0].code=='agent_failed'
+    assert read_record(events)[0]['cleanup_confirmed']
+    assert not list((persistence.RUN_OUTPUTS_DIR/'.ask-hermes-workers').iterdir())
+    calls=[json.loads(line)[0] for line in (tmp_path/'calls.jsonl').read_text().splitlines()]
+    assert calls==['tools']

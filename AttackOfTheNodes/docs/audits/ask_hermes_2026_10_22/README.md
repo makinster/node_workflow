@@ -4,11 +4,15 @@ These captures use the registered `hermes_ask_node`, real Node Config,
 selector, editor and Execution screens, and production `frontend/styles.tcss`.
 Config paths are illustrative. No repository workflows were saved. The usage
 screen is an actual isolated workflow run through a **fake subprocess worker**;
-its answer and token counts are test data, not account measurements.
-The installed Hermes is refused before inference; no compatible adapter is enabled.
+its answer is test data; turns/tokens/cost stay unreported because `-Q` has no
+usage telemetry. Refreshed 2026-10-23 for the isolated profile CLI.
+A separate owner-authorized real smoke returned **AOTN profile smoke OK** in
+5.518 seconds; [smoke result](profile-smoke.json). No other real questions ran.
 
 | View | Size | Capture |
 |---|---|---|
+| Options, profile and command defaults | 100×34 | [SVG](options.svg), [PNG](options.png) |
+| Options, scrolled to the cost opt-in | 80×24 | [SVG](options-80x24.svg), [PNG](options-80x24.png) |
 | Parameters | 100×36 | [SVG](parameters.svg), [PNG](parameters.png) |
 | Parameters, timeout focused | 80×24 | [SVG](parameters-80x24.svg), [PNG](parameters-80x24.png) |
 | Sources | 100×34 | [SVG](source.svg) |
@@ -30,7 +34,7 @@ Reproduce with the shared interpreter from the app directory:
 Both scripts select a normal truecolor terminal and disposable data directories.
 The config captures assert Save/Close geometry; generated UI checks exercise the
 metadata contract. Screens at 80×24 scroll rather than claiming the whole form
-fits. Parameters, compact Parameters, forwarding and usage PNGs were visually
+fits. Options, Parameters, compact Parameters, forwarding and usage PNGs were visually
 inspected. PNGs render original SVGs through local headless Chrome with network
 resolution disabled. [Source hashes](source-manifest.json) identify the built
 node and production styles. The shared long-text preview/editor remains a

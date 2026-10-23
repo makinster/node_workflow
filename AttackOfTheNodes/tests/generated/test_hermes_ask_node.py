@@ -30,7 +30,7 @@ def test_hermes_ask_node_registration_and_metadata():
             }
             assert isinstance(info["required"], bool)
     # Declared error codes (D7); the default generic code is always first.
-    assert [error["code"] for error in metadata["errors"]] == ['node_error', 'not_installed', 'unsupported_runtime', 'auth_failed', 'folder_missing', 'not_allowed', 'text_too_long', 'timed_out', 'turn_limit', 'permission_denied', 'agent_failed', 'invalid_response', 'record_failed', 'cleanup_failed']
+    assert [error["code"] for error in metadata["errors"]] == ['node_error', 'not_installed', 'profile_missing', 'unsupported_runtime', 'auth_failed', 'folder_missing', 'not_allowed', 'text_too_long', 'timed_out', 'turn_limit', 'permission_denied', 'agent_failed', 'invalid_response', 'record_failed', 'cleanup_failed']
 
 
 @pytest.mark.asyncio
@@ -53,7 +53,6 @@ async def test_hermes_ask_node_execute_template_smoke():
         wait_for_merge=lambda node_id, branch_id, port, inputs, timeout: None,
     )
     await node.execute(context)
-    # The generated defaults intentionally require a question and folder.
-    # Smoke must refuse without launching a provider, not fake a response.
+    # Defaults require a question and folder: never spend in a smoke test.
     assert not done
     assert errors and errors[0].code == "node_error"

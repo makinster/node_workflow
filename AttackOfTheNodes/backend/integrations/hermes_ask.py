@@ -1,8 +1,7 @@
 """Ask Hermes service: bounded subprocesses, private records and safe receipts.
 
-The production worker currently refuses installed Hermes releases before any
-imports/inference. Only a separately audited worker adapter may enable a version.
-Tests replace the private broker command with controlled subprocess fixtures.
+Uses the public CLI with an independent profile, not Hermes Python internals.
+Every question gets a strict tools preflight and the same total cleanup deadline.
 """
 import asyncio
 from datetime import datetime, timezone
@@ -12,7 +11,6 @@ try:
 except ImportError:  # Native Windows is deliberately unsupported.
     fcntl = None
 import json
-import math
 import os
 from pathlib import Path
 import re
@@ -33,15 +31,16 @@ FINAL_RESERVE = 64 * 1024
 MAX_BROKER = 2 * 1024 * 1024
 USAGE_EVENT = 'AGENT_USAGE_UPDATE'
 MESSAGES = {
-    'not_installed': 'Hermes is not installed.',
-    'unsupported_runtime': "This Hermes version can't run with these limits.",
-    'auth_failed': 'Sign in to Hermes first.',
+    'not_installed': 'Hermes is not installed',
+    'profile_missing': 'Set up the aotn Hermes profile first',
+    'unsupported_runtime': 'Ask Hermes needs a native Linux runtime.',
+    'auth_failed': 'Sign in to Hermes (aotn profile)',
     'folder_missing': 'Choose an existing folder.',
     'not_allowed': 'This folder is not allowed in Options.',
     'text_too_long': 'The question is too long.',
     'timed_out': 'Stopped after the time limit.',
     'turn_limit': 'Stopped after the turn limit.',
-    'permission_denied': 'Hermes requested a tool it was not given.',
+    'permission_denied': 'This Hermes profile has tools turned on.',
     'agent_failed': 'Hermes could not finish.',
     'invalid_response': 'No complete answer was returned.',
     'record_failed': 'The run record could not be saved.',
@@ -164,16 +163,17 @@ def broker_command():
 
 
 def worker_env():
-    # No inherited provider keys, proxy settings, plugin switches, Python
-    # paths or model overrides. Hermes auth is resolved only inside a future
-    # audited adapter; the current compatibility gate reads no credentials.
+    # CLI resolves auth only from its selected profile; strip unrelated keys,
+    # sticky HERMES_HOME, Python paths and agent overrides from the app env.
     return {key: value for key, value in os.environ.items()
             if key in {'HOME', 'PATH', 'LANG', 'LC_ALL', 'TMPDIR'}} | {
                 'PYTHONDONTWRITEBYTECODE': '1', 'PYTHONNOUSERSITE': '1'}
 
 
 async def exchange(process, request):
-    process.stdin.write(json.dumps(request, ensure_ascii=False).encode())
+    # ASCII JSON preserves every valid question up to MAX_QUESTION, even
+    # when its UTF-16 escapes are larger than its eventual UTF-8 argv.
+    process.stdin.write(json.dumps(request, ensure_ascii=True).encode('ascii'))
     try:
         await process.stdin.drain()
     except (BrokenPipeError, ConnectionResetError):
@@ -232,42 +232,16 @@ async def settle(task):
 def parse_reply(data):
     status = data.get('status')
     if status != 'reply':
-        raise failure(status if status in MESSAGES else 'agent_failed')
-    reply = data.get('reply')
-    if not isinstance(reply, dict) or reply.get('protocol') != PROTOCOL:
-        raise failure('invalid_response')
-    status = reply.get('status')
-    if status in MESSAGES:
-        raise failure(status)
-    if status != 'ok' or reply.get('policy') != POLICY:
-        raise failure('unsupported_runtime')
-    if reply.get('tool_calls') != []:
-        raise failure('permission_denied')
-    if type(reply.get('turns')) is not int or reply['turns'] != 1:
-        raise failure('turn_limit')
-    answer = reply.get('answer')
-    usage = reply.get('usage')
+        raise failure(status if isinstance(status, str) and status in MESSAGES else 'agent_failed')
+    answer = data.get('answer')
     if not isinstance(answer, str) or not answer.strip() or len(answer.encode('utf-8')) > MAX_ANSWER:
         raise failure('invalid_response')
-    if not isinstance(usage, dict):
-        raise failure('invalid_response')
-    safe_usage = {}
-    for key in ('input_tokens', 'output_tokens', 'cache_tokens'):
-        value = usage.get(key)
-        if value is not None and (type(value) is not int or value < 0):
-            raise failure('invalid_response')
-        safe_usage[key] = value
-    cost = usage.get('estimated_cost_usd')
-    if cost is not None and (type(cost) not in (int, float) or cost < 0 or not math.isfinite(cost)):
-        raise failure('invalid_response')
-    safe_usage.update(estimated_cost_usd=cost, cost_status='not_reported' if cost is None else 'estimate')
-    # Only deliberately selected identity fields, not arbitrary worker text.
-    for key in ('provider', 'model'):
-        value = reply.get(key)
-        if value is not None and (not isinstance(value, str) or not re.fullmatch(r'[a-zA-Z0-9._:/-]{1,128}', value)):
-            raise failure('invalid_response')
-        safe_usage[key] = value
-    return answer, safe_usage
+    # -Q is answer-only, not a token/cost/turn telemetry protocol. Do not
+    # manufacture measurements from the configured one-turn limit.
+    usage = {key: None for key in ('input_tokens', 'output_tokens', 'cache_tokens',
+                                   'estimated_cost_usd', 'provider', 'model')}
+    usage['cost_status'] = 'not_reported'
+    return answer, usage
 
 
 async def ask(context, question, folder, timeout):
@@ -288,9 +262,16 @@ async def ask(context, question, folder, timeout):
             raise failure("record_failed") from None
         if setting(context, 'hermes_allow_no_budget', False) is not True:
             raise NodeError('node_error', 'Allow Ask Hermes without a dollar cap in Options first.', retryable=False)
-        installation = str(Path(setting(context, 'hermes_installation_folder', '~/.hermes/hermes-agent')).expanduser().resolve())
+        profile_value = setting(context, 'hermes_profile_home', '~/.hermes/profiles/aotn')
+        command_value = setting(context, 'hermes_command', '~/.local/bin/hermes')
+        if not isinstance(profile_value, str) or not profile_value.strip():
+            raise failure('profile_missing')
+        if not isinstance(command_value, str) or not command_value.strip():
+            raise failure('not_installed')
+        profile = str(Path(profile_value).expanduser().resolve())
+        command = str(Path(command_value).expanduser().resolve())
         request = {'protocol': PROTOCOL, 'policy': POLICY, 'question': question,
-                   'folder': str(folder), 'installation': installation, 'expires_at': expires}
+                   'folder': str(folder), 'profile': profile, 'command': command, 'expires_at': expires}
         if time.monotonic() >= expires:
             raise failure('timed_out')
         spawn = asyncio.create_task(asyncio.create_subprocess_exec(*broker_command(), cwd=str(folder),
@@ -354,10 +335,10 @@ async def ask(context, question, folder, timeout):
                      for key, value in usage.items()}
             details = {'invocation_id': record.invocation_id, 'node_id': context.node_id,
                 'branch_id': context.branch_id, 'run_id': context.run_id, 'status': status,
-                'seconds': round(time.monotonic()-started, 3), 'turns': 1 if answer else None,
+                'seconds': round(time.monotonic()-started, 3), 'turns': None,
                 'tools': [], 'usage': usage or {'estimated_cost_usd': None, 'cost_status': 'not_reported'},
                 'record': file_reference(str(record.path)), 'cleanup_confirmed': confirmed,
-                'account_source': 'agent-owned',
+                'account_source': 'hermes-profile',
                 'limits': {'seconds': timeout, 'turns': 1, 'budget_usd': None},
                 'partial': status != 'completed',
                 'answer_bytes': len(answer.encode('utf-8')) if answer else None,

@@ -20,6 +20,8 @@ from backend.event_bus import EventBus
 from backend.node_factory import NodeFactory
 from backend.workflow_map import WorkflowMap
 from frontend.screens.node_config import NodeConfigScreen
+from frontend.screens.settings import SettingsScreen
+from backend.configuration_manager import ConfigurationManager
 from frontend.screens.editor import EditorScreen
 from frontend.screens.node_selector import NodeSelectorScreen
 
@@ -49,6 +51,8 @@ async def capture(name, size, mode, keys=(), reveal=None):
             if mode == 'config':
                 screen = NodeConfigScreen(FACTORY,WORKFLOW,pick,WORKFLOW.get_node_data(pick),
                                           secrets_manager=None)
+            elif mode == 'options':
+                screen = SettingsScreen(ConfigurationManager())
             elif mode == 'selector':
                 screen = NodeSelectorScreen(FACTORY)
             else:
@@ -65,6 +69,10 @@ async def capture(name, size, mode, keys=(), reveal=None):
             widget.focus()
             widget.scroll_visible(immediate=True)
             await pilot.pause()
+        if mode == 'options':
+            assert app.screen.query_one('#setting-hermes_profile_home').value == '~/.hermes/profiles/aotn'
+            assert app.screen.query_one('#setting-hermes_command').value == '~/.local/bin/hermes'
+            assert not app.screen.query_one('#setting-hermes_allow_no_budget', Checkbox).value
         if mode == 'config':
             for selector in ('#save-node-config','#cancel-node-config'):
                 widget = app.screen.query_one(selector)
@@ -75,6 +83,8 @@ async def capture(name, size, mode, keys=(), reveal=None):
 
 
 async def main():
+    await capture('options', (100,34), 'options', reveal='#setting-hermes_allow_no_budget')
+    await capture('options-80x24', (80,24), 'options', reveal='#setting-hermes_allow_no_budget')
     await capture('parameters', (100,36), 'config', ['2'])
     await capture('parameters-80x24', (80,24), 'config', ['2'], '#field-timeout')
     await capture('source', (100,34), 'config', ['1'])

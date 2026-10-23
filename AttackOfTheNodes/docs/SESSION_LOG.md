@@ -1,10 +1,53 @@
 # AttackOfTheNodes Session Log
 
-This log keeps roughly the last two weeks: entries dated October 4–22, 2026
+This log keeps roughly the last two weeks: entries dated October 4–23, 2026
 (the earliest existing entry is October 6). Every October 18 entry is retained.
 Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.md).
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
+
+## 2026-10-23 — Ask Hermes profile CLI rework (#116)
+
+Branch `codex/ask-hermes`, worktree `/home/makin/src/nw-ask-hermes`, starting
+head `c7f1b10`. Fetched and merged `origin/main` `f9f5f07` first (already
+integrated). The owner's new profile route supersedes the original internal
+worker compatibility bar; the old 2026-10-22 entry describes that earlier head.
+
+- Removed the always-refuse worker. Use the public executable in machine
+  Options (`hermes_command`, default `~/.local/bin/hermes`) with only its own
+  `HERMES_HOME` (`hermes_profile_home`, default `~/.hermes/profiles/aotn`).
+  Question is one bounded argv argument, no shell: `chat -q <question> -Q
+  --source tool --max-turns 1 --ignore-rules`. Checked Folder remains the CWD.
+  No Hermes internal imports, app env changes or fallback to the default profile.
+- Strict `tools list --platform cli` before every question: all 24 known CLI
+  toolsets must be present and disabled, no enabled/duplicate/missing/unknown
+  lines or unclassified stderr. No cache; config identity/mtime/size checked
+  across preflight. Listing failure prevents chat. Both phases share the H0
+  process-tree deadline/Stop cleanup, including detached descendants.
+- Missing profile/command and expired auth get the requested plain messages.
+  Answer parsing drops session metadata and rejects empty/invalid/oversized
+  output. The cap applies after CLI newline/metadata removal. `-Q` supplies no
+  measured turns/tokens/cost; those stay null, with CLI limits separate.
+- [New-user setup](../integrations/hermes/README.md#ask-hermes-setup) includes
+  the owner's exact profile prompt, verification commands and profile-vs-OS
+  isolation limits. Updated contract/standards/catalog/current plan and refreshed
+  real screens, including both new Options at full size and 80×24.
+
+One owner-authorized real question through the node, against the existing profile:
+`Reply with exactly: AOTN profile smoke OK` → **AOTN profile smoke OK**, completed
+in **5.518 seconds**. Temporary AOTN data/C1 receipts; no repository workflow
+saved, no Hermes config/default-profile/gateway/cron/live install changed. The
+CLI manages its own profile session/auth state. No other real questions ran.
+[Smoke evidence](audits/ask_hermes_2026_10_22/profile-smoke.json).
+
+Verification: **58 fake-CLI tests passed**, covering sources, literal argv/CWD/env,
+per-run tool preflight, auth, malformed/oversized output, missing setup, timeout
+and repeated Stop in either phase, detached descendants, records/usage/secret
+redaction, exact caps (including emoji) and malformed Unicode without a stranded
+broker. Request transport uses bounded escaped JSON; the question remains one
+CLI argument. Helper node/UI checks and shared H0 regressions pass.
+Final full `pytest -q`: **2,465 passed in 408.10 seconds**, no timing-flake
+rerun. Compilation, docs consolidation/link checker and whitespace pass.
 
 ## 2026-10-22 — C3b part 1: guarded Ask Hermes
 

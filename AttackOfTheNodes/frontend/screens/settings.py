@@ -55,7 +55,8 @@ class SettingsScreen(CommandScreenMixin, ModalScreen):
                 with TabPane("1 General", id="settings-tab-general"):
                     with VerticalScroll(classes="tab-scroll"):
                         for key, default in DEFAULT_SETTINGS.items():
-                            labels = {"hermes_installation_folder": "Hermes installation folder",
+                            labels = {"hermes_profile_home": "Hermes profile home",
+                                      "hermes_command": "Hermes command",
                                       "hermes_allow_no_budget": "Allow Ask Hermes without a dollar cap"}
                             yield Label(labels.get(key, key), classes="form-label")
                             value = values.get(key, default)
