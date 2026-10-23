@@ -57,6 +57,8 @@ class SettingsScreen(CommandScreenMixin, ModalScreen):
                         for key, default in DEFAULT_SETTINGS.items():
                             labels = {"hermes_profile_home": "Hermes profile home",
                                       "hermes_command": "Hermes command",
+                                      "hermes_investigations_per_day": "Investigations per day (0 = off, up to 50)",
+                                      "hermes_investigation_profile_home": "Investigation profile home",
                                       "hermes_allow_no_budget": "Allow Ask Hermes without a dollar cap"}
                             yield Label(labels.get(key, key), classes="form-label")
                             value = values.get(key, default)

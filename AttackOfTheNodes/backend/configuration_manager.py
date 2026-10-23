@@ -37,6 +37,9 @@ DEFAULT_SETTINGS: Dict[str, Any] = {
     "hermes_profile_home": "~/.hermes/profiles/aotn",
     "hermes_command": "~/.local/bin/hermes",
     "hermes_allow_no_budget": False,
+    # C3c: account starts per UTC day, not a dollar cap.
+    "hermes_investigations_per_day": 5,
+    "hermes_investigation_profile_home": "~/.hermes/profiles/aotn",
 }
 
 

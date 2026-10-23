@@ -7,6 +7,29 @@ This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
 
+## C3c investigation inbox — 2026-10-23
+
+**#117 review follow-up:** Unicode findings publish as bounded UTF-8 JSON,
+including emoji and Unicode separators; lone surrogates follow C1 replacement.
+Record-size rejection becomes terminal failed, and the final 3,500 UTF-16-unit
+stdout budget includes the entry newline. Seven regressions fail on `1329965`
+and pass with the fixes. Verification: **2,541 passed in 432.48 seconds** (full `pytest -q`), no known WaitUntil timing-flake rerun needed; all seven regressions pass and all seven fail on `1329965`. Compilation, Bash syntax and whitespace checks pass.
+
+Built on `codex/c3c-inbox`, own worktree `/home/makin/src/nw-c3c-inbox`, from
+fetched main `5e7c4e3` (#116 merged). The owner's simple v1 decision supersedes
+the read-only-tool proposal: AOTN gathers evidence, and the investigator has
+**no tools**. Two standard nodes queue/read versioned requests; the no-agent
+bridge uses #116's strict CLI preflight and one-turn `--query=` launch, with
+90-second bounded process-tree cleanup, exclusive claims, durable daily caps,
+no paid retries and conservative stale/cleanup blocking.
+
+[Setup](../integrations/hermes/README.md#investigation-inbox-c3c-simple-v1),
+[record contract](integrations/HERMES_SHARED_FOLDER.md#investigation-inbox-c3c),
+[built screens](audits/investigation_inbox_2026_10_23/README.md).
+Current multiline widgets are used; the shared preview editor remains later
+work. No real model call, Hermes config/job change or live install.
+Verification: **2,534 passed in 423.50 seconds** (full `pytest -q`); no known WaitUntil timing-flake rerun needed. All 48 inbox tests and both affected integration checks passed together (50). Helper node/UI checks, compilation, Bash syntax, 17 real-screen captures, keyboard save/reopen/discard, doc links and whitespace pass.
+
 ## Baseline and open work — 2026-10-22
 
 - **C3b part 1 reworked for #116 (2026-10-23):** `codex/ask-hermes`, own

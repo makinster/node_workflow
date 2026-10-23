@@ -1,0 +1,172 @@
+[
+  {
+    "file": "request-source.svg",
+    "size": [
+      110,
+      40
+    ],
+    "node": "request",
+    "view": "source",
+    "variant": "default"
+  },
+  {
+    "file": "request-parameters.svg",
+    "size": [
+      110,
+      48
+    ],
+    "node": "request",
+    "view": "parameters",
+    "variant": "default"
+  },
+  {
+    "file": "request-parameters-80x24.svg",
+    "size": [
+      80,
+      24
+    ],
+    "node": "request",
+    "view": "parameters",
+    "variant": "default"
+  },
+  {
+    "file": "request-payloads.svg",
+    "size": [
+      110,
+      42
+    ],
+    "node": "request",
+    "view": "payloads",
+    "variant": "default"
+  },
+  {
+    "file": "request-payloads-enabled.svg",
+    "size": [
+      110,
+      44
+    ],
+    "node": "request",
+    "view": "payloads",
+    "variant": "enabled"
+  },
+  {
+    "file": "request-payloads-forwarding.svg",
+    "size": [
+      110,
+      44
+    ],
+    "node": "request",
+    "view": "payloads",
+    "variant": "forwarding"
+  },
+  {
+    "file": "request-payloads-enabled-80x24.svg",
+    "size": [
+      80,
+      24
+    ],
+    "node": "request",
+    "view": "payloads",
+    "variant": "enabled"
+  },
+  {
+    "file": "request-selector.svg",
+    "size": [
+      110,
+      30
+    ],
+    "node": "request",
+    "view": "selector",
+    "variant": "default"
+  },
+  {
+    "file": "result-source.svg",
+    "size": [
+      110,
+      40
+    ],
+    "node": "result",
+    "view": "source",
+    "variant": "default"
+  },
+  {
+    "file": "result-parameters.svg",
+    "size": [
+      110,
+      27
+    ],
+    "node": "result",
+    "view": "parameters",
+    "variant": "default"
+  },
+  {
+    "file": "result-parameters-80x24.svg",
+    "size": [
+      80,
+      24
+    ],
+    "node": "result",
+    "view": "parameters",
+    "variant": "default"
+  },
+  {
+    "file": "result-payloads.svg",
+    "size": [
+      110,
+      42
+    ],
+    "node": "result",
+    "view": "payloads",
+    "variant": "default"
+  },
+  {
+    "file": "result-payloads-enabled.svg",
+    "size": [
+      110,
+      44
+    ],
+    "node": "result",
+    "view": "payloads",
+    "variant": "enabled"
+  },
+  {
+    "file": "result-payloads-forwarding.svg",
+    "size": [
+      110,
+      44
+    ],
+    "node": "result",
+    "view": "payloads",
+    "variant": "forwarding"
+  },
+  {
+    "file": "result-payloads-enabled-80x24.svg",
+    "size": [
+      80,
+      24
+    ],
+    "node": "result",
+    "view": "payloads",
+    "variant": "enabled"
+  },
+  {
+    "file": "result-selector.svg",
+    "size": [
+      110,
+      30
+    ],
+    "node": "result",
+    "view": "selector",
+    "variant": "default"
+  },
+  {
+    "file": "request-options.svg",
+    "size": [
+      110,
+      34
+    ],
+    "node": "request",
+    "view": "options",
+    "variant": "default"
+  }
+]

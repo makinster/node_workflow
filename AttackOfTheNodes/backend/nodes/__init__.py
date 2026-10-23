@@ -54,8 +54,12 @@ from .data.recall_node import RecallNode
 from .data.if_changed_node import IfChangedNode
 from .ai.pick_one_node import PickOneNode
 from .ai.hermes_ask_node import HermesAskNode
+from .io.hermes_investigate_node import HermesInvestigateNode
+from .io.hermes_investigation_result_node import HermesInvestigationResultNode
 
 ALL_NODE_CLASSES = [
+    HermesInvestigationResultNode,
+    HermesInvestigateNode,
     HermesAskNode,
     PickOneNode,
     IfChangedNode,

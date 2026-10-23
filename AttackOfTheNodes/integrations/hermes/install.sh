@@ -10,17 +10,25 @@ set -euo pipefail
 
 check=false
 run_slug=
+investigate_name=
 while [[ $# -gt 0 ]]; do
     case $1 in
         --check) check=true; shift ;;
+        --investigate-command)
+            if [[ $# -lt 2 || -n $investigate_name || -n $run_slug || ! $2 =~ ^[a-z0-9][a-z0-9_-]*$ ]]; then
+                printf '%s\n' 'usage: install.sh [--check] [--run-command <slug> | --investigate-command <name>]' >&2
+                exit 64
+            fi
+            investigate_name=$2
+            shift 2 ;;
         --run-command)
-            if [[ $# -lt 2 || -n $run_slug || ! $2 =~ ^[a-z0-9][a-z0-9_-]*$ ]]; then
-                printf '%s\n' 'usage: install.sh [--check] [--run-command <slug>]' >&2
+            if [[ $# -lt 2 || -n $run_slug || -n $investigate_name || ! $2 =~ ^[a-z0-9][a-z0-9_-]*$ ]]; then
+                printf '%s\n' 'usage: install.sh [--check] [--run-command <slug> | --investigate-command <name>]' >&2
                 exit 64
             fi
             run_slug=$2
             shift 2 ;;
-        *) printf '%s\n' 'usage: install.sh [--check] [--run-command <slug>]' >&2
+        *) printf '%s\n' 'usage: install.sh [--check] [--run-command <slug> | --investigate-command <name>]' >&2
            exit 64 ;;
     esac
 done
@@ -32,6 +40,9 @@ files=(_aotn_common.sh _aotn_run.py aotn-h1-heartbeat.sh aotn-h2-http-watchdog.s
 # Named launcher installation changes only the adapter and requested instance.
 if [[ -n $run_slug ]]; then
     files=(_aotn_run.py "aotn-run-$run_slug.sh")
+fi
+if [[ -n $investigate_name ]]; then
+    files=(_aotn_investigate.py "aotn-investigate-$investigate_name.sh")
 fi
 
 differs=0
@@ -45,6 +56,7 @@ for name in "${files[@]}"; do
     target=$target_dir/$name
     source=$source_dir/$name
     [[ $name == "aotn-run-$run_slug.sh" ]] && source="$source_dir/aotn-run-template.sh"
+    [[ $name == "aotn-investigate-$investigate_name.sh" ]] && source="$source_dir/aotn-investigate-template.sh"
     regular_destination "$target"
     mode=644
     [[ $name == aotn-*.sh ]] && mode=755
