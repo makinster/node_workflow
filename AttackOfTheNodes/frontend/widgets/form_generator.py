@@ -304,6 +304,9 @@ def _field_children(
     )
     field_widgets[field_name] = widget
 
+    if field_schema.get("presentation") == "contract_table":
+        return [widget]
+
     # Keep the label with its control; descriptions wrap below the field.
     header_items: list[Any] = [
         Label(
@@ -348,6 +351,9 @@ def _widget_for_field(
     vault_keys_by_type: Dict[str, List[Tuple[str, str]]] | None = None,
 ):
     if field_type == "object_list":
+        if field_schema.get("presentation") == "contract_table":
+            from .reply_fields import ReplyFields
+            return ReplyFields(value, field_schema, id=f"field-{field_name}")
         return ObjectListField(
             value, field_schema.get("item_schema") or {}, field_schema, id=f"field-{field_name}"
         )
@@ -385,6 +391,9 @@ def _widget_for_field(
             allow_blank=False,
         )
     if field_type in {"multiline", "code"}:
+        if field_schema.get("preview"):
+            from .long_text import LongTextPreview
+            return LongTextPreview(value, id=f"field-{field_name}")
         widget = CommandTextArea(
             "" if value is None else str(value),
             id=f"field-{field_name}",
@@ -641,7 +650,9 @@ def _set_label_required(
 
 
 def _value_from_widget(widget, field_type: str) -> Any:
-    if isinstance(widget, ObjectListField):
+    from .reply_fields import ReplyFields
+    from .long_text import LongTextPreview
+    if isinstance(widget, (ObjectListField, ReplyFields, LongTextPreview)):
         return widget.value
     if isinstance(widget, Input):
         if field_type == "integer":

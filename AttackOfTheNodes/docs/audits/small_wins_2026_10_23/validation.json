@@ -1,0 +1,24 @@
+{
+  "full_suite": {
+    "passed": 2594,
+    "seconds": 438.14,
+    "wait_until_retry": false
+  },
+  "focused_behavior_and_ui": 41,
+  "updated_selector_and_focused": 42,
+  "helper_node_checks": 3,
+  "helper_ui_checks": 3,
+  "compileall": true,
+  "doc_links": true,
+  "whitespace": true,
+  "svg_captures": 22,
+  "png_previews_inspected": 7,
+  "approval_regressions": {
+    "restored_fail_on_cap": "1 failed as expected",
+    "restored_generic_object_list": "2 viewport cases failed as expected",
+    "current": "pass"
+  },
+  "stop_probe": "opened descriptor closed after cancellation",
+  "real_model_calls": 0,
+  "live_installs": 0
+}

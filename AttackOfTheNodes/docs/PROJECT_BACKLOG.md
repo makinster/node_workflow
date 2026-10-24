@@ -226,6 +226,11 @@ Meanwhile new screens reuse the existing tokens rather than invent colours.
   Short single-line fields stay inline. Reuse existing navigation, modal
   behavior and `colors.py` styling; review samples at 80×24 before implementation.
 
+  **Small-wins scope update (owner, 2026-10-23):** Check reply opts into the
+  shared preview/editor in this PR after approved samples at 80×24. This is
+  not approval to migrate all existing multiline fields. The wider rollout
+  still needs its own samples/review. [Built screens](audits/small_wins_2026_10_23/README.md).
+
 - **Theme tokens:** one set of named colours in `styles.tcss`: the highlight
   (the map's selection blue, `#1a3a5c`, now used by the Subworkflow rows),
   type colours, warning, error, dim text. Replace hard-coded colours in

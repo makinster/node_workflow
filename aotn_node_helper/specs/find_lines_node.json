@@ -1,0 +1,146 @@
+{
+  "node_type": "find_lines_node",
+  "class_name": "FindLinesNode",
+  "category": "io",
+  "primary_family": "Inputs",
+  "display_name": "Find lines",
+  "default_alias": "Find lines",
+  "description": "Find line numbers containing plain text",
+  "tags": [
+    "file",
+    "lines",
+    "text"
+  ],
+  "icon_name": "file-text",
+  "selector_section": "Files",
+  "group": "Text files",
+  "execution_template": "producer",
+  "payload_field": false,
+  "output_routing": {
+    "default": "transient",
+    "vault": {
+      "mode": "optional"
+    }
+  },
+  "inputs": {
+    "input": {
+      "name": "Text to find",
+      "type": "string",
+      "required": true,
+      "sources": [
+        "upstream",
+        "vault",
+        "configured"
+      ],
+      "default": "configured",
+      "parameter": {
+        "type": "string",
+        "label": "Text to find",
+        "tab": "Parameters",
+        "description": "Plain text. Symbols are matched literally.",
+        "default": "ERROR"
+      }
+    }
+  },
+  "outputs": {
+    "default": {
+      "name": "Line numbers",
+      "type": "var",
+      "required": true,
+      "to": [
+        "downstream",
+        "vault"
+      ],
+      "pass_through": true
+    },
+    "match_count": {
+      "name": "Match count",
+      "type": "number",
+      "to": [
+        "vault"
+      ],
+      "description": "All matching lines, including those beyond Max matches"
+    }
+  },
+  "config_tabs": {
+    "Parameters": {
+      "file": {
+        "type": "string",
+        "label": "File",
+        "tab": "Parameters",
+        "description": "Only folders allowed in Options.",
+        "default": ""
+      },
+      "match_case": {
+        "type": "boolean",
+        "label": "Match case",
+        "tab": "Parameters",
+        "default": true
+      },
+      "max_matches": {
+        "type": "integer",
+        "label": "Max matches",
+        "tab": "Parameters",
+        "description": "Keep the latest matches. Match count includes every matching line.",
+        "default": 100,
+        "min": 1,
+        "max": 1000
+      },
+      "max_file_mb": {
+        "type": "integer",
+        "label": "Max file size (MB)",
+        "tab": "Parameters",
+        "default": 10,
+        "min": 1,
+        "max": 100
+      }
+    }
+  },
+  "errors": [
+    {
+      "code": "not_allowed",
+      "description": "This file is outside the folders allowed in Options.",
+      "retryable": false
+    },
+    {
+      "code": "file_missing",
+      "description": "This file was not found.",
+      "retryable": false
+    },
+    {
+      "code": "not_regular",
+      "description": "Choose a regular text file.",
+      "retryable": false
+    },
+    {
+      "code": "file_unreadable",
+      "description": "This file could not be read.",
+      "retryable": false
+    },
+    {
+      "code": "not_utf8",
+      "description": "This file is not UTF-8 text.",
+      "retryable": false
+    },
+    {
+      "code": "file_too_large",
+      "description": "This file is too large.",
+      "retryable": false
+    },
+    {
+      "code": "line_too_long",
+      "description": "A line in this file is too long.",
+      "retryable": false
+    },
+    {
+      "code": "file_changed",
+      "description": "This file changed while reading it.",
+      "retryable": false
+    },
+    {
+      "code": "text_missing",
+      "description": "Enter text to find.",
+      "retryable": false
+    }
+  ]
+}

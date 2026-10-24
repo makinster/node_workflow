@@ -2350,6 +2350,10 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         if not widget_query:
             return
         widget = widget_query.first()
+        from frontend.widgets.long_text import LongTextPreview
+        if isinstance(widget, LongTextPreview):
+            widget.replace_from_stash(value, self._apply_generated_field_rules)
+            return
         if hasattr(widget, "text") and not isinstance(widget, Input):
             widget.text = value
         else:
@@ -2643,6 +2647,25 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         except Exception:
             option_count = 0
         return option_count > 0 and highlighted <= 0
+
+    def _reply_fields_at_focus(self):
+        from frontend.widgets.reply_fields import ReplyFields
+        focused = self.app.focused
+        while focused is not None:
+            if isinstance(focused, ReplyFields):
+                return focused
+            focused = focused.parent
+        return None
+
+    def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
+        if action == "remove_field":
+            return self._reply_fields_at_focus() is not None
+        return super().check_action(action, parameters)
+
+    async def action_remove_field(self) -> None:
+        field = self._reply_fields_at_focus()
+        if field is not None:
+            await field.remove_selected()
 
     def action_activate_focused(self) -> None:
         activate_command_widget(

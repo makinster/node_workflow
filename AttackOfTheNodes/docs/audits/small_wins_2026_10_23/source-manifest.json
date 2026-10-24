@@ -1,0 +1,19 @@
+{
+  "base": "472001c",
+  "branch": "codex/small-wins-build",
+  "worktree": "/home/makin/src/nw-small-wins-build",
+  "sha256": {
+    "backend/text_lines.py": "3cdd9e6932c2f3942a8e87599a9b94591f96dfe888fe0a154808ade87fb5d4e4",
+    "backend/reply_shape.py": "8e5a1c49a7b12b8f3e40f16d9595fb4f31a8fb2b7912487552b491150a93dff5",
+    "backend/field_types.py": "43100d16d2486edc72dacfe4ad1fee4d234e21051e859eea23b3fbd53f616b6a",
+    "backend/nodes/io/read_lines_node.py": "6f020a494b83c810060c07866feaddece719eed69ff96b57bc9a3bc5331fbe16",
+    "backend/nodes/io/find_lines_node.py": "1b01cc5080cc03960fba07242158cc7c43d93d85e74d85be74a82da10dffe6e1",
+    "backend/nodes/data/check_reply_node.py": "24750255eb05fe78fb28d26a043d4120a72fac17f54473d69b602391667656c1",
+    "frontend/widgets/reply_fields.py": "d7984f5f0d051361e099a662372fc839d737634466a21730422706f06de2ed27",
+    "frontend/widgets/long_text.py": "bcc38df910bbfdb7eba30fc3d634af6df25cdf3d1f9599cd9fca927bb320dc4d",
+    "frontend/widgets/form_generator.py": "84b98c4a9e225ceacb5fa3ae5a18da610c3bd1ed4b958cec30b287e627735687",
+    "frontend/screens/node_config.py": "fdd7aab564c4ffcae90fa4389d219033f7789fcce3eb9f4aec9f125747d18335",
+    "frontend/styles.tcss": "b16c58a59dee4066706d4e0536a2418acce41ea828dc7bc31d9ee8f7fcf88abc",
+    "frontend/colors.py": "d346d3aefb11d54f79a60d99d0c6ed1a8e732c338941b5021804917881bab3f1"
+  }
+}
