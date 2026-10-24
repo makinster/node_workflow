@@ -225,6 +225,7 @@ NODE_CONFIG = Profile('node_config', (
     Command('node_config.jump_config_tab.4', ('4',), 'jump_config_tab(4)', 'Tab 4', policies=NAV, priority=True),
     Command('node_config.jump_config_tab.5', ('5',), 'jump_config_tab(5)', 'Tab 5', policies=NAV, priority=True),
     Command('node_config.revert_or_cancel', ('ctrl+q',), 'revert_or_cancel', 'Cancel', policies=NAV_TEXT, priority=True),
+    Command('node_config.remove_field', ('x',), 'remove_field', 'Remove field', policies=NAV, priority=True),
     Command('node_config.stash_insert', ('p',), 'stash_insert', 'Insert from Stash', policies=NAV, priority=True),
     Command('node_config.cursor_up', ('w', 'up'), 'cursor_up', 'Up', policies=NAV, priority=True, navigation='up'),
     Command('node_config.cursor_down', ('s', 'down'), 'cursor_down', 'Down', policies=NAV, priority=True, navigation='down'),

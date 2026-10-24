@@ -56,8 +56,14 @@ from .ai.pick_one_node import PickOneNode
 from .ai.hermes_ask_node import HermesAskNode
 from .io.hermes_investigate_node import HermesInvestigateNode
 from .io.hermes_investigation_result_node import HermesInvestigationResultNode
+from .io.read_lines_node import ReadLinesNode
+from .io.find_lines_node import FindLinesNode
+from .data.check_reply_node import CheckReplyNode
 
 ALL_NODE_CLASSES = [
+    CheckReplyNode,
+    FindLinesNode,
+    ReadLinesNode,
     HermesInvestigationResultNode,
     HermesInvestigateNode,
     HermesAskNode,

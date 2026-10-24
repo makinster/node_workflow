@@ -53,6 +53,13 @@ a configured path, then emits the file contents as a typed `string` downstream
 and/or to Vault. The existing `file_reader_node` preserves old graphs; see
 [PAYLOAD_FILE_IO_BUILD_PLAN.md](archive/PAYLOAD_FILE_IO_BUILD_PLAN.md), P2a.
 
+### Group: Text files (In → Files)
+
+| Node | Status | Notes |
+|------|--------|-------|
+| Read lines | Built for review | `read_lines_node` — allowed UTF-8 file excerpt, inclusive/negative line positions, From from upstream/Vault/configured, Around ±5, Last/First list selection. Excerpt [string], standard forwarding and Vault. [Contract](SMALL_WINS.md). |
+| Find lines | Built for review | `find_lines_node` — literal per-line search, Match case on, latest 100 matches by default in ascending order; Line numbers [var] and optional Vault Match count [number] containing the true total. Allowed folders and bounded reads. [Contract](SMALL_WINS.md). |
+
 ### Group: Data Source
 
 | Node | Status | Notes / Maps from |
@@ -248,6 +255,11 @@ shows a visible warning. Do not implement until the security posture is
 decided.
 
 ### Section: Transform
+
+| Node | Status | Notes |
+|------|--------|-------|
+| Check reply | Built for review | `check_reply_node` — strict JSON object against compact Field/Type/Required rows. Valid → parsed record [var]; mismatch → existing error path, “Reply didn't match.” Standard forwarding, Vault, and optional configured long-text preview/editor. [Contract](SMALL_WINS.md). |
+
 
 #### Group: Data Transform
 

@@ -7,6 +7,20 @@ This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
 
+## Small wins — 2026-10-23
+
+Read lines, Find lines and Check reply built on `codex/small-wins-build`, own
+worktree `/home/makin/src/nw-small-wins-build`, fetched `origin/main` `472001c`.
+The owner approved recent-match retention plus a true optional Vault Match
+count, and Start-style compact expected-field rows. Allowed-folder snapshots,
+bounded UTF-8 reads, strict JSON shape checking and standard forwarding are
+implemented. Configured Reply uses a shared opt-in preview/full-screen editor;
+the wider long-text UI rollout remains separate.
+[Contract](SMALL_WINS.md), [real built screens](audits/small_wins_2026_10_23/README.md).
+No model calls, live installs or external configuration changes.
+Verification: **2,594 passed in 438.14 seconds** (full `pytest -q`); no known WaitUntil timing-flake retry needed. Helper node/UI checks, compilation, links, whitespace and 41 focused behavioral/UI tests pass. Both approval regressions fail when the
+rejected behavior is restored in memory, and pass with the implementation.
+
 ## C3c investigation inbox — 2026-10-23
 
 **#117 review follow-up:** Unicode findings publish as bounded UTF-8 JSON,

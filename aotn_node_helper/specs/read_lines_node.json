@@ -1,0 +1,192 @@
+{
+  "node_type": "read_lines_node",
+  "class_name": "ReadLinesNode",
+  "category": "io",
+  "primary_family": "Inputs",
+  "display_name": "Read lines",
+  "default_alias": "Read lines",
+  "description": "Read a short excerpt from an allowed text file",
+  "tags": [
+    "file",
+    "lines",
+    "text"
+  ],
+  "icon_name": "file-text",
+  "selector_section": "Files",
+  "group": "Text files",
+  "execution_template": "producer",
+  "payload_field": false,
+  "output_routing": {
+    "default": "transient",
+    "vault": {
+      "mode": "optional"
+    }
+  },
+  "inputs": {
+    "input": {
+      "name": "From line",
+      "type": "any",
+      "required": true,
+      "sources": [
+        "upstream",
+        "vault",
+        "configured"
+      ],
+      "default": "configured",
+      "parameter": {
+        "type": "integer",
+        "label": "From line",
+        "tab": "Parameters",
+        "description": "1 = first line; -1 = last line. -50 to -1 reads the last 50 lines.",
+        "default": -50
+      }
+    }
+  },
+  "outputs": {
+    "default": {
+      "name": "Excerpt",
+      "type": "string",
+      "required": true,
+      "to": [
+        "downstream",
+        "vault"
+      ],
+      "pass_through": true
+    }
+  },
+  "config_tabs": {
+    "Parameters": {
+      "file": {
+        "type": "string",
+        "label": "File",
+        "tab": "Parameters",
+        "description": "Only folders allowed in Options.",
+        "default": ""
+      },
+      "to_line": {
+        "type": "integer",
+        "label": "To line",
+        "tab": "Parameters",
+        "visible_when": {
+          "lines_around": false
+        },
+        "description": "Included. -1 means the last line.",
+        "default": -1
+      },
+      "use_match": {
+        "type": "select",
+        "label": "Use match",
+        "tab": "Parameters",
+        "options": [
+          "Last",
+          "First"
+        ],
+        "visible_when": {
+          "input_source": [
+            "Upstream payload",
+            "Vault"
+          ]
+        },
+        "description": "For a list of line numbers. Last uses the latest match.",
+        "default": "Last"
+      },
+      "lines_around": {
+        "type": "boolean",
+        "label": "Lines around",
+        "tab": "Parameters",
+        "default": false
+      },
+      "each_side": {
+        "type": "integer",
+        "label": "Lines each side",
+        "tab": "Parameters",
+        "visible_when": {
+          "lines_around": true
+        },
+        "description": "From line is the centre. Includes that line.",
+        "default": 5,
+        "min": 0,
+        "max": 200
+      },
+      "max_file_mb": {
+        "type": "integer",
+        "label": "Max file size (MB)",
+        "tab": "Parameters",
+        "default": 10,
+        "min": 1,
+        "max": 100
+      },
+      "max_text": {
+        "type": "integer",
+        "label": "Max text (characters)",
+        "tab": "Parameters",
+        "description": "If the excerpt is longer, stop with a clear error.",
+        "default": 8000,
+        "min": 1,
+        "max": 20000
+      }
+    }
+  },
+  "errors": [
+    {
+      "code": "not_allowed",
+      "description": "This file is outside the folders allowed in Options.",
+      "retryable": false
+    },
+    {
+      "code": "file_missing",
+      "description": "This file was not found.",
+      "retryable": false
+    },
+    {
+      "code": "not_regular",
+      "description": "Choose a regular text file.",
+      "retryable": false
+    },
+    {
+      "code": "file_unreadable",
+      "description": "This file could not be read.",
+      "retryable": false
+    },
+    {
+      "code": "not_utf8",
+      "description": "This file is not UTF-8 text.",
+      "retryable": false
+    },
+    {
+      "code": "file_too_large",
+      "description": "This file is too large.",
+      "retryable": false
+    },
+    {
+      "code": "line_too_long",
+      "description": "A line in this file is too long.",
+      "retryable": false
+    },
+    {
+      "code": "file_changed",
+      "description": "This file changed while reading it.",
+      "retryable": false
+    },
+    {
+      "code": "invalid_range",
+      "description": "Check the line numbers.",
+      "retryable": false
+    },
+    {
+      "code": "no_matches",
+      "description": "No matching line to read.",
+      "retryable": false
+    },
+    {
+      "code": "no_lines",
+      "description": "This file has no lines.",
+      "retryable": false
+    },
+    {
+      "code": "excerpt_too_long",
+      "description": "The excerpt is too long.",
+      "retryable": false
+    }
+  ]
+}

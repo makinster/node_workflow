@@ -6,6 +6,28 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-23 — Small wins: bounded file excerpts and reply checks
+
+Own worktree `/home/makin/src/nw-small-wins-build`, branch
+`codex/small-wins-build`, clean start from fetched `origin/main` `472001c`.
+Rendered Check reply v2 normal/80×24 before product changes in the shared
+small-wins samples folder. Built three helper-specified nodes: Read lines,
+Find lines and Check reply. Find keeps recent matches and offers the true
+Match count in the Vault; Check uses Start-style compact table navigation and
+row editors. Standard forwarding keeps computed Vault outputs independent.
+Bounded allowed-folder snapshots close on Stop; JSON shape checks are strict.
+Configured Reply uses an opt-in shared preview/editor with Stash mode rules.
+[Contract](SMALL_WINS.md), [built screens](audits/small_wins_2026_10_23/README.md).
+No real model call, install, Hermes configuration change or owner-data read.
+Verification: **2,594 passed in 438.14 seconds** (full `pytest -q`); no known WaitUntil timing-flake retry needed. Helper node/UI checks, compilation, documentation links, whitespace and 41 focused behavioral/UI tests pass. Rejected-cap and generic-row in-memory mutations
+fail the corresponding regressions (one cap case, both table viewport cases).
+The first complete run had 2,593 passes and one selector inventory assertion
+still expecting only System; updated its exact group expectation to include
+Text files (and assert both members), plus Check reply in Utility. This is an
+intentional inventory change, not a relaxed assertion. The updated selector
+and all 41 small-wins tests pass together.
+
+
 ## 2026-10-23 — Investigation Unicode and stdout-cap review fixes (#117)
 
 Branch `codex/c3c-inbox`, own worktree `/home/makin/src/nw-c3c-inbox`, starting

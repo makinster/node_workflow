@@ -1,0 +1,167 @@
+{
+  "node_type": "check_reply_node",
+  "class_name": "CheckReplyNode",
+  "category": "data",
+  "primary_family": "Utility",
+  "display_name": "Check reply",
+  "default_alias": "Check reply",
+  "description": "Check a JSON reply against the fields you expect",
+  "tags": [
+    "JSON",
+    "reply",
+    "check"
+  ],
+  "icon_name": "list-check",
+  "selector_section": "Transform",
+  "group": null,
+  "execution_template": "producer",
+  "payload_field": false,
+  "output_routing": {
+    "default": "transient",
+    "vault": {
+      "mode": "optional"
+    }
+  },
+  "inputs": {
+    "input": {
+      "name": "Reply",
+      "type": "string",
+      "required": true,
+      "sources": [
+        "upstream",
+        "vault",
+        "configured"
+      ],
+      "default": "upstream",
+      "parameter": {
+        "type": "multiline",
+        "label": "Reply",
+        "tab": "Parameters",
+        "height": 5,
+        "description": "Preview only. e/Enter: edit full text; P: replace.",
+        "default": "",
+        "preview": true
+      }
+    }
+  },
+  "outputs": {
+    "default": {
+      "name": "Checked reply",
+      "type": "var",
+      "required": true,
+      "to": [
+        "downstream",
+        "vault"
+      ],
+      "pass_through": true
+    }
+  },
+  "config_tabs": {
+    "Parameters": {
+      "expected_fields": {
+        "type": "object_list",
+        "label": "Expected fields",
+        "tab": "Parameters",
+        "add_label": "Add field",
+        "remove_label": "Remove field",
+        "id_prefix": "field_",
+        "min_items": 1,
+        "max_items": 32,
+        "unique_by": "name",
+        "item_schema": {
+          "name": {
+            "type": "string",
+            "label": "Field name",
+            "required": true,
+            "pattern": "[A-Za-z_][A-Za-z0-9_-]{0,63}"
+          },
+          "kind": {
+            "type": "select",
+            "label": "Type",
+            "options": [
+              [
+                "Text",
+                "string"
+              ],
+              [
+                "Number",
+                "number"
+              ],
+              [
+                "Yes or no",
+                "boolean"
+              ],
+              [
+                "List",
+                "list"
+              ],
+              [
+                "Record",
+                "object"
+              ],
+              [
+                "Empty",
+                "null"
+              ]
+            ],
+            "default": "string"
+          },
+          "required": {
+            "type": "boolean",
+            "label": "Required",
+            "default": true
+          }
+        },
+        "default": [
+          {
+            "id": "summary",
+            "name": "summary",
+            "kind": "string",
+            "required": true
+          },
+          {
+            "id": "cause",
+            "name": "cause",
+            "kind": "string",
+            "required": false
+          },
+          {
+            "id": "next_step",
+            "name": "next_step",
+            "kind": "string",
+            "required": true
+          }
+        ],
+        "presentation": "contract_table",
+        "hint": "Checks that a reply has the fields below. If not, it takes the error path."
+      },
+      "allow_other_fields": {
+        "type": "boolean",
+        "label": "Extra fields are OK",
+        "tab": "Parameters",
+        "default": false
+      },
+      "max_reply": {
+        "type": "integer",
+        "label": "Max reply (characters)",
+        "tab": "Parameters",
+        "description": "",
+        "default": 16000,
+        "min": 1,
+        "max": 64000
+      }
+    }
+  },
+  "errors": [
+    {
+      "code": "shape_invalid",
+      "description": "Check the expected fields.",
+      "retryable": false
+    },
+    {
+      "code": "reply_mismatch",
+      "description": "Reply didn't match.",
+      "retryable": false
+    }
+  ]
+}
