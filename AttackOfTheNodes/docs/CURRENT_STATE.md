@@ -9,6 +9,16 @@ delivery; this documentation refresh did not change or rerun live jobs.
 
 ## MCP activity summaries — 2026-10-24
 
+**#119 review follow-up (2026-10-24):** activity projections now use the shared
+C3c redactor for labelled credentials and loaded Secrets values, before caps
+and worker output. Labels include spaced API keys, AWS access/secret keys,
+authorization/bearer and mixed-case private-key blocks. An oversized unfinished
+EOF event line counts once as damaged even when it spans the byte window;
+complete leading window fragments remain truncation only. Eleven regression
+cases fail on `ff2ea3f`; all 146 focused MCP/inbox tests pass. Compilation,
+links and whitespace checks pass. Full suite: **2,653 passed in 439.49
+seconds**; no known WaitUntil timing-flake retry needed.
+
 `get_activity(since, limit)` merges run summaries, investigation findings/failure
 codes and C1 Notify me receipts/Record event summaries into one newest-first
 UTC list. This addresses the gap where an investigation finished after its

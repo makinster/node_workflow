@@ -6,6 +6,31 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-24 — #119 review: shared credential redaction and EOF damage
+
+Own worktree `/home/makin/src/nw-mcp-activity-review`, branch
+`codex/mcp-activity-review`, clean start from #119 head `ff2ea3f`. Fetched and
+merged `origin/main` (already current). Push target remains #119's
+`codex/mcp-activity`; the original worker's worktree is unchanged.
+
+Extended C3c's shared redactor with case-insensitive authorization/bearer,
+spaced API key and AWS credential labels, quoted JSON escaping and mixed-case
+private-key blocks. Activity passes read-only loaded Secrets values to that
+same helper, before caps and worker replies, instead of maintaining its own
+replacement loop. Label redaction precedes known-value replacement so a
+Secrets value equal to a label cannot obscure the credential. Event scanning
+counts an unfinished EOF line once even when it consumes the whole byte
+window; complete leading fragments still count only as truncation.
+
+Eleven regression cases fail against `ff2ea3f`, including worker stdout and
+both MCP output forms, an oversized unfinished tail, escaped quoted values
+and label-shadowing by a known value. Seven controls cover already-supported
+labels and complete window fragments. All **146 focused MCP/inbox tests pass**;
+compilation, documentation links and whitespace checks pass. Full suite:
+**2,653 passed in 439.49 seconds**; no known WaitUntil timing-flake retry needed.
+No live installs, model calls, configuration changes or owner-data reads.
+
+
 ## 2026-10-24 — MCP activity across sources
 
 Own worktree `/home/makin/src/nw-mcp-activity`, branch `codex/mcp-activity`,

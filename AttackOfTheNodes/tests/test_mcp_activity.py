@@ -270,3 +270,100 @@ def test_stdio_activity_and_legacy_history_are_independent(tmp_path):
         legacy = client.call('get_recent_events')['structuredContent']
         assert legacy == {'runs': [run_record()]}
         assert client.call('get_activity', {'since': 'not-a-time'})['isError']
+
+
+@pytest.mark.parametrize('label', [
+    'password', 'passwd', 'secret', 'token', 'api_key', 'apikey', 'api key',
+    'authorization', 'bearer', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY',
+])
+def test_review_activity_credentials_redacted_before_worker_exit(tmp_path, label):
+    import subprocess
+    import sys
+    from tests.test_mcp import APP
+    data, home = tmp_path/'data', tmp_path/'hermes'
+    values = ['private-colon-value', 'private-equals-value', 'private-json-value', 'known-store-value']
+    text = f'{label.upper()}: {values[0]} {label.lower()}={values[1]} '
+    text += json.dumps({label.swapcase(): values[2]}) + ' ' + values[3]
+    write(data/'secrets/secrets.json', {'credential': values[3]})
+    record = finding(); record['finding'] = text
+    write(home/f'aotn/investigations/results/{RID}.json', record)
+    jsonl(home/'aotn/events.jsonl', [event(summary=text)])
+    result = subprocess.run([sys.executable, '-m', 'aotn_mcp.worker'], cwd=APP,
+        env={**os.environ, 'AOTN_DATA_DIR': str(data), 'HERMES_HOME': str(home)},
+        input=json.dumps({'name': 'get_activity', 'arguments': {}}),
+        text=True, capture_output=True, timeout=10)
+    assert result.returncode == 0 and not result.stderr
+    assert all(value not in result.stdout for value in values)
+    records = json.loads(result.stdout)['result']['activity']
+    assert {r['type'] for r in records} == {'event', 'investigation'}
+    for item in records:
+        safe = item['summary'] if item['type'] == 'event' else item['finding']
+        assert safe.count('[redacted]') >= 4
+
+
+@pytest.mark.parametrize('complete', [True, False])
+def test_review_activity_private_key_blocks_case_insensitive(roots, complete):
+    _, shared = roots
+    text = '-----bEgIn RSA pRiVaTe KeY-----\nprivate-key-material\n'
+    if complete:
+        text += '-----eNd RSA pRiVaTe KeY-----'
+    record = finding(); record['finding'] = text
+    write(shared/f'investigations/results/{RID}.json', record)
+    jsonl(shared/'events.jsonl', [event(summary=text)])
+    result = activity.get_activity()
+    assert len(result['activity']) == 2
+    assert 'private-key-material' not in json.dumps(result)
+    assert all('[redacted private key]' in (r.get('summary') or r.get('finding')) for r in result['activity'])
+
+
+def test_review_activity_protocol_redacts_labels_before_capping(tmp_path):
+    data, home = tmp_path/'data', tmp_path/'hermes'
+    text = 'AWS_ACCESS_KEY_ID=FAKEACCESSKEY123 AWS_SECRET_ACCESS_KEY=FAKESECRETKEY456 api key: FAKEAPIKEY789 '
+    text += 'Authorization: Bearer FAKEBEARER012 ' + 'x'*2500
+    record = finding(); record['finding'] = text
+    write(home/f'aotn/investigations/results/{RID}.json', record)
+    jsonl(home/'aotn/events.jsonl', [event(summary=text)])
+    with server(data, env={**os.environ, 'HERMES_HOME': str(home)}) as client:
+        response = client.call('get_activity')
+    assert not response['isError']
+    serialized = json.dumps(response)
+    assert all(secret not in serialized for secret in (
+        'FAKEACCESSKEY123', 'FAKESECRETKEY456', 'FAKEAPIKEY789', 'FAKEBEARER012'))
+    assert json.loads(response['content'][0]['text']) == response['structuredContent']
+    assert response['structuredContent']['activity'][1]['finding_truncated']
+
+
+def test_review_oversized_unfinished_tail_counts_damage(roots):
+    _, shared = roots
+    path = shared/'events.jsonl';path.parent.mkdir(parents=True)
+    path.write_bytes(b'{"unfinished":"' + b'x'*(activity.SOURCE_BYTES+1))
+    result = activity.get_activity()
+    assert result['activity'] == []
+    assert result['skipped'] == result['skipped_by_source']['events.jsonl'] == 1
+    assert result['truncated_sources'] == ['events.jsonl']
+
+
+def test_review_known_value_cannot_obscure_credential_label(roots):
+    data, shared = roots
+    write(data/'secrets/secrets.json', {'credential': 'password'})
+    jsonl(shared/'events.jsonl', [event(summary='password=unregistered-credential')])
+    result = activity.get_activity()
+    assert 'unregistered-credential' not in json.dumps(result)
+
+
+def test_review_quoted_json_credential_is_fully_redacted(roots):
+    _, shared = roots
+    text = json.dumps({'secret': 'first-part " second-part \\ tail-part'})
+    jsonl(shared/'events.jsonl', [event(summary=text)])
+    summary = activity.get_activity()['activity'][0]['summary']
+    assert '[redacted]' in summary
+    assert all(part not in summary for part in ('first-part', 'second-part', 'tail-part'))
+
+
+def test_oversized_complete_window_fragment_is_not_damage(roots):
+    _, shared = roots
+    path = shared/'events.jsonl';path.parent.mkdir(parents=True)
+    path.write_bytes(b'x'*(activity.SOURCE_BYTES+1) + b'\n')
+    result = activity.get_activity()
+    assert result['activity'] == [] and result['skipped'] == 0
+    assert result['truncated_sources'] == ['events.jsonl']

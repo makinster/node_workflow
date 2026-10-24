@@ -354,7 +354,10 @@ conditional that skips the output (expect nothing).
 Hermes or Claude Code run a saved workflow instead of repeating its steps,
 saving tokens on the agent's side. Its inputs use the Step 4 contracts,
 which exist: `run_workflow` can take typed inputs and return `values`
-today. Local stdio does not need Step 6 network auth.
+today. Local stdio does not need Step 6 network auth. #119 activity review
+fixes (2026-10-24) reuse the C3c credential redactor before worker replies and
+count an oversized unfinished event tail as damaged, independently of the
+byte-window truncation flag.
 
 ## 9. Effect on the build plan (owner order, 2026-10-22)
 

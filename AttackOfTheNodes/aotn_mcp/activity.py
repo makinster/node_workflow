@@ -117,9 +117,7 @@ class Reader:
         if not isinstance(value, str):
             raise ValueError('expected text')
         value.encode('utf-8')
-        for secret in self.secrets:
-            value = value.replace(secret, '[redacted]')
-        value = redact(value)
+        value = redact(value, known_values=self.secrets)
         return value if cap is None else value[:cap]
 
     def project(self, record, source):
@@ -243,7 +241,8 @@ class Reader:
                     boundary = data.find(b'\n')
                     left = len(data) if boundary < 0 else boundary + 1
                 end = len(data)
-                if end > left and not data.endswith(b'\n'):
+                # EOF damage counts even when it is also the leading window fragment.
+                if data and not data.endswith(b'\n'):
                     self.skipped[source] += 1  # An unfinished writer tail.
                     end = max(left, data.rfind(b'\n') + 1)
                 count = 0

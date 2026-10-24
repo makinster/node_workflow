@@ -52,16 +52,21 @@ def failure(code):
     return NodeError(code, MESSAGES[code], retryable=False)
 
 
-def redact(value, manager=None):
-    """Known Secrets values plus common labelled credentials. Never log raw text."""
-    if manager is not None:
-        values = [manager.get_secret(key) for key in manager.list_keys()]
-        for secret in sorted((s for s in values if s), key=len, reverse=True):
-            value = value.replace(secret, '[redacted]')
-    value = re.sub(r'(?i)\b((?:Bearer|Basic)\s+)\S+', r'\1[redacted]', value)
-    value = re.sub(r'''(?im)(["']?(?:api[_-]?key|access[_-]?token|refresh[_-]?token|token|password|passwd|secret|credential)["']?\s*[:=]\s*)(?:"[^"\n]*"|'[^'\n]*'|[^\s,;}]+)''', r'\1[redacted]', value)
+def redact(value, manager=None, *, known_values=()):
+    """Known Secrets values plus common labelled credentials. Never log raw text.
+
+    Read-only consumers may supply already loaded values instead of a manager.
+    Redact labels first so a known value equal to a label cannot obscure it.
+    """
+    value = re.sub(r'(?i)-----BEGIN [^-\n]*PRIVATE KEY-----[\s\S]*?-----END [^-\n]*PRIVATE KEY-----|-----BEGIN [^-\n]*PRIVATE KEY-----[\s\S]*\Z', '[redacted private key]', value)
+    value = re.sub(r"""(?im)(["']?(?:aws[_-]access[_-]key[_-]id|aws[_-]secret[_-]access[_-]key|api[ _-]*key|access[_-]?token|refresh[_-]?token|token|password|passwd|secret|credential|authorization|bearer)["']?\s*[:=]\s*)(?:(?:Bearer|Basic)\s+)?(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[^\s,;}]+)""", r'\1[redacted]', value)
+    value = re.sub(r"""(?i)\b((?:Bearer|Basic)\s+)[^\s"'<>,;}]+""", r'\1[redacted]', value)
     value = re.sub(r'(https?://)[^/\s:@]+:[^/\s@]+@', r'\1[redacted]@', value)
-    value = re.sub(r'-----BEGIN [^-\n]*PRIVATE KEY-----[\s\S]*?-----END [^-\n]*PRIVATE KEY-----|-----BEGIN [^-\n]*PRIVATE KEY-----[\s\S]*\Z', '[redacted private key]', value)
+    values = list(known_values)
+    if manager is not None:
+        values.extend(manager.get_secret(key) for key in manager.list_keys())
+    for secret in sorted((s for s in values if s), key=len, reverse=True):
+        value = value.replace(secret, '[redacted]')
     return value
 
 

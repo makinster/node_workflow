@@ -139,7 +139,9 @@ Per call, each directory scan examines at most 2,000 entries and reads at most
 8 MiB of record bytes; each JSON record is capped at 256 KiB. The event reader
 examines the newest 8 MiB and at most the latest 20,000 complete LF lines, with
 a 64 KiB cap per line. A leading fragment cut by the byte window is omitted,
-not counted as damaged. `truncated_sources` lists any sources limited by these
+not counted as damaged. An unfinished EOF line still counts once as damaged,
+even when it exceeds the entire byte window and its beginning is omitted.
+`truncated_sources` lists any sources limited by these
 scan bounds. The returned list is newest-first among examined records; it is
 not a complete history or pagination API when a source is truncated. The
 server's normal tool deadline and response cap still apply.
@@ -149,6 +151,13 @@ Only the listed summary fields are projected. Raw request evidence, event
 never returned. Text is redacted before its display cap using known values in
 the selected AOTN Secrets store and the existing investigation redactor for
 labelled credentials, bearer/basic tokens, URL passwords and private keys.
+This is the shared C3c investigation-inbox redactor, including case-insensitive
+password/passwd/secret/token/api_key/apikey/authorization/bearer labels in
+`key: value`, `key=value` and JSON forms; spaced `api key`, AWS access/secret
+key labels and mixed-case private-key blocks are covered too. Known Secrets
+values are supplied to that same redactor without instantiating a writer.
+Findings and event summaries are redacted before text caps and before the
+worker returns, so both MCP text and structured results carry the safe text.
 Unknown unlabelled secrets cannot be inferred from arbitrary prose. A damaged,
 oversized or unsafe Secrets store fails this tool closed with a plain error;
 its contents are not logged. This tool does not read Hermes profile credentials.
