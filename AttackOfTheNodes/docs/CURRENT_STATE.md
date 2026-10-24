@@ -1,11 +1,29 @@
 # Current State
 
-Snapshot checked **2026-10-23**, against fetched `origin/main` `f9f5f07` after
-#114 and #115 merged (owner confirmation and fetched history). Code and fresh
+Snapshot checked **2026-10-24**, against fetched `origin/main` `d86faf2` after
+#118 merged (owner confirmation and fetched history). Code and fresh
 GitHub checks take precedence.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
+
+## MCP activity summaries — 2026-10-24
+
+`get_activity(since, limit)` merges run summaries, investigation findings/failure
+codes and C1 Notify me receipts/Record event summaries into one newest-first
+UTC list. This addresses the gap where an investigation finished after its
+requesting run and was absent from a run-history-only answer. The legacy
+`get_recent_events` tool is unchanged. Reads use the selected data root and
+`$HERMES_HOME/aotn`, with bounded scans, damage counts, source truncation flags,
+regular-file/no-symlink checks and redacted field projections; no raw evidence
+or event values are exposed. [Contract and setup](integrations/MCP.md#activity-across-runs-and-hermes).
+
+Own worktree `/home/makin/src/nw-mcp-activity`, branch `codex/mcp-activity`,
+from clean fetched main `d86faf2`. Focused MCP tests: **73 passed**; full
+suite: **2,635 passed in 437.16 seconds**, with no timing-flake rerun.
+Compilation and whitespace checks pass; the docs checker retains the base
+`SMALL_WINS.md` active-doc allowlist failure. No live install, Hermes allowlist/configuration,
+cron job, gateway or owner workflow changes; the owner merges after review.
 
 ## Small wins — 2026-10-23
 

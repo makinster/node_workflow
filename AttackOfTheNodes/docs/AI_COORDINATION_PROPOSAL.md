@@ -349,7 +349,8 @@ H1 test cases: normal message; a forced unhandled error (expect alert); a
 conditional that skips the output (expect nothing).
 
 **AOTN as a tool for AIs.** An MCP server (local stdio) exposing
-`list_workflows`, `run_workflow`, `get_run_status`, `get_recent_events` lets
+`list_workflows`, `run_workflow`, `get_run_status`, `get_recent_events`, and
+`get_activity` (merged run, investigation and C1 receipt/event summaries) lets
 Hermes or Claude Code run a saved workflow instead of repeating its steps,
 saving tokens on the agent's side. Its inputs use the Step 4 contracts,
 which exist: `run_workflow` can take typed inputs and return `values`

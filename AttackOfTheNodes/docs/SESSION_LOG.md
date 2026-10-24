@@ -6,6 +6,37 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-24 — MCP activity across sources
+
+Own worktree `/home/makin/src/nw-mcp-activity`, branch `codex/mcp-activity`,
+clean starting/fetched main `d86faf2`. Added read-only `get_activity(since,
+limit)` across persisted run summaries, investigation terminal findings and
+C1 event/receipt summaries. This gives the MCP client visibility of findings
+that finish after their requesting run. The original `get_recent_events`
+implementation and response shape remain unchanged.
+
+Activity uses normalized UTC timestamps, inclusive since filtering and one
+merged limit. Fixed-path descriptor reads refuse symlinks/special files and
+never create, chmod or repair the shared folder. Per-record/line, byte-window
+and directory/line-count caps bound the scan; damage counts and explicit source
+truncation flags describe omissions. Safe projections exclude evidence,
+event values, outbox messages, error details and run outputs. Known AOTN Secrets
+values and common credential forms are redacted before text caps; unsafe
+Secrets loading fails closed without content diagnostics. Tool discovery and
+the [MCP guide](integrations/MCP.md#activity-across-runs-and-hermes) include the
+new tool and the existing-client allowlist instruction.
+
+Focused MCP verification: **73 passed**, including real stdio calls with a
+temporary Hermes home, mixed sources, damaged JSON/UTF-8, unknown versions,
+oversized files/lines, unfinished tails, UTC/offset/fractional ordering and
+inclusive since filtering, newest-tail caps, Unicode, redaction, read-only
+mode/content preservation, unsafe destinations and legacy compatibility.
+Full suite: **2,635 passed in 437.16 seconds**; no known WaitUntil timing-flake
+rerun needed. Compilation and whitespace checks pass. The docs
+consolidation checker reports the pre-existing unexpected active doc
+`SMALL_WINS.md`, reproduced against the #118 base; no other checker error.
+No paid calls, live installs, external configuration changes or merges.
+
 ## 2026-10-24 — #118 review: byte consistency, decoded Unicode and ranges
 
 Own worktree `/home/makin/src/nw-small-wins-build`, branch

@@ -34,6 +34,22 @@ TOOLS = [
     {"name": "get_recent_events", "description": "Read the newest persisted run summaries; this is not an events.jsonl stream.",
      "inputSchema": object_schema({"limit": {"type": "integer", "minimum": 1, "maximum": 100, "default": 10}}),
      "outputSchema": object_schema({"runs": {"type": "array", "items": {"type": "object"}}}, ("runs",))},
+    {"name": "get_activity", "description": "Read merged recent run summaries, investigation findings/failures and Notify me/Record event receipts. Newest first, UTC; bounded scans report skipped damage and truncated sources. No raw evidence or event payload values.",
+     "annotations": {"readOnlyHint": True, "destructiveHint": False, "openWorldHint": False},
+     "inputSchema": object_schema({
+         "since": {"type": "string", "format": "date-time", "description": "Inclusive ISO 8601 time with a zone; omitted means all scanned activity."},
+         "limit": {"type": "integer", "minimum": 1, "maximum": 100, "default": 10}}),
+     "outputSchema": object_schema({
+         "activity": {"type": "array", "items": {"type": "object", "required": ["type", "time", "source"],
+             "properties": {"type": {"enum": ["run", "investigation", "event"]},
+                            "time": {"type": "string", "format": "date-time"},
+                            "source": {"enum": ["run_history", "investigation_results", "events.jsonl"]}}}},
+         "skipped": {"type": "integer", "minimum": 0},
+         "skipped_by_source": object_schema({key: {"type": "integer", "minimum": 0}
+             for key in ("run_history", "investigation_results", "events.jsonl")},
+             ("run_history", "investigation_results", "events.jsonl")),
+         "truncated_sources": {"type": "array", "items": {"enum": ["run_history", "investigation_results", "events.jsonl"]}},
+     }, ("activity", "skipped", "skipped_by_source", "truncated_sources"))},
 ]
 BY_NAME = {tool["name"]: tool for tool in TOOLS}
 
