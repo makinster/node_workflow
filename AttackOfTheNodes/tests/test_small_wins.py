@@ -207,3 +207,119 @@ async def test_forwarding_keeps_input_identity_and_own_vault(run_node,tmp_path,c
     done,errors,memory=await run_node(cls,incoming=incoming,dead_drop_passthrough=True,vault_write=True,vault_write_key='own',**cfg)
     assert not errors and done[0]['data']['default'] is incoming
     assert memory.read_persistent('own')==value
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('replacement', [b'long\nx\nextra\n', b'A\nB\nC\nmore\n', b'\xff\nx\nextra\n'])
+async def test_review_read_rejects_same_inode_rewrite_growth(run_node, tmp_path, monkeypatch, replacement):
+    path = Path(content(tmp_path, 'a\nb\nc\n'))
+    inode = path.stat().st_ino
+    original = text_lines.lines
+    passes = 0
+
+    async def changed(fd, size, **kwargs):
+        nonlocal passes
+        passes += 1
+        if passes == 2:
+            path.write_bytes(replacement)
+            assert path.stat().st_ino == inode and path.stat().st_size > size
+        async for line in original(fd, size, **kwargs):
+            yield line
+
+    monkeypatch.setattr(text_lines, 'lines', changed)
+    done, errors, memory = await run_node(ReadLinesNode, file=str(path), input=-1, to_line=-1,
+                                          vault_write=True, vault_write_key='excerpt')
+    assert not done and errors[0].code == 'file_changed'
+    assert memory.read_persistent('excerpt') is None
+
+
+@pytest.mark.asyncio
+async def test_review_read_allows_append_between_passes(run_node, tmp_path, monkeypatch):
+    path = Path(content(tmp_path, 'a\nb\nc\n'))
+    original = text_lines.lines
+    passes = 0
+
+    async def appended(fd, size, **kwargs):
+        nonlocal passes
+        passes += 1
+        if passes == 2:
+            with path.open('ab') as stream:
+                stream.write(b'later\n')
+        async for line in original(fd, size, **kwargs):
+            yield line
+
+    monkeypatch.setattr(text_lines, 'lines', appended)
+    done, errors, _ = await run_node(ReadLinesNode, file=str(path), input=-1, to_line=-1)
+    assert not errors and done[0]['data']['default'] == 'c\n'
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('record', [
+    {'value': '\ud800'}, {'value': ['\udfff']}, {'value': {'nested': ['\ud800']}},
+    {'value': {'\ud800': 'text'}}, {'value': 'ok', '\ud800': 'extra'},
+    {'value': 'ok', 'extra': [{'nested': '\udfff'}]},
+])
+async def test_review_decoded_surrogates_rejected_before_publication(run_node, record):
+    kinds = {str: 'string', list: 'list', dict: 'object'}
+    rows = [{'name': 'value', 'kind': kinds[type(record['value'])], 'required': True}]
+    done, errors, memory = await run_node(CheckReplyNode, incoming=json.dumps(record),
+        expected_fields=rows, allow_other_fields=True, dead_drop_passthrough=True,
+        vault_write=True, vault_write_key='checked')
+    assert not done and errors[0].code == 'reply_mismatch'
+    assert memory.read_persistent('checked') is None
+
+
+@pytest.mark.asyncio
+async def test_review_decoded_valid_unicode_roundtrips(run_node, tmp_path):
+    from backend.persistence import write_json_atomic
+    record = {'value': '🌍\u2028\u0085', 'extra': {'🎉': ['é']}}
+    rows = [{'name': 'value', 'kind': 'string', 'required': True}]
+    done, errors, memory = await run_node(CheckReplyNode, incoming=json.dumps(record),
+        expected_fields=rows, allow_other_fields=True, vault_write=True, vault_write_key='checked')
+    assert not errors and done[0]['data']['default'] == record
+    path = tmp_path/'checked.json'
+    write_json_atomic(path, memory.read_persistent('checked'))
+    assert json.loads(path.read_text(encoding='utf-8')) == record
+
+
+@pytest.mark.asyncio
+async def test_review_reversed_negative_range_before_clamp(run_node, tmp_path):
+    done, errors, _ = await run_node(ReadLinesNode, file=content(tmp_path, 'a\nb\nc\n'),
+                                     input=-9, to_line=-10)
+    assert not done and errors[0].code == 'invalid_range'
+
+
+@pytest.mark.asyncio
+async def test_review_ordered_negative_range_still_clamps(run_node, tmp_path):
+    done, errors, _ = await run_node(ReadLinesNode, file=content(tmp_path, 'a\nb\nc\n'),
+                                     input=-10, to_line=-9)
+    assert not errors and done[0]['data']['default'] == 'a\n'
+
+
+@pytest.mark.asyncio
+async def test_review_rewrite_outside_excerpt_in_later_chunk(run_node, tmp_path, monkeypatch):
+    original_bytes = b'x\n' * 40000
+    path = Path(content(tmp_path, original_bytes.decode('utf-8')))
+    original = text_lines.lines
+    passes = 0
+
+    async def changed(fd, size, **kwargs):
+        nonlocal passes
+        passes += 1
+        if passes == 2:
+            path.write_bytes(original_bytes[:-2] + b'y\nappended\n')
+        async for line in original(fd, size, **kwargs):
+            yield line
+
+    monkeypatch.setattr(text_lines, 'lines', changed)
+    done, errors, _ = await run_node(ReadLinesNode, file=str(path), input=1, to_line=1)
+    assert not done and errors[0].code == 'file_changed'
+
+
+@pytest.mark.asyncio
+async def test_review_short_reads_with_unchanged_prefix(run_node, tmp_path, monkeypatch):
+    path = content(tmp_path, 'a\nb\nc\n')
+    original = os.read
+    monkeypatch.setattr(text_lines.os, 'read', lambda fd, size: original(fd, min(size, 2)))
+    done, errors, _ = await run_node(ReadLinesNode, file=path, input=-1, to_line=-1)
+    assert not errors and done[0]['data']['default'] == 'c\n'

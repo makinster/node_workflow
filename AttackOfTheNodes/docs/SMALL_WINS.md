@@ -17,7 +17,9 @@ chooses a list entry, **Last** by default. An empty list gives `no_matches`
 
 Lines start at 1 and include both ends. Negative values count from the end:
 From **-50**, To **-1** reads the last 50 lines. Values before the start clamp
-to 1; To beyond the end clamps to the last line. Zero, reversed ranges and
+to 1; To beyond the end clamps to the last line. Order is checked on the
+resolved positions before clamping (so -9 to -10 on three lines is reversed).
+Zero, reversed ranges and
 positive From beyond the end fail. Empty files return empty text in range
 mode. **Lines around** uses From as its centre, with **5 lines each side** by
 default (0–200). It hides To, keeping the saved value. Around an empty file
@@ -60,6 +62,11 @@ An oversized excerpt fails rather than being silently shortened.
 Reads stream a bounded initial byte snapshot, check cancellation between
 64 KiB reads and close descriptors on completion/error/Stop. Appended bytes
 are ignored; observed truncation, replacement or same-size modification fails.
+Read lines records bounded raw-byte chunk lengths and SHA-256 digests during
+counting and verifies each original chunk before decoding it during extraction.
+A changed original byte range fails with `file_changed`, including a same-inode
+truncate/rewrite that grows or a change outside the selected excerpt. Genuine
+append-only growth keeps the original excerpt; fingerprints stay in memory.
 Find and Read do not share a locked snapshot. A file can rotate or change
 between nodes; choose a fixed workflow-created snapshot when that matters.
 These are deliberate file readers, not automatic secret detectors.
@@ -97,7 +104,11 @@ only in the table display; the editor and saved configuration keep them whole.
 Required means present. Optional fields may be absent, but when present must
 still match their type. One strict JSON object only: no fences, commentary,
 trailing text, duplicate keys (including nested objects), non-finite numbers,
-repair or conversion. All values, including extra fields, must be valid.
+repair or conversion. All decoded strings and object keys must encode as UTF-8,
+recursively, including allowed extra fields. Escaped lone surrogates fail with
+`reply_mismatch` before publishing or writing to the Vault. Valid Unicode,
+including correctly paired surrogate escapes, is preserved. All values,
+including extra fields, must be valid.
 
 Valid replies produce Checked reply `[var]`, the parsed record. Invalid replies
 raise `reply_mismatch`, **“Reply didn't match.”**, through the engine's normal

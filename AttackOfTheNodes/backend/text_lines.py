@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 from collections import deque
 from contextlib import contextmanager
 import os
@@ -111,15 +112,36 @@ def snapshot(raw, get_setting, max_mb):
             os.close(parent)
 
 
-async def lines(fd, size):
-    """Stream the initial byte range; split LF only, strip a UTF-8 BOM once."""
+async def lines(fd, size, *, record=None, verify=None):
+    """Stream the initial byte range; split LF only, strip a UTF-8 BOM once.
+
+    Read lines records bounded chunk lengths/SHA-256 digests while counting,
+    then verifies the raw bytes before decoding each extraction chunk. This
+    detects rewrites even when the inode survives and the file grows, without
+    treating append-only growth beyond the initial byte range as a rewrite.
+    """
     os.lseek(fd, 0, os.SEEK_SET)
     remaining, pending, first = size, b'', True
+    index = 0
     while remaining:
         await asyncio.sleep(0)  # Stop cancels the task between bounded reads.
-        chunk = os.read(fd, min(65536, remaining))
-        if not chunk:
-            raise failure('file_changed')
+        length = verify[index][0] if verify is not None else min(65536, remaining)
+        chunk = os.read(fd, length)
+        while len(chunk) < length:
+            if not chunk:
+                raise failure('file_changed')
+            await asyncio.sleep(0)
+            more = os.read(fd, length - len(chunk))
+            if not more:
+                raise failure('file_changed')
+            chunk += more
+        if record is not None or verify is not None:
+            fingerprint = (len(chunk), hashlib.sha256(chunk).digest())
+            if verify is not None and fingerprint != verify[index]:
+                raise failure('file_changed')
+            if record is not None:
+                record.append(fingerprint)
+        index += 1
         remaining -= len(chunk)
         pieces = (pending + chunk).split(b'\n')
         pending = pieces.pop()
@@ -184,27 +206,33 @@ async def read(config, context):
     max_text = integer(config['max_text'], 1, 20000, 'excerpt_too_long')
     with snapshot(config.get('file'), context.get_setting, config['max_file_mb']) as (fd, size):
         count = 0
-        async for _ in lines(fd, size):
+        fingerprints = []
+        async for _ in lines(fd, size, record=fingerprints):
             count += 1
         if not count:
             if around:
                 raise failure('no_lines')
             return ''
         def position(n):
-            return n if n > 0 else max(1, count + n + 1)
+            return n if n > 0 else count + n + 1
         start = position(start)
+        if not around:
+            end = position(end)
+            if end < start:
+                raise failure('invalid_range')
+        start = max(1, start)
         if start > count:
             raise failure('invalid_range')
         if around:
             start, end = max(1, start - each), min(count, start + each)
         else:
-            end = min(count, position(end))
+            end = min(count, max(1, end))
         if end < start:
             raise failure('invalid_range')
         if end - start + 1 > 500:
             raise failure('excerpt_too_long')
         excerpt, chars, byte_count, number = [], 0, 0, 0
-        async for line in lines(fd, size):
+        async for line in lines(fd, size, verify=fingerprints):
             number += 1
             if start <= number <= end:
                 chars += len(line)

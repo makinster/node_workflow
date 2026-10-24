@@ -76,16 +76,19 @@ async def check(text, rows, limit=16000, extra=False):
         def constant(_):
             raise ValueError('not finite')
         result = json.loads(text, object_pairs_hook=pairs, parse_constant=constant)
-        def finite(value):
+        def valid_decoded(value):
+            if isinstance(value, str):
+                value.encode('utf-8')  # Escaped lone surrogates survive json.loads.
             if isinstance(value, float) and not math.isfinite(value):
                 raise ValueError('not finite')
             if isinstance(value, dict):
-                for item in value.values():
-                    finite(item)
+                for key, item in value.items():
+                    key.encode('utf-8')
+                    valid_decoded(item)
             elif isinstance(value, list):
                 for item in value:
-                    finite(item)
-        finite(result)
+                    valid_decoded(item)
+        valid_decoded(result)
     except (ValueError, UnicodeError, RecursionError, OverflowError):
         raise mismatch() from None
     if not isinstance(result, dict):

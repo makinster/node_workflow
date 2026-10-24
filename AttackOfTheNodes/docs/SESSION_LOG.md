@@ -1,10 +1,33 @@
 # AttackOfTheNodes Session Log
 
-This log keeps roughly the last two weeks: entries dated October 4–23, 2026
+This log keeps roughly the last two weeks: entries dated October 4–24, 2026
 (the earliest existing entry is October 6). Every October 18 entry is retained.
 Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.md).
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
+
+## 2026-10-24 — #118 review: byte consistency, decoded Unicode and ranges
+
+Own worktree `/home/makin/src/nw-small-wins-build`, branch
+`codex/small-wins-build`, clean starting head `4c780fc`; fetched and merged
+`origin/main` (already current). Read lines now verifies the original raw byte
+range across counting/extraction with bounded per-chunk SHA-256 fingerprints.
+This catches same-inode rewrites even when the file grows, including changes
+outside the excerpt, before any success/Vault publication. Append-only growth
+remains valid; short reads are filled within bounded chunks and Stop yields.
+Range ordering is checked on resolved positions before clamping. Check reply
+recursively verifies decoded text and object keys encode as UTF-8, including
+allowed extra fields; lone surrogates become `reply_mismatch` before outputs.
+No UI changes or external configuration changes.
+
+Verification: eleven regression cases fail against original `4c780fc` helpers
+(three growing rewrites, a later-chunk change outside the excerpt, six decoded
+Unicode cases, reversed negative range). Four controls pass before/after:
+append-only growth, valid Unicode/persistence, ordered clamping and short reads.
+All 15 review cases and 62 focused tests pass. Full suite: **2,609 passed
+in 439.81 seconds**; no known WaitUntil timing-flake retry needed. Compilation,
+documentation links and whitespace checks pass. [Updated contract](SMALL_WINS.md).
+
 
 ## 2026-10-23 — Small wins: bounded file excerpts and reply checks
 
