@@ -1,0 +1,222 @@
+[
+  {
+    "file": "read-parameters.svg",
+    "size": [
+      110,
+      36
+    ],
+    "node": "read",
+    "view": "parameters",
+    "variant": ""
+  },
+  {
+    "file": "read-parameters-80x24.svg",
+    "size": [
+      80,
+      24
+    ],
+    "node": "read",
+    "view": "parameters",
+    "variant": ""
+  },
+  {
+    "file": "read-payloads.svg",
+    "size": [
+      110,
+      40
+    ],
+    "node": "read",
+    "view": "payloads",
+    "variant": ""
+  },
+  {
+    "file": "read-payloads-forwarding.svg",
+    "size": [
+      110,
+      40
+    ],
+    "node": "read",
+    "view": "payloads",
+    "variant": "forwarding"
+  },
+  {
+    "file": "read-selector.svg",
+    "size": [
+      110,
+      36
+    ],
+    "node": "read",
+    "view": "selector",
+    "variant": ""
+  },
+  {
+    "file": "find-parameters.svg",
+    "size": [
+      110,
+      36
+    ],
+    "node": "find",
+    "view": "parameters",
+    "variant": ""
+  },
+  {
+    "file": "find-parameters-80x24.svg",
+    "size": [
+      80,
+      24
+    ],
+    "node": "find",
+    "view": "parameters",
+    "variant": ""
+  },
+  {
+    "file": "find-payloads.svg",
+    "size": [
+      110,
+      40
+    ],
+    "node": "find",
+    "view": "payloads",
+    "variant": ""
+  },
+  {
+    "file": "find-payloads-forwarding.svg",
+    "size": [
+      110,
+      40
+    ],
+    "node": "find",
+    "view": "payloads",
+    "variant": "forwarding"
+  },
+  {
+    "file": "find-selector.svg",
+    "size": [
+      110,
+      36
+    ],
+    "node": "find",
+    "view": "selector",
+    "variant": ""
+  },
+  {
+    "file": "check-parameters.svg",
+    "size": [
+      110,
+      36
+    ],
+    "node": "check",
+    "view": "parameters",
+    "variant": ""
+  },
+  {
+    "file": "check-parameters-80x24.svg",
+    "size": [
+      80,
+      24
+    ],
+    "node": "check",
+    "view": "parameters",
+    "variant": ""
+  },
+  {
+    "file": "check-payloads.svg",
+    "size": [
+      110,
+      40
+    ],
+    "node": "check",
+    "view": "payloads",
+    "variant": ""
+  },
+  {
+    "file": "check-payloads-forwarding.svg",
+    "size": [
+      110,
+      40
+    ],
+    "node": "check",
+    "view": "payloads",
+    "variant": "forwarding"
+  },
+  {
+    "file": "check-selector.svg",
+    "size": [
+      110,
+      36
+    ],
+    "node": "check",
+    "view": "selector",
+    "variant": ""
+  },
+  {
+    "file": "find-payloads-count.svg",
+    "size": [
+      110,
+      40
+    ],
+    "node": "find",
+    "view": "payloads",
+    "variant": "count"
+  },
+  {
+    "file": "read-parameters-range.svg",
+    "size": [
+      110,
+      36
+    ],
+    "node": "read",
+    "view": "parameters",
+    "variant": "range"
+  },
+  {
+    "file": "read-source.svg",
+    "size": [
+      110,
+      36
+    ],
+    "node": "read",
+    "view": "source",
+    "variant": ""
+  },
+  {
+    "file": "check-parameters-configured.svg",
+    "size": [
+      110,
+      36
+    ],
+    "node": "check",
+    "view": "parameters",
+    "variant": "configured"
+  },
+  {
+    "file": "check-row-editor-80x24.svg",
+    "size": [
+      80,
+      24
+    ],
+    "node": "check",
+    "view": "row-editor",
+    "variant": ""
+  },
+  {
+    "file": "check-text-editor-configured-80x24.svg",
+    "size": [
+      80,
+      24
+    ],
+    "node": "check",
+    "view": "text-editor",
+    "variant": "configured"
+  },
+  {
+    "file": "check-workflow.svg",
+    "size": [
+      140,
+      68
+    ],
+    "node": "check",
+    "view": "workflow",
+    "variant": ""
+  }
+]

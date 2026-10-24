@@ -6377,7 +6377,12 @@ async def _test_node_selector_uses_family_tabs():
         }  # the three System nodes sit inside their group entry (below)
         # Single-member groups auto-promote; the three System nodes share a
         # group. Section headers come from selector_section metadata.
-        assert group_entries(screen) == {"System": 3}
+        assert group_entries(screen) == {"System": 3, "Text files": 2}
+        text_files = next(entry for entry in screen._entries
+                          if entry["kind"] == "group" and entry["name"] == "Text files")
+        assert {member["type"] for member in text_files["members"]} == {
+            "read_lines_node", "find_lines_node",
+        }
         assert header_names(screen) == ["Text & Data", "Files", "System", "Web"]
 
         # Out tab is its own family now (no I/O toggle): tab 4 → Outputs.
@@ -6418,7 +6423,7 @@ async def _test_node_selector_uses_family_tabs():
             set(header_names(screen))
         )
         utility_types = {node["type"] for node in screen._visible_nodes}
-        assert {"echo_node", "probe_node", "counter_node"}.issubset(utility_types)
+        assert {"echo_node", "probe_node", "counter_node", "check_reply_node"}.issubset(utility_types)
 
         # Complex tab: the existing four nodes plus Ask Hermes.
         screen._set_active_tab("Complex")

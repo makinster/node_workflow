@@ -1,6 +1,7 @@
 """Field type enum and config schema validation for AttackOfTheNodes."""
 
 import math
+import re
 from enum import Enum
 from typing import Any, Dict, Iterator, List, Tuple
 
@@ -226,6 +227,18 @@ def object_list_problems(schema: Dict[str, Dict[str, Any]], config: Dict[str, An
                 continue
             for field, cell in (info.get("item_schema") or {}).items():
                 value = row.get(field, "")
+                if cell.get("type") == "boolean":
+                    if type(value) is not bool:
+                        problems.append(f"{label}: row {index} needs yes or no")
+                    continue
+                if cell.get("options"):
+                    options = [option.get("value") if isinstance(option, dict) else
+                               option[1] if isinstance(option, (list, tuple)) else option
+                               for option in cell["options"]]
+                    if value not in options:
+                        problems.append(f"{label}: row {index} needs a valid type")
+                if isinstance(value, str) and cell.get("pattern") and not re.fullmatch(cell["pattern"], value):
+                    problems.append(f"{label}: row {index} has an invalid field name")
                 if not isinstance(value, str) or (cell.get("required") and not value.strip()):
                     problems.append(f"{label}: row {index} needs {cell.get('label') or field}")
                 elif isinstance(value, str):

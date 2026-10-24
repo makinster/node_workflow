@@ -93,6 +93,19 @@ Some inputs may not offer all three options. For example, a document/context
 input on a basic LLM node may only offer Upstream or Vault (no hard-configured
 option — the document is always expected to come from a live data source).
 
+## Small wins (owner, 2026-10-23)
+
+Read lines and Find lines use `system_access`/`system_node_folders` with bounded
+regular-file snapshots. Find returns the latest capped matches, ascending, plus
+an optional Vault-only true Match count. Read accepts one line number or a list
+from upstream/Vault, selecting Last by default. Check reply checks a strict JSON
+object and publishes a parsed record; mismatch uses the engine error path.
+All three use the standard **Forward incoming payload unchanged** checkbox,
+default off; enabled Vault outputs keep the node's own result. The Check reply
+expected-field table reuses Start's compact row/editor pattern via an opted-in
+schema presentation. Configured Reply opts into the shared long-text preview.
+See [contracts, caps and errors](SMALL_WINS.md).
+
 ## Ask Hermes (C3b part 1, owner 2026-10-22)
 
 One question (Upstream payload, Vault or Configured), text Answer and optional
