@@ -25,3 +25,25 @@ CREDENTIAL_CASES = [(value, BLOCK_PARTS) for value in BLOCK_CASES] + [
 
 # A labelled-looking password must not hide the URL authority from redaction.
 CREDENTIAL_CASES += [('HTTPS://FAKEURLUSER:token=FAKEURLPASS@example.invalid/path\nstatus: OK', ('FAKEURLUSER', 'FAKEURLPASS'))]
+
+# Padding is part of a continued credential, never an empty field assignment.
+PADDED_BLOCK_CASES = [
+    ('key:\nRkFLRVNFQ1JFVA==\nstatus: OK', 'key: [redacted]\nstatus: OK'),
+    ('token:\nRkFLRVNFQ1JFVA\nU0VDUkVUUEFSVA=\n=\nstatus: OK',
+     'token: [redacted]\nstatus: OK'),
+    ('secret: first-private-part\nRkFLRVNFQ1JFVA==\n==\nstatus=OK',
+     'secret: [redacted]\nstatus=OK'),
+    ('password:\r\nRkFLRVNFQ1JFVA==\r\n=\r\nstatus: OK',
+     'password: [redacted]\r\nstatus: OK'),
+    ('api_key: |-\nFIRSTPRIVATEPART\nRkFLRVNFQ1JFVA==\n=\nstatus: OK',
+     'api_key: [redacted]\nstatus: OK'),
+]
+
+PUBLIC_FIELD_CASES = [
+    json.dumps({'monkey': 'capuchin', 'hockey': 'played indoors', 'turnkey': 'deployment complete'}),
+    json.dumps({'refresh_token_count': 312, 'password_hint': 'pet name', 'token bucket': 'full'}),
+    'monkey=capuchin hockey: played indoors turnkey=deployment complete',
+    'not-password=public x.api_key=public refresh_token_count=312 password_hint=public',
+    json.dumps({'some token': 'bucket', 'some api_key': 'public', 'some password': 'hint'}),
+    'the token bucket filled; password reset email sent',
+]

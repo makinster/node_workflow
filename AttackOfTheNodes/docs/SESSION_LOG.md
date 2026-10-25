@@ -6,6 +6,30 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-24 — #119 re-check: padded blocks and whole field names
+
+Own worktree `/home/makin/src/nw-mcp-activity-review`, branch
+`codex/mcp-activity-review`, clean start from #119 head `16fbe5f`. Fetched and
+merged `origin/main` (already current); push target is `codex/mcp-activity`.
+The shared C3c/activity redactor keeps padded Base64 continuation lines,
+including trailing `=` / `==` lines, inside the secret block. Assignments with
+values and colon fields still end an unindented block. Credential field
+names require boundaries and paired quotes, preserving longer names such as
+`monkey`, `refresh_token_count`, `password_hint` and `token bucket`.
+The MCP contract notes that redaction is best-effort for known labels/forms;
+evidence should stay small.
+
+Before the helper change, the new persistence/real-worker cases on `16fbe5f`
+produce **18 failures and four passing preservation controls**. All 22 pass
+with the fix, covering all three persisted request text fields plus activity
+findings and event summaries. Existing labelled credentials, known Secrets,
+PEM blocks and URL userinfo cases remain passing. Focused MCP/inbox checks:
+**212 passed in 32.41 seconds**. Full suite: **2,719 passed in 443.87
+seconds**; no known WaitUntil timing-flake retry needed. Compilation,
+changed-document links and whitespace checks pass. No live installs,
+configuration changes, owner-data reads or model calls.
+
+
 ## 2026-10-24 — #119 re-check: multiline credentials and URL userinfo
 
 Own worktree `/home/makin/src/nw-mcp-activity-review`, branch

@@ -9,7 +9,7 @@ import time
 
 import pytest
 
-from tests.credential_cases import CREDENTIAL_CASES
+from tests.credential_cases import CREDENTIAL_CASES, PADDED_BLOCK_CASES, PUBLIC_FIELD_CASES
 
 from backend import hermes_investigations as inbox, hermes_folder
 from backend.event_bus import EventBus
@@ -498,3 +498,17 @@ def test_redaction_recheck_inbox_persists_no_block_or_url_credentials(setup, tex
 def test_shared_redaction_preserves_public_urls_and_empty_headers():
     text = 'password:\nstatus: OK\nHTTPS://example.invalid/path/user@file?q=x\nssh://public.invalid/'
     assert inbox.redact(text) == text
+
+
+@pytest.mark.parametrize('text,expected', PADDED_BLOCK_CASES)
+def test_padding_recheck_inbox_persistence(setup, text, expected):
+    rid = queue(setup, happened=text, evidence=text, investigate=text)
+    request = json.loads((setup[4]/'investigations/pending'/(rid+'.json')).read_text(encoding='utf-8'))
+    assert [request[key] for key in ('what_happened', 'evidence', 'what_to_check')] == [expected]*3
+
+
+@pytest.mark.parametrize('text', PUBLIC_FIELD_CASES)
+def test_whole_field_recheck_inbox_persistence(setup, text):
+    rid = queue(setup, happened=text, evidence=text, investigate=text)
+    request = json.loads((setup[4]/'investigations/pending'/(rid+'.json')).read_text(encoding='utf-8'))
+    assert [request[key] for key in ('what_happened', 'evidence', 'what_to_check')] == [text]*3

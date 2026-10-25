@@ -9,6 +9,15 @@ delivery; this documentation refresh did not change or rerun live jobs.
 
 ## MCP activity summaries — 2026-10-24
 
+**#119 padding/boundary re-check (2026-10-24):** the shared C3c/activity
+redactor masks padded Base64 continuations through trailing padding-only
+lines and matches credential labels as whole field names. Ordinary compound
+names and prose remain intact. New inbox-persistence and real-worker cases
+produce 18 failures/four preservation controls on `16fbe5f`; all 22 pass with
+the fix. Focused MCP/inbox checks: **212 passed**. Full suite: **2,719 passed
+in 443.87 seconds**; no known WaitUntil timing-flake retry needed. No live
+configuration or install changes.
+
 **#119 P2 re-check (2026-10-24):** the shared C3c/activity redactor now masks
 whole multiline credential values and URL userinfo across scheme cases/names.
 Inbox request persistence and real activity-worker/MCP output are covered;

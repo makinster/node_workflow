@@ -159,7 +159,10 @@ credential values are masked as a whole: YAML literal/folded blocks (including
 chomp/indent indicators and header comments), indented continuations after a
 credential key, and plain `key:` continuation blocks, including values that
 start on the same line as their label. Indented values end on
-dedent; unindented values end at a blank line or the next field. Inline values
+dedent; unindented values end at a blank line or the next field. Base64 padding
+and trailing `=` padding lines remain part of the secret block. Labels match
+whole field names: `monkey`, `refresh_token_count`, `password_hint` and
+`token bucket` stay unchanged. Inline values
 do not consume the field on the next line when a credential header is empty.
 URL userinfo is removed for any `scheme://` case and scheme name, including
 HTTP/HTTPS, FTP, SSH and compound schemes; username-only userinfo is masked
@@ -172,6 +175,7 @@ worker returns, so both MCP text and structured results carry the safe text.
 Unknown unlabelled secrets cannot be inferred from arbitrary prose. A damaged,
 oversized or unsafe Secrets store fails this tool closed with a plain error;
 its contents are not logged. This tool does not read Hermes profile credentials.
+Redaction is best-effort for known labels/forms; keep evidence small.
 
 ## Deadlines and shutdown
 

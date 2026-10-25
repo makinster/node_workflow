@@ -53,9 +53,14 @@ def failure(code):
 
 
 _CREDENTIAL_LABEL = r'(?:aws[_-]access[_-]key[_-]id|aws[_-]secret[_-]access[_-]key|api[ _-]*key|access[_-]?token|refresh[_-]?token|token|password|passwd|secret|credential|authorization|bearer|key)'
-_BLOCK_CREDENTIAL = re.compile(r"""(?i)^(?P<prefix>(?P<leading>[ \t]*(?:-[ \t]+)?)["']?%s["']?[ \t]*[:=][ \t]*)(?P<value>[^\r]*)\r?$""" % _CREDENTIAL_LABEL)
-_INLINE_CREDENTIAL = re.compile(r"""(?i)(["']?%s["']?[ \t]*[:=][ \t]*)(?:(?:Bearer|Basic)[ \t]+)?(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[^\s,;}]+)""" % _CREDENTIAL_LABEL)
-_NEXT_FIELD = re.compile(r"""^[ \t]*(?:-[ \t]+)?(?:["'][^"']+["']|[A-Za-z_][\w .-]*)[ \t]*[:=]""")
+_CREDENTIAL_FIELD = rf"""(?:"{_CREDENTIAL_LABEL}"|'{_CREDENTIAL_LABEL}'|{_CREDENTIAL_LABEL})"""
+_BLOCK_CREDENTIAL = re.compile(r"""(?i)^(?P<prefix>(?P<leading>[ \t]*(?:-[ \t]+)?)%s[ \t]*[:=][ \t]*)(?P<value>[^\r]*)\r?$""" % _CREDENTIAL_FIELD)
+# Paired quotes and a left boundary prevent matching the tail of a longer
+# field name (monkey, not-password, or "some token").
+_INLINE_CREDENTIAL = re.compile(r"""(?i)(?<![\w.'"-])(%s[ \t]*[:=][ \t]*)(?:(?:Bearer|Basic)[ \t]+)?(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[^\s,;}]+)""" % _CREDENTIAL_FIELD)
+# An equals sign followed only by padding is a secret continuation, not the
+# next assignment. Colon fields and assignments with values still end blocks.
+_NEXT_FIELD = re.compile(r"""^[ \t]*(?:-[ \t]+)?(?:["'][^"']+["']|[A-Za-z_][\w .-]*)[ \t]*(?::|=(?![= \t]*\r?$))""")
 
 
 def _redact_credential_blocks(value):

@@ -359,7 +359,9 @@ fixes (2026-10-24) reuse the C3c credential redactor before worker replies and
 count an oversized unfinished event tail as damaged, independently of the
 byte-window truncation flag. The P2 re-check extends that shared helper to
 whole multiline credential blocks and URL userinfo for any scheme case/name,
-with persisted-inbox and activity-worker regressions.
+including padded Base64 continuation lines; credential labels match whole
+field names to preserve ordinary text. Persisted-inbox and activity-worker
+regressions cover both paths.
 
 ## 9. Effect on the build plan (owner order, 2026-10-22)
 

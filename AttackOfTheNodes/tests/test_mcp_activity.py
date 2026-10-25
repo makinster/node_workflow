@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.credential_cases import CREDENTIAL_CASES
+from tests.credential_cases import CREDENTIAL_CASES, PADDED_BLOCK_CASES, PUBLIC_FIELD_CASES
 
 from aotn_mcp import activity
 from aotn_mcp.tools import validate_arguments
@@ -405,3 +405,22 @@ def test_redaction_recheck_mcp_protocol_blocks_and_uppercase_url(tmp_path):
     assert all(secret not in json.dumps(response) for secret in (
         'FAKEBLOCKFIRST','FAKEBLOCKSECOND','FAKEUPPERURLPASS'))
     assert json.loads(response['content'][0]['text']) == response['structuredContent']
+
+
+@pytest.mark.parametrize('text,expected', PADDED_BLOCK_CASES + [(text, text) for text in PUBLIC_FIELD_CASES])
+def test_padding_and_whole_field_recheck_activity_worker(tmp_path, text, expected):
+    import subprocess
+    import sys
+    from tests.test_mcp import APP
+    data, home = tmp_path/'data', tmp_path/'hermes'
+    record = finding(); record['finding'] = text
+    write(home/f'aotn/investigations/results/{RID}.json', record)
+    jsonl(home/'aotn/events.jsonl', [event(summary=text)])
+    worker = subprocess.run([sys.executable, '-m', 'aotn_mcp.worker'], cwd=APP,
+        env={**os.environ, 'AOTN_DATA_DIR': str(data), 'HERMES_HOME': str(home)},
+        input=json.dumps({'name': 'get_activity', 'arguments': {}}),
+        text=True, capture_output=True, timeout=10)
+    assert worker.returncode == 0 and not worker.stderr
+    records = json.loads(worker.stdout)['result']['activity']
+    assert {item['type'] for item in records} == {'event', 'investigation'}
+    assert [item.get('summary', item.get('finding')) for item in records] == [expected]*2
