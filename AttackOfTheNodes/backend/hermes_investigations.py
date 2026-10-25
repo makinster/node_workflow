@@ -52,6 +52,55 @@ def failure(code):
     return NodeError(code, MESSAGES[code], retryable=False)
 
 
+_CREDENTIAL_LABEL = r'(?:aws[_-]access[_-]key[_-]id|aws[_-]secret[_-]access[_-]key|api[ _-]*key|access[_-]?token|refresh[_-]?token|token|password|passwd|secret|credential|authorization|bearer|key)'
+_BLOCK_CREDENTIAL = re.compile(r"""(?i)^(?P<prefix>(?P<leading>[ \t]*(?:-[ \t]+)?)["']?%s["']?[ \t]*[:=][ \t]*)(?P<value>[^\r]*)\r?$""" % _CREDENTIAL_LABEL)
+_INLINE_CREDENTIAL = re.compile(r"""(?i)(["']?%s["']?[ \t]*[:=][ \t]*)(?:(?:Bearer|Basic)[ \t]+)?(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[^\s,;}]+)""" % _CREDENTIAL_LABEL)
+_NEXT_FIELD = re.compile(r"""^[ \t]*(?:-[ \t]+)?(?:["'][^"']+["']|[A-Za-z_][\w .-]*)[ \t]*[:=]""")
+
+
+def _redact_credential_blocks(value):
+    """Mask labelled continuation lines, including YAML literal/folded values.
+
+    Indented blocks end at dedent. Unindented values end at a blank line or
+    the next field; never treat a block indicator as the credential itself.
+    LF frames lines, preserving CRLF and other Unicode separators as text.
+    """
+    lines, safe, index = value.split('\n'), [], 0
+    while index < len(lines):
+        header = _BLOCK_CREDENTIAL.fullmatch(lines[index])
+        if header is None or header['value'].lstrip(' \t').startswith(('"', "'")):
+            safe.append(lines[index])
+            index += 1
+            continue
+        base = len(header['leading'].expandtabs(8))
+        first = index + 1
+        while first < len(lines) and not lines[first].strip(' \t\r'):
+            first += 1
+        indented = False
+        if first < len(lines):
+            indent = len(lines[first][:len(lines[first]) - len(lines[first].lstrip(' \t'))].expandtabs(8))
+            indented = indent > base
+        if first == len(lines) or (not indented and _NEXT_FIELD.match(lines[first])):
+            safe.append(lines[index])
+            index += 1
+            continue
+        end = first
+        while end < len(lines):
+            line = lines[end]
+            if not line.strip(' \t\r'):
+                if not indented:
+                    break
+            else:
+                indent = len(line[:len(line) - len(line.lstrip(' \t'))].expandtabs(8))
+                if (indented and indent <= base) or (not indented and _NEXT_FIELD.match(line)):
+                    break
+            end += 1
+        safe.append(header['prefix'].rstrip(' \t') + ' [redacted]' +
+                    ('\r' if lines[index].endswith('\r') else ''))
+        index = end
+    return '\n'.join(safe)
+
+
 def redact(value, manager=None, *, known_values=()):
     """Known Secrets values plus common labelled credentials. Never log raw text.
 
@@ -59,9 +108,11 @@ def redact(value, manager=None, *, known_values=()):
     Redact labels first so a known value equal to a label cannot obscure it.
     """
     value = re.sub(r'(?i)-----BEGIN [^-\n]*PRIVATE KEY-----[\s\S]*?-----END [^-\n]*PRIVATE KEY-----|-----BEGIN [^-\n]*PRIVATE KEY-----[\s\S]*\Z', '[redacted private key]', value)
-    value = re.sub(r"""(?im)(["']?(?:aws[_-]access[_-]key[_-]id|aws[_-]secret[_-]access[_-]key|api[ _-]*key|access[_-]?token|refresh[_-]?token|token|password|passwd|secret|credential|authorization|bearer)["']?\s*[:=]\s*)(?:(?:Bearer|Basic)\s+)?(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[^\s,;}]+)""", r'\1[redacted]', value)
+    # Mask authority before label matching can consume its @ delimiter.
+    value = re.sub(r'(?i)(\b[a-z][a-z0-9+.-]*://)[^/\s?#@]+@', r'\1[redacted]@', value)
+    value = _redact_credential_blocks(value)
+    value = _INLINE_CREDENTIAL.sub(r'\1[redacted]', value)
     value = re.sub(r"""(?i)\b((?:Bearer|Basic)\s+)[^\s"'<>,;}]+""", r'\1[redacted]', value)
-    value = re.sub(r'(https?://)[^/\s:@]+:[^/\s@]+@', r'\1[redacted]@', value)
     values = list(known_values)
     if manager is not None:
         values.extend(manager.get_secret(key) for key in manager.list_keys())

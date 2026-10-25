@@ -6,6 +6,30 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-24 — #119 re-check: multiline credentials and URL userinfo
+
+Own worktree `/home/makin/src/nw-mcp-activity-review`, branch
+`codex/mcp-activity-review`, clean start from `6cbee5f`. Fetched and merged
+`origin/main` (already current); push target remains #119's `codex/mcp-activity`.
+Only the shared C3c helper changes: mask multiline credential blocks rather
+than their YAML marker; mask URI authority userinfo for any scheme case/name,
+including username-only credentials. Inbox request persistence and activity
+findings/event summaries benefit from the same implementation. Block handling
+covers literal/folded markers, indentation/chomp indicators, header comments,
+list indentation, CRLF/tabs, plain credential/key continuations and PEM values.
+Empty headers preserve following fields; public URLs remain unchanged.
+URL authority is masked before label matching can consume its @ delimiter;
+a password containing `token=` cannot expose the URL username.
+
+All final re-check cases run against a temporary archive of actual `6cbee5f`:
+**36 fail and eight existing controls pass**, including both persisted inbox
+requests and real activity-worker/MCP output. The same 44 cases pass with the
+fix. Broader focused MCP/inbox checks: **190 passed**. Compilation, documentation
+links and whitespace checks pass. Full suite: **2,697 passed in 440.89
+seconds**; no known WaitUntil timing-flake retry needed.
+No live installs, owner-data reads, configuration changes or model calls.
+
+
 ## 2026-10-24 — #119 review: shared credential redaction and EOF damage
 
 Own worktree `/home/makin/src/nw-mcp-activity-review`, branch

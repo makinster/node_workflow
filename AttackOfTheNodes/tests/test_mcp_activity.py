@@ -5,6 +5,8 @@ from pathlib import Path
 
 import pytest
 
+from tests.credential_cases import CREDENTIAL_CASES
+
 from aotn_mcp import activity
 from aotn_mcp.tools import validate_arguments
 from backend import persistence
@@ -367,3 +369,39 @@ def test_oversized_complete_window_fragment_is_not_damage(roots):
     result = activity.get_activity()
     assert result['activity'] == [] and result['skipped'] == 0
     assert result['truncated_sources'] == ['events.jsonl']
+
+
+@pytest.mark.parametrize('text,credentials', CREDENTIAL_CASES)
+def test_redaction_recheck_activity_blocks_and_urls_before_worker_exit(tmp_path, text, credentials):
+    import subprocess
+    import sys
+    from tests.test_mcp import APP
+    data, home = tmp_path/'data', tmp_path/'hermes'
+    record = finding();record['finding'] = text
+    write(home/f'aotn/investigations/results/{RID}.json', record)
+    jsonl(home/'aotn/events.jsonl', [event(summary=text)])
+    worker = subprocess.run([sys.executable, '-m', 'aotn_mcp.worker'], cwd=APP,
+        env={**os.environ, 'AOTN_DATA_DIR': str(data), 'HERMES_HOME': str(home)},
+        input=json.dumps({'name':'get_activity', 'arguments':{}}),
+        text=True, capture_output=True, timeout=10)
+    assert worker.returncode == 0 and not worker.stderr
+    assert all(credential not in worker.stdout for credential in credentials)
+    records = json.loads(worker.stdout)['result']['activity']
+    assert {item['type'] for item in records} == {'event', 'investigation'}
+    for item in records:
+        safe = item.get('summary', item.get('finding'))
+        assert '[redacted' in safe and 'status: OK' in safe
+
+
+def test_redaction_recheck_mcp_protocol_blocks_and_uppercase_url(tmp_path):
+    data, home = tmp_path/'data', tmp_path/'hermes'
+    text = 'password: |\n  FAKEBLOCKFIRST\n  FAKEBLOCKSECOND\nstatus: OK\nHTTPS://user:FAKEUPPERURLPASS@example.invalid/'
+    record = finding();record['finding'] = text
+    write(home/f'aotn/investigations/results/{RID}.json', record)
+    jsonl(home/'aotn/events.jsonl', [event(summary=text)])
+    with server(data, env={**os.environ, 'HERMES_HOME': str(home)}) as client:
+        response = client.call('get_activity')
+    assert not response['isError']
+    assert all(secret not in json.dumps(response) for secret in (
+        'FAKEBLOCKFIRST','FAKEBLOCKSECOND','FAKEUPPERURLPASS'))
+    assert json.loads(response['content'][0]['text']) == response['structuredContent']

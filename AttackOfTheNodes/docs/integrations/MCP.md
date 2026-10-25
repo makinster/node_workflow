@@ -154,7 +154,18 @@ labelled credentials, bearer/basic tokens, URL passwords and private keys.
 This is the shared C3c investigation-inbox redactor, including case-insensitive
 password/passwd/secret/token/api_key/apikey/authorization/bearer labels in
 `key: value`, `key=value` and JSON forms; spaced `api key`, AWS access/secret
-key labels and mixed-case private-key blocks are covered too. Known Secrets
+key labels and mixed-case private-key blocks are covered too. Multiline
+credential values are masked as a whole: YAML literal/folded blocks (including
+chomp/indent indicators and header comments), indented continuations after a
+credential key, and plain `key:` continuation blocks, including values that
+start on the same line as their label. Indented values end on
+dedent; unindented values end at a blank line or the next field. Inline values
+do not consume the field on the next line when a credential header is empty.
+URL userinfo is removed for any `scheme://` case and scheme name, including
+HTTP/HTTPS, FTP, SSH and compound schemes; username-only userinfo is masked
+too. URL userinfo is masked before credential-label matching, so passwords
+containing strings such as `token=` cannot expose the username. Public URLs,
+hosts, paths and following non-secret fields are preserved. Known Secrets
 values are supplied to that same redactor without instantiating a writer.
 Findings and event summaries are redacted before text caps and before the
 worker returns, so both MCP text and structured results carry the safe text.

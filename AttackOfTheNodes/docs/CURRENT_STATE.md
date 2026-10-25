@@ -9,6 +9,16 @@ delivery; this documentation refresh did not change or rerun live jobs.
 
 ## MCP activity summaries — 2026-10-24
 
+**#119 P2 re-check (2026-10-24):** the shared C3c/activity redactor now masks
+whole multiline credential values and URL userinfo across scheme cases/names.
+Inbox request persistence and real activity-worker/MCP output are covered;
+public URLs and following non-secret fields remain intact. All final re-check cases against an archive of `6cbee5f` produce
+36 failures across both paths and eight existing PEM/quoted/HTTP controls
+passing. Final focused MCP/inbox checks: **190 passed**, including 44 re-check
+cases and controls. Full suite: **2,697 passed in 440.89 seconds**; no
+known WaitUntil timing-flake retry needed. Compilation, links and whitespace
+checks pass. No live data/configuration or install changes.
+
 **#119 review follow-up (2026-10-24):** activity projections now use the shared
 C3c redactor for labelled credentials and loaded Secrets values, before caps
 and worker output. Labels include spaced API keys, AWS access/secret keys,

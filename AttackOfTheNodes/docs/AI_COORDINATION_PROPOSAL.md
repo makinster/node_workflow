@@ -357,7 +357,9 @@ which exist: `run_workflow` can take typed inputs and return `values`
 today. Local stdio does not need Step 6 network auth. #119 activity review
 fixes (2026-10-24) reuse the C3c credential redactor before worker replies and
 count an oversized unfinished event tail as damaged, independently of the
-byte-window truncation flag.
+byte-window truncation flag. The P2 re-check extends that shared helper to
+whole multiline credential blocks and URL userinfo for any scheme case/name,
+with persisted-inbox and activity-worker regressions.
 
 ## 9. Effect on the build plan (owner order, 2026-10-22)
 
