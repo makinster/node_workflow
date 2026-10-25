@@ -80,6 +80,19 @@ class ErrorHandler:
         self._errors_by_run[run_id] = errors
         return list(errors)
 
+    def snapshot(self, run_id: str, started_at: str):
+        """Latest five cached errors only: never lazy-load another run/file."""
+        from .run_snapshot import RunErrorSummary, RunSnapshot
+        errors = self._errors_by_run.get(run_id, ())
+        recent = tuple(RunErrorSummary(
+            time=str(record.get("timestamp") or ""),
+            node_name=str((record.get("context") or {}).get("node_alias") or record.get("node_id") or ""),
+            code=str(record.get("code") or "node_error"),
+            handled=bool(record.get("handled")),
+            message=str(record.get("message") or ""),
+        ) for record in errors[-5:])
+        return RunSnapshot(started_at, recent, max(0, len(errors) - 5))
+
     def get_unhandled_errors_for_run(self, run_id: str) -> List[Dict[str, Any]]:
         """Errors for a run that were not routed along an error path."""
         return unhandled_errors(self.get_errors_for_run(run_id))
