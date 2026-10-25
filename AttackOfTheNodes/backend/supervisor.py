@@ -439,9 +439,12 @@ class Supervisor:
                 if input_port in self._initial_data:
                     inputs[input_port] = self._initial_data[input_port]
                 continue
-            inputs[input_port] = self._memory_bank.read_transient(
-                source["source_node_id"], source["source_port"]
+            missing = object()
+            value = self._memory_bank.read_transient(
+                source["source_node_id"], source["source_port"], default=missing
             )
+            if value is not missing:
+                inputs[input_port] = value
 
         if not inputs and not node.get_input_ports():
             inputs = dict(self._initial_data)

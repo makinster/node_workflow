@@ -86,3 +86,17 @@ async def test_real_run_start_supplied_without_frontend(tmp_path,monkeypatch):
         assert datetime.fromisoformat(captured[0][1].started_at).tzinfo is not None
         assert captured[0][1].errors==()
     finally:service.close()
+
+
+def test_unpublished_input_is_distinct_from_explicit_null():
+    bus=EventBus();factory=NodeFactory();wm=WorkflowMap(factory,bus);wm.create_new('Presence')
+    source=wm.add_node('start_node');target=wm.add_node('no_op_node')
+    wm.connect(source,'default',target,'input')
+    memory=MemoryBank(bus)
+    supervisor=Supervisor(run_id='run',branch_id='S1',depth=0,start_node_id=source,
+        workflow_map=wm,memory_bank=memory,event_bus=bus)
+    supervisor.current_node_id=target
+    node=factory.create_node('no_op_node',target)
+    assert supervisor._prepare_inputs(node)=={}
+    memory.store_transient(source,'default',None)
+    assert supervisor._prepare_inputs(node)=={'input':None}
