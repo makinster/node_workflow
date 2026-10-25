@@ -15,6 +15,7 @@ aotn run "Example - Pause and wait"
 
 | Spec | Shows | Needs before running |
 |---|---|---|
+| `context_pack.json` | Disk/Git Vault facts plus log excerpts → Context Pack → investigation evidence | Configure the service folder/log, allowed folders and the investigation profile/bridge; request queueing is not finding completion |
 | `pause_and_wait.json` | Parallel Branch, Sleep, Wait Until waiting for another path | nothing |
 | `ask_and_branch.json` | User Text Input, Conditional choosing one path | answering the prompt |
 | `vault_handoff.json` | Vault output on Start, Set/Get Variable, a Text Output reading the Vault | nothing |

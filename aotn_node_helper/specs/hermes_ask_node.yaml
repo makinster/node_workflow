@@ -21,6 +21,19 @@ inputs:
       label: Question
       height: 5
       description: One question, no tools. Uses the aotn profile; no dollar cap.
+  context:
+    name: Context
+    type: string
+    required: false
+    sources: ["upstream", "vault", "configured"]
+    default: configured
+    parameter:
+      type: multiline
+      label: Context
+      preview: true
+      height: 5
+      description: Optional data; max 8,000 characters within the total question limit.
+# The maintained class adds "Not used" as the default optional source.
 outputs:
   default:
     name: Answer
@@ -94,6 +107,9 @@ errors:
     retryable: false
   - code: cleanup_failed
     description: "The agent did not stop cleanly."
+    retryable: false
+  - code: context_too_long
+    description: "The context is too long."
     retryable: false
 execution_template: producer
 payload_field: false

@@ -1,0 +1,150 @@
+{
+  "node_type": "context_pack_node",
+  "class_name": "ContextPackNode",
+  "category": "data",
+  "primary_family": "Utility",
+  "display_name": "Context Pack",
+  "default_alias": "Context Pack",
+  "description": "Bundle small, redacted facts for the next step",
+  "tags": [
+    "context",
+    "facts",
+    "evidence"
+  ],
+  "icon_name": "package",
+  "selector_section": "Transform",
+  "execution_template": "producer",
+  "payload_field": false,
+  "inputs": {
+    "input": {
+      "name": "Incoming value",
+      "type": "any",
+      "required": false,
+      "description": "The single incoming value used by Upstream payload rows"
+    }
+  },
+  "outputs": {
+    "default": {
+      "name": "Context pack",
+      "type": "string",
+      "required": true,
+      "to": [
+        "downstream",
+        "vault"
+      ],
+      "pass_through": true,
+      "description": "Labelled facts with secrets masked and shortening noted"
+    }
+  },
+  "output_routing": {
+    "default": "transient",
+    "vault": {
+      "mode": "optional"
+    }
+  },
+  "config_tabs": {
+    "Parameters": {
+      "items": {
+        "type": "object_list",
+        "label": "Items",
+        "presentation": "context_items",
+        "min_items": 1,
+        "max_items": 16,
+        "unique_by": "label",
+        "hint": "Bundle the facts for the next step.",
+        "item_schema": {
+          "label": {
+            "type": "string",
+            "label": "Label",
+            "required": true
+          },
+          "source": {
+            "type": "select",
+            "label": "Source",
+            "options": [
+              "Upstream payload",
+              "Vault",
+              "Configured text"
+            ],
+            "default": "Upstream payload"
+          },
+          "vault_key": {
+            "type": "string",
+            "label": "Vault key",
+            "vault_type": "any"
+          },
+          "text": {
+            "type": "multiline",
+            "label": "Text",
+            "preview": true
+          }
+        },
+        "default": [
+          {
+            "id": "incoming",
+            "label": "Incoming value",
+            "source": "Upstream payload",
+            "vault_key": "",
+            "text": ""
+          }
+        ]
+      },
+      "include_run": {
+        "type": "boolean",
+        "label": "Include this run's info",
+        "default": true
+      },
+      "include_errors": {
+        "type": "boolean",
+        "label": "Include this run's recent errors",
+        "default": false
+      },
+      "max_item": {
+        "type": "integer",
+        "label": "Max per item (characters)",
+        "default": 2000,
+        "min": 256,
+        "max": 4000
+      },
+      "max_total": {
+        "type": "integer",
+        "label": "Max pack (characters)",
+        "default": 6000,
+        "min": 2000,
+        "max": 8000,
+        "description": "If the pack is too long, the longest item is trimmed first, from its start. The pack says what was trimmed.",
+        "wrap_description": true
+      }
+    }
+  },
+  "errors": [
+    {
+      "code": "items_invalid",
+      "description": "Check the Context Pack items.",
+      "retryable": false
+    },
+    {
+      "code": "item_missing",
+      "description": "A Context Pack item is missing.",
+      "retryable": false
+    },
+    {
+      "code": "item_invalid",
+      "description": "A Context Pack item is not valid text or JSON.",
+      "retryable": false
+    },
+    {
+      "code": "item_too_large",
+      "description": "An item is too large to prepare.",
+      "retryable": false
+    },
+    {
+      "code": "run_info_unavailable",
+      "description": "This run's info is not available.",
+      "retryable": false
+    }
+  ],
+  "ui_hints": {
+    "standard_output": true
+  }
+}

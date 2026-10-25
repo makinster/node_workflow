@@ -25,6 +25,7 @@ from ..node_errors import NodeError
 from .hermes_worker import POLICY, PROTOCOL
 
 MAX_QUESTION = 20_000
+MAX_CONTEXT = 8_000
 MAX_ANSWER = 256 * 1024
 MAX_RECORD = 4 * 1024 * 1024
 FINAL_RESERVE = 64 * 1024
@@ -38,6 +39,7 @@ MESSAGES = {
     'folder_missing': 'Choose an existing folder.',
     'not_allowed': 'This folder is not allowed in Options.',
     'text_too_long': 'The question is too long.',
+    'context_too_long': 'The context is too long.',
     'timed_out': 'Stopped after the time limit.',
     'turn_limit': 'Stopped after the turn limit.',
     'permission_denied': 'This Hermes profile has tools turned on.',

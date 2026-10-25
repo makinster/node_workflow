@@ -23,6 +23,7 @@ EXAMPLES = Path(__file__).resolve().parent.parent / "examples"
 
 #: Warnings each example is expected to produce when built on a fresh machine.
 EXPECTED_WARNINGS = {
+    "context_pack.json": set(),
     "pause_and_wait.json": set(),
     "ask_and_branch.json": set(),
     "vault_handoff.json": set(),
@@ -33,6 +34,7 @@ EXPECTED_WARNINGS = {
 
 #: Lines (substrings) each example's execution outline must contain.
 EXPECTED_OUTLINE = {
+    "context_pack.json": ["Context Pack", "Ask Hermes to investigate"],
     "pause_and_wait.json": ["splits into 2 parallel paths:", "Wait for quick (Wait Until); waits for Quick path (No-Op)"],
     "ask_and_branch.json": ["Said yes? (Conditional)", "takes one of:", "[true]", "[false]"],
     "vault_handoff.json": ["Remember topic (Set Variable)", "Show note (Text Output)"],

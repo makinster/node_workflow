@@ -1,0 +1,127 @@
+{
+  "format": "aotn-workflow/1",
+  "name": "Example - Backup facts for investigation",
+  "nodes": {
+    "start": {
+      "type": "start_node"
+    },
+    "disk": {
+      "type": "disk_space_node",
+      "alias": "Disk free \u2192 Vault",
+      "config": {
+        "folder": "~/services/checkout",
+        "report": "Free space",
+        "unit": "GB",
+        "vault_write": true,
+        "vault_write_key": "disk_free_gb"
+      }
+    },
+    "git": {
+      "type": "git_status_node",
+      "alias": "Git changes \u2192 Vault",
+      "config": {
+        "folder": "~/services/checkout",
+        "report": "Changed files",
+        "vault_write": true,
+        "vault_write_key": "git_changed_files"
+      }
+    },
+    "find": {
+      "type": "find_lines_node",
+      "alias": "Find ERROR lines",
+      "config": {
+        "input": "ERROR",
+        "file": "~/services/checkout/backup.log"
+      }
+    },
+    "read": {
+      "type": "read_lines_node",
+      "alias": "Read around last match",
+      "config": {
+        "input_source": "Upstream payload",
+        "file": "~/services/checkout/backup.log",
+        "lines_around": true,
+        "each_side": 5,
+        "use_match": "Last"
+      }
+    },
+    "pack": {
+      "type": "context_pack_node",
+      "config": {
+        "items": [
+          {
+            "id": "logs",
+            "label": "Log excerpt",
+            "source": "Upstream payload",
+            "vault_key": "",
+            "text": ""
+          },
+          {
+            "id": "disk",
+            "label": "Disk free (GB)",
+            "source": "Vault",
+            "vault_key": "disk_free_gb",
+            "text": ""
+          },
+          {
+            "id": "git",
+            "label": "Git status",
+            "source": "Vault",
+            "vault_key": "git_changed_files",
+            "text": ""
+          },
+          {
+            "id": "service",
+            "label": "Service",
+            "source": "Configured text",
+            "vault_key": "",
+            "text": "Nightly checkout backup\nExpected: one successful backup each night."
+          }
+        ]
+      }
+    },
+    "ask": {
+      "type": "hermes_investigate_node",
+      "alias": "Ask Hermes to investigate",
+      "config": {
+        "input": "The nightly backup failed.",
+        "evidence_source": "Upstream payload",
+        "investigate": "Explain the likely cause from these facts. Report only."
+      }
+    },
+    "end": {
+      "type": "end_node",
+      "alias": "Done: request queued"
+    }
+  },
+  "connections": [
+    {
+      "from": "start.default",
+      "to": "disk.input"
+    },
+    {
+      "from": "disk.default",
+      "to": "git.input"
+    },
+    {
+      "from": "git.default",
+      "to": "find.input"
+    },
+    {
+      "from": "find.default",
+      "to": "read.input"
+    },
+    {
+      "from": "read.default",
+      "to": "pack.input"
+    },
+    {
+      "from": "pack.default",
+      "to": "ask.evidence"
+    },
+    {
+      "from": "ask.default",
+      "to": "end.input"
+    }
+  ]
+}

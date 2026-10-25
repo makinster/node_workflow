@@ -103,6 +103,18 @@ def standard_vault_reads(config: dict[str, Any], metadata: dict[str, Any]) -> li
             continue
         data_type = str((port_meta.get(port) or {}).get("data_type") or "") or None
         entries.append({"source_id": vault_key, "type_tag": data_type, "target_port": port})
+    # Ordered source rows use the same source/vault_key convention as ports.
+    # Their values are declared inputs, never inferred from arbitrary JSON paths.
+    for field_name, rows in config.items():
+        if not isinstance(rows, list):
+            continue
+        for index, row in enumerate(rows):
+            if not isinstance(row, dict) or row.get("source") != "Vault":
+                continue
+            key = str(row.get("vault_key") or "").strip()
+            if key:
+                entries.append({"source_id": key, "type_tag": "any",
+                                "target_port": f"{field_name}[{index}]"})
     if continuation_selected(config):
         continue_key = str(config.get("continue_session_key") or "").strip()
         if continue_key:

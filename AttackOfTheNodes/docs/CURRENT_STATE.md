@@ -1,11 +1,41 @@
 # Current State
 
-Snapshot checked **2026-10-24**, against fetched `origin/main` `d86faf2` after
-#118 merged (owner confirmation and fetched history). Code and fresh
+Snapshot checked **2026-10-25**, against fetched `origin/main` `9b98f48` after
+#119 merged (owner notes and fetched history). Code and fresh
 GitHub checks take precedence.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
+
+## Context Pack — 2026-10-25
+
+Built for review on `codex/context-pack`, own worktree
+`/home/makin/src/nw-context-pack`, from clean fetched `origin/main` `9b98f48`.
+The approved 15 answers and the owner's wording/table/Context/snapshot decisions
+are implemented: ordered source rows, bounded JSON preparation, shared C3c
+redaction before trimming, complete shortening notes, standard forwarding and
+an independent redacted Vault copy. The supervisor supplies immutable per-visit
+start/latest-five-error facts from this run's memory; no history/error-file
+reads or node subscriptions. Missing upstream publication remains distinct
+from explicit null. Engine changes are separate commits `92b9d4b` and `8bdf8a8`.
+Ask Hermes has optional Context (off by default), 8,000-character own cap within
+the existing 20,000-character total, in the same attached `--query=` argument.
+The shared compact tables use calm selection roles from `frontend/colors.py`.
+
+[Contract](NODE_STANDARDS.md#context-pack-owner-2026-10-25),
+[real screenshots, including before/after Start and Check reply](screenshots/context-pack/README.md),
+[validated example](../examples/context_pack.json). Tests use synthetic data,
+fake executables and temporary libraries; no paid calls, installs, owner
+workflow changes, Hermes configuration or live-job changes.
+
+Verification: initial full suite **2,779 passed in 453.68 seconds**; final-tree
+full suite **2,784 passed in 452.35 seconds**, with no WaitUntil flake retry
+needed. Focused checks cover source/cap/trim/redaction/error cases,
+per-run snapshots, real-engine direct Context wiring, literal argv injection
+attempts, Unicode cap boundaries, keyboard editing at 80×24 and shared highlight
+styles. Node-helper generation/checks, compilation and whitespace checks pass.
+The docs consolidation checker still reports the base's unexpected active
+`SMALL_WINS.md`; relative links/anchors pass.
 
 ## MCP activity summaries — 2026-10-24
 

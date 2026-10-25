@@ -1382,13 +1382,11 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         Persisted file entries require a current workflow declaration. Deleted
         declarations are retained for filtering, with no active writer ids.
         """
-        tags = sorted(
-            {
-                str(field_schema.get("vault_type"))
-                for field_schema in schema.values()
-                if isinstance(field_schema, dict) and field_schema.get("vault_type")
-            }
-        )
+        fields = list(schema.values())
+        fields += [child for spec in schema.values() if isinstance(spec, dict)
+                   for child in (spec.get("item_schema") or {}).values()]
+        tags = sorted({str(spec["vault_type"]) for spec in fields
+                       if isinstance(spec, dict) and spec.get("vault_type")})
         if not tags:
             return None
 

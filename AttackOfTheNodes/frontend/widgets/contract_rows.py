@@ -21,6 +21,7 @@ from textual.screen import ModalScreen
 from textual.widgets import Button, Checkbox, Label, Select, Static
 
 from backend.contracts import ROW_TYPES, ContractError, parse_text
+from frontend import colors
 from frontend.keymap import CONTRACT_ROW_EDITOR, bindings_for
 from frontend.widgets.command_input import CommandInput
 from frontend.widgets.command_screen_mixin import CommandScreenMixin
@@ -87,6 +88,18 @@ class ContractRowsField(Vertical):
     ContractRowsField .contract-row { width: 100%; height: 1; min-width: 10;
         border: none; text-align: left; content-align: left middle; }
     ContractRowsField .contract-row-buttons { height: auto; }
+    """
+
+    DEFAULT_CSS += f"""
+    ContractRowsField Button.contract-row:focus,
+    ContractRowsField Button.contract-row.nav-highlight,
+    ContractRowsField Button.contract-row.-active {{
+        background: {colors.SELECTION_BACKGROUND};
+        color: {colors.SELECTION_FOREGROUND};
+        text-style: bold;
+        background-tint: transparent;
+        tint: transparent;
+    }}
     """
 
     def __init__(self, kind: str, rows: List[Dict[str, Any]], **kwargs) -> None:

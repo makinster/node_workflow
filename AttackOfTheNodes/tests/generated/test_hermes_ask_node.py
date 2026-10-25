@@ -19,7 +19,7 @@ def test_hermes_ask_node_registration_and_metadata():
     metadata = next(item for item in factory.get_node_types_metadata() if item["type"] == "hermes_ask_node")
     assert metadata["display_name"] == 'Ask Hermes'
     assert metadata["default_alias"] == 'Ask Hermes'
-    assert metadata["input_ports"] == ['input']
+    assert metadata["input_ports"] == ['input', 'context']
     assert metadata["output_ports"] == ['default', 'details']
     # Every declared port exposes the per-port I/O contract (handoff §4/§6):
     # data_type defaults to "any", required defaults to False.
@@ -30,7 +30,7 @@ def test_hermes_ask_node_registration_and_metadata():
             }
             assert isinstance(info["required"], bool)
     # Declared error codes (D7); the default generic code is always first.
-    assert [error["code"] for error in metadata["errors"]] == ['node_error', 'not_installed', 'profile_missing', 'unsupported_runtime', 'auth_failed', 'folder_missing', 'not_allowed', 'text_too_long', 'timed_out', 'turn_limit', 'permission_denied', 'agent_failed', 'invalid_response', 'record_failed', 'cleanup_failed']
+    assert [error["code"] for error in metadata["errors"]] == ['node_error', 'not_installed', 'profile_missing', 'unsupported_runtime', 'auth_failed', 'folder_missing', 'not_allowed', 'text_too_long', 'timed_out', 'turn_limit', 'permission_denied', 'agent_failed', 'invalid_response', 'record_failed', 'cleanup_failed', 'context_too_long']
 
 
 @pytest.mark.asyncio

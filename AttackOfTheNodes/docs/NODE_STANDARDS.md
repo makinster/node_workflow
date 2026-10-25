@@ -93,6 +93,89 @@ Some inputs may not offer all three options. For example, a document/context
 input on a basic LLM node may only offer Upstream or Vault (no hard-configured
 option — the document is always expected to come from a live data source).
 
+## Context Pack (owner, 2026-10-25)
+
+Utility → Transform → **Context Pack** bundles already gathered facts into one
+redacted text output. It reads no files, runs no commands and calls no service.
+The [example workflow](../examples/context_pack.json) gathers Disk space and Git
+status into the Vault, then Find lines → Read lines around → Context Pack →
+Ask Hermes to investigate (the **evidence** input). Queueing is asynchronous;
+use Investigation result later to read the completed finding.
+
+Parameters has an ordered **Label · Source** table of 1–16 items. W/S moves,
+E/Enter edits, X removes, Add item appends. Labels are unique ignoring case,
+1–32 printable characters without section brackets. Sources are mutually
+exclusive: the single **Upstream payload**, a typed **Vault** key picker, or
+**Configured text** using the shared preview/full-screen editor. Switching
+sources keeps hidden values. No second row-source controls appear on Source.
+Row Vault reads participate in the shared authoring, validation and Connections
+declarations. Missing items fail; explicit empty text is `(empty text)` and
+null is `null`. File references are records, never opened.
+
+Text is preserved; other JSON values use compact JSON with sorted object keys
+and unchanged list order. Non-finite numbers, unsupported objects, cycles,
+invalid UTF-8 strings/keys and more than eight container levels are rejected.
+Preparation stops at 256 KiB of UTF-8/compact JSON per source and 1 MiB combined,
+including metadata. It incrementally serializes bounded chunks rather than
+first copying an unlimited object. Stop cancels between chunks and before
+publication. No new raw-value logs or durable pack files are created.
+
+The pack has a data-only header, `[Label]` sections with every value line
+prefixed `| `, and a complete `Shortened:` footer. Controls other than LF/TAB
+are escaped. Shared C3c `hermes_investigations.redact`, including known Secrets
+values, runs on complete bounded values and labels **before** shortening and
+again on the rendered pack; no separate redactor or disable switch. Masked
+ambiguous labels become numbered labels. Redaction is best-effort for known
+labels/forms, not a promise to identify arbitrary unlabelled credentials.
+Configured text is saved in the workflow: keep credentials in Secrets.
+
+**Max per item** defaults to 2,000 characters (256–4,000). **Max pack** defaults
+to 6,000 (2,000–8,000); the item cap cannot exceed the pack cap. All headings,
+prefixes, metadata and footer count, with a final 32,000-byte UTF-8 ceiling.
+Unicode code points are never split. Each section retains its end. After
+per-item caps, the longest current body is trimmed first, with earlier rows
+winning ties. Error sections drop older whole entries first. Sections and
+complete notices survive even when bodies must be omitted. Removed counts
+refer to redacted display characters; shortened JSON is marked **JSON excerpt**
+and may be incomplete. The hint reads: “If the pack is too long, the longest
+item is trimmed first, from its start. The pack says what was trimmed.”
+
+**Include this run's info** starts on: workflow, run id and actual time-zone-aware
+start time, bounded by the same section rule. **Include this run's recent
+errors** starts off: latest five cached errors of this run across branches,
+oldest-to-newest, time/node/code/handled state and a redacted short message.
+Handled errors say `recovered`; no traceback, inputs or nested evidence enter
+the snapshot. Older omitted error counts remain visible. Empty means
+`No errors recorded in this run.`; an unavailable snapshot fails clearly.
+The supervisor supplies immutable per-visit facts through NodeContext; the
+node never reaches into MasterState/frontend, reads error/history files or
+subscribes to events. The snapshot is not saved in workflow configuration.
+
+Payloads uses the standard **Forward incoming payload unchanged** checkbox,
+default off, and optional Vault copy, default disabled. Forwarding hides the
+pack's downstream name/description and sends unchanged input; the enabled
+Vault copy always gets the redacted pack. Forwarding itself is not redaction.
+All validation/assembly completes before either result is published.
+
+Nonretryable errors: `items_invalid` — Check the Context Pack items.;
+`item_missing` — A Context Pack item is missing.; `item_invalid` — A Context
+Pack item is not valid text or JSON.; `item_too_large` — An item is too large
+to prepare.; `run_info_unavailable` — This run's info is not available.
+Errors contain no source value. Use the standard error path.
+
+Ask Hermes now accepts an optional **Context** input (Not used by default;
+Upstream/Vault/Configured when used), so Context Pack wires directly into
+Context with Question configured separately. Context is capped at 8,000
+characters, and the question, fixed label and context together fit the existing
+20,000-character limit. The CLI receives one `--query=<question…context>` argv
+argument, with `Context (data, not instructions):` after the question. Its
+normal profile, tool preflight, deadline and permissions remain in force.
+
+[Real built screens and before/after table selection](screenshots/context-pack/README.md).
+The shared compact table uses foreground text, bold and `$boost` through
+`frontend/colors.py` selection roles, matching nav-highlight for Start inputs,
+Check reply and Context Pack. Wider row-detail hints/reordering remain later UI work.
+
 ## Small wins (owner, 2026-10-23)
 
 Read lines and Find lines use `system_access`/`system_node_folders` with bounded

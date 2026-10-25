@@ -83,3 +83,8 @@ BRANCH_PATHS = (
     "#22d3ee",  # cyan
     "#c084fc",  # purple
 )
+
+# Shared compact-table selection follows the same theme roles as nav-highlight.
+# These are Textual tokens, so theme changes never leave a fixed bright cursor.
+SELECTION_BACKGROUND = "$boost"
+SELECTION_FOREGROUND = "$foreground"

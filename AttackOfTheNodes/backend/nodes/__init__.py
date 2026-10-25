@@ -59,8 +59,10 @@ from .io.hermes_investigation_result_node import HermesInvestigationResultNode
 from .io.read_lines_node import ReadLinesNode
 from .io.find_lines_node import FindLinesNode
 from .data.check_reply_node import CheckReplyNode
+from .data.context_pack_node import ContextPackNode
 
 ALL_NODE_CLASSES = [
+    ContextPackNode,
     CheckReplyNode,
     FindLinesNode,
     ReadLinesNode,

@@ -1,10 +1,46 @@
 # AttackOfTheNodes Session Log
 
-This log keeps roughly the last two weeks: entries dated October 4–24, 2026
+This log keeps roughly the last two weeks: entries dated October 4–25, 2026
 (the earliest existing entry is October 6). Every October 18 entry is retained.
 Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.md).
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
+
+## 2026-10-25 — Context Pack, optional Context and shared compact-table highlight
+
+Own clean worktree `/home/makin/src/nw-context-pack`, branch
+`codex/context-pack`, from fetched `origin/main` `9b98f48`. Followed the owner's
+15 approved answers in `agent_channel/context-pack-samples` and the four
+2026-10-25 build decisions. No changes in the retired OneDrive checkout or
+unrelated edits in the owner's original checkout.
+
+- Added helper spec/generated registration and tests, bounded value serializer,
+  shared-redacted Context Pack renderer, 1–16 Label/Source row editor with typed
+  Vault picker and shared long-text preview, standard downstream/forwarding and
+  independent redacted Vault result. Every section and shortening note counts
+  toward final character/byte caps; errors contain no raw item value.
+- Engine-only commits: `92b9d4b` adds frozen start/latest-five-error snapshots
+  from the current run's cache through Supervisor/NodeContext; `8bdf8a8`
+  distinguishes an unpublished input from explicit null. Own tests cover
+  isolation, branches, immutability, no disk reads and actual run-start wiring.
+- Ask Hermes optional Context defaults to Not used, supports all three standard
+  sources, caps at 8,000 characters within the existing 20,000-character total,
+  and stays inside the existing attached query argument after the fixed data
+  label. Fake CLI tests exercise option-shaped and shell-shaped text.
+- Shared compact rows use `$boost`, foreground and bold through colors.py
+  selection roles. Start inputs/Check reply before/after and Context Pack,
+  long-text row, Payloads, limits at 80×24, Context and the built example are
+  real Textual screenshots. The exact long hint wraps; screenshot review fixed
+  a clipped 80×24 row-editor footer. [Screens](screenshots/context-pack/README.md).
+- Initial full suite: **2,779 passed in 453.68 seconds**. Final-tree full suite:
+  **2,784 passed in 452.35 seconds** after the input-presence/hint corrections
+  and added boundary/engine tests; no known WaitUntil flake retry needed.
+  Helper checks and focused tests pass; compilation/whitespace checks
+  pass. The docs checker retains only the pre-existing `SMALL_WINS.md` active
+  document allowlist failure; links pass.
+- No model calls, live config/install/cron changes, or merge. Redaction remains
+  the existing best-effort C3c helper; configured text is ordinary workflow
+  configuration and forwarding deliberately preserves the original payload.
 
 ## 2026-10-24 — #119 re-check: padded blocks and whole field names
 

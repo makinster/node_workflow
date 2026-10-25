@@ -259,6 +259,7 @@ decided.
 | Node | Status | Notes |
 |------|--------|-------|
 | Check reply | Built for review | `check_reply_node` — strict JSON object against compact Field/Type/Required rows. Valid → parsed record [var]; mismatch → existing error path, “Reply didn't match.” Standard forwarding, Vault, and optional configured long-text preview/editor. [Contract](SMALL_WINS.md). |
+| Context Pack | Built for review | `context_pack_node` — ordered Label/Source facts, shared redaction, bounded trimming, optional per-run info/errors. Context pack [string], standard forwarding and independent Vault copy. [Contract](NODE_STANDARDS.md#context-pack-owner-2026-10-25). |
 
 
 #### Group: Data Transform

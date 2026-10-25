@@ -252,3 +252,18 @@ park execution until the viewer closes. OS window actions are backend local
 execution effects today; a future remote deployment needs a local effector,
 not windows opened on a server. See the retained file/window decisions in
 [Node Standards](NODE_STANDARDS.md#file-and-window-design-decisions).
+
+## Per-visit run facts (2026-10-25)
+
+`NodeContext.run_snapshot` is an optional frozen `RunSnapshot`: actual run
+start time, a tuple of at most five frozen `RunErrorSummary` records and the
+older-error count. MasterState passes the run start into every Supervisor;
+the supervisor captures the ErrorHandler's current-run cache immediately
+before invoking a node. Snapshots exclude tracebacks, raw error context and
+payloads, never lazy-load files, and do not update after the visit starts.
+Branches share the handler, so the last five span this run's branches.
+The existing finalization evicts the cache. Nodes have no engine/frontend
+reach-in or subscription and decide how to redact/shorten displayed fields.
+
+Supervisor input resolution omits unpublished transient values but preserves
+explicit nulls, so a node can distinguish a missing item from JSON null.
