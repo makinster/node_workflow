@@ -116,7 +116,7 @@ def test_initialize_tools_and_ping(tmp_path, version):
         assert initialized['protocolVersion'] == (version if version != 'future-version' else '2025-11-25')
         assert initialized['capabilities'] == {'tools': {'listChanged': False}}
         tools = client.request('tools/list')['result']['tools']
-        assert {tool['name'] for tool in tools} == {'list_workflows', 'run_workflow', 'get_run_status', 'get_recent_events'}
+        assert {tool['name'] for tool in tools} == {'list_workflows', 'run_workflow', 'get_run_status', 'get_recent_events', 'get_activity'}
         for tool in tools:
             assert tool['inputSchema']['type'] == 'object'
             assert tool['inputSchema']['additionalProperties'] is False

@@ -9,6 +9,8 @@ import time
 
 import pytest
 
+from tests.credential_cases import CREDENTIAL_CASES, PADDED_BLOCK_CASES, PUBLIC_FIELD_CASES
+
 from backend import hermes_investigations as inbox, hermes_folder
 from backend.event_bus import EventBus
 from backend.memory_bank import MemoryBank
@@ -479,3 +481,34 @@ def test_review_p2_unicode_separators_preserved_without_session_receipt_leaks():
     assert parse_answer((answer+'\nsession_id: receipt\n').encode())==answer
     with pytest.raises(ValueError):
         parse_answer(b'Finding\xe2\x80\xa8session_id: private\nmore answer')
+
+
+@pytest.mark.parametrize('text,credentials', CREDENTIAL_CASES)
+def test_redaction_recheck_inbox_persists_no_block_or_url_credentials(setup, text, credentials):
+    rid = queue(setup, happened=text, evidence=text, investigate=text)
+    path = setup[4]/'investigations/pending'/(rid+'.json')
+    raw = path.read_text(encoding='utf-8')
+    assert all(credential not in raw for credential in credentials)
+    request = json.loads(raw)
+    for key in ('what_happened', 'evidence', 'what_to_check'):
+        assert '[redacted' in request[key]
+        assert 'status: OK' in request[key]
+
+
+def test_shared_redaction_preserves_public_urls_and_empty_headers():
+    text = 'password:\nstatus: OK\nHTTPS://example.invalid/path/user@file?q=x\nssh://public.invalid/'
+    assert inbox.redact(text) == text
+
+
+@pytest.mark.parametrize('text,expected', PADDED_BLOCK_CASES)
+def test_padding_recheck_inbox_persistence(setup, text, expected):
+    rid = queue(setup, happened=text, evidence=text, investigate=text)
+    request = json.loads((setup[4]/'investigations/pending'/(rid+'.json')).read_text(encoding='utf-8'))
+    assert [request[key] for key in ('what_happened', 'evidence', 'what_to_check')] == [expected]*3
+
+
+@pytest.mark.parametrize('text', PUBLIC_FIELD_CASES)
+def test_whole_field_recheck_inbox_persistence(setup, text):
+    rid = queue(setup, happened=text, evidence=text, investigate=text)
+    request = json.loads((setup[4]/'investigations/pending'/(rid+'.json')).read_text(encoding='utf-8'))
+    assert [request[key] for key in ('what_happened', 'evidence', 'what_to_check')] == [text]*3

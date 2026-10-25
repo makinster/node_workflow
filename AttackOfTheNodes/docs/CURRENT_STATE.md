@@ -1,11 +1,58 @@
 # Current State
 
-Snapshot checked **2026-10-23**, against fetched `origin/main` `f9f5f07` after
-#114 and #115 merged (owner confirmation and fetched history). Code and fresh
+Snapshot checked **2026-10-24**, against fetched `origin/main` `d86faf2` after
+#118 merged (owner confirmation and fetched history). Code and fresh
 GitHub checks take precedence.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
+
+## MCP activity summaries — 2026-10-24
+
+**#119 padding/boundary re-check (2026-10-24):** the shared C3c/activity
+redactor masks padded Base64 continuations through trailing padding-only
+lines and matches credential labels as whole field names. Ordinary compound
+names and prose remain intact. New inbox-persistence and real-worker cases
+produce 18 failures/four preservation controls on `16fbe5f`; all 22 pass with
+the fix. Focused MCP/inbox checks: **212 passed**. Full suite: **2,719 passed
+in 443.87 seconds**; no known WaitUntil timing-flake retry needed. No live
+configuration or install changes.
+
+**#119 P2 re-check (2026-10-24):** the shared C3c/activity redactor now masks
+whole multiline credential values and URL userinfo across scheme cases/names.
+Inbox request persistence and real activity-worker/MCP output are covered;
+public URLs and following non-secret fields remain intact. All final re-check cases against an archive of `6cbee5f` produce
+36 failures across both paths and eight existing PEM/quoted/HTTP controls
+passing. Final focused MCP/inbox checks: **190 passed**, including 44 re-check
+cases and controls. Full suite: **2,697 passed in 440.89 seconds**; no
+known WaitUntil timing-flake retry needed. Compilation, links and whitespace
+checks pass. No live data/configuration or install changes.
+
+**#119 review follow-up (2026-10-24):** activity projections now use the shared
+C3c redactor for labelled credentials and loaded Secrets values, before caps
+and worker output. Labels include spaced API keys, AWS access/secret keys,
+authorization/bearer and mixed-case private-key blocks. An oversized unfinished
+EOF event line counts once as damaged even when it spans the byte window;
+complete leading window fragments remain truncation only. Eleven regression
+cases fail on `ff2ea3f`; all 146 focused MCP/inbox tests pass. Compilation,
+links and whitespace checks pass. Full suite: **2,653 passed in 439.49
+seconds**; no known WaitUntil timing-flake retry needed.
+
+`get_activity(since, limit)` merges run summaries, investigation findings/failure
+codes and C1 Notify me receipts/Record event summaries into one newest-first
+UTC list. This addresses the gap where an investigation finished after its
+requesting run and was absent from a run-history-only answer. The legacy
+`get_recent_events` tool is unchanged. Reads use the selected data root and
+`$HERMES_HOME/aotn`, with bounded scans, damage counts, source truncation flags,
+regular-file/no-symlink checks and redacted field projections; no raw evidence
+or event values are exposed. [Contract and setup](integrations/MCP.md#activity-across-runs-and-hermes).
+
+Own worktree `/home/makin/src/nw-mcp-activity`, branch `codex/mcp-activity`,
+from clean fetched main `d86faf2`. Focused MCP tests: **73 passed**; full
+suite: **2,635 passed in 437.16 seconds**, with no timing-flake rerun.
+Compilation and whitespace checks pass; the docs checker retains the base
+`SMALL_WINS.md` active-doc allowlist failure. No live install, Hermes allowlist/configuration,
+cron job, gateway or owner workflow changes; the owner merges after review.
 
 ## Small wins — 2026-10-23
 

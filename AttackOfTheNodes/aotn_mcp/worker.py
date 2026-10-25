@@ -13,6 +13,9 @@ def dispatch(name, args):
 
     saved_values.RUN_FROM = 'MCP'  # shown with each saved value (C2)
 
+    if name == 'get_activity':
+        from .activity import get_activity
+        return {'result': get_activity(**args)}
     if name == 'get_run_status':
         history = persistence.RUN_HISTORY_DIR.resolve()
         if not (history / (args['run_id'] + '.json')).resolve().is_relative_to(history):

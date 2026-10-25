@@ -349,11 +349,19 @@ H1 test cases: normal message; a forced unhandled error (expect alert); a
 conditional that skips the output (expect nothing).
 
 **AOTN as a tool for AIs.** An MCP server (local stdio) exposing
-`list_workflows`, `run_workflow`, `get_run_status`, `get_recent_events` lets
+`list_workflows`, `run_workflow`, `get_run_status`, `get_recent_events`, and
+`get_activity` (merged run, investigation and C1 receipt/event summaries) lets
 Hermes or Claude Code run a saved workflow instead of repeating its steps,
 saving tokens on the agent's side. Its inputs use the Step 4 contracts,
 which exist: `run_workflow` can take typed inputs and return `values`
-today. Local stdio does not need Step 6 network auth.
+today. Local stdio does not need Step 6 network auth. #119 activity review
+fixes (2026-10-24) reuse the C3c credential redactor before worker replies and
+count an oversized unfinished event tail as damaged, independently of the
+byte-window truncation flag. The P2 re-check extends that shared helper to
+whole multiline credential blocks and URL userinfo for any scheme case/name,
+including padded Base64 continuation lines; credential labels match whole
+field names to preserve ordinary text. Persisted-inbox and activity-worker
+regressions cover both paths.
 
 ## 9. Effect on the build plan (owner order, 2026-10-22)
 

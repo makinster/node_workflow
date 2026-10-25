@@ -6,6 +6,110 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-24 — #119 re-check: padded blocks and whole field names
+
+Own worktree `/home/makin/src/nw-mcp-activity-review`, branch
+`codex/mcp-activity-review`, clean start from #119 head `16fbe5f`. Fetched and
+merged `origin/main` (already current); push target is `codex/mcp-activity`.
+The shared C3c/activity redactor keeps padded Base64 continuation lines,
+including trailing `=` / `==` lines, inside the secret block. Assignments with
+values and colon fields still end an unindented block. Credential field
+names require boundaries and paired quotes, preserving longer names such as
+`monkey`, `refresh_token_count`, `password_hint` and `token bucket`.
+The MCP contract notes that redaction is best-effort for known labels/forms;
+evidence should stay small.
+
+Before the helper change, the new persistence/real-worker cases on `16fbe5f`
+produce **18 failures and four passing preservation controls**. All 22 pass
+with the fix, covering all three persisted request text fields plus activity
+findings and event summaries. Existing labelled credentials, known Secrets,
+PEM blocks and URL userinfo cases remain passing. Focused MCP/inbox checks:
+**212 passed in 32.41 seconds**. Full suite: **2,719 passed in 443.87
+seconds**; no known WaitUntil timing-flake retry needed. Compilation,
+changed-document links and whitespace checks pass. No live installs,
+configuration changes, owner-data reads or model calls.
+
+
+## 2026-10-24 — #119 re-check: multiline credentials and URL userinfo
+
+Own worktree `/home/makin/src/nw-mcp-activity-review`, branch
+`codex/mcp-activity-review`, clean start from `6cbee5f`. Fetched and merged
+`origin/main` (already current); push target remains #119's `codex/mcp-activity`.
+Only the shared C3c helper changes: mask multiline credential blocks rather
+than their YAML marker; mask URI authority userinfo for any scheme case/name,
+including username-only credentials. Inbox request persistence and activity
+findings/event summaries benefit from the same implementation. Block handling
+covers literal/folded markers, indentation/chomp indicators, header comments,
+list indentation, CRLF/tabs, plain credential/key continuations and PEM values.
+Empty headers preserve following fields; public URLs remain unchanged.
+URL authority is masked before label matching can consume its @ delimiter;
+a password containing `token=` cannot expose the URL username.
+
+All final re-check cases run against a temporary archive of actual `6cbee5f`:
+**36 fail and eight existing controls pass**, including both persisted inbox
+requests and real activity-worker/MCP output. The same 44 cases pass with the
+fix. Broader focused MCP/inbox checks: **190 passed**. Compilation, documentation
+links and whitespace checks pass. Full suite: **2,697 passed in 440.89
+seconds**; no known WaitUntil timing-flake retry needed.
+No live installs, owner-data reads, configuration changes or model calls.
+
+
+## 2026-10-24 — #119 review: shared credential redaction and EOF damage
+
+Own worktree `/home/makin/src/nw-mcp-activity-review`, branch
+`codex/mcp-activity-review`, clean start from #119 head `ff2ea3f`. Fetched and
+merged `origin/main` (already current). Push target remains #119's
+`codex/mcp-activity`; the original worker's worktree is unchanged.
+
+Extended C3c's shared redactor with case-insensitive authorization/bearer,
+spaced API key and AWS credential labels, quoted JSON escaping and mixed-case
+private-key blocks. Activity passes read-only loaded Secrets values to that
+same helper, before caps and worker replies, instead of maintaining its own
+replacement loop. Label redaction precedes known-value replacement so a
+Secrets value equal to a label cannot obscure the credential. Event scanning
+counts an unfinished EOF line once even when it consumes the whole byte
+window; complete leading fragments still count only as truncation.
+
+Eleven regression cases fail against `ff2ea3f`, including worker stdout and
+both MCP output forms, an oversized unfinished tail, escaped quoted values
+and label-shadowing by a known value. Seven controls cover already-supported
+labels and complete window fragments. All **146 focused MCP/inbox tests pass**;
+compilation, documentation links and whitespace checks pass. Full suite:
+**2,653 passed in 439.49 seconds**; no known WaitUntil timing-flake retry needed.
+No live installs, model calls, configuration changes or owner-data reads.
+
+
+## 2026-10-24 — MCP activity across sources
+
+Own worktree `/home/makin/src/nw-mcp-activity`, branch `codex/mcp-activity`,
+clean starting/fetched main `d86faf2`. Added read-only `get_activity(since,
+limit)` across persisted run summaries, investigation terminal findings and
+C1 event/receipt summaries. This gives the MCP client visibility of findings
+that finish after their requesting run. The original `get_recent_events`
+implementation and response shape remain unchanged.
+
+Activity uses normalized UTC timestamps, inclusive since filtering and one
+merged limit. Fixed-path descriptor reads refuse symlinks/special files and
+never create, chmod or repair the shared folder. Per-record/line, byte-window
+and directory/line-count caps bound the scan; damage counts and explicit source
+truncation flags describe omissions. Safe projections exclude evidence,
+event values, outbox messages, error details and run outputs. Known AOTN Secrets
+values and common credential forms are redacted before text caps; unsafe
+Secrets loading fails closed without content diagnostics. Tool discovery and
+the [MCP guide](integrations/MCP.md#activity-across-runs-and-hermes) include the
+new tool and the existing-client allowlist instruction.
+
+Focused MCP verification: **73 passed**, including real stdio calls with a
+temporary Hermes home, mixed sources, damaged JSON/UTF-8, unknown versions,
+oversized files/lines, unfinished tails, UTC/offset/fractional ordering and
+inclusive since filtering, newest-tail caps, Unicode, redaction, read-only
+mode/content preservation, unsafe destinations and legacy compatibility.
+Full suite: **2,635 passed in 437.16 seconds**; no known WaitUntil timing-flake
+rerun needed. Compilation and whitespace checks pass. The docs
+consolidation checker reports the pre-existing unexpected active doc
+`SMALL_WINS.md`, reproduced against the #118 base; no other checker error.
+No paid calls, live installs, external configuration changes or merges.
+
 ## 2026-10-24 — #118 review: byte consistency, decoded Unicode and ranges
 
 Own worktree `/home/makin/src/nw-small-wins-build`, branch

@@ -59,7 +59,8 @@ No workflow is installed, built or edited by the MCP tools.
 | `list_workflows` | `{}` | `workflows`: each saved `id`, `name`, `callable`, `inputs`, `results`, `asks`, from `backend.contracts.call_contract` |
 | `run_workflow` | `name_or_id` string; optional `inputs` object | `run_id`, `final_state`, `exit_code`, `outputs`, `values`, and the existing RunResult metadata/errors |
 | `get_run_status` | `run_id` string | `run`: the persisted run-history summary |
-| `get_recent_events` | optional integer `limit`, 1–100, default 10 | `runs`: newest run-history summaries; no `events.jsonl` log yet |
+| `get_recent_events` | optional integer `limit`, 1–100, default 10 | `runs`: newest run-history summaries only (unchanged) |
+| `get_activity` | optional `since` ISO 8601 time with a zone; optional integer `limit`, 1–100, default 10 | `activity`: merged run summaries, investigation results and C1 events/receipts, newest first; damage counts and scan-limit flags |
 
 Example `tools/call` arguments:
 
@@ -92,6 +93,89 @@ History tools read persisted summaries afresh on every call. They do not claim
 live progress, delivery receipts or the full run output. A hard timeout or
 cancellation can end before the backend persists a final summary; no synthetic
 history record is invented.
+
+### Activity across runs and Hermes
+
+Use `get_activity` for questions such as “what happened today?” A completed
+investigation is saved independently of its requesting run and can finish
+after that run ends. `get_recent_events` retains its original run-history-only
+behavior and result shape for existing clients.
+
+```json
+{"name":"get_activity","arguments":{"since":"2026-10-23T00:00:00Z","limit":20}}
+```
+
+`since` is inclusive and must specify a time zone (`Z` or an offset); dates,
+naive times and phrases such as `today` are rejected. Omit it to include all
+activity within the bounded scan. Items sort by their normalized UTC `time`
+(with six fractional digits), newest first; `limit` applies to the merged
+list, not separately to each source. Equal-time ordering has no semantic
+meaning. Each item has `type`, `time` and a fixed `source` label:
+
+| Type / source | Included fields |
+|---|---|
+| `run` / `run_history` | `run_id`, workflow name/id, final state, start/end times and available error/output counts. Activity time is end time, falling back to start time for older summaries. |
+| `investigation` / `investigation_results` | `request_id`, `state`, `finished_at`, redacted `finding` (at most 2,000 characters), `finding_truncated`, and `failure` (the failure code, or null). Failed findings are empty. |
+| `event` / `events.jsonl` | `kind`, `stage`, `workflow`, `summary`; Record event also includes `name`. Receipts have a stage string, while Record event has `stage: null`. Notify me receipts do not store the message, so their summary is empty unless the receipt contains one. |
+
+Run history comes from the server's selected AOTN data root. Shared activity
+comes from `$HERMES_HOME/aotn`, defaulting to `~/.hermes/aotn`, using the
+[same rule as the nodes](HERMES_SHARED_FOLDER.md#the-folder). Configure the
+server process's environment for the intended shared root; the investigator's
+child profile is a separate home. No tool argument accepts a path. Missing
+sources return no items and are never created. The reader opens regular files
+read-only, refuses symlink traversal and special files, and never repairs,
+locks, chmods, truncates or moves shared records.
+
+The result also includes `skipped` and `skipped_by_source`: counts of damaged,
+unknown-version, oversized or unreadable records/lines within the scan. An
+unreadable source counts as one skipped source error. Bad JSON/UTF-8, duplicate
+keys, non-finite numbers, invalid timestamps, mismatched IDs and unfinished
+JSONL tails are skipped without returning/logging their contents. LF alone
+frames event lines; Unicode line separators remain text. These counters cover
+examined data, not records omitted by a scan cap.
+
+Per call, each directory scan examines at most 2,000 entries and reads at most
+8 MiB of record bytes; each JSON record is capped at 256 KiB. The event reader
+examines the newest 8 MiB and at most the latest 20,000 complete LF lines, with
+a 64 KiB cap per line. A leading fragment cut by the byte window is omitted,
+not counted as damaged. An unfinished EOF line still counts once as damaged,
+even when it exceeds the entire byte window and its beginning is omitted.
+`truncated_sources` lists any sources limited by these
+scan bounds. The returned list is newest-first among examined records; it is
+not a complete history or pagination API when a source is truncated. The
+server's normal tool deadline and response cap still apply.
+
+Only the listed summary fields are projected. Raw request evidence, event
+`value`, outbox messages, error details, run outputs and credential files are
+never returned. Text is redacted before its display cap using known values in
+the selected AOTN Secrets store and the existing investigation redactor for
+labelled credentials, bearer/basic tokens, URL passwords and private keys.
+This is the shared C3c investigation-inbox redactor, including case-insensitive
+password/passwd/secret/token/api_key/apikey/authorization/bearer labels in
+`key: value`, `key=value` and JSON forms; spaced `api key`, AWS access/secret
+key labels and mixed-case private-key blocks are covered too. Multiline
+credential values are masked as a whole: YAML literal/folded blocks (including
+chomp/indent indicators and header comments), indented continuations after a
+credential key, and plain `key:` continuation blocks, including values that
+start on the same line as their label. Indented values end on
+dedent; unindented values end at a blank line or the next field. Base64 padding
+and trailing `=` padding lines remain part of the secret block. Labels match
+whole field names: `monkey`, `refresh_token_count`, `password_hint` and
+`token bucket` stay unchanged. Inline values
+do not consume the field on the next line when a credential header is empty.
+URL userinfo is removed for any `scheme://` case and scheme name, including
+HTTP/HTTPS, FTP, SSH and compound schemes; username-only userinfo is masked
+too. URL userinfo is masked before credential-label matching, so passwords
+containing strings such as `token=` cannot expose the username. Public URLs,
+hosts, paths and following non-secret fields are preserved. Known Secrets
+values are supplied to that same redactor without instantiating a writer.
+Findings and event summaries are redacted before text caps and before the
+worker returns, so both MCP text and structured results carry the safe text.
+Unknown unlabelled secrets cannot be inferred from arbitrary prose. A damaged,
+oversized or unsafe Secrets store fails this tool closed with a plain error;
+its contents are not logged. This tool does not read Hermes profile credentials.
+Redaction is best-effort for known labels/forms; keep evidence small.
 
 ## Deadlines and shutdown
 
@@ -147,6 +231,9 @@ mcp_servers:
 ```
 
 Choose a client timeout longer than the server deadline plus cleanup. Start a
-new Hermes session to discover the four tools. Ask it to list workflows before
+new Hermes session to discover the five tools. Ask it to list workflows before
 running one. This is independent of the H0 cron wrappers and does not modify
 `cron.wrap_response`, cron jobs, Telegram destinations or the live checkout.
+For an existing read-only client allowlist, add `get_activity` alongside
+`list_workflows`, `get_run_status` and `get_recent_events`, then reload MCP or
+start a fresh client session. This does not require exposing `run_workflow`.

@@ -177,6 +177,15 @@ repeat suppression. Stored request timestamps have zones. Inputs are redacted
 before writing, not left for Hermes to sanitize. Limits: description/task 4,000
 characters each, excerpts 8,000, whole prompt 20,000, each record 128 KiB.
 
+The shared redactor also masks multiline credential values: literal/folded
+YAML blocks, indented values after a credential key and unindented continuation
+blocks (the value may also start inline after the label). Indented blocks
+end at dedent; unindented blocks end at a blank line or
+next field. PEM/private-key blocks are removed, including incomplete blocks.
+URL userinfo is masked for any scheme case/name (`HTTPS`, `ftp`, `ssh`, etc.),
+including username-only URLs. This same helper protects MCP activity findings
+and event summaries before caps and worker output.
+
 Policy shape:
 
 ```json
