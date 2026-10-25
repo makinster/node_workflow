@@ -106,7 +106,67 @@ def _redact_credential_blocks(value):
     return '\n'.join(safe)
 
 
-def redact(value, manager=None, *, known_values=()):
+def _encoded_secrets(value, secrets, marker):
+    """Match known values through mixed JSON escapes and rendered line prefixes.
+
+    Spans refer back to the original text, so masking never returns decoded data.
+    Each pass consumes an escape layer; deeply nested encodings fail closed.
+    """
+    original = value
+    spans = [(i, i + 1) for i in range(len(value))]
+    matches = []
+    escape = re.compile(r'\\(?:u[0-9a-fA-F]{4}|["\\/bfnrt])|\n\| ')
+    for layer in range(9):
+        for secret in secrets:
+            start = 0
+            while (start := value.find(secret, start)) >= 0:
+                end = start + len(secret)
+                matches.append((spans[start][0], spans[end - 1][1]))
+                start = end
+        found = list(escape.finditer(value))
+        if not found:
+            break
+        if layer == 8:
+            return marker
+        parts, mapped, offset = [], [], 0
+        for match in found:
+            start, end = match.span()
+            parts.append(value[offset:start])
+            mapped.extend(spans[offset:start])
+            token = match.group()
+            decoded = '\n' if token.startswith('\n') else json.loads('"' + token + '"')
+            parts.append(decoded)
+            mapped.extend([(spans[start][0], spans[end - 1][1])] * len(decoded))
+            offset = end
+        parts.append(value[offset:])
+        mapped.extend(spans[offset:])
+        value, spans = ''.join(parts), mapped
+        # JSON may encode an astral character as two separate surrogate escapes.
+        parts, mapped, index = [], [], 0
+        while index < len(value):
+            char = value[index]
+            if (0xd800 <= ord(char) <= 0xdbff and index + 1 < len(value)
+                    and 0xdc00 <= ord(value[index + 1]) <= 0xdfff):
+                parts.append(chr(0x10000 + ((ord(char) - 0xd800) << 10) + ord(value[index + 1]) - 0xdc00))
+                mapped.append((spans[index][0], spans[index + 1][1]))
+                index += 2
+            else:
+                parts.append(char)
+                mapped.append(spans[index])
+                index += 1
+        value, spans = ''.join(parts), mapped
+    merged = []
+    for start, end in sorted(matches):
+        if merged and start <= merged[-1][1]:
+            merged[-1] = (merged[-1][0], max(end, merged[-1][1]))
+        else:
+            merged.append((start, end))
+    for start, end in reversed(merged):
+        original = original[:start] + marker + original[end:]
+    return original
+
+
+def redact(value, manager=None, *, known_values=(), encoded=False):
     """Known Secrets values plus common labelled credentials. Never log raw text.
 
     Read-only consumers may supply already loaded values instead of a manager.
@@ -121,8 +181,15 @@ def redact(value, manager=None, *, known_values=()):
     values = list(known_values)
     if manager is not None:
         values.extend(manager.get_secret(key) for key in manager.list_keys())
-    for secret in sorted((s for s in values if s), key=len, reverse=True):
-        value = value.replace(secret, '[redacted]')
+    values = sorted(set(s for s in values if s), key=len, reverse=True)
+    marker = '[redacted]'
+    if encoded and any(len(s) < len(marker) or s in marker for s in values):
+        # A short secret must not expand bounded metadata or occur in its mask.
+        marker = next(chr(c) for c in range(0x2580, 0x3000) if chr(c) not in values)
+    if encoded and values:
+        return _encoded_secrets(value, values, marker)
+    for secret in values:
+        value = value.replace(secret, marker)
     return value
 
 

@@ -123,8 +123,12 @@ publication. No new raw-value logs or durable pack files are created.
 The pack has a data-only header, `[Label]` sections with every value line
 prefixed `| `, and a complete `Shortened:` footer. Controls other than LF/TAB
 are escaped. Shared C3c `hermes_investigations.redact`, including known Secrets
-values, runs on complete bounded values and labels **before** shortening and
-again on the rendered pack; no separate redactor or disable switch. Masked
+values, walks decoded strings and object keys **before** JSON escaping and
+shortening, then checks the final rendered pack. Its opt-in encoded-value check
+recognizes mixed JSON quote/backslash/Unicode escapes (including surrogate
+pairs and nested escapes) and the `| ` line-prefix layout. Deeply nested
+encodings fail closed. Short known values use a compact mask to avoid expanding
+metadata. No separate redactor or disable switch. Masked
 ambiguous labels become numbered labels. Redaction is best-effort for known
 labels/forms, not a promise to identify arbitrary unlabelled credentials.
 Configured text is saved in the workflow: keep credentials in Secrets.
@@ -135,7 +139,11 @@ prefixes, metadata and footer count, with a final 32,000-byte UTF-8 ceiling.
 Unicode code points are never split. Each section retains its end. After
 per-item caps, the longest current body is trimmed first, with earlier rows
 winning ties. Error sections drop older whole entries first. Sections and
-complete notices survive even when bodies must be omitted. Removed counts
+complete notices survive even when bodies must be omitted. Before retaining
+bodies, the renderer reserves all-omitted metadata and worst-case note sizes.
+If full-label notes cannot fit, compact notes identify sections by their
+one-based order; `*` means omitted. All 16 maximum-length labels plus run info
+and errors fit even the minimum 2,000-character pack cap. Removed counts
 refer to redacted display characters; shortened JSON is marked **JSON excerpt**
 and may be incomplete. The hint reads: “If the pack is too long, the longest
 item is trimmed first, from its start. The pack says what was trimmed.”

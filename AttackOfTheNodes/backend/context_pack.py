@@ -46,20 +46,28 @@ def items_problem(rows):
     return ''
 
 
-def chunks(value, depth=0, seen=None, quoted=False):
+def chunks(value, depth=0, seen=None, quoted=False, mask=lambda text: text):
     """Incremental compact JSON; reject before copying an unbounded source."""
     seen = set() if seen is None else seen
     if isinstance(value, str):
         if len(value) > VALUE_BYTES:
             raise failure('item_too_large')
-        if quoted:
-            yield '"'
+        # Meter the original decoded leaf before masking or serializing it.
+        yield '', 2 if quoted else 0
         for start in range(0, len(value), 1024):
             piece = value[start:start + 1024]
-            piece.encode('utf-8')  # Reject surrogates even in JSON keys.
-            yield json.dumps(piece, ensure_ascii=False)[1:-1] if quoted else piece
+            size = len(piece.encode('utf-8'))  # Also rejects lone surrogates.
+            if quoted:
+                size += sum(1 if c in '\"\\\b\f\n\r\t' else 5 if ord(c) < 32 else 0 for c in piece)
+            yield '', size
+        safe = mask(value)
         if quoted:
-            yield '"'
+            yield '"', 0
+        for start in range(0, len(safe), 1024):
+            piece = safe[start:start + 1024]
+            yield (json.dumps(piece, ensure_ascii=False)[1:-1] if quoted else piece), 0
+        if quoted:
+            yield '"', 0
     elif value is None or type(value) is bool:
         yield json.dumps(value)
     elif type(value) in (int, float):
@@ -85,27 +93,28 @@ def chunks(value, depth=0, seen=None, quoted=False):
             for index, key in enumerate(keys):
                 if index:
                     yield ','
-                yield from chunks(key, depth + 1, seen, True)
+                yield from chunks(key, depth + 1, seen, True, mask)
                 yield ':'
-                yield from chunks(value[key], depth + 1, seen, True)
+                yield from chunks(value[key], depth + 1, seen, True, mask)
             yield '}'
         else:
             yield '['
             for index, item in enumerate(value):
                 if index:
                     yield ','
-                yield from chunks(item, depth + 1, seen, True)
+                yield from chunks(item, depth + 1, seen, True, mask)
             yield ']'
         seen.remove(id(value))
     else:
         raise failure('item_invalid')
 
 
-async def prepare(value, budget):
+async def prepare(value, budget, mask=lambda text: text):
     size, parts = 0, []
     try:
-        for piece in chunks(value):
-            size += len(piece.encode('utf-8'))
+        for fragment in chunks(value, mask=mask):
+            piece, raw_size = fragment if isinstance(fragment, tuple) else (fragment, len(fragment.encode('utf-8')))
+            size += raw_size
             if size > VALUE_BYTES or budget[0] + size > TOTAL_BYTES:
                 raise failure('item_too_large')
             parts.append(piece)
@@ -151,10 +160,16 @@ class Section:
         return '[' + self.label + ']\n' + '\n'.join('| ' + line for line in body.split('\n')) + '\n\n'
 
 
-def render(sections):
+def render(sections, compact=False):
     notes = [f'{s.label} ({s.removed} characters from the start' +
              (', omitted)' if not s.body else ')') for s in sections if s.removed]
-    return HEADER + ''.join(s.render() for s in sections) + 'Shortened: ' + ('; '.join(notes) if notes else 'none') + '.'
+    if compact and notes:
+        notes = [f'{index}={s.removed}' + ('*' if not s.body else '')
+                 for index, s in enumerate(sections, 1) if s.removed]
+        footer = 'Shortened: ' + '; '.join(notes) + ' (characters from start, section order; * omitted).'
+    else:
+        footer = 'Shortened: ' + ('; '.join(notes) if notes else 'none') + '.'
+    return HEADER + ''.join(s.render() for s in sections) + footer
 
 
 async def build(config, context):
@@ -169,11 +184,15 @@ async def build(config, context):
         raise failure('run_info_unavailable')
     budget, sections = [0], []
     manager = context.secrets_manager
+    known = tuple(manager.get_secret(key) for key in manager.list_keys()) if manager else ()
+
+    def mask(text):
+        return redact(text, known_values=known, encoded=True)
 
     async def safe(value):
-        text = await prepare(value, budget)
+        text = await prepare(value, budget, mask)
         await asyncio.sleep(0)
-        return display(redact(text, manager))
+        return display(mask(text))
 
     if config['include_run']:
         if not snapshot.started_at:
@@ -233,9 +252,14 @@ async def build(config, context):
             used.add(section.label.casefold())
         if len(section.body) > cap:
             section.shorten(len(section.body) - cap)
+    # Reserve the complete all-omitted footer before retaining any body. Compact
+    # ordinal notes bound the metadata for all 18 possible sections at min caps.
+    reserve = [Section(s.label, '', removed=max(1, s.removed + len(s.body))) for s in sections]
+    minimum = mask(render(reserve))
+    compact = len(minimum) > total or len(minimum.encode('utf-8')) > PACK_BYTES
     while True:
         await asyncio.sleep(0)
-        result = redact(render(sections), manager)
+        result = mask(render(sections, compact))
         overflow = max(len(result) - total, (len(result.encode('utf-8')) - PACK_BYTES + 3) // 4)
         if overflow <= 0:
             return result

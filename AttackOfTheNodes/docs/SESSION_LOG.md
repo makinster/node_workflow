@@ -6,6 +6,32 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-25 — #120 review: escaped Secrets and metadata caps
+
+Continued in `/home/makin/src/nw-context-pack`, `codex/context-pack`, from clean
+head `0d12725`; fetched `origin/main` remains `9b98f48`. Reproduced both P2
+findings with 17 failures and two passing controls before implementation.
+
+- The bounded serializer meters original decoded values, then masks every
+  string and key before JSON escaping. Shared `hermes_investigations.redact`
+  has an opt-in escaped-value check with source spans: mixed JSON escapes,
+  surrogate pairs, nested encodings and rendered `| ` prefixes are recognized
+  without returning decoded text. Existing C3c/activity behavior is unchanged.
+  Both normal pack output and its Vault copy use the final checked block.
+- Reserve worst-case headings/prefixes/omission notices before retaining bodies.
+  Compact section-order notes replace repeated labels when needed; every valid
+  16-row setup fits the minimum pack cap with run info/errors enabled. Empty
+  bodies remain explicitly omitted; ordinary full-label notes are preserved.
+- Regression coverage includes real Secrets stores, strings/keys/nested values,
+  both forwarding modes and Vault copies, mixed/nested escapes, layout-boundary
+  leaks, maximum labels, five errors, newline expansion and Unicode byte caps.
+  Focused shared-redactor/Context Pack/activity/generated checks: **213 passed**;
+  final Context Pack checks: **52 passed**. Independent probes passed 32 mixed
+  JSON escape forms and 32 maximum-row configurations. **Full suite: 2,809 passed in 461.92 seconds**; no WaitUntil flake retry
+  needed. Compilation and whitespace checks pass. The docs checker retains
+  only the existing `SMALL_WINS.md` active-doc allowlist issue; links pass.
+- No UI, screenshot, installation or live configuration changes; no merge.
+
 ## 2026-10-25 — #120 correction: one solid HIGHLIGHT role for compact rows
 
 Continued in `/home/makin/src/nw-context-pack`, branch `codex/context-pack`,

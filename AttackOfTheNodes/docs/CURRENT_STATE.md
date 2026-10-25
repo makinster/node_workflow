@@ -7,6 +7,19 @@ This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
 
+## #120 P2 corrections — 2026-10-25
+
+Known Secrets values are masked in decoded strings and keys before JSON
+serialization, using the shared redactor. Its opt-in final check recognizes
+mixed JSON escapes and the rendered line-prefix layout. Pack output and its
+Vault copy share that checked result. Metadata reservation switches to compact
+section-order shortening notes when needed, keeping every valid 16-item setup
+within the minimum pack cap even with run info/errors enabled; bodies can be
+marked omitted. Regression probes fail on `0d12725` (17 failures, two controls
+passed); all 52 Context Pack checks now pass. Full suite: **2,809 passed in
+461.92 seconds**, no WaitUntil flake retry needed. No installation or live
+configuration changes.
+
 ## #120 compact-row highlight correction — 2026-10-25
 
 Owner correction supersedes the earlier grey/nav-highlight request. Start

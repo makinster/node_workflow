@@ -197,3 +197,105 @@ async def test_pack_wires_directly_to_ask_context_in_real_engine(tmp_path,monkey
         assert 'Direct pack context' in seen[0] and 'Started:' in seen[0]
         assert service.master_state.memory_bank.read_persistent('answer')=='Disk is full.'
     finally:service.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('forward',[False,True])
+@pytest.mark.parametrize('secret',['FAKE"SECRET','FAKE\\SECRET','FAKE\nSECRET','FAKE\tSECRET','FAKE🌍SECRET'])
+async def test_review_known_secrets_redacted_before_json_and_vault(tmp_path,forward,secret):
+    import json
+    from backend.secrets_manager import SecretsManager
+    manager=SecretsManager(tmp_path/'secrets');manager.set_secret('test',secret)
+    done,errors=[],[]
+    value={'note':[secret,{secret:'preserve this value'}]}
+    ctx=context(inputs={'input':value},secrets_manager=manager,signal_done=done.append,signal_error=errors.append)
+    node=ContextPackNode('pack',config(include_run=False,items=[row(source='Upstream payload')],
+        vault_write=True,vault_write_key='pack',dead_drop_passthrough=forward))
+    await node.execute(ctx)
+    assert not errors and done
+    pack=ctx.memory_bank.read_persistent('pack')
+    assert secret not in pack and json.dumps(secret,ensure_ascii=False)[1:-1] not in pack
+    assert 'preserve this value' in pack
+    if forward:assert done[0]['data']['default'] is value
+    else:assert done[0]['data']['default']==pack
+    # Both a serialized key and nested leaf are safe after decoding the JSON.
+    record=json.loads(pack.split('| ',1)[1].split('\n\n',1)[0])
+    assert record['note'][0]!=secret and secret not in record['note'][1]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('text',[
+    r'FAKE\"SECRET',r'\u0046A\u004bE\u0022SECRET',r'FAKE\u0022SE\u0043RET',
+    'FAKE\\u005cu0022SECRET',
+])
+async def test_review_preescaped_known_secrets(tmp_path,text):
+    from backend.secrets_manager import SecretsManager
+    manager=SecretsManager(tmp_path/'secrets');manager.set_secret('test','FAKE"SECRET')
+    out=await build(config(include_run=False,items=[row(text=text)]),context(secrets_manager=manager))
+    assert text not in out and '[redacted]' in out
+
+
+@pytest.mark.asyncio
+async def test_review_final_check_includes_line_prefix_layout(tmp_path):
+    from backend.secrets_manager import SecretsManager
+    manager=SecretsManager(tmp_path/'secrets')
+    # Neither individual value contains this secret; final formatting creates
+    # its escaped/layout form across sections.
+    secret='TAIL\n\n[Second]\nHEAD'
+    manager.set_secret('test',secret)
+    out=await build(config(include_run=False,items=[row('First',text='TAIL'),row('Second',text='HEAD')]),
+                    context(secrets_manager=manager))
+    assert 'TAIL\n\n[Second]\n| HEAD' not in out
+    assert '[redacted]' in out
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('kind',['json','newlines'])
+@pytest.mark.parametrize('run_and_errors',[False,True])
+async def test_review_maximum_valid_configuration_always_fits(kind,run_and_errors):
+    errors=tuple(RunErrorSummary('2026-10-25T00:00:00Z','N'*100,'failure',True,'message '*100) for _ in range(5))
+    ctx=context(run_snapshot=RunSnapshot('2026-10-25T00:00:00Z',errors,12),
+                workflow_name='W'*300,run_id='R'*300)
+    rows=[]
+    for i in range(16):
+        label=f'{i:02d}'+'L'*30
+        rows.append(dict(label=label,source='Vault',vault_key=f'value{i}'))
+        ctx.memory_bank.store_persistent(f'value{i}', ['x'*1000] if kind=='json' else 'old line\n'*300)
+    done,failures=[],[];ctx.signal_done=done.append;ctx.signal_error=failures.append
+    node=ContextPackNode('pack',config(items=rows,max_item=2000,max_total=2000,
+        include_run=run_and_errors,include_errors=run_and_errors,vault_write=True,vault_write_key='pack'))
+    await node.execute(ctx)
+    assert not failures and done
+    out=done[0]['data']['default']
+    assert out==ctx.memory_bank.read_persistent('pack') and len(out)<=2000 and len(out.encode())<=32000
+    assert all('['+r['label']+']' in out for r in rows)
+    assert 'Shortened' in out and 'omitted' in out
+    if run_and_errors:assert '[This run]' in out and '[Recent errors]' in out
+
+@pytest.mark.parametrize('secret, encoded', [
+    ('FAKE😀SECRET', r'FAKE\ud83d\ude00SECRET'),
+    ('FAKE\\SECRET', r'FAKE\u005cSECRET'),
+    ('FAKE\nSECRET', r'FAKE\u000aSECRET'),
+    ('FAKE\tSECRET', r'FAKE\u0009SECRET'),
+    ('FAKE/SECRET', r'FAKE\/SECRET'),
+])
+def test_review_shared_redactor_mixed_json_forms(secret, encoded):
+    from backend.hermes_investigations import redact
+    assert redact(encoded, known_values=[secret], encoded=True) == '[redacted]'
+    ordinary = r'ordinary \"quoted\" text and \u0041; no private value'
+    assert redact(ordinary, known_values=[secret], encoded=True) == ordinary
+    # Existing C3c and activity consumers retain their current behavior.
+    assert redact(encoded, known_values=[secret]) == encoded
+
+
+@pytest.mark.asyncio
+async def test_review_unicode_metadata_and_short_secret_fit(tmp_path):
+    from backend.secrets_manager import SecretsManager
+    manager = SecretsManager(tmp_path / 'secrets.json')
+    manager.set_secret('short', 'a')
+    ctx = context(secrets_manager=manager)
+    rows = [row(f'{i:02d}' + '界' * 30, text='a' * 3000) for i in range(16)]
+    pack = await build(config(items=rows, include_run=True, include_errors=True,
+                              max_item=2000, max_total=2000), ctx)
+    assert len(pack) <= 2000 and len(pack.encode('utf-8')) <= 32000
+    assert 'a' not in pack
