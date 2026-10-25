@@ -19,6 +19,7 @@ from typing import (
     Optional,
 )
 
+from .run_snapshot import RunSnapshot
 from .data_types import validate_type
 from .node_errors import normalize_error_definitions
 from .field_types import normalize_numbers, validate_config_schema
@@ -76,6 +77,9 @@ class NodeContext:
     # The running workflow's name (Hermes messages and events say where they
     # came from, C1). "" outside a run.
     workflow_name: str = ""
+
+    # Immutable facts from this run, captured before this node executes.
+    run_snapshot: Optional[RunSnapshot] = None
 
     def emit_event(self, event_name: str, payload: Dict[str, Any]) -> bool:
         """Publish an event if a bus is wired in; return whether it was sent."""

@@ -386,6 +386,7 @@ class MasterState:
                 self._configuration_manager.get("node_timeout_seconds")
             ),
             run_session=run.run_session,
+            run_started_at=run.started_at,
             secrets_manager=self._secrets_manager,
             recovery_policy=run.recovery_policy,
             input_provider=run.input_provider,

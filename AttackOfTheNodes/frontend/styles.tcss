@@ -622,3 +622,10 @@ ExecutionScreen.narrow #execution-details {
     width: auto;
     padding: 0 2 0 0;
 }
+
+/* Opt-in long form hints must wrap inside the available terminal width. */
+.form-description-wrap {
+    width: 100%;
+    height: auto;
+    text-wrap: wrap;
+}

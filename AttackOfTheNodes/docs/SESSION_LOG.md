@@ -1,10 +1,92 @@
 # AttackOfTheNodes Session Log
 
-This log keeps roughly the last two weeks: entries dated October 4–24, 2026
+This log keeps roughly the last two weeks: entries dated October 4–25, 2026
 (the earliest existing entry is October 6). Every October 18 entry is retained.
 Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.md).
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
+
+## 2026-10-25 — #120 review: escaped Secrets and metadata caps
+
+Continued in `/home/makin/src/nw-context-pack`, `codex/context-pack`, from clean
+head `0d12725`; fetched `origin/main` remains `9b98f48`. Reproduced both P2
+findings with 17 failures and two passing controls before implementation.
+
+- The bounded serializer meters original decoded values, then masks every
+  string and key before JSON escaping. Shared `hermes_investigations.redact`
+  has an opt-in escaped-value check with source spans: mixed JSON escapes,
+  surrogate pairs, nested encodings and rendered `| ` prefixes are recognized
+  without returning decoded text. Existing C3c/activity behavior is unchanged.
+  Both normal pack output and its Vault copy use the final checked block.
+- Reserve worst-case headings/prefixes/omission notices before retaining bodies.
+  Compact section-order notes replace repeated labels when needed; every valid
+  16-row setup fits the minimum pack cap with run info/errors enabled. Empty
+  bodies remain explicitly omitted; ordinary full-label notes are preserved.
+- Regression coverage includes real Secrets stores, strings/keys/nested values,
+  both forwarding modes and Vault copies, mixed/nested escapes, layout-boundary
+  leaks, maximum labels, five errors, newline expansion and Unicode byte caps.
+  Focused shared-redactor/Context Pack/activity/generated checks: **213 passed**;
+  final Context Pack checks: **52 passed**. Independent probes passed 32 mixed
+  JSON escape forms and 32 maximum-row configurations. **Full suite: 2,809 passed in 461.92 seconds**; no WaitUntil flake retry
+  needed. Compilation and whitespace checks pass. The docs checker retains
+  only the existing `SMALL_WINS.md` active-doc allowlist issue; links pass.
+- No UI, screenshot, installation or live configuration changes; no merge.
+
+## 2026-10-25 — #120 correction: one solid HIGHLIGHT role for compact rows
+
+Continued in `/home/makin/src/nw-context-pack`, branch `codex/context-pack`,
+clean at #120 head `e0f0dbe`; fetched `origin/main` remains `9b98f48`.
+The owner corrected the earlier grey/nav-highlight instruction: Start inputs,
+Check reply and Context Pack now share a compact-row renderer that reads
+`frontend.colors.HIGHLIGHT` on each draw and paints one solid selection over
+all cells and padding. Coloured cell text/backgrounds cannot punch through;
+unselected cells retain their original styles. Removed the earlier selection
+CSS-token aliases; no literal selection colour is added to widgets.
+
+The regression fails on all three old tables and passes on the correction.
+It checks every painted cell, full row width, coloured-cell restoration,
+navigation highlight, and a role override after mount. Focused UI checks:
+**15 passed**. Full suite: **2,784 passed in 470.05 seconds**; no known
+WaitUntil timing-flake retry needed. Compilation and whitespace checks pass.
+Before screenshots now record the prior `e0f0dbe` grey treatment; after
+screenshots and the Context Pack screen set were recaptured from real widgets,
+with synthetic data and no live service runs. No backend changes or merge.
+
+## 2026-10-25 — Context Pack, optional Context and shared compact-table highlight
+
+Own clean worktree `/home/makin/src/nw-context-pack`, branch
+`codex/context-pack`, from fetched `origin/main` `9b98f48`. Followed the owner's
+15 approved answers in `agent_channel/context-pack-samples` and the four
+2026-10-25 build decisions. No changes in the retired OneDrive checkout or
+unrelated edits in the owner's original checkout.
+
+- Added helper spec/generated registration and tests, bounded value serializer,
+  shared-redacted Context Pack renderer, 1–16 Label/Source row editor with typed
+  Vault picker and shared long-text preview, standard downstream/forwarding and
+  independent redacted Vault result. Every section and shortening note counts
+  toward final character/byte caps; errors contain no raw item value.
+- Engine-only commits: `92b9d4b` adds frozen start/latest-five-error snapshots
+  from the current run's cache through Supervisor/NodeContext; `8bdf8a8`
+  distinguishes an unpublished input from explicit null. Own tests cover
+  isolation, branches, immutability, no disk reads and actual run-start wiring.
+- Ask Hermes optional Context defaults to Not used, supports all three standard
+  sources, caps at 8,000 characters within the existing 20,000-character total,
+  and stays inside the existing attached query argument after the fixed data
+  label. Fake CLI tests exercise option-shaped and shell-shaped text.
+- Shared compact rows use `$boost`, foreground and bold through colors.py
+  selection roles. Start inputs/Check reply before/after and Context Pack,
+  long-text row, Payloads, limits at 80×24, Context and the built example are
+  real Textual screenshots. The exact long hint wraps; screenshot review fixed
+  a clipped 80×24 row-editor footer. [Screens](screenshots/context-pack/README.md).
+- Initial full suite: **2,779 passed in 453.68 seconds**. Final-tree full suite:
+  **2,784 passed in 452.35 seconds** after the input-presence/hint corrections
+  and added boundary/engine tests; no known WaitUntil flake retry needed.
+  Helper checks and focused tests pass; compilation/whitespace checks
+  pass. The docs checker retains only the pre-existing `SMALL_WINS.md` active
+  document allowlist failure; links pass.
+- No model calls, live config/install/cron changes, or merge. Redaction remains
+  the existing best-effort C3c helper; configured text is ordinary workflow
+  configuration and forwarding deliberately preserves the original payload.
 
 ## 2026-10-24 — #119 re-check: padded blocks and whole field names
 

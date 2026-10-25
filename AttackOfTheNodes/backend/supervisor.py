@@ -124,6 +124,7 @@ class Supervisor:
         publish_result: Optional[Callable[[Dict[str, Any]], bool]] = None,
         call_subworkflow: Optional[Callable[..., Any]] = None,
         get_setting: Optional[Callable[[str], Any]] = None,
+        run_started_at: Optional[str] = None,
     ) -> None:
         if unattended is not None:
             if unattended not in UNATTENDED_ACTIONS:
@@ -166,6 +167,7 @@ class Supervisor:
         self._run_session = run_session
         self._secrets_manager = secrets_manager
         self._get_setting = get_setting
+        self._run_started_at = run_started_at
         # None means attended: a client answers through MasterState.
         self._recovery_policy = recovery_policy
         self._input_provider = input_provider
@@ -437,9 +439,12 @@ class Supervisor:
                 if input_port in self._initial_data:
                     inputs[input_port] = self._initial_data[input_port]
                 continue
-            inputs[input_port] = self._memory_bank.read_transient(
-                source["source_node_id"], source["source_port"]
+            missing = object()
+            value = self._memory_bank.read_transient(
+                source["source_node_id"], source["source_port"], default=missing
             )
+            if value is not missing:
+                inputs[input_port] = value
 
         if not inputs and not node.get_input_ports():
             inputs = dict(self._initial_data)
@@ -595,6 +600,8 @@ class Supervisor:
             node_alias=str((self._workflow_map.get_node_data(self.current_node_id or "") or {}).get("alias") or ""),
             get_setting=self._get_setting,
             workflow_name=str(getattr(self._workflow_map, "workflow_name", "") or ""),
+            run_snapshot=self._error_handler.snapshot(self.run_id, self._run_started_at)
+            if self._run_started_at else None,
         )
 
         started_at = perf_counter()
@@ -698,6 +705,7 @@ class Supervisor:
                 "depth": self.depth,
                 "inputs": json_safe(inputs),
                 "stage": failure.stage,
+                "node_alias": str((self._workflow_map.get_node_data(self.current_node_id or "") or {}).get("alias") or ""),
                 "details": failure.details,
                 "retryable": failure.retryable,
             },

@@ -14,13 +14,17 @@ import uuid
 from typing import Any, Dict, List, Optional
 
 from rich.text import Text
+from rich.segment import Segment
+from rich.style import Style
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.message import Message
 from textual.screen import ModalScreen
+from textual.strip import Strip
 from textual.widgets import Button, Checkbox, Label, Select, Static
 
 from backend.contracts import ROW_TYPES, ContractError, parse_text
+from frontend import colors
 from frontend.keymap import CONTRACT_ROW_EDITOR, bindings_for
 from frontend.widgets.command_input import CommandInput
 from frontend.widgets.command_screen_mixin import CommandScreenMixin
@@ -76,6 +80,22 @@ def row_line(kind: str, row: Dict[str, Any]) -> str:
     return f"{name:<10} {kind_label:<8} → {route:<17} {value}"
 
 
+class CompactRowButton(Button):
+    """One solid role colour across selected text, cells and row padding."""
+
+    def render_lines(self, crop):
+        lines = super().render_lines(crop)
+        if not (self.has_focus or self.has_class("nav-highlight") or self.has_class("-active")):
+            return lines
+        # Paint after cell styles and padding are composed, so a coloured type
+        # or embedded background cannot punch through the selection. Read the
+        # live role on every draw so palette changes and overrides apply.
+        style = Style(color=self.visual_style.rich_style.color,
+                      bgcolor=colors.HIGHLIGHT, bold=True)
+        return [Strip([Segment(cell.text, style, cell.control) for cell in line],
+                      line.cell_length) for line in lines]
+
+
 class ContractRowsField(Vertical):
     """An ordered list of contract rows with an editor for each."""
 
@@ -87,6 +107,18 @@ class ContractRowsField(Vertical):
     ContractRowsField .contract-row { width: 100%; height: 1; min-width: 10;
         border: none; text-align: left; content-align: left middle; }
     ContractRowsField .contract-row-buttons { height: auto; }
+    """
+
+    DEFAULT_CSS += """
+    ContractRowsField Button.contract-row:focus,
+    ContractRowsField Button.contract-row.nav-highlight,
+    ContractRowsField Button.contract-row.-active {
+        background: transparent;
+        color: $foreground;
+        text-style: bold;
+        background-tint: transparent;
+        tint: transparent;
+    }
     """
 
     def __init__(self, kind: str, rows: List[Dict[str, Any]], **kwargs) -> None:
@@ -111,7 +143,7 @@ class ContractRowsField(Vertical):
         if not self.rows:
             empty = "No results yet." if self.kind == RESULT else "No inputs yet."
             return [Static(empty, classes="form-description")]
-        return [Button(Text(row_line(self.kind, row)), id=f"{self.id}-row-{index}",
+        return [CompactRowButton(Text(row_line(self.kind, row)), id=f"{self.id}-row-{index}",
                        classes="contract-row", compact=True)
                 for index, row in enumerate(self.rows)]
 

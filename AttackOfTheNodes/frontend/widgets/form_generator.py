@@ -290,7 +290,7 @@ def _field_children(
         field_widgets[field_name] = widget
         children.append(widget)
         if description:
-            children.append(Label(str(description), classes="form-description", markup=False,
+            children.append(Label(str(description), classes="form-description" + (" form-description-wrap" if field_schema.get("wrap_description") else ""), markup=False,
                                   id=f"field-desc-{field_name}"))
         return children
 
@@ -304,7 +304,7 @@ def _field_children(
     )
     field_widgets[field_name] = widget
 
-    if field_schema.get("presentation") == "contract_table":
+    if field_schema.get("presentation") in ("contract_table", "context_items"):
         return [widget]
 
     # Keep the label with its control; descriptions wrap below the field.
@@ -337,7 +337,7 @@ def _field_children(
             )
         )
     if description:
-        children.append(Label(str(description), classes="form-description", markup=False,
+        children.append(Label(str(description), classes="form-description" + (" form-description-wrap" if field_schema.get("wrap_description") else ""), markup=False,
                               id=f"field-desc-{field_name}"))
     return children
 
@@ -351,6 +351,9 @@ def _widget_for_field(
     vault_keys_by_type: Dict[str, List[Tuple[str, str]]] | None = None,
 ):
     if field_type == "object_list":
+        if field_schema.get("presentation") == "context_items":
+            from .context_items import ContextItems
+            return ContextItems(value, field_schema, vault_keys_by_type, id=f"field-{field_name}")
         if field_schema.get("presentation") == "contract_table":
             from .reply_fields import ReplyFields
             return ReplyFields(value, field_schema, id=f"field-{field_name}")
