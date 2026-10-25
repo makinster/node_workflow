@@ -5,7 +5,7 @@ from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.widgets import Button, Label, Select, Static
 from backend.context_pack import SOURCES, items_problem
 from frontend.widgets.command_input import CommandInput
-from frontend.widgets.contract_rows import ContractRowEditor
+from frontend.widgets.contract_rows import CompactRowButton, ContractRowEditor
 from frontend.widgets.reply_fields import ReplyFields
 from frontend.widgets.long_text import LongTextPreview
 from frontend.widgets.status_bar import StatusBar
@@ -35,7 +35,7 @@ class ContextItems(ReplyFields):
             source = str(row.get('source', ''))
             if source == 'Vault':
                 source += ' · ' + short(str(row.get('vault_key', '')), 24)
-            buttons.append(Button(Text(f'{short(str(row.get("label", "")), 23):<24}{source}'),
+            buttons.append(CompactRowButton(Text(f'{short(str(row.get("label", "")), 23):<24}{source}'),
                                   id=f'{self.id}-row-{index}', classes='contract-row', compact=True))
         return buttons
 

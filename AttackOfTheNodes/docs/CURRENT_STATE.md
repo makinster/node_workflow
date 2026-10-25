@@ -7,6 +7,18 @@ This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
 
+## #120 compact-row highlight correction — 2026-10-25
+
+Owner correction supersedes the earlier grey/nav-highlight request. Start
+inputs, Check reply and Context Pack now use the live `frontend.colors.HIGHLIGHT`
+role for one solid selection over every cell and the full row width. The shared
+renderer follows palette/role overrides after mounting and preserves cell
+colours when unselected. Three failing-before cases now pass; focused UI checks
+**15 passed**. Full suite: **2,784 passed in 470.05 seconds**, with no
+WaitUntil timing-flake retry needed. The [before/after and Context Pack screen
+captures](screenshots/context-pack/README.md) were updated; before is the prior
+#120 head `e0f0dbe`. No backend, installation or live configuration changes.
+
 ## Context Pack — 2026-10-25
 
 Built for review on `codex/context-pack`, own worktree
@@ -20,7 +32,9 @@ reads or node subscriptions. Missing upstream publication remains distinct
 from explicit null. Engine changes are separate commits `92b9d4b` and `8bdf8a8`.
 Ask Hermes has optional Context (off by default), 8,000-character own cap within
 the existing 20,000-character total, in the same attached `--query=` argument.
-The shared compact tables use calm selection roles from `frontend/colors.py`.
+The shared compact tables use the live `HIGHLIGHT` role from `frontend/colors.py`
+for a solid selection across every cell and the row padding. This supersedes
+the earlier grey/nav-highlight treatment after the owner’s correction.
 
 [Contract](NODE_STANDARDS.md#context-pack-owner-2026-10-25),
 [real screenshots, including before/after Start and Check reply](screenshots/context-pack/README.md),

@@ -1,4 +1,4 @@
-"""Real compact forms, keyboard editing, routing and shared calm selection."""
+"""Real compact forms, keyboard editing, routing and shared solid selection."""
 from copy import deepcopy
 import pytest
 from textual.widgets import Button, Checkbox, Select, Static
@@ -12,17 +12,39 @@ from tests.test_small_wins_ui import make, Host
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize('kind',['start_node','check_reply_node','context_pack_node'])
-async def test_shared_selection_matches_nav_highlight(kind):
+async def test_shared_selection_uses_highlight_role_for_every_cell(kind,monkeypatch):
+    from rich.color import Color
+    from rich.style import Style
+    from rich.text import Text
+    from textual.geometry import Region
+    from frontend import colors
+    monkeypatch.delenv('NO_COLOR',raising=False)
+    monkeypatch.setenv('TEXTUAL_COLOR_SYSTEM','truecolor')
     factory,wm,node=make(kind);app=Host(factory,wm,node)
     async with app.run_test(size=(100,36)) as pilot:
         await pilot.pause();await pilot.press('2');await pilot.pause()
         row=app.screen.query('.contract-row').first()
-        reference=Static('reference',classes='nav-highlight')
-        await app.screen.mount(reference)
+        # A future coloured type cell/background must not punch through selection.
+        row.label=Text.assemble(('Facts ',colors.NAME),
+            ('[string]',Style(color=colors.TYPE,bgcolor=colors.ERROR)))
         row.focus();await pilot.pause()
-        assert row.styles.background==reference.styles.background
-        assert row.styles.color==reference.styles.color
-        assert row.styles.text_style.bold
+        def painted():
+            lines=row.render_lines(Region(0,0,row.region.width,row.region.height))
+            return [segment for line in lines for segment in line if segment.text]
+        for role in (colors.HIGHLIGHT,colors.MAP_BACKGROUND):
+            # Read the live role after mounting; never freeze the import-time palette.
+            monkeypatch.setattr(colors,'HIGHLIGHT',role)
+            row.refresh();await pilot.pause()
+            cells=painted()
+            assert sum(len(cell.text) for cell in cells)==row.region.width
+            assert all(cell.style.bgcolor==Color.parse(colors.HIGHLIGHT) for cell in cells)
+            assert len({cell.style.color for cell in cells})==1
+        app.screen.query_one('#save-node-config').focus();await pilot.pause()
+        row.add_class('nav-highlight');await pilot.pause()
+        assert all(cell.style.bgcolor==Color.parse(colors.HIGHLIGHT) for cell in painted())
+        row.remove_class('nav-highlight');await pilot.pause()
+        assert any(cell.style.color==Color.parse(colors.TYPE) for cell in painted())
+        assert any(cell.style.bgcolor==Color.parse(colors.ERROR) for cell in painted())
 
 
 @pytest.mark.asyncio

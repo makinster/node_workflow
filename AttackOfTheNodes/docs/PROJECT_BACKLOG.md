@@ -238,7 +238,9 @@ Meanwhile new screens reuse the existing tokens rather than invent colours.
 - **One highlight rule:** a highlighted row or list item is one solid colour
   over the whole row, including coloured parts (owner, 2026-10-20: green
   type tags under a white highlight looked wrong). Several recent screens
-  still use the white button focus.
+  still use the white button focus. Start inputs, Check reply and Context Pack
+  now follow this rule through the live `frontend.colors.HIGHLIGHT` role in
+  their shared row renderer (#120, owner correction 2026-10-25).
 - **Owner's list:** collect the small UI issues the owner finds here as they
   come up, then fix them in this pass.
 

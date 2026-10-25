@@ -32,16 +32,6 @@ OUT=APP/'docs/screenshots/context-pack'
 
 async def main():
     OUT.mkdir(parents=True,exist_ok=True)
-    before = '--before' in sys.argv
-    if before:
-        # Load main's widget stylesheet, keeping production screen/widgets.
-        import ast, subprocess
-        from frontend.widgets.contract_rows import ContractRowsField
-        source=subprocess.check_output(['git','show','9b98f48:AttackOfTheNodes/frontend/widgets/contract_rows.py'],cwd=APP,text=True)
-        cls=next(n for n in ast.parse(source).body if isinstance(n,ast.ClassDef) and n.name=='ContractRowsField')
-        assignment=next(n for n in cls.body if isinstance(n,ast.Assign) and n.targets[0].id=='DEFAULT_CSS')
-        ContractRowsField.DEFAULT_CSS=ast.literal_eval(assignment.value)
-
     for kind in ('start_node','check_reply_node'):
         f,w,n=make(kind);app=Host(f,w,n)
         async with app.run_test(size=(100,32)) as p:
@@ -49,9 +39,7 @@ async def main():
             rows=list(app.screen.query('.contract-row'))
             if rows:rows[0].focus()
             await p.pause()
-            app.save_screenshot(filename=kind+('-before.svg' if before else '-after.svg'),path=str(OUT))
-    if before:
-        return
+            app.save_screenshot(filename=kind+'-after.svg',path=str(OUT))
     factory=NodeFactory()
     spec=json.loads((APP/'examples/context_pack.json').read_text())
     report=authoring.build_workflow(factory,spec)
@@ -102,7 +90,7 @@ async def main():
 
             app.save_screenshot(filename=view+'.svg',path=str(OUT))
     if not (OUT/'README.md').exists():
-        (OUT/'README.md').write_text('''# Context Pack built screens\n\nReal production screens, captured with `tests/capture_context_pack.py` using\ntemporary application data. Before captures used main’s unchanged shared-widget stylesheet (`--before`).\nSVGs are the original Textual exports; PNGs are viewing companions.\nThe workflow is built from `examples/context_pack.json`; no live service runs.\n''')
+        (OUT/'README.md').write_text('''# Context Pack built screens\n\nReal production screens, captured with `tests/capture_context_pack.py` using\ntemporary application data. Before captures were taken at e0f0dbe, before the solid-role correction.\nSVGs are the original Textual exports; PNGs are viewing companions.\nThe workflow is built from `examples/context_pack.json`; no live service runs.\n''')
 
 if __name__=='__main__':
     asyncio.run(main())

@@ -172,9 +172,10 @@ argument, with `Context (data, not instructions):` after the question. Its
 normal profile, tool preflight, deadline and permissions remain in force.
 
 [Real built screens and before/after table selection](screenshots/context-pack/README.md).
-The shared compact table uses foreground text, bold and `$boost` through
-`frontend/colors.py` selection roles, matching nav-highlight for Start inputs,
-Check reply and Context Pack. Wider row-detail hints/reordering remain later UI work.
+The shared compact table paints the live `frontend.colors.HIGHLIGHT` role
+over the whole highlighted row, including coloured cells and padding, with
+uniform foreground text. Start inputs, Check reply and Context Pack share
+this rule; cell colours return when the row is unselected. Wider row-detail hints/reordering remain later UI work.
 
 ## Small wins (owner, 2026-10-23)
 

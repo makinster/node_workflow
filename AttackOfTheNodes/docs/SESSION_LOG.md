@@ -6,6 +6,26 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-25 — #120 correction: one solid HIGHLIGHT role for compact rows
+
+Continued in `/home/makin/src/nw-context-pack`, branch `codex/context-pack`,
+clean at #120 head `e0f0dbe`; fetched `origin/main` remains `9b98f48`.
+The owner corrected the earlier grey/nav-highlight instruction: Start inputs,
+Check reply and Context Pack now share a compact-row renderer that reads
+`frontend.colors.HIGHLIGHT` on each draw and paints one solid selection over
+all cells and padding. Coloured cell text/backgrounds cannot punch through;
+unselected cells retain their original styles. Removed the earlier selection
+CSS-token aliases; no literal selection colour is added to widgets.
+
+The regression fails on all three old tables and passes on the correction.
+It checks every painted cell, full row width, coloured-cell restoration,
+navigation highlight, and a role override after mount. Focused UI checks:
+**15 passed**. Full suite: **2,784 passed in 470.05 seconds**; no known
+WaitUntil timing-flake retry needed. Compilation and whitespace checks pass.
+Before screenshots now record the prior `e0f0dbe` grey treatment; after
+screenshots and the Context Pack screen set were recaptured from real widgets,
+with synthetic data and no live service runs. No backend changes or merge.
+
 ## 2026-10-25 — Context Pack, optional Context and shared compact-table highlight
 
 Own clean worktree `/home/makin/src/nw-context-pack`, branch

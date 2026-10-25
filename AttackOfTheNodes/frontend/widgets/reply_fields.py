@@ -6,7 +6,7 @@ from textual.containers import Horizontal, Vertical
 from textual.widgets import Button, Checkbox, Label, Select, Static
 from backend.reply_shape import TYPES, field_problem
 from frontend.widgets.command_input import CommandInput
-from frontend.widgets.contract_rows import ContractRowsField, ContractRowEditor
+from frontend.widgets.contract_rows import CompactRowButton, ContractRowsField, ContractRowEditor
 from frontend.widgets.status_bar import StatusBar
 
 
@@ -30,7 +30,7 @@ class ReplyFields(ContractRowsField):
         return name if len(name) <= 23 else name[:22] + "…"
 
     def _row_buttons(self):
-        return [Button(Text(f'{self._shown_name(row):<24}'
+        return [CompactRowButton(Text(f'{self._shown_name(row):<24}'
                             f'{TYPES.get(row.get("kind"), "?"):<14}'
                             f'{"yes" if row.get("required") else "no"}'),
                        id=f'{self.id}-row-{i}', classes='contract-row', compact=True)

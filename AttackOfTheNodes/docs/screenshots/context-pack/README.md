@@ -1,7 +1,8 @@
 # Context Pack built screens
 
 Real production screens, captured with `tests/capture_context_pack.py` using
-temporary application data. Before captures used main’s unchanged shared-widget stylesheet (`--before`).
+temporary application data. Before captures were taken at `e0f0dbe`, using the previous grey treatment.
+After captures use the live `frontend.colors.HIGHLIGHT` role across the whole row.
 SVGs are the original Textual exports; PNGs are viewing companions.
 The workflow is built from `examples/context_pack.json`; no live service runs.
 
