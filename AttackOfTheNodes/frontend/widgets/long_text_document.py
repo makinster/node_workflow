@@ -1,51 +1,70 @@
-"""A TextArea document which preserves each existing line separator exactly.
+"""LF edit coordinates with a separate, lossless record of line separators.
 
-Textual's plain Document joins every line with the first separator it found.
-Forms must keep mixed CRLF/CR/LF, Unicode separators, and trailing blank lines.
-Edits still use Textual's locations, undo stack and normal caret behaviour.
+Native history stores ranges in rows/columns. Re-parsing a raw CR followed by
+an inserted LF would coalesce two logical breaks and make those ranges invalid.
+Keep the lines and their separators separately, including inside undo records.
 """
 import re
-from bisect import bisect_right
 from textual.document._document import Document, EditResult
+
+
+def split_lines(text):
+    parts = re.split(r'(\r\n|\r|\n)', text)
+    return parts[::2], parts[1::2]
+
+
+def logical_text(text):
+    return '\n'.join(split_lines(text)[0])
+
+
+def line_ending_style(text):
+    endings = set(split_lines(text)[1])
+    return 'mixed' if len(endings) > 1 else next(iter(endings), '\n')
 
 
 class LongTextDocument(Document):
     def __init__(self, text):
-        self._load(text)
-
-    def _load(self, text):
-        parts = re.split(r'(\r\n|\r|\n)', text)
-        self._lines = parts[::2]
-        self._breaks = parts[1::2]
-        self._newline = self._breaks[0] if self._breaks else '\n'
-        self._offsets = [0]
-        for line, ending in zip(self._lines, self._breaks):
-            self._offsets.append(self._offsets[-1] + len(line) + len(ending))
+        self._lines, self._breaks = split_lines(text)
+        self._newline = '\n'
 
     @property
-    def text(self):
-        return ''.join(line + ending for line, ending in zip(self._lines, self._breaks)) + self._lines[-1]
+    def saved_text(self):
+        return self._join(self._lines, self._breaks, prevent_coalescence=True)
 
-    def get_index_from_location(self, location):
-        row, column = location
-        if row >= self.line_count:
-            return len(self.text)
-        return self._offsets[row] + min(column, len(self._lines[row]))
+    @staticmethod
+    def _join(lines, breaks, *, prevent_coalescence=False):
+        parts = []
+        for index, ending in enumerate(breaks):
+            # A newly adjacent CR and LF must still represent two source lines
+            # after reopening. Keep the CR and encode the next break as CRLF.
+            if (prevent_coalescence and index and not lines[index]
+                    and breaks[index - 1] == '\r' and ending == '\n'):
+                ending = '\r\n'
+            parts.extend((lines[index], ending))
+        return ''.join(parts) + lines[-1]
 
-    def get_location_from_index(self, index):
-        if not 0 <= index <= len(self.text):
-            raise ValueError(f'Index {index!r} is outside the document.')
-        row = bisect_right(self._offsets, index) - 1
-        return row, min(index - self._offsets[row], len(self._lines[row]))
-
-    def get_text_range(self, start, end):
-        start, end = sorted((start, end))
-        return self.text[self.get_index_from_location(start):self.get_index_from_location(end)]
+    def _raw_range(self, start, end):
+        top_row, top_column = start
+        bottom_row, bottom_column = end
+        if top_row == bottom_row:
+            return self._lines[top_row][top_column:bottom_column]
+        lines = self._lines[top_row:bottom_row + 1].copy()
+        lines[0] = lines[0][top_column:]
+        lines[-1] = lines[-1][:bottom_column]
+        return self._join(lines, self._breaks[top_row:bottom_row], prevent_coalescence=True)
 
     def replace_range(self, start, end, text):
         start, end = sorted((start, end))
-        before = self.text
-        a, b = self.get_index_from_location(start), self.get_index_from_location(end)
-        replaced = before[a:b]
-        self._load(before[:a] + text + before[b:])
-        return EditResult(self.get_location_from_index(a + len(text)), replaced)
+        # Textual can delete through a location one row beyond the document.
+        start = self.get_location_from_index(min(self.get_index_from_location(start), len(self.text)))
+        end = self.get_location_from_index(min(self.get_index_from_location(end), len(self.text)))
+        top_row, top_column = start
+        bottom_row, bottom_column = end
+        replaced = self._raw_range(start, end)
+        inserted_lines, inserted_breaks = split_lines(text)
+        end_column = len(inserted_lines[-1]) + (top_column if len(inserted_lines) == 1 else 0)
+        inserted_lines[0] = self._lines[top_row][:top_column] + inserted_lines[0]
+        inserted_lines[-1] += self._lines[bottom_row][bottom_column:]
+        self._lines[top_row:bottom_row + 1] = inserted_lines
+        self._breaks[top_row:bottom_row] = inserted_breaks
+        return EditResult((top_row + len(inserted_lines) - 1, end_column), replaced)

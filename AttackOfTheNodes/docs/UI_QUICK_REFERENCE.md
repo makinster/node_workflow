@@ -101,8 +101,13 @@ the stored value stays complete. Short single-line fields remain inline.
   field asks **Replace all the text?**, starting on Cancel. In the editor,
   Esc then P inserts at the retained cursor; E/Enter resumes typing. Plain p
   types p while editing. Cancelling the picker changes nothing.
-- Unicode, CRLF/CR/LF (including mixed endings) and trailing blank lines survive
-  open, edit, Save and Cancel. Existing validation and limits still apply.
+- The editor uses LF internally. On Save, a field opened with LF, CRLF or CR
+  keeps that style, including newlines from paste and Stash. Mixed fields retain
+  their individual separators; a newly adjacent CR + LF is encoded as two breaks
+  so reopening cannot collapse a source line. Undo/redo uses logical positions.
+  A logically unchanged draft returns the original byte-identical value and
+  shows no Changed/unsaved mark, even after undo. Unicode and trailing blank
+  lines remain intact. Existing validation and limits still apply.
   Read-only fields open a viewer with Close; disabled/hidden fields stay so.
 
 This includes generated and nested multiline fields. Text Output Template is

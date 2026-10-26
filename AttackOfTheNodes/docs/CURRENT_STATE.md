@@ -7,6 +7,21 @@ This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
 
+## #121 line-ending/history correction — 2026-10-26
+
+The shared editor uses logical LF positions while keeping separator provenance
+separately for mixed text and native history. LF/CRLF/CR fields save in their
+opened style, including pasted/Stash text. Mixed fields preserve their separate
+endings; newly adjacent CR/LF breaks cannot silently coalesce. Save and close
+compare logical drafts, so undo restores an unchanged state and a byte-identical
+field. No workflow migration or runtime changes.
+
+Regression keys reproduce on `4e75a62`: four CR/mixed failures and two CRLF
+controls, at 80×24 and 120×40. Coverage also checks redo, clipboard paste,
+commands-mode Stash insert, mixed-history ranges, genuine saves and reopen.
+Focused checks: **116 passed**. Full suite: **2,840 passed in 498.49 seconds**;
+no WaitUntil flake retry needed. Compilation and whitespace checks passed.
+
 ## Shared long-text editor — 2026-10-26, built for review
 
 Owner-approved answers 1–15 and the 2026-10-25 Save/Esc/Ctrl+Q decisions are

@@ -14,7 +14,7 @@ from frontend.keymap import LONG_TEXT_EDITOR, TEXT_AREA, bindings_for, display_k
 from frontend.widgets.command_input import CommandTextArea
 from frontend.widgets.command_screen_mixin import CommandScreenMixin
 from frontend.widgets.contract_rows import CompactRowButton
-from frontend.widgets.long_text_document import LongTextDocument
+from frontend.widgets.long_text_document import LongTextDocument, logical_text, line_ending_style
 from frontend.widgets.status_bar import StatusBar
 
 
@@ -116,8 +116,12 @@ class LongTextPreview(CompactRowButton):
 class LongTextArea(CommandTextArea):
     """Native editing and history, with lossless form content."""
     def _set_document(self, text, language):
+        previous = getattr(self, 'document', None)
         super()._set_document(text, language)
-        self.document = LongTextDocument(text)
+        # Textual rebuilds on language changes using its logical .text. Keep
+        # separator provenance when that rebuild did not change the draft.
+        self.document = (previous if isinstance(previous, LongTextDocument)
+                         and logical_text(text) == previous.text else LongTextDocument(text))
         self._highlight_query = None
         self.wrapped_document = WrappedDocument(self.document, tab_width=self.indent_width)
         self.navigator = DocumentNavigator(self.wrapped_document)
@@ -167,10 +171,25 @@ class LongTextEditor(CommandScreenMixin, ModalScreen):
     def __init__(self, value, *, title='Text', read_only=False, language=None, placeholder=None):
         super().__init__()
         self.original = value
+        self.original_logical = logical_text(value)
+        self.line_ending_style = line_ending_style(value)
         self.field_title = title
         self.placeholder = placeholder
         self.read_only = read_only
         self.language = language
+
+    @property
+    def changed(self):
+        return self.query_one(CommandTextArea).text != self.original_logical
+
+    @property
+    def saved_value(self):
+        area = self.query_one(CommandTextArea)
+        if not self.changed:
+            return self.original
+        if self.line_ending_style == 'mixed':
+            return area.document.saved_text
+        return area.text.replace('\n', self.line_ending_style)
 
     def compose(self) -> ComposeResult:
         title = ('View text' if self.read_only else 'Edit text') + ' · ' + self.field_title
@@ -212,9 +231,9 @@ class LongTextEditor(CommandScreenMixin, ModalScreen):
         row, column = area.cursor_location
         text = area.text
         count = area.document.line_count
-        changed = ' · Changed' if text != self.original else ''
+        changed = ' · Changed' if self.changed else ''
         self.query_one('#long-text-counts', Static).update(Text(
-            f'Line {row + 1}, column {column + 1} · {len(text)} characters · '
+            f'Line {row + 1}, column {column + 1} · {len(self.saved_value)} characters · '
             f'{count} {"line" if count == 1 else "lines"}{changed}', style=colors.MUTED))
 
     def on_text_area_changed(self, event: TextArea.Changed):
@@ -245,7 +264,7 @@ class LongTextEditor(CommandScreenMixin, ModalScreen):
 
     def action_submit(self):
         if not self.read_only:
-            self.dismiss(self.query_one(CommandTextArea).text)
+            self.dismiss(self.saved_value)
 
     def action_cancel_draft(self):
         # Ctrl+Q owns the whole field draft, including while typing. No event
@@ -255,7 +274,7 @@ class LongTextEditor(CommandScreenMixin, ModalScreen):
 
     def action_cancel(self):
         from frontend.screens.confirm import ConfirmScreen
-        if self.read_only or self.query_one(CommandTextArea).text == self.original:
+        if self.read_only or not self.changed:
             self.dismiss(None)
         else:
             self.app.push_screen(ConfirmScreen('Discard changes?', 'Discard', 'Keep editing', initial_no=True, role_highlight=True),

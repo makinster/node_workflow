@@ -6,6 +6,30 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-26 — #121 P2: line-ending-safe editing and undo
+
+Continued in `/home/makin/src/nw-shared-long-text`, `codex/shared-long-text`,
+from clean `4e75a62`. Read the reviewer comment; fetched/merged `origin/main`
+(already current at `334cb67`). No interrupted build processes were running.
+
+- Reproduced native Enter/Undo regressions on the reviewed head: four failures
+  for CR/mixed fields at 80×24 and 120×40; two CRLF controls passed.
+- Replaced raw-byte edit coordinates with LF positions. Separate separator
+  provenance survives edits, history inverses and Textual's language rebuilds.
+  Save restores the opened LF/CRLF/CR style, while mixed fields preserve their
+  endings. Newly adjacent CR/LF separators serialize as two logical breaks.
+- Changed/close/Save compare logical drafts. A semantically unchanged buffer
+  returns the exact original field; applying an undone edit does not dirty
+  Node Config. Clipboard paste, Stash insert and undo/redo share this path.
+- Existing assertions on the internal text buffer now expect LF; assertions on
+  saved fields still require exact original separators. New regressions cover
+  Enter/Undo/Redo/Save/close, no Changed/unsaved mark, paste/Stash in all styles,
+  genuine edits/reopen, and mixed-range history. Focused checks: **116 passed**.
+  Full suite: **2,840 passed in 498.49 seconds**; no WaitUntil flake retry
+  needed. Compilation and `git diff --check` passed.
+- No layout or text-colour changes; the original screenshot captures remain
+  the build evidence for `4e75a62`. No migrations, live changes or model calls.
+
 ## 2026-10-26 — Shared long-text editor, owner-approved rollout
 
 Own worktree `/home/makin/src/nw-shared-long-text`, branch

@@ -231,7 +231,9 @@ Meanwhile new screens reuse the existing tokens rather than invent colours.
   widget, including nested rows. Editor Ctrl+S applies the field only; Node
   Config Ctrl+S saves the node. First Esc stops typing, second closes; Ctrl+Q
   cancels the draft, asking when changed. These bindings live in the shared
-  keymap and may be revisited in the UI pass. Editor text colour and the orange
+  keymap and may be revisited in the UI pass. The #121 review correction uses
+  logical LF edit coordinates and preserves the opened line-ending style on
+  Save; undone/logically unchanged drafts return the exact original value. Editor text colour and the orange
   left bar remain a later UI-pass item; this build leaves them unchanged.
 
   **Small-wins scope update (owner, 2026-10-23):** Check reply opts into the

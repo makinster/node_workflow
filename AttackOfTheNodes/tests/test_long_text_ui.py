@@ -3,6 +3,7 @@ import pytest
 from frontend.widgets.command_input import CommandTextArea
 from frontend.widgets.form_generator import _widget_for_field
 from frontend.widgets.long_text import LongTextPreview, LongTextEditor
+from frontend.widgets.long_text_document import logical_text
 from tests.test_small_wins_ui import Host, make
 
 
@@ -26,7 +27,7 @@ async def test_editor_save_preserves_mixed_line_endings_and_stays_in_node():
         area = app.screen.query_one(CommandTextArea)
         assert area.cursor_location == (0, 0)
         assert app.screen.field_title == 'Check reply › Reply'
-        assert area.text == original
+        assert area.text == logical_text(original)
         await pilot.press('p', 'ctrl+s'); await pilot.pause()
         assert app.screen is screen and app.focused is preview
         assert preview.value == 'p' + original
@@ -161,12 +162,15 @@ def test_line_ending_edits_and_undo_ranges_are_exact():
     from frontend.widgets.long_text_document import LongTextDocument
     text = 'a\r\nb\rc\n\n\u2028\u0085😀'
     doc = LongTextDocument(text)
-    assert doc.text == text and doc.line_count == 5
-    assert doc.get_text_range((0, 1), (3, 0)) == '\r\nb\rc\n'
+    assert doc.text == logical_text(text)
+    assert doc.saved_text == text and doc.line_count == 5
+    assert doc.get_text_range((0, 1), (3, 0)) == '\nb\nc\n'
     replaced = doc.replace_range((0, 1), (3, 0), 'X\nY\r\n')
-    assert doc.text == 'aX\nY\r\n\n\u2028\u0085😀'
+    assert doc.text == 'aX\nY\n\n\u2028\u0085😀'
+    assert doc.saved_text == 'aX\nY\r\n\n\u2028\u0085😀'
     doc.replace_range((0, 1), replaced.end_location, replaced.replaced_text)
-    assert doc.text == text
+    assert doc.text == logical_text(text)
+    assert doc.saved_text == text
 
 
 @pytest.mark.asyncio
@@ -180,7 +184,7 @@ async def test_editor_native_undo_preserves_newlines_and_unicode():
         preview.focus(); await pilot.press('e'); await pilot.pause()
         area = app.screen.query_one(CommandTextArea)
         await pilot.press('!', 'ctrl+z'); await pilot.pause()
-        assert area.text == original
+        assert area.text == logical_text(original)
         await pilot.press('ctrl+s'); await pilot.pause()
         assert preview.value == original
 
@@ -303,7 +307,8 @@ async def test_real_app_stash_picker_and_ctrl_q_do_not_close_node(tmp_path, monk
         assert isinstance(app.screen, StashScreen)
         await pilot.press('enter'); await pilot.pause()
         area = app.screen.query_one(CommandTextArea)
-        assert area.text == 'ffrom stash\r\n😀\nrom stash\r\n😀\n'
+        assert area.text == 'ffrom stash\n😀\nrom stash\n😀\n'
+        assert app.screen.saved_value == 'ffrom stash\r\n😀\nrom stash\r\n😀\n'
         await pilot.press('ctrl+s'); await pilot.pause()
         assert app.screen is config and app.focused is preview
         assert config._saved_result is None

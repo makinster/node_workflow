@@ -34,3 +34,7 @@ Verification: **105 focused checks passed**, including 15 shared-editor cases;
 Text Output helper **2 passed**, UI contract OK. Full suite **2,825 passed in
 477.41 seconds**, with no WaitUntil retry needed. Compilation and whitespace
 checks passed.
+
+The captures/source hashes above describe build `4e75a62`. The later #121 P2
+line-ending/history correction changes no layout or colours; its CRLF/CR/mixed
+keyboard regressions are recorded in the newest Session Log entry.
