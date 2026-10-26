@@ -7,6 +7,15 @@ This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
 
+## Delivery-loop method — 2026-10-26, docs only
+
+[Delivery Loop](DELIVERY_LOOP.md) records the request-to-use cycle, owner gates,
+review/go-live checklists, versioned planning templates and three historical
+[delivery tests](delivery_tests/README.md). Base `3239b44`; no application or
+live changes. Measurement comes first; MCP authoring and the meta-workflow are
+future direction, not implementation approval. Existing Step 4/5/6 order stays
+in its owning plans.
+
 ## #121 line-ending/history correction — 2026-10-26
 
 The shared editor uses logical LF positions while keeping separator provenance

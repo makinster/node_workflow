@@ -20,10 +20,10 @@ ACTIVE_DOCS = {
     "BACKEND_FRONTEND_BOUNDARY.md", "NODE_STANDARDS.md", "NODE_HELPER.md",
     "NODE_CATALOG.md", "UI_QUICK_REFERENCE.md", "WORKFLOW_AUTHORING.md",
     "NODE_CONTRACT_PLAN.md", "DISTRIBUTED_BUILD_PLAN.md", "STASH_PROPOSAL.md",
-    "PROJECT_BACKLOG.md",
+    "PROJECT_BACKLOG.md", "DELIVERY_LOOP.md", "TASK_INDEX.md",
 }
-# Approved Step 4 design; move to archive when Step 4 completes.
-TEMPORARY_DOCS = {"SUBWORKFLOWS_PROPOSAL.md", "DELETION_REVIEW_PROPOSAL.md", "AI_COORDINATION_PROPOSAL.md"}
+# Retained transitional designs/contracts; archive when their owning track retires them.
+TEMPORARY_DOCS = {"SUBWORKFLOWS_PROPOSAL.md", "DELETION_REVIEW_PROPOSAL.md", "AI_COORDINATION_PROPOSAL.md", "SMALL_WINS.md"}
 LINK = re.compile(r"\[([^\]]*)\]\(([^)]+)\)")
 
 
@@ -72,7 +72,9 @@ def main():
         ["git", "ls-tree", "--name-only", f"{BASE}:AttackOfTheNodes/docs"], cwd=ROOT, text=True
     ).splitlines()
     moved = [name for name in old_names if name.endswith(".md") and not (DOCS / name).exists()]
-    for name in [*moved, "ARCHITECTURE.md"]:
+    # The active task-index pointer must not hide changes to its whole archive.
+    archived = sorted({*moved, "TASK_INDEX.md", "ARCHITECTURE.md"})
+    for name in archived:
         archive = "ARCHITECTURE_PRE_CONSOLIDATION.md" if name == "ARCHITECTURE.md" else name
         path = DOCS / "archive" / archive
         if not path.exists():
@@ -108,7 +110,7 @@ def main():
     if without_link_targets("".join(transferred).rstrip()) not in without_link_targets(history):
         errors.append("PR C session-history transfer differs from its complete source entries")
     print(f"{len(files)} Markdown files; {links} relative links/anchors; "
-          f"{len(moved) + 1} whole archive bodies; {len(transferred)} transferred session entries; "
+          f"{len(archived)} whole archive bodies; {len(transferred)} transferred session entries; "
           f"{len(active)} active docs")
     print("\n".join(errors) if errors else "PASS")
     return bool(errors)

@@ -10,11 +10,15 @@ the [Distributed Build Plan](DISTRIBUTED_BUILD_PLAN.md) and
 [Stash proposal](STASH_PROPOSAL.md) preserve the longer-term direction.
 [Contributing](CONTRIBUTING.md) owns process, testing and environment conventions.
 
+The [Delivery Loop](DELIVERY_LOOP.md) covers request → real-device proof → retro,
+with templates, measurements and a small delivery test set.
+
 ## Choose a task
 
 | If you need to… | Read | Likely code / focused check |
 |---|---|---|
 | Set up, run or test | [Newcomer Guide](NEWCOMER_GUIDE.md) | `main.py`, full suite below |
+| Deliver a workflow request | [Delivery Loop](DELIVERY_LOOP.md) | `docs/templates/`, `docs/delivery_tests/`; owner gates and docs checks |
 | Build or inspect workflows | [Workflow Authoring](WORKFLOW_AUTHORING.md) | `backend/authoring.py`, `tests/test_authoring.py`, `tests/test_authoring_examples.py` |
 | Review or test the Hermes H0 adapter | [H0 contract](integrations/HERMES_H0_DRAFT.md), [adapter guide](../integrations/hermes/README.md) | `integrations/hermes/`, `tests/test_hermes_adapter.py`; no installed wrapper or cron job |
 | Connect local MCP clients | [MCP setup and tools](integrations/MCP.md) | `aotn_mcp/`, `tests/test_mcp.py`; local stdio, explicit data root |
@@ -46,12 +50,13 @@ Choose tests for the changed behavior; a focused command is not the full suite.
 
 ## History and consolidation
 
-This router absorbs the task-selection route from [Task Index](archive/TASK_INDEX.md).
+This router owns task selection; [Task Index](TASK_INDEX.md) is a compact pointer.
+The [historical index](archive/TASK_INDEX.md) remains archived whole.
 Older handoffs and execution prompts are historical, not instructions to redo
 completed phases or merge PRs. The taxonomy rename was cancelled:
 `primary_family` and frontend `group` remain separate from legacy `category`.
 The [rebuilt source map](audits/docs_audit_2026_10_17/vision_sources.md) records
-what was preserved and where. The 17 core documents own the current reading
+what was preserved and where. The core documents own the current reading
 route, plus the temporary [Subworkflows proposal](SUBWORKFLOWS_PROPOSAL.md),
 which moves to `archive/` when Step 4 completes, and the
 [AI coordination proposal](AI_COORDINATION_PROPOSAL.md) (owner decisions recorded;
