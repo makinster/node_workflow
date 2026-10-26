@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "case_id": "c3c-investigate-test",
+  "baseline": "3239b44",
+  "record_status": "historical reconstruction, not a new live run",
+  "request_kind": "new-integration",
+  "request": {
+    "schema_version": 1,
+    "request_id": "c3c-investigate-test",
+    "date": "2026-10-23",
+    "intent": "Investigate a fake backup failure using workflow-supplied evidence and report to Telegram.",
+    "example": {
+      "input": "Synthetic backup-out-of-space incident and disk-full evidence.",
+      "expected_result": "Tool-free analysis identifies the full disk and sends a report."
+    },
+    "target_device": "Owner phone, Telegram",
+    "destination": "Configured Telegram home alias",
+    "trigger": "One approved request; no-agent inbox job picks it up",
+    "inputs": [
+      "Synthetic incident",
+      "Bounded redacted evidence excerpt"
+    ],
+    "constraints": [
+      "Tool-free aotn profile, one turn, 90-second deadline and confirmed cleanup.",
+      "No automatic paid retries; cost may be not_reported."
+    ],
+    "success": [
+      "Ready result identifies the full disk; tools is empty and cleanup is confirmed.",
+      "Owner confirms Telegram report arrival."
+    ],
+    "unknowns": [
+      "Exact original workflow spec and days per step are not retained in this repository."
+    ]
+  },
+  "feasibility": {
+    "schema_version": 1,
+    "request_id": "c3c-investigate-test",
+    "checked_at": "2026-10-23",
+    "researcher": "Project delivery agents; historical reconstruction",
+    "official_api": "Use the supported Hermes profile CLI and installed no-agent script bridge; no private internal import.",
+    "sign_in": "Dedicated aotn profile with all CLI toolsets disabled; owner configures it.",
+    "cost": "One paid analysis may run; historical CLI cost_status was not_reported.",
+    "reliability": "Atomic claims, daily/repeat caps, bounded cleanup and no paid retry; empty inbox stays silent.",
+    "terms_of_service": "Separate provider terms assessment not recorded; recheck before extending account usage.",
+    "sources": [
+      "../integrations/ASK_HERMES.md",
+      "../integrations/HERMES_SHARED_FOLDER.md",
+      "../../integrations/hermes/README.md"
+    ],
+    "verdict": "feasible",
+    "reason": "Owner chose simple v1; real synthetic-incident run completed with no tools and owner-confirmed Telegram report.",
+    "conditions": [],
+    "alternatives": [
+      "Use manual headless execution for local-only checks."
+    ]
+  },
+  "final_artifact": {
+    "kind": "node_plan",
+    "status": "Reconstructed test outline, not a runnable spec.",
+    "steps": [
+      "Start -> configured synthetic evidence -> hermes_investigate_node -> End",
+      "No-agent bridge claims the request, runs tool-free analysis and publishes the result/report.",
+      "hermes_investigation_result_node supports a later result-reading workflow."
+    ]
+  },
+  "coverage": {
+    "basis": "Reconstructed at original delivery, before its new nodes landed; setup/transport and Start/End excluded.",
+    "total_operations": 2,
+    "existing_count": 1,
+    "new_count": 1,
+    "ratio": 0.5,
+    "existing": [
+      {
+        "operation": "Supply the synthetic incident evidence",
+        "nodes": [
+          "text_output_node"
+        ],
+        "node_kind": "swiss-army"
+      }
+    ],
+    "new": [
+      {
+        "operation": "Submit the investigation request",
+        "nodes": [
+          "hermes_investigate_node"
+        ],
+        "node_kind": "use-case"
+      }
+    ]
+  },
+  "measurements": {
+    "review_rounds": null,
+    "step_visits": [],
+    "note": "Days for steps 0 through 11 and review rounds unknown; empty visits means not recorded, not zero."
+  },
+  "evidence": [
+    "../CURRENT_STATE.md",
+    "../integrations/HERMES_SHARED_FOLDER.md",
+    "../../integrations/hermes/README.md"
+  ],
+  "acceptance_checks": [
+    "Request contains only bounded redacted supplied evidence.",
+    "Tool preflight requires every CLI toolset disabled.",
+    "One-turn limits, exclusive claim, daily caps and process cleanup are enforced.",
+    "Result remains Unicode-safe and fits the final stdout budget including newline.",
+    "Analysis names the disk-full cause; it performs no repair.",
+    "Owner approval precedes paid/live use; real-device confirmation is separate."
+  ],
+  "notes": [
+    "Coordinator notes, 2026-10-23: queued 23:50:19Z, picked up 23:50:53Z, ready 23:51:02Z; tools [], cleanup_confirmed true.",
+    "Owner then confirmed Telegram arrival. These timings are one execution, not delivery-loop step durations.",
+    "Coverage counts workflow operations, not bridge internals; the later result-reader capability is excluded from this test denominator."
+  ]
+}

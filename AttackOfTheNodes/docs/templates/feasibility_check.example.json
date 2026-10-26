@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "request_id": "h1-heartbeat",
+  "checked_at": "2026-10-21",
+  "researcher": "Project delivery agents; historical reconstruction",
+  "official_api": "No new external API: use installed Hermes no-agent cron and its existing Telegram destination.",
+  "sign_in": "Existing owner-configured Telegram transport; wrapper holds no bot token.",
+  "cost": "No model call; no price assertion about hosting or transport.",
+  "reliability": "Check script-path rules, absolute interpreter, deadline, escaping and output cap; verify on phone.",
+  "terms_of_service": "No new API integration; separate terms review was not recorded. Recheck provider terms if scope changes.",
+  "sources": [
+    "../integrations/HERMES_H0_DRAFT.md",
+    "../../integrations/hermes/README.md",
+    "../CURRENT_STATE.md"
+  ],
+  "verdict": "feasible",
+  "reason": "The installed no-agent script route was checked and the owner confirmed Telegram delivery.",
+  "conditions": [],
+  "alternatives": [
+    "Use manual headless execution for local-only checks."
+  ]
+}

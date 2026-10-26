@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "case_id": "h1-heartbeat",
+  "baseline": "3239b44",
+  "record_status": "historical reconstruction, not a new live run",
+  "request_kind": "composition-only",
+  "request": {
+    "schema_version": 1,
+    "request_id": "h1-heartbeat",
+    "date": "2026-10-21",
+    "intent": "Show that AOTN can run unattended and reach Telegram.",
+    "example": {
+      "input": "A scheduled run with a checked_at timestamp.",
+      "expected_result": "AOTN alive with that timestamp appears in Telegram."
+    },
+    "target_device": "Owner phone, Telegram",
+    "destination": "Configured Telegram home alias",
+    "trigger": "Owner-approved Hermes no-agent cron job",
+    "inputs": [
+      "checked_at: string supplied by the wrapper"
+    ],
+    "constraints": [
+      "Use the separate live checkout and cron data root.",
+      "No model call; escape outside text and cap stdout."
+    ],
+    "success": [
+      "Owner sees the heartbeat.",
+      "Unhandled failure alerts; skipped output sends nothing."
+    ],
+    "unknowns": [
+      "Historical days per step and review-round count were not captured."
+    ]
+  },
+  "feasibility": {
+    "schema_version": 1,
+    "request_id": "h1-heartbeat",
+    "checked_at": "2026-10-21",
+    "researcher": "Project delivery agents; historical reconstruction",
+    "official_api": "No new external API: use installed Hermes no-agent cron and its existing Telegram destination.",
+    "sign_in": "Existing owner-configured Telegram transport; wrapper holds no bot token.",
+    "cost": "No model call; no price assertion about hosting or transport.",
+    "reliability": "Check script-path rules, absolute interpreter, deadline, escaping and output cap; verify on phone.",
+    "terms_of_service": "No new API integration; separate terms review was not recorded. Recheck provider terms if scope changes.",
+    "sources": [
+      "../integrations/HERMES_H0_DRAFT.md",
+      "../../integrations/hermes/README.md",
+      "../CURRENT_STATE.md"
+    ],
+    "verdict": "feasible",
+    "reason": "The installed no-agent script route was checked and the owner confirmed Telegram delivery.",
+    "conditions": [],
+    "alternatives": [
+      "Use manual headless execution for local-only checks."
+    ]
+  },
+  "final_artifact": {
+    "kind": "workflow_spec",
+    "path": "../../integrations/hermes/h1-heartbeat.json"
+  },
+  "coverage": {
+    "basis": "Reconstructed at original delivery, before its new nodes landed; setup/transport and Start/End excluded.",
+    "total_operations": 1,
+    "existing_count": 1,
+    "new_count": 0,
+    "ratio": 1.0,
+    "existing": [
+      {
+        "operation": "Render the timestamped heartbeat",
+        "nodes": [
+          "text_output_node"
+        ],
+        "node_kind": "swiss-army"
+      }
+    ],
+    "new": []
+  },
+  "measurements": {
+    "review_rounds": null,
+    "step_visits": [],
+    "note": "Days for steps 0 through 11 and review rounds unknown; empty visits means not recorded, not zero."
+  },
+  "evidence": [
+    "../CURRENT_STATE.md",
+    "../integrations/HERMES_H0_DRAFT.md"
+  ],
+  "acceptance_checks": [
+    "Spec passes build --check in a temporary data root.",
+    "Timestamp input reaches the heartbeat text.",
+    "Normal run produces the expected message; a skipped output stays silent.",
+    "Unhandled failure reaches the transport alert path.",
+    "Live activation requires owner approval; phone confirmation is a separate check."
+  ],
+  "notes": [
+    "Heartbeat scheduled and owner-confirmed in Telegram on 2026-10-21; /aotn_heartbeat also owner-confirmed on 2026-10-22.",
+    "No live replay from this test record; use stub transport for scoring."
+  ]
+}

@@ -6,6 +6,33 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-26 — AOTN delivery loop, docs only
+
+Own worktree `/home/makin/src/nw-delivery-loop`, branch `codex/delivery-loop`,
+from fetched `origin/main` `3239b44`. Read the coordinator's 2026-10-26 notes,
+delivery-loop field guide and the H6/designer proposal before writing.
+
+- Added [Delivery Loop](DELIVERY_LOOP.md): steps 0–11, three owner approval
+  points, seven real-run lessons, request/feasibility/review/go-live templates,
+  measurements and phased future direction (not implementation approval).
+- Added two version-1 JSON Schemas and filled examples, plus three historical
+  [delivery tests](delivery_tests/README.md) with requests, verdicts, final
+  artifacts/plans, coverage, evidence and acceptance checks. Unrecorded rounds
+  and step durations remain unknown. Defined repeatable scoring and live-check
+  limits rather than claiming a fresh execution of historical requests.
+- Linked README and the restored compact TASK_INDEX pointer; retained the
+  whole archived index. Updated Current State and the designer-track pointer.
+  Updated the consolidation inventory for these docs and the existing approved
+  SMALL_WINS contract; kept archived TASK_INDEX body verification explicit.
+- Verification: all seven new JSON files parse; system Python's JSON Schema
+  validator checks both schemas, both examples and all six embedded
+  request/verdict records. Three coverage mappings and JSON source paths pass.
+  The linked heartbeat spec passes `build --check` using this worktree's code,
+  shared venv and a temporary data root. Docs consolidation (links, anchors,
+  archive bodies and session transfer) and `git diff --check` pass.
+- No application, owner workflow, live installation, service setting or paid
+  call changes. PR targets main; owner reviews/merges separately.
+
 ## 2026-10-26 — #121 P2: line-ending-safe editing and undo
 
 Continued in `/home/makin/src/nw-shared-long-text`, `codex/shared-long-text`,

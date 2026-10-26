@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "request_id": "h1-heartbeat",
+  "date": "2026-10-21",
+  "intent": "Show that AOTN can run unattended and reach Telegram.",
+  "example": {
+    "input": "A scheduled run with a checked_at timestamp.",
+    "expected_result": "AOTN alive with that timestamp appears in Telegram."
+  },
+  "target_device": "Owner phone, Telegram",
+  "destination": "Configured Telegram home alias",
+  "trigger": "Owner-approved Hermes no-agent cron job",
+  "inputs": [
+    "checked_at: string supplied by the wrapper"
+  ],
+  "constraints": [
+    "Use the separate live checkout and cron data root.",
+    "No model call; escape outside text and cap stdout."
+  ],
+  "success": [
+    "Owner sees the heartbeat.",
+    "Unhandled failure alerts; skipped output sends nothing."
+  ],
+  "unknowns": [
+    "Historical days per step and review-round count were not captured."
+  ]
+}

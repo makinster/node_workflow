@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "case_id": "c1-notify-test",
+  "baseline": "3239b44",
+  "record_status": "historical reconstruction, not a new live run",
+  "request_kind": "new-integration",
+  "request": {
+    "schema_version": 1,
+    "request_id": "c1-notify-test",
+    "date": "2026-10-21",
+    "intent": "Notify me from an AOTN run without waiting for a long run to exit.",
+    "example": {
+      "input": "One test message addressed to home.",
+      "expected_result": "Message reaches the owner through the outbox drain."
+    },
+    "target_device": "Owner phone, Telegram",
+    "destination": "Configured Telegram home alias",
+    "trigger": "One explicitly approved test run",
+    "inputs": [
+      "Configured message and destination alias"
+    ],
+    "constraints": [
+      "Never store the Telegram token in a workflow.",
+      "Use escaping, caps, dedupe and durable receipts."
+    ],
+    "success": [
+      "Owner confirms the message on Telegram.",
+      "Queue receipt and handed_off receipt remain distinct from delivery."
+    ],
+    "unknowns": [
+      "Historical review rounds and step timings were not captured."
+    ]
+  },
+  "feasibility": {
+    "schema_version": 1,
+    "request_id": "c1-notify-test",
+    "checked_at": "2026-10-21",
+    "researcher": "Project delivery agents; historical reconstruction",
+    "official_api": "Use the existing Hermes no-agent drain route; no direct bot API added to AOTN.",
+    "sign_in": "Existing Hermes destination; AOTN stores only its configured alias.",
+    "cost": "No model call; no price assertion about hosting or transport.",
+    "reliability": "Drain uses bounded messages, queue locking, dedupe and receipts; no delivered reconciler.",
+    "terms_of_service": "No new API integration; separate terms review was not recorded. Recheck provider terms if scope changes.",
+    "sources": [
+      "../integrations/HERMES_SHARED_FOLDER.md",
+      "../CURRENT_STATE.md"
+    ],
+    "verdict": "feasible",
+    "reason": "C1 #109 merged and the owner confirmed the end-to-end test message.",
+    "conditions": [],
+    "alternatives": [
+      "Use manual headless execution for local-only checks."
+    ]
+  },
+  "final_artifact": {
+    "kind": "node_plan",
+    "status": "Reconstructed delivery outline; original live workflow is outside the repo.",
+    "steps": [
+      "Start -> hermes_notify_node (message, destination home) -> quiet End",
+      "Installed no-agent drain handles transport; Record event is a separate reusable capability."
+    ]
+  },
+  "coverage": {
+    "basis": "Reconstructed at original delivery, before its new nodes landed; setup/transport and Start/End excluded.",
+    "total_operations": 1,
+    "existing_count": 0,
+    "new_count": 1,
+    "ratio": 0.0,
+    "existing": [],
+    "new": [
+      {
+        "operation": "Queue a bounded notification and receipt",
+        "nodes": [
+          "hermes_notify_node"
+        ],
+        "node_kind": "use-case"
+      }
+    ]
+  },
+  "measurements": {
+    "review_rounds": null,
+    "step_visits": [],
+    "note": "Days for steps 0 through 11 and review rounds unknown; empty visits means not recorded, not zero."
+  },
+  "evidence": [
+    "../CURRENT_STATE.md",
+    "../integrations/HERMES_SHARED_FOLDER.md"
+  ],
+  "acceptance_checks": [
+    "Notification uses a destination alias and carries no bot token.",
+    "Queue/dedupe/write-failure tests preserve messages and receipts.",
+    "Outside text cannot inject transport directives.",
+    "Queued and handed_off are never labelled delivered or read.",
+    "Owner approval precedes live send; real-device confirmation is recorded separately."
+  ],
+  "notes": [
+    "Retained c1-notify-test lives in the cron data directory; do not copy private live data into this fixture.",
+    "Owner confirmed arrival; handed_off is the highest transport receipt currently supplied."
+  ]
+}

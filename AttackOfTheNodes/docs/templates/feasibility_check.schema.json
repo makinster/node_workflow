@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Feasibility check v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "request_id",
+    "checked_at",
+    "researcher",
+    "official_api",
+    "sign_in",
+    "cost",
+    "reliability",
+    "terms_of_service",
+    "sources",
+    "verdict",
+    "reason",
+    "conditions",
+    "alternatives"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "request_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "checked_at": {
+      "type": "string",
+      "minLength": 1
+    },
+    "researcher": {
+      "type": "string",
+      "minLength": 1
+    },
+    "official_api": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sign_in": {
+      "type": "string",
+      "minLength": 1
+    },
+    "cost": {
+      "type": "string",
+      "minLength": 1
+    },
+    "reliability": {
+      "type": "string",
+      "minLength": 1
+    },
+    "terms_of_service": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "verdict": {
+      "type": "string",
+      "enum": [
+        "feasible",
+        "conditional",
+        "blocked"
+      ]
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1
+    },
+    "conditions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "alternatives": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  }
+}

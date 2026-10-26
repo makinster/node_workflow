@@ -417,6 +417,9 @@ The owner approved the following remaining order on 2026-10-22:
 - **Workflow designer:** a new track after C3. Its first step is authoring tools
   (`nodes`, `describe`, `build --check`) in `aotn mcp`; local services/commands
   remain valid integration options. This does not move Step 6 forward.
+  The [Delivery Loop](DELIVERY_LOOP.md) now documents the manual method,
+  measurements/test set and phased meta-workflow direction; it approves no
+  implementation.
 
 The [archived conversation reference](archive/plans/INTENT_ROUTING_AND_DESIGN_ASSISTANT.md)
 preserves the wider ideas and rationale. The order above is the current plan;
