@@ -464,6 +464,14 @@ keys are `enabled_when`, `visible_when`, `required_when`, `section_when`,
 `force_value_when`, and `mutually_exclusive_with` (see Dynamic Form Rule Keys
 above).
 
+`multiline` and `code` fields always use the shared three-row preview and
+full-screen editor, including nested item forms. `preview: true` is accepted
+for older specs but is unnecessary. `language`, `placeholder` and `read_only`
+are retained; inline `height` no longer sizes a multiline field. Declare long
+text by type, not by its current value's length. The getter returns the complete
+unmodified value, never preview text. See [UI Quick Reference](UI_QUICK_REFERENCE.md#shared-long-text-fields)
+for Save, Cancel, Esc, Ctrl+Q and Stash behavior.
+
 `section: "Header"` renders a bold section header above the first field of a
 consecutive run declaring the same section (e.g. `Required Inputs`,
 `Result Routing`, `AI Session`).

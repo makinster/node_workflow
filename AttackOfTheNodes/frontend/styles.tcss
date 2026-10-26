@@ -382,7 +382,7 @@ Screen {
 
 /* Generated single-line inputs are compact (one row) with a reserved left
    accent column that lights up on focus/edit. Multiline/code fields use
-   CommandTextArea and stay tall. */
+   a shared preview and open the full-screen text editor. */
 .command-input {
     width: 100%;
 }

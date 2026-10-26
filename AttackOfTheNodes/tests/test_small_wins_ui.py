@@ -4,6 +4,8 @@ from copy import deepcopy
 from pathlib import Path
 import pytest
 from textual.app import App
+from frontend.keymap import APP, bindings_for
+from frontend.keymap_runtime import KeymapScreenMixin
 from textual.widgets import Button, Checkbox, Select, Static
 from backend.event_bus import EventBus
 from backend.node_factory import NodeFactory
@@ -24,7 +26,9 @@ def make(kind='check_reply_node',**config):
     return factory,wm,node
 
 
-class Host(App):
+class Host(KeymapScreenMixin, App):
+    KEYMAP = APP
+    BINDINGS = bindings_for(KEYMAP)
     CSS_PATH='../frontend/styles.tcss'
     def __init__(self,factory,wm,node):
         super().__init__();self.factory=factory;self.workflow_map=wm;self.node=node
@@ -98,11 +102,11 @@ async def test_configured_preview_full_editor_save_cancel_and_stash():
         assert isinstance(app.screen,LongTextEditor)
         area=app.screen.query_one(CommandTextArea)
         assert area.region.height>12 and area.editing
-        await pilot.press('p');assert area.text.endswith('p')
+        await pilot.press('p');assert area.text == 'p' + original
         await pilot.press('escape','p');await pilot.pause()
-        assert area.text.endswith('ppasted')
+        assert area.text == 'ppasted' + original
         await pilot.press('e','!','ctrl+s');await pilot.pause()
-        assert preview.value.endswith('ppasted!') and app.focused is preview
+        assert preview.value == 'ppasted!' + original and app.focused is preview
         saved=preview.value
         await pilot.press('enter','x','escape','escape');await pilot.pause()
         assert app.screen.__class__.__name__=='ConfirmScreen'

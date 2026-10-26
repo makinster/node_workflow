@@ -27,7 +27,7 @@ config_tabs:
       required: true
       description: Label shown alongside the output
     template:
-      type: string
+      type: multiline
       default: '{input}'
       required: true
       description: 'Output text. Use {input} to insert the incoming value.'

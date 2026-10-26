@@ -83,6 +83,10 @@ def row_line(kind: str, row: Dict[str, Any]) -> str:
 class CompactRowButton(Button):
     """One solid role colour across selected text, cells and row padding."""
 
+    def __init__(self, *args, selected_foreground_role=None, **kwargs):
+        self.selected_foreground_role = selected_foreground_role
+        super().__init__(*args, **kwargs)
+
     def render_lines(self, crop):
         lines = super().render_lines(crop)
         if not (self.has_focus or self.has_class("nav-highlight") or self.has_class("-active")):
@@ -90,7 +94,9 @@ class CompactRowButton(Button):
         # Paint after cell styles and padding are composed, so a coloured type
         # or embedded background cannot punch through the selection. Read the
         # live role on every draw so palette changes and overrides apply.
-        style = Style(color=self.visual_style.rich_style.color,
+        foreground = (getattr(colors, self.selected_foreground_role)
+                      if self.selected_foreground_role else self.visual_style.rich_style.color)
+        style = Style(color=foreground,
                       bgcolor=colors.HIGHLIGHT, bold=True)
         return [Strip([Segment(cell.text, style, cell.control) for cell in line],
                       line.cell_length) for line in lines]

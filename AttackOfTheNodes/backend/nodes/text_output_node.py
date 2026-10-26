@@ -48,7 +48,7 @@ class TextOutputNode(Node):
             "required": True,
         },
         "template": {
-            "type": "string",
+            "type": "multiline",
             "description": "Output text. Use {input} to insert the incoming value.",
             "required": True,
         },

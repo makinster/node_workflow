@@ -351,6 +351,15 @@ CONTRACT_ROW_EDITOR = Profile('contract_row_editor', (
     Command('contract_row_editor.activate_focused', ('e', 'enter'), 'activate_focused', 'Activate', policies=NAV, priority=True, navigation='activate'),
 ), cancel_action='cancel')
 
+# The field editor owns its modal: Ctrl+Q cancels the whole draft even in TEXT.
+LONG_TEXT_EDITOR = Profile('long_text_editor', (
+    Command('long_text.cancel', ('escape',), 'cancel', 'Close', policies=NAV, priority=False),
+    Command('long_text.save', ('ctrl+s',), 'submit', 'Save field', policies=NAV_TEXT, priority=True),
+    Command('long_text.revert', ('ctrl+q',), 'cancel_draft', 'Cancel field', policies=NAV_TEXT, priority=True),
+    Command('long_text.stash', ('p',), 'stash_insert', 'Paste', policies=NAV, priority=True),
+    *NAVIGATION,
+), cancel_action='cancel')
+
 PATH_PROMPT = Profile('path_prompt', (
     Command('path_prompt.cancel', ('escape',), 'cancel', 'Cancel', policies=NAV, priority=False),
     Command('path_prompt.submit', ('ctrl+enter',), 'submit', 'Submit', policies=NAV_TEXT, priority=False),
@@ -428,7 +437,7 @@ SELECT_OVERLAY = Profile("select_overlay", (
 WIDGET_PROFILES = (TEXT_INPUT, TEXT_AREA, NAME_INPUT, STASH_PASTE, STASH_SEARCH, SELECT_OVERLAY)
 
 
-PROFILES = (CONFIRM, APP, BRANCH_KEEP_SELECTOR, BRANCH_SELECTOR, EDITOR, ERROR_DETAILS, EXECUTION, GROUP_PICKER, HELP, MERGE_BEACON_SELECTOR, NODE_CONFIG, NODE_SELECTOR, RECOVERY_BRANCH_UNPICK, SETTINGS, STASH, UNSAVED_CHANGES, USER_INPUT, WORKFLOW_LIBRARY, NAME_PROMPT, PATH_PROMPT, CONTRACT_ROW_EDITOR,)
+PROFILES = (CONFIRM, APP, BRANCH_KEEP_SELECTOR, BRANCH_SELECTOR, EDITOR, ERROR_DETAILS, EXECUTION, GROUP_PICKER, HELP, MERGE_BEACON_SELECTOR, NODE_CONFIG, NODE_SELECTOR, RECOVERY_BRANCH_UNPICK, SETTINGS, STASH, UNSAVED_CHANGES, USER_INPUT, WORKFLOW_LIBRARY, NAME_PROMPT, PATH_PROMPT, CONTRACT_ROW_EDITOR, LONG_TEXT_EDITOR,)
 
 
 def priority_for(command: Command, key: str) -> bool:

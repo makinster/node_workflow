@@ -67,6 +67,7 @@ async def test_context_item_editor_preview_save_and_reopen(size):
         preview=editor.query_one(LongTextPreview)
         preview.focus();await pilot.press('enter');await pilot.pause()
         assert isinstance(app.screen,LongTextEditor)
+        assert app.screen.field_title == 'Context Pack › Service <text> › Text'
         app.screen.query_one(CommandTextArea).text='first\nsecond\nthird'
         await pilot.press('ctrl+s');await pilot.pause()
         assert preview.value=='first\nsecond\nthird' and app.focused is preview

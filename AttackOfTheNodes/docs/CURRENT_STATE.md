@@ -1,11 +1,47 @@
 # Current State
 
-Snapshot checked **2026-10-25**, against fetched `origin/main` `9b98f48` after
-#119 merged (owner notes and fetched history). Code and fresh
+Snapshot checked **2026-10-26**, against fetched `origin/main` `334cb67` after
+#120 merged (owner notes and fetched history). Code and fresh
 GitHub checks take precedence.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
+
+## #121 line-ending/history correction — 2026-10-26
+
+The shared editor uses logical LF positions while keeping separator provenance
+separately for mixed text and native history. LF/CRLF/CR fields save in their
+opened style, including pasted/Stash text. Mixed fields preserve their separate
+endings; newly adjacent CR/LF breaks cannot silently coalesce. Save and close
+compare logical drafts, so undo restores an unchanged state and a byte-identical
+field. No workflow migration or runtime changes.
+
+Regression keys reproduce on `4e75a62`: four CR/mixed failures and two CRLF
+controls, at 80×24 and 120×40. Coverage also checks redo, clipboard paste,
+commands-mode Stash insert, mixed-history ranges, genuine saves and reopen.
+Focused checks: **116 passed**. Full suite: **2,840 passed in 498.49 seconds**;
+no WaitUntil flake retry needed. Compilation and whitespace checks passed.
+
+## Shared long-text editor — 2026-10-26, built for review
+
+Owner-approved answers 1–15 and the 2026-10-25 Save/Esc/Ctrl+Q decisions are
+implemented in `codex/shared-long-text`, own worktree `nw-shared-long-text`,
+from `origin/main` `334cb67`. All 23 existing multiline paths plus Text Output
+Template use one preview/editor through the form generator, including nested
+items. Source visibility, payload/Vault routing and saved keys are unchanged.
+
+Editor Ctrl+S applies only the field and restores preview focus; Node Config
+Ctrl+S saves the node. Two Esc stages, Ctrl+Q cancel, safe confirmation defaults,
+whole-field Stash replacement and cursor insertion use shared keyboard/modal
+patterns. Full Unicode, mixed CRLF/CR/LF and trailing blank lines survive edits.
+Selected previews/buttons use HIGHLIGHT; editor text colour stays unchanged for
+the later UI pass. Read-only fields get a viewer. No workflow migration.
+
+[Real built screens](audits/shared_long_text_2026_10_26/README.md) cover 80×24
+and 120×40. Final focused verification: **105 passed**, including the 15 shared-editor
+cases and real Stash integration; Text Output helper **2 passed** and UI contract OK.
+Full suite: **2,825 passed in 477.41 seconds**; no WaitUntil flake retry needed.
+No deployment, model calls or live configuration changes; owner merges.
 
 ## #120 P2 corrections — 2026-10-25
 

@@ -99,7 +99,8 @@ async def test_text_output_payload_tab_describes_vault_and_format(width):
         assert preview.region.height >= 3
         assert 'Source: Vault: message' in str(preview.content)
         assert '[Notice] Result: the actual text' in str(preview.content)
-        screen.query_one('#field-template', Input).value = 'Changed {input}'
+        from frontend.widgets.long_text import LongTextPreview
+        screen.query_one('#field-template', LongTextPreview).value = 'Changed {input}'
         await pilot.pause()
         assert '[Notice] Changed the actual text' in str(preview.content)
         screen.query_one('#field-input_source', Select).value = 'Upstream payload'
