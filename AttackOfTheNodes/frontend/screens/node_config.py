@@ -1742,6 +1742,9 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             self._sync_duplicate_input_source_options()
         self._scroll_changed_widget(event.select)
 
+    def on_long_text_preview_changed(self, event):
+        self._apply_generated_field_rules()
+
     def on_object_list_field_changed(self, event):
         self._sync_dynamic_options()
 

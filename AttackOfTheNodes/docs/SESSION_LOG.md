@@ -1,10 +1,53 @@
 # AttackOfTheNodes Session Log
 
-This log keeps roughly the last two weeks: entries dated October 4–25, 2026
+This log keeps roughly the last two weeks: entries dated October 4–26, 2026
 (the earliest existing entry is October 6). Every October 18 entry is retained.
 Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.md).
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
+
+## 2026-10-26 — Shared long-text editor, owner-approved rollout
+
+Own worktree `/home/makin/src/nw-shared-long-text`, branch
+`codex/shared-long-text`, clean base `334cb67` from fetched `origin/main`.
+Read the approved long-text samples/answers 1–15 and owner 2026-10-25 decisions.
+The retired OneDrive tree, authoritative working checkout and live checkout
+were not edited. No migrations, model calls, installation or live settings.
+
+- Extended the existing LongTextPreview/LongTextEditor once: all 23 multiline
+  paths and Text Output Template now use it through generated forms and nested
+  item editors. Removed the inline fallback and old inline-edit labels; helper
+  metadata matches. Existing opt-in flags remain compatible and unnecessary.
+- Three-row previews keep two source lines plus the hidden-line count, ellipsize
+  unbroken lines and retain full values. Full-screen drafts open at the start,
+  wrap/scroll, show breadcrumbs/caret/counts/Changed, and support read-only viewing.
+  The document adapter preserves each CRLF/CR/LF rather than normalizing text;
+  Unicode, literal escapes and trailing blank lines stay intact through native
+  edits and undo. Existing data/routing/runtime behavior is unchanged.
+- Editor Ctrl+S applies the field only; outer Ctrl+S saves the node. Shared
+  keymap owns cancel/save/paste/navigation. Esc stops typing before closing;
+  Ctrl+Q cancels the whole field draft, never Node Config. Discard and Stash
+  replacement start on the safe choice. Stash P replaces previews, inserts at
+  the retained editor cursor in commands mode, and types p while typing.
+- HIGHLIGHT paints selected previews, editor buttons, selection and these two
+  confirmations through shared role styling; other confirmation defaults and
+  the editor's normal text colour are retained. Selected action buttons use
+  NAME for readable text on HIGHLIGHT; unselected warning colours are unchanged. The orange text/bar cleanup
+  remains a UI-pass note.
+- Updated existing inline-editor assertions to the approved field-then-node
+  Save behavior rather than dropping coverage. New checks include 80×24 keys,
+  safe defaults, focus, read-only/disabled/hidden fields, nested rows, all 24
+  paths, exact endings/undo, live colour role and the real app/Stash picker.
+  Final focused checks **105 passed**, including 15 shared-editor cases;
+  Text Output helper **2 passed**, UI contract OK. Full suite: **2,825 passed
+  in 477.41 seconds**; no WaitUntil flake retry needed. Compilation and
+  `git diff --check` passed.
+- A before/after regression caught Text Output's formatted Payloads preview
+  retaining the old Template after field Save. Shared value-change messages
+  now refresh generated rules and routing previews before saving the node.
+- Captured and visually checked [18 real built screens](audits/shared_long_text_2026_10_26/README.md)
+  at 80×24 and 120×40, SVG plus PNG with a repeatable temporary-data harness.
+  Headless checks do not replace owner terminal review. Owner merges.
 
 ## 2026-10-25 — #120 review: escaped Secrets and metadata caps
 

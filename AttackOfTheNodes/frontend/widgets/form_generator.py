@@ -22,7 +22,7 @@ from textual.widgets import (
     TextArea,
 )
 
-from frontend.widgets.command_input import CommandInput, CommandTextArea
+from frontend.widgets.command_input import CommandInput
 
 
 WidgetGetter = Callable[[], Dict[str, Any]]
@@ -394,24 +394,13 @@ def _widget_for_field(
             allow_blank=False,
         )
     if field_type in {"multiline", "code"}:
-        if field_schema.get("preview"):
-            from .long_text import LongTextPreview
-            return LongTextPreview(value, id=f"field-{field_name}")
-        widget = CommandTextArea(
-            "" if value is None else str(value),
-            id=f"field-{field_name}",
-            placeholder=placeholder,
+        from .long_text import LongTextPreview
+        return LongTextPreview(
+            value, id=f"field-{field_name}", placeholder=placeholder,
+            field_label=field_schema.get("label") or field_name.replace("_", " ").title(),
+            read_only=bool(field_schema.get("read_only", False)),
             language=field_schema.get("language") if field_type == "code" else None,
         )
-        # TextArea's flexible default collapses to its borders inside an
-        # auto-height generated form, leaving no visible text/cursor rows.
-        height = field_schema.get("height", 6)
-        if height is not None:
-            try:
-                widget.styles.height = max(1, int(height))
-            except (TypeError, ValueError):
-                pass
-        return widget
     if field_type == "boolean":
         return Checkbox(value=bool(value), id=f"field-{field_name}")
     if field_type == "select":

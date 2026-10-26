@@ -1,0 +1,144 @@
+{
+  "base": "334cb67",
+  "screens": [
+    {
+      "file": "node-previews-80x24.svg",
+      "size": [
+        80,
+        24
+      ]
+    },
+    {
+      "file": "editor-wrapped-80x24.svg",
+      "size": [
+        80,
+        24
+      ]
+    },
+    {
+      "file": "editor-commands-80x24.svg",
+      "size": [
+        80,
+        24
+      ]
+    },
+    {
+      "file": "discard-confirm-80x24.svg",
+      "size": [
+        80,
+        24
+      ]
+    },
+    {
+      "file": "replace-confirm-80x24.svg",
+      "size": [
+        80,
+        24
+      ]
+    },
+    {
+      "file": "editor-empty-80x24.svg",
+      "size": [
+        80,
+        24
+      ]
+    },
+    {
+      "file": "node-unbroken-80x24.svg",
+      "size": [
+        80,
+        24
+      ]
+    },
+    {
+      "file": "nested-editor-80x24.svg",
+      "size": [
+        80,
+        24
+      ]
+    },
+    {
+      "file": "text-output-template-80x24.svg",
+      "size": [
+        80,
+        24
+      ]
+    },
+    {
+      "file": "node-previews-120x40.svg",
+      "size": [
+        120,
+        40
+      ]
+    },
+    {
+      "file": "editor-wrapped-120x40.svg",
+      "size": [
+        120,
+        40
+      ]
+    },
+    {
+      "file": "editor-commands-120x40.svg",
+      "size": [
+        120,
+        40
+      ]
+    },
+    {
+      "file": "discard-confirm-120x40.svg",
+      "size": [
+        120,
+        40
+      ]
+    },
+    {
+      "file": "replace-confirm-120x40.svg",
+      "size": [
+        120,
+        40
+      ]
+    },
+    {
+      "file": "editor-empty-120x40.svg",
+      "size": [
+        120,
+        40
+      ]
+    },
+    {
+      "file": "node-unbroken-120x40.svg",
+      "size": [
+        120,
+        40
+      ]
+    },
+    {
+      "file": "nested-editor-120x40.svg",
+      "size": [
+        120,
+        40
+      ]
+    },
+    {
+      "file": "text-output-template-120x40.svg",
+      "size": [
+        120,
+        40
+      ]
+    }
+  ],
+  "sources": {
+    "frontend/styles.tcss": "f40ac442e23bacbf86435e38928a88a3721cc8bd0248e5e91864ca662bea4cac",
+    "frontend/colors.py": "d346d3aefb11d54f79a60d99d0c6ed1a8e732c338941b5021804917881bab3f1",
+    "frontend/keymap.py": "722d5150e7a2986df2733c614dc74a1a6bc6b1d6fc9daf4026f0e7dece35e74e",
+    "frontend/widgets/long_text.py": "439be4ba8cd2c4c7e3e842190a97af6191e3ec3d5c343464d9e3fb8fc86a5851",
+    "frontend/widgets/long_text_document.py": "c4355a79c588192b1616b87b139a7cf6dd3089c48eab80b6501c007ba2d60576",
+    "frontend/widgets/form_generator.py": "5dcfb6aace00e8cbc9d3c54697208f3f85a31cbca9d31fe7f7da878ffc9bbe49",
+    "frontend/screens/confirm.py": "8c0a59537d0b5d4ed6129e9ef3f0f6f0cee15e00c6b43a046bd11b7ebe395774",
+    "frontend/screens/node_config.py": "5eea7c7779c706679f68f6ce5876c369f9364c21612d1cdbacc49625e03ddcfc",
+    "frontend/widgets/context_items.py": "8c4b2fcf50067c4554c0c41372291df407138e099248b6910d995b39002e9887",
+    "frontend/widgets/contract_rows.py": "ce5e62a7d930e4180446216a96adb4a3d7497690d98d48f74c49319fd54fe719",
+    "tests/test_small_wins_ui.py": "9a0c6ec3de3fa94adb0f67706f7c5e2319f41d03348e9881b52d47b8457c4d1f"
+  }
+}

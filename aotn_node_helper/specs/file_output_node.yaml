@@ -21,7 +21,7 @@ inputs:
     default: 'upstream'
     parameter:
       type: 'multiline'
-      label: 'Content (E to edit, ESC to finish)'
+      label: 'Content'
   file_path:
     type: 'file'
     required: True

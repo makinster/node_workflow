@@ -80,7 +80,7 @@ def _context_config_schema() -> Dict[str, Dict[str, Any]]:
         }
         schema[port] = {
             "type": "multiline",
-            "label": f"Context {index} (E to edit, ESC to finish)",
+            "label": f"Context {index}",
             "required": False,
             "tab": "Parameters",
             "visible_when": {
@@ -224,14 +224,14 @@ class ChatCompletionNode(Node):
         },
         "prompt": {
             "type": "multiline",
-            "label": "Prompt (E to edit, ESC to finish)",
+            "label": "Prompt",
             "required": False,
             "tab": "Parameters",
             "visible_when": {"prompt_source": "Configured"},
         },
         "document": {
             "type": "multiline",
-            "label": "Document (E to edit, ESC to finish)",
+            "label": "Document",
             "required": False,
             "tab": "Parameters",
             "visible_when": {"document_source": "Configured"},

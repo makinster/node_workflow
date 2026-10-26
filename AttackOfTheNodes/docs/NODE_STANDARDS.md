@@ -51,6 +51,15 @@ keys `enabled_when`, `visible_when`, `required_when`, `section_when`,
 particular "What the Config UI Renders Automatically" — and
 `aotn_node_helper/specs/file_output_node.yaml`.
 
+## Shared long text in forms
+
+Declare prompts, templates, messages and similar long content `multiline`.
+The form generator uses the same preview/full-screen editor for every such
+field and nested item; `preview: true` is unnecessary. Short fields remain
+inline. Source visibility, forwarding and routing are unchanged; the getter
+keeps the complete value. Editor Ctrl+S applies the field only; Node Config
+Ctrl+S saves the node. See [the shared keyboard and preservation rules](UI_QUICK_REFERENCE.md#shared-long-text-fields).
+
 ## Standard Input Source Model
 
 Every node input that can accept external data offers up to three source
@@ -195,7 +204,7 @@ object and publishes a parsed record; mismatch uses the engine error path.
 All three use the standard **Forward incoming payload unchanged** checkbox,
 default off; enabled Vault outputs keep the node's own result. The Check reply
 expected-field table reuses Start's compact row/editor pattern via an opted-in
-schema presentation. Configured Reply opts into the shared long-text preview.
+schema presentation. Configured Reply uses the shared long-text preview.
 See [contracts, caps and errors](SMALL_WINS.md).
 
 ## Ask Hermes (C3b part 1, owner 2026-10-22)

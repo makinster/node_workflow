@@ -1977,14 +1977,15 @@ async def _test_form_generator_honors_generic_schema_hints():
     app = HintFormApp()
     async with app.run_test():
         duration = app.query_one("#field-duration", Input)
-        notes = app.query_one("#field-notes", TextArea)
+        from frontend.widgets.long_text import LongTextPreview
+        notes = app.query_one("#field-notes", LongTextPreview)
         modes = app.query_one("#field-modes", SelectionList)
 
         assert duration.value == "0"
         assert duration.placeholder == "0.25"
         assert any(isinstance(validator, Number) for validator in duration.validators)
         assert notes.placeholder == "Optional long text"
-        assert notes.styles.height.value == 6
+        assert notes.styles.height.value == 3
         assert set(modes.selected) == {"safe", "verbose"}
         assert getter_holder["get_values"]()["modes"] == ["safe", "verbose"]
 
@@ -4866,10 +4867,10 @@ async def _test_node_config_repeatable_context_inputs_reveal_by_count():
         assert context_1_text.display is True
         assert context_2_text.display is True
         assert str(app.query_one("#field-label-context_1", Label).content) == (
-            "Context 1 (E to edit, ESC to finish):"
+            "Context 1:"
         )
         assert str(app.query_one("#field-label-context_2", Label).content) == (
-            "Context 2 (E to edit, ESC to finish):"
+            "Context 2:"
         )
 
         context_1_source.value = "Vault"
@@ -5375,7 +5376,8 @@ async def _test_file_writer_configured_content_has_visible_keyboard_editor():
         async with app.run_test(size=(width, 24)) as pilot:
             await pilot.pause()
             screen = app.screen
-            content = screen.query_one("#field-content", CommandTextArea)
+            from frontend.widgets.long_text import LongTextPreview
+            content = screen.query_one("#field-content", LongTextPreview)
             assert not content.display
             source = screen.query_one("#field-content_source", Select)
             source.value = "Configured"
@@ -5384,17 +5386,21 @@ async def _test_file_writer_configured_content_has_visible_keyboard_editor():
             await pilot.press("2")
             await pilot.pause()
             assert app.focused is content
-            assert content.content_region.height >= 4
-            assert content.content_region.intersection(screen.region).height >= 4
+            assert content.content_region.height == 3
+            assert content.content_region.intersection(screen.region).height == 3
             await pilot.press("e")
-            assert content.editing and not content.read_only
-            assert content.has_class("editing")
+            await pilot.pause()
+            area = app.screen.query_one(CommandTextArea)
+            assert area.editing and not area.read_only
+            assert area.region.height > 10
             await pilot.press("h", "i", "enter", "w", "s", "a", "d", "2")
-            assert content.text == "hi\nwsad2"
-            assert content.selection.end == (1, 5)
+            assert area.text == "hi\nwsad2"
+            assert area.selection.end == (1, 5)
             assert screen.query_one("#node-config-tabs", TabbedContent).active == "node-config-tab-parameters"
             await pilot.press("escape")
-            assert not content.editing and content.read_only
+            assert not area.editing and area.read_only
+            await pilot.press("ctrl+s"); await pilot.pause()
+            assert app.focused is content and content.value == "hi\nwsad2"
             await pilot.press("s")
             assert app.focused is not content
             # UX5: Ctrl+S saves and stays open; closing returns the save.

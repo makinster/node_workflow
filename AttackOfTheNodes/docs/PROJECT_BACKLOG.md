@@ -212,8 +212,9 @@ Meanwhile new screens reuse the existing tokens rather than invent colours.
 
 - **Node selector sorting:** [existing proposal](#node-selector-sorting--after-c3a-owner-2026-10-22);
   grouping/sorting samples before UI changes. Its existing schedule is unchanged.
-- **Shared long-text fields — after C3b (owner, 2026-10-22): proposal, samples first.**
-  Not approved implementation work; do not block C3b. Implement once in the
+- **Shared long-text fields — built for review, 2026-10-26.**
+  Owner approved samples/answers 1–15 on 2026-10-25, superseding the earlier
+  proposal-only status. Implemented once in the
   shared multiline widget/form generator for prompts, tasks, templates and
   messages, with no per-node editors. Show only the first 2–3 lines plus
   `… N more lines`; no inline multiline editing. E/Enter opens a full-screen
@@ -224,7 +225,14 @@ Meanwhile new screens reuse the existing tokens rather than invent colours.
   at the cursor through the existing CommandTextArea mode switch: Esc stops
   typing, P pastes, E resumes. Plain P still types “p” while typing (Stash S3).
   Short single-line fields stay inline. Reuse existing navigation, modal
-  behavior and `colors.py` styling; review samples at 80×24 before implementation.
+  behavior and `colors.py` styling. Approved samples preceded implementation;
+  [built screens](audits/shared_long_text_2026_10_26/README.md) cover 80×24 and 120×40.
+  All 23 existing multiline paths plus Text Output Template use the shared
+  widget, including nested rows. Editor Ctrl+S applies the field only; Node
+  Config Ctrl+S saves the node. First Esc stops typing, second closes; Ctrl+Q
+  cancels the draft, asking when changed. These bindings live in the shared
+  keymap and may be revisited in the UI pass. Editor text colour and the orange
+  left bar remain a later UI-pass item; this build leaves them unchanged.
 
   **Small-wins scope update (owner, 2026-10-23):** Check reply opts into the
   shared preview/editor in this PR after approved samples at 80×24. This is

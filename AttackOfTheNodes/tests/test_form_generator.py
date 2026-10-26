@@ -281,14 +281,19 @@ def test_code_field_sets_language():
 
 
 async def _test_code_field_sets_language():
+    from frontend.widgets.long_text import LongTextPreview
     from frontend.widgets.command_input import CommandTextArea
 
     schema = {
         "script": {"type": "code", "label": "Script", "language": "python"},
     }
     app, _ = _mount_form(schema, {"script": "print('hi')"})
-    async with app.run_test():
-        area = app.query_one("#field-script", CommandTextArea)
+    async with app.run_test() as pilot:
+        preview = app.query_one("#field-script", LongTextPreview)
+        assert preview.language == "python"
+        assert preview.value == "print('hi')"
+        preview.press(); await pilot.pause()
+        area = app.screen.query_one(CommandTextArea)
         assert area.language == "python"
         assert area.text == "print('hi')"
     print("test_code_field_sets_language PASSED")

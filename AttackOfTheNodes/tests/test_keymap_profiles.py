@@ -25,6 +25,7 @@ OWNER_TYPES = [
         ("recovery_branch_unpick", "RecoveryBranchUnpickScreen"),
     ]],
     ("frontend.widgets.contract_rows", "ContractRowEditor"),
+    ("frontend.widgets.long_text", "LongTextEditor"),
     ("frontend.widgets.command_input", "CommandInput"),
     ("frontend.widgets.command_input", "CommandTextArea"),
     ("frontend.widgets.select_keymap", "SelectOverlay"),
@@ -178,6 +179,7 @@ def test_remapped_screen_navigation_does_not_survive_in_text_widget_fallback():
 
 @pytest.mark.parametrize("key", ["ctrl+s", "ctrl+enter"])
 def test_node_config_multiline_save_commits_and_stays_open(key):
+    from frontend.widgets.long_text import LongTextPreview
     from backend.stash_manager import StashManager
     from frontend.widgets.command_input import CommandTextArea
     from tests.test_stash_insert import _config_app
@@ -190,15 +192,18 @@ def test_node_config_multiline_save_commits_and_stays_open(key):
             screen = await open_config(pilot)
             await pilot.press("2")
             await pilot.pause()
-            field = screen.query_one("#field-content", CommandTextArea)
-            field.begin_edit()
+            field = screen.query_one("#field-content", LongTextPreview)
+            field.focus(); await pilot.press("e"); await pilot.pause()
+            area = app.screen.query_one(CommandTextArea)
             await pilot.press(*"first", "enter", *"second")
-            expected = field.text
+            expected = area.text
             assert "\n" in expected
+            await pilot.press("ctrl+s"); await pilot.pause()
+            assert field.value == expected and screen._saved_result is None
             await pilot.press(key)
             await pilot.pause()
             assert app.screen is screen
-            assert not field.editing
+            assert app.focused is field
             assert screen._saved_result["config"]["content"] == expected
 
     asyncio.run(go())

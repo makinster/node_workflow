@@ -78,9 +78,38 @@ to the unsaved config draft. Callable workflows show ` [sub]` in the header.
 - `Esc` ends text editing and preserves text. In a single-line field Enter
   and Tab also finish editing; Enter remains a newline in CommandTextArea.
   `Ctrl+Enter` ends multiline editing (a screen may use it to submit/save).
-- `Ctrl+Q` while editing reverts that field to its edit-start value.
+- `Ctrl+Q` while editing an inline field reverts it to its edit-start value.
+  The full-screen long-text editor owns its whole draft instead (below).
 - Selection lists must not trap movement: W/S or up/down should exit to the
   previous/next widget at list boundaries.
+
+## Shared long-text fields
+
+Every multiline form field shows two source lines and, when needed,
+`… N more lines` in a three-row preview. Long lines end with an ellipsis;
+the stored value stays complete. Short single-line fields remain inline.
+
+- E/Enter opens a wrapping, scrolling full-screen editor at the start of the
+  text. Its title names the node, optional item label, and field. The quiet
+  count line shows caret position, characters, source lines and Changed.
+- Save / Ctrl+S puts the entire draft back into the field and focuses its
+  preview. It does **not** save the node. Cancel explicitly discards the draft.
+- First Esc stops typing; the next closes. With changes, it asks **Discard
+  changes?**, starting on **Keep editing**. Ctrl+Q asks immediately when changed,
+  otherwise closes; it never closes Node Config. Keep editing retains the draft.
+- On a preview, P chooses Stash text to replace the entire value. A nonempty
+  field asks **Replace all the text?**, starting on Cancel. In the editor,
+  Esc then P inserts at the retained cursor; E/Enter resumes typing. Plain p
+  types p while editing. Cancelling the picker changes nothing.
+- Unicode, CRLF/CR/LF (including mixed endings) and trailing blank lines survive
+  open, edit, Save and Cancel. Existing validation and limits still apply.
+  Read-only fields open a viewer with Close; disabled/hidden fields stay so.
+
+This includes generated and nested multiline fields. Text Output Template is
+multiline; its Label and Prompt stay inline. The legacy oversized User Text
+Input Vault-key widget is outside this rollout. Bindings belong to
+`frontend/keymap.py`; editor text-colour changes remain a later UI-pass item.
+[Built screens at 80×24 and 120×40](audits/shared_long_text_2026_10_26/README.md).
 
 ## Node Config Shape
 
@@ -97,9 +126,9 @@ Node configs share these section meanings (switch visible tabs with number keys)
 
 ## Node Config Saving (UX5)
 
-- `Ctrl+S` (or `Ctrl+Enter`) saves and keeps the node editor open. While a
-  text field or multi-line box is being edited it commits the text and leaves
-  editing first; Enter in a multi-line box stays a newline.
+- `Ctrl+S` (or `Ctrl+Enter`) in Node Config saves and keeps the node editor
+  open, committing an active inline edit first. In the full-screen text editor,
+  Ctrl+S applies the field only; use Node Config Ctrl+S afterward to save the node.
 - The Save button saves and closes.
 - Number fields (C5): a value that is not a number, not finite or out of
   range blocks the save; the problem shows in red under the field, the

@@ -394,7 +394,8 @@ def test_ctrl_enter_saves_and_stays_like_ctrl_s():
     _run(workflow_map, fetch, check)
 
 
-def test_ctrl_s_commits_a_text_area_being_edited():
+def test_ctrl_s_applies_multiline_field_then_saves_node():
+    from frontend.widgets.long_text import LongTextPreview
     from frontend.widgets.command_input import CommandTextArea
 
     workflow_map, start, _fetch, _after = _line()
@@ -407,16 +408,20 @@ def test_ctrl_s_commits_a_text_area_being_edited():
         screen = app.screen
         await pilot.press("2")
         await _settle(pilot)
-        content = screen.query_one("#field-content", CommandTextArea)
+        content = screen.query_one("#field-content", LongTextPreview)
         content.focus()
         await pilot.press("e")
-        assert content.editing
+        await _settle(pilot)
+        area = app.screen.query_one(CommandTextArea)
+        assert area.editing
         await pilot.press("h", "i", "enter", "x")
-        assert content.text == "hi\nx"  # Enter stays a newline
+        assert area.text == "hi\nx"  # Enter stays a newline
         await pilot.press("ctrl+s")
         await _settle(pilot)
-        assert not content.editing
+        assert app.focused is content and content.value == "hi\nx"
         assert app.screen is screen
+        assert workflow_map.get_node_data(writer)["config"]["content"] == ""
+        await pilot.press("ctrl+s"); await _settle(pilot)
         assert workflow_map.get_node_data(writer)["config"]["content"] == "hi\nx"
 
     _run(workflow_map, writer, check)

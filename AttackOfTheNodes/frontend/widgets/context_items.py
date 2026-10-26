@@ -86,7 +86,8 @@ class ContextItemEditor(ContractRowEditor):
                     yield Select(options, value=key or Select.NULL, allow_blank=True, id='row-key')
                 with Vertical(id='row-text-holder'):
                     yield Label('Text')
-                    yield LongTextPreview(self.row.get('text', ''), id='row-text')
+                    yield LongTextPreview(self.row.get('text', ''), id='row-text', field_label='Text',
+                                          context_label=lambda: self.query_one('#row-label', CommandInput).value)
                     yield Static('e/Enter: edit full text · P: replace', classes='form-description')
                 yield Static('Use the single incoming value. No file is opened.', id='row-upstream', classes='form-description')
                 yield Static('', id='row-error', classes='field-error', markup=False)
