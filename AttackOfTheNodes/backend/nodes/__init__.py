@@ -60,8 +60,10 @@ from .io.read_lines_node import ReadLinesNode
 from .io.find_lines_node import FindLinesNode
 from .data.check_reply_node import CheckReplyNode
 from .data.context_pack_node import ContextPackNode
+from .ai.ask_local_model_node import AskLocalModelNode
 
 ALL_NODE_CLASSES = [
+    AskLocalModelNode,
     ContextPackNode,
     CheckReplyNode,
     FindLinesNode,

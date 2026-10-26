@@ -40,6 +40,9 @@ DEFAULT_SETTINGS: Dict[str, Any] = {
     # C3c: account starts per UTC day, not a dollar cap.
     "hermes_investigations_per_day": 5,
     "hermes_investigation_profile_home": "~/.hermes/profiles/aotn",
+    # Per-machine endpoint/model; workflows can override only the model name.
+    "local_model_server_url": "http://localhost:11434",
+    "local_model_default_model": "",
 }
 
 

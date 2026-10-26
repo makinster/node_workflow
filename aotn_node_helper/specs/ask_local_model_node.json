@@ -1,0 +1,208 @@
+{
+  "node_type": "ask_local_model_node",
+  "class_name": "AskLocalModelNode",
+  "category": "ai",
+  "primary_family": "Complex",
+  "display_name": "Ask local model",
+  "default_alias": "Ask local model",
+  "description": "Ask one question on your local Ollama server; returns one answer",
+  "selector_section": "AI",
+  "icon_name": "message-circle",
+  "tags": [
+    "local",
+    "Ollama",
+    "question",
+    "JSON"
+  ],
+  "inputs": {
+    "input": {
+      "name": "Question",
+      "type": "string",
+      "required": true,
+      "sources": [
+        "upstream",
+        "vault",
+        "configured"
+      ],
+      "default": "configured",
+      "parameter": {
+        "type": "multiline",
+        "label": "Question",
+        "preview": true,
+        "height": 5,
+        "description": "One question, no tools or history. Optional Context is data, not instructions."
+      }
+    },
+    "context": {
+      "name": "Context",
+      "type": "string",
+      "required": false,
+      "sources": [
+        "upstream",
+        "vault",
+        "configured"
+      ],
+      "default": "configured",
+      "parameter": {
+        "type": "multiline",
+        "label": "Context",
+        "preview": true,
+        "height": 5,
+        "description": "Optional facts; max 8,000 characters within the 20,000-character question limit."
+      }
+    }
+  },
+  "outputs": {
+    "default": {
+      "name": "Answer",
+      "type": "string",
+      "required": true,
+      "to": [
+        "downstream",
+        "vault"
+      ],
+      "pass_through": true,
+      "description": "The final answer as text; JSON mode still returns text"
+    },
+    "details": {
+      "name": "Run details",
+      "type": "var",
+      "to": [
+        "vault"
+      ],
+      "description": "Model, token counts, wall time and server durations; no prompt or thinking trace"
+    }
+  },
+  "output_routing": {
+    "default": "transient",
+    "vault": {
+      "mode": "optional"
+    }
+  },
+  "config_tabs": {
+    "Parameters": {
+      "model": {
+        "type": "string",
+        "label": "Model override",
+        "default": "",
+        "placeholder": "Blank = Options default"
+      },
+      "timeout": {
+        "type": "integer",
+        "label": "Stop after (seconds)",
+        "default": 180,
+        "min": 10,
+        "max": 600,
+        "description": "Includes loading and waiting. A timeout stops waiting; no automatic retry."
+      },
+      "reply_json": {
+        "type": "boolean",
+        "label": "Reply as JSON",
+        "default": false,
+        "description": "Returns JSON text. Use Check reply for expected fields."
+      },
+      "thinking": {
+        "type": "boolean",
+        "label": "Thinking",
+        "default": false,
+        "description": "Off by default. Only the final answer is returned."
+      },
+      "num_ctx": {
+        "type": "integer",
+        "label": "Context window (tokens)",
+        "default": 8192,
+        "min": 512,
+        "max": 262144,
+        "description": "Larger windows use more memory. Character caps do not guarantee token fit."
+      },
+      "temperature": {
+        "type": "number",
+        "label": "Temperature",
+        "default": 0.2,
+        "min": 0,
+        "max": 2
+      },
+      "max_tokens": {
+        "type": "integer",
+        "label": "Max output tokens",
+        "default": 2048,
+        "min": 1,
+        "max": 8192
+      }
+    }
+  },
+  "errors": [
+    {
+      "code": "settings_invalid",
+      "description": "Check the local server URL and default model in Options.",
+      "retryable": false
+    },
+    {
+      "code": "invalid_config",
+      "description": "Check the local-model inputs, limits and Vault outputs.",
+      "retryable": false
+    },
+    {
+      "code": "server_unreachable",
+      "description": "Start Ollama or check its URL in Options.",
+      "retryable": false
+    },
+    {
+      "code": "model_missing",
+      "description": "Choose a model already installed on the server.",
+      "retryable": false
+    },
+    {
+      "code": "local_model_required",
+      "description": "Choose an installed local model, not a cloud model.",
+      "retryable": false
+    },
+    {
+      "code": "server_busy",
+      "description": "The local server is busy.",
+      "retryable": false
+    },
+    {
+      "code": "timed_out",
+      "description": "Stopped waiting at the time limit.",
+      "retryable": false
+    },
+    {
+      "code": "server_error",
+      "description": "The local server could not finish the request.",
+      "retryable": false
+    },
+    {
+      "code": "response_too_large",
+      "description": "The local server response or answer is too large.",
+      "retryable": false
+    },
+    {
+      "code": "incomplete_reply",
+      "description": "The local server did not finish the answer.",
+      "retryable": false
+    },
+    {
+      "code": "invalid_response",
+      "description": "The local server did not return a valid answer.",
+      "retryable": false
+    },
+    {
+      "code": "thinking_unsupported",
+      "description": "This model cannot honour the selected thinking setting.",
+      "retryable": false
+    },
+    {
+      "code": "text_too_long",
+      "description": "The assembled question is too long.",
+      "retryable": false
+    },
+    {
+      "code": "context_too_long",
+      "description": "The Context is too long.",
+      "retryable": false
+    }
+  ],
+  "execution_template": "producer",
+  "payload_field": false
+}

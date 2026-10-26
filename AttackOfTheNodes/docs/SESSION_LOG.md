@@ -6,6 +6,52 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-26 — Ask local model, approved build through step 5
+
+Own worktree `/home/makin/src/nw-local-model`, branch `codex/ask-local-model`,
+from fetched `origin/main` `27d16bc`; main still current before publication.
+Owner approved decisions/samples 1–10, visible per-node tuning and one fixed
+small smoke scenario repeated once. Preserved planning records and approval wait.
+
+- Helper-authored and registered `ask_local_model_node`; standard Question /
+  optional Context, Answer / optional Run details Vault, forwarding and shared
+  long-text forms. Added per-machine Options URL/model, with no model hardcoded.
+  Context window, temperature and output limit remain visible per node.
+- Reused the bounded HTTP pattern: local tags/show preflight then one native
+  nonstreaming chat under one deadline, explicit thinking/JSON/keep-alive,
+  input/output caps, safe coded errors and typed selected metrics. No retries,
+  auto-pull/start, CLI, tools/history, cloud fallback or raw error/trace logging.
+- Fake local server and real-engine checks cover sources, metadata, HTTP/errors,
+  timeouts/cancellation, caps, JSON, forwarding identity and independent Vault
+  outputs. Production-style 80×24/120×40 UI checks compare runtime/declared/UI
+  source sets and discover compatible upstream secondary Vault text, excluding
+  incompatible/downstream-only keys; Save/Cancel/reopen and Options pass.
+- Exactly **two** real local generation calls, same short JSON question,
+  thinking off, 64-token output budget and 180-second deadline. Cold wall
+  **35.180 s**, load **27.336 s**; repeat wall **2.929 s**, load **0.008 s**.
+  No resident model before the first call; prompt-cache reuse on the repeat.
+  Both returned `{"ok": true}` and passed Check reply. An initial harness
+  setup validation failure made no chat request; its private receipt is retained.
+  No additional inference, preload/unload, pull or service/config changes.
+- Carried [draft delivery case](delivery_tests/ask-local-model.json) into this
+  PR: original coverage 75%, candidate 100%, approval/step timestamps, zero
+  review rounds, smoke replies/metrics and checks through step 5. Independent
+  review, merge, go-live and device proof remain pending. Added a checkable
+  [example](../examples/ask_local_model.json) and [contract](integrations/LOCAL_MODEL.md).
+- Generated producer smoke deliberately changed to reject a missing required
+  Question before network. First full run: 2,918 passed, one hard-coded shared
+  multiline-inventory count failed. Added explicit new-field checks and updated
+  expected inventory to 26 fields/13 types. The next full run found the new
+  example missing from its registry; registered clean warnings and expected
+  outline so build/save/reload is checked too. Focused example/inventory checks
+  **27 passed**. **Final full suite: 2920 passed in 502.05 seconds**. No WaitUntil flake
+  retry needed. Helper node **2 passed**, UI contract OK; compilation, example
+  `build --check`, JSON/schema/coverage/source hashes, docs consolidation and
+  `git diff --check` pass. [17 real SVG/PNG screen pairs](audits/local_model_2026_10_26/README.md)
+  include Source/Parameters/Payloads, long text, selector, workflow and Options.
+- No owner workflow, live Options, schedule, notification or installation change.
+  PR targets main; no merge or go-live performed.
+
 ## 2026-10-26 — AOTN delivery loop, docs only
 
 Own worktree `/home/makin/src/nw-delivery-loop`, branch `codex/delivery-loop`,

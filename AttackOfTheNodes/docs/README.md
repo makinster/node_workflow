@@ -21,6 +21,7 @@ with templates, measurements and a small delivery test set.
 | Deliver a workflow request | [Delivery Loop](DELIVERY_LOOP.md) | `docs/templates/`, `docs/delivery_tests/`; owner gates and docs checks |
 | Build or inspect workflows | [Workflow Authoring](WORKFLOW_AUTHORING.md) | `backend/authoring.py`, `tests/test_authoring.py`, `tests/test_authoring_examples.py` |
 | Review or test the Hermes H0 adapter | [H0 contract](integrations/HERMES_H0_DRAFT.md), [adapter guide](../integrations/hermes/README.md) | `integrations/hermes/`, `tests/test_hermes_adapter.py`; no installed wrapper or cron job |
+| Ask an installed local model | [Local model contract](integrations/LOCAL_MODEL.md) | `backend/integrations/local_model.py`, `tests/test_local_model*.py` |
 | Connect local MCP clients | [MCP setup and tools](integrations/MCP.md) | `aotn_mcp/`, `tests/test_mcp.py`; local stdio, explicit data root |
 | Declare workflow inputs/results or pass run inputs | [Workflow contracts](WORKFLOW_AUTHORING.md#contracts-inputs-results-and-callable-workflows) | `backend/contracts.py`, `tests/test_contracts.py` |
 | Add/change a node | [Node Standards](NODE_STANDARDS.md), then [Node Helper](NODE_HELPER.md) | `backend/nodes/`, helper safety and commands in Node Helper |

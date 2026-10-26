@@ -413,7 +413,10 @@ The owner approved the following remaining order on 2026-10-22:
   sorting is [backlogged after C3a](PROJECT_BACKLOG.md#node-selector-sorting--after-c3a-owner-2026-10-22).
 - **Easy nodes:** follow the existing [helper rule](NODE_HELPER.md); add reusable
   ports-per-choice support when the router needs it, not before the first node.
-- **Local models:** an experiment after C3a, comparing the same real choices.
+- **Local models:** owner-approved Ask local model slice (2026-10-26), built
+  for review: [contract](integrations/LOCAL_MODEL.md), measured delivery case
+  and cold/warm smoke. Per-node context/temperature/output tuning remains
+  visible for future meta-workflows; broader comparisons remain later work.
 - **Workflow designer:** a new track after C3. Its first step is authoring tools
   (`nodes`, `describe`, `build --check`) in `aotn mcp`; local services/commands
   remain valid integration options. This does not move Step 6 forward.

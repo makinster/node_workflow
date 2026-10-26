@@ -311,6 +311,11 @@ Direct-add nodes that pair with the Loop Branch node.
 
 ### Section: AI
 
+Direct add: **Ask local model** (`ask_local_model_node`), built for review.
+One text Question plus optional Context; native Ollama, optional JSON,
+per-node tuning, Answer and optional Vault Run details.
+[Contract](integrations/LOCAL_MODEL.md).
+
 #### Group: AI Processing
 
 | Node | Status | Notes / Maps from |

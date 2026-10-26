@@ -7,6 +7,10 @@ No fixture is permission to run a live workflow, spend money or send a message.
 - [Notify me](c1-notify-test.json): new-integration at delivery; reconstructed node plan.
 - [Investigation test](c3c-investigate-test.json): new-integration at delivery; reconstructed node plan.
 
+In progress: [Ask local model](ask-local-model.json), owner-approved build
+through step 5, with original 3/4 coverage, approval timing and two-request
+cold/warm smoke. Review/merge/go-live remain pending.
+
 These three requests finished with owner-confirmed Telegram results. The
 heartbeat/C1 evidence is in [Current State](../CURRENT_STATE.md); investigation
 live proof is from the coordinator's 2026-10-23 shared notes. Repository contracts
