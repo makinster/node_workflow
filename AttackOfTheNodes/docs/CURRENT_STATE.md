@@ -7,9 +7,10 @@ This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
 
-## Meta nodes — 2026-10-27, built for review
+## Meta nodes — 2026-10-27, PR #125 open
 
 `codex/meta-nodes`, own worktree `/home/makin/src/nw-meta-nodes`, base `3f36552`.
+Implementation `389692c`, [PR #125](https://github.com/makinster/node_workflow/pull/125).
 Owner-approved [Node catalogue / Check workflow spec](integrations/META_NODES.md)
 provide bounded live contracts and the CLI's shared check-only validation.
 Debug nodes opt in; Start/End remain; internal types stay out. Measured compact

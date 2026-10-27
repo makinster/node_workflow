@@ -46,5 +46,7 @@
   "docs_consolidation": "pass: 102 Markdown files, 905 relative links/anchors, archives retained, 23 active docs",
   "git_diff_check": "pass: staged and working diff",
   "cli_build_check": "pass: nodes-example.json; temporary data root empty",
-  "compilation": "pass"
+  "compilation": "pass",
+  "implementation_head": "389692c59a4f7eb3c9955a759c4c19f3d9786718",
+  "pr_url": "https://github.com/makinster/node_workflow/pull/125"
 }

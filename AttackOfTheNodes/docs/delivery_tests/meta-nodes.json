@@ -83,7 +83,10 @@
     ],
     "screens": "../audits/meta_nodes_2026_10_26/manifest.json",
     "approved_decisions": "../audits/meta_nodes_2026_10_26/approved-decisions.md",
-    "validation_evidence": "../audits/meta_nodes_2026_10_26/verification.json"
+    "validation_evidence": "../audits/meta_nodes_2026_10_26/verification.json",
+    "implementation_head": "389692c59a4f7eb3c9955a759c4c19f3d9786718",
+    "pr": 125,
+    "pr_url": "https://github.com/makinster/node_workflow/pull/125"
   },
   "coverage": {
     "total_operations": 2,
@@ -368,6 +371,11 @@
         "at": "2026-10-27T07:13:13Z",
         "step": 5,
         "event": "Final complete suite and artifact checks pass; build record finalized before PR publication. Review rounds remain 0; do not merge."
+      },
+      {
+        "at": "2026-10-27T07:15:15Z",
+        "step": 5,
+        "event": "PR #125 published from codex/meta-nodes to main. Implementation head 389692c; publication metadata follow-up changes docs only. Open, not merged."
       }
     ],
     "verification": {

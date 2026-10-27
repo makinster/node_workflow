@@ -9,7 +9,9 @@ references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 ## 2026-10-27 — Meta nodes: Node catalogue and Check workflow spec
 
 Own worktree `/home/makin/src/nw-meta-nodes`, branch `codex/meta-nodes`, clean
-fetched base `3f36552`. Owner approved the earlier decisions 1–12 and samples,
+fetched base `3f36552`. Implementation `389692c`, [PR #125](https://github.com/makinster/node_workflow/pull/125);
+this publication record changes documentation only. Owner approved the earlier
+decisions 1–12 and samples,
 with Debug opt-in, measured cap, future Bundle-compatible entry/port shape and
 optional delivery-test repeated shapes. [Contract](integrations/META_NODES.md),
 [built screens / evidence](audits/meta_nodes_2026_10_26/README.md).
