@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from copy import deepcopy
 import json
 
 import pytest
@@ -32,11 +33,12 @@ def records(tmp_path, monkeypatch):
     return tmp_path
 
 
-async def run_after_start(tmp_path, node_type, greeting):
+async def run_after_start(tmp_path, node_type, greeting, *, structured=False):
     wm = WorkflowMap(NodeFactory(), EventBus())
     wm.create_new("Failure inputs")
     start = wm.add_node("start_node", alias="Start")
-    wm.update_node_config(start, {"greeting": greeting})
+    wm.update_node_config(start, {"rows": [dict(id="payload", name="payload", type="var",
+        value=greeting, required=True, to="Downstream")]} if structured else {"greeting": greeting})
     failing = wm.add_node(node_type, alias="Fails")
     wm.connect(start, "default", failing, "input")
     end = wm.add_node("end_node", alias="End")
@@ -75,3 +77,55 @@ async def test_any_failing_node_input_is_redacted_and_trimmed(records):
     logged = entries[0]["context"]["inputs"]["input"]
     assert len(logged) < LOGGED_INPUT_CHARS + 80
     assert "[trimmed: " in logged
+
+
+@pytest.mark.parametrize("payload,credentials", [
+    ({"api_key": "fresh-token", "password": "fresh-password", "note": "keep this fact"},
+     ["fresh-token", "fresh-password"]),
+    ({"password": ["first-password", {"value": "second-password"}], "note": "keep this fact"},
+     ["first-password", "second-password"]),
+    ({"nested": {"api_key": "nested-token"}, "accounts": [
+        {"password": "list-password", "note": "keep this fact"},
+        {"deeper": [{"AWS_SECRET_ACCESS_KEY": "nested-list-secret"}]}]},
+     ["nested-token", "list-password", "nested-list-secret"]),
+])
+async def test_structured_credentials_never_reach_saved_error(records, payload, credentials):
+    # Deliberately absent from Secrets: only the shared sensitive-label rules
+    # can recognize these credentials. Exercise the real engine and disk record.
+    original = deepcopy(payload)
+    text, files = await run_after_start(records, "error_node", payload, structured=True)
+    assert all(credential not in text for credential in credentials)
+    record = json.loads(files[0].read_text(encoding="utf-8"))
+    entries = record if isinstance(record, list) else record.get("errors", [record])
+    logged = entries[0]["context"]["inputs"]["input"]
+    assert "[redacted]" in json.dumps(logged)
+    assert "keep this fact" in json.dumps(logged)
+    assert payload == original, "logging must not mutate the live payload"
+
+
+async def test_structured_redaction_preserves_leaf_rules_known_values_and_cap(records):
+    payload = {"note": "Authorization: Bearer unlisted-inline-token", "known": CANARY,
+               "padding": "x" * 5000,
+               "tail": [{"api_key": "token-after-the-cap"}]}
+    text, files = await run_after_start(records, "error_node", payload, structured=True)
+    assert all(value not in text for value in [CANARY, "unlisted-inline-token", "token-after-the-cap"])
+    record = json.loads(files[0].read_text(encoding="utf-8"))
+    entries = record if isinstance(record, list) else record.get("errors", [record])
+    logged = entries[0]["context"]["inputs"]["input"]
+    assert len(logged) < LOGGED_INPUT_CHARS + 80
+    assert "[trimmed: " in logged
+
+
+def test_structured_keys_are_masked_after_labels_and_plain_context_stays_structured(records):
+    from backend.supervisor import _logged_inputs
+    manager = SecretsManager()
+    manager.set_secret("label-canary", "api_key")
+    payload = {"api_key": "unlisted-key-value", "ordinary": {"not-password": "public fact"}}
+    original = deepcopy(payload)
+    safe = _logged_inputs({"input": payload}, manager)
+    assert "unlisted-key-value" not in json.dumps(safe)
+    assert "api_key" not in json.dumps(safe)
+    assert "public fact" in json.dumps(safe)
+    assert payload == original
+    benign = {"input": [{"not-password": "public fact", "count": 3, "ready": True}]}
+    assert _logged_inputs(benign, manager) == benign

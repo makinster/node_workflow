@@ -102,7 +102,10 @@ locations use the existing secret redactor before capping. No raw spec is
 copied into errors. Separately, for every node, the engine redacts a failed
 node's persisted inputs (`context.inputs` in `run_errors/<run>.json`) with the
 same redactor (known Secrets values plus labelled credentials) and trims each
-input to 2,000 characters with a `[trimmed: …]` note. At most 100 rows / 8,000 serialized message+details
+input to 2,000 characters with a `[trimmed: …]` note. Structured inputs use
+that same shared credential-key rule recursively: inspect the original key,
+replace its entire sensitive value (including containers), then mask keys and
+ordinary text. Harmless structure survives; live input objects are unchanged. At most 100 rows / 8,000 serialized message+details
 characters, with explicit omissions. Graph-level issues can lack a field.
 
 Default spec cap 32,000 characters, configurable 1–64,000; hard 256 KiB,

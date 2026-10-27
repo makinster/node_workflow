@@ -70,6 +70,9 @@ Debug opt-in, measured Compact cap and future-compatible record shapes are
 implemented. [Delivery case](delivery_tests/meta-nodes.json): primary original
 coverage 0/2; related designer candidate 6/8. No Build/approval node, Bundle
 implementation or live activation. This does not advance the server/MCP plan.
+The #125 re-check fix applies the shared credential-key rules recursively to
+engine-persisted failure inputs, including lists/containers; independent re-check
+remains pending.
 
 ## Proposed phases
 

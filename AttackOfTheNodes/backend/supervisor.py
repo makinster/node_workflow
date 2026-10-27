@@ -13,7 +13,7 @@ from time import perf_counter
 from typing import Any, Awaitable, Callable, Dict, List, Optional
 
 from .event_bus import EventBus
-from .hermes_investigations import redact
+from .hermes_investigations import is_sensitive_credential_key, redact
 from .events import (
     BREAKPOINT_HIT,
     NODE_EXECUTION_UPDATE,
@@ -79,7 +79,10 @@ def _logged_inputs(inputs: Dict[str, Any], manager: Optional[SecretsManager]) ->
         if isinstance(value, str):
             return redact(value, known_values=known, encoded=True)
         if isinstance(value, dict):
-            return {mask(key): mask(item) for key, item in value.items()}
+            # Inspect the original key before masking it: label/value association
+            # must survive even when a Secrets value equals the credential label.
+            return {mask(key): mask("[redacted]") if is_sensitive_credential_key(key) else mask(item)
+                    for key, item in value.items()}
         if isinstance(value, list):
             return [mask(item) for item in value]
         return value

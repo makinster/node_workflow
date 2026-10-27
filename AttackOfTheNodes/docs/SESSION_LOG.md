@@ -6,6 +6,35 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-27 — #125 re-check: structured credentials in run_errors
+
+Same own worktree `/home/makin/src/nw-meta-nodes`, `codex/meta-nodes`, clean
+starting branch fast-forwarded from `42fcb4d` to fetched `3a69e19`.
+[Reviewer P2](https://github.com/makinster/node_workflow/pull/125#issuecomment-6447926977)
+reproduces with actual Start (var) → Error runs. Flat and nested/list credentials
+not present in Secrets are persisted by the reviewed head: **2 failed / 3 passed**
+in the first regression run. The expanded final seven cases using the exact
+reviewed `_logged_inputs` definition in an isolated process give **4 failed /
+3 passed**, including credential containers and a secret equal to a key name.
+
+- The shared redaction module exposes its existing credential-label matcher;
+  the supervisor applies it to the original dictionary key before separately
+  masking keys. Sensitive values, including objects/lists, are replaced in full.
+  No second sensitive-name list or changes to existing text-redaction rules.
+- Harmless diagnostic structure survives. Known Secrets and labelled text in
+  ordinary string fields still mask, the 2,000-character per-input cap remains,
+  and live input objects are not mutated. No node-specific workaround.
+- **47 focused checks passed**. These exercise real persisted error records,
+  nested/list/container credentials, a known value equal to a sensitive key,
+  original known-secret/text canaries and trimming. Full suite: **3,106 passed
+  in 676.59 seconds**, no retry. Compilation, delivery-case schema, docs
+  consolidation and whitespace checks pass.
+  One early suite attempt was interrupted after 746 passes to retain structured
+  diagnostics and cover whole credential containers; it is not a completed run.
+
+Two review rounds so far; independent re-check pending. No generation, external
+service call, live settings/owner workflow change or merge.
+
 ## 2026-10-27 — Meta nodes: Node catalogue and Check workflow spec
 
 Own worktree `/home/makin/src/nw-meta-nodes`, branch `codex/meta-nodes`, clean

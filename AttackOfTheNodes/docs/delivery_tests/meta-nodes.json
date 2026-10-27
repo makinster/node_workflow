@@ -2,7 +2,7 @@
   "schema_version": 1,
   "case_id": "meta-nodes",
   "baseline": "3f365520730493f1e1ecd24ee592befb23ca5ef5",
-  "record_status": "draft: step 5 complete, owner-approved build; independent review/merge pending",
+  "record_status": "draft: PR #125 round-2 structured-input fix passes author checks; independent re-check/merge pending",
   "owner_kind": "meta nodes",
   "request_kind": "new-integration",
   "node_kind": "meta",
@@ -203,7 +203,7 @@
   },
   "measurements": {
     "loop_started_at": "2026-10-27T04:27:36Z",
-    "review_rounds": 1,
+    "review_rounds": 2,
     "reviews": [
       {
         "head": "42fcb4d91ad66ee036302afa29e72b45b380bb8d",
@@ -222,6 +222,19 @@
         ],
         "outcome": "Two P2 findings fixed engine-wide/parser-side in one follow-up push with the owner-approved Brief detail level; re-check pending.",
         "url": "https://github.com/makinster/node_workflow/pull/125#issuecomment-6437185514"
+      },
+      {
+        "head": "3a69e19",
+        "reviewed_at": "2026-10-27T16:47:31Z",
+        "findings": [
+          {
+            "priority": "P2",
+            "description": "Unregistered credential values under structured input keys survived independent key/value masking in persisted run_errors; nested objects and lists affected.",
+            "status": "fixed_pending_recheck"
+          }
+        ],
+        "outcome": "Structured credential fix verified with real persisted records and 3106 full-suite passes in 676.59 seconds; no retry. Independent clean re-check pending.",
+        "url": "https://github.com/makinster/node_workflow/pull/125#issuecomment-6447926977"
       }
     ],
     "step_visits": [
@@ -285,9 +298,9 @@
         "started_at": null,
         "ended_at": null,
         "elapsed_days": null,
-        "status": "not_started",
-        "wait_reason": null,
-        "notes": "Review, merge and live steps remain pending; this build stops after PR publication."
+        "status": "awaiting_recheck",
+        "wait_reason": "Independent clean re-check of structured-input fix",
+        "notes": "Two independent rounds recorded; actual review start unknown. Author regressions/full suite pass, independent clean re-check pending."
       },
       {
         "step": 7,
@@ -400,6 +413,16 @@
         "at": "2026-10-27T16:24:36Z",
         "step": 6,
         "event": "Review round 1 fixes: failed-node inputs redacted with the shared redactor and capped at 2,000 characters before run_errors; duplicate JSON keys rejected as invalid_json with their path; Brief detail added (all non-debug Text 6,207 characters, under the 8,000 Ask local model Context cap). Re-check pending; do not merge."
+      },
+      {
+        "at": "2026-10-27T18:12:47Z",
+        "step": 6,
+        "event": "First recorded follow-up clock: flat and nested/list persistence regressions fail on 3a69e19 (2 failed / 3 passed); shared credential-label matcher reused for recursive structured inputs; final focused group 47 passed. Full suite running."
+      },
+      {
+        "at": "2026-10-27T18:23:43Z",
+        "step": 6,
+        "event": "Structured input regressions and full suite pass: 3106 in 676.59 seconds, no retry. Shared credential-key matcher, known-secret masking and 2000-character cap verified. Independent clean re-check pending; do not merge."
       }
     ],
     "verification": {
@@ -408,7 +431,7 @@
       "owner_workflow_library_writes": 0,
       "owner_workflow_executions": 0,
       "focus_tests": "37 behavioral/isolation tests; 88 source/menu/generated-UI checks; helper checks pass.",
-      "product_suite": "3096 passed in 680.85 seconds; no WaitUntil retry",
+      "product_suite": "3106 passed in 676.59 seconds; no retry",
       "screens": 23,
       "source_options": [
         "Upstream payload",
@@ -435,7 +458,39 @@
       "svg_png_pairs": 23,
       "template_schema_instances": 9,
       "docs_consolidation": "pass",
-      "git_diff_check": "pass"
+      "git_diff_check": "pass",
+      "structured_inputs_followup": {
+        "base": "3a69e19",
+        "regressions_before": {
+          "failed": 2,
+          "passed": 3
+        },
+        "focused_passed": 47,
+        "full_suite": {
+          "passed": 3106,
+          "seconds": 676.59,
+          "exit_code": 0,
+          "retry": false,
+          "log_sha256": "98f1be9970391f00a28f1aca37c8e608c8ed1adb2b5f2c252aa4eee512263125"
+        },
+        "interrupted_attempt": {
+          "passed": 746,
+          "seconds": 109.61,
+          "reason": "Refine fix to preserve harmless structured context and mask whole sensitive containers."
+        },
+        "live_generation_calls": 0,
+        "live_network_calls": 0,
+        "expanded_regressions_before": {
+          "failed": 4,
+          "passed": 3,
+          "method": "Final seven test cases run with the exact _logged_inputs definition extracted from git 3a69e19 in an isolated test process; product files unchanged."
+        },
+        "completed_at": "2026-10-27T18:23:43Z",
+        "compilation": "pass",
+        "delivery_case_schema": "pass",
+        "docs_consolidation": "pass",
+        "git_diff_check": "pass"
+      }
     },
     "loop_wall_days_so_far": 0.11501157407407407
   },
