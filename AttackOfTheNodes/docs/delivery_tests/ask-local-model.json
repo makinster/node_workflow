@@ -1,0 +1,383 @@
+{
+  "schema_version": 1,
+  "case_id": "ask-local-model",
+  "baseline": "27d16bc0bd956ea0f3a6deac78915000ad0a31e8",
+  "record_status": "Step 5 build for review; steps 6–11 pending, no merge/go-live",
+  "request_kind": "new-integration",
+  "classification_at": "2026-10-26T19:36:53.639810+00:00",
+  "request": {
+    "schema_version": 1,
+    "request_id": "ask-local-model",
+    "date": "2026-10-26",
+    "intent": "Ask one question, with optional Context, and get one answer from an installed local Ollama model. Reuse this as an inexpensive private judgment step in future meta-workflows.",
+    "example": {
+      "input": "Question: Why did the backup fail? Context: disk free 0 GB; log says no space left on device. Reply as JSON with summary, cause and next_step.",
+      "expected_result": "One answer string containing a JSON object; Check reply verifies the three text fields before Notify me queues a message."
+    },
+    "target_device": "AOTN TUI and headless authoring/run CLI on the owner machine; Telegram only in the example downstream workflow.",
+    "destination": "Answer downstream and optionally in the Vault; Run details optionally in a separate Vault key.",
+    "trigger": "One explicit node visit per question; no background scheduling, chat history or tools.",
+    "inputs": [
+      "Required Question: Configured, Upstream payload or Vault text.",
+      "Optional Context: Not used (default), Configured, Upstream payload or Vault text.",
+      "Options-owned server URL and default installed model; optional per-node model override."
+    ],
+    "constraints": [
+      "Owner approved decisions/samples 1–10; per-node tuning remains visible.",
+      "Build one PR; fake-server tests; exactly two real requests for one short JSON/thinking-off smoke scenario.",
+      "No merge, live workflow/configuration changes, pulls, retries or cloud fallback."
+    ],
+    "success": [
+      "One Question plus optional Context produces one final local answer.",
+      "JSON mode returns text that Check reply can parse and validate.",
+      "Question and Context expose exactly their accepted source kinds; compatible upstream secondary Vault outputs are selectable.",
+      "Settings, per-node controls, output routing, bounded failures and headless authoring match the approved contract."
+    ],
+    "unknowns": [
+      "Broader prompt quality, long-context token fit and device go-live remain unproven."
+    ]
+  },
+  "feasibility": {
+    "schema_version": 1,
+    "request_id": "ask-local-model",
+    "checked_at": "2026-10-26T20:55:49.917709+00:00",
+    "researcher": "Planning agent, read-only checks plus official Ollama/Microsoft documentation",
+    "official_api": "Read-only tags/show preflight and native nonstreaming chat, with JSON formatting and explicit thinking off. Two authorized real chat requests completed.",
+    "sign_in": "No sign-in is required for the normal local API. The installed model is listed. No new account, CLI installation or service configuration is needed for this plan.",
+    "cost": "Two owner-approved local generation requests; no hosted token price reported. Hardware/electricity costs unmeasured.",
+    "reliability": "Read-only metadata preflight plus one nonstreaming chat per visit, one total deadline, no retries/pulls/cloud fallback. Two approved calls passed: cold 35.180 seconds, repeat 2.929 seconds; broader load/quality/cancellation behaviour remains workload-dependent.",
+    "terms_of_service": "Official API route; /api/show returns Apache License 2.0 text for this installed model. No redistribution or broader licensing/terms assessment was performed; preserve model-specific terms for later distribution. No unofficial transport or private internals proposed.",
+    "sources": [
+      "https://docs.ollama.com/api/chat",
+      "https://docs.ollama.com/api/generate",
+      "https://docs.ollama.com/capabilities/structured-outputs",
+      "https://docs.ollama.com/capabilities/thinking",
+      "https://docs.ollama.com/api/usage",
+      "https://docs.ollama.com/api/errors",
+      "https://docs.ollama.com/api-reference/show-model-details",
+      "https://docs.ollama.com/api/authentication",
+      "https://docs.ollama.com/modelfile",
+      "https://docs.ollama.com/context-length",
+      "https://docs.ollama.com/faq",
+      "https://docs.ollama.com/windows",
+      "https://learn.microsoft.com/en-us/windows/wsl/networking"
+    ],
+    "verdict": "feasible",
+    "reason": "Approved build slice and two local smoke requests succeeded; not a broad quality/throughput benchmark.",
+    "conditions": [
+      "Review and owner merge remain required. Go-live is not approved by this PR."
+    ],
+    "alternatives": [
+      "A manually prepared HTTP Request -> JSON Path workflow can call the API and extract message.content; it does not supply the requested reusable Question/Context/settings/error contract.",
+      "Use /api/generate if a later test gives a concrete reason; no need to expose both endpoints in this node."
+    ]
+  },
+  "final_artifact": null,
+  "candidate_artifact": {
+    "kind": "workflow_spec",
+    "path": "../../examples/ask_local_model.json",
+    "approved_design": true,
+    "built_screens": "../audits/local_model_2026_10_26/README.md",
+    "note": "Prepared for PR review; no final accepted artifact until review/merge."
+  },
+  "coverage": {
+    "basis": "Requested reusable local Question/Context contract at step 2, not generic HTTP expressibility. Start/End/transport excluded.",
+    "total_operations": 4,
+    "existing_count": 3,
+    "new_count": 1,
+    "ratio": 0.75,
+    "existing": [
+      {
+        "operation": "Bundle facts",
+        "nodes": [
+          "context_pack_node"
+        ],
+        "node_kind": "meta"
+      },
+      {
+        "operation": "Check JSON reply fields",
+        "nodes": [
+          "check_reply_node"
+        ],
+        "node_kind": "meta"
+      },
+      {
+        "operation": "Queue checked result",
+        "nodes": [
+          "hermes_notify_node"
+        ],
+        "node_kind": "use-case"
+      }
+    ],
+    "new": [
+      {
+        "operation": "Ask an installed local model through reusable Question/Context/settings contract",
+        "nodes": [
+          "ask_local_model_node"
+        ],
+        "node_kind": "use-case"
+      }
+    ]
+  },
+  "measurements": {
+    "review_rounds": 0,
+    "review_heads": [],
+    "step_visits": [
+      {
+        "step": 0,
+        "started_at": "2026-10-26T19:30:15+00:00",
+        "ended_at": "2026-10-26T19:36:53.639810+00:00",
+        "elapsed_days": 0.004613886689814815,
+        "status": "complete",
+        "wait_reason": null
+      },
+      {
+        "step": 1,
+        "started_at": "2026-10-26T19:30:48.878865+00:00",
+        "ended_at": "2026-10-26T19:36:53.639810+00:00",
+        "elapsed_days": 0.004221770196759259,
+        "status": "complete_with_conditional_verdict",
+        "wait_reason": null,
+        "timing_note": "Start is first saved endpoint evidence; earlier documentation reading overlaps intent and is not precisely timed."
+      },
+      {
+        "step": 2,
+        "started_at": "2026-10-26T19:33:30+00:00",
+        "ended_at": "2026-10-26T19:36:53.639810+00:00",
+        "elapsed_days": 0.0023569422453703706,
+        "status": "complete",
+        "wait_reason": null,
+        "timing_note": "Mapping assembly boundary; earlier code reading overlapped feasibility."
+      },
+      {
+        "step": 3,
+        "started_at": "2026-10-26T19:36:53.639810+00:00",
+        "ended_at": "2026-10-26T20:40:43+00:00",
+        "elapsed_days": 0.04432129849537037,
+        "status": "owner_approved",
+        "wait_reason": null,
+        "prepared_at": "2026-10-26T19:36:53.635882+00:00"
+      },
+      {
+        "step": 4,
+        "started_at": "2026-10-26T19:33:30+00:00",
+        "ended_at": "2026-10-26T20:40:43+00:00",
+        "elapsed_days": 0.04667824074074074,
+        "status": "owner_approved",
+        "wait_reason": null,
+        "prepared_at": "2026-10-26T19:38:38.992001+00:00",
+        "visual_check_at": "2026-10-26T19:40:55.476799+00:00"
+      },
+      {
+        "step": 5,
+        "started_at": "2026-10-26T20:40:43+00:00",
+        "ended_at": "2026-10-26T21:18:28.320074+00:00",
+        "elapsed_days": 0.026218982337962965,
+        "status": "build_checked_for_review",
+        "wait_reason": null
+      }
+    ],
+    "note": "Manual boundary timestamps; some research/mapping/rendering overlaps. Sum visits per step, but use run wall time for total. Pending approval steps stay open; observed_days_so_far is a snapshot, not completed duration.",
+    "recorded_at": "2026-10-26T21:18:28.320074+00:00",
+    "run_started_at": "2026-10-26T19:30:15+00:00",
+    "run_wall_days_so_far": 0.07515416752314814
+  },
+  "approvals": {
+    "decisions": true,
+    "samples": true,
+    "generation": true,
+    "build": true,
+    "go_live": false
+  },
+  "evidence": [
+    "../integrations/LOCAL_MODEL.md",
+    "../audits/local_model_2026_10_26/README.md",
+    "../SESSION_LOG.md"
+  ],
+  "local_evidence": [
+    "/home/makin/src/agent_channel/local-model-samples/DECISIONS.md",
+    "/home/makin/src/agent_channel/local-model-samples/build-smoke.json"
+  ],
+  "acceptance_checks": [
+    "Default and overridden installed models use the Options-owned server URL.",
+    "Question and optional Context route through Configured, Upstream and Vault with existing source rules.",
+    "One native chat call uses stream:false and returns only final answer text.",
+    "JSON mode composes with Check reply; malformed, incomplete or oversized replies fail.",
+    "Thinking defaults off; no thinking trace in Answer, Vault details, logs or errors.",
+    "Server down, missing model, busy, timeout and unsupported controls fail without retry/pull/cloud fallback.",
+    "Token/latency metrics are typed and absent values remain unknown.",
+    "Headless nodes/describe/build/run expose the same contract as the TUI.",
+    "Generation and implementation require new owner authorization; no live sends in planning."
+  ],
+  "notes": [
+    "Historical planning timestamps retained, including approval wait; step 5 continues on an isolated build worktree from the same main base.",
+    "75% coverage is the frozen original mapping; this PR fills the one new operation. Replay coverage at this candidate is 4/4, not a rewrite of historical coverage.",
+    "Only the real smoke used inference; fake server tests return canned data. No live Notify me run or go-live action.",
+    "Public fixture uses an owner-configured model description; the exact private model identifier is in the local smoke receipt."
+  ],
+  "planning_snapshot": {
+    "request": {
+      "schema_version": 1,
+      "request_id": "ask-local-model",
+      "date": "2026-10-26",
+      "intent": "Ask one question, with optional Context, and get one answer from an installed local Ollama model. Reuse this as an inexpensive private judgment step in future meta-workflows.",
+      "example": {
+        "input": "Question: Why did the backup fail? Context: disk free 0 GB; log says no space left on device. Reply as JSON with summary, cause and next_step.",
+        "expected_result": "One answer string containing a JSON object; Check reply verifies the three text fields before Notify me queues a message."
+      },
+      "target_device": "AOTN TUI and headless authoring/run CLI on the owner machine; Telegram only in the example downstream workflow.",
+      "destination": "Answer downstream and optionally in the Vault; Run details optionally in a separate Vault key.",
+      "trigger": "One explicit node visit per question; no background scheduling, chat history or tools.",
+      "inputs": [
+        "Required Question: Configured, Upstream payload or Vault text.",
+        "Optional Context: Not used (default), Configured, Upstream payload or Vault text.",
+        "Options-owned server URL and default installed model; optional per-node model override."
+      ],
+      "constraints": [
+        "This task stops at delivery steps 0–4: research, decisions, samples, draft test only.",
+        "No /api/chat or /api/generate calls, empty preloads, model pulls, server configuration changes or product code.",
+        "One purpose: text question to text answer, optional JSON; no tools, vision, sessions or automatic cloud fallback.",
+        "Reuse current HTTP, Context, output-routing and multiline-preview patterns; functionality and AI-runnability take priority over styling."
+      ],
+      "success": [
+        "Owner can approve numbered choices and inspect production-style Parameters, Payloads, selector and workflow samples.",
+        "Future implementation can call one installed local model and route an answer to Check reply without exposing an API envelope.",
+        "Server down, missing model, timeout, invalid/incomplete reply and busy server have explicit failure behaviour.",
+        "Read-only evidence, unknown runtime behaviour and actual measured planning timestamps remain distinguishable."
+      ],
+      "unknowns": [
+        "Owner decisions and sample approval pending.",
+        "Cold/warm latency, GPU/CPU placement, available memory, generation quality and JSON/thinking interaction are unmeasured; generation needs separate owner OK.",
+        "Which process serves the local URL and actual server version remain unconfirmed.",
+        "The WSL PATH fact changed: this session finds /snap/bin/ollama, without invoking it."
+      ]
+    },
+    "feasibility": {
+      "schema_version": 1,
+      "request_id": "ask-local-model",
+      "checked_at": "2026-10-26T19:36:53.639810+00:00",
+      "researcher": "Planning agent, read-only checks plus official Ollama/Microsoft documentation",
+      "official_api": "Supported native Ollama HTTP API. Recommend POST /api/chat with a fresh messages array and stream:false; /api/generate is a valid prompt/response alternative. Only GET /api/tags and POST /api/show were called.",
+      "sign_in": "No sign-in is required for the normal local API. The installed model is listed. No new account, CLI installation or service configuration is needed for this plan.",
+      "cost": "Local inference has no per-call hosted token charge in this proposed path; hardware, electricity and opportunity costs remain unmeasured. No generation or paid call was made.",
+      "reliability": "List/show HTTP 200 from WSL; metadata is not an inference benchmark. Proposed one bounded nonstreaming request, no retries or pulls, total deadline, response cap and coded errors. Cold-start latency and request-cancellation behaviour unverified.",
+      "terms_of_service": "Official API route; /api/show returns Apache License 2.0 text for this installed model. No redistribution or broader licensing/terms assessment was performed; preserve model-specific terms for later distribution. No unofficial transport or private internals proposed.",
+      "sources": [
+        "https://docs.ollama.com/api/chat",
+        "https://docs.ollama.com/api/generate",
+        "https://docs.ollama.com/capabilities/structured-outputs",
+        "https://docs.ollama.com/capabilities/thinking",
+        "https://docs.ollama.com/api/usage",
+        "https://docs.ollama.com/api/errors",
+        "https://docs.ollama.com/api-reference/show-model-details",
+        "https://docs.ollama.com/api/authentication",
+        "https://docs.ollama.com/modelfile",
+        "https://docs.ollama.com/context-length",
+        "https://docs.ollama.com/faq",
+        "https://docs.ollama.com/windows",
+        "https://learn.microsoft.com/en-us/windows/wsl/networking"
+      ],
+      "verdict": "conditional",
+      "reason": "The documented protocol and installed model metadata fit a small single-purpose node; real generation, limits and defaults still need approved testing. Owner choices and samples are not yet approved.",
+      "conditions": [
+        "Owner decides the proposed node/settings contract and approves samples.",
+        "Before runtime claims or go-live, obtain separate OK for a bounded generation smoke and cold/warm measurements.",
+        "Validate JSON, thinking-off, timeout/error handling and bounded outputs with fake services first, then an approved real smoke."
+      ],
+      "alternatives": [
+        "A manually prepared HTTP Request -> JSON Path workflow can call the API and extract message.content; it does not supply the requested reusable Question/Context/settings/error contract.",
+        "Use /api/generate if a later test gives a concrete reason; no need to expose both endpoints in this node."
+      ]
+    }
+  },
+  "approval_notes": {
+    "recorded_at": "2026-10-26T20:40:43+00:00",
+    "owner_direction": "Decisions 1–10 approved; visible per-node tuning; one fixed smoke scenario run twice, no other generation."
+  },
+  "smoke_test": {
+    "scenario_count": 1,
+    "generation_requests": 2,
+    "resident_models_before_first": 0,
+    "prompt": "Reply with a JSON object containing only \"ok\": true.",
+    "limits": {
+      "timeout_seconds": 180,
+      "num_ctx": 8192,
+      "max_output_tokens": 64,
+      "temperature": 0.2
+    },
+    "reply_json": true,
+    "thinking": false,
+    "model": "owner-configured installed local model",
+    "runs": [
+      {
+        "kind": "cold",
+        "started_at": "2026-10-26T20:51:22.454104+00:00",
+        "wall_seconds": 35.17950951005332,
+        "reply": "{\n  \"ok\": true\n}",
+        "check_reply": {
+          "ok": true
+        },
+        "details": {
+          "model_digest": "07d35212591fc27746f0a317c975a6d68754fb38e9053d82e25f06057af28522",
+          "wall_seconds": 35.1793448330136,
+          "done_reason": "stop",
+          "reply_json": true,
+          "thinking_requested": false,
+          "input_tokens": 57,
+          "cached_input_tokens": 0,
+          "output_tokens": 10,
+          "server_total_seconds": 35.118117226,
+          "load_seconds": 27.336329323,
+          "input_seconds": 3.061003,
+          "output_seconds": 4.565832
+        },
+        "errors": []
+      },
+      {
+        "kind": "warm",
+        "started_at": "2026-10-26T20:51:57.634748+00:00",
+        "wall_seconds": 2.9292376540834084,
+        "reply": "{\n  \"ok\": true\n}",
+        "check_reply": {
+          "ok": true
+        },
+        "details": {
+          "model_digest": "07d35212591fc27746f0a317c975a6d68754fb38e9053d82e25f06057af28522",
+          "wall_seconds": 2.9291338809998706,
+          "done_reason": "stop",
+          "reply_json": true,
+          "thinking_requested": false,
+          "input_tokens": 57,
+          "cached_input_tokens": 53,
+          "output_tokens": 10,
+          "server_total_seconds": 2.861922684,
+          "load_seconds": 0.007693524,
+          "input_seconds": 0.549199,
+          "output_seconds": 2.297895
+        },
+        "errors": []
+      }
+    ],
+    "note": "No resident model before first call; same prompt/settings repeated once with five-minute keep-alive. An initial harness setup validation failure made no chat/generation request; its private receipt is retained. No inference retry or extra generation. The warm run repeats the same prompt and includes prompt-cache reuse; this is not a general performance comparison."
+  },
+  "candidate_coverage": {
+    "total_operations": 4,
+    "existing_count": 4,
+    "new_count": 0,
+    "ratio": 1.0,
+    "basis": "This candidate fills the original local-model gap; original step-2 coverage remains frozen at 3/4."
+  },
+  "verification": {
+    "full_suite_passed": 2920,
+    "full_suite_seconds": 502.05,
+    "full_suite_wait_until_flake_retry": false,
+    "inventory_followups": "First full run: 2918 passed, multiline count needed 26/13 plus explicit new-field assertions. Second: 2918 passed, new example missing from registry. Registered its clean-warning/outline expectations and build/save/reload coverage, then ran the complete suite.",
+    "helper_node": "2 passed",
+    "helper_ui": "config UI contract OK",
+    "fake_server_and_mounted_ui": "Source matrix, secondary Vault picker, bounded HTTP, errors, routing, real-engine Context Pack/Check reply, save/cancel and Options covered.",
+    "example_build_check": true,
+    "screenshots_svg_png_pairs": 17,
+    "real_generation_requests": 2
+  },
+  "review_status": "Independent PR review pending; zero review rounds. No merge/go-live authorization."
+}

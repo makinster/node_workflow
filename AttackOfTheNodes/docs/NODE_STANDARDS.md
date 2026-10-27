@@ -1070,3 +1070,12 @@ the authority for exact precedence and saved forms.
 [Project Backlog](PROJECT_BACKLOG.md#native-filewindow-verification-fo7) retains
 the manual FO7 protocol and deferred platform work. User-facing controls must
 explain unsupported capabilities rather than promise silent success.
+
+## Ask local model (owner, 2026-10-26)
+
+`ask_local_model_node` is a direct-add Complex / AI node. The
+[local-model contract](integrations/LOCAL_MODEL.md) owns inputs, per-node limits,
+Options, bounded native API calls, errors and outputs. Question and optional
+Context declare exactly the sources execution accepts; standard availability
+filtering and compatible secondary Vault writers are covered by mounted UI
+tests. Use the helper spec and shared form/routing patterns; no special screen.

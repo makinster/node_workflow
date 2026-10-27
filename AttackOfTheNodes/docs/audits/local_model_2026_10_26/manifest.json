@@ -1,0 +1,190 @@
+{
+  "base": "27d16bc0bd956ea0f3a6deac78915000ad0a31e8",
+  "branch": "codex/ask-local-model",
+  "worktree": "/home/makin/src/nw-local-model",
+  "registered_node": true,
+  "generation_calls": 0,
+  "screens": [
+    {
+      "file": "parameters-110x38.svg",
+      "view": "parameters",
+      "variant": "",
+      "size": [
+        110,
+        38
+      ],
+      "reveal": null
+    },
+    {
+      "file": "parameters-limits-110x38.svg",
+      "view": "parameters",
+      "variant": "limits",
+      "size": [
+        110,
+        38
+      ],
+      "reveal": "#field-reply_json"
+    },
+    {
+      "file": "payloads-110x38.svg",
+      "view": "payloads",
+      "variant": "",
+      "size": [
+        110,
+        38
+      ],
+      "reveal": null
+    },
+    {
+      "file": "source-110x38.svg",
+      "view": "source",
+      "variant": "",
+      "size": [
+        110,
+        38
+      ],
+      "reveal": null
+    },
+    {
+      "file": "parameters-80x24.svg",
+      "view": "parameters",
+      "variant": "",
+      "size": [
+        80,
+        24
+      ],
+      "reveal": null
+    },
+    {
+      "file": "parameters-limits-80x24.svg",
+      "view": "parameters",
+      "variant": "limits",
+      "size": [
+        80,
+        24
+      ],
+      "reveal": "#field-reply_json"
+    },
+    {
+      "file": "payloads-80x24.svg",
+      "view": "payloads",
+      "variant": "",
+      "size": [
+        80,
+        24
+      ],
+      "reveal": null
+    },
+    {
+      "file": "source-80x24.svg",
+      "view": "source",
+      "variant": "",
+      "size": [
+        80,
+        24
+      ],
+      "reveal": null
+    },
+    {
+      "file": "parameters-advanced-80x24.svg",
+      "view": "parameters",
+      "variant": "advanced",
+      "size": [
+        80,
+        24
+      ],
+      "reveal": "#field-max_tokens"
+    },
+    {
+      "file": "payloads-details-80x24.svg",
+      "view": "payloads",
+      "variant": "details",
+      "size": [
+        80,
+        24
+      ],
+      "reveal": "#vault-output-key-details"
+    },
+    {
+      "file": "source-inputs-80x24.svg",
+      "view": "source",
+      "variant": "inputs",
+      "size": [
+        80,
+        24
+      ],
+      "reveal": "#field-context_source"
+    },
+    {
+      "file": "parameters-configured-context-110x38.svg",
+      "view": "parameters",
+      "variant": "configured-context",
+      "size": [
+        110,
+        38
+      ],
+      "reveal": null
+    },
+    {
+      "file": "editor-80x24.svg",
+      "view": "editor",
+      "variant": "",
+      "size": [
+        80,
+        24
+      ],
+      "reveal": null
+    },
+    {
+      "file": "selector-110x34.svg",
+      "view": "selector",
+      "variant": "",
+      "size": [
+        110,
+        34
+      ],
+      "reveal": null
+    },
+    {
+      "file": "workflow-140x44.svg",
+      "view": "workflow",
+      "variant": "",
+      "size": [
+        140,
+        44
+      ],
+      "reveal": null
+    },
+    {
+      "file": "options-110x38.svg",
+      "view": "options",
+      "variant": "",
+      "size": [
+        110,
+        38
+      ],
+      "reveal": "#setting-local_model_server_url"
+    },
+    {
+      "file": "options-80x24.svg",
+      "view": "options",
+      "variant": "",
+      "size": [
+        80,
+        24
+      ],
+      "reveal": "#setting-local_model_server_url"
+    }
+  ],
+  "source_sha256": {
+    "frontend/styles.tcss": "f40ac442e23bacbf86435e38928a88a3721cc8bd0248e5e91864ca662bea4cac",
+    "frontend/colors.py": "d346d3aefb11d54f79a60d99d0c6ed1a8e732c338941b5021804917881bab3f1",
+    "frontend/widgets/long_text.py": "06d400e478645b95a41e7db6a59eaf9f9efde3544eee7ad44aca3c12d8301382",
+    "frontend/screens/node_config.py": "5eea7c7779c706679f68f6ce5876c369f9364c21612d1cdbacc49625e03ddcfc",
+    "frontend/screens/node_selector.py": "7a02ec182c045309c23295b133b6f38064daeb820e9feea7412bb9d117baba93",
+    "frontend/screens/editor.py": "85273d090f5ac9b485b3315a02c02e1e51f1ef84ab2495e6de9fca3532bda303",
+    "backend/nodes/ai/ask_local_model_node.py": "0741671b19ad99089a6bb841a3f745f183f8fce46061bab8f2156ac91ec05b7d",
+    "backend/integrations/local_model.py": "a8172cfdbdfc1f9a3ed2ea30c6512192a5b309a963f98bdf398d6bf54c832329",
+    "frontend/screens/settings.py": "a9064ec0bff599078e4a556e2e9dc0ed65c48e73b224f98f7f7301bed84d89ed"
+  }
+}

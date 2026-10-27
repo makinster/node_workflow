@@ -207,7 +207,9 @@ def test_registered_multiline_inventory_uses_shared_widget():
         fields(metadata.get('config_schema', {}), metadata['type'] + '.')
         if len(found) > before:
             types.add(metadata['type'])
-    assert len(found) == 24 and len(types) == 12
+    # Ask local model adds Question and optional Context using the same widget.
+    assert {"ask_local_model_node.input", "ask_local_model_node.context"} <= set(found)
+    assert len(found) == 26 and len(types) == 13
     assert 'text_output_node.template' in found
 
 

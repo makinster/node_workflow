@@ -1,11 +1,34 @@
 # Current State
 
-Snapshot checked **2026-10-26**, against fetched `origin/main` `334cb67` after
-#120 merged (owner notes and fetched history). Code and fresh
-GitHub checks take precedence.
+Snapshot checked **2026-10-26**, against fetched `origin/main` `27d16bc` after
+#122 merged, with the Ask local model candidate below built for review.
+Code and fresh GitHub checks take precedence.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
+
+## Ask local model — 2026-10-26, built for review
+
+Owner approved decisions 1–10 and the visible per-node tuning controls.
+`codex/ask-local-model`, worktree `/home/makin/src/nw-local-model`, base
+`27d16bc`: native bounded Ollama client, Options URL/default model, Question
+and optional Context, Answer, optional Vault Run details and standard forwarding.
+No retries, auto-pull/start, tools/history or cloud fallback. Source menus match
+runtime/metadata; mounted checks include eligible upstream secondary Vault text.
+The per-machine model field starts blank; no particular model is shipped.
+
+[Contract](integrations/LOCAL_MODEL.md), [real built screens](audits/local_model_2026_10_26/README.md),
+[delivery case](delivery_tests/ask-local-model.json). Original coverage 3/4;
+the candidate fills its one gap. Exactly two authorized small generation
+requests: cold **35.180 s** (load 27.336 s), warm **2.929 s** (load 0.008 s).
+Both JSON replies passed Check reply. Temporary data/Options only; no live
+workflow, notification, service or schedule changes. Review/merge/go-live pending.
+
+Final full suite: **2920 passed in 502.05 seconds**. Two inventory
+follow-ups were needed: 26 multiline fields across 13 types (explicit new-field
+assertions), and registration of the new example in the build/save/reload
+matrix. Final complete suite passes; no WaitUntil flake retry needed. Helper, example
+build check, compilation, JSON/schema, source-hash, docs and whitespace checks pass.
 
 ## Delivery-loop method — 2026-10-26, docs only
 

@@ -1,0 +1,94 @@
+{
+  "format": "aotn-workflow/1",
+  "name": "Example - Local backup report",
+  "nodes": {
+    "start": {
+      "type": "start_node"
+    },
+    "pack": {
+      "type": "context_pack_node",
+      "config": {
+        "items": [
+          {
+            "id": "facts",
+            "label": "Backup facts",
+            "source": "Configured text",
+            "vault_key": "",
+            "text": "Synthetic example: disk free 0 GB; backup log says no space left on device."
+          }
+        ],
+        "include_run": false
+      }
+    },
+    "ask": {
+      "type": "ask_local_model_node",
+      "config": {
+        "input": "Explain the backup failure. Reply as JSON with summary, cause and next_step as text. Use only Context.",
+        "context_source": "Upstream payload",
+        "reply_json": true,
+        "details_vault_write": true,
+        "details_vault_key": "local_call"
+      }
+    },
+    "check": {
+      "type": "check_reply_node",
+      "config": {
+        "expected_fields": [
+          {
+            "id": "summary",
+            "name": "summary",
+            "kind": "string",
+            "required": true
+          },
+          {
+            "id": "cause",
+            "name": "cause",
+            "kind": "string",
+            "required": true
+          },
+          {
+            "id": "next_step",
+            "name": "next_step",
+            "kind": "string",
+            "required": true
+          }
+        ]
+      }
+    },
+    "notify": {
+      "type": "hermes_notify_node",
+      "config": {
+        "message": "Local backup report: {input}",
+        "send_to": "home"
+      }
+    },
+    "end": {
+      "type": "end_node",
+      "config": {
+        "record_line": false
+      }
+    }
+  },
+  "connections": [
+    {
+      "from": "start.default",
+      "to": "pack.input"
+    },
+    {
+      "from": "pack.default",
+      "to": "ask.context"
+    },
+    {
+      "from": "ask.default",
+      "to": "check.input"
+    },
+    {
+      "from": "check.default",
+      "to": "notify.input"
+    },
+    {
+      "from": "notify.default",
+      "to": "end.input"
+    }
+  ]
+}

@@ -55,7 +55,9 @@ class SettingsScreen(CommandScreenMixin, ModalScreen):
                 with TabPane("1 General", id="settings-tab-general"):
                     with VerticalScroll(classes="tab-scroll"):
                         for key, default in DEFAULT_SETTINGS.items():
-                            labels = {"hermes_profile_home": "Hermes profile home",
+                            labels = {"local_model_server_url": "Local model server URL",
+                                      "local_model_default_model": "Local default model",
+                                      "hermes_profile_home": "Hermes profile home",
                                       "hermes_command": "Hermes command",
                                       "hermes_investigations_per_day": "Investigations per day (0 = off, up to 50)",
                                       "hermes_investigation_profile_home": "Investigation profile home",
