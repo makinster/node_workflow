@@ -19,6 +19,7 @@ with templates, measurements and a small delivery test set.
 |---|---|---|
 | Set up, run or test | [Newcomer Guide](NEWCOMER_GUIDE.md) | `main.py`, full suite below |
 | Deliver a workflow request | [Delivery Loop](DELIVERY_LOOP.md) | `docs/templates/`, `docs/delivery_tests/`; owner gates and docs checks |
+| Draft a local text/file workflow | [Checked designer recipe](delivery_tests/specs/README.md) | Existing nodes; review before installation or trial |
 | Build or inspect workflows | [Workflow Authoring](WORKFLOW_AUTHORING.md) | `backend/authoring.py`, `tests/test_authoring.py`, `tests/test_authoring_examples.py` |
 | Review or test the Hermes H0 adapter | [H0 contract](integrations/HERMES_H0_DRAFT.md), [adapter guide](../integrations/hermes/README.md) | `integrations/hermes/`, `tests/test_hermes_adapter.py`; no installed wrapper or cron job |
 | Ask an installed local model | [Local model contract](integrations/LOCAL_MODEL.md) | `backend/integrations/local_model.py`, `tests/test_local_model*.py` |

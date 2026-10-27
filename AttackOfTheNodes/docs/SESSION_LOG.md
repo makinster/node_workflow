@@ -6,6 +6,71 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-27 — Draft a workflow: owner-approved spec, build step
+
+Same own worktree/branch `nw-draft-workflow-samples` /
+`codex/draft-workflow-samples`, fetched main unchanged at `cfd3458`; previous
+planning-only documentation retained. Owner approved decisions 1–11 as written
+and all three samples; recorded in the external packet's DECISIONS.md.
+[Authored spec/guide](delivery_tests/specs/README.md) and
+[case](delivery_tests/draft-a-workflow.json) now record step 5, approval timestamps,
+checked-spec repeated shapes and approved scoped coverage 8/8. Original strict
+dynamic-lookup mapping remains 7/8, not an inflated replay improvement.
+
+Thirty existing-node instances / 57 edges: two JSON inference steps, eight fixed
+Compact catalogue queries, no retry. Raw draft goes to Vault before check;
+only check success gates Create unique File Write. Success displays original
+draft, warnings/omissions and actual path with a literal manual build command.
+Errors and non-ok shortlist statuses display problems and stop. No build node.
+CLI build --check passed without diagnostics in an empty temporary data root;
+no files written there. **72 focused authoring/meta/recipe tests passed in
+0.31 seconds**, with execution/save/network forbidden for the new recipe tests.
+The three committed reply fixtures retain clean pass, warning-only pass and
+bad-fan-out refusal. No model generation, workflow run, installation, output
+folder or live settings changes. Full product suite not run: no runtime code
+changed. Delivery-case schema and JSON fixtures parse; docs consolidation and
+whitespace checks pass. PR publication recorded below.
+Measured trial remains a separate step after review.
+
+## 2026-10-27 — Draft a workflow: planning packet, stop for approval
+
+Own clean worktree `/home/makin/src/nw-draft-workflow-samples`, branch
+`codex/draft-workflow-samples`, fetched `origin/main` `cfd3458` (#125 merged).
+Owner requested steps 0–3 including three data samples, not a designer build.
+[Draft case](delivery_tests/draft-a-workflow.json) and external packet
+`/home/makin/src/agent_channel/draft-workflow-samples/README.md` retain request,
+feasibility, operation map, proposed decisions, exact payloads/counts and
+repeated-shape notes. Owner approval remains pending.
+
+- Verified 58 registered / 57 authorable types with 22 actual nodes/describe CLI
+  commands; temporary data roots stayed empty. General runtime selected-id
+  catalogue lookup needs a new node; static filters cannot consume a shortlist.
+  No such node was designed. Proposed fixed palette is 6,865 characters versus
+  Brief 6,207 and the hard Context cap 8,000. A single Context Pack item would
+  trim either at 4,000; propose complete Vault/Concat context instead.
+- Existing File Write can save the original checked JSON string from Vault,
+  after check success. No serializer/build/approval node needed for that route.
+  Bounded retry is expressible; propose none initially. An isolated in-memory
+  Repeat Counter probe with max_visits=3 allowed two entries and refused the third.
+- Three **hand-authored** reply fixtures: trivial clean pass, medium pass with
+  one unreachable-node warning, deliberately flawed parallel fan-out refusal.
+  Shared checker and real CLI build --check agree; no workflow-library writes.
+  Existing client question builder accepts all sample Question/Context pairs.
+  Saved sample JSON files are planning artifacts, not observed File Write output.
+- Strict dynamic-shape coverage 7/8; the proposed fixed-scope alternative 8/8 is
+  separately labelled, not a replay improvement on an unchanged request.
+  Two catalogue/Concat/local-question shapes record fixed/varied settings and
+  boundary Vault names with design-only evidence. Review rounds 0.
+- No generation, inference-service HTTP calls, live setup or product code.
+  Real CPU-only runtime/quality is unknown; the packet's minutes-scale arithmetic
+  is explicitly not a benchmark. Three packet schemas validated, all 38 JSON
+  fixtures parsed, 83 payload-length assertions passed, and docs consolidation
+  passed (102 Markdown files, 908 links/anchors). git diff --check passed.
+  Full product suite is not applicable to this docs/data planning turn.
+
+No PR or commit requested. Stop after the approval packet; no product build,
+automated save to the library, target execution or owner approval is inferred.
+
 ## 2026-10-27 — #125 re-check: structured credentials in run_errors
 
 Same own worktree `/home/makin/src/nw-meta-nodes`, `codex/meta-nodes`, clean

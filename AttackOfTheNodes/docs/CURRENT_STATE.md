@@ -1,11 +1,33 @@
 # Current State
 
-Snapshot checked **2026-10-27**, against fetched `origin/main` `3f36552` after
-#124 merged, with the meta nodes below built for review.
+Snapshot checked **2026-10-27**, against fetched `origin/main` `cfd3458` after
+#125 merged; the designer below is authored/check-only, awaiting review.
 Code and fresh GitHub checks take precedence.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
+
+## Draft a workflow — 2026-10-27, checked spec
+
+Own worktree `/home/makin/src/nw-draft-workflow-samples`, branch
+`codex/draft-workflow-samples`, fetched base `cfd3458`.
+Owner approved all eleven recommended decisions and the three samples.
+[Spec/guide](delivery_tests/specs/README.md),
+[delivery case](delivery_tests/draft-a-workflow.json): 30 nodes / 57 edges;
+`build --check` clean, 72 focused authoring/meta/recipe tests pass.
+No product code, installation, workflow/model run or output-folder creation.
+Review and the separately authorized measured trial remain later steps.
+
+The approved fixed nine-type drafting palette fits as complete Compact text:
+6,865 characters; Brief 6,207. Static catalogue queries do not use runtime
+shortlist ids. Strict dynamic lookup still needs a new node (historical 7/8);
+the approved scoped variant is 8/8. Keep the raw Answer in Vault; only matching
+Check success gates File Write with Create unique. Owner sees draft, warnings,
+actual path and a literal manual build command, then End. No retry or automated
+build. Passing a check does not prove request fidelity or runtime success.
+
+The following #125 candidate/review notes are historical; #125 is now merged in
+`cfd3458`, as verified from Git/GitHub. Their pending/open labels are retained.
 
 ## #125 re-check: structured failure inputs — 2026-10-27
 

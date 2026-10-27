@@ -1,0 +1,210 @@
+[
+  {
+    "id": "trivial",
+    "request": "When I run it, show Ready in the output.",
+    "shortlist": {
+      "status": "ok",
+      "node_types": [
+        "start_node",
+        "text_output_node",
+        "end_node"
+      ],
+      "reason": "A configured Start greeting can be displayed locally."
+    },
+    "draft": {
+      "format": "aotn-workflow/1",
+      "name": "Draft - Show Ready",
+      "nodes": {
+        "start": {
+          "type": "start_node",
+          "config": {
+            "greeting": "Ready"
+          }
+        },
+        "show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "Message",
+            "template": "{input}"
+          }
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": false
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "start.default",
+          "to": "show.input"
+        },
+        {
+          "from": "show.default",
+          "to": "end.input"
+        }
+      ]
+    },
+    "expected_ok": true,
+    "expected_warnings": 0
+  },
+  {
+    "id": "medium",
+    "request": "Ask me for a note, uppercase it, save it as /tmp/draft-note.txt without overwriting an old note, then show the saved path.",
+    "shortlist": {
+      "status": "ok",
+      "node_types": [
+        "start_node",
+        "user_text_input_node",
+        "text_transform_node",
+        "file_output_node",
+        "text_output_node",
+        "end_node"
+      ],
+      "reason": "Existing text input, uppercase transform, Create unique file writing and path display fit the fixed palette."
+    },
+    "draft": {
+      "format": "aotn-workflow/1",
+      "name": "Draft - Save an uppercase note",
+      "nodes": {
+        "start": {
+          "type": "start_node"
+        },
+        "ask": {
+          "type": "user_text_input_node",
+          "config": {
+            "prompt": "What note should I save?"
+          }
+        },
+        "uppercase": {
+          "type": "text_transform_node",
+          "config": {
+            "operation": "uppercase"
+          }
+        },
+        "save": {
+          "type": "file_output_node",
+          "config": {
+            "content_source": "Upstream payload",
+            "file_path_source": "Configured",
+            "file_path": "/tmp/draft-note.txt",
+            "write_mode": "Create unique",
+            "open_after_write": false,
+            "interpret_newlines": false
+          }
+        },
+        "show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "Saved note",
+            "template": "{input[path]}"
+          }
+        },
+        "unused_preview": {
+          "type": "text_output_node",
+          "config": {
+            "label": "Unused preview",
+            "template": "{input}"
+          }
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": false
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "start.default",
+          "to": "ask.input"
+        },
+        {
+          "from": "ask.default",
+          "to": "uppercase.input"
+        },
+        {
+          "from": "uppercase.default",
+          "to": "save.content"
+        },
+        {
+          "from": "save.default",
+          "to": "show.input"
+        },
+        {
+          "from": "show.default",
+          "to": "end.input"
+        }
+      ]
+    },
+    "expected_ok": true,
+    "expected_warnings": 1
+  },
+  {
+    "id": "should-fail",
+    "request": "When I run it, show Ready and Done on two parallel paths.",
+    "shortlist": {
+      "status": "ok",
+      "node_types": [
+        "start_node",
+        "branch_node",
+        "text_output_node",
+        "end_node"
+      ],
+      "reason": "Parallel Branch is needed; one ordinary output cannot fork."
+    },
+    "draft": {
+      "format": "aotn-workflow/1",
+      "name": "Draft - Incorrect parallel messages",
+      "nodes": {
+        "start": {
+          "type": "start_node",
+          "config": {
+            "greeting": "Ready"
+          }
+        },
+        "ready": {
+          "type": "text_output_node",
+          "config": {
+            "label": "Ready",
+            "template": "Ready"
+          }
+        },
+        "done": {
+          "type": "text_output_node",
+          "config": {
+            "label": "Done",
+            "template": "Done"
+          }
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": false
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "start.default",
+          "to": "ready.input"
+        },
+        {
+          "from": "start.default",
+          "to": "done.input"
+        },
+        {
+          "from": "ready.default",
+          "to": "end.input"
+        },
+        {
+          "from": "done.default",
+          "to": "end.input"
+        }
+      ]
+    },
+    "expected_ok": false,
+    "expected_warnings": 0
+  }
+]
