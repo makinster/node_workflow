@@ -327,7 +327,7 @@ class SubworkflowInputEditor(_EditorBase):
                          "row-vault-key-row")
             self.stash_entry = str(mapping.get("stash_entry") or "")
             yield _field("Stash entry:", CompactRowButton(self._stash_text(), id="row-stash", compact=True), "row-stash-row")
-            yield Static(Text("P picks another entry.", style=colors.MUTED), id="row-stash-hint")
+            yield Static(Text("E/Enter picks another entry.", style=colors.MUTED), id="row-stash-hint")
             if self._has_default():
                 default = f'"{row["value"]}"' if row["type"] == "string" else default_text(row["value"])
                 yield Static(f"Its default is {default}.", classes="form-description", markup=False)
@@ -342,17 +342,17 @@ class SubworkflowInputEditor(_EditorBase):
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "row-stash":
             event.stop()
-            self.action_stash_insert()
+            self._choose_stash_entry()
         else:
             super().on_button_pressed(event)
 
     def _stash_text(self) -> Text:
         if not self.stash_entry:
-            return Text("none yet: press P", style=colors.MUTED)
+            return Text("none yet: e/Enter to choose", style=colors.MUTED)
         return info.parts_text(info.stash_parts(self.stash_entry))
 
-    def action_stash_insert(self) -> None:
-        """P: pick the Stash entry this input comes from (by name)."""
+    def _choose_stash_entry(self) -> None:
+        """Explicit binding-button activation, separate from text insertion."""
         from frontend.widgets.stash_focus import stash_field
         if stash_field(self, '#row-stash') is None:
             return

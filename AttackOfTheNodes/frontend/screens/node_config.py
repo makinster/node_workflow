@@ -2337,21 +2337,12 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 return widget if isinstance(widget, LongTextPreview) else None
         return None
 
-    def on_descendant_focus(self, event) -> None:
-        if event.widget.id != "stash-insert-node-config":
-            # Only this explicit button keeps the immediately preceding field.
-            # Every other focus transition, including unsupported controls,
-            # replaces/clears the target.
-            self._stash_widget = self._focused_stash_widget(event.widget)
-
     def action_stash_insert(self) -> None:
         """Insert into the focused text/file field; selectors never redirect."""
         from backend.field_types import stash_insert_target
 
         origin = self.focused
-        widget = (getattr(self, "_stash_widget", None)
-                  if getattr(origin, "id", None) == "stash-insert-node-config"
-                  else self._focused_stash_widget(origin))
+        widget = self._focused_stash_widget(origin)
         field = widget.id.removeprefix("field-") if widget is not None else None
         metadata = self.factory.metadata_for_type(self.node_data.get("type", "")) or {}
         target = stash_insert_target(metadata.get("config_schema") or {}, field) if field else None
@@ -2612,10 +2603,6 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
 
     def action_cursor_up(self) -> None:
         focused = self.app.focused
-        active_text = getattr(self, "_active_command_text_widget", None)
-        if is_editing_text(active_text):
-            self.app.set_focus(active_text, scroll_visible=False)
-            return
         if is_editing_text(focused):
             return
         expanded_select = self._expanded_select()
@@ -2634,10 +2621,6 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
 
     def action_cursor_down(self) -> None:
         focused = self.app.focused
-        active_text = getattr(self, "_active_command_text_widget", None)
-        if is_editing_text(active_text):
-            self.app.set_focus(active_text, scroll_visible=False)
-            return
         if is_editing_text(focused):
             return
         expanded_select = self._expanded_select()

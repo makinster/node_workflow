@@ -92,5 +92,38 @@
     "generation_calls": 0,
     "docs_consolidation": "PASS: 96 Markdown files; 842 relative links/anchors; 33 whole archive bodies; 96 transferred session entries; 23 active docs",
     "git_diff_check": "pass"
+  },
+  "review_fix_recheck": {
+    "reviewed_head": "f360e8a29bca396b59928197884acb7653a4d63a",
+    "base_regressions": {
+      "failed": 13,
+      "passed": 3,
+      "seconds": 22.69
+    },
+    "focused": {
+      "passed": 226,
+      "seconds": 205.76
+    },
+    "full_suite": {
+      "passed": 3048,
+      "seconds": 674.42,
+      "wait_until_flake_retry": false,
+      "completed_at": "2026-10-27T03:39:56Z"
+    },
+    "generation_calls": 0,
+    "compileall": "pass",
+    "legacy_focused": {
+      "passed": 2,
+      "deselected": 158,
+      "seconds": 1.47
+    },
+    "earlier_full_attempt": {
+      "status": "interrupted for embedded-screen current-focus mode correction and obsolete retained-editor test expectation",
+      "failed": 2,
+      "passed": 739,
+      "seconds": 117.54
+    },
+    "docs_consolidation": "PASS: 96 Markdown files; 843 relative links/anchors; 33 whole archive bodies; 96 transferred session entries; 23 active docs",
+    "git_diff_check": "pass"
   }
 }

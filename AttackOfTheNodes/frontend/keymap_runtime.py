@@ -35,11 +35,9 @@ def available(command: Command, scope: Scope, context: KeyContext) -> bool:
 
 
 def active_editor(screen):
-    """Retained editor ownership survives terminal focus drift."""
-    for widget in (getattr(screen, "_active_command_text_widget", None), screen.app.focused):
-        if getattr(widget, "editing", False):
-            return widget
-    return None
+    """Only the currently focused text widget owns typing and edit commands."""
+    widget = screen.app.focused
+    return widget if getattr(widget, "editing", False) else None
 
 
 def context_for(owner) -> KeyContext:
@@ -73,7 +71,7 @@ def context_for(owner) -> KeyContext:
 def effective_bindings(owner):
     """Isolate Textual 8.2's keymap storage here; dispatch still stays native.
 
-    Use this for adapters/rescue, never active_bindings (which queries guards
+    Use this for adapters, never active_bindings (which queries guards
     and would recurse from check_consume_key). Copy before applying overrides.
     """
     bindings = owner._bindings.copy()

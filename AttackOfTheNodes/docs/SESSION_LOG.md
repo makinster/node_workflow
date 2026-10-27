@@ -6,6 +6,31 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-26 — #124 second P2: current focus owns P
+
+Same own worktree `/home/makin/src/nw-source-menu-audit`, branch
+`codex/source-menu-audit`; clean starting head `f360e8a`, main still `f0aa39d`.
+[Re-check](https://github.com/makinster/node_workflow/pull/124#issuecomment-6432584941)
+confirmed the original Stash assignment fixed but found P could be rescued
+into the previously edited Options URL after focus moved to a closed Select.
+
+- Removed the shared printable-key rescue and Input/TextArea drift redirects.
+  Typing policy uses current focus only; focused typing still inserts literal P.
+- Removed Node Config's remembered Insert-button target and navigation rescue.
+  Long-text insertion captures its exact area; a refused result never focuses it.
+  Buttons refuse P; Subworkflow binding selection uses explicit E/Enter instead.
+- Regression file on `f360e8a`: **13 failed, 3 passed in 22.69 seconds**.
+  Real edit/click/key paths cover closed/open Selects, checkboxes, buttons and
+  moving to another field; clean and edited draft values, dirty state, focus and
+  later Options Save are checked. The earlier tests omitted active editing.
+- **3048 full-suite tests passed in 674.42 seconds**, no WaitUntil retry.
+  Focused checks: 226 passed in 205.76 seconds plus two embedded/edit-mode checks.
+  One earlier full attempt stopped for the embedded mode correction and obsolete
+  retained-editor expectation. Compilation, artifact/schema, consolidation and
+  whitespace checks pass. Full verification is recorded in [review evidence](audits/source_menus_2026_10_26/verification.json).
+  Two review rounds; independent re-check and merge remain pending. No generation
+  or live settings/workflow changes.
+
 ## 2026-10-26 — #124 P2: Stash must target its focused field
 
 Same own worktree `/home/makin/src/nw-source-menu-audit`, branch

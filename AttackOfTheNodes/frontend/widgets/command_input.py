@@ -9,7 +9,7 @@ from textual import events
 from textual.widgets import Input, TextArea
 
 from frontend.keymap import TEXT_INPUT, TEXT_AREA, bindings_for
-from frontend.keymap_runtime import KeymapScreenMixin, screen_owns_key, navigation_keys
+from frontend.keymap_runtime import KeymapScreenMixin, screen_owns_key
 
 _DEBUG_LOG = os.environ.get("CI_EDIT_DEBUG")
 
@@ -271,31 +271,6 @@ class CommandInput(CommandTextMixin, Input):
                 event.stop()
             return
 
-        # Detect focus drift: another CommandInput/TextArea is actively editing
-        # but focus landed here instead.  Handling keys as if THIS widget owned
-        # the session would steal editing from the intended field, so we redirect.
-        try:
-            _drift_active = getattr(self.screen, "_active_command_text_widget", None)
-        except Exception:
-            _drift_active = None
-        if (
-            _drift_active is not None
-            and _drift_active is not self
-            and isinstance(_drift_active, (CommandInput, CommandTextArea))
-            and _drift_active.editing
-        ):
-            if event.key in navigation_keys(self.screen if hasattr(self.screen, "KEYMAP") else self, role="activate"):
-                # Re-focus the correct editing widget instead of taking over.
-                self.app.set_focus(_drift_active)
-                event.stop()
-                event.prevent_default()
-                return
-            # For printable/delete keys: let them bubble to the screen rescue
-            # handler rather than swallowing them here.  Nav keys bubble too but
-            # the rescue handler explicitly ignores them (they are no-ops while
-            # editing is active).
-            return
-
         if screen_owns_key(self, event.key):
             return  # bubble to Textual's native screen binding
 
@@ -395,24 +370,6 @@ class CommandTextArea(CommandTextMixin, TextArea):
             if event.key in EDITING_NAV_KEYS or event.is_printable or event.key == "enter":
                 event.stop()
             return
-
-        # Focus-drift guard: redirect to the correct editing widget.
-        try:
-            _drift_active = getattr(self.screen, "_active_command_text_widget", None)
-        except Exception:
-            _drift_active = None
-        if (
-            _drift_active is not None
-            and _drift_active is not self
-            and isinstance(_drift_active, (CommandInput, CommandTextArea))
-            and _drift_active.editing
-        ):
-            if event.key in navigation_keys(self.screen if hasattr(self.screen, "KEYMAP") else self, role="activate"):
-                self.app.set_focus(_drift_active)
-                event.stop()
-                event.prevent_default()
-                return
-            return  # Let printable/delete keys bubble to screen rescue handler
 
         if screen_owns_key(self, event.key):
             return  # bubble to Textual's native screen binding

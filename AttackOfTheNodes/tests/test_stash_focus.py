@@ -244,7 +244,7 @@ async def test_row_editor_selects_and_neighbour_fields_cannot_receive_stash_text
 
 
 @pytest.mark.asyncio
-async def test_subworkflow_stash_binding_has_its_own_focus_target(monkeypatch):
+async def test_subworkflow_binding_button_refuses_p_but_activates_its_own_picker(monkeypatch):
     from pathlib import Path
     from textual.app import App
     from frontend.widgets.subworkflow_rows import SubworkflowInputEditor
@@ -255,7 +255,11 @@ async def test_subworkflow_stash_binding_has_its_own_focus_target(monkeypatch):
     app=Host()
     async with app.run_test() as pilot:
         editor=app.screen;binding=editor.query_one('#row-stash',Button)
+        shown=[];monkeypatch.setattr('frontend.notifications.notify_info',lambda app,msg:shown.append(msg))
         binding.focus();await pilot.press('p');await pilot.pause()
+        assert editor.stash_entry=='old'
+        assert shown==["Stash text can't go into this field"]
+        await pilot.press('enter');await pilot.pause()
         assert editor.stash_entry=='picked'
         assert editor.query_one('#row-source',Select).value=='Stash'
         assert editor.query_one('#row-value',CommandInput).value==''

@@ -103,9 +103,10 @@ already-approved Step 4.
 - **Insert (owner, 2026-10-26):** in node config, focus a text/file field, then
   press `P`. All Selects/model pickers refuse with "Stash text can't go into
   this field"; they never redirect to another field. Choose Configured before
-  focusing a hidden value. The explicit Insert button keeps only the immediately
-  preceding eligible field. In row editors, focus Default/Text or the Subworkflow
-  Stash entry control itself. The list shows
+  focusing a hidden value. No previous-field fallback is allowed, including from
+  the Insert button. In row editors, focus Default/Text; activate the Subworkflow
+  Stash binding button with E/Enter to choose a binding. P on a button refuses.
+  The list shows
   only entries that fit, `e`/Enter inserts, the modal closes and the field is
   filled. If the field accepts nothing (checkbox, select), show a short notice.
 - **Warnings:** a dropped path that doesn't exist (common over SSH) is flagged

@@ -1,6 +1,6 @@
 """Stash S3: insert a Stash entry into a node config field.
 
-P (or the Insert from Stash button) on a highlighted field opens the Stash on
+P on a highlighted text/file field opens the Stash on
 Entries in insert mode, showing only entries the field accepts. A focused file field takes [file]; a focused text field takes [string].
 Source selectors refuse Stash insertion rather than filling another field.
 
@@ -102,22 +102,24 @@ def test_p_on_a_source_row_refuses_without_changing_source_or_path(stash, report
     asyncio.run(go())
 
 
-def test_the_button_inserts_into_the_last_focused_field(stash, report):
+def test_the_button_never_inserts_into_a_previous_field(stash, report, monkeypatch):
     async def go():
+        shown = []
+        monkeypatch.setattr('frontend.notifications.notify_info', lambda app, msg: shown.append(msg))
         stash.add_file(str(report))
         app, open_config = _config_app(stash, "file_reader_node", {"input_source": "Configured"})
         async with app.run_test(size=(120, 40)) as pilot:
-            await pilot.pause(0.05)
             config = await open_config(pilot)
-            await pilot.press("2")  # Parameters tab
-            await pilot.pause(0.05)
-            app.set_focus(config.query_one("#field-file_path"))
-            await pilot.pause(0.05)
+            await pilot.press("2")
+            await pilot.pause()
+            config.query_one("#field-file_path").focus()
+            await pilot.pause()
             await pilot.click("#stash-insert-node-config")
-            await pilot.pause(0.1)
-            await pilot.click("#stash-insert")
-            await pilot.pause(0.1)
-            assert config.query_one("#field-file_path", Input).value == str(report)
+            await pilot.pause()
+            assert app.screen is config
+            assert config.query_one("#field-file_path", Input).value == ""
+            assert not config._is_dirty()
+            assert shown == ["Stash text can't go into this field"]
     asyncio.run(go())
 
 

@@ -8306,11 +8306,11 @@ async def _test_command_text_nav_mode_ad_positions_caret_before_edit():
     print("test_command_text_nav_mode_ad_positions_caret_before_edit PASSED")
 
 
-def test_mixin_blocks_nav_when_active_text_not_focused():
-    asyncio.run(_test_mixin_blocks_nav_when_active_text_not_focused())
+def test_mixin_uses_focused_control_after_text_edit():
+    asyncio.run(_test_mixin_uses_focused_control_after_text_edit())
 
 
-async def _test_mixin_blocks_nav_when_active_text_not_focused():
+async def _test_mixin_uses_focused_control_after_text_edit():
     from textual.app import App, ComposeResult
     from textual.screen import Screen
     from textual.widgets import Button
@@ -8350,10 +8350,13 @@ async def _test_mixin_blocks_nav_when_active_text_not_focused():
         await pilot.press("s")
         await pilot.pause(0.02)
         assert app.focused is button
-        assert field.editing is True
-        assert app.cursor_state.mode == "edit"
+        assert field.editing is False
+        assert app.cursor_state.mode == "nav"
+        before = field.value
+        await pilot.press("p")
+        assert field.value == before and app.focused is button
 
-    print("test_mixin_blocks_nav_when_active_text_not_focused PASSED")
+    print("test_mixin_uses_focused_control_after_text_edit PASSED")
 
 
 def test_migrated_command_screens_render_status_bar():
@@ -8645,7 +8648,7 @@ if __name__ == "__main__":
         test_auto_edit_prompt_syncs_cursor_and_status_bar,
         test_click_edit_and_textarea_commit_sync_cursor_mode,
         test_command_text_nav_mode_ad_positions_caret_before_edit,
-        test_mixin_blocks_nav_when_active_text_not_focused,
+        test_mixin_uses_focused_control_after_text_edit,
         test_migrated_command_screens_render_status_bar,
     ]
     failed = []

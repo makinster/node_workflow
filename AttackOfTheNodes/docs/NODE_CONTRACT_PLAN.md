@@ -58,8 +58,9 @@ Options local model selection remain separate, with one shared read-only picker.
 new source kinds are proposals only. Review on `28fa003` found one P2:
 Stash targeting could overwrite an unfocused field. The
 [focus-only fix](audits/source_menus_2026_10_26/STASH_FOCUS_REVIEW.md) refuses
-Selects/pickers across Node Config, Options and row editors; reviewer re-check
-and merge pending.
+Selects/pickers across Node Config, Options and row editors. A second P2 on
+`f360e8a` exposed retained-editor key rescue; the current-focus fix removes that
+rescue and the Insert-button fallback. Reviewer re-check and merge pending.
 
 ## Proposed phases
 
