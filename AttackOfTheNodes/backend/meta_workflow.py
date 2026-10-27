@@ -98,6 +98,34 @@ def _nonfinite(_):
     raise ValueError('non-finite JSON constant')
 
 
+class _Pairs(list):
+    """An object's (key, value) pairs in source order, before dict collapse."""
+
+
+def _objects(value, path, duplicates):
+    """Build dicts from parsed pairs, noting every repeated key's path."""
+    if isinstance(value, _Pairs):
+        result = {}
+        for key, item in value:
+            where = f'{path}.{key}' if path else key
+            if key in result:
+                duplicates.append(where)
+            result[key] = _objects(item, where, duplicates)
+        return result
+    if isinstance(value, list):
+        return [_objects(item, f'{path}[{n}]', duplicates) for n, item in enumerate(value)]
+    return value
+
+
+def _duplicate_diagnostics(paths):
+    rows = []
+    for path in paths:
+        parts = path.split('.')
+        node = parts[1] if len(parts) > 1 and parts[0] == 'nodes' else None
+        rows.append(dict(node=node, field=path, code='duplicate_key', level='error'))
+    return rows
+
+
 SAFE_MESSAGES = {
     'spec_invalid': 'This spec field has an invalid shape or value.',
     'bad_handle': 'Use a lowercase handle starting with a letter (letters, digits and underscore).',
@@ -107,6 +135,7 @@ SAFE_MESSAGES = {
     'unknown_reference': 'Reference must name a node handle in this spec.',
     'unknown_port': 'Connection names a port unavailable with this node configuration.',
     'duplicate_connection': 'This connection is listed more than once.',
+    'duplicate_key': 'This JSON key appears more than once; keep only one.',
     'file_not_found': 'The configured file was not found at check time.',
     'unreachable': 'Node is not reachable from Start.',
     'no_start_node': 'The workflow needs a Start node.',
@@ -166,10 +195,16 @@ async def check(factory, text, limit, manager=None):
         if len(text.encode('utf-8')) > MAX_BYTES:
             raise NodeError('spec_too_large', 'Spec exceeds its byte limit.')
         _depth(text)
-        parsed = json.loads(text, parse_constant=_nonfinite)
+        duplicates = []
+        parsed = _objects(json.loads(text, parse_constant=_nonfinite, object_pairs_hook=_Pairs),
+                          '', duplicates)
         _json_value(parsed)
     except (ValueError, UnicodeError, RecursionError):
         raise NodeError('invalid_json', 'Spec is not valid JSON text.') from None
+    if duplicates:
+        # A repeated key would silently keep only its last value; never approve that draft.
+        message, details = problem_report(_duplicate_diagnostics(duplicates), manager, invalid=True)
+        raise NodeError('invalid_json', message, details=details)
     if isinstance(parsed, dict):
         if isinstance(parsed.get('nodes'), dict) and len(parsed['nodes']) > MAX_NODES:
             raise NodeError('spec_too_large', 'Spec has more than 128 nodes.')

@@ -203,8 +203,27 @@
   },
   "measurements": {
     "loop_started_at": "2026-10-27T04:27:36Z",
-    "review_rounds": 0,
-    "reviews": [],
+    "review_rounds": 1,
+    "reviews": [
+      {
+        "head": "42fcb4d91ad66ee036302afa29e72b45b380bb8d",
+        "reviewed_at": "2026-10-27T08:29:52Z",
+        "findings": [
+          {
+            "priority": "P2",
+            "description": "A failed node's original inputs (the draft spec, with a Secrets value) persisted unredacted in run_errors context.inputs",
+            "status": "fixed_pending_recheck"
+          },
+          {
+            "priority": "P2",
+            "description": "Duplicate JSON object keys silently kept the last value, so an invalid first definition could pass",
+            "status": "fixed_pending_recheck"
+          }
+        ],
+        "outcome": "Two P2 findings fixed engine-wide/parser-side in one follow-up push with the owner-approved Brief detail level; re-check pending.",
+        "url": "https://github.com/makinster/node_workflow/pull/125#issuecomment-6437185514"
+      }
+    ],
     "step_visits": [
       {
         "step": 0,
@@ -376,6 +395,11 @@
         "at": "2026-10-27T07:15:15Z",
         "step": 5,
         "event": "PR #125 published from codex/meta-nodes to main. Implementation head 389692c; publication metadata follow-up changes docs only. Open, not merged."
+      },
+      {
+        "at": "2026-10-27T16:24:36Z",
+        "step": 6,
+        "event": "Review round 1 fixes: failed-node inputs redacted with the shared redactor and capped at 2,000 characters before run_errors; duplicate JSON keys rejected as invalid_json with their path; Brief detail added (all non-debug Text 6,207 characters, under the 8,000 Ask local model Context cap). Re-check pending; do not merge."
       }
     ],
     "verification": {
@@ -442,7 +466,7 @@
     "No real generation, outside-service calls or active workflow edits. Test library writes for other existing suite cases are temporary fixtures.",
     "Repeated shape combines an existing checked example with a proposed meta sketch. Vault reads/writes are the union of named boundary keys; there is no claim of two observed runs.",
     "Steps 3/4 were owner approved before build; exact approval timestamp unknown. Step-visit overlap is not summed as total wall time.",
-    "No independent review round yet; author checks are not review. Steps 6–11 pending."
+    "Review round 1 (42fcb4d): two P2s fixed in the follow-up push; re-check pending. Steps 7–11 pending."
   ],
   "kind": "meta nodes",
   "packet_version": "2026-10-26-v2-build",

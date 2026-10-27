@@ -32,6 +32,12 @@ serialization: don't assume `[var]` bypasses caps.
 Request → classify kind → Node catalogue → Context Pack → draft JSON spec →
 Check workflow spec → owner approval → build.
 
+Update (review round 1, Brief added): the catalogue step is two passes.
+Node catalogue (Brief, All nodes, Text; ~6,200 characters) → Ask local model
+shortlists node types → Node catalogue (Detailed, Filtered to those types) →
+Context Pack → draft. Brief fits the 8,000-character model Context; the full
+Compact/Detailed catalogue does not.
+
 | Operation | Current mapping |
 |---|---|
 | Request | User Text Input in an attended run; save request to Vault |

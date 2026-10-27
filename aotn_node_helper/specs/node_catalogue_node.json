@@ -98,11 +98,13 @@
         "type": "select",
         "label": "Detail",
         "options": [
+          "Brief",
           "Compact",
           "Detailed"
         ],
         "tab": "Parameters",
-        "description": "Detailed adds full config and row schemas.",
+        "wrap_description": true,
+        "description": "Brief: names and one-liners to shortlist nodes (fits a model Context). Then Detailed, filtered to the chosen nodes, adds full config and row schemas.",
         "default": "Compact"
       },
       "format": {

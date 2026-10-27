@@ -296,3 +296,43 @@ def test_problem_locations_use_existing_redactor_before_capping(monkeypatch):
     message,details=meta_workflow.problem_report([dict(node='private',field='config.private',code='unknown_config_key')],manager='manager')
     assert 'private' not in message+json.dumps(details)
     assert calls and all(x==('manager',True) for x in calls)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('draft,path', [
+    # A first, broken definition must not be hidden by a later valid one.
+    ('{"format":"aotn-workflow/1","name":"D","nodes":{"start":{"type":"start_node"},'
+     '"end":{"type":"does_not_exist"},"end":{"type":"end_node"}},'
+     '"connections":[{"from":"start.default","to":"end.input"}]}', 'nodes.end'),
+    ('{"format":"aotn-workflow/1","name":"D","nodes":{"start":{"type":"start_node"},'
+     '"say":{"type":"text_output_node","config":{"template":"a","template":"b"}}},'
+     '"connections":[{"from":"start.default","to":"say.input"}]}', 'nodes.say.config.template'),
+])
+async def test_duplicate_json_keys_are_invalid_json_with_their_path(draft, path):
+    node, ctx, memory, done, errors = runner('check_workflow_spec_node',
+        dict(vault_write=True, vault_write_key='checked'), draft)
+    await node.execute(ctx)
+    assert not done and memory.read_persistent('checked') is None
+    assert errors[0].code == 'invalid_json'
+    problems = errors[0].details['problems']
+    assert [(p['field'], p['code']) for p in problems] == [(path, 'duplicate_key')]
+    assert problems[0]['node'] == path.split('.')[1]
+
+
+@pytest.mark.asyncio
+async def test_brief_catalogue_fits_ask_local_model_context_with_headroom():
+    from backend.integrations.local_model import MAX_CONTEXT
+    factory = NodeFactory()
+    cfg = dict(deepcopy(factory._node_registry['node_catalogue_node'].default_config), detail='Brief')
+    text = await node_catalogue.build(factory, cfg)
+    record = await node_catalogue.build(factory, dict(cfg, format='JSON'))
+    compact = await node_catalogue.build(factory, dict(cfg, detail='Compact', format='JSON'))
+    assert {e['type'] for e in record['entries']} == {e['type'] for e in compact['entries']}
+    assert MAX_CONTEXT == 8000
+    assert len(text) <= 0.9 * MAX_CONTEXT  # default filters; 10% headroom
+    for e in record['entries']:
+        assert set(e) == {'entry_kind', 'type', 'display_name', 'description', 'inputs', 'outputs'}
+        assert all(isinstance(name, str) for name in e['inputs'] + e['outputs'])
+    assert 'check_workflow_spec_node | Check workflow spec |' in text
+    assert 'Spec -> Checked spec, Check report' in text
+    assert 'max_spec' not in text and 'Detailed' in text.splitlines()[1]

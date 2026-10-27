@@ -12,6 +12,7 @@ from .port_types import port_metadata, resolved_metadata
 MAX_BYTES = 256 * 1024
 SOURCE_IDS = {'Upstream payload': 'upstream', 'Vault': 'vault', 'Configured': 'configured'}
 COMPACT_KEYS = ('type', 'required', 'options', 'min', 'max', 'secret', 'path_hint')
+DETAILS = ('Brief', 'Compact', 'Detailed')
 
 
 def compact_json(value):
@@ -33,9 +34,20 @@ def _field(info):
     return result
 
 
+def brief_entry(factory, row):
+    """Shortlist row: names and one-liners only, no types, sources or config."""
+    description = describe_node_type(factory, row['type'])
+    return dict(entry_kind='node', type=row['type'], display_name=row['name'],
+                description=' '.join(row['description'].splitlines()),
+                inputs=[p['name'] for p in description['inputs']],
+                outputs=[p['name'] for p in description['outputs']])
+
+
 def entry(factory, row, detail):
     """Ports have stable ids/names: future Bundle contract rows can use the same shape."""
     kind = row['type']
+    if detail == 'Brief':
+        return brief_entry(factory, row)
     meta = factory.metadata_for_type(kind)
     description = describe_node_type(factory, kind)
     config = description['config']
@@ -85,7 +97,18 @@ def entry(factory, row, detail):
     return result
 
 
+def brief_text(record):
+    lines = ['Node catalogue v1 · Brief: type | name | purpose | in -> out',
+             'For shortlisting. Ask again with Detailed, filtered to the chosen types, before drafting.', '']
+    for item in record['entries']:
+        lines.append(f"{item['type']} | {item['display_name']} | {item['description']} | "
+                     f"{', '.join(item['inputs']) or '-'} -> {', '.join(item['outputs']) or '-'}")
+    return '\n'.join(lines) + '\n'
+
+
 def text_output(record):
+    if record['detail'] == 'Brief':
+        return brief_text(record)
     lines = ['Node catalogue v1 · ports resolved with defaults',
              'Complete matching entries. Compact fields omit defaults/full constraints; use Detailed.', '']
     for item in record['entries']:
@@ -106,7 +129,7 @@ def text_output(record):
 
 def validate_config(config):
     if (config.get('scope') not in ('All nodes', 'Filtered')
-            or config.get('detail') not in ('Compact', 'Detailed')
+            or config.get('detail') not in DETAILS
             or config.get('format') not in ('Text', 'JSON')
             or type(config.get('include_debug')) is not bool
             or type(config.get('max_chars')) is not int

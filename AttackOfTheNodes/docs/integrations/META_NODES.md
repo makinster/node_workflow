@@ -23,7 +23,9 @@ forwarding. Filters are node settings:
 - **Filtered** ANDs exact group, case-insensitive exact tag, and every
   case-insensitive search word in type/name/description/tags. Blank means any.
   No regex. No matches gives `catalogue_empty`.
-- **Compact / Detailed** is separate from **Text / JSON**. Compact includes
+- **Brief / Compact / Detailed** is separate from **Text / JSON**. Brief has
+  only type, display name, one-line description and input/output display
+  names: no data types, sources, config or errors. Compact includes
   field names/types/ranges/options and error codes; Detailed adds full schemas,
   defaults, declared error descriptions, custom/unchecked keys, reference
   fields, Vault declarations and UI hints. Dynamic ports are resolved with
@@ -56,6 +58,13 @@ can overflow; narrow filters. Context Pack and Ask local model have their own
 limits: the full catalogue fitting this node does not make it fit downstream.
 Use a filtered catalogue for a small request.
 
+**Two-pass planning.** Measured Brief **all non-debug** Text: **50 entries,
+6,207 characters** including its header, about 22% under the 8,000-character
+Ask local model Context cap (compact JSON is 10,362, so pass Text to a model).
+1. Shortlist: Brief, All nodes, Text → Context of the planning question.
+2. Detail: Detailed (or Compact), Filtered by the shortlisted types/search →
+   Context of the drafting question. Only the chosen nodes' config reaches it.
+
 ## Check workflow spec
 
 `check_workflow_spec_node` takes required **Spec [string]**, exactly from
@@ -81,13 +90,19 @@ schema version, verdict, node/connection/warning counts, bounded `problems`
 and `omitted_count`. It contains no spec body. Enabled Vault keys must be
 nonblank and distinct. Failure leaves both outputs untouched.
 
-Invalid JSON → `invalid_json`; failed shared check → `spec_invalid` on the
+Invalid JSON, including any repeated object key at any depth, →
+`invalid_json`; a repeated key is listed with its path (for example
+`nodes.end` or `nodes.say.config.template`) and code `duplicate_key`, since
+a parser would otherwise keep only the last value; failed shared check → `spec_invalid` on the
 normal error port; overflow → `spec_too_large`; bad settings → `invalid_config`.
 The problem list has `node`, `field`, `code`, `severity`, `message`; unknown
 locations remain null. Authoring diagnostics now carry structured locations.
 Safe guidance replaces value-quoting CLI messages before error persistence;
 locations use the existing secret redactor before capping. No raw spec is
-copied into errors. At most 100 rows / 8,000 serialized message+details
+copied into errors. Separately, for every node, the engine redacts a failed
+node's persisted inputs (`context.inputs` in `run_errors/<run>.json`) with the
+same redactor (known Secrets values plus labelled credentials) and trims each
+input to 2,000 characters with a `[trimmed: …]` note. At most 100 rows / 8,000 serialized message+details
 characters, with explicit omissions. Graph-level issues can lack a field.
 
 Default spec cap 32,000 characters, configurable 1–64,000; hard 256 KiB,
