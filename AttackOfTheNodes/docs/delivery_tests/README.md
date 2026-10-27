@@ -66,3 +66,10 @@ A stub transport proves logic only. Node plans cannot claim a build-check pass
 until converted to actual specs. Compare candidates on the same checks/base;
 keep approval/permission/redaction failures blocking. Do not overwrite the
 frozen case just to improve a score.
+
+[Draft a workflow](draft-a-workflow.json): owner-approved fixed-palette variant,
+step 5 authored and checked. [Spec and usage](specs/README.md),
+[approved reply fixtures](fixtures/draft-a-workflow.json). Strict runtime lookup
+mapping stays 7/8; the approved narrower scope is 8/8. No generation,
+designer/target execution or installation. Local approval packet:
+`/home/makin/src/agent_channel/draft-workflow-samples/`.

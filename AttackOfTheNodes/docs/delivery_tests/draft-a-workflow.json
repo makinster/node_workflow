@@ -1,0 +1,450 @@
+{
+  "schema_version": 1,
+  "case_id": "draft-a-workflow",
+  "baseline": "cfd345888b76ca24347b0b6596a84e1926765256",
+  "record_status": "step 5 authored and checked; owner decisions 1–11 and samples approved; review pending, no workflow/model run",
+  "request_kind": "composition-only",
+  "owner_kind": "first composition-only meta-workflow",
+  "node_kind": "meta",
+  "classification_note": "Owner requested composition-only. Strict runtime-selected lookup is a gap; approve the narrower fixed-palette alternative or classify a separate future new-node run. No universal composition claim.",
+  "request": {
+    "schema_version": 1,
+    "request_id": "draft-a-workflow",
+    "date": "2026-10-27",
+    "intent": "Owner supplies a plain request; existing nodes draft and check an aotn-workflow/1 spec, show warnings and a saved spec path, then stop for manual owner review/build.",
+    "example": {
+      "input": "trivial: When I run it, show Ready in the output.",
+      "expected_result": "A checked JSON spec, visible warnings (or none), and a spec file; owner may manually run aotn build on that exact file. No automatic build or execution."
+    },
+    "target_device": "Owner WSL terminal, readable on a phone; generated workflows are not run by the designer.",
+    "destination": "Proposed /home/makin/src/agent_channel/draft-workflow-output/draft.json using Create unique; this packet is in /home/makin/src/agent_channel/draft-workflow-samples/.",
+    "trigger": "Manual on-demand designer run after separate approval; no schedule.",
+    "inputs": [
+      "Owner request, approved 500-character guidance (not an enforced gate)",
+      "Live registry: Brief catalogue, then fixed pre-approved Compact queries",
+      "Existing Ask local model using owner-configured local endpoint",
+      "Original draft JSON text retained in Vault until its matching check passes"
+    ],
+    "constraints": [
+      "Steps 0–3 planning and data samples are approved; this build step authors/checks the designer only. No workflow run or generation.",
+      "No product code, installed workflow, automatic build/approval node, model generation, live file-output run or service/settings changes.",
+      "Use only existing nodes for the proposed first version; the general runtime-shortlist catalogue lookup is a named new-node gap, not an approved feature.",
+      "Keep each Ask Context within 8000 characters and its assembled question within 20000; never silently trim contracts.",
+      "Save only after a passing check, preserve original JSON text, and display actual file-reference path.",
+      "No credential values in requests/specs; no automatic execution of a drafted workflow."
+    ],
+    "success": [
+      "Within an owner-approved scope, two local-model steps shortlist then draft using existing contracts.",
+      "The shared checker rejects invalid JSON, duplicate keys, invalid types/config/ports and ignored fan-out.",
+      "A warning-only pass remains visibly marked; a failure shows readable problems and creates no success file.",
+      "The saved content is exactly the JSON text that passed; writing occurs after the check, using fixed destination settings.",
+      "Owner reviews the exact file/warnings and decides whether to run aotn build manually."
+    ],
+    "unknowns": [
+      "Resolved 2026-10-27: owner approved fixed-palette scope and all eleven recommended decisions plus samples.",
+      "Strict runtime lookup of shortlisted node ids is not accepted by catalogue v1; that path needs a new node.",
+      "Model quality, real CPU-only long-context runtime and current endpoint availability were not tested by generation.",
+      "Examples are hand-authored responses; actual checker verdicts/counts are measured, not inference quality."
+    ]
+  },
+  "feasibility": {
+    "schema_version": 1,
+    "request_id": "draft-a-workflow",
+    "checked_at": "2026-10-27T20:21:14Z",
+    "researcher": "Planning agent: current source, 22 real nodes/describe CLI probes, catalogue measurements and isolated read-only checks",
+    "official_api": "Project-owned nodes/describe and shared check_workflow_spec; existing Ask local model owns the local API client. No new external integration is needed for the scoped variant.",
+    "sign_in": "No new account. Future use needs owner Options URL/default model already configured and the local endpoint reachable. This planning packet did not connect to it.",
+    "cost": "Zero generation calls in planning. Future local CPU time, electricity and opportunity cost are unknown; no hosted-token price assumption or paid fallback.",
+    "reliability": "Brief is 6207 characters; proposed complete fixed Compact palette is 6865, both below 8000. Context Pack would trim either as a single item (max 4000), so preserve the complete text through Vault/Concat. Checker and CLI agree on two passes (one warning-only) and one refusal, with no library writes. No actual generated output or full designer run was tested.",
+    "terms_of_service": "No new API/redistribution in this plan. Existing locally installed model terms remain the owner setup dependency; not reassessed here.",
+    "sources": [
+      "/home/makin/src/nw-draft-workflow-samples/AttackOfTheNodes/backend/node_catalogue.py",
+      "/home/makin/src/nw-draft-workflow-samples/AttackOfTheNodes/backend/integrations/local_model.py",
+      "/home/makin/src/nw-draft-workflow-samples/AttackOfTheNodes/backend/nodes/io/file_output_node.py",
+      "/home/makin/src/nw-draft-workflow-samples/AttackOfTheNodes/backend/nodes/debug/repeat_node.py",
+      "/home/makin/src/nw-draft-workflow-samples/AttackOfTheNodes/docs/delivery_tests/ask-local-model.json",
+      "/home/makin/src/agent_channel/draft-workflow-samples/node-descriptions.json",
+      "/home/makin/src/agent_channel/draft-workflow-samples/catalogue-measurements.json",
+      "/home/makin/src/agent_channel/draft-workflow-samples/sample-measurements.json"
+    ],
+    "verdict": "conditional",
+    "reason": "A scoped fixed-palette designer can be composed from existing nodes. The exact general-purpose shortlist -> runtime catalogue lookup shape cannot; owner must choose scoped composition or a separate new-node loop. All generation/use awaits approval.",
+    "conditions": [
+      "Owner chooses the first supported scope and approves the data samples/decisions.",
+      "Use fixed complete Compact context or preconfigured branch profiles; do not imply dynamic catalogue filtering.",
+      "Preserve the raw draft in Vault and use the check success path to gate File Write.",
+      "Approve a later bounded local trial and measure CPU runtime/quality before claiming delivery."
+    ],
+    "alternatives": [
+      "A fixed Compact group plus Start/End/required companions",
+      "A finite Conditional menu of static query profiles",
+      "Pause for a new node for general runtime selected-type lookup; no design/build in this packet",
+      "Manual shortlist -> owner changes catalogue filters -> resume (extra owner work, outside the fully automatic goal)"
+    ]
+  },
+  "final_artifact": {
+    "kind": "checked-workflow-spec",
+    "path": "specs/draft-a-workflow.json",
+    "guide": "specs/README.md",
+    "approved_samples": "fixtures/draft-a-workflow.json",
+    "installed": false,
+    "executed": false,
+    "base": "cfd345888b76ca24347b0b6596a84e1926765256",
+    "implementation_commit": "2824108"
+  },
+  "candidate_artifact": {
+    "kind": "planning-packet",
+    "packet": "/home/makin/src/agent_channel/draft-workflow-samples",
+    "branch": "codex/draft-workflow-samples",
+    "worktree": "/home/makin/src/nw-draft-workflow-samples",
+    "decisions": "/home/makin/src/agent_channel/draft-workflow-samples/DECISIONS.md",
+    "samples": "/home/makin/src/agent_channel/draft-workflow-samples/SAMPLES.md",
+    "node_map": "/home/makin/src/agent_channel/draft-workflow-samples/NODE_MAP.md"
+  },
+  "coverage": {
+    "total_operations": 8,
+    "existing_count": 7,
+    "new_count": 1,
+    "ratio": 0.875,
+    "mappings": [
+      {
+        "operation": "Capture request",
+        "node_types": [
+          "user_text_input_node"
+        ],
+        "status": "existing"
+      },
+      {
+        "operation": "Supply Brief contracts",
+        "node_types": [
+          "node_catalogue_node"
+        ],
+        "status": "existing"
+      },
+      {
+        "operation": "Shortlist nodes",
+        "node_types": [
+          "ask_local_model_node",
+          "concat_node"
+        ],
+        "status": "existing"
+      },
+      {
+        "operation": "General runtime-selected full contract lookup",
+        "node_types": [],
+        "status": "new"
+      },
+      {
+        "operation": "Draft JSON spec",
+        "node_types": [
+          "ask_local_model_node"
+        ],
+        "status": "existing"
+      },
+      {
+        "operation": "Check spec",
+        "node_types": [
+          "check_workflow_spec_node"
+        ],
+        "status": "existing"
+      },
+      {
+        "operation": "Save matching checked text",
+        "node_types": [
+          "file_output_node"
+        ],
+        "status": "existing"
+      },
+      {
+        "operation": "Present draft, warnings and actual path",
+        "node_types": [
+          "json_path_node",
+          "concat_node",
+          "text_output_node"
+        ],
+        "status": "existing"
+      }
+    ],
+    "gap_labels": [
+      "G1: needs a new node for the strict generic runtime lookup"
+    ],
+    "scope_alternative": {
+      "description": "Owner may approve fixed local text/file palette, replacing dynamic lookup with static catalogue queries. Narrower scope, not a replay improvement on the unrestricted request.",
+      "total_operations": 8,
+      "existing_count": 8,
+      "new_count": 0,
+      "ratio": 1.0,
+      "owner_approved": true
+    }
+  },
+  "approvals": {
+    "decisions": true,
+    "samples": true,
+    "build": true,
+    "go_live": false,
+    "recorded_at": "2026-10-27T23:07:17Z",
+    "scope": "All 11 recommended choices and three data samples approved by owner; author/check/PR only this turn. Measured trial separate after review; no model calls or workflow run."
+  },
+  "measurements": {
+    "loop_started_at": "2026-10-27T19:50:48Z",
+    "review_rounds": 0,
+    "reviews": [],
+    "step_visits": [
+      {
+        "step": 0,
+        "started_at": "2026-10-27T19:50:48Z",
+        "ended_at": "2026-10-27T20:21:14Z",
+        "elapsed_days": 0.02113425925925926,
+        "status": "complete",
+        "wait_reason": null,
+        "notes": "Planning tasks overlapped; first recorded clock checkpoint is used; do not sum overlapping visits."
+      },
+      {
+        "step": 1,
+        "started_at": "2026-10-27T19:50:48Z",
+        "ended_at": "2026-10-27T20:21:14Z",
+        "elapsed_days": 0.02113425925925926,
+        "status": "complete",
+        "wait_reason": null,
+        "notes": "Planning tasks overlapped; first recorded clock checkpoint is used; do not sum overlapping visits."
+      },
+      {
+        "step": 2,
+        "started_at": "2026-10-27T19:50:48Z",
+        "ended_at": "2026-10-27T20:21:14Z",
+        "elapsed_days": 0.02113425925925926,
+        "status": "complete",
+        "wait_reason": null,
+        "notes": "Planning tasks overlapped; first recorded clock checkpoint is used; do not sum overlapping visits."
+      },
+      {
+        "step": 3,
+        "started_at": "2026-10-27T20:21:14Z",
+        "ended_at": "2026-10-27T23:07:17Z",
+        "elapsed_days": 0.1153125,
+        "status": "complete",
+        "wait_reason": "Owner decisions/sample approval; end is first recorded acknowledgement",
+        "notes": "All 11 recommended choices approved as written, fixed-scope alternative and three samples included."
+      },
+      {
+        "step": 4,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "complete",
+        "wait_reason": null,
+        "notes": "Data samples prepared with steps 0–3 as explicitly requested and approved with decisions. No separate UI work; precise stage-4 timestamps not separately captured."
+      },
+      {
+        "step": 5,
+        "started_at": "2026-10-27T23:07:17Z",
+        "ended_at": "2026-10-27T23:10:10Z",
+        "elapsed_days": 0.002002314814814815,
+        "status": "complete",
+        "wait_reason": null,
+        "notes": "Authored 30-node / 57-edge existing-node designer spec, check-only CLI clean; 72 focused tests pass. No library install, workflow run or inference call."
+      },
+      {
+        "step": 6,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "not_started",
+        "wait_reason": null,
+        "notes": "Outside this turn; no permission inferred."
+      },
+      {
+        "step": 7,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "not_started",
+        "wait_reason": null,
+        "notes": "Outside this turn; no permission inferred."
+      },
+      {
+        "step": 8,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "not_started",
+        "wait_reason": null,
+        "notes": "Outside this turn; no permission inferred."
+      },
+      {
+        "step": 9,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "not_started",
+        "wait_reason": null,
+        "notes": "Outside this turn; no permission inferred."
+      },
+      {
+        "step": 10,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "not_started",
+        "wait_reason": null,
+        "notes": "Outside this turn; no permission inferred."
+      },
+      {
+        "step": 11,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "not_started",
+        "wait_reason": null,
+        "notes": "Outside this turn; no permission inferred."
+      }
+    ],
+    "checkpoints": [
+      {
+        "at": "2026-10-27T19:50:48Z",
+        "step": 0,
+        "event": "First recorded planning clock: own clean worktree from freshly fetched main cfd3458; owner checkout preserved."
+      },
+      {
+        "at": "2026-10-27T20:21:14Z",
+        "step": 3,
+        "event": "Request, feasibility, counts, three data samples, actual read-only checker/CLI verdicts, retry control probe and numbered decisions prepared; STOP for owner approval."
+      },
+      {
+        "at": "2026-10-27T23:10:10Z",
+        "step": 5,
+        "event": "Spec authored and build --check passed without diagnostics; 72 focused checks pass. Trial remains separate after review."
+      }
+    ],
+    "verification": {
+      "generation_calls": 0,
+      "network_calls": 0,
+      "workflow_library_writes": 0,
+      "designer_workflow_runs": 0,
+      "target_workflow_runs": 0,
+      "control_node_invocations": 3,
+      "cli_discovery_commands": 22,
+      "read_only_sample_checks": 3,
+      "expected_checks": {
+        "passed": 2,
+        "failed": 1,
+        "warning_only": 1
+      },
+      "packet_schema_status": "PASS: updated delivery-case schema validated with local template references",
+      "product_suite": "Not run: no product/runtime changes; focused authoring/meta/recipe checks cover spec and new fixtures.",
+      "network_calls_scope": "Research/sample probes only; no inference-service network calls. Git/GitHub base discovery excluded.",
+      "build_check": {
+        "ok": true,
+        "diagnostics": [],
+        "nodes": 30,
+        "connections": 57,
+        "data_root": "fresh temporary directory; no files written"
+      },
+      "focused_tests": {
+        "passed": 72,
+        "seconds": 0.31,
+        "command": "python -m pytest tests/test_draft_workflow_spec.py tests/test_meta_nodes.py tests/test_authoring.py -q"
+      },
+      "docs_consolidation": "PASS: 103 Markdown files, 919 relative links/anchors",
+      "whitespace": "git diff --check passed"
+    }
+  },
+  "repeated_shapes": [
+    {
+      "id": "catalogue-question-local-answer",
+      "node_types": [
+        "node_catalogue_node",
+        "concat_node",
+        "ask_local_model_node"
+      ],
+      "fixed_settings": {
+        "node_catalogue_node.format": "Text",
+        "node_catalogue_node.include_debug": false,
+        "ask_local_model_node.reply_json": true,
+        "ask_local_model_node.thinking": false,
+        "ask_local_model_node.temperature": 0.2,
+        "ask_local_model_node.num_ctx": 8192,
+        "ask_local_model_node.model": "Options default"
+      },
+      "varied_settings": {
+        "node_catalogue_node.detail": [
+          "Brief",
+          "Compact"
+        ],
+        "node_catalogue_node.scope": [
+          "All nodes",
+          "eight fixed queries, then Concat joins complete fragments"
+        ],
+        "concat_node.template": [
+          "shortlist Question + Vault request",
+          "join fixed contracts; draft Question is prepared/stored earlier"
+        ],
+        "ask_local_model_node.sources": [
+          "Question Upstream / Context Vault brief_catalogue",
+          "Question Vault draft_question / Context Upstream"
+        ],
+        "ask_local_model_node.timeout": [
+          300,
+          600
+        ],
+        "ask_local_model_node.max_tokens": [
+          256,
+          1024
+        ]
+      },
+      "vault_edges": {
+        "reads": [
+          "draft_request",
+          "brief_catalogue",
+          "draft_shortlist",
+          "draft_question",
+          "contracts_<query>"
+        ],
+        "writes": [
+          "brief_catalogue",
+          "draft_shortlist",
+          "shortlist_details",
+          "draft_text",
+          "draft_details",
+          "contracts_<query>"
+        ]
+      },
+      "basis": "checked-spec",
+      "evidence": [
+        "specs/draft-a-workflow.json",
+        "../../tests/test_draft_workflow_spec.py"
+      ]
+    }
+  ],
+  "evidence": [
+    "/home/makin/src/agent_channel/draft-workflow-samples/node-descriptions.json",
+    "/home/makin/src/agent_channel/draft-workflow-samples/catalogue-measurements.json",
+    "/home/makin/src/agent_channel/draft-workflow-samples/fixed-palette.json",
+    "/home/makin/src/agent_channel/draft-workflow-samples/retry-control-probe.json",
+    "/home/makin/src/agent_channel/draft-workflow-samples/sample-measurements.json",
+    "/home/makin/src/agent_channel/draft-workflow-samples/timing-scenario.json",
+    "specs/draft-a-workflow.json",
+    "specs/README.md",
+    "fixtures/draft-a-workflow.json"
+  ],
+  "acceptance_checks": [
+    "Only verified current node types in supplied contracts/drafts; no invented type can pass Check.",
+    "No silent claim that static filters consume a runtime shortlist.",
+    "Scope changes need owner approval; original 7/8 denominator/mapping remains frozen.",
+    "Complete Context <=8000; assembled Question <=20000; no Context Pack item clipping of contracts.",
+    "Trivial example passes cleanly; medium warning-only pass is visible; bad fan-out fails.",
+    "File write is gated on check success and uses original matching raw text, not Python repr of parsed data.",
+    "No success file/build instruction on a failed check; no automated build or target execution.",
+    "Real model quality/timing stays not_run until separately approved, never scored as a pass."
+  ],
+  "notes": [
+    "Draft external references are absolute until owner approval/build versions them in the repository.",
+    "Requested data samples are included now under the owner-specified planning-only 0–3 scope, although DELIVERY_LOOP normally names samples as step 4. No approval is claimed.",
+    "Three reply examples are synthetic hand-authored data; checker results, source contracts and character counts are real probes.",
+    "No PR, product code, generation, live setup or installed workflow in this turn.",
+    "Future scoring: on the same catalogue base, score applicable acceptance checks individually; retain original coverage and record scoped alternatives separately. Permission/secret/approval regressions block promotion. Unrun model/device checks remain not_run.",
+    "Owner approved narrower fixed-palette variant; original general runtime lookup mapping remains 7/8 for comparison, approved scope is 8/8. No automated build or retry. Build step checked, not delivered/live.",
+    "Contract-only evidence; no observed execution. Eight static catalogue queries are collected by Concat before draft call."
+  ],
+  "pr": "https://github.com/makinster/node_workflow/pull/126"
+}
