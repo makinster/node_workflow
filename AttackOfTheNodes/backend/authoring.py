@@ -206,27 +206,58 @@ def describe_node_type(
 # --- build -----------------------------------------------------------------------------
 
 
-def build_workflow(factory: NodeFactory, spec: Any, *, write: bool = True) -> Dict[str, Any]:
-    """Build (and, with ``write``, save) the workflow ``spec`` describes.
+def check_workflow_spec(factory: NodeFactory, spec: Any) -> Dict[str, Any]:
+    """The authoring verdict only: no saves, execution or active-map edits.
 
-    Returns a report: ``ok``, ``workflow_id``, ``name``, ``path`` (when
-    written), ``nodes`` (handle -> generated id) and ``diagnostics`` (each
-    ``{level, code, node, message}``; ``node`` is a handle or None). Nothing
-    is written unless every check passes.
+    Ephemeral ids in this low-level report are check internals, not library ids.
+    The workflow node returns the parsed input spec instead of these internals.
     """
+    report, _ = _checked_graph(factory, spec)
+    return report
+
+
+def build_workflow(factory: NodeFactory, spec: Any, *, write: bool = True) -> Dict[str, Any]:
+    """Shared check, then optionally save/reload a new workflow. Never execute."""
+    report, workflow_map = _checked_graph(factory, spec)
+    if not report["ok"] or not write:
+        return report
+    name = report["name"]
+    diagnostics = report["diagnostics"]
+
+    def failed(code, message):
+        diagnostics.append(dict(level="error", code=code, node=None, field=None, message=message))
+        return dict(ok=False, format=FORMAT, diagnostics=diagnostics)
+
+    callable_ = bool(workflow_map.callable)
+    if name_taken(name, callable_=callable_):
+        return failed("duplicate_name", f"A saved workflow is already named {name!r}; choose another name")
+    problem = name_problem(name, callable_=callable_)
+    if problem:
+        return failed("name_invalid", problem)
+    workflow_id = workflow_map.workflow_id
+    SaveManager(workflow_map).save_current_workflow()
+    problem = _reload_problem(factory, workflow_id, workflow_map)
+    if problem:
+        persistence.delete_workflow(workflow_id)
+        return failed("reload_mismatch", problem)
+    return {**report, "path": str(persistence.WORKFLOWS_DIR / f"{workflow_id}.json")}
+
+
+def _checked_graph(factory: NodeFactory, spec: Any):
+    """One validation path shared by CLI checks, saving builds and the node."""
     diagnostics: List[Dict[str, Any]] = []
 
     def report(ok: bool, **extra: Any) -> Dict[str, Any]:
         return {"ok": ok, "format": FORMAT, "diagnostics": diagnostics, **extra}
 
-    def add(level: str, code: str, message: str, node: Optional[str] = None) -> None:
-        diagnostics.append({"level": level, "code": code, "node": node, "message": message})
+    def add(level: str, code: str, message: str, node: Optional[str] = None, field: Optional[str] = None) -> None:
+        diagnostics.append({"level": level, "code": code, "node": node, "field": field, "message": message})
 
     nodes_spec, connections, name = _read_spec(spec, add)
     # Only a spec that cannot be walked stops here; otherwise every problem
     # is collected so one build lists them all.
     if not nodes_spec:
-        return report(False)
+        return report(False), None
     nodes_spec = {handle: node for handle, node in nodes_spec.items()
                   if isinstance(node, dict) and isinstance(node.get("type"), str)}
 
@@ -237,14 +268,14 @@ def build_workflow(factory: NodeFactory, spec: Any, *, write: bool = True) -> Di
         if isinstance(spec["callable"], bool):
             workflow_map.set_callable(spec["callable"])
         else:
-            add("error", "spec_invalid", "\"callable\" must be true or false")
+            add("error", "spec_invalid", "\"callable\" must be true or false", field="callable")
     ids: Dict[str, str] = {}
     configs: Dict[str, Dict[str, Any]] = {}
     for handle, node_spec in nodes_spec.items():
         node_type = node_spec["type"]
         meta = metadata_for_type(factory, node_type)
         if meta is None or node_type in HIDDEN_TYPES:
-            add("error", "unknown_node_type", f"Unknown node type: {node_type}", handle)
+            add("error", "unknown_node_type", f"Unknown node type: {node_type}", handle, "type")
             continue
         overrides = node_spec.get("config") if isinstance(node_spec.get("config"), dict) else {}
         configs[handle] = _checked_config(meta, overrides, handle, add)
@@ -265,7 +296,7 @@ def build_workflow(factory: NodeFactory, spec: Any, *, write: bool = True) -> Di
         (source, source_port), (target, target_port) = connection
         where = f"connection {index + 1} ({source}.{source_port} -> {target}.{target_port})"
         if (source, source_port, target, target_port) in seen:
-            add("error", "duplicate_connection", f"{where} is listed twice")
+            add("error", "duplicate_connection", f"{where} is listed twice", field=f"connections[{index}]")
             continue
         seen.add((source, source_port, target, target_port))
         if source not in ids or target not in ids:
@@ -276,75 +307,54 @@ def build_workflow(factory: NodeFactory, spec: Any, *, write: bool = True) -> Di
         inputs = list(factory.node_input_ports(target_node))
         if source_port not in outputs:
             add("error", "unknown_port",
-                f"{where}: {source} has no output '{source_port}' (has: {', '.join(outputs)})", source)
+                f"{where}: {source} has no output '{source_port}' (has: {', '.join(outputs)})", source, f"connections[{index}].from")
             continue
         if target_port not in inputs:
             add("error", "unknown_port",
-                f"{where}: {target} has no input '{target_port}' (has: {', '.join(inputs) or 'none'})", target)
+                f"{where}: {target} has no input '{target_port}' (has: {', '.join(inputs) or 'none'})", target, f"connections[{index}].to")
             continue
         workflow_map.connect(ids[source], source_port, ids[target], target_port)
 
     handles = {node_id: handle for handle, node_id in ids.items()}
     _add_validation(workflow_map, factory, handles, add, diagnostics)
     if any(d["level"] == "error" for d in diagnostics):
-        return report(False)
-    if not write:
-        return report(True, workflow_id=workflow_map.workflow_id, name=name, nodes=ids)
-
-    # Case-insensitive, like `aotn run <name>` resolves names; the library's
-    # rename and New use the same rule (workflow_names).
-    callable_ = bool(workflow_map.callable)
-    if name_taken(name, callable_=callable_):
-        add("error", "duplicate_name", f"A saved workflow is already named {name!r}; choose another name")
-        return report(False)
-    problem = name_problem(name, callable_=callable_)
-    if problem:
-        add("error", "name_invalid", problem)
-        return report(False)
-    workflow_id = workflow_map.workflow_id
-    SaveManager(workflow_map).save_current_workflow()
-    problem = _reload_problem(factory, workflow_id, workflow_map)
-    if problem:
-        persistence.delete_workflow(workflow_id)
-        add("error", "reload_mismatch", problem)
-        return report(False)
-    return report(True, workflow_id=workflow_id, name=name, nodes=ids,
-                  path=str(persistence.WORKFLOWS_DIR / f"{workflow_id}.json"))
+        return report(False), None
+    return report(True, workflow_id=workflow_map.workflow_id, name=name, nodes=ids), workflow_map
 
 
 def _read_spec(spec: Any, add) -> Tuple[Dict[str, Dict[str, Any]], List[Any], str]:
     """Shape checks; returns (nodes, connections as ((src, port), (dst, port)), name)."""
     if not isinstance(spec, dict):
-        add("error", "spec_invalid", "The spec must be a JSON object")
+        add("error", "spec_invalid", "The spec must be a JSON object", field=None)
         return {}, [], ""
     if spec.get("format") != FORMAT:
-        add("error", "spec_invalid", f"\"format\" must be {FORMAT!r}")
+        add("error", "spec_invalid", f"\"format\" must be {FORMAT!r}", field="format")
     name = spec.get("name")
     if not isinstance(name, str) or not name.strip():
-        add("error", "spec_invalid", "\"name\" must be a non-empty string")
+        add("error", "spec_invalid", "\"name\" must be a non-empty string", field="name")
         name = ""
     nodes = spec.get("nodes")
     if not isinstance(nodes, dict) or not nodes:
-        add("error", "spec_invalid", "\"nodes\" must be a non-empty object of handle -> node")
+        add("error", "spec_invalid", "\"nodes\" must be a non-empty object of handle -> node", field="nodes")
         nodes = {}
     for handle, node in nodes.items():
         if not HANDLE_PATTERN.match(str(handle)):
             add("error", "bad_handle",
-                f"Handle {handle!r}: use lowercase letters, digits and _, starting with a letter", str(handle))
+                f"Handle {handle!r}: use lowercase letters, digits and _, starting with a letter", str(handle), "handle")
         if not isinstance(node, dict) or not isinstance(node.get("type"), str):
-            add("error", "spec_invalid", f"Node {handle!r} needs a \"type\"", str(handle))
+            add("error", "spec_invalid", f"Node {handle!r} needs a \"type\"", str(handle), "type")
             continue
         if "config" in node and not isinstance(node["config"], dict):
-            add("error", "spec_invalid", f"Node {handle!r}: \"config\" must be an object", str(handle))
+            add("error", "spec_invalid", f"Node {handle!r}: \"config\" must be an object", str(handle), "config")
         if "alias" in node and not isinstance(node["alias"], str):
-            add("error", "spec_invalid", f"Node {handle!r}: \"alias\" must be a string", str(handle))
+            add("error", "spec_invalid", f"Node {handle!r}: \"alias\" must be a string", str(handle), "alias")
         unknown = sorted(set(node) - {"type", "alias", "config"})
         if unknown:
-            add("error", "spec_invalid", f"Node {handle!r}: unknown keys {unknown}", str(handle))
+            add("error", "spec_invalid", f"Node {handle!r}: unknown keys {unknown}", str(handle), "node")
     connections = []
     raw_connections = spec.get("connections", [])
     if not isinstance(raw_connections, list):
-        add("error", "spec_invalid", "\"connections\" must be a list")
+        add("error", "spec_invalid", "\"connections\" must be a list", field="connections")
         raw_connections = []
     for index, raw in enumerate(raw_connections):
         ends = []
@@ -353,9 +363,9 @@ def _read_spec(spec: Any, add) -> Tuple[Dict[str, Dict[str, Any]], List[Any], st
             handle, _, port = str(value or "").partition(".")
             if not handle or not port:
                 add("error", "spec_invalid",
-                    f"Connection {index + 1}: \"{side}\" must be \"handle.port\" (got {value!r})")
+                    f"Connection {index + 1}: \"{side}\" must be \"handle.port\" (got {value!r})", field=f"connections[{index}].{side}")
             elif handle not in nodes:
-                add("error", "spec_invalid", f"Connection {index + 1}: no node with handle {handle!r}")
+                add("error", "spec_invalid", f"Connection {index + 1}: no node with handle {handle!r}", field=f"connections[{index}].{side}")
             ends.append((handle, port))
         connections.append(tuple(ends))
     return nodes, connections, str(name).strip()
@@ -369,13 +379,13 @@ def _checked_config(meta: Dict[str, Any], overrides: Dict[str, Any], handle: str
     for key in sorted(set(overrides) - known):
         add("error", "unknown_config_key",
             f"{handle}: unknown config key {key!r} for {meta['type']} (see: aotn describe {meta['type']})",
-            handle)
+            handle, f"config.{key}")
     config = {**deepcopy(defaults), **deepcopy(overrides)}
     for key, info in number_fields(schema):
         if key in overrides:
             value, problem = check_number(info, overrides[key], defaults.get(key))
             if problem:
-                add("error", "invalid_number", f"{handle}.{key}: {problem} (got {overrides[key]!r})", handle)
+                add("error", "invalid_number", f"{handle}.{key}: {problem} (got {overrides[key]!r})", handle, f"config.{key}")
             else:
                 config[key] = value
     return config
@@ -389,7 +399,7 @@ def _translated_references(value: Any, ids: Dict[str, str], handle: str, field: 
         if not item:
             continue
         if item not in ids:
-            add("error", "unknown_reference", f"{handle}.{field}: no node with handle {item!r}", handle)
+            add("error", "unknown_reference", f"{handle}.{field}: no node with handle {item!r}", handle, f"config.{field}")
             continue
         translated.append(ids[item])
     return ", ".join(translated)
@@ -410,7 +420,7 @@ def _add_validation(workflow_map: WorkflowMap, factory: NodeFactory, handles: Di
             # A spec that wires one output twice is a mistake, not a choice.
             if code in BUILD_ERROR_CODES:
                 level = "error"
-            add(level, code, str(issue.get("message") or ""), handle)
+            add(level, code, str(issue.get("message") or ""), handle, issue.get("field"))
 
 
 def _reload_problem(factory: NodeFactory, workflow_id: str, built: WorkflowMap) -> str:

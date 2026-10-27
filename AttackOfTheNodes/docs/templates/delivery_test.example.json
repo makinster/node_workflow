@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "case_id": "example-repeated-context",
+  "baseline": "record-exact-catalogue-commit",
+  "record_status": "template example, design only",
+  "request_kind": "composition-only",
+  "request": {
+    "schema_version": 1,
+    "request_id": "example-repeated-context",
+    "date": "2026-10-21",
+    "intent": "Prepare synthetic facts and ask a local question twice with different prompts.",
+    "example": {
+      "input": "Synthetic backup failed: disk full.",
+      "expected_result": "A structured diagnosis, then a revised diagnosis when synthetic feedback changes."
+    },
+    "target_device": "Owner phone, Telegram",
+    "destination": "Downstream answer only; no notification.",
+    "trigger": "Manual illustrative design; no execution.",
+    "inputs": [
+      "Synthetic configured facts",
+      "A configured local endpoint, not checked by this example"
+    ],
+    "constraints": [
+      "No generation authorized by this example.",
+      "Use existing context and question nodes only."
+    ],
+    "success": [
+      "Both planned sub-chains preserve the fixed context source and JSON option.",
+      "Changed facts/prompts and boundary Vault keys are recorded."
+    ],
+    "unknowns": [
+      "Local endpoint availability and live results are not verified."
+    ]
+  },
+  "feasibility": {
+    "schema_version": 1,
+    "request_id": "example-repeated-context",
+    "checked_at": "2026-10-21",
+    "researcher": "Illustrative template; not a new investigation",
+    "official_api": "Project-owned Context Pack and Ask local model contracts; endpoint availability unverified.",
+    "sign_in": "Setup is owner-dependent; not checked here.",
+    "cost": "No call made; usage/cost unknown.",
+    "reliability": "Design-only fixture, not evidence of a successful run.",
+    "terms_of_service": "No outside service checked by this template.",
+    "sources": [
+      "../NODE_STANDARDS.md",
+      "../integrations/LOCAL_MODEL.md"
+    ],
+    "verdict": "conditional",
+    "reason": "Existing node composition is possible; setup and execution need separate verification.",
+    "conditions": [
+      "Owner configures and approves local endpoint use."
+    ],
+    "alternatives": [
+      "Keep synthetic facts and expected outcomes as an unexecuted fixture."
+    ]
+  },
+  "final_artifact": null,
+  "coverage": {
+    "total_operations": 2,
+    "existing_count": 2,
+    "new_count": 0,
+    "ratio": 1.0,
+    "mappings": [
+      {
+        "operation": "Prepare synthetic facts",
+        "node_type": "context_pack_node",
+        "status": "existing"
+      },
+      {
+        "operation": "Ask a local question",
+        "node_type": "ask_local_model_node",
+        "status": "existing"
+      }
+    ]
+  },
+  "measurements": {
+    "review_rounds": 0,
+    "step_visits": []
+  },
+  "evidence": [],
+  "acceptance_checks": [
+    "Replace this example with checks for the actual request."
+  ],
+  "notes": [
+    "Illustrative shape; no recorded run or approvals."
+  ],
+  "repeated_shapes": [
+    {
+      "id": "prepare-and-ask",
+      "node_types": [
+        "context_pack_node",
+        "ask_local_model_node"
+      ],
+      "fixed_settings": {
+        "ask_local_model_node.context_source": "Upstream payload"
+      },
+      "varied_settings": {
+        "context_pack_node.items": [
+          "synthetic backup facts",
+          "synthetic facts + feedback"
+        ],
+        "ask_local_model_node.input": [
+          "diagnose",
+          "revise diagnosis"
+        ]
+      },
+      "vault_edges": {
+        "reads": [
+          "synthetic_facts"
+        ],
+        "writes": [
+          "diagnosis",
+          "revised_diagnosis"
+        ]
+      },
+      "basis": "design",
+      "evidence": [
+        "../DELIVERY_LOOP.md#future-direction--not-approved-work"
+      ]
+    }
+  ]
+}

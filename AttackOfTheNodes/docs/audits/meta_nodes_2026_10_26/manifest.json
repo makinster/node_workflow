@@ -1,0 +1,500 @@
+{
+  "schema_version": 1,
+  "base": "3f365520730493f1e1ecd24ee592befb23ca5ef5",
+  "branch": "codex/meta-nodes",
+  "worktree": "/home/makin/src/nw-meta-nodes",
+  "design_only": false,
+  "started_at": "2026-10-27T07:01:06Z",
+  "completed_at": "2026-10-27T07:01:18Z",
+  "screens": [
+    {
+      "file": "catalogue-parameters-120x40.svg",
+      "view": "parameters",
+      "node": "catalogue",
+      "variant": "",
+      "size": [
+        120,
+        40
+      ],
+      "reveal": null,
+      "config_preserved": true,
+      "library_unchanged": true,
+      "config_example": {
+        "scope": "Filtered",
+        "group_filter": "Any group",
+        "search": "notify",
+        "detail": "Compact",
+        "format": "Text",
+        "max_chars": 62400,
+        "vault_write_key": "catalogue"
+      }
+    },
+    {
+      "file": "catalogue-payloads-120x40.svg",
+      "view": "payloads",
+      "node": "catalogue",
+      "variant": "",
+      "size": [
+        120,
+        40
+      ],
+      "reveal": null,
+      "config_preserved": true,
+      "library_unchanged": true,
+      "config_example": {
+        "scope": "Filtered",
+        "group_filter": "Any group",
+        "search": "notify",
+        "detail": "Compact",
+        "format": "JSON",
+        "max_chars": 62400,
+        "vault_write_key": "node_catalogue"
+      }
+    },
+    {
+      "file": "catalogue-selector-120x40.svg",
+      "view": "selector",
+      "node": "catalogue",
+      "variant": "",
+      "size": [
+        120,
+        40
+      ],
+      "reveal": null,
+      "config_preserved": true,
+      "library_unchanged": true,
+      "config_example": {
+        "scope": "Filtered",
+        "group_filter": "Any group",
+        "search": "notify",
+        "detail": "Compact",
+        "format": "Text",
+        "max_chars": 62400,
+        "vault_write_key": "catalogue"
+      }
+    },
+    {
+      "file": "check-parameters-120x40.svg",
+      "view": "parameters",
+      "node": "check",
+      "variant": "",
+      "size": [
+        120,
+        40
+      ],
+      "reveal": null,
+      "config_preserved": true,
+      "library_unchanged": true,
+      "config_example": {
+        "input_source": "Configured",
+        "max_spec": 32000,
+        "vault_write_key": "",
+        "report_vault_key": "spec_check"
+      }
+    },
+    {
+      "file": "check-payloads-120x40.svg",
+      "view": "payloads",
+      "node": "check",
+      "variant": "",
+      "size": [
+        120,
+        40
+      ],
+      "reveal": null,
+      "config_preserved": true,
+      "library_unchanged": true,
+      "config_example": {
+        "input_source": "Upstream payload",
+        "max_spec": 32000,
+        "vault_write_key": "checked_spec",
+        "report_vault_key": "spec_check"
+      }
+    },
+    {
+      "file": "check-selector-120x40.svg",
+      "view": "selector",
+      "node": "check",
+      "variant": "",
+      "size": [
+        120,
+        40
+      ],
+      "reveal": null,
+      "config_preserved": true,
+      "library_unchanged": true,
+      "config_example": {
+        "input_source": "Upstream payload",
+        "max_spec": 32000,
+        "vault_write_key": "",
+        "report_vault_key": "spec_check"
+      }
+    },
+    {
+      "file": "catalogue-parameters-80x24.svg",
+      "view": "parameters",
+      "node": "catalogue",
+      "variant": "",
+      "size": [
+        80,
+        24
+      ],
+      "reveal": null,
+      "config_preserved": true,
+      "library_unchanged": true,
+      "config_example": {
+        "scope": "Filtered",
+        "group_filter": "Any group",
+        "search": "notify",
+        "detail": "Compact",
+        "format": "Text",
+        "max_chars": 62400,
+        "vault_write_key": "catalogue"
+      }
+    },
+    {
+      "file": "catalogue-payloads-80x24.svg",
+      "view": "payloads",
+      "node": "catalogue",
+      "variant": "",
+      "size": [
+        80,
+        24
+      ],
+      "reveal": null,
+      "config_preserved": true,
+      "library_unchanged": true,
+      "config_example": {
+        "scope": "Filtered",
+        "group_filter": "Any group",
+        "search": "notify",
+        "detail": "Compact",
+        "format": "JSON",
+        "max_chars": 62400,
+        "vault_write_key": "node_catalogue"
+      }
+    },
+    {
+      "file": "catalogue-selector-80x24.svg",
+      "view": "selector",
+      "node": "catalogue",
+      "variant": "",
+      "size": [
+        80,
+        24
+      ],
+      "reveal": null,
+      "config_preserved": true,
+      "library_unchanged": true,
+      "config_example": {
+        "scope": "Filtered",
+        "group_filter": "Any group",
+        "search": "notify",
+        "detail": "Compact",
+        "format": "Text",
+        "max_chars": 62400,
+        "vault_write_key": "catalogue"
+      }
+    },
+    {
+      "file": "check-parameters-80x24.svg",
+      "view": "parameters",
+      "node": "check",
+      "variant": "",
+      "size": [
+        80,
+        24
+      ],
+      "reveal": null,
+      "config_preserved": true,
+      "library_unchanged": true,
+      "config_example": {
+        "input_source": "Configured",
+        "max_spec": 32000,
+        "vault_write_key": "",
+        "report_vault_key": "spec_check"
+      }
+    },
+    {
+      "file": "check-payloads-80x24.svg",
+      "view": "payloads",
+      "node": "check",
+      "variant": "",
+      "size": [
+        80,
+        24
+      ],
+      "reveal": null,
+      "config_preserved": true,
+      "library_unchanged": true,
+      "config_example": {
+        "input_source": "Upstream payload",
+        "max_spec": 32000,
+        "vault_write_key": "checked_spec",
+        "report_vault_key": "spec_check"
+      }
+    },
+    {
+      "file": "check-selector-80x24.svg",
+      "view": "selector",
+      "node": "check",
+      "variant": "",
+      "size": [
+        80,
+        24
+      ],
+      "reveal": null,
+      "config_preserved": true,
+      "library_unchanged": true,
+      "config_example": {
+        "input_source": "Upstream payload",
+        "max_spec": 32000,
+        "vault_write_key": "",
+        "report_vault_key": "spec_check"
+      }
+    },
+    {
+      "file": "catalogue-parameters-cap-80x24.svg",
+      "view": "parameters",
+      "node": "catalogue",
+      "variant": "cap",
+      "size": [
+        80,
+        24
+      ],
+      "reveal": "#field-max_chars",
+      "config_preserved": true,
+      "library_unchanged": true,
+      "config_example": {
+        "scope": "Filtered",
+        "group_filter": "Any group",
+        "search": "notify",
+        "detail": "Compact",
+        "format": "Text",
+        "max_chars": 62400,
+        "vault_write_key": "catalogue"
+      }
+    },
+    {
+      "file": "catalogue-parameters-filters-80x24.svg",
+      "view": "parameters",
+      "node": "catalogue",
+      "variant": "filters",
+      "size": [
+        80,
+        24
+      ],
+      "reveal": "#field-tag_filter",
+      "config_preserved": true,
+      "library_unchanged": true,
+      "config_example": {
+        "scope": "Filtered",
+        "group_filter": "Any group",
+        "search": "notify",
+        "detail": "Compact",
+        "format": "Text",
+        "max_chars": 62400,
+        "vault_write_key": "catalogue"
+      }
+    },
+    {
+      "file": "catalogue-payloads-vault-80x24.svg",
+      "view": "payloads",
+      "node": "catalogue",
+      "variant": "vault",
+      "size": [
+        80,
+        24
+      ],
+      "reveal": "#vault-output-key-default",
+      "config_preserved": true,
+      "library_unchanged": true,
+      "config_example": {
+        "scope": "Filtered",
+        "group_filter": "Any group",
+        "search": "notify",
+        "detail": "Compact",
+        "format": "JSON",
+        "max_chars": 62400,
+        "vault_write_key": "node_catalogue"
+      }
+    },
+    {
+      "file": "check-payloads-report-80x24.svg",
+      "view": "payloads",
+      "node": "check",
+      "variant": "report",
+      "size": [
+        80,
+        24
+      ],
+      "reveal": "#vault-output-key-report",
+      "config_preserved": true,
+      "library_unchanged": true,
+      "config_example": {
+        "input_source": "Upstream payload",
+        "max_spec": 32000,
+        "vault_write_key": "checked_spec",
+        "report_vault_key": "spec_check"
+      }
+    },
+    {
+      "file": "check-source-80x24.svg",
+      "view": "source",
+      "node": "check",
+      "variant": "",
+      "size": [
+        80,
+        24
+      ],
+      "reveal": null,
+      "config_preserved": true,
+      "library_unchanged": true,
+      "config_example": {
+        "input_source": "Upstream payload",
+        "max_spec": 32000,
+        "vault_write_key": "",
+        "report_vault_key": "spec_check"
+      }
+    },
+    {
+      "file": "check-map-120x40.svg",
+      "view": "map",
+      "node": "check",
+      "variant": "",
+      "size": [
+        120,
+        40
+      ],
+      "reveal": null,
+      "config_preserved": true,
+      "library_unchanged": true,
+      "config_example": {
+        "input_source": "Upstream payload",
+        "max_spec": 32000,
+        "vault_write_key": "",
+        "report_vault_key": "spec_check"
+      }
+    },
+    {
+      "file": "check-map-head-80x24.svg",
+      "view": "map",
+      "node": "check",
+      "variant": "head",
+      "size": [
+        80,
+        24
+      ],
+      "reveal": null,
+      "config_preserved": true,
+      "library_unchanged": true,
+      "config_example": {
+        "input_source": "Upstream payload",
+        "max_spec": 32000,
+        "vault_write_key": "",
+        "report_vault_key": "spec_check"
+      }
+    },
+    {
+      "file": "check-map-gate-80x24.svg",
+      "view": "map",
+      "node": "check",
+      "variant": "gate",
+      "size": [
+        80,
+        24
+      ],
+      "reveal": null,
+      "config_preserved": true,
+      "library_unchanged": true,
+      "config_example": {
+        "input_source": "Upstream payload",
+        "max_spec": 32000,
+        "vault_write_key": "",
+        "report_vault_key": "spec_check"
+      }
+    },
+    {
+      "file": "check-map-gate-120x40.svg",
+      "view": "map",
+      "node": "check",
+      "variant": "gate",
+      "size": [
+        120,
+        40
+      ],
+      "reveal": null,
+      "config_preserved": true,
+      "library_unchanged": true,
+      "config_example": {
+        "input_source": "Upstream payload",
+        "max_spec": 32000,
+        "vault_write_key": "",
+        "report_vault_key": "spec_check"
+      }
+    },
+    {
+      "file": "check-map-overview-140x110.svg",
+      "view": "map",
+      "node": "check",
+      "variant": "overview",
+      "size": [
+        140,
+        110
+      ],
+      "reveal": null,
+      "config_preserved": true,
+      "library_unchanged": true,
+      "config_example": {
+        "input_source": "Upstream payload",
+        "max_spec": 32000,
+        "vault_write_key": "",
+        "report_vault_key": "spec_check"
+      }
+    },
+    {
+      "file": "catalogue-parameters-debug-80x24.svg",
+      "view": "parameters",
+      "node": "catalogue",
+      "variant": "debug",
+      "size": [
+        80,
+        24
+      ],
+      "reveal": "#field-include_debug",
+      "config_preserved": true,
+      "library_unchanged": true,
+      "config_example": {
+        "scope": "Filtered",
+        "group_filter": "Any group",
+        "search": "notify",
+        "detail": "Compact",
+        "format": "Text",
+        "max_chars": 62400,
+        "vault_write_key": "catalogue"
+      }
+    }
+  ],
+  "source_sha256": {
+    "backend/nodes/data/node_catalogue_node.py": "d5cb7d4a41f48806e9b48066f3c32e433e890714bc61f19c933f2bdefbbcc780",
+    "backend/nodes/data/check_workflow_spec_node.py": "653e81fed664461656ab1c5dcd80930561e9a5f647dbf37bc6fcf917ad656187",
+    "backend/meta_workflow.py": "b5b3c3c11554e1ac1c01f3ee7dab0f634b44c9bface76c1c5556d50bcea1d3c8",
+    "backend/node_catalogue.py": "59d3399bb816e48af06800a9a2ee550a7fff4dcde465327992419da333d2f2b1",
+    "frontend/styles.tcss": "f40ac442e23bacbf86435e38928a88a3721cc8bd0248e5e91864ca662bea4cac",
+    "frontend/colors.py": "d346d3aefb11d54f79a60d99d0c6ed1a8e732c338941b5021804917881bab3f1",
+    "frontend/screens/node_config.py": "8d0f4a667ffebefdcad031d0d92eb06dab38da6a2f2d8978d6bbbc034a7e2ec8",
+    "frontend/screens/node_selector.py": "7a02ec182c045309c23295b133b6f38064daeb820e9feea7412bb9d117baba93",
+    "frontend/screens/editor.py": "85273d090f5ac9b485b3315a02c02e1e51f1ef84ab2495e6de9fca3532bda303",
+    "frontend/widgets/long_text.py": "ffde7b61d1c14a3d7049ca70aac81dc855a5ef6ffaf1d805e6e47ce739382be1",
+    "frontend/widgets/form_generator.py": "fed57fd9cabe07c961c15208a94727c363b4e32cd88c85742fa9b95cab473931"
+  },
+  "workflow_library_writes": 0,
+  "workflow_executions": 0,
+  "generation_calls": 0,
+  "network_calls": 0,
+  "notes": [
+    "Production screens/CSS and real registered product nodes.",
+    "The map stops after the checked spec for manual owner review/build; no approval or build node exists.",
+    "No styling override or product files changed. PNG conversion substitutes a local monospace font only."
+  ]
+}

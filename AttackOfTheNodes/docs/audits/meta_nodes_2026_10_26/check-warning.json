@@ -1,0 +1,19 @@
+{
+  "ok": true,
+  "format": "aotn-workflow/1",
+  "diagnostics": [
+    {
+      "level": "warning",
+      "code": "file_not_found",
+      "node": "read",
+      "message": "File for field 'file_path' was not found at validation time: /example/not-on-disk/aotn-meta-notes.txt"
+    }
+  ],
+  "workflow_id": "wf_f2acc7f8dab8",
+  "name": "Read later",
+  "nodes": {
+    "start": "node_58ce3d4c",
+    "read": "node_d2efba45",
+    "end": "node_ee30e941"
+  }
+}

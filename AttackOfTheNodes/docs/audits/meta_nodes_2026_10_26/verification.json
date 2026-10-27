@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "status": "pass",
+  "base": "3f365520730493f1e1ecd24ee592befb23ca5ef5",
+  "branch": "codex/meta-nodes",
+  "behavioral_tests": "37 passed",
+  "source_menu_and_generated_ui": "88 passed",
+  "helper_nodes": "both passed: 2 focused tests each, compilation",
+  "helper_ui": "both contracts OK",
+  "schema_instances": 9,
+  "svg_png_pairs": 23,
+  "artifact_validation": "pass: production hashes and no-write manifest",
+  "compact_size": {
+    "text": 34618,
+    "json": 49866,
+    "entries": 50,
+    "default_cap": 62400
+  },
+  "independent_review_rounds": 0,
+  "full_suite": {
+    "command": "/home/makin/src/node_workflow/.venv/bin/python -m pytest -q",
+    "passed": 3096,
+    "seconds": 680.85,
+    "exit_code": 0,
+    "wait_until_retry": false,
+    "log_sha256": "548cbecf49197890923ac4cae4185e3633d3b86e5e8765cbd68e8eb0503b803a"
+  },
+  "live_generation_calls": 0,
+  "live_network_calls": 0,
+  "owner_library_writes": 0,
+  "merge": false,
+  "interrupted_attempts": [
+    {
+      "passed": 1445,
+      "seconds": 226.15,
+      "reason": "Update explicit long-text inventory to 27 fields / 14 types."
+    },
+    {
+      "passed": 2684,
+      "seconds": 500.26,
+      "reason": "Text catalogue omitted labels/required flags carried by JSON; add them plus entry kind, assertions, remeasurement and fresh screenshots."
+    }
+  ],
+  "completed_at": "2026-10-27T07:13:13Z",
+  "schema_validation": "9 valid instances, legacy cases without repeated_shapes retained; deliberately broken empty repeated chain rejected",
+  "docs_consolidation": "pass: 102 Markdown files, 905 relative links/anchors, archives retained, 23 active docs",
+  "git_diff_check": "pass: staged and working diff",
+  "cli_build_check": "pass: nodes-example.json; temporary data root empty",
+  "compilation": "pass",
+  "implementation_head": "389692c59a4f7eb3c9955a759c4c19f3d9786718",
+  "pr_url": "https://github.com/makinster/node_workflow/pull/125"
+}

@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "request_id": "meta-nodes",
+  "checked_at": "2026-10-27T04:32:22Z",
+  "researcher": "Agent: current local source and isolated authoring CLI probes",
+  "official_api": "Project-owned backend.authoring.list_node_types, describe_node_type and build_workflow(write=False). The CLI is a thin adapter. No outside API is needed.",
+  "sign_in": "None for metadata/check-only operations. They do not resolve secret values or call a model.",
+  "cost": "No paid calls, network or generation. Local CPU/memory only; performance not benchmarked.",
+  "reliability": "55 authorable / 56 registered types observed at 3f36552. Check-only probes returned valid, invalid and warning-only reports without creating any data-root entries. New wrappers, caps, cancellation, richer diagnostics and source-contract normalization still require a future build.",
+  "terms_of_service": "Internal project APIs only; no new service terms/account dependency. Existing nodes described in the catalogue keep their own execution/setup conditions.",
+  "sources": [
+    "/home/makin/src/nw-meta-nodes-samples/AttackOfTheNodes/backend/authoring.py",
+    "/home/makin/src/nw-meta-nodes-samples/AttackOfTheNodes/aotn_author.py",
+    "/home/makin/src/nw-meta-nodes-samples/AttackOfTheNodes/backend/validator.py",
+    "/home/makin/src/nw-meta-nodes-samples/AttackOfTheNodes/backend/node_factory.py",
+    "/home/makin/src/agent_channel/meta-nodes-samples/research-checks.json"
+  ],
+  "verdict": "conditional",
+  "reason": "The reusable discovery and check-only backend already exists; new workflow nodes and precise adapter contracts do not.",
+  "conditions": [
+    "Owner approves the proposed contracts, caps and samples",
+    "Build shares the current check path and adds structured diagnostic fields there, without a second validator",
+    "Build verifies no save/name lookup/execute/network path is invoked; an ephemeral validation graph is allowed",
+    "Catalogue overflow is an explicit error; choose filters/budgets before using its output as complete context"
+  ],
+  "alternatives": [
+    "Keep using nodes/describe/build --check manually",
+    "Use a frozen reviewed catalogue in a configured Context Pack for an initial manual loop",
+    "Owner manually checks, approves and builds the exact spec file until an approval-bound Build workflow path is approved"
+  ]
+}

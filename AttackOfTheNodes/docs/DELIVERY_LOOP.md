@@ -192,6 +192,16 @@ artifacts. During delivery it can be a draft. Record:
   coverage = existing / total. Zero operations → not applicable. Do not inflate
   coverage by adding trivial nodes; retain the original denominator on replay.
 
+Optional **repeated_shapes** records repeated sub-chains in a case, in order:
+node types, settings that stayed fixed, settings that varied, and Vault keys
+read/written across the chain boundary. Store key names, never values. Label
+the evidence `design`, `checked-spec`, `saved-workflow` or `observed-run` so a
+planned repetition cannot be mistaken for a successful run. This helps later
+Bundle design and replay comparisons; it does not authorize building Bundles.
+See the [delivery-test schema](templates/delivery_test.schema.json) and
+[filled shape example](templates/delivery_test.example.json). The field is
+optional; older cases remain valid without it.
+
 Track deploy/setup gaps separately: node coverage does not measure readiness.
 Log actual cost when available; `not_reported` is not zero. The first measured
 new loop is intended to be Google Calendar samples; this doc does not start it.

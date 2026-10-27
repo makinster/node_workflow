@@ -1,0 +1,104 @@
+{
+  "node_type": "check_workflow_spec_node",
+  "class_name": "CheckWorkflowSpecNode",
+  "category": "data",
+  "primary_family": "Utility",
+  "display_name": "Check workflow spec",
+  "default_alias": "Check workflow spec",
+  "description": "Check a workflow draft without saving or running it",
+  "tags": [
+    "meta",
+    "workflow"
+  ],
+  "icon_name": "list-check",
+  "selector_section": "Transform",
+  "group": null,
+  "execution_template": "producer",
+  "payload_field": false,
+  "ui_hints": {
+    "standard_output": true
+  },
+  "inputs": {
+    "input": {
+      "name": "Spec",
+      "type": "string",
+      "required": true,
+      "sources": [
+        "upstream",
+        "vault",
+        "configured"
+      ],
+      "default": "upstream",
+      "parameter": {
+        "type": "multiline",
+        "label": "Workflow spec",
+        "preview": true,
+        "default": "",
+        "description": "One aotn-workflow/1 JSON object. e/Enter: edit full text."
+      }
+    }
+  },
+  "outputs": {
+    "default": {
+      "name": "Checked spec",
+      "type": "var",
+      "required": true,
+      "to": [
+        "downstream",
+        "vault"
+      ],
+      "description": "The parsed input spec; only after validation passes"
+    },
+    "report": {
+      "name": "Check report",
+      "type": "var",
+      "required": false,
+      "to": [
+        "vault"
+      ],
+      "description": "Optional verdict, warnings and counts; no spec body"
+    }
+  },
+  "output_routing": {
+    "default": "transient",
+    "vault": {
+      "mode": "optional"
+    }
+  },
+  "config_tabs": {
+    "Parameters": {
+      "max_spec": {
+        "type": "integer",
+        "label": "Max spec (characters)",
+        "min": 1,
+        "max": 64000,
+        "tab": "Parameters",
+        "wrap_description": true,
+        "description": "Same verdict as build --check; warnings pass. No workflow is saved. Hard limits: 128 nodes / 256 edges / nesting 64.",
+        "default": 32000
+      }
+    }
+  },
+  "errors": [
+    {
+      "code": "invalid_config",
+      "description": "Check spec sources, outputs and limits.",
+      "retryable": false
+    },
+    {
+      "code": "invalid_json",
+      "description": "Spec is not valid JSON text.",
+      "retryable": false
+    },
+    {
+      "code": "spec_invalid",
+      "description": "Workflow spec did not pass; see the problem list.",
+      "retryable": false
+    },
+    {
+      "code": "spec_too_large",
+      "description": "Spec exceeds a size or graph limit.",
+      "retryable": false
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "request_id": "meta-nodes",
+  "date": "2026-10-26",
+  "intent": "Give composition-only meta-workflows a bounded live node catalogue and a check-only gate for AI-drafted workflow specs.",
+  "example": {
+    "input": "A request for a simple text notification; then an aotn-workflow/1 JSON draft using registered nodes.",
+    "expected_result": "Relevant real contracts fit the context budget. A valid draft continues as the parsed spec; an invalid draft takes the error path with node/field/message problems. Neither node saves or executes a workflow."
+  },
+  "target_device": "Owner WSL terminal, 80x24 and wider; future AI steps consume the data.",
+  "destination": "/home/makin/src/agent_channel/meta-nodes-samples/; draft delivery case in docs/delivery_tests/.",
+  "trigger": "On demand inside a future composition-only meta-workflow; no schedule or live activation.",
+  "inputs": [
+    "Current NodeFactory registry and static metadata",
+    "Shared list_node_types / describe_node_type authoring helpers",
+    "JSON text in aotn-workflow/1 from an upstream answer, Vault or configured long-text field"
+  ],
+  "constraints": [
+    "Steps 0–4 only; decisions and samples need owner approval before any build",
+    "No product code, generated node files, PR, workflow-library saves or execution",
+    "Functionality and AI-runnability before UI polish; use real styles.tcss",
+    "Reuse the same checks as aotn build --check; do not invent a second validator",
+    "Exclude internal/tombstone types; expose uncertainty and size failures",
+    "No network, model generation, spending, account setup or live settings changes"
+  ],
+  "success": [
+    "Catalogue has type/display name/description/group, typed inputs/outputs/sources, key config and declared errors",
+    "All/filter and compact/detailed are independent of Text/JSON output choices",
+    "The size limit never cuts JSON or silently removes required contract fields",
+    "Valid output is the parsed input spec, preserving handles/config, not a saved workflow or generated ids",
+    "Invalid errors have readable bounded problem rows with node, field and message",
+    "The future approval/build gaps are explicit and not treated as authorized work"
+  ],
+  "unknowns": [
+    "Owner decisions 1–12 and approval of these exact samples remain pending",
+    "Final cap/filter ergonomics and current-registry all-node output sizes need build verification",
+    "No new node has been implemented or run; no independent review or real-device proof"
+  ]
+}

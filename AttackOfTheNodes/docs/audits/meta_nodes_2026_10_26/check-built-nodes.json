@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "format": "aotn-workflow/1",
+  "diagnostics": [],
+  "workflow_id": "wf_ee94de6ff520",
+  "name": "Example - Catalogue and configured draft check",
+  "nodes": {
+    "start": "node_c381f095",
+    "catalogue": "node_1816becc",
+    "check": "node_12ea466a",
+    "end": "node_fc3bdc5d"
+  }
+}

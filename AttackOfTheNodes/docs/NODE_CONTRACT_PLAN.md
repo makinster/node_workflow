@@ -62,6 +62,18 @@ Selects/pickers across Node Config, Options and row editors. A second P2 on
 `f360e8a` exposed retained-editor key rescue; the current-focus fix removes that
 rescue and the Insert-button fallback. Reviewer re-check and merge pending.
 
+## Owner-approved meta nodes — 2026-10-26
+
+[Node catalogue and Check workflow spec](integrations/META_NODES.md) are built
+for review from `3f36552`, branch `codex/meta-nodes`. Owner decisions 1–12 plus
+Debug opt-in, measured Compact cap and future-compatible record shapes are
+implemented. [Delivery case](delivery_tests/meta-nodes.json): primary original
+coverage 0/2; related designer candidate 6/8. No Build/approval node, Bundle
+implementation or live activation. This does not advance the server/MCP plan.
+The #125 re-check fix applies the shared credential-key rules recursively to
+engine-persisted failure inputs, including lists/containers; independent re-check
+remains pending.
+
 ## Proposed phases
 
 | # | Item | Audit finding | Notes |

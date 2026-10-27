@@ -1,0 +1,114 @@
+{
+  "base": "3f365520730493f1e1ecd24ee592befb23ca5ef5",
+  "checked_at": "2026-10-27T04:32:22Z",
+  "checks": [
+    {
+      "label": "nodes",
+      "command": "aotn nodes --data-dir <temporary> --json",
+      "exit_code": 0,
+      "result_file": "nodes.json",
+      "data_files_changed": false,
+      "stderr": ""
+    },
+    {
+      "label": "describe-check_reply_node",
+      "command": "aotn describe check_reply_node --data-dir <temporary> --json",
+      "exit_code": 0,
+      "result_file": "describe-check_reply_node.json",
+      "data_files_changed": false,
+      "stderr": ""
+    },
+    {
+      "label": "describe-context_pack_node",
+      "command": "aotn describe context_pack_node --data-dir <temporary> --json",
+      "exit_code": 0,
+      "result_file": "describe-context_pack_node.json",
+      "data_files_changed": false,
+      "stderr": ""
+    },
+    {
+      "label": "describe-ask_local_model_node",
+      "command": "aotn describe ask_local_model_node --data-dir <temporary> --json",
+      "exit_code": 0,
+      "result_file": "describe-ask_local_model_node.json",
+      "data_files_changed": false,
+      "stderr": ""
+    },
+    {
+      "label": "describe-user_text_input_node",
+      "command": "aotn describe user_text_input_node --data-dir <temporary> --json",
+      "exit_code": 0,
+      "result_file": "describe-user_text_input_node.json",
+      "data_files_changed": false,
+      "stderr": ""
+    },
+    {
+      "label": "describe-conditional_node",
+      "command": "aotn describe conditional_node --data-dir <temporary> --json",
+      "exit_code": 0,
+      "result_file": "describe-conditional_node.json",
+      "data_files_changed": false,
+      "stderr": ""
+    },
+    {
+      "label": "describe-http-file",
+      "command": "aotn describe http_request_node --set response_mode=\"file\" --data-dir <temporary> --json",
+      "exit_code": 0,
+      "result_file": "describe-http-file.json",
+      "data_files_changed": false,
+      "stderr": ""
+    },
+    {
+      "label": "describe-branch-three",
+      "command": "aotn describe branch_node --set branch_count=3 --data-dir <temporary> --json",
+      "exit_code": 0,
+      "result_file": "describe-branch-three.json",
+      "data_files_changed": false,
+      "stderr": ""
+    },
+    {
+      "label": "check-valid",
+      "command": "aotn build - --check --data-dir <temporary> --json",
+      "exit_code": 0,
+      "result_file": "check-valid.json",
+      "data_files_changed": false,
+      "stderr": ""
+    },
+    {
+      "label": "check-invalid",
+      "command": "aotn build - --check --data-dir <temporary> --json",
+      "exit_code": 1,
+      "result_file": "check-invalid.json",
+      "data_files_changed": false,
+      "stderr": ""
+    },
+    {
+      "label": "check-warning",
+      "command": "aotn build - --check --data-dir <temporary> --json",
+      "exit_code": 0,
+      "result_file": "check-warning.json",
+      "data_files_changed": false,
+      "stderr": ""
+    },
+    {
+      "label": "check-name-boundary",
+      "command": "aotn build - --check --data-dir <temporary> --json",
+      "exit_code": 0,
+      "result_file": "check-name-boundary.json",
+      "data_files_changed": false,
+      "stderr": ""
+    }
+  ],
+  "node_count": 55,
+  "index_name_description_characters": 4664,
+  "workflow_library_writes": 0,
+  "workflow_executions": 0,
+  "generation_calls": 0,
+  "network_calls": 0,
+  "notes": [
+    "Every command used a fresh temporary AOTN_DATA_DIR; no files or directories appeared there.",
+    "--check creates an ephemeral graph for validation; no node execute() or saving occurs.",
+    "Current check diagnostics have level/code/node/message, not a structured field key.",
+    "The name-boundary case probes save-only checks skipped by --check; it is not a build guarantee."
+  ]
+}

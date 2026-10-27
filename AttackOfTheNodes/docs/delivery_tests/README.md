@@ -29,6 +29,10 @@ Notify me: 0/1; investigation: 1/2. Against the current catalogue these gaps
 are filled; retain the original mapping for comparison and record replay
 coverage separately. Unknown historical rounds/timings stay null or absent.
 
+[Meta nodes](meta-nodes.json): owner-approved build through step 5; two new
+meta capabilities, related composition-designer coverage 6/8 on the candidate.
+Review, merge and owner use remain pending.
+
 ## Record the next case
 
 Use the same top-level fields: integer `schema_version`, stable `case_id`,
@@ -38,6 +42,12 @@ and `notes`. Request and feasibility use the [versioned templates](../DELIVERY_L
 A final artifact is either a relative workflow-spec path or an explicit node
 plan. Coverage maps operations to nodes and measurement labels; counts must
 sum to the denominator and ratio must equal existing / total.
+
+The [schema](../templates/delivery_test.schema.json) and
+[example](../templates/delivery_test.example.json) include optional
+`repeated_shapes`: ordered node types, fixed/varied settings, boundary Vault
+reads/writes, evidence links and evidence basis. Use design-only evidence
+honestly; omit the field where no repeated sub-chain is known.
 
 For each step visit save `step` (0–11), `started_at`/`ended_at` (UTC or null),
 `elapsed_days` (number or null), `wait_reason` and any `skipped_reason`.

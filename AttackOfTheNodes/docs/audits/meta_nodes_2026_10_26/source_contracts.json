@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "nodes": [
+    {
+      "node_type": "node_catalogue_node",
+      "runtime_sha256": "66606ce51d1d16e496e1dea90faa17e1d88fa247b6029df8f5b6b25e9b5f7317",
+      "ports": {
+        "input": {
+          "mode": "control",
+          "control": null,
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any"
+        }
+      }
+    },
+    {
+      "node_type": "check_workflow_spec_node",
+      "runtime_sha256": "b152dcb1bf1cd59b6145f039d162a91b243b9df641060a44dd6cc25da4e9d80f",
+      "ports": {
+        "input": {
+          "mode": "standard",
+          "control": "input_source",
+          "accepted_sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ],
+          "data_type": "string"
+        }
+      }
+    }
+  ]
+}

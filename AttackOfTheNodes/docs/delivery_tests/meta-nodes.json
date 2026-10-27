@@ -1,0 +1,571 @@
+{
+  "schema_version": 1,
+  "case_id": "meta-nodes",
+  "baseline": "3f365520730493f1e1ecd24ee592befb23ca5ef5",
+  "record_status": "draft: PR #125 round-2 structured-input fix passes author checks; independent re-check/merge pending",
+  "owner_kind": "meta nodes",
+  "request_kind": "new-integration",
+  "node_kind": "meta",
+  "classification_at": "2026-10-27T04:36:53Z",
+  "request": {
+    "schema_version": 1,
+    "request_id": "meta-nodes",
+    "date": "2026-10-26",
+    "intent": "Give composition-only meta-workflows a bounded live node catalogue and a check-only gate for AI-drafted workflow specs.",
+    "example": {
+      "input": "A request for a simple text notification; then an aotn-workflow/1 JSON draft using registered nodes.",
+      "expected_result": "Relevant real contracts fit the context budget. A valid draft continues as the parsed spec; an invalid draft takes the error path with node/field/message problems. Neither node saves or executes a workflow."
+    },
+    "target_device": "Owner WSL terminal, 80x24 and wider; future AI steps consume the data.",
+    "destination": "Candidate node PR and durable docs/delivery_tests/meta-nodes.json; no live activation.",
+    "trigger": "On demand inside a future composition-only meta-workflow; no schedule or live activation.",
+    "inputs": [
+      "Current NodeFactory registry and static metadata",
+      "Shared list_node_types / describe_node_type authoring helpers",
+      "JSON text in aotn-workflow/1 from an upstream answer, Vault or configured long-text field"
+    ],
+    "constraints": [
+      "Owner approved decisions 1–12 and samples; Debug opt-in, measured Compact cap, entry_kind and repeated_shapes overrides apply.",
+      "Own worktree from origin/main 3f36552; one PR, no merge.",
+      "Functionality and AI-runnability before polish; production styles/forms.",
+      "Share build --check validation; no library writes, node execution, subprocess or network for these capabilities.",
+      "No Bundle, owner-approval or Build workflow node; no generation/live settings changes."
+    ],
+    "success": [
+      "Catalogue has type/display name/description/group, typed inputs/outputs/sources, key config and declared errors",
+      "All/filter and compact/detailed are independent of Text/JSON output choices",
+      "The size limit never cuts JSON or silently removes required contract fields",
+      "Valid output is the parsed input spec, preserving handles/config, not a saved workflow or generated ids",
+      "Invalid errors have readable bounded problem rows with node, field and message",
+      "The future approval/build gaps are explicit and not treated as authorized work"
+    ],
+    "unknowns": [
+      "Independent review and owner use remain pending.",
+      "No automated exact-spec-bound approval/build capability yet."
+    ]
+  },
+  "feasibility": {
+    "schema_version": 1,
+    "request_id": "meta-nodes",
+    "checked_at": "2026-10-27T06:50:23Z",
+    "researcher": "Agent: current local source and isolated authoring CLI probes",
+    "official_api": "Project-owned backend.authoring.list_node_types, describe_node_type and build_workflow(write=False). The CLI is a thin adapter. No outside API is needed.",
+    "sign_in": "None for metadata/check-only operations. They do not resolve secret values or call a model.",
+    "cost": "No paid calls, network or generation. Local CPU/memory only; performance not benchmarked.",
+    "reliability": "58 registered / 57 authorable types on candidate, 50 non-debug. Compact all-node cap measured; caps/errors/cancellation and source consistency tested. Full suite: 3096 passed in 680.85 seconds.",
+    "terms_of_service": "Internal project APIs only; no new service terms/account dependency. Existing nodes described in the catalogue keep their own execution/setup conditions.",
+    "sources": [
+      "../../backend/authoring.py",
+      "../../backend/validator.py",
+      "../../backend/node_catalogue.py",
+      "../../backend/meta_workflow.py",
+      "../audits/meta_nodes_2026_10_26/research-checks.json"
+    ],
+    "verdict": "feasible",
+    "reason": "Owner-approved wrappers now share registry discovery and the CLI check path; isolation/contract tests pass.",
+    "conditions": [],
+    "alternatives": [
+      "Keep using nodes/describe/build --check manually",
+      "Use a frozen reviewed catalogue in a configured Context Pack for an initial manual loop",
+      "Owner manually checks, approves and builds the exact spec file until an approval-bound Build workflow path is approved"
+    ]
+  },
+  "final_artifact": null,
+  "candidate_artifact": {
+    "kind": "node-implementation",
+    "branch": "codex/meta-nodes",
+    "base": "3f365520730493f1e1ecd24ee592befb23ca5ef5",
+    "worktree": "/home/makin/src/nw-meta-nodes",
+    "contract": "../integrations/META_NODES.md",
+    "helper_specs": [
+      "../../../aotn_node_helper/specs/node_catalogue_node.json",
+      "../../../aotn_node_helper/specs/check_workflow_spec_node.json"
+    ],
+    "screens": "../audits/meta_nodes_2026_10_26/manifest.json",
+    "approved_decisions": "../audits/meta_nodes_2026_10_26/approved-decisions.md",
+    "validation_evidence": "../audits/meta_nodes_2026_10_26/verification.json",
+    "implementation_head": "389692c59a4f7eb3c9955a759c4c19f3d9786718",
+    "pr": 125,
+    "pr_url": "https://github.com/makinster/node_workflow/pull/125"
+  },
+  "coverage": {
+    "total_operations": 2,
+    "existing_count": 0,
+    "new_count": 2,
+    "ratio": 0.0,
+    "mappings": [
+      {
+        "operation": "Supply live bounded node contracts",
+        "status": "new",
+        "node_type": "node_catalogue_node",
+        "reuse": [
+          "backend.authoring.list_node_types",
+          "backend.authoring.describe_node_type",
+          "NodeFactory metadata"
+        ]
+      },
+      {
+        "operation": "Check a draft without publishing it",
+        "status": "new",
+        "node_type": "check_workflow_spec_node",
+        "reuse": [
+          "backend.authoring.build_workflow(write=False)",
+          "backend.validator.validate_workflow"
+        ]
+      }
+    ],
+    "related_meta_workflow": {
+      "total_operations": 8,
+      "existing_count": 6,
+      "new_count": 2,
+      "ratio": 0.75,
+      "after_proposed_nodes": {
+        "existing_count": 6,
+        "new_count": 2,
+        "ratio": 0.75
+      },
+      "remaining_gaps": [
+        "exact-spec-bound owner approval",
+        "approval-bound workflow save"
+      ],
+      "baseline_existing_count": 4,
+      "baseline_ratio": 0.5,
+      "mappings": [
+        {
+          "operation": "Capture request",
+          "node_types": [
+            "user_text_input_node"
+          ],
+          "status": "existing"
+        },
+        {
+          "operation": "Classify kind",
+          "node_types": [
+            "pick_one_node",
+            "ask_local_model_node"
+          ],
+          "status": "existing"
+        },
+        {
+          "operation": "Supply contracts",
+          "node_types": [
+            "node_catalogue_node"
+          ],
+          "status": "candidate"
+        },
+        {
+          "operation": "Pack context",
+          "node_types": [
+            "context_pack_node"
+          ],
+          "status": "existing"
+        },
+        {
+          "operation": "Draft spec",
+          "node_types": [
+            "ask_local_model_node"
+          ],
+          "status": "existing"
+        },
+        {
+          "operation": "Check spec",
+          "node_types": [
+            "check_workflow_spec_node"
+          ],
+          "status": "candidate"
+        },
+        {
+          "operation": "Bind owner approval",
+          "node_types": [],
+          "status": "gap"
+        },
+        {
+          "operation": "Save approved workflow",
+          "node_types": [],
+          "status": "gap"
+        }
+      ],
+      "note": "6/8 counts candidate availability; approval/build gaps remain. Capture/classification/drafting require separately authorized use."
+    },
+    "replay_on_candidate": {
+      "total_operations": 2,
+      "existing_count": 2,
+      "new_count": 0,
+      "ratio": 1.0,
+      "note": "Original 0/2 mapping retained; both capabilities available on candidate, not yet merged."
+    }
+  },
+  "approvals": {
+    "decisions": true,
+    "samples": true,
+    "go_live": false,
+    "evidence": "Owner build message dated 2026-10-26 approves decisions 1–12 and sample scope with four listed changes. Exact message timestamp unavailable; recorded build-start clock is not approval time."
+  },
+  "measurements": {
+    "loop_started_at": "2026-10-27T04:27:36Z",
+    "review_rounds": 2,
+    "reviews": [
+      {
+        "head": "42fcb4d91ad66ee036302afa29e72b45b380bb8d",
+        "reviewed_at": "2026-10-27T08:29:52Z",
+        "findings": [
+          {
+            "priority": "P2",
+            "description": "A failed node's original inputs (the draft spec, with a Secrets value) persisted unredacted in run_errors context.inputs",
+            "status": "fixed_pending_recheck"
+          },
+          {
+            "priority": "P2",
+            "description": "Duplicate JSON object keys silently kept the last value, so an invalid first definition could pass",
+            "status": "fixed_pending_recheck"
+          }
+        ],
+        "outcome": "Two P2 findings fixed engine-wide/parser-side in one follow-up push with the owner-approved Brief detail level; re-check pending.",
+        "url": "https://github.com/makinster/node_workflow/pull/125#issuecomment-6437185514"
+      },
+      {
+        "head": "3a69e19",
+        "reviewed_at": "2026-10-27T16:47:31Z",
+        "findings": [
+          {
+            "priority": "P2",
+            "description": "Unregistered credential values under structured input keys survived independent key/value masking in persisted run_errors; nested objects and lists affected.",
+            "status": "fixed_pending_recheck"
+          }
+        ],
+        "outcome": "Structured credential fix verified with real persisted records and 3106 full-suite passes in 676.59 seconds; no retry. Independent clean re-check pending.",
+        "url": "https://github.com/makinster/node_workflow/pull/125#issuecomment-6447926977"
+      }
+    ],
+    "step_visits": [
+      {
+        "step": 0,
+        "started_at": "2026-10-27T04:27:36Z",
+        "ended_at": "2026-10-27T04:36:53Z",
+        "elapsed_days": 0.006446759259259259,
+        "status": "complete",
+        "wait_reason": null,
+        "notes": "Initial research/request work overlapped; first recorded clock checkpoint is used, earlier startup unmeasured."
+      },
+      {
+        "step": 1,
+        "started_at": "2026-10-27T04:27:36Z",
+        "ended_at": "2026-10-27T04:36:53Z",
+        "elapsed_days": 0.006446759259259259,
+        "status": "complete",
+        "wait_reason": null,
+        "notes": "Initial research/request work overlapped; first recorded clock checkpoint is used, earlier startup unmeasured."
+      },
+      {
+        "step": 2,
+        "started_at": null,
+        "ended_at": "2026-10-27T04:36:53Z",
+        "elapsed_days": null,
+        "status": "complete",
+        "wait_reason": null,
+        "notes": "Mapping work overlapped research; its separate start boundary was not captured."
+      },
+      {
+        "step": 3,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "complete",
+        "wait_reason": null,
+        "notes": "Owner approved in build request; exact approval timestamp unavailable. Historical drafting/render checkpoints retained."
+      },
+      {
+        "step": 4,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "complete",
+        "wait_reason": null,
+        "notes": "Owner approved in build request; exact approval timestamp unavailable. Historical drafting/render checkpoints retained.",
+        "artifact_prepared_at": "2026-10-27T04:42:49Z"
+      },
+      {
+        "step": 5,
+        "started_at": "2026-10-27T06:31:57Z",
+        "ended_at": "2026-10-27T07:13:13Z",
+        "elapsed_days": 0.028657407407407406,
+        "status": "complete",
+        "wait_reason": null,
+        "notes": "Both nodes built; full suite 3096 passed in 680.85 seconds, no WaitUntil retry. Helpers, source contracts, real CLI check, screenshots, schemas, docs and whitespace pass."
+      },
+      {
+        "step": 6,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "awaiting_recheck",
+        "wait_reason": "Independent clean re-check of structured-input fix",
+        "notes": "Two independent rounds recorded; actual review start unknown. Author regressions/full suite pass, independent clean re-check pending."
+      },
+      {
+        "step": 7,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "not_started",
+        "wait_reason": null,
+        "notes": "Review, merge and live steps remain pending; this build stops after PR publication."
+      },
+      {
+        "step": 8,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "not_started",
+        "wait_reason": null,
+        "notes": "Review, merge and live steps remain pending; this build stops after PR publication."
+      },
+      {
+        "step": 9,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "not_started",
+        "wait_reason": null,
+        "notes": "Review, merge and live steps remain pending; this build stops after PR publication."
+      },
+      {
+        "step": 10,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "not_started",
+        "wait_reason": null,
+        "notes": "Review, merge and live steps remain pending; this build stops after PR publication."
+      },
+      {
+        "step": 11,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "not_started",
+        "wait_reason": null,
+        "notes": "Review, merge and live steps remain pending; this build stops after PR publication."
+      }
+    ],
+    "checkpoints": [
+      {
+        "at": "2026-10-27T04:27:36Z",
+        "step": 0,
+        "event": "First recorded clock checkpoint: origin/main verified at 3f36552; owner checkout preserved"
+      },
+      {
+        "at": "2026-10-27T04:32:22Z",
+        "step": 1,
+        "event": "Authoring read-only probes completed; 55 authorable nodes, no temporary-root entries or library writes"
+      },
+      {
+        "at": "2026-10-27T04:36:53Z",
+        "step": 3,
+        "event": "Request, feasibility, coverage and numbered decision proposals prepared"
+      },
+      {
+        "at": "2026-10-27T04:42:39Z",
+        "step": 4,
+        "event": "Final rendering pass began with production screens/styles and non-executable sample metadata"
+      },
+      {
+        "at": "2026-10-27T04:42:49Z",
+        "step": 4,
+        "event": "23 SVG samples rendered; source options, Save/Close geometry, config preservation and empty temporary data root checked"
+      },
+      {
+        "at": "2026-10-27T04:46:20Z",
+        "step": 4,
+        "event": "PNG copies and contact sheet inspected; packet ready for artifact validation"
+      },
+      {
+        "at": "2026-10-27T04:48:18Z",
+        "step": 4,
+        "event": "Artifact/schema/source-hash/geometry checks, docs consolidation and whitespace checks pass; owner decisions/sample approval pending; stop at step 4."
+      },
+      {
+        "at": "2026-10-27T06:31:57Z",
+        "step": 5,
+        "event": "Own worktree codex/meta-nodes created from freshly fetched origin/main 3f36552; owner checkout preserved."
+      },
+      {
+        "at": "2026-10-27T06:50:23Z",
+        "step": 5,
+        "event": "Final registered node measured: 50 Compact non-debug entries, Text 31428 chars, JSON 49866 chars; default cap 62400."
+      },
+      {
+        "at": "2026-10-27T07:00:49Z",
+        "step": 5,
+        "event": "Text contract completed with port labels/required flags and entry kind. Final measurement: Text 34618 characters / 34669 bytes, compact JSON unchanged at 49866; default cap 62400. New assertions pass; full suite restarted."
+      },
+      {
+        "at": "2026-10-27T07:13:13Z",
+        "step": 5,
+        "event": "Final complete suite and artifact checks pass; build record finalized before PR publication. Review rounds remain 0; do not merge."
+      },
+      {
+        "at": "2026-10-27T07:15:15Z",
+        "step": 5,
+        "event": "PR #125 published from codex/meta-nodes to main. Implementation head 389692c; publication metadata follow-up changes docs only. Open, not merged."
+      },
+      {
+        "at": "2026-10-27T16:24:36Z",
+        "step": 6,
+        "event": "Review round 1 fixes: failed-node inputs redacted with the shared redactor and capped at 2,000 characters before run_errors; duplicate JSON keys rejected as invalid_json with their path; Brief detail added (all non-debug Text 6,207 characters, under the 8,000 Ask local model Context cap). Re-check pending; do not merge."
+      },
+      {
+        "at": "2026-10-27T18:12:47Z",
+        "step": 6,
+        "event": "First recorded follow-up clock: flat and nested/list persistence regressions fail on 3a69e19 (2 failed / 3 passed); shared credential-label matcher reused for recursive structured inputs; final focused group 47 passed. Full suite running."
+      },
+      {
+        "at": "2026-10-27T18:23:43Z",
+        "step": 6,
+        "event": "Structured input regressions and full suite pass: 3106 in 676.59 seconds, no retry. Shared credential-key matcher, known-secret masking and 2000-character cap verified. Independent clean re-check pending; do not merge."
+      }
+    ],
+    "verification": {
+      "live_generation_calls": 0,
+      "live_network_calls": 0,
+      "owner_workflow_library_writes": 0,
+      "owner_workflow_executions": 0,
+      "focus_tests": "37 behavioral/isolation tests; 88 source/menu/generated-UI checks; helper checks pass.",
+      "product_suite": "3106 passed in 676.59 seconds; no retry",
+      "screens": 23,
+      "source_options": [
+        "Upstream payload",
+        "Vault",
+        "Configured"
+      ],
+      "catalogue_measurement": "../audits/meta_nodes_2026_10_26/catalogue-size.json",
+      "no_write_proof": "../../tests/test_meta_nodes.py::test_shared_check_without_save_build_execute_or_network",
+      "guarded_calls": [
+        "persistence writes/deletes",
+        "SaveManager.save_current_workflow",
+        "WorkflowMap.save",
+        "authoring.build_workflow",
+        "authoring.name_taken",
+        "authoring._reload_problem",
+        "NodeFactory.create_node",
+        "every node execute",
+        "socket connect/create_connection",
+        "subprocess Popen/run"
+      ],
+      "cli_build_check": "Pass: both real nodes in nodes-example.json; temporary data root empty.",
+      "full_suite_exit_code": 0,
+      "final_artifact_checks": "../audits/meta_nodes_2026_10_26/verification.json",
+      "svg_png_pairs": 23,
+      "template_schema_instances": 9,
+      "docs_consolidation": "pass",
+      "git_diff_check": "pass",
+      "structured_inputs_followup": {
+        "base": "3a69e19",
+        "regressions_before": {
+          "failed": 2,
+          "passed": 3
+        },
+        "focused_passed": 47,
+        "full_suite": {
+          "passed": 3106,
+          "seconds": 676.59,
+          "exit_code": 0,
+          "retry": false,
+          "log_sha256": "98f1be9970391f00a28f1aca37c8e608c8ed1adb2b5f2c252aa4eee512263125"
+        },
+        "interrupted_attempt": {
+          "passed": 746,
+          "seconds": 109.61,
+          "reason": "Refine fix to preserve harmless structured context and mask whole sensitive containers."
+        },
+        "live_generation_calls": 0,
+        "live_network_calls": 0,
+        "expanded_regressions_before": {
+          "failed": 4,
+          "passed": 3,
+          "method": "Final seven test cases run with the exact _logged_inputs definition extracted from git 3a69e19 in an isolated test process; product files unchanged."
+        },
+        "completed_at": "2026-10-27T18:23:43Z",
+        "compilation": "pass",
+        "delivery_case_schema": "pass",
+        "docs_consolidation": "pass",
+        "git_diff_check": "pass"
+      }
+    },
+    "loop_wall_days_so_far": 0.11501157407407407
+  },
+  "acceptance_checks": [
+    "Catalogue excludes hidden/internal types while retaining authorable Start/End",
+    "Debug nodes excluded by default; opt-in includes them; entry_kind node and reusable port arrays reserve Bundle format without building Bundles",
+    "Filters/format/detail/cap are reproducible; overflow errors without incomplete contracts",
+    "Catalogue source/type claims match runtime metadata, including custom source controls and default-dependent ports",
+    "Spec sources exactly Upstream/Vault/Configured; compatible upstream secondary Vault keys appear",
+    "CLI/check node parity on valid/invalid/warning-only fixtures; fields from structured diagnostics, not English parsing",
+    "Valid output equals parsed input, not a normalized save or ids; invalid has no success output",
+    "Bounded/redacted readable problems; no raw spec in report/errors",
+    "Save/execute/network spies fail if called; workflow library and active map unchanged",
+    "Approval/build are separate future work; no inferred permission",
+    "Future replay scores these checks against the same catalogue baseline, then a newer catalogue separately"
+  ],
+  "evidence": [
+    "../audits/meta_nodes_2026_10_26/README.md",
+    "../audits/meta_nodes_2026_10_26/manifest.json",
+    "../audits/meta_nodes_2026_10_26/catalogue-size.json",
+    "../../tests/test_meta_nodes.py",
+    "../../tests/test_source_menu_audit.py",
+    "../audits/meta_nodes_2026_10_26/check-built-nodes.json"
+  ],
+  "notes": [
+    "Original planning request and dated probe reports preserved in the build audit; pending wording there is historical.",
+    "Original primary coverage stays 0/2; candidate fills 2/2 and raises related designer coverage from 4/8 to 6/8.",
+    "No real generation, outside-service calls or active workflow edits. Test library writes for other existing suite cases are temporary fixtures.",
+    "Repeated shape combines an existing checked example with a proposed meta sketch. Vault reads/writes are the union of named boundary keys; there is no claim of two observed runs.",
+    "Steps 3/4 were owner approved before build; exact approval timestamp unknown. Step-visit overlap is not summed as total wall time.",
+    "Review round 1 (42fcb4d): two P2s fixed in the follow-up push; re-check pending. Steps 7–11 pending."
+  ],
+  "kind": "meta nodes",
+  "packet_version": "2026-10-26-v2-build",
+  "repeated_shapes": [
+    {
+      "id": "context-then-local-question",
+      "node_types": [
+        "context_pack_node",
+        "ask_local_model_node"
+      ],
+      "fixed_settings": {
+        "ask_local_model_node.context_source": "Upstream payload",
+        "ask_local_model_node.reply_json": true,
+        "context_pack_node.include_run": false
+      },
+      "varied_settings": {
+        "context_pack_node.items": [
+          "synthetic backup facts (existing example)",
+          "request + kind + filtered catalogue (meta sketch)"
+        ],
+        "ask_local_model_node.input": [
+          "explain failure as structured reply",
+          "draft aotn-workflow/1 JSON spec"
+        ],
+        "ask_local_model_node.Vault_outputs": [
+          "Run details → local_call (existing example)",
+          "Answer → draft_spec (meta sketch)"
+        ]
+      },
+      "vault_edges": {
+        "reads": [
+          "request",
+          "kind"
+        ],
+        "writes": [
+          "local_call",
+          "draft_spec"
+        ]
+      },
+      "basis": "design",
+      "evidence": [
+        "../../examples/ask_local_model.json",
+        "../audits/meta_nodes_2026_10_26/render_screens.py"
+      ]
+    }
+  ]
+}

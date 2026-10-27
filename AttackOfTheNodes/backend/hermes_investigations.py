@@ -63,6 +63,11 @@ _INLINE_CREDENTIAL = re.compile(r"""(?i)(?<![\w.'"-])(%s[ \t]*[:=][ \t]*)(?:(?:B
 _NEXT_FIELD = re.compile(r"""^[ \t]*(?:-[ \t]+)?(?:["'][^"']+["']|[A-Za-z_][\w .-]*)[ \t]*(?::|=(?![= \t]*\r?$))""")
 
 
+def is_sensitive_credential_key(key):
+    """Decoded mapping key governed by the same labels as text redaction."""
+    return isinstance(key, str) and re.fullmatch(_CREDENTIAL_LABEL, key, re.IGNORECASE) is not None
+
+
 def _redact_credential_blocks(value):
     """Mask labelled continuation lines, including YAML literal/folded values.
 

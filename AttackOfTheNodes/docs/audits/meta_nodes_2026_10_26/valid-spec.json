@@ -1,0 +1,31 @@
+{
+  "format": "aotn-workflow/1",
+  "name": "Show a checked message",
+  "nodes": {
+    "start": {
+      "type": "start_node",
+      "config": {
+        "greeting": "Hello from a checked draft"
+      }
+    },
+    "show": {
+      "type": "text_output_node"
+    },
+    "end": {
+      "type": "end_node",
+      "config": {
+        "record_line": false
+      }
+    }
+  },
+  "connections": [
+    {
+      "from": "start.default",
+      "to": "show.input"
+    },
+    {
+      "from": "show.default",
+      "to": "end.input"
+    }
+  ]
+}

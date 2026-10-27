@@ -1,11 +1,47 @@
 # Current State
 
-Snapshot checked **2026-10-26**, against fetched `origin/main` `f0aa39d` after
-#123 merged, with the source-menu/picker follow-up below built for review.
+Snapshot checked **2026-10-27**, against fetched `origin/main` `3f36552` after
+#124 merged, with the meta nodes below built for review.
 Code and fresh GitHub checks take precedence.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
+
+## #125 re-check: structured failure inputs — 2026-10-27
+
+The re-check of `3a69e19` found that credentials in objects/lists could still
+reach `run_errors` because labels and values were redacted independently.
+The supervisor now checks each original dictionary key with the shared C3c/#119
+credential-label matcher, masks its whole value, then redacts keys and recurses
+through non-sensitive values. No second label list; harmless structure remains.
+Known Secrets masking and the 2,000-character input cap remain. Real Start (var)
+→ Error regressions cover flat/nested/list payloads and credential containers.
+Two flat/nested regressions fail on the reviewed head; **47 focused checks pass**.
+Full suite: **3,106 passed in 676.59 seconds**, no retry. Compilation, delivery-case
+schema, docs consolidation and whitespace checks pass. Independent clean re-check
+remains pending.
+No generation or live settings/workflow changes.
+
+## Meta nodes — 2026-10-27, PR #125 open
+
+`codex/meta-nodes`, own worktree `/home/makin/src/nw-meta-nodes`, base `3f36552`.
+Implementation `389692c`, [PR #125](https://github.com/makinster/node_workflow/pull/125).
+Owner-approved [Node catalogue / Check workflow spec](integrations/META_NODES.md)
+provide bounded live contracts and the CLI's shared check-only validation.
+Debug nodes opt in; Start/End remain; internal types stay out. Measured compact
+all-non-debug catalogue: 50 entries, Text 34,618 / JSON 49,866 characters;
+default cap 62,400 (25.14% above the larger form). No partial output.
+Check returns the original parsed draft; optional bounded warnings/report and
+error problems do not save/build/execute. No approval/build or Bundle node.
+[Built screens](audits/meta_nodes_2026_10_26/README.md) use real CSS/classes.
+[Loop case](delivery_tests/meta-nodes.json) records step 5 and optional repeated
+shapes; related designer coverage 6/8, approval and build still gaps. Review,
+merge, activation and ordinary owner use remain pending. No generation calls.
+Verification: **3,096 passed in 680.85 seconds**, no WaitUntil retry; helper,
+CLI/example, artifact/schema, compilation, consolidation and whitespace checks pass.
+
+The following #124 candidate notes retain historical review details. #124 is
+now merged in the checked `3f36552` baseline; their pending status is historical.
 
 ## #124 second review P2 — 2026-10-26, fix for re-check
 

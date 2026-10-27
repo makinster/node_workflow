@@ -61,8 +61,12 @@ from .io.find_lines_node import FindLinesNode
 from .data.check_reply_node import CheckReplyNode
 from .data.context_pack_node import ContextPackNode
 from .ai.ask_local_model_node import AskLocalModelNode
+from .data.check_workflow_spec_node import CheckWorkflowSpecNode
+from .data.node_catalogue_node import NodeCatalogueNode
 
 ALL_NODE_CLASSES = [
+    NodeCatalogueNode,
+    CheckWorkflowSpecNode,
     AskLocalModelNode,
     ContextPackNode,
     CheckReplyNode,

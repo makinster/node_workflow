@@ -1,0 +1,338 @@
+{
+  "design_only": false,
+  "registered_in_product": true,
+  "base": "3f365520730493f1e1ecd24ee592befb23ca5ef5",
+  "nodes": {
+    "node_catalogue_node": {
+      "type": "node_catalogue_node",
+      "display_name": "Node catalogue",
+      "default_alias": "Node catalogue",
+      "description": "Give an AI step bounded contracts for available nodes",
+      "category": "Utility",
+      "primary_family": "Utility",
+      "legacy_category": "data",
+      "tags": [
+        "meta",
+        "workflow"
+      ],
+      "icon_name": "list-check",
+      "color_hint": "grey",
+      "group": null,
+      "selector_section": "Transform",
+      "input_ports": [
+        "input"
+      ],
+      "output_ports": [
+        "default"
+      ],
+      "input_port_metadata": {
+        "input": {
+          "name": "Continue",
+          "description": "Sequence this step; incoming data is not a filter.",
+          "data_type": "any",
+          "required": false,
+          "sources": [
+            "upstream"
+          ]
+        }
+      },
+      "output_port_metadata": {
+        "default": {
+          "name": "Catalogue",
+          "description": "Complete matching contracts; errors if over the size cap",
+          "data_type": "string",
+          "required": true,
+          "to": [
+            "downstream",
+            "vault"
+          ]
+        }
+      },
+      "config_schema": {
+        "scope": {
+          "type": "select",
+          "label": "Nodes",
+          "options": [
+            "All nodes",
+            "Filtered"
+          ],
+          "tab": "Parameters"
+        },
+        "group_filter": {
+          "type": "select",
+          "label": "Group",
+          "options": [
+            "Any group",
+            "AI Processing",
+            "Branch",
+            "Data Transform",
+            "File Reader",
+            "File Write",
+            "Hermes",
+            "Merge",
+            "Saved values",
+            "System",
+            "Text Input",
+            "Text Output",
+            "Text files",
+            "Wait / Timer",
+            "Web Request"
+          ],
+          "tab": "Parameters",
+          "visible_when": {
+            "scope": "Filtered"
+          }
+        },
+        "tag_filter": {
+          "type": "string",
+          "label": "Tag",
+          "tab": "Parameters",
+          "visible_when": {
+            "scope": "Filtered"
+          },
+          "placeholder": "Any tag"
+        },
+        "search": {
+          "type": "string",
+          "label": "Search",
+          "tab": "Parameters",
+          "visible_when": {
+            "scope": "Filtered"
+          },
+          "placeholder": "Type, name, description or tags"
+        },
+        "detail": {
+          "type": "select",
+          "label": "Detail",
+          "options": [
+            "Compact",
+            "Detailed"
+          ],
+          "tab": "Parameters",
+          "description": "Detailed adds full config and row schemas."
+        },
+        "format": {
+          "type": "select",
+          "label": "Output",
+          "options": [
+            "Text",
+            "JSON"
+          ],
+          "tab": "Parameters",
+          "description": "Text [string] or a JSON record [var]."
+        },
+        "max_chars": {
+          "type": "integer",
+          "label": "Max catalogue (characters)",
+          "min": 512,
+          "max": 64000,
+          "tab": "Parameters",
+          "wrap_description": true,
+          "description": "Complete output only; narrow filters if the cap is exceeded. Context Pack and model context have separate limits."
+        },
+        "include_debug": {
+          "type": "boolean",
+          "label": "Include debug nodes",
+          "tab": "Parameters"
+        }
+      },
+      "default_config": {
+        "scope": "All nodes",
+        "group_filter": "Any group",
+        "tag_filter": "",
+        "search": "",
+        "detail": "Compact",
+        "format": "Text",
+        "max_chars": 62400,
+        "include_debug": false,
+        "transient_output": true,
+        "dead_drop_passthrough": false,
+        "transient_outputs": [],
+        "vault_write": false,
+        "vault_write_key": "",
+        "vault_write_description": ""
+      },
+      "ui_hints": {
+        "standard_output": true
+      },
+      "editor_only": false,
+      "terminates_branch": false,
+      "spawns_branches": false,
+      "errors": [
+        {
+          "code": "node_error",
+          "description": "Any failure the node does not declare more precisely.",
+          "retryable": false
+        },
+        {
+          "code": "invalid_config",
+          "description": "Check catalogue filters and limits.",
+          "retryable": false
+        },
+        {
+          "code": "catalogue_empty",
+          "description": "No nodes match. Broaden the filters.",
+          "retryable": false
+        },
+        {
+          "code": "catalogue_too_large",
+          "description": "Catalogue is too large. Narrow the filters or raise the cap.",
+          "retryable": false
+        }
+      ],
+      "error_port": "error",
+      "custom_config_keys": {}
+    },
+    "check_workflow_spec_node": {
+      "type": "check_workflow_spec_node",
+      "display_name": "Check workflow spec",
+      "default_alias": "Check workflow spec",
+      "description": "Check a workflow draft without saving or running it",
+      "category": "Utility",
+      "primary_family": "Utility",
+      "legacy_category": "data",
+      "tags": [
+        "meta",
+        "workflow"
+      ],
+      "icon_name": "list-check",
+      "color_hint": "grey",
+      "group": null,
+      "selector_section": "Transform",
+      "input_ports": [
+        "input"
+      ],
+      "output_ports": [
+        "default",
+        "report"
+      ],
+      "input_port_metadata": {
+        "input": {
+          "name": "Spec",
+          "description": "",
+          "data_type": "string",
+          "required": true,
+          "sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ]
+        }
+      },
+      "output_port_metadata": {
+        "default": {
+          "name": "Checked spec",
+          "description": "The parsed input spec; only after validation passes",
+          "data_type": "var",
+          "required": true,
+          "to": [
+            "downstream",
+            "vault"
+          ]
+        },
+        "report": {
+          "name": "Check report",
+          "description": "Optional verdict, warnings and counts; no spec body",
+          "data_type": "var",
+          "required": false,
+          "to": [
+            "vault"
+          ]
+        }
+      },
+      "config_schema": {
+        "input_source": {
+          "type": "select",
+          "label": "Input source",
+          "options": [
+            "Upstream payload",
+            "Vault",
+            "Configured"
+          ],
+          "tab": "Source",
+          "section": "Required Inputs"
+        },
+        "input_vault_key": {
+          "type": "string",
+          "label": "Input Vault key",
+          "required": false,
+          "tab": "Source",
+          "section": "Required Inputs",
+          "vault_type": "string",
+          "visible_when": {
+            "input_source": "Vault"
+          }
+        },
+        "input": {
+          "type": "multiline",
+          "label": "Workflow spec",
+          "preview": true,
+          "description": "One aotn-workflow/1 JSON object. e/Enter: edit full text.",
+          "tab": "Parameters",
+          "visible_when": {
+            "input_source": "Configured"
+          }
+        },
+        "max_spec": {
+          "type": "integer",
+          "label": "Max spec (characters)",
+          "min": 1,
+          "max": 64000,
+          "tab": "Parameters",
+          "wrap_description": true,
+          "description": "Same verdict as build --check; warnings pass. No workflow is saved. Hard limits: 128 nodes / 256 edges / nesting 64."
+        }
+      },
+      "default_config": {
+        "input_source": "Upstream payload",
+        "input_vault_key": "",
+        "input": "",
+        "max_spec": 32000,
+        "transient_output": true,
+        "dead_drop_passthrough": false,
+        "transient_outputs": [],
+        "vault_write": false,
+        "vault_write_key": "",
+        "vault_write_description": "",
+        "report_vault_write": false,
+        "report_vault_key": "",
+        "report_vault_description": ""
+      },
+      "ui_hints": {
+        "standard_output": true
+      },
+      "editor_only": false,
+      "terminates_branch": false,
+      "spawns_branches": false,
+      "errors": [
+        {
+          "code": "node_error",
+          "description": "Any failure the node does not declare more precisely.",
+          "retryable": false
+        },
+        {
+          "code": "invalid_config",
+          "description": "Check spec sources, outputs and limits.",
+          "retryable": false
+        },
+        {
+          "code": "invalid_json",
+          "description": "Spec is not valid JSON text.",
+          "retryable": false
+        },
+        {
+          "code": "spec_invalid",
+          "description": "Workflow spec did not pass; see the problem list.",
+          "retryable": false
+        },
+        {
+          "code": "spec_too_large",
+          "description": "Spec exceeds a size or graph limit.",
+          "retryable": false
+        }
+      ],
+      "error_port": "error",
+      "custom_config_keys": {}
+    }
+  }
+}

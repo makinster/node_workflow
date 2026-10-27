@@ -209,7 +209,8 @@ def test_registered_multiline_inventory_uses_shared_widget():
             types.add(metadata['type'])
     # Ask local model adds Question and optional Context using the same widget.
     assert {"ask_local_model_node.input", "ask_local_model_node.context"} <= set(found)
-    assert len(found) == 26 and len(types) == 13
+    assert "check_workflow_spec_node.input" in found
+    assert len(found) == 27 and len(types) == 14
     assert 'text_output_node.template' in found
 
 
