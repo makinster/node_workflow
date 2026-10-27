@@ -11,6 +11,8 @@ references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 Own clean worktree `/home/makin/src/nw-source-menu-audit`, branch
 `codex/source-menu-audit`, from fetched `origin/main` `f0aa39d` (PR #123 merged).
 Owner authorized one maintenance loop, kind `swiss-army fix`, no generation.
+Implementation `3ac0168`, [PR #124](https://github.com/makinster/node_workflow/pull/124);
+this publication record is documentation only.
 
 - Audited all 56 registered types / 131 declared input ports, including 31
   standard-source ports, custom row/source controls and implicit/trigger ports.

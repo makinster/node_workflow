@@ -7,7 +7,7 @@ This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
 
-## Source menus and model pickers — 2026-10-26, built for review
+## Source menus and model pickers — 2026-10-26, PR #124 open
 
 `codex/source-menu-audit`, worktree `/home/makin/src/nw-source-menu-audit`,
 base `f0aa39d`: [all-node audit](audits/source_menus_2026_10_26/README.md),

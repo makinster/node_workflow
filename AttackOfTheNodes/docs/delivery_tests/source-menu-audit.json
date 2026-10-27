@@ -2,7 +2,7 @@
   "schema_version": 1,
   "case_id": "source-menu-audit",
   "baseline": "f0aa39d3c5174523550be180ed7b649a00782d57",
-  "record_status": "Step 5 complete: checked PR candidate; independent review, merge and owner use pending",
+  "record_status": "Step 5 published as PR #124; independent review, merge and owner use pending",
   "request_kind": "swiss-army fix",
   "node_kind": "swiss-army",
   "classification_at": "2026-10-27T00:55:10Z",
@@ -68,7 +68,10 @@
   "candidate_artifact": {
     "kind": "application-fix",
     "branch": "codex/source-menu-audit",
-    "audit": "../audits/source_menus_2026_10_26/README.md"
+    "audit": "../audits/source_menus_2026_10_26/README.md",
+    "pr": 124,
+    "pr_url": "https://github.com/makinster/node_workflow/pull/124",
+    "implementation_head": "3ac016819f608cf181962a33b0f7c92368918d0b"
   },
   "coverage": {
     "total_operations": 0,
@@ -274,5 +277,11 @@
     "Stash has copy-insert and explicit contract sources, not persistent per-machine binding files.",
     "Original fan-in modal could not mount: no fabricated before image.",
     "Next: independent review, then owner-controlled merge and normal use."
-  ]
+  ],
+  "publication": {
+    "pr": 124,
+    "url": "https://github.com/makinster/node_workflow/pull/124",
+    "created_at": "2026-10-27T01:33:52Z",
+    "implementation_head": "3ac016819f608cf181962a33b0f7c92368918d0b"
+  }
 }

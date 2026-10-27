@@ -456,7 +456,8 @@
       "date": "2026-10-26",
       "case": "source-menu-audit.json",
       "status": "candidate; no new generation",
-      "scope": "All-node source discovery and installed-model pickers"
+      "scope": "All-node source discovery and installed-model pickers",
+      "pr": 124
     }
   ],
   "merge": {

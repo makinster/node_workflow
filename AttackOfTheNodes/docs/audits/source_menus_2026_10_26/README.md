@@ -1,6 +1,7 @@
 # Source menus and installed-model pickers · 2026-10-26
 
-Base `f0aa39d`, branch `codex/source-menu-audit`. **Five mismatches fixed**
+Base `f0aa39d`, branch `codex/source-menu-audit`,
+[PR #124](https://github.com/makinster/node_workflow/pull/124), implementation `3ac0168`. **Five mismatches fixed**
 (shared defects, not five affected ports). Audited **56 registered types,
 131 declared input ports**, including all 64 Merge slots, hidden/debug nodes,
 and **31 standard-source ports**. No node execution contract was broadened.
