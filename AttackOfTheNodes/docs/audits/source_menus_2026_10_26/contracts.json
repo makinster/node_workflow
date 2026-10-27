@@ -1,0 +1,1632 @@
+{
+  "schema_version": 1,
+  "baseline": "f0aa39d3c5174523550be180ed7b649a00782d57",
+  "review_method": "Runtime execute and called source resolvers inspected; frozen expectations require re-audit on runtime changes.",
+  "nodes": [
+    {
+      "node_type": "ask_local_model_node",
+      "ports": {
+        "input": {
+          "mode": "standard",
+          "accepted_sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ],
+          "data_type": "string",
+          "control": "input_source",
+          "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
+        },
+        "context": {
+          "mode": "standard",
+          "accepted_sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ],
+          "data_type": "string",
+          "control": "context_source",
+          "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
+        }
+      },
+      "runtime_sha256": "6565863bf17766d5a53fb669b9b3aea8f26faf62d9b9d49f02104a424a3c4490",
+      "runtime_file": "backend/nodes/ai/ask_local_model_node.py"
+    },
+    {
+      "node_type": "context_pack_node",
+      "ports": {
+        "input": {
+          "mode": "rows",
+          "accepted_sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ],
+          "data_type": "any",
+          "control": "items.source",
+          "notes": "Ordered item rows; Configured text, Vault key, or the single incoming value; no file open."
+        }
+      },
+      "runtime_sha256": "57061c7edd9127fa83b672a8f6fa4dcccd8c83770904ba7445daa824fdc6229e",
+      "runtime_file": "backend/nodes/data/context_pack_node.py"
+    },
+    {
+      "node_type": "check_reply_node",
+      "ports": {
+        "input": {
+          "mode": "standard",
+          "accepted_sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ],
+          "data_type": "string",
+          "control": "input_source",
+          "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
+        }
+      },
+      "runtime_sha256": "5374f3782233a4f066569813fdc4628105861668ed9d7d77d33f4cd4f818c197",
+      "runtime_file": "backend/nodes/data/check_reply_node.py"
+    },
+    {
+      "node_type": "find_lines_node",
+      "ports": {
+        "input": {
+          "mode": "standard",
+          "accepted_sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ],
+          "data_type": "string",
+          "control": "input_source",
+          "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
+        }
+      },
+      "runtime_sha256": "28db0f897cd98c1d64cc921f98c23208e20ba143d0770f9cc720c7035ca7732a",
+      "runtime_file": "backend/nodes/io/find_lines_node.py"
+    },
+    {
+      "node_type": "read_lines_node",
+      "ports": {
+        "input": {
+          "mode": "standard",
+          "accepted_sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ],
+          "data_type": "any",
+          "control": "input_source",
+          "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
+        }
+      },
+      "runtime_sha256": "c2519d3a76476191f346ec78ad54677438fa5dddfa8ab8afd24fdf1c80a80f5a",
+      "runtime_file": "backend/nodes/io/read_lines_node.py"
+    },
+    {
+      "node_type": "hermes_investigation_result_node",
+      "ports": {
+        "input": {
+          "mode": "standard",
+          "accepted_sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ],
+          "data_type": "string",
+          "control": "input_source",
+          "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
+        }
+      },
+      "runtime_sha256": "6ecfeb0bc8eecec349e4a62a64575c1b6e30825bde8d5b44ad726cc9e45a4e3e",
+      "runtime_file": "backend/nodes/io/hermes_investigation_result_node.py"
+    },
+    {
+      "node_type": "hermes_investigate_node",
+      "ports": {
+        "input": {
+          "mode": "standard",
+          "accepted_sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ],
+          "data_type": "string",
+          "control": "input_source",
+          "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
+        },
+        "evidence": {
+          "mode": "standard",
+          "accepted_sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ],
+          "data_type": "string",
+          "control": "evidence_source",
+          "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
+        }
+      },
+      "runtime_sha256": "4d04e4f9bd4786592cf1e87118d097dca42d66efe89ef8adb908a71c152b018e",
+      "runtime_file": "backend/nodes/io/hermes_investigate_node.py"
+    },
+    {
+      "node_type": "hermes_ask_node",
+      "ports": {
+        "input": {
+          "mode": "standard",
+          "accepted_sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ],
+          "data_type": "string",
+          "control": "input_source",
+          "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
+        },
+        "context": {
+          "mode": "standard",
+          "accepted_sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ],
+          "data_type": "string",
+          "control": "context_source",
+          "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
+        }
+      },
+      "runtime_sha256": "6fe2471320bd37cff18159161cf5a7c3c2c82b093b804d6e674882f221ce7d8c",
+      "runtime_file": "backend/nodes/ai/hermes_ask_node.py"
+    },
+    {
+      "node_type": "pick_one_node",
+      "ports": {
+        "input": {
+          "mode": "standard",
+          "accepted_sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ],
+          "data_type": "string",
+          "control": "input_source",
+          "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
+        }
+      },
+      "runtime_sha256": "f02ab7aa8fbdf11ca943e6d38f89bfdfe7a74610c5b5d756b0803332f602ad73",
+      "runtime_file": "backend/nodes/ai/pick_one_node.py"
+    },
+    {
+      "node_type": "if_changed_node",
+      "ports": {
+        "input": {
+          "mode": "standard",
+          "accepted_sources": [
+            "upstream",
+            "vault"
+          ],
+          "data_type": "any",
+          "control": "input_source",
+          "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
+        }
+      },
+      "runtime_sha256": "2bed5428bb792a5f18da19ec9b476a61abec4d30bf59af3c976696949f6c53a8",
+      "runtime_file": "backend/nodes/data/if_changed_node.py"
+    },
+    {
+      "node_type": "recall_node",
+      "ports": {
+        "input": {
+          "mode": "trigger",
+          "accepted_sources": [],
+          "data_type": "any",
+          "control": null,
+          "notes": "Incoming edge triggers work; payload is not selected as task input (may be forwarded). Parameters, saved store or user supplies the result."
+        }
+      },
+      "runtime_sha256": "869439a03d6b45f40219a5bc4037abb866683e7d2c890b5486e56fc8fd5cb62e",
+      "runtime_file": "backend/nodes/data/recall_node.py"
+    },
+    {
+      "node_type": "remember_node",
+      "ports": {
+        "input": {
+          "mode": "standard",
+          "accepted_sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ],
+          "data_type": "any",
+          "control": "input_source",
+          "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
+        }
+      },
+      "runtime_sha256": "97caddb78c581c254e767489a15715f9a89773622fb40e5bd37c0c82a07e9c17",
+      "runtime_file": "backend/nodes/data/remember_node.py"
+    },
+    {
+      "node_type": "record_event_node",
+      "ports": {
+        "input": {
+          "mode": "standard",
+          "accepted_sources": [
+            "upstream",
+            "vault"
+          ],
+          "data_type": "any",
+          "control": "input_source",
+          "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
+        }
+      },
+      "runtime_sha256": "8e69b4ccc7b5affb067aaa2258a3714213c746eb1cde865286aecee50e937d59",
+      "runtime_file": "backend/nodes/io/record_event_node.py"
+    },
+    {
+      "node_type": "hermes_notify_node",
+      "ports": {
+        "input": {
+          "mode": "standard",
+          "accepted_sources": [
+            "upstream",
+            "vault"
+          ],
+          "data_type": "any",
+          "control": "input_source",
+          "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
+        }
+      },
+      "runtime_sha256": "1c24928d47af8e26ee749f17b5beda16f7acbd591df745df8a044ad86a3d9895",
+      "runtime_file": "backend/nodes/io/hermes_notify_node.py"
+    },
+    {
+      "node_type": "file_age_node",
+      "ports": {
+        "input": {
+          "mode": "trigger",
+          "accepted_sources": [],
+          "data_type": "any",
+          "control": null,
+          "notes": "Incoming edge triggers work; payload is not selected as task input (may be forwarded). Parameters, saved store or user supplies the result."
+        }
+      },
+      "runtime_sha256": "7c900c868f550026ed0e1709127c752e88b92042ccebe801753320955c5f2ed5",
+      "runtime_file": "backend/nodes/io/file_age_node.py"
+    },
+    {
+      "node_type": "git_status_node",
+      "ports": {
+        "input": {
+          "mode": "trigger",
+          "accepted_sources": [],
+          "data_type": "any",
+          "control": null,
+          "notes": "Incoming edge triggers work; payload is not selected as task input (may be forwarded). Parameters, saved store or user supplies the result."
+        }
+      },
+      "runtime_sha256": "5e406afbaac772c479293cac4e294b90d6730b72cb7bec43db9821a22244d6aa",
+      "runtime_file": "backend/nodes/io/git_status_node.py"
+    },
+    {
+      "node_type": "disk_space_node",
+      "ports": {
+        "input": {
+          "mode": "trigger",
+          "accepted_sources": [],
+          "data_type": "any",
+          "control": null,
+          "notes": "Incoming edge triggers work; payload is not selected as task input (may be forwarded). Parameters, saved store or user supplies the result."
+        }
+      },
+      "runtime_sha256": "1c4772801843d71a7f32efc91e732ee56c7352182f464c6bd18a3e5b109a5ddd",
+      "runtime_file": "backend/nodes/io/disk_space_node.py"
+    },
+    {
+      "node_type": "error_mux_node",
+      "ports": {
+        "input": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "recover_from",
+          "notes": "Normal input and optional error record; recovery is structural, not a Vault/text source selector."
+        },
+        "error": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "recover_from",
+          "notes": "Normal input and optional error record; recovery is structural, not a Vault/text source selector."
+        }
+      },
+      "runtime_sha256": "7f865ff2e0565bdf1a7c7f96e1871d54f92f0517fc7e3d80a4760a5712099c3e",
+      "runtime_file": "backend/nodes/flow/error_mux_node.py"
+    },
+    {
+      "node_type": "subworkflow_node",
+      "ports": {
+        "input": {
+          "mode": "rows",
+          "accepted_sources": [
+            "upstream",
+            "vault",
+            "configured",
+            "stash"
+          ],
+          "data_type": "contract",
+          "control": "inputs.source",
+          "notes": "Per-child input types; Configured, Upstream payload, Vault, Stash, or omitted mapping/default. Results routed separately."
+        }
+      },
+      "runtime_sha256": "cae5d4f2045ee100a12709e8108074cf9d4c1ee9b8d4fdec4fd9b08e2376ed24",
+      "runtime_file": "backend/nodes/flow/subworkflow_node.py"
+    },
+    {
+      "node_type": "window_control_node",
+      "ports": {
+        "file": {
+          "mode": "standard",
+          "accepted_sources": [
+            "upstream",
+            "vault"
+          ],
+          "data_type": "file",
+          "control": "file_source",
+          "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
+        }
+      },
+      "runtime_sha256": "6cd72b67ed8dc5ff90039456ae89043f7602603713473ea8e99c45ec1b8e3042",
+      "runtime_file": "backend/nodes/io/window_control_node.py"
+    },
+    {
+      "node_type": "file_view_node",
+      "ports": {
+        "file": {
+          "mode": "standard",
+          "accepted_sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ],
+          "data_type": "file",
+          "control": "file_source",
+          "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
+        }
+      },
+      "runtime_sha256": "832763176b6c36fefc200b87e915be506ec7e6d9d7119bf5f22493b97d630864",
+      "runtime_file": "backend/nodes/io/file_view_node.py"
+    },
+    {
+      "node_type": "file_output_node",
+      "ports": {
+        "content": {
+          "mode": "standard",
+          "accepted_sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ],
+          "data_type": "string",
+          "control": "content_source",
+          "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
+        },
+        "file_path": {
+          "mode": "standard",
+          "accepted_sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ],
+          "data_type": "file",
+          "control": "file_path_source",
+          "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
+        }
+      },
+      "runtime_sha256": "d491c9561567ec315b6e68d6cd81423ab26a65f8781961f33bef0399a0f1b9cb",
+      "runtime_file": "backend/nodes/io/file_output_node.py"
+    },
+    {
+      "node_type": "http_request_node",
+      "ports": {
+        "input": {
+          "mode": "custom",
+          "accepted_sources": [
+            "upstream",
+            "configured"
+          ],
+          "data_type": "any",
+          "control": "body_source",
+          "notes": "POST only: config body vs input (string/bytes/JSON); GET ignores body."
+        }
+      },
+      "runtime_sha256": "a8ffbbbdffe8b10339d7f96c136c9a5d02fdd76c75c67d62f178d9fbb62f94fc",
+      "runtime_file": "backend/nodes/io/http_request_node.py"
+    },
+    {
+      "node_type": "random_number_node",
+      "ports": {
+        "input": {
+          "mode": "trigger",
+          "accepted_sources": [],
+          "data_type": "any",
+          "control": null,
+          "notes": "Incoming edge triggers work; payload is not selected as task input (may be forwarded). Parameters, saved store or user supplies the result."
+        }
+      },
+      "runtime_sha256": "4b43ce03ad1dfefd02ce21a37eb163951c113e0231e79da16b0922dfb9756ea1",
+      "runtime_file": "backend/nodes/data/random_number_node.py"
+    },
+    {
+      "node_type": "json_path_node",
+      "ports": {
+        "input": {
+          "mode": "implicit",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": null,
+          "notes": "Prepared upstream payload, no alternate source selector; config can tune behavior/template."
+        }
+      },
+      "runtime_sha256": "8ac290e11dc696c0c1435b59fe17fcae0f55ce846ded158f5e9d26911c5572e4",
+      "runtime_file": "backend/nodes/data/json_path_node.py"
+    },
+    {
+      "node_type": "text_transform_node",
+      "ports": {
+        "input": {
+          "mode": "implicit",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": null,
+          "notes": "Prepared upstream payload, no alternate source selector; config can tune behavior/template."
+        }
+      },
+      "runtime_sha256": "f8141e2b997a43f3791a76df3140db1dc44d6db24620f36743d8de03083a61a3",
+      "runtime_file": "backend/nodes/data/text_transform_node.py"
+    },
+    {
+      "node_type": "start_node",
+      "ports": {},
+      "runtime_sha256": "400157bae6939db794ad973947c178a7ebe46fee20e09286201a1d6d6614a9be",
+      "runtime_file": "backend/nodes/start_node.py"
+    },
+    {
+      "node_type": "end_node",
+      "ports": {
+        "input": {
+          "mode": "rows",
+          "accepted_sources": [
+            "upstream",
+            "vault"
+          ],
+          "data_type": "contract",
+          "control": "results.source",
+          "notes": "Ordinary incoming value for log; Return End results select Incoming payload or Vault key by contract type."
+        }
+      },
+      "runtime_sha256": "a7525a9d6f2ac37dfa3411a79c004970a6dd3c0e8b66c7231cd6534d69626697",
+      "runtime_file": "backend/nodes/end_node.py"
+    },
+    {
+      "node_type": "branch_node",
+      "ports": {
+        "input": {
+          "mode": "branch",
+          "accepted_sources": [
+            "upstream",
+            "vault"
+          ],
+          "data_type": "any",
+          "control": "branch_payload_sources",
+          "notes": "Per-path incoming or selected Vault read; Vault keys first selected in Reads. Seed fallback to upstream."
+        }
+      },
+      "runtime_sha256": "1f3ea867cca3c108a7e56d5871860b7badfe13078b6658b494df0c4e4b4d8e68",
+      "runtime_file": "backend/nodes/branch_node.py"
+    },
+    {
+      "node_type": "branch_end_node",
+      "ports": {
+        "input": {
+          "mode": "implicit",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": null,
+          "notes": "Prepared upstream payload, no alternate source selector; config can tune behavior/template."
+        }
+      },
+      "runtime_sha256": "ceae25fbb4dc9e425b0d507c28fad981622a72d642cef312e060aa403a52093c",
+      "runtime_file": "backend/nodes/branch_end_node.py"
+    },
+    {
+      "node_type": "conditional_node",
+      "ports": {
+        "input": {
+          "mode": "custom",
+          "accepted_sources": [
+            "upstream",
+            "vault"
+          ],
+          "data_type": "any",
+          "control": "left_value_source",
+          "notes": "input vs variable; any value compared as text; named key is free text."
+        }
+      },
+      "runtime_sha256": "db2242462dde3f9253be31a435e2c6fa8a712c24e8cbff40978513ae13b3ad2b",
+      "runtime_file": "backend/nodes/conditional_node.py"
+    },
+    {
+      "node_type": "merge_node",
+      "ports": {
+        "path_a": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_b": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_c": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_d": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_e": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_f": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_g": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_h": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_i": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_j": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_k": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_l": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_m": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_n": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_o": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_p": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_q": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_r": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_s": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_t": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_u": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_v": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_w": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_x": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_y": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_z": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_aa": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_ab": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_ac": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_ad": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_ae": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_af": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_ag": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_ah": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_ai": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_aj": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_ak": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_al": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_am": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_an": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_ao": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_ap": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_aq": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_ar": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_as": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_at": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_au": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_av": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_aw": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_ax": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_ay": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_az": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_ba": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_bb": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_bc": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_bd": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_be": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_bf": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_bg": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_bh": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_bi": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_bj": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_bk": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        },
+        "path_bl": {
+          "mode": "topology",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": "selected_input_port",
+          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+        }
+      },
+      "runtime_sha256": "4dc09ac0c7d55b96e85dcf4bcd2609405e983f57ece05ae78b67499b41f3b15c",
+      "runtime_file": "backend/nodes/merge_node.py"
+    },
+    {
+      "node_type": "wait_until_node",
+      "ports": {
+        "input": {
+          "mode": "implicit",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": null,
+          "notes": "Prepared upstream payload, no alternate source selector; config can tune behavior/template."
+        }
+      },
+      "runtime_sha256": "6c40a8b2304f5fc62f9b31aace4ba78698d475aa3370d9b85279877684d80816",
+      "runtime_file": "backend/nodes/wait_until_node.py"
+    },
+    {
+      "node_type": "set_variable_node",
+      "ports": {
+        "input": {
+          "mode": "custom",
+          "accepted_sources": [
+            "upstream",
+            "configured"
+          ],
+          "data_type": "any",
+          "control": "value_source",
+          "notes": "input vs literal; values unchanged; named output is a dynamic Vault write."
+        }
+      },
+      "runtime_sha256": "a5d3c6cab99fd3e1de3c6483d4b2fc9f584db3652ffe694cf5f8523da7b10b28",
+      "runtime_file": "backend/nodes/set_variable_node.py"
+    },
+    {
+      "node_type": "get_variable_node",
+      "ports": {
+        "input": {
+          "mode": "named",
+          "accepted_sources": [
+            "vault",
+            "configured"
+          ],
+          "data_type": "any",
+          "control": "variable_name",
+          "notes": "Named Vault read with configured default; incoming edge is a trigger."
+        }
+      },
+      "runtime_sha256": "ee3b3750ffea5e875525bedc22f661c8e3c28a3b7aa761fb4bb115ca206b0882",
+      "runtime_file": "backend/nodes/get_variable_node.py"
+    },
+    {
+      "node_type": "concat_node",
+      "ports": {
+        "input": {
+          "mode": "template",
+          "accepted_sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ],
+          "data_type": "any",
+          "control": "template",
+          "notes": "Template fields read all named Vault values and prepared inputs; {input} means incoming only. No whole-input source selector."
+        }
+      },
+      "runtime_sha256": "f8c00c07c5e0eb85395660df74bf35d7d4f465fab161c619b5fd7a0323c13efa",
+      "runtime_file": "backend/nodes/concat_node.py"
+    },
+    {
+      "node_type": "variable_setter_node",
+      "ports": {
+        "input": {
+          "mode": "custom",
+          "accepted_sources": [
+            "upstream",
+            "configured"
+          ],
+          "data_type": "any",
+          "control": "value",
+          "notes": "Nonempty literal wins; empty literal uses upstream; no source menu by design."
+        }
+      },
+      "runtime_sha256": "a6a9d94f4d4976223e4b2dee88f184f3f4c1c614746888aa66ef75c5b86eb996",
+      "runtime_file": "backend/nodes/debug/variable_setter_node.py"
+    },
+    {
+      "node_type": "variable_reader_node",
+      "ports": {
+        "input": {
+          "mode": "named",
+          "accepted_sources": [
+            "vault",
+            "configured"
+          ],
+          "data_type": "any",
+          "control": "variable_name",
+          "notes": "Named Vault read with configured default; incoming edge is a trigger."
+        }
+      },
+      "runtime_sha256": "ebf27c701f6315fd4c6a1477a1244bf21ec5ba44819b695489f57c11dc25379d",
+      "runtime_file": "backend/nodes/debug/variable_reader_node.py"
+    },
+    {
+      "node_type": "text_output_node",
+      "ports": {
+        "input": {
+          "mode": "standard",
+          "accepted_sources": [
+            "upstream",
+            "vault"
+          ],
+          "data_type": "any",
+          "control": "input_source",
+          "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
+        }
+      },
+      "runtime_sha256": "b539cc7e0bd60d6c0c3bd4cf3ae9991c0413fb4800a2f4d5141f4c1f3cf178d0",
+      "runtime_file": "backend/nodes/text_output_node.py"
+    },
+    {
+      "node_type": "user_text_input_node",
+      "ports": {
+        "input": {
+          "mode": "trigger",
+          "accepted_sources": [],
+          "data_type": "any",
+          "control": null,
+          "notes": "Incoming edge triggers work; payload is not selected as task input (may be forwarded). Parameters, saved store or user supplies the result."
+        }
+      },
+      "runtime_sha256": "68f0b90d9a56c6880105b68f6859c4aa64ca4f0d1415e7a70e0480800a07d748",
+      "runtime_file": "backend/nodes/user_text_input_node.py"
+    },
+    {
+      "node_type": "file_reader_node",
+      "ports": {
+        "input": {
+          "mode": "standard",
+          "accepted_sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ],
+          "data_type": "file",
+          "control": "input_source",
+          "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
+        }
+      },
+      "runtime_sha256": "87f9242be3e3e6ef5b60ba9812a27bd60fe8e2851f0341054e1c9ac29ddb3a65",
+      "runtime_file": "backend/nodes/file_reader_node.py"
+    },
+    {
+      "node_type": "chat_completion_node",
+      "ports": {
+        "prompt": {
+          "mode": "standard",
+          "accepted_sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ],
+          "data_type": "string",
+          "control": "prompt_source",
+          "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
+        },
+        "context_1": {
+          "mode": "standard",
+          "accepted_sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ],
+          "data_type": "string",
+          "control": "context_1_source",
+          "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
+        },
+        "context_2": {
+          "mode": "standard",
+          "accepted_sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ],
+          "data_type": "string",
+          "control": "context_2_source",
+          "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
+        },
+        "context_3": {
+          "mode": "standard",
+          "accepted_sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ],
+          "data_type": "string",
+          "control": "context_3_source",
+          "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
+        },
+        "context_4": {
+          "mode": "standard",
+          "accepted_sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ],
+          "data_type": "string",
+          "control": "context_4_source",
+          "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
+        },
+        "context_5": {
+          "mode": "standard",
+          "accepted_sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ],
+          "data_type": "string",
+          "control": "context_5_source",
+          "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
+        },
+        "context_6": {
+          "mode": "standard",
+          "accepted_sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ],
+          "data_type": "string",
+          "control": "context_6_source",
+          "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
+        },
+        "context_7": {
+          "mode": "standard",
+          "accepted_sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ],
+          "data_type": "string",
+          "control": "context_7_source",
+          "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
+        },
+        "context_8": {
+          "mode": "standard",
+          "accepted_sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ],
+          "data_type": "string",
+          "control": "context_8_source",
+          "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
+        },
+        "document": {
+          "mode": "standard",
+          "accepted_sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ],
+          "data_type": "string",
+          "control": "document_source",
+          "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
+        }
+      },
+      "runtime_sha256": "4d22ce999c40d9490d5099e09fc3eadf600392b3ae564859c0967a8336dbcadd",
+      "runtime_file": "backend/nodes/chat_completion_node.py"
+    },
+    {
+      "node_type": "image_generation_node",
+      "ports": {
+        "input": {
+          "mode": "implicit",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": null,
+          "notes": "Prepared upstream payload, no alternate source selector; config can tune behavior/template."
+        }
+      },
+      "runtime_sha256": "e2708e93d02cea9c1377e7181a757e3e34d73233c4c81bbc3dd99f3e4694649a",
+      "runtime_file": "backend/nodes/image_generation_node.py"
+    },
+    {
+      "node_type": "embedding_node",
+      "ports": {
+        "input": {
+          "mode": "implicit",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": null,
+          "notes": "Prepared upstream payload, no alternate source selector; config can tune behavior/template."
+        }
+      },
+      "runtime_sha256": "d1fe9f4bcebb8cdb5ed8f465a987e34743ce592396147cdfb12e8d75e13b034b",
+      "runtime_file": "backend/nodes/embedding_node.py"
+    },
+    {
+      "node_type": "tombstone_node",
+      "ports": {},
+      "runtime_sha256": "f9fc85ac3bfa79ead8f87c59581ad111b812a5033d7e869f505f467164a6da48",
+      "runtime_file": "backend/nodes/debug/tombstone_node.py"
+    },
+    {
+      "node_type": "echo_node",
+      "ports": {
+        "input": {
+          "mode": "implicit",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": null,
+          "notes": "Prepared upstream payload, no alternate source selector; config can tune behavior/template."
+        }
+      },
+      "runtime_sha256": "756e46ba9df85e9b04c9223997613e08d0da13df8b8052e0bc42fe2919baf524",
+      "runtime_file": "backend/nodes/debug/echo_node.py"
+    },
+    {
+      "node_type": "logger_node",
+      "ports": {
+        "input": {
+          "mode": "implicit",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": null,
+          "notes": "Prepared upstream payload, no alternate source selector; config can tune behavior/template."
+        }
+      },
+      "runtime_sha256": "7f7be7f967103b095072178c487f15b0de964bbd1da026402c1389e80be5914f",
+      "runtime_file": "backend/nodes/debug/logger_node.py"
+    },
+    {
+      "node_type": "sleep_node",
+      "ports": {
+        "input": {
+          "mode": "implicit",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": null,
+          "notes": "Prepared upstream payload, no alternate source selector; config can tune behavior/template."
+        }
+      },
+      "runtime_sha256": "70a5c9cc33eacc896dddcb6534ce9673caaff0264ca8eb6650c55b538077f835",
+      "runtime_file": "backend/nodes/debug/sleep_node.py"
+    },
+    {
+      "node_type": "counter_node",
+      "ports": {
+        "input": {
+          "mode": "implicit",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": null,
+          "notes": "Prepared upstream payload, no alternate source selector; config can tune behavior/template."
+        }
+      },
+      "runtime_sha256": "9f662391e22e9d5254bd5478b64645e8be650a3982ed097ce359e72c376fa627",
+      "runtime_file": "backend/nodes/debug/counter_node.py"
+    },
+    {
+      "node_type": "memory_snapshot_node",
+      "ports": {
+        "input": {
+          "mode": "trigger",
+          "accepted_sources": [],
+          "data_type": "any",
+          "control": null,
+          "notes": "Incoming edge triggers work; payload is not selected as task input (may be forwarded). Parameters, saved store or user supplies the result."
+        }
+      },
+      "runtime_sha256": "e2590d561b6af31613a44416ef24540b21eeff33df150b866dbab0f07e0d6210",
+      "runtime_file": "backend/nodes/debug/memory_snapshot_node.py"
+    },
+    {
+      "node_type": "probe_node",
+      "ports": {
+        "input": {
+          "mode": "implicit",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": null,
+          "notes": "Prepared upstream payload, no alternate source selector; config can tune behavior/template."
+        }
+      },
+      "runtime_sha256": "ff42ca9ea5a2c7f9479f730ae62910adc2df61bcacb28511e0991259940b822b",
+      "runtime_file": "backend/nodes/debug/probe_node.py"
+    },
+    {
+      "node_type": "error_node",
+      "ports": {
+        "input": {
+          "mode": "trigger",
+          "accepted_sources": [],
+          "data_type": "any",
+          "control": null,
+          "notes": "Incoming edge triggers work; payload is not selected as task input (may be forwarded). Parameters, saved store or user supplies the result."
+        }
+      },
+      "runtime_sha256": "95d18e393cf62b6d7bd9be6ac0c4461a8c9f9c39a7ce4d49e8308ae3e33d1740",
+      "runtime_file": "backend/nodes/debug/error_node.py"
+    },
+    {
+      "node_type": "random_branch_node",
+      "ports": {
+        "input": {
+          "mode": "implicit",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": null,
+          "notes": "Prepared upstream payload, no alternate source selector; config can tune behavior/template."
+        }
+      },
+      "runtime_sha256": "bf3d03c17f746b489dd042228d906fd29a87bb2f76d0cdeabe372439dc5a5a44",
+      "runtime_file": "backend/nodes/debug/random_branch_node.py"
+    },
+    {
+      "node_type": "deep_branch_node",
+      "ports": {
+        "input": {
+          "mode": "implicit",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": null,
+          "notes": "Prepared upstream payload, no alternate source selector; config can tune behavior/template."
+        }
+      },
+      "runtime_sha256": "2c3c9f74cf56fc10ff7b99edd2b12c6558621c8201e3a34e1b942e66e7407863",
+      "runtime_file": "backend/nodes/debug/deep_branch_node.py"
+    },
+    {
+      "node_type": "no_op_node",
+      "ports": {
+        "input": {
+          "mode": "implicit",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": null,
+          "notes": "Prepared upstream payload, no alternate source selector; config can tune behavior/template."
+        }
+      },
+      "runtime_sha256": "ceae25fbb4dc9e425b0d507c28fad981622a72d642cef312e060aa403a52093c",
+      "runtime_file": "backend/nodes/debug/no_op_node.py"
+    },
+    {
+      "node_type": "repeat_counter_node",
+      "ports": {
+        "input": {
+          "mode": "implicit",
+          "accepted_sources": [
+            "upstream"
+          ],
+          "data_type": "any",
+          "control": null,
+          "notes": "Prepared upstream payload, no alternate source selector; config can tune behavior/template."
+        }
+      },
+      "runtime_sha256": "4bf36fa4a9f816b3163e29b895532d6a43331a98360913a16a322ee6a60477a6",
+      "runtime_file": "backend/nodes/debug/repeat_node.py"
+    }
+  ]
+}

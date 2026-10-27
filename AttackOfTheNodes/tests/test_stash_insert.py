@@ -1,8 +1,8 @@
 """Stash S3: insert a Stash entry into a node config field.
 
-P (or the Insert from Stash button) on a highlighted field opens the Stash on
-Entries in insert mode, showing only entries the field accepts. A file field,
-or the Source row that hides it, takes [file]; a text field takes [string].
+P on a highlighted text/file field opens the Stash on
+Entries in insert mode, showing only entries the field accepts. A focused file field takes [file]; a focused text field takes [string].
+Source selectors refuse Stash insertion rather than filling another field.
 
 Run from AttackOfTheNodes/:
     ../.venv/bin/python -m pytest tests/test_stash_insert.py -v
@@ -43,13 +43,11 @@ def test_a_file_field_takes_files():
                       "set_source": None, "source_label": None}
 
 
-def test_a_source_row_fills_its_hidden_path_field():
-    target = stash_insert_target(SCHEMAS["file_reader_node"], "input_source")
-    assert target["field"] == "file_path" and target["accepts"] == {"file"}
-    assert target["set_source"] == ("input_source", "Configured")
-    # File Output has two sources; each maps to its own field.
-    assert stash_insert_target(SCHEMAS["file_output_node"], "file_path_source")["field"] == "file_path"
-    assert stash_insert_target(SCHEMAS["file_output_node"], "content_source")["field"] == "content"
+def test_source_rows_never_fill_another_field():
+    for kind, field in [("file_reader_node", "input_source"),
+                        ("file_output_node", "file_path_source"),
+                        ("file_output_node", "content_source")]:
+        assert stash_insert_target(SCHEMAS[kind], field) is None
 
 
 def test_text_fields_take_text_and_others_take_nothing():
@@ -82,57 +80,46 @@ def _config_app(stash, node_type, config=None):
     return app, open_config
 
 
-def test_p_on_a_source_row_inserts_a_file_and_switches_to_configured(stash, report):
+def test_p_on_a_source_row_refuses_without_changing_source_or_path(stash, report):
     async def go():
         from frontend import notifications
         from frontend.screens.stash import StashScreen
-
-        stash.add_file(str(report))
-        stash.add_text("not a file", name="note")
         shown = []
         original = notifications.notify_info
         notifications.notify_info = lambda app, message: shown.append(message)
         try:
             app, open_config = _config_app(stash, "file_reader_node", {"input_source": "Upstream payload"})
             async with app.run_test(size=(100, 30)) as pilot:
-                await pilot.pause(0.05)
                 config = await open_config(pilot)
-                app.set_focus(config.query_one("#field-input_source"))
-                await pilot.pause(0.05)
-                await pilot.press("p")
-                await pilot.pause(0.1)
-                stash_screen = app.screen
-                assert isinstance(stash_screen, StashScreen)
-                assert "insert into File path" in str(stash_screen.query_one(".modal-title").render())
-                rows = [str(i.query_one(Static).render()) for i in stash_screen.query_one("#stash-entries", ListView).children]
-                assert len(rows) == 1 and rows[0].startswith("march") and "[file]" in rows[0]
-                await pilot.press("enter")
-                await pilot.pause(0.1)
-                assert app.screen is config
-                assert config.query_one("#field-input_source").value == "Configured"
-                assert config.query_one("#field-file_path", Input).value == str(report)
-                assert shown[-1] == "Inserted 'march' into File path; File source set to Configured"
+                config.query_one("#field-input_source").focus()
+                await pilot.press("p"); await pilot.pause()
+                assert app.screen is config and not isinstance(app.screen, StashScreen)
+                assert config._get_form_values()["input_source"] == "Upstream payload"
+                assert config._get_form_values()["file_path"] == ""
+                assert shown == ["Stash text can't go into this field"]
         finally:
             notifications.notify_info = original
     asyncio.run(go())
 
 
-def test_the_button_inserts_into_the_last_focused_field(stash, report):
+def test_the_button_never_inserts_into_a_previous_field(stash, report, monkeypatch):
     async def go():
+        shown = []
+        monkeypatch.setattr('frontend.notifications.notify_info', lambda app, msg: shown.append(msg))
         stash.add_file(str(report))
         app, open_config = _config_app(stash, "file_reader_node", {"input_source": "Configured"})
         async with app.run_test(size=(120, 40)) as pilot:
-            await pilot.pause(0.05)
             config = await open_config(pilot)
-            await pilot.press("2")  # Parameters tab
-            await pilot.pause(0.05)
-            app.set_focus(config.query_one("#field-file_path"))
-            await pilot.pause(0.05)
+            await pilot.press("2")
+            await pilot.pause()
+            config.query_one("#field-file_path").focus()
+            await pilot.pause()
             await pilot.click("#stash-insert-node-config")
-            await pilot.pause(0.1)
-            await pilot.click("#stash-insert")
-            await pilot.pause(0.1)
-            assert config.query_one("#field-file_path", Input).value == str(report)
+            await pilot.pause()
+            assert app.screen is config
+            assert config.query_one("#field-file_path", Input).value == ""
+            assert not config._is_dirty()
+            assert shown == ["Stash text can't go into this field"]
     asyncio.run(go())
 
 
@@ -156,7 +143,7 @@ def test_a_field_that_takes_nothing_says_so(stash):
                 await pilot.press("p")
                 await pilot.pause(0.05)
                 assert not isinstance(app.screen, StashScreen)
-                assert shown == ["This field doesn't take Stash entries"]
+                assert shown == ["Stash text can't go into this field"]
         finally:
             notifications.notify_info = original
     asyncio.run(go())
@@ -254,6 +241,8 @@ def test_p_in_starts_default_asks_for_the_canonical_type(row_type, accepts):
         app = Host()
         async with app.run_test(size=(100, 40)) as pilot:
             app.push_screen(ContractRowEditor(INPUT, {"name": "who", "type": row_type}, []))
+            await pilot.pause(0.05)
+            app.screen.query_one('#row-value').focus()
             await pilot.pause(0.05)
             app.screen.action_stash_insert()
             await pilot.pause(0.05)

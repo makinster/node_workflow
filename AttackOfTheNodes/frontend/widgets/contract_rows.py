@@ -336,7 +336,12 @@ class ContractRowEditor(CommandScreenMixin, ModalScreen):
 
     def action_stash_insert(self) -> None:
         """P: fill Default from the Stash (a file input takes files, others text)."""
+        from frontend.widgets.stash_focus import stash_field
         if self.kind != INPUT:
+            from frontend import notifications
+            notifications.notify_info(self.app, "Stash text can't go into this field")
+            return
+        if stash_field(self, '#row-value') is None:
             return
         row_type = str(self.query_one("#row-type", Select).value)
         accepts = ["file"] if row_type == "file" else ["string"]
@@ -345,6 +350,9 @@ class ContractRowEditor(CommandScreenMixin, ModalScreen):
 
     def _insert_stash_entry(self, entry: Optional[Dict[str, Any]]) -> None:
         if not entry:
+            return
+        from frontend.widgets.stash_focus import stash_field
+        if stash_field(self, '#row-value') is None:
             return
         from backend.file_refs import reference_path
 

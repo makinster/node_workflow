@@ -68,7 +68,7 @@ def test_confirm_navigation_activates_focused_cancel(key):
 
 
 @pytest.mark.parametrize("widget_kind", ["input", "textarea"])
-def test_priority_command_yields_to_typing_and_active_editor(widget_kind):
+def test_priority_command_yields_only_to_focused_typing(widget_kind):
     from textual.app import ComposeResult
     from textual.containers import Vertical
     from textual.screen import Screen
@@ -113,10 +113,15 @@ def test_priority_command_yields_to_typing_and_active_editor(widget_kind):
             await pilot.press("y", "1", "2")
             assert (editor.value if widget_kind == "input" else editor.text) == "y12"
             assert app.calls == 1
-            # Retained editor ownership also suppresses actions after focus drift.
+            # Moving focus ends this field's key ownership, even if its edit
+            # session remains open. No printable key may be rescued into it.
             app.set_focus(app.screen.query_one("#other"))
-            assert not app.screen.check_action("probe", ())
-            assert editor.editing
+            assert app.screen.check_action("probe", ())
+            before = editor.value if widget_kind == "input" else editor.text
+            await pilot.press("y", "p")
+            assert app.calls == 2
+            assert (editor.value if widget_kind == "input" else editor.text) == before
+            assert app.focused.id == "other"
 
     asyncio.run(go())
 

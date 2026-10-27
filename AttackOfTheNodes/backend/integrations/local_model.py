@@ -180,6 +180,28 @@ def _canonical(name):
     return name if ':' in name.rsplit('/', 1)[-1] else name + ':latest'
 
 
+async def list_models(url, *, timeout=2.0):
+    """Bounded GET /api/tags only. Never load, pull or generate a model."""
+    base = server_url(url)
+    try:
+        async with aiohttp.ClientSession(
+                timeout=aiohttp.ClientTimeout(total=timeout), trust_env=False) as session:
+            result = await _request(session, 'GET', base + '/api/tags')
+        rows = result.get('models') if isinstance(result, dict) else None
+        if not isinstance(rows, list) or len(rows) > 1024:
+            raise failure('invalid_response')
+        names = set()
+        for row in rows:
+            if not isinstance(row, dict):
+                raise failure('invalid_response')
+            # The execution contract only accepts installed local names.
+            name = model_name(row.get('name'))
+            names.add(name)
+        return sorted(names)
+    except (aiohttp.ClientError, TimeoutError):
+        raise failure('server_unreachable') from None
+
+
 async def _model_info(session, base, model, thinking, num_ctx):
     tags = await _request(session, 'GET', base + '/api/tags')
     entries = tags.get('models')

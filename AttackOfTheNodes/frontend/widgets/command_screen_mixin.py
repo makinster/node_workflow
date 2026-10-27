@@ -16,7 +16,6 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from textual import events
 from textual.css.query import NoMatches
 
 from frontend.widgets.command_navigation import (
@@ -30,7 +29,7 @@ from frontend.widgets.command_navigation import (
 )
 from frontend.widgets.status_bar import StatusBar
 from frontend.keymap import NAVIGATION, Profile, bindings_for
-from frontend.keymap_runtime import KeymapScreenMixin, navigation_keys
+from frontend.keymap_runtime import KeymapScreenMixin
 
 
 class CommandScreenMixin(KeymapScreenMixin):
@@ -137,49 +136,9 @@ class CommandScreenMixin(KeymapScreenMixin):
         activate_command_widget(self.app.focused)
         self._sync_cursor_mode()
 
-    def on_key(self, event: events.Key) -> None:
-        """Rescue keys that should have gone to an editing text field.
-
-        In the real terminal driver, the priority-binding / key-forward path
-        can deliver keys to the wrong widget (focus drift) even though
-        `_active_command_text_widget` is set and in editing mode. Those keys
-        bubble up here unconsumed. Re-focus the editing widget and re-dispatch
-        the key to it so typing always lands.
-
-        The normal path (focus already on the editing widget) stops bubbling
-        inside `CommandInput._on_key`, so this handler is never reached in that
-        case — no double-processing.
-        """
-        active = getattr(self, "_active_command_text_widget", None)
-        if not is_editing_text(active):
-            return
-        # Only rescue when focus has actually drifted to another widget. When
-        # focus is already on the editing widget, normal event flow handles
-        # everything — intercepting here would stop events before App._on_key
-        # fires non-priority bindings (e.g. backspace → delete_left).
-        if self.app.focused is active:
-            return
-        # Rescue only non-navigation input. Navigation keys (w/s/a/d/e and
-        # arrows/enter) are intentionally blocked by check_action while editing;
-        # they must NOT force focus back to the editing field when focus has been
-        # legitimately moved to another widget (e.g., a Button).
-        _NAV_BINDING_KEYS = navigation_keys(self)
-        _TEXT_EDIT_KEYS = {"backspace", "delete", "ctrl+h", "ctrl+w", "ctrl+u", "ctrl+k"}
-        if not (event.is_printable or event.key in _TEXT_EDIT_KEYS):
-            return
-        if event.key in _NAV_BINDING_KEYS:
-            return
-        self.app.set_focus(active)
-        # Re-post the key directly to the editing widget, bypassing App.on_event
-        # and the priority-binding check that originally routed it elsewhere.
-        active.post_message(event.__class__(event.key, event.character))
-        event.stop()
-        event.prevent_default()
-
     def _sync_cursor_mode(self) -> None:
         """Update app.cursor_state and the screen's StatusBar mode indicator."""
-        active_text = getattr(self, "_active_command_text_widget", None)
-        editing = is_editing_text(active_text) or is_editing_text(self.app.focused)
+        editing = is_editing_text(self.app.focused)
         mode = "edit" if editing else "nav"
         cursor_state = getattr(self.app, "cursor_state", None)
         if cursor_state is not None:

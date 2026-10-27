@@ -1,0 +1,49 @@
+# Affected input menus
+
+Five shared defects; this expands their conditional scope per input port.
+A menu is affected only when the relevant writer/fan-in condition exists.
+All remaining ports and custom controls are listed in [the complete inventory](INVENTORY.md).
+
+M1: dynamic type collapsed to text. M2: compatible writer hidden by last type.
+M3: child Vault result missing. M4: only first incoming parent checked.
+M5: duplicate summary IDs prevent opening. [Findings and fixes](README.md#mismatches).
+
+| Node | Port | Accepts | Previously offered under the affected condition | Fix |
+|---|---|---|---|---|
+| ask_local_model_node | input | upstream/vault/configured; string | M2: compatible key hidden by other writer type; M3: child key absent; M4: compatible later upstream hidden; M5: fan-in modal fails | retain eligible writer types; declare child routes; check all parents; unique summary IDs |
+| ask_local_model_node | context | upstream/vault/configured; string | M2: compatible key hidden by other writer type; M3: child key absent; M4: compatible later upstream hidden; M5: fan-in modal fails | retain eligible writer types; declare child routes; check all parents; unique summary IDs |
+| check_reply_node | input | upstream/vault/configured; string | M2: compatible key hidden by other writer type; M3: child key absent; M4: compatible later upstream hidden; M5: fan-in modal fails | retain eligible writer types; declare child routes; check all parents; unique summary IDs |
+| find_lines_node | input | upstream/vault/configured; string | M2: compatible key hidden by other writer type; M3: child key absent; M4: compatible later upstream hidden; M5: fan-in modal fails | retain eligible writer types; declare child routes; check all parents; unique summary IDs |
+| read_lines_node | input | upstream/vault/configured; any | M3: child key absent; M4: compatible later upstream hidden; M5: fan-in modal fails | declare child routes; check all parents; unique summary IDs |
+| hermes_investigation_result_node | input | upstream/vault/configured; string | M2: compatible key hidden by other writer type; M3: child key absent; M4: compatible later upstream hidden; M5: fan-in modal fails | retain eligible writer types; declare child routes; check all parents; unique summary IDs |
+| hermes_investigate_node | input | upstream/vault/configured; string | M2: compatible key hidden by other writer type; M3: child key absent; M4: compatible later upstream hidden; M5: fan-in modal fails | retain eligible writer types; declare child routes; check all parents; unique summary IDs |
+| hermes_investigate_node | evidence | upstream/vault/configured; string | M2: compatible key hidden by other writer type; M3: child key absent; M4: compatible later upstream hidden; M5: fan-in modal fails | retain eligible writer types; declare child routes; check all parents; unique summary IDs |
+| hermes_ask_node | input | upstream/vault/configured; string | M2: compatible key hidden by other writer type; M3: child key absent; M4: compatible later upstream hidden; M5: fan-in modal fails | retain eligible writer types; declare child routes; check all parents; unique summary IDs |
+| hermes_ask_node | context | upstream/vault/configured; string | M2: compatible key hidden by other writer type; M3: child key absent; M4: compatible later upstream hidden; M5: fan-in modal fails | retain eligible writer types; declare child routes; check all parents; unique summary IDs |
+| pick_one_node | input | upstream/vault/configured; string | M2: compatible key hidden by other writer type; M3: child key absent; M4: compatible later upstream hidden; M5: fan-in modal fails | retain eligible writer types; declare child routes; check all parents; unique summary IDs |
+| if_changed_node | input | upstream/vault; any | M3: child key absent; M4: compatible later upstream hidden; M5: fan-in modal fails | declare child routes; check all parents; unique summary IDs |
+| remember_node | input | upstream/vault/configured; any | M3: child key absent; M4: compatible later upstream hidden; M5: fan-in modal fails | declare child routes; check all parents; unique summary IDs |
+| record_event_node | input | upstream/vault; any | M3: child key absent; M4: compatible later upstream hidden; M5: fan-in modal fails | declare child routes; check all parents; unique summary IDs |
+| hermes_notify_node | input | upstream/vault; any | M3: child key absent; M4: compatible later upstream hidden; M5: fan-in modal fails | declare child routes; check all parents; unique summary IDs |
+| window_control_node | file | upstream/vault; file | M1: dynamic file key hidden; M2: compatible key hidden by other writer type; M3: child key absent; M4: compatible later upstream hidden; M5: fan-in modal fails | preserve dynamic any; retain eligible writer types; declare child routes; check all parents; unique summary IDs |
+| file_view_node | file | upstream/vault/configured; file | M1: dynamic file key hidden; M2: compatible key hidden by other writer type; M3: child key absent; M4: compatible later upstream hidden; M5: fan-in modal fails | preserve dynamic any; retain eligible writer types; declare child routes; check all parents; unique summary IDs |
+| file_output_node | content | upstream/vault/configured; string | M2: compatible key hidden by other writer type; M3: child key absent; M4: compatible later upstream hidden; M5: fan-in modal fails | retain eligible writer types; declare child routes; check all parents; unique summary IDs |
+| file_output_node | file_path | upstream/vault/configured; file | M1: dynamic file key hidden; M2: compatible key hidden by other writer type; M3: child key absent; M4: compatible later upstream hidden; M5: fan-in modal fails | preserve dynamic any; retain eligible writer types; declare child routes; check all parents; unique summary IDs |
+| text_output_node | input | upstream/vault; any | M3: child key absent; M4: compatible later upstream hidden; M5: fan-in modal fails | declare child routes; check all parents; unique summary IDs |
+| file_reader_node | input | upstream/vault/configured; file | M1: dynamic file key hidden; M2: compatible key hidden by other writer type; M3: child key absent; M4: compatible later upstream hidden; M5: fan-in modal fails | preserve dynamic any; retain eligible writer types; declare child routes; check all parents; unique summary IDs |
+| chat_completion_node | prompt | upstream/vault/configured; string | M2: compatible key hidden by other writer type; M3: child key absent; M4: compatible later upstream hidden; M5: fan-in modal fails | retain eligible writer types; declare child routes; check all parents; unique summary IDs |
+| chat_completion_node | context_1 | upstream/vault/configured; string | M2: compatible key hidden by other writer type; M3: child key absent; M4: compatible later upstream hidden; M5: fan-in modal fails | retain eligible writer types; declare child routes; check all parents; unique summary IDs |
+| chat_completion_node | context_2 | upstream/vault/configured; string | M2: compatible key hidden by other writer type; M3: child key absent; M4: compatible later upstream hidden; M5: fan-in modal fails | retain eligible writer types; declare child routes; check all parents; unique summary IDs |
+| chat_completion_node | context_3 | upstream/vault/configured; string | M2: compatible key hidden by other writer type; M3: child key absent; M4: compatible later upstream hidden; M5: fan-in modal fails | retain eligible writer types; declare child routes; check all parents; unique summary IDs |
+| chat_completion_node | context_4 | upstream/vault/configured; string | M2: compatible key hidden by other writer type; M3: child key absent; M4: compatible later upstream hidden; M5: fan-in modal fails | retain eligible writer types; declare child routes; check all parents; unique summary IDs |
+| chat_completion_node | context_5 | upstream/vault/configured; string | M2: compatible key hidden by other writer type; M3: child key absent; M4: compatible later upstream hidden; M5: fan-in modal fails | retain eligible writer types; declare child routes; check all parents; unique summary IDs |
+| chat_completion_node | context_6 | upstream/vault/configured; string | M2: compatible key hidden by other writer type; M3: child key absent; M4: compatible later upstream hidden; M5: fan-in modal fails | retain eligible writer types; declare child routes; check all parents; unique summary IDs |
+| chat_completion_node | context_7 | upstream/vault/configured; string | M2: compatible key hidden by other writer type; M3: child key absent; M4: compatible later upstream hidden; M5: fan-in modal fails | retain eligible writer types; declare child routes; check all parents; unique summary IDs |
+| chat_completion_node | context_8 | upstream/vault/configured; string | M2: compatible key hidden by other writer type; M3: child key absent; M4: compatible later upstream hidden; M5: fan-in modal fails | retain eligible writer types; declare child routes; check all parents; unique summary IDs |
+| chat_completion_node | document | upstream/vault/configured; string | M2: compatible key hidden by other writer type; M3: child key absent; M4: compatible later upstream hidden; M5: fan-in modal fails | retain eligible writer types; declare child routes; check all parents; unique summary IDs |
+| context_pack_node | items[].source | upstream/vault/configured; any | M3: child key absent from row Vault picker | declare child routes |
+| branch_node | selected Vault reads / path seeds | upstream/vault; any | M3: child key absent from available Reads | declare child routes |
+
+M1/M2 concern compatible values, not implicit conversions. Known var records
+remain excluded from string-only inputs. M4/M5 concern several incoming edges
+to the same port; normal single-parent menus keep their availability rules.

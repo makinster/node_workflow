@@ -315,7 +315,7 @@ def _field_children(
             id=f"field-label-{field_name}",
         )
     ]
-    if isinstance(widget, Select) or not _is_inline_field(field_type, field_schema):
+    if isinstance(widget, Select) or field_schema.get("presentation") == "local_model" or not _is_inline_field(field_type, field_schema):
         # Dropdowns and tall widgets sit on their own line under the label so
         # their left edges align instead of being offset by label width.
         children.append(
@@ -350,6 +350,9 @@ def _widget_for_field(
     secret_key_options: list[tuple[str, str]] | None = None,
     vault_keys_by_type: Dict[str, List[Tuple[str, str]]] | None = None,
 ):
+    if field_schema.get("presentation") == "local_model":
+        from .local_model_picker import LocalModelPicker
+        return LocalModelPicker(value, use_default=True, id=f"field-{field_name}")
     if field_type == "object_list":
         if field_schema.get("presentation") == "context_items":
             from .context_items import ContextItems
@@ -644,7 +647,8 @@ def _set_label_required(
 def _value_from_widget(widget, field_type: str) -> Any:
     from .reply_fields import ReplyFields
     from .long_text import LongTextPreview
-    if isinstance(widget, (ObjectListField, ReplyFields, LongTextPreview)):
+    from .local_model_picker import LocalModelPicker
+    if isinstance(widget, (ObjectListField, ReplyFields, LongTextPreview, LocalModelPicker)):
         return widget.value
     if isinstance(widget, Input):
         if field_type == "integer":

@@ -26,6 +26,7 @@ with templates, measurements and a small delivery test set.
 | Declare workflow inputs/results or pass run inputs | [Workflow contracts](WORKFLOW_AUTHORING.md#contracts-inputs-results-and-callable-workflows) | `backend/contracts.py`, `tests/test_contracts.py` |
 | Add/change a node | [Node Standards](NODE_STANDARDS.md), then [Node Helper](NODE_HELPER.md) | `backend/nodes/`, helper safety and commands in Node Helper |
 | Check node ideas or live capabilities | [Node Catalog](NODE_CATALOG.md), `aotn nodes` / `describe` | Catalog includes proposals; CLI reads registered contracts |
+| Audit input sources / Vault choices | [Source-menu audit](audits/source_menus_2026_10_26/README.md) | `tests/test_source_menu_audit.py`, `tests/test_local_model_picker.py` |
 | Fix editor/config UI | [UI Quick Reference](UI_QUICK_REFERENCE.md), [Boundary](BACKEND_FRONTEND_BOUNDARY.md) | `frontend/screens/`, `frontend/widgets/`; debug test filter below |
 | Change runtime/routing | [Architecture](ARCHITECTURE.md), [Boundary](BACKEND_FRONTEND_BOUNDARY.md) | `backend/supervisor.py`, `backend/master_state.py`; runtime test filter below |
 | Diagnose run-screen state | [Architecture: display contract](ARCHITECTURE.md#execution-display-contract) | `tests/test_execution_status.py` |

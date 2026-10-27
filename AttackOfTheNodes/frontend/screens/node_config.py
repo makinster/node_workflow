@@ -1412,8 +1412,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             writers = set(info.get("writers") or set()) - {self.node_id}
             return bool(writers) and not (writers <= downstream)
 
-        # (key -> tag) from persisted vault entries; "" marks untagged/legacy.
-        candidates: Dict[str, str] = {}
+        # (key -> possible tags) from persisted vault entries; "" marks untagged/legacy.
+        candidates: Dict[str, set[str]] = {}
         if self.memory_bank is not None:
             try:
                 state = self.memory_bank.get_state()
@@ -1424,16 +1424,19 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                     if entry_tags.get(key) == "file" and str(key) not in declared:
                         continue
                     if eligible(str(key)):
-                        candidates[str(key)] = str(entry_tags.get(key) or "")
+                        candidates[str(key)] = {str(entry_tags.get(key) or "")}
             except Exception:
                 pass
-        # Declared writers win the more specific tag; same eligibility gate.
+        # Declared writers describe future runs; apply the same eligibility gate.
         for key, info in declared.items():
             if not eligible(key):
                 continue
-            tag = str(info.get("tag") or "")
-            if tag or key not in candidates:
-                candidates[key] = tag
+            # Every eligible writer matters; another branch may write a
+            # different compatible value under the same key.
+            writer_tags = info.get("writer_tags") or {}
+            candidates[key] = {tag for writer, tags in writer_tags.items()
+                               if writer and writer != self.node_id and writer not in downstream
+                               for tag in tags} or {"any"}
 
         def compatible(entry_tag: str, wanted: str) -> bool:
             # Untagged legacy entries hold text.
@@ -1442,17 +1445,17 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         options: Dict[str, list[tuple[str, str]]] = {}
         for wanted in tags:
             rows = [
-                (f"{key} [{entry_tag}]" if entry_tag else key, key)
-                for key, entry_tag in sorted(candidates.items())
-                if compatible(entry_tag, wanted)
+                (f"{key} [{', '.join(sorted(tag or 'legacy text' for tag in entry_tags))}]", key)
+                for key, entry_tags in sorted(candidates.items())
+                if any(compatible(tag, wanted) for tag in entry_tags)
             ]
             options[wanted] = rows
         return options
 
     def _declared_vault_writer_keys(self) -> Dict[str, Dict[str, Any]]:
-        """Vault keys declared by workflow nodes: key -> {tag, writers}.
+        """Vault keys declared by workflow nodes, with types grouped by writer.
 
-        Covers legacy ``membank_outputs`` declarations (untagged), standard
+        Covers legacy ``membank_outputs`` declarations (unknown), standard
         result routing (``vault_write_key`` — tagged with the writer's default
         output type), and AI session keys (``ai_session``). Writer node ids
         power the same-branch eligibility filter in ``_vault_key_options``.
@@ -1462,9 +1465,11 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         declared: Dict[str, Dict[str, Any]] = {}
 
         def add(key: str, tag: str, writer_id: str) -> None:
-            entry = declared.setdefault(key, {"tag": "", "writers": set()})
+            entry = declared.setdefault(key, {"tag": "", "tags": set(), "writers": set(), "writer_tags": {}})
             if tag:
                 entry["tag"] = tag
+            entry["writer_tags"].setdefault(writer_id, set()).add(tag or "any")
+            entry["tags"].add(tag or "any")
             if writer_id:
                 entry["writers"].add(str(writer_id))
 
@@ -1484,11 +1489,13 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             # Keep deleted declarations with no eligible writer. Otherwise a
             # persisted value would be mistaken for an external Vault entry.
             writer_id = "" if deleted else str(node_id)
-            for output in normalize_membank_outputs(config):
-                add(str(output["id"]), "", writer_id)
             meta = resolved_metadata(self.factory, node_type, config)
-            for key, tag in typed_vault_writes(node_type, config, meta).items():
-                add(key, tag or "", writer_id)
+            typed = typed_vault_writes(node_type, config, meta)
+            for output in normalize_membank_outputs(config):
+                if str(output["id"]) not in typed:
+                    add(str(output["id"]), "any", writer_id)
+            for key, tag in typed.items():
+                add(key, tag or "any", writer_id)
         return declared
 
     def _prune_unavailable_source_options(
@@ -1513,22 +1520,22 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             field = f"{port}_source"
             if field not in schema:
                 continue
-            connection = next((conn for conn in connections if conn.get("target_port") == port), None)
             wanted = info.get("data_type", "any")
-            fits = publishes = True
-            if connection:
+            available = False
+            for connection in connections:
+                if connection.get("target_port") != port:
+                    continue
                 source_node = self.workflow_map.get_node_data(connection.get("source_node_id", "")) or {}
                 source_config = source_node.get("config") or {}
                 publishes = source_config.get("transient_output", True) is not False or bool(source_config.get("dead_drop_passthrough"))
-                # Every payload the connection can carry (a Sleep fed by two
-                # nodes forwards either): offered when any of them fits; the
-                # validator warns about the ones that do not.
                 producers = trace_producers(
                     self.workflow_map.get_all_node_data(), self.factory,
                     connection.get("source_node_id", ""), connection.get("source_port", "default"),
                 )
-                fits = not producers or any(types_compatible(actual, wanted) for _, actual in producers)
-            if not connection or not publishes or not fits:
+                if publishes and (not producers or any(types_compatible(actual, wanted) for _, actual in producers)):
+                    available = True
+                    break
+            if not available:
                 removals.setdefault(field, set()).add("Upstream payload")
         for field_schema in schema.values():
             if not isinstance(field_schema, dict) or not field_schema.get("vault_type"):
@@ -2311,56 +2318,65 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
 
     # -- Stash S3: insert an entry into a field ---------------------------------
 
-    def on_descendant_focus(self, event) -> None:
-        widget_id = str(getattr(event.widget, "id", "") or "")
-        if widget_id.startswith("field-") and not widget_id.startswith(("field-row-", "field-label-", "field-desc-")):
-            # The button click moves focus, so remember the field it acts on.
-            self._stash_field = widget_id.removeprefix("field-")
+    def _focused_stash_widget(self, focused):
+        """Resolve the exact generated text field, including composite owners.
+
+        A nested Select/model input belongs to its outer field; it must not
+        reuse the previous text field or assign through a picker container.
+        """
+        if focused is None:
+            return None
+        for widget in focused.ancestors_with_self:
+            if widget is self:
+                break
+            widget_id = str(widget.id or "")
+            if widget_id.startswith("field-"):
+                if isinstance(widget, (CommandInput, CommandTextArea)):
+                    return widget
+                from frontend.widgets.long_text import LongTextPreview
+                return widget if isinstance(widget, LongTextPreview) else None
+        return None
 
     def action_stash_insert(self) -> None:
-        """P / Insert from Stash: open the Stash on Entries for the highlighted
-        field; a file field (or its Source row) takes [file], a text field [string]."""
+        """Insert into the focused text/file field; selectors never redirect."""
         from backend.field_types import stash_insert_target
 
-        field = getattr(self, "_stash_field", None)
+        origin = self.focused
+        widget = self._focused_stash_widget(origin)
+        field = widget.id.removeprefix("field-") if widget is not None else None
         metadata = self.factory.metadata_for_type(self.node_data.get("type", "")) or {}
         target = stash_insert_target(metadata.get("config_schema") or {}, field) if field else None
-        if target is None:
-            notifications.notify_info(self.app, "This field doesn't take Stash entries")
+        if target is None or target["field"] != field:
+            notifications.notify_info(self.app, "Stash text can't go into this field")
             return
         self.app.action_stash(
             "entries",
             insert_into={"label": target["label"], "accepts": target["accepts"]},
-            callback=lambda entry: self._insert_stash_entry(target, entry),
+            callback=lambda entry: self._insert_stash_entry(target, entry, widget, origin),
         )
 
-    def _insert_stash_entry(self, target: Dict[str, Any], entry: Optional[Dict[str, Any]]) -> None:
+    def _insert_stash_entry(self, target, entry, widget, origin) -> None:
         if not entry:
             return
+        # Capture the actual field, not a name resolved after an async picker.
+        # Removed/replaced widgets or a changed focus cancel the assignment.
+        if (not widget.is_attached or widget.screen is not self or widget.disabled
+                or not widget.visible or self.focused is not origin):
+            notifications.notify_info(self.app, "Stash text can't go into this field")
+            return
         from backend.file_refs import reference_path
+        from frontend.widgets.long_text import LongTextPreview
 
         value = reference_path(entry["value"]) if entry["type"] == "file" else str(entry["value"])
-        note = ""
-        if target["set_source"]:
-            source_field, source_value = target["set_source"]
-            source = self.query(f"#field-{source_field}")
-            if source and getattr(source.first(), "value", None) != source_value:
-                source.first().value = source_value
-                note = f"; {target['source_label']} set to {source_value}"
-        widget_query = self.query(f"#field-{target['field']}")
-        if not widget_query:
-            return
-        widget = widget_query.first()
-        from frontend.widgets.long_text import LongTextPreview
         if isinstance(widget, LongTextPreview):
             widget.replace_from_stash(value, self._apply_generated_field_rules)
             return
-        if hasattr(widget, "text") and not isinstance(widget, Input):
+        if isinstance(widget, CommandTextArea):
             widget.text = value
         else:
             widget.value = value
         self._apply_generated_field_rules()
-        notifications.notify_info(self.app, f"Inserted '{entry['name']}' into {target['label']}{note}")
+        notifications.notify_info(self.app, f"Inserted '{entry['name']}' into {target['label']}")
 
     def _commit_text_edit(self) -> None:
         for widget in (getattr(self, "_active_command_text_widget", None), self.app.focused):
@@ -2587,10 +2603,6 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
 
     def action_cursor_up(self) -> None:
         focused = self.app.focused
-        active_text = getattr(self, "_active_command_text_widget", None)
-        if is_editing_text(active_text):
-            self.app.set_focus(active_text, scroll_visible=False)
-            return
         if is_editing_text(focused):
             return
         expanded_select = self._expanded_select()
@@ -2609,10 +2621,6 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
 
     def action_cursor_down(self) -> None:
         focused = self.app.focused
-        active_text = getattr(self, "_active_command_text_widget", None)
-        if is_editing_text(active_text):
-            self.app.set_focus(active_text, scroll_visible=False)
-            return
         if is_editing_text(focused):
             return
         expanded_select = self._expanded_select()
@@ -3033,6 +3041,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         if not inputs:
             return
         yield Label("Incoming Payload", classes="form-label nav-section")
+        target_counts: Dict[str, int] = {}
         for connection in inputs:
             source_id = str(connection.get("source_node_id") or "")
             source_port = str(connection.get("source_port") or "default")
@@ -3075,10 +3084,13 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 if value is not _MISSING_PAYLOAD:
                     lines.append(f"Value: {self._short_value_text(value)}")
             # Read-only summary: plain Static so keyboard navigation skips it.
+            index = target_counts.get(target_port, 0)
+            target_counts[target_port] = index + 1
+            suffix = f"-{index}" if index else ""
             yield Static(
                 "\n".join(lines),
                 classes="form-description incoming-payload-summary",
-                id=f"incoming-payload-{target_port}",
+                id=f"incoming-payload-{target_port}{suffix}",
             )
 
     def _sync_standard_payload_controls(self) -> None:

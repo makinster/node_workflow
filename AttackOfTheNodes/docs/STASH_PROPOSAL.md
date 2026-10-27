@@ -48,7 +48,7 @@ Stage 3 is why the backend pieces must be headless-safe from day one.
 | File refs (`backend/file_refs.py`) | `file_reference(path)` creates a tagged JSON object; `reference_path()` resolves its path | File entries store that object; copy-insert writes its path into an accepting configured field. |
 | Path normalization (`backend/file_paths.py`) | `normalize_local_path`; used by the validator for fields with `normalize_local_path: True` | Dropped paths are normalized when stored, so inserted values match hand-typed ones. |
 | Field hints in schemas | `accepted_types()` in `backend/field_types.py` uses explicit `data_type`, otherwise `path_hint: file`, otherwise text-field type | File fields take file entries; ordinary text fields take text only. `path_hint` still describes file/path semantics. |
-| Source selectors | Ports declare `sources: [upstream, vault, configured]` with a `configured_field`; config holds `<port>_source` plus `<port>_vault_key` (`vault_declarations.py`) | Copy-insert into a field hidden behind `input_source != "Configured"` should switch the source to `Configured`. |
+| Source selectors | Ports declare `sources: [upstream, vault, configured]` with a `configured_field`; config holds `<port>_source` plus `<port>_vault_key` (`vault_declarations.py`) | Choose Configured first, then focus its value for Stash insertion; source selectors refuse (owner, 2026-10-26). |
 | Config form (`frontend/widgets/form_generator.py`, `frontend/screens/node_config.py`) | Widgets have id `field-<name>`; `node_config.py` already maps ids back to schema fields | Insert target = the focused `field-*` widget; read its schema entry, then filter and write. |
 | Edit widgets (`frontend/widgets/command_input.py`) | CommandInput / CommandTextArea distinguish navigation and editing | Plain `P` opens insert only outside editing; typing remains literal. |
 | Key bindings (`frontend/keymap.py`) | Editor `P` opens manage mode; Node Config `P` opens insert; the command palette keeps Ctrl+P | No command-palette change. |
@@ -100,7 +100,13 @@ already-approved Step 4.
   - *Entries*: search, rename, delete, filter by type, folder groups that
     expand.
 - **Open:** `p` from the Editor screen (manage mode, no insert).
-- **Insert:** in node config, highlight a field, press `P`. The list shows
+- **Insert (owner, 2026-10-26):** in node config, focus a text/file field, then
+  press `P`. All Selects/model pickers refuse with "Stash text can't go into
+  this field"; they never redirect to another field. Choose Configured before
+  focusing a hidden value. No previous-field fallback is allowed, including from
+  the Insert button. In row editors, focus Default/Text; activate the Subworkflow
+  Stash binding button with E/Enter to choose a binding. P on a button refuses.
+  The list shows
   only entries that fit, `e`/Enter inserts, the modal closes and the field is
   filled. If the field accepts nothing (checkbox, select), show a short notice.
 - **Warnings:** a dropped path that doesn't exist (common over SSH) is flagged
@@ -223,7 +229,9 @@ the notes below.
 
 **Design notes**
 
-1. **Hidden fields cannot be focused.** A path field hidden behind
+1. **Superseded 2026-10-26:** the owner now requires focus-only Stash assignment;
+   Source selectors refuse rather than switching/filling another field. The
+   following retains the historical design. **Hidden fields cannot be focused.** A path field hidden behind
    `<port>_source != "Configured"` can never be highlighted, so `ctrl+p` on
    the port's *Source* selector row offers file entries, switches the source
    to Configured, fills the value and says so. This answers open question 4.

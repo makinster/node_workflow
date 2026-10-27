@@ -156,9 +156,11 @@ def test_picking_a_stash_entry_saves_it_by_name_and_shows_it_as_a_source():
         editor.action_submit()
         await pilot.pause(0.05)
         refused = str(editor.query_one("#row-error").render())
+        editor.query_one('#row-stash').focus()
+        await pilot.pause(0.05)
         editor._pick_stash_entry(entry)
         await pilot.pause(0.05)
-        shown = str(editor.query_one("#row-stash").render())
+        shown = str(editor.query_one("#row-stash").label)
         editor.action_submit()
         await pilot.pause(0.1)
         return hidden, refused, shown, screens.lines(inputs), screen._collected_config()["inputs"]

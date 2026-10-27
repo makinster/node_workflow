@@ -1,0 +1,33 @@
+{
+  "phase": "after",
+  "screens": [
+    "after-unknown.svg",
+    "after-collision.svg",
+    "after-child.svg",
+    "after-fanin.svg",
+    "after-node-picker.svg",
+    "after-options-picker.svg",
+    "after-node-picker-down.svg",
+    "after-options-picker-down.svg",
+    "after-node-picker-80.svg",
+    "after-options-picker-80.svg"
+  ],
+  "requests": [
+    "GET /api/tags",
+    "GET /api/tags",
+    "GET /api/tags",
+    "GET /api/tags"
+  ],
+  "node_executions": 0,
+  "source_sha256": {
+    "AttackOfTheNodes/frontend/screens/node_config.py": "882f7f413411ab8dbd4a8e8705971cefdf569eed0fc11f7873949ad015cae224",
+    "AttackOfTheNodes/frontend/screens/settings.py": "a63a55e158e12543971975ba7351a57ca7b6a95852e1b635925ac206864daa90",
+    "AttackOfTheNodes/frontend/widgets/form_generator.py": "fed57fd9cabe07c961c15208a94727c363b4e32cd88c85742fa9b95cab473931",
+    "AttackOfTheNodes/frontend/widgets/local_model_picker.py": "c09af465ce3bf9b934dfda6abf98a0a6441abd093ecb452f4e317f0f0d157546",
+    "AttackOfTheNodes/backend/integrations/local_model.py": "91b7783ded76866d5fb9ff1df3addbfe6ecda6fd5ab02276fa631f14db0c9e7e",
+    "AttackOfTheNodes/backend/vault_declarations.py": "613ff9b9597d45498de4b2aaa41c4b0c219ad8ea9bf7dcd861c0a8f0da95cbca",
+    "AttackOfTheNodes/backend/nodes/ai/ask_local_model_node.py": "18ffa7ee73ed6200892e7dc15d5749491ca9d362a7b14a23b75e237161dd68d4"
+  },
+  "styles_sha256": "f40ac442e23bacbf86435e38928a88a3721cc8bd0248e5e91864ca662bea4cac",
+  "source_revision": "28fa003e6f713d907d7587d8da7a26a99cf59912"
+}

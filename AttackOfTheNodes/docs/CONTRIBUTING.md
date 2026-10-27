@@ -113,7 +113,7 @@ touched. Keep existing semantic IDs, including Confirm's phase-1 IDs.
    bindings. `CommandScreenMixin` already inherits `KeymapScreenMixin`; do not
    add that base twice. Non-command screens/App use `KeymapScreenMixin` directly.
    Reuse existing focus/activation helpers. Movement/activation roles in command
-   metadata let widget fallbacks and focus rescue follow effective keys rather
+   metadata let widget fallbacks follow effective keys rather
    than keeping old W/S/E routes alive after an override. Single-field A/D
    positioning has its own `text.caret_left/right` commands; their row fallback
    yields to an available screen movement command.
@@ -122,8 +122,11 @@ touched. Keep existing semantic IDs, including Confirm's phase-1 IDs.
    owners are unavailable. Screen-specific pure conditions may further restrict
    commands. Native text editing (caret, deletion, clipboard) remains Textual's.
    Edit transitions are registered widget actions; ordinary typing reaches them
-   through native dispatch, never a second raw-key shortcut map.
-5. `revert_or_cancel` first reverts a retained active editor, then uses the
+   through native dispatch, never a second raw-key shortcut map. Only the currently
+   focused text widget owns typing. Do not redirect printable keys to a retained
+   editor after focus moves. Stash resolves its field at keypress time; unsupported
+   focus refuses without changing values or dirty state.
+5. `revert_or_cancel` first reverts the currently focused editor, then uses the
    profile's `cancel_action` on a later press. Preserve screen-specific exit
    behavior (unsaved Save/Discard/Stay, User Input cancellation stopping a run).
    The focused text widget owns its own Ctrl+Q revert, preventing root Quit
@@ -142,7 +145,7 @@ touched. Keep existing semantic IDs, including Confirm's phase-1 IDs.
 8. Add actual-keypress tests with production CSS: compiled IDs/aliases, focused
    controls, NAV/TEXT/Select ownership, modal scope and button activation. Test
    rebinding through `App.set_keymap` (without adding a preferences UI): the new
-   key works, the old key does not survive in widget/overlay/rescue fallbacks,
+   key works, the old key does not survive in widget/overlay fallbacks,
    and typing stays literal. Run the `test_keymap*` modules, affected screen
    tests and full suite. Reproduce defects failing before fixing them.
 

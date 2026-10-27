@@ -32,7 +32,7 @@ from frontend.io_contract import TYPE_COLOR
 from frontend.keymap import CONTRACT_ROW_EDITOR, bindings_for
 from frontend.widgets.command_input import CommandInput
 from frontend.widgets.command_screen_mixin import CommandScreenMixin
-from frontend.widgets.contract_rows import default_text
+from frontend.widgets.contract_rows import default_text, CompactRowButton
 from frontend.widgets.status_bar import StatusBar
 
 from frontend import colors  # noqa: E402
@@ -291,6 +291,8 @@ class _EditorBase(CommandScreenMixin, ModalScreen):
 
     def action_stash_insert(self) -> None:
         """P has nothing to insert here."""
+        from frontend import notifications
+        notifications.notify_info(self.app, "Stash text can't go into this field")
 
 
 class SubworkflowInputEditor(_EditorBase):
@@ -324,8 +326,8 @@ class SubworkflowInputEditor(_EditorBase):
             yield _field("Vault key:", CommandInput(value=str(mapping.get("vault_key") or ""), id="row-vault-key"),
                          "row-vault-key-row")
             self.stash_entry = str(mapping.get("stash_entry") or "")
-            yield _field("Stash entry:", Static(self._stash_text(), id="row-stash"), "row-stash-row")
-            yield Static(Text("P picks another entry.", style=colors.MUTED), id="row-stash-hint")
+            yield _field("Stash entry:", CompactRowButton(self._stash_text(), id="row-stash", compact=True), "row-stash-row")
+            yield Static(Text("E/Enter picks another entry.", style=colors.MUTED), id="row-stash-hint")
             if self._has_default():
                 default = f'"{row["value"]}"' if row["type"] == "string" else default_text(row["value"])
                 yield Static(f"Its default is {default}.", classes="form-description", markup=False)
@@ -337,13 +339,23 @@ class SubworkflowInputEditor(_EditorBase):
                 yield Button("Cancel", id="cancel-row", variant="default")
             yield StatusBar("w/s move | e edit | p stash | ctrl+s confirm | esc cancel")
 
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "row-stash":
+            event.stop()
+            self._choose_stash_entry()
+        else:
+            super().on_button_pressed(event)
+
     def _stash_text(self) -> Text:
         if not self.stash_entry:
-            return Text("none yet: press P", style=colors.MUTED)
+            return Text("none yet: e/Enter to choose", style=colors.MUTED)
         return info.parts_text(info.stash_parts(self.stash_entry))
 
-    def action_stash_insert(self) -> None:
-        """P: pick the Stash entry this input comes from (by name)."""
+    def _choose_stash_entry(self) -> None:
+        """Explicit binding-button activation, separate from text insertion."""
+        from frontend.widgets.stash_focus import stash_field
+        if stash_field(self, '#row-stash') is None:
+            return
         accepts = ["file"] if self.row["type"] == "file" else ["string"]
         self.app.action_stash("entries", insert_into={"label": "Stash entry", "accepts": accepts},
                               callback=self._pick_stash_entry)
@@ -351,9 +363,11 @@ class SubworkflowInputEditor(_EditorBase):
     def _pick_stash_entry(self, entry: Optional[Dict[str, Any]]) -> None:
         if not entry:
             return
+        from frontend.widgets.stash_focus import stash_field
+        if stash_field(self, '#row-stash') is None:
+            return
         self.stash_entry = str(entry["name"])
-        self.query_one("#row-source", Select).value = "Stash"
-        self.query_one("#row-stash", Static).update(self._stash_text())
+        self.query_one("#row-stash", Button).label = self._stash_text()
         self._sync()
 
     def on_mount(self) -> None:

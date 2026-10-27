@@ -7,9 +7,14 @@ No fixture is permission to run a live workflow, spend money or send a message.
 - [Notify me](c1-notify-test.json): new-integration at delivery; reconstructed node plan.
 - [Investigation test](c3c-investigate-test.json): new-integration at delivery; reconstructed node plan.
 
-In progress: [Ask local model](ask-local-model.json), owner-approved build
-through step 5, with original 3/4 coverage, approval timing and two-request
-cold/warm smoke. Review/merge/go-live remain pending.
+[Ask local model](ask-local-model.json): PR #123 reviewed/merged; original 3/4
+coverage, approval timing and two-request cold/warm smoke retained. Owner setup
+and ordinary use remain pending.
+
+[Source-menu audit and model pickers](source-menu-audit.json): `swiss-army fix`,
+five shared mismatches, registry-wide consistency/mutation checks and read-only
+picker tests. No new workflow operations, so node coverage is not applicable;
+the related local-model workflow now has 4/4 available nodes. Review/merge pending.
 
 These three requests finished with owner-confirmed Telegram results. The
 heartbeat/C1 evidence is in [Current State](../CURRENT_STATE.md); investigation

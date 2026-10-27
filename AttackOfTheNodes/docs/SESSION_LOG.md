@@ -6,6 +6,92 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-26 — #124 second P2: current focus owns P
+
+Same own worktree `/home/makin/src/nw-source-menu-audit`, branch
+`codex/source-menu-audit`; clean starting head `f360e8a`, main still `f0aa39d`.
+[Re-check](https://github.com/makinster/node_workflow/pull/124#issuecomment-6432584941)
+confirmed the original Stash assignment fixed but found P could be rescued
+into the previously edited Options URL after focus moved to a closed Select.
+
+- Removed the shared printable-key rescue and Input/TextArea drift redirects.
+  Typing policy uses current focus only; focused typing still inserts literal P.
+- Removed Node Config's remembered Insert-button target and navigation rescue.
+  Long-text insertion captures its exact area; a refused result never focuses it.
+  Buttons refuse P; Subworkflow binding selection uses explicit E/Enter instead.
+- Regression file on `f360e8a`: **13 failed, 3 passed in 22.69 seconds**.
+  Real edit/click/key paths cover closed/open Selects, checkboxes, buttons and
+  moving to another field; clean and edited draft values, dirty state, focus and
+  later Options Save are checked. The earlier tests omitted active editing.
+- **3048 full-suite tests passed in 674.42 seconds**, no WaitUntil retry.
+  Focused checks: 226 passed in 205.76 seconds plus two embedded/edit-mode checks.
+  One earlier full attempt stopped for the embedded mode correction and obsolete
+  retained-editor expectation. Compilation, artifact/schema, consolidation and
+  whitespace checks pass. Full verification is recorded in [review evidence](audits/source_menus_2026_10_26/verification.json).
+  Two review rounds; independent re-check and merge remain pending. No generation
+  or live settings/workflow changes.
+
+## 2026-10-26 — #124 P2: Stash must target its focused field
+
+Same own worktree `/home/makin/src/nw-source-menu-audit`, branch
+`codex/source-menu-audit`; clean starting head `28fa003`, current main `f0aa39d`.
+[Reviewer P2](https://github.com/makinster/node_workflow/pull/124#issuecomment-6431769219)
+reproduced: Question → nested Model override → P could replace Question.
+
+- Captured the exact focused text/file widget, cleared stale targets on unrelated
+  focus, and rejected delayed replies to changed/replaced targets. Selects and
+  model pickers, including their text fallback, refuse with the owner's plain message.
+- Checked Options, native Select overlays, row editors and the full-text editor.
+  Default/Text require their own focus; Subworkflow Stash bindings have a compact
+  focusable entry control and no longer flip another source field on insertion.
+- The owner explicitly retired the old Source-selector redirect shortcut.
+  Updated its two expectations to refusal while keeping positive file insertion,
+  text replacement, ordinary typing and explicit Insert-button checks.
+- Five regression cases fail on `28fa003`; general schema/row/Options tests show
+  Stash cannot change an unfocused neighbour. Focused groups: 237 passed, dialog
+  group 64 passed, keymap group 104 passed (overlapping groups). Full suite:
+  **3032 passed in 633.99 seconds**, no WaitUntil retry. Compilation, helper UI,
+  JSON/schema/artifact, docs consolidation and whitespace checks pass. Full result in
+  [review evidence](audits/source_menus_2026_10_26/verification.json).
+- One review round, one P2; builder verification does not claim an independent
+  clean re-check. No generation, live changes or merge.
+
+## 2026-10-26 — Source-menu audit and installed-model pickers
+
+Own clean worktree `/home/makin/src/nw-source-menu-audit`, branch
+`codex/source-menu-audit`, from fetched `origin/main` `f0aa39d` (PR #123 merged).
+Owner authorized one maintenance loop, kind `swiss-army fix`, no generation.
+Implementation `3ac0168`, [PR #124](https://github.com/makinster/node_workflow/pull/124);
+this publication record is documentation only.
+
+- Audited all 56 registered types / 131 declared input ports, including 31
+  standard-source ports, custom row/source controls and implicit/trigger ports.
+  [Inventory and mismatch table](audits/source_menus_2026_10_26/README.md).
+- Fixed five shared defects: unknown writer types treated as text, last-writer
+  type hiding compatible writers, undeclared child Vault results, first-parent
+  source eligibility and duplicate fan-in summary IDs crashing Node Config.
+  Existing accepted source/type contracts and eligibility protections remain.
+  Listed six source additions as proposals; none built.
+- Both local-model controls share bounded read-only discovery, Options-default
+  override choice, sole-model empty Options draft fill, editable failure fallback,
+  retained unavailable names and URL refresh. Preserved draft values across
+  asynchronous control replacement. No generation, pulls or execution changes.
+- Registry-wide contract/UI/compatible-writer checks and deliberate broken-menu
+  mutation proof; five regressions fail against base. Fake HTTP tests cover
+  discovery, bounds, timeouts, Save/Cancel, keyboard use and replacement races.
+  [Real before/after screens](audits/source_menus_2026_10_26/contact-sheet.png)
+  include 80×24 and failure fallback. Base fan-in could not mount; no invented image.
+- [Loop record](delivery_tests/source-menu-audit.json) keeps timings/checkpoints,
+  review rounds zero, five mismatches and coverage not applicable to UI maintenance.
+  Related Ask local model case now records its one independent review and actual
+  #123 merge; original authorized smoke measurements are unchanged.
+- Verification: **3,016 passed in 516.49 seconds**, no WaitUntil retry; focused
+  **125 passed**. Two earlier full attempts were stopped for picker hardening
+  without reported failures; the final complete suite covers the final code.
+  Details in [machine evidence](audits/source_menus_2026_10_26/verification.json).
+  Node/UI helpers, compilation, JSON/template checks, docs consolidation and
+  whitespace checks recorded there. No merge, deployment or owner use claimed.
+
 ## 2026-10-26 — Ask local model, approved build through step 5
 
 Own worktree `/home/makin/src/nw-local-model`, branch `codex/ask-local-model`,

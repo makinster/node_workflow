@@ -173,7 +173,10 @@ artifacts. During delivery it can be a draft. Record:
 
 - **Request kind:** `composition-only` uses available nodes; `new-integration`
   needs a new node/capability. Record classification date/base; keep the original
-  kind even if later node growth makes replay composition-only.
+  kind even if later node growth makes replay composition-only. For maintenance,
+  retain the owner's change label (for example `swiss-army fix`) and node kind.
+  A UI/contract fix with no new workflow has zero operations and coverage not
+  applicable; keep related workflow replay coverage separately.
 - **Node kind:** `swiss-army` = reusable primitive (HTTP Request, Read lines);
   `use-case` = one tailored job (Notify me); `meta` = helps plan/check workflows
   (Context Pack, Check reply). These are measurement labels, not registry taxonomy.

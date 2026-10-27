@@ -85,7 +85,8 @@
         "type": "string",
         "label": "Model override",
         "default": "",
-        "placeholder": "Blank = Options default"
+        "placeholder": "Options default or installed model",
+        "presentation": "local_model"
       },
       "timeout": {
         "type": "integer",

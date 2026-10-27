@@ -1,0 +1,415 @@
+{
+  "schema_version": 1,
+  "case_id": "source-menu-audit",
+  "baseline": "f0aa39d3c5174523550be180ed7b649a00782d57",
+  "record_status": "PR #124: second review P2 fixed in candidate; independent re-check and merge pending",
+  "request_kind": "swiss-army fix",
+  "node_kind": "swiss-army",
+  "classification_at": "2026-10-27T00:55:10Z",
+  "request": {
+    "schema_version": 1,
+    "request_id": "source-menu-audit",
+    "date": "2026-10-26",
+    "intent": "Make every input menu reflect supported sources and compatible available Vault writes, then expose installed local models in Options and per-node overrides.",
+    "example": {
+      "input": "Upstream text and record writers use the same Vault key; a later Question input needs text.",
+      "expected_result": "The key remains selectable from its compatible text writer; model override lists installed names with Options default first."
+    },
+    "target_device": "Owner WSL terminal, 80x24 and wider",
+    "destination": "Node Config and Options drafts; one unmerged PR",
+    "trigger": "Owner opens an input menu or local model control; Options URL edits refresh read-only discovery",
+    "inputs": [
+      "All 56 registered node types and 131 declared ports",
+      "Workflow writer metadata and run MemoryBank",
+      "Options URL/default model",
+      "Read-only installed model catalogue"
+    ],
+    "constraints": [
+      "Functionality and AI-runnability first",
+      "Own worktree from f0aa39d or newer",
+      "No generation, pulls, retries or cloud fallback",
+      "Do not broaden runtime accepted sources; proposals are separate",
+      "Fake-server tests, full suite, real-screen before/after evidence; do not merge"
+    ],
+    "success": [
+      "All accepted source options are offered when independently available",
+      "Every compatible eligible writer appears, including secondary outputs and dynamic types",
+      "Incompatible known records remain excluded from text-only pickers",
+      "Both installed-model pickers work, with editable failure fallback and sole-model Options autofill",
+      "Deliberately broken source metadata is detected"
+    ],
+    "unknowns": [
+      "Owner ordinary-use outcome after merge is pending",
+      "No independent review of this candidate yet"
+    ]
+  },
+  "feasibility": {
+    "schema_version": 1,
+    "request_id": "source-menu-audit",
+    "checked_at": "2026-10-27T01:08:42Z",
+    "researcher": "Builder: runtime/schema/UI audit plus official API docs",
+    "official_api": "GET /api/tags lists installed models; native HTTP support already exists. No generation endpoint is needed.",
+    "sign_in": "Normal configured local API has no sign-in; no service/account configuration changed.",
+    "cost": "No paid requests or generation. Hardware/electricity cost not measured.",
+    "reliability": "Two-second discovery deadline, 1 MiB cap, 1024 entries, no redirects/proxies; editable fallback. Source fixes use existing type and eligibility rules.",
+    "terms_of_service": "Read-only documented API. No model redistribution, generation or new service integration; existing local-server trust boundary remains.",
+    "sources": [
+      "https://docs.ollama.com/api/tags",
+      "../audits/source_menus_2026_10_26/INVENTORY.md"
+    ],
+    "verdict": "feasible",
+    "reason": "Shared discovery defects reproduced; bounded read-only model listing is supported.",
+    "conditions": [],
+    "alternatives": [
+      "Keep manual model text entry as the failure fallback"
+    ]
+  },
+  "final_artifact": null,
+  "candidate_artifact": {
+    "kind": "application-fix",
+    "branch": "codex/source-menu-audit",
+    "audit": "../audits/source_menus_2026_10_26/README.md",
+    "pr": 124,
+    "pr_url": "https://github.com/makinster/node_workflow/pull/124",
+    "implementation_head": "3ac016819f608cf181962a33b0f7c92368918d0b"
+  },
+  "coverage": {
+    "total_operations": 0,
+    "existing_count": 0,
+    "new_count": 0,
+    "ratio": null,
+    "mappings": [],
+    "reason": "Maintenance of input/setting authoring, not a new workflow. Node coverage is not applicable; no artificial setup operations added to the denominator.",
+    "related_case": "ask-local-model.json",
+    "related_replay_coverage": {
+      "total_operations": 4,
+      "existing_count": 4,
+      "new_count": 0,
+      "ratio": 1.0
+    }
+  },
+  "measurements": {
+    "loop_started_at": "2026-10-27T00:55:10Z",
+    "review_rounds": 2,
+    "reviews": [
+      {
+        "head": "28fa003e6f713d907d7587d8da7a26a99cf59912",
+        "reviewed_at": "2026-10-27T01:52:35Z",
+        "findings": [
+          {
+            "priority": "P2",
+            "description": "Stash on a nested model picker overwrites the previously focused Question",
+            "status": "confirmed_fixed_in_recheck"
+          }
+        ],
+        "outcome": "Original assignment bug confirmed fixed by second review; a separate retained-editor P2 remained.",
+        "url": "https://github.com/makinster/node_workflow/pull/124#issuecomment-6431769219"
+      },
+      {
+        "head": "f360e8a29bca396b59928197884acb7653a4d63a",
+        "reviewed_at": "2026-10-27T02:54:55Z",
+        "findings": [
+          {
+            "priority": "P2",
+            "description": "P on a closed Select can be rescued into the previously edited server URL, changing its value and saved settings",
+            "status": "builder_fix_for_recheck"
+          }
+        ],
+        "outcome": "One finding; current-focus key routing fixed by builder; independent re-check pending",
+        "url": "https://github.com/makinster/node_workflow/pull/124#issuecomment-6432584941"
+      }
+    ],
+    "step_visits": [
+      {
+        "step": 0,
+        "started_at": "2026-10-27T00:55:10Z",
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "complete",
+        "wait_reason": null,
+        "notes": "Substep transition timestamps were not captured; do not infer durations."
+      },
+      {
+        "step": 1,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "complete",
+        "wait_reason": null,
+        "notes": "Substep transition timestamps were not captured; do not infer durations."
+      },
+      {
+        "step": 2,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "complete",
+        "wait_reason": null,
+        "notes": "Substep transition timestamps were not captured; do not infer durations."
+      },
+      {
+        "step": 3,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "complete",
+        "wait_reason": null,
+        "notes": "Owner request authorized audit, fixes and pickers together; no separate approval wait."
+      },
+      {
+        "step": 4,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "complete",
+        "wait_reason": null,
+        "notes": "Owner request authorized audit, fixes and pickers together; no separate approval wait."
+      },
+      {
+        "step": 5,
+        "started_at": null,
+        "ended_at": "2026-10-27T01:32:15.410030+00:00",
+        "elapsed_days": null,
+        "status": "complete",
+        "wait_reason": null,
+        "notes": "Build complete. Start boundary was not captured; elapsed_days remains unknown. Recorded checkpoints and total loop wall time are retained."
+      },
+      {
+        "step": 6,
+        "started_at": "2026-10-27T01:52:35Z",
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "in_progress",
+        "wait_reason": null,
+        "notes": "One P2 on reviewed head 28fa003; builder fix awaits independent re-check."
+      },
+      {
+        "step": 7,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "pending",
+        "wait_reason": null,
+        "notes": "No review/merge/deployment claimed."
+      },
+      {
+        "step": 8,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "pending",
+        "wait_reason": null,
+        "notes": "No review/merge/deployment claimed."
+      },
+      {
+        "step": 9,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "pending",
+        "wait_reason": null,
+        "notes": "No review/merge/deployment claimed."
+      },
+      {
+        "step": 10,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "pending",
+        "wait_reason": null,
+        "notes": "No review/merge/deployment claimed."
+      },
+      {
+        "step": 11,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "pending",
+        "wait_reason": null,
+        "notes": "No review/merge/deployment claimed."
+      },
+      {
+        "step": 5,
+        "started_at": null,
+        "ended_at": "2026-10-27T02:43:31Z",
+        "elapsed_days": null,
+        "status": "complete",
+        "wait_reason": null,
+        "notes": "Focused-field fix and all dispatch paths complete; 3032 full-suite tests pass. Start boundary was not captured; elapsed_days remains unknown."
+      },
+      {
+        "step": 5,
+        "started_at": null,
+        "ended_at": "2026-10-27T03:39:56Z",
+        "elapsed_days": null,
+        "status": "complete",
+        "wait_reason": null,
+        "notes": "Current-focus implementation complete; 3048 full-suite tests pass. Start boundary was not captured; elapsed_days remains unknown."
+      }
+    ],
+    "checkpoints": [
+      {
+        "at": "2026-10-27T01:04:02Z",
+        "step": 5,
+        "event": "Implementation and focused checks in progress"
+      },
+      {
+        "at": "2026-10-27T01:08:42Z",
+        "step": 5,
+        "event": "Full suite started"
+      },
+      {
+        "at": "2026-10-27T01:12:45Z",
+        "step": 5,
+        "event": "Final full suite started after picker replacement-race fix; earlier attempt interrupted with 1159 passes in 180.01 seconds"
+      },
+      {
+        "at": "2026-10-27T01:21:20Z",
+        "step": 5,
+        "event": "125 focused tests pass; complete suite started on final implementation. HTTP cancellation cannot interrupt DOM replacement; initial URL event no longer duplicates discovery."
+      },
+      {
+        "at": "2026-10-27T01:32:15.410030+00:00",
+        "step": 5,
+        "event": "3016 full-suite tests pass; five original-base failures and restored-candidate passes rechecked; ready for PR."
+      },
+      {
+        "at": "2026-10-27T02:32:48Z",
+        "step": 5,
+        "event": "Complete review-fix full suite started after all Stash dispatch paths were checked."
+      },
+      {
+        "at": "2026-10-27T02:43:31Z",
+        "step": 5,
+        "event": "3032 full-suite tests pass in 633.99 seconds; no WaitUntil retry. Focus regression fails on reviewed head; candidate ready for re-check."
+      },
+      {
+        "at": "2026-10-27T03:22:00Z",
+        "step": 5,
+        "event": "13 regression failures and 3 passes on reviewed f360e8a; candidate restored; focused tests running."
+      },
+      {
+        "at": "2026-10-27T03:25:05Z",
+        "step": 5,
+        "event": "226 focused Stash/keymap/long-text tests pass; full suite started on final current-focus implementation."
+      },
+      {
+        "at": "2026-10-27T03:28:10Z",
+        "step": 5,
+        "event": "Embedded-screen mode corrected to app current focus; obsolete retained-editor expectation updated. Two focused legacy tests pass; fresh complete suite started."
+      },
+      {
+        "at": "2026-10-27T03:39:56Z",
+        "step": 5,
+        "event": "3048 full-suite tests pass in 674.42 seconds; no WaitUntil retry. Current-focus candidate ready for independent re-check."
+      }
+    ],
+    "verification": {
+      "mismatch_count": 5,
+      "types": 56,
+      "declared_input_ports": 131,
+      "standard_source_ports": 31,
+      "base_regressions": {
+        "failed": 5,
+        "deselected": 78,
+        "exit_code": 1
+      },
+      "deliberately_broken_node": "Context source menu with Vault removed: same consistency assertion fails as expected",
+      "focused_passed": 125,
+      "full_suite": {
+        "passed": 3016,
+        "seconds": 516.49,
+        "wait_until_flake_retry": false,
+        "completed_at": "2026-10-27T01:30:07.456608+00:00"
+      },
+      "generation_calls": 0,
+      "live_read_only_calls": null,
+      "live_read_only_notes": "An initial UI helper check before the no-manager fallback may have queried the default URL for tags; not instrumented. Final helper does no discovery without Options context. Pytest and captures isolate discovery to canned endpoints."
+    },
+    "loop_wall_days_so_far": 0.1144212962962963
+  },
+  "evidence": [
+    "../audits/source_menus_2026_10_26/README.md",
+    "../audits/source_menus_2026_10_26/contracts.json",
+    "../audits/source_menus_2026_10_26/verification.json",
+    "../audits/source_menus_2026_10_26/before-manifest.json",
+    "../audits/source_menus_2026_10_26/after-manifest.json"
+  ],
+  "acceptance_checks": [
+    "Registry equality and reviewed runtime fingerprints",
+    "Declared/accepted sources equal actual options under eligible independent inputs",
+    "Source changes reveal correct fields",
+    "Every compatible eligible writer appears in the fixture; known incompatible keys stay out",
+    "Broken source menu mutation is detected",
+    "Pickers use only fake GET /api/tags, no generation",
+    "Options sole-model draft autofill, preserve existing names, Save/Cancel and URL refresh",
+    "Server-down editable fallback and 80x24 keyboard navigation",
+    "Full suite and helper checks pass; docs and whitespace checks pass",
+    "Stash on any Select/picker refuses without changing a neighbouring field",
+    "Stash callbacks target only the originating focused text/file field; binding pickers own their field",
+    "After actual editing, P on closed/open Selects, checkboxes, buttons or another field changes neither values nor clean/already-unsaved state; later Save preserves the pre-P draft"
+  ],
+  "notes": [
+    "Five shared mismatch classes; affected port rows are in the complete inventory.",
+    "Proposed new Configured/Vault contracts were not built.",
+    "Stash has copy-insert and explicit contract sources, not persistent per-machine binding files.",
+    "Original fan-in modal could not mount: no fabricated before image.",
+    "Next: independent review, then owner-controlled merge and normal use."
+  ],
+  "publication": {
+    "pr": 124,
+    "url": "https://github.com/makinster/node_workflow/pull/124",
+    "created_at": "2026-10-27T01:33:52Z",
+    "implementation_head": "3ac016819f608cf181962a33b0f7c92368918d0b"
+  },
+  "review_fix": {
+    "reviewed_head": "28fa003e6f713d907d7587d8da7a26a99cf59912",
+    "evidence": "../audits/source_menus_2026_10_26/STASH_FOCUS_REVIEW.md",
+    "base_regressions": {
+      "failed": 5,
+      "deselected": 5,
+      "seconds": 6.82
+    },
+    "generation_calls": 0,
+    "full_suite": {
+      "passed": 3032,
+      "seconds": 633.99,
+      "wait_until_flake_retry": false,
+      "completed_at": "2026-10-27T02:43:31Z"
+    }
+  },
+  "review_fix_recheck": {
+    "reviewed_head": "f360e8a29bca396b59928197884acb7653a4d63a",
+    "evidence": "../audits/source_menus_2026_10_26/STASH_FOCUS_REVIEW.md",
+    "base_regressions": {
+      "failed": 13,
+      "passed": 3,
+      "seconds": 22.69
+    },
+    "focused": {
+      "passed": 226,
+      "seconds": 205.76
+    },
+    "full_suite": {
+      "passed": 3048,
+      "seconds": 674.42,
+      "wait_until_flake_retry": false,
+      "completed_at": "2026-10-27T03:39:56Z"
+    },
+    "generation_calls": 0,
+    "compileall": "pass",
+    "legacy_focused": {
+      "passed": 2,
+      "deselected": 158,
+      "seconds": 1.47
+    },
+    "earlier_full_attempt": {
+      "status": "interrupted for embedded-screen current-focus mode correction and obsolete retained-editor test expectation",
+      "failed": 2,
+      "passed": 739,
+      "seconds": 117.54
+    },
+    "docs_consolidation": "PASS: 96 Markdown files; 843 relative links/anchors; 33 whole archive bodies; 96 transferred session entries; 23 active docs",
+    "git_diff_check": "pass"
+  }
+}
