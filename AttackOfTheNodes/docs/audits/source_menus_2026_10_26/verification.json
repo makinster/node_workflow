@@ -57,5 +57,40 @@
   ],
   "helper_spec_temp_generation": "Pass: local_model presentation preserved; existing custom runtime not overwritten",
   "candidate_regression_recheck": "5 passed on restored final files",
-  "recorded_at": "2026-10-27T01:32:15.410030+00:00"
+  "recorded_at": "2026-10-27T01:32:15.410030+00:00",
+  "review_fix": {
+    "reviewed_head": "28fa003e6f713d907d7587d8da7a26a99cf59912",
+    "base_regressions": {
+      "failed": 5,
+      "deselected": 5,
+      "seconds": 6.82
+    },
+    "overlapping_focused_runs": [
+      {
+        "passed": 237,
+        "seconds": 133.42
+      },
+      {
+        "passed": 64,
+        "seconds": 136.67
+      },
+      {
+        "passed": 104,
+        "seconds": 9.77
+      },
+      {
+        "passed": 4,
+        "seconds": 2.22
+      }
+    ],
+    "full_suite": {
+      "passed": 3032,
+      "seconds": 633.99,
+      "wait_until_flake_retry": false,
+      "completed_at": "2026-10-27T02:43:31Z"
+    },
+    "generation_calls": 0,
+    "docs_consolidation": "PASS: 96 Markdown files; 842 relative links/anchors; 33 whole archive bodies; 96 transferred session entries; 23 active docs",
+    "git_diff_check": "pass"
+  }
 }

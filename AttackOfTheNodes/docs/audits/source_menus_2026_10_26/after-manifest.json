@@ -28,5 +28,6 @@
     "AttackOfTheNodes/backend/vault_declarations.py": "613ff9b9597d45498de4b2aaa41c4b0c219ad8ea9bf7dcd861c0a8f0da95cbca",
     "AttackOfTheNodes/backend/nodes/ai/ask_local_model_node.py": "18ffa7ee73ed6200892e7dc15d5749491ca9d362a7b14a23b75e237161dd68d4"
   },
-  "styles_sha256": "f40ac442e23bacbf86435e38928a88a3721cc8bd0248e5e91864ca662bea4cac"
+  "styles_sha256": "f40ac442e23bacbf86435e38928a88a3721cc8bd0248e5e91864ca662bea4cac",
+  "source_revision": "28fa003e6f713d907d7587d8da7a26a99cf59912"
 }

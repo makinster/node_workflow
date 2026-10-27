@@ -281,12 +281,16 @@ class LongTextEditor(CommandScreenMixin, ModalScreen):
                                  lambda yes: self.dismiss(None) if yes else None)
 
     def action_stash_insert(self):
+        from frontend.widgets.stash_focus import stash_field
+        if stash_field(self, 'CommandTextArea') is None:
+            return
         if not self.read_only:
             self.app.action_stash('entries', insert_into={'label': 'Text', 'accepts': ['string']},
                                   callback=self._insert)
 
     def _insert(self, entry):
         area = self.query_one(CommandTextArea)
-        if entry and not self.read_only:
+        from frontend.widgets.stash_focus import stash_field
+        if entry and not self.read_only and stash_field(self, 'CommandTextArea') is area:
             area.insert(str(entry['value']))
         area.focus()

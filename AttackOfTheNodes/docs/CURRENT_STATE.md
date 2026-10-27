@@ -7,6 +7,18 @@ This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
 
+## #124 review P2 — 2026-10-26, fix for re-check
+
+At reviewed `28fa003`, Stash P on the nested model picker could overwrite the
+previously focused Question. The fix binds text/file insertion to its originating
+widget and refuses all Selects/model pickers with a plain message. Options,
+expanded Select overlays and custom row/text editors follow the same rule.
+The Subworkflow Stash binding has its own focusable entry control. Source-row
+redirect insertion is retired by the owner's focus-only instruction.
+[Review evidence](audits/source_menus_2026_10_26/STASH_FOCUS_REVIEW.md) and
+[loop case](delivery_tests/source-menu-audit.json) record the regression and checks: **3032 passed in 633.99 seconds**, no retry;
+independent re-check and merge remain pending.
+
 ## Source menus and model pickers — 2026-10-26, PR #124 open
 
 `codex/source-menu-audit`, worktree `/home/makin/src/nw-source-menu-audit`,

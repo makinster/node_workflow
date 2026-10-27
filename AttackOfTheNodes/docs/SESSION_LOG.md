@@ -6,6 +6,31 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-26 — #124 P2: Stash must target its focused field
+
+Same own worktree `/home/makin/src/nw-source-menu-audit`, branch
+`codex/source-menu-audit`; clean starting head `28fa003`, current main `f0aa39d`.
+[Reviewer P2](https://github.com/makinster/node_workflow/pull/124#issuecomment-6431769219)
+reproduced: Question → nested Model override → P could replace Question.
+
+- Captured the exact focused text/file widget, cleared stale targets on unrelated
+  focus, and rejected delayed replies to changed/replaced targets. Selects and
+  model pickers, including their text fallback, refuse with the owner's plain message.
+- Checked Options, native Select overlays, row editors and the full-text editor.
+  Default/Text require their own focus; Subworkflow Stash bindings have a compact
+  focusable entry control and no longer flip another source field on insertion.
+- The owner explicitly retired the old Source-selector redirect shortcut.
+  Updated its two expectations to refusal while keeping positive file insertion,
+  text replacement, ordinary typing and explicit Insert-button checks.
+- Five regression cases fail on `28fa003`; general schema/row/Options tests show
+  Stash cannot change an unfocused neighbour. Focused groups: 237 passed, dialog
+  group 64 passed, keymap group 104 passed (overlapping groups). Full suite:
+  **3032 passed in 633.99 seconds**, no WaitUntil retry. Compilation, helper UI,
+  JSON/schema/artifact, docs consolidation and whitespace checks pass. Full result in
+  [review evidence](audits/source_menus_2026_10_26/verification.json).
+- One review round, one P2; builder verification does not claim an independent
+  clean re-check. No generation, live changes or merge.
+
 ## 2026-10-26 — Source-menu audit and installed-model pickers
 
 Own clean worktree `/home/makin/src/nw-source-menu-audit`, branch

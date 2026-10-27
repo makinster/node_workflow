@@ -21,6 +21,7 @@ from textual.widgets import (
 
 from backend.configuration_manager import DEFAULT_SETTINGS
 from frontend.keymap import SETTINGS, bindings_for
+from frontend import notifications
 
 from frontend.screens.confirm import ConfirmScreen
 from frontend.widgets.command_navigation import (
@@ -223,6 +224,11 @@ class SettingsScreen(CommandScreenMixin, ModalScreen):
     def _refresh_models(self):
         picker = self.query_one('#setting-local_model_default_model', LocalModelPicker)
         picker.refresh_models(self.query_one('#setting-local_model_server_url', CommandInput).value)
+
+    def action_stash_insert(self) -> None:
+        # Options has no Stash assignment contract. In particular, its nested
+        # model picker must never dispatch to a field behind this modal.
+        notifications.notify_info(self.app, "Stash text can't go into this field")
 
     def action_save(self) -> None:
         values: Dict[str, Any] = {}

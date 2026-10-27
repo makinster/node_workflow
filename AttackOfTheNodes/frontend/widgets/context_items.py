@@ -134,7 +134,11 @@ class ContextItemEditor(ContractRowEditor):
         self.dismiss(result)
 
     def action_stash_insert(self):
-        preview = self.query_one('#row-text', LongTextPreview)
+        from frontend.widgets.stash_focus import stash_field
+        preview = stash_field(self, '#row-text')
+        if preview is None:
+            return
         if self.query_one('#row-source', Select).value == 'Configured text':
             self.app.action_stash('entries', insert_into={'label': 'Text', 'accepts': ['string']},
-                callback=lambda entry: preview.replace_from_stash(str(entry['value']), lambda: None) if entry else None)
+                callback=lambda entry: preview.replace_from_stash(str(entry['value']), lambda: None)
+                if entry and stash_field(self, '#row-text') is preview else None)

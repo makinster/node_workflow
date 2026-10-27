@@ -2,7 +2,7 @@
   "schema_version": 1,
   "case_id": "source-menu-audit",
   "baseline": "f0aa39d3c5174523550be180ed7b649a00782d57",
-  "record_status": "Step 5 published as PR #124; independent review, merge and owner use pending",
+  "record_status": "PR #124: review P2 fixed in candidate; independent re-check and merge pending",
   "request_kind": "swiss-army fix",
   "node_kind": "swiss-army",
   "classification_at": "2026-10-27T00:55:10Z",
@@ -90,8 +90,22 @@
   },
   "measurements": {
     "loop_started_at": "2026-10-27T00:55:10Z",
-    "review_rounds": 0,
-    "reviews": [],
+    "review_rounds": 1,
+    "reviews": [
+      {
+        "head": "28fa003e6f713d907d7587d8da7a26a99cf59912",
+        "reviewed_at": "2026-10-27T01:52:35Z",
+        "findings": [
+          {
+            "priority": "P2",
+            "description": "Stash on a nested model picker overwrites the previously focused Question",
+            "status": "builder_fix_for_recheck"
+          }
+        ],
+        "outcome": "One finding; builder fixed and tested; independent re-check pending",
+        "url": "https://github.com/makinster/node_workflow/pull/124#issuecomment-6431769219"
+      }
+    ],
     "step_visits": [
       {
         "step": 0,
@@ -149,12 +163,12 @@
       },
       {
         "step": 6,
-        "started_at": null,
+        "started_at": "2026-10-27T01:52:35Z",
         "ended_at": null,
         "elapsed_days": null,
-        "status": "pending",
+        "status": "in_progress",
         "wait_reason": null,
-        "notes": "No review/merge/deployment claimed."
+        "notes": "One P2 on reviewed head 28fa003; builder fix awaits independent re-check."
       },
       {
         "step": 7,
@@ -200,6 +214,15 @@
         "status": "pending",
         "wait_reason": null,
         "notes": "No review/merge/deployment claimed."
+      },
+      {
+        "step": 5,
+        "started_at": null,
+        "ended_at": "2026-10-27T02:43:31Z",
+        "elapsed_days": null,
+        "status": "complete",
+        "wait_reason": null,
+        "notes": "Focused-field fix and all dispatch paths complete; 3032 full-suite tests pass. Start boundary was not captured; elapsed_days remains unknown."
       }
     ],
     "checkpoints": [
@@ -227,6 +250,16 @@
         "at": "2026-10-27T01:32:15.410030+00:00",
         "step": 5,
         "event": "3016 full-suite tests pass; five original-base failures and restored-candidate passes rechecked; ready for PR."
+      },
+      {
+        "at": "2026-10-27T02:32:48Z",
+        "step": 5,
+        "event": "Complete review-fix full suite started after all Stash dispatch paths were checked."
+      },
+      {
+        "at": "2026-10-27T02:43:31Z",
+        "step": 5,
+        "event": "3032 full-suite tests pass in 633.99 seconds; no WaitUntil retry. Focus regression fails on reviewed head; candidate ready for re-check."
       }
     ],
     "verification": {
@@ -251,7 +284,7 @@
       "live_read_only_calls": null,
       "live_read_only_notes": "An initial UI helper check before the no-manager fallback may have queried the default URL for tags; not instrumented. Final helper does no discovery without Options context. Pytest and captures isolate discovery to canned endpoints."
     },
-    "loop_wall_days_so_far": 0.025757060532407408
+    "loop_wall_days_so_far": 0.07524305555555555
   },
   "evidence": [
     "../audits/source_menus_2026_10_26/README.md",
@@ -269,7 +302,9 @@
     "Pickers use only fake GET /api/tags, no generation",
     "Options sole-model draft autofill, preserve existing names, Save/Cancel and URL refresh",
     "Server-down editable fallback and 80x24 keyboard navigation",
-    "Full suite and helper checks pass; docs and whitespace checks pass"
+    "Full suite and helper checks pass; docs and whitespace checks pass",
+    "Stash on any Select/picker refuses without changing a neighbouring field",
+    "Stash callbacks target only the originating focused text/file field; binding pickers own their field"
   ],
   "notes": [
     "Five shared mismatch classes; affected port rows are in the complete inventory.",
@@ -283,5 +318,21 @@
     "url": "https://github.com/makinster/node_workflow/pull/124",
     "created_at": "2026-10-27T01:33:52Z",
     "implementation_head": "3ac016819f608cf181962a33b0f7c92368918d0b"
+  },
+  "review_fix": {
+    "reviewed_head": "28fa003e6f713d907d7587d8da7a26a99cf59912",
+    "evidence": "../audits/source_menus_2026_10_26/STASH_FOCUS_REVIEW.md",
+    "base_regressions": {
+      "failed": 5,
+      "deselected": 5,
+      "seconds": 6.82
+    },
+    "generation_calls": 0,
+    "full_suite": {
+      "passed": 3032,
+      "seconds": 633.99,
+      "wait_until_flake_retry": false,
+      "completed_at": "2026-10-27T02:43:31Z"
+    }
   }
 }

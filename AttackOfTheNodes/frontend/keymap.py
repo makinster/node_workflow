@@ -226,7 +226,7 @@ NODE_CONFIG = Profile('node_config', (
     Command('node_config.jump_config_tab.5', ('5',), 'jump_config_tab(5)', 'Tab 5', policies=NAV, priority=True),
     Command('node_config.revert_or_cancel', ('ctrl+q',), 'revert_or_cancel', 'Cancel', policies=NAV_TEXT, priority=True),
     Command('node_config.remove_field', ('x',), 'remove_field', 'Remove field', policies=NAV, priority=True),
-    Command('node_config.stash_insert', ('p',), 'stash_insert', 'Insert from Stash', policies=NAV, priority=True),
+    Command('node_config.stash_insert', ('p',), 'stash_insert', 'Insert from Stash', policies=frozenset({Policy.NAV, Policy.SELECT}), priority=True),
     Command('node_config.cursor_up', ('w', 'up'), 'cursor_up', 'Up', policies=NAV, priority=True, navigation='up'),
     Command('node_config.cursor_down', ('s', 'down'), 'cursor_down', 'Down', policies=NAV, priority=True, navigation='down'),
     Command('node_config.cursor_left', ('a', 'left'), 'cursor_left', 'Left', policies=NAV, priority=True, navigation='left'),
@@ -259,6 +259,7 @@ RECOVERY_BRANCH_UNPICK = Profile('recovery_branch_unpick', (
 ), cancel_action='cancel')
 
 SETTINGS = Profile('settings', (
+    Command('settings.stash_insert', ('p',), 'stash_insert', 'Stash unavailable for this field', policies=frozenset({Policy.NAV, Policy.SELECT}), priority=True),
     Command('settings.cancel', ('escape',), 'cancel', 'Cancel', policies=NAV, priority=False),
     Command('settings.save', ('ctrl+s',), 'save', 'Save', policies=NAV_TEXT, priority=False),
     Command('settings.settings_tab_general', ('1',), 'jump_settings_tab(1)', 'General', policies=NAV, priority=True),
@@ -343,7 +344,7 @@ CONTRACT_ROW_EDITOR = Profile('contract_row_editor', (
     Command('contract_row_editor.submit', ('ctrl+enter',), 'submit', 'Confirm', policies=NAV_TEXT, priority=False),
     Command('contract_row_editor.submit.ctrl.s', ('ctrl+s',), 'submit', 'Confirm', policies=NAV_TEXT, priority=True),
     Command('contract_row_editor.revert_or_cancel', ('ctrl+q',), 'revert_or_cancel', 'Cancel', policies=NAV_TEXT, priority=True),
-    Command('contract_row_editor.stash_insert', ('p',), 'stash_insert', 'Insert from Stash', policies=NAV, priority=True),
+    Command('contract_row_editor.stash_insert', ('p',), 'stash_insert', 'Insert from Stash', policies=frozenset({Policy.NAV, Policy.SELECT}), priority=True),
     Command('contract_row_editor.cursor_up', ('w', 'up'), 'cursor_up', 'Up', policies=NAV, priority=True, navigation='up'),
     Command('contract_row_editor.cursor_down', ('s', 'down'), 'cursor_down', 'Down', policies=NAV, priority=True, navigation='down'),
     Command('contract_row_editor.cursor_left', ('a', 'left'), 'cursor_left', 'Left', policies=NAV, priority=True, navigation='left'),
@@ -428,6 +429,7 @@ STASH_SEARCH = Profile("stash_search", (
 ), scope=Scope.WIDGET)
 
 SELECT_OVERLAY = Profile("select_overlay", (
+    Command("select_overlay.stash_insert", ("p",), "stash_insert", "Stash field action", policies=SELECT, priority=True),
     Command("select.up", ("w", "up"), "cursor_up", "Up", policies=SELECT, priority=True, navigation='up'),
     Command("select.down", ("s", "down"), "cursor_down", "Down", policies=SELECT, priority=True, navigation='down'),
     Command("select.choose", ("e", "enter"), "select", "Select", policies=SELECT, priority=True),

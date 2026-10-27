@@ -26,11 +26,13 @@ for phase in ('before','after'):
     assert manifest['node_executions']==0
     assert all(call=='GET /api/tags' for call in manifest['requests'])
     for source,expected in manifest['source_sha256'].items():
-        data=(ROOT/source).read_bytes() if phase=='after' else subprocess.check_output(['git','show',f'f0aa39d:{source}'],cwd=ROOT)
+        revision=manifest.get('source_revision') if phase=='after' else 'f0aa39d'
+        data=subprocess.check_output(['git','show',f'{revision}:{source}'],cwd=ROOT) if revision else (ROOT/source).read_bytes()
         assert hashlib.sha256(data).hexdigest()==expected,source
     assert hashlib.sha256((ROOT/'AttackOfTheNodes/frontend/styles.tcss').read_bytes()).hexdigest()==manifest['styles_sha256']
 case=json.loads((DOCS/'delivery_tests/source-menu-audit.json').read_text())
 coverage=case['coverage'];assert coverage['total_operations']==coverage['existing_count']+coverage['new_count']==0
-assert coverage['ratio'] is None and case['measurements']['review_rounds']==0
+assert coverage['ratio'] is None
+assert case['measurements']['review_rounds']==len(case['measurements']['reviews'])
 assert case['measurements']['verification']['generation_calls']==0
 print(f'PASS: {len(files)} parseable JSON files; six schema instances; 15 real-screen SVG/PNG pairs; source/style hashes; coverage and no-generation record.')

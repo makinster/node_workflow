@@ -55,7 +55,11 @@ ports checked; five shared discovery/rendering mismatches fixed without
 broadening execution. This follows C1–C3's shared-contract work. Per-node and
 Options local model selection remain separate, with one shared read-only picker.
 [Delivery case](delivery_tests/source-menu-audit.json) records `swiss-army fix`;
-new source kinds are proposals only. Independent review and merge pending.
+new source kinds are proposals only. Review on `28fa003` found one P2:
+Stash targeting could overwrite an unfocused field. The
+[focus-only fix](audits/source_menus_2026_10_26/STASH_FOCUS_REVIEW.md) refuses
+Selects/pickers across Node Config, Options and row editors; reviewer re-check
+and merge pending.
 
 ## Proposed phases
 

@@ -53,6 +53,18 @@ def install_select_keymap() -> None:
     def dismiss(self):
         self.query_one(SelectOverlay).action_dismiss()
 
+    def stash_insert(self):
+        # Expanded overlays own dispatch. Keep P on the same field's screen;
+        # never fall through to a suspended form's remembered Stash target.
+        action = getattr(self.screen, "action_stash_insert", None)
+        if action is not None:
+            action()
+        else:
+            from frontend import notifications
+            notifications.notify_info(self.app, "Stash text can't go into this field")
+
+    Select.action_stash_insert = stash_insert
+    SelectOverlay.action_stash_insert = stash_insert
     Select.action_cursor_up = cursor_up
     Select.action_cursor_down = cursor_down
     Select.action_select = select

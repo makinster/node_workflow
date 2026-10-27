@@ -10,6 +10,12 @@ and **31 standard-source ports**. No node execution contract was broadened.
 [loop case](../../delivery_tests/source-menu-audit.json),
 [screen contact sheet](contact-sheet.png).
 
+## Review follow-up
+
+The [P2 Stash focus fix](STASH_FOCUS_REVIEW.md) addresses the review on `28fa003`: all
+selectors refuse insertion, and text/file assignments keep their focused owner.
+Its latest checks are recorded separately in verification below.
+
 ## Mismatches
 
 | Node · port | Accepts | Previously offered | Fix |
