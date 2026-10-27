@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "measured_at": "2026-10-27T07:00:49.730716+00:00",
+  "baseline": "3f365520730493f1e1ecd24ee592befb23ca5ef5",
+  "candidate": "codex/meta-nodes",
+  "detail": "Compact",
+  "scope": "All nodes",
+  "include_debug": false,
+  "matched_count": 50,
+  "text": {
+    "characters": 34618,
+    "utf8_bytes": 34669
+  },
+  "json": {
+    "characters": 49866,
+    "utf8_bytes": 49866
+  },
+  "default_cap": 62400,
+  "allowed_range": [
+    512,
+    64000
+  ],
+  "headroom_fraction": 0.25135362772229586,
+  "measurement": "Complete final output, including headers/JSON envelope; JSON is compact ensure_ascii=False.",
+  "excluded_debug": [
+    "echo_node",
+    "error_node",
+    "logger_node",
+    "memory_snapshot_node",
+    "no_op_node",
+    "probe_node",
+    "sleep_node"
+  ]
+}

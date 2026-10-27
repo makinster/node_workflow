@@ -1,0 +1,48 @@
+{
+  "format": "aotn-workflow/1",
+  "name": "Example - Catalogue and configured draft check",
+  "nodes": {
+    "start": {
+      "type": "start_node"
+    },
+    "catalogue": {
+      "type": "node_catalogue_node",
+      "config": {
+        "scope": "Filtered",
+        "search": "notify",
+        "vault_write": true,
+        "vault_write_key": "catalogue"
+      }
+    },
+    "check": {
+      "type": "check_workflow_spec_node",
+      "alias": "Check configured draft",
+      "config": {
+        "input_source": "Configured",
+        "input": "{\"format\": \"aotn-workflow/1\", \"name\": \"Show a checked message\", \"nodes\": {\"start\": {\"type\": \"start_node\", \"config\": {\"greeting\": \"Hello from a checked draft\"}}, \"show\": {\"type\": \"text_output_node\"}, \"end\": {\"type\": \"end_node\", \"config\": {\"record_line\": false}}}, \"connections\": [{\"from\": \"start.default\", \"to\": \"show.input\"}, {\"from\": \"show.default\", \"to\": \"end.input\"}]}",
+        "report_vault_write": true,
+        "report_vault_key": "check_report"
+      }
+    },
+    "end": {
+      "type": "end_node",
+      "config": {
+        "record_line": false
+      }
+    }
+  },
+  "connections": [
+    {
+      "from": "start.default",
+      "to": "catalogue.input"
+    },
+    {
+      "from": "catalogue.default",
+      "to": "check.input"
+    },
+    {
+      "from": "check.default",
+      "to": "end.input"
+    }
+  ]
+}

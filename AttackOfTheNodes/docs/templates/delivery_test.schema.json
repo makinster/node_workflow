@@ -1,0 +1,150 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Delivery test v1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "case_id",
+    "baseline",
+    "record_status",
+    "request_kind",
+    "request",
+    "feasibility",
+    "final_artifact",
+    "coverage",
+    "measurements",
+    "evidence",
+    "acceptance_checks",
+    "notes"
+  ],
+  "properties": {
+    "case_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "baseline": {
+      "type": "string",
+      "minLength": 1
+    },
+    "record_status": {
+      "type": "string",
+      "minLength": 1
+    },
+    "request_kind": {
+      "type": "string",
+      "minLength": 1
+    },
+    "schema_version": {
+      "const": 1,
+      "type": "integer"
+    },
+    "request": {
+      "$ref": "workflow_request.schema.json"
+    },
+    "feasibility": {
+      "$ref": "feasibility_check.schema.json"
+    },
+    "final_artifact": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "coverage": {
+      "type": "object"
+    },
+    "measurements": {
+      "type": "object"
+    },
+    "evidence": {
+      "type": "array"
+    },
+    "acceptance_checks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "repeated_shapes": {
+      "type": "array",
+      "description": "Optional repeated subchains; proposal evidence is not proof of execution. Settings are keyed by node type and field; boundary Vault keys are logical names, never values.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "node_types",
+          "fixed_settings",
+          "varied_settings",
+          "vault_edges",
+          "basis",
+          "evidence"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "node_types": {
+            "type": "array",
+            "minItems": 2,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "fixed_settings": {
+            "type": "object"
+          },
+          "varied_settings": {
+            "type": "object"
+          },
+          "vault_edges": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "reads",
+              "writes"
+            ],
+            "properties": {
+              "reads": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "writes": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "basis": {
+            "enum": [
+              "design",
+              "checked-spec",
+              "saved-workflow",
+              "observed-run"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": true
+}

@@ -8,3 +8,6 @@ status or handoff instructions as current work orders.
 
 The [2026-10-26 source-menu audit](audits/source_menus_2026_10_26/README.md)
 records every input port, five shared fixes and both installed-model pickers.
+
+[Meta nodes](integrations/META_NODES.md) covers Node catalogue, Check workflow
+spec, check-only guarantees and the remaining approval/build gaps.

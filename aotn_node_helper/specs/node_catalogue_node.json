@@ -1,0 +1,168 @@
+{
+  "node_type": "node_catalogue_node",
+  "class_name": "NodeCatalogueNode",
+  "category": "data",
+  "primary_family": "Utility",
+  "display_name": "Node catalogue",
+  "default_alias": "Node catalogue",
+  "description": "Give an AI step bounded contracts for available nodes",
+  "tags": [
+    "meta",
+    "workflow"
+  ],
+  "icon_name": "list-check",
+  "selector_section": "Transform",
+  "group": null,
+  "execution_template": "producer",
+  "payload_field": false,
+  "ui_hints": {
+    "standard_output": true
+  },
+  "outputs": {
+    "default": {
+      "name": "Catalogue",
+      "type": "string",
+      "required": true,
+      "to": [
+        "downstream",
+        "vault"
+      ],
+      "description": "Complete matching contracts; errors if over the size cap"
+    }
+  },
+  "output_routing": {
+    "default": "transient",
+    "vault": {
+      "mode": "optional"
+    }
+  },
+  "config_tabs": {
+    "Parameters": {
+      "scope": {
+        "type": "select",
+        "label": "Nodes",
+        "options": [
+          "All nodes",
+          "Filtered"
+        ],
+        "tab": "Parameters",
+        "default": "All nodes"
+      },
+      "group_filter": {
+        "type": "select",
+        "label": "Group",
+        "options": [
+          "Any group",
+          "AI Processing",
+          "Branch",
+          "Data Transform",
+          "File Reader",
+          "File Write",
+          "Hermes",
+          "Merge",
+          "Saved values",
+          "System",
+          "Text Input",
+          "Text Output",
+          "Text files",
+          "Wait / Timer",
+          "Web Request"
+        ],
+        "tab": "Parameters",
+        "visible_when": {
+          "scope": "Filtered"
+        },
+        "default": "Any group"
+      },
+      "tag_filter": {
+        "type": "string",
+        "label": "Tag",
+        "tab": "Parameters",
+        "visible_when": {
+          "scope": "Filtered"
+        },
+        "placeholder": "Any tag",
+        "default": ""
+      },
+      "search": {
+        "type": "string",
+        "label": "Search",
+        "tab": "Parameters",
+        "visible_when": {
+          "scope": "Filtered"
+        },
+        "placeholder": "Type, name, description or tags",
+        "default": ""
+      },
+      "detail": {
+        "type": "select",
+        "label": "Detail",
+        "options": [
+          "Compact",
+          "Detailed"
+        ],
+        "tab": "Parameters",
+        "description": "Detailed adds full config and row schemas.",
+        "default": "Compact"
+      },
+      "format": {
+        "type": "select",
+        "label": "Output",
+        "options": [
+          "Text",
+          "JSON"
+        ],
+        "tab": "Parameters",
+        "description": "Text [string] or a JSON record [var].",
+        "default": "Text"
+      },
+      "max_chars": {
+        "type": "integer",
+        "label": "Max catalogue (characters)",
+        "min": 512,
+        "max": 64000,
+        "tab": "Parameters",
+        "wrap_description": true,
+        "description": "Complete output only; narrow filters if the cap is exceeded. Context Pack and model context have separate limits.",
+        "default": 62400
+      },
+      "include_debug": {
+        "type": "boolean",
+        "label": "Include debug nodes",
+        "default": false,
+        "tab": "Parameters"
+      }
+    }
+  },
+  "errors": [
+    {
+      "code": "invalid_config",
+      "description": "Check catalogue filters and limits.",
+      "retryable": false
+    },
+    {
+      "code": "catalogue_empty",
+      "description": "No nodes match. Broaden the filters.",
+      "retryable": false
+    },
+    {
+      "code": "catalogue_too_large",
+      "description": "Catalogue is too large. Narrow the filters or raise the cap.",
+      "retryable": false
+    }
+  ],
+  "input_ports": [
+    "input"
+  ],
+  "input_port_metadata": {
+    "input": {
+      "name": "Continue",
+      "description": "Sequence this step; incoming data is not a filter.",
+      "data_type": "any",
+      "required": false,
+      "sources": [
+        "upstream"
+      ]
+    }
+  }
+}

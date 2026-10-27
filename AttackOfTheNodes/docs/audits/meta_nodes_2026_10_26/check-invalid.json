@@ -1,0 +1,30 @@
+{
+  "ok": false,
+  "format": "aotn-workflow/1",
+  "diagnostics": [
+    {
+      "level": "error",
+      "code": "unknown_config_key",
+      "node": "show",
+      "message": "show: unknown config key 'misspelled_config' for text_output_node (see: aotn describe text_output_node)"
+    },
+    {
+      "level": "error",
+      "code": "unknown_port",
+      "node": "show",
+      "message": "connection 1 (start.default -> show.missing_port): show has no input 'missing_port' (has: input)"
+    },
+    {
+      "level": "warning",
+      "code": "unreachable",
+      "node": "show",
+      "message": "Node is not reachable from the start node"
+    },
+    {
+      "level": "warning",
+      "code": "unreachable",
+      "node": "end",
+      "message": "Node is not reachable from the start node"
+    }
+  ]
+}

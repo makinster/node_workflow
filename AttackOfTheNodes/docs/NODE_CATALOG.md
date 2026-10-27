@@ -259,6 +259,8 @@ decided.
 | Node | Status | Notes |
 |------|--------|-------|
 | Check reply | Built for review | `check_reply_node` — strict JSON object against compact Field/Type/Required rows. Valid → parsed record [var]; mismatch → existing error path, “Reply didn't match.” Standard forwarding, Vault, and optional configured long-text preview/editor. [Contract](SMALL_WINS.md). |
+| Node catalogue | Built for review | `node_catalogue_node` — bounded live authoring contracts, Debug opt-in, filters, Compact/Detailed, Text/JSON, optional Continue and Vault. [Contract](integrations/META_NODES.md). |
+| Check workflow spec | Built for review | `check_workflow_spec_node` — shared `build --check` validation of JSON text; parsed spec continues or bounded problem list on error. Optional Check report Vault, no library write or execution. [Contract](integrations/META_NODES.md). |
 | Context Pack | Built for review | `context_pack_node` — ordered Label/Source facts, shared redaction, bounded trimming, optional per-run info/errors. Context pack [string], standard forwarding and independent Vault copy. [Contract](NODE_STANDARDS.md#context-pack-owner-2026-10-25). |
 
 

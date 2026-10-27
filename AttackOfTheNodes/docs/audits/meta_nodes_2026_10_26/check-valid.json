@@ -1,0 +1,12 @@
+{
+  "ok": true,
+  "format": "aotn-workflow/1",
+  "diagnostics": [],
+  "workflow_id": "wf_8d4c3b2b0332",
+  "name": "Show a checked message",
+  "nodes": {
+    "start": "node_eaf5540a",
+    "show": "node_b7b93095",
+    "end": "node_69ebb5ef"
+  }
+}

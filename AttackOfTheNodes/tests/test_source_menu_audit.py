@@ -22,7 +22,7 @@ from frontend.widgets.form_generator import build_form
 from tests.source_menu_fixtures import graph
 
 AUDIT=Path(__file__).parents[1]/'docs/audits/source_menus_2026_10_26/contracts.json'
-CONTRACTS=json.loads(AUDIT.read_text())['nodes']
+CONTRACTS=json.loads(AUDIT.read_text())['nodes'] + json.loads((AUDIT.parents[1]/'meta_nodes_2026_10_26/source_contracts.json').read_text())['nodes']
 SOURCES={'Upstream payload':'upstream','Vault':'vault','Configured':'configured'}
 
 
@@ -31,7 +31,11 @@ def check_contract(factory, record):
     assert set(cls.input_ports)==set(record['ports']), record['node_type']
     assert hashlib.sha256(inspect.getsource(cls.execute).encode()).hexdigest()==record['runtime_sha256'], 'Runtime changed; re-audit acceptance'
     for port,row in record['ports'].items():
-        if row['mode']!='standard':continue
+        if row['mode']!='standard':
+            if row['mode']=='control':
+                assert cls.input_port_metadata[port]['sources']==row['accepted_sources']
+                assert port+'_source' not in cls.config_schema
+            continue
         info=cls.input_port_metadata[port]
         assert set(info['sources'])==set(row['accepted_sources']),(cls.node_type,port,'declared sources')
         schema=cls.config_schema
@@ -183,6 +187,8 @@ async def test_every_standard_secondary_and_dynamic_writer_in_picker():
     assert 'run_level_record' not in {v for _,v in options['string']}
     assert 'pick_one_node_details' not in {v for _,v in options['string']}
     assert 'ask_local_model_node_details' in {v for _,v in options['var']}
+    assert 'check_workflow_spec_node_report' in {v for _,v in options['var']}
+    assert 'node_catalogue_node_default' in {v for _,v in options['string']}
     # Exercise the actual nested Vault Select too, not only its option builder.
     from frontend.widgets.context_items import ContextItems
     app=Host(factory,wm,mb,node)

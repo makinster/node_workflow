@@ -1,10 +1,54 @@
 # AttackOfTheNodes Session Log
 
-This log keeps roughly the last two weeks: entries dated October 4–26, 2026
+This log keeps roughly the last two weeks: entries dated October 4–27, 2026
 (the earliest existing entry is October 6). Every October 18 entry is retained.
 Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.md).
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
+
+## 2026-10-27 — Meta nodes: Node catalogue and Check workflow spec
+
+Own worktree `/home/makin/src/nw-meta-nodes`, branch `codex/meta-nodes`, clean
+fetched base `3f36552`. Owner approved the earlier decisions 1–12 and samples,
+with Debug opt-in, measured cap, future Bundle-compatible entry/port shape and
+optional delivery-test repeated shapes. [Contract](integrations/META_NODES.md),
+[built screens / evidence](audits/meta_nodes_2026_10_26/README.md).
+
+- Registered two single-purpose Utility/Transform nodes and helper specs.
+  Catalogue reuses live authoring contracts, default-resolved ports, AND filters,
+  Compact/Detailed and Text/JSON; optional upstream Continue, downstream/Vault.
+  Default excludes the visible Debug group/section and hidden/internal types;
+  Start/End remain. `entry_kind: node` and common port arrays reserve later
+  Bundles without implementing them.
+- Actual Compact all-non-debug output: **50 entries, Text 34,618 characters /
+  34,669 UTF-8 bytes; compact JSON 49,866 characters/bytes**. Default **62,400**
+  is 25.14% above the larger form, within the allowed range. Overflow errors,
+  no partial output. Smaller Context Pack budgets still require filtered queries.
+- Shared check-only function now underlies CLI checks and saving builds.
+  Checker takes exact Upstream/Vault/Configured JSON text, returns the original
+  parsed spec or coded bounded safe problems. Optional Check report is Vault-only
+  on success; no saved workflow/ids, build, execution, retries or network calls.
+- Extended #124's source contract audit to all **58 types**, including Continue
+  and Spec and every compatible upstream/secondary Vault output. Added isolation,
+  CLI parity, source/output/error/cap/cancellation tests. Shared long-text
+  inventory explicitly includes Spec: **27 fields / 14 types**.
+- Added optional `repeated_shapes` to the delivery-test schema/example and
+  method; populated this case with fixed/varied context→question settings and
+  boundary Vault key names, explicitly design evidence. Original primary
+  coverage 0/2 retained; related designer coverage **6/8 on candidate**. Exact
+  approval-bound review/save remain future gaps; no approval/build node.
+- Verification: **3,096 passed in 680.85 seconds**, no WaitUntil retry.
+  Behavioral checks **37 passed**,
+  source/menu/generated-UI group **88 passed**, both helper node/UI checks and
+  compilation passed. **23 real SVG/PNG pairs**, current-source hashes, nine
+  schema instances, docs consolidation and whitespace checked. Two preliminary
+  suite attempts were stopped: 1,445 passes before the inventory update, then
+  2,684 before adding missing Text port labels/required flags and entry kind.
+  Final full suite passes. Review rounds **0** so far.
+
+No real generation, outside-service call, owner workflow/library edit, live
+settings change or merge. Step 5 completed at `2026-10-27T07:13:13Z` with test evidence;
+independent review, merge, setup/activation, owner use and retro remain pending.
 
 ## 2026-10-26 — #124 second P2: current focus owns P
 
