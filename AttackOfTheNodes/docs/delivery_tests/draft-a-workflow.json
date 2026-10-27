@@ -89,7 +89,8 @@
     "approved_samples": "fixtures/draft-a-workflow.json",
     "installed": false,
     "executed": false,
-    "base": "cfd345888b76ca24347b0b6596a84e1926765256"
+    "base": "cfd345888b76ca24347b0b6596a84e1926765256",
+    "implementation_commit": "2824108"
   },
   "candidate_artifact": {
     "kind": "planning-packet",
@@ -329,7 +330,7 @@
         "failed": 1,
         "warning_only": 1
       },
-      "packet_schema_status": "planning packet validated; updated delivery schema validation recorded in build evidence",
+      "packet_schema_status": "PASS: updated delivery-case schema validated with local template references",
       "product_suite": "Not run: no product/runtime changes; focused authoring/meta/recipe checks cover spec and new fixtures.",
       "network_calls_scope": "Research/sample probes only; no inference-service network calls. Git/GitHub base discovery excluded.",
       "build_check": {
@@ -444,5 +445,6 @@
     "Future scoring: on the same catalogue base, score applicable acceptance checks individually; retain original coverage and record scoped alternatives separately. Permission/secret/approval regressions block promotion. Unrun model/device checks remain not_run.",
     "Owner approved narrower fixed-palette variant; original general runtime lookup mapping remains 7/8 for comparison, approved scope is 8/8. No automated build or retry. Build step checked, not delivered/live.",
     "Contract-only evidence; no observed execution. Eight static catalogue queries are collected by Concat before draft call."
-  ]
+  ],
+  "pr": "https://github.com/makinster/node_workflow/pull/126"
 }

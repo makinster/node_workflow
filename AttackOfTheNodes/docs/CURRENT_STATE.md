@@ -15,6 +15,8 @@ Owner approved all eleven recommended decisions and the three samples.
 [Spec/guide](delivery_tests/specs/README.md),
 [delivery case](delivery_tests/draft-a-workflow.json): 30 nodes / 57 edges;
 `build --check` clean, 72 focused authoring/meta/recipe tests pass.
+[PR #126](https://github.com/makinster/node_workflow/pull/126), spec commit `2824108`,
+targets main; review pending.
 No product code, installation, workflow/model run or output-folder creation.
 Review and the separately authorized measured trial remain later steps.
 

@@ -29,7 +29,8 @@ The three committed reply fixtures retain clean pass, warning-only pass and
 bad-fan-out refusal. No model generation, workflow run, installation, output
 folder or live settings changes. Full product suite not run: no runtime code
 changed. Delivery-case schema and JSON fixtures parse; docs consolidation and
-whitespace checks pass. PR publication recorded below.
+whitespace checks pass. [PR #126](https://github.com/makinster/node_workflow/pull/126),
+authored spec commit `2824108`; publication targets main.
 Measured trial remains a separate step after review.
 
 ## 2026-10-27 — Draft a workflow: planning packet, stop for approval
