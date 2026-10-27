@@ -6,12 +6,14 @@ supervisors at incremented depth; each walks independently.
 """
 
 import asyncio
+import json
 import logging
 from dataclasses import dataclass
 from time import perf_counter
 from typing import Any, Awaitable, Callable, Dict, List, Optional
 
 from .event_bus import EventBus
+from .hermes_investigations import redact
 from .events import (
     BREAKPOINT_HIT,
     NODE_EXECUTION_UPDATE,
@@ -60,6 +62,35 @@ from .workflow_map import WorkflowMap
 
 
 logger = logging.getLogger(__name__)
+
+# Failed inputs are persisted in run_errors; keep each one short and redacted.
+LOGGED_INPUT_CHARS = 2000
+
+
+def _logged_inputs(inputs: Dict[str, Any], manager: Optional[SecretsManager]) -> Dict[str, Any]:
+    """Known Secrets values and labelled credentials masked, each input capped."""
+    try:
+        known = tuple(manager.get_secret(key) for key in manager.list_keys()) if manager else ()
+    except Exception:  # A broken store must not let raw inputs through.
+        logger.warning("Secrets unavailable while logging a failure; inputs omitted.")
+        return {"omitted": "Secrets could not be loaded to redact these inputs."}
+
+    def mask(value: Any) -> Any:
+        if isinstance(value, str):
+            return redact(value, known_values=known, encoded=True)
+        if isinstance(value, dict):
+            return {mask(key): mask(item) for key, item in value.items()}
+        if isinstance(value, list):
+            return [mask(item) for item in value]
+        return value
+
+    logged = {}
+    for port, value in mask(json_safe(inputs)).items():
+        text = value if isinstance(value, str) else json.dumps(value, ensure_ascii=False)
+        if len(text) > LOGGED_INPUT_CHARS:
+            value = text[:LOGGED_INPUT_CHARS] + f"\n[trimmed: {len(text):,} characters in total]"
+        logged[port] = value
+    return logged
 
 
 def _task_is_cancelling() -> bool:
@@ -703,7 +734,7 @@ class Supervisor:
                 "branch_id": self.branch_id,
                 "node_id": self.current_node_id,
                 "depth": self.depth,
-                "inputs": json_safe(inputs),
+                "inputs": _logged_inputs(inputs, self._secrets_manager),
                 "stage": failure.stage,
                 "node_alias": str((self._workflow_map.get_node_data(self.current_node_id or "") or {}).get("alias") or ""),
                 "details": failure.details,
