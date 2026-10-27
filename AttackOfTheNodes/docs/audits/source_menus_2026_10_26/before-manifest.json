@@ -1,0 +1,19 @@
+{
+  "phase": "before",
+  "screens": [
+    "before-unknown.svg",
+    "before-collision.svg",
+    "before-child.svg",
+    "before-node-picker.svg",
+    "before-options-picker.svg"
+  ],
+  "requests": [],
+  "node_executions": 0,
+  "styles_sha256": "f40ac442e23bacbf86435e38928a88a3721cc8bd0248e5e91864ca662bea4cac",
+  "baseline": "f0aa39d3c5174523550be180ed7b649a00782d57",
+  "source_sha256": {
+    "AttackOfTheNodes/frontend/screens/node_config.py": "5eea7c7779c706679f68f6ce5876c369f9364c21612d1cdbacc49625e03ddcfc",
+    "AttackOfTheNodes/frontend/screens/settings.py": "a9064ec0bff599078e4a556e2e9dc0ed65c48e73b224f98f7f7301bed84d89ed",
+    "AttackOfTheNodes/frontend/widgets/form_generator.py": "5dcfb6aace00e8cbc9d3c54697208f3f85a31cbca9d31fe7f7da878ffc9bbe49"
+  }
+}

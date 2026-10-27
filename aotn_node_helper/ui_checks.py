@@ -121,7 +121,7 @@ async def collect_ui_problems(node_type: str) -> list[str]:
                 problems.append(
                     f"{field_name}: rendered in tab {pane.id!r}, expected {expected_pane!r}"
                 )
-            if not widget.can_focus and not (field_schema.get("type") == "object_list" and any(child.can_focus for child in widget.query("*"))):
+            if not widget.can_focus and not ((field_schema.get("type") == "object_list" or field_schema.get("presentation") == "local_model") and any(child.can_focus for child in widget.query("*"))):
                 problems.append(f"{field_name}: widget is not keyboard focusable")
 
         # D8: the Connections tab stays, and an Errors section lists every

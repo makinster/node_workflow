@@ -13,6 +13,7 @@ from textual.widgets import (
     Label,
     ListItem,
     ListView,
+    Select,
     Static,
     TabbedContent,
     TabPane,
@@ -31,6 +32,7 @@ from frontend.widgets.command_input import CommandInput
 from frontend.widgets.command_screen_mixin import CommandScreenMixin
 from frontend.widgets.list_navigation import move_list_highlight
 from frontend.widgets.status_bar import StatusBar
+from frontend.widgets.local_model_picker import LocalModelPicker
 
 
 class SettingsScreen(CommandScreenMixin, ModalScreen):
@@ -64,7 +66,9 @@ class SettingsScreen(CommandScreenMixin, ModalScreen):
                                       "hermes_allow_no_budget": "Allow Ask Hermes without a dollar cap"}
                             yield Label(labels.get(key, key), classes="form-label")
                             value = values.get(key, default)
-                            if isinstance(default, bool):
+                            if key == "local_model_default_model":
+                                yield LocalModelPicker(value, url=values.get("local_model_server_url", DEFAULT_SETTINGS["local_model_server_url"]), id=f"setting-{key}")
+                            elif isinstance(default, bool):
                                 yield Checkbox(value=bool(value), id=f"setting-{key}")
                             else:
                                 yield CommandInput(value=str(value), id=f"setting-{key}")
@@ -108,7 +112,7 @@ class SettingsScreen(CommandScreenMixin, ModalScreen):
         }
         widgets = command_focus_widgets(
             self,
-            (CommandInput, Checkbox, ListView, Button),
+            (CommandInput, Select, Checkbox, ListView, Button),
         )
         return [
             widget
@@ -206,6 +210,19 @@ class SettingsScreen(CommandScreenMixin, ModalScreen):
             return False
         move_list_highlight(self.app, focused, len(keys), delta)
         return True
+
+    def on_input_changed(self, event: CommandInput.Changed) -> None:
+        if event.input.id == "setting-local_model_server_url" and self.is_mounted:
+            self._model_url_timer = getattr(self, '_model_url_timer', None)
+            if self._model_url_timer is not None:
+                self._model_url_timer.stop()
+            picker = self.query_one('#setting-local_model_default_model', LocalModelPicker)
+            if event.value != picker.url:
+                self._model_url_timer = self.set_timer(0.3, self._refresh_models)
+
+    def _refresh_models(self):
+        picker = self.query_one('#setting-local_model_default_model', LocalModelPicker)
+        picker.refresh_models(self.query_one('#setting-local_model_server_url', CommandInput).value)
 
     def action_save(self) -> None:
         values: Dict[str, Any] = {}

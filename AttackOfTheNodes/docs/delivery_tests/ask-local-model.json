@@ -2,7 +2,7 @@
   "schema_version": 1,
   "case_id": "ask-local-model",
   "baseline": "27d16bc0bd956ea0f3a6deac78915000ad0a31e8",
-  "record_status": "Step 5 build for review; steps 6–11 pending, no merge/go-live",
+  "record_status": "PR #123 reviewed and merged; owner setup/use pending. Picker/source follow-up candidate recorded separately.",
   "request_kind": "new-integration",
   "classification_at": "2026-10-26T19:36:53.639810+00:00",
   "request": {
@@ -23,7 +23,7 @@
       "Options-owned server URL and default installed model; optional per-node model override."
     ],
     "constraints": [
-      "Owner approved decisions/samples 1–10; per-node tuning remains visible.",
+      "Owner approved decisions/samples 1\u201310; per-node tuning remains visible.",
       "Build one PR; fake-server tests; exactly two real requests for one short JSON/thinking-off smoke scenario.",
       "No merge, live workflow/configuration changes, pulls, retries or cloud fallback."
     ],
@@ -72,13 +72,19 @@
       "Use /api/generate if a later test gives a concrete reason; no need to expose both endpoints in this node."
     ]
   },
-  "final_artifact": null,
+  "final_artifact": {
+    "kind": "workflow_spec",
+    "path": "../../examples/ask_local_model.json",
+    "accepted_in_pr": 123,
+    "accepted_head": "0b643ae4a1d004413c4907a6feb357062323901b",
+    "merge_commit": "f0aa39d3c5174523550be180ed7b649a00782d57"
+  },
   "candidate_artifact": {
     "kind": "workflow_spec",
     "path": "../../examples/ask_local_model.json",
     "approved_design": true,
     "built_screens": "../audits/local_model_2026_10_26/README.md",
-    "note": "Prepared for PR review; no final accepted artifact until review/merge."
+    "note": "Historical step-5 candidate record; final accepted artifact and merge are recorded separately."
   },
   "coverage": {
     "basis": "Requested reusable local Question/Context contract at step 2, not generic HTTP expressibility. Start/End/transport excluded.",
@@ -120,8 +126,10 @@
     ]
   },
   "measurements": {
-    "review_rounds": 0,
-    "review_heads": [],
+    "review_rounds": 1,
+    "review_heads": [
+      "0b643ae4a1d004413c4907a6feb357062323901b"
+    ],
     "step_visits": [
       {
         "step": 0,
@@ -175,12 +183,75 @@
         "elapsed_days": 0.026218982337962965,
         "status": "build_checked_for_review",
         "wait_reason": null
+      },
+      {
+        "step": 6,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "complete",
+        "wait_reason": null,
+        "notes": "Review timing unknown; one clean review reported in coordinator notes."
+      },
+      {
+        "step": 7,
+        "started_at": null,
+        "ended_at": "2026-10-27T00:37:09Z",
+        "elapsed_days": null,
+        "status": "complete",
+        "wait_reason": null,
+        "notes": "Merge timestamp verified through GitHub; start/duration unknown."
+      },
+      {
+        "step": 8,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "pending",
+        "wait_reason": "Owner setup, real-device proof and use remain pending.",
+        "notes": "Not executed by the source-menu follow-up."
+      },
+      {
+        "step": 9,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "pending",
+        "wait_reason": "Owner setup, real-device proof and use remain pending.",
+        "notes": "Not executed by the source-menu follow-up."
+      },
+      {
+        "step": 10,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "pending",
+        "wait_reason": "Owner setup, real-device proof and use remain pending.",
+        "notes": "Not executed by the source-menu follow-up."
+      },
+      {
+        "step": 11,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "pending",
+        "wait_reason": "Owner setup, real-device proof and use remain pending.",
+        "notes": "Not executed by the source-menu follow-up."
       }
     ],
     "note": "Manual boundary timestamps; some research/mapping/rendering overlaps. Sum visits per step, but use run wall time for total. Pending approval steps stay open; observed_days_so_far is a snapshot, not completed duration.",
     "recorded_at": "2026-10-26T21:18:28.320074+00:00",
     "run_started_at": "2026-10-26T19:30:15+00:00",
-    "run_wall_days_so_far": 0.07515416752314814
+    "run_wall_days_so_far": 0.07515416752314814,
+    "reviews": [
+      {
+        "head": "0b643ae4a1d004413c4907a6feb357062323901b",
+        "findings": [],
+        "outcome": "Clean first independent review, per coordinator 2026-10-26 notes",
+        "timestamps": null,
+        "source": "External agent_channel/NOTES.md, 2026-10-26 entries; no GitHub review object"
+      }
+    ]
   },
   "approvals": {
     "decisions": true,
@@ -234,7 +305,7 @@
         "Options-owned server URL and default installed model; optional per-node model override."
       ],
       "constraints": [
-        "This task stops at delivery steps 0–4: research, decisions, samples, draft test only.",
+        "This task stops at delivery steps 0\u20134: research, decisions, samples, draft test only.",
         "No /api/chat or /api/generate calls, empty preloads, model pulls, server configuration changes or product code.",
         "One purpose: text question to text answer, optional JSON; no tools, vision, sessions or automatic cloud fallback.",
         "Reuse current HTTP, Context, output-routing and multiline-preview patterns; functionality and AI-runnability take priority over styling."
@@ -292,7 +363,7 @@
   },
   "approval_notes": {
     "recorded_at": "2026-10-26T20:40:43+00:00",
-    "owner_direction": "Decisions 1–10 approved; visible per-node tuning; one fixed smoke scenario run twice, no other generation."
+    "owner_direction": "Decisions 1\u201310 approved; visible per-node tuning; one fixed smoke scenario run twice, no other generation."
   },
   "smoke_test": {
     "scenario_count": 1,
@@ -379,5 +450,19 @@
     "screenshots_svg_png_pairs": 17,
     "real_generation_requests": 2
   },
-  "review_status": "Independent PR review pending; zero review rounds. No merge/go-live authorization."
+  "review_status": "One clean independent review per coordinator notes; PR #123 merged. Go-live and ordinary use pending.",
+  "followups": [
+    {
+      "date": "2026-10-26",
+      "case": "source-menu-audit.json",
+      "status": "candidate; no new generation",
+      "scope": "All-node source discovery and installed-model pickers"
+    }
+  ],
+  "merge": {
+    "pr": 123,
+    "head": "0b643ae4a1d004413c4907a6feb357062323901b",
+    "commit": "f0aa39d3c5174523550be180ed7b649a00782d57",
+    "merged_at": "2026-10-27T00:37:09Z"
+  }
 }

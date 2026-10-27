@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "baseline": "f0aa39d3c5174523550be180ed7b649a00782d57",
+  "mismatch_count": 5,
+  "registry": {
+    "types": 56,
+    "declared_input_ports": 131,
+    "standard_source_ports": 31
+  },
+  "base_regressions": {
+    "command": "pytest tests/test_source_menu_audit.py -q -k 'regressions_hidden or fanin'",
+    "failed": 5,
+    "deselected": 78,
+    "exit_code": 1
+  },
+  "deliberate_mutation": {
+    "node": "ask_local_model_node",
+    "port": "context",
+    "change": "remove Vault from source options",
+    "result": "Caught by check_contract: offered sources assertion; expected failure test passes",
+    "standalone_exit_code": 1,
+    "standalone_error": "AssertionError: ('ask_local_model_node', 'context', 'offered sources')"
+  },
+  "focused": {
+    "passed": 125,
+    "seconds": 25.06
+  },
+  "helper_node": {
+    "passed": 2
+  },
+  "helper_ui": "config UI contract OK",
+  "compileall": "pass",
+  "full_suite": {
+    "passed": 3016,
+    "seconds": 516.49,
+    "wait_until_flake_retry": false,
+    "completed_at": "2026-10-27T01:30:07.456608+00:00"
+  },
+  "generation_calls": 0,
+  "live_read_only_calls": "Not instrumented; initial UI helper may have listed tags on default URL. Final helper without Options context does no discovery. Pytest/captures are isolated.",
+  "json_template_and_screenshot_check": "13 parseable JSON files; six schema instances; 15 SVG/PNG pairs; source/style hashes pass",
+  "docs_consolidation": "PASS: 95 Markdown files; 835 relative links/anchors; 33 whole archive bodies; 96 transferred session entries; 23 active docs",
+  "git_diff_check": "pass",
+  "earlier_full_attempts": [
+    {
+      "status": "interrupted for asynchronous picker value hardening",
+      "passed_before_stop": 1159,
+      "seconds": 180.01,
+      "failures_before_stop": 0
+    },
+    {
+      "status": "interrupted for discovery cancellation/initial-event correction",
+      "passed_before_stop": 2490,
+      "seconds": 394.33,
+      "failures_before_stop": 0
+    }
+  ],
+  "helper_spec_temp_generation": "Pass: local_model presentation preserved; existing custom runtime not overwritten",
+  "candidate_regression_recheck": "5 passed on restored final files",
+  "recorded_at": "2026-10-27T01:32:15.410030+00:00"
+}

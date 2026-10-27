@@ -116,6 +116,6 @@ async def test_options_labels_and_save():
         await pilot.pause()
         labels=[str(label.render()) for label in app.screen.query(Label)]
         assert 'Local model server URL' in labels and 'Local default model' in labels
-        app.screen.query_one('#setting-local_model_default_model',CommandInput).value='chosen-local:latest'
+        app.screen.query_one('#setting-local_model_default_model').query_one(CommandInput).value='chosen-local:latest'
         app.screen.action_save();await pilot.pause()
         assert received[0]['settings']['local_model_default_model']=='chosen-local:latest'

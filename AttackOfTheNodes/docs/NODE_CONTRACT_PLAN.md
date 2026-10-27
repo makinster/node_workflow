@@ -47,6 +47,16 @@ Keep `NodeContext` and graph-ignorant execution.
 - The `await context.signal_done(...)` examples in `NODE_STANDARDS.md` and
   `AGENT_START_GUIDE.md` are fixed (it is a plain call).
 
+## Owner-requested maintenance — 2026-10-26
+
+[Source-menu audit and installed-model pickers](audits/source_menus_2026_10_26/README.md),
+base `f0aa39d`, candidate `codex/source-menu-audit`: all 56 types / 131 input
+ports checked; five shared discovery/rendering mismatches fixed without
+broadening execution. This follows C1–C3's shared-contract work. Per-node and
+Options local model selection remain separate, with one shared read-only picker.
+[Delivery case](delivery_tests/source-menu-audit.json) records `swiss-army fix`;
+new source kinds are proposals only. Independent review and merge pending.
+
 ## Proposed phases
 
 | # | Item | Audit finding | Notes |

@@ -1412,8 +1412,8 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             writers = set(info.get("writers") or set()) - {self.node_id}
             return bool(writers) and not (writers <= downstream)
 
-        # (key -> tag) from persisted vault entries; "" marks untagged/legacy.
-        candidates: Dict[str, str] = {}
+        # (key -> possible tags) from persisted vault entries; "" marks untagged/legacy.
+        candidates: Dict[str, set[str]] = {}
         if self.memory_bank is not None:
             try:
                 state = self.memory_bank.get_state()
@@ -1424,16 +1424,19 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                     if entry_tags.get(key) == "file" and str(key) not in declared:
                         continue
                     if eligible(str(key)):
-                        candidates[str(key)] = str(entry_tags.get(key) or "")
+                        candidates[str(key)] = {str(entry_tags.get(key) or "")}
             except Exception:
                 pass
-        # Declared writers win the more specific tag; same eligibility gate.
+        # Declared writers describe future runs; apply the same eligibility gate.
         for key, info in declared.items():
             if not eligible(key):
                 continue
-            tag = str(info.get("tag") or "")
-            if tag or key not in candidates:
-                candidates[key] = tag
+            # Every eligible writer matters; another branch may write a
+            # different compatible value under the same key.
+            writer_tags = info.get("writer_tags") or {}
+            candidates[key] = {tag for writer, tags in writer_tags.items()
+                               if writer and writer != self.node_id and writer not in downstream
+                               for tag in tags} or {"any"}
 
         def compatible(entry_tag: str, wanted: str) -> bool:
             # Untagged legacy entries hold text.
@@ -1442,17 +1445,17 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         options: Dict[str, list[tuple[str, str]]] = {}
         for wanted in tags:
             rows = [
-                (f"{key} [{entry_tag}]" if entry_tag else key, key)
-                for key, entry_tag in sorted(candidates.items())
-                if compatible(entry_tag, wanted)
+                (f"{key} [{', '.join(sorted(tag or 'legacy text' for tag in entry_tags))}]", key)
+                for key, entry_tags in sorted(candidates.items())
+                if any(compatible(tag, wanted) for tag in entry_tags)
             ]
             options[wanted] = rows
         return options
 
     def _declared_vault_writer_keys(self) -> Dict[str, Dict[str, Any]]:
-        """Vault keys declared by workflow nodes: key -> {tag, writers}.
+        """Vault keys declared by workflow nodes, with types grouped by writer.
 
-        Covers legacy ``membank_outputs`` declarations (untagged), standard
+        Covers legacy ``membank_outputs`` declarations (unknown), standard
         result routing (``vault_write_key`` — tagged with the writer's default
         output type), and AI session keys (``ai_session``). Writer node ids
         power the same-branch eligibility filter in ``_vault_key_options``.
@@ -1462,9 +1465,11 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         declared: Dict[str, Dict[str, Any]] = {}
 
         def add(key: str, tag: str, writer_id: str) -> None:
-            entry = declared.setdefault(key, {"tag": "", "writers": set()})
+            entry = declared.setdefault(key, {"tag": "", "tags": set(), "writers": set(), "writer_tags": {}})
             if tag:
                 entry["tag"] = tag
+            entry["writer_tags"].setdefault(writer_id, set()).add(tag or "any")
+            entry["tags"].add(tag or "any")
             if writer_id:
                 entry["writers"].add(str(writer_id))
 
@@ -1484,11 +1489,13 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             # Keep deleted declarations with no eligible writer. Otherwise a
             # persisted value would be mistaken for an external Vault entry.
             writer_id = "" if deleted else str(node_id)
-            for output in normalize_membank_outputs(config):
-                add(str(output["id"]), "", writer_id)
             meta = resolved_metadata(self.factory, node_type, config)
-            for key, tag in typed_vault_writes(node_type, config, meta).items():
-                add(key, tag or "", writer_id)
+            typed = typed_vault_writes(node_type, config, meta)
+            for output in normalize_membank_outputs(config):
+                if str(output["id"]) not in typed:
+                    add(str(output["id"]), "any", writer_id)
+            for key, tag in typed.items():
+                add(key, tag or "any", writer_id)
         return declared
 
     def _prune_unavailable_source_options(
@@ -1513,22 +1520,22 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             field = f"{port}_source"
             if field not in schema:
                 continue
-            connection = next((conn for conn in connections if conn.get("target_port") == port), None)
             wanted = info.get("data_type", "any")
-            fits = publishes = True
-            if connection:
+            available = False
+            for connection in connections:
+                if connection.get("target_port") != port:
+                    continue
                 source_node = self.workflow_map.get_node_data(connection.get("source_node_id", "")) or {}
                 source_config = source_node.get("config") or {}
                 publishes = source_config.get("transient_output", True) is not False or bool(source_config.get("dead_drop_passthrough"))
-                # Every payload the connection can carry (a Sleep fed by two
-                # nodes forwards either): offered when any of them fits; the
-                # validator warns about the ones that do not.
                 producers = trace_producers(
                     self.workflow_map.get_all_node_data(), self.factory,
                     connection.get("source_node_id", ""), connection.get("source_port", "default"),
                 )
-                fits = not producers or any(types_compatible(actual, wanted) for _, actual in producers)
-            if not connection or not publishes or not fits:
+                if publishes and (not producers or any(types_compatible(actual, wanted) for _, actual in producers)):
+                    available = True
+                    break
+            if not available:
                 removals.setdefault(field, set()).add("Upstream payload")
         for field_schema in schema.values():
             if not isinstance(field_schema, dict) or not field_schema.get("vault_type"):
@@ -3033,6 +3040,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         if not inputs:
             return
         yield Label("Incoming Payload", classes="form-label nav-section")
+        target_counts: Dict[str, int] = {}
         for connection in inputs:
             source_id = str(connection.get("source_node_id") or "")
             source_port = str(connection.get("source_port") or "default")
@@ -3075,10 +3083,13 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 if value is not _MISSING_PAYLOAD:
                     lines.append(f"Value: {self._short_value_text(value)}")
             # Read-only summary: plain Static so keyboard navigation skips it.
+            index = target_counts.get(target_port, 0)
+            target_counts[target_port] = index + 1
+            suffix = f"-{index}" if index else ""
             yield Static(
                 "\n".join(lines),
                 classes="form-description incoming-payload-summary",
-                id=f"incoming-payload-{target_port}",
+                id=f"incoming-payload-{target_port}{suffix}",
             )
 
     def _sync_standard_payload_controls(self) -> None:

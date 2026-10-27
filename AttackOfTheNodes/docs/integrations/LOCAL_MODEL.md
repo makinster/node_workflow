@@ -8,9 +8,17 @@ vision, CLI process, retries, model pulls or cloud fallback.
 
 Options → General: **Local model server URL** defaults to
 `http://localhost:11434`. **Local default model** is a per-machine installed
-model name. It starts blank so no particular model is shipped or silently
-selected; set the approved installed model on this machine. A node's optional
-Model override selects another installed local model; blank uses Options.
+model name. No particular model is shipped. Both model fields list installed
+names using a read-only `GET /api/tags` with a two-second deadline. The Options
+picker fills an empty draft if exactly one model is installed; Save commits it,
+Cancel leaves settings unchanged. Multiple/zero models do not select one.
+A node's Model override starts with **Options default (<current default>)**;
+that choice saves an empty override. The remaining choices are installed names.
+If listing fails, both controls show **Couldn't list models** and accept typed
+text. Previously saved names absent from the list remain labelled, preserving
+workflows for repair. Editing the Options URL refreshes its picker; discovery
+never generates, loads or pulls a model.
+[Model-list API](https://docs.ollama.com/api/tags).
 The URL never comes from the workflow. HTTP(S) base URLs only: no credentials,
 path, query or fragment. Environment proxies and redirects are disabled.
 
@@ -51,7 +59,9 @@ are tested together. Standard availability filtering still removes unconnected,
 incompatible or duplicate choices; Not used is a disabled optional input, not
 another source. Typed Vault discovery includes eligible upstream secondary
 outputs and excludes incompatible/self/downstream-only writers. No new
-node-specific screen or special picker was needed.
+node-specific source screen was needed. The model setting uses a shared picker.
+The [all-node audit](../audits/source_menus_2026_10_26/README.md) covers
+secondary/dynamic writes, multi-writer keys and fan-in availability.
 
 [Chat protocol](https://docs.ollama.com/api/chat),
 [JSON format](https://docs.ollama.com/capabilities/structured-outputs),

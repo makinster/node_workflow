@@ -1,13 +1,28 @@
 # Current State
 
-Snapshot checked **2026-10-26**, against fetched `origin/main` `27d16bc` after
-#122 merged, with the Ask local model candidate below built for review.
+Snapshot checked **2026-10-26**, against fetched `origin/main` `f0aa39d` after
+#123 merged, with the source-menu/picker follow-up below built for review.
 Code and fresh GitHub checks take precedence.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
 
-## Ask local model — 2026-10-26, built for review
+## Source menus and model pickers — 2026-10-26, built for review
+
+`codex/source-menu-audit`, worktree `/home/makin/src/nw-source-menu-audit`,
+base `f0aa39d`: [all-node audit](audits/source_menus_2026_10_26/README.md),
+56 types / 131 input ports / 31 standard source ports, **five shared mismatches**.
+Fixes preserve dynamic types, compatible multi-writer keys, child result Vault
+writes and all fan-in parents; duplicate summary IDs no longer block Node Config.
+Options and per-node model choices share bounded read-only installed-model
+pickers, sole-model Options draft autofill and editable failure fallback.
+Source additions remain proposals; no generation or live settings changes.
+[Loop case](delivery_tests/source-menu-audit.json): `swiss-army fix`, no new
+workflow operations/coverage denominator; review and owner use pending.
+Full suite: **3,016 passed in 516.49 seconds**; focused **125 passed**,
+no WaitUntil retry. Helper, schema/screenshots, docs and whitespace checks pass.
+
+## Ask local model — 2026-10-26, PR #123 merged
 
 Owner approved decisions 1–10 and the visible per-node tuning controls.
 `codex/ask-local-model`, worktree `/home/makin/src/nw-local-model`, base
@@ -22,7 +37,9 @@ The per-machine model field starts blank; no particular model is shipped.
 the candidate fills its one gap. Exactly two authorized small generation
 requests: cold **35.180 s** (load 27.336 s), warm **2.929 s** (load 0.008 s).
 Both JSON replies passed Check reply. Temporary data/Options only; no live
-workflow, notification, service or schedule changes. Review/merge/go-live pending.
+workflow, notification, service or schedule changes. A clean first independent
+review was reported in the coordinator notes; PR #123 merged at `f0aa39d`.
+Owner setup, ordinary use and retro remain pending.
 
 Final full suite: **2920 passed in 502.05 seconds**. Two inventory
 follow-ups were needed: 26 multiline fields across 13 types (explicit new-field

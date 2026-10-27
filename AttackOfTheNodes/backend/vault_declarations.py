@@ -37,6 +37,15 @@ def standard_vault_writes(node_type: str, config: dict[str, Any], metadata: dict
         for row in start_rows(config):
             if not row.get("_legacy") and sends_to_vault(row) and row["name"]:
                 writes[vault_key_for(row)] = row["type"]
+    if node_type == "subworkflow_node":
+        # The child types belong to its saved contract, not this node's port
+        # metadata. Unknown is explicit any; never pretend it is string.
+        for row in config.get("results") or []:
+            if not isinstance(row, dict) or row.get("to") not in ("Vault", "Both"):
+                continue
+            name = str(row.get("name") or "").strip()
+            if name:
+                writes[str(row.get("vault_key") or "").strip() or name] = "any"
     if config.get("vault_write"):
         key = str(config.get("vault_write_key") or "").strip()
         if key:

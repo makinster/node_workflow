@@ -6,6 +6,40 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-26 — Source-menu audit and installed-model pickers
+
+Own clean worktree `/home/makin/src/nw-source-menu-audit`, branch
+`codex/source-menu-audit`, from fetched `origin/main` `f0aa39d` (PR #123 merged).
+Owner authorized one maintenance loop, kind `swiss-army fix`, no generation.
+
+- Audited all 56 registered types / 131 declared input ports, including 31
+  standard-source ports, custom row/source controls and implicit/trigger ports.
+  [Inventory and mismatch table](audits/source_menus_2026_10_26/README.md).
+- Fixed five shared defects: unknown writer types treated as text, last-writer
+  type hiding compatible writers, undeclared child Vault results, first-parent
+  source eligibility and duplicate fan-in summary IDs crashing Node Config.
+  Existing accepted source/type contracts and eligibility protections remain.
+  Listed six source additions as proposals; none built.
+- Both local-model controls share bounded read-only discovery, Options-default
+  override choice, sole-model empty Options draft fill, editable failure fallback,
+  retained unavailable names and URL refresh. Preserved draft values across
+  asynchronous control replacement. No generation, pulls or execution changes.
+- Registry-wide contract/UI/compatible-writer checks and deliberate broken-menu
+  mutation proof; five regressions fail against base. Fake HTTP tests cover
+  discovery, bounds, timeouts, Save/Cancel, keyboard use and replacement races.
+  [Real before/after screens](audits/source_menus_2026_10_26/contact-sheet.png)
+  include 80×24 and failure fallback. Base fan-in could not mount; no invented image.
+- [Loop record](delivery_tests/source-menu-audit.json) keeps timings/checkpoints,
+  review rounds zero, five mismatches and coverage not applicable to UI maintenance.
+  Related Ask local model case now records its one independent review and actual
+  #123 merge; original authorized smoke measurements are unchanged.
+- Verification: **3,016 passed in 516.49 seconds**, no WaitUntil retry; focused
+  **125 passed**. Two earlier full attempts were stopped for picker hardening
+  without reported failures; the final complete suite covers the final code.
+  Details in [machine evidence](audits/source_menus_2026_10_26/verification.json).
+  Node/UI helpers, compilation, JSON/template checks, docs consolidation and
+  whitespace checks recorded there. No merge, deployment or owner use claimed.
+
 ## 2026-10-26 — Ask local model, approved build through step 5
 
 Own worktree `/home/makin/src/nw-local-model`, branch `codex/ask-local-model`,
