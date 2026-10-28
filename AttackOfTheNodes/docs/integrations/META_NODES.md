@@ -70,8 +70,9 @@ limits: the full catalogue fitting this node does not make it fit downstream.
 Use a filtered catalogue for a small request.
 
 **Two-pass planning.** Measured Brief **all non-debug** Text: **50 entries,
-7,438 characters** including its header/legend, 562 below the 8,000-character
-Ask local model Context cap (compact JSON is 10,362, so pass Text to a model).
+7,447 characters** after the Context-limit description update: 553 below the
+default 8,000-character Ask local model Context cap (now configurable). Compact
+JSON is 10,371, so pass Text to a model.
 1. Shortlist: Brief, All nodes, Text → Context of the planning question.
 2. Detail: Detailed (or Compact), Filtered by the shortlisted types/search →
    Context of the drafting question. Only the chosen nodes' config reaches it.

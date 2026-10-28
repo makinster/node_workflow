@@ -43,6 +43,7 @@ DEFAULT_SETTINGS: Dict[str, Any] = {
     # Per-machine endpoint/model; workflows can override only the model name.
     "local_model_server_url": "http://localhost:11434",
     "local_model_default_model": "",
+    "local_model_context_limit": 8000,
 }
 
 

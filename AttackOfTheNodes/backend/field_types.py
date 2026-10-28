@@ -124,11 +124,14 @@ def check_number(field_info: Dict[str, Any], raw: Any, default: Any = None) -> T
     exclusive); the value is then an ``int`` for integer fields, else a
     ``float``. Blank means the field's default, which is checked the same
     way. Nothing is ever coerced to 0: callers keep the typed text and block
-    the save (editor) or the run (validator).
+    the save (editor) or the run (validator). An explicit ``allow_blank`` schema
+    flag preserves an empty string for an optional inherited numeric override.
     """
     integer = str(field_info.get("type") or "") == FieldType.INTEGER.value
     text = raw.strip() if isinstance(raw, str) else raw
     if text is None or text == "":
+        if field_info.get("allow_blank") is True:
+            return "", ""
         if default is None or (isinstance(default, str) and not default.strip()):
             return None, "Enter a number"
         return check_number(field_info, default)

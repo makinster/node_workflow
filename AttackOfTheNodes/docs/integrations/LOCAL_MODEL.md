@@ -34,8 +34,21 @@ alone is not a privacy audit. No sign-in is needed for the normal local API.
 
 - Question [string], required: Upstream payload / Vault / Configured.
 - Context [string], optional: the same sources plus Not used (default off state).
-- Context is appended as labelled data after the question. Context ≤8,000
-  characters; assembled question ≤20,000, valid UTF-8, no silent AOTN trimming.
+- Options → 1 General → **Local model context limit (characters)** defaults to
+  8,000, range 1,000–200,000 whole characters. Per-node **Context limit** is
+  optional: blank uses Options, a whole number in that same range overrides it.
+- Context is appended as labelled data after Question. Context must fit that
+  effective limit; the assembled Question (including Context label/text) must
+  fit **effective limit + 12,000**. Defaults remain 8,000 / 20,000. Oversize
+  input errors before HTTP; nothing is silently shortened. Text is valid UTF-8.
+- Run details includes `estimated_tokens = assembled_question_characters / 4 +
+  max_tokens`, `num_ctx` and `warnings`. An estimate above the context window
+  adds a warning but does not block. It excludes fixed system/framing overhead
+  and is not a tokenizer or fit guarantee. Enable the optional Run details Vault
+  output to retain it; no Question/Context text is included.
+- Context Pack still caps each item at 4,000 characters. Raising this setting
+  changes neither Context Pack nor a Node catalogue's own `max_chars`. Existing
+  designer queries keep their 7,500 budget until explicitly changed.
 - Reply as JSON defaults off. On sends `format:"json"` plus a JSON instruction;
   validates JSON syntax and returns the original text. Check reply owns expected
   fields/types. JSON alone proves neither shape nor factual correctness.

@@ -24,11 +24,11 @@ A non-`ok` status explains scope/uncertainty and stops. All preparation/service/
 validation/write errors go to a readable problem message and End. There is no
 retry, automatic build, approval node, shell execution or generated-workflow run.
 
-After the Text-port fix, Brief is 7,438 characters; all complete Compact
-fragments joined are 7,421,
-including headers. They reach Context intact, without Context Pack truncation.
-The exact counts are measured for the fix on base `232d112`; registry growth may hit the 7,500
-catalogue/planning budget or hard 8,000 Context cap and stop rather than clip.
+With the Context-limit description update, Brief is 7,447 characters; all
+complete Compact fragments joined are 7,421, including headers. They reach Context intact, without Context Pack truncation.
+The Brief count is measured on the Context-limit change from `e7d07e8`. Registry
+growth may hit the catalogue/planning budget of 7,500 or the default Context cap
+of 8,000 and stop rather than clip. Options can now raise the latter.
 The shortlist uses a 300 s timeout / 256 output tokens; drafting uses 600 s /
 1,024 tokens. Both use JSON replies, thinking off, temperature 0.2 and a context
 window of 8,192. Model override is empty: use the owner's Options default.
@@ -38,8 +38,10 @@ Text ports now show ids separately from quoted display names, with an id-only
 connection legend. Brief uses `default "Greeting"`; Compact/Detailed use
 `default ("Greeting") [string]`. The draft Question includes a literal
 `{"from":"start.default","to":"show.input"}` example (doubled braces in the
-stored Concat template, single braces when rendered). No client/context cap,
-query, JSON format, call setting or workflow path changed. This revised
+stored Concat template, single braces when rendered). The port-id fix changed
+no query, JSON format, call setting or workflow path.
+Ask local model now supports an Options Context cap and per-node override;
+this spec keeps the default and its separate catalogue budget unchanged. This revised
 spec passed the separately authorized re-trial unchanged. The prior failed
 trial used old Text/prompt; its original library was not modified. The new
 library is `/home/makin/.local/share/aotn-draft-workflow-retrial-2026-10-27`.

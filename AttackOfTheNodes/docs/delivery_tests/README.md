@@ -77,3 +77,7 @@ That first failure displayed problems and stopped with no saved spec. After
 saved draft checked/built only in a fresh trial library and run once, Ready
 confirmed (plus an extra End line). Original failure remains frozen. Local packet:
 `/home/makin/src/agent_channel/draft-workflow-samples/`.
+
+[Local model Context limit](local-model-context-limit.json): owner-approved
+maintenance; Options default and blank node override, bounded oversize errors,
+advisory token warning. No new workflow operations or live generation.

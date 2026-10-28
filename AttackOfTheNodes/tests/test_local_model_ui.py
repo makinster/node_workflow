@@ -80,7 +80,7 @@ async def test_long_text_controls_save_cancel_and_reopen(size):
         assert isinstance(app.screen,LongTextEditor)
         app.screen.query_one(CommandTextArea).text='Edited question\nWith facts'
         await pilot.press('ctrl+s');await pilot.pause();assert preview.value=='Edited question\nWith facts'
-        for key,value in [('num_ctx','16384'),('temperature','0.4'),('max_tokens','96')]:
+        for key,value in [('num_ctx','16384'),('temperature','0.4'),('max_tokens','96'),('context_limit','12000')]:
             field=screen.query_one(f'#field-{key}',CommandInput)
             assert field.display;field.value=value
         await pilot.press('3');await pilot.pause()
@@ -91,10 +91,12 @@ async def test_long_text_controls_save_cancel_and_reopen(size):
         await screen.action_save_and_stay();await pilot.pause()
         saved=deepcopy(wm.get_node_data(node)['config'])
         assert saved['input']=='Edited question\nWith facts' and saved['num_ctx']==16384 and saved['max_tokens']==96
+        assert saved['context_limit']==12000
     reopened=Host(factory,wm,node)
     async with reopened.run_test(size=size) as pilot:
         await pilot.pause();await pilot.press('2');await pilot.pause()
         assert reopened.screen.query_one('#field-input',LongTextPreview).value==saved['input']
+        assert reopened.screen.query_one('#field-context_limit',CommandInput).value=='12000'
         reopened.screen.query_one('#field-temperature',CommandInput).value='1.1'
         reopened.screen.action_cancel();await pilot.pause()
         assert wm.get_node_data(node)['config']==saved
@@ -116,6 +118,34 @@ async def test_options_labels_and_save():
         await pilot.pause()
         labels=[str(label.render()) for label in app.screen.query(Label)]
         assert 'Local model server URL' in labels and 'Local default model' in labels
+        assert 'Local model context limit (characters)' in labels
+        limit=app.screen.query_one('#setting-local_model_context_limit', CommandInput)
+        assert limit.value=='8000'
+        for invalid in ['999','200001','1.5','words']:
+            limit.value=invalid
+            app.screen.action_save()
+            assert not received and limit.value==invalid
+        limit.value='12000'
         app.screen.query_one('#setting-local_model_default_model').query_one(CommandInput).value='chosen-local:latest'
         app.screen.action_save();await pilot.pause()
         assert received[0]['settings']['local_model_default_model']=='chosen-local:latest'
+        assert received[0]['settings']['local_model_context_limit']==12000
+
+@pytest.mark.asyncio
+async def test_context_limit_override_blank_and_range_save():
+    factory,wm,node=make();app=Host(factory,wm,node)
+    async with app.run_test(size=(100,36)) as pilot:
+        await pilot.pause();screen=app.screen
+        field=screen.query_one('#field-context_limit',CommandInput)
+        assert field.value==''
+        before=deepcopy(wm.get_node_data(node)['config'])
+        field.value='999'
+        await screen.action_save_and_stay();await pilot.pause()
+        assert wm.get_node_data(node)['config']==before
+        assert field.value=='999'
+        field.value='12000'
+        await screen.action_save_and_stay();await pilot.pause()
+        assert wm.get_node_data(node)['config']['context_limit']==12000
+        field.value=''
+        await screen.action_save_and_stay();await pilot.pause()
+        assert wm.get_node_data(node)['config']['context_limit']==''

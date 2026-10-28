@@ -1,0 +1,212 @@
+{
+  "schema_version": 1,
+  "case_id": "local-model-context-limit",
+  "baseline": "e7d07e8",
+  "record_status": "Step 5 built and checked, review pending; no real generation",
+  "request_kind": "maintenance",
+  "node_kind": "use-case",
+  "request": {
+    "schema_version": 1,
+    "request_id": "local-model-context-limit",
+    "date": "2026-10-27",
+    "intent": "Make local Question/Context size configurable while preserving bounded errors and exposing advisory token fit.",
+    "example": {
+      "input": "Context of 10,000 characters, Options limit 12,000; blank node override.",
+      "expected_result": "Send complete text; total assembled Question cap 24,000. Warn in Run details if chars/4 + output exceeds num_ctx, without blocking."
+    },
+    "target_device": "Owner WSL app, Options 1 General and Node Config; headless uses same metadata/runtime.",
+    "destination": "Answer and optional Run details Vault output.",
+    "trigger": "Explicit node visit only.",
+    "inputs": [
+      "Question and optional Context, existing three sources.",
+      "Options integer cap and optional blank/integer node override."
+    ],
+    "constraints": [
+      "Use all six owner-recommended choices; no live local-model calls.",
+      "Defaults 8,000 and 20,000 remain; range 1,000–200,000; no silent truncation.",
+      "Context Pack 4,000 per item unchanged."
+    ],
+    "success": [
+      "Saved blank inherits Options; explicit node cap wins.",
+      "Invalid settings/config or oversize text errors before HTTP.",
+      "Token estimate warnings appear in Run details without stopping a valid request."
+    ],
+    "unknowns": [
+      "No real generation or runtime performance measurement in this maintenance run."
+    ]
+  },
+  "feasibility": {
+    "schema_version": 1,
+    "request_id": "local-model-context-limit",
+    "checked_at": "2026-10-28T02:38:24.372775+00:00",
+    "researcher": "Current source, fake-server and mounted UI checks",
+    "official_api": "Existing local client and ConfigurationManager; no API protocol change.",
+    "sign_in": "No new setup or sign-in.",
+    "cost": "No real generation; test server only.",
+    "reliability": "Validate effective character cap before HTTP; numeric blank opt-in preserves Options inheritance. Estimate is advisory, not exact tokenization.",
+    "terms_of_service": "No new provider or integration; existing local setup unchanged.",
+    "sources": [
+      "../integrations/LOCAL_MODEL.md",
+      "../../backend/integrations/local_model.py"
+    ],
+    "verdict": "feasible",
+    "reason": "All six owner choices fit existing metadata-driven forms and client; no unresolved design gap.",
+    "conditions": [],
+    "alternatives": []
+  },
+  "final_artifact": {
+    "kind": "node-enhancement",
+    "node_type": "ask_local_model_node",
+    "path": "../../backend/nodes/ai/ask_local_model_node.py"
+  },
+  "coverage": {
+    "total_operations": 0,
+    "existing_count": 0,
+    "new_count": 0,
+    "ratio": null,
+    "reason": "Existing-node/settings maintenance; no workflow authored. Original designer coverage unchanged."
+  },
+  "owner_decisions": {
+    "approved": true,
+    "choices": [
+      "Options label/default/range as requested",
+      "Blank node Context limit inherits Options",
+      "Total assembled Question limit = effective Context limit + 12,000",
+      "chars / 4 + max output estimate warns in Run details, never blocks",
+      "Oversize Context errors; no silent truncation",
+      "Context Pack per-item 4,000 unchanged"
+    ]
+  },
+  "measurements": {
+    "review_rounds": 0,
+    "step_visits": [
+      {
+        "step": 0,
+        "started_at": null,
+        "ended_at": "2026-10-28T02:38:24.372775+00:00",
+        "elapsed_days": null,
+        "status": "complete",
+        "notes": "Owner explicitly supplied labels/choices and requested build; standard controls reused, mounted checks substitute for new UI design samples. Precise step start not separately captured."
+      },
+      {
+        "step": 1,
+        "started_at": null,
+        "ended_at": "2026-10-28T02:38:24.372775+00:00",
+        "elapsed_days": null,
+        "status": "complete",
+        "notes": "Owner explicitly supplied labels/choices and requested build; standard controls reused, mounted checks substitute for new UI design samples. Precise step start not separately captured."
+      },
+      {
+        "step": 2,
+        "started_at": null,
+        "ended_at": "2026-10-28T02:38:24.372775+00:00",
+        "elapsed_days": null,
+        "status": "complete",
+        "notes": "Owner explicitly supplied labels/choices and requested build; standard controls reused, mounted checks substitute for new UI design samples. Precise step start not separately captured."
+      },
+      {
+        "step": 3,
+        "started_at": null,
+        "ended_at": "2026-10-28T02:38:24.372775+00:00",
+        "elapsed_days": null,
+        "status": "complete",
+        "notes": "Owner explicitly supplied labels/choices and requested build; standard controls reused, mounted checks substitute for new UI design samples. Precise step start not separately captured."
+      },
+      {
+        "step": 4,
+        "started_at": null,
+        "ended_at": "2026-10-28T02:38:24.372775+00:00",
+        "elapsed_days": null,
+        "status": "complete",
+        "notes": "Owner explicitly supplied labels/choices and requested build; standard controls reused, mounted checks substitute for new UI design samples. Precise step start not separately captured."
+      },
+      {
+        "step": 5,
+        "started_at": null,
+        "ended_at": "2026-10-28T02:38:24.372775+00:00",
+        "elapsed_days": null,
+        "status": "complete",
+        "notes": "Owner explicitly supplied labels/choices and requested build; standard controls reused, mounted checks substitute for new UI design samples. Precise step start not separately captured."
+      },
+      {
+        "step": 6,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "not_started",
+        "notes": "Awaiting review; not authorized for go-live."
+      },
+      {
+        "step": 7,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "not_started",
+        "notes": "Awaiting review; not authorized for go-live."
+      },
+      {
+        "step": 8,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "not_started",
+        "notes": "Awaiting review; not authorized for go-live."
+      },
+      {
+        "step": 9,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "not_started",
+        "notes": "Awaiting review; not authorized for go-live."
+      },
+      {
+        "step": 10,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "not_started",
+        "notes": "Awaiting review; not authorized for go-live."
+      },
+      {
+        "step": 11,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "not_started",
+        "notes": "Awaiting review; not authorized for go-live."
+      }
+    ],
+    "verification": {
+      "focused_tests": 316,
+      "real_generation_calls": 0,
+      "live_workflow_runs": 0,
+      "baseline_regression_failures": 13,
+      "helper_node_checks": 2,
+      "helper_ui": "PASS",
+      "generation_calls": 0,
+      "focused_seconds": 23.86,
+      "delivery_schema": "PASS",
+      "docs_consolidation": "PASS: 103 Markdown files / 932 relative links",
+      "whitespace": "git diff --check PASS"
+    }
+  },
+  "evidence": [
+    "../integrations/LOCAL_MODEL.md",
+    "../../tests/test_local_model.py",
+    "../../tests/test_local_model_ui.py"
+  ],
+  "acceptance_checks": [
+    "Defaults and blank override preserve 8,000/20,000.",
+    "Overrides and both endpoints of 1,000–200,000 work; invalid values fail.",
+    "Oversize Context and total Question error before HTTP; complete accepted text reaches fake server.",
+    "Estimated tokens equal/below num_ctx has no warning; above warns and does not block.",
+    "Options rejects bad range without saving; Node Config blank/save/reopen matches runtime.",
+    "No real inference, Context Pack cap or installed workflow changes."
+  ],
+  "notes": [
+    "No new node; shared numeric validator supports blank only when schema explicitly opts in with allow_blank.",
+    "Brief is now 7,447 chars from description change; fixed designer palette remains 7,421. Existing catalogue 7,500 cap is separate from configurable Ask cap.",
+    "Historical trial metrics remain unchanged in the designer case."
+  ]
+}
