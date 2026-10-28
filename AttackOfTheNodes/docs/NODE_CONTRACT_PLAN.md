@@ -82,8 +82,10 @@ eleven decisions and three samples. Step 5 passes build --check and 72 focused
 checks; the [case](delivery_tests/draft-a-workflow.json) retains original general
 lookup coverage 7/8 beside approved scoped coverage 8/8. Raw JSON is checked
 before Create unique writing, with a manual owner build command afterward.
-No automatic build/approval node, retry, workflow run or inference call.
-PR review precedes the separate measured trial; this does not advance MCP.
+No automatic build/approval node or retry. PR #126 merged after clean review.
+Decision 11 then ran once: 70.64 s CPU, two calls, Check failed on annotated
+port ids; no saved spec or target build/run. Trial allowance consumed; fixes
+and another trial need separate authorization. This does not advance MCP.
 
 ## Proposed phases
 

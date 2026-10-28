@@ -70,6 +70,7 @@ frozen case just to improve a score.
 [Draft a workflow](draft-a-workflow.json): owner-approved fixed-palette variant,
 step 5 authored and checked. [Spec and usage](specs/README.md),
 [approved reply fixtures](fixtures/draft-a-workflow.json). Strict runtime lookup
-mapping stays 7/8; the approved narrower scope is 8/8. No generation,
-designer/target execution or installation. Local approval packet:
+mapping stays 7/8; the approved narrower scope is 8/8. Decision 11 trial:
+one designer run, two calls, 70.64 s CPU, Check failed on annotated port ids.
+Failure displayed and stopped; no saved spec or target build/run. Local packet:
 `/home/makin/src/agent_channel/draft-workflow-samples/`.
