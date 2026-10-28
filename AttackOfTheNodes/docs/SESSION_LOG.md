@@ -39,6 +39,8 @@ Medium trial. Delivery schema, exact metrics/two-call trace, immutable files,
 prior-output preservation, warning comparison, scope/format assertions, docs
 consolidation (103 files / 936 links) and git diff --check pass. No product
 suite: documentation/data results only; no further generation or target run.
+Results [PR #131](https://github.com/makinster/node_workflow/pull/131), record
+commit `ee1cb4c`, targets main.
 
 ## 2026-10-27 — Ask local model configurable Context cap
 

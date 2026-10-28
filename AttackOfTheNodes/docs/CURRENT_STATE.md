@@ -29,6 +29,7 @@ not target execution). Six-node graph/input/uppercase/Create unique structure
 fits, but medium end-to-end behavior is not proven. Prior trivial success remains.
 [Case](delivery_tests/draft-a-workflow.json) and local TRIAL.md Medium trial retain
 metrics, Check/fit warnings, saved draft, scope decision and source-quality limits.
+[Results PR #131](https://github.com/makinster/node_workflow/pull/131), record `ee1cb4c`.
 
 Earlier implementation/trial entries below are historical; #130 is now merged.
 
