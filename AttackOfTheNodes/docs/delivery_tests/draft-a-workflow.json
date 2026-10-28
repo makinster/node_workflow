@@ -2,7 +2,7 @@
   "schema_version": 1,
   "case_id": "draft-a-workflow",
   "baseline": "cfd345888b76ca24347b0b6596a84e1926765256",
-  "record_status": "Prior decision 11 trial failed; Text port/prompt ambiguity fix authored and checked, awaiting review; no re-trial",
+  "record_status": "Owner-approved re-trial passed on merged port fix; exact saved draft checked, built only in fresh trial library and run once; Ready confirmed. Single trivial case only.",
   "request_kind": "composition-only",
   "owner_kind": "first composition-only meta-workflow",
   "node_kind": "meta",
@@ -87,13 +87,15 @@
     "path": "specs/draft-a-workflow.json",
     "guide": "specs/README.md",
     "approved_samples": "fixtures/draft-a-workflow.json",
-    "installed": false,
-    "executed": false,
-    "base": "232d1122ab74bedad4c1140c586a87f351699be6",
+    "installed": true,
+    "executed": true,
+    "base": "8945c3d8563695c6c59b4072434ae98900d28ae3",
     "implementation_commit": "555e493",
-    "execution_scope": "Current prompt revision checked only; previous installed/observed revision is identified in trial.",
-    "data_root": "/home/makin/.local/share/aotn-draft-workflow-trial",
-    "previous_installed_workflow_id": "wf_26e14719ecd0"
+    "execution_scope": "Unchanged designer ran once on port-id fix. Generated target separately checked/built/run once in fresh trial library under explicit owner approval.",
+    "data_root": "/home/makin/.local/share/aotn-draft-workflow-retrial-2026-10-27",
+    "previous_installed_workflow_id": "wf_26e14719ecd0",
+    "installed_workflow_id": "wf_90fdef2f232c",
+    "generated_draft_path": "/home/makin/src/agent_channel/draft-workflow-output/draft.json"
   },
   "candidate_artifact": {
     "kind": "planning-packet",
@@ -188,11 +190,13 @@
     "recorded_at": "2026-10-27T23:07:17Z",
     "scope": "All 11 recommended choices and three data samples approved by owner; author/check/PR only this turn. Measured trial separate after review; no model calls or workflow run.",
     "go_live_scope": "Owner authorized decision 11 trial only: install unchanged designer, run once with trivial request and exactly two local calls; no target build/run, retry, schedule or broader activation.",
-    "trial_recorded_at": "2026-10-28T00:04:00.706242+00:00"
+    "trial_recorded_at": "2026-10-28T00:04:00.706242+00:00",
+    "retrial_scope": "Owner authorized one unchanged designer run, exactly two local calls; if Check passes, check/build saved draft into fresh trial library and run that target once. No prompt edits or retry.",
+    "retrial_recorded_at": "2026-10-28T02:16:14.192537+00:00"
   },
   "measurements": {
     "loop_started_at": "2026-10-27T19:50:48Z",
-    "review_rounds": 1,
+    "review_rounds": 2,
     "reviews": [
       {
         "pr": 126,
@@ -201,6 +205,14 @@
         "findings": 0,
         "outcome": "Clean independent review",
         "evidence": "https://github.com/makinster/node_workflow/pull/126#issuecomment-6456383586"
+      },
+      {
+        "pr": 128,
+        "head": "dc6397c50ff545da1188769538f528e90c22629c",
+        "at": "2026-10-28T01:59:37Z",
+        "findings": 0,
+        "outcome": "Clean independent port-fix review; growth headroom is a backlog note.",
+        "evidence": "https://github.com/makinster/node_workflow/pull/128#issuecomment-6458618327"
       }
     ],
     "step_visits": [
@@ -311,6 +323,42 @@
         "status": "not_started",
         "wait_reason": null,
         "notes": "Outside this turn; no permission inferred."
+      },
+      {
+        "step": 6,
+        "started_at": null,
+        "ended_at": "2026-10-28T01:59:37Z",
+        "elapsed_days": null,
+        "status": "complete",
+        "wait_reason": null,
+        "notes": "Port-id fix clean review; start timestamp unknown."
+      },
+      {
+        "step": 7,
+        "started_at": null,
+        "ended_at": "2026-10-28T02:02:55Z",
+        "elapsed_days": null,
+        "status": "complete",
+        "wait_reason": null,
+        "notes": "Port-id fix PR #128 merged as 8945c3d8563695c6c59b4072434ae98900d28ae3"
+      },
+      {
+        "step": 8,
+        "started_at": null,
+        "ended_at": "2026-10-28T02:16:14.192537+00:00",
+        "elapsed_days": null,
+        "status": "complete_for_retrial",
+        "wait_reason": null,
+        "notes": "Owner-approved fresh trial library configured and unchanged designer installed. Separate setup start unknown."
+      },
+      {
+        "step": 9,
+        "started_at": "2026-10-28T02:16:14.192537+00:00",
+        "ended_at": "2026-10-28T02:18:32.792081+00:00",
+        "elapsed_days": 0.001604161388888889,
+        "status": "trivial_ready_proved",
+        "wait_reason": null,
+        "notes": "One designer run/two local calls; zero-warning Check pass; saved file check/build then one target run in trial library; Ready observed in CLI output. Agent/handoff elapsed included. No broader owner use inferred."
       }
     ],
     "checkpoints": [
@@ -333,14 +381,19 @@
         "at": "2026-10-28T00:05:11.347089+00:00",
         "step": 9,
         "event": "Decision 11 allowance consumed: one run, two successful local calls, failed workflow check; no retry, saved success draft, target build or target run."
+      },
+      {
+        "at": "2026-10-28T02:18:32.792081+00:00",
+        "step": 9,
+        "event": "Re-trial Check passed, saved raw text matches Answer, target built in fresh trial library and run once: Ready confirmed."
       }
     ],
     "verification": {
-      "generation_calls": 2,
+      "generation_calls": 4,
       "network_calls": null,
-      "workflow_library_writes": 1,
-      "designer_workflow_runs": 1,
-      "target_workflow_runs": 0,
+      "workflow_library_writes": 3,
+      "designer_workflow_runs": 2,
+      "target_workflow_runs": 1,
       "control_node_invocations": 3,
       "cli_discovery_commands": 22,
       "read_only_sample_checks": 3,
@@ -366,8 +419,9 @@
       },
       "docs_consolidation": "PASS: 103 Markdown files, 919 relative links/anchors",
       "whitespace": "git diff --check passed",
-      "scope": "Cumulative planning/build/trial counts; check-only sample checks remain distinct from the single real trial below."
-    }
+      "scope": "Cumulative original trial plus re-trial: four local calls across two designer runs, one generated-target run; library writes are saved workflows (old designer, fresh designer, target). Planning/build checks remain separate."
+    },
+    "review_count_scope": "Known source/spec reviews #126 and #128; results-only PR reviews not audited."
   },
   "repeated_shapes": [
     {
@@ -434,7 +488,9 @@
         "specs/draft-a-workflow.json",
         "../../tests/test_draft_workflow_spec.py",
         "/home/makin/src/agent_channel/draft-workflow-samples/trial-2026-10-27/vault-capture.json",
-        "/home/makin/src/agent_channel/draft-workflow-samples/trial-2026-10-27/events.jsonl"
+        "/home/makin/src/agent_channel/draft-workflow-samples/trial-2026-10-27/events.jsonl",
+        "/home/makin/src/agent_channel/draft-workflow-samples/retrial-2026-10-27/vault-capture.json",
+        "/home/makin/src/agent_channel/draft-workflow-samples/retrial-2026-10-27/events.jsonl"
       ]
     }
   ],
@@ -452,7 +508,10 @@
     "/home/makin/src/agent_channel/draft-workflow-samples/trial-2026-10-27/trial-runtime.json",
     "/home/makin/src/agent_channel/draft-workflow-samples/trial-2026-10-27/placement-before.json",
     "/home/makin/src/agent_channel/draft-workflow-samples/trial-2026-10-27/placement-samples.json",
-    "/home/makin/src/agent_channel/draft-workflow-samples/trial-2026-10-27/run-result.json"
+    "/home/makin/src/agent_channel/draft-workflow-samples/trial-2026-10-27/run-result.json",
+    "/home/makin/src/agent_channel/draft-workflow-samples/TRIAL.md",
+    "/home/makin/src/agent_channel/draft-workflow-samples/retrial-2026-10-27/retrial-summary.json",
+    "/home/makin/src/agent_channel/draft-workflow-samples/retrial-2026-10-27/target-run.json"
   ],
   "acceptance_checks": [
     "Only verified current node types in supplied contracts/drafts; no invented type can pass Check.",
@@ -473,7 +532,8 @@
     "Owner approved narrower fixed-palette variant; original general runtime lookup mapping remains 7/8 for comparison, approved scope is 8/8. No automated build or retry. Build step checked, not delivered/live.",
     "Contract-only evidence; no observed execution. Eight static catalogue queries are collected by Concat before draft call.",
     "Earlier planning/build notes are dated historical evidence. The trial below supersedes their not_run/contract-only status for the trivial designer path only; medium/negative model runs remain unrun. No request-delivery success inferred from FINISHED/0.",
-    "Catalogue Text port-id fix is check-only, separately recorded in catalogue_text_fix. Prior trial and observed shapes refer to the old spec SHA/text; no successful re-trial inferred."
+    "Catalogue Text port-id fix is check-only, separately recorded in catalogue_text_fix. Prior trial and observed shapes refer to the old spec SHA/text; no successful re-trial inferred.",
+    "Re-trial is separately owner-approved on 8945c3d. Prior failed trial and pre-fix measurements stay frozen. Current success is limited to one trivial request; original operation mapping/coverage unchanged, not a quality score."
   ],
   "pr": "https://github.com/makinster/node_workflow/pull/126",
   "trial": {
@@ -746,6 +806,199 @@
     "retrial": "not authorized or performed",
     "evidence_packet": "/home/makin/src/agent_channel/draft-workflow-samples/port-ids-fix",
     "pr": "https://github.com/makinster/node_workflow/pull/128",
-    "implementation_commit": "555e493"
+    "implementation_commit": "555e493",
+    "scope": "Historical check-only source fix; zero calls/runs there excludes the separately approved re-trial."
+  },
+  "retrial": {
+    "schema_version": 1,
+    "date_local": "2026-10-27",
+    "timezone": "America/Los_Angeles",
+    "base": "8945c3d8563695c6c59b4072434ae98900d28ae3",
+    "worktree": "/home/makin/src/nw-draft-workflow-retrial",
+    "branch": "codex/draft-workflow-retrial",
+    "request": "When I run it, show Ready in the output.",
+    "spec_sha256": "b77c97adc162f41326dbfd5e0c442beee1cad2f7eb84fc900b3f9a8d4a32ca1f",
+    "workflow_id": "wf_90fdef2f232c",
+    "run_id": "run_8c8b368a",
+    "data_root": "/home/makin/.local/share/aotn-draft-workflow-retrial-2026-10-27",
+    "input_path": "Supported RunService/InputProvider answered unchanged saved designer User Text Input exactly once.",
+    "started_at": "2026-10-28T02:16:14.192537+00:00",
+    "ended_at": "2026-10-28T02:17:29.332863+00:00",
+    "overall_wall_seconds": 75.14032183401287,
+    "wall_scope": "Designer start through completion; supplied input included, installation/placement probes excluded. Target and complete handoff times separate below.",
+    "workflow_runs": 1,
+    "local_generation_calls": 2,
+    "retries": 0,
+    "prompt_edits": false,
+    "model": "qwen3.6:latest",
+    "server_url": "http://localhost:11434",
+    "placement": {
+      "before": {
+        "at": "2026-10-28T02:16:14.192400+00:00",
+        "loaded": false,
+        "ollama_ps": "empty",
+        "processor": null
+      },
+      "during_and_after": {
+        "processor": "100% CPU",
+        "size_vram": 0,
+        "context_length": 8192,
+        "size_bytes": 23148248430,
+        "runner": "llamacpp",
+        "after_at": "2026-10-28T02:17:29.589362+00:00"
+      }
+    },
+    "calls": [
+      {
+        "step": "shortlist",
+        "timeout_seconds": 300,
+        "max_output_tokens": 256,
+        "num_ctx": 8192,
+        "temperature": 0.2,
+        "model": "qwen3.6:latest",
+        "model_digest": "3899b1c0e7c55773feedbc824241631df463feb395418d09604f51ed905834ef",
+        "wall_seconds": 45.891637512948364,
+        "done_reason": "stop",
+        "reply_json": true,
+        "thinking_requested": false,
+        "input_tokens": 2067,
+        "cached_input_tokens": 0,
+        "output_tokens": 72,
+        "server_total_seconds": 45.881952688,
+        "load_seconds": 27.509041796,
+        "input_seconds": 14.407333,
+        "output_seconds": 3.935614
+      },
+      {
+        "step": "draft",
+        "timeout_seconds": 600,
+        "max_output_tokens": 1024,
+        "num_ctx": 8192,
+        "temperature": 0.2,
+        "model": "qwen3.6:latest",
+        "model_digest": "3899b1c0e7c55773feedbc824241631df463feb395418d09604f51ed905834ef",
+        "wall_seconds": 29.180109085980803,
+        "done_reason": "stop",
+        "reply_json": true,
+        "thinking_requested": false,
+        "input_tokens": 2095,
+        "cached_input_tokens": 0,
+        "output_tokens": 196,
+        "server_total_seconds": 29.174989292,
+        "load_seconds": 0.00292675,
+        "input_seconds": 18.3223,
+        "output_seconds": 10.715107
+      }
+    ],
+    "context_characters": {
+      "brief": 7438,
+      "fixed_compact": 7421
+    },
+    "outcome": "check_pass_and_target_ready_confirmed",
+    "check": {
+      "schema_version": 1,
+      "ok": true,
+      "node_count": 3,
+      "connection_count": 2,
+      "warning_count": 0,
+      "problems": [],
+      "omitted_count": 0
+    },
+    "engine_final_state": "FINISHED",
+    "engine_exit_code": 0,
+    "designer_errors": [],
+    "saved_draft_path": "/home/makin/src/agent_channel/draft-workflow-output/draft.json",
+    "saved_draft_sha256": "fd078814e5f4b59ce5b0b179f49a1e506946a59a562e48e18be247c78fc2f9ec",
+    "saved_equals_raw_answer": true,
+    "file_write_mode": "Create unique",
+    "file_write_executed": true,
+    "saved_file_build_check": {
+      "ok": true,
+      "diagnostics": [],
+      "command": [
+        "main.py",
+        "build",
+        "/home/makin/src/agent_channel/draft-workflow-output/draft.json",
+        "--check",
+        "--json",
+        "--data-dir",
+        "/home/makin/.local/share/aotn-draft-workflow-retrial-2026-10-27"
+      ],
+      "no_library_writes": true
+    },
+    "target_build": {
+      "ok": true,
+      "diagnostics": [],
+      "workflow_id": "wf_d45c38f43900",
+      "library_path": "/home/makin/.local/share/aotn-draft-workflow-retrial-2026-10-27/workflows/wf_d45c38f43900.json",
+      "data_root": "/home/makin/.local/share/aotn-draft-workflow-retrial-2026-10-27",
+      "main_library_changed": false
+    },
+    "target_run": {
+      "runs": 1,
+      "run_id": "run_32c89a73",
+      "final_state": "FINISHED",
+      "exit_code": 0,
+      "wall_seconds": 0.12251726596150547,
+      "started_at": "2026-10-28T02:18:32.669557+00:00",
+      "ended_at": "2026-10-28T02:18:32.792081+00:00",
+      "outputs": [
+        "[Ready Output] Ready",
+        "[END] Workflow completed (received: [Ready Output] Ready)"
+      ],
+      "errors": [],
+      "ready_confirmed": true,
+      "local_generation_calls": 0
+    },
+    "end_to_end_wall_seconds": 138.599544,
+    "end_to_end_scope": "Designer start through generated target completion, including agent inspection/handoff, saved-file check, build and target CLI startup; excludes designer installation and pre-run placement.",
+    "quality": {
+      "result": "functional_pass_with_extra_completion_line",
+      "versus_approved_sample": "Same three core node types and valid machine port ids; Ready appears. Different label/handles and literal Ready template rather than passing Start greeting. End retains default record_line=true, producing an extra completion line; approved sample End is quiet.",
+      "limitations": "One trivial sample only; no claim about medium requests, repeatability or general planning quality."
+    },
+    "draft_spec": {
+      "format": "aotn-workflow/1",
+      "name": "Show Ready Workflow",
+      "nodes": {
+        "start": {
+          "type": "start_node"
+        },
+        "show_ready": {
+          "type": "text_output_node",
+          "config": {
+            "label": "Ready Output",
+            "template": "Ready"
+          }
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "message": "Workflow completed"
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "start.default",
+          "to": "show_ready.input"
+        },
+        {
+          "from": "show_ready.default",
+          "to": "end.input"
+        }
+      ]
+    },
+    "evidence_packet": "/home/makin/src/agent_channel/draft-workflow-samples/retrial-2026-10-27",
+    "summary": "/home/makin/src/agent_channel/draft-workflow-samples/TRIAL.md",
+    "results_verification": {
+      "delivery_case_schema": "PASS",
+      "metrics_and_immutable_specs": "PASS",
+      "original_failure_retained": "PASS",
+      "check_build_run_evidence": "PASS; zero Check/build diagnostics, no target errors, Ready output observed",
+      "docs_consolidation": "PASS: 103 Markdown files / 925 relative links/anchors",
+      "whitespace": "git diff --check PASS",
+      "product_suite": "not run: documentation/data result update only; no product or prompt changes"
+    }
   }
 }

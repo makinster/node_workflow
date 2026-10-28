@@ -6,6 +6,39 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-27 — Draft a workflow: authorized re-trial, Ready confirmed
+
+Own clean worktree `/home/makin/src/nw-draft-workflow-retrial`, branch
+`codex/draft-workflow-retrial`, fetched main `8945c3d` (#128 merged).
+Owner authorized one unchanged designer run with the same trivial request, plus
+saved-file check/build/one target run if Check passed. Fresh persistent library:
+`/home/makin/.local/share/aotn-draft-workflow-retrial-2026-10-27`.
+Public RunService/InputProvider answered the original node once. No modified
+spec/prompt, retry or extra generation; exactly two local calls.
+
+Designer `run_8c8b368a`, 02:16:14–02:17:29 UTC October 28 (October 27 PDT):
+**75.1403 s**. Shortlist wall/load/input/output **45.8916 / 27.5090 / 14.4073 /
+3.9356 s**, 2,067 input / 72 output tokens. Draft **29.1801 / 0.0029 / 18.3223 /
+10.7151 s**, 2,095 input / 196 output tokens. Cached input 0; both stop, no timeout.
+Before: unloaded; during/after: ollama ps 100% CPU, context 8192, API VRAM 0.
+Full Brief/Compact context 7,438 / 7,421 characters reached the calls.
+
+Check passed / zero warnings. Exact raw Answer saved by Create unique at
+`/home/makin/src/agent_channel/draft-workflow-output/draft.json`; saved-file
+build --check clean. Built only in this trial library (`wf_d45c38f43900`), then
+ran target once (`run_32c89a73`): **[Ready Output] Ready** plus an End completion
+line, no errors/model calls, CLI wall **0.1225 s**. Overall designer-start to
+target-finish **138.5995 s** includes inspection/handoff, check/build/startup.
+Matches the functional request with valid ids/three core types, noisier than the
+quiet sample. No main-library changes or broader repeatability claim.
+
+[Case](delivery_tests/draft-a-workflow.json) retains original failure plus this
+re-trial, source-review evidence, raw saved spec, all metrics and observed shapes.
+Local TRIAL.md has an added Re-trial section. Delivery schema, exact metric/spec
+identity, clean Check/build/Ready assertions, docs consolidation (103 files /
+925 links) and git diff --check pass. No product suite: documentation/data
+results only. No further trial authorized or attempted.
+
 ## 2026-10-27 — Catalogue Text port ids and designer example
 
 Own clean worktree `/home/makin/src/nw-catalogue-port-ids`, branch
