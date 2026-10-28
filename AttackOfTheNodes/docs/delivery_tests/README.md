@@ -81,3 +81,10 @@ confirmed (plus an extra End line). Original failure remains frozen. Local packe
 [Local model Context limit](local-model-context-limit.json): owner-approved
 maintenance; Options default and blank node override, bounded oversize errors,
 advisory token warning. No new workflow operations or live generation.
+
+The medium designer trial on `80e4315` is in that same
+[designer case](draft-a-workflow.json): 99.23 s, two calls, default cap 8,000,
+Check pass/zero warnings, no token-fit warning. Reference's intentional warning
+was not reproduced. Saved-file check passed; target not built/run because its
+`/tmp` write is outside the trial library. Incorrect literal path placeholder
+makes the draft functionally incomplete despite structural validity.
