@@ -45,6 +45,10 @@ Secrets-only credentials. [Contract](integrations/ASK_CLAUDE.md) /
 Validation: 3,207 full tests, 205 focused checks, 27 examples, helper/UI and docs/schema checks pass. Catalogue cap maintenance keeps existing designer discovery
 within its default Context budget; no new designer behavior or automated build.
 
+PR #132 P2: separate exact-known-secret Answer masking from shared diagnostic
+redaction; parse/mask/serialize JSON so ordinary field names reach Check reply.
+Ask local model inspected; no matching Answer-redaction pattern, no change.
+
 ## Done in PR #51
 
 - One Vault read/write model, `backend/vault_declarations.py`

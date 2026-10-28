@@ -159,13 +159,56 @@ async def test_total_deadline_and_cancel_close_stream(sdk):
 async def test_output_and_sdk_logging_redaction(sdk,caplog):
     sdk.result.content=[NS(type='text',text=f'{KEY}\npassword: fresh-password')]
     node,ctx,done,errors=make();await node.execute(ctx)
-    text=done[0]['data']['default'];assert KEY not in text and 'fresh-password' not in text
+    text=done[0]['data']['default'];assert text == '[redacted]\npassword: fresh-password'
     token=claude._active_secrets.set((KEY,))
     try:
         with caplog.at_level(logging.DEBUG,logger='anthropic._base_client'):
             logging.getLogger('anthropic._base_client').debug('SDK body: %s',{'api_key':KEY,'password':'fresh-password'})
     finally:claude._active_secrets.reset(token)
     assert 'SDK body:' in caplog.text and KEY not in caplog.text and 'fresh-password' not in caplog.text
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('reply_json', [False, True])
+@pytest.mark.parametrize('text', [
+    '{"key":"invoice_number","value":"INV-42"}',
+    '{"token":"page-2","password_hint":"pet name","key":"invoice_number"}',
+])
+async def test_answer_preserves_ordinary_labels(sdk, reply_json, text):
+    sdk.result.content = [NS(type='text', text=text)]
+    node, ctx, done, errors = make(reply_json=reply_json, vault_write=True, vault_write_key='answer')
+    await node.execute(ctx)
+    assert not errors
+    assert done[0]['data']['default'] == text
+    assert ctx.memory_bank.read_persistent('answer') == text
+    from backend.reply_shape import check
+    fields = [{'id': key, 'name': key, 'kind': 'string', 'required': True}
+              for key in json.loads(text)]
+    assert await check(text, fields, 16000, False) == json.loads(text)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('reply_json', [False, True])
+@pytest.mark.parametrize('secret', [KEY, 'quote"slash\\newline\nsecret'])
+async def test_answer_masks_only_known_values(sdk, reply_json, secret):
+    payload = {'key': 'invoice_number', 'value': secret,
+               'nested': [f'before {secret} after', {'password_hint': 'pet name'}]}
+    raw = json.dumps(payload) if reply_json else f'key: invoice_number\n{secret}\npassword_hint: pet name'
+    if reply_json:
+        raw = raw.replace(secret[0], '\\u%04x' % ord(secret[0]))
+    sdk.result.content = [NS(type='text', text=raw)]
+    node, ctx, done, errors = make(secret=secret, reply_json=reply_json,
+                                  vault_write=True, vault_write_key='answer')
+    await node.execute(ctx)
+    assert not errors
+    text = done[0]['data']['default']
+    assert secret not in text
+    assert ctx.memory_bank.read_persistent('answer') == text
+    if reply_json:
+        assert json.loads(text) == {'key': 'invoice_number', 'value': '[redacted]',
+            'nested': ['before [redacted] after', {'password_hint': 'pet name'}]}
+    else:
+        assert text == 'key: invoice_number\n[redacted]\npassword_hint: pet name'
+
 
 @pytest.mark.parametrize('limit',[999,200001,'invalid',True])
 def test_bad_limits(limit):

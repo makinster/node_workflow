@@ -1,6 +1,7 @@
 """Single-turn Messages SDK adapter. No environment credentials or provider bodies in errors."""
 import asyncio
 from contextvars import ContextVar
+import json
 import logging
 import re
 import time
@@ -130,6 +131,25 @@ def _estimate(message):
     return total
 
 
+def _mask_answer(value, known):
+    """Mask exact Secrets in answer strings, without interpreting data labels."""
+    values = sorted(set(secret for secret in known if secret), key=len, reverse=True)
+    if not values:
+        return value
+    pattern = re.compile('|'.join(re.escape(secret) for secret in values))
+
+    def mask(item):
+        if isinstance(item, str):
+            return pattern.sub(lambda _: '[redacted]', item)
+        if isinstance(item, list):
+            return [mask(child) for child in item]
+        if isinstance(item, dict):
+            return {mask(key): mask(child) for key, child in item.items()}
+        return item
+
+    return mask(value)
+
+
 def _answer(message, elapsed, reply_json, known):
     # Never publish partial text on a refusal or length stop, even if present.
     reason = message.stop_reason
@@ -149,15 +169,19 @@ def _answer(message, elapsed, reply_json, known):
         raise failure('invalid_response')
     if len(text) > MAX_ANSWER:
         raise failure('response_too_large')
-    text = redact(text, known_values=known, encoded=True)
-    if len(text) > MAX_ANSWER:
-        raise failure('response_too_large')
     try:
         text.encode('utf-8')
         if reply_json:
-            _json(text)  # Check reply owns expected fields/types.
+            # Parse before masking: labels are data and escaped Secrets must
+            # be matched inside decoded strings. Check reply owns the schema.
+            text = json.dumps(_mask_answer(_json(text), known), ensure_ascii=False, separators=(',', ':'))
+        else:
+            text = _mask_answer(text, known)
+        text.encode('utf-8')
     except (ValueError, UnicodeError, RecursionError):
         raise failure('invalid_response') from None
+    if len(text) > MAX_ANSWER:
+        raise failure('response_too_large')
     usage = message.usage
     estimate = _estimate(message)
     details = {'model': redact(model, known_values=known, encoded=True),

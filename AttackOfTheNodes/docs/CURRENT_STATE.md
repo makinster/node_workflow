@@ -20,6 +20,12 @@ Brief grows to 7,634; designer Brief cap raised to 8,000; palette stays 7,421.
 Catalogue default 64,000 (existing ceiling), compact JSON 51,792. **3,207 full-suite checks pass** (680.92 s); 205 focused checks, 27 example checks, helper node/UI, build --check, delivery schema, dependency, docs and whitespace checks pass. The three full runs and inventory corrections are recorded in the case.
 [PR #132](https://github.com/makinster/node_workflow/pull/132), implementation `9d04dde`, targets main; not merged.
 
+PR #132 P2 follow-up: Answer now masks only exact known Secrets, with JSON
+parsed before masking decoded strings and re-serialized afterward. Ordinary
+credential-like field names remain data for Check reply. Diagnostic/error
+redaction is unchanged. Ask local model has no Answer-redaction pattern and is
+unchanged. Verification is recorded in the latest session entry.
+
 ## Draft a workflow — 2026-10-27, medium trial checked only
 
 Own clean worktree `/home/makin/src/nw-draft-workflow-medium-trial`, branch

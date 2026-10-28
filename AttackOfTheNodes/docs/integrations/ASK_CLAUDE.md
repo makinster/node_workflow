@@ -38,9 +38,12 @@ provider guarantee, so a non-JSON response becomes `invalid_response`.
 **Forward incoming payload unchanged** checkbox. Optional **Run details [var]**
 is Vault only: model that served the reply, input/output tokens, stop reason,
 wall seconds and a USD **Estimate**. It contains no question, Context, thinking,
-SDK exception body or API key. Known Secrets and labelled credentials in
-Answer/SDK diagnostics use the existing shared redactor. The supervisor's
-redaction and per-input error-record cap protect persisted failed inputs too.
+SDK exception body or API key. Answer masks only exact known Secrets values;
+ordinary labels such as `key`,
+`token` and `password_hint` remain data. JSON mode parses first, masks decoded
+strings (including object keys), then serializes valid JSON text. SDK diagnostics
+and Run details retain the shared credential redactor (labels plus known Secrets).
+The supervisor's redaction and per-input error-record cap protect persisted failed inputs too.
 
 Stop reason is checked before reading content. `refusal` errors with a category
 (or `unspecified`); `max_tokens` errors as a cut-off reply. Other unfinished

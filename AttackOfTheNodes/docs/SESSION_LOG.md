@@ -6,6 +6,29 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-27 — PR #132 P2: preserve structured Answer data
+
+Worktree `/home/makin/src/nw-ask-hosted-question`, branch
+`codex/ask-hosted-question`, starting head `745ee64`; fetched origin and
+reconciled main `4f1f5e7` (already included). Clean before this fix.
+
+Answer now masks only exact known Secrets values. JSON is parsed before masking
+nested decoded strings (including keys), then re-serialized; ordinary `key`,
+`token` and `password_hint` data reaches Check reply intact. Shared redaction
+for SDK logs, Run details, exceptions and persisted errors remains unchanged.
+Ask local model adapter/node inspected: no shared Answer-redaction pattern;
+left unchanged.
+
+Nine focused cases failed before the fix and pass afterward. Updated the old
+Answer expectation deliberately: an unstored `password:` value remains data,
+while the same labelled value is still masked in SDK diagnostics. Regressions
+cover the reviewer's invoice JSON through Check reply, text/JSON known-key
+masking, escaped JSON, nested strings and Vault/downstream publication.
+Verification: **260 passed in 24.95 s** across adapter/generated/UI, shared
+redactor, failed-input persistence, local-model adapter and Check reply checks;
+focused compileall and `git diff --check` pass. Mock SDK/local test servers only;
+no real API or inference calls. Full suite not rerun for this scoped follow-up.
+
 ## 2026-10-27 — Hosted single-question node
 
 Own clean worktree `/home/makin/src/nw-ask-hosted-question`, branch
