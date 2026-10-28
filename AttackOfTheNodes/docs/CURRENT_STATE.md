@@ -28,8 +28,9 @@ Engine FINISHED/exit 0 means handled failure, **not** a successful draft.
 Complete Brief/Compact context stayed 6,207 / 6,865 characters. Original general
 lookup mapping remains 7/8; approved fixed-palette scope stays 8/8, not a quality
 score. The generated draft is non-executable versus the approved clean sample.
-No fixes, extra trial or broad activation were authorized; this result update
-changes documentation only. Local timing/evidence:
+No fixes, extra trial or broad activation were authorized;
+[results PR #127](https://github.com/makinster/node_workflow/pull/127) changes
+documentation only. Local timing/evidence:
 `/home/makin/src/agent_channel/draft-workflow-samples/TRIAL.md`.
 
 The following #125 candidate/review notes are historical; #125 is now merged in

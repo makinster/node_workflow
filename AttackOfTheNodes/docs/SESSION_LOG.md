@@ -35,6 +35,8 @@ Review round count updated to one clean #126 review; original coverage retained.
 Only result docs change; no further fix/trial. Delivery schema, metric/raw-spec
 identity, failed/no-write assertions, docs consolidation (103 files / 920 links)
 and git diff --check pass. No product suite: results-only documentation.
+Results [PR #127](https://github.com/makinster/node_workflow/pull/127), trial
+record commit `d58662f`, targets main; no product/spec/prompt changes.
 
 ## 2026-10-27 — Draft a workflow: owner-approved spec, build step
 
