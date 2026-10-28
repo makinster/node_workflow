@@ -99,3 +99,56 @@ paths, acyclic graph, exact limits, current complete palette and sample verdicts
 The three fixtures are hand-authored: clean pass, warning-only pass, bad fan-out
 refusal. They measure checker behavior, not inference quality or runtime.
 CPU time, generated-spec quality and real-device proof remain unmeasured.
+
+## Draft a workflow v2 — Step 1
+
+`draft-a-workflow-v2.json` is the revised recipe; the original spec is unchanged.
+It analyzes requirements, permits one clarification turn of at most three
+questions, drafts with the fixed 12-type palette, checks the structure, and asks
+for an independent meaning review. Only the exact verdict `pass` reaches File
+Write (Create unique). Other verdicts, unresolved requests and errors explain
+what needs review and stop. There are no repair loops or automatic target runs.
+All four Ask steps use the explicit approved hosted option, low effort and JSON
+replies; the clarify path adds the fourth call only when needed. Stable complete
+contracts are Context; changing request/requirements/draft are in Question.
+
+The extra Compact queries cover Conditional, Concat and JSON Path. All returned
+entries are retained: the current exact inventory is 12 types and assembled
+Context is **9,364 characters**, below the 50,000-character planning budget.
+Check workflow spec retains its 8,000-character raw-draft cap. Check reply checks
+top-level fields; numbered-question and nested requirement/coverage checks live
+in the external trial runner. The ordinary success output says manual review
+required and not behavior-tested, with both reports and the actual saved path.
+
+From the app directory, run a fresh **mock-only** trial:
+
+```bash
+python -m tools.draft_trials --trial-root /absolute/fresh/trial-root
+```
+
+The [runner guide](../../../tools/draft_trials/README.md) explains case rendering,
+ordered `InputProvider` answers (no PTY), calibration, safety checks, fixture
+runs, per-case evidence and negative scenarios. It creates an isolated library;
+never pass the owner's library or copy settings/Secrets. `--real-calls` defaults
+to off. **Step 2 requires separate owner approval and the owner adding the key
+to the trial library through Options → Secrets.** Use the documented `--prepare`
+flow first. Step 1's canned replies are engine/harness proof, not real-model
+quality, latency, cost or interactive CLI proof.
+
+
+PR #135 review follow-up: the runner now validates the entire prepared-root tree
+and exact preparation record before writes or backend imports. Symlinks, hard
+links, special entries and resolved escapes are rejected. The frozen oracle is
+version 2: per-value source/operation lineage rejects hardcoded heading answers
+and partial-file reconstructions. Calibration now has **19 good/bad pairs**
+(original 15 plus four provenance regressions). The v2 designer spec is unchanged.
+
+
+PR #135 route follow-up: oracle version 3 freezes structural obligations for
+all ten cases. A shared matcher checks required operations and displays on their
+own declared routes, requires real work on every branch, and binds outputs to
+the actual producer node. This rejects correct-looking values produced serially
+on one parallel path. Cases 7/9 also require true/false work after their own
+Conditional route. The original 19 pairs remain; three new pairs cover serial
+parallel work, pre-Conditional displays and pre-Conditional uppercase work.
+Calibration is now **22 pairs**. The designer spec remains unchanged.

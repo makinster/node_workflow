@@ -6,6 +6,93 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-28 — PR #135 route-structure review
+
+Continued the clean PR branch at `48959db`. Reused the reviewer's
+`/tmp/pr135-case8-recheck.py` from the review-worktree investigation: both
+transforms and displays run serially on one parallel path, restoring the
+original input from Vault, while the other path ends. Reproduced its rules and
+full mocked-trial false pass before the fix.
+
+Every case now freezes role, producer, ordering and route requirements (oracle
+v3). One handle-independent matcher checks them using dominance, exclusive
+route reachability, execution-route membership and actual producer-node data
+lineage. End-only paths, work hoisted before the decision, shared work and
+borrowing another producer cannot satisfy a declared route. All control nodes
+and ports must be accounted for; matching is bounded. Case 8 permits port swaps;
+cases 7/9 require their specific true/false work. No designer/backend change.
+
+Retained the prior 19 calibration pairs and added serial parallel work,
+pre-Conditional displays and uppercase-before-empty-choice negatives. Tests
+cover each route, renamed handles, swapped parallel ports, linear-case
+requirements and incorrect producer provenance. Focused checks: **96 passed
+in 6.83 s**. Full `pytest -n auto`: **3,330 passed in 44.60 s**.
+Standalone proof `/tmp/aotn-pr135-route-proof-20261028` passes all ten cases,
+21 target fixtures, and all 22 good/bad calibration expectations (44 judge
+calibration calls plus 31 designer calls, all mocked). Docs consolidation,
+source-style and whitespace checks pass. No real model/API calls or Secrets
+access.
+
+## 2026-10-28 — PR #135 containment, provenance and style review
+
+Continued the clean PR branch at `4b42912`. Read the review worktree
+`/tmp/nw-review135-4b42912` and reused `/tmp/pr135-root-probe.py`,
+`/tmp/pr135-loose-probe.py` and `/tmp/pr135-rule-probe.py` as regression designs.
+Six new regression cases failed before fixes: a symlinked library, an outside
+sentinel overwritten through the marker, a hardcoded heading, and partial-file
+reconstructions in cases 4/5/10. Tests only use disposable sentinels and stubbed
+batch/model execution; no real calls or Secrets access.
+
+Added pre-import tree/marker validation: no symlinks (including dangling/internal
+links), hard links or special files, all resolved paths contained, exact marker
+schema/path/version with duplicate fields rejected, fresh/exclusive preparation.
+Oracle v2 now retains a source expression through whole-value adapters and each
+required operation, separates data from control lineage, and validates saved
+paths against the same writer. Audited all ten cases: fixed literal messages
+remain allowed, dynamic text/file contents cannot be reconstructed from literals.
+Four new calibration pairs supplement the original fifteen. Expanded all trial
+modules and tests into multiline style; a source-style regression enforces it.
+Focused checks: **78 passed in 6.09 s**. Full `pytest -n auto`: **3,312 passed
+in 41.56 s**. Final standalone proof at
+`/tmp/aotn-pr135-review-fixes-proof-20261028`: all ten cases / 21 target fixtures
+pass, 19 good drafts accepted and 19 bad drafts rejected. Mock judge false-pass
+and false-failure tests now each measure 19 deliberately wrong verdicts. Docs
+consolidation, source-style and whitespace checks pass. A temporary formatter
+installation outside the repo was used; no runtime/dev dependency changed.
+
+## 2026-10-28 — Draft workflow Step 1
+
+Started own clean WSL worktree `/home/makin/src/nw-draft-workflow-step1`, branch
+`codex/draft-workflow-step1`, from fetched main `19640f9`. Read approved plan,
+TEST_SET and decisions 1–14. Added a v2 spec next to the unchanged old one:
+requirements → optional single clarification → draft → structural check →
+independent meaning review → save only for pass. No new app nodes required.
+Static complete palette has 12 types, 9,364 characters, no truncation.
+
+External runner uses the public RunService input hook and bounded pure rules,
+real build/check, exact saved raw text and local target fixture runs. Mock SDK
+supplies canned replies; Secrets lazy load and sockets are forbidden in mock
+mode. All ten cases / 21 target fixtures pass in the initial probe. Fifteen
+paired calibrations accept every good draft and reject every bad one, including
+wrong order/source/path/mode, fan-out, ignored clarification, unreachable nodes,
+label contamination and the historical double-brace saved-path regression.
+False-pass/false-failure accounting is tested with deliberately wrong canned
+judge verdicts. Ready/clarify, failed review, unresolved answer and error paths
+are covered. No real model/API calls or owner Secrets access. Step 2 remains
+separately gated; its library key must be added by the owner.
+
+Final v2 CLI `build --check --json --data-dir <fresh temp>`: **ok true, no
+diagnostics**, 55 nodes. Focused suite: **40 passed in 4.93 s**; final full
+`pytest -n auto`: **3,274 passed in 38.41 s**. Standalone final mock proof:
+`/tmp/aotn-draft-step1-final-proof-20261028`, all ten cases and 21 required
+fixtures pass, 31 designer calls plus 30 calibration judge calls, all mocked.
+All 15 good calibrations pass and all 15 bad ones fail. Docs consolidation and
+whitespace checks pass. Initial full run had 3,272 passes and an unrelated
+subworkflow modal mount race (`test_open_a_waiting_subworkflow_see_who_asks_and_go_back`);
+that case passed alone, and the full rerun passed 3,273 before the final report
+independence regression added the fortieth focused test. No existing UI test or
+production behavior was changed to obtain the green result.
+
 ## 2026-10-28 — PR #134 review fixes applied
 
 Applied the reviewed local patch from `/tmp/nw-review134-396b18f` onto

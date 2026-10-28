@@ -1,9 +1,9 @@
 # Current State
 
-Snapshot checked **2026-10-28**, against fetched `origin/main` `56cb997`
-after #132 and #133 merged. Context caching is built for review on
-`codex/ask-claude-caching`; earlier delivery entries retain their dated scope.
-No real API calls in this change. Code and fresh GitHub checks take precedence.
+Snapshot checked **2026-10-28**, against fetched `origin/main` `19640f9`
+after #134 merged. Revised workflow designer Step 1 is built for review on
+`codex/draft-workflow-step1`; earlier entries retain their dated scope.
+No real model/API calls in this change. Code and fresh checks take precedence.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
@@ -13,6 +13,47 @@ Sonnet/Opus and document the 512-token minimum prefix. Per-model price tests
 and real-engine run summaries cover all three supported models. See the latest
 Session Log entry for verification: full `pytest -n auto` passes **3,234 tests
 in 35.63 s** after the review fixes.
+
+## PR #135 route review — 2026-10-28
+
+On `codex/draft-workflow-step1` from `48959db`: oracle v3 now freezes
+role/producer/route obligations for every case and checks them with one common
+matcher. Parallel paths may swap their assigned operations, but every path must
+do its own declared work. Conditional cases 7/9 require their work on the
+corresponding route. Data lineage identifies the actual producing node, while
+dominance and exclusive reachability prevent hoisted, shared or borrowed work.
+Calibration: 22 good/bad pairs. Focused checks: **96 passed in 6.83 s**;
+full `pytest -n auto`: **3,330 passed in 44.60 s**. Final standalone mock
+batch passes all ten cases, 21 target fixtures and 22 calibration pairs.
+No real calls or Secrets access.
+
+## PR #135 review fixes — 2026-10-28
+
+On `codex/draft-workflow-step1` from review head `4b42912`: prepared roots are
+validated recursively before writes/backend imports, including exact marker
+contents and rejection of links/special entries. Oracle v2 tracks complete
+input/operation and conditional-control provenance; new regressions cover the
+hardcoded heading and three partial-file reconstructions. Calibration is now
+19 paired fixtures; trial tooling and tests use multiline control flow.
+Focused tests: **78 passed in 6.09 s**. Full `pytest -n auto`: **3,312 passed
+in 41.56 s**. Standalone mock batch: ten cases, 21 target fixtures and all
+19 calibration pairs pass their expectations. Docs/whitespace checks pass.
+No real model/API calls or Secrets access.
+
+## Revised workflow designer — 2026-10-28, Step 1 built for review
+
+Own worktree `/home/makin/src/nw-draft-workflow-step1`, branch
+`codex/draft-workflow-step1`, clean base `19640f9`. Approved external plan
+`/home/makin/src/agent_channel/draft-workflow-plan-2/` decisions 1–14:
+existing-node clarify/draft/check/meaning-review/save gate, 12-type static
+palette, external frozen-case evaluator and ordered RunService InputProvider.
+No app/backend changes or old-spec edits. All ten canned cases and 21 target
+fixtures pass; 15 calibration pairs accept good and reject bad drafts.
+The independent judge is mocked; real quality, billing and CLI interaction are
+not proven. Step 2 needs separate owner approval and owner trial-key setup.
+See [v2 recipe](delivery_tests/specs/README.md#draft-a-workflow-v2--step-1) and
+[runner](../tools/draft_trials/README.md). Full `pytest -n auto`: **3,274 passed in 38.41 s**. V2 build --check has no
+diagnostics; docs and whitespace checks pass.
 
 ## Hosted question caching — 2026-10-28, built for review
 
