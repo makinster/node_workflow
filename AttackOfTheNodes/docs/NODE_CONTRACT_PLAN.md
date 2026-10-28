@@ -88,7 +88,11 @@ port ids; no saved spec or target build/run. Trial allowance consumed; fixes
 and another trial need separate authorization. The owner-requested source fix
 now separates Text port ids from display labels and adds a literal connection
 example to the draft prompt. New Brief/fixed sizes 7,438 / 7,421; 104 focused
-checks and build --check pass. No re-trial. This does not advance MCP.
+checks and build --check pass. The owner then authorized a separate re-trial
+on merged `8945c3d`: 75.14 s, two local calls, Check pass/zero warnings; saved
+file checked, built only in a fresh trial library and run once, Ready confirmed.
+Extra End output differs from the quiet sample. No prompt edits/retry, main
+library changes or broader use proof. This does not advance MCP.
 
 ## Proposed phases
 

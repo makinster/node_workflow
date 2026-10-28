@@ -72,5 +72,8 @@ step 5 authored and checked. [Spec and usage](specs/README.md),
 [approved reply fixtures](fixtures/draft-a-workflow.json). Strict runtime lookup
 mapping stays 7/8; the approved narrower scope is 8/8. Decision 11 trial:
 one designer run, two calls, 70.64 s CPU, Check failed on annotated port ids.
-Failure displayed and stopped; no saved spec or target build/run. Local packet:
+That first failure displayed problems and stopped with no saved spec. After
+#128, the separately approved re-trial passed: two calls / 75.14 s, zero warnings;
+saved draft checked/built only in a fresh trial library and run once, Ready
+confirmed (plus an extra End line). Original failure remains frozen. Local packet:
 `/home/makin/src/agent_channel/draft-workflow-samples/`.

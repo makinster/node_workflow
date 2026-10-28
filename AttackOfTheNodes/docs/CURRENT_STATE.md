@@ -1,11 +1,37 @@
 # Current State
 
-Snapshot checked **2026-10-27**, against fetched `origin/main` `232d112` after
-#127 merged; catalogue Text fix below is checked but not re-trialled.
+Snapshot checked **2026-10-27**, against fetched `origin/main` `8945c3d` after
+#128 merged; the owner-approved trivial re-trial below passed.
 Code and fresh GitHub checks take precedence.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
+
+## Draft a workflow — 2026-10-27, re-trial passed
+
+Own clean worktree `/home/makin/src/nw-draft-workflow-retrial`, branch
+`codex/draft-workflow-retrial`, main `8945c3d`. Owner authorized an unchanged-spec
+re-trial in fresh library
+`/home/makin/.local/share/aotn-draft-workflow-retrial-2026-10-27`.
+Same trivial request, public RunService/InputProvider, one designer run and
+exactly two local calls, no prompt changes/retry. **75.14 s designer wall**:
+shortlist 45.89 s (27.51 s cold load), draft 29.18 s. Before: unloaded;
+during/after: 100% CPU, context 8,192, GPU VRAM 0.
+
+Check passed with zero warnings and File Write saved the exact raw Answer to
+`/home/makin/src/agent_channel/draft-workflow-output/draft.json`.
+Saved-file build --check passed; under the same explicit approval, built only
+into the fresh trial library and ran that target once: **[Ready Output] Ready**.
+Target CLI wall 0.1225 s; no errors/model calls. Start-to-target completion
+138.60 s includes inspection/handoff, saved-file check/build and CLI startup.
+Three core types and machine port ids are correct. Extra End completion line
+makes this noisier than the quiet sample; one trivial success is not general
+quality/repeatability proof. Main library unchanged. [Case](delivery_tests/draft-a-workflow.json)
+retains original failure, timings, saved draft, output and observed shapes.
+[Results PR #129](https://github.com/makinster/node_workflow/pull/129), record `869ab1a`.
+Local report: `/home/makin/src/agent_channel/draft-workflow-samples/TRIAL.md`.
+
+Earlier implementation/failed-trial notes below are historical.
 
 ## Catalogue port ids — 2026-10-27, checked fix
 

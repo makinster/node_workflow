@@ -6,7 +6,11 @@ Owner approved the eleven recommended decisions and three samples on 2026-10-27.
 The original PR checked the authored designer without running it. The later
 owner-authorized decision 11 trial ran once on merged `398c482`: 70.64 s CPU,
 two calls, Check failed on display-annotated port ids. No success file or
-target build/run; full measurements and raw draft are in the delivery case.
+target build/run. The separately owner-approved re-trial on `8945c3d` passed
+in 75.14 s with two local calls and zero Check warnings. The saved raw draft
+passed build --check, was built only in a fresh trial library and ran once:
+`[Ready Output] Ready`. It also emits an End completion line, unlike the quiet
+sample. Full measurements, both trials and raw drafts are in the delivery case.
 
 The designer uses existing nodes only. Its **drafting palette** is nine types:
 Start, End, Merge Beacon, Parallel Branch, User Text Input, Text Output,
@@ -36,8 +40,10 @@ connection legend. Brief uses `default "Greeting"`; Compact/Detailed use
 `{"from":"start.default","to":"show.input"}` example (doubled braces in the
 stored Concat template, single braces when rendered). No client/context cap,
 query, JSON format, call setting or workflow path changed. This revised
-spec is check-only; the prior failed trial used the old Text/prompt. No re-trial
-or update to the installed trial library was performed.
+spec passed the separately authorized re-trial unchanged. The prior failed
+trial used old Text/prompt; its original library was not modified. The new
+library is `/home/makin/.local/share/aotn-draft-workflow-retrial-2026-10-27`.
+No further inference or ordinary use was tested.
 
 The raw Answer goes into `draft_text`. That exact text is checked with an
 8,000-character limit. Only Check's success wire reaches File Write; its Content
