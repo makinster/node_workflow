@@ -45,6 +45,9 @@ change. [Recipe and Step 2 gate](delivery_tests/specs/README.md#draft-a-workflow
 Review follow-up on #135 adds complete prepared-tree validation and oracle v2
 source/control provenance, expands calibration from 15 to 19 pairs, and rewrites
 the trial tools in multiline style. No designer/backend behavior changes.
+Route re-review adds oracle v3 case-declared work/producer/route obligations
+for all ten cases and a common matcher. Parallel/Conditional work cannot be
+borrowed from another route; calibration expands to 22 pairs.
 Real trials require separate owner approval and owner-added trial-library key.
 
 ## Owner-requested caching — 2026-10-28

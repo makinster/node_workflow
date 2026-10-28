@@ -1,15 +1,15 @@
-# Step 1 verification — PR #135 review fixes, 2026-10-28
+# Step 1 verification — route review, 2026-10-28
 
-Review base `4b42912`, branch `codex/draft-workflow-step1`.
-No real model/API calls or owner Secrets access. Judge replies below are canned;
-this proves harness decisions, not real inference quality.
+Review base `48959db`, branch `codex/draft-workflow-step1`.
+No real model/API calls or Secrets access. Judge replies below are canned;
+these checks prove harness decisions, not real inference quality.
 
-- Focused tests: 78 passed in 6.09 s.
-- Full pytest -n auto: 3,312 passed in 41.56 s.
+- Focused tests: 96 passed in 6.83 s.
+- Full pytest -n auto: 3,330 passed in 44.60 s.
 - Standalone mock batch: ten cases, 21 target fixtures, all pass.
-- Existing v2 designer spec unchanged (55 nodes; prior CLI check had no diagnostics).
+- V2 designer spec unchanged (55 nodes; prior CLI check had no diagnostics).
 - Complete palette: 12 types, 9,364 characters; no clipping.
-- Mock calls in final proof: 31 designer calls plus 38 calibration judge calls.
+- Mock calls: 31 designer calls plus 44 calibration judge calls.
 
 | Calibration fixture | Good rules | Bad rules | Mock good judge | Mock bad judge |
 |---|---|---|---|---|
@@ -32,23 +32,23 @@ this proves harness decisions, not real inference quality.
 | partial_file_display | pass | fail | pass | fail |
 | partial_file_copy | pass | fail | pass | fail |
 | partial_clarified_content | pass | fail | pass | fail |
+| serial_parallel_work | pass | fail | pass | fail |
+| conditional_work_before_choice | pass | fail | pass | fail |
+| uppercase_before_empty_choice | pass | fail | pass | fail |
 
-The first fifteen pairs are retained; the last four reproduce provenance false
-passes. All pair expectations match. A separate deliberately wrong canned-judge
-test measures 19 false passes and 19 false failures and fails the batch gate.
+The original 19 pairs are retained. The last three add serial work on one
+parallel path, both status displays before a Conditional, and uppercase work
+before the empty/nonempty decision. Every good draft passes and every bad
+draft fails. Deliberately wrong canned-judge tests separately count 22 false
+passes and 22 false failures and reject the batch.
 
-Containment probes reproduce the symlinked-library write and marker-sentinel
-overwrite with stubbed batch execution, then verify both now stop before writes.
-Tests also cover nested internal/external/dangling links, FIFOs, hard links,
-invalid preparation records, unchanged sentinels, and rejection before backend
-imports/environment changes. Preparation never opens library or Secrets files.
+Oracle v3 freezes required structural roles, ordering/producer relations and
+route work in each case record. The matcher is case-id independent and accepts
+renamed handles and swapped parallel ports. Every declared fork port must do
+its own real work. Dominance, exclusive reachability and recorded execution
+routes exclude hoisted, shared, sibling or End-only work. Actual producer-node
+lineage prevents a decorative operation from claiming another value.
 
-Oracle v2 preserves whole-input expressions through transforms and adapters,
-distinguishes data from branch-control dependence, and traces saved paths to
-the actual writer. Every case has a provenance regression; Ready intentionally
-remains a permitted literal. Unsupported equivalent expressions fail for review.
-
-All trial modules use multiline statements, checked with AST/token regressions.
-No app/backend changes were needed. Step 2 remains separately approved and
-unexecuted. Prepared-tree validation is not an OS sandbox against concurrent
-directory replacement.
+All earlier containment/provenance/style regressions remain. No production
+backend or designer-spec changes were required. Step 2 remains separately
+approved and unexecuted.

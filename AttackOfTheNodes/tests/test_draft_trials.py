@@ -217,7 +217,7 @@ def test_full_mock_batch_and_all_target_fixtures(tmp_path):
     assert report["result"] == "pass" and report["case_count"] == 10
     assert report["fixture_count"] == 21
     calibration = json.loads((root / "calibration-report.json").read_text())
-    assert len(calibration["fixtures"]) == 38 and calibration["result"] == "pass"
+    assert len(calibration["fixtures"]) == 44 and calibration["result"] == "pass"
     assert calibration["judge_false_passes"] == calibration["judge_false_failures"] == 0
     assert all(r["case_rules"] == r["expected"] for r in calibration["fixtures"])
     assert not (root / "library/secrets/secrets.json").exists()
@@ -245,7 +245,7 @@ async def test_calibration_detects_judge_false_passes_and_failures(tmp_path):
         replies += [runner.meaning("fail"), runner.meaning("pass")]
     result = await runner.calibrate(tmp_path, judge_replies=replies)
     assert result["result"] == "fail"
-    assert result["judge_false_passes"] == result["judge_false_failures"] == 19
+    assert result["judge_false_passes"] == result["judge_false_failures"] == 22
     assert all(r["case_rules"] == r["expected"] for r in result["fixtures"])
 
 

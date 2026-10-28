@@ -1,4 +1,4 @@
-"""Frozen ten-case oracle v2. Reference drafts are hand-authored calibration."""
+"""Frozen ten-case oracle v3. Reference drafts are hand-authored calibration."""
 
 from copy import deepcopy
 from pathlib import Path
@@ -29,14 +29,180 @@ OPERATIONS = {
 }
 
 
+def role(kind, **criteria):
+    return dict(type=kind + "_node", **criteria)
+
+
+def structure(roles, *, before=(), data_from=(), forks=()):
+    return dict(
+        roles=roles, before=list(before), data_from=list(data_from), forks=list(forks)
+    )
+
+
+# Frozen, handle-independent obligations. A case specifies the work, its data
+# producers, and the route where it belongs; the matcher has no case-id logic.
+STRUCTURES = {
+    1: structure(
+        {
+            "start": role("start"),
+            "message": role("text_output", output_literal="Ready"),
+        },
+        before=[("start", "message")],
+    ),
+    2: structure(
+        {
+            "source": {
+                "one_of": [
+                    role("start", config={"greeting": "  Monday Update  "}),
+                    role("concat", config={"template": "  Monday Update  "}),
+                ]
+            },
+            "strip": role("text_transform", config={"operation": "strip"}),
+            "lower": role("text_transform", config={"operation": "lowercase"}),
+            "message": role("text_output"),
+        },
+        data_from=[
+            ("source", "strip"),
+            ("source", "lower"),
+            ("strip", "message"),
+            ("lower", "message"),
+        ],
+    ),
+    3: structure(
+        {
+            "ask": role("user_text_input"),
+            "upper": role("text_transform", config={"operation": "uppercase"}),
+            "message": role("text_output"),
+        },
+        data_from=[("ask", "upper"), ("upper", "message")],
+    ),
+    4: structure(
+        {"read": role("file_reader"), "message": role("text_output")},
+        data_from=[("read", "message")],
+    ),
+    5: structure(
+        {
+            "read": role("file_reader"),
+            "write": role("file_output"),
+            "path": role("text_output", output_kind="saved_path"),
+        },
+        data_from=[("read", "write"), ("write", "path")],
+    ),
+    6: structure(
+        {
+            "ask": role("user_text_input"),
+            "upper": role("text_transform", config={"operation": "uppercase"}),
+            "write": role("file_output"),
+            "path": role("text_output", output_kind="saved_path"),
+        },
+        data_from=[("ask", "upper"), ("upper", "write"), ("write", "path")],
+    ),
+    7: structure(
+        {
+            "ask": role("user_text_input"),
+            "choice": role(
+                "conditional",
+                config={
+                    "condition_type": "equals",
+                    "left_value_source": "input",
+                    "right_value": "yes",
+                },
+            ),
+            "continue": role("text_output", output_literal="Continuing"),
+            "stop": role("text_output", output_literal="Stopping"),
+        },
+        data_from=[("ask", "choice")],
+        forks=[
+            dict(
+                role="choice",
+                ports=["true", "false"],
+                work=[["continue"], ["stop"]],
+                permutable=False,
+            )
+        ],
+    ),
+    8: structure(
+        {
+            "ask": role("user_text_input"),
+            "split": role("branch"),
+            "upper": role("text_transform", config={"operation": "uppercase"}),
+            "lower": role("text_transform", config={"operation": "lowercase"}),
+            "upper_message": role("text_output", output_operation="uppercase"),
+            "lower_message": role("text_output", output_operation="lowercase"),
+        },
+        data_from=[
+            ("ask", "split"),
+            ("upper", "upper_message"),
+            ("lower", "lower_message"),
+        ],
+        forks=[
+            dict(
+                role="split",
+                ports=["path_a", "path_b"],
+                work=[["upper", "upper_message"], ["lower", "lower_message"]],
+                permutable=True,
+            )
+        ],
+    ),
+    9: structure(
+        {
+            "read": role("file_reader"),
+            "strip": role("text_transform", config={"operation": "strip"}),
+            "choice": role(
+                "conditional",
+                config={
+                    "condition_type": "equals",
+                    "left_value_source": "input",
+                    "right_value": "",
+                },
+            ),
+            "empty": role("text_output", output_literal="Empty note"),
+            "upper": role("text_transform", config={"operation": "uppercase"}),
+            "write": role("file_output"),
+            "path": role("text_output", output_kind="saved_path"),
+        },
+        data_from=[
+            ("read", "strip"),
+            ("strip", "choice"),
+            ("upper", "write"),
+            ("write", "path"),
+        ],
+        forks=[
+            dict(
+                role="choice",
+                ports=["true", "false"],
+                work=[["empty"], ["upper", "write", "path"]],
+                permutable=False,
+            )
+        ],
+    ),
+    10: structure(
+        {
+            "read": role("file_reader"),
+            "strip": role("text_transform", config={"operation": "strip"}),
+            "lower": role("text_transform", config={"operation": "lowercase"}),
+            "write": role("file_output"),
+            "path": role("text_output", output_kind="saved_path"),
+        },
+        data_from=[
+            ("read", "strip"),
+            ("strip", "lower"),
+            ("lower", "write"),
+            ("write", "path"),
+        ],
+    ),
+}
+
+
 def case_record(number, root):
     return dict(
-        version=2,
+        version=3,
         id=number,
         root=str(Path(root).resolve()),
         request=REQUESTS[number - 1].replace("ROOT", str(root)),
         clarification=ANSWER.replace("ROOT", str(root)) if number == 10 else "",
         required_operations=OPERATIONS.get(number, []),
+        required_structure=deepcopy(STRUCTURES[number]),
     )
 
 
@@ -426,4 +592,70 @@ def calibration_pairs():
         10,
         lambda spec: partial_content(spec, "transform", "{input[0]}ello\nworld"),
     )
+
+    def serial_parallel(spec):
+        spec["nodes"]["ask"]["config"]["membank_outputs"] = [
+            {"id": "original", "output": "original", "data_type": "string"}
+        ]
+        spec["nodes"]["restore"] = {
+            "type": "concat_node",
+            "config": {"template": "{original}"},
+        }
+        spec["connections"] = [
+            edge
+            for edge in spec["connections"]
+            if edge["from"] not in ("parallel.path_b", "show.default")
+        ]
+        spec["connections"] += [
+            {"from": "parallel.path_b", "to": "end.input"},
+            {"from": "show.default", "to": "restore.input"},
+            {"from": "restore.default", "to": "lower.input"},
+        ]
+
+    pair("serial_parallel_work", 8, serial_parallel)
+
+    def conditional_before_choice(spec):
+        spec["nodes"]["ask"]["config"]["membank_outputs"] = [
+            {"id": "original", "output": "original", "data_type": "string"}
+        ]
+        spec["nodes"]["restore"] = {
+            "type": "concat_node",
+            "config": {"template": "{original}"},
+        }
+        spec["connections"] = [
+            edge
+            for edge in spec["connections"]
+            if edge["from"]
+            not in (
+                "ask.default",
+                "show.default",
+                "stop.default",
+                "if.true",
+                "if.false",
+            )
+        ]
+        spec["connections"] += [
+            {"from": "ask.default", "to": "show.input"},
+            {"from": "show.default", "to": "stop.input"},
+            {"from": "stop.default", "to": "restore.input"},
+            {"from": "restore.default", "to": "if.input"},
+            {"from": "if.true", "to": "end.input"},
+            {"from": "if.false", "to": "end.input"},
+        ]
+
+    pair("conditional_work_before_choice", 7, conditional_before_choice)
+
+    def uppercase_before_choice(spec):
+        spec["connections"] = [
+            edge
+            for edge in spec["connections"]
+            if edge["from"] not in ("strip.default", "if.false", "upper.default")
+        ]
+        spec["connections"] += [
+            {"from": "strip.default", "to": "upper.input"},
+            {"from": "upper.default", "to": "if.input"},
+            {"from": "if.false", "to": "write.content"},
+        ]
+
+    pair("uppercase_before_empty_choice", 9, uppercase_before_choice)
     return pairs

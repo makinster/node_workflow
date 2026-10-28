@@ -14,6 +14,19 @@ and real-engine run summaries cover all three supported models. See the latest
 Session Log entry for verification: full `pytest -n auto` passes **3,234 tests
 in 35.63 s** after the review fixes.
 
+## PR #135 route review — 2026-10-28
+
+On `codex/draft-workflow-step1` from `48959db`: oracle v3 now freezes
+role/producer/route obligations for every case and checks them with one common
+matcher. Parallel paths may swap their assigned operations, but every path must
+do its own declared work. Conditional cases 7/9 require their work on the
+corresponding route. Data lineage identifies the actual producing node, while
+dominance and exclusive reachability prevent hoisted, shared or borrowed work.
+Calibration: 22 good/bad pairs. Focused checks: **96 passed in 6.83 s**;
+full `pytest -n auto`: **3,330 passed in 44.60 s**. Final standalone mock
+batch passes all ten cases, 21 target fixtures and 22 calibration pairs.
+No real calls or Secrets access.
+
 ## PR #135 review fixes — 2026-10-28
 
 On `codex/draft-workflow-step1` from review head `4b42912`: prepared roots are

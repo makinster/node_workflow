@@ -142,3 +142,13 @@ links, special entries and resolved escapes are rejected. The frozen oracle is
 version 2: per-value source/operation lineage rejects hardcoded heading answers
 and partial-file reconstructions. Calibration now has **19 good/bad pairs**
 (original 15 plus four provenance regressions). The v2 designer spec is unchanged.
+
+
+PR #135 route follow-up: oracle version 3 freezes structural obligations for
+all ten cases. A shared matcher checks required operations and displays on their
+own declared routes, requires real work on every branch, and binds outputs to
+the actual producer node. This rejects correct-looking values produced serially
+on one parallel path. Cases 7/9 also require true/false work after their own
+Conditional route. The original 19 pairs remain; three new pairs cover serial
+parallel work, pre-Conditional displays and pre-Conditional uppercase work.
+Calibration is now **22 pairs**. The designer spec remains unchanged.

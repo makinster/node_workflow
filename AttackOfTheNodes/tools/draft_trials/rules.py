@@ -23,6 +23,7 @@ class RuleFailure(ValueError):
 class Value:
     data: object
     expression: tuple = ()
+    lineage: tuple = ()
 
     def __post_init__(self):
         if not self.expression:
@@ -55,6 +56,7 @@ def format_value(template, values):
     answer text is a different expression from that source's transformed value.
     """
     fields = []
+    lineage = []
     for _, field, specification, conversion in Formatter().parse(template):
         if field is None:
             continue
@@ -71,12 +73,13 @@ def format_value(template, values):
         for part in re.findall(r"\[([^]]+)\]", field):
             expression = project(expression, part)
         fields.append((field, expression))
+        lineage.extend(values[key].lineage)
     rendered = template.format_map({key: value.data for key, value in values.items()})
     if not fields:
         return Value(rendered)
     if len(fields) == 1 and template == "{" + fields[0][0] + "}":
-        return Value(rendered, fields[0][1])
-    return Value(rendered, ("format", template, tuple(fields)))
+        return Value(rendered, fields[0][1], tuple(lineage))
+    return Value(rendered, ("format", template, tuple(fields)), tuple(lineage))
 
 
 def effective_nodes(spec):
@@ -134,19 +137,12 @@ def safety(spec, case):
             raise RuleFailure("legacy output prompt needs review")
         if t == "branch_node":
             if (
-                case["id"] != 8
-                or c.get("branch_count") != 2
-                or c.get("branch_payload_sources")
+                c.get("branch_payload_sources")
                 or c.get("condition", "always_branch") != "always_branch"
             ):
                 raise RuleFailure("unsupported branch behavior")
         if t == "conditional_node":
-            if (
-                case["id"] not in (7, 9)
-                or c["condition_type"] != "equals"
-                or c["left_value_source"] != "input"
-                or c["right_value"] != ("yes" if case["id"] == 7 else "")
-            ):
+            if c["condition_type"] != "equals" or c["left_value_source"] != "input":
                 raise RuleFailure("wrong conditional comparison/source")
         if t == "user_text_input_node":
             if case["id"] not in (3, 6, 7, 8):
@@ -193,8 +189,6 @@ def safety(spec, case):
                 or not c["transient_output"]
             ):
                 raise RuleFailure("unsafe writer flags")
-    if case["id"] == 8 and not any(n["type"] == "branch_node" for n in nodes.values()):
-        raise RuleFailure("parallel node required")
     return nodes, out
 
 
@@ -206,10 +200,11 @@ def evaluate(spec, case, variant):
     writes = []
     prompts = []
     visited = []
+    visits = []
     ends = []
     answers = iter(variant["answers"])
     pending = [
-        (handle, Value(""), frozenset(), ())
+        (handle, Value(""), frozenset(), (), ())
         for handle, node in nodes.items()
         if node["type"] == "start_node"
     ]
@@ -230,10 +225,12 @@ def evaluate(spec, case, variant):
         return incoming
 
     while pending:
-        handle, value, ancestors, controls = pending.pop()
+        handle, value, ancestors, controls, routes = pending.pop()
         if handle in ancestors:
             raise RuleFailure("cycle")
         visited.append(handle)
+        visit = dict(handle=handle, routes=routes, data_lineage=value.lineage)
+        visits.append(visit)
         config = nodes[handle]["config"]
         kind = nodes[handle]["type"]
         port = "default"
@@ -241,7 +238,7 @@ def evaluate(spec, case, variant):
         if len(visited) > 128:
             raise RuleFailure("step bound exceeded")
         if kind == "start_node":
-            value = Value(config["greeting"])
+            value = Value(config["greeting"], lineage=(handle,))
         elif kind in ("end_node", "branch_end_node"):
             if kind != "end_node":
                 raise RuleFailure("route must end at End")
@@ -253,7 +250,7 @@ def evaluate(spec, case, variant):
             except StopIteration:
                 raise RuleFailure("extra prompt") from None
             prompts.append(config["prompt"])
-            value = Value(answer, ("answer", handle))
+            value = Value(answer, ("answer", handle), (handle,))
         elif kind == "file_reader_node":
             filename = Path(config["file_path"]).name
             if filename not in variant["files"]:
@@ -262,11 +259,13 @@ def evaluate(spec, case, variant):
                     writes=writes,
                     prompts=prompts,
                     visited=visited,
+                    visits=visits,
                     error=True,
                 )
             value = Value(
                 variant["files"][filename],
                 ("file", str(safe_path(config["file_path"], root)), handle),
+                (handle,),
             )
         elif kind == "text_transform_node":
             operation = config["operation"]
@@ -278,10 +277,12 @@ def evaluate(spec, case, variant):
             value = Value(
                 functions[operation](str(value.data or "")),
                 ("operation", operation, value.expression),
+                value.lineage + (handle,),
             )
         elif kind == "conditional_node":
             port = "true" if str(value.data) == config["right_value"] else "false"
             controls += (dict(handle=handle, port=port, expression=value.expression),)
+            routes += (dict(fork=handle, port=port),)
         elif kind == "branch_node":
             # Only guaranteed preceding writes can be read safely by both paths.
             if any(
@@ -293,14 +294,26 @@ def evaluate(spec, case, variant):
                 for key, node in nodes.items()
             ):
                 raise RuleFailure("parallel Vault writes need review")
-            for branch in ("path_a", "path_b"):
+            from .structure_rules import output_ports
+
+            for branch in output_ports(nodes[handle]):
                 target = outgoing.get(handle + "." + branch)
                 if not target:
                     raise RuleFailure("missing branch")
-                pending.append((target[0].split(".")[0], value, ancestors, controls))
+                pending.append(
+                    (
+                        target[0].split(".")[0],
+                        value,
+                        ancestors,
+                        controls,
+                        routes + (dict(fork=handle, port=branch),),
+                    )
+                )
             continue
         elif kind == "concat_node":
             value = format_value(config["template"], dict(vault, input=value))
+            visit["data_lineage"] = value.lineage
+            value.lineage += (handle,)
         elif kind == "json_path_node":
             data = json.loads(value.data) if isinstance(value.data, str) else value.data
             expression = value.expression
@@ -312,24 +325,28 @@ def evaluate(spec, case, variant):
                 else:
                     data = data[int(part)]
                 expression = project(expression, part)
-            value = Value(data, expression)
+            value = Value(data, expression, value.lineage + (handle,))
         elif kind == "text_output_node":
             value = source(config, "input", value)
             body = format_value(config["template"], {"input": value})
+            visit["data_lineage"] = body.lineage
             outputs.append(
                 dict(
                     handle=handle,
                     body=body.data,
                     expression=body.expression,
                     controls=controls,
+                    routes=routes,
                 )
             )
             value = Value(
                 "[" + config["label"] + "] " + body.data,
                 ("label", config["label"], body.expression),
+                body.lineage + (handle,),
             )
         elif kind == "file_output_node":
             content = source(config, "content", value)
+            visit["data_lineage"] = content.lineage
             destination = str(safe_path(config["file_path"], root))
             path = str(
                 root
@@ -352,6 +369,7 @@ def evaluate(spec, case, variant):
             value = Value(
                 {"path": path, "kind": "file"},
                 ("file_reference", handle, destination, content.expression),
+                content.lineage + (handle,),
             )
         else:
             raise RuleFailure("unsupported type")
@@ -364,7 +382,7 @@ def evaluate(spec, case, variant):
         target = outgoing.get(handle + "." + port)
         if not target:
             raise RuleFailure("nonterminal route ends before End")
-        pending.append((target[0].split(".")[0], value, ancestors, controls))
+        pending.append((target[0].split(".")[0], value, ancestors, controls, routes))
     try:
         next(answers)
         raise RuleFailure("missing prompt")
@@ -373,7 +391,12 @@ def evaluate(spec, case, variant):
     if not ends:
         raise RuleFailure("no End")
     return dict(
-        outputs=outputs, writes=writes, prompts=prompts, visited=visited, error=False
+        outputs=outputs,
+        writes=writes,
+        prompts=prompts,
+        visited=visited,
+        visits=visits,
+        error=False,
     )
 
 
@@ -513,8 +536,10 @@ def check_rules(spec, case):
         )
         safety(spec, case)
         record("path_type_safety", True, "All nodes, including error routes, inspected")
+        evaluated = []
         for variant in fixture_variants(case["id"]):
             result = evaluate(spec, case, variant)
+            evaluated.append(result)
             writes = result["writes"]
             outputs = result["outputs"]
             expected = [
@@ -538,6 +563,10 @@ def check_rules(spec, case):
             )
             ok = ok and provenance
             record("semantics." + variant["name"], ok, result)
+        from .structure_rules import check_required_structure
+
+        shape = check_required_structure(spec, case["required_structure"], evaluated)
+        record("required_structure", shape["result"] == "pass", shape)
     except (
         RuleFailure,
         ValueError,

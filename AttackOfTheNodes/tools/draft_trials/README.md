@@ -2,7 +2,7 @@
 
 This is an external test harness, not a new workflow node or a general English
 requirements prover. The frozen oracle in `cases.py` implements the approved
-10-case TEST_SET (version 2). `fixtures/calibration.json` contains 19 paired,
+10-case TEST_SET (version 3). `fixtures/calibration.json` contains 22 paired,
 hand-authored good/bad drafts. Mock mode exercises the actual SDK adapter,
 designer graph, Check nodes, authoring build/check and target engine. It supplies
 canned replies and a synthetic credential in memory; Secrets lazy loading and
@@ -68,12 +68,25 @@ runs real `main.py build --check --json`, rejects all warnings, verifies the
 pure subset over every fixture. It inspects every node, including error routes.
 Dynamic file paths, escaping symlinks, ordinary output fan-out, cycles,
 unsupported source/routing overrides and unproven parallel Vault races fail.
-Oracle version 2 checks expression lineage for every output and write. Each
+Oracle version 3 checks expression lineage for every output and write. Each
 required operation must act on the complete requested source and feed the
 result; merely carrying a source-derived character or an unrelated operation
 name is insufficient. Literal answer suffixes and partial-file reconstruction
 are rejected. Conditional status messages must depend on the real tested input;
-saved-path displays must come from the same writer's file reference. Explicit
+saved-path displays must come from the same writer's file reference. Each frozen case also declares `required_structure`: semantic roles, ordering
+and producer relationships, and work assigned to each active fork port. The
+common matcher has no case-id branches. It matches roles to actual node/config
+and output evidence, requires the producer that really feeds each output, and
+uses graph dominance, exclusive route reachability and recorded execution-route
+membership. Work before a fork, after a shared join, on its sibling route or in
+an unused decorative operation cannot satisfy a route. Every active route must
+do nonterminal work; an End-only branch fails. All control nodes must be
+accounted for by the declaration. Case 8 permits upper/lower port swaps; cases
+7/9 fix the true/false work. Linear cases use the same role/producer checks.
+The `required_structure` rule emits role mappings and route evidence separately
+from expression provenance and output comparisons. Ambiguous candidate searches
+are bounded and fail for review instead of being silently accepted.
+Explicit
 fixed messages (Ready, Continuing/Stopping, Empty note) and the original fixed
 heading remain valid literals in their appropriate roles.
 Configured reader/writer paths are mandatory for these frozen cases. Proven

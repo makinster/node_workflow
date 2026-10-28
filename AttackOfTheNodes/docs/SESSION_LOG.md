@@ -6,6 +6,33 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-28 — PR #135 route-structure review
+
+Continued the clean PR branch at `48959db`. Reused the reviewer's
+`/tmp/pr135-case8-recheck.py` from the review-worktree investigation: both
+transforms and displays run serially on one parallel path, restoring the
+original input from Vault, while the other path ends. Reproduced its rules and
+full mocked-trial false pass before the fix.
+
+Every case now freezes role, producer, ordering and route requirements (oracle
+v3). One handle-independent matcher checks them using dominance, exclusive
+route reachability, execution-route membership and actual producer-node data
+lineage. End-only paths, work hoisted before the decision, shared work and
+borrowing another producer cannot satisfy a declared route. All control nodes
+and ports must be accounted for; matching is bounded. Case 8 permits port swaps;
+cases 7/9 require their specific true/false work. No designer/backend change.
+
+Retained the prior 19 calibration pairs and added serial parallel work,
+pre-Conditional displays and uppercase-before-empty-choice negatives. Tests
+cover each route, renamed handles, swapped parallel ports, linear-case
+requirements and incorrect producer provenance. Focused checks: **96 passed
+in 6.83 s**. Full `pytest -n auto`: **3,330 passed in 44.60 s**.
+Standalone proof `/tmp/aotn-pr135-route-proof-20261028` passes all ten cases,
+21 target fixtures, and all 22 good/bad calibration expectations (44 judge
+calibration calls plus 31 designer calls, all mocked). Docs consolidation,
+source-style and whitespace checks pass. No real model/API calls or Secrets
+access.
+
 ## 2026-10-28 — PR #135 containment, provenance and style review
 
 Continued the clean PR branch at `4b42912`. Read the review worktree
