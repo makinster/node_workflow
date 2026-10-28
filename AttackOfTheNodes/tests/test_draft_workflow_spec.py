@@ -138,7 +138,7 @@ async def test_complete_live_palette_and_prompt_sizes_fit_without_truncation():
         types.update(e['type'] for e in records['entries'])
     assert types == PALETTE
     contracts = n['contracts']['config']['template'].format_map(values)
-    assert len(brief) == 7447
+    assert len(brief) == 7634
     assert len(contracts) == 7421
     assert len(contracts) < 7500 < 8000
     for case in CASES:

@@ -6,6 +6,22 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-27 — Hosted single-question node
+
+Own clean worktree `/home/makin/src/nw-ask-hosted-question`, branch
+`codex/ask-hosted-question`, fetched main `4f1f5e7`. Implemented owner choices
+1–9 using the official SDK and existing source/routing/form contracts. Explicit
+Secrets lookup, effort, streaming final helper, overall deadline, supported-only
+fallback, no partial replies and readable typed errors. Shared redactor protects
+Answer/SDK diagnostics; real engine mocked-auth run tests persisted canaries.
+Options/node Context defaults 100,000/blank, range 1,000–200,000, total +12,000.
+Only mocked SDK calls; no real API/local inference or owner workflow run.
+New helper spec, source audit row, save/reopen/range tests and delivery case.
+Catalogue remeasured: Brief 7,634; Compact Text 36,848 / JSON 51,792.
+Default now 64,000, capped below the 25% target at the existing ceiling; designer
+Brief cap 8,000, fixed palette 7,421. Historic measurements preserved.
+**3,207 full-suite tests pass in 680.92 s**. Earlier runs found only stale Brief/long-text/example inventories, corrected and explicitly recorded in the case. 205 focused checks (including 63 new-node/UI checks), 27 examples, helper node (2)/UI, example/designer build --check, dependency check and delivery schema pass; docs consolidation 104 Markdown / 945 relative links and git diff --check pass. Five production-form SVG captures retained in `/home/makin/src/agent_channel/hosted-question-samples/`. [Contract](integrations/ASK_CLAUDE.md).
+
 ## 2026-10-27 — Draft a workflow: medium trial, stop at target check
 
 Own clean worktree `/home/makin/src/nw-draft-workflow-medium-trial`, branch

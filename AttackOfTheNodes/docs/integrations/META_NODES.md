@@ -56,7 +56,7 @@ Brief retains names-only arrays; Compact/Detailed retain separate `id` / `name`.
 
 Remeasured after the Text-port fix, base `232d112`: **50 non-debug entries;
 Compact Text 35,386 characters / 35,437 UTF-8 bytes; compact JSON 49,874
-characters/bytes**. Default **62,400** stays unchanged, about 25% above the larger
+characters/bytes**. At that measurement the default was **62,400**, about 25% above the larger
 form. Original build measurement is retained in the
 [historical measurement](../audits/meta_nodes_2026_10_26/catalogue-size.json).
 Current fixed-palette and Brief counts are in the
@@ -68,6 +68,14 @@ Nothing is partially returned or silently dropped. Detailed/all-debug output
 can overflow; narrow filters. Context Pack and Ask local model have their own
 limits: the full catalogue fitting this node does not make it fit downstream.
 Use a filtered catalogue for a small request.
+
+Current registry with the hosted-question node: **51 non-debug entries**, Compact
+Text **36,848** characters and compact JSON **51,792**. The default is now
+**64,000**, the existing upper bound (23.6% headroom, nearest allowed cap to
+the 25% target). Brief Text **7,634** / compact JSON **10,603**. The designer
+Brief catalogue cap rises from 7,500 to **8,000** so registry growth does not
+stop its first pass; Context remains 8,000 (366 characters headroom). The
+fixed nine-type palette remains **7,421**. No designer run is authorized here.
 
 **Two-pass planning.** Measured Brief **all non-debug** Text: **50 entries,
 7,447 characters** after the Context-limit description update: 553 below the

@@ -63,8 +63,10 @@ from .data.context_pack_node import ContextPackNode
 from .ai.ask_local_model_node import AskLocalModelNode
 from .data.check_workflow_spec_node import CheckWorkflowSpecNode
 from .data.node_catalogue_node import NodeCatalogueNode
+from .ai.ask_claude_node import AskClaudeNode
 
 ALL_NODE_CLASSES = [
+    AskClaudeNode,
     NodeCatalogueNode,
     CheckWorkflowSpecNode,
     AskLocalModelNode,

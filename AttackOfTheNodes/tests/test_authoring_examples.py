@@ -23,6 +23,7 @@ EXAMPLES = Path(__file__).resolve().parent.parent / "examples"
 
 #: Warnings each example is expected to produce when built on a fresh machine.
 EXPECTED_WARNINGS = {
+    "ask_hosted_question.json": set(),
     "ask_local_model.json": set(),
     "context_pack.json": set(),
     "pause_and_wait.json": set(),
@@ -35,6 +36,7 @@ EXPECTED_WARNINGS = {
 
 #: Lines (substrings) each example's execution outline must contain.
 EXPECTED_OUTLINE = {
+    "ask_hosted_question.json": ["Ask Claude", "Check reply"],
     "ask_local_model.json": ["Context Pack", "Ask local model", "Check reply", "Notify me"],
     "context_pack.json": ["Context Pack", "Ask Hermes to investigate"],
     "pause_and_wait.json": ["splits into 2 parallel paths:", "Wait for quick (Wait Until); waits for Quick path (No-Op)"],

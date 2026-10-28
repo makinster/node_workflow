@@ -44,6 +44,8 @@ DEFAULT_SETTINGS: Dict[str, Any] = {
     "local_model_server_url": "http://localhost:11434",
     "local_model_default_model": "",
     "local_model_context_limit": 8000,
+    "claude_model": "claude-haiku-5-5",
+    "claude_context_limit": 100000,
 }
 
 

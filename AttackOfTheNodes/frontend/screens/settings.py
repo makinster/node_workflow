@@ -61,6 +61,8 @@ class SettingsScreen(CommandScreenMixin, ModalScreen):
                             labels = {"local_model_server_url": "Local model server URL",
                                       "local_model_default_model": "Local default model",
                                       "local_model_context_limit": "Local model context limit (characters)",
+                                      "claude_model": "Claude model",
+                                      "claude_context_limit": "Claude context limit (characters)",
                                       "hermes_profile_home": "Hermes profile home",
                                       "hermes_command": "Hermes command",
                                       "hermes_investigations_per_day": "Investigations per day (0 = off, up to 50)",
@@ -70,6 +72,9 @@ class SettingsScreen(CommandScreenMixin, ModalScreen):
                             value = values.get(key, default)
                             if key == "local_model_default_model":
                                 yield LocalModelPicker(value, url=values.get("local_model_server_url", DEFAULT_SETTINGS["local_model_server_url"]), id=f"setting-{key}")
+                            elif key == "claude_model":
+                                from backend.integrations.claude import MODELS
+                                yield Select([(m, m) for m in MODELS], value=value, allow_blank=False, id=f"setting-{key}")
                             elif isinstance(default, bool):
                                 yield Checkbox(value=bool(value), id=f"setting-{key}")
                             else:
@@ -237,12 +242,13 @@ class SettingsScreen(CommandScreenMixin, ModalScreen):
             widget = self.query_one(f"#setting-{key}")
             if isinstance(default, bool):
                 values[key] = bool(widget.value)
-            elif key == "local_model_context_limit":
+            elif key in ("local_model_context_limit", "claude_context_limit"):
                 from backend.field_types import check_number
                 value, problem = check_number({'type': 'integer', 'min': 1000, 'max': 200000}, widget.value, default)
                 if problem:
-                    self._set_secret_status('Local model context limit: ' + problem)
-                    notifications.notify_error(self.app, 'Local model context limit: ' + problem)
+                    label = 'Claude context limit' if key == 'claude_context_limit' else 'Local model context limit'
+                    self._set_secret_status(label + ': ' + problem)
+                    notifications.notify_error(self.app, label + ': ' + problem)
                     widget.focus()
                     return
                 values[key] = value

@@ -1,11 +1,23 @@
 # Current State
 
-Snapshot checked **2026-10-27**, against fetched `origin/main` `80e4315` after
-#130 merged; medium draft checked but is outside the approved target-run scope.
+Snapshot checked **2026-10-27**, against fetched `origin/main` `4f1f5e7` after
+#131 merged; hosted-question candidate below awaits review. No real API calls.
 Code and fresh GitHub checks take precedence.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
+
+## Hosted question node — 2026-10-27, built for review
+
+Own worktree `/home/makin/src/nw-ask-hosted-question`, branch
+`codex/ask-hosted-question`, base `4f1f5e7`. Owner choices 1–9 implemented:
+single-turn streaming SDK, Secrets-only key, Options model/context limit, node
+overrides/effort/JSON and standard inputs/routing. Refusal/cutoff stop before
+content; typed errors omit provider bodies. Shared redactor protects Answer and
+SDK diagnostics; real engine canary checks cover run_errors. No real API call.
+[Contract](integrations/ASK_CLAUDE.md), [case](delivery_tests/ask-claude.json).
+Brief grows to 7,634; designer Brief cap raised to 8,000; palette stays 7,421.
+Catalogue default 64,000 (existing ceiling), compact JSON 51,792. **3,207 full-suite checks pass** (680.92 s); 205 focused checks, 27 example checks, helper node/UI, build --check, delivery schema, dependency, docs and whitespace checks pass. The three full runs and inventory corrections are recorded in the case.
 
 ## Draft a workflow — 2026-10-27, medium trial checked only
 

@@ -15,6 +15,7 @@ aotn run "Example - Pause and wait"
 
 | Spec | Shows | Needs before running |
 |---|---|---|
+| `ask_hosted_question.json` | One Question → hosted Answer as JSON → Check reply → Text Output | Add `ANTHROPIC_API_KEY` in Secrets; consumes API credits; no live call was made for this example |
 | `context_pack.json` | Disk/Git Vault facts plus log excerpts → Context Pack → investigation evidence | Configure the service folder/log, allowed folders and the investigation profile/bridge; request queueing is not finding completion |
 | `pause_and_wait.json` | Parallel Branch, Sleep, Wait Until waiting for another path | nothing |
 | `ask_and_branch.json` | User Text Input, Conditional choosing one path | answering the prompt |
