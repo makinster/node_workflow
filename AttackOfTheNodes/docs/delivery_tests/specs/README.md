@@ -20,14 +20,24 @@ A non-`ok` status explains scope/uncertainty and stops. All preparation/service/
 validation/write errors go to a readable problem message and End. There is no
 retry, automatic build, approval node, shell execution or generated-workflow run.
 
-Brief is 6,207 characters; all complete Compact fragments joined are 6,865,
+After the Text-port fix, Brief is 7,438 characters; all complete Compact
+fragments joined are 7,421,
 including headers. They reach Context intact, without Context Pack truncation.
-The exact counts are tied to base `cfd3458`; registry growth may hit the 7,500
+The exact counts are measured for the fix on base `232d112`; registry growth may hit the 7,500
 catalogue/planning budget or hard 8,000 Context cap and stop rather than clip.
 The shortlist uses a 300 s timeout / 256 output tokens; drafting uses 600 s /
 1,024 tokens. Both use JSON replies, thinking off, temperature 0.2 and a context
 window of 8,192. Model override is empty: use the owner's Options default.
 The 500-character request limit is guidance, not a new input gate.
+
+Text ports now show ids separately from quoted display names, with an id-only
+connection legend. Brief uses `default "Greeting"`; Compact/Detailed use
+`default ("Greeting") [string]`. The draft Question includes a literal
+`{"from":"start.default","to":"show.input"}` example (doubled braces in the
+stored Concat template, single braces when rendered). No client/context cap,
+query, JSON format, call setting or workflow path changed. This revised
+spec is check-only; the prior failed trial used the old Text/prompt. No re-trial
+or update to the installed trial library was performed.
 
 The raw Answer goes into `draft_text`. That exact text is checked with an
 8,000-character limit. Only Check's success wire reaches File Write; its Content

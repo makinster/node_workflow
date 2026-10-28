@@ -2,7 +2,7 @@
   "schema_version": 1,
   "case_id": "draft-a-workflow",
   "baseline": "cfd345888b76ca24347b0b6596a84e1926765256",
-  "record_status": "Decision 11 trial completed once: Check failed; two local calls, no retry or saved spec; request not delivered",
+  "record_status": "Prior decision 11 trial failed; Text port/prompt ambiguity fix authored and checked, awaiting review; no re-trial",
   "request_kind": "composition-only",
   "owner_kind": "first composition-only meta-workflow",
   "node_kind": "meta",
@@ -87,13 +87,13 @@
     "path": "specs/draft-a-workflow.json",
     "guide": "specs/README.md",
     "approved_samples": "fixtures/draft-a-workflow.json",
-    "installed": true,
-    "executed": true,
-    "base": "398c482ffd64df878c921c8b544dae004adddeb9",
-    "implementation_commit": "2824108",
-    "execution_scope": "Designer ran once; generated target was not built or run.",
-    "installed_workflow_id": "wf_26e14719ecd0",
-    "data_root": "/home/makin/.local/share/aotn-draft-workflow-trial"
+    "installed": false,
+    "executed": false,
+    "base": "232d1122ab74bedad4c1140c586a87f351699be6",
+    "implementation_commit": "555e493",
+    "execution_scope": "Current prompt revision checked only; previous installed/observed revision is identified in trial.",
+    "data_root": "/home/makin/.local/share/aotn-draft-workflow-trial",
+    "previous_installed_workflow_id": "wf_26e14719ecd0"
   },
   "candidate_artifact": {
     "kind": "planning-packet",
@@ -472,7 +472,8 @@
     "Future scoring: on the same catalogue base, score applicable acceptance checks individually; retain original coverage and record scoped alternatives separately. Permission/secret/approval regressions block promotion. Unrun model/device checks remain not_run.",
     "Owner approved narrower fixed-palette variant; original general runtime lookup mapping remains 7/8 for comparison, approved scope is 8/8. No automated build or retry. Build step checked, not delivered/live.",
     "Contract-only evidence; no observed execution. Eight static catalogue queries are collected by Concat before draft call.",
-    "Earlier planning/build notes are dated historical evidence. The trial below supersedes their not_run/contract-only status for the trivial designer path only; medium/negative model runs remain unrun. No request-delivery success inferred from FINISHED/0."
+    "Earlier planning/build notes are dated historical evidence. The trial below supersedes their not_run/contract-only status for the trivial designer path only; medium/negative model runs remain unrun. No request-delivery success inferred from FINISHED/0.",
+    "Catalogue Text port-id fix is check-only, separately recorded in catalogue_text_fix. Prior trial and observed shapes refer to the old spec SHA/text; no successful re-trial inferred."
   ],
   "pr": "https://github.com/makinster/node_workflow/pull/126",
   "trial": {
@@ -665,5 +666,86 @@
       "product_suite": "not run: documentation/data results only; no product changes or further inference"
     },
     "results_pr": "https://github.com/makinster/node_workflow/pull/127"
+  },
+  "catalogue_text_fix": {
+    "base": "232d112",
+    "worktree": "/home/makin/src/nw-catalogue-port-ids",
+    "branch": "codex/catalogue-port-ids",
+    "reason": "Prior trial copied port/display labels into connection ids.",
+    "text_notation": {
+      "Brief": "default \"Greeting\"",
+      "Compact/Detailed": "default (\"Greeting\") [string]",
+      "legend": "Connections use port ids only; quoted names are labels."
+    },
+    "json_fields_changed": false,
+    "measurements": {
+      "brief_characters": 7438,
+      "brief_bytes": 7439,
+      "fixed_palette_characters": 7421,
+      "fixed_palette_bytes": 7438,
+      "context_cap": 8000,
+      "per_catalogue_cap": 7500,
+      "queries": [
+        {
+          "node": "catalogue_start",
+          "characters": 844
+        },
+        {
+          "node": "catalogue_ends",
+          "characters": 1218
+        },
+        {
+          "node": "catalogue_output",
+          "characters": 798
+        },
+        {
+          "node": "catalogue_input",
+          "characters": 572
+        },
+        {
+          "node": "catalogue_reader",
+          "characters": 713
+        },
+        {
+          "node": "catalogue_writer",
+          "characters": 1356
+        },
+        {
+          "node": "catalogue_transform",
+          "characters": 695
+        },
+        {
+          "node": "catalogue_parallel",
+          "characters": 1124
+        }
+      ],
+      "json_start_record_sha256": {
+        "Brief": "c78bc4a4d6b57e037e57f53647e29eb59e4350bf64d983cb45d1263a69cb9198",
+        "Compact": "bd91fa7ff6f3ee373efe7400c16229cca21e89b5793480567b5a784317556fa0",
+        "Detailed": "4561345c581b723665e5af9b2b10448283198963e121248d4167ab70ca893328"
+      }
+    },
+    "fixed_context_headroom": 579,
+    "brief_context_headroom": 562,
+    "literal_connection_example": {
+      "from": "start.default",
+      "to": "show.input"
+    },
+    "checks": {
+      "regressions_failed_on_base": 4,
+      "focused_passed": 104,
+      "seconds": 0.48,
+      "build_check": "PASS; no diagnostics or data-root writes",
+      "json_record_parity": "Start JSON hashes identical on base/candidate for Brief/Compact/Detailed",
+      "delivery_schema": "PASS",
+      "docs_consolidation": "PASS: 103 Markdown files / 923 links",
+      "whitespace": "git diff --check PASS"
+    },
+    "workflow_runs": 0,
+    "generation_calls": 0,
+    "retrial": "not authorized or performed",
+    "evidence_packet": "/home/makin/src/agent_channel/draft-workflow-samples/port-ids-fix",
+    "pr": "https://github.com/makinster/node_workflow/pull/128",
+    "implementation_commit": "555e493"
   }
 }

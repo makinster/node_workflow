@@ -6,6 +6,36 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-27 — Catalogue Text port ids and designer example
+
+Own clean worktree `/home/makin/src/nw-catalogue-port-ids`, branch
+`codex/catalogue-port-ids`, freshly fetched main `232d112` (#127 merged).
+Fixes the ambiguity seen in the single failed designer trial: Compact/Detailed
+Text render `default ("Greeting") [string]` rather than `default/Greeting`.
+Brief renders compact `default "Greeting"` tokens and tighter table separators;
+all Text levels include an id-only connection legend. Labels are JSON-quoted.
+Brief looks up ids only while rendering Text; JSON record fields are unchanged.
+
+Designer draft Question now contains one literal `start.default -> show.input`
+JSON connection, with doubled braces in the saved Concat template. New measured
+Brief **7,438 chars / 7,439 bytes**, complete fixed Compact **7,421 / 7,438**:
+both fit the unchanged 7,500 catalogue budget and hard 8,000 Context cap.
+The old Brief test's 10% headroom assumption was deliberately replaced by the
+existing 7,500 budget: exposing ids reduces Context headroom to 562 characters.
+Fixed palette has 579 characters Context headroom; no contracts were trimmed.
+
+Four new notation/escaping regressions failed on the base, then passed.
+**104 focused catalogue/designer/authoring/example/generated checks pass in
+0.48 s**. Same Start JSON records hash identically before/after at all three
+levels; build --check passes with no diagnostics or temporary-root writes.
+Delivery case adds this check-only fix separately; previous trial timings,
+rejected draft and old counts stay historical. No workflow/model calls,
+installed-spec update or re-trial. Delivery schema, docs consolidation
+(103 Markdown files / 923 links) and git diff --check pass. No full suite:
+the focused catalogue/authoring checks cover this Text/prompt-only change.
+[PR #128](https://github.com/makinster/node_workflow/pull/128), implementation
+`555e493`, targets main.
+
 ## 2026-10-27 — Draft a workflow: single measured CPU trial
 
 Own clean worktree `/home/makin/src/nw-draft-workflow-trial`, branch

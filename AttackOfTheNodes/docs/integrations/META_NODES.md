@@ -24,8 +24,8 @@ forwarding. Filters are node settings:
   case-insensitive search word in type/name/description/tags. Blank means any.
   No regex. No matches gives `catalogue_empty`.
 - **Brief / Compact / Detailed** is separate from **Text / JSON**. Brief has
-  only type, display name, one-line description and input/output display
-  names: no data types, sources, config or errors. Compact includes
+  type, display name, one-line description and input/output display names
+  (plus port ids in Text): no data types, sources, config or errors. Compact includes
   field names/types/ranges/options and error codes; Detailed adds full schemas,
   defaults, declared error descriptions, custom/unchecked keys, reference
   fields, Vault declarations and UI hints. Dynamic ports are resolved with
@@ -46,10 +46,21 @@ outputs carry `to`. The common shape and `entry_kind` reserve a future
 **No Bundle discovery, serialization or execution is implemented.** Saved
 workflows are not scanned or presented as catalogue entries.
 
-Measured Compact **all non-debug** output, including final headers/envelope:
-**50 entries; Text 34,618 characters / 34,669 UTF-8 bytes; compact JSON
-49,866 characters/bytes**. Default **62,400 characters** is 25.14% above the
-larger form, within 512–64,000. [Reproducible measurement](../audits/meta_nodes_2026_10_26/catalogue-size.json).
+Text ports separate machine ids from quoted labels: `default ("Greeting")
+[string] ...`. Brief uses the shorter `default "Greeting"`; its tight table
+separators keep ids and names inside the existing designer budget. Every Text
+level says **Connections use port ids only; quoted names are labels.** Labels
+are JSON-quoted, including embedded slashes, quotes and newlines. A connection
+uses `start.default`, never `start.default/Greeting`. JSON fields are unchanged:
+Brief retains names-only arrays; Compact/Detailed retain separate `id` / `name`.
+
+Remeasured after the Text-port fix, base `232d112`: **50 non-debug entries;
+Compact Text 35,386 characters / 35,437 UTF-8 bytes; compact JSON 49,874
+characters/bytes**. Default **62,400** stays unchanged, about 25% above the larger
+form. Original build measurement is retained in the
+[historical measurement](../audits/meta_nodes_2026_10_26/catalogue-size.json).
+Current fixed-palette and Brief counts are in the
+[designer case](../delivery_tests/draft-a-workflow.json).
 The cap counts Text as returned or compact JSON, not pretty-printed JSON.
 Both forms also have a hard 256 KiB UTF-8 cap. Overflow gives
 `catalogue_too_large`, with measured count/limit, and publishes nothing.
@@ -59,7 +70,7 @@ limits: the full catalogue fitting this node does not make it fit downstream.
 Use a filtered catalogue for a small request.
 
 **Two-pass planning.** Measured Brief **all non-debug** Text: **50 entries,
-6,207 characters** including its header, about 22% under the 8,000-character
+7,438 characters** including its header/legend, 562 below the 8,000-character
 Ask local model Context cap (compact JSON is 10,362, so pass Text to a model).
 1. Shortlist: Brief, All nodes, Text → Context of the planning question.
 2. Detail: Detailed (or Compact), Filtered by the shortlisted types/search →

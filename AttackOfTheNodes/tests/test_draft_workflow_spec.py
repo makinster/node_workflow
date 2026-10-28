@@ -138,14 +138,18 @@ async def test_complete_live_palette_and_prompt_sizes_fit_without_truncation():
         types.update(e['type'] for e in records['entries'])
     assert types == PALETTE
     contracts = n['contracts']['config']['template'].format_map(values)
-    assert len(brief) == 6207
-    assert len(contracts) == 6865
+    assert len(brief) == 7438
+    assert len(contracts) == 7421
     assert len(contracts) < 7500 < 8000
     for case in CASES:
         state = dict(draft_request=case['request'], draft_shortlist=json.dumps(
             case['shortlist'], ensure_ascii=False, separators=(',', ':')))
         question = n['shortlist_question']['config']['template'].format_map(state)
         draft_question = n['draft_question']['config']['template'].format_map(state)
+        # Doubled braces in the stored Concat template become literal JSON.
+        assert '{"from":"start.default","to":"show.input"}' in draft_question
+        assert '{{' not in draft_question
+        assert 'display names are labels, never part of a connection' in draft_question
         for q, context in [(question, brief), (draft_question, contracts)]:
             assert len(q) + len(context) + 100 < 20000
 
