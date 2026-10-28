@@ -28,6 +28,7 @@ Three core types and machine port ids are correct. Extra End completion line
 makes this noisier than the quiet sample; one trivial success is not general
 quality/repeatability proof. Main library unchanged. [Case](delivery_tests/draft-a-workflow.json)
 retains original failure, timings, saved draft, output and observed shapes.
+[Results PR #129](https://github.com/makinster/node_workflow/pull/129), record `869ab1a`.
 Local report: `/home/makin/src/agent_channel/draft-workflow-samples/TRIAL.md`.
 
 Earlier implementation/failed-trial notes below are historical.

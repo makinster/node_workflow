@@ -38,6 +38,8 @@ Local TRIAL.md has an added Re-trial section. Delivery schema, exact metric/spec
 identity, clean Check/build/Ready assertions, docs consolidation (103 files /
 925 links) and git diff --check pass. No product suite: documentation/data
 results only. No further trial authorized or attempted.
+Results [PR #129](https://github.com/makinster/node_workflow/pull/129), record
+commit `869ab1a`, targets main.
 
 ## 2026-10-27 — Catalogue Text port ids and designer example
 
