@@ -16,26 +16,39 @@ python -m tools.draft_trials --trial-root /absolute/another-root --cases 1,10
 python -m tools.draft_trials --trial-root /absolute/calibration-root --calibrate-only
 ```
 
-The root must not exist. The runner creates its own `library/`, `cases/`,
-`calibration/` and `artifacts/`. It builds both designer versions into that library
-with distinct names, then executes only v2. Every CLI build/check subprocess
-receives `--data-dir <root>/library`; every RunService worker inherits that root
-before backend imports. No default library or owner settings are copied.
-Prepared roots undergo a complete metadata-only tree check before any write,
-environment change or backend-service import: symlinks (including internal or
-dangling links), hard links and non-regular entries are rejected. Every resolved
-path must stay in the resolved root. The regular `prepared.json` record must
-match its exact version, library path and preparation note, with no duplicate or
-unknown fields. Library files and Secrets are never opened by this check.
-`--prepare` only creates a fresh root and exclusively creates its marker; it
-cannot be combined with `--real-calls` or rewrite an existing preparation record.
-This preflight is not an OS sandbox against concurrent directory replacement.
-For programmatic use, set `AOTN_DATA_DIR` **before backend imports**, as the CLI
-does; changing the environment after imports cannot relocate cached data paths.
+A new root is prepared automatically in mock mode, or explicitly with
+`--prepare`. Its only top-level entries are `prepared.json`, `library/` and
+`runs/`. Prepared roots can be reused in mock or approved real mode. Each run
+exclusively creates the next unused directory, `runs/000001/`, `runs/000002/`,
+and so on. Existing files/directories are never overwritten to allocate a run.
+All artifacts, generated workflows, fixture files and backend run records stay
+inside that run's directory, including its own `library/`. Every CLI build/check
+subprocess receives that run library through `--data-dir`; RunService inherits
+it before backend imports. Both designer versions are built there with distinct
+names, then only v2 executes. The shared root `library/` stays in place and is
+not written by trials. In real mode only, normal node credential access uses a
+read-only Secrets manager pointing to the shared library; no key or settings
+are copied. Mock mode uses a synthetic credential and blocks Secrets loading.
+
+Before any write, environment change or backend-service import, every existing
+root undergoes the same complete metadata-only tree check, including **all prior
+runs and the shared library**: symlinks (internal, external or dangling), hard
+links, FIFOs, sockets and other non-regular entries are rejected. Every resolved
+path must stay in the resolved root; symlinked ancestry is rejected too. The
+regular `prepared.json` must match its exact version, library path and note,
+with no duplicate or unknown fields. The root must contain exactly that marker
+and the `library/` and `runs/` directories. Library files and Secrets are never
+opened by this check. Old roots without this layout are rejected; prepare a new
+root rather than silently migrating an old trial's evidence.
+`--prepare` requires a fresh root, exclusively creates its marker and cannot be
+combined with `--real-calls`. This preflight is not an OS sandbox against
+concurrent directory replacement. For programmatic use, select `AOTN_DATA_DIR`
+**before backend imports**, as the CLI does; changing it after imports cannot
+relocate cached data paths. Use the CLI for preparation/reuse/containment checks.
 
 Each case freezes its rendered request, clarification, expectations and fixture
 variants before generation. Only the designer's draft destination is changed
-to `cases/<id>/drafts/draft.json`; that trial variant is saved in
+to `runs/<run>/cases/<id>/drafts/draft.json`; that trial variant is saved in
 `trial-designer.json`. Target paths are never repaired or redirected. The old
 spec remains unchanged and is built for inspection, not run as a local-model
 comparison. A future baseline comparison needs its separate approved call scope.
@@ -105,8 +118,11 @@ failure fixture, not a warning waiver for generated workflows.
 
 ## Artifacts
 
+The CLI prints the exact report path. All paths below are relative to the new
+`runs/<run>/` directory, never the shared root or an earlier run.
+
 - `report.json`: overall result, per-case results, counts, timings (p50/range),
-  failure categories and cost caveat; no-result is explicit failure.
+  failure categories, `budget_usd`, `time_limit_seconds`, cost estimate and caveat; no-result is explicit failure.
 - `calibration-report.json`: every good/bad rule verdict and judge verdict,
   false passes and false failures. Canned judge verdicts are protocol tests.
 - `artifacts/contracts.json`: complete text, length, hash and exact returned
@@ -130,20 +146,47 @@ owner adding `ANTHROPIC_API_KEY` to the **trial library** using the app. The
 harness does not copy, inspect or print credentials. The app's normal Ask node
 obtains its own key at execution, as in ordinary use.
 
-After approval, prepare a fresh root and stop:
+### Owner commands (after separate approval)
+
+From WSL, use this block. Run the first two setup commands once. The root must
+be fresh for `--prepare`; keep it for repeat trials. The app command really
+selects that library before importing backend services (covered by a launch
+regression test).
 
 ```bash
-python -m tools.draft_trials --trial-root /absolute/approved-root --prepare
-# Owner opens the app with --data-dir /absolute/approved-root/library,
-# adds the key through Options → Secrets, then closes the app.
-python -m tools.draft_trials --trial-root /absolute/approved-root --real-calls
+cd /home/makin/src/node_workflow/AttackOfTheNodes
+TRIAL_PY=/home/makin/src/node_workflow/.venv/bin/python
+TRIAL_ROOT=/home/makin/draft-trial-01
+
+# a. Prepare once.
+"$TRIAL_PY" -m tools.draft_trials --trial-root "$TRIAL_ROOT" --prepare
+
+# b. Add ANTHROPIC_API_KEY in Options → Secrets, then close the app.
+"$TRIAL_PY" main.py --data-dir "$TRIAL_ROOT/library"
+
+# c. Run after owner approval; repeat this command with the same root.
+"$TRIAL_PY" -m tools.draft_trials --trial-root "$TRIAL_ROOT" --real-calls --budget 0.50
+
+# d. Read the first result. Repeats print their new report path.
+cat "$TRIAL_ROOT/runs/000001/report.json"
 ```
 
-`--real-calls` is off by default; it accepts only a fresh or untouched prepared
-root. Cache stays off initially. The estimate guard includes calibration and
-stops before further calls at $0.10, 600 seconds or unknown cost. It is not a
-provider billing hard cap: a completed call can cross the bound and charged
-failures may lack usage. Reports record that limitation. Calibration precedes
-case generation; a real judge false pass stops the batch for an owner-approved
-comparison, never automatic escalation. No such trial or comparison was run
-in Step 1. Repetitions require fresh roots and the approved later budget.
+Recommend **$0.50 for a full run**. There are 44 calibration judge calls before
+the ten cases; calibration alone is about $0.12–0.15 at current planning
+estimates, not a measured Step 1 result. `--budget USD` has **no default** and is
+required with `--real-calls`, even for calibration-only runs. Limits must be
+positive finite numbers. `--time-limit SECONDS` defaults to 600. Both limits
+are recorded in `report.json`, including failures.
+
+The estimate guard includes calibration and checks **immediately before each
+Ask adapter call**, including calls within one designer run. It stops before
+further requests at the requested dollar limit, elapsed time limit, or unknown
+cost. An exhausted calibration guard writes a failed report with the available
+cost estimate. This is not a provider billing hard cap: a completed call can
+cross the bound, SDK retries belong to that call, and charged failures may lack
+usage. The time guard stops new calls; it does not interrupt one already in
+flight, which retains its node timeout. Cache stays off initially. Calibration
+precedes case generation; a real judge false pass stops the batch for an
+owner-approved comparison, never automatic escalation. No real trial or
+comparison was run in this Step 1 preparation change. Repeat runs reuse the
+shared key through the app's ordinary provider without re-adding or copying it.

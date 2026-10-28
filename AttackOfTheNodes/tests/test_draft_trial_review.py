@@ -18,6 +18,7 @@ def prepared_root(tmp_path):
     root = tmp_path / "trial"
     root.mkdir()
     (root / "library").mkdir()
+    (root / "runs").mkdir()
     (root / "prepared.json").write_text(
         json.dumps(
             {
@@ -31,6 +32,8 @@ def prepared_root(tmp_path):
 
 
 def invoke(monkeypatch, root, *flags):
+    if "--real-calls" in flags:
+        flags = (*flags, "--budget", "0.50")
     monkeypatch.setattr(
         sys, "argv", ["draft_trials", "--trial-root", str(root), *flags]
     )
@@ -46,7 +49,7 @@ def test_review_symlink_library_cannot_write_outside(tmp_path, monkeypatch, caps
     (root / "library").symlink_to(outside, target_is_directory=True)
     calls = []
 
-    async def fake_batch(trial_root, *args):
+    async def fake_batch(trial_root, *args, **kwargs):
         calls.append(trial_root)
         (trial_root / "library" / "probe.json").write_text("escaped write")
         return {"result": "pass", "case_count": 0}
@@ -176,7 +179,7 @@ def test_invalid_preparation_records_stop_before_batch(
     root = prepared_root(tmp_path)
     (root / "prepared.json").write_text(content)
 
-    async def forbidden(*args):
+    async def forbidden(*args, **kwargs):
         raise AssertionError("batch reached an invalid marker")
 
     monkeypatch.setattr(runner, "batch", forbidden)
@@ -198,15 +201,17 @@ def test_prepare_is_exclusive_and_valid_marker_is_accepted_without_calls(
     assert (root / "prepared.json").read_bytes() == marker
     called = []
 
-    async def fake_batch(trial_root, *args):
+    async def fake_batch(trial_root, *args, **kwargs):
         called.append(trial_root)
         (trial_root / "library" / "probe.txt").write_text("contained")
         return {"result": "pass", "case_count": 0}
 
     monkeypatch.setattr(runner, "batch", fake_batch)
     assert invoke(monkeypatch, root, "--real-calls") == 0
-    assert called == [root]
-    assert (root / "library" / "probe.txt").read_text() == "contained"
+    assert called == [root / "runs" / "000001"]
+    assert (
+        root / "runs" / "000001" / "library" / "probe.txt"
+    ).read_text() == "contained"
     assert (root / "prepared.json").read_bytes() == marker
 
 
