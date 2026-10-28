@@ -34,6 +34,14 @@ blocks: stable Context first with `cache_control: {"type": "ephemeral",
 or unused Context sends no marker. Changing only the question leaves the cached
 prefix unchanged. The provider's minimum cacheable length and prefix-matching
 rules still apply; selecting a TTL does not guarantee a cache hit.
+The minimum cacheable prefix is 512 tokens for all three supported models.
+Context below about 512 tokens (roughly 2,000 English-text characters) generally
+won't cache. The threshold applies to the entire prefix through the marker,
+including the system instruction and Context label, not Context alone; character
+counts are only an approximation. Below the token threshold the request succeeds
+without caching or an error, and both `cache_read_input_tokens` and
+`cache_creation_input_tokens` stay at 0. The question after the marker does not
+help reach the threshold.
 
 **Effort** is low / medium / high, default low, sent as `output_config.effort`.
 No temperature, top_p, top_k, thinking-disable or budget_tokens field is sent.
@@ -80,7 +88,10 @@ the API's top-level counts for the serving attempt, not a sum across models.
 Base prices per million tokens: Haiku $0.10 input / $0.50 output; Sonnet $2 /
 $10; Opus $4 / $20. These are the owner-approved small estimate table, not a
 billing quote. Haiku's documented >100,000-input-token tier is higher
-($0.50 / $2.50). Cache reads cost 0.1× the base input rate; 5-minute writes
+($0.50 / $2.50). Cache reads cost 0.1× the base input rate for Haiku
+($0.01/MTok at the base tier), and 0.05× for Sonnet ($0.10/MTok) and Opus
+($0.20/MTok), checked against the official pricing table on 2026-10-28.
+5-minute writes
 cost 1.25×, 1-hour writes 2×. Ordinary input, reads and writes are disjoint
 counts, so cached tokens are not charged again as ordinary input. The API's
 per-TTL write breakdown takes precedence; when absent, the requested TTL is

@@ -14,6 +14,7 @@ from .local_model import Answer, read_text, context_limit_value, _json
 
 MODELS = ('claude-haiku-5-5', 'claude-sonnet-5-5', 'claude-opus-5-5')
 PRICES = dict(zip(MODELS, ((.10, .50), (2., 10.), (4., 20.))))
+CACHE_READ_MULTIPLIERS = dict(zip(MODELS, (.1, .05, .05)))
 CACHE_CONTEXT = {'off': None, '5 min': '5m', '1 h': '1h'}
 MAX_ANSWER = 16_000
 MESSAGES = {
@@ -164,7 +165,7 @@ def _estimate(message, ttl=None):
         if any(value is None for value in (reads, writes, short, long)):
             return None
         a, b = PRICES[model]
-        total += ((inputs + reads * .1 + short * 1.25 + long * 2) * a + outputs * b) / 1_000_000
+        total += ((inputs + reads * CACHE_READ_MULTIPLIERS[model] + short * 1.25 + long * 2) * a + outputs * b) / 1_000_000
     return total
 
 

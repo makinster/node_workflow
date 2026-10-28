@@ -342,7 +342,9 @@ async def test_cache_prefix_and_cost(sdk, cache, ttl, model):
     assert details['cache_read_input_tokens'] == 1000
     assert details['cache_creation_input_tokens'] == 2000
     a, b = claude.PRICES[model]
-    assert details['estimated_cost_usd'] == pytest.approx((100*a + 10*b + 1000*a*.1 + 2000*a*(1.25 if ttl=='5m' else 2))/1e6)
+    read_price = {claude.MODELS[0]: .01, claude.MODELS[1]: .10, claude.MODELS[2]: .20}[model]
+    assert details['estimated_cost_usd'] == pytest.approx(
+        (100*a + 10*b + 1000*read_price + 2000*a*(1.25 if ttl=='5m' else 2))/1e6)
     node.config['input'] = 'Different question'
     await node.execute(ctx)
     assert sdk.calls[1][1]['messages'][0]['content'][0] == content[0]
@@ -376,7 +378,7 @@ def test_mixed_ttl_fallback_cost(sdk):
         cache_read_input_tokens=1000, cache_creation_input_tokens=3000,
         cache_creation=NS(ephemeral_5m_input_tokens=1000, ephemeral_1h_input_tokens=2000))
         for model in claude.MODELS[1:]]
-    expected = sum(((100 + 100 + 1250 + 4000)*claude.PRICES[m][0] + 10*claude.PRICES[m][1])/1e6 for m in claude.MODELS[1:])
+    expected = sum(((100 + 50 + 1250 + 4000)*claude.PRICES[m][0] + 10*claude.PRICES[m][1])/1e6 for m in claude.MODELS[1:])
     assert claude._estimate(sdk.result, '5m') == pytest.approx(expected)
     sdk.result.usage.iterations[-1].model = 'unknown-model'
     assert claude._estimate(sdk.result, '5m') is None
@@ -387,7 +389,12 @@ def test_bad_cache_counts_do_not_underestimate(sdk, value):
     assert claude._estimate(sdk.result, '1h') is None
 
 @pytest.mark.asyncio
-async def test_engine_usage_and_history_with_cache(sdk, tmp_path):
+@pytest.mark.parametrize('model,expected_cost', [
+    ('claude-haiku-5-5', .000425),
+    ('claude-sonnet-5-5', .0084),
+    ('claude-opus-5-5', .0168),
+])
+async def test_engine_usage_and_history_with_cache(sdk, tmp_path, model, expected_cost):
     from backend.configuration_manager import ConfigurationManager
     from backend.node_factory import NodeFactory
     from backend.workflow_map import WorkflowMap
@@ -395,6 +402,8 @@ async def test_engine_usage_and_history_with_cache(sdk, tmp_path):
     from backend.run_service import RunService
     from backend import persistence
     ConfigurationManager().set('claude_cache_context', '1 h')
+    ConfigurationManager().set('claude_model', model)
+    sdk.result.model = model
     SecretsManager().set_secret('ANTHROPIC_API_KEY', KEY)
     sdk.result.content = [NS(type='text', text='Answer ' + KEY)]
     sdk.result.usage.cache_read_input_tokens = 1000
@@ -412,8 +421,8 @@ async def test_engine_usage_and_history_with_cache(sdk, tmp_path):
     receipt, = result['agent_usage']
     assert receipt['node_id'] == ask and receipt['status'] == 'completed'
     assert receipt['usage']['cache_read_input_tokens'] == 1000
-    assert receipt['usage']['estimated_cost_usd'] == pytest.approx(.000425)
-    assert result['agent_usage_summary'] == {'estimated_cost_usd': pytest.approx(.000425),
+    assert receipt['usage']['estimated_cost_usd'] == pytest.approx(expected_cost)
+    assert result['agent_usage_summary'] == {'estimated_cost_usd': pytest.approx(expected_cost),
         'reported': 1, 'not_reported': 0, 'partial': 0}
     assert KEY not in json.dumps(result['agent_usage'])
     records = list(persistence.RUN_HISTORY_DIR.glob('*.json'))
@@ -433,3 +442,16 @@ def test_cache_run_details_example(sdk):
         'cache_creation_5m_input_tokens': 0, 'cache_creation_1h_input_tokens': 2000,
         'cost_estimate': 'Estimate: $0.000425 USD'}
     print(json.dumps(excerpt, indent=2))
+
+@pytest.mark.parametrize('model,read_price', [
+    ('claude-haiku-5-5', .01),
+    ('claude-sonnet-5-5', .10),
+    ('claude-opus-5-5', .20),
+])
+def test_published_cache_read_prices(sdk, model, read_price):
+    # Independent dollar amounts from the rate card, not production constants.
+    sdk.result.model = model
+    sdk.result.usage.input_tokens = 0
+    sdk.result.usage.output_tokens = 0
+    sdk.result.usage.cache_read_input_tokens = 1_000_000
+    assert claude._estimate(sdk.result) == pytest.approx(read_price)

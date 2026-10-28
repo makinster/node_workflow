@@ -8,6 +8,12 @@ This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
 
+PR #134 review fixes (2026-10-28) correct doubled cache-read estimates for
+Sonnet/Opus and document the 512-token minimum prefix. Per-model price tests
+and real-engine run summaries cover all three supported models. See the latest
+Session Log entry for verification: full `pytest -n auto` passes **3,234 tests
+in 35.63 s** after the review fixes.
+
 ## Hosted question caching — 2026-10-28, built for review
 
 Own clean worktree `/home/makin/src/nw-ask-claude-caching`, branch

@@ -6,6 +6,34 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-28 — PR #134 review fixes applied
+
+Applied the reviewed local patch from `/tmp/nw-review134-396b18f` onto
+`codex/ask-claude-caching` at `396b18f`. Cache-read multipliers now vary by
+model; write rates stay 1.25× / 2×. Independent published-price tests cover
+all three models, and the real-engine usage/history test now checks all three
+run-level cost summaries. Documented the 512-token whole-prefix threshold,
+rough character guideline and successful uncached calls with zero cache counts.
+No real API calls or owner Secrets accessed. Full `pytest -n auto`: **3,234
+passed in 35.63 s**. Docs consolidation and whitespace checks pass.
+
+## 2026-10-28 — PR #134 local review
+
+Reviewed exact head `396b18f` in detached WSL worktree
+`/tmp/nw-review134-396b18f`. Baseline full `pytest -n auto` passed 3,229 tests
+in 37.64 s. Independent rate-card tests then reproduced doubled cache-read
+estimates for both Sonnet and Opus. Official current prices are $0.10 and
+$0.20/MTok respectively (both 0.05× input); Haiku stays at 0.1×. Local fixes
+add per-model multipliers, independent regression cases, corrected existing
+cache/fallback expectations, and the missing 512-token/zero-cache-count docs.
+The threshold applies to the whole prefix through the marker; about 2,000
+characters is only a rough Context guideline. SDK 2.3.0 stable/beta cache and
+usage fields verified. Off/empty requests, write-TTL accounting, successful
+run receipts and masking checked. No real API calls or owner Secrets accessed.
+After the local fixes, full `pytest -n auto`: **3,232 passed in 35.67 s**;
+docs consolidation and whitespace checks pass. Changes remain uncommitted
+and unpushed at the user's request.
+
 ## 2026-10-28 — Context caching and run usage
 
 Own clean WSL worktree `/home/makin/src/nw-ask-claude-caching`, branch
