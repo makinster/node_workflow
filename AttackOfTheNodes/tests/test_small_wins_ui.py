@@ -41,7 +41,7 @@ class Host(KeymapScreenMixin, App):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('size',[(110,36),(80,24)])
+@pytest.mark.parametrize('size',[(80,24),pytest.param((110,36), marks=pytest.mark.slow)])
 async def test_compact_fields_table_and_keys_regression(size):
     factory,wm,node=make();app=Host(factory,wm,node)
     original=deepcopy(wm.get_node_data(node)['config'])

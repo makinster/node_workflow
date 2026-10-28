@@ -6,6 +6,31 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-27 — Isolate and parallelize the test suite
+
+Own worktree `/home/makin/src/nw-faster-tests`, `codex/faster-tests`, base/fetched
+main `4f1f5e7`. Added pinned development xdist dependency, work-stealing and
+capture; disposable collection/per-test AOTN and Hermes roots including bound
+storage aliases; logging cleanup; spawn-safe saved-value concurrency tests.
+No product/runtime files changed. Stash exhaustiveness now uses the actual form
+factory/guard plus mounted keyboard checks, rather than one giant mounted form.
+Real short deadline/cleanup subprocesses preserve hostile descendant kill/reap
+assertions; one actual 25-second check remains slow. Exact weak-reference checks
+prove twenty child instances are released. Full layout widths retained; redundant
+non-layout size repetitions reduced. 18 size cases removed, eight cases added or
+split out: original 3,137 → 3,127. Quick excludes 44 slow cases.
+
+Three consecutive full `pytest -n auto` runs all passed without flakes/retries:
+**35.48 / 35.45 / 35.38 s** external wall. Final serial: **3,127 passed**, 526.10 s
+wall / 508.57 s pytest. Quick: **3,083 passed**, 29.68 s wall. Original serial:
+3,137 passed, 694.25 s wall / 674.19 s pytest, overlapping initial diagnostic;
+owner independent baseline 657 s. [Benchmark report](audits/test_speed_2026_10_27/README.md)
+and [raw measurements](audits/test_speed_2026_10_27/measurements.json) record
+controlled parallel baseline (**3,137 passed, 133.16 s**), top fifteen and timing
+caveats. Dependencies check clean; tests compile; docs consolidation passes
+(104 Markdown files / 946 relative links), as does git diff --check. Docs explain
+full/quick commands, isolation and reviewer full-run policy.
+
 ## 2026-10-27 — Draft a workflow: medium trial, stop at target check
 
 Own clean worktree `/home/makin/src/nw-draft-workflow-medium-trial`, branch

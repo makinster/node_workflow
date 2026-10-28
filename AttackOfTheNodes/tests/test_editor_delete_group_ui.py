@@ -4,6 +4,7 @@ import asyncio
 from pathlib import Path
 
 import pytest
+from tests.ui_sizes import LAYOUT_WIDTHS
 from textual.app import App
 from textual.widgets import Button, Label, ListView
 
@@ -43,7 +44,7 @@ def test_editor_header_marks_only_callable_workflows(callable_):
     asyncio.run(check())
 
 
-@pytest.mark.parametrize("width", [60, 100, 140])
+@pytest.mark.parametrize('width', [100])
 def test_exact_count_picker_requires_selection_and_never_auto_applies(width):
     async def check():
         g = fan()
@@ -220,7 +221,7 @@ def test_kept_path_keeps_pending_name_and_payload_source_edits():
     asyncio.run(check())
 
 
-@pytest.mark.parametrize("width", [60, 100, 140])
+@pytest.mark.parametrize("width", LAYOUT_WIDTHS)
 def test_picker_scrolls_to_last_path_and_buttons_stay_visible(width):
     async def check():
         g = fan()
@@ -380,7 +381,7 @@ def test_count_increase_prompt_and_optional_picker(choice):
     asyncio.run(check())
 
 
-@pytest.mark.parametrize("width", [60, 100, 140])
+@pytest.mark.parametrize("width", LAYOUT_WIDTHS)
 def test_recovery_prompt_renders_the_question_and_all_three_buttons(width):
     from frontend.screens.branch_keep_selector_screen import BranchRecoveryPrompt
 
@@ -440,7 +441,7 @@ def test_saved_paths_and_unrestored_changes_have_separate_editor_rows():
     asyncio.run(check())
 
 
-@pytest.mark.parametrize("width", [60, 100, 140])
+@pytest.mark.parametrize("width", LAYOUT_WIDTHS)
 @pytest.mark.parametrize("mode", ["keep", "recover"])
 def test_short_picker_fits_its_rows_and_keeps_controls_together(width, mode):
     async def check():

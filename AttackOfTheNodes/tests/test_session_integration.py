@@ -6,6 +6,7 @@ from pathlib import Path
 import threading
 from types import SimpleNamespace
 import pytest
+from tests.ui_sizes import LAYOUT_WIDTHS
 from textual.app import App
 from textual.widgets import Input
 from backend.event_bus import EventBus
@@ -78,7 +79,7 @@ class ConfigHarness(App):
         super().__init__();self.target=screen;self.result=result
     def on_mount(self):self.push_screen(self.target,self.result.append)
 
-@pytest.mark.parametrize('width',[60,100,140])
+@pytest.mark.parametrize('width',LAYOUT_WIDTHS)
 @pytest.mark.parametrize('typ,field,tab',[('wait_until_node','timeout_seconds',1),('chat_completion_node','temperature',2),('file_output_node','file_path',2)])
 async def test_fields_fit_and_save_preserves_unrelated_config(width,typ,field,tab):
     factory=NodeFactory();wm=WorkflowMap(factory,EventBus());wm.create_new('layout');nid=wm.add_node(typ)

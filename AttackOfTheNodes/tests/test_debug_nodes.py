@@ -6,6 +6,9 @@ or standalone:
     python tests/test_debug_nodes.py
 """
 
+import pytest
+from tests.ui_sizes import LAYOUT_WIDTHS
+
 import asyncio
 import sys
 import time
@@ -5343,75 +5346,75 @@ async def _test_activate_command_widget_single_press_toggles_boolean():
     print("test_activate_command_widget_single_press_toggles_boolean PASSED")
 
 
-def test_file_writer_configured_content_has_visible_keyboard_editor():
-    asyncio.run(_test_file_writer_configured_content_has_visible_keyboard_editor())
+@pytest.mark.parametrize("width", LAYOUT_WIDTHS)
+def test_file_writer_configured_content_has_visible_keyboard_editor(width):
+    asyncio.run(_test_file_writer_configured_content_has_visible_keyboard_editor(width))
 
 
-async def _test_file_writer_configured_content_has_visible_keyboard_editor():
+async def _test_file_writer_configured_content_has_visible_keyboard_editor(width):
     from textual.app import App
     from textual.widgets import Select, TabbedContent
 
     from frontend.screens.node_config import NodeConfigScreen
     from frontend.widgets.command_input import CommandTextArea
 
-    for width in (60, 100, 140):
-        _, wm, mb, _ = _make_services()
-        wm.create_new("file_writer_content_edit")
-        node_id = wm.add_node("file_output_node")
-        saved = []
+    _, wm, mb, _ = _make_services()
+    wm.create_new("file_writer_content_edit")
+    node_id = wm.add_node("file_output_node")
+    saved = []
 
-        class ConfigApp(App):
-            CSS_PATH = str(Path(__file__).parent.parent / "frontend" / "styles.tcss")
+    class ConfigApp(App):
+        CSS_PATH = str(Path(__file__).parent.parent / "frontend" / "styles.tcss")
 
-            async def on_mount(self):
-                await self.push_screen(
-                    NodeConfigScreen(
-                        wm._factory, wm, node_id, wm.get_node_data(node_id),
-                        memory_bank=mb,
-                    ),
-                    saved.append,
-                )
+        async def on_mount(self):
+            await self.push_screen(
+                NodeConfigScreen(
+                    wm._factory, wm, node_id, wm.get_node_data(node_id),
+                    memory_bank=mb,
+                ),
+                saved.append,
+            )
 
-        app = ConfigApp()
-        async with app.run_test(size=(width, 24)) as pilot:
-            await pilot.pause()
-            screen = app.screen
-            from frontend.widgets.long_text import LongTextPreview
-            content = screen.query_one("#field-content", LongTextPreview)
-            assert not content.display
-            source = screen.query_one("#field-content_source", Select)
-            source.value = "Configured"
-            await pilot.pause()
-            assert source.value == "Configured"
-            await pilot.press("2")
-            await pilot.pause()
-            assert app.focused is content
-            assert content.content_region.height == 3
-            assert content.content_region.intersection(screen.region).height == 3
-            await pilot.press("e")
-            await pilot.pause()
-            area = app.screen.query_one(CommandTextArea)
-            assert area.editing and not area.read_only
-            assert area.region.height > 10
-            await pilot.press("h", "i", "enter", "w", "s", "a", "d", "2")
-            assert area.text == "hi\nwsad2"
-            assert area.selection.end == (1, 5)
-            assert screen.query_one("#node-config-tabs", TabbedContent).active == "node-config-tab-parameters"
-            await pilot.press("escape")
-            assert not area.editing and area.read_only
-            await pilot.press("ctrl+s"); await pilot.pause()
-            assert app.focused is content and content.value == "hi\nwsad2"
-            await pilot.press("s")
-            assert app.focused is not content
-            # UX5: Ctrl+S saves and stays open; closing returns the save.
-            await pilot.press("ctrl+s")
-            await pilot.pause()
-            assert not saved and app.screen is screen
-            await pilot.press("escape")
-            await pilot.pause()
-            assert saved[0]["config"]["content"] == "hi\nwsad2"
-            assert saved[0]["config"]["content_source"] == "Configured"
-            assert wm.get_node_data(node_id)["config"]["content"] == ""
+    app = ConfigApp()
+    async with app.run_test(size=(width, 24)) as pilot:
+        await pilot.pause()
+        screen = app.screen
+        from frontend.widgets.long_text import LongTextPreview
+        content = screen.query_one("#field-content", LongTextPreview)
+        assert not content.display
+        source = screen.query_one("#field-content_source", Select)
+        source.value = "Configured"
+        await pilot.pause()
+        assert source.value == "Configured"
+        await pilot.press("2")
+        await pilot.pause()
+        assert app.focused is content
+        assert content.content_region.height == 3
+        assert content.content_region.intersection(screen.region).height == 3
+        await pilot.press("e")
+        await pilot.pause()
+        area = app.screen.query_one(CommandTextArea)
+        assert area.editing and not area.read_only
+        assert area.region.height > 10
+        await pilot.press("h", "i", "enter", "w", "s", "a", "d", "2")
+        assert area.text == "hi\nwsad2"
+        assert area.selection.end == (1, 5)
+        assert screen.query_one("#node-config-tabs", TabbedContent).active == "node-config-tab-parameters"
+        await pilot.press("escape")
+        assert not area.editing and area.read_only
+        await pilot.press("ctrl+s"); await pilot.pause()
+        assert app.focused is content and content.value == "hi\nwsad2"
+        await pilot.press("s")
+        assert app.focused is not content
+        # UX5: Ctrl+S saves and stays open; closing returns the save.
+        await pilot.press("ctrl+s")
+        await pilot.pause()
+        assert not saved and app.screen is screen
+        await pilot.press("escape")
+        await pilot.pause()
+        assert saved[0]["config"]["content"] == "hi\nwsad2"
+        assert saved[0]["config"]["content_source"] == "Configured"
+        assert wm.get_node_data(node_id)["config"]["content"] == ""
 
 
 def test_node_config_digit_types_while_editing_but_jumps_in_nav():

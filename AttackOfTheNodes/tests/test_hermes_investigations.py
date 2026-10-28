@@ -10,6 +10,7 @@ import time
 import pytest
 
 from tests.credential_cases import CREDENTIAL_CASES, PADDED_BLOCK_CASES, PUBLIC_FIELD_CASES
+from tests.process_helpers import SHORT_CLEANUP, short_broker
 
 from backend import hermes_investigations as inbox, hermes_folder
 from backend.event_bus import EventBus
@@ -62,7 +63,11 @@ def queue(setup,**kw):
 
 
 def command(root,timeout=10):
-    return [sys.executable,'-c',f"from backend.integrations.hermes_investigate import tick; print(tick({str(root)!r},timeout={timeout}))"]
+    # Shorten both containment layers inside this disposable test launcher.
+    broker = short_broker(APP / 'backend/integrations/hermes_process.py')
+    code = SHORT_CLEANUP + 'from backend.integrations import hermes_investigate as bridge\n'
+    code += f'bridge.broker_command=lambda: {broker!r}\nprint(bridge.tick({str(root)!r},timeout={timeout}))'
+    return [sys.executable, '-c', code]
 
 
 def run(root,timeout=10):
@@ -140,7 +145,7 @@ def test_deadline_and_stop_kill_reap_detached_descendants(setup,tmp_path,cancel)
     program=f'signal.signal(signal.SIGINT,signal.SIG_IGN)\nPath({str(parent)!r}).write_text(str(os.getpid()))\nsubprocess.Popen([sys.executable,"-c",{detached!r}])\ntime.sleep(60)'
     fake(tmp_path,program);rid=queue(setup)
     started=time.monotonic()
-    proc=subprocess.Popen(command(root,15 if cancel else 7),stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,cwd=APP)
+    proc=subprocess.Popen(command(root,10 if cancel else 2),stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,cwd=APP)
     pids=[wait_file(parent,proc),wait_file(child,proc)]
     if cancel:proc.send_signal(signal.SIGTERM)
     out,err=proc.communicate(timeout=10)
@@ -351,7 +356,7 @@ def test_preflight_timeout_stop_and_detached_cleanup(setup,tmp_path,cancel):
     executable=fake(tmp_path)
     source=executable.read_text().replace("if sys.argv[1]=='tools':\n", "if sys.argv[1]=='tools':\n"+'\n'.join(' '+line for line in program.splitlines())+'\n')
     executable.write_text(source);rid=queue(setup)
-    p=subprocess.Popen(command(root,15 if cancel else 7),stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,cwd=APP)
+    p=subprocess.Popen(command(root,10 if cancel else 2),stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,cwd=APP)
     pids=[wait_file(parent,p),wait_file(pidfile,p)]
     if cancel:p.send_signal(signal.SIGTERM)
     p.communicate(timeout=10)

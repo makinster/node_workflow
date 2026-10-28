@@ -5,6 +5,7 @@ import time
 from types import SimpleNamespace
 
 import pytest
+from tests.ui_sizes import LAYOUT_SIZES
 from textual.app import App
 from textual.widgets import Checkbox
 from backend.event_bus import EventBus
@@ -67,7 +68,7 @@ async def test_forwarding_preserves_incoming_identity_and_computed_vault_report(
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('size', [(80, 24), (120, 40)])
+@pytest.mark.parametrize('size', LAYOUT_SIZES)
 @pytest.mark.parametrize('node_type', NODE_TYPES)
 async def test_standard_forwarding_toggle_save_reopen(node_type, size):
     factory = NodeFactory()

@@ -53,7 +53,8 @@ def test_a_long_small_dialog_can_use_the_whole_height():
 
 # -- #93 review: actions stay reachable (2026-10-20) ---------------------------------------
 
-import pytest  # noqa: E402
+import pytest
+from tests.ui_sizes import LAYOUT_SIZES  # noqa: E402
 
 from backend import persistence  # noqa: E402
 
@@ -82,7 +83,7 @@ def buttons_inside(make_screen, ids, size, focus=None, whole=False):
     return asyncio.run(run())
 
 
-@pytest.mark.parametrize("size", [(80, 24), (120, 40)])
+@pytest.mark.parametrize("size", LAYOUT_SIZES)
 def test_options_shows_save_and_cancel(size):
     from backend.configuration_manager import DEFAULT_SETTINGS
     from frontend.screens.settings import SettingsScreen
@@ -94,7 +95,7 @@ def test_options_shows_save_and_cancel(size):
     assert buttons_inside(lambda: SettingsScreen(Configuration()), ["save-settings", "cancel-settings"], size)
 
 
-@pytest.mark.parametrize("size", [(80, 24), (120, 40)])
+@pytest.mark.parametrize("size", LAYOUT_SIZES)
 def test_a_full_file_window_shows_open_and_close(size, tmp_path, monkeypatch):
     from frontend.screens.workflow_library import WorkflowLibraryScreen
 
@@ -112,7 +113,7 @@ def test_a_tall_row_editor_scrolls_to_its_buttons():
                           focus="confirm-row")
 
 
-@pytest.mark.parametrize("size", [(80, 24), (120, 40)])
+@pytest.mark.parametrize("size", LAYOUT_SIZES)
 def test_a_long_keep_picker_shows_its_whole_button_row(size):
     from frontend.screens.branch_keep_selector_screen import BranchKeepSelectorScreen
 

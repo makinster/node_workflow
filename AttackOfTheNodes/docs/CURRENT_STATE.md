@@ -1,11 +1,25 @@
 # Current State
 
-Snapshot checked **2026-10-27**, against fetched `origin/main` `80e4315` after
-#130 merged; medium draft checked but is outside the approved target-run scope.
+Snapshot checked **2026-10-27**, against fetched `origin/main` `4f1f5e7`.
+Test-suite acceleration is built for review; earlier delivery entries retain their dated scope.
 Code and fresh GitHub checks take precedence.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
+
+## Parallel test suite — 2026-10-27, built for review
+
+Own worktree `/home/makin/src/nw-faster-tests`, branch `codex/faster-tests`,
+base `4f1f5e7`. Per-test persistence/Hermes roots, isolated logging, spawned
+concurrency tests and xdist work-stealing; no production code changes.
+All declared Stash selectors remain checked, real subprocess kill/reap assertions
+remain, twenty child-stack releases remain, and full geometry coverage remains.
+Three consecutive full parallel runs: **3,127 passed**, **35.48 / 35.45 / 35.38 s**
+external wall; serial **526.10 s**, quick **29.68 s** (3,083 passed; 44 slow cases).
+The original serial probe took 694.25 s with overlapping diagnostics; owner's
+independent baseline was 657 s. [Measurements and coverage accounting](audits/test_speed_2026_10_27/README.md)
+record caveats and the controlled parallel baseline. Install `requirements-dev.txt`;
+full `pytest -n auto`, quick `pytest -n auto -m "not slow"`. Reviewers run full.
 
 ## Draft a workflow — 2026-10-27, medium trial checked only
 

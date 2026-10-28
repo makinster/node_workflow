@@ -2,6 +2,7 @@
 from copy import deepcopy
 from pathlib import Path
 import pytest
+from tests.ui_sizes import LAYOUT_SIZES
 from textual.widgets import Checkbox, Select, Label
 from backend.event_bus import EventBus
 from backend.node_base import Node
@@ -44,7 +45,7 @@ def make():
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('size',[(80,24),(120,40)])
+@pytest.mark.parametrize('size', [(80, 24)])
 async def test_declared_accepted_and_ui_sources_match_including_secondary_vault(size):
     factory,wm,node=make();app=Host(factory,wm,node)
     before=deepcopy(wm.get_node_data(node)['config'])
@@ -71,7 +72,7 @@ async def test_declared_accepted_and_ui_sources_match_including_secondary_vault(
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('size',[(80,24),(120,40)])
+@pytest.mark.parametrize('size',LAYOUT_SIZES)
 async def test_long_text_controls_save_cancel_and_reopen(size):
     factory,wm,node=make();app=Host(factory,wm,node)
     async with app.run_test(size=size) as pilot:

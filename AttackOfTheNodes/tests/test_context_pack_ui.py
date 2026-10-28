@@ -48,7 +48,7 @@ async def test_shared_selection_uses_highlight_role_for_every_cell(kind,monkeypa
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('size',[(100,36),(80,24)])
+@pytest.mark.parametrize('size',[(80,24),pytest.param((100,36), marks=pytest.mark.slow)])
 async def test_context_item_editor_preview_save_and_reopen(size):
     factory,wm,node=make('context_pack_node');app=Host(factory,wm,node)
     before=deepcopy(wm.get_node_data(node)['config'])

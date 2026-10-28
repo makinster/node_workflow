@@ -4,6 +4,7 @@ from copy import deepcopy
 from pathlib import Path
 
 import pytest
+from tests.ui_sizes import LAYOUT_WIDTHS
 from textual.app import App
 from textual.widgets import Input, SelectionList, Static, TabPane, TabbedContent
 
@@ -37,7 +38,7 @@ class ConfigApp(App):
         self.push_screen(self.config_screen, self.results.append)
 
 
-@pytest.mark.parametrize('width', [60, 100, 140])
+@pytest.mark.parametrize('width', LAYOUT_WIDTHS)
 def test_wait_layout_navigation_and_clean_save(width):
     async def check():
         wm, wait, target, _ = make_screen()

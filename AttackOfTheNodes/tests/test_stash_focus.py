@@ -21,7 +21,7 @@ async def complete_old_insert_if_open(app,pilot):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('size',[(80,24),(120,40)])
+@pytest.mark.parametrize('size', [(80, 24)])
 @pytest.mark.parametrize('listing',[True,False])
 async def test_model_override_stash_does_not_replace_question(stash,discovery,monkeypatch,size,listing):
     if not listing:discovery.statuses['/api/tags']=503
@@ -60,11 +60,62 @@ async def test_focusing_an_unrelated_control_clears_the_previous_stash_target(st
 
 @pytest.mark.asyncio
 async def test_all_declared_select_fields_refuse_without_editing_any_neighbour(monkeypatch):
-    """Render every registered schema Select through the real form generator.
+    """Every declared picker uses the real renderer and exact dispatch guard.
 
-    Remove visibility conditions only in this aggregate fixture so all modes'
-    fields can receive focus; original types/options/picker hints are retained.
+    Exhaustive metadata coverage does not require mounting a 200-field form.
+    The mounted test below exercises keyboard dispatch for each widget kind.
     """
+    from types import SimpleNamespace
+    from backend.node_factory import NodeFactory
+    from backend.field_types import stash_insert_target
+    from frontend.screens.node_config import NodeConfigScreen
+    from frontend.widgets.form_generator import _widget_for_field
+
+    def fields(schema, prefix=''):
+        for name, info in schema.items():
+            yield prefix + name, info
+            if info.get('item_schema'):
+                yield from fields(info['item_schema'], prefix + name + '__')
+
+    shown = []
+    monkeypatch.setattr('frontend.notifications.notify_info', lambda app, message: shown.append(message))
+    from textual.app import App
+    async with App().run_test():
+        protected = CommandInput('Keep neighbour', id='field-protected')
+        def forbidden(*args, **kwargs):
+            raise AssertionError('A selector must not open Stash')
+        host = SimpleNamespace(app=SimpleNamespace(action_stash=forbidden), node_data={'type': 'fixture'})
+        host._focused_stash_widget = lambda focused: NodeConfigScreen._focused_stash_widget(host, focused)
+        count = 0
+        for meta in NodeFactory().get_node_types_metadata():
+            for name, info in fields(meta['config_schema']):
+                if not (info.get('options') or info.get('type') == 'select' or info.get('secret') or info.get('vault_type') or info.get('presentation') == 'local_model'):
+                    continue
+                if info.get('type') in ('object_list', 'multiselect', 'boolean'):
+                    continue
+                key = meta['type'] + '__' + name
+                schema = {key: info, 'protected': {'type': 'string'}}
+                options = info.get('options') or []
+                value = (options[0][1] if isinstance(options[0], (list, tuple)) else options[0]) if options else ''
+                widget = _widget_for_field(key, info.get('type', 'string'), info, value,
+                    secret_key_options=[('stored-key', 'stored-key')],
+                    vault_keys_by_type={str(info.get('vault_type')): [('value', 'value')]})
+                assert isinstance(widget, (Select, LocalModelPicker)), key
+                assert stash_insert_target(schema, key) is None, key
+                host.factory = SimpleNamespace(metadata_for_type=lambda _: {'config_schema': schema})
+                host.focused = protected  # establish a previously edited neighbour
+                host.focused = widget
+                before = protected.value, getattr(widget, 'value', None)
+                NodeConfigScreen.action_stash_insert(host)
+                assert (protected.value, getattr(widget, 'value', None)) == before, key
+                assert shown[-1] == "Stash text can't go into this field", key
+                count += 1
+        assert count > 50
+
+
+@pytest.mark.asyncio
+async def test_select_widget_kinds_refuse_stash_through_real_keyboard(monkeypatch):
+    """One small production-style screen covers all rendered Select kinds."""
     from textual.app import App
     from backend.node_factory import NodeFactory
     from backend.workflow_map import WorkflowMap
@@ -72,55 +123,50 @@ async def test_all_declared_select_fields_refuse_without_editing_any_neighbour(m
     from frontend.screens.node_config import NodeConfigScreen
     from types import SimpleNamespace
     from pathlib import Path
-    factory=NodeFactory();schema={'protected':{'type':'string'}};values={'protected':'Keep neighbour'}
-    def fields(schema,prefix=''):
-        for name,info in schema.items():
-            yield prefix+name,info
-            if info.get('item_schema'):
-                yield from fields(info['item_schema'],prefix+name+'__')
-    for meta in factory.get_node_types_metadata():
-        for name,info in fields(meta['config_schema']):
-            if not (info.get('options') or info.get('type')=='select' or info.get('secret') or info.get('vault_type')):
-                continue
-            if info.get('type') in ('object_list','multiselect','boolean'):continue
-            key=meta['type']+'__'+name
-            spec={k:v for k,v in info.items() if k not in ('visible_when','enabled_when','force_value_when','options_from','options_from_setting','mutually_exclusive_with','section_when','required_when')}
-            spec['tab']='Parameters';schema[key]=spec
-            options=spec.get('options') or []
-            if options:values[key]=options[0][1] if isinstance(options[0],(list,tuple)) else options[0]
-    meta=factory.metadata_for_type('ask_local_model_node');meta['config_schema']=schema
-    wm=WorkflowMap(factory,EventBus());wm.create_new('Every selector Stash target')
-    node=wm.add_node('ask_local_model_node');wm.update_node_config(node,values)
-    shown=[];monkeypatch.setattr('frontend.notifications.notify_info',lambda app,message:shown.append(message))
+    factory = NodeFactory()
+    schema = {
+        'protected': {'type': 'string', 'tab': 'Parameters'},
+        'plain': {'type': 'select', 'options': ['one', 'two'], 'tab': 'Parameters'},
+        'options': {'type': 'string', 'options': ['one', 'two'], 'tab': 'Parameters'},
+        'secret': {'type': 'string', 'secret': True, 'tab': 'Parameters'},
+        'vault': {'type': 'string', 'vault_type': 'string', 'tab': 'Parameters'},
+    }
+    factory.metadata_for_type('ask_local_model_node')['config_schema'] = schema
+    wm = WorkflowMap(factory, EventBus()); wm.create_new('Select kinds')
+    node = wm.add_node('ask_local_model_node')
+    wm.update_node_config(node, {'protected': 'Keep neighbour', 'plain': 'one', 'options': 'one'})
+    shown = []
+    monkeypatch.setattr('frontend.notifications.notify_info', lambda app, message: shown.append(message))
     class Host(App):
-        CSS_PATH=str(Path(__file__).parents[1]/'frontend/styles.tcss')
+        CSS_PATH = str(Path(__file__).parents[1] / 'frontend/styles.tcss')
         def on_mount(self):
-            self.push_screen(NodeConfigScreen(factory,wm,node,wm.get_node_data(node),secrets_manager=SimpleNamespace(list_keys=lambda:['stored-key'])))
-        def action_stash(self,*args,**kwargs):raise AssertionError('A selector must not open Stash')
-    app=Host()
-    async with app.run_test(size=(100,36)) as pilot:
-        await pilot.press('2');await pilot.pause();screen=app.screen
-        # Topology-driven controls have no field-* id; they obey the same rule.
-        await screen.query_one('.generated-form').mount(Select([('Custom','custom')],value='custom',id='topology-source'))
-        selects=list(screen.query(Select));assert len(selects)>50
+            self.push_screen(NodeConfigScreen(factory, wm, node, wm.get_node_data(node),
+                secrets_manager=SimpleNamespace(list_keys=lambda: ['stored-key'])))
+        def action_stash(self, *args, **kwargs):
+            raise AssertionError('A selector must not open Stash')
+    app = Host()
+    async with app.run_test(size=(100, 36)) as pilot:
+        await pilot.press('2'); await pilot.pause(); screen = app.screen
+        await screen.query_one('.generated-form').mount(Select([('Custom', 'custom')], value='custom', id='topology-source'))
+        selects = list(screen.query(Select))
+        assert {'field-plain', 'field-options', 'field-secret', 'field-vault', 'topology-source'} <= {s.id for s in selects}
         for selector in selects:
-            screen.query_one('#field-protected').focus();await pilot.pause()
-            selector.focus();await pilot.pause()
+            screen.query_one('#field-protected').focus(); await pilot.pause()
+            selector.focus(); await pilot.pause()
             assert app.focused is selector
-            before=deepcopy(screen._get_form_values())
-            await pilot.press('p');await pilot.pause()
-            assert screen._get_form_values()==before,selector.id
-            assert shown[-1]=="Stash text can't go into this field",selector.id
-        # Native overlay focus must be refused too, including the explicit button.
-        selector=next(s for s in selects if s._options)
-        selector.focus();selector.expanded=True;await pilot.pause()
-        before=deepcopy(screen._get_form_values());count=len(shown)
-        await pilot.press('p');await pilot.pause()
-        assert screen._get_form_values()==before
-        assert len(shown)>count
-        selector.expanded=False;await pilot.pause()
-        screen.query_one('#stash-insert-node-config').press();await pilot.pause()
-        assert screen._get_form_values()==before
+            before = deepcopy(screen._get_form_values()); dirty = screen._is_dirty()
+            await pilot.press('p'); await pilot.pause()
+            assert screen._get_form_values() == before and screen._is_dirty() == dirty
+            assert shown[-1] == "Stash text can't go into this field"
+        selector = screen.query_one('#field-plain', Select)
+        selector.focus(); selector.expanded = True; await pilot.pause()
+        before = deepcopy(screen._get_form_values()); dirty = screen._is_dirty(); count = len(shown)
+        await pilot.press('p'); await pilot.pause()
+        assert screen._get_form_values() == before and screen._is_dirty() == dirty
+        assert len(shown) > count
+        selector.expanded = False; await pilot.pause()
+        screen.query_one('#stash-insert-node-config').press(); await pilot.pause()
+        assert screen._get_form_values() == before and screen._is_dirty() == dirty
 
 
 @pytest.mark.asyncio

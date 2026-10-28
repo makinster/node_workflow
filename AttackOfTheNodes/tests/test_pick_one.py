@@ -394,7 +394,7 @@ async def test_saved_run_routes_plain_answer_through_conditional(server, tmp_pat
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('size',[(80,24),(120,40)])
+@pytest.mark.parametrize('size', [(80, 24)])
 async def test_ui_rejects_duplicate_rows_and_saves_independent_vault_routing(tmp_path,size):
     from textual.app import App
     from textual.widgets import Checkbox

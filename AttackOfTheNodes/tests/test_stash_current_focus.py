@@ -44,7 +44,7 @@ def options_values(screen):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('size', [(80, 24), (120, 40)])
+@pytest.mark.parametrize('size', [(80, 24)])
 @pytest.mark.parametrize('target', ['closed-select', 'open-select', 'checkbox', 'button', 'other-text'])
 async def test_options_p_after_edit_never_changes_values_or_unsaved_state(discovery, monkeypatch, size, target):
     messages = []

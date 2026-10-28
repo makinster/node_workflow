@@ -1,0 +1,626 @@
+{
+  "base": "4f1f5e7",
+  "environment": {
+    "python": "3.14.4",
+    "pytest": "9.1.0",
+    "textual": "8.2.7",
+    "pytest_xdist": "3.8.0",
+    "execnet": "2.1.2",
+    "available_cpus": 24
+  },
+  "runs": [
+    {
+      "label": "before-serial",
+      "wall_seconds": 694.25,
+      "footer": "3137 passed in 674.19s (0:11:14)",
+      "caveat": "Overlapped initial parallel diagnostic and brief focused checks; owner independent baseline was 657 s.",
+      "top_15": [
+        {
+          "seconds": 109.89,
+          "phase": "call",
+          "test": "tests/test_stash_focus.py::test_all_declared_select_fields_refuse_without_editing_any_neighbour"
+        },
+        {
+          "seconds": 24.15,
+          "phase": "call",
+          "test": "tests/test_telegram_launcher.py::test_real_25_second_deadline_kills_and_reaps_descendants"
+        },
+        {
+          "seconds": 9.65,
+          "phase": "call",
+          "test": "tests/test_subworkflow_calls.py::test_repeated_calls_release_their_stacks"
+        },
+        {
+          "seconds": 6.56,
+          "phase": "call",
+          "test": "tests/test_debug_nodes.py::test_file_writer_configured_content_has_visible_keyboard_editor"
+        },
+        {
+          "seconds": 6.39,
+          "phase": "call",
+          "test": "tests/test_editor_delete_group_ui.py::test_picker_scrolls_to_last_path_and_buttons_stay_visible[100]"
+        },
+        {
+          "seconds": 5.76,
+          "phase": "call",
+          "test": "tests/test_hermes_adapter.py::test_h2_loopback[ok-200-5.5-unavailable]"
+        },
+        {
+          "seconds": 5.74,
+          "phase": "call",
+          "test": "tests/test_editor_delete_group_ui.py::test_picker_scrolls_to_last_path_and_buttons_stay_visible[140]"
+        },
+        {
+          "seconds": 5.56,
+          "phase": "call",
+          "test": "tests/test_editor_delete_group_ui.py::test_picker_scrolls_to_last_path_and_buttons_stay_visible[60]"
+        },
+        {
+          "seconds": 5.04,
+          "phase": "call",
+          "test": "tests/test_source_menu_audit.py::test_actual_ui_sources_and_visible_fields_for_all_standard_ports[chat_completion_node]"
+        },
+        {
+          "seconds": 4.69,
+          "phase": "call",
+          "test": "tests/test_hermes_investigations.py::test_preflight_timeout_stop_and_detached_cleanup[False]"
+        },
+        {
+          "seconds": 4.68,
+          "phase": "call",
+          "test": "tests/test_hermes_investigations.py::test_deadline_and_stop_kill_reap_detached_descendants[False]"
+        },
+        {
+          "seconds": 4.37,
+          "phase": "call",
+          "test": "tests/test_hermes_adapter.py::test_overlap_per_slug_and_cleanup_lock"
+        },
+        {
+          "seconds": 4.2,
+          "phase": "call",
+          "test": "tests/test_hermes_investigations.py::test_deadline_and_stop_kill_reap_detached_descendants[True]"
+        },
+        {
+          "seconds": 4.14,
+          "phase": "call",
+          "test": "tests/test_hermes_investigations.py::test_preflight_timeout_stop_and_detached_cleanup[True]"
+        },
+        {
+          "seconds": 3.87,
+          "phase": "call",
+          "test": "tests/test_telegram_launcher.py::test_late_signal_cannot_extend_launcher_deadline"
+        }
+      ]
+    },
+    {
+      "label": "before-parallel-controlled",
+      "wall_seconds": 133.1581421670271,
+      "returncode": 0,
+      "base": "4f1f5e7",
+      "harness": "new isolation, capture and xdist scheduling; original tests",
+      "footer": "3137 passed, 6 warnings in 132.94s (0:02:12)",
+      "top_15": [
+        {
+          "seconds": 109.83,
+          "phase": "call",
+          "test": "tests/test_stash_focus.py::test_all_declared_select_fields_refuse_without_editing_any_neighbour"
+        },
+        {
+          "seconds": 24.15,
+          "phase": "call",
+          "test": "tests/test_telegram_launcher.py::test_real_25_second_deadline_kills_and_reaps_descendants"
+        },
+        {
+          "seconds": 6.11,
+          "phase": "call",
+          "test": "tests/test_debug_nodes.py::test_file_writer_configured_content_has_visible_keyboard_editor"
+        },
+        {
+          "seconds": 5.87,
+          "phase": "call",
+          "test": "tests/test_editor_delete_group_ui.py::test_picker_scrolls_to_last_path_and_buttons_stay_visible[100]"
+        },
+        {
+          "seconds": 5.84,
+          "phase": "call",
+          "test": "tests/test_hermes_adapter.py::test_h2_loopback[ok-200-5.5-unavailable]"
+        },
+        {
+          "seconds": 5.69,
+          "phase": "call",
+          "test": "tests/test_editor_delete_group_ui.py::test_picker_scrolls_to_last_path_and_buttons_stay_visible[140]"
+        },
+        {
+          "seconds": 5.61,
+          "phase": "call",
+          "test": "tests/test_editor_delete_group_ui.py::test_picker_scrolls_to_last_path_and_buttons_stay_visible[60]"
+        },
+        {
+          "seconds": 4.7,
+          "phase": "call",
+          "test": "tests/test_hermes_investigations.py::test_preflight_timeout_stop_and_detached_cleanup[False]"
+        },
+        {
+          "seconds": 4.68,
+          "phase": "call",
+          "test": "tests/test_hermes_investigations.py::test_deadline_and_stop_kill_reap_detached_descendants[False]"
+        },
+        {
+          "seconds": 4.41,
+          "phase": "call",
+          "test": "tests/test_hermes_adapter.py::test_overlap_per_slug_and_cleanup_lock"
+        },
+        {
+          "seconds": 4.2,
+          "phase": "call",
+          "test": "tests/test_hermes_investigations.py::test_preflight_timeout_stop_and_detached_cleanup[True]"
+        },
+        {
+          "seconds": 4.2,
+          "phase": "call",
+          "test": "tests/test_hermes_investigations.py::test_deadline_and_stop_kill_reap_detached_descendants[True]"
+        },
+        {
+          "seconds": 3.94,
+          "phase": "call",
+          "test": "tests/test_source_menu_audit.py::test_actual_ui_sources_and_visible_fields_for_all_standard_ports[chat_completion_node]"
+        },
+        {
+          "seconds": 3.87,
+          "phase": "call",
+          "test": "tests/test_telegram_launcher.py::test_late_signal_cannot_extend_launcher_deadline"
+        },
+        {
+          "seconds": 3.79,
+          "phase": "call",
+          "test": "tests/test_node_config_visibility_scroll.py::test_llm_initial_focus_and_scroll_follow_highlight_only[60]"
+        }
+      ]
+    },
+    {
+      "label": "after-parallel-1",
+      "wall_seconds": 35.48,
+      "footer": "3127 passed in 35.24s",
+      "top_15": [
+        {
+          "seconds": 24.14,
+          "phase": "call",
+          "test": "tests/test_telegram_launcher.py::test_launcher_deadline_kills_and_reaps_descendants[production-25s]"
+        },
+        {
+          "seconds": 5.82,
+          "phase": "call",
+          "test": "tests/test_editor_delete_group_ui.py::test_picker_scrolls_to_last_path_and_buttons_stay_visible[100]"
+        },
+        {
+          "seconds": 5.62,
+          "phase": "call",
+          "test": "tests/test_editor_delete_group_ui.py::test_picker_scrolls_to_last_path_and_buttons_stay_visible[60]"
+        },
+        {
+          "seconds": 5.59,
+          "phase": "call",
+          "test": "tests/test_editor_delete_group_ui.py::test_picker_scrolls_to_last_path_and_buttons_stay_visible[140]"
+        },
+        {
+          "seconds": 4.43,
+          "phase": "call",
+          "test": "tests/test_hermes_adapter.py::test_overlap_per_slug_and_cleanup_lock"
+        },
+        {
+          "seconds": 4.27,
+          "phase": "call",
+          "test": "tests/test_source_menu_audit.py::test_actual_ui_sources_and_visible_fields_for_all_standard_ports[chat_completion_node]"
+        },
+        {
+          "seconds": 3.9,
+          "phase": "call",
+          "test": "tests/test_node_config_visibility_scroll.py::test_llm_initial_focus_and_scroll_follow_highlight_only[60]"
+        },
+        {
+          "seconds": 3.88,
+          "phase": "call",
+          "test": "tests/test_node_config_visibility_scroll.py::test_llm_initial_focus_and_scroll_follow_highlight_only[100]"
+        },
+        {
+          "seconds": 3.76,
+          "phase": "call",
+          "test": "tests/test_node_config_visibility_scroll.py::test_llm_initial_focus_and_scroll_follow_highlight_only[140]"
+        },
+        {
+          "seconds": 3.15,
+          "phase": "call",
+          "test": "tests/test_wait_until_ui.py::test_wait_layout_navigation_and_clean_save[60]"
+        },
+        {
+          "seconds": 2.99,
+          "phase": "call",
+          "test": "tests/test_wait_until_ui.py::test_wait_layout_navigation_and_clean_save[140]"
+        },
+        {
+          "seconds": 2.97,
+          "phase": "call",
+          "test": "tests/test_wait_until_ui.py::test_wait_layout_navigation_and_clean_save[100]"
+        },
+        {
+          "seconds": 2.92,
+          "phase": "call",
+          "test": "tests/test_stash_current_focus.py::test_node_p_after_edit_preserves_form_and_workflow_dirty_state[other-text]"
+        },
+        {
+          "seconds": 2.7,
+          "phase": "call",
+          "test": "tests/test_stash_current_focus.py::test_node_p_after_edit_preserves_form_and_workflow_dirty_state[checkbox]"
+        },
+        {
+          "seconds": 2.59,
+          "phase": "call",
+          "test": "tests/test_long_text_ui.py::test_real_app_stash_picker_and_ctrl_q_do_not_close_node"
+        }
+      ]
+    },
+    {
+      "label": "after-parallel-2",
+      "argv": [
+        "-n",
+        "auto"
+      ],
+      "wall_seconds": 35.453362705069594,
+      "returncode": 0,
+      "footer": "3127 passed in 35.23s",
+      "top_15": [
+        {
+          "seconds": 24.14,
+          "phase": "call",
+          "test": "tests/test_telegram_launcher.py::test_launcher_deadline_kills_and_reaps_descendants[production-25s]"
+        },
+        {
+          "seconds": 5.81,
+          "phase": "call",
+          "test": "tests/test_editor_delete_group_ui.py::test_picker_scrolls_to_last_path_and_buttons_stay_visible[100]"
+        },
+        {
+          "seconds": 5.65,
+          "phase": "call",
+          "test": "tests/test_editor_delete_group_ui.py::test_picker_scrolls_to_last_path_and_buttons_stay_visible[60]"
+        },
+        {
+          "seconds": 5.59,
+          "phase": "call",
+          "test": "tests/test_editor_delete_group_ui.py::test_picker_scrolls_to_last_path_and_buttons_stay_visible[140]"
+        },
+        {
+          "seconds": 4.42,
+          "phase": "call",
+          "test": "tests/test_hermes_adapter.py::test_overlap_per_slug_and_cleanup_lock"
+        },
+        {
+          "seconds": 4.28,
+          "phase": "call",
+          "test": "tests/test_source_menu_audit.py::test_actual_ui_sources_and_visible_fields_for_all_standard_ports[chat_completion_node]"
+        },
+        {
+          "seconds": 3.82,
+          "phase": "call",
+          "test": "tests/test_node_config_visibility_scroll.py::test_llm_initial_focus_and_scroll_follow_highlight_only[60]"
+        },
+        {
+          "seconds": 3.77,
+          "phase": "call",
+          "test": "tests/test_node_config_visibility_scroll.py::test_llm_initial_focus_and_scroll_follow_highlight_only[140]"
+        },
+        {
+          "seconds": 3.68,
+          "phase": "call",
+          "test": "tests/test_node_config_visibility_scroll.py::test_llm_initial_focus_and_scroll_follow_highlight_only[100]"
+        },
+        {
+          "seconds": 3.25,
+          "phase": "call",
+          "test": "tests/test_wait_until_ui.py::test_wait_layout_navigation_and_clean_save[60]"
+        },
+        {
+          "seconds": 2.99,
+          "phase": "call",
+          "test": "tests/test_wait_until_ui.py::test_wait_layout_navigation_and_clean_save[100]"
+        },
+        {
+          "seconds": 2.98,
+          "phase": "call",
+          "test": "tests/test_wait_until_ui.py::test_wait_layout_navigation_and_clean_save[140]"
+        },
+        {
+          "seconds": 2.93,
+          "phase": "call",
+          "test": "tests/test_stash_current_focus.py::test_node_p_after_edit_preserves_form_and_workflow_dirty_state[checkbox]"
+        },
+        {
+          "seconds": 2.88,
+          "phase": "call",
+          "test": "tests/test_long_text_ui.py::test_real_app_stash_picker_and_ctrl_q_do_not_close_node"
+        },
+        {
+          "seconds": 2.8,
+          "phase": "call",
+          "test": "tests/test_stash_current_focus.py::test_node_p_after_edit_preserves_form_and_workflow_dirty_state[other-text]"
+        }
+      ]
+    },
+    {
+      "label": "after-parallel-3",
+      "argv": [
+        "-n",
+        "auto"
+      ],
+      "wall_seconds": 35.379308967036195,
+      "returncode": 0,
+      "footer": "3127 passed in 35.15s",
+      "top_15": [
+        {
+          "seconds": 24.15,
+          "phase": "call",
+          "test": "tests/test_telegram_launcher.py::test_launcher_deadline_kills_and_reaps_descendants[production-25s]"
+        },
+        {
+          "seconds": 5.97,
+          "phase": "call",
+          "test": "tests/test_editor_delete_group_ui.py::test_picker_scrolls_to_last_path_and_buttons_stay_visible[100]"
+        },
+        {
+          "seconds": 5.69,
+          "phase": "call",
+          "test": "tests/test_editor_delete_group_ui.py::test_picker_scrolls_to_last_path_and_buttons_stay_visible[140]"
+        },
+        {
+          "seconds": 5.65,
+          "phase": "call",
+          "test": "tests/test_editor_delete_group_ui.py::test_picker_scrolls_to_last_path_and_buttons_stay_visible[60]"
+        },
+        {
+          "seconds": 4.51,
+          "phase": "call",
+          "test": "tests/test_source_menu_audit.py::test_actual_ui_sources_and_visible_fields_for_all_standard_ports[chat_completion_node]"
+        },
+        {
+          "seconds": 4.44,
+          "phase": "call",
+          "test": "tests/test_hermes_adapter.py::test_overlap_per_slug_and_cleanup_lock"
+        },
+        {
+          "seconds": 3.93,
+          "phase": "call",
+          "test": "tests/test_node_config_visibility_scroll.py::test_llm_initial_focus_and_scroll_follow_highlight_only[100]"
+        },
+        {
+          "seconds": 3.86,
+          "phase": "call",
+          "test": "tests/test_node_config_visibility_scroll.py::test_llm_initial_focus_and_scroll_follow_highlight_only[60]"
+        },
+        {
+          "seconds": 3.68,
+          "phase": "call",
+          "test": "tests/test_node_config_visibility_scroll.py::test_llm_initial_focus_and_scroll_follow_highlight_only[140]"
+        },
+        {
+          "seconds": 3.01,
+          "phase": "call",
+          "test": "tests/test_wait_until_ui.py::test_wait_layout_navigation_and_clean_save[100]"
+        },
+        {
+          "seconds": 2.97,
+          "phase": "call",
+          "test": "tests/test_wait_until_ui.py::test_wait_layout_navigation_and_clean_save[60]"
+        },
+        {
+          "seconds": 2.94,
+          "phase": "call",
+          "test": "tests/test_wait_until_ui.py::test_wait_layout_navigation_and_clean_save[140]"
+        },
+        {
+          "seconds": 2.74,
+          "phase": "call",
+          "test": "tests/test_stash_current_focus.py::test_node_p_after_edit_preserves_form_and_workflow_dirty_state[other-text]"
+        },
+        {
+          "seconds": 2.69,
+          "phase": "call",
+          "test": "tests/test_stash_current_focus.py::test_node_p_after_edit_preserves_form_and_workflow_dirty_state[checkbox]"
+        },
+        {
+          "seconds": 2.5,
+          "phase": "call",
+          "test": "tests/test_long_text_ui.py::test_real_app_stash_picker_and_ctrl_q_do_not_close_node"
+        }
+      ]
+    },
+    {
+      "label": "after-serial",
+      "argv": [
+        "-n",
+        "0"
+      ],
+      "wall_seconds": 526.0975918679032,
+      "returncode": 0,
+      "footer": "3127 passed in 508.57s (0:08:28)",
+      "top_15": [
+        {
+          "seconds": 24.13,
+          "phase": "call",
+          "test": "tests/test_telegram_launcher.py::test_launcher_deadline_kills_and_reaps_descendants[production-25s]"
+        },
+        {
+          "seconds": 5.47,
+          "phase": "call",
+          "test": "tests/test_editor_delete_group_ui.py::test_picker_scrolls_to_last_path_and_buttons_stay_visible[140]"
+        },
+        {
+          "seconds": 5.44,
+          "phase": "call",
+          "test": "tests/test_editor_delete_group_ui.py::test_picker_scrolls_to_last_path_and_buttons_stay_visible[60]"
+        },
+        {
+          "seconds": 5.43,
+          "phase": "call",
+          "test": "tests/test_editor_delete_group_ui.py::test_picker_scrolls_to_last_path_and_buttons_stay_visible[100]"
+        },
+        {
+          "seconds": 4.38,
+          "phase": "call",
+          "test": "tests/test_hermes_adapter.py::test_overlap_per_slug_and_cleanup_lock"
+        },
+        {
+          "seconds": 3.59,
+          "phase": "call",
+          "test": "tests/test_node_config_visibility_scroll.py::test_llm_initial_focus_and_scroll_follow_highlight_only[140]"
+        },
+        {
+          "seconds": 3.4,
+          "phase": "call",
+          "test": "tests/test_node_config_visibility_scroll.py::test_llm_initial_focus_and_scroll_follow_highlight_only[60]"
+        },
+        {
+          "seconds": 3.32,
+          "phase": "call",
+          "test": "tests/test_node_config_visibility_scroll.py::test_llm_initial_focus_and_scroll_follow_highlight_only[100]"
+        },
+        {
+          "seconds": 3.27,
+          "phase": "call",
+          "test": "tests/test_source_menu_audit.py::test_actual_ui_sources_and_visible_fields_for_all_standard_ports[chat_completion_node]"
+        },
+        {
+          "seconds": 3.07,
+          "phase": "call",
+          "test": "tests/test_small_wins_ui.py::test_configured_preview_full_editor_save_cancel_and_stash"
+        },
+        {
+          "seconds": 2.86,
+          "phase": "call",
+          "test": "tests/test_wait_until_ui.py::test_wait_layout_navigation_and_clean_save[60]"
+        },
+        {
+          "seconds": 2.8,
+          "phase": "call",
+          "test": "tests/test_wait_until_ui.py::test_wait_layout_navigation_and_clean_save[100]"
+        },
+        {
+          "seconds": 2.78,
+          "phase": "call",
+          "test": "tests/test_wait_until_ui.py::test_wait_layout_navigation_and_clean_save[140]"
+        },
+        {
+          "seconds": 2.65,
+          "phase": "call",
+          "test": "tests/test_long_text_ui.py::test_unbroken_line_preview_full_value_and_hidden_source_are_preserved"
+        },
+        {
+          "seconds": 2.53,
+          "phase": "call",
+          "test": "tests/test_stash_current_focus.py::test_node_p_after_edit_preserves_form_and_workflow_dirty_state[checkbox]"
+        }
+      ]
+    },
+    {
+      "label": "after-quick",
+      "argv": [
+        "-n",
+        "auto",
+        "-m",
+        "not slow"
+      ],
+      "wall_seconds": 29.682487723999657,
+      "returncode": 0,
+      "footer": "3083 passed in 29.46s",
+      "top_15": [
+        {
+          "seconds": 5.74,
+          "phase": "call",
+          "test": "tests/test_editor_delete_group_ui.py::test_picker_scrolls_to_last_path_and_buttons_stay_visible[100]"
+        },
+        {
+          "seconds": 4.43,
+          "phase": "call",
+          "test": "tests/test_hermes_adapter.py::test_overlap_per_slug_and_cleanup_lock"
+        },
+        {
+          "seconds": 4.08,
+          "phase": "call",
+          "test": "tests/test_source_menu_audit.py::test_actual_ui_sources_and_visible_fields_for_all_standard_ports[chat_completion_node]"
+        },
+        {
+          "seconds": 3.69,
+          "phase": "call",
+          "test": "tests/test_node_config_visibility_scroll.py::test_llm_initial_focus_and_scroll_follow_highlight_only[100]"
+        },
+        {
+          "seconds": 2.97,
+          "phase": "call",
+          "test": "tests/test_wait_until_ui.py::test_wait_layout_navigation_and_clean_save[100]"
+        },
+        {
+          "seconds": 2.81,
+          "phase": "call",
+          "test": "tests/test_stash_current_focus.py::test_node_p_after_edit_preserves_form_and_workflow_dirty_state[checkbox]"
+        },
+        {
+          "seconds": 2.67,
+          "phase": "call",
+          "test": "tests/test_stash_current_focus.py::test_node_p_after_edit_preserves_form_and_workflow_dirty_state[other-text]"
+        },
+        {
+          "seconds": 2.52,
+          "phase": "call",
+          "test": "tests/test_stash_current_focus.py::test_node_p_after_edit_preserves_form_and_workflow_dirty_state[open-select]"
+        },
+        {
+          "seconds": 2.5,
+          "phase": "call",
+          "test": "tests/test_stash_current_focus.py::test_options_p_after_edit_never_changes_values_or_unsaved_state[closed-select-size0]"
+        },
+        {
+          "seconds": 2.48,
+          "phase": "call",
+          "test": "tests/test_long_text_ui.py::test_real_app_stash_picker_and_ctrl_q_do_not_close_node"
+        },
+        {
+          "seconds": 2.44,
+          "phase": "call",
+          "test": "tests/test_stash_current_focus.py::test_options_p_after_edit_never_changes_values_or_unsaved_state[open-select-size0]"
+        },
+        {
+          "seconds": 2.36,
+          "phase": "call",
+          "test": "tests/test_stash_current_focus.py::test_node_p_after_edit_preserves_form_and_workflow_dirty_state[closed-select]"
+        },
+        {
+          "seconds": 2.36,
+          "phase": "call",
+          "test": "tests/test_stash_current_focus.py::test_options_p_after_edit_never_changes_values_or_unsaved_state[other-text-size0]"
+        },
+        {
+          "seconds": 2.34,
+          "phase": "call",
+          "test": "tests/test_stash_current_focus.py::test_options_p_after_edit_never_changes_values_or_unsaved_state[checkbox-size0]"
+        },
+        {
+          "seconds": 2.27,
+          "phase": "call",
+          "test": "tests/test_local_model_ui.py::test_long_text_controls_save_cancel_and_reopen[size0]"
+        }
+      ]
+    }
+  ],
+  "test_count": {
+    "before": 3137,
+    "after": 3127,
+    "quick": 3083,
+    "slow": 44,
+    "redundant_size_cases_removed": 18,
+    "cases_added": 8
+  },
+  "commands": {
+    "full": "python -m pytest -n auto -q --durations=15",
+    "serial": "python -m pytest -n 0 -q --durations=15",
+    "quick": "python -m pytest -n auto -m \"not slow\" -q --durations=15"
+  }
+}

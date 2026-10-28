@@ -1,3 +1,5 @@
+import pytest
+from tests.ui_sizes import LAYOUT_WIDTHS
 """Regression coverage for shared payload source discovery and forwarding."""
 import asyncio
 
@@ -78,7 +80,8 @@ def test_object_list_roundtrip_and_removal():
     asyncio.run(run())
 
 
-def test_manager_object_rows_and_downstream_picker_at_supported_widths():
+@pytest.mark.parametrize("width", LAYOUT_WIDTHS)
+def test_manager_object_rows_and_downstream_picker_at_supported_widths(width):
     from pathlib import Path
     from textual.app import App
     from textual.widgets import Select, TabbedContent
@@ -109,8 +112,7 @@ def test_manager_object_rows_and_downstream_picker_at_supported_widths():
             for row in rows.rows:
                 assert row[0].size.height > 0
             assert len(wm.get_node_data(node)['config']['additional_files']) == 1
-    for width in (60, 100, 140):
-        asyncio.run(run(width))
+    asyncio.run(run(width))
 
 
 def test_vault_only_producer_is_not_offered_as_upstream():
