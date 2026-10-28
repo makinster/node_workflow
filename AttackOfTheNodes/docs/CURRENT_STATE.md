@@ -21,6 +21,8 @@ New node description measures Brief at 7,447; fixed palette remains 7,421.
 [delivery case](delivery_tests/local-model-context-limit.json). Focused checks
 cover defaults/override/bounds/oversize, warning publication, mounted Options and
 Node Config save/reopen/blank/range, source-menu parity and shared numeric policy.
+**316 focused checks pass**; [PR #130](https://github.com/makinster/node_workflow/pull/130),
+implementation `5746071`, targets main.
 
 ## Draft a workflow — 2026-10-27, re-trial passed
 

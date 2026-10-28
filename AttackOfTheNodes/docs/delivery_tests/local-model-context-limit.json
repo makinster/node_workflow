@@ -57,7 +57,8 @@
   "final_artifact": {
     "kind": "node-enhancement",
     "node_type": "ask_local_model_node",
-    "path": "../../backend/nodes/ai/ask_local_model_node.py"
+    "path": "../../backend/nodes/ai/ask_local_model_node.py",
+    "implementation_commit": "5746071"
   },
   "coverage": {
     "total_operations": 0,
@@ -208,5 +209,6 @@
     "No new node; shared numeric validator supports blank only when schema explicitly opts in with allow_blank.",
     "Brief is now 7,447 chars from description change; fixed designer palette remains 7,421. Existing catalogue 7,500 cap is separate from configurable Ask cap.",
     "Historical trial metrics remain unchanged in the designer case."
-  ]
+  ],
+  "pr": "https://github.com/makinster/node_workflow/pull/130"
 }

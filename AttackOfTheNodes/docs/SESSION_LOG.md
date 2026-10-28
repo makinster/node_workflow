@@ -29,6 +29,8 @@ New description makes Brief 7,447; fixed palette unchanged at 7,421. See
 [contract](integrations/LOCAL_MODEL.md) and
 [maintenance case](delivery_tests/local-model-context-limit.json) for decisions,
 coverage not applicable (no new workflow), verification and remaining review.
+[PR #130](https://github.com/makinster/node_workflow/pull/130), implementation
+`5746071`, targets main; no live calls.
 
 ## 2026-10-27 — Draft a workflow: authorized re-trial, Ready confirmed
 
