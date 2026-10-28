@@ -3,7 +3,10 @@
 [Authoring spec](draft-a-workflow.json), [delivery case](../draft-a-workflow.json),
 [approved sample fixtures](../fixtures/draft-a-workflow.json).
 Owner approved the eleven recommended decisions and three samples on 2026-10-27.
-This is the authored designer, checked without installing or running it.
+The original PR checked the authored designer without running it. The later
+owner-authorized decision 11 trial ran once on merged `398c482`: 70.64 s CPU,
+two calls, Check failed on display-annotated port ids. No success file or
+target build/run; full measurements and raw draft are in the delivery case.
 
 The designer uses existing nodes only. Its **drafting palette** is nine types:
 Start, End, Merge Beacon, Parallel Branch, User Text Input, Text Output,
@@ -51,10 +54,10 @@ python main.py build docs/delivery_tests/specs/draft-a-workflow.json --check --j
 ```
 
 This check needs no inference endpoint or credentials. It does not install the
-designer or create its output folder. No workflow or model call was run for this
-PR. The separately approved measured trial is **after review**, not this step.
+designer or create its output folder. No workflow or model call was run for the original
+PR #126. The separate trial after review is now recorded above.
 Future setup: confirm Options URL/default and permission for the fixed destination,
-then explicitly authorize installation/trial in the intended data root. Keep local
+then obtain separate authorization before any further trial in that data root. Keep local
 requests/specs free of credentials; generated target-file paths still need review.
 
 ## Re-check the recipe

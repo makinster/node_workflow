@@ -1,32 +1,36 @@
 # Current State
 
-Snapshot checked **2026-10-27**, against fetched `origin/main` `cfd3458` after
-#125 merged; the designer below is authored/check-only, awaiting review.
+Snapshot checked **2026-10-27**, against fetched `origin/main` `398c482` after
+#126 merged; the designer trial below failed validation.
 Code and fresh GitHub checks take precedence.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
 
-## Draft a workflow — 2026-10-27, checked spec
+## Draft a workflow — 2026-10-27, trial failed
 
-Own worktree `/home/makin/src/nw-draft-workflow-samples`, branch
-`codex/draft-workflow-samples`, fetched base `cfd3458`.
-Owner approved all eleven recommended decisions and the three samples.
-[Spec/guide](delivery_tests/specs/README.md),
-[delivery case](delivery_tests/draft-a-workflow.json): 30 nodes / 57 edges;
-`build --check` clean, 72 focused authoring/meta/recipe tests pass.
-[PR #126](https://github.com/makinster/node_workflow/pull/126), spec commit `2824108`,
-targets main; review pending.
-No product code, installation, workflow/model run or output-folder creation.
-Review and the separately authorized measured trial remain later steps.
+[PR #126](https://github.com/makinster/node_workflow/pull/126) merged as `398c482`
+after one clean review. The [spec](delivery_tests/specs/README.md) remains unchanged.
+Owner authorized decision 11: installed in the dedicated persistent library at
+`/home/makin/.local/share/aotn-draft-workflow-trial`, answered the original input
+through supported RunService/InputProvider, and ran the trivial request once.
+Trial worktree `/home/makin/src/nw-draft-workflow-trial`, branch
+`codex/draft-workflow-trial`; [case](delivery_tests/draft-a-workflow.json).
 
-The approved fixed nine-type drafting palette fits as complete Compact text:
-6,865 characters; Brief 6,207. Static catalogue queries do not use runtime
-shortlist ids. Strict dynamic lookup still needs a new node (historical 7/8);
-the approved scoped variant is 8/8. Keep the raw Answer in Vault; only matching
-Check success gates File Write with Create unique. Owner sees draft, warnings,
-actual path and a literal manual build command, then End. No retry or automated
-build. Passing a check does not prove request fidelity or runtime success.
+**70.64 seconds total, exactly two calls, no retry.** Before: model unloaded;
+during/after: 100% CPU, 8,192 context, no GPU offload. Shortlist 41.26 s (28.02 s
+load), draft 29.32 s. Neither timed out. The draft used display annotations in
+port ids (`default/Greeting`, `input/Input`). Check rejected it: two unknown-port
+errors, two unreachable warnings. The failure message appeared; File Write and
+success output were skipped. No saved draft, target build/run or output folder.
+Engine FINISHED/exit 0 means handled failure, **not** a successful draft.
+
+Complete Brief/Compact context stayed 6,207 / 6,865 characters. Original general
+lookup mapping remains 7/8; approved fixed-palette scope stays 8/8, not a quality
+score. The generated draft is non-executable versus the approved clean sample.
+No fixes, extra trial or broad activation were authorized; this result update
+changes documentation only. Local timing/evidence:
+`/home/makin/src/agent_channel/draft-workflow-samples/TRIAL.md`.
 
 The following #125 candidate/review notes are historical; #125 is now merged in
 `cfd3458`, as verified from Git/GitHub. Their pending/open labels are retained.

@@ -2,7 +2,7 @@
   "schema_version": 1,
   "case_id": "draft-a-workflow",
   "baseline": "cfd345888b76ca24347b0b6596a84e1926765256",
-  "record_status": "step 5 authored and checked; owner decisions 1–11 and samples approved; review pending, no workflow/model run",
+  "record_status": "Decision 11 trial completed once: Check failed; two local calls, no retry or saved spec; request not delivered",
   "request_kind": "composition-only",
   "owner_kind": "first composition-only meta-workflow",
   "node_kind": "meta",
@@ -87,10 +87,13 @@
     "path": "specs/draft-a-workflow.json",
     "guide": "specs/README.md",
     "approved_samples": "fixtures/draft-a-workflow.json",
-    "installed": false,
-    "executed": false,
-    "base": "cfd345888b76ca24347b0b6596a84e1926765256",
-    "implementation_commit": "2824108"
+    "installed": true,
+    "executed": true,
+    "base": "398c482ffd64df878c921c8b544dae004adddeb9",
+    "implementation_commit": "2824108",
+    "execution_scope": "Designer ran once; generated target was not built or run.",
+    "installed_workflow_id": "wf_26e14719ecd0",
+    "data_root": "/home/makin/.local/share/aotn-draft-workflow-trial"
   },
   "candidate_artifact": {
     "kind": "planning-packet",
@@ -181,14 +184,25 @@
     "decisions": true,
     "samples": true,
     "build": true,
-    "go_live": false,
+    "go_live": true,
     "recorded_at": "2026-10-27T23:07:17Z",
-    "scope": "All 11 recommended choices and three data samples approved by owner; author/check/PR only this turn. Measured trial separate after review; no model calls or workflow run."
+    "scope": "All 11 recommended choices and three data samples approved by owner; author/check/PR only this turn. Measured trial separate after review; no model calls or workflow run.",
+    "go_live_scope": "Owner authorized decision 11 trial only: install unchanged designer, run once with trivial request and exactly two local calls; no target build/run, retry, schedule or broader activation.",
+    "trial_recorded_at": "2026-10-28T00:04:00.706242+00:00"
   },
   "measurements": {
     "loop_started_at": "2026-10-27T19:50:48Z",
-    "review_rounds": 0,
-    "reviews": [],
+    "review_rounds": 1,
+    "reviews": [
+      {
+        "pr": 126,
+        "head": "d86a83e8eaaaa3029ff17b7bf981163ed7ab6630",
+        "at": "2026-10-27T23:45:08Z",
+        "findings": 0,
+        "outcome": "Clean independent review",
+        "evidence": "https://github.com/makinster/node_workflow/pull/126#issuecomment-6456383586"
+      }
+    ],
     "step_visits": [
       {
         "step": 0,
@@ -247,38 +261,38 @@
       {
         "step": 6,
         "started_at": null,
-        "ended_at": null,
+        "ended_at": "2026-10-27T23:45:08Z",
         "elapsed_days": null,
-        "status": "not_started",
+        "status": "complete",
         "wait_reason": null,
-        "notes": "Outside this turn; no permission inferred."
+        "notes": "Clean independent review on d86a83e; review-start timestamp unknown."
       },
       {
         "step": 7,
         "started_at": null,
-        "ended_at": null,
+        "ended_at": "2026-10-27T23:54:06Z",
         "elapsed_days": null,
-        "status": "not_started",
+        "status": "complete",
         "wait_reason": null,
-        "notes": "Outside this turn; no permission inferred."
+        "notes": "Owner merged PR #126 as 398c482ffd64df878c921c8b544dae004adddeb9; merge-start timestamp unknown."
       },
       {
         "step": 8,
-        "started_at": null,
-        "ended_at": null,
-        "elapsed_days": null,
-        "status": "not_started",
+        "started_at": "2026-10-28T00:02:14Z",
+        "ended_at": "2026-10-28T00:04:00.706242+00:00",
+        "elapsed_days": 0.0012350259490740742,
+        "status": "complete_for_trial",
         "wait_reason": null,
-        "notes": "Outside this turn; no permission inferred."
+        "notes": "First recorded endpoint/placement checkpoint through run start. Unchanged spec built into dedicated persistent trial library; only its Options URL/default configured. No schedule or general activation."
       },
       {
         "step": 9,
-        "started_at": null,
-        "ended_at": null,
-        "elapsed_days": null,
-        "status": "not_started",
+        "started_at": "2026-10-28T00:04:00.706242+00:00",
+        "ended_at": "2026-10-28T00:05:11.347089+00:00",
+        "elapsed_days": 0.0008176023428354205,
+        "status": "trial_failed",
         "wait_reason": null,
-        "notes": "Outside this turn; no permission inferred."
+        "notes": "Single CPU trial; exactly two local calls. Check spec_invalid (2 unknown-port errors, 2 unreachable warnings); failure displayed and stopped. File Write skipped. No successful real-device delivery or owner confirmation claimed."
       },
       {
         "step": 10,
@@ -314,13 +328,18 @@
         "at": "2026-10-27T23:10:10Z",
         "step": 5,
         "event": "Spec authored and build --check passed without diagnostics; 72 focused checks pass. Trial remains separate after review."
+      },
+      {
+        "at": "2026-10-28T00:05:11.347089+00:00",
+        "step": 9,
+        "event": "Decision 11 allowance consumed: one run, two successful local calls, failed workflow check; no retry, saved success draft, target build or target run."
       }
     ],
     "verification": {
-      "generation_calls": 0,
-      "network_calls": 0,
-      "workflow_library_writes": 0,
-      "designer_workflow_runs": 0,
+      "generation_calls": 2,
+      "network_calls": null,
+      "workflow_library_writes": 1,
+      "designer_workflow_runs": 1,
       "target_workflow_runs": 0,
       "control_node_invocations": 3,
       "cli_discovery_commands": 22,
@@ -332,7 +351,7 @@
       },
       "packet_schema_status": "PASS: updated delivery-case schema validated with local template references",
       "product_suite": "Not run: no product/runtime changes; focused authoring/meta/recipe checks cover spec and new fixtures.",
-      "network_calls_scope": "Research/sample probes only; no inference-service network calls. Git/GitHub base discovery excluded.",
+      "network_calls_scope": "Two generation calls; read-only model-info/placement requests were not counted. Git/GitHub discovery excluded.",
       "build_check": {
         "ok": true,
         "diagnostics": [],
@@ -346,7 +365,8 @@
         "command": "python -m pytest tests/test_draft_workflow_spec.py tests/test_meta_nodes.py tests/test_authoring.py -q"
       },
       "docs_consolidation": "PASS: 103 Markdown files, 919 relative links/anchors",
-      "whitespace": "git diff --check passed"
+      "whitespace": "git diff --check passed",
+      "scope": "Cumulative planning/build/trial counts; check-only sample checks remain distinct from the single real trial below."
     }
   },
   "repeated_shapes": [
@@ -409,10 +429,12 @@
           "contracts_<query>"
         ]
       },
-      "basis": "checked-spec",
+      "basis": "observed-run",
       "evidence": [
         "specs/draft-a-workflow.json",
-        "../../tests/test_draft_workflow_spec.py"
+        "../../tests/test_draft_workflow_spec.py",
+        "/home/makin/src/agent_channel/draft-workflow-samples/trial-2026-10-27/vault-capture.json",
+        "/home/makin/src/agent_channel/draft-workflow-samples/trial-2026-10-27/events.jsonl"
       ]
     }
   ],
@@ -425,7 +447,12 @@
     "/home/makin/src/agent_channel/draft-workflow-samples/timing-scenario.json",
     "specs/draft-a-workflow.json",
     "specs/README.md",
-    "fixtures/draft-a-workflow.json"
+    "fixtures/draft-a-workflow.json",
+    "/home/makin/src/agent_channel/draft-workflow-samples/TRIAL.md",
+    "/home/makin/src/agent_channel/draft-workflow-samples/trial-2026-10-27/trial-runtime.json",
+    "/home/makin/src/agent_channel/draft-workflow-samples/trial-2026-10-27/placement-before.json",
+    "/home/makin/src/agent_channel/draft-workflow-samples/trial-2026-10-27/placement-samples.json",
+    "/home/makin/src/agent_channel/draft-workflow-samples/trial-2026-10-27/run-result.json"
   ],
   "acceptance_checks": [
     "Only verified current node types in supplied contracts/drafts; no invented type can pass Check.",
@@ -444,7 +471,198 @@
     "No PR, product code, generation, live setup or installed workflow in this turn.",
     "Future scoring: on the same catalogue base, score applicable acceptance checks individually; retain original coverage and record scoped alternatives separately. Permission/secret/approval regressions block promotion. Unrun model/device checks remain not_run.",
     "Owner approved narrower fixed-palette variant; original general runtime lookup mapping remains 7/8 for comparison, approved scope is 8/8. No automated build or retry. Build step checked, not delivered/live.",
-    "Contract-only evidence; no observed execution. Eight static catalogue queries are collected by Concat before draft call."
+    "Contract-only evidence; no observed execution. Eight static catalogue queries are collected by Concat before draft call.",
+    "Earlier planning/build notes are dated historical evidence. The trial below supersedes their not_run/contract-only status for the trivial designer path only; medium/negative model runs remain unrun. No request-delivery success inferred from FINISHED/0."
   ],
-  "pr": "https://github.com/makinster/node_workflow/pull/126"
+  "pr": "https://github.com/makinster/node_workflow/pull/126",
+  "trial": {
+    "schema_version": 1,
+    "date_local": "2026-10-27",
+    "timezone": "America/Los_Angeles",
+    "base": "398c482ffd64df878c921c8b544dae004adddeb9",
+    "spec_sha256": "354c67fa88c8e7de2074425b082d8c294aee80cc4713b13201024f91d6921965",
+    "request": "When I run it, show Ready in the output.",
+    "run_id": "run_4baf21cf",
+    "workflow_id": "wf_26e14719ecd0",
+    "data_root": "/home/makin/.local/share/aotn-draft-workflow-trial",
+    "input_path": "Public RunService.start(InputProvider, TerminatePolicy), unchanged saved designer; original User Text Input answered exactly once.",
+    "started_at": "2026-10-28T00:04:00.706242+00:00",
+    "ended_at": "2026-10-28T00:05:11.347089+00:00",
+    "overall_wall_seconds": 70.64084242098033,
+    "wall_scope": "start through RunService.wait completion; input included, installation and placement probes excluded",
+    "workflow_runs": 1,
+    "local_generation_calls": 2,
+    "retries": 0,
+    "target_builds": 0,
+    "target_runs": 0,
+    "model": "qwen3.6:latest",
+    "server_url": "http://localhost:11434",
+    "placement": {
+      "before": {
+        "at": "2026-10-28T00:04:00.706108+00:00",
+        "loaded": false,
+        "ollama_ps": "empty",
+        "processor": null,
+        "note": "No loaded model; no active placement before run."
+      },
+      "during_and_after": {
+        "processor": "100% CPU",
+        "gpu_offload": false,
+        "size_vram": 0,
+        "context_length": 8192,
+        "runner": "llamacpp",
+        "size_bytes": 23148248430,
+        "first_loaded_observation": "2026-10-28T00:04:32.519091+00:00"
+      }
+    },
+    "calls": [
+      {
+        "step": "shortlist",
+        "timeout_seconds": 300,
+        "max_output_tokens": 256,
+        "num_ctx": 8192,
+        "temperature": 0.2,
+        "model": "qwen3.6:latest",
+        "model_digest": "3899b1c0e7c55773feedbc824241631df463feb395418d09604f51ed905834ef",
+        "wall_seconds": 41.2550433849683,
+        "done_reason": "stop",
+        "reply_json": true,
+        "thinking_requested": false,
+        "input_tokens": 1593,
+        "cached_input_tokens": 0,
+        "output_tokens": 51,
+        "server_total_seconds": 41.249783113,
+        "load_seconds": 28.016812274,
+        "input_seconds": 10.703514,
+        "output_seconds": 2.515851
+      },
+      {
+        "step": "draft",
+        "timeout_seconds": 600,
+        "max_output_tokens": 1024,
+        "num_ctx": 8192,
+        "temperature": 0.2,
+        "model": "qwen3.6:latest",
+        "model_digest": "3899b1c0e7c55773feedbc824241631df463feb395418d09604f51ed905834ef",
+        "wall_seconds": 29.320667815045454,
+        "done_reason": "stop",
+        "reply_json": true,
+        "thinking_requested": false,
+        "input_tokens": 1884,
+        "cached_input_tokens": 0,
+        "output_tokens": 246,
+        "server_total_seconds": 29.299860441,
+        "load_seconds": 0.001817048,
+        "input_seconds": 15.495611,
+        "output_seconds": 13.672831
+      }
+    ],
+    "context_characters": {
+      "brief": 6207,
+      "fixed_compact": 6865
+    },
+    "outcome": "check_failed",
+    "engine_final_state": "FINISHED",
+    "engine_exit_code": 0,
+    "exit_code_note": "Handled Check failure ends FINISHED/0; does not mean a valid draft was delivered.",
+    "check": {
+      "ok": false,
+      "code": "spec_invalid",
+      "error_count": 2,
+      "warning_count": 2,
+      "omitted_count": 0,
+      "problems": [
+        {
+          "node": "start_node",
+          "field": "connections[0].from",
+          "code": "unknown_port",
+          "severity": "error",
+          "message": "Connection names a port unavailable with this node configuration."
+        },
+        {
+          "node": "text_output_node",
+          "field": "connections[1].from",
+          "code": "unknown_port",
+          "severity": "error",
+          "message": "Connection names a port unavailable with this node configuration."
+        },
+        {
+          "node": "end_node",
+          "field": null,
+          "code": "unreachable",
+          "severity": "warning",
+          "message": "Node is not reachable from Start."
+        },
+        {
+          "node": "text_output_node",
+          "field": null,
+          "code": "unreachable",
+          "severity": "warning",
+          "message": "Node is not reachable from Start."
+        }
+      ],
+      "success_report_written": false
+    },
+    "saved_draft_path": null,
+    "file_write_executed": false,
+    "saved_file_build_check": "not_applicable: Check failed and no success spec file was saved",
+    "quality": {
+      "result": "fail",
+      "versus_approved_sample": "Correct core node types and Ready text, but display labels were copied into all four connection endpoints; draft is not executable. Approved sample checks cleanly.",
+      "additional_difference": "End record_line was omitted (defaults true), unlike approved quiet End; source comparison only, target not run."
+    },
+    "draft_spec": {
+      "format": "aotn-workflow/1",
+      "name": "Ready Status Workflow",
+      "nodes": {
+        "start_node": {
+          "type": "start_node",
+          "alias": "Start"
+        },
+        "text_output_node": {
+          "type": "text_output_node",
+          "alias": "Text Output",
+          "config": {
+            "input_source": "Upstream payload",
+            "label": "Status",
+            "template": "Ready"
+          }
+        },
+        "end_node": {
+          "type": "end_node",
+          "alias": "End",
+          "config": {
+            "message": "Workflow completed successfully"
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "start_node.default/Greeting",
+          "to": "text_output_node.input/Input"
+        },
+        {
+          "from": "text_output_node.default/Formatted output",
+          "to": "end_node.input/Input"
+        }
+      ]
+    },
+    "visible_output": [
+      "[Draft failed] DRAFT DID NOT COMPLETE\nWorkflow spec did not pass.\nstart_node · connections[0].from · Connection names a port unavailable with this node configuration.\ntext_output_node · connections[1].from · Connection names a port unavailable with this node configuration.\nend_node · — · Node is not reachable from Start.\ntext_output_node · — · Node is not reachable from Start.\n\nNo success build command. No automatic retry. If saving failed, inspect the destination for a partial file before trying again."
+    ],
+    "evidence_packet": "/home/makin/src/agent_channel/draft-workflow-samples/trial-2026-10-27",
+    "summary": "/home/makin/src/agent_channel/draft-workflow-samples/TRIAL.md",
+    "raw_answer_sha256": "b17ffaaada018368520b7483f281e8b21c37398aab3634bd5363f44f925a39f8",
+    "raw_answer_path": "/home/makin/src/agent_channel/draft-workflow-samples/trial-2026-10-27/failed-draft.txt",
+    "worktree": "/home/makin/src/nw-draft-workflow-trial",
+    "branch": "codex/draft-workflow-trial",
+    "results_verification": {
+      "delivery_case_schema": "PASS",
+      "metrics_and_raw_spec_identity": "PASS",
+      "failed_no_write_outcome": "PASS",
+      "docs_consolidation": "PASS: 103 Markdown files; 920 relative links/anchors",
+      "whitespace": "git diff --check PASS",
+      "product_suite": "not run: documentation/data results only; no product changes or further inference"
+    }
+  }
 }

@@ -6,6 +6,36 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-27 — Draft a workflow: single measured CPU trial
+
+Own clean worktree `/home/makin/src/nw-draft-workflow-trial`, branch
+`codex/draft-workflow-trial`, fetched main `398c482` (#126 merged). Owner explicitly
+authorized decision 11. Built the unchanged spec into dedicated persistent library
+`/home/makin/.local/share/aotn-draft-workflow-trial` (workflow `wf_26e14719ecd0`).
+Configured only its local Options URL/default, used the supported public
+RunService/InputProvider to answer the original User Text Input once, then ran
+exactly once: `run_4baf21cf`. No modified spec, retry or extra generation.
+
+Run at 2026-10-28 00:04:00–00:05:11 UTC (October 27 PDT): **70.6408 s overall**.
+Before: unloaded; during/after: `ollama ps` 100% CPU, context 8192, API VRAM 0.
+Shortlist wall/load/input/output: 41.2550 / 28.0168 / 10.7035 / 2.5159 s,
+1,593 input / 51 output tokens. Draft: 29.3207 / 0.0018 / 15.4956 / 13.6728 s,
+1,884 input / 246 output tokens. Cached input 0 on both; no timeout, both stop.
+
+**Check failed**, two unknown-port errors plus two unreachable warnings:
+model copied display names into endpoint ids (`default/Greeting`, `input/Input`).
+Core types/Ready text fit the request, but draft is non-executable versus the
+approved sample. Quiet End setting also differs (source comparison, not run).
+Failure path displayed problems and stopped; File Write/success output skipped.
+No saved draft, output folder, generated-target build or execution. FINISHED/0
+is a handled error, not successful drafting. No saved-file check applicable.
+[Case](delivery_tests/draft-a-workflow.json) keeps full timings, placement, raw
+spec and observed repeated shapes; local packet has `TRIAL.md` and raw evidence.
+Review round count updated to one clean #126 review; original coverage retained.
+Only result docs change; no further fix/trial. Delivery schema, metric/raw-spec
+identity, failed/no-write assertions, docs consolidation (103 files / 920 links)
+and git diff --check pass. No product suite: results-only documentation.
+
 ## 2026-10-27 — Draft a workflow: owner-approved spec, build step
 
 Same own worktree/branch `nw-draft-workflow-samples` /
