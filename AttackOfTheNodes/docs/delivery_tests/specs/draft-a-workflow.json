@@ -32,7 +32,7 @@
         "detail": "Brief",
         "format": "Text",
         "include_debug": false,
-        "max_chars": 7500,
+        "max_chars": 8000,
         "transient_output": true,
         "vault_write": true,
         "vault_write_key": "brief_catalogue"

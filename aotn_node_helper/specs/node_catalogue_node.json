@@ -126,7 +126,7 @@
         "tab": "Parameters",
         "wrap_description": true,
         "description": "Complete output only; narrow filters if the cap is exceeded. Context Pack and model context have separate limits.",
-        "default": 62400
+        "default": 64000
       },
       "include_debug": {
         "type": "boolean",

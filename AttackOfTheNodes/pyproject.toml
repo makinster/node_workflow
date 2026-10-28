@@ -10,6 +10,7 @@ dependencies = [
     "textual>=8.2",
     "textual-dev>=1.8",
     "aiohttp>=3.14,<4",
+    "anthropic>=2.3,<3",
 ]
 
 # Optional Windows window placement/control (FO4, D5 in

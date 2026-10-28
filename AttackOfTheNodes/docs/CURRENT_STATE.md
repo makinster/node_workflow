@@ -1,7 +1,8 @@
 # Current State
 
-Snapshot checked **2026-10-27**, against fetched `origin/main` `4f1f5e7`.
-Test-suite acceleration is built for review; earlier delivery entries retain their dated scope.
+Snapshot checked **2026-10-27**, against fetched `origin/main` `ba48bf5`
+after #132 merged. Test-suite acceleration (#133) remains under review;
+earlier delivery entries retain their dated scope. No real API calls.
 Code and fresh GitHub checks take precedence.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
@@ -20,6 +21,28 @@ The original serial probe took 694.25 s with overlapping diagnostics; owner's
 independent baseline was 657 s. [Measurements and coverage accounting](audits/test_speed_2026_10_27/README.md)
 record caveats and the controlled parallel baseline. Install `requirements-dev.txt`;
 full `pytest -n auto`, quick `pytest -n auto -m "not slow"`. Reviewers run full.
+After merging main `ba48bf5` (#132) into the candidate, one full parallel run
+passes **3,205 tests in 37.16 s**; both runtime SDK and xdist dev dependencies
+are present. Original benchmark numbers above remain tied to `4f1f5e7`.
+
+## Hosted question node — 2026-10-27, built for review
+
+Own worktree `/home/makin/src/nw-ask-hosted-question`, branch
+`codex/ask-hosted-question`, base `4f1f5e7`. Owner choices 1–9 implemented:
+single-turn streaming SDK, Secrets-only key, Options model/context limit, node
+overrides/effort/JSON and standard inputs/routing. Refusal/cutoff stop before
+content; typed errors omit provider bodies. Shared redactor protects Answer and
+SDK diagnostics; real engine canary checks cover run_errors. No real API call.
+[Contract](integrations/ASK_CLAUDE.md), [case](delivery_tests/ask-claude.json).
+Brief grows to 7,634; designer Brief cap raised to 8,000; palette stays 7,421.
+Catalogue default 64,000 (existing ceiling), compact JSON 51,792. **3,207 full-suite checks pass** (680.92 s); 205 focused checks, 27 example checks, helper node/UI, build --check, delivery schema, dependency, docs and whitespace checks pass. The three full runs and inventory corrections are recorded in the case.
+[PR #132](https://github.com/makinster/node_workflow/pull/132), implementation `9d04dde`, targets main; not merged.
+
+PR #132 P2 follow-up: Answer now masks only exact known Secrets, with JSON
+parsed before masking decoded strings and re-serialized afterward. Ordinary
+credential-like field names remain data for Check reply. Diagnostic/error
+redaction is unchanged. Ask local model has no Answer-redaction pattern and is
+unchanged. Verification is recorded in the latest session entry.
 
 ## Draft a workflow — 2026-10-27, medium trial checked only
 
