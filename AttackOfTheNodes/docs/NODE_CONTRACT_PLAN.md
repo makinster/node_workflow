@@ -101,7 +101,11 @@ library changes or broader use proof. This does not advance MCP.
 Question cap follows it + 12,000; token fit is advisory in Run details. No
 trimming, Context Pack limit change, new node or real generation.
 [Maintenance case](delivery_tests/local-model-context-limit.json) records all
-six owner choices and fake-server/UI checks; review pending.
+six owner choices and fake-server/UI checks; merged as #130. The subsequent
+medium trial kept 8,000: 99.23 s, two calls, Check pass/zero warnings and no
+fit warning. Target build/run correctly withheld for `/tmp` write outside the
+trial library. Saved-path display template is incorrect; no fix/retry authorized.
+See the [designer case](delivery_tests/draft-a-workflow.json).
 
 ## Proposed phases
 

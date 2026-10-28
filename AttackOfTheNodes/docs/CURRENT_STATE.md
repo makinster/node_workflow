@@ -1,11 +1,37 @@
 # Current State
 
-Snapshot checked **2026-10-27**, against fetched `origin/main` `e7d07e8` after
-#129 merged; the Context-limit enhancement below is checked, awaiting review.
+Snapshot checked **2026-10-27**, against fetched `origin/main` `80e4315` after
+#130 merged; medium draft checked but is outside the approved target-run scope.
 Code and fresh GitHub checks take precedence.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
+
+## Draft a workflow — 2026-10-27, medium trial checked only
+
+Own clean worktree `/home/makin/src/nw-draft-workflow-medium-trial`, branch
+`codex/draft-workflow-medium-trial`, main `80e4315`. Owner-approved unchanged
+spec, fresh library `/home/makin/.local/share/aotn-draft-workflow-medium-2026-10-27`,
+exact medium request, default Context 8,000, two local calls/no retry or edits.
+**99.23 s overall** (shortlist 48.62 s, draft 50.55 s). Before: unloaded;
+during/after: 100% CPU, context 8192, GPU VRAM 0. Neither token-fit warning fired
+(estimates 2,323.5 / 3,246.75 below 8,192). Full Context 7,447 / 7,421.
+
+Check passed with **zero warnings**; the reference has one intentional unreachable
+preview, omitted by the generated graph, so warning-only display was not tested.
+Exact raw Answer saved as
+`/home/makin/src/agent_channel/draft-workflow-output/draft (1).json`;
+saved-file build --check clean. **Target not built/run**: requested write path
+`/tmp/draft-note.txt` is outside the allowed trial library. No path redirection.
+Source comparison finds a functional error: display template `{{input}}` would
+emit literal `{input}` rather than the saved path (pure string-format proof,
+not target execution). Six-node graph/input/uppercase/Create unique structure
+fits, but medium end-to-end behavior is not proven. Prior trivial success remains.
+[Case](delivery_tests/draft-a-workflow.json) and local TRIAL.md Medium trial retain
+metrics, Check/fit warnings, saved draft, scope decision and source-quality limits.
+[Results PR #131](https://github.com/makinster/node_workflow/pull/131), record `ee1cb4c`.
+
+Earlier implementation/trial entries below are historical; #130 is now merged.
 
 ## Ask local model Context limit — 2026-10-27, built for review
 

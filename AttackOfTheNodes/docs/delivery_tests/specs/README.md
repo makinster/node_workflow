@@ -12,6 +12,14 @@ passed build --check, was built only in a fresh trial library and ran once:
 `[Ready Output] Ready`. It also emits an End completion line, unlike the quiet
 sample. Full measurements, both trials and raw drafts are in the delivery case.
 
+The medium trial on `80e4315` took 99.23 s with two calls, default cap 8,000,
+zero Check warnings and no token-fit warning. Reference's one unreachable-node
+warning was absent because the draft omitted the unused preview. Saved-file
+check passed, but target was not built/run: its `/tmp` write violates the
+trial-folder-only condition. It also uses `{{input}}` in Text Output, yielding
+literal `{input}` instead of a path. No prompt/spec fix or retry was attempted;
+this is not medium end-to-end proof.
+
 The designer uses existing nodes only. Its **drafting palette** is nine types:
 Start, End, Merge Beacon, Parallel Branch, User Text Input, Text Output,
 Text Transform, File Reader and File Write. The designer's own meta/helper nodes

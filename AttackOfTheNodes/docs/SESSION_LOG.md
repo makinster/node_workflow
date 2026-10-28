@@ -6,6 +6,42 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-27 — Draft a workflow: medium trial, stop at target check
+
+Own clean worktree `/home/makin/src/nw-draft-workflow-medium-trial`, branch
+`codex/draft-workflow-medium-trial`, fetched main `80e4315` (#130 merged).
+Owner authorized one unchanged designer/medium-request run, exactly two local
+calls, default Context 8,000, no retry/edit. Fresh trial library
+`/home/makin/.local/share/aotn-draft-workflow-medium-2026-10-27`; supported public
+RunService/InputProvider answered the original node once. `run_dcfe2b17`.
+
+03:14:23–03:16:03 UTC October 28 (October 27 PDT): **99.2268 s** designer wall.
+Shortlist wall/load/input/output **48.6249 / 27.5314 / 15.0418 / 6.0214 s**,
+2,086 input / 104 output tokens. Draft **50.5479 / 0.0017 / 19.0150 / 31.3690 s**,
+2,147 input / 405 output tokens. Cached input 0, both stop, no timeout.
+Before unloaded; during/after 100% CPU, context 8192, API VRAM 0. No token-fit
+warnings: estimates 2,323.5 / 3,246.75 below 8,192. Context 7,447 / 7,421 chars.
+
+Check passed, zero warnings. Reference still has one intentional unreachable
+unused_preview warning; generated six-node graph omits it, so warning display
+was not exercised. Raw text saved exactly via Create unique to
+`/home/makin/src/agent_channel/draft-workflow-output/draft (1).json`; previous
+file preserved. Saved-file build --check clean (0.1081 s), library unchanged.
+Stopped there: target `/tmp/draft-note.txt` write violates trial-library-only
+condition, so **no target build or run**, path edit or further call.
+
+Source-only quality check: correct core nodes/ports, uppercase/Create unique;
+Text Output `{{input}}` formats as literal `{input}`, not saved path. End also
+keeps a completion line. Structurally valid, functionally incomplete; no live
+medium result claimed. [Case](delivery_tests/draft-a-workflow.json) retains raw
+spec, metrics, warnings, scope decision and original trials; local TRIAL.md adds
+Medium trial. Delivery schema, exact metrics/two-call trace, immutable files,
+prior-output preservation, warning comparison, scope/format assertions, docs
+consolidation (103 files / 936 links) and git diff --check pass. No product
+suite: documentation/data results only; no further generation or target run.
+Results [PR #131](https://github.com/makinster/node_workflow/pull/131), record
+commit `ee1cb4c`, targets main.
+
 ## 2026-10-27 — Ask local model configurable Context cap
 
 Own clean worktree `/home/makin/src/nw-local-context-limit`, branch

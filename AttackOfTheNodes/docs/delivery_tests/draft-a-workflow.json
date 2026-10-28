@@ -2,7 +2,7 @@
   "schema_version": 1,
   "case_id": "draft-a-workflow",
   "baseline": "cfd345888b76ca24347b0b6596a84e1926765256",
-  "record_status": "Owner-approved re-trial passed on merged port fix; exact saved draft checked, built only in fresh trial library and run once; Ready confirmed. Single trivial case only.",
+  "record_status": "Medium trial: Check pass/zero warnings; saved-file check clean, target outside approved path boundary so not built/run; display template incorrect. Prior trivial success retained.",
   "request_kind": "composition-only",
   "owner_kind": "first composition-only meta-workflow",
   "node_kind": "meta",
@@ -89,13 +89,13 @@
     "approved_samples": "fixtures/draft-a-workflow.json",
     "installed": true,
     "executed": true,
-    "base": "8945c3d8563695c6c59b4072434ae98900d28ae3",
+    "base": "80e4315562c289ac5e495bc4e599e8d52799ba6b",
     "implementation_commit": "555e493",
-    "execution_scope": "Unchanged designer ran once on port-id fix. Generated target separately checked/built/run once in fresh trial library under explicit owner approval.",
-    "data_root": "/home/makin/.local/share/aotn-draft-workflow-retrial-2026-10-27",
+    "execution_scope": "Designer ran once for medium request; generated medium target was checked only, not built or run. Prior trivial target execution remains in retrial.",
+    "data_root": "/home/makin/.local/share/aotn-draft-workflow-medium-2026-10-27",
     "previous_installed_workflow_id": "wf_26e14719ecd0",
-    "installed_workflow_id": "wf_90fdef2f232c",
-    "generated_draft_path": "/home/makin/src/agent_channel/draft-workflow-output/draft.json"
+    "installed_workflow_id": "wf_e59205f40c8f",
+    "generated_draft_path": "/home/makin/src/agent_channel/draft-workflow-output/draft (1).json"
   },
   "candidate_artifact": {
     "kind": "planning-packet",
@@ -192,7 +192,9 @@
     "go_live_scope": "Owner authorized decision 11 trial only: install unchanged designer, run once with trivial request and exactly two local calls; no target build/run, retry, schedule or broader activation.",
     "trial_recorded_at": "2026-10-28T00:04:00.706242+00:00",
     "retrial_scope": "Owner authorized one unchanged designer run, exactly two local calls; if Check passes, check/build saved draft into fresh trial library and run that target once. No prompt edits or retry.",
-    "retrial_recorded_at": "2026-10-28T02:16:14.192537+00:00"
+    "retrial_recorded_at": "2026-10-28T02:16:14.192537+00:00",
+    "medium_trial_scope": "Owner authorized unchanged designer once/two calls/default Context 8,000, no retry or prompt edits; target check/build/run only if confined to fresh trial library with no network/Hermes/System commands. Otherwise stop at build --check.",
+    "medium_trial_recorded_at": "2026-10-28T03:14:23.954677+00:00"
   },
   "measurements": {
     "loop_started_at": "2026-10-27T19:50:48Z",
@@ -359,6 +361,24 @@
         "status": "trivial_ready_proved",
         "wait_reason": null,
         "notes": "One designer run/two local calls; zero-warning Check pass; saved file check/build then one target run in trial library; Ready observed in CLI output. Agent/handoff elapsed included. No broader owner use inferred."
+      },
+      {
+        "step": 8,
+        "started_at": null,
+        "ended_at": "2026-10-28T03:14:23.954677+00:00",
+        "elapsed_days": null,
+        "status": "complete_for_medium_trial",
+        "wait_reason": null,
+        "notes": "Fresh library and unchanged designer installed. Context cap left at 8,000. Setup start unknown."
+      },
+      {
+        "step": 9,
+        "started_at": "2026-10-28T03:14:23.954677+00:00",
+        "ended_at": "2026-10-28T03:16:59.005719+00:00",
+        "elapsed_days": 0.0017945722453703702,
+        "status": "medium_check_pass_target_scope_blocked",
+        "wait_reason": "Target writes outside approved trial library.",
+        "notes": "Designer 99.2268 s; elapsed visit includes inspection and saved-file check. Zero Check warnings; literal placeholder defect found by source/pure formatting. No target build/run."
       }
     ],
     "checkpoints": [
@@ -386,13 +406,18 @@
         "at": "2026-10-28T02:18:32.792081+00:00",
         "step": 9,
         "event": "Re-trial Check passed, saved raw text matches Answer, target built in fresh trial library and run once: Ready confirmed."
+      },
+      {
+        "at": "2026-10-28T03:16:59.005719+00:00",
+        "step": 9,
+        "event": "Medium Check passed with zero warnings and no token-fit warning; saved file checked cleanly. Stop at check under target path restriction; display-template fidelity fails."
       }
     ],
     "verification": {
-      "generation_calls": 4,
+      "generation_calls": 6,
       "network_calls": null,
-      "workflow_library_writes": 3,
-      "designer_workflow_runs": 2,
+      "workflow_library_writes": 4,
+      "designer_workflow_runs": 3,
       "target_workflow_runs": 1,
       "control_node_invocations": 3,
       "cli_discovery_commands": 22,
@@ -419,7 +444,7 @@
       },
       "docs_consolidation": "PASS: 103 Markdown files, 919 relative links/anchors",
       "whitespace": "git diff --check passed",
-      "scope": "Cumulative original trial plus re-trial: four local calls across two designer runs, one generated-target run; library writes are saved workflows (old designer, fresh designer, target). Planning/build checks remain separate."
+      "scope": "Cumulative: original designer trial, trivial re-trial, medium trial (two calls each). One generated target run from trivial re-trial only. Saved workflows: three designers plus trivial target."
     },
     "review_count_scope": "Known source/spec reviews #126 and #128; results-only PR reviews not audited."
   },
@@ -490,7 +515,9 @@
         "/home/makin/src/agent_channel/draft-workflow-samples/trial-2026-10-27/vault-capture.json",
         "/home/makin/src/agent_channel/draft-workflow-samples/trial-2026-10-27/events.jsonl",
         "/home/makin/src/agent_channel/draft-workflow-samples/retrial-2026-10-27/vault-capture.json",
-        "/home/makin/src/agent_channel/draft-workflow-samples/retrial-2026-10-27/events.jsonl"
+        "/home/makin/src/agent_channel/draft-workflow-samples/retrial-2026-10-27/events.jsonl",
+        "/home/makin/src/agent_channel/draft-workflow-samples/medium-trial-2026-10-27/vault-capture.json",
+        "/home/makin/src/agent_channel/draft-workflow-samples/medium-trial-2026-10-27/events.jsonl"
       ]
     }
   ],
@@ -511,7 +538,9 @@
     "/home/makin/src/agent_channel/draft-workflow-samples/trial-2026-10-27/run-result.json",
     "/home/makin/src/agent_channel/draft-workflow-samples/TRIAL.md",
     "/home/makin/src/agent_channel/draft-workflow-samples/retrial-2026-10-27/retrial-summary.json",
-    "/home/makin/src/agent_channel/draft-workflow-samples/retrial-2026-10-27/target-run.json"
+    "/home/makin/src/agent_channel/draft-workflow-samples/retrial-2026-10-27/target-run.json",
+    "/home/makin/src/agent_channel/draft-workflow-samples/medium-trial-2026-10-27/medium-summary.json",
+    "/home/makin/src/agent_channel/draft-workflow-samples/medium-trial-2026-10-27/saved-check-and-scope.json"
   ],
   "acceptance_checks": [
     "Only verified current node types in supplied contracts/drafts; no invented type can pass Check.",
@@ -533,7 +562,8 @@
     "Contract-only evidence; no observed execution. Eight static catalogue queries are collected by Concat before draft call.",
     "Earlier planning/build notes are dated historical evidence. The trial below supersedes their not_run/contract-only status for the trivial designer path only; medium/negative model runs remain unrun. No request-delivery success inferred from FINISHED/0.",
     "Catalogue Text port-id fix is check-only, separately recorded in catalogue_text_fix. Prior trial and observed shapes refer to the old spec SHA/text; no successful re-trial inferred.",
-    "Re-trial is separately owner-approved on 8945c3d. Prior failed trial and pre-fix measurements stay frozen. Current success is limited to one trivial request; original operation mapping/coverage unchanged, not a quality score."
+    "Re-trial is separately owner-approved on 8945c3d. Prior failed trial and pre-fix measurements stay frozen. Current success is limited to one trivial request; original operation mapping/coverage unchanged, not a quality score.",
+    "Medium trial did not exercise the reference one-warning presentation: the generated draft has no unused_preview. Check pass is structural, not functional proof; saved-path formatting is wrong and target run scope was correctly refused."
   ],
   "pr": "https://github.com/makinster/node_workflow/pull/126",
   "trial": {
@@ -1001,5 +1031,250 @@
       "product_suite": "not run: documentation/data result update only; no product or prompt changes"
     },
     "results_pr": "https://github.com/makinster/node_workflow/pull/129"
+  },
+  "medium_trial": {
+    "schema_version": 1,
+    "date_local": "2026-10-27",
+    "timezone": "America/Los_Angeles",
+    "base": "80e4315562c289ac5e495bc4e599e8d52799ba6b",
+    "worktree": "/home/makin/src/nw-draft-workflow-medium-trial",
+    "branch": "codex/draft-workflow-medium-trial",
+    "request": "Ask me for a note, uppercase it, save it as /tmp/draft-note.txt without overwriting an old note, then show the saved path.",
+    "spec_sha256": "b77c97adc162f41326dbfd5e0c442beee1cad2f7eb84fc900b3f9a8d4a32ca1f",
+    "workflow_id": "wf_e59205f40c8f",
+    "run_id": "run_dcfe2b17",
+    "data_root": "/home/makin/.local/share/aotn-draft-workflow-medium-2026-10-27",
+    "input_path": "Supported RunService/InputProvider supplied the exact medium request to the original User Text Input once; saved designer unchanged.",
+    "started_at": "2026-10-28T03:14:23.954677+00:00",
+    "ended_at": "2026-10-28T03:16:03.181472+00:00",
+    "overall_wall_seconds": 99.22679048404098,
+    "wall_scope": "Designer start through completion; excludes installation, placement probes and saved-file check/handoff.",
+    "workflow_runs": 1,
+    "local_generation_calls": 2,
+    "retries": 0,
+    "prompt_edits": false,
+    "context_limit": 8000,
+    "total_question_limit": 20000,
+    "context_limit_source": "Options default; node overrides blank",
+    "model": "qwen3.6:latest",
+    "server_url": "http://localhost:11434",
+    "placement": {
+      "before": {
+        "at": "2026-10-28T03:14:23.954539+00:00",
+        "loaded": false,
+        "ollama_ps": "empty",
+        "processor": null
+      },
+      "during_and_after": {
+        "processor": "100% CPU",
+        "size_vram": 0,
+        "context_length": 8192,
+        "size_bytes": 23148248430,
+        "runner": "llamacpp",
+        "after_at": "2026-10-28T03:16:03.417231+00:00"
+      }
+    },
+    "calls": [
+      {
+        "step": "shortlist",
+        "timeout_seconds": 300,
+        "max_output_tokens": 256,
+        "temperature": 0.2,
+        "model": "qwen3.6:latest",
+        "model_digest": "3899b1c0e7c55773feedbc824241631df463feb395418d09604f51ed905834ef",
+        "wall_seconds": 48.62487349798903,
+        "done_reason": "stop",
+        "reply_json": true,
+        "thinking_requested": false,
+        "input_tokens": 2086,
+        "cached_input_tokens": 0,
+        "output_tokens": 104,
+        "server_total_seconds": 48.617976919,
+        "load_seconds": 27.531439373,
+        "input_seconds": 15.041754,
+        "output_seconds": 6.021403,
+        "estimated_tokens": 2323.5,
+        "num_ctx": 8192,
+        "warnings": []
+      },
+      {
+        "step": "draft",
+        "timeout_seconds": 600,
+        "max_output_tokens": 1024,
+        "temperature": 0.2,
+        "model": "qwen3.6:latest",
+        "model_digest": "3899b1c0e7c55773feedbc824241631df463feb395418d09604f51ed905834ef",
+        "wall_seconds": 50.547870197100565,
+        "done_reason": "stop",
+        "reply_json": true,
+        "thinking_requested": false,
+        "input_tokens": 2147,
+        "cached_input_tokens": 0,
+        "output_tokens": 405,
+        "server_total_seconds": 50.542578924,
+        "load_seconds": 0.001744978,
+        "input_seconds": 19.014995,
+        "output_seconds": 31.369009,
+        "estimated_tokens": 3246.75,
+        "num_ctx": 8192,
+        "warnings": []
+      }
+    ],
+    "context_characters": {
+      "brief": 7447,
+      "fixed_compact": 7421
+    },
+    "token_fit_warning_fired": {
+      "shortlist": false,
+      "draft": false
+    },
+    "outcome": "check_pass_target_scope_blocked",
+    "check": {
+      "schema_version": 1,
+      "ok": true,
+      "node_count": 6,
+      "connection_count": 5,
+      "warning_count": 0,
+      "problems": [],
+      "omitted_count": 0
+    },
+    "engine_final_state": "FINISHED",
+    "engine_exit_code": 0,
+    "designer_errors": [],
+    "saved_draft_path": "/home/makin/src/agent_channel/draft-workflow-output/draft (1).json",
+    "saved_draft_sha256": "07c140ce57cd54b01164f0c4f47037fd7bdc2df56f394f0c635f8c3bd292bf3a",
+    "saved_equals_raw_answer": true,
+    "file_write_mode": "Create unique",
+    "older_saved_outputs_preserved": true,
+    "saved_file_build_check": {
+      "ok": true,
+      "diagnostics": [],
+      "wall_seconds": 0.10811892396304756,
+      "checked_at": "2026-10-28T03:16:58.897600+00:00",
+      "trial_library_unchanged": true
+    },
+    "reference_sample_check": {
+      "ok": true,
+      "warning_count": 1,
+      "diagnostics": [
+        {
+          "level": "warning",
+          "code": "unreachable",
+          "node": "unused_preview",
+          "field": null,
+          "message": "Node is not reachable from the start node"
+        }
+      ]
+    },
+    "target_builds": 0,
+    "target_runs": 0,
+    "target_run_gate": {
+      "allowed": false,
+      "decision": "Stop after build --check; do not build or run target.",
+      "reason": "Configured File Write destination /tmp/draft-note.txt is outside the fresh trial library; stop at build --check under owner scope.",
+      "write_path": "/tmp/draft-note.txt",
+      "network_hermes_system_nodes_present": false,
+      "source_review_only": true,
+      "paths_not_redirected": true
+    },
+    "quality": {
+      "result": "partial: valid graph, incorrect saved-path display",
+      "node_count": 6,
+      "reference_node_count": 7,
+      "core_types_and_ports": "valid",
+      "note_input": "present; not executed",
+      "uppercase": "configured correctly; not executed",
+      "no_overwrite": "Create unique configured; not executed",
+      "saved_path_display": {
+        "correct": false,
+        "template": "{{input}}",
+        "pure_format_result": "{input}",
+        "expected_reference_template": "{input[path]}",
+        "evidence": "Python format only; no target node executed."
+      },
+      "warning_comparison": "Generated graph has zero warnings. Reference has one intentional unreachable unused_preview; generated graph omits it. Warning-only presentation was not exercised by this run.",
+      "other_difference": "End defaults to an extra completion line; reference End is quiet.",
+      "runtime_status": "Not built/run under owner path restriction; no medium end-to-end success claim."
+    },
+    "draft_spec": {
+      "format": "aotn-workflow/1",
+      "name": "Draft Note Workflow",
+      "nodes": {
+        "start": {
+          "type": "start_node"
+        },
+        "get_note": {
+          "type": "user_text_input_node",
+          "config": {
+            "prompt": "Please enter your note:"
+          }
+        },
+        "uppercase": {
+          "type": "text_transform_node",
+          "config": {
+            "operation": "uppercase"
+          }
+        },
+        "save_note": {
+          "type": "file_output_node",
+          "config": {
+            "content_source": "Upstream payload",
+            "file_path_source": "Configured",
+            "file_path": "/tmp/draft-note.txt",
+            "write_mode": "Create unique"
+          }
+        },
+        "show_path": {
+          "type": "text_output_node",
+          "config": {
+            "label": "Saved Path",
+            "template": "{{input}}"
+          }
+        },
+        "end": {
+          "type": "end_node"
+        }
+      },
+      "connections": [
+        {
+          "from": "start.default",
+          "to": "get_note.input"
+        },
+        {
+          "from": "get_note.default",
+          "to": "uppercase.input"
+        },
+        {
+          "from": "uppercase.default",
+          "to": "save_note.content"
+        },
+        {
+          "from": "save_note.default",
+          "to": "show_path.input"
+        },
+        {
+          "from": "show_path.default",
+          "to": "end.input"
+        }
+      ]
+    },
+    "visible_output": [
+      "[Draft ready] CHECKED DRAFT -- manual review required\nWarnings: 0\nProblems (warnings included): []\nOmitted problems: 0\n\nSpec file: /home/makin/src/agent_channel/draft-workflow-output/draft (1).json\nAfter reviewing this exact file, build by hand:\naotn build '/home/makin/src/agent_channel/draft-workflow-output/draft (1).json'\nBuild saves a workflow; it does not run it.\n\n{\n  \"format\": \"aotn-workflow/1\",\n  \"name\": \"Draft Note Workflow\",\n  \"nodes\": {\n    \"start\": {\n      \"type\": \"start_node\"\n    },\n    \"get_note\": {\n      \"type\": \"user_text_input_node\",\n      \"config\": {\n        \"prompt\": \"Please enter your note:\"\n      }\n    },\n    \"uppercase\": {\n      \"type\": \"text_transform_node\",\n      \"config\": {\n        \"operation\": \"uppercase\"\n      }\n    },\n    \"save_note\": {\n      \"type\": \"file_output_node\",\n      \"config\": {\n        \"content_source\": \"Upstream payload\",\n        \"file_path_source\": \"Configured\",\n        \"file_path\": \"/tmp/draft-note.txt\",\n        \"write_mode\": \"Create unique\"\n      }\n    },\n    \"show_path\": {\n      \"type\": \"text_output_node\",\n      \"config\": {\n        \"label\": \"Saved Path\",\n        \"template\": \"{{input}}\"\n      }\n    },\n    \"end\": {\n      \"type\": \"end_node\"\n    }\n  },\n  \"connections\": [\n    {\n      \"from\": \"start.default\",\n      \"to\": \"get_note.input\"\n    },\n    {\n      \"from\": \"get_note.default\",\n      \"to\": \"uppercase.input\"\n    },\n    {\n      \"from\": \"uppercase.default\",\n      \"to\": \"save_note.content\"\n    },\n    {\n      \"from\": \"save_note.default\",\n      \"to\": \"show_path.input\"\n    },\n    {\n      \"from\": \"show_path.default\",\n      \"to\": \"end.input\"\n    }\n  ]\n}"
+    ],
+    "evidence_packet": "/home/makin/src/agent_channel/draft-workflow-samples/medium-trial-2026-10-27",
+    "summary": "/home/makin/src/agent_channel/draft-workflow-samples/TRIAL.md",
+    "results_verification": {
+      "delivery_schema": "PASS",
+      "exact_metrics_and_two_calls": "PASS",
+      "immutable_designer_and_raw_saved_spec": "PASS",
+      "prior_output_preservation": "PASS",
+      "reference_one_warning_and_generated_zero": "PASS; warning display not exercised",
+      "scope_stop_and_no_target_build_run": "PASS",
+      "pure_template_quality_probe": "literal {input}; no target node execution",
+      "docs_consolidation": "PASS: 103 Markdown files / 936 relative links/anchors",
+      "whitespace": "git diff --check PASS",
+      "product_suite": "not run: documentation/data result update only"
+    },
+    "results_pr": "https://github.com/makinster/node_workflow/pull/131"
   }
 }
