@@ -320,7 +320,9 @@ per-node tuning, Answer and optional Vault Run details.
 
 Direct add: **Ask Claude** (`ask_claude_node`), built for review. One text Question,
 optional Context, effort, model setting/override, JSON option and optional Vault
-Run details. Official SDK, Secrets-only key. [Contract](integrations/ASK_CLAUDE.md).
+Run details. Options offers Context caching (off / 5 min / 1 h); cache tokens
+and estimates also reach run-level usage. Official SDK, Secrets-only key.
+[Contract](integrations/ASK_CLAUDE.md).
 
 #### Group: AI Processing
 

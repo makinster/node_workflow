@@ -61,6 +61,7 @@ class SettingsScreen(CommandScreenMixin, ModalScreen):
                             labels = {"local_model_server_url": "Local model server URL",
                                       "local_model_default_model": "Local default model",
                                       "local_model_context_limit": "Local model context limit (characters)",
+                                      "claude_cache_context": "Cache context",
                                       "claude_model": "Claude model",
                                       "claude_context_limit": "Claude context limit (characters)",
                                       "hermes_profile_home": "Hermes profile home",
@@ -75,6 +76,9 @@ class SettingsScreen(CommandScreenMixin, ModalScreen):
                             elif key == "claude_model":
                                 from backend.integrations.claude import MODELS
                                 yield Select([(m, m) for m in MODELS], value=value, allow_blank=False, id=f"setting-{key}")
+                            elif key == "claude_cache_context":
+                                from backend.integrations.claude import CACHE_CONTEXT
+                                yield Select([(v, v) for v in CACHE_CONTEXT], value=value, allow_blank=False, id=f"setting-{key}")
                             elif isinstance(default, bool):
                                 yield Checkbox(value=bool(value), id=f"setting-{key}")
                             else:
