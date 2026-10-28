@@ -6,6 +6,39 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-28 — Draft workflow Step 1
+
+Started own clean WSL worktree `/home/makin/src/nw-draft-workflow-step1`, branch
+`codex/draft-workflow-step1`, from fetched main `19640f9`. Read approved plan,
+TEST_SET and decisions 1–14. Added a v2 spec next to the unchanged old one:
+requirements → optional single clarification → draft → structural check →
+independent meaning review → save only for pass. No new app nodes required.
+Static complete palette has 12 types, 9,364 characters, no truncation.
+
+External runner uses the public RunService input hook and bounded pure rules,
+real build/check, exact saved raw text and local target fixture runs. Mock SDK
+supplies canned replies; Secrets lazy load and sockets are forbidden in mock
+mode. All ten cases / 21 target fixtures pass in the initial probe. Fifteen
+paired calibrations accept every good draft and reject every bad one, including
+wrong order/source/path/mode, fan-out, ignored clarification, unreachable nodes,
+label contamination and the historical double-brace saved-path regression.
+False-pass/false-failure accounting is tested with deliberately wrong canned
+judge verdicts. Ready/clarify, failed review, unresolved answer and error paths
+are covered. No real model/API calls or owner Secrets access. Step 2 remains
+separately gated; its library key must be added by the owner.
+
+Final v2 CLI `build --check --json --data-dir <fresh temp>`: **ok true, no
+diagnostics**, 55 nodes. Focused suite: **40 passed in 4.93 s**; final full
+`pytest -n auto`: **3,274 passed in 38.41 s**. Standalone final mock proof:
+`/tmp/aotn-draft-step1-final-proof-20261028`, all ten cases and 21 required
+fixtures pass, 31 designer calls plus 30 calibration judge calls, all mocked.
+All 15 good calibrations pass and all 15 bad ones fail. Docs consolidation and
+whitespace checks pass. Initial full run had 3,272 passes and an unrelated
+subworkflow modal mount race (`test_open_a_waiting_subworkflow_see_who_asks_and_go_back`);
+that case passed alone, and the full rerun passed 3,273 before the final report
+independence regression added the fortieth focused test. No existing UI test or
+production behavior was changed to obtain the green result.
+
 ## 2026-10-28 — PR #134 review fixes applied
 
 Applied the reviewed local patch from `/tmp/nw-review134-396b18f` onto

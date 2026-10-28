@@ -36,6 +36,14 @@ the config UI, connection matching, preflight, runtime routing and author
 tests, so that a green check means the runtime honours the generated UI.
 Keep `NodeContext` and graph-ignorant execution.
 
+## Owner-requested workflow designer trial — 2026-10-28
+
+Approved external plan decisions 1–14, Step 1: v2 existing-node recipe, external
+10-case runner, 15 paired calibrations and mocked full-path tests. Built on
+`codex/draft-workflow-step1` from `19640f9`; no new backend node and no old-spec
+change. [Recipe and Step 2 gate](delivery_tests/specs/README.md#draft-a-workflow-v2--step-1).
+Real trials require separate owner approval and owner-added trial-library key.
+
 ## Owner-requested caching — 2026-10-28
 
 `codex/ask-claude-caching`, base `56cb997`: Options TTL setting, stable Context
