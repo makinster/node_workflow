@@ -60,6 +60,7 @@ class SettingsScreen(CommandScreenMixin, ModalScreen):
                         for key, default in DEFAULT_SETTINGS.items():
                             labels = {"local_model_server_url": "Local model server URL",
                                       "local_model_default_model": "Local default model",
+                                      "local_model_context_limit": "Local model context limit (characters)",
                                       "hermes_profile_home": "Hermes profile home",
                                       "hermes_command": "Hermes command",
                                       "hermes_investigations_per_day": "Investigations per day (0 = off, up to 50)",
@@ -236,6 +237,15 @@ class SettingsScreen(CommandScreenMixin, ModalScreen):
             widget = self.query_one(f"#setting-{key}")
             if isinstance(default, bool):
                 values[key] = bool(widget.value)
+            elif key == "local_model_context_limit":
+                from backend.field_types import check_number
+                value, problem = check_number({'type': 'integer', 'min': 1000, 'max': 200000}, widget.value, default)
+                if problem:
+                    self._set_secret_status('Local model context limit: ' + problem)
+                    notifications.notify_error(self.app, 'Local model context limit: ' + problem)
+                    widget.focus()
+                    return
+                values[key] = value
             elif isinstance(default, int):
                 try:
                     values[key] = int(widget.value)

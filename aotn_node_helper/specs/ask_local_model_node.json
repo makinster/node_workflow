@@ -5,7 +5,7 @@
   "primary_family": "Complex",
   "display_name": "Ask local model",
   "default_alias": "Ask local model",
-  "description": "Ask one question on your local Ollama server; returns one answer",
+  "description": "Ask one local question with an adjustable Context cap; returns one answer",
   "selector_section": "AI",
   "icon_name": "message-circle",
   "tags": [
@@ -48,7 +48,7 @@
         "label": "Context",
         "preview": true,
         "height": 5,
-        "description": "Optional facts; max 8,000 characters within the 20,000-character question limit."
+        "description": "Optional facts. Uses Context limit; total question limit is that limit + 12,000."
       }
     }
   },
@@ -70,7 +70,7 @@
       "to": [
         "vault"
       ],
-      "description": "Model, token counts, wall time and server durations; no prompt or thinking trace"
+      "description": "Token counts, timing and token-fit warnings; no prompt or thinking trace"
     }
   },
   "output_routing": {
@@ -129,13 +129,23 @@
         "default": 2048,
         "min": 1,
         "max": 8192
+      },
+      "context_limit": {
+        "type": "integer",
+        "allow_blank": true,
+        "label": "Context limit",
+        "default": "",
+        "min": 1000,
+        "max": 200000,
+        "placeholder": "Blank = Options default",
+        "description": "Characters, 1,000\u2013200,000. Blank uses Options. No truncation."
       }
     }
   },
   "errors": [
     {
       "code": "settings_invalid",
-      "description": "Check the local server URL and default model in Options.",
+      "description": "Check the local server URL, default model and context limit in Options.",
       "retryable": false
     },
     {

@@ -1,11 +1,28 @@
 # Current State
 
-Snapshot checked **2026-10-27**, against fetched `origin/main` `8945c3d` after
-#128 merged; the owner-approved trivial re-trial below passed.
+Snapshot checked **2026-10-27**, against fetched `origin/main` `e7d07e8` after
+#129 merged; the Context-limit enhancement below is checked, awaiting review.
 Code and fresh GitHub checks take precedence.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
+
+## Ask local model Context limit — 2026-10-27, built for review
+
+Own clean worktree `/home/makin/src/nw-local-context-limit`, branch
+`codex/local-context-limit`, base `e7d07e8`. Owner's six choices implemented:
+Options character limit 8,000 (1,000–200,000); blank per-node override inherits;
+total Question limit is effective cap + 12,000. Oversize still errors without
+trimming. Run details records chars/4 + max-output token estimate, window and
+advisory warnings; never blocks solely on estimated fit. Context Pack's per-item
+4,000 and catalogue-specific caps stay separate. No real model/workflow calls.
+New node description measures Brief at 7,447; fixed palette remains 7,421.
+[Contract](integrations/LOCAL_MODEL.md),
+[delivery case](delivery_tests/local-model-context-limit.json). Focused checks
+cover defaults/override/bounds/oversize, warning publication, mounted Options and
+Node Config save/reopen/blank/range, source-menu parity and shared numeric policy.
+**316 focused checks pass**; [PR #130](https://github.com/makinster/node_workflow/pull/130),
+implementation `5746071`, targets main.
 
 ## Draft a workflow — 2026-10-27, re-trial passed
 

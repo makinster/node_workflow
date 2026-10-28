@@ -46,7 +46,8 @@ def make(s,inputs=None,**changes):
     node=AskLocalModelNode('local',{**deepcopy(AskLocalModelNode.default_config),'input':PRIVATE,**changes})
     done=[];errors=[];memory=MemoryBank(EventBus())
     memory.store_persistent('question','Vault question',type_tag='string');memory.store_persistent('facts','Vault facts',type_tag='string')
-    settings={'local_model_server_url':s.url,'local_model_default_model':MODEL}
+    from backend.configuration_manager import DEFAULT_SETTINGS
+    settings={**DEFAULT_SETTINGS,'local_model_server_url':s.url,'local_model_default_model':MODEL}
     ctx=NodeContext('local','s1','run-local',inputs or {},memory,done.append,errors.append,lambda *_:None,lambda *_:None,lambda *_:None,get_setting=settings.get)
     return node,ctx,done,errors
 
@@ -228,3 +229,63 @@ async def test_real_engine_pack_to_local_to_check_reply(server,monkeypatch,tmp_p
         assert memory.read_persistent('usage')['model_digest']=='a'*64
         assert 'Context Pack' in server.calls[-1][1]['messages'][1]['content']
     finally:service.close()
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('limit,override,length,code',[
+    (8000,'',8000,None),(8000,'',8001,'context_too_long'),
+    (12000,'',10000,None),(8000,12000,10000,None),
+    (20000,1000,1000,None),(20000,1000,1001,'context_too_long'),(200000,'',200000,None),
+    (999,'',5,'settings_invalid'),(200001,'',5,'settings_invalid'),
+    (8000,999,5,'invalid_config'),(8000,200001,5,'invalid_config'),
+    (8000,True,5,'invalid_config'),(8000,1000.5,5,'invalid_config')])
+async def test_context_limit_default_override_range_and_no_trimming(server,limit,override,length,code):
+    node,ctx,done,errors=make(server,context_source='Configured',context='x'*length,context_limit=override)
+    old=ctx.get_setting
+    ctx.get_setting=lambda k:limit if k=='local_model_context_limit' else old(k)
+    await node.execute(ctx)
+    if code:
+        assert not done and errors[0].code==code
+        assert not server.calls
+    else:
+        assert not errors and done
+        assert server.calls[-1][1]['messages'][1]['content'].endswith('x'*length)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('limit',[8000,12000])
+async def test_context_limit_total_question_boundary(server,limit):
+    node,ctx,done,errors=make(server,input='x'*(limit+12000),context_limit=limit)
+    await node.execute(ctx)
+    assert not errors
+    node,ctx,done,errors=make(server,input='x'*(limit+12001),context_limit=limit)
+    await node.execute(ctx)
+    assert errors[0].code=='text_too_long'
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('length,expected',[(1792,False),(1793,True)])
+async def test_context_token_estimate_warns_without_blocking(server,length,expected):
+    result=await call(server,question='x'*length,num_ctx=512,max_tokens=64)
+    assert result.details['estimated_tokens']==length/4+64
+    assert bool(result.details['warnings']) is expected
+    assert result.details['num_ctx']==512
+    assert len(server.calls)==3
+
+
+def test_context_limit_blank_numeric_field():
+    from backend.field_types import check_number
+    schema=AskLocalModelNode.config_schema['context_limit']
+    assert check_number(schema,'','')==('','')
+    assert check_number(schema,'20000','')==(20000,'')
+    assert check_number(schema,'999','')[1]
+    assert check_number({'type':'integer'},'','')[1]  # no change to ordinary numeric fields
+
+@pytest.mark.asyncio
+async def test_token_warning_is_published_to_run_details_vault(server):
+    node,ctx,done,errors=make(server,input='x'*1800,num_ctx=512,max_tokens=64,
+        details_vault_write=True,details_vault_key='usage')
+    await node.execute(ctx)
+    assert done and not errors
+    details=ctx.memory_bank.read_persistent('usage')
+    assert details['estimated_tokens']==514 and details['warnings']
+    assert 'x'*100 not in json.dumps(details)

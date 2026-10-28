@@ -94,6 +94,15 @@ file checked, built only in a fresh trial library and run once, Ready confirmed.
 Extra End output differs from the quiet sample. No prompt edits/retry, main
 library changes or broader use proof. This does not advance MCP.
 
+## Owner-approved Context limit — 2026-10-27
+
+[Ask local model](integrations/LOCAL_MODEL.md) now takes an Options character cap
+(default 8,000; range 1,000–200,000) with blank per-node inheritance. Total
+Question cap follows it + 12,000; token fit is advisory in Run details. No
+trimming, Context Pack limit change, new node or real generation.
+[Maintenance case](delivery_tests/local-model-context-limit.json) records all
+six owner choices and fake-server/UI checks; review pending.
+
 ## Proposed phases
 
 | # | Item | Audit finding | Notes |

@@ -6,6 +6,32 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-27 — Ask local model configurable Context cap
+
+Own clean worktree `/home/makin/src/nw-local-context-limit`, branch
+`codex/local-context-limit`, fetched main `e7d07e8`. Read the designer RETRO.md;
+all six owner-recommended choices implemented without a new design decision.
+Options General has the 8,000-character default (1,000–200,000); blank node
+Context limit inherits. Assembled Question cap is effective limit + 12,000.
+Oversize fails before HTTP, accepted text stays intact. Run details adds the
+chars/4 + max-output estimate, window and warning when over; no fit blocking.
+Context Pack per-item 4,000 and catalogue-specific limits stay unchanged.
+
+Schema-opted-in blank numeric handling supports the node override without
+changing ordinary required numeric fields. Helper spec and node metadata match;
+UI Save refuses invalid Options/override values without persisting them.
+13 new regressions fail on the old base. **316 focused fake-server/UI/authoring/
+numeric checks passed in 23.86 s**; helper compile/two generated checks and
+metadata UI checks pass. Delivery schema, docs consolidation (103 files /
+932 links) and git diff --check pass. No real
+model call, workflow run, installed settings or library changes.
+New description makes Brief 7,447; fixed palette unchanged at 7,421. See
+[contract](integrations/LOCAL_MODEL.md) and
+[maintenance case](delivery_tests/local-model-context-limit.json) for decisions,
+coverage not applicable (no new workflow), verification and remaining review.
+[PR #130](https://github.com/makinster/node_workflow/pull/130), implementation
+`5746071`, targets main; no live calls.
+
 ## 2026-10-27 — Draft a workflow: authorized re-trial, Ready confirmed
 
 Own clean worktree `/home/makin/src/nw-draft-workflow-retrial`, branch
