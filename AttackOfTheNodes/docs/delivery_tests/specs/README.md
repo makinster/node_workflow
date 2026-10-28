@@ -134,3 +134,11 @@ to off. **Step 2 requires separate owner approval and the owner adding the key
 to the trial library through Options → Secrets.** Use the documented `--prepare`
 flow first. Step 1's canned replies are engine/harness proof, not real-model
 quality, latency, cost or interactive CLI proof.
+
+
+PR #135 review follow-up: the runner now validates the entire prepared-root tree
+and exact preparation record before writes or backend imports. Symlinks, hard
+links, special entries and resolved escapes are rejected. The frozen oracle is
+version 2: per-value source/operation lineage rejects hardcoded heading answers
+and partial-file reconstructions. Calibration now has **19 good/bad pairs**
+(original 15 plus four provenance regressions). The v2 designer spec is unchanged.

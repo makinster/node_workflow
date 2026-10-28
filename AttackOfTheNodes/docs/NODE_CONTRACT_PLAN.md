@@ -42,6 +42,9 @@ Approved external plan decisions 1–14, Step 1: v2 existing-node recipe, extern
 10-case runner, 15 paired calibrations and mocked full-path tests. Built on
 `codex/draft-workflow-step1` from `19640f9`; no new backend node and no old-spec
 change. [Recipe and Step 2 gate](delivery_tests/specs/README.md#draft-a-workflow-v2--step-1).
+Review follow-up on #135 adds complete prepared-tree validation and oracle v2
+source/control provenance, expands calibration from 15 to 19 pairs, and rewrites
+the trial tools in multiline style. No designer/backend behavior changes.
 Real trials require separate owner approval and owner-added trial-library key.
 
 ## Owner-requested caching — 2026-10-28

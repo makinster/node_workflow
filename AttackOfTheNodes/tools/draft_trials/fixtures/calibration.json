@@ -2097,5 +2097,549 @@
         }
       ]
     }
+  },
+  {
+    "id": "hardcoded_heading",
+    "case": 2,
+    "good": {
+      "format": "aotn-workflow/1",
+      "name": "Case 2",
+      "nodes": {
+        "start": {
+          "type": "start_node",
+          "config": {
+            "greeting": "  Monday Update  "
+          }
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": false
+          }
+        },
+        "show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "Result",
+            "template": "{input}"
+          }
+        },
+        "strip": {
+          "type": "text_transform_node",
+          "config": {
+            "operation": "strip"
+          }
+        },
+        "transform": {
+          "type": "text_transform_node",
+          "config": {
+            "operation": "lowercase"
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "start.default",
+          "to": "strip.input"
+        },
+        {
+          "from": "strip.default",
+          "to": "transform.input"
+        },
+        {
+          "from": "transform.default",
+          "to": "show.input"
+        },
+        {
+          "from": "show.default",
+          "to": "end.input"
+        }
+      ]
+    },
+    "bad": {
+      "format": "aotn-workflow/1",
+      "name": "Case 2",
+      "nodes": {
+        "start": {
+          "type": "start_node",
+          "config": {
+            "greeting": ""
+          }
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": false
+          }
+        },
+        "show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "Result",
+            "template": "{input}monday update"
+          }
+        },
+        "strip": {
+          "type": "text_transform_node",
+          "config": {
+            "operation": "strip"
+          }
+        },
+        "transform": {
+          "type": "text_transform_node",
+          "config": {
+            "operation": "lowercase"
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "start.default",
+          "to": "strip.input"
+        },
+        {
+          "from": "strip.default",
+          "to": "transform.input"
+        },
+        {
+          "from": "transform.default",
+          "to": "show.input"
+        },
+        {
+          "from": "show.default",
+          "to": "end.input"
+        }
+      ]
+    }
+  },
+  {
+    "id": "partial_file_display",
+    "case": 4,
+    "good": {
+      "format": "aotn-workflow/1",
+      "name": "Case 4",
+      "nodes": {
+        "start": {
+          "type": "start_node",
+          "config": {
+            "greeting": ""
+          }
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": false
+          }
+        },
+        "show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "Result",
+            "template": "{input}"
+          }
+        },
+        "read": {
+          "type": "file_reader_node",
+          "config": {
+            "input_source": "Configured",
+            "file_path": "ROOT/agenda.txt",
+            "transient_output": true
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "start.default",
+          "to": "read.input"
+        },
+        {
+          "from": "read.default",
+          "to": "show.input"
+        },
+        {
+          "from": "show.default",
+          "to": "end.input"
+        }
+      ]
+    },
+    "bad": {
+      "format": "aotn-workflow/1",
+      "name": "Case 4",
+      "nodes": {
+        "start": {
+          "type": "start_node",
+          "config": {
+            "greeting": ""
+          }
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": false
+          }
+        },
+        "show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "Result",
+            "template": "{input[0]}udget: €20\nBring notes.\n"
+          }
+        },
+        "read": {
+          "type": "file_reader_node",
+          "config": {
+            "input_source": "Configured",
+            "file_path": "ROOT/agenda.txt",
+            "transient_output": true
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "start.default",
+          "to": "read.input"
+        },
+        {
+          "from": "read.default",
+          "to": "show.input"
+        },
+        {
+          "from": "show.default",
+          "to": "end.input"
+        }
+      ]
+    }
+  },
+  {
+    "id": "partial_file_copy",
+    "case": 5,
+    "good": {
+      "format": "aotn-workflow/1",
+      "name": "Case 5",
+      "nodes": {
+        "start": {
+          "type": "start_node",
+          "config": {
+            "greeting": ""
+          }
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": false
+          }
+        },
+        "show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "Result",
+            "template": "{input[path]}"
+          }
+        },
+        "read": {
+          "type": "file_reader_node",
+          "config": {
+            "input_source": "Configured",
+            "file_path": "ROOT/agenda.txt",
+            "transient_output": true
+          }
+        },
+        "write": {
+          "type": "file_output_node",
+          "config": {
+            "content_source": "Upstream payload",
+            "file_path_source": "Configured",
+            "file_path": "ROOT/agenda-copy.txt",
+            "write_mode": "Create unique",
+            "binary_content": false,
+            "interpret_newlines": false,
+            "open_after_write": false,
+            "close_on_run_end": false,
+            "transient_output": true,
+            "dead_drop_passthrough": false
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "start.default",
+          "to": "read.input"
+        },
+        {
+          "from": "read.default",
+          "to": "write.content"
+        },
+        {
+          "from": "write.default",
+          "to": "show.input"
+        },
+        {
+          "from": "show.default",
+          "to": "end.input"
+        }
+      ]
+    },
+    "bad": {
+      "format": "aotn-workflow/1",
+      "name": "Case 5",
+      "nodes": {
+        "start": {
+          "type": "start_node",
+          "config": {
+            "greeting": ""
+          }
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": false
+          }
+        },
+        "show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "Result",
+            "template": "{input[path]}"
+          }
+        },
+        "read": {
+          "type": "file_reader_node",
+          "config": {
+            "input_source": "Configured",
+            "file_path": "ROOT/agenda.txt",
+            "transient_output": true
+          }
+        },
+        "write": {
+          "type": "file_output_node",
+          "config": {
+            "content_source": "Upstream payload",
+            "file_path_source": "Configured",
+            "file_path": "ROOT/agenda-copy.txt",
+            "write_mode": "Create unique",
+            "binary_content": false,
+            "interpret_newlines": false,
+            "open_after_write": false,
+            "close_on_run_end": false,
+            "transient_output": true,
+            "dead_drop_passthrough": false
+          }
+        },
+        "partial": {
+          "type": "concat_node",
+          "config": {
+            "template": "{input[0]}ine one\nLine two\n"
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "start.default",
+          "to": "read.input"
+        },
+        {
+          "from": "write.default",
+          "to": "show.input"
+        },
+        {
+          "from": "show.default",
+          "to": "end.input"
+        },
+        {
+          "from": "read.default",
+          "to": "partial.input"
+        },
+        {
+          "from": "partial.default",
+          "to": "write.content"
+        }
+      ]
+    }
+  },
+  {
+    "id": "partial_clarified_content",
+    "case": 10,
+    "good": {
+      "format": "aotn-workflow/1",
+      "name": "Case 10",
+      "nodes": {
+        "start": {
+          "type": "start_node",
+          "config": {
+            "greeting": ""
+          }
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": false
+          }
+        },
+        "show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "Result",
+            "template": "{input[path]}"
+          }
+        },
+        "read": {
+          "type": "file_reader_node",
+          "config": {
+            "input_source": "Configured",
+            "file_path": "ROOT/raw-notes.txt",
+            "transient_output": true
+          }
+        },
+        "strip": {
+          "type": "text_transform_node",
+          "config": {
+            "operation": "strip"
+          }
+        },
+        "transform": {
+          "type": "text_transform_node",
+          "config": {
+            "operation": "lowercase"
+          }
+        },
+        "write": {
+          "type": "file_output_node",
+          "config": {
+            "content_source": "Upstream payload",
+            "file_path_source": "Configured",
+            "file_path": "ROOT/tidy-notes.txt",
+            "write_mode": "Create unique",
+            "binary_content": false,
+            "interpret_newlines": false,
+            "open_after_write": false,
+            "close_on_run_end": false,
+            "transient_output": true,
+            "dead_drop_passthrough": false
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "start.default",
+          "to": "read.input"
+        },
+        {
+          "from": "read.default",
+          "to": "strip.input"
+        },
+        {
+          "from": "strip.default",
+          "to": "transform.input"
+        },
+        {
+          "from": "transform.default",
+          "to": "write.content"
+        },
+        {
+          "from": "write.default",
+          "to": "show.input"
+        },
+        {
+          "from": "show.default",
+          "to": "end.input"
+        }
+      ]
+    },
+    "bad": {
+      "format": "aotn-workflow/1",
+      "name": "Case 10",
+      "nodes": {
+        "start": {
+          "type": "start_node",
+          "config": {
+            "greeting": ""
+          }
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": false
+          }
+        },
+        "show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "Result",
+            "template": "{input[path]}"
+          }
+        },
+        "read": {
+          "type": "file_reader_node",
+          "config": {
+            "input_source": "Configured",
+            "file_path": "ROOT/raw-notes.txt",
+            "transient_output": true
+          }
+        },
+        "strip": {
+          "type": "text_transform_node",
+          "config": {
+            "operation": "strip"
+          }
+        },
+        "transform": {
+          "type": "text_transform_node",
+          "config": {
+            "operation": "lowercase"
+          }
+        },
+        "write": {
+          "type": "file_output_node",
+          "config": {
+            "content_source": "Upstream payload",
+            "file_path_source": "Configured",
+            "file_path": "ROOT/tidy-notes.txt",
+            "write_mode": "Create unique",
+            "binary_content": false,
+            "interpret_newlines": false,
+            "open_after_write": false,
+            "close_on_run_end": false,
+            "transient_output": true,
+            "dead_drop_passthrough": false
+          }
+        },
+        "partial": {
+          "type": "concat_node",
+          "config": {
+            "template": "{input[0]}ello\nworld"
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "start.default",
+          "to": "read.input"
+        },
+        {
+          "from": "read.default",
+          "to": "strip.input"
+        },
+        {
+          "from": "strip.default",
+          "to": "transform.input"
+        },
+        {
+          "from": "write.default",
+          "to": "show.input"
+        },
+        {
+          "from": "show.default",
+          "to": "end.input"
+        },
+        {
+          "from": "transform.default",
+          "to": "partial.input"
+        },
+        {
+          "from": "partial.default",
+          "to": "write.content"
+        }
+      ]
+    }
   }
 ]

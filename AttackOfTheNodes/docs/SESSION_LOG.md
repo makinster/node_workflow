@@ -6,6 +6,33 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-28 — PR #135 containment, provenance and style review
+
+Continued the clean PR branch at `4b42912`. Read the review worktree
+`/tmp/nw-review135-4b42912` and reused `/tmp/pr135-root-probe.py`,
+`/tmp/pr135-loose-probe.py` and `/tmp/pr135-rule-probe.py` as regression designs.
+Six new regression cases failed before fixes: a symlinked library, an outside
+sentinel overwritten through the marker, a hardcoded heading, and partial-file
+reconstructions in cases 4/5/10. Tests only use disposable sentinels and stubbed
+batch/model execution; no real calls or Secrets access.
+
+Added pre-import tree/marker validation: no symlinks (including dangling/internal
+links), hard links or special files, all resolved paths contained, exact marker
+schema/path/version with duplicate fields rejected, fresh/exclusive preparation.
+Oracle v2 now retains a source expression through whole-value adapters and each
+required operation, separates data from control lineage, and validates saved
+paths against the same writer. Audited all ten cases: fixed literal messages
+remain allowed, dynamic text/file contents cannot be reconstructed from literals.
+Four new calibration pairs supplement the original fifteen. Expanded all trial
+modules and tests into multiline style; a source-style regression enforces it.
+Focused checks: **78 passed in 6.09 s**. Full `pytest -n auto`: **3,312 passed
+in 41.56 s**. Final standalone proof at
+`/tmp/aotn-pr135-review-fixes-proof-20261028`: all ten cases / 21 target fixtures
+pass, 19 good drafts accepted and 19 bad drafts rejected. Mock judge false-pass
+and false-failure tests now each measure 19 deliberately wrong verdicts. Docs
+consolidation, source-style and whitespace checks pass. A temporary formatter
+installation outside the repo was used; no runtime/dev dependency changed.
+
 ## 2026-10-28 — Draft workflow Step 1
 
 Started own clean WSL worktree `/home/makin/src/nw-draft-workflow-step1`, branch

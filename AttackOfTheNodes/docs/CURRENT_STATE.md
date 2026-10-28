@@ -14,6 +14,19 @@ and real-engine run summaries cover all three supported models. See the latest
 Session Log entry for verification: full `pytest -n auto` passes **3,234 tests
 in 35.63 s** after the review fixes.
 
+## PR #135 review fixes — 2026-10-28
+
+On `codex/draft-workflow-step1` from review head `4b42912`: prepared roots are
+validated recursively before writes/backend imports, including exact marker
+contents and rejection of links/special entries. Oracle v2 tracks complete
+input/operation and conditional-control provenance; new regressions cover the
+hardcoded heading and three partial-file reconstructions. Calibration is now
+19 paired fixtures; trial tooling and tests use multiline control flow.
+Focused tests: **78 passed in 6.09 s**. Full `pytest -n auto`: **3,312 passed
+in 41.56 s**. Standalone mock batch: ten cases, 21 target fixtures and all
+19 calibration pairs pass their expectations. Docs/whitespace checks pass.
+No real model/API calls or Secrets access.
+
 ## Revised workflow designer — 2026-10-28, Step 1 built for review
 
 Own worktree `/home/makin/src/nw-draft-workflow-step1`, branch

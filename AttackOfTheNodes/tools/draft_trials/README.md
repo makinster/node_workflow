@@ -2,7 +2,7 @@
 
 This is an external test harness, not a new workflow node or a general English
 requirements prover. The frozen oracle in `cases.py` implements the approved
-10-case TEST_SET (version 1). `fixtures/calibration.json` contains 15 paired,
+10-case TEST_SET (version 2). `fixtures/calibration.json` contains 19 paired,
 hand-authored good/bad drafts. Mock mode exercises the actual SDK adapter,
 designer graph, Check nodes, authoring build/check and target engine. It supplies
 canned replies and a synthetic credential in memory; Secrets lazy loading and
@@ -21,6 +21,15 @@ The root must not exist. The runner creates its own `library/`, `cases/`,
 with distinct names, then executes only v2. Every CLI build/check subprocess
 receives `--data-dir <root>/library`; every RunService worker inherits that root
 before backend imports. No default library or owner settings are copied.
+Prepared roots undergo a complete metadata-only tree check before any write,
+environment change or backend-service import: symlinks (including internal or
+dangling links), hard links and non-regular entries are rejected. Every resolved
+path must stay in the resolved root. The regular `prepared.json` record must
+match its exact version, library path and preparation note, with no duplicate or
+unknown fields. Library files and Secrets are never opened by this check.
+`--prepare` only creates a fresh root and exclusively creates its marker; it
+cannot be combined with `--real-calls` or rewrite an existing preparation record.
+This preflight is not an OS sandbox against concurrent directory replacement.
 For programmatic use, set `AOTN_DATA_DIR` **before backend imports**, as the CLI
 does; changing the environment after imports cannot relocate cached data paths.
 
@@ -59,6 +68,14 @@ runs real `main.py build --check --json`, rejects all warnings, verifies the
 pure subset over every fixture. It inspects every node, including error routes.
 Dynamic file paths, escaping symlinks, ordinary output fan-out, cycles,
 unsupported source/routing overrides and unproven parallel Vault races fail.
+Oracle version 2 checks expression lineage for every output and write. Each
+required operation must act on the complete requested source and feed the
+result; merely carrying a source-derived character or an unrelated operation
+name is insufficient. Literal answer suffixes and partial-file reconstruction
+are rejected. Conditional status messages must depend on the real tested input;
+saved-path displays must come from the same writer's file reference. Explicit
+fixed messages (Ready, Continuing/Stopping, Empty note) and the original fixed
+heading remain valid literals in their appropriate roles.
 Configured reader/writer paths are mandatory for these frozen cases. Proven
 sequential Vault data alternatives, Concat and JSON Path adapters are supported.
 Legacy Text Output prompts, Start contracts, arbitrary formatting expressions and
