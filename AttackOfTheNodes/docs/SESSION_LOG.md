@@ -1,10 +1,75 @@
 # AttackOfTheNodes Session Log
 
-This log keeps roughly the last two weeks: entries dated October 4–27, 2026
+This log keeps roughly the last two weeks: entries dated October 4–28, 2026
 (the earliest existing entry is October 6). Every October 18 entry is retained.
 Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.md).
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
+
+## 2026-10-28 — PR #134 review fixes applied
+
+Applied the reviewed local patch from `/tmp/nw-review134-396b18f` onto
+`codex/ask-claude-caching` at `396b18f`. Cache-read multipliers now vary by
+model; write rates stay 1.25× / 2×. Independent published-price tests cover
+all three models, and the real-engine usage/history test now checks all three
+run-level cost summaries. Documented the 512-token whole-prefix threshold,
+rough character guideline and successful uncached calls with zero cache counts.
+No real API calls or owner Secrets accessed. Full `pytest -n auto`: **3,234
+passed in 35.63 s**. Docs consolidation and whitespace checks pass.
+
+## 2026-10-28 — PR #134 local review
+
+Reviewed exact head `396b18f` in detached WSL worktree
+`/tmp/nw-review134-396b18f`. Baseline full `pytest -n auto` passed 3,229 tests
+in 37.64 s. Independent rate-card tests then reproduced doubled cache-read
+estimates for both Sonnet and Opus. Official current prices are $0.10 and
+$0.20/MTok respectively (both 0.05× input); Haiku stays at 0.1×. Local fixes
+add per-model multipliers, independent regression cases, corrected existing
+cache/fallback expectations, and the missing 512-token/zero-cache-count docs.
+The threshold applies to the whole prefix through the marker; about 2,000
+characters is only a rough Context guideline. SDK 2.3.0 stable/beta cache and
+usage fields verified. Off/empty requests, write-TTL accounting, successful
+run receipts and masking checked. No real API calls or owner Secrets accessed.
+After the local fixes, full `pytest -n auto`: **3,232 passed in 35.67 s**;
+docs consolidation and whitespace checks pass. Changes remain uncommitted
+and unpushed at the user's request.
+
+## 2026-10-28 — Context caching and run usage
+
+Own clean WSL worktree `/home/makin/src/nw-ask-claude-caching`, branch
+`codex/ask-claude-caching`, from latest `origin/main` `56cb997`. Preserved the
+owner checkout's unrelated edits. Inspected installed SDK 2.3.0 cache-control,
+TTL, usage and cache-creation types before implementation; checked official
+cache pricing. Options stores off / 5 min / 1 h through ConfigurationManager.
+Off keeps the original request exactly; enabled nonblank Context becomes the
+first marked text block, with the question afterward. Empty Context has no marker.
+Run details add cache reads/writes and TTL breakdown, with separate rates and
+per-attempt fallback estimates. Successful calls emit the existing agent usage
+event for run history and CLI JSON, without prompt/Answer/Secrets data.
+
+Reproduced missing run usage with a failing event test before the fix. Mock-only
+checks cover request compatibility, prefix reuse, TTLs on both stream routes,
+empty Context, settings persistence, cache prices and fallback, production Options
+form and real-engine saved usage/redaction. The initial full run had 3,228 passes
+and one expected execute-hash audit failure; re-audited unchanged source
+acceptance and corrected its copied runtime-file pointer. Final full
+`pytest -n auto`: **3,229 passed in 37.51 s**. Docs consolidation passes
+(105 Markdown files / 958 relative links); `git diff --check` passes.
+No live API calls and no owner Secrets read or printed.
+
+Test `test_cache_run_details_example` prints this 1-hour Run details excerpt:
+
+```json
+{
+  "input_tokens": 100,
+  "output_tokens": 10,
+  "cache_read_input_tokens": 1000,
+  "cache_creation_input_tokens": 2000,
+  "cache_creation_5m_input_tokens": 0,
+  "cache_creation_1h_input_tokens": 2000,
+  "cost_estimate": "Estimate: $0.000425 USD"
+}
+```
 
 ## 2026-10-27 — PR #133: reconcile merged main
 

@@ -1,12 +1,32 @@
 # Current State
 
-Snapshot checked **2026-10-27**, against fetched `origin/main` `ba48bf5`
-after #132 merged. Test-suite acceleration (#133) remains under review;
-earlier delivery entries retain their dated scope. No real API calls.
-Code and fresh GitHub checks take precedence.
+Snapshot checked **2026-10-28**, against fetched `origin/main` `56cb997`
+after #132 and #133 merged. Context caching is built for review on
+`codex/ask-claude-caching`; earlier delivery entries retain their dated scope.
+No real API calls in this change. Code and fresh GitHub checks take precedence.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
+
+PR #134 review fixes (2026-10-28) correct doubled cache-read estimates for
+Sonnet/Opus and document the 512-token minimum prefix. Per-model price tests
+and real-engine run summaries cover all three supported models. See the latest
+Session Log entry for verification: full `pytest -n auto` passes **3,234 tests
+in 35.63 s** after the review fixes.
+
+## Hosted question caching — 2026-10-28, built for review
+
+Own clean worktree `/home/makin/src/nw-ask-claude-caching`, branch
+`codex/ask-claude-caching`, base `56cb997`. Options **Cache context** defaults
+to off and offers 5 min / 1 h. Enabled requests cache the stable Context prefix;
+o marker for empty Context, and off keeps the original request. SDK 2.3.0
+cache/TTL types inspected locally. Run details include cache reads and writes,
+with separate TTL pricing; successful calls now publish usage and estimates to
+run history and CLI JSON through the existing event. Mocked engine tests verify
+canary masking; no owner Secrets read and no live API calls.
+Full `pytest -n auto`: **3,229 passed in 37.51 s**. Docs consolidation and
+whitespace checks pass. See [contract](integrations/ASK_CLAUDE.md) and the latest
+session entry for checks and the tested Run details example.
 
 ## Parallel test suite — 2026-10-27, built for review
 

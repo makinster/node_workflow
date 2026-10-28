@@ -36,6 +36,14 @@ the config UI, connection matching, preflight, runtime routing and author
 tests, so that a green check means the runtime honours the generated UI.
 Keep `NodeContext` and graph-ignorant execution.
 
+## Owner-requested caching — 2026-10-28
+
+`codex/ask-claude-caching`, base `56cb997`: Options TTL setting, stable Context
+prefix marker, cache-aware cost estimates and successful run usage receipts.
+SDK 2.3.0 types checked locally; mocked clients only. Off preserves request
+compatibility. [Contract](integrations/ASK_CLAUDE.md) and
+[Current State](CURRENT_STATE.md) own behavior and verification.
+
 ## Owner-requested integration — 2026-10-27
 
 Hosted single-question node, base `4f1f5e7`, `codex/ask-hosted-question`: owner

@@ -135,3 +135,14 @@ exists for that case; the failing regression records the duplicate-ID exception.
 [before manifest](before-manifest.json), [after manifest](after-manifest.json).
 The manifests record source/style hashes and HTTP methods/paths; every capture
 request is a fake-server GET. Generated names are synthetic, not owner settings.
+
+## 2026-10-28 hosted usage receipt re-audit
+
+The hosted question execute method now emits the shared agent usage event after
+a successful response. Its Question and Context still resolve through the same
+`read_text` function: Upstream payload / Vault / Configured, with Not used on
+optional Context. Port declarations, form choices, missing/type checks, limits
+and output routing are unchanged. Caching reorders the already-resolved text
+only when enabled. The 12 source-combination tests remain, alongside caching
+request and real-engine usage tests. Refreshed only this node's execute hash and
+corrected its copied runtime-file pointer; no source expectations were relaxed.

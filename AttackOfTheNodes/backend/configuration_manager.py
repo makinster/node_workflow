@@ -46,6 +46,7 @@ DEFAULT_SETTINGS: Dict[str, Any] = {
     "local_model_context_limit": 8000,
     "claude_model": "claude-haiku-5-5",
     "claude_context_limit": 100000,
+    "claude_cache_context": "off",
 }
 
 

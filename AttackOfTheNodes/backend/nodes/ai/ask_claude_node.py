@@ -49,6 +49,15 @@ class AskClaudeNode(Node):
         except NodeError as exc:
             context.signal_error(exc)
             return
+        from uuid import uuid4
+        from ...events import AGENT_USAGE_UPDATE
+        context.emit_event(AGENT_USAGE_UPDATE, {
+            'invocation_id': 'ask_' + uuid4().hex,
+            'node_id': context.node_id, 'branch_id': context.branch_id,
+            'run_id': context.run_id, 'status': 'completed', 'partial': False,
+            'seconds': result.details['wall_seconds'],
+            'account_source': 'anthropic-api', 'usage': dict(result.details),
+        })
         if self.config['details_vault_write']:
             context.memory_bank.store_persistent(self.config['details_vault_key'].strip(), result.details, type_tag='var')
         if self.config['vault_write']:

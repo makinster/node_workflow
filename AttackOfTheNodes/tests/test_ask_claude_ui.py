@@ -50,6 +50,9 @@ async def test_options_choices_default_and_range(monkeypatch):
         await pilot.pause()
         model=app.screen.query_one('#setting-claude_model',Select)
         assert [v for _,v in model._options]==list(MODELS) and model.value==MODELS[0]
+        cache=app.screen.query_one('#setting-claude_cache_context',Select)
+        assert [v for _,v in cache._options]==['off','5 min','1 h'] and cache.value=='off'
+        cache.value='1 h'
         field=app.screen.query_one('#setting-claude_context_limit',CommandInput)
         assert field.value=='100000'
         for value in ['999','200001','not a number']:
@@ -59,3 +62,5 @@ async def test_options_choices_default_and_range(monkeypatch):
         app.screen.action_save();await pilot.pause()
         assert app.saved[0]['settings']['claude_context_limit']==200000
         assert app.saved[0]['settings']['claude_model']==MODELS[2]
+
+        assert app.saved[0]['settings']['claude_cache_context']=='1 h'
