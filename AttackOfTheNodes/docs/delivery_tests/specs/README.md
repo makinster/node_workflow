@@ -32,11 +32,16 @@ A non-`ok` status explains scope/uncertainty and stops. All preparation/service/
 validation/write errors go to a readable problem message and End. There is no
 retry, automatic build, approval node, shell execution or generated-workflow run.
 
-With the Context-limit description update, Brief is 7,447 characters; all
+Current registry with the hosted-question node: Brief **7,634** characters;
+fixed palette **7,421**, both below Context 8,000. Brief catalogue max is now
+8,000 (previously 7,500); runtime Context setting and approved prompts are
+unchanged. No designer/model call accompanies this maintenance.
+
+Historical measurement: with the Context-limit description update, Brief is 7,447 characters; all
 complete Compact fragments joined are 7,421, including headers. They reach Context intact, without Context Pack truncation.
-The Brief count is measured on the Context-limit change from `e7d07e8`. Registry
-growth may hit the catalogue/planning budget of 7,500 or the default Context cap
-of 8,000 and stop rather than clip. Options can now raise the latter.
+The Brief count is measured on the Context-limit change from `e7d07e8`. That older 7,500 catalogue cap is superseded above. Further registry growth
+can reach the current 8,000 Context/catalogue budget and stop rather than clip.
+Options can raise Context independently of a workflow’s catalogue cap.
 The shortlist uses a 300 s timeout / 256 output tokens; drafting uses 600 s /
 1,024 tokens. Both use JSON replies, thinking off, temperature 0.2 and a context
 window of 8,192. Model override is empty: use the owner's Options default.

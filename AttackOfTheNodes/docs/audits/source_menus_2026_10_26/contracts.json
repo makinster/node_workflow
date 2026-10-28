@@ -1627,6 +1627,35 @@
       },
       "runtime_sha256": "4bf36fa4a9f816b3163e29b895532d6a43331a98360913a16a322ee6a60477a6",
       "runtime_file": "backend/nodes/debug/repeat_node.py"
+    },
+    {
+      "node_type": "ask_claude_node",
+      "ports": {
+        "input": {
+          "mode": "standard",
+          "accepted_sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ],
+          "data_type": "string",
+          "control": "input_source",
+          "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
+        },
+        "context": {
+          "mode": "standard",
+          "accepted_sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ],
+          "data_type": "string",
+          "control": "context_source",
+          "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
+        }
+      },
+      "runtime_sha256": "4d9f2f869fe80d822cf06016aadb11a1280d51b9f4a1e3e125abaa27f978848c",
+      "runtime_file": "backend/nodes/ai/ask_local_model_node.py"
     }
   ]
 }

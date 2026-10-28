@@ -1,0 +1,59 @@
+{
+  "format": "aotn-workflow/1",
+  "name": "Example - Ask one question",
+  "nodes": {
+    "start": {
+      "type": "start_node",
+      "config": {
+        "greeting": "Reply as JSON with one string field named answer: what is 2 + 2?"
+      }
+    },
+    "ask": {
+      "type": "ask_claude_node",
+      "config": {
+        "input_source": "Upstream payload",
+        "reply_json": true,
+        "details_vault_write": true,
+        "details_vault_key": "question_usage"
+      }
+    },
+    "check": {
+      "type": "check_reply_node",
+      "config": {
+        "input_source": "Upstream payload",
+        "expected_fields": [
+          {
+            "id": "answer",
+            "name": "answer",
+            "kind": "string",
+            "required": true
+          }
+        ]
+      }
+    },
+    "show": {
+      "type": "text_output_node"
+    },
+    "end": {
+      "type": "end_node"
+    }
+  },
+  "connections": [
+    {
+      "from": "start.default",
+      "to": "ask.input"
+    },
+    {
+      "from": "ask.default",
+      "to": "check.input"
+    },
+    {
+      "from": "check.default",
+      "to": "show.input"
+    },
+    {
+      "from": "show.default",
+      "to": "end.input"
+    }
+  ]
+}

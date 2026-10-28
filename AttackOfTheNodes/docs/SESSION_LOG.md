@@ -6,6 +6,45 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-27 — PR #132 P2: preserve structured Answer data
+
+Worktree `/home/makin/src/nw-ask-hosted-question`, branch
+`codex/ask-hosted-question`, starting head `745ee64`; fetched origin and
+reconciled main `4f1f5e7` (already included). Clean before this fix.
+
+Answer now masks only exact known Secrets values. JSON is parsed before masking
+nested decoded strings (including keys), then re-serialized; ordinary `key`,
+`token` and `password_hint` data reaches Check reply intact. Shared redaction
+for SDK logs, Run details, exceptions and persisted errors remains unchanged.
+Ask local model adapter/node inspected: no shared Answer-redaction pattern;
+left unchanged.
+
+Nine focused cases failed before the fix and pass afterward. Updated the old
+Answer expectation deliberately: an unstored `password:` value remains data,
+while the same labelled value is still masked in SDK diagnostics. Regressions
+cover the reviewer's invoice JSON through Check reply, text/JSON known-key
+masking, escaped JSON, nested strings and Vault/downstream publication.
+Verification: **260 passed in 24.95 s** across adapter/generated/UI, shared
+redactor, failed-input persistence, local-model adapter and Check reply checks;
+focused compileall and `git diff --check` pass. Mock SDK/local test servers only;
+no real API or inference calls. Full suite not rerun for this scoped follow-up.
+
+## 2026-10-27 — Hosted single-question node
+
+Own clean worktree `/home/makin/src/nw-ask-hosted-question`, branch
+`codex/ask-hosted-question`, fetched main `4f1f5e7`. Implemented owner choices
+1–9 using the official SDK and existing source/routing/form contracts. Explicit
+Secrets lookup, effort, streaming final helper, overall deadline, supported-only
+fallback, no partial replies and readable typed errors. Shared redactor protects
+Answer/SDK diagnostics; real engine mocked-auth run tests persisted canaries.
+Options/node Context defaults 100,000/blank, range 1,000–200,000, total +12,000.
+Only mocked SDK calls; no real API/local inference or owner workflow run.
+New helper spec, source audit row, save/reopen/range tests and delivery case.
+Catalogue remeasured: Brief 7,634; Compact Text 36,848 / JSON 51,792.
+Default now 64,000, capped below the 25% target at the existing ceiling; designer
+Brief cap 8,000, fixed palette 7,421. Historic measurements preserved.
+**3,207 full-suite tests pass in 680.92 s**. Earlier runs found only stale Brief/long-text/example inventories, corrected and explicitly recorded in the case. 205 focused checks (including 63 new-node/UI checks), 27 examples, helper node (2)/UI, example/designer build --check, dependency check and delivery schema pass; docs consolidation 104 Markdown / 945 relative links and git diff --check pass. Five production-form SVG captures retained in `/home/makin/src/agent_channel/hosted-question-samples/`. [Contract](integrations/ASK_CLAUDE.md). [PR #132](https://github.com/makinster/node_workflow/pull/132), implementation `9d04dde`; owner review pending, not merged.
+
 ## 2026-10-27 — Draft a workflow: medium trial, stop at target check
 
 Own clean worktree `/home/makin/src/nw-draft-workflow-medium-trial`, branch

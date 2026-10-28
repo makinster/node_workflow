@@ -318,6 +318,10 @@ One text Question plus optional Context; native Ollama, optional JSON,
 per-node tuning, Answer and optional Vault Run details.
 [Contract](integrations/LOCAL_MODEL.md).
 
+Direct add: **Ask Claude** (`ask_claude_node`), built for review. One text Question,
+optional Context, effort, model setting/override, JSON option and optional Vault
+Run details. Official SDK, Secrets-only key. [Contract](integrations/ASK_CLAUDE.md).
+
 #### Group: AI Processing
 
 | Node | Status | Notes / Maps from |

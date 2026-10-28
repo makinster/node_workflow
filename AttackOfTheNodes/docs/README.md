@@ -22,6 +22,7 @@ with templates, measurements and a small delivery test set.
 | Draft a local text/file workflow | [Checked designer recipe](delivery_tests/specs/README.md) | Existing nodes; review before installation or trial |
 | Build or inspect workflows | [Workflow Authoring](WORKFLOW_AUTHORING.md) | `backend/authoring.py`, `tests/test_authoring.py`, `tests/test_authoring_examples.py` |
 | Review or test the Hermes H0 adapter | [H0 contract](integrations/HERMES_H0_DRAFT.md), [adapter guide](../integrations/hermes/README.md) | `integrations/hermes/`, `tests/test_hermes_adapter.py`; no installed wrapper or cron job |
+| Ask one hosted question | [Hosted question contract](integrations/ASK_CLAUDE.md) | `backend/integrations/claude.py`, `tests/test_ask_claude*.py`; mocked SDK only |
 | Ask an installed local model | [Local model contract](integrations/LOCAL_MODEL.md) | `backend/integrations/local_model.py`, `tests/test_local_model*.py` |
 | Supply node contracts / check draft specs | [Meta nodes](integrations/META_NODES.md) | `backend/node_catalogue.py`, `backend/meta_workflow.py`, `tests/test_meta_nodes.py` |
 | Connect local MCP clients | [MCP setup and tools](integrations/MCP.md) | `aotn_mcp/`, `tests/test_mcp.py`; local stdio, explicit data root |

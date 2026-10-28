@@ -1,0 +1,217 @@
+{
+  "node_type": "ask_claude_node",
+  "class_name": "AskClaudeNode",
+  "category": "ai",
+  "primary_family": "Complex",
+  "display_name": "Ask Claude",
+  "default_alias": "Ask Claude",
+  "description": "Ask one hosted question with optional Context; returns one answer",
+  "selector_section": "AI",
+  "icon_name": "message-circle",
+  "tags": [
+    "question",
+    "JSON",
+    "Claude"
+  ],
+  "inputs": {
+    "input": {
+      "name": "Question",
+      "type": "string",
+      "required": true,
+      "sources": [
+        "upstream",
+        "vault",
+        "configured"
+      ],
+      "default": "configured",
+      "parameter": {
+        "type": "multiline",
+        "label": "Question",
+        "preview": true,
+        "height": 5,
+        "description": "One question, no tools or history. Optional Context is data, not instructions."
+      }
+    },
+    "context": {
+      "name": "Context",
+      "type": "string",
+      "required": false,
+      "sources": [
+        "upstream",
+        "vault",
+        "configured"
+      ],
+      "default": "configured",
+      "parameter": {
+        "type": "multiline",
+        "label": "Context",
+        "preview": true,
+        "height": 5,
+        "description": "Optional facts. Uses Context limit; total question limit is that limit + 12,000."
+      }
+    }
+  },
+  "outputs": {
+    "default": {
+      "name": "Answer",
+      "type": "string",
+      "required": true,
+      "to": [
+        "downstream",
+        "vault"
+      ],
+      "pass_through": true,
+      "description": "The final answer as text; JSON mode still returns text"
+    },
+    "details": {
+      "name": "Run details",
+      "type": "var",
+      "to": [
+        "vault"
+      ],
+      "description": "Model, tokens, stop reason, wall time and cost estimate; no prompt or credentials"
+    }
+  },
+  "output_routing": {
+    "default": "transient",
+    "vault": {
+      "mode": "optional"
+    }
+  },
+  "config_tabs": {
+    "Parameters": {
+      "model": {
+        "type": "string",
+        "label": "Model override",
+        "default": "Options default",
+        "options": [
+          "Options default",
+          "claude-haiku-5-5",
+          "claude-sonnet-5-5",
+          "claude-opus-5-5"
+        ],
+        "description": "Options default uses Claude model in Options."
+      },
+      "timeout": {
+        "type": "integer",
+        "label": "Stop after (seconds)",
+        "default": 120,
+        "min": 10,
+        "max": 600,
+        "description": "Total time including SDK retries. Stops waiting at this limit."
+      },
+      "reply_json": {
+        "type": "boolean",
+        "label": "Reply as JSON",
+        "default": false,
+        "description": "Returns JSON text. Use Check reply for expected fields."
+      },
+      "max_tokens": {
+        "type": "integer",
+        "label": "Max output tokens",
+        "default": 2048,
+        "min": 1,
+        "max": 8192
+      },
+      "context_limit": {
+        "type": "integer",
+        "allow_blank": true,
+        "label": "Context limit",
+        "default": "",
+        "min": 1000,
+        "max": 200000,
+        "placeholder": "Blank = Options default",
+        "description": "Characters, 1,000–200,000. Blank uses Claude context limit in Options. No truncation."
+      },
+      "effort": {
+        "type": "string",
+        "label": "Effort",
+        "default": "low",
+        "options": [
+          "low",
+          "medium",
+          "high"
+        ]
+      }
+    }
+  },
+  "errors": [
+    {
+      "code": "missing_key",
+      "description": "Add ANTHROPIC_API_KEY in Options → Secrets.",
+      "retryable": false
+    },
+    {
+      "code": "settings_invalid",
+      "description": "Check Claude model and context limit in Options.",
+      "retryable": false
+    },
+    {
+      "code": "invalid_config",
+      "description": "Check the question, Context, limits and Vault outputs.",
+      "retryable": false
+    },
+    {
+      "code": "auth_error",
+      "description": "The API rejected the key; check ANTHROPIC_API_KEY in Secrets.",
+      "retryable": false
+    },
+    {
+      "code": "rate_limited",
+      "description": "The API rate limit was reached; wait before running again.",
+      "retryable": false
+    },
+    {
+      "code": "overloaded",
+      "description": "The API is overloaded; try later.",
+      "retryable": false
+    },
+    {
+      "code": "network_error",
+      "description": "Could not reach the API; check the connection.",
+      "retryable": false
+    },
+    {
+      "code": "timed_out",
+      "description": "Stopped waiting at the time limit.",
+      "retryable": false
+    },
+    {
+      "code": "api_error",
+      "description": "The API could not finish the request.",
+      "retryable": false
+    },
+    {
+      "code": "refusal",
+      "description": "The API declined the request.",
+      "retryable": false
+    },
+    {
+      "code": "incomplete_reply",
+      "description": "The reply was cut off or did not finish.",
+      "retryable": false
+    },
+    {
+      "code": "invalid_response",
+      "description": "The API did not return a valid answer.",
+      "retryable": false
+    },
+    {
+      "code": "response_too_large",
+      "description": "The answer is too large.",
+      "retryable": false
+    },
+    {
+      "code": "context_too_long",
+      "description": "Context exceeds its character limit; shorten it or raise the limit.",
+      "retryable": false
+    },
+    {
+      "code": "text_too_long",
+      "description": "The assembled question exceeds Context limit + 12,000 characters.",
+      "retryable": false
+    }
+  ],
+  "execution_template": "producer",
+  "payload_field": false
+}

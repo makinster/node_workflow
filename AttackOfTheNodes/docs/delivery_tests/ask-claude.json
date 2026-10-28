@@ -1,0 +1,298 @@
+{
+  "schema_version": 1,
+  "case_id": "ask-claude",
+  "baseline": "4f1f5e7",
+  "record_status": "Step 5 built and verified; external review and go-live pending; no real API calls",
+  "request_kind": "new-integration",
+  "node_kind": "use-case",
+  "request": {
+    "schema_version": 1,
+    "request_id": "ask-claude",
+    "date": "2026-10-27",
+    "intent": "Ask one hosted question using AOTN Secrets, optional Context and JSON text for Check reply.",
+    "example": {
+      "input": "Question: Return an object with ok=true; Reply as JSON on; optional facts from Vault.",
+      "expected_result": "One JSON text Answer; optional Vault usage/timing/cost estimate; no credentials."
+    },
+    "target_device": "Owner WSL terminal app and CLI",
+    "destination": "Answer downstream/Vault; Run details Vault only",
+    "trigger": "Explicit node visit",
+    "inputs": [
+      "Question: string, Upstream/Vault/Configured",
+      "Context: optional string, same sources or Not used"
+    ],
+    "constraints": [
+      "Owner choices 1–9; official SDK; no tools/history; no temperature or thinking toggles.",
+      "No live API or local-model calls; mocked SDK tests only.",
+      "No automatic environment credentials; fixed Messages endpoint."
+    ],
+    "success": [
+      "All sources, routing and errors match UI and metadata.",
+      "Refusal/cutoff publish no partial answer.",
+      "No Secrets canary in returned Answer, SDK logs or persisted run_errors."
+    ],
+    "unknowns": [
+      "Account access, actual billed cost, real provider latency and limits are not checked."
+    ]
+  },
+  "feasibility": {
+    "schema_version": 1,
+    "request_id": "ask-claude",
+    "checked_at": "2026-10-27",
+    "researcher": "Build agent; official docs plus installed SDK signature checks, no API calls",
+    "official_api": "Official anthropic 2.3 SDK Messages stream/final-message helper; effort and supported server-side fallback.",
+    "sign_in": "Owner must add ANTHROPIC_API_KEY to AOTN Secrets; no account/key read for research.",
+    "cost": "Owner base-rate estimate table, labelled estimate; long-input tiers, caching and charged fallback refusals can differ.",
+    "reliability": "120s overall deadline including two SDK retries; strict caps and typed errors. Real availability and latency unverified.",
+    "terms_of_service": "Official API integration; owner account subject to Anthropic commercial terms. No tools or service circumvention; account eligibility not checked.",
+    "sources": [
+      "https://platform.claude.com/docs/en/models/overview",
+      "https://platform.claude.com/docs/en/build-with-claude/effort",
+      "https://platform.claude.com/docs/en/build-with-claude/refusals-and-fallback",
+      "https://platform.claude.com/docs/en/models/haiku-5-5/overview",
+      "https://github.com/anthropics/anthropic-sdk-python"
+    ],
+    "verdict": "feasible",
+    "reason": "Documented IDs/options and SDK stream signatures support the owner-approved scope. Mocked build only; go-live remains separate.",
+    "conditions": [],
+    "alternatives": [
+      "Continue using existing local question node when private/offline processing is needed."
+    ]
+  },
+  "final_artifact": {
+    "kind": "node",
+    "node_type": "ask_claude_node",
+    "helper_spec": "../../../aotn_node_helper/specs/ask_claude_node.json",
+    "contract": "../integrations/ASK_CLAUDE.md",
+    "implementation_commit": "9d04dde"
+  },
+  "coverage": {
+    "total_operations": 4,
+    "existing_count": 3,
+    "new_count": 1,
+    "ratio": 0.75,
+    "mappings": [
+      {
+        "operation": "Supply Question/Context",
+        "node_type": "user_text_input_node",
+        "status": "existing"
+      },
+      {
+        "operation": "Ask hosted question",
+        "node_type": "ask_claude_node",
+        "status": "new"
+      },
+      {
+        "operation": "Validate JSON fields",
+        "node_type": "check_reply_node",
+        "status": "existing"
+      },
+      {
+        "operation": "Display Answer",
+        "node_type": "text_output_node",
+        "status": "existing"
+      }
+    ]
+  },
+  "measurements": {
+    "review_rounds": 0,
+    "steps": [
+      {
+        "step": 0,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "owner-directed scope",
+        "notes": "Owner supplied choices and requested build; standard schema UI reused. Exact planning timestamps were not separately captured."
+      },
+      {
+        "step": 1,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "owner-directed scope",
+        "notes": "Owner supplied choices and requested build; standard schema UI reused. Exact planning timestamps were not separately captured."
+      },
+      {
+        "step": 2,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "owner-directed scope",
+        "notes": "Owner supplied choices and requested build; standard schema UI reused. Exact planning timestamps were not separately captured."
+      },
+      {
+        "step": 3,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "owner-directed scope",
+        "notes": "Owner supplied choices and requested build; standard schema UI reused. Exact planning timestamps were not separately captured."
+      },
+      {
+        "step": 4,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "owner-directed scope",
+        "notes": "Owner supplied choices and requested build; standard schema UI reused. Exact planning timestamps were not separately captured."
+      },
+      {
+        "step": 5,
+        "started_at": "2026-10-28T04:11:59.443415+00:00",
+        "ended_at": "2026-10-28T04:54:08.437361+00:00",
+        "elapsed_days": 0.029270763263888888,
+        "status": "complete",
+        "notes": "SDK mocked only; full suite, source-menu/long-text inventories, example checks, helper/UI, schema and docs checks pass. No external review yet."
+      },
+      {
+        "step": 6,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "not_started",
+        "notes": ""
+      },
+      {
+        "step": 7,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "not_started",
+        "notes": ""
+      },
+      {
+        "step": 8,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "not_started",
+        "notes": ""
+      },
+      {
+        "step": 9,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "not_started",
+        "notes": ""
+      },
+      {
+        "step": 10,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "not_started",
+        "notes": ""
+      },
+      {
+        "step": 11,
+        "started_at": null,
+        "ended_at": null,
+        "elapsed_days": null,
+        "status": "not_started",
+        "notes": ""
+      }
+    ],
+    "verification": {
+      "real_api_calls": 0,
+      "local_generation_calls": 0,
+      "brief_chars": 7634,
+      "compact_text_chars": 36848,
+      "compact_json_chars": 51792,
+      "fixed_palette_chars": 7421,
+      "full_suite": "PASS",
+      "focused_tests": 205,
+      "focused_seconds": 15.28,
+      "new_node_tests": 63,
+      "example_tests": 27,
+      "helper_node_tests": 2,
+      "helper_ui": "PASS",
+      "example_check": "PASS; not saved or run",
+      "designer_check": "PASS; not saved or run",
+      "docs_consolidation": "PASS: 104 Markdown files / 945 relative links",
+      "dependency_check": "PASS: pip check",
+      "delivery_schema": "PASS",
+      "whitespace": "PASS",
+      "full_suite_tests": 3207,
+      "full_suite_seconds": 680.92,
+      "full_suite_runs": [
+        {
+          "passed": 3188,
+          "failed": 2,
+          "seconds": 683.49,
+          "notes": "Inventory expectations for growing Brief and new long-text fields; fixed."
+        },
+        {
+          "passed": 3205,
+          "failed": 1,
+          "seconds": 686.15,
+          "notes": "New example missing from examples manifest; registered and rechecked."
+        },
+        {
+          "passed": 3207,
+          "failed": 0,
+          "seconds": 680.92
+        }
+      ]
+    }
+  },
+  "evidence": [
+    "../../tests/test_ask_claude.py",
+    "../../tests/test_ask_claude_ui.py",
+    "../../tests/test_source_menu_audit.py",
+    "../../examples/ask_hosted_question.json"
+  ],
+  "acceptance_checks": [
+    "Sources match runtime and offer compatible upstream secondary Vault writes.",
+    "Secrets only; missing key cannot use environment; canaries absent from Answer/logs/run_errors.",
+    "SDK request has effort, streaming final helper, approved defaults, no unsupported sampling fields.",
+    "Supported models get fallback; refusal/max_tokens stop before content access.",
+    "Caps reject oversize without calling SDK; timeout/cancel close stream.",
+    "Options/node choices save and reopen; cancel leaves stored config unchanged."
+  ],
+  "notes": [
+    "Full suite and doc validation recorded before PR publication.",
+    "Catalogue default capped at existing 64k ceiling; historical size/ratio retained in contract.",
+    "Designer Brief cap maintenance only; no prompt/settings/model changes or designer run.",
+    "Sample output and errors are synthetic; no account or real-device proof.",
+    "Five actual built-screen SVGs (100×40, production CSS, synthetic values) retained in /home/makin/src/agent_channel/hosted-question-samples; discovery stubbed, no service execution."
+  ],
+  "repeated_shapes": [
+    {
+      "id": "question-json-check",
+      "node_types": [
+        "ask_claude_node",
+        "check_reply_node"
+      ],
+      "fixed_settings": {
+        "ask_claude_node": {
+          "reply_json": true,
+          "effort": "low",
+          "max_tokens": 2048
+        }
+      },
+      "varied_settings": {
+        "ask_claude_node": [
+          "Question",
+          "Context source",
+          "model override"
+        ]
+      },
+      "vault_edges": {
+        "reads": [
+          "facts"
+        ],
+        "writes": [
+          "answer",
+          "usage"
+        ]
+      },
+      "basis": "design",
+      "evidence": [
+        "../../tests/test_ask_claude.py"
+      ]
+    }
+  ],
+  "pr": "https://github.com/makinster/node_workflow/pull/132"
+}
