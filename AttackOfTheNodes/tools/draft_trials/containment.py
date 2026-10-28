@@ -74,14 +74,17 @@ def unique_fields(pairs):
 
 
 def validate_prepared(root):
-    """Call only after validate_tree has inspected every entry in the root."""
-    if {path.name for path in root.iterdir()} != {"prepared.json", "library"}:
-        raise ContainmentError("trial root must be fresh or an untouched prepared root")
+    """Validate the entire reusable root without opening library files."""
+    root = validate_tree(root)
+    if {path.name for path in root.iterdir()} != {"prepared.json", "library", "runs"}:
+        raise ContainmentError(
+            "prepared root must contain exactly prepared.json, library and runs"
+        )
     marker = root / "prepared.json"
     library = root / "library"
-    if not library.is_dir() or not marker.is_file():
+    if not library.is_dir() or not (root / "runs").is_dir() or not marker.is_file():
         raise ContainmentError(
-            "prepared root needs a regular prepared.json and library directory"
+            "prepared root needs a regular prepared.json and library/runs directories"
         )
     if marker.stat().st_size > 4096:
         raise ContainmentError("prepared.json exceeds the preparation-record limit")
@@ -104,3 +107,17 @@ def validate_prepared(root):
     # No credentials are inspected; only this marker's explicit library path.
     if Path(record["library"]).resolve(strict=True) != library:
         raise ContainmentError("prepared.json library escapes the trial root")
+
+
+def create_run(root):
+    """Allocate an exclusive run directory after the complete root preflight."""
+    runs = root / "runs"
+    number = 1
+    while True:
+        directory = runs / f"{number:06d}"
+        try:
+            directory.mkdir()
+        except FileExistsError:
+            number += 1
+            continue
+        return directory

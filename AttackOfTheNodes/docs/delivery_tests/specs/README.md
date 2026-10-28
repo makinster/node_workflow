@@ -128,11 +128,14 @@ python -m tools.draft_trials --trial-root /absolute/fresh/trial-root
 
 The [runner guide](../../../tools/draft_trials/README.md) explains case rendering,
 ordered `InputProvider` answers (no PTY), calibration, safety checks, fixture
-runs, per-case evidence and negative scenarios. It creates an isolated library;
+runs, per-case evidence and negative scenarios. It creates an isolated library per run under `runs/<run>/`;
 never pass the owner's library or copy settings/Secrets. `--real-calls` defaults
 to off. **Step 2 requires separate owner approval and the owner adding the key
 to the trial library through Options → Secrets.** Use the documented `--prepare`
-flow first. Step 1's canned replies are engine/harness proof, not real-model
+flow first. Prepared roots are reusable with a stable shared key library; each
+run gets a fresh artifact directory. Real mode requires an explicit `--budget`
+(recommend `0.50` for the full batch); `--time-limit` defaults to 600 seconds.
+See the runner guide for the exact owner commands and report paths. Step 1's canned replies are engine/harness proof, not real-model
 quality, latency, cost or interactive CLI proof.
 
 

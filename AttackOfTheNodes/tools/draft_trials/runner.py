@@ -9,6 +9,7 @@ from contextlib import ExitStack
 from copy import deepcopy
 import hashlib
 import json
+import math
 from pathlib import Path
 import re
 import subprocess
@@ -29,13 +30,23 @@ OLD = SPEC.with_name("draft-a-workflow.json")
 
 class TrialBudget:
     # A stop-before-next-call estimate guard, not a provider billing hard cap.
-    def __init__(self):
+    def __init__(self, budget_usd, time_limit=600):
+        if budget_usd is None or not math.isfinite(budget_usd) or budget_usd <= 0:
+            raise ValueError("budget must be a positive finite USD amount")
+        if not math.isfinite(time_limit) or time_limit <= 0:
+            raise ValueError("time limit must be positive and finite")
+        self.limit = budget_usd
+        self.time_limit = time_limit
         self.started = time.monotonic()
         self.cost = 0.0
         self.unknown = False
 
     def before(self):
-        if self.unknown or self.cost >= 0.10 or time.monotonic() - self.started >= 600:
+        if (
+            self.unknown
+            or self.cost >= self.limit
+            or time.monotonic() - self.started >= self.time_limit
+        ):
             raise ValueError("Trial estimate/time budget reached or cost unknown")
 
     def record(self, result):
@@ -47,6 +58,7 @@ class TrialBudget:
 
 
 _budget = None
+_shared_library = None
 
 
 def write_json(path, value):
@@ -260,10 +272,61 @@ def meaning(verdict="pass"):
     )
 
 
+def create_trial_service():
+    """Keep all persistence in this run; share only the read-only key provider."""
+    from backend import run_service as runtime
+
+    class ReadOnlySecrets(runtime.SecretsManager):
+        def set_secret(self, key, value):
+            raise RuntimeError("trial library Secrets are read-only")
+
+        def delete_secret(self, key):
+            raise RuntimeError("trial library Secrets are read-only")
+
+        def _save(self):
+            raise RuntimeError("trial library Secrets are read-only")
+
+    bus = runtime.EventBus()
+    factory = runtime.NodeFactory()
+    workflow_map = runtime.WorkflowMap(factory, bus)
+    memory = runtime.MemoryBank(bus)
+    configuration = runtime.ConfigurationManager()
+    secrets = ReadOnlySecrets(
+        _shared_library / "secrets" if _shared_library is not None else None
+    )
+    master = runtime.MasterState(
+        workflow_map,
+        memory,
+        bus,
+        output_manager=runtime.OutputManager(),
+        configuration_manager=configuration,
+        secrets_manager=secrets,
+    )
+    return runtime.RunService(
+        master, workflow_map, factory, bus, secrets, configuration
+    )
+
+
 async def run_workflow(spec, answers, artifact, timeout=30):
+    # NODE_EXECUTION_UPDATE is observational: stop() there does not prevent the
+    # current node from entering its adapter. Guard the actual call boundary.
+    if _budget is not None:
+        from backend.integrations import claude
+
+        original = claude.ask
+
+        async def guarded_ask(**kwargs):
+            _budget.before()
+            return await original(**kwargs)
+
+        with patch.object(claude, "ask", guarded_ask):
+            return await _run_workflow(spec, answers, artifact, timeout)
+    return await _run_workflow(spec, answers, artifact, timeout)
+
+
+async def _run_workflow(spec, answers, artifact, timeout=30):
     from backend.authoring import build_workflow
     from backend.node_factory import NodeFactory
-    from backend.run_service import RunService
     from backend.run_policies import InputProvider, TerminatePolicy
 
     class Provider(OrderedAnswers, InputProvider):
@@ -276,22 +339,13 @@ async def run_workflow(spec, answers, artifact, timeout=30):
     if not built["ok"]:
         raise ValueError(built)
     provider = Provider(answers)
-    service = RunService.create()
+    service = create_trial_service()
     service.load(built["path"])
     started = time.monotonic()
     handles = {value: key for key, value in built["nodes"].items()}
     steps = []
 
     def step(event):
-        if (
-            _budget is not None
-            and event.get("status") == "running"
-            and spec["nodes"][handles[event["node_id"]]]["type"] == "ask_claude_node"
-        ):
-            try:
-                _budget.before()
-            except ValueError:
-                service.stop()
         steps.append(
             dict(
                 handle=handles.get(event.get("node_id")),
@@ -877,7 +931,7 @@ async def calibrate(trial_root, real_calls=False, judge_replies=None):
     return result
 
 
-async def batch(
+async def _batch(
     trial_root,
     case_ids=range(1, 11),
     real_calls=False,
@@ -898,25 +952,30 @@ async def batch(
         write_json(artifacts / (path.stem + "-build.json"), built)
         if not built["ok"]:
             raise ValueError(built)
-    global _budget
-    _budget = TrialBudget() if real_calls else None
-    calibration = await calibrate(trial_root, real_calls)
+    calibration = {"result": "not_run"}
     rows = []
-    if calibration["result"] == "pass" and not calibrate_only:
-        overrides = json.loads(Path(replies_file).read_text()) if replies_file else {}
-        for number in case_ids:
-            if _budget is not None:
-                _budget.before()
-            rows.append(
-                await run_case(
-                    number,
-                    trial_root,
-                    library,
-                    overrides.get(str(number)),
-                    real_calls,
-                    scenario,
-                )
+    failure = None
+    try:
+        calibration = await calibrate(trial_root, real_calls)
+        if calibration["result"] == "pass" and not calibrate_only:
+            overrides = (
+                json.loads(Path(replies_file).read_text()) if replies_file else {}
             )
+            for number in case_ids:
+                if _budget is not None:
+                    _budget.before()
+                rows.append(
+                    await run_case(
+                        number,
+                        trial_root,
+                        library,
+                        overrides.get(str(number)),
+                        real_calls,
+                        scenario,
+                    )
+                )
+    except (ValueError, RuntimeError, TimeoutError, OSError) as exc:
+        failure = type(exc).__name__ + ": " + str(exc)
     summary = dict(
         mode="real" if real_calls else "mock",
         input_transport="RunService InputProvider (not CLI interactive proof)",
@@ -926,7 +985,8 @@ async def batch(
         cases=rows,
         result=(
             "pass"
-            if calibration["result"] == "pass"
+            if not failure
+            and calibration["result"] == "pass"
             and all(r["result"] == "pass" for r in rows)
             else "fail"
         ),
@@ -956,11 +1016,41 @@ async def batch(
             r.get("failure", "behavior failure") for r in rows if r["result"] != "pass"
         )
     )
+    if failure:
+        summary["failure"] = failure
     summary["estimated_cost_usd"] = _budget.cost if _budget is not None else None
     summary["cost_note"] = (
         "Mock token counts do not measure inference cost"
         if not real_calls
-        else "Estimate guard includes calibration; stops before further calls at $0.10 / 600 s or unknown cost. Not a billing hard cap."
+        else "Estimate/time guard includes calibration; stops before further calls at the recorded limits or unknown cost. Not a billing hard cap."
     )
-    write_json(trial_root / "report.json", summary)
     return summary
+
+
+async def batch(
+    trial_root,
+    case_ids=range(1, 11),
+    real_calls=False,
+    calibrate_only=False,
+    scenario="ready",
+    replies_file=None,
+    *,
+    budget_usd=None,
+    time_limit=600,
+    shared_library=None,
+):
+    global _budget, _shared_library
+    previous = _budget, _shared_library
+    try:
+        _budget = TrialBudget(budget_usd, time_limit) if real_calls else None
+        if real_calls and shared_library is None:
+            raise ValueError("real calls require a prepared shared library")
+        _shared_library = Path(shared_library) if real_calls else None
+        summary = await _batch(
+            trial_root, case_ids, real_calls, calibrate_only, scenario, replies_file
+        )
+        summary.update(budget_usd=budget_usd, time_limit_seconds=time_limit)
+        write_json(trial_root / "report.json", summary)
+        return summary
+    finally:
+        _budget, _shared_library = previous

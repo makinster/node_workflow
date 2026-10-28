@@ -213,10 +213,12 @@ def test_full_mock_batch_and_all_target_fixtures(tmp_path):
         timeout=60,
     )
     assert proc.returncode == 0, proc.stdout + proc.stderr
-    report = json.loads((root / "report.json").read_text())
+    run_root = Path(json.loads(proc.stdout)["report"]).parent
+    assert run_root == root / "runs" / "000001"
+    report = json.loads((run_root / "report.json").read_text())
     assert report["result"] == "pass" and report["case_count"] == 10
     assert report["fixture_count"] == 21
-    calibration = json.loads((root / "calibration-report.json").read_text())
+    calibration = json.loads((run_root / "calibration-report.json").read_text())
     assert len(calibration["fixtures"]) == 44 and calibration["result"] == "pass"
     assert calibration["judge_false_passes"] == calibration["judge_false_failures"] == 0
     assert all(r["case_rules"] == r["expected"] for r in calibration["fixtures"])
@@ -226,15 +228,19 @@ def test_full_mock_batch_and_all_target_fixtures(tmp_path):
         c["usage_summary"]["reported"] == c["calls"]["attempted"]
         for c in report["cases"]
     )
-    # Reusing a trial would silently mix immutable fixtures and evidence.
+    # Reuse creates a new run without touching any previous evidence.
+    before = runner.tree(run_root)
     again = subprocess.run(
         [sys.executable, "-m", "tools.draft_trials", "--trial-root", str(root)],
         cwd=runner.APP,
         text=True,
         capture_output=True,
-        timeout=5,
+        timeout=60,
     )
-    assert again.returncode != 0 and "fresh" in again.stderr
+    assert again.returncode == 0, again.stdout + again.stderr
+    assert Path(json.loads(again.stdout)["report"]).parent == root / "runs" / "000002"
+    assert runner.tree(run_root) == before
+    assert not list((root / "library").iterdir())
 
 
 @pytest.mark.slow
@@ -263,7 +269,7 @@ def test_mock_sdk_never_reads_secrets_or_connects():
 
 
 def test_budget_stops_on_estimate_time_or_unknown_cost(monkeypatch):
-    budget = runner.TrialBudget()
+    budget = runner.TrialBudget(0.10)
     budget.before()
     budget.record(
         {
@@ -273,11 +279,11 @@ def test_budget_stops_on_estimate_time_or_unknown_cost(monkeypatch):
     )
     with pytest.raises(ValueError):
         budget.before()
-    budget = runner.TrialBudget()
+    budget = runner.TrialBudget(0.10)
     budget.unknown = True
     with pytest.raises(ValueError):
         budget.before()
-    budget = runner.TrialBudget()
+    budget = runner.TrialBudget(0.10)
     budget.started -= 601
     with pytest.raises(ValueError):
         budget.before()

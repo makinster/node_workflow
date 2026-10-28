@@ -1,9 +1,9 @@
 # Current State
 
-Snapshot checked **2026-10-28**, against fetched `origin/main` `19640f9`
-after #134 merged. Revised workflow designer Step 1 is built for review on
-`codex/draft-workflow-step1`; earlier entries retain their dated scope.
-No real model/API calls in this change. Code and fresh checks take precedence.
+Snapshot checked **2026-10-28**, against fetched `origin/main` `5bb1ebd`
+after #135 merged. Trial repeat-run and budget preparation is on
+`codex/draft-trials-step2-prep`; this is still Step 1, with no real calls or
+Secrets access. Earlier entries retain their dated scope.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
@@ -13,6 +13,23 @@ Sonnet/Opus and document the 512-token minimum prefix. Per-model price tests
 and real-engine run summaries cover all three supported models. See the latest
 Session Log entry for verification: full `pytest -n auto` passes **3,234 tests
 in 35.63 s** after the review fixes.
+
+## Draft trials: repeat-run preparation — 2026-10-28
+
+The harness requires an explicit real-call `--budget USD` and records it with
+`--time-limit` (600 seconds by default). The estimate/time guard runs at the
+Ask adapter boundary so the next request cannot slip through a stop event.
+Prepared roots contain exactly `prepared.json`, shared `library/`, and `runs/`.
+Each invocation exclusively allocates a new numbered run containing all
+artifacts and backend persistence. Real mode uses a read-only provider for the
+shared key; trials never modify that library or copy keys/settings. Complete
+preflight still rejects links, special files and escapes throughout the shared
+library and all earlier runs before writes or backend imports. The runner guide
+contains exact owner setup/app/run/result commands, recommends a $0.50 full-run
+estimate budget, and explains the 44-call calibration cost and billing limits.
+Full `pytest -n auto`: **3,370 passed in 46.83 s**; focused preparation
+checks: **40 passed in 4.75 s**. Documentation/whitespace checks pass. No real calls or
+Secrets access; execution of Step 2 still needs separate owner approval.
 
 ## PR #135 route review — 2026-10-28
 

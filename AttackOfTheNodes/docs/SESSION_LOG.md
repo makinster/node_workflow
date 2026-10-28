@@ -6,6 +6,38 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-28 — Draft trial repeat-run and budget preparation
+
+Started `codex/draft-trials-step2-prep` from fetched `origin/main` `5bb1ebd`
+(the merged #135). Added required explicit real-call `--budget USD`, optional
+`--time-limit` (default 600 seconds), and report fields for both. A mocked
+regression exposed that stopping from the node-running event could still enter
+the current adapter; the guard now checks at the Ask adapter boundary.
+Estimate, elapsed-time and unknown-cost tests prove the next request is blocked.
+
+Prepared roots now contain exactly marker/library/runs. Every run exclusively
+allocates a new numbered directory containing its own backend library and all
+trial artifacts; the shared owner library remains unchanged. A read-only key
+provider uses that library only in real mode, without copying Secrets or
+settings. Tree/marker checks retain #135's restrictions across all prior runs
+and the shared library, before writes, env changes or backend-service imports.
+New tests cover reused roots, old-run immutability, every emitted artifact
+path, symlinks (including ancestry/internal/dangling), hard links, FIFO/socket,
+wrong entry types, exact root layout, invalid/missing limits, guard failures,
+and shared-provider wiring. Two real-path batches use a mocked SDK with Secrets
+loading and sockets forbidden. Existing full ten-case mock proof is retained.
+
+Documented a phone-friendly owner command block with an app launch verified
+through the real entry-point/TUI constructors and intercepted App.run. It
+selects the requested library before backend imports. Recommended full-run
+budget is $0.50 because 44 calibration judge calls precede the ten cases;
+estimates are planning figures, not Step 1 inference measurements.
+No real API calls or Secrets access. Step 2 still requires separate owner
+approval. Focused preparation checks: **40 passed in 4.75 s**. Full
+`pytest -n auto`: **3,370 passed in 46.83 s**. Documentation consolidation
+and `git diff --check` pass. Both the repeated full ten-case mock trial and
+repeated real-path/SDK-mock trials preserve earlier artifacts and shared library.
+
 ## 2026-10-28 — PR #135 route-structure review
 
 Continued the clean PR branch at `48959db`. Reused the reviewer's
