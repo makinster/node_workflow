@@ -5,6 +5,7 @@ from dataclasses import replace
 import re
 
 import pytest
+from tests.ui_sizes import LAYOUT_WIDTHS
 from textual.containers import VerticalScroll
 from textual.widgets import Button, Static
 
@@ -163,7 +164,7 @@ def test_execution_error_hint_and_help_follow_native_rebinding_without_modal_lea
     asyncio.run(check())
 
 
-@pytest.mark.parametrize("width", [60, 100, 140])
+@pytest.mark.parametrize("width", LAYOUT_WIDTHS)
 def test_generated_help_scrolls_by_keyboard_with_close_visible(width):
     async def check():
         app, master, wm, memory, bus = make_app()

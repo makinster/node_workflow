@@ -101,7 +101,8 @@ def test_failure_is_one_line_without_child_tracebacks(tmp_path, raw, code):
 
 
 @pytest.mark.skipif(sys.platform != 'linux', reason='Linux subreaper containment')
-def test_real_25_second_deadline_kills_and_reaps_descendants(tmp_path):
+@pytest.mark.parametrize('deadline', [2, pytest.param(25, marks=pytest.mark.slow, id='production-25s')])
+def test_launcher_deadline_kills_and_reaps_descendants(tmp_path, deadline):
     parent_pid, child_pid = tmp_path / 'parent', tmp_path / 'descendant'
     escaped = ('import os,signal,time\nos.setsid()\n'
                'signal.signal(signal.SIGINT,signal.SIG_IGN)\n'
@@ -111,7 +112,13 @@ def test_real_25_second_deadline_kills_and_reaps_descendants(tmp_path):
                      f'open({str(parent_pid)!r},"w").write(str(os.getpid()))\n'
                      f'subprocess.Popen([sys.executable,"-c",{escaped!r}])\ntime.sleep(90)\n')
     started = time.monotonic()
-    process = subprocess.Popen(invocation(root, tmp_path / 'data') + ['--telegram-launcher'],
+    argv = invocation(root, tmp_path / 'data')
+    if deadline != 25:
+        argv = [sys.executable, '-c',
+            "import runpy,sys; m=runpy.run_path(sys.argv.pop(1)); "
+            "m['main'].__globals__.update(LAUNCHER_DEADLINE=2,GRACE=.4,CLEANUP_WAIT=.1); sys.exit(m['main']())",
+            str(ADAPTER), *argv[2:]]
+    process = subprocess.Popen(argv + ['--telegram-launcher'],
                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     pids = []
     try:
@@ -119,7 +126,8 @@ def test_real_25_second_deadline_kills_and_reaps_descendants(tmp_path):
         out, err = process.communicate(timeout=29)
         assert process.returncode == 124, err
         assert out == "Couldn't run h1-heartbeat: stopped after 25 s\n" and err == ''
-        assert 23 <= time.monotonic() - started < 29
+        minimum = 23 if deadline == 25 else 1.6
+        assert minimum <= time.monotonic() - started < deadline + 4
         assert all(not Path(f'/proc/{pid}').exists() for pid in pids)
         # Confirmed cleanup releases the persistent marker as well as flock.
         (root / 'AttackOfTheNodes/main.py').write_text(program(report(['next run'])))
@@ -168,18 +176,18 @@ def test_late_signal_cannot_extend_launcher_deadline(tmp_path):
                      f'open({str(pidfile)!r},"w").write(str(os.getpid()))\ntime.sleep(60)\n')
     argv = [sys.executable, '-c',
             "import runpy,sys; m=runpy.run_path(sys.argv.pop(1)); "
-            "m['main'].__globals__.update(LAUNCHER_DEADLINE=4,GRACE=3,CLEANUP_WAIT=0.2); "
+            "m['main'].__globals__.update(LAUNCHER_DEADLINE=2,GRACE=1.5,CLEANUP_WAIT=0.1); "
             "sys.exit(m['main']())", str(ADAPTER), *invocation(root, tmp_path / 'data')[2:],
             '--telegram-launcher']
     process = subprocess.Popen(argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     pid = wait_file(pidfile)
     try:
-        time.sleep(3.3)
+        time.sleep(1.6)
         process.send_signal(signal.SIGTERM)
         sent = time.monotonic()
         out, err = process.communicate(timeout=4)
-        # Restarting a full grace period here would take about three seconds.
-        assert time.monotonic() - sent < 1.5
+        # Restarting a full grace period here would take about 1.5 seconds.
+        assert time.monotonic() - sent < 1.0
         assert process.returncode == 143 and err == ''
         assert out == "Couldn't run h1-heartbeat: run interrupted\n"
         assert not Path(f'/proc/{pid}').exists()

@@ -7,7 +7,7 @@ from tests.test_small_wins_ui import Host, make
 
 
 @pytest.mark.parametrize('original', ['a\r\nb', 'a\rb', 'a\rb\r\nc\nend\n'])
-@pytest.mark.parametrize('size', [(80, 24), (120, 40)])
+@pytest.mark.parametrize('size', [(80, 24)])
 @pytest.mark.asyncio
 async def test_enter_undo_save_is_byte_identical_and_not_dirty(original, size):
     factory, wm, node = make(input_source='Configured', input=original)

@@ -56,12 +56,14 @@ Use the checkout's app code and the intended interpreter. Run from
 ../.venv/bin/python -m compileall -q .
 ../.venv/bin/python -m pytest tests/test_debug_nodes.py -q -k '<behavior>'
 ../.venv/bin/python -m pytest tests/test_execution_status.py -q
-../.venv/bin/python -m pytest -q
+../.venv/bin/python -m pytest -n auto             # full set
+../.venv/bin/python -m pytest -n auto -m "not slow" # quick set
 git diff --check
 ```
 
 Choose the focused command for the change, then run required broader checks.
-Full `pytest -q` is the full suite; `test_debug_nodes.py` alone is not. Use real
+Full `pytest -n auto` is the full suite; `test_debug_nodes.py` and
+`-m "not slow"` are subsets. **Reviewers run the full set before merge.** Use real
 backend services when practical, isolate persistence to temporary directories,
 and set `AOTN_DATA_DIR` before backend imports in standalone probes. Never write
 test workflows to the owner's `workflows/` directory. New node tests should
@@ -79,6 +81,58 @@ Headless screenshots/tests do not replace owner live or native-platform checks.
 The owner prefers plain, compact UI. Show sample screens before styling/layout
 work and obtain the requested review. State which states/widths were inspected.
 Keep generated test data and secrets out of commits.
+
+### Parallel tests and isolation
+
+Install development dependencies with
+`python -m pip install -r requirements-dev.txt` from `AttackOfTheNodes/`
+(or install the editable package with its `dev` extra). The dev file includes
+pytest-xdist; application runtime dependencies are unchanged. Use `-n 0` for
+serial diagnosis and `--durations=15` to identify expensive tests. Timing and
+coverage evidence is in the [2026-10-27 report](audits/test_speed_2026_10_27/README.md).
+
+`tests/conftest.py` establishes a disposable collection root **before backend
+imports**, separately in every worker, then its autouse fixture assigns a new
+`tmp_path` root for every test. It sets `AOTN_DATA_DIR` / `HERMES_HOME` and patches
+persistence directories plus the import-bound aliases in configuration, errors,
+outputs, history and logging. Specific fixtures can choose narrower paths under
+their own `tmp_path`. New storage-directory aliases must join this fixture.
+Subprocesses inherit the test root; tests of `--data-dir` may override it with
+another per-test temporary path. No test may write to the project data folders
+or the owner's Hermes folders. Tests intentionally removing an environment
+variable to check default-path resolution must keep that check read-only.
+
+Logging handlers and levels are restored after each test; handlers created by
+that test are closed, so later tests cannot write into an old test's log or a
+closed capture stream. Saved-value concurrency tests use spawned processes,
+configuring each child's lock backend explicitly; they do not fork a worker
+with live UI/logging threads. Fake HTTP services bind port zero.
+
+The default xdist scheduler is `worksteal`, so different-length cases can move
+between idle workers. There are no test groups forcing shared mutable state,
+retry plugins or automatic flaky-test retries. Each test must pass independently.
+
+Use the `slow` mark for the single true 25-second launcher test and extra
+terminal-size cases. Geometry/navigation/scroll checks retain all original
+sizes (60/100/140 where applicable): the common size stays in the quick set,
+extra sizes stay in the full set. Non-layout behavior uses one size while
+retaining its other parameter axes. Split loops over layout sizes into pytest
+parameters so workers can schedule them independently.
+
+Deadline and cleanup tests still launch real hostile processes, check exit
+status and verify descendants are killed **and reaped**. Disposable test-only
+runpy launchers shorten timing constants in the tested subprocesses; deployed
+argv, environment, workflow settings and production defaults gain no bypass.
+The full set retains one actual production-duration check. Never replace
+cleanup assertions with a sleep or a mocked kill call.
+
+The exhaustive Stash check renders every declared selector through the real
+form factory and invokes the real refusal guard without mounting a giant form.
+A small production-style screen checks each Select kind with real keyboard
+input; existing tests still cover model-picker success/fallback, closed/open
+Selects, buttons, checkboxes, row editors and delayed replies. The child-stack
+leak test still runs all twenty children and now checks their weak references
+are gone, rather than scanning/counting the entire interpreter heap twice.
 
 ## Shared frontend patterns
 

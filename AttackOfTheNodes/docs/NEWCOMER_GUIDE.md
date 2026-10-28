@@ -19,10 +19,15 @@ python3 -m venv .venv
 .venv/bin/python -m pip install -e AttackOfTheNodes/
 cd AttackOfTheNodes
 ../.venv/bin/python main.py                 # launch this checkout's app
-../.venv/bin/python -m pytest -q            # full suite
+../.venv/bin/python -m pytest -n auto       # full suite (requires dev dependencies)
 ../.venv/bin/python -m pytest tests/test_forwarding.py -q  # focused example
 git diff --check
 ```
+
+For tests, install `AttackOfTheNodes/requirements-dev.txt` from the repository
+root. Quick run: `pytest -n auto -m "not slow"` from `AttackOfTheNodes/`.
+Reviewers run the full `pytest -n auto` set before merge; see
+[testing/isolation](CONTRIBUTING.md#parallel-tests-and-isolation).
 
 These are installation instructions; a clean installation was not repeated for
 this docs change. The tested environment is in Current State. In the owner's

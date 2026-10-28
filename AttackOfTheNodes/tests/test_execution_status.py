@@ -2,6 +2,7 @@
 import asyncio
 
 import pytest
+from tests.ui_sizes import LAYOUT_WIDTHS
 from textual.screen import ModalScreen
 
 from backend.events import RECOVERY_OPTIONS_AVAILABLE
@@ -292,7 +293,7 @@ def test_unhandled_setup_error_reports_failure():
     asyncio.run(asyncio.wait_for(check(), timeout=15))
 
 
-@pytest.mark.parametrize("width", [60, 100, 140])
+@pytest.mark.parametrize("width", LAYOUT_WIDTHS)
 def test_render_updates_preserve_cards_highlight_and_scroll(width):
     async def check():
         from frontend.widgets.node_list import NodeList

@@ -287,9 +287,16 @@ def test_a_call_past_the_depth_limit_fails_at_once():
     assert result.final_state == "FINISHED" and result.values == {"got": "Kim"}
 
 
-def test_repeated_calls_release_their_stacks():
+def test_repeated_calls_release_their_stacks(monkeypatch):
     from backend.master_state import MasterState
 
+    import weakref
+    created = []
+    original_init = MasterState.__init__
+    def track(instance, *args, **kwargs):
+        original_init(instance, *args, **kwargs)
+        created.append(weakref.ref(instance))
+    monkeypatch.setattr(MasterState, '__init__', track)
     child = greeter()
     parent = (Flow("Loop")
               .node("start", "start_node")
@@ -301,14 +308,13 @@ def test_repeated_calls_release_their_stacks():
         previous = f"c{index}"
     parent.node("end", "end_node").link("start", "one").link(previous, "end")
     parent_id = parent.save()
-    gc.collect()
-    before = sum(isinstance(o, MasterState) for o in gc.get_objects())
     result, service = run(parent_id)
     assert result.final_state == "FINISHED", result.errors
     assert service.master_state.call_tree.live == 0
     gc.collect()
-    after = sum(isinstance(o, MasterState) for o in gc.get_objects())
-    assert after - before <= 1  # the parent's, and none of the twenty children
+    assert len(created) == 21  # the parent plus all twenty real child runs
+    assert sum(ref() is service.master_state for ref in created) == 1
+    assert all(ref() is None or ref() is service.master_state for ref in created)
 
 
 # -- files (C13) --------------------------------------------------------------------------

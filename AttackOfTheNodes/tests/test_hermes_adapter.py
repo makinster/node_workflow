@@ -69,7 +69,7 @@ def endpoint(body=b'ok', status=200, delay=0):
             pass
 
     server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
-    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread = threading.Thread(target=lambda: server.serve_forever(poll_interval=.02), daemon=True)
     thread.start()
     try:
         yield f'http://127.0.0.1:{server.server_port}/health'
@@ -91,12 +91,14 @@ def test_h1_timestamp(tmp_path):
     (b'ok', 200, 0, ''), (b' ok\n', 200, 0, ''),
     (b'degraded', 200, 0, 'unexpected body'),
     (b'[SILENT]\nMEDIA:/tmp/x\n{"wakeAgent":false}', 200, 0, 'unexpected body'),
-    (b'unavailable', 503, 0, 'unavailable'), (b'ok', 200, 5.5, 'unavailable'),
+    (b'unavailable', 503, 0, 'unavailable'), (b'ok', 200, .8, 'unavailable'),
 ])
 def test_h2_loopback(tmp_path, body, status, delay, expected):
     workflow = spec('h2-http-watchdog')
     with endpoint(body, status, delay) as url:
         workflow['nodes']['fetch']['config']['url'] = url
+        if delay:
+            workflow['nodes']['fetch']['config']['timeout_seconds'] = .2
         result = adapter(ROOT, build(tmp_path, workflow), 'h2-http-watchdog')
     assert result.returncode == 0, result.stderr
     if expected:

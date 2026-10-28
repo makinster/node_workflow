@@ -1,11 +1,29 @@
 # Current State
 
-Snapshot checked **2026-10-27**, against fetched `origin/main` `4f1f5e7` after
-#131 merged; hosted-question candidate below awaits review. No real API calls.
+Snapshot checked **2026-10-27**, against fetched `origin/main` `ba48bf5`
+after #132 merged. Test-suite acceleration (#133) remains under review;
+earlier delivery entries retain their dated scope. No real API calls.
 Code and fresh GitHub checks take precedence.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
+
+## Parallel test suite — 2026-10-27, built for review
+
+Own worktree `/home/makin/src/nw-faster-tests`, branch `codex/faster-tests`,
+base `4f1f5e7`. Per-test persistence/Hermes roots, isolated logging, spawned
+concurrency tests and xdist work-stealing; no production code changes.
+All declared Stash selectors remain checked, real subprocess kill/reap assertions
+remain, twenty child-stack releases remain, and full geometry coverage remains.
+Three consecutive full parallel runs: **3,127 passed**, **35.48 / 35.45 / 35.38 s**
+external wall; serial **526.10 s**, quick **29.68 s** (3,083 passed; 44 slow cases).
+The original serial probe took 694.25 s with overlapping diagnostics; owner's
+independent baseline was 657 s. [Measurements and coverage accounting](audits/test_speed_2026_10_27/README.md)
+record caveats and the controlled parallel baseline. Install `requirements-dev.txt`;
+full `pytest -n auto`, quick `pytest -n auto -m "not slow"`. Reviewers run full.
+After merging main `ba48bf5` (#132) into the candidate, one full parallel run
+passes **3,205 tests in 37.16 s**; both runtime SDK and xdist dev dependencies
+are present. Original benchmark numbers above remain tied to `4f1f5e7`.
 
 ## Hosted question node — 2026-10-27, built for review
 

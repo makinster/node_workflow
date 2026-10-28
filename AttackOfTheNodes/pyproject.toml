@@ -17,6 +17,7 @@ dependencies = [
 # docs/FILE_OUTPUT_BUILD_PLAN.md). Without it files still open; placement
 # degrades with a logged warning. Install with: pip install -e ".[windows]"
 [project.optional-dependencies]
+dev = ["pytest>=9.1", "pytest-asyncio>=1.4", "pytest-xdist>=3.8,<4"]
 windows = ['pywin32>=306; platform_system == "Windows"']
 
 [project.scripts]

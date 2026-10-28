@@ -156,7 +156,11 @@ def test_every_call_reads_the_file_so_another_process_is_seen(_stash_dir):
     assert {r["name"]: r["value"] for r in saved.SavedValues().list_values()} == {"a": 3, "b": 2}
 
 
-def _count(folder, times):
+def _count(folder, times, windows_lock=False):
+    # Spawn never inherits a parent's monkeypatches or live UI/logger threads.
+    if windows_lock:
+        saved.fcntl = None
+        saved.msvcrt = _FcntlBackedMsvcrt()
     store = saved.SavedValues(folder)
     for _ in range(times):
         store.add(saved.all_place(), "runs", 1)
@@ -165,12 +169,13 @@ def _count(folder, times):
 
 def test_two_processes_at_once_lose_no_counts_or_names(_stash_dir):
     # Cron and the app at the same moment: each change is one locked step.
-    context = multiprocessing.get_context("fork")
+    context = multiprocessing.get_context("spawn")
     workers = [context.Process(target=_count, args=(_stash_dir, 40), name=f"w{i}") for i in range(3)]
     for worker in workers:
         worker.start()
     for worker in workers:
         worker.join(30)
+        assert worker.exitcode == 0
     values = {r["name"]: r["value"] for r in saved.SavedValues(_stash_dir).list_values()}
     assert values["runs"] == 120
     assert {"own_w0", "own_w1", "own_w2"} <= set(values)
@@ -646,12 +651,13 @@ def test_finding_1_a_busy_windows_lock_times_out_without_writing(monkeypatch, _s
 def test_finding_1_two_processes_on_the_windows_lock_lose_no_counts(monkeypatch, _stash_dir):
     monkeypatch.setattr(saved, "fcntl", None)
     monkeypatch.setattr(saved, "msvcrt", _FcntlBackedMsvcrt())
-    context = multiprocessing.get_context("fork")
-    workers = [context.Process(target=_count, args=(_stash_dir, 30), name=f"m{i}") for i in range(3)]
+    context = multiprocessing.get_context("spawn")
+    workers = [context.Process(target=_count, args=(_stash_dir, 30, True), name=f"m{i}") for i in range(3)]
     for worker in workers:
         worker.start()
     for worker in workers:
         worker.join(30)
+        assert worker.exitcode == 0
     assert saved.SavedValues(_stash_dir).get(saved.all_place(), "runs")["value"] == 90
 
 

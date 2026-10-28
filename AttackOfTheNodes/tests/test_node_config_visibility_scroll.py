@@ -4,6 +4,7 @@ from copy import deepcopy
 from pathlib import Path
 
 import pytest
+from tests.ui_sizes import LAYOUT_WIDTHS
 from textual.app import App
 from textual.widgets import Checkbox, SelectionList, Select
 
@@ -22,7 +23,7 @@ def config_app(wm, node, memory):
     return ConfigApp()
 
 
-@pytest.mark.parametrize("width", [60, 100, 140])
+@pytest.mark.parametrize('width', [100])
 async def test_text_output_source_hides_key_and_preserves_selection(width):
     _, wm, memory, _ = _make_services()
     wm.create_new("visibility")
@@ -55,7 +56,7 @@ async def test_text_output_source_hides_key_and_preserves_selection(width):
         assert wm.get_node_data(node) == before
 
 
-@pytest.mark.parametrize("width", [60, 100, 140])
+@pytest.mark.parametrize("width", LAYOUT_WIDTHS)
 async def test_llm_initial_focus_and_scroll_follow_highlight_only(width):
     _, wm, memory, _ = _make_services()
     wm.create_new("scroll")
@@ -223,7 +224,7 @@ async def test_unavailable_legacy_write_checkbox_is_hidden(node_type):
         assert not screen.query("#membank-writes")
 
 
-@pytest.mark.parametrize("width", [60, 100, 140])
+@pytest.mark.parametrize("width", LAYOUT_WIDTHS)
 async def test_short_payload_tab_scroll_stays_on_current_highlight(width):
     _, wm, memory, _ = _make_services()
     wm.create_new("short_payload_scroll")

@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import pytest
+from tests.ui_sizes import LAYOUT_WIDTHS
 from textual.containers import VerticalScroll
 
 from frontend.app import AttackOfTheNodesApp
@@ -41,7 +42,7 @@ def runtime_payload(long=False):
     }
 
 
-@pytest.mark.parametrize("width", [60, 100, 140])
+@pytest.mark.parametrize("width", LAYOUT_WIDTHS)
 @pytest.mark.parametrize("long", [False, True])
 async def test_error_buttons_have_keyboard_focus_and_scroll(width, long):
     app = ErrorApp(runtime_payload(long))

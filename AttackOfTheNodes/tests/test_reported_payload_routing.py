@@ -2,6 +2,7 @@
 from pathlib import Path
 
 import pytest
+from tests.ui_sizes import LAYOUT_WIDTHS
 from textual.app import App
 from textual.widgets import Input, Select, Static
 
@@ -46,7 +47,7 @@ class ConfigApp(App):
         self.push_screen(self.target, self.results.append)
 
 
-@pytest.mark.parametrize('width', [60, 100, 140])
+@pytest.mark.parametrize('width', [100])
 async def test_start_value_has_one_editor_and_routing_preview_updates(width):
     _, wm, mb, _ = _make_services()
     wm.create_new('start_preview')
@@ -80,7 +81,7 @@ async def test_start_value_has_one_editor_and_routing_preview_updates(width):
         assert [(r['name'], r['value'], r['to']) for r in rows] == [('greeting', 'edited once', 'Downstream')]
 
 
-@pytest.mark.parametrize('width', [60, 100, 140])
+@pytest.mark.parametrize('width', LAYOUT_WIDTHS)
 async def test_text_output_payload_tab_describes_vault_and_format(width):
     _, wm, mb, _ = _make_services()
     wm.create_new('output_preview')

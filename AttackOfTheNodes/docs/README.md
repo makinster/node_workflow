@@ -42,7 +42,8 @@ with templates, measurements and a small delivery test set.
 From `AttackOfTheNodes/`, with a checkout-local `.venv` at the repository root:
 
 ```bash
-../.venv/bin/python -m pytest -q
+../.venv/bin/python -m pytest -n auto
+../.venv/bin/python -m pytest -n auto -m "not slow"
 ../.venv/bin/python -m pytest tests/test_debug_nodes.py -q -k 'node_config or command_input or selection'
 ../.venv/bin/python -m pytest tests/test_debug_nodes.py -q -k '<runtime_behavior_name>'
 ../.venv/bin/python -m pytest tests/test_execution_status.py -q
@@ -51,6 +52,10 @@ From `AttackOfTheNodes/`, with a checkout-local `.venv` at the repository root:
 
 In the owner's separate worktrees, substitute the shared interpreter documented
 in [Current State](CURRENT_STATE.md). Run `git diff --check` for documentation.
+Install `requirements-dev.txt` first. Reviewers run the full set before merge;
+the quick command excludes marked long-deadline and extra-size cases. See
+[Contributing](CONTRIBUTING.md#parallel-tests-and-isolation) for isolation rules
+and the [timing report](audits/test_speed_2026_10_27/README.md).
 Choose tests for the changed behavior; a focused command is not the full suite.
 
 ## History and consolidation

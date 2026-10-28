@@ -75,6 +75,17 @@ Selects/pickers across Node Config, Options and row editors. A second P2 on
 `f360e8a` exposed retained-editor key rescue; the current-focus fix removes that
 rescue and the Insert-button fallback. Reviewer re-check and merge pending.
 
+### Test-suite maintenance — 2026-10-27
+
+Owner-requested acceleration from `4f1f5e7`, candidate `codex/faster-tests`:
+per-test data/Hermes isolation, xdist development setup, exhaustive form-level
+Stash checks with mounted spots, real short subprocess deadline tests plus one
+long check, exact child-release checks and retained slow layout sizes. Runtime
+contracts unchanged. Three consecutive full parallel runs pass (3,127 cases,
+35.48 / 35.45 / 35.38 s); quick excludes 44 slow cases. [Benchmark and coverage
+report](audits/test_speed_2026_10_27/README.md) owns measurements/caveats.
+Reviewers run full `pytest -n auto` before merge.
+
 ## Owner-approved meta nodes — 2026-10-26
 
 [Node catalogue and Check workflow spec](integrations/META_NODES.md) are built
