@@ -202,8 +202,8 @@ async def test_catalogue_complete_default_and_headroom():
         for port in e['inputs'] + e['outputs']:
             assert {'id','name','data_type','required'} <= port.keys()
     assert record['ports_basis'] == 'defaults' and record['complete']
-    assert 'input/Spec [string] required (upstream/vault/configured)' in text
-    assert 'input/Continue [any] optional (upstream)' in text
+    assert 'input ("Spec") [string] required (upstream/vault/configured)' in text
+    assert 'input ("Continue") [any] optional (upstream)' in text
     assert 'node node_catalogue_node |' in text
     # Detailed full catalogue may overflow by design. Filter to one entry.
     detailed = await node_catalogue.build(factory, dict(cfg, scope='Filtered', search='node_catalogue_node', detail='Detailed',format='JSON'))
@@ -329,10 +329,49 @@ async def test_brief_catalogue_fits_ask_local_model_context_with_headroom():
     compact = await node_catalogue.build(factory, dict(cfg, detail='Compact', format='JSON'))
     assert {e['type'] for e in record['entries']} == {e['type'] for e in compact['entries']}
     assert MAX_CONTEXT == 8000
-    assert len(text) <= 0.9 * MAX_CONTEXT  # default filters; 10% headroom
+    assert len(text) <= 7500 < MAX_CONTEXT  # ids + labels fit existing designer budget
     for e in record['entries']:
         assert set(e) == {'entry_kind', 'type', 'display_name', 'description', 'inputs', 'outputs'}
         assert all(isinstance(name, str) for name in e['inputs'] + e['outputs'])
-    assert 'check_workflow_spec_node | Check workflow spec |' in text
-    assert 'Spec -> Checked spec, Check report' in text
-    assert 'max_spec' not in text and 'Detailed' in text.splitlines()[1]
+    assert 'check_workflow_spec_node|Check workflow spec|' in text
+    assert 'input "Spec" -> default "Checked spec", report "Check report"' in text
+    assert 'max_spec' not in text and node_catalogue.PORT_LEGEND in text
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('detail', ['Brief', 'Compact', 'Detailed'])
+async def test_text_ports_separate_machine_ids_from_display_names(detail):
+    factory = NodeFactory()
+    cfg = dict(factory._node_registry['node_catalogue_node'].default_config,
+               scope='Filtered', search='start_node', detail=detail)
+    before = await node_catalogue.build(factory, dict(cfg, format='JSON'))
+    text = await node_catalogue.build(factory, cfg)
+    assert 'Connections use port ids only; quoted names are labels.' in text
+    expected = 'default "Greeting"' if detail == 'Brief' else 'default ("Greeting") [string]'
+    assert expected in text
+    assert 'default/Greeting' not in text
+    assert ('error "Error"' if detail == 'Brief' else 'error ("Error")') in text
+    assert await node_catalogue.build(factory, dict(cfg, format='JSON')) == before
+    row = before['entries'][0]
+    if detail == 'Brief':
+        # Existing JSON names-only representation remains unchanged.
+        assert row['inputs'] == []
+        assert row['outputs'] == ['Greeting', 'Error']
+        assert set(row) == {'entry_kind','type','display_name','description','inputs','outputs'}
+    else:
+        assert row['outputs'][0]['id'] == 'default'
+        assert row['outputs'][0]['name'] == 'Greeting'
+
+
+@pytest.mark.asyncio
+async def test_text_port_display_name_is_quoted_not_a_connection_fragment(monkeypatch):
+    factory = NodeFactory()
+    # A display name may itself contain slashes, quotes or a newline.
+    cls = factory._node_registry['start_node']
+    monkeypatch.setattr(cls, 'output_port_metadata', {
+        **cls.output_port_metadata,
+        'default': {'name': 'Greeting/"label"\nnext', 'data_type': 'string'}})
+    cfg = dict(factory._node_registry['node_catalogue_node'].default_config,
+               scope='Filtered', search='start_node')
+    text = await node_catalogue.build(factory, cfg)
+    assert 'default ("Greeting/\\"label\\"\\nnext") [string]' in text

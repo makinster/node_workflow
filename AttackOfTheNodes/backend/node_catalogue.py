@@ -97,26 +97,40 @@ def entry(factory, row, detail):
     return result
 
 
-def brief_text(record):
-    lines = ['Node catalogue v1 · Brief: type | name | purpose | in -> out',
-             'For shortlisting. Ask again with Detailed, filtered to the chosen types, before drafting.', '']
+PORT_LEGEND = 'Connections use port ids only; quoted names are labels.'
+
+
+def port_label(port, *, brief=False):
+    name = compact_json(port['name'])
+    return f"{port['id']} {name}" if brief else f"{port['id']} ({name})"
+
+
+def brief_text(record, factory):
+    lines = ['Node catalogue v1 · Brief: type|name|purpose|in -> out',
+             PORT_LEGEND, '']
     for item in record['entries']:
-        lines.append(f"{item['type']} | {item['display_name']} | {item['description']} | "
-                     f"{', '.join(item['inputs']) or '-'} -> {', '.join(item['outputs']) or '-'}")
+        # Brief JSON deliberately retains its original names-only arrays.
+        # Resolve ids only for Text; never add/change JSON contract fields.
+        description = describe_node_type(factory, item['type'])
+        def ports(direction):
+            return ', '.join(port_label(dict(id=p['port'], name=p['name']), brief=True)
+                             for p in description[direction]) or '-'
+        lines.append(f"{item['type']}|{item['display_name']}|{item['description']}|"
+                     f"{ports('inputs')} -> {ports('outputs')}")
     return '\n'.join(lines) + '\n'
 
 
-def text_output(record):
+def text_output(record, factory):
     if record['detail'] == 'Brief':
-        return brief_text(record)
+        return brief_text(record, factory)
     lines = ['Node catalogue v1 · ports resolved with defaults',
-             'Complete matching entries. Compact fields omit defaults/full constraints; use Detailed.', '']
+             'Complete matching entries. Compact fields omit defaults/full constraints; use Detailed.', PORT_LEGEND, '']
     for item in record['entries']:
         lines.extend([f"{item['entry_kind']} {item['type']} | {item['display_name']} | {item['group'] or 'Ungrouped'}",
                       item['description'],
                       'Family: ' + item['family'] + ' · Tags: ' + ', '.join(item['tags']),
-                      'In: ' + ('; '.join(f"{p['id']}/{p['name']} [{p['data_type']}] {'required' if p['required'] else 'optional'} ({'/'.join(p['sources'])})" for p in item['inputs']) or 'none'),
-                      'Out: ' + '; '.join(f"{p['id']}/{p['name']} [{p['data_type']}] {'required' if p['required'] else 'optional'} ({'/'.join(p['to'])})" for p in item['outputs']),
+                      'In: ' + ('; '.join(f"{port_label(p)} [{p['data_type']}] {'required' if p['required'] else 'optional'} ({'/'.join(p['sources'])})" for p in item['inputs']) or 'none'),
+                      'Out: ' + '; '.join(f"{port_label(p)} [{p['data_type']}] {'required' if p['required'] else 'optional'} ({'/'.join(p['to'])})" for p in item['outputs']),
                       'Config: ' + compact_json(item['config_fields']),
                       'Errors: ' + compact_json(item['errors'])])
         for key in ('custom_keys', 'node_reference_fields', 'defaults', 'unchecked_keys',
@@ -164,7 +178,7 @@ async def build(factory, config):
     record = dict(schema_version=1, ports_basis='defaults', detail=config['detail'],
                   include_debug=config['include_debug'], matched_count=len(entries),
                   complete=True, entries=entries)
-    value = record if config['format'] == 'JSON' else text_output(record)
+    value = record if config['format'] == 'JSON' else text_output(record, factory)
     serialized = compact_json(record) if config['format'] == 'JSON' else value
     if len(serialized) > config['max_chars'] or len(serialized.encode('utf-8')) > MAX_BYTES:
         raise NodeError('catalogue_too_large', 'Catalogue is too large. Narrow the filters or raise the cap.',

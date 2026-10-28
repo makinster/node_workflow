@@ -1,16 +1,30 @@
 # Current State
 
-Snapshot checked **2026-10-27**, against fetched `origin/main` `398c482` after
-#126 merged; the designer trial below failed validation.
+Snapshot checked **2026-10-27**, against fetched `origin/main` `232d112` after
+#127 merged; catalogue Text fix below is checked but not re-trialled.
 Code and fresh GitHub checks take precedence.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
 
+## Catalogue port ids — 2026-10-27, checked fix
+
+Own clean worktree `/home/makin/src/nw-catalogue-port-ids`, branch
+`codex/catalogue-port-ids`, base `232d112`. Text now distinguishes port ids from
+quoted display labels in Brief/Compact/Detailed, with an id-only connection
+legend; JSON fields stay unchanged. The designer draft prompt includes a
+literal id-only connection example. Brief **7,438** / fixed Compact **7,421**
+characters fit the existing 7,500 budget and hard 8,000 Context cap.
+Four regressions failed on the base then passed; **104 focused tests pass**.
+`build --check` is clean without temporary-root writes. No workflow/model calls,
+live-library changes or re-trial; prior failure below remains the observed result.
+[Contract](integrations/META_NODES.md), [spec/guide](delivery_tests/specs/README.md).
+
 ## Draft a workflow — 2026-10-27, trial failed
 
 [PR #126](https://github.com/makinster/node_workflow/pull/126) merged as `398c482`
-after one clean review. The [spec](delivery_tests/specs/README.md) remains unchanged.
+after one clean review. That trial used the unchanged original
+[spec](delivery_tests/specs/README.md).
 Owner authorized decision 11: installed in the dedicated persistent library at
 `/home/makin/.local/share/aotn-draft-workflow-trial`, answered the original input
 through supported RunService/InputProvider, and ran the trivial request once.

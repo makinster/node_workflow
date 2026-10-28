@@ -85,7 +85,10 @@ before Create unique writing, with a manual owner build command afterward.
 No automatic build/approval node or retry. PR #126 merged after clean review.
 Decision 11 then ran once: 70.64 s CPU, two calls, Check failed on annotated
 port ids; no saved spec or target build/run. Trial allowance consumed; fixes
-and another trial need separate authorization. This does not advance MCP.
+and another trial need separate authorization. The owner-requested source fix
+now separates Text port ids from display labels and adds a literal connection
+example to the draft prompt. New Brief/fixed sizes 7,438 / 7,421; 104 focused
+checks and build --check pass. No re-trial. This does not advance MCP.
 
 ## Proposed phases
 
