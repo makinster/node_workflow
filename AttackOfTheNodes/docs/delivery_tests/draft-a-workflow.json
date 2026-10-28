@@ -90,7 +90,7 @@
     "installed": false,
     "executed": false,
     "base": "232d1122ab74bedad4c1140c586a87f351699be6",
-    "implementation_commit": null,
+    "implementation_commit": "555e493",
     "execution_scope": "Current prompt revision checked only; previous installed/observed revision is identified in trial.",
     "data_root": "/home/makin/.local/share/aotn-draft-workflow-trial",
     "previous_installed_workflow_id": "wf_26e14719ecd0"
@@ -744,6 +744,8 @@
     "workflow_runs": 0,
     "generation_calls": 0,
     "retrial": "not authorized or performed",
-    "evidence_packet": "/home/makin/src/agent_channel/draft-workflow-samples/port-ids-fix"
+    "evidence_packet": "/home/makin/src/agent_channel/draft-workflow-samples/port-ids-fix",
+    "pr": "https://github.com/makinster/node_workflow/pull/128",
+    "implementation_commit": "555e493"
   }
 }

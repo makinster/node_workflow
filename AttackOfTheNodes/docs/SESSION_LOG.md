@@ -33,6 +33,8 @@ rejected draft and old counts stay historical. No workflow/model calls,
 installed-spec update or re-trial. Delivery schema, docs consolidation
 (103 Markdown files / 923 links) and git diff --check pass. No full suite:
 the focused catalogue/authoring checks cover this Text/prompt-only change.
+[PR #128](https://github.com/makinster/node_workflow/pull/128), implementation
+`555e493`, targets main.
 
 ## 2026-10-27 — Draft a workflow: single measured CPU trial
 

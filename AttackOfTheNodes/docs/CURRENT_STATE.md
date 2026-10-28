@@ -18,7 +18,9 @@ characters fit the existing 7,500 budget and hard 8,000 Context cap.
 Four regressions failed on the base then passed; **104 focused tests pass**.
 `build --check` is clean without temporary-root writes. No workflow/model calls,
 live-library changes or re-trial; prior failure below remains the observed result.
-[Contract](integrations/META_NODES.md), [spec/guide](delivery_tests/specs/README.md).
+[PR #128](https://github.com/makinster/node_workflow/pull/128), implementation
+`555e493`; [contract](integrations/META_NODES.md),
+[spec/guide](delivery_tests/specs/README.md).
 
 ## Draft a workflow — 2026-10-27, trial failed
 
