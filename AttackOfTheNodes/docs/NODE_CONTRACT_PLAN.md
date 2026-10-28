@@ -41,7 +41,7 @@ Keep `NodeContext` and graph-ignorant execution.
 Hosted single-question node, base `4f1f5e7`, `codex/ask-hosted-question`: owner
 choices 1–9, standard source/secondary Vault metadata, official SDK and
 Secrets-only credentials. [Contract](integrations/ASK_CLAUDE.md) /
-[case](delivery_tests/ask-claude.json). Built for review; no live call or go-live.
+[case](delivery_tests/ask-claude.json). Built for review in [PR #132](https://github.com/makinster/node_workflow/pull/132); no live call or go-live.
 Validation: 3,207 full tests, 205 focused checks, 27 examples, helper/UI and docs/schema checks pass. Catalogue cap maintenance keeps existing designer discovery
 within its default Context budget; no new designer behavior or automated build.
 

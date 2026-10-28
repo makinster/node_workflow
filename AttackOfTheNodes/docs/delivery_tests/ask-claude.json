@@ -63,7 +63,8 @@
     "kind": "node",
     "node_type": "ask_claude_node",
     "helper_spec": "../../../aotn_node_helper/specs/ask_claude_node.json",
-    "contract": "../integrations/ASK_CLAUDE.md"
+    "contract": "../integrations/ASK_CLAUDE.md",
+    "implementation_commit": "9d04dde"
   },
   "coverage": {
     "total_operations": 4,
@@ -292,5 +293,6 @@
         "../../tests/test_ask_claude.py"
       ]
     }
-  ]
+  ],
+  "pr": "https://github.com/makinster/node_workflow/pull/132"
 }

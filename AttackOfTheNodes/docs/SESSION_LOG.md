@@ -20,7 +20,7 @@ New helper spec, source audit row, save/reopen/range tests and delivery case.
 Catalogue remeasured: Brief 7,634; Compact Text 36,848 / JSON 51,792.
 Default now 64,000, capped below the 25% target at the existing ceiling; designer
 Brief cap 8,000, fixed palette 7,421. Historic measurements preserved.
-**3,207 full-suite tests pass in 680.92 s**. Earlier runs found only stale Brief/long-text/example inventories, corrected and explicitly recorded in the case. 205 focused checks (including 63 new-node/UI checks), 27 examples, helper node (2)/UI, example/designer build --check, dependency check and delivery schema pass; docs consolidation 104 Markdown / 945 relative links and git diff --check pass. Five production-form SVG captures retained in `/home/makin/src/agent_channel/hosted-question-samples/`. [Contract](integrations/ASK_CLAUDE.md).
+**3,207 full-suite tests pass in 680.92 s**. Earlier runs found only stale Brief/long-text/example inventories, corrected and explicitly recorded in the case. 205 focused checks (including 63 new-node/UI checks), 27 examples, helper node (2)/UI, example/designer build --check, dependency check and delivery schema pass; docs consolidation 104 Markdown / 945 relative links and git diff --check pass. Five production-form SVG captures retained in `/home/makin/src/agent_channel/hosted-question-samples/`. [Contract](integrations/ASK_CLAUDE.md). [PR #132](https://github.com/makinster/node_workflow/pull/132), implementation `9d04dde`; owner review pending, not merged.
 
 ## 2026-10-27 — Draft a workflow: medium trial, stop at target check
 

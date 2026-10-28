@@ -18,6 +18,7 @@ SDK diagnostics; real engine canary checks cover run_errors. No real API call.
 [Contract](integrations/ASK_CLAUDE.md), [case](delivery_tests/ask-claude.json).
 Brief grows to 7,634; designer Brief cap raised to 8,000; palette stays 7,421.
 Catalogue default 64,000 (existing ceiling), compact JSON 51,792. **3,207 full-suite checks pass** (680.92 s); 205 focused checks, 27 example checks, helper node/UI, build --check, delivery schema, dependency, docs and whitespace checks pass. The three full runs and inventory corrections are recorded in the case.
+[PR #132](https://github.com/makinster/node_workflow/pull/132), implementation `9d04dde`, targets main; not merged.
 
 ## Draft a workflow — 2026-10-27, medium trial checked only
 
