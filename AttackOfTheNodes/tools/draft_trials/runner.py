@@ -427,6 +427,10 @@ async def _run_workflow(spec, answers, artifact, timeout=30):
             await asyncio.wait_for(service.wait(), 5)
             raise
         vault = deepcopy(service.master_state.memory_bank.get_state()["persistent"])
+        result['output_records'] = [
+            dict(text=str(line), handle=handles.get(getattr(line, 'node_id', '')))
+            for line in result['outputs']
+        ]
         result.update(
             seconds=time.monotonic() - started, input_trace=provider.trace, steps=steps
         )
@@ -574,19 +578,24 @@ async def target_fixtures(spec, case, directory):
         run, vault = await run_workflow(
             trial, expected_prompts, directory / (variant["name"] + ".json")
         )
-        # Extract exactly one known Output label prefix, retaining bracketed data.
-        labels = {
-            n.get("config", {}).get("label", "Output")
-            for n in spec["nodes"].values()
-            if n["type"] == "text_output_node"
-        }
-        bodies = []
-        for line in run["outputs"]:
-            matches = [
-                label for label in labels if str(line).startswith("[" + label + "] ")
-            ]
-            if len(matches) == 1:
-                bodies.append(str(line)[len(matches[0]) + 3 :])
+        # Classify by emitter, never by text: bare content may start with
+        # [END] or another node's label. Persist handles before JSON loses
+        # OutputLogEntry attributes.
+        from backend.output_entry import text_output_prefix
+        from .rules import allows_display_framing, display_outputs_match
+
+        bodies, completion_noise = [], []
+        for record in run['output_records']:
+            node = spec['nodes'].get(record['handle'], {})
+            line = record['text']
+            if node.get('type') == 'end_node':
+                completion_noise.append(line)
+            elif node.get('type') == 'text_output_node':
+                prefix = text_output_prefix(node.get('config', {}).get('label', 'Output'))
+                # Remove exactly this emitter's prefix; retain bracketed data.
+                bodies.append(line.removeprefix(prefix))
+            else:
+                bodies.append(line)  # unexpected output is not completion noise
         after = tree(root)
         created = {k: v for k, v in after.items() if k not in before}
         preserved = all(after.get(k) == v for k, v in before.items())
@@ -606,7 +615,9 @@ async def target_fixtures(spec, case, directory):
         # Missing file fixture must error rather than report successful empty output.
         ok = (
             bool(run["errors"]) == variant["error"]
-            and Counter(bodies) == Counter(expected)
+            and display_outputs_match(
+                [{"body": body} for body in bodies], expected, allows_display_framing(case)
+            )
             and preserved
             and content_ok
         )
@@ -618,13 +629,7 @@ async def target_fixtures(spec, case, directory):
                 created={k: v.decode("utf-8") for k, v in created.items()},
                 sentinels_preserved=preserved,
                 input_trace=run["input_trace"],
-                completion_noise=[
-                    str(line)
-                    for line in run["outputs"]
-                    if not any(
-                        str(line).startswith("[" + label + "] ") for label in labels
-                    )
-                ],
+                completion_noise=completion_noise,
                 run_artifact=str(directory / (variant["name"] + ".json")),
             )
         )

@@ -4,7 +4,7 @@ from typing import Any, ClassVar, Dict, List
 
 from ..node_base import Node, NodeContext
 from ..node_category import NodeCategory
-from ..output_entry import OutputLogEntry
+from ..output_entry import OutputLogEntry, text_output_prefix
 from ..vault_declarations import legacy_output_keys
 
 
@@ -44,7 +44,7 @@ class TextOutputNode(Node):
         "input_vault_key": {"type": "string", "label": "Input Vault key", "vault_type": "any", "tab": "Source", "section": "Required Inputs", "visible_when": {"input_source": "Vault"}},
         "label": {
             "type": "string",
-            "description": "Label shown alongside the output",
+            "description": "Label prefix; empty or whitespace-only shows bare text",
             "required": True,
         },
         "template": {
@@ -91,7 +91,7 @@ class TextOutputNode(Node):
             )
             return
 
-        full_output = f"[{label}] {formatted}"
+        full_output = text_output_prefix(label) + formatted
         log = list(context.memory_bank.read_persistent("output_log", default=[]))
         log.append(
             OutputLogEntry(

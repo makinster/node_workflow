@@ -155,3 +155,15 @@ and output routing are unchanged. Caching reorders the already-resolved text
 only when enabled. The 12 source-combination tests remain, alongside caching
 request and real-engine usage tests. Refreshed only this node's execute hash and
 corrected its copied runtime-file pointer; no source expectations were relaxed.
+
+### 2026-10-29 Text Output re-audit
+
+Owner-approved blank-label behavior changes only the final string assembly:
+empty/whitespace-only labels produce bare text; nonblank labels remain verbatim.
+Upstream/Vault selection, missing Vault rejection, optional user prompt,
+template formatting errors and log/default/legacy Vault destinations are
+unchanged. Runtime and preview share `text_output_prefix`. Updated only Text
+Output's pinned execute hash in contracts.json after reviewing that delta.
+`test_bare_text_output.py` covers both accepted sources, blank/nonblank labels,
+log/payload/Vault parity and bracketed data; the source-menu suite still checks
+the declarations and real form choices. Historical screenshots are retained.

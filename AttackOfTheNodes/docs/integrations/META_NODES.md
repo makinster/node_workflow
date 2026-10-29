@@ -53,12 +53,13 @@ not an atomic reservation. Conditional `equals` compares stringified operands
 with case and whitespace intact. These describe existing execution; no runtime
 or fixture behavior changed.
 
-Text Output puts the same `"[label] " + formatted text` string in its log and
-on its default output port. The label is display framing, so showing requested
-text through this node satisfies an exact-text display request. The label is
-still part of the downstream payload: writing that payload saves the label
-too. A request to save raw content must use the raw content source rather than
-the labelled Text Output result.
+Text Output logs and emits bare formatted text when its label is empty or
+whitespace-only. A nonblank label adds `[label] ` verbatim, including any
+surrounding spaces in that label. Log, default payload and legacy Vault writes
+all receive the same string. Set labels are display framing; writing their
+payload saves the label too. For exact bare text use an empty label.
+End's `record_line` completion log is normal run framing, not an unrequested
+effect or additional requested output.
 
 Compact Text config now uses `field:type=JSON-default`, with any remaining
 constraints in JSON after the value; no `=` means no default. For example,
@@ -104,14 +105,14 @@ limits: the full catalogue fitting this node does not make it fit downstream.
 Use a filtered catalogue for a small request.
 
 Current registry with execution contracts: **51 non-debug entries**, Compact Text
-**39,503** characters (previously **39,224**) and compact JSON **61,532**
-(previously **61,249**), below the unchanged **64,000** cap. Brief Text stays
+**39,591** characters (previously **39,503**) and compact JSON **61,618**
+(previously **61,532**), below the unchanged **64,000** cap. Brief Text stays
 **7,634** / compact JSON **10,603**. The original designer's nine-type palette
-is **8,168** (previously **7,996**); its drafting Context is explicitly **8,500**,
-raised from 8,000. Its Brief catalogue cap remains 8,000. V2 is **10,275**
-(previously **9,996**), below its 50,000 limit.
+is **8,256** (previously **8,168**); its drafting Context is explicitly **8,500**,
+raised from 8,000. Its Brief catalogue cap remains 8,000. V2 is **10,363**
+(previously **10,275**), below its 50,000 limit.
 
-Text Output with an empty label still logs and emits `"[] " + formatted text`.
+Text Output with an empty or whitespace-only label logs and emits bare text.
 Start without nonempty rows emits the greeting string verbatim; configured rows
 replace it. Conditional emits the original left value on its selected true/false
 port, not a comparison boolean. The contracts describe the routing exceptions.

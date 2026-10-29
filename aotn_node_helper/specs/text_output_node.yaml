@@ -25,7 +25,7 @@ config_tabs:
       type: string
       default: Output
       required: true
-      description: Label shown alongside the output
+      description: Label prefix; empty or whitespace-only shows bare text
     template:
       type: multiline
       default: '{input}'

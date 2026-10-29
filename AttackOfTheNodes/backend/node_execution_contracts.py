@@ -9,7 +9,7 @@ EXECUTION_CONTRACTS = {
         'output_payload': 'default: with rows absent/empty, greeting string verbatim (default "Workflow started"); transient_output=false suppresses it. Nonempty rows replace greeting: one downstream value as-is, several as name:value object, none/no_inputs emits no payload.',
     },
     'end_node': {
-        'output_payload': 'None; ends branch. record_line logs END; return_end publishes workflow results only.',
+        'output_payload': 'None; ends branch. record_line logs [END] completion as normal run framing, not an unrequested effect. return_end publishes workflow results only.',
     },
     'branch_end_node': {
         'output_payload': 'default: input unchanged; absent: empty text.',
@@ -21,7 +21,7 @@ EXECUTION_CONTRACTS = {
         'output_payload': 'default: unchanged user answer string; incoming input triggers prompt only.',
     },
     'text_output_node': {
-        'output_payload': 'default/log: "[label] "+formatted text. Empty label still emits "[] "+text. Label is display framing even for exact text requests. Downstream includes label (also when saved). {input[path]}: path; {{input}}: literal.',
+        'output_payload': 'default/log: empty or whitespace-only label = bare formatted text; a set label adds "[label] " unchanged. Label is display framing. The same downstream payload includes any set label (also when saved). {input[path]}: path; {{input}}: literal.',
     },
     'text_transform_node': {
         'output_payload': 'default: transformed string. strip trims whole-input boundary whitespace. Falsy input becomes empty text.',

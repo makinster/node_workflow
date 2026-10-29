@@ -7,6 +7,7 @@ from textual.app import App
 from textual.widgets import Input, Select, Static
 
 from backend.file_refs import file_reference
+from frontend.widgets.command_input import CommandInput
 from frontend.node_io_display import trace_transient_producer, output_display_name
 from frontend.screens.node_config import NodeConfigScreen
 from tests.test_debug_nodes import _make_services
@@ -104,6 +105,13 @@ async def test_text_output_payload_tab_describes_vault_and_format(width):
         screen.query_one('#field-template', LongTextPreview).value = 'Changed {input}'
         await pilot.pause()
         assert '[Notice] Changed the actual text' in str(preview.content)
+        for blank in ('', '   '):
+            screen.query_one('#field-label', CommandInput).value = blank
+            await pilot.pause()
+            assert 'Output format: Changed {input}' in str(preview.content)
+            assert 'Preview (captured value): Changed the actual text' in str(preview.content)
+            assert '[]' not in str(preview.content)
+
         screen.query_one('#field-input_source', Select).value = 'Upstream payload'
         await pilot.pause()
         assert 'Source: Upstream payload' in str(preview.content)

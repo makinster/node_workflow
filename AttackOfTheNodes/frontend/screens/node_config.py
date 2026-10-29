@@ -14,6 +14,7 @@ from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.screen import ModalScreen
 from textual.widgets import Button, Checkbox, Input, Label, Select, SelectionList, Static, TabbedContent, TabPane, TextArea
 
+from backend.output_entry import text_output_prefix
 from backend.branch_paths import ALL_PATH_PORTS, path_port, path_ports
 from backend.configuration_manager import DEFAULT_SETTINGS
 from backend.nodes.branch_node import (
@@ -3170,14 +3171,14 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                     value = self.memory_bank.read_transient(connection["source_node_id"], connection.get("source_port", "default"), default=_MISSING_PAYLOAD)
             label = values.get("label", "Output")
             template = values.get("template", "{input}")
-            lines = [f"Source: {source}", f"Output format: [{label}] {template}"]
+            lines = [f"Source: {source}", f"Output format: {text_output_prefix(label)}{template}"]
             if values.get("request_user_input"):
                 lines.append("The prompted user response replaces the selected input at execution.")
             elif value is _MISSING_PAYLOAD:
                 lines.append("Preview available after the selected source produces a value.")
             else:
                 try:
-                    lines.append("Preview (captured value): " + self._short_value_text(f"[{label}] {template.format(input=value)}"))
+                    lines.append("Preview (captured value): " + self._short_value_text(text_output_prefix(label) + template.format(input=value)))
                 except (KeyError, IndexError, ValueError) as error:
                     lines.append(f"Invalid template: {error}")
             connected = bool(self.node_data.get("connections", {}).get("outputs"))

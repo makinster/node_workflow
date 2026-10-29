@@ -13,6 +13,8 @@ from pathlib import Path
 import re
 from string import Formatter
 
+from backend.output_entry import text_output_prefix
+
 from .cases import PALETTE, fixture_variants
 
 
@@ -376,8 +378,9 @@ def evaluate(spec, case, variant):
                 )
             )
             value = Value(
-                "[" + config["label"] + "] " + body.data,
-                ("label", config["label"], body.expression),
+                text_output_prefix(config["label"]) + body.data,
+                (("label", config["label"], body.expression)
+                 if text_output_prefix(config["label"]) else body.expression),
                 body.lineage + (handle,),
             )
         elif kind == "file_output_node":
@@ -550,6 +553,8 @@ def provenance_matches(result, case, variant):
 
 def display_outputs_match(outputs, expected, framing):
     from itertools import permutations
+    if len(outputs) != len(expected):
+        return False
     return any(all(display_matches(o['body'], e, framing) for o, e in zip(outputs, order))
                for order in permutations(expected))
 

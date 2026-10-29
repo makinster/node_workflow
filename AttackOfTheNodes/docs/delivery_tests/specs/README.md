@@ -32,8 +32,8 @@ A non-`ok` status explains scope/uncertainty and stops. All preparation/service/
 validation/write errors go to a readable problem message and End. There is no
 retry, automatic build, approval node, shell execution or generated-workflow run.
 
-Current registry: Brief **7,634** characters, fixed palette **8,168**
-(previously **7,996**). The original designer's drafting node explicitly sets
+Current registry: Brief **7,634** characters, fixed palette **8,256**
+(previously **8,168**). The original designer's drafting node explicitly sets
 Context to **8,500** (previously the 8,000 default); Brief's cap stays 8,000.
 No designer/provider call accompanies this maintenance.
 
@@ -117,7 +117,7 @@ The judge allows 4,096 output tokens and asks for short reasons (under about
 
 The extra Compact queries cover Conditional, Concat and JSON Path. All returned
 entries are retained: the current exact inventory is 12 types and assembled
-Context is **10,275 characters** (previously **9,996**), below the
+Context is **10,363 characters** (previously **10,275**), below the
 unchanged 50,000-character planning budget. Compact includes config defaults
 and marks only fields without defaults as required. The meaning judge delegates
 config completeness/validity to Check workflow spec; omitted defaults are allowed.
@@ -180,3 +180,9 @@ while preserving existing files means create a unique copy; stopping without
 writing does not complete that request. Explicit restrictions/conflicts still
 require clarification. The run 000006 case 5 evidence asked exactly this
 unnecessary collision question; the case/request remains unchanged.
+
+The analysis and resolve prompts must not invent “exactly”, “nothing else” or
+“only” display acceptance unless requested for that value. End completion logs
+are normal run framing. Blank or whitespace-only Text Output labels now produce
+bare text; set labels retain their literal prefix. This runtime change applies
+to logs, downstream payloads, legacy Vault writes and the configuration preview.
