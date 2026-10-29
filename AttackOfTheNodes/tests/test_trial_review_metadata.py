@@ -39,3 +39,13 @@ def test_judge_focuses_on_requested_inputs():
     prompt = json.loads(SPEC.read_text())['nodes']['judge_question']['config']['template']
     assert 'ordinary inputs the request describes' in prompt
     assert 'edge cases the request never raised' in prompt
+
+
+def test_both_requirement_prompts_describe_outcomes_not_wiring():
+    import json
+    from tools.draft_trials.runner import SPEC
+    nodes = json.loads(SPEC.read_text())['nodes']
+    for handle in ('analysis_question', 'resolve_question'):
+        prompt = nodes[handle]['config']['template']
+        assert 'what the user should see or get, never which node feeds which' in prompt
+        assert 'not node ports or wiring' in prompt
