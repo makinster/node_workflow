@@ -6,6 +6,54 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-29 — Trial review corrections and one structural redraft (Important)
+
+Clean worktree `/home/makin/src/nw-draft-review-retry`, branch
+`codex/draft-review-retry`, fetched main base `17a2a18`. Owner workspace edits
+preserved. Six focused changes: End logs only `[END] <message>` (never input);
+generic transient_output docs for every declaring node; consistent Start
+passing-versus-showing wording; review limited to ordinary requested inputs;
+requirements state user outcomes rather than wiring; one automatic structural
+redraft with exact check errors, then a separate Check before judge/save.
+
+End's runtime, metadata note and review digest were rechecked, with nonempty,
+empty and structured-input tests. Return End still collects its input results.
+Updated pinned quiet-End, metadata-behavior and payload integration expectations,
+source-menu execute digest, saved delivery example and terminal SVG example.
+The received-input echo no longer appears in code/docs/tools/fixtures. Examples
+were updated for the new policy, not regenerated through a live trial.
+
+NodeFactory/authoring expose generic standard_key_docs; Compact/Detailed Text
+and JSON include it. Actual defaults are shown (Notify and Record event default
+false; the others true). Start now says the greeting becomes the next node's
+input and Start itself shows nothing. Updated its node/helper purpose and
+manifest content/source digests after source review. The metadata manifest
+retains original authors and records this local source recheck as verifier;
+no external human review is claimed.
+
+V2 first check.error stores first_check_error and first_draft_text and sends
+one extra drafting question containing the original brief plus rejected raw
+draft and exact error. draft_retry writes final draft_text; check_retry must
+pass before the judge. The second error routes to the existing stop path.
+There are no cycles and no retries for adapter/meaning failures. Usage receipts
+and the existing adapter cost/time/unknown-cost guard cover the extra call.
+Case reports contain draft_retry status; evidence preserves both drafts,
+first error and first/retry details. A handled first error remains in history.
+
+Full `pytest -n auto -q`: **3,611 passed in 44.02 s** (13 additional checks;
+base 3,598). Focused core suite 145 passed before extended guard/headroom tests.
+Provider transport mocked; no real API calls, Secrets access or trial rerun.
+All 22 calibration pairs keep their expected rules verdicts; no fixture edits
+or regeneration needed. `git diff --check` passes; all changed files already
+use LF, so no line-ending normalization was needed.
+
+Catalogue characters: Brief Text **15,051 → 15,037**, JSON **18,217 → 18,214**;
+Compact Text **49,204 → 52,321**, JSON **71,830 → 75,164** (all non-debug).
+V2 bundle **17,736 → 18,091 / 50,000**; largest individual Compact fragment
+**2,766 / 16,000**, Brief **15,037 / 50,000**. All v2 caps/headroom retained.
+Full Compact JSON, as before, needs an explicit cap above the 64,000 default.
+Live prompt-quality improvements remain unverified until the owner's next run.
+
 ## 2026-10-29 — Node metadata record v1, batch 1 (Foundational)
 
 Clean worktree `/home/makin/src/nw-metadata-batch1`, branch

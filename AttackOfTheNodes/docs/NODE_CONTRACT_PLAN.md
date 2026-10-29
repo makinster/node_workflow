@@ -334,3 +334,13 @@ prohibit invented exact/only acceptance. Reviewed source-menu runtime hash,
 updated contracts/help and documented affected uses. Full mock-provider suite:
 3,469 passed; all 22 calibration pairs unchanged. Contracts fit existing caps;
 see Session Log for sizes and compatibility details.
+
+### Trial review corrections and structural repair — 2026-10-29 (complete)
+
+Owner-approved End message-only logging, shared transient_output documentation,
+consistent Start passing-versus-showing wording, outcome-only requirements and
+review scoped to requested ordinary inputs. V2 first structural failure gets
+one redraft with exact errors; a separate second check gates judge/save. Usage,
+budget guards and evidence include the retry. Six focused commits; full mocked
+suite 3,611 passed. Manifest rechecked locally, no fixture changes. See Current
+State and Session Log for caps, evidence and live-validation limits.

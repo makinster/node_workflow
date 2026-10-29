@@ -1,10 +1,9 @@
 # Current State
 
-Snapshot checked **2026-10-29**, against fetched `origin/main` `a5dbf26`
-after #143 merged. Node metadata record v1 batch 1 is on
-`claude/node-metadata-v1-batch1`. No real provider calls or Secrets access.
-Earlier entries retain their dated scope; blank-label behavior below supersedes
-the October 28 contract description.
+Snapshot checked **2026-10-29**, against fetched `origin/main` `17a2a18`
+after #145 merged. Trial review corrections and structural redraft are on
+`codex/draft-review-retry`. No real provider calls or Secrets access.
+Earlier entries retain their dated scope.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
@@ -14,6 +13,26 @@ Sonnet/Opus and document the 512-token minimum prefix. Per-model price tests
 and real-engine run summaries cover all three supported models. See the latest
 Session Log entry for verification: full `pytest -n auto` passes **3,234 tests
 in 35.63 s** after the review fixes.
+
+## Trial review corrections and one structural redraft — 2026-10-29
+
+End logs only its message and no longer echoes input; Return End results are
+unchanged. Shared metadata/catalogue docs explain transient_output and actual
+defaults. Start consistently passes its greeting as the next node's input and
+shows nothing itself. Requirements describe outcomes, not wiring. The judge
+evaluates ordinary requested inputs without inventing edge cases.
+
+V2 retries once after the first Check workflow spec failure, sending the exact
+error and original brief/draft. A separate second Check must pass before the
+judge. Second failures stop; adapter or meaning failures do not retry. Trial
+evidence preserves both drafts/error/retry details and reports retry status;
+existing usage and cost/time/unknown-cost guards cover the extra call.
+
+Full suite **3,611 passed in 44.02 s** (13 added checks); all 22 calibration
+pairs retain their expected verdicts. No fixture edits or real trial rerun.
+Catalogue Text: Brief **15,037**, Compact **52,321**. JSON: **18,214 / 75,164**
+(full Compact JSON needs an explicit larger cap, as before). V2 bundle
+**18,091/50,000**, largest Compact query **2,766/16,000**. Caps unchanged.
 
 ## Node metadata record v1, batch 1 — 2026-10-29 (Foundational)
 

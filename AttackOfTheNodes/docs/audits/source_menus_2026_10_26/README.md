@@ -167,3 +167,12 @@ Output's pinned execute hash in contracts.json after reviewing that delta.
 `test_bare_text_output.py` covers both accepted sources, blank/nonblank labels,
 log/payload/Vault parity and bracketed data; the source-menu suite still checks
 the declarations and real form choices. Historical screenshots are retained.
+
+### 2026-10-29 End re-audit
+
+The owner decided that End record_line must log only `[END] <message>`.
+Re-reviewed the execution delta: it removes input interpolation from the log;
+return-result collection still reads the original input and termination is
+unchanged. Updated End's execute digest and checked quiet/default logging,
+nonempty/empty/structured inputs and payload integration. This changes no
+input-source declarations or source menus.

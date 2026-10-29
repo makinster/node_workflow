@@ -99,3 +99,19 @@ model. Field names belong in `execution_contract`. List every effect any
 supported mode can have, with a note naming the mode. Check every sentence
 against `execute` and its helpers, add or cite mocked tests, and get an
 independent verifier before the record lands.
+
+## Shared standard config documentation (2026-10-29)
+
+NodeFactory and authoring descriptions expose `standard_key_docs`, derived from
+the node class defaults. Compact/Detailed catalogue records and Text include it.
+For every type declaring `transient_output`, true passes output to the next
+node and false sends no output on; the text states the type's actual default
+(most are true; Notify and Record event default false). This generic description
+lives outside the authored per-node record and does not mark pending types as
+reviewed. Suppressing the payload does not stop traversal to the next node.
+
+Start's record now consistently distinguishes passing the greeting as the next
+node's input from showing text. End's re-reviewed record documents only the
+configured completion message, with no echoed input. The manifest retains the
+original metadata author and identifies this source recheck as the verifier;
+no external human review is claimed for this change.

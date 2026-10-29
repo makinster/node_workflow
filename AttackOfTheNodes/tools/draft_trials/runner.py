@@ -724,6 +724,15 @@ async def run_case(
         report["input_trace"] = run["input_trace"]
         report["errors"] = run["errors"]
         report["gate_evidence"] = run["steps"]
+        report['draft_retry'] = dict(
+            requested='first_check_error' in vault,
+            attempted=sum(e['handle'] == 'draft_retry' and e['status'] == 'running'
+                          for e in run['steps']),
+            succeeded=sum(e['handle'] == 'draft_retry' and e['status'] == 'done'
+                          for e in run['steps']),
+            check_passed=any(e['handle'] == 'check_retry' and e['status'] == 'done'
+                             for e in run['steps']),
+        )
         report["model_calls"] = dict(
             attempted=sum(
                 e["status"] == "running"

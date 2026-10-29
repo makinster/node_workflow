@@ -139,7 +139,7 @@ The CLI prints the exact report path. All paths below are relative to the new
   that fail structurally include its error code and bounded problem details.
   Budget stops retain completed calibration rows.
 - `artifacts/contracts.json`: complete text, length, hash and exact returned
-  inventory from every static Compact query. Current palette text: 10,363 chars
+  inventory from every static Compact query. Current palette text: 18,091 chars
   (before display-framing clarification: 9,928),
   comfortably below the 50,000-char planning cap. No entry is clipped.
 - `cases/<id>/frozen-case.json`, `trial-designer.json`, `designer-run.json`,
@@ -205,7 +205,7 @@ cat "$TRIAL_ROOT/runs/000001/report.json"
 ```
 
 Recommend **$0.50 for a full run**. There are 44 calibration judge calls before
-the ten cases; calibration alone is about $0.12–0.15 at current planning
+the ten cases (each may use one extra structural redraft); calibration alone is about $0.12–0.15 at current planning
 estimates, not a measured Step 1 result. `--budget USD` has **no default** and is
 required with `--real-calls`, even for calibration-only runs. Limits must be
 positive finite numbers. `--time-limit SECONDS` defaults to 600. Both limits
@@ -278,3 +278,19 @@ Nonblank labels retain all their characters and add `[label] `. The symbolic
 case evaluator and target-run extraction share the runtime prefix helper.
 No frozen calibration fixture changed; the nonblank label in
 `label_in_saved_content` still corrupts raw saved content and fails.
+
+### One structural redraft
+
+The first Check workflow spec error in v2 routes to one extra drafting step,
+with the original brief, rejected raw draft and exact structured error. A
+separate second Check must pass before the meaning judge runs. It never loops
+back; a second structural failure stops without judge or save. An adapter or
+meaning-review failure does not trigger redrafting.
+
+`evidence.json` retains `first_draft_text`, `first_check_error`, final
+`draft_text`, first/retry details and final `spec_check`. Each case report has
+`draft_retry` with requested, attempted, succeeded and check_passed. SDK receipts
+and the existing adapter boundary budget/time/unknown-cost guards cover the
+extra call. `model_calls` records node attempts; the budget counts adapter calls
+actually allowed past its guard. A recovered first check error remains in run
+history even when the corrected draft passes.
