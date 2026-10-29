@@ -927,7 +927,8 @@ async def calibrate(
                 raw_draft = json.dumps(target)
                 try:
                     _, structural = await check(
-                        factory, raw_draft, workflow["nodes"]["check"]["config"]["max_spec"]
+                        factory, raw_draft, workflow["nodes"]["check"]["config"]["max_spec"],
+                        fail_on_unreachable=workflow["nodes"]["check"]["config"].get("fail_on_unreachable", False)
                     )
                 except NodeError as exc:
                     # Negative calibration fixtures still reach the judge, with

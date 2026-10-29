@@ -653,4 +653,8 @@ def calibration_pairs():
         spec["connections"].append({"from": "empty.default", "to": "upper.input"})
 
     pair("empty_choice_still_saves", 9, empty_choice_saves)
+    def spare_end(spec):
+        spec['nodes']['spare_end'] = {'type': 'end_node', 'config': {'record_line': False}}
+
+    pair('unconnected_end', 8, spare_end)
     return pairs

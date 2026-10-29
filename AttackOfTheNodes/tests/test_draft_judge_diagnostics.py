@@ -16,7 +16,7 @@ async def test_calibration_reply_and_question_evidence(tmp_path, monkeypatch):
     from backend.node_factory import NodeFactory
     from backend.secrets_manager import SecretsManager
 
-    replies = [runner.meaning(), "not JSON: password=mock-secret-value"] * 22
+    replies = [runner.meaning(), "not JSON: password=mock-secret-value"] * 23
     replies[0]["summary"] = "password=mock-secret-value"
     replies[0]["coverage"][0]["evidence"] = "mock-secret-value"
     replies[4] = {"summary": "z" * 4100}
@@ -54,7 +54,7 @@ async def test_calibration_reply_and_question_evidence(tmp_path, monkeypatch):
         draft = path.with_name(row['variant'] + '-draft.json').read_text()
         limit = json.loads(runner.SPEC.read_text())['nodes']['check']['config']['max_spec']
         try:
-            _, expected = await check(NodeFactory(), draft, limit)
+            _, expected = await check(NodeFactory(), draft, limit, fail_on_unreachable=True)
         except NodeError as exc:
             expected = dict(ok=False, code=exc.code, message=str(exc), **exc.details)
         assert structural == expected
@@ -120,13 +120,13 @@ def test_prepared_real_calibrate_only_with_mock_sdk(tmp_path, monkeypatch, all_f
     for record in (report, calibration):
         assert record["judge_model"] == "claude-sonnet-5-5"
         assert record["judge_effort"] == "high"
-        assert record["model_calls"] == {"attempted": 44, "succeeded": 44}
+        assert record["model_calls"] == {"attempted": 46, "succeeded": 46}
         assert record["estimated_cost_usd"] > 0
     assert report["estimated_cost_usd"] == pytest.approx(calibration["estimated_cost_usd"])
     assert report["case_count"] == 0 and report["cases"] == []
     assert not (run / "cases").exists()
     assert not list((root / "library").iterdir())
-    assert not mock.replies and len(mock.calls) == 44
+    assert not mock.replies and len(mock.calls) == 46
     for row, call in zip(calibration["fixtures"], mock.calls):
         question = run / "calibration" / row["fixture"] / (row["variant"] + "-judge-question.txt")
         contracts = json.loads((run / "artifacts/contracts.json").read_text())["text"]
