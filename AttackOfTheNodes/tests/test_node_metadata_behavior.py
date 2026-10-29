@@ -58,8 +58,9 @@ async def test_start_greeting_runs_next_step_even_when_empty_and_is_never_displa
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize('record_line,value,logged', [
-    (True, 'x', ['[END] Branch completed (received: x)']),
+    (True, 'x', ['[END] Branch completed']),
     (True, '', ['[END] Branch completed']),
+    (True, {'secret': 'never echo'}, ['[END] Branch completed']),
     (False, 'x', []),
 ])
 async def test_end_line_framing_and_silence(record_line, value, logged):

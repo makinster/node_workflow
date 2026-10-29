@@ -514,7 +514,7 @@
           "notes": "Ordinary incoming value for log; Return End results select Incoming payload or Vault key by contract type."
         }
       },
-      "runtime_sha256": "a7525a9d6f2ac37dfa3411a79c004970a6dd3c0e8b66c7231cd6534d69626697",
+      "runtime_sha256": "858ec7c977778fa1cecde8b8ee6a23d3d59bffa3c05124ce363bd025d00e9d16",
       "runtime_file": "backend/nodes/end_node.py"
     },
     {

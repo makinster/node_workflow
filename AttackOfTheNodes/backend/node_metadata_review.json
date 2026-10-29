@@ -20,18 +20,18 @@
     },
     "end_node": {
       "sources": {
-        "backend/nodes/end_node.py": "5f457b8137fa970547b0f5ed05fa366ae6a04b100211d83b6d6d4a637d98ad40",
+        "backend/nodes/end_node.py": "c5dad96d959429b270a6bdba93cbae62436551359fd2ebc292818b79b74f33d4",
         "backend/contracts.py": "c88d7398adb513ab745990f1e959438024e65dea9515ab9d96b2854501e1fb1d",
         "backend/output_entry.py": "6121bc67a278ac66244365ff5c23c235cd457316ef2826cd41db07b202af2ba2"
       },
       "tests": [
         "tests/test_node_metadata_behavior.py::test_end_line_framing_and_silence"
       ],
-      "content_sha256": "b59a6bee9c8370765cda889748f38556a1b4264e3753b105f67eaaa0f97694f7",
+      "content_sha256": "d3ba3e7f99fc2ae3f3d74a34820078265765fd3a9535cc6a355576972687dd99",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-29",
-      "source_revision": "a5dbf2667768734cb0389f345e78c01d20bd1e73",
-      "verifier": "metadata-batch1-independent-verifier"
+      "source_revision": "17a2a185e8a7881a56c53247a1b7253e94583e90",
+      "verifier": "owner-decision-and-draft-review-source-recheck"
     },
     "branch_end_node": {
       "sources": {

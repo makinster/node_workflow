@@ -974,7 +974,7 @@
       "ended_at": "2026-10-28T02:18:32.792081+00:00",
       "outputs": [
         "[Ready Output] Ready",
-        "[END] Workflow completed (received: [Ready Output] Ready)"
+        "[END] Workflow completed"
       ],
       "errors": [],
       "ready_confirmed": true,

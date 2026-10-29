@@ -126,7 +126,7 @@ NODE_METADATA: Dict[str, Dict[str, Any]] = {
         "time_class": "quick",
         "execution_contract": {
             "output_payload": "None; ends branch. record_line logs [END] completion as normal run framing, not an unrequested effect. return_end publishes workflow results only.",
-            "notes": 'record_line on (default) logs "[END] <message>", plus " (received: <input>)" when the input is not empty; off adds nothing.',
+            "notes": 'record_line on (default) logs only "[END] <message>"; input is never echoed. Off adds nothing.',
         },
     },
     "branch_end_node": {
