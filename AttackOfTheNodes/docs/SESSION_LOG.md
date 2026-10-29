@@ -6,6 +6,20 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-28 — Trial judge diagnostics (Scaffolding)
+
+Clean worktree `nw-trial-judge-diagnostics`, branch
+`codex/trial-judge-diagnostics`, base main `8056401`. Owner reports all 44
+calibration verdicts failed; the harness previously discarded reply reasons.
+Save redacted, bounded reply JSON/text and exact question files. Add judge-only
+model/effort options and report selections, call counts and estimated costs.
+Calibration budget stops preserve completed rows. No judge prompt or backend
+changes, real API calls, or owner trial artifact access.
+
+New mock regressions reproduced missing evidence/options on the base code.
+Validation: focused trial suite **142 passed** (including six diagnostics
+cases), all inference mocked; `git diff --check` passed.
+
 ## 2026-10-28 — Judge headroom and incomplete usage
 
 Started clean worktree `nw-draft-judge-usage`, branch `codex/draft-judge-usage`,

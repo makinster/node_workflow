@@ -54,6 +54,10 @@ addressed with judge/requirements token headroom and a short-reasons prompt.
 Capped/refused final replies now emit incomplete usage before their unchanged
 error path; the trial guard retains their cost and still stops. Mock proof only
 for this follow-up; no real rerun.
+Scaffolding diagnostics follow-up from `8056401` saves bounded redacted judge
+replies and exact calibration questions, adds judge-only model/effort options,
+and reports call totals/cost for calibration-only and partial budget stops.
+Judge prompt unchanged; mocked transport only.
 
 ## Owner-requested caching — 2026-10-28
 
