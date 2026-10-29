@@ -6,6 +6,31 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-29 — Owner-decided claims follow-up (Scaffolding)
+
+Separate worktree `/home/makin/src/node_workflow-claims`, branch
+`codex/resolve-node-claims`, from fetched `origin/main` `ee0bca4` (#151).
+Preserved the original checkout's unrelated edits. Catalogue/shortlist, v2
+specification and `tools/draft_trials` files are untouched.
+
+Reproduced undeclared count/visits and ignored If Changed suppression before
+repair. Counter and Repeat Counter now declare their existing numeric outputs.
+Shared producer tracing scopes fixed forwarding to `default`, preserving the
+computed ports' numeric types; both regressions failed before that repair.
+If Changed saves normally, publishes nothing when suppressed and traverses the
+selected edge. Both Changed and No change routes pass real-engine checks.
+Window Control suppression is explicitly unsupported: a passing policy claim
+checks build/check rejection for true/false and fixed file-reference forwarding
+with retained saved switches. All four former strict xfails now pass; the
+runner has no expected-failure exceptions.
+
+Refreshed the baseline, shared receipt (234 pass / 179 skip / zero xfail),
+compatibility audit and relevant source attestations. Reviewed metadata record
+text and 12 reviewed / 47 pending status are unchanged; no palette admission.
+Full `pytest -n auto`: **4,496 passed, 187 skipped, zero xfails in 42.37 s**. No real API calls.
+The historical #151 entry below retains its original verification counts;
+this entry and the refreshed audit supersede its four pending decisions.
+
 ## 2026-10-29 — Registry claims foundation (Foundational)
 
 Root `/home/makin/src/nw-node-claims`, branch `codex/node-claims`, fetched main

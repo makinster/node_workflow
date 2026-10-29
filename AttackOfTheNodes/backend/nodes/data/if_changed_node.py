@@ -50,4 +50,5 @@ class IfChangedNode(Node):
         if changed is None:  # first run: nothing was saved yet
             changed = self.config.get("first_time") == "Changed"
         port = "changed" if changed else "no_change"
-        context.signal_done({"data": {port: value}, "output_port": port, "next_node_id": None})
+        data = {port: value} if self.config.get("transient_output", True) else {}
+        context.signal_done({"data": data, "output_port": port, "next_node_id": None})

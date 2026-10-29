@@ -27,12 +27,13 @@ from backend.run_session import RunSession
 from backend.vault_declarations import typed_vault_writes, vault_output_fields, vault_read_entries
 from backend.window_manager import FakeWindowManager
 from backend.nodes.io.window_support import WINDOW_MANAGER_RESOURCE
-from tests.node_claim_scenarios import CASES, MISMATCHES, SCENARIO_VERSION
+from tests.node_claim_scenarios import CASES, SCENARIO_VERSION
 from tests.test_node_metadata_behavior import engine
 from tools.draft_trials.cases import PALETTE
 
 FACTORY = NodeFactory()
 KINDS = sorted(FACTORY.get_registered_types())
+WINDOW_SUPPRESSION_REASON = 'Window Control always forwards the targeted file reference; suppression is unsupported.'
 FLAGS = ('vault_write', 'transient_output', 'dead_drop_passthrough', 'transient_outputs')
 # Only these exact accesses are engine/debug bookkeeping, never user data.
 INTERNAL_WRITES = {'output_log', '_repeat_counter_claim'}
@@ -195,11 +196,6 @@ def check_ports(run):
     assert all(k.rsplit('__',1)[-1] in ports for k in transient)
 
 
-def expectation(kind, dimension):
-    reason=MISMATCHES.get((kind,dimension))
-    return [pytest.mark.xfail(reason=reason, strict=True)] if reason else []
-
-
 def test_claim_registry_is_complete():
     assert set(CASES)==set(KINDS)
     assert len(PALETTE)==12 and PALETTE <= set(CASES)
@@ -208,7 +204,7 @@ def test_claim_registry_is_complete():
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('kind', [pytest.param(k,id=k,marks=expectation(k,'ports')) for k in KINDS])
+@pytest.mark.parametrize('kind', KINDS)
 async def test_declared_ports_and_types(kind,tmp_path,boundaries):
     run=await execute(kind,tmp_path)
     if CASES[kind].get('error'):
@@ -243,9 +239,17 @@ async def test_activated_vault_writes(kind,tmp_path,boundaries):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('kind', [pytest.param(k,id=k,marks=expectation(k,'transient_output')) for k in KINDS])
+@pytest.mark.parametrize('kind', KINDS)
 async def test_transient_output_suppression(kind,tmp_path,boundaries):
     meta=FACTORY.metadata_for_type(kind)
+    if kind == 'window_control_node':
+        assert 'transient_output' not in meta['standard_flags'], WINDOW_SUPPRESSION_REASON
+        for value in (False, True):
+            test_authoring_rejects_unsupported_standard_flags(kind, 'transient_output', value)
+            run = await execute(kind, tmp_path / str(value), {'transient_output': value})
+            assert_success(run)
+            assert output(run)['default'] is run.ctx.inputs['file']
+        return
     if 'transient_output' not in meta['default_config']:
         pytest.skip('No declared transient switch; authoring rejection is tested separately')
     changes=dict(transient_output=False,dead_drop_passthrough=False)
@@ -282,7 +286,7 @@ async def test_declared_dead_drop_forwarding(kind,tmp_path,boundaries):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('kind', [pytest.param(k,id=k,marks=expectation(k,'required_inputs')) for k in KINDS])
+@pytest.mark.parametrize('kind', KINDS)
 async def test_missing_required_inputs_error(kind,tmp_path,boundaries):
     meta=FACTORY.metadata_for_type(kind)
     required={p:info for p,info in meta['input_port_metadata'].items() if info.get('required')}
@@ -528,7 +532,7 @@ def evidence_hashes():
     files={
         'tests/test_node_claims.py','tests/node_claim_scenarios.py','tests/test_node_metadata_behavior.py',
         'backend/node_capabilities.py','backend/authoring.py','backend/node_factory.py',
-        'backend/vault_declarations.py','backend/supervisor.py','backend/memory_bank.py',
+        'backend/vault_declarations.py','backend/supervisor.py','backend/memory_bank.py','backend/port_types.py',
         'backend/node_metadata.py','backend/saved_values.py','backend/meta_workflow.py',
         'backend/system_access.py','backend/text_lines.py','backend/contracts.py','tools/claims_compatibility.py',
     }
@@ -544,25 +548,21 @@ async def test_claims_receipt(tmp_path,boundaries):
     for kind in KINDS:
         observations={}
         for dimension,check in DIMENSIONS.items():
-            reason=MISMATCHES.get((kind,dimension))
             try:
                 await check(kind,tmp_path/kind/dimension,boundaries)
             except pytest.skip.Exception as exc:
-                assert not reason
                 observations[dimension]={'status':'skip','reason':str(exc)}
-            except AssertionError as exc:
-                if not reason: raise
-                observations[dimension]={'status':'xfail','reason':reason,'observed':str(exc)[:500]}
             else:
-                assert not reason, 'Resolved mismatch needs re-review: '+kind+'/'+dimension
                 observations[dimension]={'status':'pass'}
+                if kind == 'window_control_node' and dimension == 'transient_output':
+                    observations[dimension].update(supported=False, reason=WINDOW_SUPPRESSION_REASON)
         run=await execute(kind,tmp_path/kind/'trace')
         rows.append(dict(node_type=kind,reviewed=kind in PALETTE,boundary=CASES[kind].get('boundary','local context and temporary files'),
             limits=('Reviewed palette value/source and graph matrix is tested separately.' if kind in PALETTE else 'Default mode and applicable generic claims only; remaining source/mode/session/native-OS matrices await family review.'),claims=observations,trace=dict(required_optional_reads=vault_read_entries(kind,run.node.config,resolved_metadata(FACTORY,kind,run.node.config)),
             actual_reads=run.memory.reads,snapshot_keys=run.memory.snapshots,
             attempted_writes=run.memory.attempted,committed_writes=[{'key':k,'type':t} for k,_,t in run.memory.committed],
             emitted_ports=list(output(run)),errors=[str(e) for e in run.errors])))
-    payload=dict(schema_version=1,scenario_version=SCENARIO_VERSION,base_revision='439e6148e29eaab951e187592d484b508190aa15',
+    payload=dict(schema_version=1,scenario_version=SCENARIO_VERSION,base_revision='ee0bca449425eaa23792b08f442ac3fd81e6b2fb',
                  sources=evidence_hashes(),nodes=rows,palette_scenario_count=len(PALETTE_SCENARIOS),
                  engine_graph_count=len(ENGINE_CASES),engine_runs_per_graph=2,
                  interpretation='Node claim statuses were executed for this receipt. Palette value and engine assertions run as separate parametrized tests; no live service quality or admission is claimed.')
@@ -571,7 +571,7 @@ async def test_claims_receipt(tmp_path,boundaries):
         text=json.dumps(payload,indent=2).replace(str(tmp_path),'$ROOT')+'\n'
         Path(destination).write_text(text)
     assert len(rows)==59
-    assert all(c['status']!='xfail' for row in rows if row['reviewed'] for c in row['claims'].values())
+    assert all(c['status'] in {'pass', 'skip'} for row in rows for c in row['claims'].values())
 
 
 def test_claims_evidence_is_current():
@@ -581,7 +581,8 @@ def test_claims_evidence_is_current():
     assert record['palette_scenario_count']==len(PALETTE_SCENARIOS)
     assert record['engine_graph_count']==len(ENGINE_CASES)
     assert all(c.get('reason') for row in record['nodes'] for c in row['claims'].values()
-               if c['status'] in {'skip','xfail'})
+               if c['status'] == 'skip')
+    assert all(c['status'] in {'pass', 'skip'} for row in record['nodes'] for c in row['claims'].values())
 
 
 @pytest.mark.asyncio
@@ -604,6 +605,18 @@ def test_bundled_standard_flag_compatibility():
     baseline=json.loads((EVIDENCE.parent/'baseline.json').read_text())
     assert result['spec_count']==baseline['compatibility_audit']['spec_count']==17
     assert result['newly_failing_specs']==0, result
+    from backend.node_capabilities import supported_standard_flags
+    root = Path(__file__).parents[1]
+    assert {row['node_type'] for row in baseline['nodes']} == set(KINDS)
+    for row in baseline['nodes']:
+        meta = FACTORY.metadata_for_type(row['node_type'])
+        assert row['source_sha256'] == hashlib.sha256((root / row['source']).read_bytes().replace(b'\r\n', b'\n')).hexdigest()
+        assert row['outputs'] == meta['output_port_metadata']
+        for flag, claim in row['standard_flags'].items():
+            assert claim['authoring_accepts'] == (row['authorable'] and flag in supported_standard_flags(meta))
+    window = next(row for row in baseline['nodes'] if row['node_type'] == 'window_control_node')
+    claim = window['standard_flags']['transient_output']
+    assert claim['supported'] is False and WINDOW_SUPPRESSION_REASON in claim['evidence']
 
 
 @pytest.mark.asyncio
@@ -616,3 +629,45 @@ async def test_required_any_distinguishes_null_from_missing(kind,tmp_path,bounda
     assert not missing.done and 'missing' in str(missing.errors[0])
     unavailable=await execute(kind,tmp_path/'vault',{'input_source':'Vault','input_vault_key':'absent'})
     assert not unavailable.done and 'absent' in str(unavailable.errors[0])
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('first_time,port', [('Changed', 'changed'), ('No change', 'no_change')])
+async def test_if_changed_suppression_preserves_route_and_saved_value(first_time, port, engine, tmp_path, boundaries):
+    run = await execute('if_changed_node', tmp_path, {'first_time': first_time, 'transient_output': False})
+    assert_success(run)
+    assert output(run) == {}
+    assert run.done[0]['output_port'] == port
+    from backend import saved_values as saved
+    place = saved.place_for(run.node.config['keep_for'], run.ctx.workflow_name)
+    assert saved.SavedValues().get(place, 'claims')['value'] == 'UPSTREAM'
+    wm = engine.workflow_map
+    wm.create_new('Suppressed comparison')
+    start = wm.add_node('start_node')
+    target = wm.add_node('if_changed_node')
+    wm.update_node_config(target, {**wm.get_node_data(target)['config'],
+        'name': 'graph', 'first_time': first_time, 'transient_output': False})
+    wm.connect(start, 'default', target, 'input')
+    probes = {}
+    for route in ('changed', 'no_change'):
+        probes[route] = wm.add_node('probe_node')
+        wm.connect(target, route, probes[route], 'input')
+    from backend.run_policies import TerminatePolicy
+    await engine.start(recovery_policy=TerminatePolicy('terminate_workflow'))
+    result = await engine.wait()
+    assert result.exit_code == 0
+    completed = engine.master_state.completed_nodes
+    assert probes[port] in completed
+    assert probes['no_change' if port == 'changed' else 'changed'] not in completed
+
+
+@pytest.mark.parametrize('kind,port', [('counter_node', 'count'), ('repeat_counter_node', 'visits')])
+def test_counter_data_ports_keep_their_numeric_type(kind, port):
+    from backend.port_types import trace_producers
+    nodes = {
+        'source': {'type': 'start_node', 'config': {}, 'connections': {'inputs': []}},
+        'counter': {'type': kind, 'config': {}, 'connections': {'inputs': [
+            {'source_node_id': 'source', 'source_port': 'default', 'target_port': 'input'}]}},
+    }
+    assert trace_producers(nodes, FACTORY, 'counter', 'default') == [('source', 'string')]
+    assert trace_producers(nodes, FACTORY, 'counter', port) == [('counter', 'number')]
