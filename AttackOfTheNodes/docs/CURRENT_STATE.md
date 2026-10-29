@@ -1,8 +1,8 @@
 # Current State
 
-Snapshot checked **2026-10-28**, against fetched `origin/main` `4e42273`
-after #139 merged. Palette behavior contracts and diagnostic case trials are on
-`codex/palette-behavior-contracts`. This change makes no real API calls and
+Snapshot checked **2026-10-28**, against fetched `origin/main` `18d21d4`
+after #140 merged. Trial scoring and prompt-failure evidence are on
+`codex/trial-scoring-prompt-evidence`. This change makes no real API calls and
 does not access owner Secrets. Earlier entries retain their dated scope.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
@@ -13,6 +13,32 @@ Sonnet/Opus and document the 512-token minimum prefix. Per-model price tests
 and real-engine run summaries cover all three supported models. See the latest
 Session Log entry for verification: full `pytest -n auto` passes **3,234 tests
 in 35.63 s** after the review fixes.
+
+## Trial scoring, input evidence and display framing — 2026-10-28
+
+The harness and Check reply now share the decoded top-level shape gate, with
+the harness reading v2's analysis/resolved/judge field configurations. Integer
+orders and numeric strings score correctly; frozen protocol rules for ids,
+questions and coverage remain. Unexpected/out-of-order prompts retain their
+text, unanswered row and prior answers. Designer run, vault snapshot, calls and
+case report are saved before that case fails. All-priced case errors do not
+make cost unknown; missing/unpriced adapter usage still stops further calls.
+Priced partial replies retain cost; calibration execution errors end that phase
+with their actual reason instead of pretending cost is unknown.
+
+Verified Text Output logs and emits the same `"[label] " + formatted text`.
+The contract treats the prefix as display framing even for exact-text requests,
+while warning that the labelled downstream value remains labelled if saved.
+Node execution and fixtures are unchanged. Contracts: v2 **9,928 → 9,996**
+(50,000 cap); original **7,928 → 7,996** (8,000 cap); Compact Text
+**39,156 → 39,224**, JSON **61,181 → 61,249** (64,000 cap); Brief unchanged.
+
+Full `pytest -n auto`: **3,428 passed in 36.95 s**, including 21 new regression
+checks. An existing diagnostics test's nested patch lifetimes leaked a fake
+Secrets getter into later tests; scoped cleanup fixes the reproduced two-test
+sequence. Initial regressions reproduced five failures on the base. Provider
+transport is mocked; no real trial rerun or owner Secrets/artifact access.
+Whitespace check passes.
 
 ## Palette execution contracts and diagnostic cases — 2026-10-28
 

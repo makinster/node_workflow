@@ -6,6 +6,42 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-28 — Trial scoring, prompt evidence and Text Output framing (Important)
+
+Clean worktree `/home/makin/src/nw-trial-scoring`, branch
+`codex/trial-scoring-prompt-evidence`, main base `18d21d4`. Owner-reported numeric
+requirement orders passed the workflow but failed harness scoring. Extracted
+Check reply's decoded shape gate and reused it with v2's actual analysis,
+resolved and judge field configurations. Integer/numeric-string orders now
+pass; existing id/question/coverage protocol checks and strict pass rules remain.
+
+Unexpected/out-of-order requests append unanswered trace rows rather than
+discarding the prompt. Input completion failure is recorded in the run result;
+case evidence, receipts and input trace are saved before scoring failure.
+All-priced errors no longer mark cost unknown; attempted adapters missing a
+receipt and unpriced receipts still stop before the next case/call. A priced
+partial response retains cost without setting unknown. Calibration execution
+errors stop the phase explicitly, preserving the eighth-call cutoff evidence
+without a fictitious cost-unknown failure. Updated the affected cutoff tests to
+assert known cost and independently enforce the real estimate limit.
+
+Text Output's execute method logs and emits the same labelled string. The
+shared contract now calls the prefix display framing even for exact text, and
+states that downstream/saved payloads still contain it. No node execution or
+fixture changes. Final characters: v2 **9,928 → 9,996** (50,000 cap); original
+contracts **7,928 → 7,996** (8,000 cap); Compact Text **39,156 → 39,224**, JSON
+**61,181 → 61,249** (64,000 cap); Brief unchanged **7,634 / 10,603**.
+
+Initial focused regressions: **5 failed / 1 passed** on the base. Final full
+`pytest -n auto`: **3,428 passed in 36.95 s**, including 21 new checks for
+integer/string orders on ready and clarification paths, three shared shape
+configs, case 9 evidence/case 10 continuation, missing-usage stop and actual
+Text Output values. Full testing also reproduced a pre-existing diagnostics
+mock leaking Secrets methods into Context Pack tests; a scoped nested
+monkeypatch fixes cleanup order. The two-test reproduction passes afterward.
+Whitespace check passes. All provider calls mocked; no owner trial inspection,
+owner Secrets access or inference quality claims.
+
 ## 2026-10-28 — Palette behavior contracts and diagnostic case trials (Important)
 
 Clean worktree `/home/makin/src/nw-palette-behavior`, branch

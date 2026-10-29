@@ -135,14 +135,32 @@ The CLI prints the exact report path. All paths below are relative to the new
   that fail structurally include its error code and bounded problem details.
   Budget stops retain completed calibration rows.
 - `artifacts/contracts.json`: complete text, length, hash and exact returned
-  inventory from every static Compact query. Current palette text: 9,928 chars
-  (before execution contracts: 9,869),
+  inventory from every static Compact query. Current palette text: 9,996 chars
+  (before display-framing clarification: 9,928),
   comfortably below the 50,000-char planning cap. No entry is clipped.
 - `cases/<id>/frozen-case.json`, `trial-designer.json`, `designer-run.json`,
   `evidence.json`, `calls.json`, `build-check.json`, `report.json`, exact saved
   draft, and `target-runs/`: original request/answer, first/resolved requirements,
   raw draft, structural/meaning reports, usage/cache tokens, serving models,
   node timings, input trace, save gate evidence and behavior receipts.
+
+Unexpected or out-of-order prompts are not answered. Their trace row records
+the actual prompt, node, `answer: null`, failure, and expected prompt when
+applicable; earlier answered rows remain intact. Run evidence includes
+`input_failure`. The designer's vault snapshot (`evidence.json`), call receipts,
+run artifact and case report are saved before the case is marked failed.
+Other cases still run when cost/time limits permit. Cost is unknown only for
+unpriced usage or an adapter attempt without a receipt; a node/input failure
+with all calls priced does not by itself make cost unknown. Priced partial
+responses retain their costs. A calibration judge execution error still ends
+calibration with a failed report and its completed evidence, independently of
+the cost guard; the diagnostic cases flag retains its usual behavior.
+
+The harness uses Check reply's shared decoded-record shape gate and the v2
+spec's actual field declarations. Frozen protocol checks still require stable
+ids, numbered clarification questions, complete judge coverage and empty
+problems on pass. Requirement `order` accepts integers or nonempty strings,
+including `1` and `"1"`; it no longer rejects a valid reply just for numeric order.
 
 Adding equivalent graphs means openly versioning rules and calibration before
 rerunning. Never change expected results to accept a generated mistake.
