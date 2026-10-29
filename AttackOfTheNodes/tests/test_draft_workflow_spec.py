@@ -139,8 +139,8 @@ async def test_complete_live_palette_and_prompt_sizes_fit_without_truncation():
     assert types == PALETTE
     contracts = n['contracts']['config']['template'].format_map(values)
     assert len(brief) == 7634
-    assert len(contracts) == 7996
-    assert len(contracts) < 8000  # retain the existing designer Context cap
+    assert len(contracts) == 8168
+    assert len(contracts) < n['draft']['config']['context_limit'] == 8500
     for case in CASES:
         state = dict(draft_request=case['request'], draft_shortlist=json.dumps(
             case['shortlist'], ensure_ascii=False, separators=(',', ':')))

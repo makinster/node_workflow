@@ -74,11 +74,14 @@ def selector_matches(node, selector, evidence):
         for key, value in selector.get("config", {}).items()
     ):
         return False
+    from .rules import display_matches
+
     expressions = [output["expression"] for output in evidence]
     if "output_literal" in selector:
         return bool(expressions) and all(
-            expression == ("literal", selector["output_literal"])
-            for expression in expressions
+            output["expression"][0] == "literal" and display_matches(
+                output["expression"][1], selector["output_literal"], output.get("framing", False))
+            for output in evidence
         )
     if "output_operation" in selector:
         return bool(expressions) and all(

@@ -291,7 +291,8 @@
         "details_vault_write": true,
         "transient_output": true,
         "vault_write": true,
-        "vault_write_key": "draft_text"
+        "vault_write_key": "draft_text",
+        "context_limit": 8500
       }
     },
     "check": {

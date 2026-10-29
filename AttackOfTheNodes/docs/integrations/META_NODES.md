@@ -104,13 +104,17 @@ limits: the full catalogue fitting this node does not make it fit downstream.
 Use a filtered catalogue for a small request.
 
 Current registry with execution contracts: **51 non-debug entries**, Compact Text
-**39,224** characters (before: **39,156**) and compact JSON **61,249** (before:
-**61,181**). The default stays **64,000**, the existing upper bound. Brief Text
-stays **7,634** / compact JSON **10,603**. The designer
-Brief catalogue cap rises from 7,500 to **8,000** so registry growth does not
-stop its first pass; Context remains 8,000 (366 characters headroom). The
-fixed nine-type palette is **7,996** (before: **7,928**), below Context 8,000.
-Shorter headers/config notation retain all contract information without raising caps.
+**39,503** characters (previously **39,224**) and compact JSON **61,532**
+(previously **61,249**), below the unchanged **64,000** cap. Brief Text stays
+**7,634** / compact JSON **10,603**. The original designer's nine-type palette
+is **8,168** (previously **7,996**); its drafting Context is explicitly **8,500**,
+raised from 8,000. Its Brief catalogue cap remains 8,000. V2 is **10,275**
+(previously **9,996**), below its 50,000 limit.
+
+Text Output with an empty label still logs and emits `"[] " + formatted text`.
+Start without nonempty rows emits the greeting string verbatim; configured rows
+replace it. Conditional emits the original left value on its selected true/false
+port, not a comparison boolean. The contracts describe the routing exceptions.
 
 **Two-pass planning.** Measured Brief **all non-debug** Text: **50 entries,
 7,447 characters** after the Context-limit description update: 553 below the

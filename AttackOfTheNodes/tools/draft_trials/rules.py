@@ -1,7 +1,8 @@
 """Bounded pure evaluator for the frozen cases. Never executes draft node code.
 
-Unsupported forms fail with a rule id; adding equivalents requires versioning
-this oracle, rather than weakening expectations after a generated failure.
+Oracle v4: display-only framing may surround a whole value; saved content,
+source provenance and exact/only display requests remain strict. Unsupported
+forms fail with a rule id. Frozen cases and calibration fixtures are unchanged.
 """
 
 from collections import Counter, defaultdict
@@ -80,6 +81,40 @@ def format_value(template, values):
     if len(fields) == 1 and template == "{" + fields[0][0] + "}":
         return Value(rendered, fields[0][1], tuple(lineage))
     return Value(rendered, ("format", template, tuple(fields)), tuple(lineage))
+
+
+def allows_display_framing(case):
+    # Scope exact/only to display clauses, not "type exactly yes" or
+    # "trim whitespace only" elsewhere in the request.
+    request = case['request'] + ' ' + case.get('clarification', '')
+    return not re.search(r"\b(?:show|display|print)\b[^.;!?]*\b(?:exactly|only)\b|\b(?:exactly|only)\s+(?:show|display|print)\b", request, re.I)
+
+
+def plain_framing(text):
+    return bool(re.fullmatch(r"[A-Za-z\s:,.!()'\-]*", text)) and not re.search(
+        r"\b(?:not|never|failed|error|instead)\b", text, re.I)
+
+
+def display_matches(actual, expected, framing):
+    if actual == expected:
+        return True
+    if not framing or not expected or actual.count(expected) != 1:
+        return False
+    before, after = actual.split(expected)
+    return plain_framing(before) and plain_framing(after)
+
+
+def display_expression(expression, framing):
+    # Unwrap one whole-value interpolation only for display scoring. Saved
+    # content and downstream payloads retain their original format expression.
+    if framing and expression[0] == 'format':
+        _, template, fields = expression
+        if len(fields) == 1:
+            marker = '{' + fields[0][0] + '}'
+            before, after = template.split(marker)
+            if plain_framing(before) and plain_framing(after):
+                return display_expression(fields[0][1], framing)
+    return expression
 
 
 def effective_nodes(spec):
@@ -334,7 +369,8 @@ def evaluate(spec, case, variant):
                 dict(
                     handle=handle,
                     body=body.data,
-                    expression=body.expression,
+                    expression=display_expression(body.expression, allows_display_framing(case)),
+                    framing=allows_display_framing(case),
                     controls=controls,
                     routes=routes,
                 )
@@ -444,7 +480,7 @@ def provenance_matches(result, case, variant):
     writes = result["writes"]
     if number == 1:
         # The requested message itself is a valid literal in this one case.
-        return all(output["expression"] == ("literal", "Ready") for output in outputs)
+        return all(output["expression"][0] == "literal" and display_matches(output["expression"][1], "Ready", output["framing"]) for output in outputs)
     if number == 2:
         return all(
             any(
@@ -464,7 +500,7 @@ def provenance_matches(result, case, variant):
         port = "true" if variant["answers"][0] == "yes" else "false"
         text = "Continuing" if port == "true" else "Stopping"
         return all(
-            output["expression"] == ("literal", text)
+            output["expression"][0] == "literal" and display_matches(output["expression"][1], text, output["framing"])
             and control_matches(output, port, (), "answer", case)
             for output in outputs
         )
@@ -485,7 +521,7 @@ def provenance_matches(result, case, variant):
         )
     if number == 9 and not writes:
         return all(
-            output["expression"] == ("literal", "Empty note")
+            output["expression"][0] == "literal" and display_matches(output["expression"][1], "Empty note", output["framing"])
             and control_matches(output, "true", ("strip",), "file", case)
             for output in outputs
         )
@@ -510,6 +546,12 @@ def provenance_matches(result, case, variant):
     destination = str(Path(case["root"]) / write["requested"])
     path_expression = ("saved_path", write["handle"], destination, write["expression"])
     return all(output["expression"] == path_expression for output in outputs)
+
+
+def display_outputs_match(outputs, expected, framing):
+    from itertools import permutations
+    return any(all(display_matches(o['body'], e, framing) for o, e in zip(outputs, order))
+               for order in permutations(expected))
 
 
 def check_rules(spec, case):
@@ -546,9 +588,7 @@ def check_rules(spec, case):
                 writes[0]["path"] if x == "@path" and writes else x
                 for x in variant["outputs"]
             ]
-            ok = result["error"] == variant["error"] and Counter(
-                o["body"] for o in outputs
-            ) == Counter(expected)
+            ok = result["error"] == variant["error"] and len(outputs) == len(expected) and display_outputs_match(outputs, expected, allows_display_framing(case))
             ok = (
                 ok
                 and {w["requested"]: w["content"] for w in writes} == variant["writes"]

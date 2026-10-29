@@ -135,7 +135,7 @@ The CLI prints the exact report path. All paths below are relative to the new
   that fail structurally include its error code and bounded problem details.
   Budget stops retain completed calibration rows.
 - `artifacts/contracts.json`: complete text, length, hash and exact returned
-  inventory from every static Compact query. Current palette text: 9,996 chars
+  inventory from every static Compact query. Current palette text: 10,275 chars
   (before display-framing clarification: 9,928),
   comfortably below the 50,000-char planning cap. No entry is clipped.
 - `cases/<id>/frozen-case.json`, `trial-designer.json`, `designer-run.json`,
@@ -250,3 +250,19 @@ when both flags are supplied. Cost/time/unknown-cost guards still apply before
 each case and every real call; the flag cannot bypass an exhausted guard.
 The v2 judge's `problems` contains only request-blocking defects, with harmless
 remarks in `summary`. A pass still needs an empty problems list.
+
+### Display scoring (oracle v4)
+
+Requests to show a value accept a whole value surrounded by plain framing words,
+for example `Saved path: {input[path]}`. The display clause's `exactly`/`only`
+keeps strict body matching (a condition such as `type exactly yes` does not).
+Only display evidence is unwrapped: downstream labels, saved content, full-source
+provenance, actual writer path identity and route obligations remain strict.
+The bounded oracle supports a single whole-value interpolation with plain ASCII
+word/punctuation framing, not multiple fields, indexed fragments or path
+prefixes. All 22 existing negative calibration drafts still fail.
+
+The saved case 5 analysis in run 000006 asked unique filename versus no write.
+The requirements prompt's former “Offer” default wording allowed that needless
+question; it now applies the default and records it in assumptions. No request
+or fixture was changed, and model behavior has not been retested with live calls.
