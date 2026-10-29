@@ -57,6 +57,11 @@ from .workflow_map import WorkflowMap
 from .workflow_names import name_problem, name_taken
 
 FORMAT = "aotn-workflow/1"
+INPUT_ARRIVAL_NOTE = (
+    "Ordinary inputs may have several incoming connections. Each arriving path runs the node "
+    "separately with that path’s payload; this is not a join/wait. Shared End is normal. "
+    "Special join nodes have their own rules."
+)
 HANDLE_PATTERN = re.compile(r"^[a-z][a-z0-9_]{0,39}$")
 
 #: Types an author never places directly.
@@ -196,6 +201,7 @@ def describe_node_type(
         "standard_key_docs": deepcopy(meta.get("standard_key_docs") or {}),
         "node_reference_fields": list(NODE_REFERENCE_FIELDS.get(node_type, ())),
         "inputs": inputs,
+        "input_routing": INPUT_ARRIVAL_NOTE,
         "outputs": outputs,
         "vault_reads": vault_read_entries(node_type, config, resolved),
         "vault_writes": [

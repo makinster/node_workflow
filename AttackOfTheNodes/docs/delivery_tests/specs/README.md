@@ -229,3 +229,12 @@ are explicitly scored without pretending they are runnable workflows. See the
 Shared calibration now has 23 pairs. The User Text Input contract documents its
 existing answer-to-Vault copy option so a two-answer Concat is discoverable.
 Current complete contracts: **18,271** characters; Brief: **15,037**. Caps hold.
+
+The reviewer now distinguishes a shared node from an unreachable one:
+“unconnected” means no path reaches it. Shared normal Ends finish each arriving
+path independently; they do not require a Merge. The judge's saved-path checklist
+also rejects Text Output `{input}` after File Write, which shows the entire file
+record; `{input[path]}` shows its actual path. Both distinctions are verified by
+local engine/node tests and documented in the full contracts. All 23 calibration
+pair rule verdicts are retained; live judge improvement has not been measured.
+Current complete v2 contracts: **21,146** characters, under the 50,000 cap.

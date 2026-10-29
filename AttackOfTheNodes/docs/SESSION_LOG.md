@@ -6,6 +6,44 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-29 — Shared End and file-record reviewer contracts (Important)
+
+Clean worktree `/home/makin/src/nw-shared-end-review`, branch
+`codex/shared-end-review-contracts`, fetched main base `f03b4c1` after #147.
+Owner reports runs 11/12 drafted all 20 requests correctly, with calibration
+misses around shared Ends and whole-file-record display. No live judge rerun.
+
+Verified against the real local engine BEFORE writing the new contract text:
+two parallel paths can connect to one normal End input, with two End executions
+on distinct branch ids. A shared ordinary Text Output likewise runs once per
+arrival and receives each path's correct value. End finishes each path; it does
+not join or wait for them. A second test uses an actual File Write result:
+Text Output {input} renders the whole record, whereas {input[path]} renders the
+saved absolute path. Initial engine proof: four passed.
+
+End notes now explicitly describe sharing as normal/complete, with Return End's
+existing one-publication constraint retained. A shared authoring input_routing
+note explains ordinary per-path arrivals (special joins retain their rules);
+Compact/Detailed Text and JSON include it once per catalogue response. Brief
+stays unchanged. File Write/Text Output notes explicitly distinguish the whole
+{type, ref_key, path} record from its path. The judge defines unconnected as no
+path reaching the node, accepts shared End arrivals, and rejects the whole
+record as a saved-path display. Literal examples use doubled Concat braces so
+the final judge question contains single {input}/{input[path]} fields.
+
+Re-read the routing/branch sources, End, File Write, Text Output and file-ref
+helpers; updated all three metadata content attestations and source/test
+citations. No runtime or fixture behavior changed. All 23 calibration pairs
+retain their expected GOOD/BAD rule verdicts; live calibration quality remains
+unverified. Full `pytest -n auto -q`: **3,658 passed in 40.72 s** (five new
+checks); focused metadata/calibration suite 118 passed before final wording.
+No real API calls. Whitespace checks pass; LF normalization reads before writes.
+
+Characters: Brief Text/JSON unchanged **15,037 / 18,214**; Compact Text
+**52,535 → 53,280**, JSON **75,407 → 76,170**. Complete v2 contracts
+**18,271 → 21,146 / 50,000**; all v2 query/Context caps and headroom hold.
+Full Compact JSON still needs an explicit larger cap, as before.
+
 ## 2026-10-29 — Unreachable-node redraft and selectable second trial set (Important)
 
 Clean worktree `/home/makin/src/nw-case-set-two`, branch

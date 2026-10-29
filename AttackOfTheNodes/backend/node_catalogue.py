@@ -5,7 +5,7 @@ import asyncio
 from copy import deepcopy
 import json
 
-from .authoring import HIDDEN_TYPES, describe_node_type, list_node_types
+from .authoring import HIDDEN_TYPES, INPUT_ARRIVAL_NOTE, describe_node_type, list_node_types
 from .node_errors import NodeError
 from .node_metadata import (
     COST_PHRASES, RECORD_SCHEMA_VERSION, effects_text, needs_text, note_lines, selection,
@@ -186,7 +186,7 @@ def text_output(record, factory):
         return brief_text(record, factory)
     lines = [header(record) + (': default ports; field:type=default; required=no default.'
                                if record['detail'] == 'Compact' else ': default ports; full schema and defaults.'),
-             PORT_LEGEND, '']
+             PORT_LEGEND, record['input_routing'], '']
     for item in record['entries']:
         lines.extend([f"{item['entry_kind']} {item['type']} | {item['display_name']} | {item['group'] or 'Ungrouped'}",
                       item['description'], *intent_lines(item['node_metadata'], notes=True),
@@ -252,6 +252,8 @@ async def build(factory, config):
                   ports_basis='defaults', detail=config['detail'],
                   include_debug=config['include_debug'], matched_count=len(entries),
                   complete=True, entries=entries)
+    if config['detail'] != 'Brief':
+        record['input_routing'] = INPUT_ARRIVAL_NOTE
     value = record if config['format'] == 'JSON' else text_output(record, factory)
     serialized = compact_json(record) if config['format'] == 'JSON' else value
     characters, size = len(serialized), len(serialized.encode('utf-8'))

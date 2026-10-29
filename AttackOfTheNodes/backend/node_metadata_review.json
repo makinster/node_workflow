@@ -22,16 +22,20 @@
       "sources": {
         "backend/nodes/end_node.py": "c5dad96d959429b270a6bdba93cbae62436551359fd2ebc292818b79b74f33d4",
         "backend/contracts.py": "c88d7398adb513ab745990f1e959438024e65dea9515ab9d96b2854501e1fb1d",
-        "backend/output_entry.py": "6121bc67a278ac66244365ff5c23c235cd457316ef2826cd41db07b202af2ba2"
+        "backend/output_entry.py": "6121bc67a278ac66244365ff5c23c235cd457316ef2826cd41db07b202af2ba2",
+        "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09",
+        "backend/master_state.py": "dea6cc4c75f7414fd9bbb63bf037798907839cc2d41fafd4e4c09584b6112b07"
       },
       "tests": [
-        "tests/test_node_metadata_behavior.py::test_end_line_framing_and_silence"
+        "tests/test_node_metadata_behavior.py::test_end_line_framing_and_silence",
+        "tests/test_shared_end_contracts.py::test_parallel_arrivals_run_shared_nodes_and_end_separately",
+        "tests/test_contracts.py::test_the_return_end_publishes_once"
       ],
-      "content_sha256": "d3ba3e7f99fc2ae3f3d74a34820078265765fd3a9535cc6a355576972687dd99",
+      "content_sha256": "241986825014650a91ad61f1b66bf9a525758c51b954169c4875b8a28fb12e22",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-29",
-      "source_revision": "17a2a185e8a7881a56c53247a1b7253e94583e90",
-      "verifier": "owner-decision-and-draft-review-source-recheck"
+      "source_revision": "f03b4c1369bd20f276d70d560f7b93296d0bbaf8",
+      "verifier": "shared-end-and-file-record-source-recheck"
     },
     "branch_end_node": {
       "sources": {
@@ -84,18 +88,21 @@
       "sources": {
         "backend/nodes/text_output_node.py": "01faa45080caf024421f9c01abc27ed2bc2cadd2cdeaa3b02000422e44ace563",
         "backend/output_entry.py": "6121bc67a278ac66244365ff5c23c235cd457316ef2826cd41db07b202af2ba2",
-        "backend/vault_declarations.py": "613ff9b9597d45498de4b2aaa41c4b0c219ad8ea9bf7dcd861c0a8f0da95cbca"
+        "backend/vault_declarations.py": "613ff9b9597d45498de4b2aaa41c4b0c219ad8ea9bf7dcd861c0a8f0da95cbca",
+        "backend/nodes/io/file_output_node.py": "fd55f39bbb01042cefc4a1502252f13305e7afe8e6f14ce67992f920dd00ae17",
+        "backend/file_refs.py": "72b5edc5179e38bf12c050e56daef85055bf83c70b541c9204436240ae62dee6"
       },
       "tests": [
         "tests/test_node_metadata_behavior.py::test_text_output_label_framing",
         "tests/test_node_metadata_behavior.py::test_text_output_default_label_template_errors_and_legacy_prompt",
-        "tests/test_node_metadata_behavior.py::test_documented_failures_fail_the_node"
+        "tests/test_node_metadata_behavior.py::test_documented_failures_fail_the_node",
+        "tests/test_shared_end_contracts.py::test_file_write_record_display_is_distinct_from_path"
       ],
-      "content_sha256": "173c905d820abbc751f556296b73f13df1ae95217d832b4d82789fc1774c631e",
+      "content_sha256": "693cd958d90e9520c157cbd97e97443b75d4a2063416ff78b4b32a1e927c093a",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-29",
-      "source_revision": "a5dbf2667768734cb0389f345e78c01d20bd1e73",
-      "verifier": "metadata-batch1-independent-verifier"
+      "source_revision": "f03b4c1369bd20f276d70d560f7b93296d0bbaf8",
+      "verifier": "shared-end-and-file-record-source-recheck"
     },
     "text_transform_node": {
       "sources": {
@@ -137,18 +144,21 @@
         "backend/window_manager.py": "e02a9a0671476b8bb65d7991a5b0d8edd7def0618a1d2703d5d3121db43eb2d2",
         "backend/file_paths.py": "1ffa449ac98037634f5dccb7c7c96fec1cd59e3bcee3a8bd37a8eebd6b6048fe",
         "backend/file_refs.py": "72b5edc5179e38bf12c050e56daef85055bf83c70b541c9204436240ae62dee6",
-        "backend/run_session.py": "01d0ee7bef1601bfde0eff71d35332e6c96f5f71ac1c12e4fdffcc1d700353a0"
+        "backend/run_session.py": "01d0ee7bef1601bfde0eff71d35332e6c96f5f71ac1c12e4fdffcc1d700353a0",
+        "backend/nodes/text_output_node.py": "01faa45080caf024421f9c01abc27ed2bc2cadd2cdeaa3b02000422e44ace563",
+        "backend/output_entry.py": "6121bc67a278ac66244365ff5c23c235cd457316ef2826cd41db07b202af2ba2"
       },
       "tests": [
         "tests/test_node_metadata_behavior.py::test_file_write_overwrites_by_default_and_open_after_write_uses_window_manager",
         "tests/test_palette_behavior_contracts.py::test_verified_file_write_and_configured_reader_behavior",
-        "tests/test_window_manager.py::test_fallback_opens_via_os_opener"
+        "tests/test_window_manager.py::test_fallback_opens_via_os_opener",
+        "tests/test_shared_end_contracts.py::test_file_write_record_display_is_distinct_from_path"
       ],
-      "content_sha256": "ee5c0978ab96ece4cefa73359532fef5b6bdb18cf9daf9b8ba527695b0fe03f9",
+      "content_sha256": "f8ca8c813eb43ad300395be7c6ed86572fd651c9ee6e9c5844a38bfded1c1438",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-29",
-      "source_revision": "a5dbf2667768734cb0389f345e78c01d20bd1e73",
-      "verifier": "metadata-batch1-independent-verifier"
+      "source_revision": "f03b4c1369bd20f276d70d560f7b93296d0bbaf8",
+      "verifier": "shared-end-and-file-record-source-recheck"
     },
     "conditional_node": {
       "sources": {

@@ -234,3 +234,21 @@ were documented: Brief Text **15,037** / JSON **18,214** (unchanged), Compact Te
 **52,535** (previously **52,321**) / JSON **75,407** (previously **75,164**).
 The complete v2 contract bundle is **18,271 / 50,000**. Query and context caps
 are unchanged. Full Compact JSON still needs an explicit larger cap as before.
+
+### Shared arrivals and saved-path display
+
+Full catalogue Text and JSON now include a generic `input_routing` note. Several
+incoming wires to one ordinary input are allowed: each arriving path runs it
+separately with that path's payload. A shared normal End finishes each arrival;
+it is complete, not an unreachable node or a join barrier. Return End still has
+its separate single-publication rule. Engine tests verify both shared ordinary
+inputs and direct parallel arrivals at a shared End.
+
+After File Write, Text Output `{input}` displays the whole file record
+`{type, ref_key, path}`. That does not satisfy a saved-path display request;
+use `{input[path]}`. Both node records and the judge checklist say this directly.
+
+Latest counts: Brief Text/JSON unchanged **15,037 / 18,214**; Compact Text
+**53,280** (previously **52,535**), JSON **76,170** (previously **75,407**).
+Complete v2 contracts **21,146** (previously **18,271**), within 50,000.
+Caps/headroom are unchanged; full Compact JSON still needs a larger explicit cap.
