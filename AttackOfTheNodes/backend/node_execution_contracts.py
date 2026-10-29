@@ -21,7 +21,7 @@ EXECUTION_CONTRACTS = {
         'output_payload': 'default: unchanged user answer string; incoming input triggers prompt only.',
     },
     'text_output_node': {
-        'output_payload': 'default: logged "[label] " + formatted template. {input[path]} reads the path key; {{input}} is literal {input}.',
+        'output_payload': 'default/log: "[label] "+formatted text. Label is display framing even for exact text requests. Downstream includes label (also when saved). {input[path]}: path; {{input}}: literal.',
     },
     'text_transform_node': {
         'output_payload': 'default: transformed string. strip trims whole-input boundary whitespace. Falsy input becomes empty text.',

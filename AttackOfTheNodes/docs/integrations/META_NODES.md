@@ -53,6 +53,13 @@ not an atomic reservation. Conditional `equals` compares stringified operands
 with case and whitespace intact. These describe existing execution; no runtime
 or fixture behavior changed.
 
+Text Output puts the same `"[label] " + formatted text` string in its log and
+on its default output port. The label is display framing, so showing requested
+text through this node satisfies an exact-text display request. The label is
+still part of the downstream payload: writing that payload saves the label
+too. A request to save raw content must use the raw content source rather than
+the labelled Text Output result.
+
 Compact Text config now uses `field:type=JSON-default`, with any remaining
 constraints in JSON after the value; no `=` means no default. For example,
 `message:string="Branch completed"`. Every field/default/constraint remains;
@@ -97,12 +104,12 @@ limits: the full catalogue fitting this node does not make it fit downstream.
 Use a filtered catalogue for a small request.
 
 Current registry with execution contracts: **51 non-debug entries**, Compact Text
-**39,156** characters (before: **41,400**) and compact JSON **61,181** (before:
-**56,360**). The default stays **64,000**, the existing upper bound. Brief Text
+**39,224** characters (before: **39,156**) and compact JSON **61,249** (before:
+**61,181**). The default stays **64,000**, the existing upper bound. Brief Text
 stays **7,634** / compact JSON **10,603**. The designer
 Brief catalogue cap rises from 7,500 to **8,000** so registry growth does not
 stop its first pass; Context remains 8,000 (366 characters headroom). The
-fixed nine-type palette is **7,928** (before: **7,943**), below Context 8,000.
+fixed nine-type palette is **7,996** (before: **7,928**), below Context 8,000.
 Shorter headers/config notation retain all contract information without raising caps.
 
 **Two-pass planning.** Measured Brief **all non-debug** Text: **50 entries,

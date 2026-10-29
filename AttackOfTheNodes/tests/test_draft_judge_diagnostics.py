@@ -33,9 +33,10 @@ async def test_calibration_reply_and_question_evidence(tmp_path, monkeypatch):
     monkeypatch.setattr(runner, "run_workflow", fake_run)
     with ExitStack() as stack:
         runner.MockSDK([]).install(stack)
-        monkeypatch.setattr(SecretsManager, "list_keys", lambda self: ["test"])
-        monkeypatch.setattr(SecretsManager, "get_secret", lambda self, key: "mock-secret-value")
-        result = await runner.calibrate(tmp_path, real_calls=True)
+        with monkeypatch.context() as scoped:
+            scoped.setattr(SecretsManager, "list_keys", lambda self: ["test"])
+            scoped.setattr(SecretsManager, "get_secret", lambda self, key: "mock-secret-value")
+            result = await runner.calibrate(tmp_path, real_calls=True)
     stored = json.loads((tmp_path / "calibration-report.json").read_text())
     assert stored == json.loads(json.dumps(result))
     rows = stored["fixtures"]

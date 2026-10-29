@@ -43,6 +43,31 @@ def pairs(items):
     return record
 
 
+def check_record(result, rows, extra=False):
+    """Shared decoded-record shape gate; nested protocol rules belong to clients."""
+    problem = field_problem(rows)
+    if problem:
+        raise NodeError('shape_invalid', problem)
+    if not isinstance(result, dict):
+        raise mismatch()
+    expected = {row['name'] for row in rows}
+    if not extra and set(result) - expected:
+        raise mismatch()
+    for row in rows:
+        name, kind = row['name'], row['kind']
+        if name not in result:
+            if row['required']:
+                raise mismatch()
+            continue
+        value = result[name]
+        valid = {'string': type(value) is str, 'number': type(value) in (int, float),
+                 'boolean': type(value) is bool, 'list': type(value) is list,
+                 'object': type(value) is dict, 'null': value is None}[kind]
+        if not valid:
+            raise mismatch()
+    return result
+
+
 async def check(text, rows, limit=16000, extra=False):
     problem = field_problem(rows)
     if problem:
@@ -91,22 +116,6 @@ async def check(text, rows, limit=16000, extra=False):
         valid_decoded(result)
     except (ValueError, UnicodeError, RecursionError, OverflowError):
         raise mismatch() from None
-    if not isinstance(result, dict):
-        raise mismatch()
-    expected = {row['name'] for row in rows}
-    if not extra and set(result) - expected:
-        raise mismatch()
-    for row in rows:
-        name, kind = row['name'], row['kind']
-        if name not in result:
-            if row['required']:
-                raise mismatch()
-            continue
-        value = result[name]
-        valid = {'string': type(value) is str, 'number': type(value) in (int, float),
-                 'boolean': type(value) is bool, 'list': type(value) is list,
-                 'object': type(value) is dict, 'null': value is None}[kind]
-        if not valid:
-            raise mismatch()
+    check_record(result, rows, extra)
     await asyncio.sleep(0)
     return result

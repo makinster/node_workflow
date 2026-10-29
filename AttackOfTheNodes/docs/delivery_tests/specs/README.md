@@ -33,7 +33,7 @@ validation/write errors go to a readable problem message and End. There is no
 retry, automatic build, approval node, shell execution or generated-workflow run.
 
 Current registry with the hosted-question node: Brief **7,634** characters;
-fixed palette **7,928** (before execution contracts: **7,943**), both below Context 8,000. Brief catalogue max is now
+fixed palette **7,996** (before display-framing clarification: **7,928**), both below Context 8,000. Brief catalogue max is now
 8,000 (previously 7,500); runtime Context setting and approved prompts are
 unchanged. No designer/model call accompanies this maintenance.
 
@@ -117,7 +117,7 @@ The judge allows 4,096 output tokens and asks for short reasons (under about
 
 The extra Compact queries cover Conditional, Concat and JSON Path. All returned
 entries are retained: the current exact inventory is 12 types and assembled
-Context is **9,928 characters** (before execution contracts: **9,869**), below the
+Context is **9,996 characters** (before display-framing clarification: **9,928**), below the
 unchanged 50,000-character planning budget. Compact includes config defaults
 and marks only fields without defaults as required. The meaning judge delegates
 config completeness/validity to Check workflow spec; omitted defaults are allowed.
@@ -126,9 +126,16 @@ explain trigger-only incoming values. File Write describes its actual `path`
 key and unique-name collision rule; Conditional describes exact equals matching.
 The judge reserves `problems` for request-blocking defects; remarks go in
 `summary`, and a pass still requires empty `problems`.
-Check workflow spec retains its 8,000-character raw-draft cap. Check reply checks
-top-level fields; numbered-question and nested requirement/coverage checks live
-in the external trial runner. The ordinary success output says manual review
+Text Output's label is display framing, even for exact-text display requests;
+both its log and downstream value contain the prefix, so saving that downstream
+value also saves the label.
+Check workflow spec retains its 8,000-character raw-draft cap. Check reply and
+the trial runner share the decoded top-level shape gate, with the runner reading
+the actual analysis/resolved/judge field configurations from this spec.
+Numbered-question and nested requirement/coverage checks remain frozen protocol
+checks in the runner. Requirement order accepts an integer or nonempty text
+(including numeric strings and existing descriptive orders). A pass still needs
+complete coverage and empty problems. The ordinary success output says manual review
 required and not behavior-tested, with both reports and the actual saved path.
 
 From the app directory, run a fresh **mock-only** trial:

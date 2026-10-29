@@ -75,6 +75,15 @@ belong in summary; problems are blockers only. The optional
 calibration while retaining overall failure and the original budget/time guards.
 Runtime and fixtures remain unchanged; mocked verification only.
 
+Important scoring follow-up from main `18d21d4`: harness and Check reply share
+the decoded top-level shape check using v2's actual field declarations. Numeric
+requirement orders are accepted; protocol coverage/clarification checks remain.
+Unexpected prompt traces and case evidence survive failure. Priced case errors
+allow subsequent cases; missing/unpriced call usage still stops at the guard.
+Calibration execution failures stop that phase with their real failure reason.
+Text Output contracts clarify display framing versus the labelled downstream
+payload; runtime and fixtures are unchanged. Mocked verification only.
+
 ## Owner-requested caching — 2026-10-28
 
 `codex/ask-claude-caching`, base `56cb997`: Options TTL setting, stable Context

@@ -524,7 +524,7 @@ def forbid_trial_secrets(monkeypatch):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize('reason,code', [('max_tokens', 'incomplete_reply'), ('refusal', 'refusal')])
-async def test_stopped_reply_run_records_usage_and_budget_still_stops(
+async def test_stopped_reply_run_records_known_usage_and_limit_still_stops(
     sdk, tmp_path, monkeypatch, reason, code
 ):
     from backend import persistence
@@ -562,7 +562,7 @@ async def test_stopped_reply_run_records_usage_and_budget_still_stops(
         'estimated_cost_usd': pytest.approx(cost), 'reported': 1, 'not_reported': 0, 'partial': 1,
     }
     assert budget.cost == pytest.approx(.123 + cost)
-    assert budget.unknown
+    assert not budget.unknown
     assert 'answer' not in vault and 'details' not in vault
     assert not any(step['handle'] == 'show' and step['status'] in ('running', 'done')
                    for step in run['steps'])
@@ -574,6 +574,8 @@ async def test_stopped_reply_run_records_usage_and_budget_still_stops(
     persisted = '\n'.join(path.read_text() for path in histories)
     assert '"incomplete"' in persisted and '"partial": true' in persisted
     assert KEY not in persisted and 'PRIVATE_PARTIAL_REPLY' not in persisted
+    budget.before()  # A reported partial response has known cost despite the node error.
+    budget.cost = budget.limit
     with pytest.raises(ValueError, match='budget'):
         await runner.run_workflow(spec, [], tmp_path / 'forbidden-next-run.json')
     assert len(sdk.calls) == 1 and not (tmp_path / 'forbidden-next-run.json').exists()
@@ -596,7 +598,7 @@ async def test_eighth_calibration_call_cutoff_cost_is_in_failed_batch_report(sdk
         tmp_path, real_calls=True, calibrate_only=True,
         budget_usd=.50, shared_library=tmp_path / 'unused-shared-library',
     )
-    assert report['result'] == 'fail' and 'budget' in report['failure']
+    assert report['result'] == 'fail' and 'Calibration judge run failed' in report['failure']
     assert len(sdk.calls) == 8 and not sdk.results
     expected = 7 * .000015 + (100 * .10 + 1536 * .50) / 1e6
     assert report['estimated_cost_usd'] == pytest.approx(expected)

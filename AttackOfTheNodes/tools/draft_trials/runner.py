@@ -52,11 +52,13 @@ class TrialBudget:
         ):
             raise ValueError("Trial estimate/time budget reached or cost unknown")
 
-    def record(self, result):
+    def record(self, result, *, attempted_calls=None):
         self.succeeded += len(result.get("agent_usage", []))
         summary = result["agent_usage_summary"]
         cost = summary["estimated_cost_usd"]
-        self.unknown |= bool(summary["not_reported"]) or bool(result["errors"])
+        self.unknown |= bool(summary["not_reported"])
+        if attempted_calls is not None:
+            self.unknown |= attempted_calls > len(result.get("agent_usage", []))
         if cost is not None:
             self.cost += cost
 
@@ -148,11 +150,17 @@ class OrderedAnswers:
     async def provide(self, request):
         if not self.answers:
             self.failure = "unexpected prompt"
+            self.trace.append(dict(prompt=request.prompt, answer=None,
+                                   node_id=request.node_id, failure=self.failure))
             raise ValueError(self.failure)
-        expected, answer = self.answers.pop(0)
+        expected, answer = self.answers[0]
         if expected not in request.prompt:
             self.failure = "out-of-order prompt"
+            self.trace.append(dict(prompt=request.prompt, answer=None,
+                                   node_id=request.node_id, failure=self.failure,
+                                   expected_prompt=expected))
             raise ValueError(self.failure)
+        self.answers.pop(0)
         self.trace.append(
             dict(prompt=request.prompt, answer=answer, node_id=request.node_id)
         )
@@ -370,6 +378,7 @@ async def _run_workflow(spec, answers, artifact, timeout=30):
         pass
 
     has_asks = any(n["type"] == "ask_claude_node" for n in spec["nodes"].values())
+    calls_before = _budget.calls if _budget is not None else 0
     if _budget is not None and has_asks:
         _budget.before()
     built = build_workflow(NodeFactory(), spec)
@@ -421,11 +430,14 @@ async def _run_workflow(spec, answers, artifact, timeout=30):
         result.update(
             seconds=time.monotonic() - started, input_trace=provider.trace, steps=steps
         )
+        try:
+            provider.complete()
+        except ValueError as exc:
+            result['input_failure'] = str(exc)
         if _budget is not None and has_asks:
             _budget.cost -= run_cost
-            _budget.record(result)
+            _budget.record(result, attempted_calls=_budget.calls - calls_before)
         write_json(artifact, result)
-        provider.complete()
         return result, vault
     finally:
         service.close()
@@ -455,30 +467,33 @@ def check_cli(path, library):
     return dict(exit_code=proc.returncode, report=report, stderr=proc.stderr)
 
 
-def valid_analysis(record):
-    if not isinstance(record, dict) or set(record) != {
-        "status",
-        "requirements",
-        "questions",
-        "assumptions",
-        "reason",
-    }:
+def valid_v2_shape(record, node):
+    """Use Check reply's own record gate and the workflow's actual field config."""
+    from backend.node_errors import NodeError
+    from backend.reply_shape import check_record
+
+    config = json.loads(SPEC.read_text())["nodes"][node]["config"]
+    try:
+        check_record(record, config['expected_fields'], config['allow_other_fields'])
+    except NodeError:
+        return False
+    return True
+
+
+def valid_analysis(record, shape='analysis_shape'):
+    if not valid_v2_shape(record, shape):
         return False
     if record["status"] not in ("ready", "clarify", "outside_scope", "needs_new_node"):
-        return False
-    if (
-        not isinstance(record["requirements"], list)
-        or not isinstance(record["questions"], str)
-        or not isinstance(record["assumptions"], list)
-        or not isinstance(record["reason"], str)
-    ):
         return False
     ids = []
     for r in record["requirements"]:
         if not isinstance(r, dict) or not all(
             isinstance(r.get(k), str) and r[k].strip()
-            for k in ("id", "action", "source", "destination", "order", "acceptance")
+            for k in ("id", "action", "source", "destination", "acceptance")
         ):
+            return False
+        order = r.get('order')
+        if not (type(order) is int or isinstance(order, str) and order.strip()):
             return False
         ids.append(r["id"])
     if len(set(ids)) != len(ids):
@@ -498,19 +513,9 @@ def valid_analysis(record):
 
 
 def valid_judge(report, req):
-    if not isinstance(report, dict) or set(report) != {
-        "verdict",
-        "coverage",
-        "problems",
-        "summary",
-    }:
+    if not valid_v2_shape(report, 'judge_shape'):
         return False
-    if (
-        report["verdict"] not in ("pass", "fail", "unsure")
-        or not isinstance(report["problems"], list)
-        or not isinstance(report["summary"], str)
-        or not isinstance(report["coverage"], list)
-    ):
+    if report["verdict"] not in ("pass", "fail", "unsure"):
         return False
     coverage = report["coverage"]
     ids = [r["id"] for r in req["requirements"]]
@@ -698,8 +703,6 @@ async def run_case(
                 directory / "designer-run.json",
                 timeout=180 if real_calls else 30,
             )
-        if not real_calls and mock.replies:
-            raise ValueError("Unused canned replies; unexpected call sequence")
         # Preserve raw replies and all named evidence via public RunService memory snapshot.
         selected = {k: v for k, v in vault.items() if k not in ("output_log",)}
         write_json(directory / "evidence.json", selected)
@@ -724,8 +727,14 @@ async def run_case(
             ),
             succeeded=len(run["agent_usage"]),
         )
+        if run.get('input_failure'):
+            report['input_failure'] = run['input_failure']
+            raise ValueError(run['input_failure'])
+        if not real_calls and mock.replies:
+            raise ValueError("Unused canned replies; unexpected call sequence")
         first = json.loads(vault.get("first_analysis", "null"))
         frozen = json.loads(vault.get("frozen_requirements", "null"))
+        frozen_shape = 'resolved_shape' if vault.get('resolved_analysis') else 'analysis_shape'
         judge = vault.get("judge_report")
         report["scope"] = (
             first.get("status", "invalid") if isinstance(first, dict) else "invalid"
@@ -739,7 +748,7 @@ async def run_case(
         report["meaning_review"] = (
             judge.get("verdict", "invalid")
             if isinstance(judge, dict)
-            and valid_analysis(frozen)
+            and valid_analysis(frozen, frozen_shape)
             and valid_judge(judge, frozen)
             else "not_run" if judge is None else "invalid"
         )
@@ -779,7 +788,7 @@ async def run_case(
             or len(vault.get("judge_text", "")) > 4000
         ):
             raise ValueError("Reply exceeds frozen limit")
-        if not valid_analysis(frozen) or frozen["status"] != "ready":
+        if not valid_analysis(frozen, frozen_shape) or frozen["status"] != "ready":
             raise ValueError("Invalid/unresolved requirements")
         report["meaning_review"] = (
             judge.get("verdict", "invalid") if valid_judge(judge, frozen) else "invalid"
@@ -998,6 +1007,8 @@ async def calibrate(
                         ),
                     )
                 )
+                if run.get('errors'):
+                    raise ValueError('Calibration judge run failed; inspect its run evidence')
     except (ValueError, RuntimeError, TimeoutError, OSError) as exc:
         failure = type(exc).__name__ + ": " + str(exc)
     receipts = [receipt for row in rows for receipt in row["usage"]]
