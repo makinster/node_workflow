@@ -6,6 +6,31 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-28 — Catalogue defaults and calibration structural evidence (Important)
+
+Clean worktree `/home/makin/src/nw-catalogue-defaults`, branch
+`codex/catalogue-defaults-calibration`, fetched main base `f0a9ae0`. Owner's
+calibration diagnosis: defaulted Start/End fields appeared required, and the
+judge received a placeholder structural note. Compact now includes registry
+defaults and removes `required` for defaulted config fields. The meaning judge
+delegates config completeness/validity to the structural report and accepts
+omitted defaults. Calibration uses the exact Check workflow spec helper and
+v2 limit; negative structural fixtures retain its real error details.
+
+Full suite initially caught original designer Context overflow. Shortened
+repeated headers to preserve all entries/defaults within the unchanged caps.
+Final characters: Compact Text **36,848 → 41,400**, JSON **51,792 → 56,360**
+(64,000 cap); Brief Text/JSON unchanged **7,634 / 10,603**; original designer
+contracts **7,421 → 7,943** (8,000 cap); v2 **9,364 → 9,869** (50,000 cap).
+Updated the original designer's exact size assertion and retired its old 7,500
+headroom target while retaining its actual 8,000 limit.
+
+Validation: three new regression cases fail with the base implementations
+loaded in an isolated test process. Full `pytest -n auto`: **3,394 passed in
+44.81 s**; the original catalogue headroom assertion passes separately after
+restoration. Whitespace check passes. All trial transport mocked; no real API
+calls, owner trial inspection, Secrets access or inference quality claims.
+
 ## 2026-10-28 — Trial judge diagnostics (Scaffolding)
 
 Clean worktree `nw-trial-judge-diagnostics`, branch

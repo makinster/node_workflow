@@ -48,6 +48,10 @@ def test_v2_structural_gate_and_contracts():
         "analysis": 2048, "resolve": 2048, "draft": 4096, "judge": 4096,
     }
     assert "reasons under about 150 words" in nodes["judge_question"]["config"]["template"]
+    judge_prompt = nodes['judge_question']['config']['template']
+    assert 'Config completeness and validity are already covered by the STRUCTURAL REPORT (Check workflow spec)' in judge_prompt
+    assert 'Missing fields that have defaults are not problems' in judge_prompt
+    assert 'Decide only whether the workflow does what the original request and frozen requirements ask' in judge_prompt
     calls = [n for n in nodes.values() if n["type"] == "ask_claude_node"]
     assert len(calls) == 4
     assert all(

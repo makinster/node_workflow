@@ -1,9 +1,9 @@
 # Current State
 
-Snapshot checked **2026-10-28**, against fetched `origin/main` `94f8d18`
-after #136 merged. Judge token headroom and incomplete-call usage are on
-`codex/draft-judge-usage`. This change makes no real API calls and does not
-access owner Secrets. Earlier entries retain their dated scope.
+Snapshot checked **2026-10-28**, against fetched `origin/main` `f0a9ae0`
+after #138 merged. Catalogue defaults and calibration structural evidence are on
+`codex/catalogue-defaults-calibration`. This change makes no real API calls and
+does not access owner Secrets. Earlier entries retain their dated scope.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
@@ -13,6 +13,21 @@ Sonnet/Opus and document the 512-token minimum prefix. Per-model price tests
 and real-engine run summaries cover all three supported models. See the latest
 Session Log entry for verification: full `pytest -n auto` passes **3,234 tests
 in 35.63 s** after the review fixes.
+
+## Catalogue defaults and calibration check evidence — 2026-10-28
+
+Compact config fields now include registry defaults and omit `required` when
+a default exists. Brief remains a names/ports shortlist. Shorter repeated
+headers retain the existing caps: all-node Compact Text **36,848 → 41,400**,
+JSON **51,792 → 56,360** (64,000 cap); original designer **7,421 → 7,943**
+(8,000 Context cap); v2 contracts **9,364 → 9,869** (50,000 cap).
+The v2 judge delegates config completeness/validity to Check workflow spec and
+accepts omitted defaults. Calibration now passes the same helper's actual
+success report or negative-fixture error details, using the v2 8,000-character
+spec limit. No real trial rerun or owner artifact/Secrets access. Three new
+regression cases fail against base implementations. Full `pytest -n auto`:
+**3,394 passed in 44.81 s**; restored original headroom assertion also passes
+separately; whitespace checks pass. Provider transport is mocked in trial tests.
 
 ## Trial judge diagnostics — 2026-10-28
 

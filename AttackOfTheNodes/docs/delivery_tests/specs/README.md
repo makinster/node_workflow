@@ -33,7 +33,7 @@ validation/write errors go to a readable problem message and End. There is no
 retry, automatic build, approval node, shell execution or generated-workflow run.
 
 Current registry with the hosted-question node: Brief **7,634** characters;
-fixed palette **7,421**, both below Context 8,000. Brief catalogue max is now
+fixed palette **7,943** (before config defaults: **7,421**), both below Context 8,000. Brief catalogue max is now
 8,000 (previously 7,500); runtime Context setting and approved prompts are
 unchanged. No designer/model call accompanies this maintenance.
 
@@ -117,7 +117,10 @@ The judge allows 4,096 output tokens and asks for short reasons (under about
 
 The extra Compact queries cover Conditional, Concat and JSON Path. All returned
 entries are retained: the current exact inventory is 12 types and assembled
-Context is **9,364 characters**, below the 50,000-character planning budget.
+Context is **9,869 characters** (before config defaults: **9,364**), below the
+unchanged 50,000-character planning budget. Compact includes config defaults
+and marks only fields without defaults as required. The meaning judge delegates
+config completeness/validity to Check workflow spec; omitted defaults are allowed.
 Check workflow spec retains its 8,000-character raw-draft cap. Check reply checks
 top-level fields; numbered-question and nested requirement/coverage checks live
 in the external trial runner. The ordinary success output says manual review

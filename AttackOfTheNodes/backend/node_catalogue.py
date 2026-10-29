@@ -13,6 +13,7 @@ MAX_BYTES = 256 * 1024
 SOURCE_IDS = {'Upstream payload': 'upstream', 'Vault': 'vault', 'Configured': 'configured'}
 COMPACT_KEYS = ('type', 'required', 'options', 'min', 'max', 'secret', 'path_hint')
 DETAILS = ('Brief', 'Compact', 'Detailed')
+_MISSING = object()
 
 
 def compact_json(value):
@@ -25,8 +26,11 @@ def is_debug(meta):
             or str(meta.get('selector_section') or '').casefold() == 'debug')
 
 
-def _field(info):
+def _field(info, default=_MISSING):
     result = {k: deepcopy(info[k]) for k in COMPACT_KEYS if k in info and info[k] is not False}
+    if default is not _MISSING:
+        result['default'] = deepcopy(default)
+        result.pop('required', None)
     if 'options' in result:
         result['options'] = [o[1] if isinstance(o, (list, tuple)) and len(o) == 2 else o for o in result['options']]
     if isinstance(info.get('item_schema'), dict):
@@ -81,7 +85,8 @@ def entry(factory, row, detail):
                   description=' '.join(row['description'].splitlines()),
                   family=row['family'], group=row['group'] or None,
                   tags=list(meta.get('tags') or []), inputs=inputs, outputs=outputs,
-                  config_fields={k: _field(v) for k, v in schema.items()},
+                  config_fields={k: _field(v, config[k]) if k in config else _field(v)
+                                 for k, v in schema.items()},
                   errors=[e['code'] for e in description['errors']])
     if description['custom_keys']:
         result['custom_keys'] = list(description['custom_keys'])
@@ -123,8 +128,8 @@ def brief_text(record, factory):
 def text_output(record, factory):
     if record['detail'] == 'Brief':
         return brief_text(record, factory)
-    lines = ['Node catalogue v1 · ports resolved with defaults',
-             'Complete matching entries. Compact fields omit defaults/full constraints; use Detailed.', PORT_LEGEND, '']
+    lines = ['Node catalogue v1 · default ports',
+             'Config defaults may be omitted; required means no default. Full constraints: Detailed.', PORT_LEGEND, '']
     for item in record['entries']:
         lines.extend([f"{item['entry_kind']} {item['type']} | {item['display_name']} | {item['group'] or 'Ungrouped'}",
                       item['description'],

@@ -11,6 +11,9 @@ from tools.draft_trials.containment import preparation_record
 
 @pytest.mark.asyncio
 async def test_calibration_reply_and_question_evidence(tmp_path, monkeypatch):
+    from backend.meta_workflow import check
+    from backend.node_errors import NodeError
+    from backend.node_factory import NodeFactory
     from backend.secrets_manager import SecretsManager
 
     replies = [runner.meaning(), "not JSON: password=mock-secret-value"] * 22
@@ -46,6 +49,21 @@ async def test_calibration_reply_and_question_evidence(tmp_path, monkeypatch):
     for row, question in zip(rows, questions):
         path = tmp_path / "calibration" / row["fixture"] / (row["variant"] + "-judge-question.txt")
         assert path.read_text() == question
+        structural = json.loads(question.split('STRUCTURAL REPORT (not meaning proof):\n')[1])
+        draft = path.with_name(row['variant'] + '-draft.json').read_text()
+        limit = json.loads(runner.SPEC.read_text())['nodes']['check']['config']['max_spec']
+        try:
+            _, expected = await check(NodeFactory(), draft, limit)
+        except NodeError as exc:
+            expected = dict(ok=False, code=exc.code, message=str(exc), **exc.details)
+        assert structural == expected
+        assert 'note' not in structural
+        if row['variant'] == 'good':
+            assert structural['ok'] is True
+            assert structural['node_count'] == len(json.loads(draft)['nodes'])
+    fan_out = next(q for row, q in zip(rows, questions)
+                   if row['fixture'] == 'ordinary_fan_out' and row['variant'] == 'bad')
+    assert json.loads(fan_out.split('STRUCTURAL REPORT (not meaning proof):\n')[1])['ok'] is False
 
 
 @pytest.mark.asyncio

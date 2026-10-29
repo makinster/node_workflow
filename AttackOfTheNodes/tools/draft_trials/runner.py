@@ -865,6 +865,12 @@ async def calibrate(
     judge_model=JUDGE_MODELS[0], judge_effort=JUDGE_EFFORTS[0],
 ):
     from backend.agent_usage import usage_summary
+    from backend.meta_workflow import check
+    from backend.node_errors import NodeError
+    from backend.node_factory import NodeFactory
+
+    workflow = json.loads(SPEC.read_text())
+    factory = NodeFactory()
 
     calls_before = _budget.calls if _budget else 0
     succeeded_before = _budget.succeeded if _budget else 0
@@ -895,7 +901,16 @@ async def calibrate(
                 expected = variant == "good"
                 rules = check_rules(target, case)
                 write_json(directory / (variant + "-draft.json"), target)
-                template = json.loads(SPEC.read_text())["nodes"]["judge_question"][
+                raw_draft = json.dumps(target)
+                try:
+                    _, structural = await check(
+                        factory, raw_draft, workflow["nodes"]["check"]["config"]["max_spec"]
+                    )
+                except NodeError as exc:
+                    # Negative calibration fixtures still reach the judge, with
+                    # the same check's error evidence instead of a success report.
+                    structural = dict(ok=False, code=exc.code, message=str(exc), **exc.details)
+                template = workflow["nodes"]["judge_question"][
                     "config"
                 ]["template"]
                 req = requirements(case)
@@ -904,10 +919,8 @@ async def calibrate(
                         draft_request=case["request"],
                         clarification_answer=case["clarification"],
                         frozen_requirements=json.dumps(req),
-                        draft_text=json.dumps(target),
-                        spec_check=json.dumps(
-                            {"note": "rules recorded independently, hidden from judge"}
-                        ),
+                        draft_text=raw_draft,
+                        spec_check=json.dumps(structural),
                     )
                 )
                 (directory / (variant + "-judge-question.txt")).write_text(
