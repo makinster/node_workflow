@@ -6,6 +6,35 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-28 — Judge headroom and incomplete usage
+
+Started clean worktree `nw-draft-judge-usage`, branch `codex/draft-judge-usage`,
+from fetched `origin/main` `94f8d18`. Owner reported the first real trial stopped
+on judge calibration call 8/44 at its 1,536-token cap. Raised the v2 judge cap
+to 4,096 with a short-reasons request. Requirements analysis/resolution were
+also tight at 1,024 for structured 4,000-character replies; raised both to
+2,048. Draft remains 4,096. No schema/character/save gate changes.
+
+A typed NodeError carries only sanitized usage for max-token/refusal stops.
+The node emits one incomplete/partial receipt before signalling the same code,
+message and retryability; response content remains unread and unpublished.
+Run summaries/history and TrialBudget retain that known cost. The existing
+error-based stop remains unchanged. Owner commands now start in a main checkout.
+
+Reproduced the missing-cost regression against base backend code with a mocked
+eighth calibration cutoff: reported $0.000105 instead of $0.000883 (synthetic
+tokens). The new test passes with the eighth call's cost included and no ninth
+call. Tests also cover both stop reasons, cache TTLs, all supported price rates,
+no content reads or Vault/Answer leakage, persisted usage, guard stop, and spec
+caps. No real API calls or owner Secrets access; no owner-trial files inspected.
+Focused checks: **200 passed in 12.21 s**. The first full run reported one
+source-menu audit fingerprint failure (3,384 passed); re-reviewed input sources,
+validation/schema and successful routing, which are unchanged, and documented
+the new fingerprint in the audit. Final `pytest -n auto`: **3,385 passed in
+44.01 s**. The revised spec passes `main.py build --check --json` with zero
+diagnostics in a temporary data directory. Docs consolidation and whitespace
+checks pass.
+
 ## 2026-10-28 — Draft trial repeat-run and budget preparation
 
 Started `codex/draft-trials-step2-prep` from fetched `origin/main` `5bb1ebd`

@@ -1,9 +1,9 @@
 # Current State
 
-Snapshot checked **2026-10-28**, against fetched `origin/main` `5bb1ebd`
-after #135 merged. Trial repeat-run and budget preparation is on
-`codex/draft-trials-step2-prep`; this is still Step 1, with no real calls or
-Secrets access. Earlier entries retain their dated scope.
+Snapshot checked **2026-10-28**, against fetched `origin/main` `94f8d18`
+after #136 merged. Judge token headroom and incomplete-call usage are on
+`codex/draft-judge-usage`. This change makes no real API calls and does not
+access owner Secrets. Earlier entries retain their dated scope.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
@@ -13,6 +13,20 @@ Sonnet/Opus and document the 512-token minimum prefix. Per-model price tests
 and real-engine run summaries cover all three supported models. See the latest
 Session Log entry for verification: full `pytest -n auto` passes **3,234 tests
 in 35.63 s** after the review fixes.
+
+## Draft trial cutoff follow-up — 2026-10-28
+
+The owner reported the first real trial stopped on calibration call 8/44 after
+a 1,536-token judge cutoff. The v2 judge now allows 4,096 tokens and asks for
+reasons under about 150 words. The two requirements-analysis limits rise from
+1,024 to 2,048; the draft stays at 4,096. Capped and refused final replies retain
+sanitized token/cache/cost usage as incomplete/partial receipts before the same
+NodeError, with no partial Answer or Vault outputs. The existing trial guard
+includes that cost and still stops on the error. Owner commands now specify a
+checkout of main. Focused checks: **200 passed in 12.21 s**; full
+`pytest -n auto`: **3,385 passed in 44.01 s**. The revised spec's CLI check
+passes with zero diagnostics; docs/whitespace checks pass. This follow-up did
+not inspect or rerun the owner's trial.
 
 ## Draft trials: repeat-run preparation — 2026-10-28
 

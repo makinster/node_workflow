@@ -49,6 +49,11 @@ Route re-review adds oracle v3 case-declared work/producer/route obligations
 for all ten cases and a common matcher. Parallel/Conditional work cannot be
 borrowed from another route; calibration expands to 22 pairs.
 Real trials require separate owner approval and owner-added trial-library key.
+Follow-up from main `94f8d18`: owner-reported first-run calibration cutoff is
+addressed with judge/requirements token headroom and a short-reasons prompt.
+Capped/refused final replies now emit incomplete usage before their unchanged
+error path; the trial guard retains their cost and still stops. Mock proof only
+for this follow-up; no real rerun.
 
 ## Owner-requested caching — 2026-10-28
 

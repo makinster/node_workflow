@@ -16,6 +16,15 @@ The [P2 Stash focus fix](STASH_FOCUS_REVIEW.md) addresses the review on `28fa003
 selectors refuse insertion, and text/file assignments keep their focused owner.
 Its latest checks are recorded separately in verification below.
 
+2026-10-28 incomplete-usage follow-up from main `94f8d18`: re-reviewed
+`AskClaudeNode.execute` after extracting usage publication and adding incomplete
+receipts on capped/refused replies. Question/Context still use the same
+`claude.prepare` / `read_text` source resolution and validation. Input ports,
+accepted sources, schema options and successful Vault/downstream routing are
+unchanged. No partial Answer or Vault Run details is published on errors.
+Updated only this node's runtime fingerprint; the same source/schema/form and
+mocked source-combination checks remain required.
+
 ## Mismatches
 
 | Node · port | Accepts | Previously offered | Fix |

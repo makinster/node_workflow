@@ -65,8 +65,12 @@ Successful calls also emit the existing `AGENT_USAGE_UPDATE` event, with a
 unique invocation ID and sanitized usage, regardless of whether Run details is
 saved to the Vault. Run history and CLI JSON expose these receipts in
 `agent_usage`; `agent_usage_summary` totals their estimates. No question,
-Context or Answer is included in the receipt. Failed calls retain the existing
-error path and do not publish a successful usage receipt.
+Context or Answer is included in the receipt. A final `max_tokens` or `refusal`
+stop also emits sanitized usage and cost, with `status: "incomplete"` and
+`partial: true`, before the same error is signalled. These estimates are included
+in run totals and the trial budget even though no Answer or Vault Run details
+is published. Other failures retain the existing error path; missing provider
+usage does not become a zero-cost receipt.
 The supervisor's redaction and per-input error-record cap protect persisted failed inputs too.
 
 Stop reason is checked before reading content. `refusal` errors with a category

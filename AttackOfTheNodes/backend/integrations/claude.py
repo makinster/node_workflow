@@ -188,13 +188,45 @@ def _mask_answer(value, known):
     return mask(value)
 
 
+class IncompleteReply(NodeError):
+    """A refused or capped reply with usage, but no partial response content."""
+
+    def __init__(self, error, usage):
+        super().__init__(error.code, str(error), retryable=error.retryable)
+        self.usage = usage
+
+
+def _usage_details(message, elapsed, known, ttl):
+    iterations = getattr(message.usage, 'iterations', None)
+    model = iterations[-1].model if iterations else message.model
+    if not isinstance(model, str) or not re.fullmatch(r'[a-zA-Z0-9._-]{1,200}', model):
+        model = 'unknown'
+    reason = message.stop_reason
+    usage = message.usage
+    estimate = _estimate(message, ttl)
+    reads, writes, short, long = _cache_counts(usage, ttl)
+    details = {'model': redact(model, known_values=known, encoded=True),
+               'input_tokens': _count(usage.input_tokens), 'output_tokens': _count(usage.output_tokens),
+               'cache_read_input_tokens': reads, 'cache_creation_input_tokens': writes,
+               'cache_creation_5m_input_tokens': short, 'cache_creation_1h_input_tokens': long,
+               'stop_reason': reason, 'wall_seconds': elapsed,
+               'estimated_cost_usd': estimate,
+               'cost_estimate': ('Estimate: unavailable.' if estimate is None else f'Estimate: ${estimate:.6f} USD'),
+               'cost_note': 'Estimate includes cache reads and writes; long-input tiers and fallback billing may differ.'}
+    return details
+
+
 def _answer(message, elapsed, reply_json, known, ttl=None):
     # Never publish partial text on a refusal or length stop, even if present.
     reason = message.stop_reason
     if reason == 'refusal':
         category = getattr(getattr(message, 'stop_details', None), 'category', None)
         category = category if isinstance(category, str) and re.fullmatch(r'[a-z_]{1,40}', category) else 'unspecified'
-        raise failure('refusal', ' Category: ' + category + '.')
+        error = failure('refusal', ' Category: ' + category + '.')
+        raise IncompleteReply(error, _usage_details(message, elapsed, known, ttl))
+    if reason == 'max_tokens':
+        raise IncompleteReply(failure('incomplete_reply'),
+                              _usage_details(message, elapsed, known, ttl))
     if reason != 'end_turn':
         raise failure('incomplete_reply')
     iterations = getattr(message.usage, 'iterations', None)
@@ -220,18 +252,7 @@ def _answer(message, elapsed, reply_json, known, ttl=None):
         raise failure('invalid_response') from None
     if len(text) > MAX_ANSWER:
         raise failure('response_too_large')
-    usage = message.usage
-    estimate = _estimate(message, ttl)
-    reads, writes, short, long = _cache_counts(usage, ttl)
-    details = {'model': redact(model, known_values=known, encoded=True),
-               'input_tokens': _count(usage.input_tokens), 'output_tokens': _count(usage.output_tokens),
-               'cache_read_input_tokens': reads, 'cache_creation_input_tokens': writes,
-               'cache_creation_5m_input_tokens': short, 'cache_creation_1h_input_tokens': long,
-               'stop_reason': reason, 'wall_seconds': elapsed,
-               'estimated_cost_usd': estimate,
-               'cost_estimate': ('Estimate: unavailable.' if estimate is None else f'Estimate: ${estimate:.6f} USD'),
-               'cost_note': 'Estimate includes cache reads and writes; long-input tiers and fallback billing may differ.'}
-    return Answer(text, details)
+    return Answer(text, _usage_details(message, elapsed, known, ttl))
 
 
 async def ask(*, key, known, model, question, timeout, reply_json, effort, max_tokens):

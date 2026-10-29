@@ -111,6 +111,9 @@ what needs review and stop. There are no repair loops or automatic target runs.
 All four Ask steps use the explicit approved hosted option, low effort and JSON
 replies; the clarify path adds the fourth call only when needed. Stable complete
 contracts are Context; changing request/requirements/draft are in Question.
+The judge allows 4,096 output tokens and asks for short reasons (under about
+150 words). Initial/resolved requirements allow 2,048 each; drafting retains
+4,096. Character/schema checks and success gates are unchanged.
 
 The extra Compact queries cover Conditional, Concat and JSON Path. All returned
 entries are retained: the current exact inventory is 12 types and assembled

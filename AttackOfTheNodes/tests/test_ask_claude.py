@@ -19,7 +19,7 @@ KEY = 'canary-private-api-41e539a'
 
 @pytest.fixture
 def sdk(monkeypatch):
-    s = NS(calls=[], clients=[], error=None, delay=0, closed=0,
+    s = NS(calls=[], clients=[], error=None, delay=0, closed=0, results=[],
         result=NS(model=claude.MODELS[0],stop_reason='end_turn',stop_details=None,
             content=[NS(type='thinking',thinking='PRIVATE_THOUGHT'),NS(type='text',text='{"ok":true}')],
             usage=NS(input_tokens=100,output_tokens=10,iterations=None)))
@@ -32,7 +32,7 @@ def sdk(monkeypatch):
         async def get_final_message(self):
             await asyncio.sleep(s.delay)
             if s.error: raise s.error
-            return s.result
+            return s.results.pop(0) if s.results else s.result
     class Client:
         def __init__(self,**kw):
             s.clients.append(kw)
@@ -455,3 +455,155 @@ def test_published_cache_read_prices(sdk, model, read_price):
     sdk.result.usage.output_tokens = 0
     sdk.result.usage.cache_read_input_tokens = 1_000_000
     assert claude._estimate(sdk.result) == pytest.approx(read_price)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('reason,code', [('max_tokens', 'incomplete_reply'), ('refusal', 'refusal')])
+@pytest.mark.parametrize('cache,ttl', [('5 min', '5m'), ('1 h', '1h')])
+@pytest.mark.parametrize('model,input_rate,output_rate,read_rate', [
+    ('claude-haiku-5-5', .10, .50, .01),
+    ('claude-sonnet-5-5', 2., 10., .10),
+    ('claude-opus-5-5', 4., 20., .20),
+])
+async def test_stopped_reply_emits_only_incomplete_usage(
+    sdk, reason, code, cache, ttl, model, input_rate, output_rate, read_rate
+):
+    class Unreadable:
+        def __iter__(self):
+            raise AssertionError('partial content must not be read')
+
+    sdk.result.stop_reason = reason
+    sdk.result.stop_details = NS(category='cyber')
+    sdk.result.content = Unreadable()
+    sdk.result.model = model
+    sdk.result.usage.output_tokens = 1536
+    sdk.result.usage.cache_read_input_tokens = 1000
+    sdk.result.usage.cache_creation_input_tokens = 2000
+    node, ctx, done, errors = make(
+        model=model,
+        settings={'claude_cache_context': cache},
+        context_source='Configured', context='Stable facts',
+        reply_json=True, vault_write=True, vault_write_key='answer',
+        details_vault_write=True, details_vault_key='details',
+    )
+    events = []
+    ctx.publish_event = lambda event, payload: events.append((event, payload))
+    await node.execute(ctx)
+    assert not done and len(errors) == 1 and errors[0].code == code
+    assert str(errors[0]) == claude.MESSAGES[code] + (' Category: cyber.' if reason == 'refusal' else '')
+    assert errors[0].retryable is False
+    assert ctx.memory_bank.read_persistent('answer') is None
+    assert ctx.memory_bank.read_persistent('details') is None
+    (event, receipt), = events
+    assert event == 'AGENT_USAGE_UPDATE'
+    assert receipt['status'] == 'incomplete' and receipt['partial'] is True
+    assert receipt['node_id'] == 'ask' and receipt['invocation_id'].startswith('ask_')
+    usage = receipt['usage']
+    assert usage['input_tokens'] == 100 and usage['output_tokens'] == 1536
+    assert usage['stop_reason'] == reason and usage['model'] == model
+    expected = (100 * input_rate + 1536 * output_rate + 1000 * read_rate
+                + 2000 * input_rate * (1.25 if ttl == '5m' else 2)) / 1e6
+    assert usage['estimated_cost_usd'] == pytest.approx(expected)
+    assert KEY not in json.dumps(receipt)
+
+
+def forbid_trial_secrets(monkeypatch):
+    from backend.secrets_manager import SecretsManager
+    import socket
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError('Secrets loading and network access forbidden')
+
+    monkeypatch.setattr(SecretsManager, '_ensure_loaded', forbidden)
+    monkeypatch.setattr(SecretsManager, 'get_secret', lambda self, name: KEY)
+    monkeypatch.setattr(SecretsManager, 'list_keys', lambda self: [])
+    monkeypatch.setattr(SecretsManager, 'has_key', lambda self, name: True)
+    monkeypatch.setattr(socket.socket, 'connect', forbidden)
+    monkeypatch.setattr(socket, 'create_connection', forbidden)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('reason,code', [('max_tokens', 'incomplete_reply'), ('refusal', 'refusal')])
+async def test_stopped_reply_run_records_usage_and_budget_still_stops(
+    sdk, tmp_path, monkeypatch, reason, code
+):
+    from backend import persistence
+    from tools.draft_trials import runner
+
+    forbid_trial_secrets(monkeypatch)
+    sdk.result.stop_reason = reason
+    sdk.result.usage.output_tokens = 1536
+    sdk.result.content = [NS(type='text', text='PRIVATE_PARTIAL_REPLY ' + KEY)]
+    budget = runner.TrialBudget(.50)
+    budget.cost = .123
+    monkeypatch.setattr(runner, '_budget', budget)
+    spec = {
+        'format': 'aotn-workflow/1', 'name': 'Incomplete reply proof',
+        'nodes': {
+            'start': {'type': 'start_node'},
+            'ask': {'type': 'ask_claude_node', 'config': {
+                'input': 'Synthetic question', 'vault_write': True, 'vault_write_key': 'answer',
+                'details_vault_write': True, 'details_vault_key': 'details',
+            }},
+            'show': {'type': 'text_output_node', 'config': {'template': '{input}'}},
+        },
+        'connections': [
+            {'from': 'start.default', 'to': 'ask.input'},
+            {'from': 'ask.default', 'to': 'show.input'},
+        ],
+    }
+    run, vault = await runner.run_workflow(spec, [], tmp_path / 'run.json')
+    assert len(sdk.calls) == 1
+    assert any(error['code'] == code for error in run['errors'])
+    receipt, = run['agent_usage']
+    assert receipt['status'] == 'incomplete' and receipt['partial'] is True
+    cost = (100 * .10 + 1536 * .50) / 1e6
+    assert run['agent_usage_summary'] == {
+        'estimated_cost_usd': pytest.approx(cost), 'reported': 1, 'not_reported': 0, 'partial': 1,
+    }
+    assert budget.cost == pytest.approx(.123 + cost)
+    assert budget.unknown
+    assert 'answer' not in vault and 'details' not in vault
+    assert not any(step['handle'] == 'show' and step['status'] in ('running', 'done')
+                   for step in run['steps'])
+    assert 'PRIVATE_PARTIAL_REPLY' not in json.dumps(run) and KEY not in json.dumps(run)
+    saved = json.loads((tmp_path / 'run.json').read_text())
+    assert saved['agent_usage'] == run['agent_usage']
+    histories = list(persistence.RUN_HISTORY_DIR.glob('*.json'))
+    assert histories
+    persisted = '\n'.join(path.read_text() for path in histories)
+    assert '"incomplete"' in persisted and '"partial": true' in persisted
+    assert KEY not in persisted and 'PRIVATE_PARTIAL_REPLY' not in persisted
+    with pytest.raises(ValueError, match='budget'):
+        await runner.run_workflow(spec, [], tmp_path / 'forbidden-next-run.json')
+    assert len(sdk.calls) == 1 and not (tmp_path / 'forbidden-next-run.json').exists()
+
+
+@pytest.mark.asyncio
+async def test_eighth_calibration_call_cutoff_cost_is_in_failed_batch_report(sdk, tmp_path, monkeypatch):
+    from tools.draft_trials import runner
+
+    forbid_trial_secrets(monkeypatch)
+    for number in range(1, 9):
+        message = deepcopy(sdk.result)
+        message.content = [NS(type='text', text=json.dumps(runner.meaning('pass' if number % 2 else 'fail')))]
+        if number == 8:
+            message.stop_reason = 'max_tokens'
+            message.usage.output_tokens = 1536
+            message.content = [NS(type='text', text='PRIVATE_CUTOFF ' + KEY)]
+        sdk.results.append(message)
+    report = await runner.batch(
+        tmp_path, real_calls=True, calibrate_only=True,
+        budget_usd=.50, shared_library=tmp_path / 'unused-shared-library',
+    )
+    assert report['result'] == 'fail' and 'budget' in report['failure']
+    assert len(sdk.calls) == 8 and not sdk.results
+    expected = 7 * .000015 + (100 * .10 + 1536 * .50) / 1e6
+    assert report['estimated_cost_usd'] == pytest.approx(expected)
+    assert json.loads((tmp_path / 'report.json').read_text()) == report
+    calls = [json.loads(path.read_text()) for path in (tmp_path / 'calibration').rglob('*-judge-run.json')]
+    assert len(calls) == 8
+    incomplete = [run for run in calls if run['errors']]
+    assert len(incomplete) == 1
+    assert incomplete[0]['agent_usage'][0]['status'] == 'incomplete'
+    assert KEY not in json.dumps(calls) and 'PRIVATE_CUTOFF' not in json.dumps(calls)
