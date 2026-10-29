@@ -240,6 +240,16 @@ async def test_fallback_actual_model_and_estimate(sdk):
     assert ctx.memory_bank.read_persistent('usage')['estimated_cost_usd'] is None
 
 @pytest.mark.asyncio
+async def test_fallback_enabled_reply_without_iteration_model(sdk):
+    # The primary model answered: the API's plain iteration carries no model.
+    sdk.result.model=claude.MODELS[1]
+    sdk.result.usage.iterations=[NS(model=None,input_tokens=100,output_tokens=10)]
+    node,ctx,done,errors=make(model=claude.MODELS[1],details_vault_write=True,details_vault_key='usage');await node.execute(ctx)
+    assert not errors and done
+    details=ctx.memory_bank.read_persistent('usage')
+    assert details['model']==claude.MODELS[1] and details['estimated_cost_usd'] is not None
+
+@pytest.mark.asyncio
 async def test_real_engine_error_records_do_not_contain_key(sdk,tmp_path,monkeypatch):
     from backend import persistence,error_handler,output_manager,run_history
     from backend.node_factory import NodeFactory

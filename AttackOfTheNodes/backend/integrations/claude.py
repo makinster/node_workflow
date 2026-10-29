@@ -149,6 +149,16 @@ def _cache_counts(usage, ttl):
     return reads, writes, short, long
 
 
+def _attempt_model(attempt, message):
+    # A plain (non-fallback) iteration may omit its model; the message names it.
+    return getattr(attempt, 'model', None) or message.model
+
+
+def _served_model(message):
+    iterations = getattr(message.usage, 'iterations', None)
+    return _attempt_model(iterations[-1], message) if iterations else message.model
+
+
 def _estimate(message, ttl=None):
     """Price disjoint ordinary/cache counts, per attempt when supplied."""
     usage = message.usage
@@ -156,7 +166,7 @@ def _estimate(message, ttl=None):
     attempts = iterations or [message]
     total = 0.
     for attempt in attempts:
-        model = attempt.model
+        model = _attempt_model(attempt, message)
         tokens = attempt if iterations else usage
         inputs, outputs = _count(tokens.input_tokens), _count(tokens.output_tokens)
         if model not in PRICES or inputs is None or outputs is None:
@@ -197,8 +207,7 @@ class IncompleteReply(NodeError):
 
 
 def _usage_details(message, elapsed, known, ttl):
-    iterations = getattr(message.usage, 'iterations', None)
-    model = iterations[-1].model if iterations else message.model
+    model = _served_model(message)
     if not isinstance(model, str) or not re.fullmatch(r'[a-zA-Z0-9._-]{1,200}', model):
         model = 'unknown'
     reason = message.stop_reason
@@ -229,8 +238,7 @@ def _answer(message, elapsed, reply_json, known, ttl=None):
                               _usage_details(message, elapsed, known, ttl))
     if reason != 'end_turn':
         raise failure('incomplete_reply')
-    iterations = getattr(message.usage, 'iterations', None)
-    model = iterations[-1].model if iterations else message.model
+    model = _served_model(message)
     if not isinstance(model, str) or not re.fullmatch(r'[a-zA-Z0-9._-]{1,200}', model):
         raise failure('invalid_response')
     # Thinking and fallback marker blocks are not the answer.
