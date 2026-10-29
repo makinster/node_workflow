@@ -47,17 +47,11 @@ class AskClaudeNode(Node):
                 timeout=self.config['timeout'], reply_json=self.config['reply_json'],
                 effort=self.config['effort'], max_tokens=self.config['max_tokens'])
         except NodeError as exc:
+            if isinstance(exc, claude.IncompleteReply):
+                self._report_usage(context, exc.usage, partial=True)
             context.signal_error(exc)
             return
-        from uuid import uuid4
-        from ...events import AGENT_USAGE_UPDATE
-        context.emit_event(AGENT_USAGE_UPDATE, {
-            'invocation_id': 'ask_' + uuid4().hex,
-            'node_id': context.node_id, 'branch_id': context.branch_id,
-            'run_id': context.run_id, 'status': 'completed', 'partial': False,
-            'seconds': result.details['wall_seconds'],
-            'account_source': 'anthropic-api', 'usage': dict(result.details),
-        })
+        self._report_usage(context, result.details)
         if self.config['details_vault_write']:
             context.memory_bank.store_persistent(self.config['details_vault_key'].strip(), result.details, type_tag='var')
         if self.config['vault_write']:
@@ -66,3 +60,14 @@ class AskClaudeNode(Node):
         payload = context.inputs.get('input') if forwarding else result.text
         context.signal_done({'data': {'default': payload}
                              if forwarding or self.config['transient_output'] else {}})
+
+    def _report_usage(self, context, details, *, partial=False):
+        from uuid import uuid4
+        from ...events import AGENT_USAGE_UPDATE
+        context.emit_event(AGENT_USAGE_UPDATE, {
+            'invocation_id': 'ask_' + uuid4().hex,
+            'node_id': context.node_id, 'branch_id': context.branch_id,
+            'run_id': context.run_id, 'status': 'incomplete' if partial else 'completed', 'partial': partial,
+            'seconds': details['wall_seconds'],
+            'account_source': 'anthropic-api', 'usage': dict(details),
+        })

@@ -148,13 +148,14 @@ obtains its own key at execution, as in ordinary use.
 
 ### Owner commands (after separate approval)
 
-From WSL, use this block. Run the first two setup commands once. The root must
+From WSL, run from a checkout of main (e.g. `~/src/nw-main/AttackOfTheNodes`).
+Use this block. Run the first two setup commands once. The root must
 be fresh for `--prepare`; keep it for repeat trials. The app command really
 selects that library before importing backend services (covered by a launch
 regression test).
 
 ```bash
-cd /home/makin/src/node_workflow/AttackOfTheNodes
+cd ~/src/nw-main/AttackOfTheNodes
 TRIAL_PY=/home/makin/src/node_workflow/.venv/bin/python
 TRIAL_ROOT=/home/makin/draft-trial-01
 
@@ -182,7 +183,9 @@ The estimate guard includes calibration and checks **immediately before each
 Ask adapter call**, including calls within one designer run. It stops before
 further requests at the requested dollar limit, elapsed time limit, or unknown
 cost. An exhausted calibration guard writes a failed report with the available
-cost estimate. This is not a provider billing hard cap: a completed call can
+cost estimate. Capped replies (`max_tokens`) and refusals retain incomplete
+usage receipts, so their known cost is included even though the error still
+stops the trial. This is not a provider billing hard cap: a completed call can
 cross the bound, SDK retries belong to that call, and charged failures may lack
 usage. The time guard stops new calls; it does not interrupt one already in
 flight, which retains its node timeout. Cache stays off initially. Calibration
