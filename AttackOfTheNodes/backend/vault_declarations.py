@@ -7,12 +7,48 @@ continuation key) are applied here.
 """
 
 from typing import Any
+from string import Formatter
 
 from .branch_paths import branch_count_from_config, path_ports
 
 # Prompt-source label that resumes an AI session; mirrors
 # backend/nodes/chat_completion_node.CONTINUE_SESSION_SOURCE.
 CONTINUE_SESSION_SOURCE = "Continue AI session"
+
+
+def supports_standard_vault_write(node_type: str, config: dict[str, Any], metadata: dict[str, Any]) -> bool:
+    """Standard result routing exists only on outputs declaring Vault support.
+
+    Start's explicit rows route individually; its legacy result switch is ignored
+    in row/no-input mode. Legacy named writes remain separate below.
+    """
+    if node_type == "start_node" and (config.get("rows") or config.get("no_inputs")):
+        return False
+    output = (metadata.get("output_port_metadata") or {}).get("default") or {}
+    return "vault" in (output.get("to") or [])
+
+
+def concat_template_keys(config: dict[str, Any], metadata: dict[str, Any]) -> list[str]:
+    """Bare format roots read from the Vault, excluding prepared input names.
+
+    Invalid templates belong to the runtime formatter. Inspect nested format
+    specs too, up to Python's own two-level formatting limit.
+    """
+    fields: list[str] = []
+    def collect(template: str, depth: int = 0) -> None:
+        for _, name, spec, _ in Formatter().parse(template):
+            if name is not None:
+                root = name.split("[", 1)[0].split(".", 1)[0]
+                if root:
+                    fields.append(root)
+            if spec and depth < 2:
+                collect(spec, depth + 1)
+    try:
+        collect(str(config.get("template", "{input}")))
+    except ValueError:
+        return []
+    inputs = set(metadata.get("input_ports") or []) | {"input"}
+    return _unique([key for key in fields if key not in inputs])
 
 
 def vault_output_fields(metadata: dict[str, Any]) -> dict[str, tuple[str, str, str]]:
@@ -46,7 +82,7 @@ def standard_vault_writes(node_type: str, config: dict[str, Any], metadata: dict
             name = str(row.get("name") or "").strip()
             if name:
                 writes[str(row.get("vault_key") or "").strip() or name] = "any"
-    if config.get("vault_write"):
+    if config.get("vault_write") and supports_standard_vault_write(node_type, config, metadata):
         key = str(config.get("vault_write_key") or "").strip()
         if key:
             output = (metadata.get("output_port_metadata") or {}).get("default") or {}

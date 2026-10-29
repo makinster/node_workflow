@@ -1212,10 +1212,10 @@
           ],
           "data_type": "any",
           "control": "template",
-          "notes": "Template fields read all named Vault values and prepared inputs; {input} means incoming only. No whole-input source selector."
+          "notes": "Template fields read all named Vault values and prepared inputs; missing fields error. {input} means incoming only. No whole-input source selector."
         }
       },
-      "runtime_sha256": "f8c00c07c5e0eb85395660df74bf35d7d4f465fab161c619b5fd7a0323c13efa",
+      "runtime_sha256": "487bb8dd4c03cfc329311a64a137d6c519011890b60d0ba2d42474ff298231e9",
       "runtime_file": "backend/nodes/concat_node.py"
     },
     {

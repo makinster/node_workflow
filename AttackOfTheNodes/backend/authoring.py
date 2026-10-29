@@ -67,8 +67,8 @@ HANDLE_PATTERN = re.compile(r"^[a-z][a-z0-9_]{0,39}$")
 #: Types an author never places directly.
 HIDDEN_TYPES = frozenset({"tombstone_node"})
 
-#: Config keys the shared output-routing and Vault models give every node,
-#: whether or not a type lists them in its defaults.
+#: Retained shared config keys; acceptance alone is not runtime support.
+#: Validation warns for unsupported Vault result writes.
 STANDARD_KEYS = frozenset({
     "transient_output", "transient_outputs", "dead_drop_passthrough",
     "vault_write", "vault_write_key", "vault_write_description",

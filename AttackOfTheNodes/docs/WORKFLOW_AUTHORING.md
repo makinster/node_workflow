@@ -52,8 +52,14 @@ with `aotn run "<name>"` or open it from the app's Workflow Library.
   with a letter; local to the spec. Node ids are generated and reported back.
 - **`alias`** is the display name (optional; defaults to the type's).
 - **`config`** uses the node's real config keys (see `aotn describe`), merged
-  over its defaults. Shared routing and Vault keys (`vault_write`,
-  `vault_write_key`, `transient_output`, ...) are allowed on every node.
+  over its defaults. Shared routing keys are retained for compatibility, but
+  only work where the node implements them. `vault_write` / `vault_write_key`
+  publish a result only when its default output declares `to: [..., "vault"]`
+  (see Compact/Detailed catalogue). Build/check warn for unsupported standard Vault writes and
+  do not count them as writers. Start with explicit rows routes each row instead.
+  Concat supports result Vault writes, disabled transient output, and unchanged
+  input forwarding via `dead_drop_passthrough`. Legacy named writes and
+  node-specific variable/session outputs keep their own rules.
 - **Node references**: fields `describe` lists under "Node references"
   (Wait Until's `target_node_ids`) take handles; the build writes the ids.
 - **Connections** name both ports: `"handle.port"`. The ports must exist for

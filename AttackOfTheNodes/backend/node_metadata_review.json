@@ -71,7 +71,7 @@
         "backend/nodes/user_text_input_node.py": "c3bfcf7fd0337f6fcd4d2603036b2d11ce20752d8d4c9158470009706f03ed12",
         "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09",
         "backend/node_errors.py": "13f7cc5b3dd7d41b9c2e4bbf893dfd87dd3357c3eea91e1d940915b93b628292",
-        "backend/nodes/concat_node.py": "be67de79da8793cd6cdc90ef23173f9e7bd8dacaab054eab62f6a409afdafbc4"
+        "backend/nodes/concat_node.py": "9be589fb6251d27b51ba4038c80dd3d4c25684d6c20eb8428e8ee8b9254dfc20"
       },
       "tests": [
         "tests/test_node_metadata_behavior.py::test_user_text_input_waits_for_a_person_and_emits_the_answer",
@@ -81,14 +81,14 @@
       "content_sha256": "b49fab86123410d7c7cc55ce481d45872d203000676dc59f51e1b118c98dfde5",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-29",
-      "source_revision": "da90653f4b038615e8c8a273639854d87a6df696",
-      "verifier": "set-two-answer-vault-source-recheck"
+      "source_revision": "495e9aa9261b202ee2b468bcb0191ea6b1391c47",
+      "verifier": "concat-vault-routing-source-recheck"
     },
     "text_output_node": {
       "sources": {
         "backend/nodes/text_output_node.py": "01faa45080caf024421f9c01abc27ed2bc2cadd2cdeaa3b02000422e44ace563",
         "backend/output_entry.py": "6121bc67a278ac66244365ff5c23c235cd457316ef2826cd41db07b202af2ba2",
-        "backend/vault_declarations.py": "613ff9b9597d45498de4b2aaa41c4b0c219ad8ea9bf7dcd861c0a8f0da95cbca",
+        "backend/vault_declarations.py": "fe497a2ce9dbcd5c1147489c58149538b831e6a8b3ad08fdbf8a3c7e6f48f513",
         "backend/nodes/io/file_output_node.py": "fd55f39bbb01042cefc4a1502252f13305e7afe8e6f14ce67992f920dd00ae17",
         "backend/file_refs.py": "72b5edc5179e38bf12c050e56daef85055bf83c70b541c9204436240ae62dee6"
       },
@@ -101,8 +101,8 @@
       "content_sha256": "693cd958d90e9520c157cbd97e97443b75d4a2063416ff78b4b32a1e927c093a",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-29",
-      "source_revision": "f03b4c1369bd20f276d70d560f7b93296d0bbaf8",
-      "verifier": "shared-end-and-file-record-source-recheck"
+      "source_revision": "495e9aa9261b202ee2b468bcb0191ea6b1391c47",
+      "verifier": "concat-vault-routing-source-recheck"
     },
     "text_transform_node": {
       "sources": {
@@ -179,17 +179,21 @@
     },
     "concat_node": {
       "sources": {
-        "backend/nodes/concat_node.py": "be67de79da8793cd6cdc90ef23173f9e7bd8dacaab054eab62f6a409afdafbc4"
+        "backend/nodes/concat_node.py": "9be589fb6251d27b51ba4038c80dd3d4c25684d6c20eb8428e8ee8b9254dfc20",
+        "backend/saved_values.py": "e49b28260410e8798c1f97a9224f8d464298ddee1a5d52a75d068d81029d13da"
       },
       "tests": [
-        "tests/test_node_metadata_behavior.py::test_concat_unknown_names_empty_literal_braces_and_vault_values",
+        "tests/test_node_metadata_behavior.py::test_concat_literal_braces_and_vault_values",
+        "tests/test_concat_vault.py::test_concat_writes_result_and_routes_payload",
+        "tests/test_concat_vault.py::test_concat_missing_key_or_bad_template_errors_without_publishing",
+        "tests/test_concat_vault.py::test_concat_result_reaches_a_downstream_vault_template",
         "tests/test_node_metadata_behavior.py::test_documented_failures_fail_the_node"
       ],
-      "content_sha256": "82eebc0a3f116f9b9dc8a3b37f62a0d5f18bc38766e8b32b1cadeb2aceb4bbe2",
+      "content_sha256": "cc02379128b56a933eb9eb56b3a7c40a51566462db9b180ebe934b1f619149a6",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-29",
-      "source_revision": "a5dbf2667768734cb0389f345e78c01d20bd1e73",
-      "verifier": "metadata-batch1-independent-verifier"
+      "source_revision": "495e9aa9261b202ee2b468bcb0191ea6b1391c47",
+      "verifier": "concat-vault-routing-source-recheck"
     },
     "json_path_node": {
       "sources": {

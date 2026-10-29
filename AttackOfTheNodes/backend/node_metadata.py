@@ -264,8 +264,8 @@ NODE_METADATA: Dict[str, Dict[str, Any]] = {
         "cost_class": "no_usage_fee",
         "time_class": "quick",
         "execution_contract": {
-            "output_payload": "default: format_map string from Vault + inputs (inputs win). {input[path]} reads the path key.",
-            "notes": "Unknown bare names become empty text; a missing [key] or .attribute errors. {{ and }} give literal braces. A template without {input} ignores the input.",
+            "output_payload": "default: format_map string from Vault + inputs (inputs win). {input[path]} reads the path key. vault_write saves this formatted string as string; dead_drop_passthrough forwards the unchanged input instead.",
+            "notes": "A missing Vault name, [key] or .attribute errors; missing names never become empty text. {{ and }} give literal braces. A template without {input} ignores the input for formatting. transient_output=false sends no payload unless dead_drop_passthrough=true; Vault writes still happen.",
         },
     },
     "json_path_node": {

@@ -25,6 +25,7 @@ ISSUE_CODES: Dict[str, str] = {
     # Ports and connections
     "undeclared_port": "A connection uses a port the node type does not have.",
     "hidden_output_connection": "A connection leaves an output this node's settings never use.",
+    "disabled_output_connection": "A connected default output publishes no payload with these settings.",
     "hidden_input_connection": "A connection enters an input this node's settings never read.",
     "duplicate_input_source": "One node reads the same upstream payload or Vault key twice.",
     "ignored_fan_out": "An ordinary output has several connections; only the first runs.",
@@ -49,6 +50,8 @@ ISSUE_CODES: Dict[str, str] = {
     "unwritten_vault_key": "An optional Vault read names a key no node writes (fallback used).",
     "vault_source_key_missing": "An input set to read from the Vault has no key.",
     "vault_output_key_missing": "Vault output is on but has no key.",
+    "vault_write_unsupported": "vault_write is set on a node that cannot honour this output route.",
+    "template_vault_key_unwritten": "A Concat template key has no declared writer on an earlier incoming path.",
     "vault_type_mismatch": "A Vault key's written type differs from the reader's type.",
     "ai_session_tag_missing": "A key read as an AI session is not written as one.",
     "vault_race": "Every writer of a Vault key is on a parallel branch to its reader.",

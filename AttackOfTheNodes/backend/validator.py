@@ -21,6 +21,8 @@ from .vault_declarations import (
     repeatable_slot_active as _repeatable_slot_active,
     standard_vault_reads,
     typed_vault_writes,
+    supports_standard_vault_write,
+    concat_template_keys,
 )
 from .field_types import check_number, field_visible as _field_visible, number_fields, object_list_problems
 from .file_paths import normalize_local_path
@@ -35,7 +37,7 @@ from .node_errors import (
     mux_routes,
 )
 from .node_factory import NodeFactory
-from .contracts import return_rows, row_problems, start_rows
+from .contracts import return_rows, row_problems, start_rows, sends_downstream
 from .workflow_map import WorkflowMap
 
 if TYPE_CHECKING:
@@ -240,6 +242,24 @@ def validate_workflow(
         declared_out = set(factory.node_output_ports(data))
         type_in = set(meta.get("input_ports") or [])
         declared_in = set(factory.node_input_ports(data))
+        config = data.get("config") or {}
+        default_meta = (meta.get("output_port_metadata") or {}).get("default") or {}
+        # Only diagnose switches the runtime actually implements. Legacy nodes
+        # without standard output routing may ignore retained shared keys.
+        # Legacy Chat Completion always emits its result, even when its old
+        # transient switch is false. Do not claim it drops data.
+        disabled = (node_type != "chat_completion_node"
+                    and "vault" in (default_meta.get("to") or [])
+                    and config.get("transient_output") is False
+                    and not (default_meta.get("pass_through") and config.get("dead_drop_passthrough")))
+        if node_type == "start_node" and (config.get("rows") or config.get("no_inputs")):
+            disabled = not any(sends_downstream(row) for row in start_rows(config))
+        if disabled and any(c.get("source_port", "default") == "default"
+                            for c in data.get("connections", {}).get("outputs", [])):
+            warnings.append({"node_id": node_id, "code": "disabled_output_connection",
+                             "message": "Connected default output publishes no payload with these settings "
+                                        "(transient_output=false or no downstream Start rows); "
+                                        "the next node receives no value from this connection"})
         for conn in data.get("connections", {}).get("outputs", []):
             port = conn.get("source_port", "default")
             routing = (factory.node_output_port_metadata(data).get(port) or {}).get("to")
@@ -473,6 +493,10 @@ def validate_workflow(
                 errors.append({"node_id": node_id, "code": "vault_source_key_missing", "message": f"Vault source for '{port}' requires a key"})
         if config.get("vault_write") and not str(config.get("vault_write_key") or "").strip():
             errors.append({"node_id": node_id, "code": "vault_output_key_missing", "message": "Vault output requires a key"})
+        if config.get("vault_write") and not supports_standard_vault_write(str(data.get("type") or ""), config, metadata):
+            warnings.append({"node_id": node_id, "code": "vault_write_unsupported",
+                             "message": "vault_write is ignored by this node's output routing; "
+                                        "it does not publish vault_write_key. Use a supported Vault output or row."})
 
     for duplicate in _duplicate_input_source_errors(all_nodes, standard_vault_reads):
         errors.append(duplicate)
@@ -483,6 +507,23 @@ def validate_workflow(
             # Prefer a concrete tag over an untyped legacy declaration.
             if type_tag is not None or key not in declared_membank_outputs:
                 declared_membank_outputs[key] = type_tag
+    reverse_adj = _build_reverse_adjacency(all_nodes)
+    for node_id, data in all_nodes.items():
+        if data.get("type") != "concat_node":
+            continue
+        config = data.get("config") or {}
+        ancestors = _build_ancestor_set(node_id, all_nodes, reverse_adj) - {node_id}
+        earlier_keys = set()
+        for ancestor in ancestors:
+            earlier_keys.update(vault_writes.get(ancestor, {}))
+            for entry in (all_nodes[ancestor].get("config") or {}).get("membank_outputs") or []:
+                earlier_keys.add(_membank_source_id(entry))
+        for key in concat_template_keys(config, metadata_by_type.get("concat_node") or {}):
+            if key not in earlier_keys:
+                warnings.append({"node_id": node_id, "code": "template_vault_key_unwritten",
+                                 "message": f"Concat template reads Vault key '{key}' but no earlier node "
+                                            "on an incoming path declares a write. Missing keys error at runtime; "
+                                            "parallel writers need ordering before this reader."})
     for node_id, sources in derive_input_sources(all_nodes).items():
         for source in sources:
             source_type = source.get("type")

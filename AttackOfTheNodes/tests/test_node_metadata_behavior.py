@@ -208,12 +208,12 @@ async def test_conditional_modes_emit_one_port_with_the_left_value(config, left,
 
 
 @pytest.mark.asyncio
-async def test_concat_unknown_names_empty_literal_braces_and_vault_values():
+async def test_concat_literal_braces_and_vault_values():
     node, ctx, memory, done, errors = runner('concat_node', dict(
-        template='{greeting} {input} {missing}| {{x}}'), 'in')
+        template='{greeting} {input}| {{x}}'), 'in')
     memory.store_persistent('greeting', 'Hi')
     await node.execute(ctx)
-    assert not errors and done[0]['data'] == {'default': 'Hi in | {x}'}
+    assert not errors and done[0]['data'] == {'default': 'Hi in| {x}'}
     node, ctx, _, done, errors = runner('concat_node', dict(template='Fixed'), 'ignored')
     await node.execute(ctx)
     assert done[0]['data'] == {'default': 'Fixed'}

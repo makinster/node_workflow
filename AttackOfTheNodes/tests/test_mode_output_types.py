@@ -104,10 +104,13 @@ def test_selector_filter_follows_the_mode(mode, fits):
 
 
 @pytest.mark.parametrize("mode, tag", [("file", "file"), ("text", "string")])
-def test_vault_typing_reads_the_resolved_type(mode, tag):
+def test_resolved_http_type_does_not_invent_an_unsupported_vault_write(mode, tag):
     config = {"response_mode": mode, "vault_write": True, "vault_write_key": "page"}
     metadata = resolved_metadata(FACTORY, "http_request_node", config)
-    assert typed_vault_writes("http_request_node", config, metadata) == {"page": tag}
+    assert metadata['output_port_metadata']['default']['data_type'] == tag
+    # HTTP's execute publishes downstream only; accepting retained shared keys
+    # must not invent a Vault writer for its mode-dependent result.
+    assert typed_vault_writes("http_request_node", config, metadata) == {}
 
 
 def test_resolved_metadata_without_hook_is_the_static_metadata():
