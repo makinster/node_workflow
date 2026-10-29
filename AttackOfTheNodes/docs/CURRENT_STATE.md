@@ -1,8 +1,8 @@
 # Current State
 
-Snapshot checked **2026-10-29**, against fetched `origin/main` `f03b4c1`
-after #147 merged. Shared End/file-record reviewer contracts are on
-`codex/shared-end-review-contracts`. No real API calls. Earlier entries retain
+Snapshot checked **2026-10-29**, against fetched `origin/main` `495e9aa`
+after #149 merged. Concat Vault and disabled-output repair is on
+`codex/concat-vault-diagnostics`. No real API calls. Earlier entries retain
 their dated scope.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
@@ -13,6 +13,31 @@ Sonnet/Opus and document the 512-token minimum prefix. Per-model price tests
 and real-engine run summaries cover all three supported models. See the latest
 Session Log entry for verification: full `pytest -n auto` passes **3,234 tests
 in 35.63 s** after the review fixes.
+
+## Concat Vault and disabled output — 2026-10-29
+
+Concat now writes its formatted string to the Vault through the standard
+helper, honours disabled transient output, and preserves input identity when
+forwarding. Missing template names error instead of becoming empty text.
+Build/check warn for unsupported standard Vault writes and no longer declare
+those keys; 25 types support that result route, 33 other authorable types do not.
+Concat also warns for format keys without an earlier declared writer.
+
+A connected default output that publishes no payload gets a structural warning.
+Check workflow spec's new opt-in `fail_on_disabled_output` rejects it; both v2
+checks and calibration enable it. The exact warning reaches the existing one
+redraft, and a repeated defect stops before judge/save. V2 explicitly initializes
+its optional second-analysis text, preserving status-only paths under strict
+Concat formatting. No calibration fixture changes.
+
+Full `pytest -n auto`: **3,685 passed in 42.90 s**. All **23 pairs** retain their
+expected rule verdicts; disabled_transient bad now fails structurally too.
+Catalogue Text: Brief **14,569**, Compact **53,217**; JSON **18,214 / 76,638**.
+V2 contracts **21,513 / 50,000**. Existing caps and 20% Text headroom retained
+by shortening the repeated pending-metadata notice, without removing facts.
+See [audit and limits](audits/concat_vault_2026_10_29/README.md). Static ancestry
+cannot prove branch timing; legacy Chat Completion's ignored transient switch
+is excluded from the diagnostic. No real provider or owner-workflow execution.
 
 ## Shared End and saved-path reviewer contracts — 2026-10-29
 

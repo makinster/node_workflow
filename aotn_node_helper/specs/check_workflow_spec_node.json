@@ -82,6 +82,12 @@
         "label": "Reject unreachable nodes",
         "default": false,
         "description": "Treat unreachable-node warnings as a failed check; other warnings still pass."
+      },
+      "fail_on_disabled_output": {
+        "type": "boolean",
+        "label": "Reject disabled connected output",
+        "default": false,
+        "description": "Fail when a connected default output sends no payload, so a drafter can repair it."
       }
     }
   },

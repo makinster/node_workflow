@@ -980,7 +980,8 @@ async def calibrate(
                 try:
                     _, structural = await check(
                         factory, raw_draft, workflow["nodes"]["check"]["config"]["max_spec"],
-                        fail_on_unreachable=workflow["nodes"]["check"]["config"].get("fail_on_unreachable", False)
+                        fail_on_unreachable=workflow["nodes"]["check"]["config"].get("fail_on_unreachable", False),
+                        fail_on_disabled_output=workflow["nodes"]["check"]["config"].get("fail_on_disabled_output", False)
                     )
                 except NodeError as exc:
                     # Negative calibration fixtures still reach the judge, with

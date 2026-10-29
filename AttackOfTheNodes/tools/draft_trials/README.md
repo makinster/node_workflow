@@ -369,3 +369,12 @@ These are projections under the same selections/prices, not a measured set-2
 run or a billing cap. Harder outputs, different selections and caching can change
 them. Details: `docs/audits/draft_trials_set_2_cost.json`. No new API calls were
 made to estimate cost; existing budget/time/unknown-cost guards remain active.
+
+V2 also enables `fail_on_disabled_output` on both structural checks and the
+calibration check. A connected default output that publishes no payload now
+triggers the same one redraft as an unreachable node, with exact diagnostic
+text. A second failure stops before judge/save. Budget and usage accounting
+still count the extra draft call. `disabled_transient` bad is now mechanically
+rejected; all 23 pairs retain their expected rule verdicts. No fixture changes.
+The optional second-analysis text is explicitly initialized so a status-only
+first analysis does not rely on Concat silently filling a missing key.

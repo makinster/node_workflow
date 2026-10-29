@@ -36,6 +36,16 @@ the config UI, connection matching, preflight, runtime routing and author
 tests, so that a green check means the runtime honours the generated UI.
 Keep `NodeContext` and graph-ignorant execution.
 
+## Owner-requested Concat and output follow-up — 2026-10-29
+
+Base `495e9aa`, `codex/concat-vault-diagnostics`: Concat standard Vault/transient/
+forwarding behavior and strict missing-key errors; truthful standard write
+support and shared preflight diagnostics for template keys and disabled outputs.
+V2 opts into one redraft for a disabled connected output and explicitly initializes
+optional analysis text. Metadata/source attestations refreshed, all 23 calibration
+rule pairs retained, full 3,685 tests passed. No API calls. [Audit and limits](audits/concat_vault_2026_10_29/README.md),
+[Current State](CURRENT_STATE.md) and Session Log hold verification and sizes.
+
 ## Owner-requested workflow designer trial — 2026-10-28
 
 Approved external plan decisions 1–14, Step 1: v2 existing-node recipe, external

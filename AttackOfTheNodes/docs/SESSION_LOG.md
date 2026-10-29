@@ -6,6 +6,52 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-29 — Concat Vault and structural output repair (Important)
+
+Clean worktree `/home/makin/src/nw-concat-vault`, branch
+`codex/concat-vault-diagnostics`, fetched main base `495e9aa`. The owner checkout
+had unrelated edits/untracked material and was left untouched. The owner's
+hand-built review/report workflow exposed the Concat defects. New tests
+reproduced absent writes/routing and silent missing-name substitution before
+fixing them (12 failed, one existing behavior passed).
+
+Concat now uses `saved_values.finish`: typed result write before completion,
+disabled transient publication, and identity-preserving incoming forwarding.
+Missing bare Vault keys now signal a formatting error naming the key, with no
+result publication. Existing bad field/braces failures are reported consistently.
+Metadata and source/input audit attestations were re-read and refreshed.
+
+Reviewed all 59 registered types: 25 now implement the standard Vault result
+route; 34 do not (including the non-authorable tombstone). Shared declarations
+no longer claim those unsupported writes; validator/build/check warn. Explicit
+Start rows ignore the legacy standard switch and keep their own write rules.
+Existing node-specific/legacy writes remain. Concat template roots without a
+declared ancestor writer warn, without claiming scheduling proof.
+
+Connected disabled default payloads now warn. The new Check option defaults
+false; both v2 checks and calibration opt in. Tests prove one charged/counted
+mock redraft gets the exact warning, and a second disabled draft stops before
+judge/save. No usage, budget, time guard or retry-limit changes. Strict Concat
+also exposed a scope-summary reference to optional `resolved_analysis`: v2 now
+initializes that text explicitly to empty before analysis, preserving both
+status-only outcomes and the real later clarification reply.
+
+Old typing tests that invented writes from HTTP/Random Number were corrected:
+HTTP's resolved payload type is still checked, unsupported writes return no
+declaration, and the branch-seed type test uses an actual numeric Vault writer.
+File Viewer declaration proof now uses live metadata instead of an incomplete
+synthetic record. No fixtures changed or regenerated. Pending-metadata wording
+was shortened without losing the unknown-effects/needs and not-Read-only facts.
+
+Full **3,685 passed in 42.90 s** (`pytest -n auto`); all 23 pair rule verdicts
+retained and disabled_transient bad now structurally rejected. Before → after:
+Brief Text **15,037 → 14,569** (JSON **18,214** unchanged), Compact Text
+**53,280 → 53,217** (JSON **76,170 → 76,638**), v2 contracts
+**21,146 → 21,513 / 50,000**. Existing query/Context caps and 20% Text headroom
+pass. No real API calls. Live reviewer quality remains unmeasured. The
+[audit](audits/concat_vault_2026_10_29/README.md) lists unsupported types and
+limits, including legacy Chat Completion ignoring its transient switch.
+
 ## 2026-10-29 — Shared End and file-record reviewer contracts (Important)
 
 Clean worktree `/home/makin/src/nw-shared-end-review`, branch

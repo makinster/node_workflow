@@ -184,9 +184,11 @@ def problem_report(diagnostics, manager=None, *, invalid=False):
     return body()
 
 
-async def check(factory, text, limit, manager=None, *, fail_on_unreachable=False):
+async def check(factory, text, limit, manager=None, *, fail_on_unreachable=False, fail_on_disabled_output=False):
     if type(fail_on_unreachable) is not bool:
         raise NodeError('invalid_config', 'Choose a boolean fail_on_unreachable option.')
+    if type(fail_on_disabled_output) is not bool:
+        raise NodeError('invalid_config', 'Choose a boolean fail_on_disabled_output option.')
     if type(limit) is not int or not 1 <= limit <= 64000:
         raise NodeError('invalid_config', 'Choose a spec size limit from 1 to 64,000 characters.')
     if not isinstance(text, str):
@@ -215,8 +217,12 @@ async def check(factory, text, limit, manager=None, *, fail_on_unreachable=False
     await asyncio.sleep(0)
     checked = authoring.check_workflow_spec(factory, parsed)
     await asyncio.sleep(0)  # Stop must win before any publication.
-    rejected = not checked['ok'] or (fail_on_unreachable and any(
-        d.get('code') == 'unreachable' for d in checked['diagnostics']))
+    rejected_codes = set()
+    if fail_on_unreachable:
+        rejected_codes.add('unreachable')
+    if fail_on_disabled_output:
+        rejected_codes.add('disabled_output_connection')
+    rejected = not checked['ok'] or any(d.get('code') in rejected_codes for d in checked['diagnostics'])
     message, details = problem_report(checked['diagnostics'], manager, invalid=rejected)
     if rejected:
         raise NodeError('spec_invalid', message, details=details)

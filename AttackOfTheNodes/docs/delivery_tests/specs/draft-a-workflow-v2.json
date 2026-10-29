@@ -537,7 +537,8 @@
         "report_vault_write": true,
         "report_vault_key": "spec_check",
         "transient_output": true,
-        "fail_on_unreachable": true
+        "fail_on_unreachable": true,
+        "fail_on_disabled_output": true
       }
     },
     "judge_question": {
@@ -749,7 +750,8 @@
         "report_vault_write": true,
         "report_vault_key": "spec_check",
         "transient_output": true,
-        "fail_on_unreachable": true
+        "fail_on_unreachable": true,
+        "fail_on_disabled_output": true
       }
     },
     "rejected_draft": {
