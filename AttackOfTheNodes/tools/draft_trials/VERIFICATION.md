@@ -34,7 +34,7 @@ these checks prove harness decisions, not real inference quality.
 | partial_clarified_content | pass | fail | pass | fail |
 | serial_parallel_work | pass | fail | pass | fail |
 | conditional_work_before_choice | pass | fail | pass | fail |
-| uppercase_before_empty_choice | pass | fail | pass | fail |
+| empty_choice_still_saves | pass | fail | pass | fail |
 
 The original 19 pairs are retained. The last three add serial work on one
 parallel path, both status displays before a Conditional, and uppercase work
