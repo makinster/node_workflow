@@ -59,6 +59,10 @@ with `aotn run "<name>"` or open it from the app's Workflow Library.
 - **Connections** name both ports: `"handle.port"`. The ports must exist for
   that node's config (Branch with 3 paths has `path_a`..`path_c`; every node
   also has `error`).
+- **Several sources may connect to one input.** Each arriving path runs an
+  ordinary node separately, using that path's payload. Several paths sharing
+  one normal End is complete: each arrival finishes there. This is not a join
+  barrier; Merge and other special joins have their own waiting rules.
 - **One destination per ordinary output.** The engine follows only the first
   connection of an output, so wiring one output to two nodes fails the build
   (`ignored_fan_out`; the editor's validator warns about it). Use a Parallel

@@ -355,3 +355,13 @@ and explicit status-only/clarification success. User Text Input's existing
 answer-to-Vault option is documented so two-answer Concat is discoverable.
 Full mocked suite 3,653 passed; limits, cost projection and palette constraints
 are recorded in Current State, the trial guide and Session Log.
+
+### Shared End and saved-path review wording — 2026-10-29 (complete)
+
+Verified real-engine per-path execution for shared ordinary inputs and shared
+normal Ends before documenting it. End notes/generic full catalogue wording
+and judge distinguish sharing from unreachable nodes. File Write/Text Output
+records and judge reject whole-record display as a saved-path display. Three
+metadata attestations rechecked with source/test citations. No runtime/fixture
+change; 23 pairs retain verdicts; full suite 3,658 passed. Live judge calibration
+awaits owner rerun. See Current State and Session Log for catalogue counts.

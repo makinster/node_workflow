@@ -1,9 +1,9 @@
 # Current State
 
-Snapshot checked **2026-10-29**, against fetched `origin/main` `da90653`
-after #146 merged. Unreachable-node redraft and selectable set 2 are on
-`codex/draft-case-set-two`. No real provider calls; prior run receipts were
-read only for the cost projection. Earlier entries retain their dated scope.
+Snapshot checked **2026-10-29**, against fetched `origin/main` `f03b4c1`
+after #147 merged. Shared End/file-record reviewer contracts are on
+`codex/shared-end-review-contracts`. No real API calls. Earlier entries retain
+their dated scope.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
@@ -13,6 +13,22 @@ Sonnet/Opus and document the 512-token minimum prefix. Per-model price tests
 and real-engine run summaries cover all three supported models. See the latest
 Session Log entry for verification: full `pytest -n auto` passes **3,234 tests
 in 35.63 s** after the review fixes.
+
+## Shared End and saved-path reviewer contracts — 2026-10-29
+
+Owner reports 20/20 real requests passed across sets 1/2, with reviewer self-test
+misses around shared Ends and file records. Real-engine tests now verify two
+parallel paths sharing one End and ordinary shared-input execution per arrival.
+End and generic full catalogue/authoring notes state that sharing is normal;
+only a node no path reaches is unconnected. Return End still publishes once.
+
+File Write/Text Output records and judge checklist distinguish {input} (whole
+file record) from {input[path]} (saved path). No runtime or calibration fixture
+changes. All 23 pair rule verdicts retained. Full suite: **3,658 passed in
+40.72 s**; no live API calls or judge rerun. Prompt-quality improvement unverified.
+
+Catalogue: Brief **15,037 Text / 18,214 JSON** unchanged; Compact **53,280 Text /
+76,170 JSON**. V2 contracts **21,146/50,000**; all caps/headroom unchanged.
 
 ## Unreachable-node redraft and second trial set — 2026-10-29
 

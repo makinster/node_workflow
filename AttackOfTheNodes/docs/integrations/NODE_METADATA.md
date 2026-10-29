@@ -121,3 +121,14 @@ answer-copy option and Concat's use of that saved value plus current input.
 Its execute source was re-read and its content digest rechecked locally; set-2
 engine tests cover the two-answer flow. No runtime behavior was added to that
 node. The metadata manifest cites the supporting engine test.
+
+Ordinary input-arrival semantics are exposed as `input_routing` in authoring
+node descriptions and full (Compact/Detailed) catalogue responses, outside the
+per-node record. Several incoming connections are allowed; each arriving path
+runs an ordinary node separately with its payload. This does not create a join
+or wait; special join nodes have their own rules. A normal End can be shared.
+End's record states the per-path completion rule and preserves Return End's
+one-publication limit. File Write/Text Output records explicitly state that
+{input} after writing displays the full {type, ref_key, path} record and that
+{input[path]} displays the actual saved path. Real local-engine/node tests
+support the refreshed End/Text Output/File Write review attestations.

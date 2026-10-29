@@ -126,7 +126,7 @@ NODE_METADATA: Dict[str, Dict[str, Any]] = {
         "time_class": "quick",
         "execution_contract": {
             "output_payload": "None; ends branch. record_line logs [END] completion as normal run framing, not an unrequested effect. return_end publishes workflow results only.",
-            "notes": 'record_line on (default) logs only "[END] <message>"; input is never echoed. Off adds nothing.',
+            "notes": 'Several paths may share one End input (normal End, return_end=false). Each arriving path runs End separately and finishes there; this is normal and complete, not unconnected. Return End publishes results only once; repeat publication errors. record_line on (default) logs only "[END] <message>"; input is never echoed. Off adds nothing.',
         },
     },
     "branch_end_node": {
@@ -186,7 +186,7 @@ NODE_METADATA: Dict[str, Dict[str, Any]] = {
         "time_note": "Formatting is quick; with request_user_input on it waits for a person.",
         "execution_contract": {
             "output_payload": 'default/log: empty or whitespace-only label = bare formatted text; a set label adds "[label] " unchanged. Label is display framing. The same downstream payload includes any set label (also when saved). {input[path]}: path; {{input}}: literal.',
-            "notes": "The default label is Output. Template names other than input, a missing [key] or .attribute, or bad braces, error. A missing input Vault key errors; request_user_input replaces the input with the answer.",
+            "notes": "After File Write, {input} shows the whole file record {type, ref_key, path}, NOT just its path. To show the saved path, use {input[path]}. The default label is Output. Template names other than input, a missing [key] or .attribute, or bad braces, error. A missing input Vault key errors; request_user_input replaces the input with the answer.",
         },
     },
     "text_transform_node": {
@@ -237,7 +237,7 @@ NODE_METADATA: Dict[str, Dict[str, Any]] = {
         "time_note": "Small writes are quick; file size decides the wait. Open after write can add up to about 5 s finding the window.",
         "execution_contract": {
             "output_payload": 'default: {type:"file",ref_key:string,path:"actual saved absolute path"}; new ref_key="file:"+path; reused identity/lifetime retained. dead_drop_passthrough forwards input; transient_output=false suppresses normal output.',
-            "notes": "Create unique: name.ext if absent; else name (1).ext, name (2).ext, etc.; keeps existing files. Not atomic.",
+            "notes": "After File Write, Text Output {input} shows the whole file record {type, ref_key, path}, NOT just its path. To show the saved path, use {input[path]}. Create unique: name.ext if absent; else name (1).ext, name (2).ext, etc.; keeps existing files. Not atomic.",
         },
     },
     "conditional_node": {
