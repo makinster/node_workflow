@@ -186,6 +186,7 @@ def describe_node_type(
         "name": str(meta.get("display_name") or node_type),
         "family": str(meta.get("primary_family") or ""),
         "description": str(meta.get("description") or ""),
+        "execution_contract": deepcopy(meta.get("execution_contract") or {}),
         "config": config,
         "fields": fields,
         "unchecked_keys": sorted((set(defaults) - set(schema)) | set(meta.get("custom_config_keys") or {})),

@@ -1,8 +1,8 @@
 # Current State
 
-Snapshot checked **2026-10-28**, against fetched `origin/main` `f0a9ae0`
-after #138 merged. Catalogue defaults and calibration structural evidence are on
-`codex/catalogue-defaults-calibration`. This change makes no real API calls and
+Snapshot checked **2026-10-28**, against fetched `origin/main` `4e42273`
+after #139 merged. Palette behavior contracts and diagnostic case trials are on
+`codex/palette-behavior-contracts`. This change makes no real API calls and
 does not access owner Secrets. Earlier entries retain their dated scope.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
@@ -13,6 +13,29 @@ Sonnet/Opus and document the 512-token minimum prefix. Per-model price tests
 and real-engine run summaries cover all three supported models. See the latest
 Session Log entry for verification: full `pytest -n auto` passes **3,234 tests
 in 35.63 s** after the review fixes.
+
+## Palette execution contracts and diagnostic cases — 2026-10-28
+
+Verified node execution before documenting payloads for all twelve target types
+in shared registry metadata, consumed by `describe` and Compact/Detailed
+catalogues. Generated Configured-input lines explain that the incoming value
+only triggers execution. File Write documents `type`/`ref_key`/actual absolute
+`path`, collision suffixes and preserved files; Conditional documents exact
+case/whitespace equality. No mismatch with good fixtures was found; the oracle's
+synthetic unique suffix is a lineage probe, not an expected runtime filename.
+No runtime or fixture changes. The v2 judge puts remarks in summary and reserves
+problems for request-blocking defects; a pass still requires empty problems.
+
+`--cases-even-if-calibration-fails` optionally runs selected cases after failed
+calibration. Stdout/report retain failed calibration and overall failure; no
+guard is bypassed, and calibrate-only still skips cases. Full mocked-provider
+`pytest -n auto`: **3,407 passed in 44.19 s** (13 new focused checks).
+Eight regression failures reproduced missing contracts/prompt/flag on the base;
+five direct runtime checks already passed there. No owner trial rerun or Secrets
+access. Caps unchanged: Compact Text **41,400 → 39,156**, JSON **56,360 → 61,181**
+(64,000); original contracts **7,943 → 7,928** (8,000); v2 **9,869 → 9,928**
+(50,000). Brief remains **7,634 Text / 10,603 JSON**. Shorter Compact Text config
+notation retains all fields/defaults/constraints. Whitespace check passes.
 
 ## Catalogue defaults and calibration check evidence — 2026-10-28
 

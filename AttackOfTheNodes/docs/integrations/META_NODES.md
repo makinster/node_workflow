@@ -34,6 +34,31 @@ forwarding. Filters are node settings:
   defaults, explicitly labelled `ports_basis: "defaults"`; config can change
   those ports. Compact is discovery context, not a complete validator schema.
 
+Compact and Detailed also expose `execution_contract` metadata for the twelve
+designer target types: `output_payload` describes the emitted value and `notes`
+records extra execution rules. The shared registry metadata lives in
+[`node_execution_contracts.py`](../../backend/node_execution_contracts.py),
+verified against the node execute methods. Both the drafter and meaning judge
+receive these same entries. Configurable inputs get a generated
+`configured_inputs` line: when their source is Configured, the configured field
+provides the data and the incoming wire is a trigger only; its value is ignored
+and is not checked against that input's data type. This does not waive checks
+on the configured value itself.
+
+File Write emits a file-reference object with `type`, `ref_key` and `path`;
+`path` is the actual absolute saved path, usable as `{input[path]}`. Create
+unique first uses the requested path if absent, then adds ` (1)`, ` (2)`, etc.
+before the last extension on collisions. It preserves existing files but is
+not an atomic reservation. Conditional `equals` compares stringified operands
+with case and whitespace intact. These describe existing execution; no runtime
+or fixture behavior changed.
+
+Compact Text config now uses `field:type=JSON-default`, with any remaining
+constraints in JSON after the value; no `=` means no default. For example,
+`message:string="Branch completed"`. Every field/default/constraint remains;
+JSON `config_fields` retains its structured form. This shorter notation pays
+for the payload/Configured lines within existing context caps. Brief is unchanged.
+
 **Catalogue** is a string in Text mode or a JSON record `[var]` in JSON mode,
 published downstream and/or to the standard optional Vault output. JSON has
 `schema_version: 1`, `complete`, `detail`, `include_debug`, `matched_count`,
@@ -71,14 +96,14 @@ can overflow; narrow filters. Context Pack and Ask local model have their own
 limits: the full catalogue fitting this node does not make it fit downstream.
 Use a filtered catalogue for a small request.
 
-Current registry with config defaults: **51 non-debug entries**, Compact Text
-**41,400** characters (before: **36,848**) and compact JSON **56,360** (before:
-**51,792**). The default stays **64,000**, the existing upper bound. Brief Text
+Current registry with execution contracts: **51 non-debug entries**, Compact Text
+**39,156** characters (before: **41,400**) and compact JSON **61,181** (before:
+**56,360**). The default stays **64,000**, the existing upper bound. Brief Text
 stays **7,634** / compact JSON **10,603**. The designer
 Brief catalogue cap rises from 7,500 to **8,000** so registry growth does not
 stop its first pass; Context remains 8,000 (366 characters headroom). The
-fixed nine-type palette is **7,943** (before: **7,421**), below Context 8,000.
-Repeated headers are shorter so all config defaults fit without raising caps.
+fixed nine-type palette is **7,928** (before: **7,943**), below Context 8,000.
+Shorter headers/config notation retain all contract information without raising caps.
 
 **Two-pass planning.** Measured Brief **all non-debug** Text: **50 entries,
 7,447 characters** after the Context-limit description update: 553 below the

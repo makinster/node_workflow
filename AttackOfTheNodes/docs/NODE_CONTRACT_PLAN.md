@@ -66,6 +66,15 @@ delegates config completeness and validity to the structural check. Calibration
 passes the actual shared check result, including failure details for negative
 fixtures. Mock verification only; no owner trial rerun.
 
+Important follow-up from main `4e42273`: registry execution contracts now
+describe payload shapes for all twelve target types, Configured-source trigger
+semantics, Create unique naming and exact equals matching. Compact Text uses
+shorter lossless config notation to stay inside existing caps. Judge remarks
+belong in summary; problems are blockers only. The optional
+`--cases-even-if-calibration-fails` collects case evidence after a failed
+calibration while retaining overall failure and the original budget/time guards.
+Runtime and fixtures remain unchanged; mocked verification only.
+
 ## Owner-requested caching — 2026-10-28
 
 `codex/ask-claude-caching`, base `56cb997`: Options TTL setting, stable Context

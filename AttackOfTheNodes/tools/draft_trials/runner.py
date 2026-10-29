@@ -1042,6 +1042,7 @@ async def _batch(
     replies_file=None,
     judge_model=JUDGE_MODELS[0],
     judge_effort=JUDGE_EFFORTS[0],
+    cases_even_if_calibration_fails=False,
 ):
     from backend.authoring import build_workflow
     from backend.node_factory import NodeFactory
@@ -1064,7 +1065,7 @@ async def _batch(
             trial_root, real_calls, judge_model=judge_model, judge_effort=judge_effort
         )
         failure = calibration.get("failure")
-        if calibration["result"] == "pass" and not calibrate_only:
+        if (calibration["result"] == "pass" or cases_even_if_calibration_fails) and not calibrate_only:
             overrides = (
                 json.loads(Path(replies_file).read_text()) if replies_file else {}
             )
@@ -1101,6 +1102,7 @@ async def _batch(
         case_count=len(rows),
         fixture_count=sum(len(r.get("behavior", {}).get("fixtures", [])) for r in rows),
         calibration=calibration["result"],
+        cases_even_if_calibration_fails=cases_even_if_calibration_fails,
         cases=rows,
         result=(
             "pass"
@@ -1159,6 +1161,7 @@ async def batch(
     shared_library=None,
     judge_model=JUDGE_MODELS[0],
     judge_effort=JUDGE_EFFORTS[0],
+    cases_even_if_calibration_fails=False,
 ):
     global _budget, _shared_library
     previous = _budget, _shared_library
@@ -1170,6 +1173,7 @@ async def batch(
         summary = await _batch(
             trial_root, case_ids, real_calls, calibrate_only, scenario, replies_file,
             judge_model, judge_effort,
+            cases_even_if_calibration_fails,
         )
         summary.update(budget_usd=budget_usd, time_limit_seconds=time_limit)
         write_json(trial_root / "report.json", summary)

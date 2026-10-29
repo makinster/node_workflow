@@ -232,8 +232,8 @@ async def test_compact_catalogue_config_defaults_are_optional(kind, field, defau
             assert fields[key]['default'] == value
             assert 'required' not in fields[key]
     text = await node_catalogue.build(factory, cfg)
-    assert f'"{field}":' + node_catalogue.compact_json(fields[field]) in text
-    assert 'Config defaults may be omitted' in text
+    assert f'{field}:string=' + node_catalogue.compact_json(default) in text
+    assert 'field:type=default; required=no default' in text
     assert factory.metadata_for_type(kind) == before
 
 

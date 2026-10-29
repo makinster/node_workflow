@@ -52,7 +52,7 @@ def test_review_symlink_library_cannot_write_outside(tmp_path, monkeypatch, caps
     async def fake_batch(trial_root, *args, **kwargs):
         calls.append(trial_root)
         (trial_root / "library" / "probe.json").write_text("escaped write")
-        return {"result": "pass", "case_count": 0}
+        return {"result": "pass", "case_count": 0, "calibration": "pass"}
 
     monkeypatch.setattr(runner, "batch", fake_batch)
     with pytest.raises(SystemExit) as error:
@@ -204,7 +204,7 @@ def test_prepare_is_exclusive_and_valid_marker_is_accepted_without_calls(
     async def fake_batch(trial_root, *args, **kwargs):
         called.append(trial_root)
         (trial_root / "library" / "probe.txt").write_text("contained")
-        return {"result": "pass", "case_count": 0}
+        return {"result": "pass", "case_count": 0, "calibration": "pass"}
 
     monkeypatch.setattr(runner, "batch", fake_batch)
     assert invoke(monkeypatch, root, "--real-calls") == 0
