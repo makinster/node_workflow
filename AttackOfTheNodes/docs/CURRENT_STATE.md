@@ -14,6 +14,17 @@ and real-engine run summaries cover all three supported models. See the latest
 Session Log entry for verification: full `pytest -n auto` passes **3,234 tests
 in 35.63 s** after the review fixes.
 
+## Trial judge diagnostics — 2026-10-28
+
+Scaffolding follow-up from main `8056401`: calibration retains redacted judge
+replies (parsed JSON or bounded text, 4,000 characters) and exact question
+files. Judge-only model/effort options apply in calibration and cases and are
+recorded in both reports. Prepared-root calibration-only reports call totals
+and estimated cost, including partial budget stops; cases are skipped.
+Judge prompt and backend are unchanged. Mock verification only; no real API
+calls or owner trial artifacts inspected. Focused trial suite: **142 passed**,
+including six diagnostics cases; whitespace check passed. See [trial tooling](../tools/draft_trials/README.md).
+
 ## Draft trial cutoff follow-up — 2026-10-28
 
 The owner reported the first real trial stopped on calibration call 8/44 after

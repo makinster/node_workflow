@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import sys
 
+from . import JUDGE_MODELS, JUDGE_EFFORTS
 from .containment import (
     ContainmentError,
     checked_root,
@@ -55,6 +56,8 @@ def main():
         help="Stop before the next call after this time (default 600)",
     )
     parser.add_argument("--calibrate-only", action="store_true")
+    parser.add_argument("--judge-model", choices=JUDGE_MODELS, default=JUDGE_MODELS[0])
+    parser.add_argument("--judge-effort", choices=JUDGE_EFFORTS, default=JUDGE_EFFORTS[0])
     parser.add_argument("--cases", default="1,2,3,4,5,6,7,8,9,10")
     parser.add_argument(
         "--scenario",
@@ -124,6 +127,8 @@ def main():
                 budget_usd=args.budget,
                 time_limit=args.time_limit,
                 shared_library=root / "library",
+                judge_model=args.judge_model,
+                judge_effort=args.judge_effort,
             )
         )
     except Exception as exc:
@@ -133,6 +138,8 @@ def main():
             {
                 "result": "fail",
                 "failure": type(exc).__name__ + ": " + str(exc),
+                "judge_model": args.judge_model,
+                "judge_effort": args.judge_effort,
                 "budget_usd": args.budget,
                 "time_limit_seconds": args.time_limit,
             },

@@ -123,8 +123,14 @@ The CLI prints the exact report path. All paths below are relative to the new
 
 - `report.json`: overall result, per-case results, counts, timings (p50/range),
   failure categories, `budget_usd`, `time_limit_seconds`, cost estimate and caveat; no-result is explicit failure.
-- `calibration-report.json`: every good/bad rule verdict and judge verdict,
-  false passes and false failures. Canned judge verdicts are protocol tests.
+- `calibration-report.json`: selected `judge_model`/`judge_effort`, attempted and
+  succeeded `model_calls`, estimated cost, every good/bad rule verdict and judge verdict,
+  false passes and false failures. Each row includes `judge_reply`: parsed JSON
+  when it fits, otherwise redacted text capped at 4,000 characters. Reply
+  evidence uses the same credential masking as run records. Canned judge
+  verdicts are protocol tests. Exact question text is saved beside each
+  calibration draft as `<variant>-judge-question.txt`; contracts remain in
+  `artifacts/contracts.json`. Budget stops retain completed calibration rows.
 - `artifacts/contracts.json`: complete text, length, hash and exact returned
   inventory from every static Compact query. Current palette text: 9,364 chars,
   comfortably below the 50,000-char planning cap. No entry is clipped.
@@ -193,3 +199,21 @@ precedes case generation; a real judge false pass stops the batch for an
 owner-approved comparison, never automatic escalation. No real trial or
 comparison was run in this Step 1 preparation change. Repeat runs reuse the
 shared key through the app's ordinary provider without re-adding or copying it.
+
+
+Judge diagnostics can run alone on a prepared root:
+
+```bash
+python -m tools.draft_trials --trial-root /absolute/prepared-root \
+  --real-calls --budget 0.50 --calibrate-only \
+  --judge-model claude-haiku-5-5 --judge-effort low
+```
+
+`--judge-model` accepts `claude-haiku-5-5` (default), `claude-sonnet-5-5`, or
+`claude-opus-5-5`; `--judge-effort` accepts `low` (default), `medium`, or `high`.
+These options affect only the judge in calibration and cases. Both reports
+record the selections; `report.json` includes total attempted/succeeded calls
+and estimated cost even when calibration fails or exhausts its budget.
+Calibration-only skips all cases, whether calibration passes or fails. A failed
+calibration still exits with failure. Mock mode remains the default; mock token
+costs do not measure inference costs. The judge prompt is unchanged.

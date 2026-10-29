@@ -20,6 +20,7 @@ from types import SimpleNamespace as NS
 from unittest.mock import patch
 import asyncio
 
+from . import JUDGE_MODELS, JUDGE_EFFORTS
 from .cases import case_record, fixture_variants, good_draft, PALETTE
 from .rules import check_rules, RuleFailure
 
@@ -39,6 +40,8 @@ class TrialBudget:
         self.time_limit = time_limit
         self.started = time.monotonic()
         self.cost = 0.0
+        self.calls = 0
+        self.succeeded = 0
         self.unknown = False
 
     def before(self):
@@ -50,6 +53,7 @@ class TrialBudget:
             raise ValueError("Trial estimate/time budget reached or cost unknown")
 
     def record(self, result):
+        self.succeeded += len(result.get("agent_usage", []))
         summary = result["agent_usage_summary"]
         cost = summary["estimated_cost_usd"]
         self.unknown |= bool(summary["not_reported"]) or bool(result["errors"])
@@ -67,6 +71,38 @@ def write_json(path, value):
         json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False) + "\n",
         encoding="utf-8",
     )
+
+
+def bounded_judge_reply(raw):
+    """Use run-record credential masking before bounding saved reply evidence."""
+    from backend.hermes_investigations import is_sensitive_credential_key, redact
+    from backend.secrets_manager import SecretsManager
+
+    manager = SecretsManager(_shared_library / "secrets" if _shared_library else None)
+    try:
+        known = tuple(manager.get_secret(key) for key in manager.list_keys())
+    except Exception:
+        return "[reply omitted: Secrets unavailable for redaction]"
+
+    def mask(value):
+        if isinstance(value, str):
+            return redact(value, known_values=known, encoded=True)
+        if isinstance(value, dict):
+            return {
+                mask(key): "[redacted]" if is_sensitive_credential_key(key) else mask(item)
+                for key, item in value.items()
+            }
+        if isinstance(value, list):
+            return [mask(item) for item in value]
+        return value
+
+    try:
+        parsed = json.loads(raw)
+    except ValueError:
+        return mask(raw)[:4000]
+    safe = mask(parsed)
+    text = json.dumps(safe, ensure_ascii=False, separators=(",", ":"))
+    return safe if len(text) <= 4000 else text[:4000]
 
 
 def sha(text):
@@ -317,6 +353,7 @@ async def run_workflow(spec, answers, artifact, timeout=30):
 
         async def guarded_ask(**kwargs):
             _budget.before()
+            _budget.calls += 1
             return await original(**kwargs)
 
         with patch.object(claude, "ask", guarded_ask):
@@ -593,7 +630,8 @@ async def target_fixtures(spec, case, directory):
 
 
 async def run_case(
-    number, trial_root, library, replies=None, real_calls=False, scenario="ready"
+    number, trial_root, library, replies=None, real_calls=False, scenario="ready",
+    *, judge_model=JUDGE_MODELS[0], judge_effort=JUDGE_EFFORTS[0],
 ):
     directory = trial_root / "cases" / str(number)
     directory.mkdir(parents=True)
@@ -605,6 +643,7 @@ async def run_case(
     )
     spec = json.loads(SPEC.read_text())
     spec["name"] += " case " + str(number)
+    spec["nodes"]["judge"]["config"].update(model=judge_model, effort=judge_effort)
     drafts = directory / "drafts"
     drafts.mkdir()
     spec["nodes"]["write"]["config"]["file_path"] = str(drafts / "draft.json")
@@ -635,6 +674,8 @@ async def run_case(
             replies = [{"_error": "transport"}]
     report = dict(
         case=number,
+        judge_model=judge_model,
+        judge_effort=judge_effort,
         mode="real" if real_calls else "mock",
         scope="not_run",
         clarification="not_run",
@@ -819,7 +860,15 @@ async def contract_inventory():
     return text, inventory
 
 
-async def calibrate(trial_root, real_calls=False, judge_replies=None):
+async def calibrate(
+    trial_root, real_calls=False, judge_replies=None, *,
+    judge_model=JUDGE_MODELS[0], judge_effort=JUDGE_EFFORTS[0],
+):
+    from backend.agent_usage import usage_summary
+
+    calls_before = _budget.calls if _budget else 0
+    succeeded_before = _budget.succeeded if _budget else 0
+    cost_before = _budget.cost if _budget else 0
     contracts, inventory = await contract_inventory()
     write_json(
         trial_root / "artifacts" / "contracts.json",
@@ -835,98 +884,138 @@ async def calibrate(trial_root, real_calls=False, judge_replies=None):
     )
     rows = []
     mock_replies = iter(judge_replies) if judge_replies is not None else None
-    for pair in pairs:
-        directory = trial_root / "calibration" / pair["id"]
-        case = case_record(pair["case"], directory / "fixtures")
-        prepare_files(Path(case["root"]), fixture_variants(pair["case"])[0])
-        for variant in ("good", "bad"):
-            target = json.loads(json.dumps(pair[variant]).replace("ROOT", case["root"]))
-            expected = variant == "good"
-            rules = check_rules(target, case)
-            write_json(directory / (variant + "-draft.json"), target)
-            template = json.loads(SPEC.read_text())["nodes"]["judge_question"][
-                "config"
-            ]["template"]
-            req = requirements(case)
-            question = template.format_map(
-                dict(
-                    draft_request=case["request"],
-                    clarification_answer=case["clarification"],
-                    frozen_requirements=json.dumps(req),
-                    draft_text=json.dumps(target),
-                    spec_check=json.dumps(
-                        {"note": "rules recorded independently, hidden from judge"}
-                    ),
+    failure = None
+    try:
+        for pair in pairs:
+            directory = trial_root / "calibration" / pair["id"]
+            case = case_record(pair["case"], directory / "fixtures")
+            prepare_files(Path(case["root"]), fixture_variants(pair["case"])[0])
+            for variant in ("good", "bad"):
+                target = json.loads(json.dumps(pair[variant]).replace("ROOT", case["root"]))
+                expected = variant == "good"
+                rules = check_rules(target, case)
+                write_json(directory / (variant + "-draft.json"), target)
+                template = json.loads(SPEC.read_text())["nodes"]["judge_question"][
+                    "config"
+                ]["template"]
+                req = requirements(case)
+                question = template.format_map(
+                    dict(
+                        draft_request=case["request"],
+                        clarification_answer=case["clarification"],
+                        frozen_requirements=json.dumps(req),
+                        draft_text=json.dumps(target),
+                        spec_check=json.dumps(
+                            {"note": "rules recorded independently, hidden from judge"}
+                        ),
+                    )
                 )
-            )
-            judge_node = deepcopy(json.loads(SPEC.read_text())["nodes"]["judge"])
-            judge_node["config"].update(
-                context_source="Configured",
-                context=contracts,
-                vault_write_key="judge_text",
-                details_vault_key="judge_details",
-            )
-            spec = dict(
-                format="aotn-workflow/1",
-                name="Calibration " + pair["id"] + " " + variant,
-                nodes={
-                    "start": {"type": "start_node", "config": {"greeting": question}},
-                    "judge": judge_node,
-                    "end": {"type": "end_node", "config": {"record_line": False}},
-                },
-                connections=[
-                    {"from": "start.default", "to": "judge.input"},
-                    {"from": "judge.default", "to": "end.input"},
-                ],
-            )
-            reply = (
-                next(mock_replies)
-                if mock_replies is not None
-                else meaning("pass" if expected else "fail")
-            )
-            with ExitStack() as stack:
-                if not real_calls:
-                    MockSDK([reply]).install(stack)
-                run, vault = await run_workflow(
-                    spec,
-                    [],
-                    directory / (variant + "-judge-run.json"),
-                    timeout=180 if real_calls else 30,
+                (directory / (variant + "-judge-question.txt")).write_text(
+                    question, encoding="utf-8"
                 )
-            try:
-                judge = json.loads(vault.get("judge_text", "null"))
-            except ValueError:
-                judge = None
-            verdict = judge.get("verdict") if valid_judge(judge, req) else "invalid"
-            false_pass = not expected and verdict == "pass"
-            false_failure = expected and verdict != "pass"
-            rows.append(
-                dict(
-                    fixture=pair["id"],
-                    variant=variant,
-                    expected="pass" if expected else "fail",
-                    case_rules=rules["result"],
-                    rules=rules["rules"],
-                    judge_verdict=verdict,
-                    judge_false_pass=false_pass,
-                    judge_false_failure=false_failure,
-                    usage=run["agent_usage"],
-                    result=(
-                        "pass"
-                        if (rules["result"] == "pass") == expected
-                        and not false_pass
-                        and not false_failure
-                        else "fail"
-                    ),
+                judge_node = deepcopy(json.loads(SPEC.read_text())["nodes"]["judge"])
+                judge_node["config"].update(
+                    model=judge_model,
+                    effort=judge_effort,
+                    context_source="Configured",
+                    context=contracts,
+                    vault_write_key="judge_text",
+                    details_vault_key="judge_details",
                 )
-            )
+                spec = dict(
+                    format="aotn-workflow/1",
+                    name="Calibration " + pair["id"] + " " + variant,
+                    nodes={
+                        "start": {"type": "start_node", "config": {"greeting": question}},
+                        "judge": judge_node,
+                        "end": {"type": "end_node", "config": {"record_line": False}},
+                    },
+                    connections=[
+                        {"from": "start.default", "to": "judge.input"},
+                        {"from": "judge.default", "to": "end.input"},
+                    ],
+                )
+                reply = (
+                    next(mock_replies)
+                    if mock_replies is not None
+                    else meaning("pass" if expected else "fail")
+                )
+                with ExitStack() as stack:
+                    if not real_calls:
+                        MockSDK([reply]).install(stack)
+                    run, vault = await run_workflow(
+                        spec,
+                        [],
+                        directory / (variant + "-judge-run.json"),
+                        timeout=180 if real_calls else 30,
+                    )
+                    judge_reply = bounded_judge_reply(vault.get("judge_text", ""))
+                try:
+                    judge = json.loads(vault.get("judge_text", "null"))
+                except ValueError:
+                    judge = None
+                verdict = judge.get("verdict") if valid_judge(judge, req) else "invalid"
+                false_pass = not expected and verdict == "pass"
+                false_failure = expected and verdict != "pass"
+                rows.append(
+                    dict(
+                        fixture=pair["id"],
+                        variant=variant,
+                        expected="pass" if expected else "fail",
+                        case_rules=rules["result"],
+                        rules=rules["rules"],
+                        judge_verdict=verdict,
+                        judge_reply=judge_reply,
+                        model_calls=dict(
+                            attempted=sum(
+                                e["handle"] == "judge" and e["status"] == "running"
+                                for e in run["steps"]
+                            ),
+                            succeeded=len(run["agent_usage"]),
+                        ),
+                        judge_false_pass=false_pass,
+                        judge_false_failure=false_failure,
+                        usage=run["agent_usage"],
+                        result=(
+                            "pass"
+                            if (rules["result"] == "pass") == expected
+                            and not false_pass
+                            and not false_failure
+                            else "fail"
+                        ),
+                    )
+                )
+    except (ValueError, RuntimeError, TimeoutError, OSError) as exc:
+        failure = type(exc).__name__ + ": " + str(exc)
+    receipts = [receipt for row in rows for receipt in row["usage"]]
+    calls = {
+        key: sum(r["model_calls"][key] for r in rows)
+        for key in ("attempted", "succeeded")
+    }
+    if _budget is not None:
+        calls = dict(
+            attempted=_budget.calls - calls_before,
+            succeeded=_budget.succeeded - succeeded_before,
+        )
     result = dict(
+        judge_model=judge_model,
+        judge_effort=judge_effort,
+        model_calls=calls,
+        estimated_cost_usd=(
+            _budget.cost - cost_before if _budget is not None
+            else usage_summary(receipts)["estimated_cost_usd"]
+        ),
         mode="real" if real_calls else "mock",
-        result="pass" if all(r["result"] == "pass" for r in rows) else "fail",
+        result=(
+            "pass" if not failure and all(r["result"] == "pass" for r in rows)
+            else "fail"
+        ),
         judge_false_passes=sum(r["judge_false_pass"] for r in rows),
         judge_false_failures=sum(r["judge_false_failure"] for r in rows),
         fixtures=rows,
     )
+    if failure:
+        result["failure"] = failure
     write_json(trial_root / "calibration-report.json", result)
     return result
 
@@ -938,6 +1027,8 @@ async def _batch(
     calibrate_only=False,
     scenario="ready",
     replies_file=None,
+    judge_model=JUDGE_MODELS[0],
+    judge_effort=JUDGE_EFFORTS[0],
 ):
     from backend.authoring import build_workflow
     from backend.node_factory import NodeFactory
@@ -956,7 +1047,10 @@ async def _batch(
     rows = []
     failure = None
     try:
-        calibration = await calibrate(trial_root, real_calls)
+        calibration = await calibrate(
+            trial_root, real_calls, judge_model=judge_model, judge_effort=judge_effort
+        )
+        failure = calibration.get("failure")
         if calibration["result"] == "pass" and not calibrate_only:
             overrides = (
                 json.loads(Path(replies_file).read_text()) if replies_file else {}
@@ -972,11 +1066,23 @@ async def _batch(
                         overrides.get(str(number)),
                         real_calls,
                         scenario,
+                        judge_model=judge_model,
+                        judge_effort=judge_effort,
                     )
                 )
     except (ValueError, RuntimeError, TimeoutError, OSError) as exc:
         failure = type(exc).__name__ + ": " + str(exc)
+    calls = {
+        key: calibration.get("model_calls", {}).get(key, 0)
+        + sum(r.get("model_calls", {}).get(key, 0) for r in rows)
+        for key in ("attempted", "succeeded")
+    }
+    if _budget is not None:
+        calls = dict(attempted=_budget.calls, succeeded=_budget.succeeded)
     summary = dict(
+        judge_model=judge_model,
+        judge_effort=judge_effort,
+        model_calls=calls,
         mode="real" if real_calls else "mock",
         input_transport="RunService InputProvider (not CLI interactive proof)",
         case_count=len(rows),
@@ -1038,6 +1144,8 @@ async def batch(
     budget_usd=None,
     time_limit=600,
     shared_library=None,
+    judge_model=JUDGE_MODELS[0],
+    judge_effort=JUDGE_EFFORTS[0],
 ):
     global _budget, _shared_library
     previous = _budget, _shared_library
@@ -1047,7 +1155,8 @@ async def batch(
             raise ValueError("real calls require a prepared shared library")
         _shared_library = Path(shared_library) if real_calls else None
         summary = await _batch(
-            trial_root, case_ids, real_calls, calibrate_only, scenario, replies_file
+            trial_root, case_ids, real_calls, calibrate_only, scenario, replies_file,
+            judge_model, judge_effort,
         )
         summary.update(budget_usd=budget_usd, time_limit_seconds=time_limit)
         write_json(trial_root / "report.json", summary)
