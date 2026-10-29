@@ -294,3 +294,78 @@ and the existing adapter boundary budget/time/unknown-cost guards cover the
 extra call. `model_calls` records node attempts; the budget counts adapter calls
 actually allowed past its guard. A recovered first check error remains in run
 history even when the corrected draft passes.
+
+## Choosing the request set
+
+`--case-set 1` is the default and retains the original ten requests, variants and
+rule expectations. `--case-set 2` selects a separate frozen version-1 set;
+`--cases` still selects ids 1–10 **within that set**. Case numbers overlap across
+sets, so stdout, run/case reports and frozen case artifacts record `case_set`.
+Each run has its own directory and temporary fixture files as before.
+
+Mock example (no API calls):
+
+```bash
+python -m tools.draft_trials --trial-root /tmp/draft-set-2 --case-set 2
+```
+
+| Set 2 id | Request / required outcome |
+|---|---|
+| 1 | Ask for a word; exact `Go` shows uppercase, other answers show lowercase, on exclusive routes. |
+| 2 | Ask first name then last name; combine both answers with a single space. |
+| 3 | Read JSON and show `person.nickname`, not the surrounding document. |
+| 4 | Read, trim and uppercase text; Create unique, preserve older files and show actual path. |
+| 5 | Missing source file path: ask a numbered file/path clarification, then reverse and show the specified file. |
+| 6 | Email request: `outside_scope`, with a reason and no saved target draft. |
+| 7 | Count words in new user text on each run: `needs_new_node`, with a reason and no saved target draft. |
+| 8 | Two parallel paths from one answer: show uppercase on one; lowercase/write/show path on the other. Only one file write. |
+| 9 | Method wording: copy the first/only line of an explicitly single-line file into a new file; a whole-file copy is equivalent. |
+| 10 | Show a fixed message despite harmless conversational chatter. |
+
+Definitions and reference drafts live in `case_set_two.py`, with a checked-in
+snapshot at `fixtures/case_set_2.json`. The eight runnable cases have **23
+behavior variants**, covering both conditional outcomes, two distinct answers,
+changed JSON fields, Unicode, empty phrases, collisions and missing files.
+Rules independently check whole-source lineage, both answer identities/order,
+JSON projection, requested transforms, actual writer path, and required route
+work. The real local target engine then checks output/file bytes and preserved
+sentinels. Trim/uppercase order may commute because that changes no result.
+The oracle accepts a bounded set of equivalent forms, not arbitrary English
+or arbitrary workflow programs; unsupported forms fail with a rule id.
+
+“Fully right” means `result: pass` / `fully_right: true`:
+
+- Runnable cases pass clarification, structure, case rules, judge and all target
+  variants. Case 5 specifically starts `clarify`, consumes the supplied path on
+  the one clarify turn, then becomes `ready` and passes the same gates.
+- Cases 6/7 return the expected status with a nonempty reason, no clarification
+  question, one analysis call, no saved target draft and no target execution.
+  `expected_outcome: status_only`, `status_check` and `no_saved_workflow` expose
+  that proof. Structure/judge/behavior are `not_applicable`, not failures.
+- Batch stdout/report show `case_set` and the `fully_right` count. A calibration
+  failure still makes the overall run fail even if all case outcomes pass.
+
+Concat has one wire input, not two independently named wire ports. Case 2 uses
+two logical inputs: User Text Input's documented `membank_outputs` copies the
+first answer to Vault, and Concat combines it with the second current input.
+The method request explicitly guarantees a one-line source: arbitrary first-line
+extraction is outside this palette and is not being hidden by the fixtures.
+
+## Unreachable-node calibration and cost
+
+Calibration is shared across sets and now contains **23 pairs / 46 judge
+calls**, adding `unconnected_end` (clean two-path workflow versus that workflow
+plus an unreachable End). Every earlier pair retains its expected rule verdicts.
+V2's first check and retry check opt into `fail_on_unreachable`; other Check
+workflow spec uses keep their default warning behavior. The exact structured
+warning reaches the one redraft, and the reviewer treats disconnected nodes as
+problems even if they appear decorative. The retry template uses real newlines.
+
+A full set-2 run without redrafts has **73 hosted calls**: 46 calibration, 10
+initial analyses, one clarification analysis, eight drafts and eight meaning
+reviews. Using run 000010's recorded per-stage estimated costs gives **$0.09354**;
+eight redrafts would project **$0.10966**. Allow roughly **$0.15** for planning.
+These are projections under the same selections/prices, not a measured set-2
+run or a billing cap. Harder outputs, different selections and caching can change
+them. Details: `docs/audits/draft_trials_set_2_cost.json`. No new API calls were
+made to estimate cost; existing budget/time/unknown-cost guards remain active.

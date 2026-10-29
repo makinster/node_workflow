@@ -279,7 +279,9 @@ class MockSDK:
 
 def requirements(case, status="ready"):
     """Canned model output, not evidence that a real model understood the case."""
-    return dict(
+    if case.get('case_set') == 2 and status == 'ready':
+        status = case.get('expected_status', status)
+    result = dict(
         status=status,
         requirements=[
             dict(
@@ -299,6 +301,14 @@ def requirements(case, status="ready"):
         assumptions=[],
         reason="",
     )
+
+    if case.get('case_set') == 2:
+        if status == 'clarify':
+            result['questions'] = '1. Which file path should I read?'
+        if status in ('outside_scope', 'needs_new_node'):
+            result['reason'] = ('Sending email is outside the permitted target scope.' if status == 'outside_scope'
+                                else 'The palette has no word-counting operation.')
+    return result
 
 
 def meaning(verdict="pass"):
@@ -540,6 +550,12 @@ def valid_judge(report, req):
 
 
 def clarification_ok(case, first, trace):
+    if case.get('case_set') == 2:
+        if case['expected_first_status'] != 'clarify':
+            return len(trace) == 1 and first.get('status') == case['expected_first_status']
+        return (len(trace) == 2 and first.get('status') == 'clarify'
+                and trace[1]['answer'] == case['clarification']
+                and bool(re.search(r'file|path', first.get('questions',''), re.I)))
     if case["id"] != 10:
         return len(trace) == 1 and first.get("status") == "ready"
     if (
@@ -560,11 +576,16 @@ def clarification_ok(case, first, trace):
     )
 
 
+def case_variants(case):
+    return (fixture_variants(case['id'], 2) if case.get('case_set') == 2
+            else fixture_variants(case['id']))
+
+
 async def target_fixtures(spec, case, directory):
     """Only called after structure, rules, deeper judge shape and safety pass."""
     results = []
     root = Path(case["root"])
-    for variant in fixture_variants(case["id"]):
+    for variant in case_variants(case):
         reset_files(root, variant["files"])
         before = tree(root)
         trial = deepcopy(spec)
@@ -641,15 +662,18 @@ async def target_fixtures(spec, case, directory):
 
 async def run_case(
     number, trial_root, library, replies=None, real_calls=False, scenario="ready",
-    *, judge_model=JUDGE_MODELS[0], judge_effort=JUDGE_EFFORTS[0],
+    *, judge_model=JUDGE_MODELS[0], judge_effort=JUDGE_EFFORTS[0], case_set=1,
 ):
     directory = trial_root / "cases" / str(number)
     directory.mkdir(parents=True)
-    case = case_record(number, directory / "fixtures")
+    case = case_record(number, directory / "fixtures", case_set)
+    variants = case_variants(case)
+    expected_status = case.get("expected_status", "ready")
+    needs_clarification = bool(case["clarification"])
     root = Path(case["root"])
-    prepare_files(root, fixture_variants(number)[0])
+    prepare_files(root, variants[0])
     write_json(
-        directory / "frozen-case.json", dict(case, fixtures=fixture_variants(number))
+        directory / "frozen-case.json", dict(case, fixtures=variants)
     )
     spec = json.loads(SPEC.read_text())
     spec["name"] += " case " + str(number)
@@ -659,7 +683,7 @@ async def run_case(
     spec["nodes"]["write"]["config"]["file_path"] = str(drafts / "draft.json")
     write_json(directory / "trial-designer.json", spec)
     answers = [("What should the workflow do?", case["request"])]
-    if number == 10:
+    if needs_clarification:
         answers.append(
             (
                 "Answer the questions above",
@@ -667,16 +691,16 @@ async def run_case(
             )
         )
     if replies is None:
-        first = requirements(case, "clarify" if number == 10 else "ready")
+        first = requirements(case, "clarify" if needs_clarification else expected_status)
         replies = [first]
-        if number == 10:
+        if needs_clarification:
             replies.append(
                 requirements(case, "clarify" if scenario == "unhelpful" else "ready")
             )
-        if scenario != "unhelpful":
+        if scenario != "unhelpful" and expected_status == "ready":
             replies.extend(
                 [
-                    good_draft(number, case["root"]),
+                    good_draft(number, case["root"], case_set),
                     meaning("fail" if scenario == "judge_fail" else "pass"),
                 ]
             )
@@ -684,6 +708,12 @@ async def run_case(
             replies = [{"_error": "transport"}]
     report = dict(
         case=number,
+        case_set=case_set,
+        expected_first_status=case.get("expected_first_status", "clarify" if needs_clarification else "ready"),
+        expected_status=expected_status,
+        saved_workflow_expected=expected_status == "ready",
+        expected_outcome=("status_only" if expected_status != "ready" else
+                          "clarified_workflow" if needs_clarification else "ready_workflow"),
         judge_model=judge_model,
         judge_effort=judge_effort,
         mode="real" if real_calls else "mock",
@@ -698,6 +728,13 @@ async def run_case(
     )
     mock = MockSDK(replies)
     started = time.monotonic()
+    def finish():
+        report['fully_right'] = report.get('result') == 'pass'
+        report['seconds'] = time.monotonic() - started
+        if not real_calls:
+            report['calls'] = dict(attempted=len(mock.calls), succeeded=mock.succeeded, remaining=len(mock.replies))
+        write_json(directory / 'report.json', report)
+        return report
     try:
         with ExitStack() as stack:
             if not real_calls:
@@ -766,6 +803,29 @@ async def run_case(
             and valid_judge(judge, frozen)
             else "not_run" if judge is None else "invalid"
         )
+        report['status_check'] = dict(
+            first=first.get('status') if isinstance(first, dict) else 'invalid',
+            final=(frozen.get('status') if isinstance(frozen, dict) else
+                   first.get('status') if isinstance(first, dict) and expected_status != 'ready' else 'not_frozen'),
+            expected_first=report['expected_first_status'], expected_final=expected_status)
+        if expected_status in ('outside_scope', 'needs_new_node'):
+            files = list(drafts.glob('*'))
+            correct = (valid_analysis(first) and first['status'] == expected_status
+                       and bool(first['reason'].strip()) and not first['questions'].strip()
+                       and len(run['input_trace']) == 1 and not run['errors']
+                       and not files and not vault.get('draft_text') and judge is None
+                       and report['model_calls']['attempted'] == 1)
+            report.update(result='pass' if correct else 'fail',
+                          clarification='not_required', spec_valid='not_applicable',
+                          case_rules=dict(result='pass' if correct else 'fail', rules=[dict(
+                              id=f'{case_set}.{number}.status_and_no_workflow',
+                              result='pass' if correct else 'fail', evidence=report['status_check'])]),
+                          meaning_review='not_applicable',
+                          behavior=dict(result='not_applicable', fixtures=[]),
+                          no_saved_workflow=not files)
+            if not correct:
+                report['failure'] = 'Expected status with reason and no saved workflow or target execution'
+            return finish()
         structural = vault.get("spec_check")
         if isinstance(structural, dict):
             report["spec_valid"] = "pass" if structural.get("ok") else "fail"
@@ -816,7 +876,7 @@ async def run_case(
         )
         report["warnings"] = checked["report"].get("diagnostics", [])
         target = json.loads(raw)
-        if number == 10:
+        if needs_clarification:
             gate_order = [e["handle"] for e in run["steps"] if e["status"] == "done"]
             if (
                 not (
@@ -850,15 +910,7 @@ async def run_case(
     ) as exc:
         report["result"] = "fail"
         report["failure"] = str(exc)
-    report["seconds"] = time.monotonic() - started
-    if not real_calls:
-        report["calls"] = dict(
-            attempted=len(mock.calls),
-            succeeded=mock.succeeded,
-            remaining=len(mock.replies),
-        )
-    write_json(directory / "report.json", report)
-    return report
+    return finish()
 
 
 async def contract_inventory():
@@ -1069,6 +1121,7 @@ async def _batch(
     judge_model=JUDGE_MODELS[0],
     judge_effort=JUDGE_EFFORTS[0],
     cases_even_if_calibration_fails=False,
+    case_set=1,
 ):
     from backend.authoring import build_workflow
     from backend.node_factory import NodeFactory
@@ -1108,6 +1161,7 @@ async def _batch(
                         scenario,
                         judge_model=judge_model,
                         judge_effort=judge_effort,
+                        **({"case_set": case_set} if case_set != 1 else {}),
                     )
                 )
     except (ValueError, RuntimeError, TimeoutError, OSError) as exc:
@@ -1125,7 +1179,9 @@ async def _batch(
         model_calls=calls,
         mode="real" if real_calls else "mock",
         input_transport="RunService InputProvider (not CLI interactive proof)",
+        case_set=case_set,
         case_count=len(rows),
+        fully_right=sum(r["result"] == "pass" for r in rows),
         fixture_count=sum(len(r.get("behavior", {}).get("fixtures", [])) for r in rows),
         calibration=calibration["result"],
         cases_even_if_calibration_fails=cases_even_if_calibration_fails,
@@ -1188,10 +1244,13 @@ async def batch(
     judge_model=JUDGE_MODELS[0],
     judge_effort=JUDGE_EFFORTS[0],
     cases_even_if_calibration_fails=False,
+    case_set=1,
 ):
     global _budget, _shared_library
     previous = _budget, _shared_library
     try:
+        if case_set not in (1, 2):
+            raise ValueError("case_set must be 1 or 2")
         _budget = TrialBudget(budget_usd, time_limit) if real_calls else None
         if real_calls and shared_library is None:
             raise ValueError("real calls require a prepared shared library")
@@ -1199,7 +1258,7 @@ async def batch(
         summary = await _batch(
             trial_root, case_ids, real_calls, calibrate_only, scenario, replies_file,
             judge_model, judge_effort,
-            cases_even_if_calibration_fails,
+            cases_even_if_calibration_fails, case_set,
         )
         summary.update(budget_usd=budget_usd, time_limit_seconds=time_limit)
         write_json(trial_root / "report.json", summary)

@@ -1,0 +1,1293 @@
+{
+  "case_set": 2,
+  "version": 1,
+  "cases": [
+    {
+      "id": 1,
+      "request": "Ask me for a word. If I type exactly Go, show its uppercase version. Otherwise show its lowercase version. Take only one path.",
+      "expected_first_status": "ready",
+      "expected_status": "ready",
+      "clarification": "",
+      "fixtures": [
+        {
+          "name": "word-0",
+          "files": {},
+          "answers": [
+            "Go"
+          ],
+          "outputs": [
+            "GO"
+          ],
+          "writes": {},
+          "error": false
+        },
+        {
+          "name": "word-1",
+          "files": {},
+          "answers": [
+            "MiXeD"
+          ],
+          "outputs": [
+            "mixed"
+          ],
+          "writes": {},
+          "error": false
+        },
+        {
+          "name": "word-2",
+          "files": {},
+          "answers": [
+            "go"
+          ],
+          "outputs": [
+            "go"
+          ],
+          "writes": {},
+          "error": false
+        },
+        {
+          "name": "word-3",
+          "files": {},
+          "answers": [
+            ""
+          ],
+          "outputs": [
+            ""
+          ],
+          "writes": {},
+          "error": false
+        }
+      ],
+      "required_structure": {
+        "roles": {
+          "ask": {
+            "type": "user_text_input_node"
+          },
+          "choice": {
+            "type": "conditional_node"
+          },
+          "upper": {
+            "type": "text_transform_node",
+            "config": {
+              "operation": "uppercase"
+            }
+          },
+          "lower": {
+            "type": "text_transform_node",
+            "config": {
+              "operation": "lowercase"
+            }
+          },
+          "yes": {
+            "type": "text_output_node",
+            "output_operation": "uppercase"
+          },
+          "no": {
+            "type": "text_output_node",
+            "output_operation": "lowercase"
+          }
+        },
+        "before": [],
+        "data_from": [
+          [
+            "ask",
+            "choice"
+          ],
+          [
+            "upper",
+            "yes"
+          ],
+          [
+            "lower",
+            "no"
+          ]
+        ],
+        "forks": [
+          {
+            "role": "choice",
+            "ports": [
+              "true",
+              "false"
+            ],
+            "work": [
+              [
+                "upper",
+                "yes"
+              ],
+              [
+                "lower",
+                "no"
+              ]
+            ],
+            "permutable": false
+          }
+        ]
+      },
+      "good": {
+        "format": "aotn-workflow/1",
+        "name": "Set 2 case 1",
+        "nodes": {
+          "start": {
+            "type": "start_node",
+            "config": {
+              "greeting": ""
+            }
+          },
+          "ask": {
+            "type": "user_text_input_node",
+            "config": {
+              "prompt": "Enter a word:"
+            }
+          },
+          "choice": {
+            "type": "conditional_node",
+            "config": {
+              "condition_type": "equals",
+              "right_value": "Go"
+            }
+          },
+          "uppercase": {
+            "type": "text_transform_node",
+            "config": {
+              "operation": "uppercase"
+            }
+          },
+          "show_uppercase": {
+            "type": "text_output_node",
+            "config": {
+              "label": "",
+              "template": "{input}"
+            }
+          },
+          "show_uppercase_end": {
+            "type": "end_node",
+            "config": {
+              "record_line": false
+            }
+          },
+          "lowercase": {
+            "type": "text_transform_node",
+            "config": {
+              "operation": "lowercase"
+            }
+          },
+          "show_lowercase": {
+            "type": "text_output_node",
+            "config": {
+              "label": "",
+              "template": "{input}"
+            }
+          },
+          "show_lowercase_end": {
+            "type": "end_node",
+            "config": {
+              "record_line": false
+            }
+          }
+        },
+        "connections": [
+          {
+            "from": "start.default",
+            "to": "ask.input"
+          },
+          {
+            "from": "ask.default",
+            "to": "choice.input"
+          },
+          {
+            "from": "choice.true",
+            "to": "uppercase.input"
+          },
+          {
+            "from": "show_uppercase.default",
+            "to": "show_uppercase_end.input"
+          },
+          {
+            "from": "uppercase.default",
+            "to": "show_uppercase.input"
+          },
+          {
+            "from": "choice.false",
+            "to": "lowercase.input"
+          },
+          {
+            "from": "show_lowercase.default",
+            "to": "show_lowercase_end.input"
+          },
+          {
+            "from": "lowercase.default",
+            "to": "show_lowercase.input"
+          }
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "request": "Ask me for my first name, then my last name. Combine both answers and show the first name, a single space, and the last name.",
+      "expected_first_status": "ready",
+      "expected_status": "ready",
+      "clarification": "",
+      "fixtures": [
+        {
+          "name": "names-0",
+          "files": {},
+          "answers": [
+            "Ada",
+            "Lovelace"
+          ],
+          "outputs": [
+            "Ada Lovelace"
+          ],
+          "writes": {},
+          "error": false
+        },
+        {
+          "name": "names-1",
+          "files": {},
+          "answers": [
+            "René",
+            "Silva"
+          ],
+          "outputs": [
+            "René Silva"
+          ],
+          "writes": {},
+          "error": false
+        },
+        {
+          "name": "names-2",
+          "files": {},
+          "answers": [
+            "Lin",
+            "Q"
+          ],
+          "outputs": [
+            "Lin Q"
+          ],
+          "writes": {},
+          "error": false
+        }
+      ],
+      "required_structure": {
+        "roles": {
+          "first": {
+            "type": "user_text_input_node"
+          },
+          "last": {
+            "type": "user_text_input_node"
+          },
+          "combine": {
+            "type": "concat_node"
+          },
+          "show": {
+            "type": "text_output_node"
+          }
+        },
+        "before": [
+          [
+            "first",
+            "last"
+          ]
+        ],
+        "data_from": [
+          [
+            "first",
+            "combine"
+          ],
+          [
+            "last",
+            "combine"
+          ],
+          [
+            "combine",
+            "show"
+          ]
+        ],
+        "forks": []
+      },
+      "good": {
+        "format": "aotn-workflow/1",
+        "name": "Set 2 case 2",
+        "nodes": {
+          "start": {
+            "type": "start_node",
+            "config": {
+              "greeting": ""
+            }
+          },
+          "first": {
+            "type": "user_text_input_node",
+            "config": {
+              "prompt": "First name?",
+              "membank_outputs": [
+                {
+                  "id": "first_name",
+                  "output": "first_name",
+                  "data_type": "string"
+                }
+              ]
+            }
+          },
+          "last": {
+            "type": "user_text_input_node",
+            "config": {
+              "prompt": "Last name?"
+            }
+          },
+          "combine": {
+            "type": "concat_node",
+            "config": {
+              "template": "{first_name} {input}"
+            }
+          },
+          "show": {
+            "type": "text_output_node",
+            "config": {
+              "label": "",
+              "template": "{input}"
+            }
+          },
+          "show_end": {
+            "type": "end_node",
+            "config": {
+              "record_line": false
+            }
+          }
+        },
+        "connections": [
+          {
+            "from": "start.default",
+            "to": "first.input"
+          },
+          {
+            "from": "first.default",
+            "to": "last.input"
+          },
+          {
+            "from": "last.default",
+            "to": "combine.input"
+          },
+          {
+            "from": "show.default",
+            "to": "show_end.input"
+          },
+          {
+            "from": "combine.default",
+            "to": "show.input"
+          }
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "request": "Read ROOT/profile.json as UTF-8 JSON. Show the value of person.nickname, not the rest of the file.",
+      "expected_first_status": "ready",
+      "expected_status": "ready",
+      "clarification": "",
+      "fixtures": [
+        {
+          "name": "nickname-0",
+          "files": {
+            "profile.json": "{\"person\":{\"nickname\":\"Mira\",\"name\":\"wrong\"},\"nickname\":\"also wrong\"}"
+          },
+          "answers": [],
+          "outputs": [
+            "Mira"
+          ],
+          "writes": {},
+          "error": false
+        },
+        {
+          "name": "nickname-1",
+          "files": {
+            "profile.json": "{\"person\":{\"nickname\":\"Kai\"},\"other\":42}"
+          },
+          "answers": [],
+          "outputs": [
+            "Kai"
+          ],
+          "writes": {},
+          "error": false
+        },
+        {
+          "name": "nickname-2",
+          "files": {
+            "profile.json": "{\"person\":{\"nickname\":\"Zoë\"}}"
+          },
+          "answers": [],
+          "outputs": [
+            "Zoë"
+          ],
+          "writes": {},
+          "error": false
+        }
+      ],
+      "required_structure": {
+        "roles": {
+          "read": {
+            "type": "file_reader_node"
+          },
+          "field": {
+            "type": "json_path_node",
+            "config": {
+              "path": "person.nickname"
+            }
+          },
+          "show": {
+            "type": "text_output_node"
+          }
+        },
+        "before": [],
+        "data_from": [
+          [
+            "read",
+            "field"
+          ],
+          [
+            "field",
+            "show"
+          ]
+        ],
+        "forks": []
+      },
+      "good": {
+        "format": "aotn-workflow/1",
+        "name": "Set 2 case 3",
+        "nodes": {
+          "start": {
+            "type": "start_node",
+            "config": {
+              "greeting": ""
+            }
+          },
+          "read": {
+            "type": "file_reader_node",
+            "config": {
+              "file_path": "ROOT/profile.json",
+              "input_source": "Configured"
+            }
+          },
+          "field": {
+            "type": "json_path_node",
+            "config": {
+              "path": "person.nickname"
+            }
+          },
+          "show": {
+            "type": "text_output_node",
+            "config": {
+              "label": "",
+              "template": "{input}"
+            }
+          },
+          "show_end": {
+            "type": "end_node",
+            "config": {
+              "record_line": false
+            }
+          }
+        },
+        "connections": [
+          {
+            "from": "start.default",
+            "to": "read.input"
+          },
+          {
+            "from": "read.default",
+            "to": "field.input"
+          },
+          {
+            "from": "show.default",
+            "to": "show_end.input"
+          },
+          {
+            "from": "field.default",
+            "to": "show.input"
+          }
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "request": "Read ROOT/message.txt, trim whitespace from both ends, then uppercase the result. Save it as a new ROOT/message-clean.txt without overwriting an older file and show the actual saved path.",
+      "expected_first_status": "ready",
+      "expected_status": "ready",
+      "clarification": "",
+      "fixtures": [
+        {
+          "name": "collision",
+          "files": {
+            "message.txt": "  Call Ana\n  ",
+            "message-clean.txt": "KEEP OLD",
+            "message-clean (1).txt": "KEEP ALSO"
+          },
+          "answers": [],
+          "outputs": [
+            "@path"
+          ],
+          "writes": {
+            "message-clean.txt": "CALL ANA"
+          },
+          "error": false
+        },
+        {
+          "name": "new",
+          "files": {
+            "message.txt": "\tMixed  words\n"
+          },
+          "answers": [],
+          "outputs": [
+            "@path"
+          ],
+          "writes": {
+            "message-clean.txt": "MIXED  WORDS"
+          },
+          "error": false
+        },
+        {
+          "name": "missing",
+          "files": {},
+          "answers": [],
+          "outputs": [],
+          "writes": {},
+          "error": true
+        }
+      ],
+      "required_structure": {
+        "roles": {
+          "read": {
+            "type": "file_reader_node"
+          },
+          "trim": {
+            "type": "text_transform_node",
+            "config": {
+              "operation": "strip"
+            }
+          },
+          "upper": {
+            "type": "text_transform_node",
+            "config": {
+              "operation": "uppercase"
+            }
+          },
+          "write": {
+            "type": "file_output_node"
+          },
+          "show": {
+            "type": "text_output_node",
+            "output_kind": "saved_path"
+          }
+        },
+        "before": [],
+        "data_from": [
+          [
+            "read",
+            "trim"
+          ],
+          [
+            "read",
+            "upper"
+          ],
+          [
+            "trim",
+            "write"
+          ],
+          [
+            "upper",
+            "write"
+          ],
+          [
+            "write",
+            "show"
+          ]
+        ],
+        "forks": []
+      },
+      "good": {
+        "format": "aotn-workflow/1",
+        "name": "Set 2 case 4",
+        "nodes": {
+          "start": {
+            "type": "start_node",
+            "config": {
+              "greeting": ""
+            }
+          },
+          "read": {
+            "type": "file_reader_node",
+            "config": {
+              "file_path": "ROOT/message.txt",
+              "input_source": "Configured"
+            }
+          },
+          "strip": {
+            "type": "text_transform_node",
+            "config": {
+              "operation": "strip"
+            }
+          },
+          "uppercase": {
+            "type": "text_transform_node",
+            "config": {
+              "operation": "uppercase"
+            }
+          },
+          "write": {
+            "type": "file_output_node",
+            "config": {
+              "file_path": "ROOT/message-clean.txt",
+              "write_mode": "Create unique",
+              "open_after_write": false
+            }
+          },
+          "path": {
+            "type": "text_output_node",
+            "config": {
+              "label": "",
+              "template": "{input[path]}"
+            }
+          },
+          "path_end": {
+            "type": "end_node",
+            "config": {
+              "record_line": false
+            }
+          }
+        },
+        "connections": [
+          {
+            "from": "start.default",
+            "to": "read.input"
+          },
+          {
+            "from": "read.default",
+            "to": "strip.input"
+          },
+          {
+            "from": "strip.default",
+            "to": "uppercase.input"
+          },
+          {
+            "from": "uppercase.default",
+            "to": "write.content"
+          },
+          {
+            "from": "path.default",
+            "to": "path_end.input"
+          },
+          {
+            "from": "write.default",
+            "to": "path.input"
+          }
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "request": "Read my UTF-8 text file, reverse its text character by character, and show the result.",
+      "expected_first_status": "clarify",
+      "expected_status": "ready",
+      "clarification": "Use ROOT/reverse-source.txt.",
+      "fixtures": [
+        {
+          "name": "reverse-0",
+          "files": {
+            "reverse-source.txt": "Abc\nnext"
+          },
+          "answers": [],
+          "outputs": [
+            "txen\ncbA"
+          ],
+          "writes": {},
+          "error": false
+        },
+        {
+          "name": "reverse-1",
+          "files": {
+            "reverse-source.txt": "été !"
+          },
+          "answers": [],
+          "outputs": [
+            "! été"
+          ],
+          "writes": {},
+          "error": false
+        },
+        {
+          "name": "missing",
+          "files": {},
+          "answers": [],
+          "outputs": [],
+          "writes": {},
+          "error": true
+        }
+      ],
+      "required_structure": {
+        "roles": {
+          "read": {
+            "type": "file_reader_node"
+          },
+          "reverse": {
+            "type": "text_transform_node",
+            "config": {
+              "operation": "reverse"
+            }
+          },
+          "show": {
+            "type": "text_output_node"
+          }
+        },
+        "before": [],
+        "data_from": [
+          [
+            "read",
+            "reverse"
+          ],
+          [
+            "reverse",
+            "show"
+          ]
+        ],
+        "forks": []
+      },
+      "good": {
+        "format": "aotn-workflow/1",
+        "name": "Set 2 case 5",
+        "nodes": {
+          "start": {
+            "type": "start_node",
+            "config": {
+              "greeting": ""
+            }
+          },
+          "read": {
+            "type": "file_reader_node",
+            "config": {
+              "file_path": "ROOT/reverse-source.txt",
+              "input_source": "Configured"
+            }
+          },
+          "reverse": {
+            "type": "text_transform_node",
+            "config": {
+              "operation": "reverse"
+            }
+          },
+          "show": {
+            "type": "text_output_node",
+            "config": {
+              "label": "",
+              "template": "{input}"
+            }
+          },
+          "show_end": {
+            "type": "end_node",
+            "config": {
+              "record_line": false
+            }
+          }
+        },
+        "connections": [
+          {
+            "from": "start.default",
+            "to": "read.input"
+          },
+          {
+            "from": "read.default",
+            "to": "reverse.input"
+          },
+          {
+            "from": "show.default",
+            "to": "show_end.input"
+          },
+          {
+            "from": "reverse.default",
+            "to": "show.input"
+          }
+        ]
+      }
+    },
+    {
+      "id": 6,
+      "request": "Send an email to colleague@example.invalid saying the report is ready.",
+      "expected_first_status": "outside_scope",
+      "expected_status": "outside_scope",
+      "clarification": "",
+      "fixtures": [
+        {
+          "name": "status-only",
+          "files": {},
+          "answers": [],
+          "outputs": [],
+          "writes": {},
+          "error": false
+        }
+      ],
+      "required_structure": null,
+      "good": null
+    },
+    {
+      "id": 7,
+      "request": "Ask me for text each time I run it, count its words separated by whitespace, and show the number of words.",
+      "expected_first_status": "needs_new_node",
+      "expected_status": "needs_new_node",
+      "clarification": "",
+      "fixtures": [
+        {
+          "name": "status-only",
+          "files": {},
+          "answers": [],
+          "outputs": [],
+          "writes": {},
+          "error": false
+        }
+      ],
+      "required_structure": null,
+      "good": null
+    },
+    {
+      "id": 8,
+      "request": "Ask me for a phrase. On two parallel paths, show its uppercase version on one path; on the other, lowercase that same phrase and save it as a new ROOT/phrase.txt without overwriting an older file, then show the actual saved path. Only the second path writes a file.",
+      "expected_first_status": "ready",
+      "expected_status": "ready",
+      "clarification": "",
+      "fixtures": [
+        {
+          "name": "phrase-0",
+          "files": {
+            "phrase.txt": "KEEP OLD"
+          },
+          "answers": [
+            "MiXeD Phrase"
+          ],
+          "outputs": [
+            "MIXED PHRASE",
+            "@path"
+          ],
+          "writes": {
+            "phrase.txt": "mixed phrase"
+          },
+          "error": false
+        },
+        {
+          "name": "phrase-1",
+          "files": {
+            "phrase.txt": "KEEP OLD"
+          },
+          "answers": [
+            "Été 123"
+          ],
+          "outputs": [
+            "ÉTÉ 123",
+            "@path"
+          ],
+          "writes": {
+            "phrase.txt": "été 123"
+          },
+          "error": false
+        },
+        {
+          "name": "phrase-2",
+          "files": {
+            "phrase.txt": "KEEP OLD"
+          },
+          "answers": [
+            ""
+          ],
+          "outputs": [
+            "",
+            "@path"
+          ],
+          "writes": {
+            "phrase.txt": ""
+          },
+          "error": false
+        }
+      ],
+      "required_structure": {
+        "roles": {
+          "ask": {
+            "type": "user_text_input_node"
+          },
+          "split": {
+            "type": "branch_node"
+          },
+          "upper": {
+            "type": "text_transform_node",
+            "config": {
+              "operation": "uppercase"
+            }
+          },
+          "lower": {
+            "type": "text_transform_node",
+            "config": {
+              "operation": "lowercase"
+            }
+          },
+          "write": {
+            "type": "file_output_node"
+          },
+          "shown": {
+            "type": "text_output_node",
+            "output_operation": "uppercase"
+          },
+          "path": {
+            "type": "text_output_node",
+            "output_kind": "saved_path"
+          }
+        },
+        "before": [],
+        "data_from": [
+          [
+            "ask",
+            "split"
+          ],
+          [
+            "upper",
+            "shown"
+          ],
+          [
+            "lower",
+            "write"
+          ],
+          [
+            "write",
+            "path"
+          ]
+        ],
+        "forks": [
+          {
+            "role": "split",
+            "ports": [
+              "path_a",
+              "path_b"
+            ],
+            "work": [
+              [
+                "upper",
+                "shown"
+              ],
+              [
+                "lower",
+                "write",
+                "path"
+              ]
+            ],
+            "permutable": true
+          }
+        ]
+      },
+      "good": {
+        "format": "aotn-workflow/1",
+        "name": "Set 2 case 8",
+        "nodes": {
+          "start": {
+            "type": "start_node",
+            "config": {
+              "greeting": ""
+            }
+          },
+          "ask": {
+            "type": "user_text_input_node",
+            "config": {
+              "prompt": "Enter a phrase:"
+            }
+          },
+          "parallel": {
+            "type": "branch_node",
+            "config": {
+              "branch_count": 2
+            }
+          },
+          "upper": {
+            "type": "text_transform_node",
+            "config": {
+              "operation": "uppercase"
+            }
+          },
+          "lower": {
+            "type": "text_transform_node",
+            "config": {
+              "operation": "lowercase"
+            }
+          },
+          "upper_show": {
+            "type": "text_output_node",
+            "config": {
+              "label": "",
+              "template": "{input}"
+            }
+          },
+          "upper_show_end": {
+            "type": "end_node",
+            "config": {
+              "record_line": false
+            }
+          },
+          "write": {
+            "type": "file_output_node",
+            "config": {
+              "file_path": "ROOT/phrase.txt",
+              "write_mode": "Create unique",
+              "open_after_write": false
+            }
+          },
+          "path": {
+            "type": "text_output_node",
+            "config": {
+              "label": "",
+              "template": "{input[path]}"
+            }
+          },
+          "path_end": {
+            "type": "end_node",
+            "config": {
+              "record_line": false
+            }
+          }
+        },
+        "connections": [
+          {
+            "from": "start.default",
+            "to": "ask.input"
+          },
+          {
+            "from": "ask.default",
+            "to": "parallel.input"
+          },
+          {
+            "from": "parallel.path_a",
+            "to": "upper.input"
+          },
+          {
+            "from": "parallel.path_b",
+            "to": "lower.input"
+          },
+          {
+            "from": "upper_show.default",
+            "to": "upper_show_end.input"
+          },
+          {
+            "from": "upper.default",
+            "to": "upper_show.input"
+          },
+          {
+            "from": "lower.default",
+            "to": "write.content"
+          },
+          {
+            "from": "path.default",
+            "to": "path_end.input"
+          },
+          {
+            "from": "write.default",
+            "to": "path.input"
+          }
+        ]
+      }
+    },
+    {
+      "id": 9,
+      "request": "Open ROOT/one-line.txt, which contains just one line, copy that first line unchanged and paste it into a new ROOT/line-copy.txt. Keep any older copy and show the actual saved path.",
+      "expected_first_status": "ready",
+      "expected_status": "ready",
+      "clarification": "",
+      "fixtures": [
+        {
+          "name": "collision",
+          "files": {
+            "one-line.txt": "One complete line",
+            "line-copy.txt": "KEEP OLD"
+          },
+          "answers": [],
+          "outputs": [
+            "@path"
+          ],
+          "writes": {
+            "line-copy.txt": "One complete line"
+          },
+          "error": false
+        },
+        {
+          "name": "new",
+          "files": {
+            "one-line.txt": "A different line — unchanged"
+          },
+          "answers": [],
+          "outputs": [
+            "@path"
+          ],
+          "writes": {
+            "line-copy.txt": "A different line — unchanged"
+          },
+          "error": false
+        },
+        {
+          "name": "missing",
+          "files": {},
+          "answers": [],
+          "outputs": [],
+          "writes": {},
+          "error": true
+        }
+      ],
+      "required_structure": {
+        "roles": {
+          "read": {
+            "type": "file_reader_node"
+          },
+          "write": {
+            "type": "file_output_node"
+          },
+          "path": {
+            "type": "text_output_node",
+            "output_kind": "saved_path"
+          }
+        },
+        "before": [],
+        "data_from": [
+          [
+            "read",
+            "write"
+          ],
+          [
+            "write",
+            "path"
+          ]
+        ],
+        "forks": []
+      },
+      "good": {
+        "format": "aotn-workflow/1",
+        "name": "Set 2 case 9",
+        "nodes": {
+          "start": {
+            "type": "start_node",
+            "config": {
+              "greeting": ""
+            }
+          },
+          "read": {
+            "type": "file_reader_node",
+            "config": {
+              "file_path": "ROOT/one-line.txt",
+              "input_source": "Configured"
+            }
+          },
+          "write": {
+            "type": "file_output_node",
+            "config": {
+              "file_path": "ROOT/line-copy.txt",
+              "write_mode": "Create unique",
+              "open_after_write": false
+            }
+          },
+          "path": {
+            "type": "text_output_node",
+            "config": {
+              "label": "",
+              "template": "{input[path]}"
+            }
+          },
+          "path_end": {
+            "type": "end_node",
+            "config": {
+              "record_line": false
+            }
+          }
+        },
+        "connections": [
+          {
+            "from": "start.default",
+            "to": "read.input"
+          },
+          {
+            "from": "read.default",
+            "to": "write.content"
+          },
+          {
+            "from": "path.default",
+            "to": "path_end.input"
+          },
+          {
+            "from": "write.default",
+            "to": "path.input"
+          }
+        ]
+      }
+    },
+    {
+      "id": 10,
+      "request": "Hi there! I have a busy morning and could use something simple. When I run this, show Hello team. Thanks for helping; the morning chatter needs no action.",
+      "expected_first_status": "ready",
+      "expected_status": "ready",
+      "clarification": "",
+      "fixtures": [
+        {
+          "name": "greeting",
+          "files": {},
+          "answers": [],
+          "outputs": [
+            "Hello team"
+          ],
+          "writes": {},
+          "error": false
+        }
+      ],
+      "required_structure": {
+        "roles": {
+          "start": {
+            "type": "start_node"
+          },
+          "show": {
+            "type": "text_output_node",
+            "output_literal": "Hello team"
+          }
+        },
+        "before": [
+          [
+            "start",
+            "show"
+          ]
+        ],
+        "data_from": [],
+        "forks": []
+      },
+      "good": {
+        "format": "aotn-workflow/1",
+        "name": "Set 2 case 10",
+        "nodes": {
+          "start": {
+            "type": "start_node",
+            "config": {
+              "greeting": ""
+            }
+          },
+          "show": {
+            "type": "text_output_node",
+            "config": {
+              "label": "",
+              "template": "Hello team"
+            }
+          },
+          "show_end": {
+            "type": "end_node",
+            "config": {
+              "record_line": false
+            }
+          }
+        },
+        "connections": [
+          {
+            "from": "show.default",
+            "to": "show_end.input"
+          },
+          {
+            "from": "start.default",
+            "to": "show.input"
+          }
+        ]
+      }
+    }
+  ]
+}

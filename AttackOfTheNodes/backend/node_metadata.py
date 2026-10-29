@@ -168,6 +168,7 @@ NODE_METADATA: Dict[str, Dict[str, Any]] = {
         "time_note": "Waits until a person answers; a run with nobody to answer fails instead.",
         "execution_contract": {
             "output_payload": "default: unchanged user answer string; incoming input triggers prompt only.",
+            "notes": 'Optional membank_outputs copies the answer to Vault before continuing: [{id:"key",output:"key",data_type:"string"}]. Concat can read {key} alongside its current {input}.',
         },
     },
     "text_output_node": {

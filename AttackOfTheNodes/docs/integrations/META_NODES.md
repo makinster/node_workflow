@@ -218,3 +218,19 @@ entries for each declaring type, including the actual default. false suppresses
 the payload; it does not stop traversal. Start passes its greeting as input to
 the next node and itself shows nothing. End record_line logs only `[END] <message>`
 and no longer echoes input. Return End's workflow results still read the input.
+
+### Opt-in rejection of unreachable nodes
+
+Check workflow spec now accepts `fail_on_unreachable` (boolean, default false).
+With it enabled, any `unreachable` diagnostic fails the check as `spec_invalid`;
+its original warning severity, code, location and sanitized text remain in the
+error details. There is no success/report publication. Other warnings and the
+default checker behavior are unchanged. V2 enables the option on both checks,
+so a disconnected node gets the same single redraft as a structural error.
+The retry prompt includes the exact structured check warning.
+
+Latest sizes after the option and User Text Input's existing Vault-copy behavior
+were documented: Brief Text **15,037** / JSON **18,214** (unchanged), Compact Text
+**52,535** (previously **52,321**) / JSON **75,407** (previously **75,164**).
+The complete v2 contract bundle is **18,271 / 50,000**. Query and context caps
+are unchanged. Full Compact JSON still needs an explicit larger cap as before.

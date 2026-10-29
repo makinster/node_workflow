@@ -6,6 +6,66 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-29 — Unreachable-node redraft and selectable second trial set (Important)
+
+Clean worktree `/home/makin/src/nw-case-set-two`, branch
+`codex/draft-case-set-two`, fetched main base `da90653`. Owner workspace edits
+preserved. Two jobs in one PR, split into two focused commits.
+
+Part A: Check workflow spec has fail_on_unreachable (boolean, default false).
+Opt-in rejection keeps the original structured warning text, severity, code and
+location and publishes no success/report. V2 enables it on check/check_retry,
+so unreachable/decorative nodes get the existing one redraft; a second failure
+stops before judge/save. The judge treats them as problems. The retry template
+now uses actual newlines. Added unconnected_end: clean two-path draft versus
+that draft plus an unconnected End. Calibration regenerated: 23 pairs/46 judge
+calls; all prior expected rule verdicts remain. Re-audited the Check node's
+execute hash and helper schema; no input menu or default-client policy change.
+
+Part B: --case-set 2 selects ten separate version-1 requests, rules and reference
+drafts; default set 1 retains its requests, variants and expectations. New set
+covers exclusive transformations on both conditional outcomes, two answers,
+JSON projection, read/trim/uppercase/write, source-path clarification, email
+outside_scope, dynamic word counting needs_new_node, parallel work with only
+one writer, method-worded single-line copy, and harmless chat. Eight runnable
+cases have 23 behavior variants including collisions, Unicode, empty phrases
+and missing files. Rules prove full-source/answer lineage and routes; actual
+local target runs separately check outputs, strict file bytes and sentinels.
+Trim and uppercase may commute; tests prove both equivalent orders pass.
+
+Status-only success requires the exact expected status, a reason, no question,
+no saved target draft, one analysis call and no target execution. Their unused
+structure/judge/behavior results are not_applicable. Clarification case 5 must
+first ask a numbered file/path question, consume the supplied path on the one
+clarify turn, then become ready and pass every workflow gate. Reports/stdout
+identify case_set and fully_right; rows show expected status/outcome and saved
+workflow expectation. fixtures/case_set_2.json pins the second-set definitions.
+
+Palette constraints made explicit: Concat has one wire input plus Vault values,
+so the two-answer reference copies the first answer using User Text Input's
+existing membank_outputs option. That option is now documented in its full
+record, with source/content recheck and engine-test citation in the manifest.
+No runtime behavior was added to User Text Input. Method-copy case 9 explicitly
+states that the source has one line, so whole-file copy is equivalent; arbitrary
+first-line extraction is unsupported. The oracle remains a bounded equivalence
+checker, not an English/program equivalence prover. Live drafting quality is
+unverified until the owner's next real trial.
+
+Full `pytest -n auto -q`: **3,653 passed in 40.86 s** (42 added checks from base
+3,611). Focused new-case/structural suite: 41 passed. Initial full run exposed
+new-code statement layout and a prompt-section parsing expectation; fixed the
+layout and moved the judge instruction before the data, retaining the exact
+structural-report comparison. No real API calls. Read only prior run 000010's
+usage receipts to project costs: 73 calls without redrafts (~$0.09354), up to
+8 extra redrafts (~$0.10966 using that run's averages); allow ~$0.15 for planning,
+not a billing cap. Basis is docs/audits/draft_trials_set_2_cost.json.
+
+Catalogue: Brief Text/JSON unchanged **15,037 / 18,214**. Compact Text
+**52,321 → 52,535**, JSON **75,164 → 75,407**. V2 contracts **18,091 → 18,271**
+within 50,000; query caps remain 16,000 and Context 100,000 with headroom.
+Full Compact JSON still needs an explicit larger cap, as before. Whitespace
+checks pass. LF normalization reads bytes before writing.
+
 ## 2026-10-29 — Trial review corrections and one structural redraft (Important)
 
 Clean worktree `/home/makin/src/nw-draft-review-retry`, branch

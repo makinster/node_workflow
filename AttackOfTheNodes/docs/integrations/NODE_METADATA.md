@@ -115,3 +115,9 @@ node's input from showing text. End's re-reviewed record documents only the
 configured completion message, with no echoed input. The manifest retains the
 original metadata author and identifies this source recheck as the verifier;
 no external human review is claimed for this change.
+
+User Text Input's full record now documents the existing `membank_outputs`
+answer-copy option and Concat's use of that saved value plus current input.
+Its execute source was re-read and its content digest rechecked locally; set-2
+engine tests cover the two-answer flow. No runtime behavior was added to that
+node. The metadata manifest cites the supporting engine test.
