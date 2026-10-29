@@ -1,0 +1,4473 @@
+{
+  "schema_version": 1,
+  "base_revision": "439e6148e29eaab951e187592d484b508190aa15",
+  "date": "2026-10-29",
+  "scope": "pre-change source-reviewed baseline; accepted means explicit authoring override, not executable capability",
+  "registered_count": 59,
+  "reviewed_count": 12,
+  "nodes": [
+    {
+      "node_type": "ask_claude_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/ai/ask_claude_node.py",
+      "source_sha256": "ca5d51f3e2fad94050a82714c447d9ba87f0afa2fa2c10b6679da4f713af5d5d",
+      "inputs": {
+        "input": {
+          "name": "Question",
+          "description": "",
+          "data_type": "string",
+          "required": true,
+          "sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ]
+        },
+        "context": {
+          "name": "Context",
+          "description": "",
+          "data_type": "string",
+          "required": false,
+          "sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ]
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Answer",
+          "description": "The final answer as text; JSON mode still returns text",
+          "data_type": "string",
+          "required": true,
+          "to": [
+            "downstream",
+            "vault"
+          ],
+          "pass_through": true
+        },
+        "details": {
+          "name": "Run details",
+          "description": "Model, tokens, stop reason, wall time and cost estimate; no prompt or credentials",
+          "data_type": "var",
+          "required": false,
+          "to": [
+            "vault"
+          ]
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": true,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": [],
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "hermes_ask_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/ai/hermes_ask_node.py",
+      "source_sha256": "519833d8e42e2c52d203f6a02ba75409cedd11ce8f1fa530b7fa9f6992e25120",
+      "inputs": {
+        "input": {
+          "name": "Question",
+          "description": "",
+          "data_type": "string",
+          "required": true,
+          "sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ]
+        },
+        "context": {
+          "name": "Context",
+          "description": "Optional data after the question; at most 8,000 characters",
+          "data_type": "string",
+          "required": false,
+          "sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ]
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Answer",
+          "description": "The final answer as text",
+          "data_type": "string",
+          "required": true,
+          "to": [
+            "downstream",
+            "vault"
+          ],
+          "pass_through": true
+        },
+        "details": {
+          "name": "Run details",
+          "description": "Time, turns, token use, cost and saved record",
+          "data_type": "var",
+          "required": false,
+          "to": [
+            "vault"
+          ]
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": true,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": [],
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "hermes_investigate_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/io/hermes_investigate_node.py",
+      "source_sha256": "8a99c4acc6cd62e6813b56f9f0e740286fb671c0951f7a5539a2b341c77e78c8",
+      "inputs": {
+        "input": {
+          "name": "What happened",
+          "description": "",
+          "data_type": "string",
+          "required": true,
+          "sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ]
+        },
+        "evidence": {
+          "name": "Short excerpts",
+          "description": "",
+          "data_type": "string",
+          "required": false,
+          "sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ]
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Request id",
+          "description": "The new request id, or the original id for a skipped repeat",
+          "data_type": "string",
+          "required": true,
+          "to": [
+            "downstream",
+            "vault"
+          ],
+          "pass_through": true
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": true,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": [],
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "ask_local_model_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/ai/ask_local_model_node.py",
+      "source_sha256": "906a74138630732b7e18ade131c245dd26eacc12cce0497d038998a0120cd363",
+      "inputs": {
+        "input": {
+          "name": "Question",
+          "description": "",
+          "data_type": "string",
+          "required": true,
+          "sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ]
+        },
+        "context": {
+          "name": "Context",
+          "description": "",
+          "data_type": "string",
+          "required": false,
+          "sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ]
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Answer",
+          "description": "The final answer as text; JSON mode still returns text",
+          "data_type": "string",
+          "required": true,
+          "to": [
+            "downstream",
+            "vault"
+          ],
+          "pass_through": true
+        },
+        "details": {
+          "name": "Run details",
+          "description": "Token counts, timing and token-fit warnings; no prompt or thinking trace",
+          "data_type": "var",
+          "required": false,
+          "to": [
+            "vault"
+          ]
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": true,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": [],
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "chat_completion_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/chat_completion_node.py",
+      "source_sha256": "8bb74fad772071ffaa496f5a06b9d9305ed8009d30ef7ee08f784366018f7aae",
+      "inputs": {
+        "prompt": {
+          "name": "Prompt",
+          "description": "Instruction text sent to the model",
+          "data_type": "string",
+          "required": true,
+          "sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ]
+        },
+        "context_1": {
+          "name": "Context 1",
+          "description": "Additional context appended before the document",
+          "data_type": "string",
+          "required": false,
+          "sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ]
+        },
+        "context_2": {
+          "name": "Context 2",
+          "description": "Additional context appended before the document",
+          "data_type": "string",
+          "required": false,
+          "sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ]
+        },
+        "context_3": {
+          "name": "Context 3",
+          "description": "Additional context appended before the document",
+          "data_type": "string",
+          "required": false,
+          "sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ]
+        },
+        "context_4": {
+          "name": "Context 4",
+          "description": "Additional context appended before the document",
+          "data_type": "string",
+          "required": false,
+          "sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ]
+        },
+        "context_5": {
+          "name": "Context 5",
+          "description": "Additional context appended before the document",
+          "data_type": "string",
+          "required": false,
+          "sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ]
+        },
+        "context_6": {
+          "name": "Context 6",
+          "description": "Additional context appended before the document",
+          "data_type": "string",
+          "required": false,
+          "sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ]
+        },
+        "context_7": {
+          "name": "Context 7",
+          "description": "Additional context appended before the document",
+          "data_type": "string",
+          "required": false,
+          "sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ]
+        },
+        "context_8": {
+          "name": "Context 8",
+          "description": "Additional context appended before the document",
+          "data_type": "string",
+          "required": false,
+          "sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ]
+        },
+        "document": {
+          "name": "Document / Context",
+          "description": "Optional document appended to the prompt",
+          "data_type": "string",
+          "required": false,
+          "sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ]
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "LLM Result",
+          "description": "Model response text (or forwarded payload on dead-drop)",
+          "data_type": "string",
+          "required": true,
+          "to": [
+            "downstream",
+            "vault"
+          ],
+          "pass_through": true
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": true,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": [],
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "check_reply_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/data/check_reply_node.py",
+      "source_sha256": "24750255eb05fe78fb28d26a043d4120a72fac17f54473d69b602391667656c1",
+      "inputs": {
+        "input": {
+          "name": "Reply",
+          "description": "",
+          "data_type": "string",
+          "required": true,
+          "sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ]
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Checked reply",
+          "description": "",
+          "data_type": "var",
+          "required": true,
+          "to": [
+            "downstream",
+            "vault"
+          ],
+          "pass_through": true
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": true,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": [],
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "check_workflow_spec_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/data/check_workflow_spec_node.py",
+      "source_sha256": "bd0e4cbf9959a22a9066155daa0aa4baba64c5df5a13ef454957af6f51750ede",
+      "inputs": {
+        "input": {
+          "name": "Spec",
+          "description": "",
+          "data_type": "string",
+          "required": true,
+          "sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ]
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Checked spec",
+          "description": "The parsed input spec; only after validation passes",
+          "data_type": "var",
+          "required": true,
+          "to": [
+            "downstream",
+            "vault"
+          ]
+        },
+        "report": {
+          "name": "Check report",
+          "description": "Optional verdict, warnings and counts; no spec body",
+          "data_type": "var",
+          "required": false,
+          "to": [
+            "vault"
+          ]
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": true,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": [],
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "concat_node",
+      "metadata_review": "reviewed",
+      "authorable": true,
+      "source": "backend/nodes/concat_node.py",
+      "source_sha256": "9be589fb6251d27b51ba4038c80dd3d4c25684d6c20eb8428e8ee8b9254dfc20",
+      "inputs": {
+        "input": {
+          "name": "Input",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Text",
+          "data_type": "string",
+          "to": [
+            "downstream",
+            "vault"
+          ],
+          "pass_through": true,
+          "description": "",
+          "required": false
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": true,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": [],
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": "cc02379128b56a933eb9eb56b3a7c40a51566462db9b180ebe934b1f619149a6"
+    },
+    {
+      "node_type": "conditional_node",
+      "metadata_review": "reviewed",
+      "authorable": true,
+      "source": "backend/nodes/conditional_node.py",
+      "source_sha256": "d69a072d8adb6521bb43c97bf26c843d556b29ac0d49d85d881cd05942c55c4d",
+      "inputs": {
+        "input": {
+          "name": "Input",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "outputs": {
+        "true": {
+          "name": "True",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "false": {
+          "name": "False",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": "c77fb3895f3ef4be218c700e63619574069a71f46b9783169bf98b84454e103f"
+    },
+    {
+      "node_type": "context_pack_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/data/context_pack_node.py",
+      "source_sha256": "10c4c52fe5844afda48b3ebe32d949195a31d2f3a6a194e38b52040bcfe389dc",
+      "inputs": {
+        "input": {
+          "name": "Incoming value",
+          "description": "The single incoming value used by Upstream payload rows",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Context pack",
+          "description": "Labelled facts with secrets masked and shortening noted",
+          "data_type": "string",
+          "required": true,
+          "to": [
+            "downstream",
+            "vault"
+          ],
+          "pass_through": true
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": true,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": [],
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "counter_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/debug/counter_node.py",
+      "source_sha256": "438e03b060bc7c040f01f4fe0b68ade4502cf7792624dd7f82bf85f5f523ef45",
+      "inputs": {
+        "input": {
+          "name": "Input",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Output",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "fixed_forwarding": true,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "deep_branch_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/debug/deep_branch_node.py",
+      "source_sha256": "9e51ca2f1a3416ac3dd86859ed94bca8e0c293b227b8b839782c96142ddfba2f",
+      "inputs": {
+        "input": {
+          "name": "Input",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "outputs": {
+        "branch": {
+          "name": "Branch",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "tombstone_node",
+      "metadata_review": "pending",
+      "authorable": false,
+      "source": "backend/nodes/debug/tombstone_node.py",
+      "source_sha256": "22aeacd3fc64b9cbe7c5181ad745be4d1b5878af3f63adb0f2784b35b81d7662",
+      "inputs": {},
+      "outputs": {},
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "disk_space_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/io/disk_space_node.py",
+      "source_sha256": "e8f88189322370978445ba927f71c29ed816bf33e117b50cb681e06f75cd6f39",
+      "inputs": {
+        "input": {
+          "name": "Input",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Disk space",
+          "description": "The value chosen in Report, in the chosen unit",
+          "data_type": "number",
+          "required": true,
+          "to": [
+            "downstream",
+            "vault"
+          ],
+          "pass_through": true
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": true,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": [],
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "echo_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/debug/echo_node.py",
+      "source_sha256": "bffdba60839c4f94f8b00677f27dec58fd2548046b6bdc3afa864176b187f8aa",
+      "inputs": {
+        "input": {
+          "name": "Input",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Output",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "embedding_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/embedding_node.py",
+      "source_sha256": "e81bebd92fa6da38295bc662afcc7d8218715058e260711f92aa5fcd4bebc557",
+      "inputs": {
+        "input": {
+          "name": "Input",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Output",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "end_node",
+      "metadata_review": "reviewed",
+      "authorable": true,
+      "source": "backend/nodes/end_node.py",
+      "source_sha256": "c5dad96d959429b270a6bdba93cbae62436551359fd2ebc292818b79b74f33d4",
+      "inputs": {
+        "input": {
+          "name": "Input",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "outputs": {},
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": "241986825014650a91ad61f1b66bf9a525758c51b954169c4875b8a28fb12e22"
+    },
+    {
+      "node_type": "error_mux_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/flow/error_mux_node.py",
+      "source_sha256": "bf8fe1b855f40faaf747d725bd9faf89d55fd5c614a2f94990941c7db4230dae",
+      "inputs": {
+        "input": {
+          "name": "Input",
+          "description": "The guarded node's normal output; also how the mux catches that node's errors",
+          "data_type": "any",
+          "required": false
+        },
+        "error": {
+          "name": "Error",
+          "description": "Optional: a node's error port wired here directly (older layout)",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "No error",
+          "description": "The guarded node's normal output, when it succeeds",
+          "data_type": "any",
+          "required": false
+        },
+        "unmatched": {
+          "name": "Any other error",
+          "description": "Any failure no other recovery branch takes",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "error_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/debug/error_node.py",
+      "source_sha256": "00212fd410bd7e6d2a9f6d1d29df21e9c83ce9de10d08cb6520c5b060e6452f6",
+      "inputs": {
+        "input": {
+          "name": "Input",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Output",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "file_view_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/io/file_view_node.py",
+      "source_sha256": "002ffebdb3abda40dd80740e185e423b56390556d889ca2e3b8f0d3edfd34dbf",
+      "inputs": {
+        "file": {
+          "name": "File",
+          "description": "File reference from upstream/vault, or a configured path",
+          "data_type": "file",
+          "required": true,
+          "sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ]
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "File Reference",
+          "description": "The viewed file's reference, forwarded for further steps",
+          "data_type": "file",
+          "required": true,
+          "to": [
+            "downstream",
+            "vault"
+          ],
+          "pass_through": true
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": true,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": [],
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "file_reader_node",
+      "metadata_review": "reviewed",
+      "authorable": true,
+      "source": "backend/nodes/file_reader_node.py",
+      "source_sha256": "a15051d529765f3843a728381213cb5cfe2f99652dee898f090f835f2bff196d",
+      "inputs": {
+        "input": {
+          "name": "File",
+          "data_type": "file",
+          "required": true,
+          "sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ],
+          "configured_field": "file_path",
+          "description": ""
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "File contents",
+          "data_type": "string",
+          "required": true,
+          "to": [
+            "downstream",
+            "vault"
+          ],
+          "description": ""
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": true,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": [],
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": "ea72295a985b2e71ab45df834a27f3514ad8263025f1bfb1f99ad9d33d3d1870"
+    },
+    {
+      "node_type": "file_output_node",
+      "metadata_review": "reviewed",
+      "authorable": true,
+      "source": "backend/nodes/io/file_output_node.py",
+      "source_sha256": "fd55f39bbb01042cefc4a1502252f13305e7afe8e6f14ce67992f920dd00ae17",
+      "inputs": {
+        "content": {
+          "name": "Content",
+          "description": "Text or Base64 text written to the file",
+          "data_type": "string",
+          "required": true,
+          "sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ]
+        },
+        "file_path": {
+          "name": "File Path",
+          "description": "Destination path, or a file reference from upstream/vault",
+          "data_type": "file",
+          "required": true,
+          "sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ]
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "File Reference",
+          "description": "Typed reference to the written file",
+          "data_type": "file",
+          "required": true,
+          "to": [
+            "downstream",
+            "vault"
+          ],
+          "pass_through": true
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": true,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": [],
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": "f8ca8c813eb43ad300395be7c6ed86572fd651c9ee6e9c5844a38bfded1c1438"
+    },
+    {
+      "node_type": "file_age_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/io/file_age_node.py",
+      "source_sha256": "0554ef3fe6ffcc6ccbb54d9f129bf39dc1700b67fe33ced094128e898acb0789",
+      "inputs": {
+        "input": {
+          "name": "Input",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Age",
+          "description": "Time since the last change, in the chosen unit",
+          "data_type": "number",
+          "required": true,
+          "to": [
+            "downstream",
+            "vault"
+          ],
+          "pass_through": true
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": true,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": [],
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "find_lines_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/io/find_lines_node.py",
+      "source_sha256": "1b01cc5080cc03960fba07242158cc7c43d93d85e74d85be74a82da10dffe6e1",
+      "inputs": {
+        "input": {
+          "name": "Text to find",
+          "description": "",
+          "data_type": "string",
+          "required": true,
+          "sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ]
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Line numbers",
+          "description": "",
+          "data_type": "var",
+          "required": true,
+          "to": [
+            "downstream",
+            "vault"
+          ],
+          "pass_through": true
+        },
+        "match_count": {
+          "name": "Match count",
+          "description": "All matching lines, including those beyond Max matches",
+          "data_type": "number",
+          "required": false,
+          "to": [
+            "vault"
+          ]
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": true,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": [],
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "get_variable_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/get_variable_node.py",
+      "source_sha256": "362b51c7e39ab24dc0de81a206af427311258cc9f0d9055ced2ca367a7ee63bb",
+      "inputs": {
+        "input": {
+          "name": "Input",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Output",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "git_status_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/io/git_status_node.py",
+      "source_sha256": "696c37d9877fce8814725c73ac1edb49beff7877dffe57e6890ec618602abe8c",
+      "inputs": {
+        "input": {
+          "name": "Input",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Git status",
+          "description": "The value chosen in Report: Clean [bool], Branch [string], Changed files [var], Commits ahead [number]",
+          "data_type": "any",
+          "required": true,
+          "to": [
+            "downstream",
+            "vault"
+          ],
+          "pass_through": true
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": true,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": [],
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "http_request_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/io/http_request_node.py",
+      "source_sha256": "8ce5ee8bc814c88affb897911067971e37b7060ee0ab51acaff6084009582ee4",
+      "inputs": {
+        "input": {
+          "name": "Input",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Response",
+          "description": "The response body: text, or a file reference when Response as is file",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "if_changed_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/data/if_changed_node.py",
+      "source_sha256": "8657b574dab33b5a7c78d61403b471a8c227e46ad12806f987de14b60abe71bf",
+      "inputs": {
+        "input": {
+          "name": "Value",
+          "description": "The value to compare and save",
+          "data_type": "any",
+          "required": true,
+          "sources": [
+            "upstream",
+            "vault"
+          ]
+        }
+      },
+      "outputs": {
+        "changed": {
+          "name": "Changed",
+          "description": "The new value",
+          "data_type": "any",
+          "required": false,
+          "to": [
+            "downstream"
+          ]
+        },
+        "no_change": {
+          "name": "No change",
+          "description": "The value, the same as last time",
+          "data_type": "any",
+          "required": false,
+          "to": [
+            "downstream"
+          ]
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": true,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": [],
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "image_generation_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/image_generation_node.py",
+      "source_sha256": "ffcc411d621c3526c34099b14275de1dc70f97b016f26dc6b282f88844099cb3",
+      "inputs": {
+        "input": {
+          "name": "Input",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Output",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "hermes_investigation_result_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/io/hermes_investigation_result_node.py",
+      "source_sha256": "0e2c16104b931e5be2417476599c1a10f95e3d54804f6a36d5e1f623e49ec367",
+      "inputs": {
+        "input": {
+          "name": "Request id",
+          "description": "",
+          "data_type": "string",
+          "required": true,
+          "sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ]
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Finding",
+          "description": "The finding, or not ready yet / failed",
+          "data_type": "string",
+          "required": true,
+          "to": [
+            "downstream",
+            "vault"
+          ],
+          "pass_through": true
+        },
+        "state": {
+          "name": "State",
+          "description": "ready / not ready yet / failed; for a Conditional",
+          "data_type": "string",
+          "required": false,
+          "to": [
+            "vault"
+          ]
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": true,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": [],
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "json_path_node",
+      "metadata_review": "reviewed",
+      "authorable": true,
+      "source": "backend/nodes/data/json_path_node.py",
+      "source_sha256": "735ab138add0bb2f9ca52e44b8d6de38f20bd76be773e03e59205225233b2db6",
+      "inputs": {
+        "input": {
+          "name": "Input",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Output",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": "097aa179e65876159dbfaa650ebaa7f7e19cdbc19b387c03e117796c69df4831"
+    },
+    {
+      "node_type": "pick_one_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/ai/pick_one_node.py",
+      "source_sha256": "a7c38951ae204f694ddc3da91eac15157fb84b7ee198a47e2f80f2b41be929de",
+      "inputs": {
+        "input": {
+          "name": "Text to judge",
+          "description": "The text Jev reads before picking an answer; at most 20,000 characters",
+          "data_type": "string",
+          "required": true,
+          "sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ]
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Answer",
+          "description": "Exactly the picked answer, or unsure below the cutoff",
+          "data_type": "string",
+          "required": true,
+          "to": [
+            "downstream",
+            "vault"
+          ],
+          "pass_through": true
+        },
+        "details": {
+          "name": "Pick details",
+          "description": "Every answer's score, confidence, model and token usage",
+          "data_type": "var",
+          "required": false,
+          "to": [
+            "vault"
+          ]
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": true,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": [],
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "logger_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/debug/logger_node.py",
+      "source_sha256": "ff76d05f205d8abf5dde3f1e0cb2bc3dcd89ff1f3f9f6871c0bc1077a0706d79",
+      "inputs": {
+        "input": {
+          "name": "Input",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Output",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "fixed_forwarding": "Logs the payload, then forwards it unchanged.",
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "memory_snapshot_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/debug/memory_snapshot_node.py",
+      "source_sha256": "1a02c22f93c7605c3c52ee55fd99918296816bec286b97fa1e53c362ec60e031",
+      "inputs": {
+        "input": {
+          "name": "Input",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Output",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "fixed_forwarding": "Logs the Vault, then forwards the incoming payload unchanged.",
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "merge_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/merge_node.py",
+      "source_sha256": "5bbac88410ae2e18a13403f56004b498bb6d1271de8533953417cbaf3ad58056",
+      "inputs": {
+        "path_a": {
+          "name": "Path A",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_b": {
+          "name": "Path B",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_c": {
+          "name": "Path C",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_d": {
+          "name": "Path D",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_e": {
+          "name": "Path E",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_f": {
+          "name": "Path F",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_g": {
+          "name": "Path G",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_h": {
+          "name": "Path H",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_i": {
+          "name": "Path I",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_j": {
+          "name": "Path J",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_k": {
+          "name": "Path K",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_l": {
+          "name": "Path L",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_m": {
+          "name": "Path M",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_n": {
+          "name": "Path N",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_o": {
+          "name": "Path O",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_p": {
+          "name": "Path P",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_q": {
+          "name": "Path Q",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_r": {
+          "name": "Path R",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_s": {
+          "name": "Path S",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_t": {
+          "name": "Path T",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_u": {
+          "name": "Path U",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_v": {
+          "name": "Path V",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_w": {
+          "name": "Path W",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_x": {
+          "name": "Path X",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_y": {
+          "name": "Path Y",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_z": {
+          "name": "Path Z",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_aa": {
+          "name": "Path Aa",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_ab": {
+          "name": "Path Ab",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_ac": {
+          "name": "Path Ac",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_ad": {
+          "name": "Path Ad",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_ae": {
+          "name": "Path Ae",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_af": {
+          "name": "Path Af",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_ag": {
+          "name": "Path Ag",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_ah": {
+          "name": "Path Ah",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_ai": {
+          "name": "Path Ai",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_aj": {
+          "name": "Path Aj",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_ak": {
+          "name": "Path Ak",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_al": {
+          "name": "Path Al",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_am": {
+          "name": "Path Am",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_an": {
+          "name": "Path An",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_ao": {
+          "name": "Path Ao",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_ap": {
+          "name": "Path Ap",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_aq": {
+          "name": "Path Aq",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_ar": {
+          "name": "Path Ar",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_as": {
+          "name": "Path As",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_at": {
+          "name": "Path At",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_au": {
+          "name": "Path Au",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_av": {
+          "name": "Path Av",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_aw": {
+          "name": "Path Aw",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_ax": {
+          "name": "Path Ax",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_ay": {
+          "name": "Path Ay",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_az": {
+          "name": "Path Az",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_ba": {
+          "name": "Path Ba",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_bb": {
+          "name": "Path Bb",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_bc": {
+          "name": "Path Bc",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_bd": {
+          "name": "Path Bd",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_be": {
+          "name": "Path Be",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_bf": {
+          "name": "Path Bf",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_bg": {
+          "name": "Path Bg",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_bh": {
+          "name": "Path Bh",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_bi": {
+          "name": "Path Bi",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_bj": {
+          "name": "Path Bj",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_bk": {
+          "name": "Path Bk",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_bl": {
+          "name": "Path Bl",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Output",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "branch_end_node",
+      "metadata_review": "reviewed",
+      "authorable": true,
+      "source": "backend/nodes/branch_end_node.py",
+      "source_sha256": "886600f9f0eb71e0964ac0d4559e11ea9d34f8481460c561540579b9f3c0671a",
+      "inputs": {
+        "input": {
+          "name": "Input",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Output",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "fixed_forwarding": "Forwards the branch's payload unchanged to the Merge.",
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": "a7b11e79741185b004a04ca305cef2bd7c883b40c92421d50630578cf89c498f"
+    },
+    {
+      "node_type": "no_op_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/debug/no_op_node.py",
+      "source_sha256": "5d569d27d430d2dfb102fe74dea955bd48a5fba7481c43b9e9e3232294a9464e",
+      "inputs": {
+        "input": {
+          "name": "Input",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Output",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "fixed_forwarding": "Forwards the incoming payload unchanged.",
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "node_catalogue_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/data/node_catalogue_node.py",
+      "source_sha256": "12af7cd08ccad2b33809b10e4c49b1e0744eeb75f48fbe72aec3035c39df5780",
+      "inputs": {
+        "input": {
+          "name": "Continue",
+          "description": "Sequence this step; incoming data is not a filter.",
+          "data_type": "any",
+          "required": false,
+          "sources": [
+            "upstream"
+          ]
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Catalogue",
+          "description": "Complete matching contracts; errors if over the size cap",
+          "data_type": "string",
+          "required": true,
+          "to": [
+            "downstream",
+            "vault"
+          ]
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": true,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": [],
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "hermes_notify_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/io/hermes_notify_node.py",
+      "source_sha256": "97303bfffce271e4de5118ce7d0ac9ba24601d6484a721a0a436bfef11b98284",
+      "inputs": {
+        "input": {
+          "name": "Input",
+          "description": "The value {input} puts in the message",
+          "data_type": "any",
+          "required": false,
+          "sources": [
+            "upstream",
+            "vault"
+          ]
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Receipt",
+          "description": "Receipt id, status (queued, skipped or not queued) and the message as queued",
+          "data_type": "var",
+          "required": false,
+          "to": [
+            "downstream",
+            "vault"
+          ],
+          "pass_through": true
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": true,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": [],
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "branch_node",
+      "metadata_review": "reviewed",
+      "authorable": true,
+      "source": "backend/nodes/branch_node.py",
+      "source_sha256": "3a3274190e2276a30627f3a9f036ba115104cf1ce7fa65633eaa658f359981af",
+      "inputs": {
+        "input": {
+          "name": "Input",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "outputs": {
+        "path_a": {
+          "name": "Path A",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_b": {
+          "name": "Path B",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_c": {
+          "name": "Path C",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_d": {
+          "name": "Path D",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_e": {
+          "name": "Path E",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_f": {
+          "name": "Path F",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_g": {
+          "name": "Path G",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_h": {
+          "name": "Path H",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_i": {
+          "name": "Path I",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_j": {
+          "name": "Path J",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_k": {
+          "name": "Path K",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_l": {
+          "name": "Path L",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_m": {
+          "name": "Path M",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_n": {
+          "name": "Path N",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_o": {
+          "name": "Path O",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_p": {
+          "name": "Path P",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_q": {
+          "name": "Path Q",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_r": {
+          "name": "Path R",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_s": {
+          "name": "Path S",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_t": {
+          "name": "Path T",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_u": {
+          "name": "Path U",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_v": {
+          "name": "Path V",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_w": {
+          "name": "Path W",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_x": {
+          "name": "Path X",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_y": {
+          "name": "Path Y",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_z": {
+          "name": "Path Z",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_aa": {
+          "name": "Path Aa",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_ab": {
+          "name": "Path Ab",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_ac": {
+          "name": "Path Ac",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_ad": {
+          "name": "Path Ad",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_ae": {
+          "name": "Path Ae",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_af": {
+          "name": "Path Af",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_ag": {
+          "name": "Path Ag",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_ah": {
+          "name": "Path Ah",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_ai": {
+          "name": "Path Ai",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_aj": {
+          "name": "Path Aj",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_ak": {
+          "name": "Path Ak",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_al": {
+          "name": "Path Al",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_am": {
+          "name": "Path Am",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_an": {
+          "name": "Path An",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_ao": {
+          "name": "Path Ao",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_ap": {
+          "name": "Path Ap",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_aq": {
+          "name": "Path Aq",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_ar": {
+          "name": "Path Ar",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_as": {
+          "name": "Path As",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_at": {
+          "name": "Path At",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_au": {
+          "name": "Path Au",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_av": {
+          "name": "Path Av",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_aw": {
+          "name": "Path Aw",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_ax": {
+          "name": "Path Ax",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_ay": {
+          "name": "Path Ay",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_az": {
+          "name": "Path Az",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_ba": {
+          "name": "Path Ba",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_bb": {
+          "name": "Path Bb",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_bc": {
+          "name": "Path Bc",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_bd": {
+          "name": "Path Bd",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_be": {
+          "name": "Path Be",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_bf": {
+          "name": "Path Bf",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_bg": {
+          "name": "Path Bg",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_bh": {
+          "name": "Path Bh",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_bi": {
+          "name": "Path Bi",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_bj": {
+          "name": "Path Bj",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_bk": {
+          "name": "Path Bk",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_bl": {
+          "name": "Path Bl",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": "e94e747ac47b035dd44de06a0de7188c15366d2669de39c648c8ad613a1e9cb5"
+    },
+    {
+      "node_type": "probe_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/debug/probe_node.py",
+      "source_sha256": "ddcd27889f3354cd95167322bae6924c6bb4245f11d40b56bce52c962eefd93b",
+      "inputs": {
+        "input": {
+          "name": "Input",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Output",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "fixed_forwarding": "Logs the payload's type and value, then forwards it unchanged.",
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "random_branch_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/debug/random_branch_node.py",
+      "source_sha256": "37c0f8ceb566d46bec9fab1e06d02ea540e5bbd06c09d7bf002b797bd3817096",
+      "inputs": {
+        "input": {
+          "name": "Input",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "outputs": {
+        "path_a": {
+          "name": "Path A",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        },
+        "path_b": {
+          "name": "Path B",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "random_number_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/data/random_number_node.py",
+      "source_sha256": "ce701638060c923a89912196c7c1279e0583f46d0ae8bdea43209809559ecf3e",
+      "inputs": {
+        "input": {
+          "name": "Input",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Number",
+          "data_type": "number",
+          "description": "",
+          "required": false
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "read_lines_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/io/read_lines_node.py",
+      "source_sha256": "6f020a494b83c810060c07866feaddece719eed69ff96b57bc9a3bc5331fbe16",
+      "inputs": {
+        "input": {
+          "name": "From line",
+          "description": "",
+          "data_type": "any",
+          "required": true,
+          "sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ]
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Excerpt",
+          "description": "",
+          "data_type": "string",
+          "required": true,
+          "to": [
+            "downstream",
+            "vault"
+          ],
+          "pass_through": true
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": true,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": [],
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "recall_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/data/recall_node.py",
+      "source_sha256": "5da0bb9a0ca43edce09e7594eace33220d3a6850d7780bb95af87f36d73bb9de",
+      "inputs": {
+        "input": {
+          "name": "Input",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Saved value",
+          "description": "The value saved under this name",
+          "data_type": "any",
+          "required": true,
+          "to": [
+            "downstream",
+            "vault"
+          ],
+          "pass_through": true
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": true,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": [],
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "record_event_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/io/record_event_node.py",
+      "source_sha256": "6ebe4ca1ae32c9a52c8c14067041eaed1f1331bc63577a3967a0849a72770f14",
+      "inputs": {
+        "input": {
+          "name": "Input",
+          "description": "The value {input} puts in the summary",
+          "data_type": "any",
+          "required": false,
+          "sources": [
+            "upstream",
+            "vault"
+          ]
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Event id",
+          "description": "The id of the recorded event (\"\" when skipped or not recorded)",
+          "data_type": "string",
+          "required": false,
+          "to": [
+            "downstream",
+            "vault"
+          ],
+          "pass_through": true
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": true,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": [],
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "remember_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/data/remember_node.py",
+      "source_sha256": "41a174cdce76cb1354a15499da2b0f59b57ab45b2f5549287a6cb62816a28d2a",
+      "inputs": {
+        "input": {
+          "name": "Value",
+          "description": "The value to save",
+          "data_type": "any",
+          "required": true,
+          "configured_field": "value",
+          "sources": [
+            "upstream",
+            "vault",
+            "configured"
+          ]
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Saved value",
+          "description": "The value as saved (the new total with Add)",
+          "data_type": "any",
+          "required": false,
+          "to": [
+            "downstream",
+            "vault"
+          ],
+          "pass_through": true
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": true,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": [],
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "repeat_counter_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/debug/repeat_node.py",
+      "source_sha256": "9c969c599d02e68b56d9573fecc1d11a40040ef64826f26d9e9311d4d5acb355",
+      "inputs": {
+        "input": {
+          "name": "Input",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Output",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "fixed_forwarding": "Counts visits, then forwards the incoming payload unchanged.",
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "set_variable_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/set_variable_node.py",
+      "source_sha256": "bb841865158b430f05fe8716341eb1a177d9b41d6f7bb688285531fc7f974a7a",
+      "inputs": {
+        "input": {
+          "name": "Input",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Output",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "sleep_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/debug/sleep_node.py",
+      "source_sha256": "c601231665f735c983af2184d988b7a1271ad29703db81fc73fabeb4890d9e8b",
+      "inputs": {
+        "input": {
+          "name": "Input",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Output",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "fixed_forwarding": "Pauses, then forwards the previous node output unchanged.",
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "start_node",
+      "metadata_review": "reviewed",
+      "authorable": true,
+      "source": "backend/nodes/start_node.py",
+      "source_sha256": "24745b954cbcfb057a532340bce62420846e699d06c537a60a803e0c7dd9cc17",
+      "inputs": {},
+      "outputs": {
+        "default": {
+          "name": "Greeting",
+          "data_type": "string",
+          "required": true,
+          "to": [
+            "downstream",
+            "vault"
+          ],
+          "pass_through": false,
+          "description": ""
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": true,
+          "execute_honours": true,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": [],
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": "edd10e0599c4254e65f6ecd4a16c65e6530ccd2fd9a02f105d23f7a74278d592"
+    },
+    {
+      "node_type": "subworkflow_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/flow/subworkflow_node.py",
+      "source_sha256": "e8afe059136e5fc904e426b83d57b7a25263075639477b5efa13074df1a41b3d",
+      "inputs": {
+        "input": {
+          "name": "Input",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Results",
+          "description": "The results sent to the next node",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "text_output_node",
+      "metadata_review": "reviewed",
+      "authorable": true,
+      "source": "backend/nodes/text_output_node.py",
+      "source_sha256": "01faa45080caf024421f9c01abc27ed2bc2cadd2cdeaa3b02000422e44ace563",
+      "inputs": {
+        "input": {
+          "name": "Input",
+          "description": "Any payload formatted as text; use File Reader for file contents",
+          "data_type": "any",
+          "required": true,
+          "sources": [
+            "upstream",
+            "vault"
+          ]
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Formatted output",
+          "data_type": "string",
+          "to": [
+            "downstream"
+          ],
+          "description": "",
+          "required": false
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": "693cd958d90e9520c157cbd97e97443b75d4a2063416ff78b4b32a1e927c093a"
+    },
+    {
+      "node_type": "text_transform_node",
+      "metadata_review": "reviewed",
+      "authorable": true,
+      "source": "backend/nodes/data/text_transform_node.py",
+      "source_sha256": "ed32338894341d95b81059265e634e7672ab87cf53434743fe8e58ad77327210",
+      "inputs": {
+        "input": {
+          "name": "Input",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Text",
+          "data_type": "string",
+          "description": "",
+          "required": false
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": "db8e0c03527a975f0601863f06699ada4347512c1583652b8ad27c19e12ef6e2"
+    },
+    {
+      "node_type": "user_text_input_node",
+      "metadata_review": "reviewed",
+      "authorable": true,
+      "source": "backend/nodes/user_text_input_node.py",
+      "source_sha256": "c3bfcf7fd0337f6fcd4d2603036b2d11ce20752d8d4c9158470009706f03ed12",
+      "inputs": {
+        "input": {
+          "name": "Input",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Text",
+          "data_type": "string",
+          "description": "",
+          "required": false
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": "b49fab86123410d7c7cc55ce481d45872d203000676dc59f51e1b118c98dfde5"
+    },
+    {
+      "node_type": "variable_reader_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/debug/variable_reader_node.py",
+      "source_sha256": "d5c49fbe600d0116ea1454e161d506f693f143535de4f138982c63c780c8a121",
+      "inputs": {
+        "input": {
+          "name": "Input",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Output",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "variable_setter_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/debug/variable_setter_node.py",
+      "source_sha256": "00c12c1be3c8b9521281e52ef4073ed0876ba10e0ce4d7b54ca8315f16591746",
+      "inputs": {
+        "input": {
+          "name": "Input",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Output",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "wait_until_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/wait_until_node.py",
+      "source_sha256": "791ffd2b2da433d5af704b57aaf7a0d8735d53e92f2e6f0737caa04c10d3dc58",
+      "inputs": {
+        "input": {
+          "name": "Input",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "Output",
+          "description": "",
+          "data_type": "any",
+          "required": false
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    },
+    {
+      "node_type": "window_control_node",
+      "metadata_review": "pending",
+      "authorable": true,
+      "source": "backend/nodes/io/window_control_node.py",
+      "source_sha256": "ce4084fafd00e64204543eb9c03fa8cff6324f628b0b2d498268e48048fba39b",
+      "inputs": {
+        "file": {
+          "name": "File",
+          "description": "File reference whose window to control",
+          "data_type": "file",
+          "required": true,
+          "sources": [
+            "upstream",
+            "vault"
+          ]
+        }
+      },
+      "outputs": {
+        "default": {
+          "name": "File Reference",
+          "description": "The targeted file's reference, forwarded unchanged",
+          "data_type": "file",
+          "required": true,
+          "to": [
+            "downstream"
+          ]
+        }
+      },
+      "fixed_forwarding": null,
+      "standard_flags": {
+        "vault_write": {
+          "authoring_accepts": true,
+          "declared_in_defaults": false,
+          "default": null,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_output": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": true,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "dead_drop_passthrough": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": false,
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        },
+        "transient_outputs": {
+          "authoring_accepts": true,
+          "declared_in_defaults": true,
+          "default": [],
+          "execute_honours": false,
+          "evidence": "execute source and shared helper review; runtime observations in linked claims report"
+        }
+      },
+      "reviewed_record_sha256": null
+    }
+  ],
+  "compatibility_policy": "Reject any explicitly supplied unsupported standard flag, including neutral false/empty; preserve saved workflow loading.",
+  "compatibility_audit": {
+    "roots": [
+      "examples",
+      "docs/delivery_tests"
+    ],
+    "spec_count": 17,
+    "new_errors": []
+  }
+}
