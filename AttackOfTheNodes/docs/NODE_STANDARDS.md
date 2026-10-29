@@ -29,6 +29,14 @@ concept; the backend exposes the metadata but does not use it for execution.
 Record every new node idea
 in `NODE_CATALOG.md`, even concept-only ones.
 
+Every registered node type needs a reviewed
+[node metadata record](integrations/NODE_METADATA.md) in
+`backend/node_metadata.py` in the same change that registers it (purpose,
+use when, not for, effects, needs, cost/time, execution contract; debug and
+tombstone types get the lighter record). The class `description` equals the
+record's purpose. `tests/test_node_metadata.py` fails for a type with neither
+a record nor a migration-ledger entry, and the ledger may not grow.
+
 ---
 
 ## Core Principle

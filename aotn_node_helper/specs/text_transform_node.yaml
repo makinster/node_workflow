@@ -8,7 +8,7 @@ selector_section: "Transform"
 icon_name: case-sensitive
 display_name: Text Transform
 default_alias: Text Transform
-description: Apply a text transformation (case, strip, reverse, markdown format) to the input string
+description: "Change text in one fixed way: uppercase, lowercase, trim both ends, title case, reverse, or tidy Markdown."
 input_ports: ["input"]
 output_ports: ["default"]
 output_port_metadata:

@@ -11,7 +11,7 @@ from ..file_refs import is_file_reference, reference_path
 class FileReaderNode(Node):
     node_type = "file_reader_node"
     display_name = "File Reader"
-    description = "Copies UTF-8 file contents into a text payload"
+    description = "Read all text from a UTF-8 file and send it to the next step."
     category = NodeCategory.IO
     primary_family = "Inputs"
     tags = ["File I/O"]

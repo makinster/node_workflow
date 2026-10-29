@@ -3,7 +3,7 @@ class_name: TextOutputNode
 category: io
 primary_family: Outputs
 display_name: Text Output
-description: Formats input through a template and logs it
+description: "Show formatted text in this run's output and pass the same text to the next step."
 inputs:
   input:
     type: any

@@ -121,37 +121,36 @@ def test_no_retry_no_execution_capabilities_and_approved_call_limits():
 
 
 @pytest.mark.asyncio
-async def test_complete_live_palette_and_prompt_sizes_fit_without_truncation():
+async def test_v1_is_deprecated_and_pinned_to_its_historical_catalogue():
+    """Draft a workflow v1 is a historical recipe (node metadata plan, 2026-10-28).
+
+    Its spec stays unchanged. On catalogue v2 its old Branch prose query no
+    longer matches and its contracts no longer fit its 8,500 context, so it
+    needs its pinned old app; v2 is the maintained recipe.
+    """
     n = SPEC['nodes']; factory = NodeFactory()
     defaults = authoring.describe_node_type(factory, 'node_catalogue_node')['config']
-    brief = await node_catalogue.build(factory, dict(defaults, **n['brief']['config']))
-    values = {}
-    types = set()
     for handle, node in n.items():
-        if not handle.startswith('catalogue_'):
-            continue
-        c = dict(defaults, **node['config'])
-        assert c['scope'] == 'Filtered' and c['detail'] == 'Compact'
-        assert c['include_debug'] is False
-        values[c['vault_write_key']] = await node_catalogue.build(factory, c)
-        records = await node_catalogue.build(factory, dict(c, format='JSON'))
-        types.update(e['type'] for e in records['entries'])
-    assert types == PALETTE
-    contracts = n['contracts']['config']['template'].format_map(values)
-    assert len(brief) == 7634
-    assert len(contracts) == 8256
-    assert len(contracts) < n['draft']['config']['context_limit'] == 8500
+        if handle.startswith('catalogue_'):
+            c = dict(defaults, **node['config'])
+            assert c['scope'] == 'Filtered' and c['detail'] == 'Compact'
+            assert c['max_chars'] == 7500 and c['include_debug'] is False
+    assert n['catalogue_parallel']['config']['search'] == 'Duplicates input'
+    with pytest.raises(NodeError) as error:
+        await node_catalogue.build(factory, dict(defaults, **n['catalogue_parallel']['config']))
+    assert error.value.code == 'catalogue_empty'
+    assert n['brief']['config']['max_chars'] == 8000
+    assert n['draft']['config']['context_limit'] == 8500
+    readme = (ROOT / 'docs/delivery_tests/specs/README.md').read_text()
+    assert 'v1 is deprecated' in readme
     for case in CASES:
         state = dict(draft_request=case['request'], draft_shortlist=json.dumps(
             case['shortlist'], ensure_ascii=False, separators=(',', ':')))
-        question = n['shortlist_question']['config']['template'].format_map(state)
         draft_question = n['draft_question']['config']['template'].format_map(state)
         # Doubled braces in the stored Concat template become literal JSON.
         assert '{"from":"start.default","to":"show.input"}' in draft_question
         assert '{{' not in draft_question
         assert 'display names are labels, never part of a connection' in draft_question
-        for q, context in [(question, brief), (draft_question, contracts)]:
-            assert len(q) + len(context) + 100 < 20000
 
 
 @pytest.mark.asyncio

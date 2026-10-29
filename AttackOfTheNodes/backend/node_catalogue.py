@@ -7,9 +7,16 @@ import json
 
 from .authoring import HIDDEN_TYPES, describe_node_type, list_node_types
 from .node_errors import NodeError
+from .node_metadata import (
+    COST_PHRASES, RECORD_SCHEMA_VERSION, effects_text, needs_text, note_lines, selection,
+)
 from .port_types import port_metadata, resolved_metadata
 
+#: Catalogue schema 2 carries node metadata record v1; each versions separately.
+SCHEMA_VERSION = 2
 MAX_BYTES = 256 * 1024
+MAX_CHARS_LIMIT = 200_000
+PENDING_LINE = 'Metadata pending review: effects and needs not stated (not Read-only).'
 SOURCE_IDS = {'Upstream payload': 'upstream', 'Vault': 'vault', 'Configured': 'configured'}
 COMPACT_KEYS = ('type', 'required', 'options', 'min', 'max', 'secret', 'path_hint')
 DETAILS = ('Brief', 'Compact', 'Detailed')
@@ -39,12 +46,18 @@ def _field(info, default=_MISSING):
 
 
 def brief_entry(factory, row):
-    """Shortlist row: names and one-liners only, no types, sources or config."""
+    """Shortlist row: purpose-first selection facts; no types, sources or config.
+
+    The old fields keep their meaning (description is the purpose alias);
+    node_metadata is the selection projection, or None while pending review.
+    """
     description = describe_node_type(factory, row['type'])
+    record = factory.metadata_for_type(row['type']).get('node_metadata')
     return dict(entry_kind='node', type=row['type'], display_name=row['name'],
                 description=' '.join(row['description'].splitlines()),
                 inputs=[p['name'] for p in description['inputs']],
-                outputs=[p['name'] for p in description['outputs']])
+                outputs=[p['name'] for p in description['outputs']],
+                node_metadata=selection(record) if record else None)
 
 
 def entry(factory, row, detail):
@@ -92,8 +105,8 @@ def entry(factory, row, detail):
         result['custom_keys'] = list(description['custom_keys'])
     if description['node_reference_fields']:
         result['node_reference_fields'] = description['node_reference_fields']
-    if meta.get('execution_contract'):
-        result['execution_contract'] = deepcopy(meta['execution_contract'])
+    # The full record carries execution_contract once; never a second copy.
+    result['node_metadata'] = deepcopy(meta.get('node_metadata'))
     configured = {
         p['id']: f"{p['source_field']}=Configured: use {p['configured_field']}; {p['id']} trigger only; no type check."
         for p in inputs if 'configured_field' in p and p.get('source_field')
@@ -132,8 +145,26 @@ def config_text(fields):
     return ';'.join(rows)
 
 
+def header(record):
+    return (f"Node catalogue v{record['schema_version']} · node record v{record['node_metadata_version']}"
+            f" · {record['detail']} ({record['metadata_projection']})")
+
+
+def intent_lines(meta, *, notes):
+    """Choosing facts; Compact/Detailed add the explanatory notes for wiring."""
+    if meta is None:
+        return [PENDING_LINE]
+    lines = [f"Use when: {meta['use_when']}"] if 'use_when' in meta else []
+    if 'not_for' in meta:
+        lines.append(f"Not for: {meta['not_for']}")
+    lines.append(f"Effects: {effects_text(meta)}. Needs: {needs_text(meta)}.")
+    if 'cost_class' in meta:
+        lines.append(f"Cost: {COST_PHRASES[meta['cost_class']]}. Time: {meta['time_class']}.")
+    return lines + (note_lines(meta) if notes else [])
+
+
 def brief_text(record, factory):
-    lines = ['Node catalogue v1 · Brief: type|name|purpose|in -> out',
+    lines = [header(record) + ': type|name|purpose|in -> out, then choosing facts',
              PORT_LEGEND, '']
     for item in record['entries']:
         # Brief JSON deliberately retains its original names-only arrays.
@@ -144,25 +175,26 @@ def brief_text(record, factory):
                              for p in description[direction]) or '-'
         lines.append(f"{item['type']}|{item['display_name']}|{item['description']}|"
                      f"{ports('inputs')} -> {ports('outputs')}")
+        lines.extend('  ' + line for line in intent_lines(item['node_metadata'], notes=False))
     return '\n'.join(lines) + '\n'
 
 
 def text_output(record, factory):
     if record['detail'] == 'Brief':
         return brief_text(record, factory)
-    lines = ['Default ports; field:type=default; required=no default.'
-             if record['detail'] == 'Compact' else 'Catalogue v1: default ports; full schema and defaults.',
+    lines = [header(record) + (': default ports; field:type=default; required=no default.'
+                               if record['detail'] == 'Compact' else ': default ports; full schema and defaults.'),
              PORT_LEGEND, '']
     for item in record['entries']:
         lines.extend([f"{item['entry_kind']} {item['type']} | {item['display_name']} | {item['group'] or 'Ungrouped'}",
-                      item['description'],
+                      item['description'], *intent_lines(item['node_metadata'], notes=True),
                       'Family: ' + item['family'] + ' · Tags: ' + ', '.join(item['tags']),
                       'In: ' + ('; '.join(f"{port_label(p)} [{p['data_type']}] {'required' if p['required'] else 'optional'} ({'/'.join(p['sources'])})" for p in item['inputs']) or 'none'),
                       'Out: ' + '; '.join(f"{port_label(p)} [{p['data_type']}] {'required' if p['required'] else 'optional'} ({'/'.join(p['to'])})" for p in item['outputs']),
                       'Config: ' + (config_text(item['config_fields']) if record['detail'] == 'Compact'
                                                   else compact_json(item['config_fields'])),
                       'Errors: ' + compact_json(item['errors'])])
-        for key, value in item.get('execution_contract', {}).items():
+        for key, value in ((item['node_metadata'] or {}).get('execution_contract') or {}).items():
             lines.append(('Output payload: ' if key == 'output_payload' else 'Behavior: ') + value)
         if item.get('configured_inputs'):
             lines.append('Configured: ' + ' '.join(item['configured_inputs'].values()))
@@ -180,7 +212,7 @@ def validate_config(config):
             or config.get('format') not in ('Text', 'JSON')
             or type(config.get('include_debug')) is not bool
             or type(config.get('max_chars')) is not int
-            or not 512 <= config['max_chars'] <= 64000
+            or not 512 <= config['max_chars'] <= MAX_CHARS_LIMIT
             or any(not isinstance(config.get(k), str) or len(config[k]) > 256
                    for k in ('group_filter', 'tag_filter', 'search'))):
         raise NodeError('invalid_config', 'Check catalogue filters, format and size limit.')
@@ -201,20 +233,28 @@ async def build(factory, config):
                 continue
             if tag and tag.casefold() not in [t.casefold() for t in meta.get('tags') or []]:
                 continue
-            haystack = ' '.join([row['type'], row['name'], row['description'], *(meta.get('tags') or [])]).casefold()
+            # Positive intent only: not_for names wrong uses and never matches.
+            use_when = (meta.get('node_metadata') or {}).get('use_when', '')
+            haystack = ' '.join([row['type'], row['name'], row['description'], use_when,
+                                 *(meta.get('tags') or [])]).casefold()
             if not all(word in haystack for word in config['search'].casefold().split()):
                 continue
         await asyncio.sleep(0)
         entries.append(entry(factory, row, config['detail']))
     if not entries:
         raise NodeError('catalogue_empty', 'No nodes match. Broaden the filters.')
-    record = dict(schema_version=1, ports_basis='defaults', detail=config['detail'],
+    record = dict(schema_version=SCHEMA_VERSION, node_metadata_version=RECORD_SCHEMA_VERSION,
+                  metadata_projection='selection' if config['detail'] == 'Brief' else 'full',
+                  ports_basis='defaults', detail=config['detail'],
                   include_debug=config['include_debug'], matched_count=len(entries),
                   complete=True, entries=entries)
     value = record if config['format'] == 'JSON' else text_output(record, factory)
     serialized = compact_json(record) if config['format'] == 'JSON' else value
-    if len(serialized) > config['max_chars'] or len(serialized.encode('utf-8')) > MAX_BYTES:
+    characters, size = len(serialized), len(serialized.encode('utf-8'))
+    if characters > config['max_chars'] or size > MAX_BYTES:
         raise NodeError('catalogue_too_large', 'Catalogue is too large. Narrow the filters or raise the cap.',
-                        details=dict(characters=len(serialized), limit=config['max_chars'], matched_count=len(entries)))
+                        details=dict(characters=characters, limit=config['max_chars'], bytes=size,
+                                     byte_limit=MAX_BYTES, matched_count=len(entries),
+                                     failed='characters' if characters > config['max_chars'] else 'bytes'))
     await asyncio.sleep(0)
     return value

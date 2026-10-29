@@ -187,16 +187,24 @@ async def test_catalogue_complete_default_and_headroom():
     factory = NodeFactory()
     cfg = deepcopy(factory._node_registry['node_catalogue_node'].default_config)
     text = await node_catalogue.build(factory, cfg)
-    record = await node_catalogue.build(factory, dict(cfg, format='JSON'))
+    # Catalogue v2: the full JSON outgrew the retained 64k default. It errors
+    # visibly with both counts; an explicit larger cap returns it complete.
+    with pytest.raises(NodeError) as too_large:
+        await node_catalogue.build(factory, dict(cfg, format='JSON'))
+    assert too_large.value.details['failed'] == 'characters'
+    assert too_large.value.details['limit'] == 64000 and too_large.value.details['bytes']
+    record = await node_catalogue.build(factory, dict(cfg, format='JSON', max_chars=node_catalogue.MAX_CHARS_LIMIT))
     kinds = {e['type'] for e in record['entries']}
     assert {'start_node','end_node','node_catalogue_node','check_workflow_spec_node'} <= kinds
     assert 'tombstone_node' not in kinds
     assert kinds == {r['type'] for r in authoring.list_node_types(factory)
                      if not node_catalogue.is_debug(factory.metadata_for_type(r['type']))
                      and not factory.metadata_for_type(r['type']).get('editor_only')}
-    largest = max(len(text), len(node_catalogue.compact_json(record)))
-    # Aim for 25% headroom, bounded by the existing 64k catalogue limit.
-    assert cfg['max_chars'] == min(64000, round(largest * 1.25 / 100) * 100)
+    # The 64k default is retained for ordinary bounded queries; default Text
+    # keeps at least 20% headroom under it.
+    assert cfg['max_chars'] == 64000 and len(text) * 1.2 <= 64000
+    assert record['schema_version'] == 2 and record['node_metadata_version'] == 1
+    assert record['metadata_projection'] == 'full'
     assert all(e['entry_kind'] == 'node' and isinstance(e['inputs'], list)
                and isinstance(e['outputs'], list) for e in record['entries'])
     for e in record['entries']:
@@ -269,7 +277,7 @@ async def test_catalogue_caps_no_partial_output_or_forwarding():
     assert memory.read_persistent('catalogue') == 'prior'
     node.config.update(max_chars=62400,format='JSON',scope='Filtered',search='notify')
     errors.clear();await node.execute(ctx)
-    assert not errors and done[0]['data']['default']['schema_version']==1
+    assert not errors and done[0]['data']['default']['schema_version']==2
     assert done[0]['data']['default'] != ctx.inputs['input']
     assert memory.read_persistent('catalogue') == done[0]['data']['default']
     resolved = NodeFactory().node_output_port_metadata(dict(type=node.node_type,config=node.config))
@@ -352,17 +360,20 @@ async def test_duplicate_json_keys_are_invalid_json_with_their_path(draft, path)
 
 @pytest.mark.asyncio
 async def test_brief_catalogue_fits_ask_local_model_context_with_headroom():
-    from backend.integrations.local_model import MAX_CONTEXT
     factory = NodeFactory()
     cfg = dict(deepcopy(factory._node_registry['node_catalogue_node'].default_config), detail='Brief')
     text = await node_catalogue.build(factory, cfg)
     record = await node_catalogue.build(factory, dict(cfg, format='JSON'))
-    compact = await node_catalogue.build(factory, dict(cfg, detail='Compact', format='JSON'))
+    compact = await node_catalogue.build(factory, dict(cfg, detail='Compact', format='JSON',
+                                                       max_chars=node_catalogue.MAX_CHARS_LIMIT))
     assert {e['type'] for e in record['entries']} == {e['type'] for e in compact['entries']}
-    assert MAX_CONTEXT == 8000
-    assert len(text) <= MAX_CONTEXT  # growing registry still fits default model Context
+    # Purpose-first Brief no longer fits the 8,000 local-model default (plan:
+    # the deprecated v1 designer used that); v2 gives Brief an explicit 50k cap.
+    assert len(text) * 1.2 <= 50000
+    assert record['metadata_projection'] == 'selection'
     for e in record['entries']:
-        assert set(e) == {'entry_kind', 'type', 'display_name', 'description', 'inputs', 'outputs'}
+        assert set(e) == {'entry_kind', 'type', 'display_name', 'description', 'inputs', 'outputs',
+                          'node_metadata'}
         assert all(isinstance(name, str) for name in e['inputs'] + e['outputs'])
     assert 'check_workflow_spec_node|Check workflow spec|' in text
     assert 'input "Spec" -> default "Checked spec", report "Check report"' in text
@@ -388,7 +399,8 @@ async def test_text_ports_separate_machine_ids_from_display_names(detail):
         # Existing JSON names-only representation remains unchanged.
         assert row['inputs'] == []
         assert row['outputs'] == ['Greeting', 'Error']
-        assert set(row) == {'entry_kind','type','display_name','description','inputs','outputs'}
+        assert set(row) == {'entry_kind','type','display_name','description','inputs','outputs',
+                            'node_metadata'}
     else:
         assert row['outputs'][0]['id'] == 'default'
         assert row['outputs'][0]['name'] == 'Greeting'

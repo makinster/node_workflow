@@ -7,7 +7,7 @@ group: 'File Write'
 icon_name: 'file-output'
 display_name: 'File Write'
 default_alias: 'File Write'
-description: 'Write content to a file and emit a typed file reference'
+description: "Write text, or Base64-decoded bytes, to a file and pass on a file reference holding the actual saved path."
 ui_hints:
   forwarded_input_port: 'content'
   forwarded_input_fallbacks: ["file_path"]

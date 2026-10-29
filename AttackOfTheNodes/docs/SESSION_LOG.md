@@ -6,6 +6,27 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-29 — Node metadata record v1, batch 1 (Foundational)
+
+Clean worktree `/home/makin/src/nw-metadata-batch1`, branch
+`claude/node-metadata-v1-batch1`, fetched main base `a5dbf26`. Implements the
+owner-approved node metadata plan: central registry, record v1 validator
+(limits, enums, canonical order, conditional notes, 4,096-byte ceiling, light
+records for debug/tombstone), derived Read-only, factory/describe exposure,
+legacy `EXECUTION_CONTRACTS` as a projection, catalogue schema 2 (Brief
+selection, full records in Compact/Detailed, search excludes not_for, 200k
+configurable cap, byte/char failure details), migration ledger that may only
+shrink, and a digest-pinned review manifest. Batch-1 records for the twelve v2
+palette types replace their class/helper-spec descriptions with the purpose.
+Branch's not_for now says it is only for requested parallel paths (trial runs
+000006/000008, cases 9 and 10, added unrequested splits). Text Output's
+use_when says to leave the label empty for plain text. Empty Start greeting
+verified: the next step runs and gets empty text. v2 Brief/Compact caps and the
+Branch query moved per plan; v1 marked deprecated, spec unchanged.
+Independent verification: a separate reviewer re-read every record against execute/helpers; no false empty effect list; 7 wording gaps (End convention, File Write folders/close/5 s window wait/Base64, Conditional/Concat/JSON Path/Text Output failure cases, File Reader line endings) fixed and re-confirmed. Full pytest -n auto: 3,598 passed.
+Not done here: the changed-file impact check for unlisted helpers (CI-level),
+the remaining 47 records, exact type-id catalogue selection.
+
 ## 2026-10-29 — Bare Text Output and target behavior scoring (Important)
 
 Clean worktree `/home/makin/src/nw-bare-text`, branch

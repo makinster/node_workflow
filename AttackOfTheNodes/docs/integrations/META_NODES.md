@@ -24,8 +24,10 @@ forwarding. Filters are node settings:
   case-insensitive search word in type/name/description/tags. Blank means any.
   No regex. No matches gives `catalogue_empty`.
 - **Brief / Compact / Detailed** is separate from **Text / JSON**. Brief has
-  type, display name, one-line description and input/output display names
-  (plus port ids in Text): no data types, sources, config or errors. Compact includes
+  type, display name, one-line description (the node's purpose) and
+  input/output display names (plus port ids in Text), then the
+  [node metadata](NODE_METADATA.md) selection facts: use when, not for,
+  effects, needs, cost and time. No data types, sources, config or errors. Compact includes
   field names/types/ranges/options, config defaults and error codes. Fields with
   defaults may be omitted from specs; Compact retains `required` only for fields
   without defaults. Detailed adds full schemas,
@@ -34,11 +36,12 @@ forwarding. Filters are node settings:
   defaults, explicitly labelled `ports_basis: "defaults"`; config can change
   those ports. Compact is discovery context, not a complete validator schema.
 
-Compact and Detailed also expose `execution_contract` metadata for the twelve
-designer target types: `output_payload` describes the emitted value and `notes`
-records extra execution rules. The shared registry metadata lives in
-[`node_execution_contracts.py`](../../backend/node_execution_contracts.py),
-verified against the node execute methods. Both the drafter and meaning judge
+Compact and Detailed expose the full [node metadata record](NODE_METADATA.md)
+(catalogue schema 2) under `node_metadata`; for the twelve designer target
+types it includes `execution_contract`: `output_payload` describes the emitted
+value and `notes` records extra execution rules. The one authored registry is
+[`node_metadata.py`](../../backend/node_metadata.py), verified against the node
+execute methods; `node_execution_contracts.py` is a derived projection. Both the drafter and meaning judge
 receive these same entries. Configurable inputs get a generated
 `configured_inputs` line: when their source is Configured, the configured field
 provides the data and the incoming wire is a trigger only; its value is ignored
@@ -65,14 +68,18 @@ Compact Text config now uses `field:type=JSON-default`, with any remaining
 constraints in JSON after the value; no `=` means no default. For example,
 `message:string="Branch completed"`. Every field/default/constraint remains;
 JSON `config_fields` retains its structured form. This shorter notation pays
-for the payload/Configured lines within existing context caps. Brief is unchanged.
+for the payload/Configured lines within existing context caps.
 
 **Catalogue** is a string in Text mode or a JSON record `[var]` in JSON mode,
 published downstream and/or to the standard optional Vault output. JSON has
-`schema_version: 1`, `complete`, `detail`, `include_debug`, `matched_count`,
+`schema_version: 2` (since node metadata record v1, 2026-10-29),
+`node_metadata_version: 1`, `metadata_projection` (`selection` for Brief,
+`full` otherwise), `complete`, `detail`, `include_debug`, `matched_count`,
 `ports_basis` and `entries`. Each entry has `entry_kind: "node"`, `type`,
 `display_name`, one-line `description`, `family`, `group`, `tags`, `inputs`,
-`outputs`, `config_fields`, `errors`, plus detailed fields where requested.
+`outputs`, `config_fields`, `errors`, `node_metadata` (null while a type is
+pending review: effects unknown, not Read-only), plus detailed fields where
+requested. Search also matches a record's `use_when`, never its `not_for`.
 
 Inputs/outputs are arrays of `{id, name, data_type, required, ...}`; inputs
 carry `sources` (and source/configured-field identifiers where declared),
@@ -104,23 +111,25 @@ can overflow; narrow filters. Context Pack and Ask local model have their own
 limits: the full catalogue fitting this node does not make it fit downstream.
 Use a filtered catalogue for a small request.
 
-Current registry with execution contracts: **51 non-debug entries**, Compact Text
-**39,591** characters (previously **39,503**) and compact JSON **61,618**
-(previously **61,532**), below the unchanged **64,000** cap. Brief Text stays
-**7,634** / compact JSON **10,603**. The original designer's nine-type palette
-is **8,256** (previously **8,168**); its drafting Context is explicitly **8,500**,
-raised from 8,000. Its Brief catalogue cap remains 8,000. V2 is **10,363**
-(previously **10,275**), below its 50,000 limit.
+Current registry with node metadata batch 1 (12 reviewed records, 2026-10-29):
+**51 non-debug entries**, Compact Text **49,204** characters (previously
+**39,591**), within the unchanged **64,000** default; compact JSON **71,830**
+(previously **61,618**) now needs an explicit larger cap. The configurable
+maximum is **200,000**; the 256 KiB byte ceiling is unchanged. Brief Text
+**15,051** / compact JSON **18,217** (previously **7,634** / **10,603**). V2's
+contracts are **17,736** (previously **10,363**) within its 50,000 budget. The
+original designer is deprecated: its 8,500 Context no longer fits its palette
+(**12,194** now, without its unmatched Branch query) and its Branch query no longer matches.
 
 Text Output with an empty or whitespace-only label logs and emits bare text.
 Start without nonempty rows emits the greeting string verbatim; configured rows
 replace it. Conditional emits the original left value on its selected true/false
 port, not a comparison boolean. The contracts describe the routing exceptions.
 
-**Two-pass planning.** Measured Brief **all non-debug** Text: **50 entries,
-7,447 characters** after the Context-limit description update: 553 below the
-default 8,000-character Ask local model Context cap (now configurable). Compact
-JSON is 10,371, so pass Text to a model.
+**Two-pass planning.** Brief **all non-debug** Text is **15,051 characters**
+with node metadata batch 1 (previously 7,634): purpose-first selection facts no
+longer fit the default 8,000-character Ask local model Context; raise that cap
+or filter. Pass Text to a model.
 1. Shortlist: Brief, All nodes, Text → Context of the planning question.
 2. Detail: Detailed (or Compact), Filtered by the shortlisted types/search →
    Context of the drafting question. Only the chosen nodes' config reaches it.

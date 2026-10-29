@@ -14,18 +14,21 @@ from tools.draft_trials.cases import PALETTE
 @pytest.mark.asyncio
 async def test_palette_contracts_describe_payloads_and_configured_inputs():
     factory = NodeFactory()
-    cfg = dict(factory.metadata_for_type('node_catalogue_node')['default_config'], format='JSON')
+    cfg = dict(factory.metadata_for_type('node_catalogue_node')['default_config'], format='JSON',
+               max_chars=node_catalogue.MAX_CHARS_LIMIT)
     record = await node_catalogue.build(factory, cfg)
     entries = {e['type']: e for e in record['entries']}
     for kind in PALETTE:
-        assert entries[kind]['execution_contract']['output_payload']
-        assert (authoring.describe_node_type(factory, kind)['execution_contract']
-                == entries[kind]['execution_contract'])
+        # Catalogue v2 carries the contract once, inside the full record.
+        assert 'execution_contract' not in entries[kind]
+        contract = entries[kind]['node_metadata']['execution_contract']
+        assert contract['output_payload']
+        assert authoring.describe_node_type(factory, kind)['execution_contract'] == contract
     text, inventory = await runner.contract_inventory()
     assert set(t for ts in inventory.values() for t in ts) == PALETTE
     assert len(text) <= 50000
     for kind in PALETTE:
-        assert entries[kind]['execution_contract']['output_payload'] in text
+        assert entries[kind]['node_metadata']['execution_contract']['output_payload'] in text
     assert 'Output payload:' in text
     for word in ('ref_key', 'path', 'actual saved', 'Configured', 'trigger only',
                  'Create unique', ' (1)', 'case-sensitive', 'whitespace'):

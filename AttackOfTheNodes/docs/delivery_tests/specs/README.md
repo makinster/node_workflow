@@ -1,5 +1,14 @@
 # Draft a workflow
 
+**Status (2026-10-29): v1 is deprecated; v2 is the maintained recipe.** Node
+metadata record v1 / catalogue schema 2 (`backend/node_metadata.py`) made
+Brief purpose-first and renamed the Branch purpose. The original spec below is
+kept unchanged with its historical evidence, but it needs its pinned old app
+and catalogue: on current main its `Duplicates input` Branch query matches
+nothing, Brief is larger than its 8,000 cap and its contracts no longer fit its
+8,500 Context. Do not grow its local prompts; any new v1 use needs a new local
+fit/quality trial. Its historical numbers below refer to that old catalogue.
+
 [Authoring spec](draft-a-workflow.json), [delivery case](../draft-a-workflow.json),
 [approved sample fixtures](../fixtures/draft-a-workflow.json).
 Owner approved the eleven recommended decisions and three samples on 2026-10-27.
@@ -117,8 +126,12 @@ The judge allows 4,096 output tokens and asks for short reasons (under about
 
 The extra Compact queries cover Conditional, Concat and JSON Path. All returned
 entries are retained: the current exact inventory is 12 types and assembled
-Context is **10,363 characters** (previously **10,275**), below the
-unchanged 50,000-character planning budget. Compact includes config defaults
+Context is **17,736 characters** with node metadata record v1 (previously
+**10,363**), below the unchanged 50,000-character planning budget with more than
+the required 20% headroom. Brief has an explicit 50,000 cap (15,051 characters
+now); each Compact query uses 16,000. The Branch query is `Branch` group plus
+the words `parallel simultaneous` from Parallel Branch's use_when (the old
+`Duplicates input` wording is gone); its frozen inventory is `branch_node` only. Compact includes config defaults
 and marks only fields without defaults as required. The meaning judge delegates
 config completeness/validity to Check workflow spec; omitted defaults are allowed.
 All twelve types now describe output payloads; generated Configured-source lines

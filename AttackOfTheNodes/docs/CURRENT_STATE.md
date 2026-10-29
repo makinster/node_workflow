@@ -1,8 +1,8 @@
 # Current State
 
-Snapshot checked **2026-10-29**, against fetched `origin/main` `91b137c`
-after #142 merged. Bare Text Output and target behavior scoring are on
-`codex/bare-text-output-behavior`. No real provider calls or Secrets access.
+Snapshot checked **2026-10-29**, against fetched `origin/main` `a5dbf26`
+after #143 merged. Node metadata record v1 batch 1 is on
+`claude/node-metadata-v1-batch1`. No real provider calls or Secrets access.
 Earlier entries retain their dated scope; blank-label behavior below supersedes
 the October 28 contract description.
 This is the live status snapshot; plans and logs preserve dated decisions.
@@ -14,6 +14,32 @@ Sonnet/Opus and document the 512-token minimum prefix. Per-model price tests
 and real-engine run summaries cover all three supported models. See the latest
 Session Log entry for verification: full `pytest -n auto` passes **3,234 tests
 in 35.63 s** after the review fixes.
+
+## Node metadata record v1, batch 1 — 2026-10-29 (Foundational)
+
+Owner-approved design (`agent_channel/node-metadata-plan/`). One central
+registry, `backend/node_metadata.py`, holds each node's purpose, use when, not
+for, effect flags, needs, cost/time class and the verified execution contract;
+NodeFactory exports it as `node_metadata`, and `description` /
+`execution_contract` are derived aliases. Batch 1 covers the twelve Draft a
+workflow v2 palette types; 47 types stay in the `PENDING_REVIEW` ledger with no
+record (catalogue: "pending review", never Read-only). Debug nodes and the
+tombstone will get the lighter record. A review manifest
+(`backend/node_metadata_review.json`) pins reviewed sources/tests by digest;
+completeness tests count all 59 registered types. See
+[Node metadata](integrations/NODE_METADATA.md).
+
+Catalogue schema 2: Brief is purpose-first (selection projection); Compact and
+Detailed carry the full record once; search adds use_when, never not_for;
+`max_chars` up to 200,000 (default 64,000; 256 KiB ceiling unchanged).
+Draft a workflow v2: Brief cap 50,000, Compact queries 16,000, Branch query now
+`parallel simultaneous` (frozen inventory: `branch_node`). v1 is deprecated and
+pinned to its old catalogue. Empty Start greeting: the next step still runs and
+receives empty text (real-engine test). Sizes before → after: Brief Text 7,634 →
+15,051, Brief JSON 10,603 → 18,217, Compact Text 39,591 → 49,204, Compact JSON
+61,618 → 71,830 (needs an explicit cap above 64,000), v2 contracts 10,363 →
+17,736 / 50,000, v1 contracts 8,256 / 8,500 → no longer fits. Independent verification: a separate reviewer re-read every record against execute/helpers; no false empty effect list; 7 wording gaps (End convention, File Write folders/close/5 s window wait/Base64, Conditional/Concat/JSON Path/Text Output failure cases, File Reader line endings) fixed and re-confirmed.
+Full pytest -n auto: 3,598 passed. No real model/API calls.
 
 ## Bare Text Output and target behavior scoring — 2026-10-29
 

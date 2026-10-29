@@ -13,7 +13,7 @@ from .node_errors import ERROR_PORT, definitions_with_default
 from .data_types import coerce_type
 from .config_migrations import normalize_node_config
 from .node_base import Node
-from .node_execution_contracts import EXECUTION_CONTRACTS
+from .node_metadata import record_for
 from .nodes import ALL_NODE_CLASSES
 
 
@@ -156,13 +156,18 @@ class NodeFactory:
             )
             legacy_category = self._metadata_string(getattr(node_class, "category", ""))
             category = primary_family or legacy_category
+            # Record v1 (backend/node_metadata.py) is the one authored source;
+            # description and execution_contract are derived aliases of it.
+            # A pending type has no record: None, never an empty Read-only one.
+            record = record_for(node_type)
             metadata.append(
                 {
                     "type": node_type,
                     "display_name": node_class.display_name,
                     "default_alias": node_class.default_alias,
-                    "description": node_class.description,
-                    "execution_contract": deepcopy(EXECUTION_CONTRACTS.get(node_type, {})),
+                    "description": record["purpose"] if record else node_class.description,
+                    "node_metadata": record,
+                    "execution_contract": deepcopy((record or {}).get("execution_contract") or {}),
                     "category": category,
                     "primary_family": category,
                     "legacy_category": legacy_category,

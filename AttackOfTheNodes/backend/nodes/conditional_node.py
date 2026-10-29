@@ -12,7 +12,7 @@ class ConditionalNode(Node):
 
     node_type: ClassVar[str] = "conditional_node"
     display_name: ClassVar[str] = "Conditional"
-    description: ClassVar[str] = "Routes to one path based on a condition"
+    description: ClassVar[str] = "Choose one of two paths, true or false, by comparing a value with fixed text."
     category: ClassVar[str] = NodeCategory.FLOW
     input_ports: ClassVar[List[str]] = ["input"]
     output_ports: ClassVar[List[str]] = ["true", "false"]

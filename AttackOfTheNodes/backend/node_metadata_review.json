@@ -1,0 +1,197 @@
+{
+  "manifest_version": 1,
+  "node_metadata_version": 1,
+  "reviews": {
+    "start_node": {
+      "sources": {
+        "backend/nodes/start_node.py": "2edbdf2201347a87f1753feb44f0ecff9b1c20f0a2d75b1c3a5b46d04fb82010",
+        "backend/contracts.py": "c88d7398adb513ab745990f1e959438024e65dea9515ab9d96b2854501e1fb1d",
+        "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09"
+      },
+      "tests": [
+        "tests/test_node_metadata_behavior.py::test_start_greeting_runs_next_step_even_when_empty_and_is_never_displayed",
+        "tests/test_contracts.py::test_legacy_start_is_one_greeting_row"
+      ],
+      "content_sha256": "34bc56408e443152656048c37956ef4eb7cb48915fd3bb8deb880515bee7091d",
+      "author": "metadata-batch1-author-session",
+      "reviewed": "2026-10-29",
+      "source_revision": "a5dbf2667768734cb0389f345e78c01d20bd1e73",
+      "verifier": "metadata-batch1-independent-verifier"
+    },
+    "end_node": {
+      "sources": {
+        "backend/nodes/end_node.py": "5f457b8137fa970547b0f5ed05fa366ae6a04b100211d83b6d6d4a637d98ad40",
+        "backend/contracts.py": "c88d7398adb513ab745990f1e959438024e65dea9515ab9d96b2854501e1fb1d",
+        "backend/output_entry.py": "6121bc67a278ac66244365ff5c23c235cd457316ef2826cd41db07b202af2ba2"
+      },
+      "tests": [
+        "tests/test_node_metadata_behavior.py::test_end_line_framing_and_silence"
+      ],
+      "content_sha256": "b59a6bee9c8370765cda889748f38556a1b4264e3753b105f67eaaa0f97694f7",
+      "author": "metadata-batch1-author-session",
+      "reviewed": "2026-10-29",
+      "source_revision": "a5dbf2667768734cb0389f345e78c01d20bd1e73",
+      "verifier": "metadata-batch1-independent-verifier"
+    },
+    "branch_end_node": {
+      "sources": {
+        "backend/nodes/branch_end_node.py": "886600f9f0eb71e0964ac0d4559e11ea9d34f8481460c561540579b9f3c0671a",
+        "backend/branch_health.py": "7a247eb016ec83dfd0ac99937783a3d36fa45fd5a425fc5d688cd612929273a1"
+      },
+      "tests": [
+        "tests/test_node_metadata_behavior.py::test_merge_beacon_forwards_unchanged"
+      ],
+      "content_sha256": "a7b11e79741185b004a04ca305cef2bd7c883b40c92421d50630578cf89c498f",
+      "author": "metadata-batch1-author-session",
+      "reviewed": "2026-10-29",
+      "source_revision": "a5dbf2667768734cb0389f345e78c01d20bd1e73",
+      "verifier": "metadata-batch1-independent-verifier"
+    },
+    "branch_node": {
+      "sources": {
+        "backend/nodes/branch_node.py": "3a3274190e2276a30627f3a9f036ba115104cf1ce7fa65633eaa658f359981af",
+        "backend/branch_paths.py": "0b4769ebbefffdbaf04a456cac955091f8e6ae6a64f18c4441a5d24013614c8a",
+        "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09"
+      },
+      "tests": [
+        "tests/test_node_metadata_behavior.py::test_parallel_branch_default_starts_every_path_and_ignores_legacy_condition"
+      ],
+      "content_sha256": "e94e747ac47b035dd44de06a0de7188c15366d2669de39c648c8ad613a1e9cb5",
+      "author": "metadata-batch1-author-session",
+      "reviewed": "2026-10-29",
+      "source_revision": "a5dbf2667768734cb0389f345e78c01d20bd1e73",
+      "verifier": "metadata-batch1-independent-verifier"
+    },
+    "user_text_input_node": {
+      "sources": {
+        "backend/nodes/user_text_input_node.py": "c3bfcf7fd0337f6fcd4d2603036b2d11ce20752d8d4c9158470009706f03ed12",
+        "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09",
+        "backend/node_errors.py": "13f7cc5b3dd7d41b9c2e4bbf893dfd87dd3357c3eea91e1d940915b93b628292"
+      },
+      "tests": [
+        "tests/test_node_metadata_behavior.py::test_user_text_input_waits_for_a_person_and_emits_the_answer",
+        "tests/test_run_lifecycle.py::test_unattended_run_does_not_hang_on_an_input_request"
+      ],
+      "content_sha256": "289001f15026154940e2f67f17af166f79dd0041566249ba47e23502970171bb",
+      "author": "metadata-batch1-author-session",
+      "reviewed": "2026-10-29",
+      "source_revision": "a5dbf2667768734cb0389f345e78c01d20bd1e73",
+      "verifier": "metadata-batch1-independent-verifier"
+    },
+    "text_output_node": {
+      "sources": {
+        "backend/nodes/text_output_node.py": "01faa45080caf024421f9c01abc27ed2bc2cadd2cdeaa3b02000422e44ace563",
+        "backend/output_entry.py": "6121bc67a278ac66244365ff5c23c235cd457316ef2826cd41db07b202af2ba2",
+        "backend/vault_declarations.py": "613ff9b9597d45498de4b2aaa41c4b0c219ad8ea9bf7dcd861c0a8f0da95cbca"
+      },
+      "tests": [
+        "tests/test_node_metadata_behavior.py::test_text_output_label_framing",
+        "tests/test_node_metadata_behavior.py::test_text_output_default_label_template_errors_and_legacy_prompt",
+        "tests/test_node_metadata_behavior.py::test_documented_failures_fail_the_node"
+      ],
+      "content_sha256": "173c905d820abbc751f556296b73f13df1ae95217d832b4d82789fc1774c631e",
+      "author": "metadata-batch1-author-session",
+      "reviewed": "2026-10-29",
+      "source_revision": "a5dbf2667768734cb0389f345e78c01d20bd1e73",
+      "verifier": "metadata-batch1-independent-verifier"
+    },
+    "text_transform_node": {
+      "sources": {
+        "backend/nodes/data/text_transform_node.py": "ed32338894341d95b81059265e634e7672ab87cf53434743fe8e58ad77327210",
+        "backend/text_format.py": "d476cce52b3038b08e406257ba006e11f97e27385956329dc1ff704ccb5538c7"
+      },
+      "tests": [
+        "tests/test_node_metadata_behavior.py::test_text_transform_operations",
+        "tests/test_node_metadata_behavior.py::test_conditional_missing_vault_variable_compares_as_empty_and_transform_fallback"
+      ],
+      "content_sha256": "db8e0c03527a975f0601863f06699ada4347512c1583652b8ad27c19e12ef6e2",
+      "author": "metadata-batch1-author-session",
+      "reviewed": "2026-10-29",
+      "source_revision": "a5dbf2667768734cb0389f345e78c01d20bd1e73",
+      "verifier": "metadata-batch1-independent-verifier"
+    },
+    "file_reader_node": {
+      "sources": {
+        "backend/nodes/file_reader_node.py": "a15051d529765f3843a728381213cb5cfe2f99652dee898f090f835f2bff196d",
+        "backend/file_paths.py": "1ffa449ac98037634f5dccb7c7c96fec1cd59e3bcee3a8bd37a8eebd6b6048fe",
+        "backend/file_refs.py": "72b5edc5179e38bf12c050e56daef85055bf83c70b541c9204436240ae62dee6",
+        "backend/run_session.py": "01d0ee7bef1601bfde0eff71d35332e6c96f5f71ac1c12e4fdffcc1d700353a0"
+      },
+      "tests": [
+        "tests/test_node_metadata_behavior.py::test_file_reader_needs_a_typed_reference_from_upstream",
+        "tests/test_node_metadata_behavior.py::test_file_reader_text_mode_normalizes_line_endings",
+        "tests/test_palette_behavior_contracts.py::test_verified_file_write_and_configured_reader_behavior"
+      ],
+      "content_sha256": "ea72295a985b2e71ab45df834a27f3514ad8263025f1bfb1f99ad9d33d3d1870",
+      "author": "metadata-batch1-author-session",
+      "reviewed": "2026-10-29",
+      "source_revision": "a5dbf2667768734cb0389f345e78c01d20bd1e73",
+      "verifier": "metadata-batch1-independent-verifier"
+    },
+    "file_output_node": {
+      "sources": {
+        "backend/nodes/io/file_output_node.py": "fd55f39bbb01042cefc4a1502252f13305e7afe8e6f14ce67992f920dd00ae17",
+        "backend/nodes/io/window_support.py": "a57a7cfd13ad725a04708a864dd31ed07b41555afb9deeda16280483e1151ee3",
+        "backend/window_manager.py": "e02a9a0671476b8bb65d7991a5b0d8edd7def0618a1d2703d5d3121db43eb2d2",
+        "backend/file_paths.py": "1ffa449ac98037634f5dccb7c7c96fec1cd59e3bcee3a8bd37a8eebd6b6048fe",
+        "backend/file_refs.py": "72b5edc5179e38bf12c050e56daef85055bf83c70b541c9204436240ae62dee6",
+        "backend/run_session.py": "01d0ee7bef1601bfde0eff71d35332e6c96f5f71ac1c12e4fdffcc1d700353a0"
+      },
+      "tests": [
+        "tests/test_node_metadata_behavior.py::test_file_write_overwrites_by_default_and_open_after_write_uses_window_manager",
+        "tests/test_palette_behavior_contracts.py::test_verified_file_write_and_configured_reader_behavior",
+        "tests/test_window_manager.py::test_fallback_opens_via_os_opener"
+      ],
+      "content_sha256": "ee5c0978ab96ece4cefa73359532fef5b6bdb18cf9daf9b8ba527695b0fe03f9",
+      "author": "metadata-batch1-author-session",
+      "reviewed": "2026-10-29",
+      "source_revision": "a5dbf2667768734cb0389f345e78c01d20bd1e73",
+      "verifier": "metadata-batch1-independent-verifier"
+    },
+    "conditional_node": {
+      "sources": {
+        "backend/nodes/conditional_node.py": "d69a072d8adb6521bb43c97bf26c843d556b29ac0d49d85d881cd05942c55c4d",
+        "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09"
+      },
+      "tests": [
+        "tests/test_node_metadata_behavior.py::test_conditional_modes_emit_one_port_with_the_left_value",
+        "tests/test_node_metadata_behavior.py::test_documented_failures_fail_the_node",
+        "tests/test_node_metadata_behavior.py::test_conditional_missing_vault_variable_compares_as_empty_and_transform_fallback",
+        "tests/test_palette_behavior_contracts.py::test_verified_equals_is_exact"
+      ],
+      "content_sha256": "c77fb3895f3ef4be218c700e63619574069a71f46b9783169bf98b84454e103f",
+      "author": "metadata-batch1-author-session",
+      "reviewed": "2026-10-29",
+      "source_revision": "a5dbf2667768734cb0389f345e78c01d20bd1e73",
+      "verifier": "metadata-batch1-independent-verifier"
+    },
+    "concat_node": {
+      "sources": {
+        "backend/nodes/concat_node.py": "be67de79da8793cd6cdc90ef23173f9e7bd8dacaab054eab62f6a409afdafbc4"
+      },
+      "tests": [
+        "tests/test_node_metadata_behavior.py::test_concat_unknown_names_empty_literal_braces_and_vault_values",
+        "tests/test_node_metadata_behavior.py::test_documented_failures_fail_the_node"
+      ],
+      "content_sha256": "82eebc0a3f116f9b9dc8a3b37f62a0d5f18bc38766e8b32b1cadeb2aceb4bbe2",
+      "author": "metadata-batch1-author-session",
+      "reviewed": "2026-10-29",
+      "source_revision": "a5dbf2667768734cb0389f345e78c01d20bd1e73",
+      "verifier": "metadata-batch1-independent-verifier"
+    },
+    "json_path_node": {
+      "sources": {
+        "backend/nodes/data/json_path_node.py": "735ab138add0bb2f9ca52e44b8d6de38f20bd76be773e03e59205225233b2db6"
+      },
+      "tests": [
+        "tests/test_node_metadata_behavior.py::test_json_path_lookup",
+        "tests/test_node_metadata_behavior.py::test_documented_failures_fail_the_node"
+      ],
+      "content_sha256": "097aa179e65876159dbfaa650ebaa7f7e19cdbc19b387c03e117796c69df4831",
+      "author": "metadata-batch1-author-session",
+      "reviewed": "2026-10-29",
+      "source_revision": "a5dbf2667768734cb0389f345e78c01d20bd1e73",
+      "verifier": "metadata-batch1-independent-verifier"
+    }
+  }
+}
