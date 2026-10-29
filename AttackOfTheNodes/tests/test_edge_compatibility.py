@@ -273,7 +273,7 @@ def test_branch_path_forwards_its_input_type():
 
 @pytest.mark.parametrize("writer_type, warns", [
     ("file_output_node", False),
-    ("random_number_node", True),
+    ("disk_space_node", True),
 ])
 def test_vault_seeded_branch_path_takes_the_writer_type(writer_type, warns):
     workflow_map = _workflow(f"c2_branch_seed_{writer_type}")

@@ -54,7 +54,7 @@ async def test_calibration_reply_and_question_evidence(tmp_path, monkeypatch):
         draft = path.with_name(row['variant'] + '-draft.json').read_text()
         limit = json.loads(runner.SPEC.read_text())['nodes']['check']['config']['max_spec']
         try:
-            _, expected = await check(NodeFactory(), draft, limit, fail_on_unreachable=True)
+            _, expected = await check(NodeFactory(), draft, limit, fail_on_unreachable=True, fail_on_disabled_output=True)
         except NodeError as exc:
             expected = dict(ok=False, code=exc.code, message=str(exc), **exc.details)
         assert structural == expected

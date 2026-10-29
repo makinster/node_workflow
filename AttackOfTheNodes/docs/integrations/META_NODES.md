@@ -252,3 +252,20 @@ Latest counts: Brief Text/JSON unchanged **15,037 / 18,214**; Compact Text
 **53,280** (previously **52,535**), JSON **76,170** (previously **75,407**).
 Complete v2 contracts **21,146** (previously **18,271**), within 50,000.
 Caps/headroom are unchanged; full Compact JSON still needs a larger explicit cap.
+
+## Concat and disabled-output follow-up — 2026-10-29
+
+Concat now performs standard Vault result writes, optional transient output and
+unchanged-input forwarding. Missing format names error. Shared preflight warns
+for unsupported standard Vault writes, unknown earlier Concat template writers,
+and connected default outputs with disabled payload publication. These are
+warnings for ordinary uses. `fail_on_disabled_output=false` is the new default
+Check option; v2 sets it true on both checks so the first failure triggers its
+one structural redraft. The trial's calibration check uses the same setting.
+A second defect stops before judge/save. No calibration fixture changes.
+
+Latest Text counts: Brief **14,569**, Compact **53,217**; JSON **18,214 / 76,638**.
+V2 bundle **21,513 / 50,000**. Repeated pending-metadata wording is shorter but
+retains unknown effects/needs and not-Read-only facts; caps/headroom unchanged.
+See the [audit](../audits/concat_vault_2026_10_29/README.md) for capability and
+static-analysis limits. No live reviewer calibration was run.

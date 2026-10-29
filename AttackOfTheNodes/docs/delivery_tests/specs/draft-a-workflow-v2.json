@@ -9,6 +9,15 @@
         "greeting": "Local text and files only. Manual review before building."
       }
     },
+    "initialize_resolution": {
+      "type": "set_variable_node",
+      "alias": "No second analysis yet",
+      "config": {
+        "variable_name": "resolved_analysis",
+        "value_source": "literal",
+        "value": ""
+      }
+    },
     "request": {
       "type": "user_text_input_node",
       "alias": "Read the request",
@@ -528,7 +537,8 @@
         "report_vault_write": true,
         "report_vault_key": "spec_check",
         "transient_output": true,
-        "fail_on_unreachable": true
+        "fail_on_unreachable": true,
+        "fail_on_disabled_output": true
       }
     },
     "judge_question": {
@@ -740,7 +750,8 @@
         "report_vault_write": true,
         "report_vault_key": "spec_check",
         "transient_output": true,
-        "fail_on_unreachable": true
+        "fail_on_unreachable": true,
+        "fail_on_disabled_output": true
       }
     },
     "rejected_draft": {
@@ -754,6 +765,10 @@
   "connections": [
     {
       "from": "start.default",
+      "to": "initialize_resolution.input"
+    },
+    {
+      "from": "initialize_resolution.default",
       "to": "request.input"
     },
     {

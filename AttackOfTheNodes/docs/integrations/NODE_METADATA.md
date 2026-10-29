@@ -132,3 +132,11 @@ one-publication limit. File Write/Text Output records explicitly state that
 {input} after writing displays the full {type, ref_key, path} record and that
 {input[path]} displays the actual saved path. Real local-engine/node tests
 support the refreshed End/Text Output/File Write review attestations.
+
+Concat's 2026-10-29 follow-up (base `495e9aa`) rechecks its record against the
+new standard Vault/forwarding helper and strict missing-name runtime errors.
+The existing User Text Input / Text Output records were also rechecked where
+their attested Concat/source-declaration dependencies changed; their runtime
+behavior is unchanged. Source-menu audit fingerprints for Concat and Check
+workflow spec were refreshed after rechecking their input acceptance. See the
+[Vault audit](../audits/concat_vault_2026_10_29/README.md).

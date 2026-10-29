@@ -27,6 +27,8 @@ class CheckWorkflowSpecNode(Node):
     default_config: ClassVar[Dict[str, Any]] = {'input_source': 'Upstream payload', 'input_vault_key': '', 'input': '', 'max_spec': 32000, 'fail_on_unreachable': False, 'transient_output': True, 'dead_drop_passthrough': False, 'transient_outputs': [], 'vault_write': False, 'vault_write_key': '', 'vault_write_description': '', 'report_vault_write': False, 'report_vault_key': '', 'report_vault_description': ''}
     config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {'input_source': {'type': 'select', 'label': 'Input source', 'options': ['Upstream payload', 'Vault', 'Configured'], 'tab': 'Source', 'section': 'Required Inputs'}, 'input_vault_key': {'type': 'string', 'label': 'Input Vault key', 'required': False, 'tab': 'Source', 'section': 'Required Inputs', 'vault_type': 'string', 'visible_when': {'input_source': 'Vault'}}, 'input': {'type': 'multiline', 'label': 'Workflow spec', 'preview': True, 'description': 'One aotn-workflow/1 JSON object. e/Enter: edit full text.', 'tab': 'Parameters', 'visible_when': {'input_source': 'Configured'}}, 'max_spec': {'type': 'integer', 'label': 'Max spec (characters)', 'min': 1, 'max': 64000, 'tab': 'Parameters', 'wrap_description': True, 'description': 'Same verdict as build --check; warnings pass. No workflow is saved. Hard limits: 128 nodes / 256 edges / nesting 64.'}}
     config_schema['fail_on_unreachable'] = {'type': 'boolean', 'label': 'Reject unreachable nodes', 'description': 'Treat unreachable-node warnings as a failed check; other warnings still pass.'}
+    default_config['fail_on_disabled_output'] = False
+    config_schema['fail_on_disabled_output'] = {'type': 'boolean', 'label': 'Reject disabled connected output', 'description': 'Fail when a connected default output sends no payload, so a drafter can repair it.'}
     ui_hints: ClassVar[Dict[str, Any]] = {'standard_output': True}
     error_definitions: ClassVar[List[Dict[str, Any]]] = [{'code': 'invalid_config', 'description': 'Check spec sources, outputs and limits.', 'retryable': False}, {'code': 'invalid_json', 'description': 'Spec is not valid JSON text.', 'retryable': False}, {'code': 'spec_invalid', 'description': 'Workflow spec did not pass; see the problem list.', 'retryable': False}, {'code': 'spec_too_large', 'description': 'Spec exceeds a size or graph limit.', 'retryable': False}]
 
@@ -38,7 +40,8 @@ class CheckWorkflowSpecNode(Node):
             validate_outputs(self.config, report=True)
             value, report = await check(NodeFactory(), spec_source(self.config, context),
                                         self.config.get('max_spec'), context.secrets_manager,
-                                        fail_on_unreachable=self.config.get('fail_on_unreachable', False))
+                                        fail_on_unreachable=self.config.get('fail_on_unreachable', False),
+                                        fail_on_disabled_output=self.config.get('fail_on_disabled_output', False))
             publish(self.config, context, value, 'var', report)
         except NodeError as exc:
             context.signal_error(exc)

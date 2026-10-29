@@ -80,7 +80,7 @@ async def test_end_explicitly_terminates():
 def test_multiple_file_vault_declarations():
     config = {'vault_write':True,'vault_write_key':'primary','additional_files':[
         {'id':'one','path':'one.md','vault_key':'one'}, {'id':'selected','path':'two.md','vault_key':''}]}
-    meta = {'output_port_metadata':{'default':{'data_type':'file'}}}
+    meta = NodeFactory().metadata_for_type('file_view_node')
     assert standard_vault_writes('file_view_node',config,meta) == {'primary':'file','one':'file'}
 
 

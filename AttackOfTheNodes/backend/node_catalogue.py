@@ -16,7 +16,7 @@ from .port_types import port_metadata, resolved_metadata
 SCHEMA_VERSION = 2
 MAX_BYTES = 256 * 1024
 MAX_CHARS_LIMIT = 200_000
-PENDING_LINE = 'Metadata pending review: effects and needs not stated (not Read-only).'
+PENDING_LINE = 'Metadata unreviewed: effects/needs unknown; not Read-only.'
 SOURCE_IDS = {'Upstream payload': 'upstream', 'Vault': 'vault', 'Configured': 'configured'}
 COMPACT_KEYS = ('type', 'required', 'options', 'min', 'max', 'secret', 'path_hint')
 DETAILS = ('Brief', 'Compact', 'Detailed')
