@@ -130,9 +130,13 @@ The CLI prints the exact report path. All paths below are relative to the new
   evidence uses the same credential masking as run records. Canned judge
   verdicts are protocol tests. Exact question text is saved beside each
   calibration draft as `<variant>-judge-question.txt`; contracts remain in
-  `artifacts/contracts.json`. Budget stops retain completed calibration rows.
+  `artifacts/contracts.json`. Each question includes the actual Check workflow
+  spec result, using the v2 check's helper and character limit. Negative fixtures
+  that fail structurally include its error code and bounded problem details.
+  Budget stops retain completed calibration rows.
 - `artifacts/contracts.json`: complete text, length, hash and exact returned
-  inventory from every static Compact query. Current palette text: 9,364 chars,
+  inventory from every static Compact query. Current palette text: 9,869 chars
+  (before config defaults: 9,364),
   comfortably below the 50,000-char planning cap. No entry is clipped.
 - `cases/<id>/frozen-case.json`, `trial-designer.json`, `designer-run.json`,
   `evidence.json`, `calls.json`, `build-check.json`, `report.json`, exact saved

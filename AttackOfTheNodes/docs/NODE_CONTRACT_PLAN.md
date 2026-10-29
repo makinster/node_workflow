@@ -59,6 +59,13 @@ replies and exact calibration questions, adds judge-only model/effort options,
 and reports call totals/cost for calibration-only and partial budget stops.
 Judge prompt unchanged; mocked transport only.
 
+Important follow-up from main `f0a9ae0`: Compact now includes config defaults
+and removes `required` for defaulted fields. Shorter repeated headers retain
+the existing 8,000/50,000/64,000 context/catalogue caps. The v2 meaning judge
+delegates config completeness and validity to the structural check. Calibration
+passes the actual shared check result, including failure details for negative
+fixtures. Mock verification only; no owner trial rerun.
+
 ## Owner-requested caching — 2026-10-28
 
 `codex/ask-claude-caching`, base `56cb997`: Options TTL setting, stable Context

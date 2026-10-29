@@ -215,6 +215,36 @@ async def test_catalogue_complete_default_and_headroom():
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize('kind,field,default', [
+    ('start_node', 'greeting', 'Workflow started'),
+    ('end_node', 'message', 'Branch completed'),
+])
+async def test_compact_catalogue_config_defaults_are_optional(kind, field, default):
+    factory = NodeFactory()
+    cfg = dict(factory._node_registry['node_catalogue_node'].default_config,
+               scope='Filtered', search=kind)
+    before = deepcopy(factory.metadata_for_type(kind))
+    record = await node_catalogue.build(factory, dict(cfg, format='JSON'))
+    fields = next(e for e in record['entries'] if e['type'] == kind)['config_fields']
+    assert fields[field] == {'type': 'string', 'default': default}
+    for key, value in before['default_config'].items():
+        if key in fields:
+            assert fields[key]['default'] == value
+            assert 'required' not in fields[key]
+    text = await node_catalogue.build(factory, cfg)
+    assert f'"{field}":' + node_catalogue.compact_json(fields[field]) in text
+    assert 'Config defaults may be omitted' in text
+    assert factory.metadata_for_type(kind) == before
+
+
+def test_compact_field_keeps_required_without_a_default():
+    info = {'type': 'boolean', 'required': True}
+    assert node_catalogue._field(info) == info
+    for default in (False, 0, '', [], {}, None):
+        assert node_catalogue._field(info, default) == {'type': 'boolean', 'default': default}
+
+
+@pytest.mark.asyncio
 async def test_debug_optin_and_and_filters():
     f = NodeFactory();cfg = deepcopy(f._node_registry['node_catalogue_node'].default_config)
     # Full debug catalogue may exceed cap in JSON: use Text, then filtered JSON.

@@ -26,7 +26,9 @@ forwarding. Filters are node settings:
 - **Brief / Compact / Detailed** is separate from **Text / JSON**. Brief has
   type, display name, one-line description and input/output display names
   (plus port ids in Text): no data types, sources, config or errors. Compact includes
-  field names/types/ranges/options and error codes; Detailed adds full schemas,
+  field names/types/ranges/options, config defaults and error codes. Fields with
+  defaults may be omitted from specs; Compact retains `required` only for fields
+  without defaults. Detailed adds full schemas,
   defaults, declared error descriptions, custom/unchecked keys, reference
   fields, Vault declarations and UI hints. Dynamic ports are resolved with
   defaults, explicitly labelled `ports_basis: "defaults"`; config can change
@@ -69,13 +71,14 @@ can overflow; narrow filters. Context Pack and Ask local model have their own
 limits: the full catalogue fitting this node does not make it fit downstream.
 Use a filtered catalogue for a small request.
 
-Current registry with the hosted-question node: **51 non-debug entries**, Compact
-Text **36,848** characters and compact JSON **51,792**. The default is now
-**64,000**, the existing upper bound (23.6% headroom, nearest allowed cap to
-the 25% target). Brief Text **7,634** / compact JSON **10,603**. The designer
+Current registry with config defaults: **51 non-debug entries**, Compact Text
+**41,400** characters (before: **36,848**) and compact JSON **56,360** (before:
+**51,792**). The default stays **64,000**, the existing upper bound. Brief Text
+stays **7,634** / compact JSON **10,603**. The designer
 Brief catalogue cap rises from 7,500 to **8,000** so registry growth does not
 stop its first pass; Context remains 8,000 (366 characters headroom). The
-fixed nine-type palette remains **7,421**. No designer run is authorized here.
+fixed nine-type palette is **7,943** (before: **7,421**), below Context 8,000.
+Repeated headers are shorter so all config defaults fit without raising caps.
 
 **Two-pass planning.** Measured Brief **all non-debug** Text: **50 entries,
 7,447 characters** after the Context-limit description update: 553 below the
