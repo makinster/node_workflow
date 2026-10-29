@@ -6,7 +6,7 @@ exposes them to all authoring clients; they never drive execution or validation.
 
 EXECUTION_CONTRACTS = {
     'start_node': {
-        'output_payload': 'default: greeting string; rows: one downstream value as-is, several as name:value object, none emits no payload.',
+        'output_payload': 'default: with rows absent/empty, greeting string verbatim (default "Workflow started"); transient_output=false suppresses it. Nonempty rows replace greeting: one downstream value as-is, several as name:value object, none/no_inputs emits no payload.',
     },
     'end_node': {
         'output_payload': 'None; ends branch. record_line logs END; return_end publishes workflow results only.',
@@ -21,7 +21,7 @@ EXECUTION_CONTRACTS = {
         'output_payload': 'default: unchanged user answer string; incoming input triggers prompt only.',
     },
     'text_output_node': {
-        'output_payload': 'default/log: "[label] "+formatted text. Label is display framing even for exact text requests. Downstream includes label (also when saved). {input[path]}: path; {{input}}: literal.',
+        'output_payload': 'default/log: "[label] "+formatted text. Empty label still emits "[] "+text. Label is display framing even for exact text requests. Downstream includes label (also when saved). {input[path]}: path; {{input}}: literal.',
     },
     'text_transform_node': {
         'output_payload': 'default: transformed string. strip trims whole-input boundary whitespace. Falsy input becomes empty text.',
@@ -34,7 +34,7 @@ EXECUTION_CONTRACTS = {
         'notes': 'Create unique: name.ext if absent; else name (1).ext, name (2).ext, etc.; keeps existing files. Not atomic.',
     },
     'conditional_node': {
-        'output_payload': 'true or false only: left value unchanged (input or Vault variable).',
+        'output_payload': 'Only the selected port (true if matched, false otherwise) emits the unchanged left value: input, or Vault value when left_value_source=variable; never the comparison boolean.',
         'notes': 'equals compares str(left) == str(right_value): case-sensitive, whitespace preserved; no trimming.',
     },
     'concat_node': {

@@ -32,10 +32,10 @@ A non-`ok` status explains scope/uncertainty and stops. All preparation/service/
 validation/write errors go to a readable problem message and End. There is no
 retry, automatic build, approval node, shell execution or generated-workflow run.
 
-Current registry with the hosted-question node: Brief **7,634** characters;
-fixed palette **7,996** (before display-framing clarification: **7,928**), both below Context 8,000. Brief catalogue max is now
-8,000 (previously 7,500); runtime Context setting and approved prompts are
-unchanged. No designer/model call accompanies this maintenance.
+Current registry: Brief **7,634** characters, fixed palette **8,168**
+(previously **7,996**). The original designer's drafting node explicitly sets
+Context to **8,500** (previously the 8,000 default); Brief's cap stays 8,000.
+No designer/provider call accompanies this maintenance.
 
 Historical measurement: with the Context-limit description update, Brief is 7,447 characters; all
 complete Compact fragments joined are 7,421, including headers. They reach Context intact, without Context Pack truncation.
@@ -117,7 +117,7 @@ The judge allows 4,096 output tokens and asks for short reasons (under about
 
 The extra Compact queries cover Conditional, Concat and JSON Path. All returned
 entries are retained: the current exact inventory is 12 types and assembled
-Context is **9,996 characters** (before display-framing clarification: **9,928**), below the
+Context is **10,275 characters** (previously **9,996**), below the
 unchanged 50,000-character planning budget. Compact includes config defaults
 and marks only fields without defaults as required. The meaning judge delegates
 config completeness/validity to Check workflow spec; omitted defaults are allowed.
@@ -173,3 +173,10 @@ on one parallel path. Cases 7/9 also require true/false work after their own
 Conditional route. The original 19 pairs remain; three new pairs cover serial
 parallel work, pre-Conditional displays and pre-Conditional uppercase work.
 Calibration is now **22 pairs**. The designer spec remains unchanged.
+
+The requirements prompt now applies Create unique and no automatic opening as
+assumptions, rather than asking to confirm these defaults. Creating a new file
+while preserving existing files means create a unique copy; stopping without
+writing does not complete that request. Explicit restrictions/conflicts still
+require clarification. The run 000006 case 5 evidence asked exactly this
+unnecessary collision question; the case/request remains unchanged.

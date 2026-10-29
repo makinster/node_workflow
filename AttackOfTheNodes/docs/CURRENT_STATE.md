@@ -1,9 +1,9 @@
 # Current State
 
-Snapshot checked **2026-10-28**, against fetched `origin/main` `18d21d4`
-after #140 merged. Trial scoring and prompt-failure evidence are on
-`codex/trial-scoring-prompt-evidence`. This change makes no real API calls and
-does not access owner Secrets. Earlier entries retain their dated scope.
+Snapshot checked **2026-10-28**, against fetched `origin/main` `40cba09`
+after #141 merged. Display contracts and trial framing rules are on
+`codex/display-contracts-trial-rules`. No real provider calls; only saved trial
+evidence was read. Earlier entries retain their dated scope.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
@@ -13,6 +13,20 @@ Sonnet/Opus and document the 512-token minimum prefix. Per-model price tests
 and real-engine run summaries cover all three supported models. See the latest
 Session Log entry for verification: full `pytest -n auto` passes **3,234 tests
 in 35.63 s** after the review fixes.
+
+## Display contracts and framing rules — 2026-10-28
+
+Empty Text Output labels, Start greeting/row routing and Conditional value
+forwarding are explicit in authoring contracts. Display scoring accepts plain
+framing around complete values; exact/only displays and saved content remain
+strict. All 22 calibration pairs retain their expected verdicts. Case 5's saved
+analysis asked unique-copy versus stop; the generic requirements prompt now
+applies its Create unique default instead of offering it as another question.
+No fixture or runtime node behavior changed; live response behavior unverified.
+
+Full suite: **3,449 passed in 37.57 s**. Contracts: original **8,168/8,500**
+(Context cap raised from 8,000), v2 **10,275/50,000**, Compact Text **39,503**,
+JSON **61,532**, both below 64,000. Brief **7,634 / 10,603** unchanged.
 
 ## Trial scoring, input evidence and display framing — 2026-10-28
 

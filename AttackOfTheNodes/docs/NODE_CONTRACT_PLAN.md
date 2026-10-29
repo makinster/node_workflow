@@ -314,3 +314,12 @@ the audit report; copy the table here if a phase needs it.
 | A | Entry route, newcomer guide and audit F01–F15/F41 | Prepared on `docs/a-entry-route`; publication/verification in [Current State](CURRENT_STATE.md) |
 | B | Rebuild vision sources, preserve reasoning, consolidate and archive | Prepared on `docs/b-consolidation-vision`; see Current State for verification/review |
 | C | Bound session history and address remaining S2/S3 | After B merges |
+
+### Display contract follow-up — 2026-10-28 (complete)
+
+Verified and clarified empty Text Output label, Start greeting versus rows and
+Conditional unchanged-value routing. Original designer Context rises from 8,000
+to 8,500 for 8,168 characters; v2 10,275 stays below 50,000. Trial oracle v4
+permits display framing without changing saved-content provenance or calibration
+fixtures. Requirements now apply safe copy defaults. Full mock-provider suite:
+3,449 passed; see Session Log for case 5 evidence and size deltas.

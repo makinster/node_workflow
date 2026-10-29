@@ -6,6 +6,36 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-28 — Display contracts and trial framing rules (Important)
+
+Based on fetched main `40cba09`, clean worktree
+`/home/makin/src/nw-display-contracts`, branch
+`codex/display-contracts-trial-rules`; owner workspace edits preserved.
+Verified execute methods: empty Text Output label logs/emits `[] ` plus text;
+Start with absent/empty rows emits the greeting string verbatim, nonempty rows
+replace it; Conditional emits the unchanged selected left value on true/false,
+never the comparison boolean. Contracts now state these cases explicitly.
+
+Oracle v4 permits plain framing of whole displayed values, including actual
+saved paths, across semantic, provenance and role checks. Exact/only display
+clauses remain strict; saved content and downstream labels stay unchanged.
+Reproduced case 6 framed path: base rules fail, new rules pass. All existing
+22 calibration pairs retain their expected verdicts; no fixtures changed.
+
+Read run 000006 cases/5/evidence.json: first_analysis asked unique filename vs
+stop on collision, citing a missing write policy. The request already requires
+a new copy preserving existing files. Changed generic requirements guidance
+from offering defaults to applying Create unique/no opening as assumptions;
+explicit conflicts still ask. No real provider calls; future live behavior is
+unverified.
+
+Characters before → after: original 7,996 → 8,168 (draft Context explicitly
+raised 8,000 → 8,500); v2 9,996 → 10,275 (50,000 cap); Compact Text
+39,224 → 39,503 and JSON 61,249 → 61,532 (64,000 cap). Brief unchanged
+7,634 / 10,603. Full `pytest -n auto`: **3,449 passed in 37.57 s**,
+including 21 new tests; focused suite 71 passed before four additional negative
+framing checks. `git diff --check` passes.
+
 ## 2026-10-28 — Trial scoring, prompt evidence and Text Output framing (Important)
 
 Clean worktree `/home/makin/src/nw-trial-scoring`, branch
