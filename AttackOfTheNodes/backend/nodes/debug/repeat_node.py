@@ -17,11 +17,17 @@ class RepeatCounterNode(Node):
     # read-only summary instead of an option.
     ui_hints: ClassVar[Dict[str, Any]] = {
         "pass_through": "Counts visits, then forwards the incoming payload unchanged.",
-        "forwarded_input_port": "input",
+        "forwarded_input_port": "input", "forwarded_output_ports": ["default"],
     }
     category: ClassVar[str] = NodeCategory.DEBUG
     input_ports: ClassVar[List[str]] = ["input"]
-    output_ports: ClassVar[List[str]] = ["default"]
+    output_ports: ClassVar[List[str]] = ["default", "visits"]
+    output_port_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {
+        "default": {"name": "Payload", "description": "The incoming payload, forwarded unchanged",
+                    "data_type": "any", "required": False, "to": ["downstream"]},
+        "visits": {"name": "Visits", "description": "Visits to this node before the error threshold",
+                   "data_type": "number", "required": False, "to": ["downstream"]},
+    }
     default_config: ClassVar[Dict[str, Any]] = {"max_visits": 3}
     config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {
         "max_visits": {"type": "integer", "label": "Max Visits", "required": True, "min": 1},

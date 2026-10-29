@@ -57,8 +57,10 @@ def is_pass_through_node(factory, node: Dict[str, Any], port: str | None = None)
     if port == ERROR_PORT:
         return False
     metadata = metadata_for_type(factory, node.get("type", ""))
-    if metadata and (metadata.get("ui_hints") or {}).get("pass_through"):
-        return True
+    hints = (metadata or {}).get("ui_hints") or {}
+    if hints.get("pass_through"):
+        forwarded = hints.get("forwarded_output_ports")
+        return forwarded is None or (port or "default") in forwarded
     config = node.get("config") or {}
     if config.get("pass_through") is True:
         return True

@@ -42,14 +42,18 @@ The owner accepted all eight recommendations in the external
 `agent_channel/palette-scaling-plan.md`. Branch `codex/node-claims` from
 `439e614` implements only baseline/claims/unsupported-option rejection:
 59-type inventory, shared real-execute tests, reviewed-twelve value/engine
-matrix and explicit pending skips/strict xfails. No shortlist, exact-ID lookup,
+matrix and explicit pending skips. No shortlist, exact-ID lookup,
 new drafter nodes, new reviewed records or admission in this PR.
 
 Reviewed record text remains the spec; small clear mismatches were repaired in
-code. Four pending decisions remain (count/visits ports and If Changed/Window
-Control suppression), listed in the [audit](audits/claims_baseline_2026_10_29/README.md).
-Full suite: 4,488 passed, 187 skipped, four expected failures; all 23 calibration
-rule pairs retained. No real calls. Independent review, remaining pending-family
+code. The Scaffolding follow-up from `ee0bca4` resolves the owner's four decisions:
+declare Counter `count` and Repeat Counter `visits` as numeric outputs, implement
+If Changed suppression while preserving route traversal, and record Window
+Control suppression as unsupported with build/check rejection and a passing
+policy claim. Baseline/receipt/source attestations refreshed; all four former
+xfails pass. [Audit](audits/claims_baseline_2026_10_29/README.md).
+Full suite: 4,496 passed, 187 skipped, zero xfails in 42.37 s. No real calls.
+Independent review, remaining pending-family
 matrices and selection work remain gates before wider admission.
 
 ## Owner-requested Concat and output follow-up — 2026-10-29

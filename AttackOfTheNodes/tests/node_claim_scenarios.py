@@ -1,5 +1,5 @@
 """Versioned scenario data and boundary protocols, never replacement execute methods."""
-SCENARIO_VERSION = 1
+SCENARIO_VERSION = 2
 # Every registered type must have a row. Config/inputs are merged over real defaults.
 # $tokens are resolved to isolated local fixtures by the shared runner.
 CASES = {
@@ -57,16 +57,6 @@ CASES = {
  'window_control_node': {'inputs': {'file': '$ref'}, 'boundary': 'fake_window_manager'},
  'subworkflow_node': {'config': {'workflow_id': 'child', 'results': []}, 'boundary': 'child_callback'},
 }
-# Per-claim expected failures, not per-type blanket exemptions. A strict xpass
-# forces review when runtime is fixed. Reviewed palette records are never edited
-# to hide these pending-type discrepancies.
-MISMATCHES = {
- ('counter_node', 'ports'): 'Emits undeclared count data port; owner must choose an output port or remove the extra data.',
- ('repeat_counter_node', 'ports'): 'Emits undeclared visits data port; owner must choose an output port or remove the extra data.',
- ('if_changed_node', 'transient_output'): 'Declared transient switch is ignored on changed/no_change; clarify suppression versus route traversal.',
- ('window_control_node', 'transient_output'): 'Declared transient switch is ignored; decide whether this fixed-forwarding action supports suppression.',
-}
-
 # Independent expected values for the reviewed palette. The shared interpreter
 # runs these same records; no per-type test functions choose a passing answer.
 PALETTE_SCENARIOS = [

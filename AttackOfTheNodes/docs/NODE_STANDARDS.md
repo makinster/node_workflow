@@ -1087,3 +1087,15 @@ Options, bounded native API calls, errors and outputs. Question and optional
 Context declare exactly the sources execution accepts; standard availability
 filtering and compatible secondary Vault writers are covered by mounted UI
 tests. Use the helper spec and shared form/routing patterns; no special screen.
+
+## Owner-decided claims follow-up (2026-10-29)
+
+Counter exposes `count [number]`; Repeat Counter exposes `visits [number]`.
+Their `default` output still forwards the input. Fixed-forwarding nodes with
+separate computed outputs can scope `ui_hints.forwarded_output_ports` to
+`["default"]`; producer tracing then preserves the computed ports' types.
+If Changed suppression saves/compares normally and traverses its selected edge
+without publishing data. Window Control always forwards the targeted file
+reference: suppression is unsupported, and build/check reject explicit
+`transient_output` settings. Retained saved defaults do not promise a capability.
+See the [claims audit](audits/claims_baseline_2026_10_29/README.md).

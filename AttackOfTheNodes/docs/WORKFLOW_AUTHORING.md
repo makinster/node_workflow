@@ -63,6 +63,10 @@ with `aotn run "<name>"` or open it from the app's Workflow Library.
   Concat supports result writes, transient suppression and unchanged-input
   forwarding; missing template roots are required Vault reads. Legacy named
   writes and node-specific variable/session outputs keep their own rules.
+  If Changed supports suppression while still traversing its selected route.
+  Window Control always forwards its file reference and rejects explicit
+  `transient_output` settings, including false. Counter `count` and Repeat
+  Counter `visits` are declared numeric output ports.
   [Claims and compatibility audit](audits/claims_baseline_2026_10_29/README.md).
 - **Node references**: fields `describe` lists under "Node references"
   (Wait Until's `target_node_ids`) take handles; the build writes the ids.

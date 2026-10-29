@@ -149,7 +149,7 @@ The [claims audit](../audits/claims_baseline_2026_10_29/README.md) records all
 execution receipts and the owner code-versus-claim decision list. One shared
 runner calls real execute methods; 78 palette value/source scenarios and 21
 real-engine graphs (two runs each) add behavior proof. Current full suite:
-4,488 passed, 187 explicit skips, four strict expected failures on pending types.
+4,496 passed, 187 skipped, zero xfails in 42.37 s; 234 passing node claims and 179 explicit claim skips.
 No metadata backfill or wider admission is claimed. All twelve manifest entries
 link the shared claims and declaration/capability helpers. The linked receipt
 hashes scenario data and runner protocols; a new registration without scenarios
@@ -159,6 +159,9 @@ is not a substitute for independent admission review or real-service evidence.
 
 Factory/describe `standard_flags` reports executable authoring support. The
 builder rejects explicit unsupported flags, including false/empty settings,
-while saved configs retain their prior loading behavior. Pending ignored flags
-are errors in new specs and have strict per-claim xfails where a behavior was
-claimed. No shortlist or new drafter node is included.
+while saved configs retain their prior loading behavior. Unsupported flags
+are errors in new specs. The four owner-decided discrepancies
+from #151 now pass: numeric count/visits ports, If Changed suppression with
+selected-route traversal, and Window Control fixed forwarding with suppression
+explicitly unsupported. No xfail exemptions remain. No shortlist or new drafter
+node is included.

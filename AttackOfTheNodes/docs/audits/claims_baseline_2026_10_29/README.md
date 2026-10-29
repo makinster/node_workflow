@@ -1,22 +1,21 @@
 # Registered-node claims baseline — 2026-10-29
 
-Captured before this repair from `439e6148e29eaab951e187592d484b508190aa15`
-(main including #150). The owner accepted the eight recommendations in
-`/home/makin/src/agent_channel/palette-scaling-plan.md`; this PR implements
-claims only, without shortlist work, new nodes, metadata backfill or admission.
+Originally captured from `439e614` for PR #151, then refreshed from
+`ee0bca449425eaa23792b08f442ac3fd81e6b2fb` after the owner's four decisions.
+This Scaffolding follow-up changes no shortlist, drafter, catalogue or admission files.
 
-[`baseline.json`](baseline.json) is the immutable source-reviewed snapshot of
-all 59 types: 12 reviewed records and 47 pending. It records every declared
-input/output (including `to` / `pass_through` where present), retained default
-flags, global authoring acceptance, execute support and LF-normalized sources.
-Absent `to` means the legacy implicit downstream route, not a newly invented
-Vault capability. Tombstone is registered but deliberately non-authorable.
+[`baseline.json`](baseline.json) is the refreshed source-reviewed snapshot of
+all 59 types: 12 reviewed records and 47 pending. It records declared ports,
+retained defaults, current authoring acceptance, execute support and LF-normalized
+source hashes. The original pre-repair snapshot remains in PR #151's Git history.
+Absent `to` means the legacy implicit downstream route. Tombstone is registered
+but deliberately non-authorable. Authoring acceptance does not imply admission.
 
-Before this PR, all four flags were globally accepted as explicit overrides.
 V = `vault_write`, T = `transient_output`, D = `dead_drop_passthrough`,
-O = `transient_outputs`. The support column is the pre-change execute audit;
-it does not promise all retained defaults are supported. Start V/T applies to
-legacy greeting mode; explicit rows have their own destinations. No type reads O.
+O = `transient_outputs`. The support column reflects current execute support.
+Start V/T applies to greeting mode; explicit rows have their own destinations.
+No type reads O. Window Control's retained transient default is unsupported:
+it always forwards the file reference and build/check reject explicit switches.
 
 | Registered type | Review | Honours | Declared output routes / optional forwarding |
 |---|---|---|---|
@@ -24,13 +23,13 @@ legacy greeting mode; explicit rows have their own destinations. No type reads O
 | `hermes_ask_node` | pending | V,T,D | default: downstream/vault; optional forwarding; details: vault |
 | `hermes_investigate_node` | pending | V,T,D | default: downstream/vault; optional forwarding |
 | `ask_local_model_node` | pending | V,T,D | default: downstream/vault; optional forwarding; details: vault |
-| `chat_completion_node` | pending | V,D | default: downstream/vault; optional forwarding |
+| `chat_completion_node` | pending | V,T,D | default: downstream/vault; optional forwarding |
 | `check_reply_node` | pending | V,T,D | default: downstream/vault; optional forwarding |
 | `check_workflow_spec_node` | pending | V,T | default: downstream/vault; report: vault |
 | `concat_node` | reviewed | V,T,D | default: downstream/vault; optional forwarding |
 | `conditional_node` | reviewed | none | true, false: implicit downstream |
 | `context_pack_node` | pending | V,T,D | default: downstream/vault; optional forwarding |
-| `counter_node` | pending | none | default: implicit downstream |
+| `counter_node` | pending | none | default: downstream (fixed forwarding); count: downstream number |
 | `deep_branch_node` | pending | none | branch: implicit downstream |
 | `tombstone_node` | pending | none | none |
 | `disk_space_node` | pending | V,T,D | default: downstream/vault; optional forwarding |
@@ -47,7 +46,7 @@ legacy greeting mode; explicit rows have their own destinations. No type reads O
 | `get_variable_node` | pending | none | default: implicit downstream |
 | `git_status_node` | pending | V,T,D | default: downstream/vault; optional forwarding |
 | `http_request_node` | pending | none | default: implicit downstream |
-| `if_changed_node` | pending | none | changed, no_change: downstream |
+| `if_changed_node` | pending | T | changed, no_change: downstream |
 | `image_generation_node` | pending | none | default: implicit downstream |
 | `hermes_investigation_result_node` | pending | V,T,D | default: downstream/vault; optional forwarding; state: vault |
 | `json_path_node` | reviewed | none | default: implicit downstream |
@@ -67,7 +66,7 @@ legacy greeting mode; explicit rows have their own destinations. No type reads O
 | `recall_node` | pending | V,T,D | default: downstream/vault; optional forwarding |
 | `record_event_node` | pending | V,T,D | default: downstream/vault; optional forwarding |
 | `remember_node` | pending | V,T,D | default: downstream/vault; optional forwarding |
-| `repeat_counter_node` | pending | none | default: implicit downstream |
+| `repeat_counter_node` | pending | none | default: downstream (fixed forwarding); visits: downstream number |
 | `set_variable_node` | pending | none | default: implicit downstream |
 | `sleep_node` | pending | none | default: implicit downstream |
 | `start_node` | reviewed | V,T | default: downstream/vault |
@@ -83,7 +82,7 @@ legacy greeting mode; explicit rows have their own destinations. No type reads O
 ## Executable evidence and limits
 
 [`claims.json`](claims.json) records post-repair observations for each type and
-claim, including explicit skips and strict expected failures with reasons,
+claim, including explicit skips and unsupported-capability reasons,
 attempted/committed writes, declared required/optional reads, per-key reads,
 snapshot accesses, emitted ports and external-boundary protocol names.
 The source/scenario hashes bind the receipt to the runner, fixtures, runtime
@@ -150,25 +149,35 @@ supported flag list; a config key merely existing is not proof of its behavior.
 Reviewed metadata record text is unchanged. Re-attestation records source review
 and links these scenarios; passing hashes are not an independent admission review.
 
-## Owner decisions: fix code or fix claim?
+## Owner decisions resolved — Scaffolding follow-up
 
-Each item is a strict per-claim xfail; an unexpected pass fails the suite and
-requires review. None is a reviewed palette type. No wider palette is admitted.
+All four former expected failures are passing claims; no xfail exemptions remain.
+No wider palette is admitted.
 
-- `counter_node` / `ports`: Emits undeclared count data port; owner must choose an output port or remove the extra data.
-- `repeat_counter_node` / `ports`: Emits undeclared visits data port; owner must choose an output port or remove the extra data.
-- `if_changed_node` / `transient_output`: Declared transient switch is ignored on changed/no_change; clarify suppression versus route traversal.
-- `window_control_node` / `transient_output`: Declared transient switch is ignored; decide whether this fixed-forwarding action supports suppression.
+- Counter declares its existing `count` output as `number`.
+- Repeat Counter declares its existing `visits` output as `number`.
+- Both keep `default` as fixed forwarding. Shared producer tracing scopes that
+  forwarding to `default`, so numeric outputs retain their declared type.
+- If Changed honours `transient_output=false`: saves/compares normally, publishes
+  no data and still traverses the selected Changed/No change edge. Both routes
+  have real-engine regressions. It now advertises suppression as supported.
+- Window Control does not support suppression: its file reference always passes
+  onward. Build/check reject explicit true/false switches. The passing policy
+  claim records `supported: false` and the reason, and verifies fixed forwarding
+  for retained saved settings. This is no suppression-behavior claim.
+
+Baseline, receipt and relevant source attestations were refreshed after source
+review. The If Changed input-source contract is unchanged; only its runtime
+fingerprint changed. Reviewed record text and reviewed/pending counts stay intact.
 
 ## Verification
 
-Full `pytest -n auto`: **4,488 passed, 187 skipped, 4 xfailed in 40.62 s**.
+Full `pytest -n auto`: **4,496 passed, 187 skipped, zero xfails in 42.37 s**.
 All **23** calibration pairs keep their expected rule verdicts; fixtures did not
-change. The shared receipt has **230 pass / 179 skip / 4 xfail** node claims.
+change. The shared receipt has **234 pass / 179 skip / 0 xfail** node claims.
 Eight further skips are non-authorable-tombstone flag-policy cases. The value
 matrix has **78** rows; **21** engine graphs run twice. The real CLI rejects an
 unsupported false flag with exit 1 / `unsupported_standard_flag` and no save.
 
-Catalogue sizes are unchanged: Brief Text **14,569**, Compact Text **53,217**,
-JSON **18,214 / 76,638**, v2 selected contracts **21,513 / 50,000**. Existing
-caps/headroom pass. No live API calls, native OS proof or owner workflow run.
+Catalogue and designer caps/headroom remain covered by the full suite.
+No live API calls, native OS proof or owner workflow run.

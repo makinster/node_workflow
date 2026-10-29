@@ -212,7 +212,7 @@
           "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
         }
       },
-      "runtime_sha256": "b3e4f7b1877e1f72bae7996d7e66baaee2e0a4622d01dc376cbc805850262823",
+      "runtime_sha256": "e539de9d5f318321a832082de69499646c285229a074482faab4f42645921e40",
       "runtime_file": "backend/nodes/data/if_changed_node.py"
     },
     {
