@@ -149,6 +149,11 @@
         "default": 16000,
         "min": 1,
         "max": 64000
+      },
+      "validate_selection": {
+        "type": "boolean",
+        "label": "Validate candidate selection",
+        "default": false
       }
     }
   },
@@ -161,6 +166,11 @@
     {
       "code": "reply_mismatch",
       "description": "Reply didn't match.",
+      "retryable": false
+    },
+    {
+      "code": "selection_invalid",
+      "description": "Candidate IDs or roles are invalid.",
       "retryable": false
     }
   ]

@@ -6,6 +6,30 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-29 — Exact selection and measured role recall (Important)
+
+Root `/home/makin/src/nw-palette-selection`, branch `codex/palette-selection`,
+base `ee0bca4` including #151. Owner checkout/unrelated recovery files untouched.
+Read section 1, omission/budget rules and accepted owner choices of the external
+`agent_channel/palette-scaling-plan.md`. Same twelve admitted types; no new
+node types or hosted calls. Exact catalogue identities, family Brief headings,
+separate analysis selection, reviewed role/support closure, one local expansion,
+shared complete snapshots and mechanical selected-type checks are implemented.
+The original fixed palette inventory/call baseline remains intact.
+
+[Audit and limitations](audits/palette_selection_2026_10_29/README.md) includes
+before/after Text/JSON counts and per-case role recall. Both mocked sets stay
+10/10 with original call totals. A removed writer expands once; unproven roles
+stop before drafting; one structural repair remains separate. The 23 original
+calibration rule pairs are unchanged. Reviewed metadata text is unchanged;
+meta-node read additions were rechecked against the twelve claims and source
+hashes/claims receipts refreshed. Rebased onto `4775f5e` (#152), preserving its
+four owner-decided claim fixes and zero xfails. No new mismatch or admission.
+Owner live inference/paraphrase recall is not asserted.
+
+Full `pytest -n auto`: **4,524 passed, 187 skipped, zero xfails** (42.71s).
+No real API calls.
+
 ## 2026-10-29 — Owner-decided claims follow-up (Scaffolding)
 
 Separate worktree `/home/makin/src/node_workflow-claims`, branch

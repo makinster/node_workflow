@@ -308,6 +308,21 @@ def requirements(case, status="ready"):
         if status in ('outside_scope', 'needs_new_node'):
             result['reason'] = ('Sending email is outside the permitted target scope.' if status == 'outside_scope'
                                 else 'The palette has no word-counting operation.')
+    # Canned selection is mock transport data, not retrieval evidence. Recall is
+    # scored separately against frozen role alternatives, never reference identity.
+    from backend.palette_selection import ROLE_TYPES
+    selected = set()
+    if status == 'ready':
+        draft = good_draft(case.get('id', 1), case.get('root', 'ROOT'), case.get('case_set', 1))
+        selected = {n['type'] for n in draft['nodes'].values()}
+    candidates, roles = [], []
+    for kind in sorted(selected - {'start_node', 'end_node'}):
+        role = next(r for r, alts in ROLE_TYPES.items() if (kind,) in alts)
+        roles.append(dict(role=role, requirement_ids=['r1'], reason='Frozen mock outcome role'))
+        candidates.append(dict(type_id=kind, role=role, requirement_ids=['r1'], reason='Canned capability candidate'))
+    if status == 'ready' and not roles:
+        roles.append(dict(role='finish', requirement_ids=['r1'], reason='Finish the requested work'))
+    result['selection'] = dict(candidates=candidates, roles=roles)
     return result
 
 
@@ -498,6 +513,13 @@ def valid_analysis(record, shape='analysis_shape'):
     if not valid_v2_shape(record, shape):
         return False
     if record["status"] not in ("ready", "clarify", "outside_scope", "needs_new_node"):
+        return False
+    from backend.palette_selection import validate_analysis
+    from backend.node_factory import NodeFactory
+    from backend.node_errors import NodeError
+    try:
+        validate_analysis(NodeFactory(), record)
+    except NodeError:
         return False
     ids = []
     for r in record["requirements"]:
@@ -729,6 +751,7 @@ async def run_case(
     mock = MockSDK(replies)
     started = time.monotonic()
     def finish():
+        report.setdefault('recall', selection_recall(case, []))
         report['fully_right'] = report.get('result') == 'pass'
         report['seconds'] = time.monotonic() - started
         if not real_calls:
@@ -756,10 +779,18 @@ async def run_case(
                 else {"source": "agent_usage receipts", "receipts": run["agent_usage"]}
             ),
         )
+        snapshot_text = vault.get('complete_contracts', '')
+        if snapshot_text.startswith('Selection snapshot: '):
+            from backend.palette_selection import read_snapshot
+            report['selection'] = read_snapshot(snapshot_text)
+            report['recall'] = selection_recall(case, report['selection']['selected_type_ids'])
         report["usage"] = run["agent_usage"]
         report["usage_summary"] = run["agent_usage_summary"]
         report["input_trace"] = run["input_trace"]
         report["errors"] = run["errors"]
+        selection_errors = [e for e in run['errors'] if e.get('code') == 'selection_incomplete']
+        if selection_errors:
+            report['selection_stop'] = selection_errors
         report["gate_evidence"] = run["steps"]
         report['draft_retry'] = dict(
             requested='first_check_error' in vault,
@@ -852,6 +883,10 @@ async def run_case(
         raw_path = files[0]
         report.update(raw_sha256=sha(raw), saved_path=str(raw_path))
         contracts = vault.get("complete_contracts", "")
+        from backend.palette_selection import read_snapshot
+        receipt = read_snapshot(contracts)
+        report['selection'] = receipt
+        report['recall'] = selection_recall(case, receipt['selected_type_ids'])
         report["contracts"] = dict(characters=len(contracts), sha256=sha(contracts))
         if len(contracts) > 50000 or not contracts:
             raise ValueError("Complete contracts outside planning budget")
@@ -911,6 +946,27 @@ async def run_case(
         report["result"] = "fail"
         report["failure"] = str(exc)
     return finish()
+
+
+def selection_recall(case, selected):
+    """Frozen role alternatives/compositions, separate from behavior/rule verdicts."""
+    selected = set(selected)
+    roles = case.get('required_structure', {}).get('roles', {})
+    covered, missing, useful = [], [], set()
+    for name, rule in roles.items():
+        alternatives = rule.get('one_of', [rule])
+        alternatives = [{r['type']} for r in alternatives]
+        viable = [alt for alt in alternatives if alt <= selected]
+        if viable:
+            covered.append(name)
+            useful.update(set.union(*viable))
+        else:
+            missing.append(dict(role=name, acceptable_compositions=[sorted(a) for a in alternatives]))
+    useful.update({'start_node', 'end_node'} & selected)
+    return dict(roles_covered=covered, candidate_count=len(selected), missing_roles=missing,
+                unnecessary_candidates=sorted(selected - useful),
+                status_only=case.get('expected_status', 'ready') != 'ready',
+                evidence='Frozen role recall; mock responses do not demonstrate semantic retrieval')
 
 
 async def contract_inventory():

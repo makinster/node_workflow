@@ -32,6 +32,10 @@ class CheckWorkflowSpecNode(Node):
     ui_hints: ClassVar[Dict[str, Any]] = {'standard_output': True}
     error_definitions: ClassVar[List[Dict[str, Any]]] = [{'code': 'invalid_config', 'description': 'Check spec sources, outputs and limits.', 'retryable': False}, {'code': 'invalid_json', 'description': 'Spec is not valid JSON text.', 'retryable': False}, {'code': 'spec_invalid', 'description': 'Workflow spec did not pass; see the problem list.', 'retryable': False}, {'code': 'spec_too_large', 'description': 'Spec exceeds a size or graph limit.', 'retryable': False}]
 
+    default_config['contract_snapshot_vault_key'] = ''
+    config_schema['contract_snapshot_vault_key'] = dict(type='string', label='Selected snapshot Vault key')
+    error_definitions.append(dict(code='selection_invalid', description='Selected snapshot missing or stale.', retryable=False))
+
     async def execute(self, context: NodeContext) -> None:
         from ...node_factory import NodeFactory
         from ...meta_workflow import validate_outputs, spec_source, check, publish
@@ -42,6 +46,10 @@ class CheckWorkflowSpecNode(Node):
                                         self.config.get('max_spec'), context.secrets_manager,
                                         fail_on_unreachable=self.config.get('fail_on_unreachable', False),
                                         fail_on_disabled_output=self.config.get('fail_on_disabled_output', False))
+            if self.config.get('contract_snapshot_vault_key'):
+                from ...palette_selection import check_draft
+                receipt = check_draft(NodeFactory(), value, context.memory_bank.read_persistent(self.config['contract_snapshot_vault_key']))
+                report['selection_sha256'] = receipt['contracts_sha256']
             publish(self.config, context, value, 'var', report)
         except NodeError as exc:
             context.signal_error(exc)

@@ -365,7 +365,7 @@ async def test_equivalent_adapters_pass_rules_and_real_targets(
         number,
         tmp_path / "trial",
         tmp_path / "library",
-        replies=[runner.requirements(c), spec, runner.meaning()],
+        replies=[analysis_with_adapter(c, adapter), spec, runner.meaning()],
     )
     assert report["result"] == "pass", report
 
@@ -377,3 +377,11 @@ def test_parallel_allows_proven_preceding_vault_writer(case):
         {"id": "original", "output": "original", "data_type": "string"}
     ]
     assert check_rules(spec, c)["result"] == "pass"
+
+
+def analysis_with_adapter(case, adapter):
+    analysis = runner.requirements(case)
+    kind, role = ('json_path_node', 'extract_json') if adapter == 'path' else ('concat_node', 'compose_text')
+    analysis['selection']['candidates'].append(dict(type_id=kind, role=role, requirement_ids=['r1'], reason='Alternative valid composition'))
+    analysis['selection']['roles'].append(dict(role=role, requirement_ids=['r1'], reason='Alternative valid composition'))
+    return analysis

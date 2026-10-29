@@ -269,3 +269,20 @@ V2 bundle **21,513 / 50,000**. Repeated pending-metadata wording is shorter but
 retains unknown effects/needs and not-Read-only facts; caps/headroom unchanged.
 See the [audit](../audits/concat_vault_2026_10_29/README.md) for capability and
 static-analysis limits. No live reviewer calibration was run.
+
+## Exact identities and v2 selection (2026-10-29)
+
+Use Node catalogue `scope=Exact IDs` with `type_ids_source` set to Configured,
+Upstream payload or Vault. Configured takes a `type_ids` list; Vault takes
+`type_ids_vault_key`. Lists contain 1–64 exact, unique, visible admitted IDs;
+unknown, duplicate, hidden or unadmitted IDs are errors. Output includes every
+selected contract in stable ID order, or a size error; no truncation or
+substring matching. All nodes/Filtered retain their existing trigger behavior.
+Brief Text now groups entries under family headings; Brief JSON is unchanged.
+
+The optional `Selected analysis` mode is the existing v2 adapter: separate
+candidate/role evidence from requirements analysis, reviewed support closure,
+one local discovery expansion and a frozen Compact snapshot. Both v2 structural
+checks enforce the snapshot's type set. No extra ordinary inference call or
+new target-node admission. [Audit, source attestations, recall and budgets](../audits/palette_selection_2026_10_29/README.md)
+record the mock-only evidence and deliberate omission test.

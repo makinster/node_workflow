@@ -29,6 +29,27 @@ class NodeCatalogueNode(Node):
     ui_hints: ClassVar[Dict[str, Any]] = {'standard_output': True}
     error_definitions: ClassVar[List[Dict[str, Any]]] = [{'code': 'invalid_config', 'description': 'Check catalogue filters and limits.', 'retryable': False}, {'code': 'catalogue_empty', 'description': 'No nodes match. Broaden the filters.', 'retryable': False}, {'code': 'catalogue_too_large', 'description': 'Catalogue is too large. Narrow the filters or raise the cap.', 'retryable': False}]
 
+    # Exact identity selection is optional; ordinary All/Filtered inputs still
+    # only sequence the node. Selected analysis is the bounded v2 adapter.
+    from ...palette_selection import ADMITTED as _admitted
+    default_config.update(type_ids=[], type_ids_source='Configured', type_ids_vault_key='',
+                          selection_request_vault_key='', discovery_request_vault_key='',
+                          discovery_snapshot_vault_key='', selection_clarification_vault_key='')
+    config_schema['scope']['options'] += ['Exact IDs', 'Selected analysis']
+    config_schema.update(
+        type_ids_source=dict(type='select', label='Selection source', options=['Upstream payload', 'Vault', 'Configured']),
+        type_ids_vault_key=dict(type='string', label='Selection Vault key', vault_type='var', visible_when={'type_ids_source': 'Vault'}),
+        type_ids=dict(type='multiselect', label='Exact type IDs', options=sorted(_admitted), visible_when={'type_ids_source': 'Configured'}),
+        selection_request_vault_key=dict(type='string', label='Original request Vault key'),
+        discovery_request_vault_key=dict(type='string', label='Discovery request Vault key'),
+        discovery_snapshot_vault_key=dict(type='string', label='Frozen discovery Vault key'),
+        selection_clarification_vault_key=dict(type='string', label='Clarification Vault key'))
+    input_port_metadata['input'].update(description='All/Filtered: trigger only. Exact IDs: a list of identities; Selected analysis: requirements JSON.',
+        sources=['upstream'])
+    error_definitions += [dict(code=c, description=d, retryable=False) for c, d in [
+        ('selection_invalid', 'Unknown, duplicate, hidden or unadmitted selection; check the exact IDs.'),
+        ('selection_incomplete', 'A required role lacks an admitted, proven composition; no draft.')]]
+
     @classmethod
     def describe_output_ports(cls, config):
         return {'default': {**cls.output_port_metadata['default'],
@@ -41,7 +62,61 @@ class NodeCatalogueNode(Node):
         from ...node_errors import NodeError
         try:
             validate_outputs(self.config)
-            value = await build(NodeFactory(), self.config)
+            config = dict(self.config)
+            if config['scope'] in ('Exact IDs', 'Selected analysis'):
+                source = config['type_ids_source']
+                if source == 'Configured':
+                    value = config['type_ids']
+                elif source == 'Upstream payload':
+                    value = context.inputs.get('input')
+                elif source == 'Vault':
+                    key = config.get('type_ids_vault_key')
+                    if not isinstance(key, str) or not key.strip():
+                        raise NodeError('invalid_config', 'Choose a type_ids_vault_key for selection.')
+                    value = context.memory_bank.read_persistent(key.strip())
+                else:
+                    raise NodeError('invalid_config', 'Choose a selection source.')
+                if config['scope'] == 'Exact IDs':
+                    config['type_ids'] = value
+                    value = await build(NodeFactory(), config)
+                else:
+                    import json
+                    from ...palette_selection import snapshot, registry_revision, digest
+                    if config['format'] != 'Text':
+                        raise NodeError('invalid_config', 'Selected analysis returns a Text snapshot.')
+                    try:
+                        analysis = json.loads(value) if isinstance(value, str) else value
+                    except ValueError:
+                        raise NodeError('selection_invalid', 'Selection analysis must be JSON.') from None
+                    if config['discovery_snapshot_vault_key']:
+                        try:
+                            discovery = context.memory_bank.read_persistent(config['discovery_snapshot_vault_key'])
+                            frozen = json.loads(discovery.rsplit('\nDiscovery: ', 1)[1])
+                            if (frozen['registry_sha256'] != registry_revision(NodeFactory())
+                                    or frozen['request_sha256'] != digest(context.memory_bank.read_persistent(config['selection_request_vault_key']))):
+                                raise ValueError('discovery binding')
+                        except (AttributeError, IndexError, ValueError, KeyError, TypeError):
+                            raise NodeError('selection_invalid', 'Discovery registry/request changed; start a fresh request.') from None
+                    value = await snapshot(NodeFactory(), analysis,
+                        context.memory_bank.read_persistent(config['selection_request_vault_key']), config,
+                        clarification=context.memory_bank.read_persistent(config['selection_clarification_vault_key']) if config['selection_clarification_vault_key'] else '')
+            else:
+                value = await build(NodeFactory(), config)
+            if config.get('discovery_request_vault_key'):
+                from ...palette_selection import positive_matches, ADMITTED, registry_revision, digest
+                import json
+                if config['format'] != 'Text' or config['detail'] != 'Brief':
+                    raise NodeError('invalid_config', 'Discovery suggestions require Brief Text.')
+                factory = NodeFactory()
+                request = context.memory_bank.read_persistent(config['discovery_request_vault_key'])
+                if not isinstance(request, str):
+                    raise NodeError('selection_invalid', 'Discovery needs the original request.')
+                discovery = dict(registry_sha256=registry_revision(factory), request_sha256=digest(request), suggested_type_ids=[k for k in positive_matches(factory, request) if k in ADMITTED],
+                    implemented_not_admitted=sorted(set(factory._node_registry) - ADMITTED - {'tombstone_node'}),
+                    note='Pending names are classification hints, not proven capabilities or admitted candidates.')
+                value += '\nDiscovery: ' + json.dumps(discovery, separators=(',', ':')) + '\n'
+                if len(value) > config['max_chars'] or len(value.encode()) > 256 * 1024:
+                    raise NodeError('catalogue_too_large', 'Complete discovery exceeds catalogue cap.')
             publish(self.config, context, value, 'var' if self.config['format'] == 'JSON' else 'string')
         except NodeError as exc:
             context.signal_error(exc)

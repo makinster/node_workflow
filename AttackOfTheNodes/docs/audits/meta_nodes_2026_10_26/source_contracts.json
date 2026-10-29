@@ -3,7 +3,7 @@
   "nodes": [
     {
       "node_type": "node_catalogue_node",
-      "runtime_sha256": "66606ce51d1d16e496e1dea90faa17e1d88fa247b6029df8f5b6b25e9b5f7317",
+      "runtime_sha256": "c5fe69f2e34c6c5830465e156e93965881518c980b4bd028d2961cbc04a7b40d",
       "ports": {
         "input": {
           "mode": "control",
@@ -17,7 +17,7 @@
     },
     {
       "node_type": "check_workflow_spec_node",
-      "runtime_sha256": "dfc8dadca3a81aa8ca15447678761291c73985f94242d36eb9b73fff80e07922",
+      "runtime_sha256": "437bf638f65e5aeab015602aa2cb38d6f7fe0d02a916f34b97713b90dc79f4a0",
       "ports": {
         "input": {
           "mode": "standard",

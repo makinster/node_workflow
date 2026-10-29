@@ -1,0 +1,55 @@
+{
+  "Brief": {
+    "Text": {
+      "characters": 14687,
+      "utf8_bytes": 14689
+    },
+    "JSON": {
+      "characters": 18233,
+      "utf8_bytes": 18233
+    }
+  },
+  "Compact": {
+    "Text": {
+      "characters": 53146,
+      "utf8_bytes": 53201
+    },
+    "JSON": {
+      "characters": 77731,
+      "utf8_bytes": 77733
+    }
+  },
+  "v2_fixed_baseline": {
+    "characters": 21619,
+    "limit": 50000
+  },
+  "v2_selected": {
+    "min_characters": 6096,
+    "max_characters": 13184,
+    "limit": 50000,
+    "context_limit": 100000,
+    "note": "Mock selection from frozen reference roles; not live semantic recall or cost evidence."
+  },
+  "requested_base_ee0bca4": {
+    "Brief": {
+      "Text": 14569,
+      "JSON": 18214
+    },
+    "Compact": {
+      "Text": 53217,
+      "JSON": 76638
+    },
+    "v2_fixed": 21513
+  },
+  "publication_base_4775f5e": {
+    "Brief": {
+      "Text": 14603,
+      "JSON": 18233
+    },
+    "Compact": {
+      "Text": 53317,
+      "JSON": 76818
+    },
+    "v2_fixed": 21513
+  }
+}

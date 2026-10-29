@@ -29,6 +29,10 @@ class CheckReplyNode(Node):
     ui_hints: ClassVar[Dict[str, Any]] = {}
     error_definitions: ClassVar[List[Dict[str, Any]]] = [{'code': 'shape_invalid', 'description': 'Check the expected fields.', 'retryable': False}, {'code': 'reply_mismatch', 'description': "Reply didn't match.", 'retryable': False}]
 
+    error_definitions.append(dict(code='selection_invalid', description='Candidate IDs or roles are invalid.', retryable=False))
+    default_config['validate_selection'] = False
+    config_schema['validate_selection'] = dict(type='boolean', label='Validate candidate selection')
+
     async def execute(self, context: NodeContext) -> None:
         from ... import text_lines
         from ...node_errors import NodeError
@@ -38,6 +42,10 @@ class CheckReplyNode(Node):
             from ...reply_shape import check
             value = await check(text_lines.source(self.config, context), self.config['expected_fields'],
                                 self.config['max_reply'], self.config['allow_other_fields'])
+            if self.config.get('validate_selection'):
+                from ...palette_selection import validate_analysis
+                from ...node_factory import NodeFactory
+                validate_analysis(NodeFactory(), value)
             finish(self, context, value, 'var')
         except NodeError as exc:
             context.signal_error(exc)

@@ -88,6 +88,11 @@
         "label": "Reject disabled connected output",
         "default": false,
         "description": "Fail when a connected default output sends no payload, so a drafter can repair it."
+      },
+      "contract_snapshot_vault_key": {
+        "type": "string",
+        "label": "Selected snapshot Vault key",
+        "default": ""
       }
     }
   },
@@ -110,6 +115,11 @@
     {
       "code": "spec_too_large",
       "description": "Spec exceeds a size or graph limit.",
+      "retryable": false
+    },
+    {
+      "code": "selection_invalid",
+      "description": "Selected snapshot missing or stale.",
       "retryable": false
     }
   ]
