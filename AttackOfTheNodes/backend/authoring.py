@@ -53,6 +53,7 @@ from .save_manager import SaveManager
 from .data_types import types_compatible
 from .validator import _build_ancestor_set, _build_reverse_adjacency, validate_workflow
 from .vault_declarations import typed_vault_writes, vault_read_entries
+from .node_capabilities import STANDARD_FLAGS, supported_standard_flags
 from .workflow_map import WorkflowMap
 from .workflow_names import name_problem, name_taken
 
@@ -91,6 +92,7 @@ AUTHORING_CODES: Dict[str, str] = {
     "bad_handle": "A node handle is not a lowercase identifier.",
     "unknown_node_type": "A node's type is not registered (or is internal).",
     "unknown_config_key": "A config key is not one the node type knows.",
+    "unsupported_standard_flag": "An explicit standard flag has no supported runtime behavior on this node.",
     "invalid_number": "A number field is not a finite number in its allowed range.",
     "unknown_reference": "A node-reference field names a handle the spec does not define.",
     "unknown_port": "A connection uses a port the node does not have with this config.",
@@ -197,7 +199,8 @@ def describe_node_type(
         "fields": fields,
         "unchecked_keys": sorted((set(defaults) - set(schema)) | set(meta.get("custom_config_keys") or {})),
         "custom_keys": dict(meta.get("custom_config_keys") or {}),
-        "standard_keys": sorted(STANDARD_KEYS),
+        "standard_keys": sorted((STANDARD_KEYS - STANDARD_FLAGS) | supported_standard_flags(meta, config)),
+        "standard_flags": sorted(supported_standard_flags(meta, config)),
         "standard_key_docs": deepcopy(meta.get("standard_key_docs") or {}),
         "node_reference_fields": list(NODE_REFERENCE_FIELDS.get(node_type, ())),
         "inputs": inputs,
@@ -390,6 +393,11 @@ def _checked_config(meta: Dict[str, Any], overrides: Dict[str, Any], handle: str
             f"{handle}: unknown config key {key!r} for {meta['type']} (see: aotn describe {meta['type']})",
             handle, f"config.{key}")
     config = {**deepcopy(defaults), **deepcopy(overrides)}
+    supported = supported_standard_flags(meta, config)
+    for flag in sorted((set(overrides) & STANDARD_FLAGS) - supported):
+        add("error", "unsupported_standard_flag",
+            f"{handle}: {meta['type']} cannot honour {flag}; remove this unsupported option "
+            "(explicit false/empty values are also rejected)", handle, f"config.{flag}")
     for key, info in number_fields(schema):
         if key in overrides:
             value, problem = check_number(info, overrides[key], defaults.get(key))

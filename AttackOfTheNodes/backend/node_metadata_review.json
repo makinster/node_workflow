@@ -6,17 +6,25 @@
       "sources": {
         "backend/nodes/start_node.py": "24745b954cbcfb057a532340bce62420846e699d06c537a60a803e0c7dd9cc17",
         "backend/contracts.py": "c88d7398adb513ab745990f1e959438024e65dea9515ab9d96b2854501e1fb1d",
-        "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09"
+        "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09",
+        "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
+        "backend/node_capabilities.py": "e28bc9fb60c2f1a0c90c6494b5da76a689cf761a935f45f65f1e11fad340a31f",
+        "backend/authoring.py": "8b76e1d3e22b984d9956c863918a4c1f8baf9d3fc6a672b037cdad9e3829cdfc",
+        "backend/vault_declarations.py": "3f4fbad4245f9889fa17c552a05399d67d67699e68904265f01cec0aa341122d"
       },
       "tests": [
         "tests/test_node_metadata_behavior.py::test_start_greeting_runs_next_step_even_when_empty_and_is_never_displayed",
-        "tests/test_contracts.py::test_legacy_start_is_one_greeting_row"
+        "tests/test_contracts.py::test_legacy_start_is_one_greeting_row",
+        "tests/test_node_claims.py::test_declared_ports_and_types",
+        "tests/test_node_claims.py::test_reviewed_palette_scenarios",
+        "tests/test_node_claims.py::test_palette_real_engine_delivery",
+        "tests/test_node_claims.py::test_claims_evidence_is_current"
       ],
       "content_sha256": "edd10e0599c4254e65f6ecd4a16c65e6530ccd2fd9a02f105d23f7a74278d592",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-29",
-      "source_revision": "539d2279c5f14a7b0c31b46a61f777e19d2e72aa",
-      "verifier": "draft-review-source-recheck"
+      "source_revision": "439e6148e29eaab951e187592d484b508190aa15",
+      "verifier": "claims-runtime-source-recheck"
     },
     "end_node": {
       "sources": {
@@ -24,190 +32,284 @@
         "backend/contracts.py": "c88d7398adb513ab745990f1e959438024e65dea9515ab9d96b2854501e1fb1d",
         "backend/output_entry.py": "6121bc67a278ac66244365ff5c23c235cd457316ef2826cd41db07b202af2ba2",
         "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09",
-        "backend/master_state.py": "dea6cc4c75f7414fd9bbb63bf037798907839cc2d41fafd4e4c09584b6112b07"
+        "backend/master_state.py": "dea6cc4c75f7414fd9bbb63bf037798907839cc2d41fafd4e4c09584b6112b07",
+        "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
+        "backend/node_capabilities.py": "e28bc9fb60c2f1a0c90c6494b5da76a689cf761a935f45f65f1e11fad340a31f",
+        "backend/authoring.py": "8b76e1d3e22b984d9956c863918a4c1f8baf9d3fc6a672b037cdad9e3829cdfc",
+        "backend/vault_declarations.py": "3f4fbad4245f9889fa17c552a05399d67d67699e68904265f01cec0aa341122d"
       },
       "tests": [
         "tests/test_node_metadata_behavior.py::test_end_line_framing_and_silence",
         "tests/test_shared_end_contracts.py::test_parallel_arrivals_run_shared_nodes_and_end_separately",
-        "tests/test_contracts.py::test_the_return_end_publishes_once"
+        "tests/test_contracts.py::test_the_return_end_publishes_once",
+        "tests/test_node_claims.py::test_declared_ports_and_types",
+        "tests/test_node_claims.py::test_reviewed_palette_scenarios",
+        "tests/test_node_claims.py::test_palette_real_engine_delivery",
+        "tests/test_node_claims.py::test_claims_evidence_is_current"
       ],
       "content_sha256": "241986825014650a91ad61f1b66bf9a525758c51b954169c4875b8a28fb12e22",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-29",
-      "source_revision": "f03b4c1369bd20f276d70d560f7b93296d0bbaf8",
-      "verifier": "shared-end-and-file-record-source-recheck"
+      "source_revision": "439e6148e29eaab951e187592d484b508190aa15",
+      "verifier": "claims-runtime-source-recheck"
     },
     "branch_end_node": {
       "sources": {
         "backend/nodes/branch_end_node.py": "886600f9f0eb71e0964ac0d4559e11ea9d34f8481460c561540579b9f3c0671a",
-        "backend/branch_health.py": "7a247eb016ec83dfd0ac99937783a3d36fa45fd5a425fc5d688cd612929273a1"
+        "backend/branch_health.py": "7a247eb016ec83dfd0ac99937783a3d36fa45fd5a425fc5d688cd612929273a1",
+        "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
+        "backend/node_capabilities.py": "e28bc9fb60c2f1a0c90c6494b5da76a689cf761a935f45f65f1e11fad340a31f",
+        "backend/authoring.py": "8b76e1d3e22b984d9956c863918a4c1f8baf9d3fc6a672b037cdad9e3829cdfc",
+        "backend/vault_declarations.py": "3f4fbad4245f9889fa17c552a05399d67d67699e68904265f01cec0aa341122d",
+        "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09"
       },
       "tests": [
-        "tests/test_node_metadata_behavior.py::test_merge_beacon_forwards_unchanged"
+        "tests/test_node_metadata_behavior.py::test_merge_beacon_forwards_unchanged",
+        "tests/test_node_claims.py::test_declared_ports_and_types",
+        "tests/test_node_claims.py::test_reviewed_palette_scenarios",
+        "tests/test_node_claims.py::test_palette_real_engine_delivery",
+        "tests/test_node_claims.py::test_claims_evidence_is_current"
       ],
       "content_sha256": "a7b11e79741185b004a04ca305cef2bd7c883b40c92421d50630578cf89c498f",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-29",
-      "source_revision": "a5dbf2667768734cb0389f345e78c01d20bd1e73",
-      "verifier": "metadata-batch1-independent-verifier"
+      "source_revision": "439e6148e29eaab951e187592d484b508190aa15",
+      "verifier": "claims-runtime-source-recheck"
     },
     "branch_node": {
       "sources": {
         "backend/nodes/branch_node.py": "3a3274190e2276a30627f3a9f036ba115104cf1ce7fa65633eaa658f359981af",
         "backend/branch_paths.py": "0b4769ebbefffdbaf04a456cac955091f8e6ae6a64f18c4441a5d24013614c8a",
-        "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09"
+        "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09",
+        "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
+        "backend/node_capabilities.py": "e28bc9fb60c2f1a0c90c6494b5da76a689cf761a935f45f65f1e11fad340a31f",
+        "backend/authoring.py": "8b76e1d3e22b984d9956c863918a4c1f8baf9d3fc6a672b037cdad9e3829cdfc",
+        "backend/vault_declarations.py": "3f4fbad4245f9889fa17c552a05399d67d67699e68904265f01cec0aa341122d"
       },
       "tests": [
-        "tests/test_node_metadata_behavior.py::test_parallel_branch_default_starts_every_path_and_ignores_legacy_condition"
+        "tests/test_node_metadata_behavior.py::test_parallel_branch_default_starts_every_path_and_ignores_legacy_condition",
+        "tests/test_node_claims.py::test_declared_ports_and_types",
+        "tests/test_node_claims.py::test_reviewed_palette_scenarios",
+        "tests/test_node_claims.py::test_palette_real_engine_delivery",
+        "tests/test_node_claims.py::test_claims_evidence_is_current"
       ],
       "content_sha256": "e94e747ac47b035dd44de06a0de7188c15366d2669de39c648c8ad613a1e9cb5",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-29",
-      "source_revision": "a5dbf2667768734cb0389f345e78c01d20bd1e73",
-      "verifier": "metadata-batch1-independent-verifier"
+      "source_revision": "439e6148e29eaab951e187592d484b508190aa15",
+      "verifier": "claims-runtime-source-recheck"
     },
     "user_text_input_node": {
       "sources": {
-        "backend/nodes/user_text_input_node.py": "c3bfcf7fd0337f6fcd4d2603036b2d11ce20752d8d4c9158470009706f03ed12",
+        "backend/nodes/user_text_input_node.py": "3289cbec6af2f679e92c15da27c9b05abd9924c48c6e4926c07669419e6b3b23",
         "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09",
         "backend/node_errors.py": "13f7cc5b3dd7d41b9c2e4bbf893dfd87dd3357c3eea91e1d940915b93b628292",
-        "backend/nodes/concat_node.py": "9be589fb6251d27b51ba4038c80dd3d4c25684d6c20eb8428e8ee8b9254dfc20"
+        "backend/nodes/concat_node.py": "9be589fb6251d27b51ba4038c80dd3d4c25684d6c20eb8428e8ee8b9254dfc20",
+        "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
+        "backend/node_capabilities.py": "e28bc9fb60c2f1a0c90c6494b5da76a689cf761a935f45f65f1e11fad340a31f",
+        "backend/authoring.py": "8b76e1d3e22b984d9956c863918a4c1f8baf9d3fc6a672b037cdad9e3829cdfc",
+        "backend/vault_declarations.py": "3f4fbad4245f9889fa17c552a05399d67d67699e68904265f01cec0aa341122d"
       },
       "tests": [
         "tests/test_node_metadata_behavior.py::test_user_text_input_waits_for_a_person_and_emits_the_answer",
         "tests/test_run_lifecycle.py::test_unattended_run_does_not_hang_on_an_input_request",
-        "tests/test_case_set_two.py::test_references_pass_rules_and_real_target_behavior"
+        "tests/test_case_set_two.py::test_references_pass_rules_and_real_target_behavior",
+        "tests/test_node_claims.py::test_declared_ports_and_types",
+        "tests/test_node_claims.py::test_reviewed_palette_scenarios",
+        "tests/test_node_claims.py::test_palette_real_engine_delivery",
+        "tests/test_node_claims.py::test_claims_evidence_is_current"
       ],
       "content_sha256": "b49fab86123410d7c7cc55ce481d45872d203000676dc59f51e1b118c98dfde5",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-29",
-      "source_revision": "495e9aa9261b202ee2b468bcb0191ea6b1391c47",
-      "verifier": "concat-vault-routing-source-recheck"
+      "source_revision": "439e6148e29eaab951e187592d484b508190aa15",
+      "verifier": "claims-runtime-source-recheck"
     },
     "text_output_node": {
       "sources": {
-        "backend/nodes/text_output_node.py": "01faa45080caf024421f9c01abc27ed2bc2cadd2cdeaa3b02000422e44ace563",
+        "backend/nodes/text_output_node.py": "0382e1f748a203be7ee9f30c7c48ccaf2e9a8a0725192d80d639669238407054",
         "backend/output_entry.py": "6121bc67a278ac66244365ff5c23c235cd457316ef2826cd41db07b202af2ba2",
-        "backend/vault_declarations.py": "fe497a2ce9dbcd5c1147489c58149538b831e6a8b3ad08fdbf8a3c7e6f48f513",
-        "backend/nodes/io/file_output_node.py": "fd55f39bbb01042cefc4a1502252f13305e7afe8e6f14ce67992f920dd00ae17",
-        "backend/file_refs.py": "72b5edc5179e38bf12c050e56daef85055bf83c70b541c9204436240ae62dee6"
+        "backend/vault_declarations.py": "3f4fbad4245f9889fa17c552a05399d67d67699e68904265f01cec0aa341122d",
+        "backend/nodes/io/file_output_node.py": "74994c1760a6a65c97017b7bb4139a3c993f49055e06f069b0cd7af9b1bf8c1e",
+        "backend/file_refs.py": "72b5edc5179e38bf12c050e56daef85055bf83c70b541c9204436240ae62dee6",
+        "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
+        "backend/node_capabilities.py": "e28bc9fb60c2f1a0c90c6494b5da76a689cf761a935f45f65f1e11fad340a31f",
+        "backend/authoring.py": "8b76e1d3e22b984d9956c863918a4c1f8baf9d3fc6a672b037cdad9e3829cdfc",
+        "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09"
       },
       "tests": [
         "tests/test_node_metadata_behavior.py::test_text_output_label_framing",
         "tests/test_node_metadata_behavior.py::test_text_output_default_label_template_errors_and_legacy_prompt",
         "tests/test_node_metadata_behavior.py::test_documented_failures_fail_the_node",
-        "tests/test_shared_end_contracts.py::test_file_write_record_display_is_distinct_from_path"
+        "tests/test_shared_end_contracts.py::test_file_write_record_display_is_distinct_from_path",
+        "tests/test_node_claims.py::test_declared_ports_and_types",
+        "tests/test_node_claims.py::test_reviewed_palette_scenarios",
+        "tests/test_node_claims.py::test_palette_real_engine_delivery",
+        "tests/test_node_claims.py::test_claims_evidence_is_current"
       ],
       "content_sha256": "693cd958d90e9520c157cbd97e97443b75d4a2063416ff78b4b32a1e927c093a",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-29",
-      "source_revision": "495e9aa9261b202ee2b468bcb0191ea6b1391c47",
-      "verifier": "concat-vault-routing-source-recheck"
+      "source_revision": "439e6148e29eaab951e187592d484b508190aa15",
+      "verifier": "claims-runtime-source-recheck"
     },
     "text_transform_node": {
       "sources": {
         "backend/nodes/data/text_transform_node.py": "ed32338894341d95b81059265e634e7672ab87cf53434743fe8e58ad77327210",
-        "backend/text_format.py": "d476cce52b3038b08e406257ba006e11f97e27385956329dc1ff704ccb5538c7"
+        "backend/text_format.py": "d476cce52b3038b08e406257ba006e11f97e27385956329dc1ff704ccb5538c7",
+        "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
+        "backend/node_capabilities.py": "e28bc9fb60c2f1a0c90c6494b5da76a689cf761a935f45f65f1e11fad340a31f",
+        "backend/authoring.py": "8b76e1d3e22b984d9956c863918a4c1f8baf9d3fc6a672b037cdad9e3829cdfc",
+        "backend/vault_declarations.py": "3f4fbad4245f9889fa17c552a05399d67d67699e68904265f01cec0aa341122d",
+        "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09"
       },
       "tests": [
         "tests/test_node_metadata_behavior.py::test_text_transform_operations",
-        "tests/test_node_metadata_behavior.py::test_conditional_missing_vault_variable_compares_as_empty_and_transform_fallback"
+        "tests/test_node_metadata_behavior.py::test_conditional_missing_vault_variable_compares_as_empty_and_transform_fallback",
+        "tests/test_node_claims.py::test_declared_ports_and_types",
+        "tests/test_node_claims.py::test_reviewed_palette_scenarios",
+        "tests/test_node_claims.py::test_palette_real_engine_delivery",
+        "tests/test_node_claims.py::test_claims_evidence_is_current"
       ],
       "content_sha256": "db8e0c03527a975f0601863f06699ada4347512c1583652b8ad27c19e12ef6e2",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-29",
-      "source_revision": "a5dbf2667768734cb0389f345e78c01d20bd1e73",
-      "verifier": "metadata-batch1-independent-verifier"
+      "source_revision": "439e6148e29eaab951e187592d484b508190aa15",
+      "verifier": "claims-runtime-source-recheck"
     },
     "file_reader_node": {
       "sources": {
         "backend/nodes/file_reader_node.py": "a15051d529765f3843a728381213cb5cfe2f99652dee898f090f835f2bff196d",
         "backend/file_paths.py": "1ffa449ac98037634f5dccb7c7c96fec1cd59e3bcee3a8bd37a8eebd6b6048fe",
         "backend/file_refs.py": "72b5edc5179e38bf12c050e56daef85055bf83c70b541c9204436240ae62dee6",
-        "backend/run_session.py": "01d0ee7bef1601bfde0eff71d35332e6c96f5f71ac1c12e4fdffcc1d700353a0"
+        "backend/run_session.py": "01d0ee7bef1601bfde0eff71d35332e6c96f5f71ac1c12e4fdffcc1d700353a0",
+        "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
+        "backend/node_capabilities.py": "e28bc9fb60c2f1a0c90c6494b5da76a689cf761a935f45f65f1e11fad340a31f",
+        "backend/authoring.py": "8b76e1d3e22b984d9956c863918a4c1f8baf9d3fc6a672b037cdad9e3829cdfc",
+        "backend/vault_declarations.py": "3f4fbad4245f9889fa17c552a05399d67d67699e68904265f01cec0aa341122d",
+        "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09"
       },
       "tests": [
         "tests/test_node_metadata_behavior.py::test_file_reader_needs_a_typed_reference_from_upstream",
         "tests/test_node_metadata_behavior.py::test_file_reader_text_mode_normalizes_line_endings",
-        "tests/test_palette_behavior_contracts.py::test_verified_file_write_and_configured_reader_behavior"
+        "tests/test_palette_behavior_contracts.py::test_verified_file_write_and_configured_reader_behavior",
+        "tests/test_node_claims.py::test_declared_ports_and_types",
+        "tests/test_node_claims.py::test_reviewed_palette_scenarios",
+        "tests/test_node_claims.py::test_palette_real_engine_delivery",
+        "tests/test_node_claims.py::test_claims_evidence_is_current"
       ],
       "content_sha256": "ea72295a985b2e71ab45df834a27f3514ad8263025f1bfb1f99ad9d33d3d1870",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-29",
-      "source_revision": "a5dbf2667768734cb0389f345e78c01d20bd1e73",
-      "verifier": "metadata-batch1-independent-verifier"
+      "source_revision": "439e6148e29eaab951e187592d484b508190aa15",
+      "verifier": "claims-runtime-source-recheck"
     },
     "file_output_node": {
       "sources": {
-        "backend/nodes/io/file_output_node.py": "fd55f39bbb01042cefc4a1502252f13305e7afe8e6f14ce67992f920dd00ae17",
+        "backend/nodes/io/file_output_node.py": "74994c1760a6a65c97017b7bb4139a3c993f49055e06f069b0cd7af9b1bf8c1e",
         "backend/nodes/io/window_support.py": "a57a7cfd13ad725a04708a864dd31ed07b41555afb9deeda16280483e1151ee3",
         "backend/window_manager.py": "e02a9a0671476b8bb65d7991a5b0d8edd7def0618a1d2703d5d3121db43eb2d2",
         "backend/file_paths.py": "1ffa449ac98037634f5dccb7c7c96fec1cd59e3bcee3a8bd37a8eebd6b6048fe",
         "backend/file_refs.py": "72b5edc5179e38bf12c050e56daef85055bf83c70b541c9204436240ae62dee6",
         "backend/run_session.py": "01d0ee7bef1601bfde0eff71d35332e6c96f5f71ac1c12e4fdffcc1d700353a0",
-        "backend/nodes/text_output_node.py": "01faa45080caf024421f9c01abc27ed2bc2cadd2cdeaa3b02000422e44ace563",
-        "backend/output_entry.py": "6121bc67a278ac66244365ff5c23c235cd457316ef2826cd41db07b202af2ba2"
+        "backend/nodes/text_output_node.py": "0382e1f748a203be7ee9f30c7c48ccaf2e9a8a0725192d80d639669238407054",
+        "backend/output_entry.py": "6121bc67a278ac66244365ff5c23c235cd457316ef2826cd41db07b202af2ba2",
+        "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
+        "backend/node_capabilities.py": "e28bc9fb60c2f1a0c90c6494b5da76a689cf761a935f45f65f1e11fad340a31f",
+        "backend/authoring.py": "8b76e1d3e22b984d9956c863918a4c1f8baf9d3fc6a672b037cdad9e3829cdfc",
+        "backend/vault_declarations.py": "3f4fbad4245f9889fa17c552a05399d67d67699e68904265f01cec0aa341122d",
+        "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09"
       },
       "tests": [
         "tests/test_node_metadata_behavior.py::test_file_write_overwrites_by_default_and_open_after_write_uses_window_manager",
         "tests/test_palette_behavior_contracts.py::test_verified_file_write_and_configured_reader_behavior",
         "tests/test_window_manager.py::test_fallback_opens_via_os_opener",
-        "tests/test_shared_end_contracts.py::test_file_write_record_display_is_distinct_from_path"
+        "tests/test_shared_end_contracts.py::test_file_write_record_display_is_distinct_from_path",
+        "tests/test_node_claims.py::test_declared_ports_and_types",
+        "tests/test_node_claims.py::test_reviewed_palette_scenarios",
+        "tests/test_node_claims.py::test_palette_real_engine_delivery",
+        "tests/test_node_claims.py::test_claims_evidence_is_current"
       ],
       "content_sha256": "f8ca8c813eb43ad300395be7c6ed86572fd651c9ee6e9c5844a38bfded1c1438",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-29",
-      "source_revision": "f03b4c1369bd20f276d70d560f7b93296d0bbaf8",
-      "verifier": "shared-end-and-file-record-source-recheck"
+      "source_revision": "439e6148e29eaab951e187592d484b508190aa15",
+      "verifier": "claims-runtime-source-recheck"
     },
     "conditional_node": {
       "sources": {
         "backend/nodes/conditional_node.py": "d69a072d8adb6521bb43c97bf26c843d556b29ac0d49d85d881cd05942c55c4d",
-        "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09"
+        "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09",
+        "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
+        "backend/node_capabilities.py": "e28bc9fb60c2f1a0c90c6494b5da76a689cf761a935f45f65f1e11fad340a31f",
+        "backend/authoring.py": "8b76e1d3e22b984d9956c863918a4c1f8baf9d3fc6a672b037cdad9e3829cdfc",
+        "backend/vault_declarations.py": "3f4fbad4245f9889fa17c552a05399d67d67699e68904265f01cec0aa341122d"
       },
       "tests": [
         "tests/test_node_metadata_behavior.py::test_conditional_modes_emit_one_port_with_the_left_value",
         "tests/test_node_metadata_behavior.py::test_documented_failures_fail_the_node",
         "tests/test_node_metadata_behavior.py::test_conditional_missing_vault_variable_compares_as_empty_and_transform_fallback",
-        "tests/test_palette_behavior_contracts.py::test_verified_equals_is_exact"
+        "tests/test_palette_behavior_contracts.py::test_verified_equals_is_exact",
+        "tests/test_node_claims.py::test_declared_ports_and_types",
+        "tests/test_node_claims.py::test_reviewed_palette_scenarios",
+        "tests/test_node_claims.py::test_palette_real_engine_delivery",
+        "tests/test_node_claims.py::test_claims_evidence_is_current"
       ],
       "content_sha256": "c77fb3895f3ef4be218c700e63619574069a71f46b9783169bf98b84454e103f",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-29",
-      "source_revision": "a5dbf2667768734cb0389f345e78c01d20bd1e73",
-      "verifier": "metadata-batch1-independent-verifier"
+      "source_revision": "439e6148e29eaab951e187592d484b508190aa15",
+      "verifier": "claims-runtime-source-recheck"
     },
     "concat_node": {
       "sources": {
         "backend/nodes/concat_node.py": "9be589fb6251d27b51ba4038c80dd3d4c25684d6c20eb8428e8ee8b9254dfc20",
-        "backend/saved_values.py": "e49b28260410e8798c1f97a9224f8d464298ddee1a5d52a75d068d81029d13da"
+        "backend/saved_values.py": "cc6c9e07f33f395580d5408dcfdb646140fd9f829bff0d6e27e6f5d1f5f6372b",
+        "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
+        "backend/node_capabilities.py": "e28bc9fb60c2f1a0c90c6494b5da76a689cf761a935f45f65f1e11fad340a31f",
+        "backend/authoring.py": "8b76e1d3e22b984d9956c863918a4c1f8baf9d3fc6a672b037cdad9e3829cdfc",
+        "backend/vault_declarations.py": "3f4fbad4245f9889fa17c552a05399d67d67699e68904265f01cec0aa341122d",
+        "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09"
       },
       "tests": [
         "tests/test_node_metadata_behavior.py::test_concat_literal_braces_and_vault_values",
         "tests/test_concat_vault.py::test_concat_writes_result_and_routes_payload",
         "tests/test_concat_vault.py::test_concat_missing_key_or_bad_template_errors_without_publishing",
         "tests/test_concat_vault.py::test_concat_result_reaches_a_downstream_vault_template",
-        "tests/test_node_metadata_behavior.py::test_documented_failures_fail_the_node"
+        "tests/test_node_metadata_behavior.py::test_documented_failures_fail_the_node",
+        "tests/test_node_claims.py::test_declared_ports_and_types",
+        "tests/test_node_claims.py::test_reviewed_palette_scenarios",
+        "tests/test_node_claims.py::test_palette_real_engine_delivery",
+        "tests/test_node_claims.py::test_claims_evidence_is_current"
       ],
       "content_sha256": "cc02379128b56a933eb9eb56b3a7c40a51566462db9b180ebe934b1f619149a6",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-29",
-      "source_revision": "495e9aa9261b202ee2b468bcb0191ea6b1391c47",
-      "verifier": "concat-vault-routing-source-recheck"
+      "source_revision": "439e6148e29eaab951e187592d484b508190aa15",
+      "verifier": "claims-runtime-source-recheck"
     },
     "json_path_node": {
       "sources": {
-        "backend/nodes/data/json_path_node.py": "735ab138add0bb2f9ca52e44b8d6de38f20bd76be773e03e59205225233b2db6"
+        "backend/nodes/data/json_path_node.py": "735ab138add0bb2f9ca52e44b8d6de38f20bd76be773e03e59205225233b2db6",
+        "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
+        "backend/node_capabilities.py": "e28bc9fb60c2f1a0c90c6494b5da76a689cf761a935f45f65f1e11fad340a31f",
+        "backend/authoring.py": "8b76e1d3e22b984d9956c863918a4c1f8baf9d3fc6a672b037cdad9e3829cdfc",
+        "backend/vault_declarations.py": "3f4fbad4245f9889fa17c552a05399d67d67699e68904265f01cec0aa341122d",
+        "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09"
       },
       "tests": [
         "tests/test_node_metadata_behavior.py::test_json_path_lookup",
-        "tests/test_node_metadata_behavior.py::test_documented_failures_fail_the_node"
+        "tests/test_node_metadata_behavior.py::test_documented_failures_fail_the_node",
+        "tests/test_node_claims.py::test_declared_ports_and_types",
+        "tests/test_node_claims.py::test_reviewed_palette_scenarios",
+        "tests/test_node_claims.py::test_palette_real_engine_delivery",
+        "tests/test_node_claims.py::test_claims_evidence_is_current"
       ],
       "content_sha256": "097aa179e65876159dbfaa650ebaa7f7e19cdbc19b387c03e117796c69df4831",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-29",
-      "source_revision": "a5dbf2667768734cb0389f345e78c01d20bd1e73",
-      "verifier": "metadata-batch1-independent-verifier"
+      "source_revision": "439e6148e29eaab951e187592d484b508190aa15",
+      "verifier": "claims-runtime-source-recheck"
     }
   }
 }

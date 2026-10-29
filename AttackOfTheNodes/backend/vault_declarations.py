@@ -22,10 +22,8 @@ def supports_standard_vault_write(node_type: str, config: dict[str, Any], metada
     Start's explicit rows route individually; its legacy result switch is ignored
     in row/no-input mode. Legacy named writes remain separate below.
     """
-    if node_type == "start_node" and (config.get("rows") or config.get("no_inputs")):
-        return False
-    output = (metadata.get("output_port_metadata") or {}).get("default") or {}
-    return "vault" in (output.get("to") or [])
+    from .node_capabilities import supported_standard_flags
+    return 'vault_write' in supported_standard_flags({**metadata, 'type': node_type}, config)
 
 
 def concat_template_keys(config: dict[str, Any], metadata: dict[str, Any]) -> list[str]:
@@ -173,11 +171,11 @@ def config_vault_read_entries(node_type: str, config: dict[str, Any]) -> list[di
 
     Entries are ``{"source_id", "target_port", "required"}``; ``target_port``
     is the config field (or Branch path) that names the key. Every
-    node-specific read has a runtime fallback today (Get Variable and Variable
+    fallback read is optional (Get Variable and Variable
     Reader return their ``default``, Conditional compares against "", Counter
     starts at 0, a Branch seed falls back to the input payload), so each is
-    optional: preflight warns when no node writes the key. A read without a
-    fallback declares ``required=True`` and is checked like a standard read.
+    optional: preflight warns when no node writes the key. Concat template roots
+    have no fallback and declare ``required=True``, like a standard required read.
     """
     entries: list[dict[str, Any]] = []
 
@@ -201,6 +199,9 @@ def config_vault_read_entries(node_type: str, config: dict[str, Any]) -> list[di
                 source = str(sources.get(port) or "").strip()
                 if source.startswith("vault:"):
                     add(source.removeprefix("vault:"), port)
+    elif node_type == "concat_node":
+        for key in concat_template_keys(config, {"input_ports": ["input"]}):
+            add(key, "template", required=True)
     return entries
 
 

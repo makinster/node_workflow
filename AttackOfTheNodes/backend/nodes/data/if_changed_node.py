@@ -32,7 +32,11 @@ class IfChangedNode(Node):
     error_definitions: ClassVar[List[Dict[str, Any]]] = [{'code': 'store_unwritable', 'description': 'The saved values file could not be written.', 'retryable': True}, {'code': 'store_unreadable', 'description': 'The saved values file could not be read.', 'retryable': True}, {'code': 'too_big', 'description': 'The value is over 64 KB, or is not plain data.', 'retryable': False}]
 
     async def execute(self, context: NodeContext) -> None:
-        value = saved.node_value(self, context)
+        try:
+            value = saved.node_value(self, context)
+        except ValueError as exc:
+            context.signal_error(exc)
+            return
         place = saved.place_for(self.config.get("keep_for"), context.workflow_name)
         try:
             changed, _previous = saved.SavedValues().check_and_save(

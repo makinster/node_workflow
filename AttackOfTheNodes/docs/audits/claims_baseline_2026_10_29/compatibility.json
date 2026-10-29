@@ -1,0 +1,97 @@
+{
+  "roots": [
+    "examples",
+    "docs/delivery_tests"
+  ],
+  "spec_count": 17,
+  "newly_failing_specs": 0,
+  "specs": [
+    {
+      "path": "examples/ask_and_branch.json",
+      "pointer": "",
+      "new_flag_errors": []
+    },
+    {
+      "path": "examples/ask_hosted_question.json",
+      "pointer": "",
+      "new_flag_errors": []
+    },
+    {
+      "path": "examples/ask_local_model.json",
+      "pointer": "",
+      "new_flag_errors": []
+    },
+    {
+      "path": "examples/catch_http_errors.json",
+      "pointer": "",
+      "new_flag_errors": []
+    },
+    {
+      "path": "examples/context_pack.json",
+      "pointer": "",
+      "new_flag_errors": []
+    },
+    {
+      "path": "examples/fetch_and_save.json",
+      "pointer": "",
+      "new_flag_errors": []
+    },
+    {
+      "path": "examples/pause_and_wait.json",
+      "pointer": "",
+      "new_flag_errors": []
+    },
+    {
+      "path": "examples/summarise_file.json",
+      "pointer": "",
+      "new_flag_errors": []
+    },
+    {
+      "path": "examples/vault_handoff.json",
+      "pointer": "",
+      "new_flag_errors": []
+    },
+    {
+      "path": "docs/delivery_tests/draft-a-workflow.json",
+      "pointer": "/trial/draft_spec",
+      "new_flag_errors": []
+    },
+    {
+      "path": "docs/delivery_tests/draft-a-workflow.json",
+      "pointer": "/retrial/draft_spec",
+      "new_flag_errors": []
+    },
+    {
+      "path": "docs/delivery_tests/draft-a-workflow.json",
+      "pointer": "/medium_trial/draft_spec",
+      "new_flag_errors": []
+    },
+    {
+      "path": "docs/delivery_tests/fixtures/draft-a-workflow.json",
+      "pointer": "/0/draft",
+      "new_flag_errors": []
+    },
+    {
+      "path": "docs/delivery_tests/fixtures/draft-a-workflow.json",
+      "pointer": "/1/draft",
+      "new_flag_errors": []
+    },
+    {
+      "path": "docs/delivery_tests/fixtures/draft-a-workflow.json",
+      "pointer": "/2/draft",
+      "new_flag_errors": []
+    },
+    {
+      "path": "docs/delivery_tests/specs/draft-a-workflow-v2.json",
+      "pointer": "",
+      "new_flag_errors": []
+    },
+    {
+      "path": "docs/delivery_tests/specs/draft-a-workflow.json",
+      "pointer": "",
+      "new_flag_errors": []
+    }
+  ],
+  "owner_workflows_scanned": false,
+  "policy": "Reject explicit unsupported flags including false/empty; saved workflow loading is unchanged."
+}

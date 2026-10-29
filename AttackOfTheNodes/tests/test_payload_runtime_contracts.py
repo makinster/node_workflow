@@ -55,7 +55,7 @@ async def test_text_prompt_retained_after_source_resolution():
 
 
 async def test_text_output_payload_is_captured_before_continuing_connected_path():
-    context, done, errors, _ = _make_context()
+    context, done, errors, _ = _make_context(inputs={'input': ''})
     node = NodeFactory().create_node('text_output_node','out')
     await node.execute(context)
     supervisor = object.__new__(Supervisor)

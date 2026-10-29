@@ -6,6 +6,64 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-29 — Registry claims foundation (Foundational)
+
+Root `/home/makin/src/nw-node-claims`, branch `codex/node-claims`, fetched main
+base `439e614` including #150. The original checkout had unrelated edits and
+untracked recovery material; it was left untouched. Read sections 2, 6 and the
+owner choices of `/home/makin/src/agent_channel/palette-scaling-plan.md`.
+The owner accepted all eight recommendations; this delivery is claims only.
+
+Captured the pre-change 59-type baseline (12 reviewed, 47 pending), routing
+metadata, all four globally accepted flags, execute support and source/record
+digests. Audited 17 bundled/delivery specs before rejection: none explicitly
+request an unsupported flag. No owner workflow reads/rewrites or implicit
+migrations. New authoring errors on every explicit unsupported flag, even a
+neutral false/empty option; supported lists come from shared capabilities.
+Legacy saved configs still load. The actual CLI `build --check --json` returned
+exit 1 with `unsupported_standard_flag` for an unsupported false flag and saved
+nothing. `transient_outputs` has no consumer and is unsupported everywhere.
+
+One shared test module runs real execute methods against observed real memory,
+controlled waits and named fake service/command/window boundaries; unstubbed
+network/process escape fails. All 59 types have base scenarios. Applicable
+Vault, type/port, required-input, forwarding and suppression claims are generated
+from metadata/declarations; absence of a capability is an explicit skip.
+78 data scenarios exercise the reviewed twelve's sources, values, defaults,
+errors, null/false/zero, branch bounds, labels, file paths and legacy copies.
+21 real-engine graphs run twice, including a stale transient value injected
+before restart, selected conditional routes, parallel shared Ends, source
+resolution, required Vault handoffs and traversal without a published payload.
+Input cancellation forbids late publication. Concat snapshot semantics are
+proved by perturbing a named value, precedence and missing-name tests, not
+inferred from a raw snapshot read. A deliberate broken execute verifies the
+runner detects an absent declared write.
+
+Tests reproduced real defects before repair. Fixed small clear code gaps:
+legacy completion suppression/result typing/blank Vault key; File Write's blank
+key before touching disk; Text Output's absent required input; all declared
+User Text Input legacy key forms; Saved-value missing upstream/Vault input
+versus valid explicit null. Concat template roots now join the shared required
+read model. Reviewed metadata text was not edited. Re-read changed node/helper
+sources, refresh source-menu fingerprints and link all twelve manifest entries
+to the shared node/engine scenarios and hash-bound receipt. Local source recheck
+is additional evidence, not an independent palette-admission review.
+
+Four pending per-claim discrepancies remain strict xfails: Counter count port,
+Repeat Counter visits port, If Changed suppression, Window Control suppression.
+They are listed in the audit and PR as owner code-versus-claim decisions. No
+reviewed palette type is xfailed. Other pending source/mode/session/native OS
+matrices await family work; no broadening of the palette or new drafter node.
+
+Full **4,488 passed, 187 skipped, 4 xfailed in 40.62 s** (`pytest -n auto`).
+All 23 pairs retain expected rule verdicts, with unchanged calibration fixtures.
+Receipt: 230 passing, 179 skipped, four expected-failure node claims; plus eight
+non-authorable-tombstone skips in the standard-flag policy matrix. JSON includes
+each reason, actual reads/snapshots, attempted/committed writes and versioned
+source/scenario hashes. Unchanged catalogue sizes: Brief Text 14,569 / JSON
+18,214; Compact Text 53,217 / JSON 76,638; v2 bundle 21,513 / 50,000.
+No real API calls or owner trial execution. [Audit](audits/claims_baseline_2026_10_29/README.md).
+
 ## 2026-10-29 — Concat Vault and structural output repair (Important)
 
 Clean worktree `/home/makin/src/nw-concat-vault`, branch

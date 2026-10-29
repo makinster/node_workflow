@@ -36,6 +36,22 @@ the config UI, connection matching, preflight, runtime routing and author
 tests, so that a green check means the runtime honours the generated UI.
 Keep `NodeContext` and graph-ignorant execution.
 
+## Accepted palette scaling: claims milestone — 2026-10-29
+
+The owner accepted all eight recommendations in the external
+`agent_channel/palette-scaling-plan.md`. Branch `codex/node-claims` from
+`439e614` implements only baseline/claims/unsupported-option rejection:
+59-type inventory, shared real-execute tests, reviewed-twelve value/engine
+matrix and explicit pending skips/strict xfails. No shortlist, exact-ID lookup,
+new drafter nodes, new reviewed records or admission in this PR.
+
+Reviewed record text remains the spec; small clear mismatches were repaired in
+code. Four pending decisions remain (count/visits ports and If Changed/Window
+Control suppression), listed in the [audit](audits/claims_baseline_2026_10_29/README.md).
+Full suite: 4,488 passed, 187 skipped, four expected failures; all 23 calibration
+rule pairs retained. No real calls. Independent review, remaining pending-family
+matrices and selection work remain gates before wider admission.
+
 ## Owner-requested Concat and output follow-up — 2026-10-29
 
 Base `495e9aa`, `codex/concat-vault-diagnostics`: Concat standard Vault/transient/

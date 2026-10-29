@@ -197,10 +197,16 @@ def node_value(node: Any, context: Any) -> Any:
     source = node.config.get("input_source")
     if source == "Vault":
         key = str(node.config.get("input_vault_key") or "").strip()
-        return context.memory_bank.read_persistent(key) if key else None
+        missing = object()
+        value = context.memory_bank.read_persistent(key, default=missing) if key else missing
+        if value is missing:
+            raise ValueError(f"Required Vault input is unavailable: {key or '(no key selected)'}")
+        return value
     if source == "Configured":
         return str(node.config.get("value") or "")
-    return context.inputs.get("input")
+    if "input" not in context.inputs:
+        raise ValueError("Required upstream input is missing")
+    return context.inputs["input"]
 
 
 def preview(record: Dict[str, Any], width: int = 40) -> str:

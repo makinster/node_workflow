@@ -303,6 +303,9 @@ class ChatCompletionNode(Node):
     }
 
     async def execute(self, context: NodeContext) -> None:
+        if self.config.get("vault_write") and not str(self.config.get("vault_write_key") or "").strip():
+            context.signal_error(ValueError("Chat Completion: enter a Vault output key."))
+            return
         continuing = self.config.get("prompt_source") == CONTINUE_SESSION_SOURCE
         context_parts = self._resolve_context_inputs(context)
         document = self._resolve_document(context)
@@ -396,7 +399,7 @@ class ChatCompletionNode(Node):
         if self.config.get("vault_write", True):
             vault_key = str(self.config.get("vault_write_key") or "").strip()
             if vault_key:
-                context.memory_bank.store_persistent(vault_key, result.text)
+                context.memory_bank.store_persistent(vault_key, result.text, type_tag="string")
 
         if self.config.get("dead_drop_passthrough"):
             # Forward the incoming transient payload unchanged.
@@ -406,7 +409,8 @@ class ChatCompletionNode(Node):
         else:
             # The Result is the designated downstream payload.
             payload = result.text
-        context.signal_done({"data": {"default": payload}})
+        context.signal_done({"data": {"default": payload}
+                             if self.config.get("dead_drop_passthrough") or self.config.get("transient_output", True) else {}})
 
     def _resolve_prompt(self, context: NodeContext) -> Optional[str]:
         source = self.config.get("prompt_source", "Configured")
