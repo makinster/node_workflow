@@ -24,3 +24,10 @@ async def test_every_transient_option_has_shared_behavior_docs():
     text = await node_catalogue.build(factory, dict(cfg, scope='Filtered', search='file_reader_node'))
     assert 'Standard config: transient_output:' in text
     assert 'false sends no output on' in text
+
+
+def test_start_distinguishes_passing_input_from_showing_text():
+    meta = NodeFactory().metadata_for_type('start_node')['node_metadata']
+    assert 'to the next node as its input' in meta['purpose']
+    assert 'Start itself shows nothing' in meta['not_for']
+    assert 'never displayed' not in str(meta)

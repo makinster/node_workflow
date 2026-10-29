@@ -4,7 +4,7 @@
   "reviews": {
     "start_node": {
       "sources": {
-        "backend/nodes/start_node.py": "2edbdf2201347a87f1753feb44f0ecff9b1c20f0a2d75b1c3a5b46d04fb82010",
+        "backend/nodes/start_node.py": "24745b954cbcfb057a532340bce62420846e699d06c537a60a803e0c7dd9cc17",
         "backend/contracts.py": "c88d7398adb513ab745990f1e959438024e65dea9515ab9d96b2854501e1fb1d",
         "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09"
       },
@@ -12,11 +12,11 @@
         "tests/test_node_metadata_behavior.py::test_start_greeting_runs_next_step_even_when_empty_and_is_never_displayed",
         "tests/test_contracts.py::test_legacy_start_is_one_greeting_row"
       ],
-      "content_sha256": "34bc56408e443152656048c37956ef4eb7cb48915fd3bb8deb880515bee7091d",
+      "content_sha256": "edd10e0599c4254e65f6ecd4a16c65e6530ccd2fd9a02f105d23f7a74278d592",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-29",
-      "source_revision": "a5dbf2667768734cb0389f345e78c01d20bd1e73",
-      "verifier": "metadata-batch1-independent-verifier"
+      "source_revision": "539d2279c5f14a7b0c31b46a61f777e19d2e72aa",
+      "verifier": "draft-review-source-recheck"
     },
     "end_node": {
       "sources": {
