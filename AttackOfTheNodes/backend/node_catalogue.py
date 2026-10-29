@@ -107,6 +107,8 @@ def entry(factory, row, detail):
         result['node_reference_fields'] = description['node_reference_fields']
     # The full record carries execution_contract once; never a second copy.
     result['node_metadata'] = deepcopy(meta.get('node_metadata'))
+    if meta.get('standard_key_docs'):
+        result['standard_key_docs'] = deepcopy(meta['standard_key_docs'])
     configured = {
         p['id']: f"{p['source_field']}=Configured: use {p['configured_field']}; {p['id']} trigger only; no type check."
         for p in inputs if 'configured_field' in p and p.get('source_field')
@@ -196,6 +198,8 @@ def text_output(record, factory):
                       'Errors: ' + compact_json(item['errors'])])
         for key, value in ((item['node_metadata'] or {}).get('execution_contract') or {}).items():
             lines.append(('Output payload: ' if key == 'output_payload' else 'Behavior: ') + value)
+        for key, value in item.get('standard_key_docs', {}).items():
+            lines.append('Standard config: ' + key + ': ' + value)
         if item.get('configured_inputs'):
             lines.append('Configured: ' + ' '.join(item['configured_inputs'].values()))
         for key in ('custom_keys', 'node_reference_fields', 'defaults', 'unchecked_keys',

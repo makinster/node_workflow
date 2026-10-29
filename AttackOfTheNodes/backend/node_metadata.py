@@ -387,6 +387,14 @@ def note_lines(record: Dict[str, Any]) -> List[str]:
     return [f"{label}: {text}" for label, text in notes if text]
 
 
+def standard_key_docs(defaults):
+    """Shared config behavior, derived for every type declaring the option."""
+    if 'transient_output' not in defaults:
+        return {}
+    default = str(defaults['transient_output']).lower()
+    return {'transient_output': 'true passes the output on to the next node; false sends no output on. Default: ' + default + '.'}
+
+
 def canonical_json(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, separators=(",", ":"),
                       sort_keys=True, allow_nan=False)

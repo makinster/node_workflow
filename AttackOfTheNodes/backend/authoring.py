@@ -193,6 +193,7 @@ def describe_node_type(
         "unchecked_keys": sorted((set(defaults) - set(schema)) | set(meta.get("custom_config_keys") or {})),
         "custom_keys": dict(meta.get("custom_config_keys") or {}),
         "standard_keys": sorted(STANDARD_KEYS),
+        "standard_key_docs": deepcopy(meta.get("standard_key_docs") or {}),
         "node_reference_fields": list(NODE_REFERENCE_FIELDS.get(node_type, ())),
         "inputs": inputs,
         "outputs": outputs,
