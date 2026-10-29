@@ -31,3 +31,11 @@ def test_start_distinguishes_passing_input_from_showing_text():
     assert 'to the next node as its input' in meta['purpose']
     assert 'Start itself shows nothing' in meta['not_for']
     assert 'never displayed' not in str(meta)
+
+
+def test_judge_focuses_on_requested_inputs():
+    import json
+    from tools.draft_trials.runner import SPEC
+    prompt = json.loads(SPEC.read_text())['nodes']['judge_question']['config']['template']
+    assert 'ordinary inputs the request describes' in prompt
+    assert 'edge cases the request never raised' in prompt
