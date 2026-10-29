@@ -71,12 +71,7 @@ class EndNode(Node):
     async def execute(self, context: NodeContext) -> None:
         if self.config.get("record_line", True):
             message = self.config.get("message", "Branch completed")
-            input_value = context.inputs.get("input", "")
-
-            if input_value:
-                full = f"[END] {message} (received: {input_value})"
-            else:
-                full = f"[END] {message}"
+            full = f"[END] {message}"
 
             log = list(context.memory_bank.read_persistent("output_log", default=[]))
             log.append(

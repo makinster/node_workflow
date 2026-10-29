@@ -3,7 +3,7 @@ class_name: StartNode
 category: flow
 primary_family: Flow Control
 display_name: Start
-description: "Begin a run and send the greeting, or the workflow's input values, to the next step."
+description: "Begin a run by passing the greeting, or configured input values, to the next node as its input."
 input_ports: []
 outputs:
   default:

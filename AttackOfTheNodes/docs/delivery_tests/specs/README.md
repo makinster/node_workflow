@@ -126,9 +126,9 @@ The judge allows 4,096 output tokens and asks for short reasons (under about
 
 The extra Compact queries cover Conditional, Concat and JSON Path. All returned
 entries are retained: the current exact inventory is 12 types and assembled
-Context is **17,736 characters** with node metadata record v1 (previously
-**10,363**), below the unchanged 50,000-character planning budget with more than
-the required 20% headroom. Brief has an explicit 50,000 cap (15,051 characters
+Context is **18,091 characters** with node metadata record v1 (previously
+**17,736**), below the unchanged 50,000-character planning budget with more than
+the required 20% headroom. Brief has an explicit 50,000 cap (15,037 characters
 now); each Compact query uses 16,000. The Branch query is `Branch` group plus
 the words `parallel simultaneous` from Parallel Branch's use_when (the old
 `Duplicates input` wording is gone); its frozen inventory is `branch_node` only. Compact includes config defaults
@@ -199,3 +199,19 @@ The analysis and resolve prompts must not invent “exactly”, “nothing else�
 are normal run framing. Blank or whitespace-only Text Output labels now produce
 bare text; set labels retain their literal prefix. This runtime change applies
 to logs, downstream payloads, legacy Vault writes and the configuration preview.
+
+After the first Check workflow spec failure, v2 sends one structural repair
+request containing the original drafting brief, rejected raw draft and exact
+structured check error. The corrected raw draft replaces `draft_text` and goes
+through a separate Check node before the meaning judge. A second rejection
+ends through the failure path; there is no loop. Transport/adapter failures and
+meaning-review failures do not trigger this structural retry. The trial budget
+and usage accounting include the extra drafter call; evidence keeps both raw
+drafts, first check error and retry status. See `tests/test_draft_structural_retry.py`.
+
+Requirements describe user-visible outcomes and data/files, rather than node
+wiring. The judge evaluates ordinary requested inputs, without inventing edge
+cases such as line-ending formats. Start passes its greeting to the next node
+as input and shows nothing itself. End logs only `[END] <message>`, never its
+input. Compact contracts include shared `transient_output` behavior for every
+type that declares that config option, including its actual default.

@@ -103,15 +103,15 @@ def _read_only():
 NODE_METADATA: Dict[str, Dict[str, Any]] = {
     "start_node": {
         "schema_version": 1,
-        "purpose": "Begin a run and send the greeting, or the workflow's input values, to the next step.",
+        "purpose": "Begin a run by passing the greeting, or configured input values, to the next node as its input.",
         "use_when": "Every workflow starts here. Set the greeting to the text the first step should receive, or add Inputs for values a caller supplies.",
-        "not_for": "Showing text in the run output: the greeting only goes to the next step and is never displayed. Use Text Output to show text.",
+        "not_for": "Showing text: Start itself shows nothing. Use Text Output to show the value passed to the next node.",
         "side_effects": _read_only(),
         "needs": _none(),
         "cost_class": "no_usage_fee",
         "time_class": "quick",
         "execution_contract": {
-            "output_payload": 'default: with rows absent/empty, greeting string verbatim (default "Workflow started"); transient_output=false suppresses it. Nonempty rows replace greeting: one downstream value as-is, several as name:value object, none/no_inputs emits no payload.',
+            "output_payload": 'default port passes to the next node as input; with rows absent/empty, greeting string verbatim (default "Workflow started"); transient_output=false suppresses it. Nonempty rows replace greeting: one downstream value as-is, several as name:value object, none/no_inputs emits no payload.',
             "notes": 'The next step runs even with no payload. An empty greeting "" still starts it and arrives as empty text; with no payload the next input is absent (most nodes then read empty text).',
         },
     },
@@ -126,7 +126,7 @@ NODE_METADATA: Dict[str, Dict[str, Any]] = {
         "time_class": "quick",
         "execution_contract": {
             "output_payload": "None; ends branch. record_line logs [END] completion as normal run framing, not an unrequested effect. return_end publishes workflow results only.",
-            "notes": 'record_line on (default) logs "[END] <message>", plus " (received: <input>)" when the input is not empty; off adds nothing.',
+            "notes": 'record_line on (default) logs only "[END] <message>"; input is never echoed. Off adds nothing.',
         },
     },
     "branch_end_node": {
@@ -385,6 +385,14 @@ def note_lines(record: Dict[str, Any]) -> List[str]:
              ("Needs note", record["needs"].get("note")),
              ("Cost note", record.get("cost_note")), ("Time note", record.get("time_note"))]
     return [f"{label}: {text}" for label, text in notes if text]
+
+
+def standard_key_docs(defaults):
+    """Shared config behavior, derived for every type declaring the option."""
+    if 'transient_output' not in defaults:
+        return {}
+    default = str(defaults['transient_output']).lower()
+    return {'transient_output': 'true passes the output on to the next node; false sends no output on. Default: ' + default + '.'}
 
 
 def canonical_json(value: Any) -> str:

@@ -112,12 +112,12 @@ limits: the full catalogue fitting this node does not make it fit downstream.
 Use a filtered catalogue for a small request.
 
 Current registry with node metadata batch 1 (12 reviewed records, 2026-10-29):
-**51 non-debug entries**, Compact Text **49,204** characters (previously
-**39,591**), within the unchanged **64,000** default; compact JSON **71,830**
-(previously **61,618**) now needs an explicit larger cap. The configurable
+**51 non-debug entries**, Compact Text **52,321** characters (previously
+**49,204**), within the unchanged **64,000** default; compact JSON **75,164**
+(previously **71,830**) now needs an explicit larger cap. The configurable
 maximum is **200,000**; the 256 KiB byte ceiling is unchanged. Brief Text
-**15,051** / compact JSON **18,217** (previously **7,634** / **10,603**). V2's
-contracts are **17,736** (previously **10,363**) within its 50,000 budget. The
+**15,037** / compact JSON **18,214** (previously **15,051** / **18,217**). V2's
+contracts are **18,091** (previously **17,736**) within its 50,000 budget. The
 original designer is deprecated: its 8,500 Context no longer fits its palette
 (**12,194** now, without its unmatched Branch query) and its Branch query no longer matches.
 
@@ -126,7 +126,7 @@ Start without nonempty rows emits the greeting string verbatim; configured rows
 replace it. Conditional emits the original left value on its selected true/false
 port, not a comparison boolean. The contracts describe the routing exceptions.
 
-**Two-pass planning.** Brief **all non-debug** Text is **15,051 characters**
+**Two-pass planning.** Brief **all non-debug** Text is **15,037 characters**
 with node metadata batch 1 (previously 7,634): purpose-first selection facts no
 longer fit the default 8,000-character Ask local model Context; raise that cap
 or filter. Pass Text to a model.
@@ -212,3 +212,9 @@ The helper specs remain authoring inputs; runtime bodies are intentional custom
 implementations. Continue uses legacy explicit port metadata because the helper
 currently requires two choices for a generated source selector. Regeneration
 must preserve its explicit upstream-only type/required/source metadata.
+
+Shared `standard_key_docs` now explains transient_output in Compact/Detailed
+entries for each declaring type, including the actual default. false suppresses
+the payload; it does not stop traversal. Start passes its greeting as input to
+the next node and itself shows nothing. End record_line logs only `[END] <message>`
+and no longer echoes input. Return End's workflow results still read the input.

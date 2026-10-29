@@ -53,7 +53,7 @@ def test_v2_structural_gate_and_contracts():
     assert 'Missing fields that have defaults are not problems' in judge_prompt
     assert 'Decide only whether the workflow does what the original request and frozen requirements ask' in judge_prompt
     calls = [n for n in nodes.values() if n["type"] == "ask_claude_node"]
-    assert len(calls) == 4
+    assert len(calls) == 5
     assert all(
         n["config"]["model"] == "claude-haiku-5-5"
         and n["config"]["effort"] == "low"
@@ -61,7 +61,7 @@ def test_v2_structural_gate_and_contracts():
         for n in calls
     )
 
-    # No errors can rejoin a success path, no cycles/retries, and save needs pass.
+    # The first check may retry once; no cycles, and save still needs judge pass.
     def walk(h, blocked=None, seen=frozenset()):
         assert h not in seen
         reachable = {h}
@@ -298,7 +298,7 @@ def test_budget_stops_on_estimate_time_or_unknown_cost(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_structural_error_stops_before_judge_or_save(tmp_path):
+async def test_second_structural_error_stops_before_judge_or_save(tmp_path):
     c = case_record(1, tmp_path / "trial/cases/1/fixtures")
     bad = good_draft(1, c["root"])
     bad["nodes"]["show"]["type"] = "imaginary_node"
@@ -306,9 +306,9 @@ async def test_structural_error_stops_before_judge_or_save(tmp_path):
         1,
         tmp_path / "trial",
         tmp_path / "library",
-        replies=[runner.requirements(c), bad],
+        replies=[runner.requirements(c), bad, bad],
     )
-    assert report["result"] == "fail" and report["calls"]["attempted"] == 2
+    assert report["result"] == "fail" and report["calls"]["attempted"] == 3
     assert report["behavior"]["result"] == "not_run"
     assert list((tmp_path / "trial/cases/1/drafts").glob("*")) == []
 

@@ -79,7 +79,7 @@ async def test_manager_reader_writer_parallel_merge_and_end_branch(tmp_path, sel
     assert second.read_text(encoding="utf-8") == "second\n"
     assert mb.read_transient(nodes["merge"], "default") == expected
     assert mb.read_transient(nodes["output"], "default") == f"[Merged] {expected}"
-    assert mb.read_persistent("output_log") == [f"[Merged] {expected}", f"[END] Branch completed (received: [Merged] {expected})"]
+    assert mb.read_persistent("output_log") == [f"[Merged] {expected}", f"[END] Branch completed"]
     assert nodes["end"] in master.completed_nodes
 
     # Deleting/restoring the Manager hides/restores all of its declared refs.

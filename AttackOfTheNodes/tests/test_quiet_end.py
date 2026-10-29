@@ -26,7 +26,7 @@ def ended(**end_config):
 def test_the_line_is_on_by_default():
     result, _ = run(ended())
     assert [line for line in lines(result) if line.startswith("[END]")] == [
-        "[END] Branch completed (received: Workflow started)"]
+        "[END] Branch completed"]
 
 
 def test_off_the_end_adds_nothing():

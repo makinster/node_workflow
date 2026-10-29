@@ -13,7 +13,7 @@ from .node_errors import ERROR_PORT, definitions_with_default
 from .data_types import coerce_type
 from .config_migrations import normalize_node_config
 from .node_base import Node
-from .node_metadata import record_for
+from .node_metadata import record_for, standard_key_docs
 from .nodes import ALL_NODE_CLASSES
 
 
@@ -167,6 +167,7 @@ class NodeFactory:
                     "default_alias": node_class.default_alias,
                     "description": record["purpose"] if record else node_class.description,
                     "node_metadata": record,
+                    "standard_key_docs": standard_key_docs(node_class.default_config),
                     "execution_contract": deepcopy((record or {}).get("execution_contract") or {}),
                     "category": category,
                     "primary_family": category,
