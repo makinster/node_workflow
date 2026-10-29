@@ -72,3 +72,12 @@ source routing, typed outputs, Debug filters, complete records, headroom and
 bounded safe error problems. No real generation or live workflow/settings
 changes. Full-suite and final artifact results are recorded in
 [verification](verification.json) and the delivery case.
+
+### 2026-10-29 Check workflow spec re-audit
+
+Added the opt-in fail_on_unreachable argument (default false). Re-read the
+check-only path: it checks the boolean before publication, retains warning
+details, rejects an unreachable node only when opted in, and performs no workflow
+save or target execution. Updated this node's execute hash in source_contracts.
+Default/opt-in, warning text, single-redraft and second-failure tests cover the
+change; input source declarations and menus are unchanged.

@@ -137,6 +137,9 @@ def effective_nodes(spec):
 
 def safety(spec, case):
     """Inspect ALL nodes, including error routes, before any target execution."""
+    if case.get("case_set") == 2:
+        from .rules_set_two import safety as second
+        return second(spec, case)
     if spec.get("format") != "aotn-workflow/1" or spec.get("callable"):
         raise RuleFailure("unsupported spec/callable")
     if len(spec.get("nodes", {})) > 64:
@@ -310,6 +313,7 @@ def evaluate(spec, case, variant):
                 "uppercase": str.upper,
                 "lowercase": str.lower,
                 "strip": str.strip,
+                "reverse": lambda text: text[::-1],
             }
             value = Value(
                 functions[operation](str(value.data or "")),
@@ -560,6 +564,9 @@ def display_outputs_match(outputs, expected, framing):
 
 
 def check_rules(spec, case):
+    if case.get("case_set") == 2:
+        from .rules_set_two import check_rules as second
+        return second(spec, case)
     from backend.authoring import check_workflow_spec
     from backend.node_factory import NodeFactory
 

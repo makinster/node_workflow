@@ -76,6 +76,12 @@
         "wrap_description": true,
         "description": "Same verdict as build --check; warnings pass. No workflow is saved. Hard limits: 128 nodes / 256 edges / nesting 64.",
         "default": 32000
+      },
+      "fail_on_unreachable": {
+        "type": "boolean",
+        "label": "Reject unreachable nodes",
+        "default": false,
+        "description": "Treat unreachable-node warnings as a failed check; other warnings still pass."
       }
     }
   },

@@ -344,3 +344,14 @@ one redraft with exact errors; a separate second check gates judge/save. Usage,
 budget guards and evidence include the retry. Six focused commits; full mocked
 suite 3,611 passed. Manifest rechecked locally, no fixture changes. See Current
 State and Session Log for caps, evidence and live-validation limits.
+
+### Unreachable-node strictness and harder trial set — 2026-10-29 (complete)
+
+Opt-in fail_on_unreachable defaults false; v2 uses it on both checks, preserving
+the existing one-redraft limit and exact warning details. Judge/decorative-node
+wording and retry newlines corrected. Calibration: 23 pairs. --case-set 2 adds
+ten version-1 requests with source/provenance rules, 23 runnable behavior variants
+and explicit status-only/clarification success. User Text Input's existing
+answer-to-Vault option is documented so two-answer Concat is discoverable.
+Full mocked suite 3,653 passed; limits, cost projection and palette constraints
+are recorded in Current State, the trial guide and Session Log.

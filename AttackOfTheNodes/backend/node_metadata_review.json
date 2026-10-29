@@ -66,17 +66,19 @@
       "sources": {
         "backend/nodes/user_text_input_node.py": "c3bfcf7fd0337f6fcd4d2603036b2d11ce20752d8d4c9158470009706f03ed12",
         "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09",
-        "backend/node_errors.py": "13f7cc5b3dd7d41b9c2e4bbf893dfd87dd3357c3eea91e1d940915b93b628292"
+        "backend/node_errors.py": "13f7cc5b3dd7d41b9c2e4bbf893dfd87dd3357c3eea91e1d940915b93b628292",
+        "backend/nodes/concat_node.py": "be67de79da8793cd6cdc90ef23173f9e7bd8dacaab054eab62f6a409afdafbc4"
       },
       "tests": [
         "tests/test_node_metadata_behavior.py::test_user_text_input_waits_for_a_person_and_emits_the_answer",
-        "tests/test_run_lifecycle.py::test_unattended_run_does_not_hang_on_an_input_request"
+        "tests/test_run_lifecycle.py::test_unattended_run_does_not_hang_on_an_input_request",
+        "tests/test_case_set_two.py::test_references_pass_rules_and_real_target_behavior"
       ],
-      "content_sha256": "289001f15026154940e2f67f17af166f79dd0041566249ba47e23502970171bb",
+      "content_sha256": "b49fab86123410d7c7cc55ce481d45872d203000676dc59f51e1b118c98dfde5",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-29",
-      "source_revision": "a5dbf2667768734cb0389f345e78c01d20bd1e73",
-      "verifier": "metadata-batch1-independent-verifier"
+      "source_revision": "da90653f4b038615e8c8a273639854d87a6df696",
+      "verifier": "set-two-answer-vault-source-recheck"
     },
     "text_output_node": {
       "sources": {

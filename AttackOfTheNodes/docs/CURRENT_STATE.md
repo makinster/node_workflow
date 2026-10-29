@@ -1,9 +1,9 @@
 # Current State
 
-Snapshot checked **2026-10-29**, against fetched `origin/main` `17a2a18`
-after #145 merged. Trial review corrections and structural redraft are on
-`codex/draft-review-retry`. No real provider calls or Secrets access.
-Earlier entries retain their dated scope.
+Snapshot checked **2026-10-29**, against fetched `origin/main` `da90653`
+after #146 merged. Unreachable-node redraft and selectable set 2 are on
+`codex/draft-case-set-two`. No real provider calls; prior run receipts were
+read only for the cost projection. Earlier entries retain their dated scope.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
@@ -13,6 +13,31 @@ Sonnet/Opus and document the 512-token minimum prefix. Per-model price tests
 and real-engine run summaries cover all three supported models. See the latest
 Session Log entry for verification: full `pytest -n auto` passes **3,234 tests
 in 35.63 s** after the review fixes.
+
+## Unreachable-node redraft and second trial set — 2026-10-29
+
+Check workflow spec can reject unreachable warnings via an opt-in flag; v2
+sets it on both checks. The exact warning reaches the existing one redraft,
+and the judge treats disconnected nodes as problems. Retry text has real
+newlines. Calibration now has **23 pairs**, including an unconnected End.
+
+`--case-set 2` selects ten harder requests; set 1 remains the default. Eight
+runnable cases have 23 behavior variants and provenance/route rules. Missing
+path clarification must resolve before drafting. Email/word-count requests
+must produce the correct outside_scope/needs_new_node status and no saved
+target draft. Reports/stdout show case_set and fully_right. Reference requests,
+variants and drafts are frozen in fixtures/case_set_2.json.
+
+Full suite: **3,653 passed in 40.86 s** (42 added checks). No real API calls.
+All existing calibration verdicts retained. Set-2 cost projection from recorded
+run 000010 averages: **~$0.094**, **~$0.110 with eight redrafts**; allow ~$0.15.
+Live set-2 quality is unverified. Concat uses one wire input plus a saved answer;
+method-copy assumes an explicitly single-line source, not arbitrary line slicing.
+
+Catalogue: Brief **15,037 Text / 18,214 JSON** unchanged; Compact **52,535 Text /
+75,407 JSON**. V2 bundle **18,271/50,000**, query caps 16,000 unchanged. Full
+Compact JSON still requires a larger explicit cap. User Text Input's existing
+Vault-copy option is documented and its metadata locally rechecked.
 
 ## Trial review corrections and one structural redraft — 2026-10-29
 

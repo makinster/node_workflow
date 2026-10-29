@@ -215,3 +215,17 @@ cases such as line-ending formats. Start passes its greeting to the next node
 as input and shows nothing itself. End logs only `[END] <message>`, never its
 input. Compact contracts include shared `transient_output` behavior for every
 type that declares that config option, including its actual default.
+
+V2's Check nodes both enable `fail_on_unreachable`. A disconnected/decorative
+node triggers the one structural redraft; a second rejection stops before the
+judge/save. The judge likewise treats unreachable or unconnected nodes as
+request-blocking problems. The retry question now has actual newline characters.
+All other checker clients retain warning behavior by default.
+
+The trial harness has `--case-set 2` for ten separate harder requests; set 1 is
+still the default. Its clarification, outside-scope and missing-node outcomes
+are explicitly scored without pretending they are runnable workflows. See the
+[trial guide](../../../tools/draft_trials/README.md#choosing-the-request-set).
+Shared calibration now has 23 pairs. The User Text Input contract documents its
+existing answer-to-Vault copy option so a two-answer Concat is discoverable.
+Current complete contracts: **18,271** characters; Brief: **15,037**. Caps hold.

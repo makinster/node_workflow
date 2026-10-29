@@ -3243,5 +3243,195 @@
         }
       ]
     }
+  },
+  {
+    "id": "unconnected_end",
+    "case": 8,
+    "good": {
+      "format": "aotn-workflow/1",
+      "name": "Case 8",
+      "nodes": {
+        "start": {
+          "type": "start_node",
+          "config": {
+            "greeting": ""
+          }
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": false
+          }
+        },
+        "show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "{input}"
+          }
+        },
+        "ask": {
+          "type": "user_text_input_node",
+          "config": {
+            "prompt": "Enter a phrase:"
+          }
+        },
+        "parallel": {
+          "type": "branch_node",
+          "config": {
+            "branch_count": 2
+          }
+        },
+        "upper": {
+          "type": "text_transform_node",
+          "config": {
+            "operation": "uppercase"
+          }
+        },
+        "lower": {
+          "type": "text_transform_node",
+          "config": {
+            "operation": "lowercase"
+          }
+        },
+        "low_show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "{input}"
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "start.default",
+          "to": "ask.input"
+        },
+        {
+          "from": "ask.default",
+          "to": "parallel.input"
+        },
+        {
+          "from": "parallel.path_a",
+          "to": "upper.input"
+        },
+        {
+          "from": "parallel.path_b",
+          "to": "lower.input"
+        },
+        {
+          "from": "upper.default",
+          "to": "show.input"
+        },
+        {
+          "from": "lower.default",
+          "to": "low_show.input"
+        },
+        {
+          "from": "show.default",
+          "to": "end.input"
+        },
+        {
+          "from": "low_show.default",
+          "to": "end.input"
+        }
+      ]
+    },
+    "bad": {
+      "format": "aotn-workflow/1",
+      "name": "Case 8",
+      "nodes": {
+        "start": {
+          "type": "start_node",
+          "config": {
+            "greeting": ""
+          }
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": false
+          }
+        },
+        "show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "{input}"
+          }
+        },
+        "ask": {
+          "type": "user_text_input_node",
+          "config": {
+            "prompt": "Enter a phrase:"
+          }
+        },
+        "parallel": {
+          "type": "branch_node",
+          "config": {
+            "branch_count": 2
+          }
+        },
+        "upper": {
+          "type": "text_transform_node",
+          "config": {
+            "operation": "uppercase"
+          }
+        },
+        "lower": {
+          "type": "text_transform_node",
+          "config": {
+            "operation": "lowercase"
+          }
+        },
+        "low_show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "{input}"
+          }
+        },
+        "spare_end": {
+          "type": "end_node",
+          "config": {
+            "record_line": false
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "start.default",
+          "to": "ask.input"
+        },
+        {
+          "from": "ask.default",
+          "to": "parallel.input"
+        },
+        {
+          "from": "parallel.path_a",
+          "to": "upper.input"
+        },
+        {
+          "from": "parallel.path_b",
+          "to": "lower.input"
+        },
+        {
+          "from": "upper.default",
+          "to": "show.input"
+        },
+        {
+          "from": "lower.default",
+          "to": "low_show.input"
+        },
+        {
+          "from": "show.default",
+          "to": "end.input"
+        },
+        {
+          "from": "low_show.default",
+          "to": "end.input"
+        }
+      ]
+    }
   }
 ]

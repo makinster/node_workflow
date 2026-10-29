@@ -194,7 +194,12 @@ STRUCTURES = {
 }
 
 
-def case_record(number, root):
+def case_record(number, root, case_set=1):
+    if case_set == 2:
+        from .case_set_two import case_record as second
+        return second(number, root)
+    if case_set != 1:
+        raise ValueError("case_set must be 1 or 2")
     return dict(
         version=3,
         id=number,
@@ -206,7 +211,10 @@ def case_record(number, root):
     )
 
 
-def fixture_variants(number):
+def fixture_variants(number, case_set=1):
+    if case_set == 2:
+        from .case_set_two import fixture_variants as second
+        return second(number)
     def v(name, files=None, answers=(), outputs=(), writes=None, error=False):
         return dict(
             name=name,
@@ -313,7 +321,10 @@ def fixture_variants(number):
     raise ValueError("Unknown case")
 
 
-def good_draft(number, root="ROOT"):
+def good_draft(number, root="ROOT", case_set=1):
+    if case_set == 2:
+        from .case_set_two import good_draft as second
+        return second(number, root)
     n = {}
     e = []
 
@@ -653,4 +664,8 @@ def calibration_pairs():
         spec["connections"].append({"from": "empty.default", "to": "upper.input"})
 
     pair("empty_choice_still_saves", 9, empty_choice_saves)
+    def spare_end(spec):
+        spec['nodes']['spare_end'] = {'type': 'end_node', 'config': {'record_line': False}}
+
+    pair('unconnected_end', 8, spare_end)
     return pairs

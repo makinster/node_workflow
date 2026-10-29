@@ -1,0 +1,25 @@
+{
+  "basis": "Recorded run 000010 per-stage estimated costs; no new API calls",
+  "case_set": 2,
+  "calibration_pairs": 23,
+  "planned_calls": {
+    "calibration": 46,
+    "analysis": 10,
+    "resolve": 1,
+    "draft": 8,
+    "judge": 8
+  },
+  "total_calls_without_redrafts": 73,
+  "mean_cost_usd": {
+    "calibration": 0.0012965636363636362,
+    "analysis": 0.0010077,
+    "resolve": 0.0012029,
+    "draft": 0.00141809,
+    "draft_retry": 0.0020155,
+    "judge": 0.0014090300000000001
+  },
+  "estimated_without_redrafts_usd": 0.09353878727272727,
+  "estimated_with_eight_redrafts_usd": 0.10966278727272727,
+  "planning_allowance_usd": 0.15,
+  "limitations": "Same selections/prices and stage averages as run 10; harder prompts, actual tokens, cache behavior and different selections change cost. This is not a billing cap."
+}

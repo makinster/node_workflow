@@ -62,6 +62,7 @@ def main():
     )
     parser.add_argument("--judge-model", choices=JUDGE_MODELS, default=JUDGE_MODELS[0])
     parser.add_argument("--judge-effort", choices=JUDGE_EFFORTS, default=JUDGE_EFFORTS[0])
+    parser.add_argument("--case-set", type=int, choices=[1, 2], default=1)
     parser.add_argument("--cases", default="1,2,3,4,5,6,7,8,9,10")
     parser.add_argument(
         "--scenario",
@@ -134,6 +135,7 @@ def main():
                 judge_model=args.judge_model,
                 judge_effort=args.judge_effort,
                 cases_even_if_calibration_fails=args.cases_even_if_calibration_fails,
+                case_set=args.case_set,
             )
         )
     except Exception as exc:
@@ -142,6 +144,7 @@ def main():
             run_root / "report.json",
             {
                 "result": "fail",
+                "case_set": args.case_set,
                 "failure": type(exc).__name__ + ": " + str(exc),
                 "judge_model": args.judge_model,
                 "judge_effort": args.judge_effort,
@@ -156,6 +159,8 @@ def main():
             {
                 "result": report["result"],
                 "cases": report["case_count"],
+                "case_set": args.case_set,
+                "fully_right": report.get("fully_right"),
                 "calibration": report["calibration"],
                 "cases_even_if_calibration_fails": args.cases_even_if_calibration_fails,
                 "report": str(run_root / "report.json"),
