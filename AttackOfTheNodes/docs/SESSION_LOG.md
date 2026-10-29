@@ -6,6 +6,36 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-28 — Palette behavior contracts and diagnostic case trials (Important)
+
+Clean worktree `/home/makin/src/nw-palette-behavior`, branch
+`codex/palette-behavior-contracts`, main base `4e42273`. Verified all twelve
+target execute methods and file-reference helpers. File Write returns the actual
+saved absolute path in a typed reference; Configured File Reader ignores the
+incoming value; Create unique uses the original path then numbered suffixes
+before the last extension; Conditional equals preserves case/whitespace. Good
+fixtures agree with execution. The oracle's synthetic suffix is an intentional
+lineage probe and is not a naming assertion. Runtime/fixtures are unchanged.
+
+Added shared registry execution-contract metadata and generic catalogue rendering
+of payload and Configured-input semantics, available to drafter and judge.
+Compact Text config notation is shorter without losing fields/defaults or
+constraints. Counts: Text **41,400 → 39,156**, JSON **56,360 → 61,181** (64,000
+cap); original designer **7,943 → 7,928** (8,000 cap); v2 **9,869 → 9,928**
+(50,000 cap); Brief unchanged **7,634 / 10,603**. The judge now puts harmless
+remarks in summary; only request-blocking issues belong in problems. Strict
+empty-problems pass validation is unchanged.
+
+The opt-in `--cases-even-if-calibration-fails` runs selected cases for diagnostic
+evidence after failed calibration. Calibration/overall result stay fail in
+stdout/report; calibrate-only precedence and cost/time/unknown-cost guards are
+unchanged. New tests reproduce eight missing-feature failures on the base and
+five already-correct runtime checks. Focused checks: **13 passed**; full
+`pytest -n auto`: **3,407 passed in 44.19 s** after two older CLI batch mocks
+were updated to include the calibration field now printed on stdout. Whitespace
+check passed. All provider transport mocked; no real API calls, owner trial
+artifact inspection or Secrets access, and no inference quality claims.
+
 ## 2026-10-28 — Catalogue defaults and calibration structural evidence (Important)
 
 Clean worktree `/home/makin/src/nw-catalogue-defaults`, branch

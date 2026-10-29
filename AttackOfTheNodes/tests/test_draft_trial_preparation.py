@@ -163,7 +163,7 @@ def test_real_path_reuses_shared_library_without_writes(tmp_path, monkeypatch):
             run_root / "report.json",
             {"result": "pass", **{k: kwargs[k] for k in ("budget_usd", "time_limit")}},
         )
-        return {"result": "pass", "case_count": 0}
+        return {"result": "pass", "case_count": 0, "calibration": "pass"}
 
     monkeypatch.setattr(runner, "batch", fake_batch)
     assert invoke(monkeypatch, root, "--real-calls", "--budget", "0.50") == 0

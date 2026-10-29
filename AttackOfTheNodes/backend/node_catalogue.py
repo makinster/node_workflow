@@ -92,6 +92,14 @@ def entry(factory, row, detail):
         result['custom_keys'] = list(description['custom_keys'])
     if description['node_reference_fields']:
         result['node_reference_fields'] = description['node_reference_fields']
+    if meta.get('execution_contract'):
+        result['execution_contract'] = deepcopy(meta['execution_contract'])
+    configured = {
+        p['id']: f"{p['source_field']}=Configured: use {p['configured_field']}; {p['id']} trigger only; no type check."
+        for p in inputs if 'configured_field' in p and p.get('source_field')
+    }
+    if configured:
+        result['configured_inputs'] = configured
     if detail == 'Detailed':
         result.update(config_fields=deepcopy(schema), defaults=deepcopy(config),
                       errors=description['errors'], custom_keys=description['custom_keys'],
@@ -108,6 +116,20 @@ PORT_LEGEND = 'Connections use port ids only; quoted names are labels.'
 def port_label(port, *, brief=False):
     name = compact_json(port['name'])
     return f"{port['id']} {name}" if brief else f"{port['id']} ({name})"
+
+
+def config_text(fields):
+    """Lossless short Text notation; JSON keeps its structured field records."""
+    rows = []
+    for name, info in fields.items():
+        rest = {k: v for k, v in info.items() if k not in ('type', 'default')}
+        row = name + ':' + str(info.get('type', 'any'))
+        if 'default' in info:
+            row += '=' + compact_json(info['default'])
+        if rest:
+            row += ' ' + compact_json(rest)
+        rows.append(row)
+    return ';'.join(rows)
 
 
 def brief_text(record, factory):
@@ -128,16 +150,22 @@ def brief_text(record, factory):
 def text_output(record, factory):
     if record['detail'] == 'Brief':
         return brief_text(record, factory)
-    lines = ['Node catalogue v1 · default ports',
-             'Config defaults may be omitted; required means no default. Full constraints: Detailed.', PORT_LEGEND, '']
+    lines = ['Default ports; field:type=default; required=no default.'
+             if record['detail'] == 'Compact' else 'Catalogue v1: default ports; full schema and defaults.',
+             PORT_LEGEND, '']
     for item in record['entries']:
         lines.extend([f"{item['entry_kind']} {item['type']} | {item['display_name']} | {item['group'] or 'Ungrouped'}",
                       item['description'],
                       'Family: ' + item['family'] + ' · Tags: ' + ', '.join(item['tags']),
                       'In: ' + ('; '.join(f"{port_label(p)} [{p['data_type']}] {'required' if p['required'] else 'optional'} ({'/'.join(p['sources'])})" for p in item['inputs']) or 'none'),
                       'Out: ' + '; '.join(f"{port_label(p)} [{p['data_type']}] {'required' if p['required'] else 'optional'} ({'/'.join(p['to'])})" for p in item['outputs']),
-                      'Config: ' + compact_json(item['config_fields']),
+                      'Config: ' + (config_text(item['config_fields']) if record['detail'] == 'Compact'
+                                                  else compact_json(item['config_fields'])),
                       'Errors: ' + compact_json(item['errors'])])
+        for key, value in item.get('execution_contract', {}).items():
+            lines.append(('Output payload: ' if key == 'output_payload' else 'Behavior: ') + value)
+        if item.get('configured_inputs'):
+            lines.append('Configured: ' + ' '.join(item['configured_inputs'].values()))
         for key in ('custom_keys', 'node_reference_fields', 'defaults', 'unchecked_keys',
                     'standard_keys', 'vault_reads', 'vault_writes', 'ui_hints'):
             if key in item:

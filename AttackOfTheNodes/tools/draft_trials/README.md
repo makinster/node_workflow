@@ -135,8 +135,8 @@ The CLI prints the exact report path. All paths below are relative to the new
   that fail structurally include its error code and bounded problem details.
   Budget stops retain completed calibration rows.
 - `artifacts/contracts.json`: complete text, length, hash and exact returned
-  inventory from every static Compact query. Current palette text: 9,869 chars
-  (before config defaults: 9,364),
+  inventory from every static Compact query. Current palette text: 9,928 chars
+  (before execution contracts: 9,869),
   comfortably below the 50,000-char planning cap. No entry is clipped.
 - `cases/<id>/frozen-case.json`, `trial-designer.json`, `designer-run.json`,
   `evidence.json`, `calls.json`, `build-check.json`, `report.json`, exact saved
@@ -220,4 +220,15 @@ record the selections; `report.json` includes total attempted/succeeded calls
 and estimated cost even when calibration fails or exhausts its budget.
 Calibration-only skips all cases, whether calibration passes or fails. A failed
 calibration still exits with failure. Mock mode remains the default; mock token
-costs do not measure inference costs. The judge prompt is unchanged.
+costs do not measure inference costs.
+
+For diagnostic evidence after a failed calibration, add
+`--cases-even-if-calibration-fails`. Without it, failed calibration skips all
+cases as before. With it, the selected cases (all ten by default) run, but
+`report.json` and stdout retain `calibration: "fail"` and overall
+`result: "fail"`; the command exits 1 even if every case passes. Both record
+`cases_even_if_calibration_fails`. `--calibrate-only` still skips cases even
+when both flags are supplied. Cost/time/unknown-cost guards still apply before
+each case and every real call; the flag cannot bypass an exhausted guard.
+The v2 judge's `problems` contains only request-blocking defects, with harmless
+remarks in `summary`. A pass still needs an empty problems list.

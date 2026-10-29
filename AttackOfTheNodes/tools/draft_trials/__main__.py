@@ -56,6 +56,10 @@ def main():
         help="Stop before the next call after this time (default 600)",
     )
     parser.add_argument("--calibrate-only", action="store_true")
+    parser.add_argument(
+        "--cases-even-if-calibration-fails", action="store_true",
+        help="Run selected cases after failed calibration; overall result remains fail",
+    )
     parser.add_argument("--judge-model", choices=JUDGE_MODELS, default=JUDGE_MODELS[0])
     parser.add_argument("--judge-effort", choices=JUDGE_EFFORTS, default=JUDGE_EFFORTS[0])
     parser.add_argument("--cases", default="1,2,3,4,5,6,7,8,9,10")
@@ -129,6 +133,7 @@ def main():
                 shared_library=root / "library",
                 judge_model=args.judge_model,
                 judge_effort=args.judge_effort,
+                cases_even_if_calibration_fails=args.cases_even_if_calibration_fails,
             )
         )
     except Exception as exc:
@@ -151,6 +156,8 @@ def main():
             {
                 "result": report["result"],
                 "cases": report["case_count"],
+                "calibration": report["calibration"],
+                "cases_even_if_calibration_fails": args.cases_even_if_calibration_fails,
                 "report": str(run_root / "report.json"),
             }
         )
