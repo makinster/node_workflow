@@ -1,0 +1,134 @@
+"""Versioned scenario data and boundary protocols, never replacement execute methods."""
+SCENARIO_VERSION = 1
+# Every registered type must have a row. Config/inputs are merged over real defaults.
+# $tokens are resolved to isolated local fixtures by the shared runner.
+CASES = {
+ 'start_node': {'config': {'greeting': 'COMPUTED'}},
+ 'end_node': {'config': {'record_line': False}},
+ 'branch_node': {}, 'branch_end_node': {},
+ 'conditional_node': {'config': {'condition_type': 'equals', 'right_value': 'UPSTREAM'}},
+ 'concat_node': {'config': {'template': 'COMPUTED {topic}'}, 'seeds': {'topic': 'VAULT'}},
+ 'text_output_node': {'config': {'label': '', 'template': 'COMPUTED {input}'}},
+ 'user_text_input_node': {},
+ 'text_transform_node': {'config': {'operation': 'lowercase'}},
+ 'json_path_node': {'config': {'path': 'answer'}, 'inputs': {'input': {'answer': 'COMPUTED'}}},
+ 'file_reader_node': {'config': {'input_source': 'Configured', 'file_path': '$text'}},
+ 'file_output_node': {'config': {'content_source': 'Configured', 'content': 'COMPUTED', 'file_path': '$out'}},
+ 'echo_node': {}, 'logger_node': {}, 'probe_node': {}, 'no_op_node': {},
+ 'counter_node': {}, 'repeat_counter_node': {}, 'memory_snapshot_node': {},
+ 'deep_branch_node': {}, 'random_branch_node': {'config': {'seed': 'claims'}},
+ 'error_node': {'config': {'error_mode': 'fail'}, 'error': True},
+ 'tombstone_node': {'error': True},
+ 'sleep_node': {'config': {'duration': 0}},
+ 'get_variable_node': {'seeds': {'value': 'COMPUTED'}},
+ 'set_variable_node': {'config': {'value_source': 'literal', 'value': 'COMPUTED'}},
+ 'variable_reader_node': {'config': {'variable_name': 'value'}, 'seeds': {'value': 'COMPUTED'}},
+ 'variable_setter_node': {'config': {'variable_name': 'value'}},
+ 'random_number_node': {'config': {'min_value': 1, 'max_value': 1}},
+ 'merge_node': {'inputs': {'path_a': 'UPSTREAM'}, 'boundary': 'merge_callback'},
+ 'wait_until_node': {'config': {'target_node_ids': 'ready'}, 'boundary': 'completion_callback'},
+ 'error_mux_node': {},
+ 'embedding_node': {'boundary': 'already-local placeholder; no service is called'},
+ 'image_generation_node': {'boundary': 'already-local placeholder; no service is called'},
+ 'chat_completion_node': {'config': {'prompt': 'question', 'api_key_secret': 'test', 'prompt_source': 'Configured'},
+                          'inputs': {'document': 'UPSTREAM', 'prompt': 'question'}, 'boundary': 'completion_client'},
+ 'ask_claude_node': {'config': {'input': 'question'}, 'boundary': 'hosted_question_transport'},
+ 'ask_local_model_node': {'config': {'input': 'question', 'model': 'test'}, 'boundary': 'local_question_transport'},
+ 'hermes_ask_node': {'config': {'input': 'question', 'folder': '$dir'}, 'boundary': 'delegated_question_transport'},
+ 'pick_one_node': {'config': {'api_key_secret': 'test'}, 'boundary': 'choice_transport'},
+ 'check_reply_node': {'inputs': {'input': '{"summary":"COMPUTED","next_step":"done"}'}},
+ 'check_workflow_spec_node': {'inputs': {'input': '$spec'}},
+ 'node_catalogue_node': {'config': {'detail': 'Brief'}},
+ 'context_pack_node': {'config': {'include_run': False}},
+ 'disk_space_node': {'config': {'folder': '$dir'}, 'boundary': 'local temporary filesystem'},
+ 'file_age_node': {'config': {'path': '$text'}, 'boundary': 'local temporary filesystem'},
+ 'git_status_node': {'config': {'folder': '$dir'}, 'boundary': 'git_command'},
+ 'find_lines_node': {'config': {'input': 'COMPUTED', 'file': '$text'}},
+ 'read_lines_node': {'config': {'input': 1, 'file': '$text'}},
+ 'remember_node': {'config': {'name': 'claims'}},
+ 'recall_node': {'config': {'name': 'claims', 'starting_value': 'COMPUTED'}},
+ 'if_changed_node': {'config': {'name': 'claims'}},
+ 'record_event_node': {'config': {'event_name': 'claims', 'summary': 'COMPUTED'}, 'boundary': 'event_store'},
+ 'hermes_notify_node': {'boundary': 'notification_queue'},
+ 'hermes_investigate_node': {'config': {'input': 'COMPUTED', 'investigate': 'Check it'}, 'boundary': 'investigation_queue'},
+ 'hermes_investigation_result_node': {'config': {'input': 'test'}, 'boundary': 'investigation_result_store'},
+ 'http_request_node': {'config': {'url': 'https://example.invalid/'}, 'boundary': 'http_response'},
+ 'file_view_node': {'config': {'file_source': 'Configured', 'file': '$text'}, 'boundary': 'fake_window_manager'},
+ 'window_control_node': {'inputs': {'file': '$ref'}, 'boundary': 'fake_window_manager'},
+ 'subworkflow_node': {'config': {'workflow_id': 'child', 'results': []}, 'boundary': 'child_callback'},
+}
+# Per-claim expected failures, not per-type blanket exemptions. A strict xpass
+# forces review when runtime is fixed. Reviewed palette records are never edited
+# to hide these pending-type discrepancies.
+MISMATCHES = {
+ ('counter_node', 'ports'): 'Emits undeclared count data port; owner must choose an output port or remove the extra data.',
+ ('repeat_counter_node', 'ports'): 'Emits undeclared visits data port; owner must choose an output port or remove the extra data.',
+ ('if_changed_node', 'transient_output'): 'Declared transient switch is ignored on changed/no_change; clarify suppression versus route traversal.',
+ ('window_control_node', 'transient_output'): 'Declared transient switch is ignored; decide whether this fixed-forwarding action supports suppression.',
+}
+
+# Independent expected values for the reviewed palette. The shared interpreter
+# runs these same records; no per-type test functions choose a passing answer.
+PALETTE_SCENARIOS = [
+ {'type':'start_node','config':{'greeting':''},'output':{'default':''}},
+ {'type':'start_node','config':{'no_inputs':True},'output':{}},
+ {'type':'start_node','config':{'rows':[{'name':'n','type':'number','value':0,'to':'Both'}]},'output':{'default':0}},
+ {'type':'start_node','config':{'rows':[{'name':'n','type':'bool','value':False,'to':'Both'}]},'output':{'default':False}},
+ {'type':'start_node','config':{'rows':[{'name':'n','type':'var','value':{'x':[]},'to':'Both'}]},'output':{'default':{'x':[]}}},
+ {'type':'end_node','inputs':{'input':{'secret':'do not echo'}},'config':{'record_line':True,'message':'Finished'},'output':{},'log':['[END] Finished']},
+ {'type':'end_node','config':{'return_end':True,'results':[{'name':'n','type':'string','required':True,'source':'Vault','vault_key':'absent'}]},'error':True},
+ {'type':'branch_node','config':{'branch_count':64},'inputs':{'input':{'x':[]}},'branches':64},
+ {'type':'branch_node','config':{'branch_payload_sources':{'path_a':'vault:topic'}},'seeds':{'topic':'VAULT'},'branch_values':['VAULT','UPSTREAM']},
+ {'type':'conditional_node','inputs':{'input':'UPSTREAM'},'output':{'true':'UPSTREAM'}},
+ {'type':'conditional_node','inputs':{'input':'upstream'},'output':{'false':'upstream'}},
+ {'type':'conditional_node','inputs':{'input':' UPSTREAM'},'output':{'false':' UPSTREAM'}},
+ {'type':'conditional_node','config':{'condition_type':'regex','right_value':'['},'error':True},
+ {'type':'conditional_node','config':{'left_value_source':'variable','variable_name':'topic','right_value':'VAULT'},'seeds':{'topic':'VAULT'},'output':{'true':'VAULT'}},
+ {'type':'conditional_node','config':{'left_value_source':'variable','variable_name':'absent','right_value':''},'output':{'true':''}},
+ {'type':'concat_node','config':{'template':'{topic}|{input}|{{literal}}'},'seeds':{'topic':'VAULT'},'output':{'default':'VAULT|UPSTREAM|{literal}'}},
+ {'type':'concat_node','config':{'template':'{topic}'},'inputs':{'input':'ignored','topic':'INPUT WINS'},'seeds':{'topic':'VAULT'},'output':{'default':'INPUT WINS'}},
+ {'type':'concat_node','config':{'template':'A[{absent}] B[{input}]'},'error':True,'error_contains':'absent'},
+ {'type':'concat_node','config':{'template':'{input[absent]}'},'inputs':{'input':{}},'error':True},
+ {'type':'concat_node','config':{'template':'{'},'error':True},
+ {'type':'text_output_node','config':{'label':'  ','template':'{input}'},'output':{'default':'UPSTREAM'},'log':['UPSTREAM']},
+ {'type':'text_output_node','config':{'label':'Result','template':'{input}'},'output':{'default':'[Result] UPSTREAM'},'log':['[Result] UPSTREAM']},
+ {'type':'text_output_node','config':{'input_source':'Vault','input_vault_key':'topic','template':'{input}'},'seeds':{'topic':'VAULT'},'output':{'default':'VAULT'},'read':'topic'},
+ {'type':'text_output_node','config':{'input_source':'Vault','input_vault_key':'absent'},'error':True,'error_contains':'absent'},
+ {'type':'text_output_node','config':{'template':'{input[path]}'},'inputs':{'input':'$ref'},'output':{'default':'$text'}},
+ {'type':'text_output_node','config':{'template':'{input[path]}'},'inputs':{'input':{}},'error':True},
+ {'type':'text_output_node','config':{'request_user_input':True,'template':'{input}'},'inputs':{},'output':{'default':'ANSWER'}},
+ {'type':'file_reader_node','config':{'input_source':'Upstream payload'},'inputs':{'input':'$ref'},'output':{'default':'COMPUTED\nsecond line\n'}},
+ {'type':'file_reader_node','config':{'input_source':'Vault','input_vault_key':'file'},'seeds':{'file':'$ref'},'output':{'default':'COMPUTED\nsecond line\n'},'read':'file'},
+ {'type':'file_reader_node','config':{'input_source':'Configured'},'inputs':{'input':{'wrong':'wire type ignored'}},'output':{'default':'COMPUTED\nsecond line\n'}},
+ {'type':'file_reader_node','config':{'input_source':'Vault','input_vault_key':'absent'},'error':True},
+ {'type':'file_reader_node','config':{'input_source':'Vault','input_vault_key':'file'},'seeds':{'file':False},'error':True},
+ {'type':'file_reader_node','config':{'file_path':''},'error':True},
+ {'type':'file_output_node','config':{'content_source':'Upstream payload'},'inputs':{'content':'WIRE CONTENT'},'file_content':'WIRE CONTENT'},
+ {'type':'file_output_node','config':{'content_source':'Vault','content_vault_key':'text'},'seeds':{'text':'VAULT CONTENT'},'file_content':'VAULT CONTENT','read':'text'},
+ {'type':'file_output_node','config':{'content_source':'Vault','content_vault_key':'absent'},'error':True},
+ {'type':'file_output_node','config':{'file_path_source':'Upstream payload'},'inputs':{'file_path':'$ref'},'file_content':'COMPUTED','saved_path':'$text'},
+ {'type':'file_output_node','config':{'file_path_source':'Vault','file_path_vault_key':'file'},'seeds':{'file':'$ref'},'file_content':'COMPUTED','saved_path':'$text','read':'file'},
+ {'type':'file_output_node','config':{'file_path_source':'Vault','file_path_vault_key':'absent'},'error':True},
+ {'type':'file_output_node','config':{'write_mode':'Create unique'},'existing_out':True,'file_content':'COMPUTED','saved_name':'saved (1).txt'},
+ {'type':'json_path_node','inputs':{'input':'{"answer":[0,false,null]}'},'output':{'default':[0,False,None]}},
+ {'type':'json_path_node','config':{'path':'a.1','default_value':'fallback'},'inputs':{'input':{'a':['one',2]}},'output':{'default':2}},
+ {'type':'json_path_node','inputs':{'input':{}},'config':{'default_value':'fallback'},'output':{'default':'fallback'}},
+ {'type':'json_path_node','inputs':{'input':'{'},'error':True},
+]
+for operation,expected in [('uppercase',' A BC '),('lowercase',' a bc '),('strip','A bC'),('title',' A Bc '),('reverse',' Cb A '),('markdown format',' A bC\n')]:
+ PALETTE_SCENARIOS.append({'type':'text_transform_node','config':{'operation':operation},'inputs':{'input':' A bC '},'output':{'default':expected}})
+for value in [None,False,0,{},[], '']:
+ PALETTE_SCENARIOS += [
+  {'type':'branch_end_node','inputs':{'input':value},'output':{'default':value}},
+  {'type':'concat_node','config':{'template':'{input}'},'inputs':{'input':value},'output':{'default':str(value)}},
+ ]
+for kind in ['user_text_input_node','text_output_node','start_node']:
+ for declaration in [[{'id':'legacy'}],[{'output':'legacy'}],[{'source_id':'legacy'}],['legacy']]:
+  PALETTE_SCENARIOS.append({'type':kind,'config':{'membank_outputs':declaration},'legacy_key':'legacy'})
+
+PALETTE_SCENARIOS += [
+ {'type':'start_node','config':{'rows':[{'name':'a','type':'string','value':'A','to':'Downstream'},{'name':'b','type':'bool','value':False,'to':'Downstream'}]},'output':{'default':{'a':'A','b':False}}},
+ {'type':'start_node','config':{'rows':[{'name':'a','type':'string','value':'A','to':'Vault'}]},'output':{}},
+ {'type':'branch_end_node','inputs':{'input':{'x':[1]}},'output':{'default':{'x':[1]}},'identity':True},
+ {'type':'conditional_node','config':{'condition_type':'contains','right_value':''},'inputs':{'input':{'x':[1]}},'output':{'true':{'x':[1]}},'identity':True},
+]

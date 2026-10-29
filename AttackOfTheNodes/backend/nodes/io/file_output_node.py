@@ -66,6 +66,9 @@ class FileOutputNode(Node):
     ui_hints: ClassVar[Dict[str, Any]] = {'forwarded_input_port': 'content', 'forwarded_input_fallbacks': ['file_path']}
 
     async def execute(self, context: NodeContext) -> None:
+        if self.config.get("vault_write") and not str(self.config.get("vault_write_key") or "").strip():
+            context.signal_error(ValueError("File Write: enter a Vault output key."))
+            return
         content = self._resolve_content(context)
         if content is None:
             context.signal_error(

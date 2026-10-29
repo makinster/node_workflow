@@ -1,9 +1,8 @@
 # Current State
 
-Snapshot checked **2026-10-29**, against fetched `origin/main` `495e9aa`
-after #149 merged. Concat Vault and disabled-output repair is on
-`codex/concat-vault-diagnostics`. No real API calls. Earlier entries retain
-their dated scope.
+Snapshot checked **2026-10-29**, against fetched `origin/main` `439e614`
+after #150 merged. Claims-only foundation is on `codex/node-claims`.
+No real API calls; earlier entries retain their dated scope.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
@@ -13,6 +12,41 @@ Sonnet/Opus and document the 512-token minimum prefix. Per-model price tests
 and real-engine run summaries cover all three supported models. See the latest
 Session Log entry for verification: full `pytest -n auto` passes **3,234 tests
 in 35.63 s** after the review fixes.
+
+## Executable node claims — 2026-10-29 (Foundational)
+
+The owner accepted all eight palette-scaling recommendations; this is the
+claims portion only. No shortlist, extra drafter nodes, record backfill or
+palette expansion. [Frozen baseline and observations](audits/claims_baseline_2026_10_29/README.md)
+cover all **59** types: **12 reviewed / 47 pending**. One shared data-driven
+runner executes real nodes with real observed MemoryBank and bounded fake
+external boundaries. It includes **78** palette value/source scenarios and
+**21** real-engine graphs, each run twice with stale transient injection.
+
+New authoring rejects unsupported explicit standard flags as errors, including
+false/empty values. Factory/describe expose supported flags; saved workflow
+loading is unchanged. No runtime consumes `transient_outputs`. The read-only
+compatibility audit found **0 newly failing specs out of 17** bundled/delivery
+specs. Owner workflows were not scanned or rewritten.
+
+Reproduced clear mismatches were fixed in code: completion-result suppression,
+type tags and blank keys; File Write blank keys; required Text Output input;
+User Text Input legacy copies; missing required Saved-value inputs versus null;
+and Concat read declarations. Reviewed record text is unchanged. All twelve
+review attestations now link the shared claims and source/declaration helpers.
+
+Full `pytest -n auto`: **4,488 passed, 187 skipped, 4 xfailed in 40.62 s**.
+The node receipt has **230 passing / 179 skipped / 4 expected-failure claims**;
+eight additional skips are non-authorable tombstone flag cases. Skips have
+explicit reasons. All **23** calibration pair rule verdicts retained.
+
+Owner decisions remain: Counter's undeclared `count` data port; Repeat Counter's
+undeclared `visits`; If Changed and Window Control ignoring suppression. Each is
+a strict per-claim xfail on a pending type; unexpected success requires review.
+No admitted type is xfailed. Pending source/mode/session/native-platform matrices
+and independent admission review remain family work. No live-service quality
+claim. Sizes unchanged: Brief Text **14,569**, Compact Text **53,217**, v2
+contracts **21,513 / 50,000** (JSON **18,214 / 76,638**); caps intact.
 
 ## Concat Vault and disabled output — 2026-10-29
 

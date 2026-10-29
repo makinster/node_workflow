@@ -38,7 +38,8 @@ async def run_start_then_show(service, start_config):
     wm.update_node_config(end, {**wm.get_node_data(end)['config'], 'record_line': False})
     wm.connect(start, 'default', show, 'input')
     wm.connect(show, 'default', end, 'input')
-    await service.start()
+    from backend.run_policies import TerminatePolicy
+    await service.start(recovery_policy=TerminatePolicy('terminate_workflow'))
     return await service.wait()
 
 
@@ -46,11 +47,18 @@ async def run_start_then_show(service, start_config):
 @pytest.mark.parametrize('start_config,shown', [
     ({'greeting': ''}, '<>'),
     ({'greeting': 'Hello'}, '<Hello>'),
-    ({'greeting': 'Hello', 'transient_output': False}, '<>'),
+    ({'greeting': 'Hello', 'transient_output': False}, None),
 ])
 async def test_start_greeting_runs_next_step_even_when_empty_and_is_never_displayed(
         engine, start_config, shown):
     result = await run_start_then_show(engine, start_config)
+    if shown is None:
+        # Suppression still traverses the edge, but the required consumer now
+        # reports the absent payload instead of inventing empty text.
+        assert result.exit_code != 0
+        assert any('required upstream input is missing' in e['message'] for e in result.errors)
+        assert not output_text(result)
+        return
     assert result.exit_code == 0
     # The next step ran; only Text Output put anything in the run output.
     assert output_text(result) == [shown]

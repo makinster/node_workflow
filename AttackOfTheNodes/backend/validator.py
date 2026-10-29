@@ -246,10 +246,7 @@ def validate_workflow(
         default_meta = (meta.get("output_port_metadata") or {}).get("default") or {}
         # Only diagnose switches the runtime actually implements. Legacy nodes
         # without standard output routing may ignore retained shared keys.
-        # Legacy Chat Completion always emits its result, even when its old
-        # transient switch is false. Do not claim it drops data.
-        disabled = (node_type != "chat_completion_node"
-                    and "vault" in (default_meta.get("to") or [])
+        disabled = ("vault" in (default_meta.get("to") or [])
                     and config.get("transient_output") is False
                     and not (default_meta.get("pass_through") and config.get("dead_drop_passthrough")))
         if node_type == "start_node" and (config.get("rows") or config.get("no_inputs")):

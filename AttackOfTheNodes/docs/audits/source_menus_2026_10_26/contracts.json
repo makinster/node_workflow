@@ -212,7 +212,7 @@
           "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
         }
       },
-      "runtime_sha256": "2bed5428bb792a5f18da19ec9b476a61abec4d30bf59af3c976696949f6c53a8",
+      "runtime_sha256": "b3e4f7b1877e1f72bae7996d7e66baaee2e0a4622d01dc376cbc805850262823",
       "runtime_file": "backend/nodes/data/if_changed_node.py"
     },
     {
@@ -244,7 +244,7 @@
           "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
         }
       },
-      "runtime_sha256": "97caddb78c581c254e767489a15715f9a89773622fb40e5bd37c0c82a07e9c17",
+      "runtime_sha256": "8f778b8b609c5a63bc9da837d3bdf8c72c904ad51e1fde0d4eaf90eb8fbfccf7",
       "runtime_file": "backend/nodes/data/remember_node.py"
     },
     {
@@ -428,7 +428,7 @@
           "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
         }
       },
-      "runtime_sha256": "d491c9561567ec315b6e68d6cd81423ab26a65f8781961f33bef0399a0f1b9cb",
+      "runtime_sha256": "241047f8c5090d5d096112177b943086d7ac5656dfbbca8ac43feda8b393f298",
       "runtime_file": "backend/nodes/io/file_output_node.py"
     },
     {
@@ -1266,7 +1266,7 @@
           "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
         }
       },
-      "runtime_sha256": "53621fc5a99ef9f8e83e03563d014f4b552a3d250a22caa42afdd31232c62635",
+      "runtime_sha256": "bb12b7a21469d7509f92c7124c068cc70d9178e0513c13a02f44177b6a0398a8",
       "runtime_file": "backend/nodes/text_output_node.py"
     },
     {
@@ -1280,7 +1280,7 @@
           "notes": "Incoming edge triggers work; payload is not selected as task input (may be forwarded). Parameters, saved store or user supplies the result."
         }
       },
-      "runtime_sha256": "68f0b90d9a56c6880105b68f6859c4aa64ca4f0d1415e7a70e0480800a07d748",
+      "runtime_sha256": "cfa9bfc25d7c67ca5c89568fb6002b8815bf43d14886ab11552304f3aa7461b9",
       "runtime_file": "backend/nodes/user_text_input_node.py"
     },
     {
@@ -1415,7 +1415,7 @@
           "notes": "Source controls match the runtime resolver; Vault key visible for Vault, configured value visible for Configured."
         }
       },
-      "runtime_sha256": "4d22ce999c40d9490d5099e09fc3eadf600392b3ae564859c0967a8336dbcadd",
+      "runtime_sha256": "a979fb0c9b63c5dc661b2cf82f53ca762200a9fff8275cce747873ed72eae4db",
       "runtime_file": "backend/nodes/chat_completion_node.py"
     },
     {

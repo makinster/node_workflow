@@ -5,6 +5,7 @@ from typing import Any, ClassVar, Dict, List
 from ..node_base import Node, NodeContext
 from ..node_category import NodeCategory
 from ..node_errors import ENGINE_ERROR_DEFINITIONS, ENGINE_UNATTENDED_INPUT
+from ..vault_declarations import legacy_output_keys
 
 
 class UserTextInputNode(Node):
@@ -33,12 +34,6 @@ class UserTextInputNode(Node):
         value = await context.signal_waiting_for_input(str(self.config.get("prompt", "Enter text:")))
         # Legacy Vault declarations name copies of this node's answer. Publish
         # them before signaling success so cross-branch readers can use them.
-        outputs = self.config.get("membank_outputs") or []
-        if isinstance(outputs, list):
-            for output in outputs:
-                if not isinstance(output, dict):
-                    continue
-                key = str(output.get("output") or output.get("id") or "").strip()
-                if key:
-                    context.memory_bank.store_persistent(key, value, type_tag="string")
+        for key in legacy_output_keys(self.config):
+            context.memory_bank.store_persistent(key, value, type_tag="string")
         context.signal_done({"data": {"default": value}, "next_node_id": None})

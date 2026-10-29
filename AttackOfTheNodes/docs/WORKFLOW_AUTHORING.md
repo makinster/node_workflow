@@ -52,14 +52,18 @@ with `aotn run "<name>"` or open it from the app's Workflow Library.
   with a letter; local to the spec. Node ids are generated and reported back.
 - **`alias`** is the display name (optional; defaults to the type's).
 - **`config`** uses the node's real config keys (see `aotn describe`), merged
-  over its defaults. Shared routing keys are retained for compatibility, but
-  only work where the node implements them. `vault_write` / `vault_write_key`
-  publish a result only when its default output declares `to: [..., "vault"]`
-  (see Compact/Detailed catalogue). Build/check warn for unsupported standard Vault writes and
-  do not count them as writers. Start with explicit rows routes each row instead.
-  Concat supports result Vault writes, disabled transient output, and unchanged
-  input forwarding via `dead_drop_passthrough`. Legacy named writes and
-  node-specific variable/session outputs keep their own rules.
+  over its defaults. Factory metadata and `describe` JSON list `standard_flags`
+  this type supports. Build/check reject an explicitly supplied unsupported
+  `vault_write`, `transient_output`, `dead_drop_passthrough` or
+  `transient_outputs` as an error, even for false/empty values. No runtime
+  consumes `transient_outputs`. Class defaults retained in old saved workflows
+  are not authoring capabilities; loading saved workflows is unchanged.
+  Standard result Vault writes require a Vault-supported default output.
+  Start with explicit rows uses row destinations instead of greeting switches.
+  Concat supports result writes, transient suppression and unchanged-input
+  forwarding; missing template roots are required Vault reads. Legacy named
+  writes and node-specific variable/session outputs keep their own rules.
+  [Claims and compatibility audit](audits/claims_baseline_2026_10_29/README.md).
 - **Node references**: fields `describe` lists under "Node references"
   (Wait Until's `target_node_ids`) take handles; the build writes the ids.
 - **Connections** name both ports: `"handle.port"`. The ports must exist for

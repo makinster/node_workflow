@@ -13,6 +13,7 @@ from .node_errors import ERROR_PORT, definitions_with_default
 from .data_types import coerce_type
 from .config_migrations import normalize_node_config
 from .node_base import Node
+from .node_capabilities import supported_standard_flags
 from .node_metadata import record_for, standard_key_docs
 from .nodes import ALL_NODE_CLASSES
 
@@ -214,6 +215,8 @@ class NodeFactory:
                     "custom_config_keys": dict(getattr(node_class, "custom_config_keys", {})),
                 }
             )
+        for item in metadata:
+            item['standard_flags'] = sorted(supported_standard_flags(item))
         return sorted(metadata, key=lambda item: item["display_name"])
 
     def _metadata_string(self, value: Any) -> str:

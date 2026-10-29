@@ -79,6 +79,9 @@ class TextOutputNode(Node):
                 context.signal_error(ValueError(f"Text Output Vault input is unavailable: {key or '(no key selected)'}"))
                 return
         else:
+            if "input" not in context.inputs and not request_input:
+                context.signal_error(ValueError("Text Output: required upstream input is missing"))
+                return
             input_value = context.inputs.get("input", "")
         if request_input:
             input_value = await context.signal_waiting_for_input(prompt)
