@@ -11,7 +11,7 @@ class BranchEndNode(Node):
 
     node_type: ClassVar[str] = "branch_end_node"
     display_name: ClassVar[str] = "Merge Beacon"
-    description: ClassVar[str] = "Marks a branch as complete before merge"
+    description: ClassVar[str] = "Pass a parallel path's value on unchanged and mark that path as ready for a Merge."
     # C4: fixed forwarding. The output is the input, so its type follows the
     # input (port_types traces through this node) and the editor shows a
     # read-only summary instead of an option.

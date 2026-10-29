@@ -5,7 +5,7 @@ primary_family: 'Inputs'
 tags: ['File I/O']
 icon_name: 'file-input'
 display_name: 'File Reader'
-description: 'Copies UTF-8 file contents into a text payload'
+description: "Read all text from a UTF-8 file and send it to the next step."
 inputs:
   input:
     type: 'file'

@@ -12,7 +12,7 @@ class ConcatNode(Node):
 
     node_type: ClassVar[str] = "concat_node"
     display_name: ClassVar[str] = "Concat"
-    description: ClassVar[str] = "Formats input and variables into text"
+    description: ClassVar[str] = "Build one text from a template filled with the input and saved Vault values."
     category: ClassVar[str] = NodeCategory.DATA
     input_ports: ClassVar[List[str]] = ["input"]
     output_ports: ClassVar[List[str]] = ["default"]

@@ -16,7 +16,7 @@ class EndNode(Node):
 
     node_type: ClassVar[str] = "end_node"
     display_name: ClassVar[str] = "End"
-    description: ClassVar[str] = "Terminates a workflow branch"
+    description: ClassVar[str] = "Finish a path, adding an [END] completion line to the run output unless that line is turned off."
     category: ClassVar[str] = NodeCategory.FLOW
 
     input_ports: ClassVar[List[str]] = ["input"]

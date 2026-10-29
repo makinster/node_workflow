@@ -8,7 +8,7 @@ selector_section: "Transform"
 icon_name: braces
 display_name: JSON Path
 default_alias: JSON Path
-description: Extract a value from a JSON string by dot-path (e.g. "user.name")
+description: "Pick one value out of JSON data by a dot path such as user.name or items.0."
 input_ports: ["input"]
 output_ports: ["default", "error"]
 config_tabs:

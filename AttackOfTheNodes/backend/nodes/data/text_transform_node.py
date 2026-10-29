@@ -18,7 +18,7 @@ class TextTransformNode(Node):
     node_type: ClassVar[str] = 'text_transform_node'
     display_name: ClassVar[str] = 'Text Transform'
     default_alias: ClassVar[str] = 'Text Transform'
-    description: ClassVar[str] = 'Apply a text transformation (case, strip, reverse, markdown format) to the input string'
+    description: ClassVar[str] = 'Change text in one fixed way: uppercase, lowercase, trim both ends, title case, reverse, or tidy Markdown.'
     category: ClassVar[str] = NodeCategory.DATA
     primary_family: ClassVar[str] = 'Complex'
     tags: ClassVar[List[str]] = ['Utility']

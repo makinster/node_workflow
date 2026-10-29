@@ -15,7 +15,7 @@ class TextOutputNode(Node):
 
     node_type: ClassVar[str] = "text_output_node"
     display_name: ClassVar[str] = "Text Output"
-    description: ClassVar[str] = "Formats input through a template and logs it"
+    description: ClassVar[str] = "Show formatted text in this run's output and pass the same text to the next step."
     category: ClassVar[str] = NodeCategory.IO
 
     ui_hints: ClassVar[Dict[str, Any]] = {"formatted_output_preview": True}

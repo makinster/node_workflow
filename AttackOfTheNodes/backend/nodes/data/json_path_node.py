@@ -13,7 +13,7 @@ class JsonPathNode(Node):
     node_type: ClassVar[str] = 'json_path_node'
     display_name: ClassVar[str] = 'JSON Path'
     default_alias: ClassVar[str] = 'JSON Path'
-    description: ClassVar[str] = 'Extract a value from a JSON string by dot-path (e.g. "user.name")'
+    description: ClassVar[str] = 'Pick one value out of JSON data by a dot path such as user.name or items.0.'
     category: ClassVar[str] = NodeCategory.DATA
     primary_family: ClassVar[str] = 'Utility'
     tags: ClassVar[List[str]] = ['Utility']

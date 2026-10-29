@@ -25,7 +25,7 @@ class StartNode(Node):
 
     node_type: ClassVar[str] = "start_node"
     display_name: ClassVar[str] = "Start"
-    description: ClassVar[str] = "Entry point for workflow execution"
+    description: ClassVar[str] = "Begin a run and send the greeting, or the workflow's input values, to the next step."
     category: ClassVar[str] = NodeCategory.FLOW
 
     input_ports: ClassVar[List[str]] = []

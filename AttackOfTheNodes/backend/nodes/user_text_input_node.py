@@ -12,7 +12,7 @@ class UserTextInputNode(Node):
 
     node_type: ClassVar[str] = "user_text_input_node"
     display_name: ClassVar[str] = "User Text Input"
-    description: ClassVar[str] = "Prompts the user for text during execution"
+    description: ClassVar[str] = "Pause the run, ask a person for text, and send their answer to the next step."
     category: ClassVar[str] = NodeCategory.IO
     input_ports: ClassVar[List[str]] = ["input"]
     output_ports: ClassVar[List[str]] = ["default"]

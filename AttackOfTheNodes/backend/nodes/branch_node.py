@@ -18,7 +18,7 @@ class BranchNode(Node):
 
     node_type: ClassVar[str] = "branch_node"
     display_name: ClassVar[str] = "Parallel Branch"
-    description: ClassVar[str] = "Duplicates input across parallel branch paths"
+    description: ClassVar[str] = "Run the same input down 2 to 64 parallel paths at the same time."
     category: ClassVar[str] = NodeCategory.FLOW
 
     input_ports: ClassVar[List[str]] = ["input"]

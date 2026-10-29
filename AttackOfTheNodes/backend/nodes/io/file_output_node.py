@@ -49,7 +49,7 @@ class FileOutputNode(Node):
     node_type: ClassVar[str] = 'file_output_node'
     display_name: ClassVar[str] = 'File Write'
     default_alias: ClassVar[str] = 'File Write'
-    description: ClassVar[str] = 'Write content to a file and emit a typed file reference'
+    description: ClassVar[str] = 'Write text, or Base64-decoded bytes, to a file and pass on a file reference holding the actual saved path.'
     category: ClassVar[str] = NodeCategory.IO
     primary_family: ClassVar[str] = 'Outputs'
     tags: ClassVar[List[str]] = ['File I/O', 'Runtime Resource']

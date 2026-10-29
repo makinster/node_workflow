@@ -19,6 +19,12 @@ aotn_node_helper/
 
 ## Before generating
 
+A generated node is not ready to register until it has a reviewed record in
+`backend/node_metadata.py` ([Node metadata](integrations/NODE_METADATA.md)),
+with an independent verifier and the review manifest entry. The spec's
+`description` must equal that record's `purpose`. Regeneration never fills or
+replaces the central record.
+
 Generation writes the entire node class and generated test files. `--force`
 allows replacement of an existing node; it does **not** preserve `execute()`,
 custom `resolve_output_ports` / `describe_output_ports` hooks, or edited tests.

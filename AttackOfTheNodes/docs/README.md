@@ -25,6 +25,7 @@ with templates, measurements and a small delivery test set.
 | Ask one hosted question | [Hosted question contract](integrations/ASK_CLAUDE.md) | `backend/integrations/claude.py`, `tests/test_ask_claude*.py`; mocked SDK only |
 | Ask an installed local model | [Local model contract](integrations/LOCAL_MODEL.md) | `backend/integrations/local_model.py`, `tests/test_local_model*.py` |
 | Supply node contracts / check draft specs | [Meta nodes](integrations/META_NODES.md) | `backend/node_catalogue.py`, `backend/meta_workflow.py`, `tests/test_meta_nodes.py` |
+| Describe what a node is for (purpose, effects, needs) | [Node metadata](integrations/NODE_METADATA.md) | `backend/node_metadata.py`, `backend/node_metadata_review.json`, `tests/test_node_metadata.py` |
 | Connect local MCP clients | [MCP setup and tools](integrations/MCP.md) | `aotn_mcp/`, `tests/test_mcp.py`; local stdio, explicit data root |
 | Declare workflow inputs/results or pass run inputs | [Workflow contracts](WORKFLOW_AUTHORING.md#contracts-inputs-results-and-callable-workflows) | `backend/contracts.py`, `tests/test_contracts.py` |
 | Add/change a node | [Node Standards](NODE_STANDARDS.md), then [Node Helper](NODE_HELPER.md) | `backend/nodes/`, helper safety and commands in Node Helper |

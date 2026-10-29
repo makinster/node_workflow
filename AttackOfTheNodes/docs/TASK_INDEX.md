@@ -11,3 +11,7 @@ records every input port, five shared fixes and both installed-model pickers.
 
 [Meta nodes](integrations/META_NODES.md) covers Node catalogue, Check workflow
 spec, check-only guarantees and the remaining approval/build gaps.
+
+[Node metadata](integrations/NODE_METADATA.md) covers record v1 (purpose,
+use when, not for, effects, needs, cost/time), the migration ledger and the
+review manifest. Adding or changing a node type means updating its record.
