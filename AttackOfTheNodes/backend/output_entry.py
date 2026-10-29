@@ -21,3 +21,8 @@ class OutputLogEntry(str):
         obj.node_id = node_id
         obj.timestamp = timestamp or datetime.now(timezone.utc).isoformat()
         return obj
+
+
+def text_output_prefix(label: str) -> str:
+    """Blank/whitespace-only labels are bare; preserve nonblank labels verbatim."""
+    return f"[{label}] " if label.strip() else ""

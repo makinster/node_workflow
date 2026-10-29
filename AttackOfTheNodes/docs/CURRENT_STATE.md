@@ -1,9 +1,10 @@
 # Current State
 
-Snapshot checked **2026-10-28**, against fetched `origin/main` `40cba09`
-after #141 merged. Display contracts and trial framing rules are on
-`codex/display-contracts-trial-rules`. No real provider calls; only saved trial
-evidence was read. Earlier entries retain their dated scope.
+Snapshot checked **2026-10-29**, against fetched `origin/main` `91b137c`
+after #142 merged. Bare Text Output and target behavior scoring are on
+`codex/bare-text-output-behavior`. No real provider calls or Secrets access.
+Earlier entries retain their dated scope; blank-label behavior below supersedes
+the October 28 contract description.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
@@ -13,6 +14,22 @@ Sonnet/Opus and document the 512-token minimum prefix. Per-model price tests
 and real-engine run summaries cover all three supported models. See the latest
 Session Log entry for verification: full `pytest -n auto` passes **3,234 tests
 in 35.63 s** after the review fixes.
+
+## Bare Text Output and target behavior scoring — 2026-10-29
+
+Empty/whitespace-only labels now produce bare text in logs, default payloads and
+legacy Vault writes. Set labels preserve their literal prefix. Preview and
+symbolic evaluation use the same prefix policy. Target behavior shares display
+framing rules with case scoring; emitted node identity separates End completion
+logs from user text. Exact/only display requests and saved bytes remain strict.
+Both requirements prompts forbid invented display exclusivity. End contracts
+identify normal completion framing. All 22 calibration pairs remain correct.
+
+Full suite **3,469 passed in 35.78 s**, including 20 new tests. Runtime source-menu
+audit hash updated after reviewing unchanged input semantics. No fixture or
+workflow JSON changes; no live trial rerun. Contracts: original **8,256/8,500**,
+v2 **10,363/50,000**, Compact Text **39,591**, JSON **61,618** (64,000 cap).
+Brief **7,634 / 10,603** unchanged. All caps unchanged.
 
 ## Display contracts and framing rules — 2026-10-28
 

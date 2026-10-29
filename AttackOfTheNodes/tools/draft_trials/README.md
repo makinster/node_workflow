@@ -111,9 +111,13 @@ A separate library is **not** a filesystem sandbox. Only passing targets run,
 using the saved workflow returned by `build_workflow`. All required variants
 reuse one generated draft; they restore synthetic files, preserve original
 sentinels byte-for-byte and check unexpected files, raw saved bytes, returned
-paths, prompt count, output bodies and branch traces. OutputManager's known
-`[label] ` wrapper is removed exactly once; bracketed user data survives. End
-noise is recorded separately. The missing-file case is a distinct required
+paths, prompt count, output bodies and branch traces. Target runs use the same
+whole-value display-framing matcher as case rules; exactly/only display clauses
+remain strict. Each run artifact stores `output_records` with text and emitting
+spec handle. The harness classifies output by that handle and removes exactly
+that Text Output node's nonblank label prefix; bare bracketed user data survives.
+Only actual End-node logs count as completion noise, recorded separately.
+Saved file bytes and preserved sentinels remain strict. The missing-file case is a distinct required
 failure fixture, not a warning waiver for generated workflows.
 
 ## Artifacts
@@ -135,7 +139,7 @@ The CLI prints the exact report path. All paths below are relative to the new
   that fail structurally include its error code and bounded problem details.
   Budget stops retain completed calibration rows.
 - `artifacts/contracts.json`: complete text, length, hash and exact returned
-  inventory from every static Compact query. Current palette text: 10,275 chars
+  inventory from every static Compact query. Current palette text: 10,363 chars
   (before display-framing clarification: 9,928),
   comfortably below the 50,000-char planning cap. No entry is clipped.
 - `cases/<id>/frozen-case.json`, `trial-designer.json`, `designer-run.json`,
@@ -266,3 +270,11 @@ The saved case 5 analysis in run 000006 asked unique filename versus no write.
 The requirements prompt's former “Offer” default wording allowed that needless
 question; it now applies the default and records it in assumptions. No request
 or fixture was changed, and model behavior has not been retested with live calls.
+
+### Empty-label runtime change (2026-10-29)
+
+Empty or whitespace-only Text Output labels now emit/log bare formatted text.
+Nonblank labels retain all their characters and add `[label] `. The symbolic
+case evaluator and target-run extraction share the runtime prefix helper.
+No frozen calibration fixture changed; the nonblank label in
+`label_in_saved_content` still corrupts raw saved content and fails.

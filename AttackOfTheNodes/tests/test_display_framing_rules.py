@@ -36,8 +36,8 @@ def test_exact_display_stays_exact(word, tmp_path):
 async def test_empty_label_and_start_payload():
     node, ctx, memory, done, errors = node_runner('text_output_node', {'label': ''}, 'Ready')
     await node.execute(ctx)
-    assert not errors and done[0]['data'] == {'default': '[] Ready'}
-    assert str(memory.read_persistent('output_log')[0]) == '[] Ready'
+    assert not errors and done[0]['data'] == {'default': 'Ready'}
+    assert str(memory.read_persistent('output_log')[0]) == 'Ready'
     for config, expected in [({}, 'Workflow started'), ({'greeting': '  Monday Update  ', 'rows': []}, '  Monday Update  ')]:
         node, ctx, _, done, errors = node_runner('start_node', config)
         await node.execute(ctx)
@@ -62,7 +62,7 @@ def test_case_five_ready_default_instruction():
 @pytest.mark.asyncio
 async def test_clarified_contract_wording():
     text, _ = await runner.contract_inventory()
-    for wording in ['Empty label still emits "[] "+text', 'with rows absent/empty, greeting string verbatim', 'Nonempty rows replace greeting', 'never the comparison boolean']:
+    for wording in ['empty or whitespace-only label = bare formatted text', 'with rows absent/empty, greeting string verbatim', 'Nonempty rows replace greeting', 'never the comparison boolean']:
         assert wording in text
 
 

@@ -1,10 +1,52 @@
 # AttackOfTheNodes Session Log
 
-This log keeps roughly the last two weeks: entries dated October 4–28, 2026
+This log keeps roughly the last two weeks: entries dated October 4–29, 2026
 (the earliest existing entry is October 6). Every October 18 entry is retained.
 Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.md).
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
+
+## 2026-10-29 — Bare Text Output and target behavior scoring (Important)
+
+Clean worktree `/home/makin/src/nw-bare-text`, branch
+`codex/bare-text-output-behavior`, fetched main base `91b137c`.
+Owner workspace edits preserved. Owner-approved runtime decision: empty and
+whitespace-only Text Output labels now log/emit bare formatted text; nonblank
+labels, including their surrounding spaces, retain `[label] ` verbatim.
+The same prefix helper serves execution, configuration preview, symbolic
+payload evaluation and target-output extraction. Legacy Vault writes agree.
+
+Target behavior uses the same display matcher as case rules. Run artifacts
+retain output text plus emitting spec handles, distinguishing actual End logs
+from user text beginning `[END]` and from Text Output labelled `END`. Only
+actual End logs are completion noise. Exactly/only display bodies and saved
+file bytes remain strict. Both analysis/resolve prompts prohibit invented
+exactly/nothing-else/only acceptance; the End contract explains normal framing.
+
+Repository-use audit: runtime `backend/nodes/text_output_node.py`, preview
+`frontend/screens/node_config.py`, symbolic evaluator `rules.py`, target extractor
+`runner.py`, execution metadata, node/helper label help and live docs updated.
+Existing literal `[] Ready` and wording assertions in
+`test_display_framing_rules.py` now expect bare text; preview assertions in
+`test_reported_payload_routing.py` cover both blank forms; original contract
+length in `test_draft_workflow_spec.py` updated. New `test_bare_text_output.py`
+covers source/payload/log/Vault parity, framed paths in cases 5/10, strict saved
+bytes, bracketed content, End identity and serialized emitter evidence.
+The source-menu audit's Text Output execute hash was re-audited and updated;
+input-source behavior is unchanged. No tracked workflow JSON uses a blank
+Text Output label. Historical screenshots/log entries retain their dated facts;
+no frozen cases or calibration fixtures changed.
+
+Full mock-provider `pytest -n auto`: **3,469 passed in 35.78 s**. All 22 existing
+calibration pairs retain GOOD-pass/BAD-fail verdicts. Initial regressions failed
+on the base; the first full run had 3,464 passes and the expected stale audit
+hash failure, corrected after re-audit and additional Vault coverage. No real
+provider calls or Secrets access. Whitespace check passes.
+
+Contract characters before → after: original **8,168 → 8,256** (8,500 cap),
+v2 **10,275 → 10,363** (50,000), Compact Text **39,503 → 39,591** and JSON
+**61,532 → 61,618** (64,000). Brief unchanged **7,634 / 10,603**. No cap raised.
+Live judge/requirements response improvements remain unverified.
 
 ## 2026-10-28 — Display contracts and trial framing rules (Important)
 

@@ -323,3 +323,14 @@ to 8,500 for 8,168 characters; v2 10,275 stays below 50,000. Trial oracle v4
 permits display framing without changing saved-content provenance or calibration
 fixtures. Requirements now apply safe copy defaults. Full mock-provider suite:
 3,449 passed; see Session Log for case 5 evidence and size deltas.
+
+### Bare Text Output and behavior parity — 2026-10-29 (complete)
+
+Owner-approved runtime change: empty/whitespace-only labels produce bare text;
+set labels remain verbatim. Shared prefix helper covers runtime, UI preview and
+trial evaluation. Target behavior and case rules share display-framing matching;
+only End-originated logs count as completion framing. Both requirements prompts
+prohibit invented exact/only acceptance. Reviewed source-menu runtime hash,
+updated contracts/help and documented affected uses. Full mock-provider suite:
+3,469 passed; all 22 calibration pairs unchanged. Contracts fit existing caps;
+see Session Log for sizes and compatibility details.
