@@ -165,7 +165,7 @@ def test_each_conditional_route_requires_its_own_work(tmp_path, number):
     name = (
         "conditional_work_before_choice"
         if number == 7
-        else "uppercase_before_empty_choice"
+        else "empty_choice_still_saves"
     )
     pair = next(pair for pair in calibration_pairs() if pair["id"] == name)
     import json

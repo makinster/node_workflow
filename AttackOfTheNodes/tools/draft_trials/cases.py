@@ -325,7 +325,7 @@ def good_draft(number, root="ROOT"):
 
     node("start", "start", greeting="  Monday Update  " if number == 2 else "")
     node("end", "end", record_line=False)
-    node("show", "text_output", label="Result", template="{input}")
+    node("show", "text_output", label="", template="{input}")
     source = "start"
     if number in (3, 6, 7, 8):
         node(
@@ -379,13 +379,13 @@ def good_draft(number, root="ROOT"):
         edge(source, "if")
         if number == 7:
             n["show"]["config"]["template"] = "Continuing"
-            node("stop", "text_output", template="Stopping")
+            node("stop", "text_output", label="", template="Stopping")
             edge("if", "show", "true")
             edge("if", "stop", "false")
             edge("stop", "end")
             source = None
         else:
-            node("empty", "text_output", template="Empty note")
+            node("empty", "text_output", label="", template="Empty note")
             edge("if", "empty", "true")
             edge("empty", "end")
             node("upper", "text_transform", operation="uppercase")
@@ -421,7 +421,7 @@ def good_draft(number, root="ROOT"):
         edge(source, "parallel")
         node("upper", "text_transform", operation="uppercase")
         node("lower", "text_transform", operation="lowercase")
-        node("low_show", "text_output", template="{input}")
+        node("low_show", "text_output", label="", template="{input}")
         edge("parallel", "upper", "path_a")
         edge("parallel", "lower", "path_b")
         edge("upper", "show")
@@ -645,17 +645,12 @@ def calibration_pairs():
 
     pair("conditional_work_before_choice", 7, conditional_before_choice)
 
-    def uppercase_before_choice(spec):
+    def empty_choice_saves(spec):
+        # The empty route shows its message, then still uppercases and saves it.
         spec["connections"] = [
-            edge
-            for edge in spec["connections"]
-            if edge["from"] not in ("strip.default", "if.false", "upper.default")
+            edge for edge in spec["connections"] if edge["from"] != "empty.default"
         ]
-        spec["connections"] += [
-            {"from": "strip.default", "to": "upper.input"},
-            {"from": "upper.default", "to": "if.input"},
-            {"from": "if.false", "to": "write.content"},
-        ]
+        spec["connections"].append({"from": "empty.default", "to": "upper.input"})
 
-    pair("uppercase_before_empty_choice", 9, uppercase_before_choice)
+    pair("empty_choice_still_saves", 9, empty_choice_saves)
     return pairs

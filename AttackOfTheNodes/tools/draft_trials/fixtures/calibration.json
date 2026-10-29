@@ -21,7 +21,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "Ready"
           }
         }
@@ -56,7 +56,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "{input"
           }
         }
@@ -95,7 +95,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "{input}"
           }
         },
@@ -150,7 +150,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "{input}"
           }
         },
@@ -209,7 +209,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "{input}"
           }
         },
@@ -264,7 +264,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "{input}"
           }
         },
@@ -323,7 +323,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "{input[path]}"
           }
         },
@@ -389,7 +389,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "{input[path]}"
           }
         },
@@ -459,7 +459,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "{input[path]}"
           }
         },
@@ -525,7 +525,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "{input[path]}"
           }
         },
@@ -595,7 +595,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "{input[path]}"
           }
         },
@@ -661,7 +661,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "{input[path]}"
           }
         },
@@ -731,7 +731,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "Continuing"
           }
         },
@@ -752,6 +752,7 @@
         "stop": {
           "type": "text_output_node",
           "config": {
+            "label": "",
             "template": "Stopping"
           }
         }
@@ -802,7 +803,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "Continuing"
           }
         },
@@ -823,6 +824,7 @@
         "stop": {
           "type": "text_output_node",
           "config": {
+            "label": "",
             "template": "Stopping"
           }
         }
@@ -877,7 +879,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "{input}"
           }
         },
@@ -908,6 +910,7 @@
         "low_show": {
           "type": "text_output_node",
           "config": {
+            "label": "",
             "template": "{input}"
           }
         }
@@ -966,7 +969,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "{input}"
           }
         },
@@ -991,6 +994,7 @@
         "low_show": {
           "type": "text_output_node",
           "config": {
+            "label": "",
             "template": "{input}"
           }
         }
@@ -1049,7 +1053,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "{input[path]}"
           }
         },
@@ -1135,7 +1139,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "{input[path]}"
           }
         },
@@ -1225,7 +1229,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "Ready"
           }
         }
@@ -1260,7 +1264,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "Wrong"
           }
         },
@@ -1305,7 +1309,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "{input[path]}"
           }
         },
@@ -1379,7 +1383,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "{{input}}"
           }
         },
@@ -1457,7 +1461,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "{input[path]}"
           }
         },
@@ -1531,7 +1535,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "{input}"
           }
         },
@@ -1609,7 +1613,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "{input[path]}"
           }
         },
@@ -1675,7 +1679,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "{input[path]}"
           }
         },
@@ -1746,7 +1750,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "{input[path]}"
           }
         },
@@ -1812,7 +1816,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "{input[path]}"
           }
         },
@@ -1892,7 +1896,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "{input[path]}"
           }
         },
@@ -1921,6 +1925,7 @@
         "empty": {
           "type": "text_output_node",
           "config": {
+            "label": "",
             "template": "Empty note"
           }
         },
@@ -2004,7 +2009,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "{input[path]}"
           }
         },
@@ -2033,6 +2038,7 @@
         "empty": {
           "type": "text_output_node",
           "config": {
+            "label": "",
             "template": "Empty note"
           }
         },
@@ -2120,7 +2126,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "{input}"
           }
         },
@@ -2175,7 +2181,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "{input}monday update"
           }
         },
@@ -2234,7 +2240,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "{input}"
           }
         },
@@ -2281,7 +2287,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "{input[0]}udget: €20\nBring notes.\n"
           }
         },
@@ -2332,7 +2338,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "{input[path]}"
           }
         },
@@ -2398,7 +2404,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "{input[path]}"
           }
         },
@@ -2478,7 +2484,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "{input[path]}"
           }
         },
@@ -2564,7 +2570,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "{input[path]}"
           }
         },
@@ -2664,7 +2670,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "{input}"
           }
         },
@@ -2695,6 +2701,7 @@
         "low_show": {
           "type": "text_output_node",
           "config": {
+            "label": "",
             "template": "{input}"
           }
         }
@@ -2753,7 +2760,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "{input}"
           }
         },
@@ -2791,6 +2798,7 @@
         "low_show": {
           "type": "text_output_node",
           "config": {
+            "label": "",
             "template": "{input}"
           }
         },
@@ -2863,7 +2871,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "Continuing"
           }
         },
@@ -2884,6 +2892,7 @@
         "stop": {
           "type": "text_output_node",
           "config": {
+            "label": "",
             "template": "Stopping"
           }
         }
@@ -2934,7 +2943,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "Continuing"
           }
         },
@@ -2962,6 +2971,7 @@
         "stop": {
           "type": "text_output_node",
           "config": {
+            "label": "",
             "template": "Stopping"
           }
         },
@@ -3005,7 +3015,7 @@
     }
   },
   {
-    "id": "uppercase_before_empty_choice",
+    "id": "empty_choice_still_saves",
     "case": 9,
     "good": {
       "format": "aotn-workflow/1",
@@ -3026,7 +3036,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "{input[path]}"
           }
         },
@@ -3055,6 +3065,7 @@
         "empty": {
           "type": "text_output_node",
           "config": {
+            "label": "",
             "template": "Empty note"
           }
         },
@@ -3138,7 +3149,7 @@
         "show": {
           "type": "text_output_node",
           "config": {
-            "label": "Result",
+            "label": "",
             "template": "{input[path]}"
           }
         },
@@ -3167,6 +3178,7 @@
         "empty": {
           "type": "text_output_node",
           "config": {
+            "label": "",
             "template": "Empty note"
           }
         },
@@ -3202,12 +3214,20 @@
           "to": "strip.input"
         },
         {
+          "from": "strip.default",
+          "to": "if.input"
+        },
+        {
           "from": "if.true",
           "to": "empty.input"
         },
         {
-          "from": "empty.default",
-          "to": "end.input"
+          "from": "if.false",
+          "to": "upper.input"
+        },
+        {
+          "from": "upper.default",
+          "to": "write.content"
         },
         {
           "from": "write.default",
@@ -3218,16 +3238,8 @@
           "to": "end.input"
         },
         {
-          "from": "strip.default",
+          "from": "empty.default",
           "to": "upper.input"
-        },
-        {
-          "from": "upper.default",
-          "to": "if.input"
-        },
-        {
-          "from": "if.false",
-          "to": "write.content"
         }
       ]
     }
