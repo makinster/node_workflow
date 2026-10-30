@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "scenario_version": 3,
+  "scenario_version": 4,
   "base_revision": "8ee108b4e3e932790c94ad90c5bc419cee5f75e2",
   "sources": {
     "backend/authoring.py": "8b76e1d3e22b984d9956c863918a4c1f8baf9d3fc6a672b037cdad9e3829cdfc",
@@ -13,7 +13,7 @@
     "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
     "backend/node_catalogue.py": "45c692dcf0b09ea8788559ee755f283de5233cdf6727b6eea6e810a577e5f32e",
     "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
-    "backend/node_metadata.py": "f6c41769eca7414f434e344f477419e4a841476e3e3be9e9e458f57d54b5ac54",
+    "backend/node_metadata.py": "71884eaa1477d4c142fd25ec65bbe31699e0f8df61d187510d2fc2dc5bfc8e95",
     "backend/nodes/ai/ask_claude_node.py": "a2e3d19151aa02688f239c65d3a6889ea9ea3e396532c2a466a485f42d268b65",
     "backend/nodes/ai/ask_local_model_node.py": "906a74138630732b7e18ade131c245dd26eacc12cce0497d038998a0120cd363",
     "backend/nodes/ai/hermes_ask_node.py": "519833d8e42e2c52d203f6a02ba75409cedd11ce8f1fa530b7fa9f6992e25120",
@@ -73,7 +73,7 @@
     "backend/nodes/text_output_node.py": "0382e1f748a203be7ee9f30c7c48ccaf2e9a8a0725192d80d639669238407054",
     "backend/nodes/user_text_input_node.py": "3289cbec6af2f679e92c15da27c9b05abd9924c48c6e4926c07669419e6b3b23",
     "backend/nodes/wait_until_node.py": "791ffd2b2da433d5af704b57aaf7a0d8735d53e92f2e6f0737caa04c10d3dc58",
-    "backend/palette_selection.py": "2ea7b17543dce6871c51c7f3cb6ba84fbfb059b9590ef1fdfa8ed16d8d30e9a9",
+    "backend/palette_selection.py": "e682119423684facc795107ae289470810a23a4192152612d1ceb663d2102470",
     "backend/port_types.py": "fba69be8d89a713cfc1e98870544420cd8809e973d0b1079eca397dde17d422a",
     "backend/reply_schema.py": "4873fffbf0f34b8f71988686b300bc9ebdc75213babf380dcab10c52d771d779",
     "backend/reply_shape.py": "f10b3e581338160414fb2d27a09a2a35c576f5d28f4a353f9f85a47ec17bb72f",
@@ -83,16 +83,16 @@
     "backend/system_access.py": "49296ed42c4288f02cddf54980f94be9218249c4bd7360810ec237d563630c6f",
     "backend/text_lines.py": "62fcd1e24ef3101b3f3c3db2bb0200f3e7448173c4a22d34c2449e6f70bd1fe7",
     "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
-    "tests/node_claim_scenarios.py": "d7bb8db3854db05b92dda412f385dffb1dae79bd442f45d99a15f06bb105cdff",
+    "tests/node_claim_scenarios.py": "a350677a26e5cf99fa98ce2b764e16f57e6089a65ce106a055cf8a3076c40dc7",
     "tests/test_helper_family_admission.py": "a1987e71aa6cf32449745832ca84ca8165a4cabd2ec37c2fea33a68b12f53a47",
-    "tests/test_helper_family_followup.py": "d2c376175c50bb2456136d26066a0dbd8089d9cf96d4153d97f8c6225981b730",
-    "tests/test_node_claims.py": "ede58c413fae07cddca401d7e2c0ab97ab877ff33d1efeb453c114258b532a3c",
+    "tests/test_helper_family_followup.py": "e3eb3721aa7ce63a4c501c699abefda9e613caef4316f9016ba7970873e1d010",
+    "tests/test_node_claims.py": "f5fc8e26e54881a5b0bf113f2ef04baf56657e422c3a483b0e1854442089a240",
     "tests/test_node_metadata_behavior.py": "e2b58bd0c0c66b603f0226fc688ca1dcdcfcb2981da5294fb3c741d22dda87e5",
     "tools/claims_compatibility.py": "7dc67f171fb1155bfbec8afcd8b1d0ff10a7e5adadf731f12b01d6cf9755246a",
     "tools/draft_trials/admission.py": "7329aa71ab0de1380a8d8a0f0cc064ea0cc2da1c0a9dc8880ec85d25d54a4ca4",
     "tools/draft_trials/case_set_three.py": "4b81c19bc128c9368442b84c66075b0626723b242ea1a9bc6eccb4571e60f390",
     "tools/draft_trials/fixtures/regressions/run_000035_case_3.json": "7d8eb1f463137aaf06365372225c34f247069cd5c63232bc4006023ef7483042",
-    "tools/draft_trials/reply_schemas.py": "09eab615285fe488b05d728bcb3e8c1fe75da7264aa35345685003ad6f645f1c",
+    "tools/draft_trials/reply_schemas.py": "c4918a851cccb058086022345ba64bd8cba0459b37785ad1f563f4de71e71ba7",
     "tools/draft_trials/rules_set_three.py": "a7e9796ed5c64f71c2220d1118d5ad440d0825383a58bf7ef84c33d1f666e35d",
     "tools/draft_trials/structure_rules.py": "51d0b5223e464bca8584be849a7f0a4e7dbd915e42716e937a13728df43f7a95"
   },
@@ -2739,7 +2739,7 @@
       }
     }
   ],
-  "palette_scenario_count": 150,
+  "palette_scenario_count": 152,
   "engine_graph_count": 33,
   "engine_runs_per_graph": 2,
   "interpretation": "Node claim statuses were executed for this receipt. Palette value and engine assertions run as separate parametrized tests; no live service quality or admission is claimed."

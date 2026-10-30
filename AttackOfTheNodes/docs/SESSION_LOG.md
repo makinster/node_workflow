@@ -6,6 +6,34 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-30 — PR #158 follow-up 2: layout and constraints (Important)
+
+Same branch `codex/helper-family`, following `cde189b`. Owner's paid results
+were 10/10, 8/10 and 2/4, with perfect calibration. Documented Context Pack's
+literal LF header, ordered labelled sections, every-line `| ` framing, `▀`
+mask, empty/omitted/shortened JSON markers, and exact shortening footer forms.
+Independent byte expectations cover multiline/trailing-empty-line masking and
+44-character prefix removal. Re-reviewed the expanded record and Check reply's
+shared selection dependency; refreshed the version-4 claims receipt (152 value
+scenarios, unchanged 234 passing / 179 skipped generic claims).
+
+Requirements gain optional `kind: action | constraint` (omitted means action),
+before acceptance in generated schemas. Both analysis prompts distinguish
+prohibitions/limits from action steps. Ready selections cover actions only;
+constraints stay in frozen requirements for drafter/judge and require judge
+coverage. Tests exercise constraint-only, omitted/action uncovered, invalid
+kinds, empty ready analysis, both admission scopes and a mock end-to-end case
+with a read-only constraint plus a forbidden-write mutation. Schemas regenerated
+with the documented command. Sets 1/2 keep exactly twelve types/seventeen roles.
+
+Full `pytest -n auto`: **4,705 passed, 187 skipped, zero xfails in 42.67 s**.
+All mock sets 1–3 and thirty calibration rule pairs pass. Full Brief stays
+15,794; Compact 57,481 → 57,781 / 64,000. Admitted Brief/Compact 8,484 / 26,444
+(Compact previously 26,144) / 50,000; fixed twelve-type contracts stay 22,345.
+Selected snapshots: 8,500 / 11,929 / 11,135 / 9,939, with 100,000 context cap.
+No claim/code mismatch or uncertainty requiring owner choice. No real API calls,
+helper execute changes, judge prompt changes or edits under workflows/.
+
 ## 2026-10-30 — PR #158 paid-trial follow-up (Important)
 
 Same root `/home/makin/src/nw-helper-family`, branch `codex/helper-family`,

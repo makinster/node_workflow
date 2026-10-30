@@ -21,6 +21,13 @@ PR #158 follow-up restores per-node catalogue explanations, repairs unambiguous
 candidate roles and evaluates ordinary Conditional guards in set 3. Compositions
 outside the local probe report `needs_review`; the frozen suites remain strict.
 No further family is admitted by this change.
+Follow-up 2 documents Context Pack's exact layout and pins its UTF-8 bytes in
+claims scenarios. Optional requirement kind distinguishes actions from constraints;
+only actions require capability roles, while constraints still reach draft/judge
+and case rules. Regenerated schemas retain the exact frozen twelve-type baseline.
+The record/dependency attestations and version-4 claims receipt are refreshed.
+Full suite: 4,705 passed / 187 skipped; all three mock sets pass.
+
 
 For the checked implementation baseline, open PRs and owner gates, see
 [Current State](CURRENT_STATE.md). Phase rows below retain completion details.

@@ -369,6 +369,7 @@ async def test_reviewed_palette_scenarios(row,tmp_path,boundaries):
     if row.get('vault'):
         for key, value in row['vault'].items(): assert run.memory.read_persistent(key) == value
     if 'output' in row: assert output(run)==expand(row['output'],tokens)
+    if 'output_utf8' in row: assert output(run)['default'].encode('utf-8') == row['output_utf8']
     if 'log' in row: assert [str(x) for x in run.memory.read_persistent('output_log',[]) ]==row['log']
     if 'read' in row: assert row['read'] in run.memory.reads
     if row.get('identity'):

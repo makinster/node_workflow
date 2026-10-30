@@ -367,7 +367,7 @@
         "backend/port_types.py": "fba69be8d89a713cfc1e98870544420cd8809e973d0b1079eca397dde17d422a",
         "backend/reply_shape.py": "f10b3e581338160414fb2d27a09a2a35c576f5d28f4a353f9f85a47ec17bb72f",
         "backend/reply_schema.py": "4873fffbf0f34b8f71988686b300bc9ebdc75213babf380dcab10c52d771d779",
-        "backend/palette_selection.py": "2ea7b17543dce6871c51c7f3cb6ba84fbfb059b9590ef1fdfa8ed16d8d30e9a9"
+        "backend/palette_selection.py": "e682119423684facc795107ae289470810a23a4192152612d1ceb663d2102470"
       },
       "tests": [
         "tests/test_node_claims.py::test_reviewed_palette_scenarios",
@@ -375,13 +375,16 @@
         "tests/test_node_claims.py::test_palette_real_engine_delivery",
         "tests/test_small_wins.py::test_all_reply_types_and_sources",
         "tests/test_helper_family_followup.py::test_candidate_is_reassigned_to_its_unique_declared_role",
-        "tests/test_helper_family_followup.py::test_ambiguous_candidate_role_still_errors"
+        "tests/test_helper_family_followup.py::test_ambiguous_candidate_role_still_errors",
+        "tests/test_helper_family_followup.py::test_only_constraints_are_exempt_from_role_coverage",
+        "tests/test_helper_family_followup.py::test_unknown_requirement_kind_is_rejected_by_schema_and_selection",
+        "tests/test_helper_family_followup.py::test_uncovered_constraint_reaches_draft_and_judge_and_remains_enforced"
       ],
       "content_sha256": "53fd3cf9f2a6f9b7beede148363cca8dbcdaf7bbd4a3491567c9e7e94d88b0bc",
       "author": "helper-family-record-author",
-      "verifier": "candidate-role-repair-source-recheck",
+      "verifier": "constraint-selection-source-and-schema-recheck",
       "reviewed": "2026-10-30",
-      "source_revision": "16a764c6869f8ceac7c646bde823281639bb4fb2"
+      "source_revision": "cde189b7e2950463341699dafe457b42b9f85daa"
     },
     "context_pack_node": {
       "sources": {
@@ -403,11 +406,11 @@
         "tests/test_context_pack.py::test_longest_first_tie_order_and_footer_cap",
         "tests/test_context_pack.py::test_review_known_secrets_redacted_before_json_and_vault"
       ],
-      "content_sha256": "51cdd80cec777f746849845e9f2724cb3b17e5aa58315aaf927cdb54cf2318fa",
+      "content_sha256": "238f20426ae87ba0d8b99fd2ef93e8bc0a5d51fece30cb798c9d6f1f00ebea5e",
       "author": "helper-family-record-author",
-      "verifier": "helper-family-source-and-scenario-recheck",
+      "verifier": "exact-layout-source-and-byte-scenario-recheck",
       "reviewed": "2026-10-30",
-      "source_revision": "8ee108b4e3e932790c94ad90c5bc419cee5f75e2"
+      "source_revision": "cde189b7e2950463341699dafe457b42b9f85daa"
     }
   }
 }

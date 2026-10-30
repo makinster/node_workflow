@@ -147,6 +147,9 @@ def validate_analysis(factory, analysis):
     if not isinstance(requirements, list) or any(not isinstance(r, dict) or not isinstance(r.get('id'), str) for r in requirements):
         raise NodeError('selection_invalid', 'Requirements need string IDs before candidate selection.')
     req_ids = {r['id'] for r in requirements}
+    if any(r.get('kind', 'action') not in ('action', 'constraint') for r in requirements):
+        raise NodeError('selection_invalid', 'Requirement kind must be action or constraint.')
+    action_ids = {r['id'] for r in requirements if r.get('kind', 'action') == 'action'}
     for row in candidates + roles:
         if (not isinstance(row, dict) or not isinstance(row.get('role'), str)
                 or not row['role'].strip() or len(row['role']) > 128
@@ -157,8 +160,8 @@ def validate_analysis(factory, analysis):
     role_names = [r['role'] for r in roles]
     if len(role_names) != len(set(role_names)) or any(c['role'] not in role_names for c in candidates):
         raise NodeError('selection_invalid', 'Candidate roles must name unique declared roles.')
-    if analysis.get('status') == 'ready' and (not roles or req_ids - {r for row in roles for r in row['requirement_ids']}):
-        raise NodeError('selection_invalid', 'Ready selection must cover every requirement with a role.')
+    if analysis.get('status') == 'ready' and (not req_ids or action_ids - {r for row in roles for r in row['requirement_ids']}):
+        raise NodeError('selection_invalid', 'Ready selection must cover every action requirement with a role.')
     return selection
 
 

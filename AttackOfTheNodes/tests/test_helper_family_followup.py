@@ -11,8 +11,102 @@ from backend import palette_selection as selection
 from tools.draft_trials import runner
 from tools.draft_trials.cases import case_record, fixture_variants, good_draft
 from tools.draft_trials.rules import check_rules
+from tools.draft_trials.admission import configure
+from tools.draft_trials.reply_schemas import analysis_schema
+from backend.reply_schema import check, provider_schema
 
 FIXTURE = Path(runner.__file__).parent/'fixtures/regressions/run_000035_case_3.json'
+
+
+@pytest.mark.parametrize('kind', ['action', None, 'constraint'])
+def test_only_constraints_are_exempt_from_role_coverage(kind):
+    value = runner.requirements(case_record(2, '/tmp/constraint-fixtures', 3))
+    value['selection'] = dict(candidates=[], roles=[])
+    if kind is not None:
+        value['requirements'][0]['kind'] = kind
+    original = deepcopy(value)
+    check(value, analysis_schema())
+    if kind == 'constraint':
+        assert selection.validate_analysis(NodeFactory(), value) == value['selection']
+        assert runner.valid_analysis(value)
+    else:
+        with pytest.raises(NodeError, match='cover every action requirement'):
+            selection.validate_analysis(NodeFactory(), value)
+        assert not runner.valid_analysis(value)
+    assert value == original
+
+
+@pytest.mark.parametrize('kind', ['prohibition', '', None, [], True])
+def test_unknown_requirement_kind_is_rejected_by_schema_and_selection(kind):
+    value = runner.requirements(case_record(2, '/tmp/constraint-fixtures', 3))
+    value['requirements'][0]['kind'] = kind
+    with pytest.raises(NodeError, match='schema'):
+        check(value, analysis_schema())
+    with pytest.raises(NodeError, match='Requirement kind'):
+        selection.validate_analysis(NodeFactory(), value)
+    assert not runner.valid_analysis(value)
+
+
+def test_requirement_kind_is_optional_before_acceptance_for_both_admissions():
+    spec = json.loads(runner.SPEC.read_text())
+    for admitted in (selection.ORIGINAL_PALETTE, selection.ADMITTED):
+        active = configure(deepcopy(spec), admitted)
+        for name in ('analysis', 'resolve', 'analysis_shape', 'resolved_shape'):
+            schema = active['nodes'][name]['config']['reply_schema']
+            for checked in (schema, provider_schema(schema)):
+                row = checked['properties']['requirements']['items']
+                fields = list(row['properties'])
+                assert fields.index('kind') + 1 == fields.index('acceptance')
+                assert row['properties']['kind'] == dict(type='string', enum=['action', 'constraint'], default='action')
+                assert 'kind' not in row['required']
+                assert set(row['required']) == set(fields) - {'kind'}
+            ids = schema['properties']['selection']['properties']['candidates']['items']['properties']['type_id']['enum']
+            assert ids == sorted(admitted)
+        for name in ('analysis_question', 'resolve_question'):
+            prompt = active['nodes'][name]['config']['template']
+            assert 'Prohibitions and limits are constraints, not steps.' in prompt
+            assert 'Cover every action requirement.' in prompt
+
+
+def test_ready_still_needs_a_requirement():
+    value = dict(status='ready', requirements=[], selection=dict(candidates=[], roles=[]))
+    with pytest.raises(NodeError, match='cover every action requirement'):
+        selection.validate_analysis(NodeFactory(), value)
+
+
+@pytest.mark.asyncio
+async def test_uncovered_constraint_reaches_draft_and_judge_and_remains_enforced(tmp_path):
+    case = case_record(2, tmp_path/'trial/cases/2/fixtures', 3)
+    value = runner.requirements(case)
+    constraint = dict(id='r2', action='Do not write or change any file', source='fixture library',
+                      destination='unchanged files', order=2, kind='constraint', acceptance='No filesystem writes')
+    value['requirements'].append(constraint)
+    verdict = runner.meaning()
+    assert not runner.valid_judge(verdict, value)  # Constraints still need judge coverage.
+    verdict['coverage'].append(dict(requirement_id='r2', evidence='All nodes are read-only', met=True))
+    assert runner.valid_judge(verdict, value)
+    draft = good_draft(2, case['root'], 3)
+    report = await runner.run_case(2, tmp_path/'trial', tmp_path/'library', case_set=3,
+        replies=[value, draft, verdict])
+    assert report['result'] == 'pass', report
+    assert report['model_calls'] == dict(attempted=3, succeeded=3)
+    evidence = json.loads((tmp_path/'trial/cases/2/evidence.json').read_text())
+    assert json.loads(evidence['frozen_requirements'])['requirements'][-1] == constraint
+    calls = json.loads((tmp_path/'trial/cases/2/calls.json').read_text())
+    for call in calls[1:]:
+        assert constraint['action'] in json.dumps(call)
+        assert 'constraint' in json.dumps(call)
+    # Case rules still reject a write even when it targets the allowed fixture directory.
+    bad = deepcopy(draft)
+    bad['nodes']['write'] = dict(type='file_output_node', config=dict(file_path=str(Path(case['root'])/'extra.txt')))
+    for edge in bad['connections']:
+        if edge['from'] == 'show.default':
+            edge['to'] = 'write.content'
+    bad['connections'].append({'from': 'write.default', 'to': 'end.input'})
+    rules = check_rules(bad, case)
+    assert rules['result'] == 'fail'
+    assert any(row['result'] == 'fail' and 'Unrequested filesystem write' in str(row['evidence'])
+               for row in rules['rules'])
 
 
 def recorded_draft(root):

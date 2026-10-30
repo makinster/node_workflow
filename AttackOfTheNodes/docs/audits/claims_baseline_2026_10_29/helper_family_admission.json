@@ -6,9 +6,9 @@
   },
   "after": {
     "Brief": 15794,
-    "Compact": 57481,
+    "Compact": 57781,
     "admitted_Brief": 8484,
-    "admitted_Compact": 26144,
+    "admitted_Compact": 26444,
     "baseline_contracts": 22345
   },
   "admitted_type_ids": [
@@ -95,8 +95,8 @@
     },
     {
       "case": 4,
-      "total_characters": 9639,
-      "contracts_characters": 8562,
+      "total_characters": 9939,
+      "contracts_characters": 8862,
       "type_ids": [
         "context_pack_node",
         "end_node",
@@ -114,5 +114,23 @@
     "admitted_Compact": 25246,
     "baseline_contracts": 25309
   },
-  "per_node_descriptions_restored": true
+  "per_node_descriptions_restored": true,
+  "followup_2_previous_head": "cde189b7e2950463341699dafe457b42b9f85daa",
+  "followup_2_previous": {
+    "Brief": 15794,
+    "Compact": 57481,
+    "admitted_Brief": 8484,
+    "admitted_Compact": 26144,
+    "baseline_contracts": 22345
+  },
+  "requirement_kind": {
+    "optional": true,
+    "default": "action",
+    "enum": [
+      "action",
+      "constraint"
+    ],
+    "role_coverage": "action requirements only",
+    "judge_coverage": "all requirements"
+  }
 }

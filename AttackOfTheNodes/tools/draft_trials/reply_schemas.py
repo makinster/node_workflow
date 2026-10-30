@@ -27,11 +27,15 @@ def analysis_schema(admitted=ADMITTED):
     req_ids = array(text(minLength=1), minItems=1)
     reason = text(minLength=1, maxLength=512)
     role_row = dict(role=role, requirement_ids=req_ids, reason=reason)
+    requirement = obj(dict(id=text(minLength=1), action=text(minLength=1),
+        source=text(minLength=1), destination=text(minLength=1),
+        order=dict(anyOf=[dict(type='integer'), text(minLength=1)]),
+        kind=text(enum=['action', 'constraint'], default='action'), acceptance=text(minLength=1)))
+    # Older analyses omit kind; absence has the same action meaning everywhere.
+    requirement['required'].remove('kind')
     # Property order is generation order: reasoning first, the decision last.
     return obj(dict(
-        requirements=array(obj(dict(id=text(minLength=1), action=text(minLength=1),
-            source=text(minLength=1), destination=text(minLength=1),
-            order=dict(anyOf=[dict(type='integer'), text(minLength=1)]), acceptance=text(minLength=1)))),
+        requirements=array(requirement),
         questions=text(), assumptions=array(text()), reason=text(),
         selection=obj(dict(candidates=array(obj(dict(type_id=text(enum=sorted(admitted)), **role_row)), maxItems=MAX_IDS),
                            roles=array(obj(role_row), maxItems=32))),

@@ -222,3 +222,26 @@ All three mock sets and thirty calibration rule pairs retain expected results.
 The run 000035 case-3 regression uses the real node implementations plus a
 separate engine run; unsupported admitted compositions report `needs_review`.
 No real API calls or paid-judge quality claim.
+
+## PR #158 follow-up 2 — exact layout and constraint requirements
+
+Context Pack's expanded reviewed record describes the literal header, section
+and per-line framing, mask, empty/omitted/shortened JSON markers and both shortening
+footer forms. Two new value scenarios compare independent UTF-8 bytes, including
+multiline trailing blanks, a mocked secret and prefix-removal counts. Execute is
+unchanged. The record and Check reply selection dependency were re-reviewed and
+attested before regenerating `claims.json`: scenario version 4, 152 value scenarios,
+234 passing / 179 reasoned skipped generic claims, 33 twice-run engine graphs.
+
+Requirement `kind` is optional before `acceptance`, default action; constraints
+need no capability role but remain in draft/judge inputs and judge coverage.
+The full mock pipeline and forbidden-write mutation cover continued enforcement.
+Schemas were regenerated with `python -m tools.draft_trials.reply_schemas --write`.
+No admission change; sets 1/2 retain their exact twelve-type baseline.
+
+Latest full `pytest -n auto`: **4,705 passed, 187 skipped, zero xfails** (42.67 s).
+Mock sets 1–3 and all thirty calibration pairs pass. Full Brief/Compact:
+15,794 / 57,781 (cap 64,000); admitted: 8,484 / 26,444 (contract cap 50,000).
+The twelve-type bundle remains 22,345. Representative selected snapshots peak at
+11,929 with context cap 100,000. Judge prompt and workflows/ are unchanged.
+No API calls or paid-reviewer improvement claim; no claim/code mismatches found.

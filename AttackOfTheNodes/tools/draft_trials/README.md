@@ -446,12 +446,18 @@ then run through the real engine as a separate delivery check. Positive alternat
 Vault routing, direct JSON projection and renamed handles are tested.
 Mock reports are plumbing and behavior evidence, not live drafting quality.
 
+Requirements may include `kind: "action" | "constraint"` before `acceptance`;
+when omitted it means `action`. Prohibitions and limits are constraints, not
+steps, so only action requirements need shortlist role coverage. All requirements
+remain frozen for draft/judge, with judge coverage and case safety rules unchanged.
+This general schema field changes neither admission nor frozen sets 1/2.
+
 Schemas are regenerated with `python -m tools.draft_trials.reply_schemas --write`.
 The exact enum lists and contract sizes are recorded in
 [the admission receipt](../../docs/audits/claims_baseline_2026_10_29/helper_family_admission.json).
-The full catalogue is Brief 15,794 / Compact 57,481 characters after the PR #158
+The full catalogue is Brief 15,794 / Compact 57,781 characters after the PR #158
 follow-up restored per-node standard-flag and Configured descriptions. The
-sixteen-type view is 8,484 / 26,144. Caps remain unchanged: full catalogue 64,000,
+sixteen-type view is 8,484 / 26,444. Caps remain unchanged: full catalogue 64,000,
 selected contracts 50,000 and model context 100,000. Representative selection
 snapshots use 8,500–11,929 characters including their receipts. The full registry
 fits its hard cap; selected contracts retain the 20% planning headroom check.
