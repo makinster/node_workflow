@@ -40,9 +40,10 @@ def analysis_schema():
 
 def judge_schema():
     # A verdict written before its evidence anchors the review; keep it last.
+    # Remarks precede problems so non-blocking notes have their own place.
     return obj(dict(
         coverage=array(obj(dict(requirement_id=text(minLength=1), evidence=text(minLength=1), met=dict(type='boolean')))),
-        problems=array(text()), summary=text(),
+        remarks=array(text()), problems=array(text()), summary=text(),
         verdict=text(enum=['pass', 'fail', 'unsure'])))
 
 
