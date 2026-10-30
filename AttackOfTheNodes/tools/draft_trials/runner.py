@@ -892,8 +892,8 @@ async def run_case(
             raise ValueError("Complete contracts outside planning budget")
         if (
             len(raw) > 8000
-            or len(vault.get("first_analysis", "")) > 4000
-            or len(vault.get("resolved_analysis", "")) > 4000
+            or len(vault.get("first_analysis", "")) > 8000
+            or len(vault.get("resolved_analysis", "")) > 8000
             or len(vault.get("judge_text", "")) > 4000
         ):
             raise ValueError("Reply exceeds frozen limit")

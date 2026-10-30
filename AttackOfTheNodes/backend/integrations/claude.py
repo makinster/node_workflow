@@ -241,12 +241,15 @@ def _answer(message, elapsed, reply_json, known, ttl=None):
     model = _served_model(message)
     if not isinstance(model, str) or not re.fullmatch(r'[a-zA-Z0-9._-]{1,200}', model):
         raise failure('invalid_response')
+    # A finished but unusable answer was still billed: keep its usage.
+    def unusable(code):
+        return IncompleteReply(failure(code), _usage_details(message, elapsed, known, ttl))
     # Thinking and fallback marker blocks are not the answer.
     text = ''.join(block.text for block in message.content if block.type == 'text')
     if not text.strip():
-        raise failure('invalid_response')
+        raise unusable('invalid_response')
     if len(text) > MAX_ANSWER:
-        raise failure('response_too_large')
+        raise unusable('response_too_large')
     try:
         text.encode('utf-8')
         if reply_json:
@@ -257,9 +260,9 @@ def _answer(message, elapsed, reply_json, known, ttl=None):
             text = _mask_answer(text, known)
         text.encode('utf-8')
     except (ValueError, UnicodeError, RecursionError):
-        raise failure('invalid_response') from None
+        raise unusable('invalid_response') from None
     if len(text) > MAX_ANSWER:
-        raise failure('response_too_large')
+        raise unusable('response_too_large')
     return Answer(text, _usage_details(message, elapsed, known, ttl))
 
 

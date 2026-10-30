@@ -126,6 +126,8 @@ async def test_invalid_answer(sdk,text,code):
     sdk.result.content=[NS(type='text',text=text)]
     node,ctx,done,errors=make(reply_json=True);await node.execute(ctx)
     assert not done and errors[0].code==code
+    # The call finished and was billed, so its usage is still reported.
+    assert isinstance(errors[0],claude.IncompleteReply) and errors[0].usage['input_tokens']
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize('status,klass,code',[(401,anthropic.AuthenticationError,'auth_error'),(403,anthropic.PermissionDeniedError,'auth_error'),
