@@ -173,9 +173,9 @@ def test_existing_name_is_not_overwritten():
 
 
 @pytest.mark.parametrize("bad, message", [
-    ([], "must be a JSON object"),
-    ({"format": "x", "name": "n", "nodes": {"s": {"type": "start_node"}}}, "\"format\" must be"),
-    ({"format": authoring.FORMAT, "name": "", "nodes": {}}, "\"name\" must be"),
+    ([], "spec: expected a JSON object"),
+    ({"format": "x", "name": "n", "nodes": {"s": {"type": "start_node"}}}, "format: expected"),
+    ({"format": authoring.FORMAT, "name": "", "nodes": {}}, "name: expected"),
 ])
 def test_malformed_specs(bad, message):
     report = authoring.build_workflow(FACTORY, bad)
