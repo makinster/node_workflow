@@ -9,7 +9,7 @@
         "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09",
         "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
-        "backend/authoring.py": "1c43f1a4dd63c36b0ccb4939b8b47478f880b69ebfdaa34b976ccce11a4c37c4",
+        "backend/authoring.py": "db9837627a62a405c8cda26792329b8ec24ad1977b2857a5e52e933eccb0083a",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8"
       },
       "tests": [
@@ -35,7 +35,7 @@
         "backend/master_state.py": "dea6cc4c75f7414fd9bbb63bf037798907839cc2d41fafd4e4c09584b6112b07",
         "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
-        "backend/authoring.py": "1c43f1a4dd63c36b0ccb4939b8b47478f880b69ebfdaa34b976ccce11a4c37c4",
+        "backend/authoring.py": "db9837627a62a405c8cda26792329b8ec24ad1977b2857a5e52e933eccb0083a",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8"
       },
       "tests": [
@@ -59,7 +59,7 @@
         "backend/branch_health.py": "7a247eb016ec83dfd0ac99937783a3d36fa45fd5a425fc5d688cd612929273a1",
         "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
-        "backend/authoring.py": "1c43f1a4dd63c36b0ccb4939b8b47478f880b69ebfdaa34b976ccce11a4c37c4",
+        "backend/authoring.py": "db9837627a62a405c8cda26792329b8ec24ad1977b2857a5e52e933eccb0083a",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
         "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09"
       },
@@ -83,7 +83,7 @@
         "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09",
         "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
-        "backend/authoring.py": "1c43f1a4dd63c36b0ccb4939b8b47478f880b69ebfdaa34b976ccce11a4c37c4",
+        "backend/authoring.py": "db9837627a62a405c8cda26792329b8ec24ad1977b2857a5e52e933eccb0083a",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8"
       },
       "tests": [
@@ -107,7 +107,7 @@
         "backend/nodes/concat_node.py": "9be589fb6251d27b51ba4038c80dd3d4c25684d6c20eb8428e8ee8b9254dfc20",
         "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
-        "backend/authoring.py": "1c43f1a4dd63c36b0ccb4939b8b47478f880b69ebfdaa34b976ccce11a4c37c4",
+        "backend/authoring.py": "db9837627a62a405c8cda26792329b8ec24ad1977b2857a5e52e933eccb0083a",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8"
       },
       "tests": [
@@ -134,7 +134,7 @@
         "backend/file_refs.py": "72b5edc5179e38bf12c050e56daef85055bf83c70b541c9204436240ae62dee6",
         "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
-        "backend/authoring.py": "1c43f1a4dd63c36b0ccb4939b8b47478f880b69ebfdaa34b976ccce11a4c37c4",
+        "backend/authoring.py": "db9837627a62a405c8cda26792329b8ec24ad1977b2857a5e52e933eccb0083a",
         "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09"
       },
       "tests": [
@@ -159,7 +159,7 @@
         "backend/text_format.py": "d476cce52b3038b08e406257ba006e11f97e27385956329dc1ff704ccb5538c7",
         "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
-        "backend/authoring.py": "1c43f1a4dd63c36b0ccb4939b8b47478f880b69ebfdaa34b976ccce11a4c37c4",
+        "backend/authoring.py": "db9837627a62a405c8cda26792329b8ec24ad1977b2857a5e52e933eccb0083a",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
         "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09"
       },
@@ -185,7 +185,7 @@
         "backend/run_session.py": "01d0ee7bef1601bfde0eff71d35332e6c96f5f71ac1c12e4fdffcc1d700353a0",
         "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
-        "backend/authoring.py": "1c43f1a4dd63c36b0ccb4939b8b47478f880b69ebfdaa34b976ccce11a4c37c4",
+        "backend/authoring.py": "db9837627a62a405c8cda26792329b8ec24ad1977b2857a5e52e933eccb0083a",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
         "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09"
       },
@@ -216,7 +216,7 @@
         "backend/output_entry.py": "6121bc67a278ac66244365ff5c23c235cd457316ef2826cd41db07b202af2ba2",
         "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
-        "backend/authoring.py": "1c43f1a4dd63c36b0ccb4939b8b47478f880b69ebfdaa34b976ccce11a4c37c4",
+        "backend/authoring.py": "db9837627a62a405c8cda26792329b8ec24ad1977b2857a5e52e933eccb0083a",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
         "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09"
       },
@@ -242,7 +242,7 @@
         "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09",
         "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
-        "backend/authoring.py": "1c43f1a4dd63c36b0ccb4939b8b47478f880b69ebfdaa34b976ccce11a4c37c4",
+        "backend/authoring.py": "db9837627a62a405c8cda26792329b8ec24ad1977b2857a5e52e933eccb0083a",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8"
       },
       "tests": [
@@ -267,7 +267,7 @@
         "backend/saved_values.py": "cc6c9e07f33f395580d5408dcfdb646140fd9f829bff0d6e27e6f5d1f5f6372b",
         "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
-        "backend/authoring.py": "1c43f1a4dd63c36b0ccb4939b8b47478f880b69ebfdaa34b976ccce11a4c37c4",
+        "backend/authoring.py": "db9837627a62a405c8cda26792329b8ec24ad1977b2857a5e52e933eccb0083a",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
         "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09"
       },
@@ -293,7 +293,7 @@
         "backend/nodes/data/json_path_node.py": "735ab138add0bb2f9ca52e44b8d6de38f20bd76be773e03e59205225233b2db6",
         "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
-        "backend/authoring.py": "1c43f1a4dd63c36b0ccb4939b8b47478f880b69ebfdaa34b976ccce11a4c37c4",
+        "backend/authoring.py": "db9837627a62a405c8cda26792329b8ec24ad1977b2857a5e52e933eccb0083a",
         "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
         "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09"
       },

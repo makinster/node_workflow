@@ -51,8 +51,9 @@ with `aotn run "<name>"` or open it from the app's Workflow Library.
 ### Nodes as a list
 
 `nodes` also accepts a list of node objects. Each object must have a unique
-`id` containing a valid handle (1–40 lowercase letters, digits or underscores,
-starting with a letter), plus the usual `type`, optional `alias` and `config`:
+`id` (or `handle`; both mean the same) containing a valid handle (1–40
+lowercase letters, digits or underscores, starting with a letter), plus the
+usual `type`, optional `alias` and `config`:
 
 ```json
 {
@@ -67,7 +68,7 @@ starting with a letter), plus the usual `type`, optional `alias` and `config`:
 ```
 
 The builder converts this to `"nodes": {"start": {...}, "end": {...}}`
-before graph validation, removing only the list-only `id` fields. `build`,
+before graph validation, removing only the list-only `id`/`handle` fields. `build`,
 `build --check` and Check workflow spec accept both forms. Saved workflows
 use their ordinary keyed node map with generated runtime IDs; the normalized
 Spec output from Check workflow spec uses the keyed authoring handles.

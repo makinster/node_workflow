@@ -385,3 +385,14 @@ def analysis_with_adapter(case, adapter):
     analysis['selection']['candidates'].append(dict(type_id=kind, role=role, requirement_ids=['r1'], reason='Alternative valid composition'))
     analysis['selection']['roles'].append(dict(role=role, requirement_ids=['r1'], reason='Alternative valid composition'))
     return analysis
+
+
+def test_list_form_draft_is_checked_like_keyed_draft(case):
+    # Drafts are read with the same conversion as build/--check (PR 159).
+    c = case(1)
+    keyed = json.loads(json.dumps(good_draft(1)).replace("ROOT", c["root"]))
+    listed = dict(keyed, nodes=[dict(id=h, **n) for h, n in keyed["nodes"].items()])
+    assert runner.draft_spec(json.dumps(listed)) == keyed
+    assert check_rules(runner.draft_spec(json.dumps(listed)), c)["result"] == "pass"
+    duplicate = dict(listed, nodes=listed["nodes"] + listed["nodes"][:1])
+    assert runner.draft_spec(json.dumps(duplicate)) == duplicate
