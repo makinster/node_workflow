@@ -181,3 +181,36 @@ unsupported false flag with exit 1 / `unsupported_standard_flag` and no save.
 
 Catalogue and designer caps/headroom remain covered by the full suite.
 No live API calls, native OS proof or owner workflow run.
+
+
+## Helper family admission — 2026-10-30
+
+Base `8ee108b`, branch `codex/helper-family`: sixteen reviewed / 43 pending out
+of 59 registered types. All four helpers support optional within-run Vault
+writes (including Find lines' independent total-match count), suppression and
+unchanged-input forwarding. No helper execute implementation changed. No
+claim/code mismatches were found; no xfails or owner decisions were added.
+
+The shared data-driven matrix now includes helper source/limit/error cases and
+fixed Context Pack run/error snapshots. Fake Secrets prove masking without
+reading actual keys. File byte/mtime snapshots assert that every helper execute
+leaves the fixture filesystem unchanged. Existing security, cancellation,
+Unicode, snapshot-race, deep JSON and pack-shortening tests remain in the review
+attestations. Updated receipt includes helper code and scenario/trial digests.
+
+The [admission receipt](helper_family_admission.json) gives the exact schema enum
+lists, before/after catalogue counts and per-case selected snapshot sizes.
+Regenerate the executable receipt only after source and scenario review:
+
+```bash
+AOTN_CLAIMS_REPORT="$PWD/docs/audits/claims_baseline_2026_10_29/claims.json" \
+  python -m pytest tests/test_node_claims.py -q -k claims_receipt
+```
+
+The default full-catalogue counts are Brief 14,687 → 15,794 and Compact
+53,204 → 53,302. Common Text legends remove repeated explanations without
+removing fields/defaults/claims. Complete sixteen-type contracts use 25,246 of
+50,000 characters; Brief uses 8,484. Context remains capped at 100,000.
+The original fixed twelve-type bundle uses 25,309 characters; its exact type
+inventory and old expected outcomes remain pinned. Full validation counts are
+recorded in Current State / Session Log after the final run.

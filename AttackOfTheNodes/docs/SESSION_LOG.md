@@ -1,10 +1,38 @@
 # AttackOfTheNodes Session Log
 
-This log keeps roughly the last two weeks: entries dated October 4–29, 2026
+This log keeps roughly the last two weeks: entries dated October 4–30, 2026
 (the earliest existing entry is October 6). Every October 18 entry is retained.
 Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.md).
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
+
+## 2026-10-30 — Text, JSON and line helper family (Important)
+
+Root `/home/makin/src/nw-helper-family`, branch `codex/helper-family`, fetched
+base `8ee108b` (#157). Owner checkout/unrelated work preserved. Added reviewed
+records/lookalike links and shared data-driven claims for Find lines, Read lines,
+Check reply and Context Pack. Standard Vault/secondary-count writes, suppression,
+forwarding, three source modes, limits, empty/no-match behavior, JSON failures,
+fixed run/error snapshots and mocked masking are covered. No helper runtime code
+changed and no claim/code mismatches or owner decisions were found.
+
+Added narrow selection roles, exact admission boundary config and regenerated
+live schemas. Frozen sets 1/2 retain exact twelve-type/seventeen-role equality
+and canonical content digests. Set 3 has four requests/twelve variants and five
+pairs (pack pair held out). All 25 pairs already on the base are unchanged; total
+30. Independent fixture outcomes plus actual local execute and separate engine
+runs cover sources/errors; direct JSON projection and alternate Vault routing
+remain valid. Judge prompt unchanged. No workflows/ content edited.
+
+Verification: full `pytest -n auto`: **4,677 passed, 187 skipped, zero xfails in 43.61 s**. All three mock trial sets
+and all thirty calibration pairs pass. Claims receipt: 234 pass/179 reasoned
+skip, 150 value rows and 33 graphs run twice. `git diff --check` clean; no real
+API calls. LF normalization read each file before writing.
+
+Catalogue Brief 14,687→15,794 / Compact 53,204→53,302; sixteen-type complete
+Brief/Compact 8,484/25,246; largest representative snapshot 11,806 of 50,000,
+context cap 100,000. [Exact enums and size receipt](audits/claims_baseline_2026_10_29/helper_family_admission.json).
+Paid trial quality remains for the owner after review/merge.
 
 ## 2026-10-29 — Structured replies and End framing guard (Important)
 

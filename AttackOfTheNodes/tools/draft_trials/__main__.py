@@ -62,8 +62,8 @@ def main():
     )
     parser.add_argument("--judge-model", choices=JUDGE_MODELS, default=JUDGE_MODELS[0])
     parser.add_argument("--judge-effort", choices=JUDGE_EFFORTS, default=JUDGE_EFFORTS[0])
-    parser.add_argument("--case-set", type=int, choices=[1, 2], default=1)
-    parser.add_argument("--cases", default="1,2,3,4,5,6,7,8,9,10")
+    parser.add_argument("--case-set", type=int, choices=[1, 2, 3], default=1)
+    parser.add_argument("--cases", default=None)
     parser.add_argument(
         "--scenario",
         choices=["ready", "judge_fail", "error", "unhelpful"],
@@ -80,13 +80,14 @@ def main():
     if args.real_calls and args.replies:
         parser.error("--replies is mock-only")
     try:
-        ids = [int(value) for value in args.cases.split(",")]
+        count=4 if args.case_set==3 else 10
+        ids = [int(value) for value in args.cases.split(",")] if args.cases else list(range(1,count+1))
         if len(set(ids)) != len(ids) or any(
-            number not in range(1, 11) for number in ids
+            number not in range(1, count+1) for number in ids
         ):
             raise ValueError()
     except ValueError:
-        parser.error("--cases must contain distinct ids from 1 through 10")
+        parser.error(f"--cases must contain distinct ids from 1 through {count}")
 
     # All validation precedes mkdir, marker writes, env changes and runner import.
     try:

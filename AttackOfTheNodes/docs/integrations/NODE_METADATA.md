@@ -165,3 +165,20 @@ from #151 now pass: numeric count/visits ports, If Changed suppression with
 selected-route traversal, and Window Control fixed forwarding with suppression
 explicitly unsupported. No xfail exemptions remain. No shortlist or new drafter
 node is included.
+
+
+### Helper family admission (2026-10-30)
+
+Find lines, Read lines, Check reply and Context Pack now have source-reviewed
+records and executable claims; the registry has sixteen reviewed records and
+43 pending types. New optional v1 `use_instead` links carry `when` (<=160
+characters) and an exact `node_type`, at most four. Validation rejects unknown,
+hidden, duplicate and self targets. Brief and full records retain the links;
+Text marks unadmitted targets explicitly. Links never grant admission or cause
+recursive catalogue expansion. JSON consumers resolve admission separately.
+The four new records distinguish search numbers/excerpts/whole-file reading,
+validation/extraction and bounded redacted packs/exact templates.
+
+Compact Text uses shared standard-flag and configured-source legends, with each
+node's complete defaults and source/field/port mappings retained. Full JSON
+continues to carry the complete per-node documentation. Size caps are unchanged.

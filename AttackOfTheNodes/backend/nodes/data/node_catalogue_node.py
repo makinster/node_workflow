@@ -32,11 +32,12 @@ class NodeCatalogueNode(Node):
     # Exact identity selection is optional; ordinary All/Filtered inputs still
     # only sequence the node. Selected analysis is the bounded v2 adapter.
     from ...palette_selection import ADMITTED as _admitted
-    default_config.update(type_ids=[], type_ids_source='Configured', type_ids_vault_key='',
+    default_config.update(admitted_type_ids=[], type_ids=[], type_ids_source='Configured', type_ids_vault_key='',
                           selection_request_vault_key='', discovery_request_vault_key='',
                           discovery_snapshot_vault_key='', selection_clarification_vault_key='')
     config_schema['scope']['options'] += ['Exact IDs', 'Selected analysis']
     config_schema.update(
+        admitted_type_ids=dict(type='multiselect', label='Admission boundary (empty uses current admission)', options=sorted(_admitted)),
         type_ids_source=dict(type='select', label='Selection source', options=['Upstream payload', 'Vault', 'Configured']),
         type_ids_vault_key=dict(type='string', label='Selection Vault key', vault_type='var', visible_when={'type_ids_source': 'Vault'}),
         type_ids=dict(type='multiselect', label='Exact type IDs', options=sorted(_admitted), visible_when={'type_ids_source': 'Configured'}),
@@ -103,7 +104,7 @@ class NodeCatalogueNode(Node):
             else:
                 value = await build(NodeFactory(), config)
             if config.get('discovery_request_vault_key'):
-                from ...palette_selection import positive_matches, ADMITTED, registry_revision, digest
+                from ...palette_selection import positive_matches, admission, registry_revision, digest
                 import json
                 if config['format'] != 'Text' or config['detail'] != 'Brief':
                     raise NodeError('invalid_config', 'Discovery suggestions require Brief Text.')
@@ -111,8 +112,9 @@ class NodeCatalogueNode(Node):
                 request = context.memory_bank.read_persistent(config['discovery_request_vault_key'])
                 if not isinstance(request, str):
                     raise NodeError('selection_invalid', 'Discovery needs the original request.')
-                discovery = dict(registry_sha256=registry_revision(factory), request_sha256=digest(request), suggested_type_ids=[k for k in positive_matches(factory, request) if k in ADMITTED],
-                    implemented_not_admitted=sorted(set(factory._node_registry) - ADMITTED - {'tombstone_node'}),
+                allowed = admission(config)
+                discovery = dict(registry_sha256=registry_revision(factory), request_sha256=digest(request), suggested_type_ids=[k for k in positive_matches(factory, request) if k in allowed],
+                    implemented_not_admitted=sorted(set(factory._node_registry) - allowed - {'tombstone_node'}),
                     note='Pending names are classification hints, not proven capabilities or admitted candidates.')
                 value += '\nDiscovery: ' + json.dumps(discovery, separators=(',', ':')) + '\n'
                 if len(value) > config['max_chars'] or len(value.encode()) > 256 * 1024:

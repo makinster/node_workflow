@@ -22,7 +22,7 @@ def array(items, **constraints):
     return dict(type='array', items=items, **constraints)
 
 
-def analysis_schema():
+def analysis_schema(admitted=ADMITTED):
     role = text(enum=sorted(ROLE_TYPES))
     req_ids = array(text(minLength=1), minItems=1)
     reason = text(minLength=1, maxLength=512)
@@ -33,7 +33,7 @@ def analysis_schema():
             source=text(minLength=1), destination=text(minLength=1),
             order=dict(anyOf=[dict(type='integer'), text(minLength=1)]), acceptance=text(minLength=1)))),
         questions=text(), assumptions=array(text()), reason=text(),
-        selection=obj(dict(candidates=array(obj(dict(type_id=text(enum=sorted(ADMITTED)), **role_row)), maxItems=MAX_IDS),
+        selection=obj(dict(candidates=array(obj(dict(type_id=text(enum=sorted(admitted)), **role_row)), maxItems=MAX_IDS),
                            roles=array(obj(role_row), maxItems=32))),
         status=text(enum=['ready', 'clarify', 'outside_scope', 'needs_new_node'])))
 
@@ -47,9 +47,9 @@ def judge_schema():
         verdict=text(enum=['pass', 'fail', 'unsure'])))
 
 
-def install(spec):
+def install(spec, admitted=ADMITTED):
     for ai, gate in [('analysis', 'analysis_shape'), ('resolve', 'resolved_shape'), ('judge', 'judge_shape')]:
-        schema = judge_schema() if ai == 'judge' else analysis_schema()
+        schema = judge_schema() if ai == 'judge' else analysis_schema(admitted)
         spec['nodes'][ai]['config']['reply_schema'] = schema
         spec['nodes'][gate]['config']['reply_schema'] = schema
     return spec

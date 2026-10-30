@@ -10,6 +10,15 @@ owner where a phase needs a decision (C5's number policy, C6's field
 removal, C7's Deep Branch contract) and before Step 4. Each item needs a
 reproduction first; the audit gives one for each.
 
+First helper-family admission (2026-10-30, `codex/helper-family`, from `8ee108b`)
+is implemented for owner review: Find lines, Read lines, Check reply and Context
+Pack, four cases / five calibration pairs, all sixteen-type schemas regenerated.
+Sets 1/2 remain pinned to their original twelve-type scope. No claim/code
+mismatches; no helper execute implementation changed. See
+[Current State](CURRENT_STATE.md#first-helper-family--2026-10-30-important) and
+[admission receipt](audits/claims_baseline_2026_10_29/helper_family_admission.json).
+No further family is admitted by this change.
+
 For the checked implementation baseline, open PRs and owner gates, see
 [Current State](CURRENT_STATE.md). Phase rows below retain completion details.
 Historical integration note (2026-10-17): C7's #66 merged to the C6 branch;

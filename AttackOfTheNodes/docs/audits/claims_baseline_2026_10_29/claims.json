@@ -1,17 +1,19 @@
 {
   "schema_version": 1,
-  "scenario_version": 2,
-  "base_revision": "ee0bca449425eaa23792b08f442ac3fd81e6b2fb",
+  "scenario_version": 3,
+  "base_revision": "8ee108b4e3e932790c94ad90c5bc419cee5f75e2",
   "sources": {
     "backend/authoring.py": "8b76e1d3e22b984d9956c863918a4c1f8baf9d3fc6a672b037cdad9e3829cdfc",
+    "backend/context_pack.py": "57443dd1922fa4fb744c7593e5708072457a8b133b5172080226eab38b9dbad9",
     "backend/contracts.py": "c88d7398adb513ab745990f1e959438024e65dea9515ab9d96b2854501e1fb1d",
+    "backend/hermes_investigations.py": "680eb4669943a8ea0e23b4136c5c1c7d89008c16421e2ab336eb6e950de642ca",
     "backend/integrations/claude.py": "d8c4f36f6e07b355f1d19bf881ee3fbbe1c32104655942281b9b6d9ec7803c3d",
     "backend/memory_bank.py": "fe5e8fe144dc6537020f5d5c76a9d5e9dd44e6522ecdeebb2536b46e41cbef9c",
     "backend/meta_workflow.py": "fc3b76dd16cf8430697a4437c32a5f6d4c93fc44f2e8dfd861ffa82b4c62ad86",
     "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
-    "backend/node_catalogue.py": "4141919245bb645af31ef39da0f4f4c6f148c9a6742ec7d8ce3987ee43a0481a",
+    "backend/node_catalogue.py": "c3fb66b7f2130bb1327fea89277a261fd4cbf84de6fdd5117757ea1f23f302b7",
     "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
-    "backend/node_metadata.py": "bc7c23cf2599090020e2186041cbc9d02f19b77a0c1f2aa40b46225fc1f72fb5",
+    "backend/node_metadata.py": "f6c41769eca7414f434e344f477419e4a841476e3e3be9e9e458f57d54b5ac54",
     "backend/nodes/ai/ask_claude_node.py": "a2e3d19151aa02688f239c65d3a6889ea9ea3e396532c2a466a485f42d268b65",
     "backend/nodes/ai/ask_local_model_node.py": "906a74138630732b7e18ade131c245dd26eacc12cce0497d038998a0120cd363",
     "backend/nodes/ai/hermes_ask_node.py": "519833d8e42e2c52d203f6a02ba75409cedd11ce8f1fa530b7fa9f6992e25120",
@@ -26,7 +28,7 @@
     "backend/nodes/data/context_pack_node.py": "10c4c52fe5844afda48b3ebe32d949195a31d2f3a6a194e38b52040bcfe389dc",
     "backend/nodes/data/if_changed_node.py": "c8917e197bb130d744fffa144488bc603cfa7d2c6aaa12505e1a7d0da3db8a54",
     "backend/nodes/data/json_path_node.py": "735ab138add0bb2f9ca52e44b8d6de38f20bd76be773e03e59205225233b2db6",
-    "backend/nodes/data/node_catalogue_node.py": "b02382a20e5623edbd86d3c78ddd1ffd13b598d0fe5b2c00a6e038426725916a",
+    "backend/nodes/data/node_catalogue_node.py": "0e038471bbdfe2581a72d9f17c72af160534d7d803659bbac50f6fd8c687c311",
     "backend/nodes/data/random_number_node.py": "ce701638060c923a89912196c7c1279e0583f46d0ae8bdea43209809559ecf3e",
     "backend/nodes/data/recall_node.py": "5da0bb9a0ca43edce09e7594eace33220d3a6850d7780bb95af87f36d73bb9de",
     "backend/nodes/data/remember_node.py": "eb2d104a1fe59c17ec476b3121e7381057644814602d68add261ee99414fb806",
@@ -71,19 +73,25 @@
     "backend/nodes/text_output_node.py": "0382e1f748a203be7ee9f30c7c48ccaf2e9a8a0725192d80d639669238407054",
     "backend/nodes/user_text_input_node.py": "3289cbec6af2f679e92c15da27c9b05abd9924c48c6e4926c07669419e6b3b23",
     "backend/nodes/wait_until_node.py": "791ffd2b2da433d5af704b57aaf7a0d8735d53e92f2e6f0737caa04c10d3dc58",
-    "backend/palette_selection.py": "a0472b0d494bc7cd1453c13ec82ec00615ad7c6b2ca56a0d80ba398fcc67aa2d",
+    "backend/palette_selection.py": "779ae5f7e07250df6ebdbe1f50f2fdab97f78fa436c95f56f5f038f05d31762e",
     "backend/port_types.py": "fba69be8d89a713cfc1e98870544420cd8809e973d0b1079eca397dde17d422a",
     "backend/reply_schema.py": "4873fffbf0f34b8f71988686b300bc9ebdc75213babf380dcab10c52d771d779",
     "backend/reply_shape.py": "f10b3e581338160414fb2d27a09a2a35c576f5d28f4a353f9f85a47ec17bb72f",
+    "backend/run_snapshot.py": "435685111863cf22fbb3a02b36cdf1fb1bee60d292b5d9659f23cd0e70ad2e4f",
     "backend/saved_values.py": "cc6c9e07f33f395580d5408dcfdb646140fd9f829bff0d6e27e6f5d1f5f6372b",
     "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09",
     "backend/system_access.py": "49296ed42c4288f02cddf54980f94be9218249c4bd7360810ec237d563630c6f",
     "backend/text_lines.py": "62fcd1e24ef3101b3f3c3db2bb0200f3e7448173c4a22d34c2449e6f70bd1fe7",
     "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
-    "tests/node_claim_scenarios.py": "7ddc737c38926257cc22870d5faa78b94f579cc76e94efcd770fde961de3aaf9",
-    "tests/test_node_claims.py": "38333b5be978fab3a0f13fe04e2b7fb479222f1eb81adc750c6442c43f11526d",
+    "tests/node_claim_scenarios.py": "d7bb8db3854db05b92dda412f385dffb1dae79bd442f45d99a15f06bb105cdff",
+    "tests/test_helper_family_admission.py": "a1987e71aa6cf32449745832ca84ca8165a4cabd2ec37c2fea33a68b12f53a47",
+    "tests/test_node_claims.py": "69f33355d444e45592324fc38020639698bee748f0dbd039aec43d9c1b7e6882",
     "tests/test_node_metadata_behavior.py": "e2b58bd0c0c66b603f0226fc688ca1dcdcfcb2981da5294fb3c741d22dda87e5",
-    "tools/claims_compatibility.py": "7dc67f171fb1155bfbec8afcd8b1d0ff10a7e5adadf731f12b01d6cf9755246a"
+    "tools/claims_compatibility.py": "7dc67f171fb1155bfbec8afcd8b1d0ff10a7e5adadf731f12b01d6cf9755246a",
+    "tools/draft_trials/admission.py": "7329aa71ab0de1380a8d8a0f0cc064ea0cc2da1c0a9dc8880ec85d25d54a4ca4",
+    "tools/draft_trials/case_set_three.py": "4b81c19bc128c9368442b84c66075b0626723b242ea1a9bc6eccb4571e60f390",
+    "tools/draft_trials/reply_schemas.py": "09eab615285fe488b05d728bcb3e8c1fe75da7264aa35345685003ad6f645f1c",
+    "tools/draft_trials/rules_set_three.py": "8c5efd70e253fca023c2a48eab3166bd0d0beb0ac340aae6aa08ebabb3e74ad0"
   },
   "nodes": [
     {
@@ -296,9 +304,9 @@
     },
     {
       "node_type": "check_reply_node",
-      "reviewed": false,
+      "reviewed": true,
       "boundary": "local context and temporary files",
-      "limits": "Default mode and applicable generic claims only; remaining source/mode/session/native-OS matrices await family review.",
+      "limits": "Reviewed palette value/source and graph matrix is tested separately.",
       "claims": {
         "ports": {
           "status": "pass"
@@ -473,9 +481,9 @@
     },
     {
       "node_type": "context_pack_node",
-      "reviewed": false,
+      "reviewed": true,
       "boundary": "local context and temporary files",
-      "limits": "Default mode and applicable generic claims only; remaining source/mode/session/native-OS matrices await family review.",
+      "limits": "Reviewed palette value/source and graph matrix is tested separately.",
       "claims": {
         "ports": {
           "status": "pass"
@@ -1046,9 +1054,9 @@
     },
     {
       "node_type": "find_lines_node",
-      "reviewed": false,
+      "reviewed": true,
       "boundary": "local context and temporary files",
-      "limits": "Default mode and applicable generic claims only; remaining source/mode/session/native-OS matrices await family review.",
+      "limits": "Reviewed palette value/source and graph matrix is tested separately.",
       "claims": {
         "ports": {
           "status": "pass"
@@ -1945,9 +1953,9 @@
     },
     {
       "node_type": "read_lines_node",
-      "reviewed": false,
+      "reviewed": true,
       "boundary": "local context and temporary files",
-      "limits": "Default mode and applicable generic claims only; remaining source/mode/session/native-OS matrices await family review.",
+      "limits": "Reviewed palette value/source and graph matrix is tested separately.",
       "claims": {
         "ports": {
           "status": "pass"
@@ -2728,8 +2736,8 @@
       }
     }
   ],
-  "palette_scenario_count": 78,
-  "engine_graph_count": 21,
+  "palette_scenario_count": 150,
+  "engine_graph_count": 33,
   "engine_runs_per_graph": 2,
   "interpretation": "Node claim statuses were executed for this receipt. Palette value and engine assertions run as separate parametrized tests; no live service quality or admission is claimed."
 }

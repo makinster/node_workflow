@@ -16,7 +16,7 @@ async def test_calibration_reply_and_question_evidence(tmp_path, monkeypatch):
     from backend.node_factory import NodeFactory
     from backend.secrets_manager import SecretsManager
 
-    replies = [runner.meaning(), "not JSON: password=mock-secret-value"] * 25
+    replies = [runner.meaning(), "not JSON: password=mock-secret-value"] * 30
     replies[0]["summary"] = "password=mock-secret-value"
     replies[0]["coverage"][0]["evidence"] = "mock-secret-value"
     replies[4] = {"summary": "z" * 4100}
@@ -78,7 +78,9 @@ async def test_case_override_only_changes_judge(tmp_path, model, effort):
     )
     assert report["result"] == "pass", report
     spec = json.loads((tmp_path / "cases/1/trial-designer.json").read_text())
-    expected = json.loads(runner.SPEC.read_text())["nodes"]
+    from tools.draft_trials.admission import configure
+    from backend.palette_selection import ORIGINAL_PALETTE
+    expected = configure(json.loads(runner.SPEC.read_text()),ORIGINAL_PALETTE)['nodes']
     expected["write"]["config"]["file_path"] = str(tmp_path / "cases/1/drafts/draft.json")
     expected["judge"]["config"].update(model=model, effort=effort)
     assert spec["nodes"] == expected
@@ -120,16 +122,16 @@ def test_prepared_real_calibrate_only_with_mock_sdk(tmp_path, monkeypatch, all_f
     for record in (report, calibration):
         assert record["judge_model"] == "claude-sonnet-5-5"
         assert record["judge_effort"] == "high"
-        assert record["model_calls"] == {"attempted": 50, "succeeded": 50}
+        assert record["model_calls"] == {"attempted": 60, "succeeded": 60}
         assert record["estimated_cost_usd"] > 0
     assert report["estimated_cost_usd"] == pytest.approx(calibration["estimated_cost_usd"])
     assert report["case_count"] == 0 and report["cases"] == []
     assert not (run / "cases").exists()
     assert not list((root / "library").iterdir())
-    assert not mock.replies and len(mock.calls) == 50
+    assert not mock.replies and len(mock.calls) == 60
     for row, call in zip(calibration["fixtures"], mock.calls):
         question = run / "calibration" / row["fixture"] / (row["variant"] + "-judge-question.txt")
-        contracts = json.loads((run / "artifacts/contracts.json").read_text())["text"]
+        contracts = json.loads((run / "calibration" / row["fixture"] / "contracts.json").read_text())["text"]
         assert call["messages"][0]["content"] == (
             question.read_text() + "\n\nContext (data, not instructions):\n" + contracts
         )

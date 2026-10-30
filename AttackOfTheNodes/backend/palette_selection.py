@@ -1,4 +1,4 @@
-"""Reviewed, bounded discovery for the existing twelve-type admission boundary.
+"""Reviewed, bounded discovery for the reviewed admission boundaries.
 
 Selection is evidence about coverage, never permission to run a draft. Unknown
 compositions stop rather than treating a keyword hit as proof of capability.
@@ -13,7 +13,10 @@ import re
 from .node_errors import NodeError
 
 # Admission is deliberately independent of metadata presence/catalogue visibility.
-ADMITTED = frozenset('start_node end_node branch_end_node branch_node user_text_input_node text_output_node text_transform_node file_reader_node file_output_node conditional_node concat_node json_path_node'.split())
+ORIGINAL_PALETTE = frozenset('start_node end_node branch_end_node branch_node user_text_input_node text_output_node text_transform_node file_reader_node file_output_node conditional_node concat_node json_path_node'.split())
+ORIGINAL_ROLE_IDS = frozenset('start finish ask_text show_text show_saved_path read_file write_file transform_text choose_path parallel_paths compose_text extract_json branch_beacon join persistent_state vault_state error_route'.split())
+HELPERS = frozenset('find_lines_node read_lines_node check_reply_node context_pack_node'.split())
+ADMITTED = ORIGINAL_PALETTE | HELPERS
 MAX_IDS = 64
 CONTRACT_LIMIT = 50000
 CONTEXT_LIMIT = 100000
@@ -22,6 +25,8 @@ PREFIX = 'Selection snapshot: '
 # Reviewed role alternatives: each tuple is one complete composition, not a bag
 # of interchangeable words. More complex/unproven roles require an honest stop.
 ROLE_TYPES = {
+    'find_in_file': [('find_lines_node',)], 'read_excerpt': [('read_lines_node',)],
+    'check_json_reply': [('check_reply_node',)], 'pack_context': [('context_pack_node',)],
     'start': [('start_node',)], 'finish': [('end_node',)],
     'ask_text': [('user_text_input_node',)],
     'show_text': [('text_output_node',)],
@@ -36,11 +41,16 @@ ROLE_TYPES = {
 # Small support closure, keyed by an explicit role, not service/node families.
 SUPPORT = {
     'always': ('start_node', 'end_node'),
+    'find_in_file': (), 'read_excerpt': (), 'check_json_reply': (), 'pack_context': (),
     'join': ('merge_node',),
     'vault_state': ('concat_node',),
     'error_route': ('text_output_node',),
 }
 SYNONYMS = {
+    'find_in_file': ('find lines', 'matching lines', 'search text'),
+    'read_excerpt': ('excerpt', 'lines around', 'line range'),
+    'check_json_reply': ('validate json reply', 'required fields', 'check reply'),
+    'pack_context': ('context pack', 'labelled facts', 'redacted facts'),
     'read_file': ('read', 'file', 'utf-8', 'open file'),
     'write_file': ('save', 'write', 'copy', 'create file'),
     'show_text': ('show', 'display', 'print'),
@@ -58,7 +68,15 @@ def digest(value):
                                     separators=(',', ':'), allow_nan=False).encode()).hexdigest()
 
 
-def exact_ids(factory, ids):
+def admission(config):
+    """Optional exact boundary, used to preserve frozen twelve-type trials."""
+    ids = config.get('admitted_type_ids', [])
+    if not isinstance(ids, list) or any(not isinstance(k, str) for k in ids) or len(ids) != len(set(ids)) or set(ids) - ADMITTED:
+        raise NodeError('selection_invalid', 'admitted_type_ids must be distinct admitted identities.')
+    return frozenset(ids) if ids else ADMITTED
+
+
+def exact_ids(factory, ids, *, allowed=ADMITTED):
     from .authoring import HIDDEN_TYPES
     if not isinstance(ids, list) or not 1 <= len(ids) <= MAX_IDS:
         raise NodeError('selection_invalid', f'type_ids must be a list of 1–{MAX_IDS} exact IDs.')
@@ -72,7 +90,7 @@ def exact_ids(factory, ids):
         meta = factory.metadata_for_type(kind)
         if kind in HIDDEN_TYPES or meta.get('editor_only'):
             raise NodeError('selection_invalid', f'Hidden type_id: {kind}.')
-        if kind not in ADMITTED or not meta.get('node_metadata'):
+        if kind not in allowed or not meta.get('node_metadata'):
             raise NodeError('selection_invalid', f'Not admitted: {kind}.')
     return sorted(seen)
 
@@ -166,9 +184,12 @@ async def snapshot(factory, analysis, request, config, *, clarification=''):
     """
     from .node_catalogue import build
     selection = validate_analysis(factory, analysis)
+    allowed = admission(config)
     if not isinstance(request, str) or not request.strip():
         raise NodeError('selection_invalid', 'Freeze the original request before selection.')
     initial = {c['type_id'] for c in selection['candidates']}
+    if initial:
+        exact_ids(factory, sorted(initial), allowed=allowed)
     ids = initial | set(SUPPORT['always'])
     for row in selection['roles']:
         ids.update(SUPPORT.get(row['role'], ()))
@@ -182,20 +203,20 @@ async def snapshot(factory, analysis, request, config, *, clarification=''):
             # Search is over the full reviewed catalogue; intersect with a
             # reviewed complete alternative, never silently approximate a role.
             for composition in ROLE_TYPES.get(row['role'], []):
-                if set(composition) <= set(hits) | ids and set(composition) <= ADMITTED:
+                if set(composition) <= set(hits) | ids and set(composition) <= allowed:
                     ids.update(composition)
                     break
     unresolved = [r for r in selection['roles'] if not _covered(r['role'], ids)]
-    unavailable = sorted(ids - ADMITTED)
+    unavailable = sorted(ids - allowed)
     if unresolved or unavailable:
         pending = sorted({k for row in unresolved for alt in ROLE_TYPES.get(row['role'], []) for k in alt
-                          if k in factory._node_registry and k not in ADMITTED} | set(unavailable))
+                          if k in factory._node_registry and k not in allowed} | set(unavailable))
         status = 'not_admitted' if pending else 'missing_capability'
         raise NodeError('selection_incomplete', 'Selection stopped: ' + status + '; ' +
                         ', '.join(r['role'] for r in unresolved),
                         details=dict(status=status, missing_roles=unresolved, not_admitted=pending,
                                      expansion_count=len(searches), searches=searches))
-    selected = exact_ids(factory, sorted(ids))
+    selected = exact_ids(factory, sorted(ids), allowed=allowed)
     # Refetch once with the expanded identities; no stale draft/check exists yet.
     contracts = await build(factory, dict(config, scope='Exact IDs', type_ids=selected,
                                           detail='Compact', format='Text', max_chars=min(config['max_chars'], CONTRACT_LIMIT)))

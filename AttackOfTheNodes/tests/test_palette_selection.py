@@ -82,7 +82,7 @@ async def test_support_closure_is_small_and_role_driven():
     result = selection.read_snapshot(await selection.snapshot(NodeFactory(), a, 'show Ready', config()))
     assert result['selected_type_ids'] == ['end_node', 'start_node', 'text_output_node']
     assert result['expansion_count'] == 0  # No padding to eight candidates.
-    assert set(selection.SUPPORT) == {'always', 'join', 'vault_state', 'error_route'}
+    assert set(selection.SUPPORT) == {'always', 'join', 'vault_state', 'error_route', 'find_in_file','read_excerpt','check_json_reply','pack_context'}
     for role, kind in [('vault_state', 'concat_node'), ('error_route', 'text_output_node')]:
         a['selection'] = dict(candidates=[], roles=[dict(role=role, requirement_ids=['r1'], reason='Explicitly required')])
         receipt = selection.read_snapshot(await selection.snapshot(NodeFactory(), a, 'role '+role, config()))
@@ -147,7 +147,7 @@ async def test_draft_subset_and_stale_snapshot_are_mechanical():
 @pytest.mark.asyncio
 async def test_brief_families_positive_search_and_budgets():
     factory = NodeFactory()
-    assert selection.ADMITTED == PALETTE  # Explicit original-suite boundary retained.
+    assert selection.ORIGINAL_PALETTE == PALETTE  # Explicit original-suite boundary retained.
     brief = await node_catalogue.build(factory, config(detail='Brief'))
     assert 'Family: ' in brief
     assert brief.count('Family: ') == len({factory.metadata_for_type(r['type'])['primary_family'] for r in await _brief_rows(factory)})
@@ -217,7 +217,7 @@ async def test_gate_rejects_unselected_type_then_only_one_retry(tmp_path):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('case_set, expected_calls', [(1, 81), (2, 77)])
+@pytest.mark.parametrize('case_set, expected_calls', [(1, 91), (2, 87)])
 async def test_twenty_frozen_cases_recall_and_no_extra_ordinary_call(tmp_path, case_set, expected_calls):
     (tmp_path/'trial').mkdir()
     report = await runner.batch(tmp_path/'trial', case_set=case_set)

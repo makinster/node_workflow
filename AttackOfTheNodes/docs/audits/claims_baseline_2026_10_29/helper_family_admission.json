@@ -1,0 +1,109 @@
+{
+  "before": {
+    "Brief": 14687,
+    "Compact": 53204,
+    "baseline_contracts": 21619
+  },
+  "after": {
+    "Brief": 15794,
+    "Compact": 53302,
+    "admitted_Brief": 8484,
+    "admitted_Compact": 25246,
+    "baseline_contracts": 25309
+  },
+  "admitted_type_ids": [
+    "branch_end_node",
+    "branch_node",
+    "check_reply_node",
+    "concat_node",
+    "conditional_node",
+    "context_pack_node",
+    "end_node",
+    "file_output_node",
+    "file_reader_node",
+    "find_lines_node",
+    "json_path_node",
+    "read_lines_node",
+    "start_node",
+    "text_output_node",
+    "text_transform_node",
+    "user_text_input_node"
+  ],
+  "role_ids": [
+    "ask_text",
+    "branch_beacon",
+    "check_json_reply",
+    "choose_path",
+    "compose_text",
+    "error_route",
+    "extract_json",
+    "find_in_file",
+    "finish",
+    "join",
+    "pack_context",
+    "parallel_paths",
+    "persistent_state",
+    "read_excerpt",
+    "read_file",
+    "show_saved_path",
+    "show_text",
+    "start",
+    "transform_text",
+    "vault_state",
+    "write_file"
+  ],
+  "contract_limit": 50000,
+  "context_limit": 100000,
+  "calibration_pairs": 30,
+  "snapshots": [
+    {
+      "case": 1,
+      "total_characters": 8541,
+      "contracts_characters": 7606,
+      "type_ids": [
+        "end_node",
+        "read_lines_node",
+        "start_node",
+        "text_output_node"
+      ]
+    },
+    {
+      "case": 2,
+      "total_characters": 11806,
+      "contracts_characters": 10596,
+      "type_ids": [
+        "end_node",
+        "find_lines_node",
+        "read_lines_node",
+        "start_node",
+        "text_output_node",
+        "user_text_input_node"
+      ]
+    },
+    {
+      "case": 3,
+      "total_characters": 11012,
+      "contracts_characters": 9801,
+      "type_ids": [
+        "check_reply_node",
+        "end_node",
+        "file_reader_node",
+        "json_path_node",
+        "start_node",
+        "text_output_node"
+      ]
+    },
+    {
+      "case": 4,
+      "total_characters": 9724,
+      "contracts_characters": 8647,
+      "type_ids": [
+        "context_pack_node",
+        "end_node",
+        "start_node",
+        "text_output_node",
+        "user_text_input_node"
+      ]
+    }
+  ]
+}

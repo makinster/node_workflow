@@ -2,7 +2,7 @@
 
 This is an external test harness, not a new workflow node or a general English
 requirements prover. The frozen oracle in `cases.py` implements the approved
-10-case TEST_SET (version 3). `fixtures/calibration.json` contains 24 paired,
+10-case TEST_SET (version 3). `fixtures/calibration.json` contains 30 paired,
 hand-authored good/bad drafts. Mock mode exercises the actual SDK adapter,
 designer graph, Check nodes, authoring build/check and target engine. It supplies
 canned replies and a synthetic credential in memory; Secrets lazy loading and
@@ -204,9 +204,9 @@ TRIAL_ROOT=/home/makin/draft-trial-01
 cat "$TRIAL_ROOT/runs/000001/report.json"
 ```
 
-Recommend **$0.50 for a full run**. There are 48 calibration judge calls before
-the ten cases (each may use one extra structural redraft); calibration alone is about $0.12–0.15 at current planning
-estimates, not a measured Step 1 result. `--budget USD` has **no default** and is
+There are 60 calibration judge calls before the selected cases (each ready
+case may use one extra structural redraft). Earlier cost estimates predate this
+family and require a new owner-run measurement. `--budget USD` has **no default** and is
 required with `--real-calls`, even for calibration-only runs. Limits must be
 positive finite numbers. `--time-limit SECONDS` defaults to 600. Both limits
 are recorded in `report.json`, including failures.
@@ -408,3 +408,50 @@ format/schema payload on all three supported routes, without provider calls.
 Full verification: **4,548 passed, 187 skipped, zero xfails** (`pytest -n auto`,
 38.22s); 24 calibration rule pairs retain their expected verdicts. No real API
 calls. The original 23 frozen pairs are byte-for-byte equivalent when decoded.
+
+
+## Helper family: set 3 (2026-10-30)
+
+`--case-set 3` selects four requests / twelve fixture runs: inclusive excerpt,
+interactive literal search with a handled `no_matches` route, JSON reply shape
+validation and summary extraction, and a two-source labelled Context Pack.
+Each file reader uses a literal configured path. Each target run explicitly
+sets `system_node_folders` to that case's fixture directory only; its execution
+artifact records that setting. These settings are a read-scope check, not an OS
+sandbox. No new target writes files or contacts a service.
+
+Sets 1 and 2 retain exactly their original twelve types and seventeen role IDs,
+including the word-count `needs_new_node` and email `outside_scope` cases.
+`fixtures/admission_baseline.json` pins those IDs, all original requests,
+structures, reference drafts, variants and the first 25 calibration pairs by
+canonical digest. Scope is applied to the actual Brief lookup, discovery,
+selection/expansion and analysis/check schemas; it is not only prompt wording.
+Default delivery uses all sixteen admitted types / twenty-one roles.
+
+Five new pairs cover whole-file versus excerpt, configured search overriding
+an answer, a wrong no-match message, rejecting permitted extra JSON fields and
+a pack that ignores its answer. The pack pair is explicitly held out from prompt
+tuning. The base already contained 25 pairs (including the held-out reversed
+empty check); all remain unchanged, giving 30 pairs / 60 judge calls now.
+Per-pair `contracts.json` preserves the exact context the judge received;
+original pairs retain the twelve-type baseline, helper pairs get all sixteen.
+The judge prompt is unchanged.
+
+The set-3 oracle invokes real local execute methods with tiny temporary fixtures,
+fixed snapshots and empty fake Secrets, comparing independent expected values.
+It observes active input/Vault reads for lineage, so a configured-source wire
+cannot masquerade as a consumed value. Shared authoring checks own graph/type
+validity; the existing structure matcher owns frozen case intent. Target fixtures
+then run through the real engine as a separate delivery check. Positive alternate
+Vault routing, direct JSON projection and renamed handles are tested.
+Mock reports are plumbing and behavior evidence, not live drafting quality.
+
+Schemas are regenerated with `python -m tools.draft_trials.reply_schemas --write`.
+The exact enum lists and contract sizes are recorded in
+[the admission receipt](../../docs/audits/claims_baseline_2026_10_29/helper_family_admission.json).
+The measured full catalogue is Brief 15,794 / Compact 53,302 characters; the
+sixteen-type view is 8,484 / 25,246. Caps remain unchanged: selected contracts
+50,000 and model context 100,000. Four representative selection snapshots use
+8,541–11,806 characters including their receipts. Full registry Compact retains
+the existing 20% headroom test by sharing complete flag/source legends instead
+of repeating identical explanations for every node.
