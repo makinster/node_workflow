@@ -42,7 +42,10 @@ def safety(spec, case):
                 raise RuleFailure('unrequested/wrong prompt subject')
         if t == 'text_transform_node' and c['operation'] not in case['required_operations']:
             raise RuleFailure('unrequested transform')
-        if t == 'json_path_node' and (case['id'] != 3 or c['path'] != 'person.nickname'):
+        if t == 'json_path_node' and not (
+                (case['id'] == 3 and c['path'] == 'person.nickname') or
+                # Picking "path" from the saved-file reference shows the saved path.
+                (case['writes'] and c['path'] == 'path')):
             raise RuleFailure('wrong JSON field')
         if t == 'file_reader_node':
             if not case['reads'] or c['input_source'] != 'Configured' or safe_path(c['file_path'],case['root']) != Path(case['root'])/case['reads']:

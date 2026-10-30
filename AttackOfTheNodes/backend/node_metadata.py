@@ -327,7 +327,10 @@ NODE_METADATA: Dict[str, Dict[str, Any]] = {
                             'notes': 'file always comes from config. Configured input (-50 '
                                      'default) overrides wire; set input_source=Upstream payload '
                                      'to use Find lines. to_line is inclusive; lines_around uses '
-                                     'each_side (0–200). Empty file returns empty text for '
+                                     'each_side (0–200); to read only the matched line, '
+                                     'set lines_around=true and each_side=0 (otherwise the '
+                                     'excerpt runs from the match to to_line). Empty file '
+                                     'returns empty text for '
                                      'ordinary ranges, no_lines around a match. Invalid range, '
                                      '>500 lines, max_text (1–20000) or 80000 UTF-8 bytes errors; '
                                      'shared file limits/errors apply.'},
