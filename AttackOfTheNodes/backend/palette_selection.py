@@ -77,6 +77,27 @@ def exact_ids(factory, ids):
     return sorted(seen)
 
 
+def _merge_repeats(rows, key):
+    """Fold repeated rows for one ID into the first, joining requirement IDs.
+
+    A schema cannot forbid repeats; listing a node or role twice is not a
+    selection error. Malformed rows pass through for the checks below.
+    """
+    merged, first = [], {}
+    for row in rows:
+        ident = row.get(key) if isinstance(row, dict) else None
+        if (isinstance(ident, str) and ident in first and isinstance(row.get('requirement_ids'), list)
+                and isinstance(first[ident].get('requirement_ids'), list)):
+            ids = first[ident]['requirement_ids']
+            ids.extend(r for r in row['requirement_ids'] if r not in ids)
+            continue
+        row = deepcopy(row)
+        if isinstance(ident, str):
+            first[ident] = row
+        merged.append(row)
+    return merged
+
+
 def validate_analysis(factory, analysis):
     selection = analysis.get('selection') if isinstance(analysis, dict) else None
     if not isinstance(selection, dict) or set(selection) != {'candidates', 'roles'}:
@@ -84,6 +105,8 @@ def validate_analysis(factory, analysis):
     candidates, roles = selection['candidates'], selection['roles']
     if not isinstance(candidates, list) or len(candidates) > MAX_IDS or not isinstance(roles, list) or len(roles) > 32:
         raise NodeError('selection_invalid', 'Selection exceeds candidate/role limits.')
+    candidates, roles = _merge_repeats(candidates, 'type_id'), _merge_repeats(roles, 'role')
+    selection = dict(candidates=candidates, roles=roles)
     if candidates:
         exact_ids(factory, [c.get('type_id') if isinstance(c, dict) else None for c in candidates])
     requirements = analysis.get('requirements')

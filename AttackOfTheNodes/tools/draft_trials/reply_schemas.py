@@ -27,20 +27,23 @@ def analysis_schema():
     req_ids = array(text(minLength=1), minItems=1)
     reason = text(minLength=1, maxLength=512)
     role_row = dict(role=role, requirement_ids=req_ids, reason=reason)
+    # Property order is generation order: reasoning first, the decision last.
     return obj(dict(
-        status=text(enum=['ready', 'clarify', 'outside_scope', 'needs_new_node']),
         requirements=array(obj(dict(id=text(minLength=1), action=text(minLength=1),
             source=text(minLength=1), destination=text(minLength=1),
             order=dict(anyOf=[dict(type='integer'), text(minLength=1)]), acceptance=text(minLength=1)))),
         questions=text(), assumptions=array(text()), reason=text(),
         selection=obj(dict(candidates=array(obj(dict(type_id=text(enum=sorted(ADMITTED)), **role_row)), maxItems=MAX_IDS),
-                           roles=array(obj(role_row), maxItems=32)))))
+                           roles=array(obj(role_row), maxItems=32))),
+        status=text(enum=['ready', 'clarify', 'outside_scope', 'needs_new_node'])))
 
 
 def judge_schema():
-    return obj(dict(verdict=text(enum=['pass', 'fail', 'unsure']),
+    # A verdict written before its evidence anchors the review; keep it last.
+    return obj(dict(
         coverage=array(obj(dict(requirement_id=text(minLength=1), evidence=text(minLength=1), met=dict(type='boolean')))),
-        problems=array(text()), summary=text()))
+        problems=array(text()), summary=text(),
+        verdict=text(enum=['pass', 'fail', 'unsure'])))
 
 
 def install(spec):
