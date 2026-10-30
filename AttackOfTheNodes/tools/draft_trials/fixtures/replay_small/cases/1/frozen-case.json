@@ -1,0 +1,27 @@
+{
+  "version": 3,
+  "id": 1,
+  "root": "/saved/trial/cases/1/fixtures",
+  "request": "When I run it, show Ready in the output.",
+  "clarification": "",
+  "required_operations": [],
+  "required_structure": {
+    "roles": {
+      "start": {
+        "type": "start_node"
+      },
+      "message": {
+        "type": "text_output_node",
+        "output_literal": "Ready"
+      }
+    },
+    "before": [
+      [
+        "start",
+        "message"
+      ]
+    ],
+    "data_from": [],
+    "forks": []
+  }
+}

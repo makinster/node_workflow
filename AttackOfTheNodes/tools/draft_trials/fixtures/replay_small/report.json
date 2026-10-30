@@ -1,0 +1,17 @@
+{
+  "mode": "mock",
+  "execution_mode": "stub",
+  "case_set": 1,
+  "case_count": 1,
+  "fully_right": 1,
+  "calibration": "pass",
+  "result": "pass",
+  "cases": [
+    {
+      "case": 1,
+      "case_set": 1,
+      "result": "pass",
+      "fully_right": true
+    }
+  ]
+}

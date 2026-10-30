@@ -62,7 +62,9 @@ def main():
     )
     parser.add_argument("--judge-model", choices=JUDGE_MODELS, default=JUDGE_MODELS[0])
     parser.add_argument("--judge-effort", choices=JUDGE_EFFORTS, default=JUDGE_EFFORTS[0])
-    parser.add_argument("--case-set", type=int, choices=[1, 2, 3], default=1)
+    parser.add_argument("--case-set", default=None, help='1,2,3, a comma list, or all (default 1; replay infers saved sets)')
+    parser.add_argument('--replay', type=Path, help='Mock-only replay of a saved run directory')
+    parser.add_argument('--affected', metavar='GIT_BASE', help='Select sets from changed paths; unknown impact selects all')
     parser.add_argument("--cases", default=None)
     parser.add_argument(
         "--scenario",
@@ -79,19 +81,40 @@ def main():
         parser.error("--budget USD is required with --real-calls")
     if args.real_calls and args.replies:
         parser.error("--replies is mock-only")
+    if args.replay and (args.real_calls or args.replies or args.prepare or args.scenario != 'ready'):
+        parser.error('--replay is mock-only; cannot combine with --real-calls, --replies, --prepare or --scenario')
+    replay = None
+    selection = None
     try:
-        count=4 if args.case_set==3 else 10
-        ids = [int(value) for value in args.cases.split(",")] if args.cases else list(range(1,count+1))
-        if len(set(ids)) != len(ids) or any(
-            number not in range(1, count+1) for number in ids
-        ):
-            raise ValueError()
-    except ValueError:
-        parser.error(f"--cases must contain distinct ids from 1 through {count}")
+        from .dependencies import affected, sets_from_text
+        if args.replay:
+            from .replay import ReplayRun
+            source = checked_root(args.replay.expanduser())
+            validate_tree(source)
+            replay = ReplayRun(source)
+        sets = sets_from_text(args.case_set) if args.case_set else replay.sets if replay else [1]
+        if args.affected:
+            selection = affected(args.affected)
+            # Explicit choices add coverage; they never exclude an affected set.
+            sets = sorted(set(selection['selected']) | (set(sets) if args.case_set else set()))
+            selection['selected'] = sets
+            selection['skipped'] = [n for n in (1, 2, 3) if n not in sets]
+            for n in sets:
+                if not selection['reasons'][str(n)]:
+                    selection['reasons'][str(n)].append(dict(path=None, reason='explicit --case-set'))
+        args.case_set = sets[0] if len(sets) == 1 else sets
+        count = min(4 if n == 3 else 10 for n in sets)
+        ids = [int(value) for value in args.cases.split(',')] if args.cases else None
+        if ids is not None and (len(set(ids)) != len(ids) or any(n not in range(1,count+1) for n in ids)):
+            raise ValueError(f'--cases must contain distinct ids from 1 through {count} for every selected set')
+    except (ValueError, OSError) as exc:
+        parser.error(str(exc))
 
     # All validation precedes mkdir, marker writes, env changes and runner import.
     try:
         root = checked_root(args.trial_root)
+        if replay is not None and root.is_relative_to(replay.root):
+            raise ContainmentError('Replay output must not be inside the saved source run')
         if root.exists():
             validate_tree(root)
             if args.prepare:
@@ -121,6 +144,13 @@ def main():
     os.environ["AOTN_DATA_DIR"] = str(run_root / "library")
     from .runner import batch, write_json
 
+    if selection:
+        for n in sets:
+            reasons = ', '.join(dict.fromkeys(r['reason'] for r in selection['reasons'][str(n)]))
+            print(f'Selected set {n}: {reasons}', file=sys.stderr)
+        for n in selection['skipped']:
+            print(f'Skipped set {n}: {selection["skipped_reason"]}', file=sys.stderr)
+
     try:
         report = asyncio.run(
             batch(
@@ -137,6 +167,7 @@ def main():
                 judge_effort=args.judge_effort,
                 cases_even_if_calibration_fails=args.cases_even_if_calibration_fails,
                 case_set=args.case_set,
+                **({'replay': replay} if replay is not None else {}),
             )
         )
     except Exception as exc:
@@ -155,6 +186,9 @@ def main():
         )
         print(json.dumps({"result": "fail", "report": str(run_root / "report.json")}))
         return 1
+    if selection:
+        report['affected'] = selection
+        write_json(run_root/'report.json', report)
     print(
         json.dumps(
             {
@@ -163,7 +197,9 @@ def main():
                 "case_set": args.case_set,
                 "fully_right": report.get("fully_right"),
                 "calibration": report["calibration"],
-                "cases_even_if_calibration_fails": args.cases_even_if_calibration_fails,
+                "cases_even_if_calibration_fails": report.get('cases_even_if_calibration_fails', args.cases_even_if_calibration_fails),
+                **({'replay_summary': report['replay_summary']} if replay else {}),
+                **({'affected': selection} if selection else {}),
                 "report": str(run_root / "report.json"),
             }
         )

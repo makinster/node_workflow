@@ -1,0 +1,22 @@
+{
+  "steps": [
+    {
+      "handle": "analysis",
+      "status": "running"
+    },
+    {
+      "handle": "draft",
+      "status": "running"
+    },
+    {
+      "handle": "judge",
+      "status": "running"
+    }
+  ],
+  "input_trace": [
+    {
+      "prompt": "What should the workflow do?",
+      "answer": "When I run it, show Ready in the output."
+    }
+  ]
+}

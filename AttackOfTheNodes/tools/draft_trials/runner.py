@@ -174,8 +174,9 @@ class OrderedAnswers:
 class MockSDK:
     """Replace SDK transport only. Real node preparation, masking and usage run."""
 
-    def __init__(self, replies):
+    def __init__(self, replies, replay_tape=None):
         self.replies = list(replies)
+        self.replay_tape = replay_tape
         self.calls = []
         self.succeeded = 0
 
@@ -196,9 +197,12 @@ class MockSDK:
                 return False
 
             async def get_final_message(self):
-                if not outer.replies:
+                if outer.replay_tape is not None:
+                    reply = outer.replay_tape.pop()
+                elif not outer.replies:
                     raise AssertionError("unexpected SDK call")
-                reply = outer.replies.pop(0)
+                else:
+                    reply = outer.replies.pop(0)
                 if isinstance(reply, dict) and reply.get("_error"):
                     raise RuntimeError("canned transport failure")
                 text = (
@@ -377,7 +381,8 @@ def create_trial_service():
     )
 
 
-async def run_workflow(spec, answers, artifact, timeout=30, *, system_node_folders=None):
+async def run_workflow(spec, answers, artifact, timeout=30, *, system_node_folders=None,
+                       step_observer=None, cache_context=None):
     # NODE_EXECUTION_UPDATE is observational: stop() there does not prevent the
     # current node from entering its adapter. Guard the actual call boundary.
     if _budget is not None:
@@ -391,11 +396,14 @@ async def run_workflow(spec, answers, artifact, timeout=30, *, system_node_folde
             return await original(**kwargs)
 
         with patch.object(claude, "ask", guarded_ask):
-            return await _run_workflow(spec, answers, artifact, timeout, system_node_folders=system_node_folders)
-    return await _run_workflow(spec, answers, artifact, timeout, system_node_folders=system_node_folders)
+            return await _run_workflow(spec, answers, artifact, timeout, system_node_folders=system_node_folders,
+                                       step_observer=step_observer, cache_context=cache_context)
+    return await _run_workflow(spec, answers, artifact, timeout, system_node_folders=system_node_folders,
+                               step_observer=step_observer, cache_context=cache_context)
 
 
-async def _run_workflow(spec, answers, artifact, timeout=30, *, system_node_folders=None):
+async def _run_workflow(spec, answers, artifact, timeout=30, *, system_node_folders=None,
+                        step_observer=None, cache_context=None):
     from backend.authoring import build_workflow
     from backend.node_factory import NodeFactory
     from backend.run_policies import InputProvider, TerminatePolicy
@@ -412,6 +420,13 @@ async def _run_workflow(spec, answers, artifact, timeout=30, *, system_node_fold
         raise ValueError(built)
     provider = Provider(answers)
     service = create_trial_service()
+    # Override this service's setting lookup only: no settings files (including
+    # the prepared key library or owner's normal settings) are changed.
+    settings = ExitStack()
+    if cache_context is not None:
+        original_get = service.configuration.get
+        settings.enter_context(patch.object(service.configuration, 'get',
+            side_effect=lambda key: cache_context if key == 'claude_cache_context' else original_get(key)))
     if system_node_folders is not None:
         service.configuration.set('system_node_folders', str(system_node_folders))
     service.load(built["path"])
@@ -420,6 +435,10 @@ async def _run_workflow(spec, answers, artifact, timeout=30, *, system_node_fold
     steps = []
 
     def step(event):
+        handle = handles.get(event.get('node_id'))
+        if (step_observer is not None and event.get('status') == 'running'
+                and spec['nodes'].get(handle, {}).get('type') == 'ask_claude_node'):
+            step_observer(handle)
         steps.append(
             dict(
                 handle=handles.get(event.get("node_id")),
@@ -474,6 +493,7 @@ async def _run_workflow(spec, answers, artifact, timeout=30, *, system_node_fold
         write_json(artifact, result)
         return result, vault
     finally:
+        settings.close()
         service.close()
 
 
@@ -693,8 +713,10 @@ async def target_fixtures(spec, case, directory):
 
 async def run_case(
     number, trial_root, library, replies=None, real_calls=False, scenario="ready",
-    *, judge_model=JUDGE_MODELS[0], judge_effort=JUDGE_EFFORTS[0], case_set=1,
+    *, judge_model=JUDGE_MODELS[0], judge_effort=JUDGE_EFFORTS[0], case_set=1, replay=None,
 ):
+    if replay is not None and real_calls:
+        raise ValueError('Replay is mock-only')
     directory = trial_root / "cases" / str(number)
     directory.mkdir(parents=True)
     case = case_record(number, directory / "fixtures", case_set)
@@ -702,6 +724,9 @@ async def run_case(
     expected_status = case.get("expected_status", "ready")
     needs_clarification = bool(case["clarification"])
     root = Path(case["root"])
+    tape = replay.case(case_set, number, root) if replay is not None else None
+    if tape is not None:
+        replies = []  # Never reach the default canned-response path during replay.
     prepare_files(root, variants[0])
     write_json(
         directory / "frozen-case.json", dict(case, fixtures=variants)
@@ -710,7 +735,7 @@ async def run_case(
     from .admission import configure
     from backend.palette_selection import ADMITTED, ORIGINAL_PALETTE
     configure(spec, ORIGINAL_PALETTE if case_set in (1,2) else ADMITTED)
-    spec["name"] += " case " + str(number)
+    spec["name"] += f' set {case_set} case {number} trial {sha(str(directory))[:10]}'
     spec["nodes"]["judge"]["config"].update(model=judge_model, effort=judge_effort)
     drafts = directory / "drafts"
     drafts.mkdir()
@@ -724,6 +749,8 @@ async def run_case(
                 case["clarification"] if scenario != "unhelpful" else "not sure",
             )
         )
+    if tape is not None and tape.answers is not None:
+        answers = tape.answers
     if replies is None:
         first = requirements(case, "clarify" if needs_clarification else expected_status)
         replies = [first]
@@ -760,9 +787,18 @@ async def run_case(
         warnings=[],
         artifacts=str(directory),
     )
-    mock = MockSDK(replies)
+    mock = MockSDK(replies, replay_tape=tape)
     started = time.monotonic()
     def finish():
+        if tape is not None:
+            if tape.failure:
+                report['result'] = 'replay_diverged'
+                report['failure'] = tape.failure
+            report['mode'] = 'replay'
+            report['real_api_calls'] = 0
+            report['execution_mode'] = 'stub'
+            report['substituted_boundaries'] = ['saved SDK replies; network and Secrets forbidden']
+            report['replay'] = tape.report(report.get('result', 'fail'))
         report.setdefault('recall', selection_recall(case, []))
         report['fully_right'] = report.get('result') == 'pass'
         report['seconds'] = time.monotonic() - started
@@ -779,6 +815,7 @@ async def run_case(
                 answers,
                 directory / "designer-run.json",
                 timeout=180 if real_calls else 30,
+                **({'step_observer': tape.observe} if tape is not None else {}),
             )
         # Preserve raw replies and all named evidence via public RunService memory snapshot.
         selected = {k: v for k, v in vault.items() if k not in ("output_log",)}
@@ -822,9 +859,13 @@ async def run_case(
             succeeded=len(run["agent_usage"]),
         )
         if run.get('input_failure'):
+            if tape is not None:
+                tape.failure = 'replay_diverged: current user-input sequence has no matching saved answer.'
             report['input_failure'] = run['input_failure']
             raise ValueError(run['input_failure'])
-        if not real_calls and mock.replies:
+        if tape is not None and tape.failure:
+            raise ValueError(tape.failure)
+        if not real_calls and tape is None and mock.replies:
             raise ValueError("Unused canned replies; unexpected call sequence")
         first = json.loads(vault.get("first_analysis", "null"))
         frozen = json.loads(vault.get("frozen_requirements", "null"))
@@ -1010,8 +1051,10 @@ async def contract_inventory():
 
 async def calibrate(
     trial_root, real_calls=False, judge_replies=None, *,
-    judge_model=JUDGE_MODELS[0], judge_effort=JUDGE_EFFORTS[0],
+    judge_model=JUDGE_MODELS[0], judge_effort=JUDGE_EFFORTS[0], replay=None,
 ):
+    if replay is not None and real_calls:
+        raise ValueError('Replay is mock-only')
     from backend.agent_usage import usage_summary
     from backend.meta_workflow import check
     from backend.node_errors import NodeError
@@ -1106,19 +1149,20 @@ async def calibrate(
                         {"from": "judge.default", "to": "end.input"},
                     ],
                 )
-                reply = (
-                    next(mock_replies)
-                    if mock_replies is not None
-                    else meaning("pass" if expected else "fail")
-                )
+                tape = replay.judge(pair['id'], variant) if replay is not None else None
+                reply = None if tape is not None else (
+                    next(mock_replies) if mock_replies is not None
+                    else meaning("pass" if expected else "fail"))
                 with ExitStack() as stack:
                     if not real_calls:
-                        MockSDK([reply]).install(stack)
+                        MockSDK([] if tape is not None else [reply], replay_tape=tape).install(stack)
                     run, vault = await run_workflow(
                         spec,
                         [],
                         directory / (variant + "-judge-run.json"),
                         timeout=180 if real_calls else 30,
+                        cache_context='5 min',
+                        **({'step_observer': tape.observe} if tape is not None else {}),
                     )
                     judge_reply = bounded_judge_reply(vault.get("judge_text", ""))
                 try:
@@ -1156,7 +1200,11 @@ async def calibrate(
                         ),
                     )
                 )
-                if run.get('errors'):
+                if tape is not None:
+                    if tape.failure:
+                        rows[-1]['result'] = 'replay_diverged'
+                    rows[-1]['replay'] = tape.report(rows[-1]['result'])
+                if run.get('errors') and tape is None:
                     raise ValueError('Calibration judge run failed; inspect its run evidence')
     except (ValueError, RuntimeError, TimeoutError, OSError) as exc:
         failure = type(exc).__name__ + ": " + str(exc)
@@ -1187,10 +1235,31 @@ async def calibrate(
         judge_false_failures=sum(r["judge_false_failure"] for r in rows),
         fixtures=rows,
     )
+    from .costing import cache_report
+    result['cache'] = cache_report(receipts, attempted_calls=calls['attempted'])
+    result['cache']['cost_basis'] = 'SDK receipts' if real_calls else 'synthetic mock usage; no inference charge'
+    if replay is not None:
+        from .replay import counts
+        result.update(mode='replay', execution_mode='stub', real_api_calls=0, replay_summary=counts(rows))
     if failure:
         result["failure"] = failure
     write_json(trial_root / "calibration-report.json", result)
     return result
+
+
+def build_designers(artifacts):
+    from backend.authoring import build_workflow
+    from backend.node_factory import NodeFactory
+    artifacts.mkdir(parents=True, exist_ok=True)
+    # These are internal trial copies, never owner workflows. A unique name
+    # permits multiple sets/invocations in one isolated library.
+    for path in (OLD, SPEC):
+        spec = json.loads(path.read_text())
+        spec['name'] += ' trial ' + sha(str(artifacts))[:10]
+        built = build_workflow(NodeFactory(), spec)
+        write_json(artifacts/(path.stem+'-build.json'), built)
+        if not built['ok']:
+            raise ValueError(built)
 
 
 async def _batch(
@@ -1204,32 +1273,31 @@ async def _batch(
     judge_effort=JUDGE_EFFORTS[0],
     cases_even_if_calibration_fails=False,
     case_set=1,
+    calibration_report=None,
+    replay=None,
 ):
-    from backend.authoring import build_workflow
-    from backend.node_factory import NodeFactory
-
     start = time.monotonic()
+    calls_before = _budget.calls if _budget is not None else 0
+    succeeded_before = _budget.succeeded if _budget is not None else 0
+    cost_before = _budget.cost if _budget is not None else 0.
     library = trial_root / "library"
     artifacts = trial_root / "artifacts"
-    artifacts.mkdir(exist_ok=True)
-    # Both versions built in the isolated library; only v2 executes.
-    for path in (OLD, SPEC):
-        built = build_workflow(NodeFactory(), json.loads(path.read_text()))
-        write_json(artifacts / (path.stem + "-build.json"), built)
-        if not built["ok"]:
-            raise ValueError(built)
+    if calibration_report is None:
+        build_designers(artifacts)
     calibration = {"result": "not_run"}
     rows = []
     failure = None
     try:
-        calibration = await calibrate(
-            trial_root, real_calls, judge_model=judge_model, judge_effort=judge_effort
-        )
+        calibration = calibration_report if calibration_report is not None else await calibrate(
+            trial_root, real_calls, judge_model=judge_model, judge_effort=judge_effort,
+            **({'replay': replay} if replay is not None else {}))
         failure = calibration.get("failure")
         if (calibration["result"] == "pass" or cases_even_if_calibration_fails) and not calibrate_only:
             overrides = (
                 json.loads(Path(replies_file).read_text()) if replies_file else {}
             )
+            if calibration_report is not None:
+                overrides = overrides.get(str(case_set), {})
             for number in case_ids:
                 if _budget is not None:
                     _budget.before()
@@ -1244,17 +1312,18 @@ async def _batch(
                         judge_model=judge_model,
                         judge_effort=judge_effort,
                         **({"case_set": case_set} if case_set != 1 else {}),
+                        **({'replay': replay} if replay is not None else {}),
                     )
                 )
     except (ValueError, RuntimeError, TimeoutError, OSError) as exc:
         failure = type(exc).__name__ + ": " + str(exc)
     calls = {
-        key: calibration.get("model_calls", {}).get(key, 0)
+        key: (calibration.get("model_calls", {}).get(key, 0) if calibration_report is None else 0)
         + sum(r.get("model_calls", {}).get(key, 0) for r in rows)
         for key in ("attempted", "succeeded")
     }
     if _budget is not None:
-        calls = dict(attempted=_budget.calls, succeeded=_budget.succeeded)
+        calls = dict(attempted=_budget.calls-calls_before, succeeded=_budget.succeeded-succeeded_before)
     summary = dict(
         judge_model=judge_model,
         judge_effort=judge_effort,
@@ -1308,12 +1377,57 @@ async def _batch(
                                  for r in rows if r['result'] == 'needs_review']
     if failure:
         summary["failure"] = failure
-    summary["estimated_cost_usd"] = _budget.cost if _budget is not None else None
+    summary["estimated_cost_usd"] = _budget.cost-cost_before if _budget is not None else None
     summary["cost_note"] = (
         "Mock token counts do not measure inference cost"
         if not real_calls
         else "Estimate/time guard includes calibration; stops before further calls at the recorded limits or unknown cost. Not a billing hard cap."
     )
+    if calibration_report is not None:
+        summary['calibration_shared'] = True
+        summary['calibration_report'] = '../calibration-report.json'
+    if replay is not None:
+        from .replay import counts
+        summary.update(mode='replay', execution_mode='stub', real_api_calls=0, replay_source=str(replay.root),
+                       replay_summary=counts(rows))
+    return summary
+
+
+async def _multi_batch(trial_root, sets, ids, real_calls, calibrate_only, scenario,
+                       replies_file, judge_model, judge_effort, continue_cases, replay):
+    start = time.monotonic()
+    build_designers(trial_root/'artifacts')
+    calibration = await calibrate(trial_root, real_calls, judge_model=judge_model,
+                                  judge_effort=judge_effort,
+                                  **({'replay': replay} if replay is not None else {}))
+    sections = {}
+    for n in sets:
+        directory = trial_root/f'set-{n}'
+        directory.mkdir(parents=True)
+        (directory/'library').mkdir()
+        section = await _batch(directory, ids[n], real_calls, calibrate_only, scenario,
+            replies_file, judge_model, judge_effort, continue_cases, n,
+            calibration_report=calibration, replay=replay)
+        sections[str(n)] = section
+        write_json(directory/'report.json', section)
+    rows = [row for section in sections.values() for row in section['cases']]
+    results = [section['result'] for section in sections.values()]
+    result = ('fail' if calibration['result'] != 'pass' or 'fail' in results else
+              'needs_review' if 'needs_review' in results else 'pass')
+    summary = dict(result=result, mode='real' if real_calls else 'mock', case_sets=sets,
+        sets=sections, case_count=len(rows),
+        fully_right={n: section['fully_right'] for n, section in sections.items()},
+        fixture_count=sum(section['fixture_count'] for section in sections.values()),
+        calibration=calibration['result'], calibration_report='calibration-report.json',
+        cases_even_if_calibration_fails=continue_cases,
+        model_calls={key: calibration['model_calls'][key]+sum(s['model_calls'][key] for s in sections.values())
+                     for key in ('attempted','succeeded')},
+        judge_model=judge_model, judge_effort=judge_effort, seconds=time.monotonic()-start,
+        estimated_cost_usd=_budget.cost if _budget is not None else None,
+        cost_note='Calibration charged once; per-set costs exclude shared calibration. Mock counts are not inference estimates.')
+    if replay is not None:
+        from .replay import counts
+        summary.update(mode='replay', execution_mode='stub', real_api_calls=0, replay_source=str(replay.root), replay_summary=counts(rows))
     return summary
 
 
@@ -1332,23 +1446,41 @@ async def batch(
     judge_effort=JUDGE_EFFORTS[0],
     cases_even_if_calibration_fails=False,
     case_set=1,
+    replay=None,
 ):
     global _budget, _shared_library
     previous = _budget, _shared_library
     try:
-        if case_ids is None:
-            case_ids=range(1,5) if case_set==3 else range(1,11)
-        if case_set not in (1, 2, 3):
-            raise ValueError("case_set must be 1, 2 or 3")
+        from .dependencies import sets_from_text
+        sets = sets_from_text(case_set) if isinstance(case_set, str) else sorted(case_set) if isinstance(case_set, (list, tuple)) else [case_set]
+        if not sets or len(sets) != len(set(sets)) or any(n not in (1, 2, 3) for n in sets):
+            raise ValueError('case_set must contain distinct sets from 1,2,3')
+        if replay is not None:
+            if real_calls or replies_file:
+                raise ValueError('Replay is mock-only and cannot be combined with --replies')
+            from .replay import ReplayRun
+            replay = replay if isinstance(replay, ReplayRun) else ReplayRun(replay)
+            # Diagnostic replay checks the saved cases even after failed judge
+            # self-test; overall success still requires passing calibration.
+            cases_even_if_calibration_fails = True
         _budget = TrialBudget(budget_usd, time_limit) if real_calls else None
         if real_calls and shared_library is None:
             raise ValueError("real calls require a prepared shared library")
         _shared_library = Path(shared_library) if real_calls else None
-        summary = await _batch(
-            trial_root, case_ids, real_calls, calibrate_only, scenario, replies_file,
-            judge_model, judge_effort,
-            cases_even_if_calibration_fails, case_set,
-        )
+        requested_ids = list(case_ids) if case_ids is not None else None
+        def ids_for(n):
+            ids = list(requested_ids) if requested_ids is not None else ((replay.case_ids(n) if replay is not None else []) or list(range(1,5 if n==3 else 11)))
+            if len(ids) != len(set(ids)) or any(type(i) is not int or i not in range(1,5 if n==3 else 11) for i in ids):
+                raise ValueError('Invalid case IDs for selected set')
+            return ids
+        ids = {n: ids_for(n) for n in sets}
+        if len(sets) == 1:
+            summary = await _batch(
+                trial_root, ids[sets[0]], real_calls, calibrate_only, scenario, replies_file,
+                judge_model, judge_effort, cases_even_if_calibration_fails, sets[0], replay=replay)
+        else:
+            summary = await _multi_batch(trial_root, sets, ids, real_calls, calibrate_only,
+                scenario, replies_file, judge_model, judge_effort, cases_even_if_calibration_fails, replay)
         summary.update(budget_usd=budget_usd, time_limit_seconds=time_limit)
         write_json(trial_root / "report.json", summary)
         return summary

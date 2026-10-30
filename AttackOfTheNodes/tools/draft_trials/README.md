@@ -484,3 +484,110 @@ undeclared roles because support already includes them; reassign any other
 undeclared candidate role only when its type occurs in exactly one declared
 role's reviewed alternatives. Otherwise retain the error. No extra inference
 call or rewrite of the recorded requirements is involved.
+
+## Cheaper iteration: saved replies, shared calibration and affected sets
+
+```bash
+# One fresh self-test for all selected suites, not one per suite:
+python -m tools.draft_trials --trial-root /absolute/trial --case-set all
+python -m tools.draft_trials --trial-root /absolute/trial --case-set 1,3 --cases 1,2
+
+# No provider calls; infer the suite and recorded case IDs from the source:
+python -m tools.draft_trials --trial-root /absolute/replay-trial \
+  --replay ~/draft-trial-01/runs/000041
+
+# Committed, staged, unstaged and untracked paths relative to the base:
+python -m tools.draft_trials --trial-root /absolute/trial --affected origin/main
+```
+
+`--case-set` defaults to 1 and accepts distinct comma-separated IDs or `all`
+(1,2,3). Calibration always runs once, with every current good/bad pair, before
+any selected case. A multi-set run writes one root `calibration-report.json`
+and `set-<n>/report.json` for each set; the root report embeds those sections.
+`fully_right` remains per set. Per-set call/cost totals exclude shared calibration;
+the invocation totals include it once. Budget, elapsed-time and unknown-cost
+guards cover the entire invocation without resetting between sets. Failed
+calibration blocks cases unless explicitly running the diagnostic override;
+even with that override, the overall result remains fail. Sets 1/2 retain the
+exact original twelve-type admission/contracts; set 3 retains its sixteen types.
+For multi-set `--replies`, use `{ "1": { "1": [replies...] }, "3": ... }`;
+single-set overrides retain the original case-ID object format.
+
+Replay is mock-only and cannot combine with `--real-calls`, `--replies`,
+`--prepare` or nondefault `--scenario`. The source tree is validated before
+creating output; outputs cannot be inside the saved source run. Replay reads
+published replies and AI execution order from each case's evidence/run files,
+plus the saved per-pair judge replies. It relocates only that case's original
+fixture root into a fresh fixture directory and preserves recorded user answers.
+First drafts and structural retries stay separate. It never falls back to the
+canned good draft or judge answer. Missing/unpublished/truncated reply evidence,
+a new AI call or a mismatched stage stops that case/variant as `replay_diverged`;
+remaining cases and calibration pairs are still checked. A new deterministic
+rejection is a newly failing case, not a reason to consume leftover replies.
+
+The current selection/Check reply/spec checks, case rules, bounded real-engine
+fixtures and all calibration rules still run through the existing gates.
+Reports include `same_outcome`, `newly_passing`, `newly_failing`, `diverged`,
+consumed/remaining replies, original/current outcomes and `real_api_calls: 0`.
+Replay runs the saved cases diagnostically even after failed calibration; it
+still cannot report an overall pass without passing calibration. Replay is
+`execution_mode=stub`: recorded inference, fake Secrets and blocked network,
+with real local nodes/engine. It measures deterministic handling of old answers,
+not how changed prompts/contracts would affect a fresh model answer.
+The committed `fixtures/replay_small/` is a minimal saved **mock** run, not paid
+evidence. A replay source can itself contain a multi-set invocation.
+
+Calibration reuses the unchanged complete contract text in the node's existing
+Context input, enabling `claude_cache_context = "5 min"` for that isolated
+RunService's setting lookup only. No settings file is changed, including the
+prepared key library and the owner's normal settings. The existing adapter
+serializes cached Context before the question; the question text and the order
+of all judge-template sections are unchanged. There are two reusable prefixes:
+the frozen twelve-type contracts and the admitted sixteen-type contracts.
+`calibration-report.json.cache` reports ordinary/output/cache-read/cache-write
+tokens, estimated cost, the same tokens priced without caching and savings
+(which may be negative on a cache write). Unknown usage stays unknown. Mock or
+replay counts are explicitly synthetic, never a measured inference charge.
+
+`dependencies.py` owns reviewed dependency index v1. Suite/oracle paths map to
+their owning set. It reuses case family/helper/used-type/candidate-alternative
+tags, expected compositions and reviewed metadata source dependencies. Shared
+prompts, serving, catalogue, metadata, selection and harness/routing changes
+select all. Any unmatched path, or no changed paths, selects all; never zero.
+Git renames inspect both old/new paths. The selection and skipped-set reasons
+are printed to stderr and retained in stdout/report JSON. An explicit
+`--case-set` adds requested coverage to affected coverage, never excludes it.
+The complete universal calibration core still runs for an affected-only family.
+Affected-only runs shorten iteration; they do not replace full release checks.
+
+To reproduce the conservative paid `all` projection from saved SDK counts:
+
+```bash
+python -m tools.draft_trials.costing \
+  ~/draft-trial-01/runs/000039 ~/draft-trial-01/runs/000040 \
+  ~/draft-trial-01/runs/000041
+```
+
+Those runs yield **130 calls** (60 calibration + 31/27/12 case calls),
+**1,074,097 input / 140,169 output tokens**, approximately **$0.1774942** before
+any cache savings, using the adapter's checked-in prices. Calibration from the
+last supplied run is charged once. This assumes historical reply lengths and
+repair counts, with no guessed character/token ratio or cache-hit rate; the
+next owner-approved paid run reports actual cache reads/writes and savings.
+
+Verification on the step-A branch from `a1d5363` (2026-10-30): full
+`python -m pytest -n auto` **4,756 passed, 187 skipped**, zero xfails (46.12 s).
+All mock sets pass (10/10, 10/10, 4/4), as do all thirty mechanical calibration
+pairs. A separate multi-set CLI round trip also replays its saved replies.
+Owner run replays made zero real API calls:
+
+| Source run | Same outcome | Newly passing | Newly failing | Diverged |
+|---|---:|---:|---:|---:|
+| 000039 (set 1) | 10 | 0 | 0 | 0 |
+| 000040 (set 2) | 10 | 0 | 0 | 0 |
+| 000041 (set 3) | 4 | 0 | 0 | 0 |
+
+All sixty judgment-variant comparisons are unchanged in each replay. Run 000039
+keeps its failed calibration and therefore remains an overall failure despite
+its 10/10 case score. Runs 000040/000041 keep their 9/10 and 3/4 case scores.
+No judge prompt, frozen expected result, backend service or workflows/ edit.
