@@ -127,7 +127,6 @@ def _duplicate_diagnostics(paths):
 
 
 SAFE_MESSAGES = {
-    'spec_invalid': 'This spec field has an invalid shape or value.',
     'bad_handle': 'Use a lowercase handle starting with a letter (letters, digits and underscore).',
     'unknown_node_type': 'Choose an available node type from the catalogue.',
     'unknown_config_key': 'Unknown config field; see this node’s catalogue entry.',
@@ -170,7 +169,10 @@ def problem_report(diagnostics, manager=None, *, invalid=False):
         code = str(diagnostic.get('code') or 'validation')
         # Core CLI messages can quote arbitrary config values. Preserve verdict,
         # structured location and code; render safe guidance for node persistence.
-        message = SAFE_MESSAGES.get(code, 'Check this node’s configuration: ' + code.replace('_', ' ') + '.')
+        if code == 'spec_invalid' or diagnostic.get('hint') in authoring.SPEC_SHAPE_MESSAGES:
+            message = authoring.spec_shape_message(diagnostic)
+        else:
+            message = SAFE_MESSAGES.get(code, 'Check this node’s configuration: ' + code.replace('_', ' ') + '.')
         row = dict(node=_safe(diagnostic.get('node'), manager, 80),
                    field=_safe(diagnostic.get('field'), manager, 200),
                    code=_safe(code, manager, 80), severity=diagnostic.get('level', 'error'),
@@ -210,10 +212,14 @@ async def check(factory, text, limit, manager=None, *, fail_on_unreachable=False
         message, details = problem_report(_duplicate_diagnostics(duplicates), manager, invalid=True)
         raise NodeError('invalid_json', message, details=details)
     if isinstance(parsed, dict):
-        if isinstance(parsed.get('nodes'), dict) and len(parsed['nodes']) > MAX_NODES:
+        if isinstance(parsed.get('nodes'), (dict, list)) and len(parsed['nodes']) > MAX_NODES:
             raise NodeError('spec_too_large', 'Spec has more than 128 nodes.')
         if isinstance(parsed.get('connections'), list) and len(parsed['connections']) > MAX_CONNECTIONS:
             raise NodeError('spec_too_large', 'Spec has more than 256 connections.')
+    parsed, normalization_errors = authoring.normalize_spec(parsed)
+    if normalization_errors:
+        message, details = problem_report(normalization_errors, manager, invalid=True)
+        raise NodeError('spec_invalid', message, details=details)
     await asyncio.sleep(0)
     checked = authoring.check_workflow_spec(factory, parsed)
     await asyncio.sleep(0)  # Stop must win before any publication.

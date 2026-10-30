@@ -48,6 +48,37 @@ with `aotn run "<name>"` or open it from the app's Workflow Library.
 }
 ```
 
+### Nodes as a list
+
+`nodes` also accepts a list of node objects. Each object must have a unique
+`id` containing a valid handle (1–40 lowercase letters, digits or underscores,
+starting with a letter), plus the usual `type`, optional `alias` and `config`:
+
+```json
+{
+  "format": "aotn-workflow/1",
+  "name": "List example",
+  "nodes": [
+    {"id": "start", "type": "start_node", "config": {"greeting": "Hello"}},
+    {"id": "end", "type": "end_node"}
+  ],
+  "connections": [{"from": "start.default", "to": "end.input"}]
+}
+```
+
+The builder converts this to `"nodes": {"start": {...}, "end": {...}}`
+before graph validation, removing only the list-only `id` fields. `build`,
+`build --check` and Check workflow spec accept both forms. Saved workflows
+use their ordinary keyed node map with generated runtime IDs; the normalized
+Spec output from Check workflow spec uses the keyed authoring handles.
+Existing keyed specs are unchanged.
+
+Missing, invalid or duplicate IDs are errors. Keyed entries such as
+`{"start": {"type": "start_node"}}` cannot be mixed into a node list.
+Shape errors give the expected format, a tiny generic example and the JSON
+type received, without quoting supplied values. If `nodes` is unusable,
+connection diagnostics are suppressed until that top-level problem is fixed.
+
 - **Handles** (`start`, `nap`): lowercase letters, digits and `_`, starting
   with a letter; local to the spec. Node ids are generated and reported back.
 - **`alias`** is the display name (optional; defaults to the type's).

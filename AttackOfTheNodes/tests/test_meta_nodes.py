@@ -109,8 +109,10 @@ def test_cli_check_and_node_share_verdict_and_structured_diagnostics(spec, mutat
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize('source', ['Upstream payload', 'Vault', 'Configured'])
-async def test_check_sources_preserve_original_spec_and_typed_outputs(spec, source):
-    encoded = json.dumps(spec)
+@pytest.mark.parametrize('node_form', ['keyed', 'list'])
+async def test_check_sources_preserve_original_spec_and_typed_outputs(spec, source, node_form):
+    supplied = spec if node_form == 'keyed' else {**spec, 'nodes': [dict(id=key, **node) for key, node in spec['nodes'].items()]}
+    encoded = json.dumps(supplied)
     node, ctx, memory, done, errors = runner('check_workflow_spec_node',
         dict(input_source=source, input=encoded, input_vault_key='draft',
              vault_write=True, vault_write_key='checked', report_vault_write=True, report_vault_key='report'), encoded)
