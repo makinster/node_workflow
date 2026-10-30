@@ -6,6 +6,40 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-30 — PR #158 paid-trial follow-up (Important)
+
+Same root `/home/makin/src/nw-helper-family`, branch `codex/helper-family`,
+following `16a764c`. Owner reported paid results 8/10, 8/10 and 2/4 with two bad
+calibration passes. Restored the exact per-node standard config and Configured
+text explanations; removed the duplicating shared legends, kept lookalike links.
+Full Compact is 57,481 of the unchanged 64,000 cap. The former whole-registry
+20% headroom assumption no longer fits restored prose; the hard cap remains
+checked, every per-node explanation is asserted, and planning headroom is checked
+against the admitted contracts (26,144 of 50,000). Brief remains 15,794 (8,484 for
+sixteen types); selected snapshots peak at 11,929; context cap remains 100,000.
+
+Copied the saved run 000035 case-3 draft as a regression fixture, normalizing only
+its configured file root. The probe executes Conditional, Text Transform and
+Merge Beacon locally and follows the real selected-port packet. The family
+structure matcher permits additional outcome-preserving Conditional guards;
+sets 1/2 keep the strict original fork layout. Unknown admitted compositions or
+unsupported modes (including unmapped wire/Vault file references) produce
+`needs_review`, preserved in case and batch reports
+with targets unexecuted. Known structural/path/semantic failures still fail.
+
+After repeat folding, candidate-role validation drops undeclared Start/End
+candidates and repairs a stale role only when exactly one declared role contains
+that type. Ambiguous/unmatched roles still error and the input analysis remains
+unchanged. A full mock pipeline verifies no extra call. Re-attested unchanged
+Check reply claims against the shared validation dependency and refreshed receipts.
+
+Full `pytest -n auto`: **4,692 passed, 187 skipped, zero xfails in 41.16 s**.
+All three mock sets and all thirty calibration pairs pass. Saved draft passes
+rules and real-engine fixtures; mutations of its guard/extraction still fail.
+No real API calls, judge prompt changes or workflows/ edits. Nodes-as-list habit
+and the first-line `needs_new_node` case deliberately left alone. Paid reviewer
+quality remains for the owner's next trial; no measured improvement is claimed.
+
 ## 2026-10-30 — Text, JSON and line helper family (Important)
 
 Root `/home/makin/src/nw-helper-family`, branch `codex/helper-family`, fetched

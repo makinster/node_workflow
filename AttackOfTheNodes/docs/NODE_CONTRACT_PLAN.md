@@ -17,6 +17,9 @@ Sets 1/2 remain pinned to their original twelve-type scope. No claim/code
 mismatches; no helper execute implementation changed. See
 [Current State](CURRENT_STATE.md#first-helper-family--2026-10-30-important) and
 [admission receipt](audits/claims_baseline_2026_10_29/helper_family_admission.json).
+PR #158 follow-up restores per-node catalogue explanations, repairs unambiguous
+candidate roles and evaluates ordinary Conditional guards in set 3. Compositions
+outside the local probe report `needs_review`; the frozen suites remain strict.
 No further family is admitted by this change.
 
 For the checked implementation baseline, open PRs and owner gates, see

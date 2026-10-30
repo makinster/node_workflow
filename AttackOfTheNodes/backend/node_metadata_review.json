@@ -367,19 +367,21 @@
         "backend/port_types.py": "fba69be8d89a713cfc1e98870544420cd8809e973d0b1079eca397dde17d422a",
         "backend/reply_shape.py": "f10b3e581338160414fb2d27a09a2a35c576f5d28f4a353f9f85a47ec17bb72f",
         "backend/reply_schema.py": "4873fffbf0f34b8f71988686b300bc9ebdc75213babf380dcab10c52d771d779",
-        "backend/palette_selection.py": "779ae5f7e07250df6ebdbe1f50f2fdab97f78fa436c95f56f5f038f05d31762e"
+        "backend/palette_selection.py": "2ea7b17543dce6871c51c7f3cb6ba84fbfb059b9590ef1fdfa8ed16d8d30e9a9"
       },
       "tests": [
         "tests/test_node_claims.py::test_reviewed_palette_scenarios",
         "tests/test_node_claims.py::test_activated_vault_writes",
         "tests/test_node_claims.py::test_palette_real_engine_delivery",
-        "tests/test_small_wins.py::test_all_reply_types_and_sources"
+        "tests/test_small_wins.py::test_all_reply_types_and_sources",
+        "tests/test_helper_family_followup.py::test_candidate_is_reassigned_to_its_unique_declared_role",
+        "tests/test_helper_family_followup.py::test_ambiguous_candidate_role_still_errors"
       ],
       "content_sha256": "53fd3cf9f2a6f9b7beede148363cca8dbcdaf7bbd4a3491567c9e7e94d88b0bc",
       "author": "helper-family-record-author",
-      "verifier": "helper-family-source-and-scenario-recheck",
+      "verifier": "candidate-role-repair-source-recheck",
       "reviewed": "2026-10-30",
-      "source_revision": "8ee108b4e3e932790c94ad90c5bc419cee5f75e2"
+      "source_revision": "16a764c6869f8ceac7c646bde823281639bb4fb2"
     },
     "context_pack_node": {
       "sources": {

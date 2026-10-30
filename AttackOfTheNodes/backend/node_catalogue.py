@@ -127,7 +127,6 @@ def entry(factory, row, detail):
 
 PORT_LEGEND = 'Connections use port ids only; quoted names are labels.'
 LOOKALIKE_LEGEND = 'Use instead links name alternatives; they do not grant admission.'
-STANDARD_LEGEND = ('Standard config: transient_output: for nodes declaring this flag, true passes the output on to the next node; false sends no output on. Each Config shows its default; documented forwarding modes take precedence.')
 
 
 def port_label(port, *, brief=False):
@@ -197,7 +196,7 @@ def text_output(record, factory):
         return brief_text(record, factory)
     lines = [header(record) + (': default ports; field:type=default; required=no default.'
                                if record['detail'] == 'Compact' else ': default ports; full schema and defaults.'),
-             PORT_LEGEND, LOOKALIKE_LEGEND, record['input_routing'], STANDARD_LEGEND, 'Configured mappings: source_field→configured_field (port). Use config; wire is trigger only, no wire type check.', 'All nodes may raise node_error.', '']
+             PORT_LEGEND, LOOKALIKE_LEGEND, record['input_routing'], 'All nodes may raise node_error.', '']
     for item in record['entries']:
         lines.extend([f"{item['entry_kind']} {item['type']} | {item['display_name']} | {item['group'] or 'Ungrouped'}",
                       item['description'], *intent_lines(item['node_metadata'], notes=True),
@@ -211,10 +210,9 @@ def text_output(record, factory):
         for key, value in ((item['node_metadata'] or {}).get('execution_contract') or {}).items():
             lines.append(('Output payload: ' if key == 'output_payload' else 'Behavior: ') + value)
         for key, value in item.get('standard_key_docs', {}).items():
-            if key == 'transient_output': continue  # Lossless shared legend above; defaults stay per node.
             lines.append('Standard config: ' + key + ': ' + value)
         if item.get('configured_inputs'):
-            lines.append('Configured: ' + '; '.join(p['source_field']+'→'+p['configured_field']+' ('+p['id']+')' for p in item['inputs'] if p.get('configured_field') and p.get('source_field')))
+            lines.append('Configured: ' + ' '.join(item['configured_inputs'].values()))
         for key in ('custom_keys', 'node_reference_fields', 'defaults', 'unchecked_keys',
                     'standard_keys', 'vault_reads', 'vault_writes', 'ui_hints'):
             if key in item:

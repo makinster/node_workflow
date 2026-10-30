@@ -179,6 +179,8 @@ recursive catalogue expansion. JSON consumers resolve admission separately.
 The four new records distinguish search numbers/excerpts/whole-file reading,
 validation/extraction and bounded redacted packs/exact templates.
 
-Compact Text uses shared standard-flag and configured-source legends, with each
-node's complete defaults and source/field/port mappings retained. Full JSON
-continues to carry the complete per-node documentation. Size caps are unchanged.
+Compact/Detailed Text repeat each node's standard-flag documentation and full
+Configured-source explanation after the PR #158 follow-up. These lines are
+intentional context for drafting and review; the shared standard/source legends
+were removed. Full JSON still carries the same per-node documentation. Size caps
+are unchanged; planning headroom is checked on the selected contract snapshot.

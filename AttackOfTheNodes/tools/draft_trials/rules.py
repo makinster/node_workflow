@@ -22,6 +22,11 @@ class RuleFailure(ValueError):
     pass
 
 
+class NeedsReview(RuntimeError):
+    """The bounded oracle cannot certify this otherwise admitted composition."""
+
+
+
 @dataclass
 class Value:
     data: object

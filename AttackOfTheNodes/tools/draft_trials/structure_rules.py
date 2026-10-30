@@ -95,7 +95,7 @@ def selector_matches(node, selector, evidence):
     return True
 
 
-def check_required_structure(spec, declaration, results):
+def check_required_structure(spec, declaration, results, *, allow_additional_conditionals=False):
     from .rules import effective_nodes
 
     nodes = effective_nodes(spec)
@@ -153,7 +153,14 @@ def check_required_structure(spec, declaration, results):
                     fork=handle, port=port, exclusive_nodes=sorted(exclusive), work=work
                 )
             )
-    empty = [route for route in route_layout if not route["work"]]
+    declared_choice_candidates = {handle for fork in declaration['forks']
+                                  for handle in candidates.get(fork['role'], [])}
+    # Frozen suites require their exact fork layout. Outcome-based family cases
+    # may use extra guards: tested results and producer lineage still apply.
+    empty = [route for route in route_layout if not route['work'] and
+             (not allow_additional_conditionals
+              or nodes[route['fork']]['type'] != 'conditional_node'
+              or route['fork'] in declared_choice_candidates)]
     if empty:
         return dict(
             result="fail",
@@ -187,6 +194,9 @@ def check_required_structure(spec, declaration, results):
             if node["type"] in ("branch_node", "conditional_node")
         }
         declared_forks = {mapping[fork["role"]] for fork in declaration["forks"]}
+        if allow_additional_conditionals:
+            actual_forks = {handle for handle in actual_forks
+                            if handle in declared_forks or nodes[handle]['type'] != 'conditional_node'}
         if actual_forks != declared_forks:
             return None
         evidence = []

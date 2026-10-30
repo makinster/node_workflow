@@ -200,9 +200,13 @@ async def test_catalogue_complete_default_and_headroom():
     assert kinds == {r['type'] for r in authoring.list_node_types(factory)
                      if not node_catalogue.is_debug(factory.metadata_for_type(r['type']))
                      and not factory.metadata_for_type(r['type']).get('editor_only')}
-    # The 64k default is retained for ordinary bounded queries; default Text
-    # keeps at least 20% headroom under it.
-    assert cfg['max_chars'] == 64000 and len(text) * 1.2 <= 64000
+    # Owner restored complete per-node descriptions. The full registry fits
+    # the unchanged 64k cap; planning headroom applies to admitted contracts.
+    assert cfg['max_chars'] == 64000 and len(text) <= 64000
+    from backend.palette_selection import ADMITTED, CONTRACT_LIMIT
+    admitted = await node_catalogue.build(factory, dict(cfg, scope='Exact IDs',
+        type_ids=sorted(ADMITTED), max_chars=CONTRACT_LIMIT))
+    assert len(admitted) * 1.2 <= CONTRACT_LIMIT
     assert record['schema_version'] == 2 and record['node_metadata_version'] == 1
     assert record['metadata_projection'] == 'full'
     assert all(e['entry_kind'] == 'node' and isinstance(e['inputs'], list)

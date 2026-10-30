@@ -29,15 +29,28 @@ Set 3 adds four requests / twelve variants, and five good/bad calibration pairs.
 The requested base actually has 25 existing pairs; all are preserved, for 30 total.
 The judge prompt is unchanged. No owner workflows were edited.
 
-Full catalogue Brief **14,687 → 15,794**, Compact **53,204 → 53,302** characters.
-Complete sixteen-type Brief/Compact: **8,484 / 25,246**, selected snapshot maximum
-**11,806 / 50,000**; context cap stays **100,000**. Shared Text legends preserve
-all claims/defaults and the existing cap/headroom checks. Exact enum lists and
+Full catalogue Brief **14,687 → 15,794**, Compact **53,204 → 57,481** characters.
+Complete sixteen-type Brief/Compact: **8,484 / 26,144**, selected snapshot maximum
+**11,929 / 50,000**; context cap stays **100,000**. Per-node standard-flag and
+Configured descriptions are restored. The full catalogue fits the unchanged
+64,000 cap; the selected planning contracts retain 20% headroom. Exact enum lists and
 per-case sizes: [admission receipt](audits/claims_baseline_2026_10_29/helper_family_admission.json).
 
-Full `pytest -n auto`: **4,677 passed, 187 skipped, zero xfails in 43.61 s**, including mock trials for all three sets
-and all thirty calibration pairs. No live drafting-quality or API acceptance
-claim; the owner runs paid trials after merge.
+PR #158 follow-up to `16a764c` restores per-node explanations, follows actual
+selected output ports in the family probe, and accepts outcome-preserving extra
+Conditional guards. The copied run 000035 case-3 draft passes rules and the real
+engine across all four fixtures. Unsupported admitted compositions report
+`needs_review` in case/batch summaries and are not executed or scored as failure.
+Frozen sets 1/2 keep their strict branch-layout checks. Candidate-role repair
+drops undeclared Start/End candidates and reassigns only unique declared matches;
+ambiguity still errors. Judge prompt, nodes-as-list repair and the first-line
+`needs_new_node` case are unchanged.
+
+Full `pytest -n auto`: **4,692 passed, 187 skipped, zero xfails in 41.16 s**,
+including mock trials for all three sets and all thirty calibration pairs.
+The owner's paid results on `16a764c` were 8/10, 8/10 and 2/4 with two bad
+calibration passes. This follow-up used no real API calls; paid reviewer quality
+has not been remeasured here.
 
 ## Structured reply schemas — 2026-10-29 (Important)
 

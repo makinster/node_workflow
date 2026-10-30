@@ -11,7 +11,7 @@
     "backend/memory_bank.py": "fe5e8fe144dc6537020f5d5c76a9d5e9dd44e6522ecdeebb2536b46e41cbef9c",
     "backend/meta_workflow.py": "fc3b76dd16cf8430697a4437c32a5f6d4c93fc44f2e8dfd861ffa82b4c62ad86",
     "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
-    "backend/node_catalogue.py": "c3fb66b7f2130bb1327fea89277a261fd4cbf84de6fdd5117757ea1f23f302b7",
+    "backend/node_catalogue.py": "45c692dcf0b09ea8788559ee755f283de5233cdf6727b6eea6e810a577e5f32e",
     "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
     "backend/node_metadata.py": "f6c41769eca7414f434e344f477419e4a841476e3e3be9e9e458f57d54b5ac54",
     "backend/nodes/ai/ask_claude_node.py": "a2e3d19151aa02688f239c65d3a6889ea9ea3e396532c2a466a485f42d268b65",
@@ -73,7 +73,7 @@
     "backend/nodes/text_output_node.py": "0382e1f748a203be7ee9f30c7c48ccaf2e9a8a0725192d80d639669238407054",
     "backend/nodes/user_text_input_node.py": "3289cbec6af2f679e92c15da27c9b05abd9924c48c6e4926c07669419e6b3b23",
     "backend/nodes/wait_until_node.py": "791ffd2b2da433d5af704b57aaf7a0d8735d53e92f2e6f0737caa04c10d3dc58",
-    "backend/palette_selection.py": "779ae5f7e07250df6ebdbe1f50f2fdab97f78fa436c95f56f5f038f05d31762e",
+    "backend/palette_selection.py": "2ea7b17543dce6871c51c7f3cb6ba84fbfb059b9590ef1fdfa8ed16d8d30e9a9",
     "backend/port_types.py": "fba69be8d89a713cfc1e98870544420cd8809e973d0b1079eca397dde17d422a",
     "backend/reply_schema.py": "4873fffbf0f34b8f71988686b300bc9ebdc75213babf380dcab10c52d771d779",
     "backend/reply_shape.py": "f10b3e581338160414fb2d27a09a2a35c576f5d28f4a353f9f85a47ec17bb72f",
@@ -85,13 +85,16 @@
     "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
     "tests/node_claim_scenarios.py": "d7bb8db3854db05b92dda412f385dffb1dae79bd442f45d99a15f06bb105cdff",
     "tests/test_helper_family_admission.py": "a1987e71aa6cf32449745832ca84ca8165a4cabd2ec37c2fea33a68b12f53a47",
-    "tests/test_node_claims.py": "69f33355d444e45592324fc38020639698bee748f0dbd039aec43d9c1b7e6882",
+    "tests/test_helper_family_followup.py": "d2c376175c50bb2456136d26066a0dbd8089d9cf96d4153d97f8c6225981b730",
+    "tests/test_node_claims.py": "ede58c413fae07cddca401d7e2c0ab97ab877ff33d1efeb453c114258b532a3c",
     "tests/test_node_metadata_behavior.py": "e2b58bd0c0c66b603f0226fc688ca1dcdcfcb2981da5294fb3c741d22dda87e5",
     "tools/claims_compatibility.py": "7dc67f171fb1155bfbec8afcd8b1d0ff10a7e5adadf731f12b01d6cf9755246a",
     "tools/draft_trials/admission.py": "7329aa71ab0de1380a8d8a0f0cc064ea0cc2da1c0a9dc8880ec85d25d54a4ca4",
     "tools/draft_trials/case_set_three.py": "4b81c19bc128c9368442b84c66075b0626723b242ea1a9bc6eccb4571e60f390",
+    "tools/draft_trials/fixtures/regressions/run_000035_case_3.json": "7d8eb1f463137aaf06365372225c34f247069cd5c63232bc4006023ef7483042",
     "tools/draft_trials/reply_schemas.py": "09eab615285fe488b05d728bcb3e8c1fe75da7264aa35345685003ad6f645f1c",
-    "tools/draft_trials/rules_set_three.py": "8c5efd70e253fca023c2a48eab3166bd0d0beb0ac340aae6aa08ebabb3e74ad0"
+    "tools/draft_trials/rules_set_three.py": "a7e9796ed5c64f71c2220d1118d5ad440d0825383a58bf7ef84c33d1f666e35d",
+    "tools/draft_trials/structure_rules.py": "51d0b5223e464bca8584be849a7f0a4e7dbd915e42716e937a13728df43f7a95"
   },
   "nodes": [
     {

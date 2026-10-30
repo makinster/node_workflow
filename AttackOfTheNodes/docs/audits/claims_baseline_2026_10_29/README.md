@@ -207,10 +207,18 @@ AOTN_CLAIMS_REPORT="$PWD/docs/audits/claims_baseline_2026_10_29/claims.json" \
   python -m pytest tests/test_node_claims.py -q -k claims_receipt
 ```
 
-The default full-catalogue counts are Brief 14,687 → 15,794 and Compact
-53,204 → 53,302. Common Text legends remove repeated explanations without
-removing fields/defaults/claims. Complete sixteen-type contracts use 25,246 of
-50,000 characters; Brief uses 8,484. Context remains capped at 100,000.
-The original fixed twelve-type bundle uses 25,309 characters; its exact type
-inventory and old expected outcomes remain pinned. Full validation counts are
-recorded in Current State / Session Log after the final run.
+The full-catalogue counts are Brief 14,687 → 15,794 and Compact
+53,204 → 57,481 after restoring per-node standard/source prose in the PR #158
+follow-up. The initial `16a764c` sizes remain in the admission receipt's
+`previous` fields. Complete sixteen-type contracts use 26,144 of 50,000
+characters; Brief uses 8,484. Context remains capped at 100,000, full catalogue
+at 64,000, and selected contracts retain the 20% planning margin. The fixed
+twelve-type bundle uses 22,345 characters. No fields, defaults or claims were
+removed to fit. The shared validation dependency's repair was re-reviewed;
+record content and the four helper execute implementations remain unchanged.
+
+Follow-up full `pytest -n auto`: **4,692 passed, 187 skipped, zero xfails**.
+All three mock sets and thirty calibration rule pairs retain expected results.
+The run 000035 case-3 regression uses the real node implementations plus a
+separate engine run; unsupported admitted compositions report `needs_review`.
+No real API calls or paid-judge quality claim.

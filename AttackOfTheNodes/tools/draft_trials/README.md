@@ -449,9 +449,32 @@ Mock reports are plumbing and behavior evidence, not live drafting quality.
 Schemas are regenerated with `python -m tools.draft_trials.reply_schemas --write`.
 The exact enum lists and contract sizes are recorded in
 [the admission receipt](../../docs/audits/claims_baseline_2026_10_29/helper_family_admission.json).
-The measured full catalogue is Brief 15,794 / Compact 53,302 characters; the
-sixteen-type view is 8,484 / 25,246. Caps remain unchanged: selected contracts
-50,000 and model context 100,000. Four representative selection snapshots use
-8,541–11,806 characters including their receipts. Full registry Compact retains
-the existing 20% headroom test by sharing complete flag/source legends instead
-of repeating identical explanations for every node.
+The full catalogue is Brief 15,794 / Compact 57,481 characters after the PR #158
+follow-up restored per-node standard-flag and Configured descriptions. The
+sixteen-type view is 8,484 / 26,144. Caps remain unchanged: full catalogue 64,000,
+selected contracts 50,000 and model context 100,000. Representative selection
+snapshots use 8,500–11,929 characters including their receipts. The full registry
+fits its hard cap; selected contracts retain the 20% planning headroom check.
+
+### Follow-up: admitted types versus oracle limits
+
+The local family probe follows actual `output_port` packets, including
+Conditional's true/false value forwarding, and directly evaluates all audited
+sequential local types. Extra Conditional guards are allowed when observed
+outcomes and requested producer lineage hold; frozen sets 1/2 keep their exact
+branch-layout obligations. The copied run 000035 case-3 draft is an engine-backed
+regression fixture. Its only normalization is the configured fixture file root.
+
+A safe admitted composition the local oracle cannot certify (for example
+parallel scheduling or dynamically sourced File Reader references) returns
+`needs_review`, not a draft failure. Such a case is
+not fully right and does not execute target fixtures. Its batch and stdout also
+report `needs_review` unless a separate known failure takes precedence; the CLI
+exits nonzero. `reviews_needed` lists these cases separately from `failures`.
+Known invalid structures, unsafe paths and wrong observed results still fail.
+
+Selection repair occurs after duplicate folding: drop Start/End candidates with
+undeclared roles because support already includes them; reassign any other
+undeclared candidate role only when its type occurs in exactly one declared
+role's reviewed alternatives. Otherwise retain the error. No extra inference
+call or rewrite of the recorded requirements is involved.

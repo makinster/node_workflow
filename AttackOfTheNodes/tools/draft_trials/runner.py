@@ -940,9 +940,14 @@ async def run_case(
             report["clarification"] != "pass"
             or report["spec_valid"] != "pass"
             or report["warnings"]
-            or report["case_rules"]["result"] != "pass"
         ):
             raise ValueError("Case gates failed; target not executed")
+        if report['case_rules']['result'] == 'needs_review':
+            report['result'] = 'needs_review'
+            report['review_reason'] = 'The bounded case oracle cannot certify this composition.'
+            return finish()
+        if report['case_rules']['result'] != 'pass':
+            raise ValueError('Case gates failed; target not executed')
         report["behavior"] = await target_fixtures(
             target, case, directory / "target-runs"
         )
@@ -1268,6 +1273,9 @@ async def _batch(
             if not failure
             and calibration["result"] == "pass"
             and all(r["result"] == "pass" for r in rows)
+            else 'needs_review'
+            if not failure and calibration['result'] == 'pass'
+            and all(r['result'] in ('pass', 'needs_review') for r in rows)
             else "fail"
         ),
         seconds=time.monotonic() - start,
@@ -1293,9 +1301,11 @@ async def _batch(
     }
     summary["failures"] = dict(
         Counter(
-            r.get("failure", "behavior failure") for r in rows if r["result"] != "pass"
+            r.get("failure", "behavior failure") for r in rows if r["result"] == "fail"
         )
     )
+    summary['reviews_needed'] = [dict(case=r['case'], reason=r['review_reason'])
+                                 for r in rows if r['result'] == 'needs_review']
     if failure:
         summary["failure"] = failure
     summary["estimated_cost_usd"] = _budget.cost if _budget is not None else None

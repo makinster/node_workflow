@@ -1,0 +1,154 @@
+{
+  "format": "aotn-workflow/1",
+  "name": "Validate reply.json and show summary or Invalid reply",
+  "nodes": {
+    "start": {
+      "type": "start_node",
+      "alias": "Start",
+      "config": {
+        "greeting": "Workflow started"
+      }
+    },
+    "read_reply": {
+      "type": "file_reader_node",
+      "alias": "Read reply file",
+      "config": {
+        "input_source": "Configured",
+        "file_path": "ROOT/reply.json"
+      }
+    },
+    "check_reply": {
+      "type": "check_reply_node",
+      "alias": "Check reply fields",
+      "config": {
+        "input_source": "Upstream payload",
+        "expected_fields": [
+          {
+            "id": "summary",
+            "name": "summary",
+            "kind": "string",
+            "required": true
+          },
+          {
+            "id": "count",
+            "name": "count",
+            "kind": "number",
+            "required": true
+          }
+        ],
+        "allow_other_fields": true,
+        "max_reply": 16000,
+        "validate_selection": false,
+        "reply_schema": ""
+      }
+    },
+    "guard": {
+      "type": "conditional_node",
+      "alias": "Reply present",
+      "config": {
+        "condition_type": "not_equals",
+        "left_value_source": "input",
+        "variable_name": "",
+        "right_value": ""
+      }
+    },
+    "extract_summary": {
+      "type": "json_path_node",
+      "alias": "Extract summary",
+      "config": {
+        "path": "summary",
+        "default_value": ""
+      }
+    },
+    "show_summary": {
+      "type": "text_output_node",
+      "alias": "Show summary",
+      "config": {
+        "input_source": "Upstream payload",
+        "input_vault_key": "",
+        "label": "",
+        "template": "{input}",
+        "request_user_input": false,
+        "prompt": "Enter a value:"
+      }
+    },
+    "show_invalid": {
+      "type": "text_output_node",
+      "alias": "Show Invalid reply",
+      "config": {
+        "input_source": "Upstream payload",
+        "input_vault_key": "",
+        "label": "",
+        "template": "Invalid reply",
+        "request_user_input": false,
+        "prompt": "Enter a value:"
+      }
+    },
+    "end_ok": {
+      "type": "end_node",
+      "alias": "End valid",
+      "config": {
+        "record_line": true,
+        "message": "Branch completed",
+        "return_end": false,
+        "results": []
+      }
+    },
+    "end_invalid": {
+      "type": "end_node",
+      "alias": "End invalid",
+      "config": {
+        "record_line": true,
+        "message": "Branch completed",
+        "return_end": false,
+        "results": []
+      }
+    }
+  },
+  "connections": [
+    {
+      "from": "start.default",
+      "to": "read_reply.input"
+    },
+    {
+      "from": "read_reply.default",
+      "to": "check_reply.input"
+    },
+    {
+      "from": "read_reply.error",
+      "to": "show_invalid.input"
+    },
+    {
+      "from": "check_reply.default",
+      "to": "guard.input"
+    },
+    {
+      "from": "check_reply.error",
+      "to": "show_invalid.input"
+    },
+    {
+      "from": "guard.true",
+      "to": "extract_summary.input"
+    },
+    {
+      "from": "guard.false",
+      "to": "show_invalid.input"
+    },
+    {
+      "from": "extract_summary.default",
+      "to": "show_summary.input"
+    },
+    {
+      "from": "extract_summary.error",
+      "to": "show_invalid.input"
+    },
+    {
+      "from": "show_summary.default",
+      "to": "end_ok.input"
+    },
+    {
+      "from": "show_invalid.default",
+      "to": "end_invalid.input"
+    }
+  ]
+}

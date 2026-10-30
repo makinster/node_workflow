@@ -124,6 +124,22 @@ def validate_analysis(factory, analysis):
     if not isinstance(candidates, list) or len(candidates) > MAX_IDS or not isinstance(roles, list) or len(roles) > 32:
         raise NodeError('selection_invalid', 'Selection exceeds candidate/role limits.')
     candidates, roles = _merge_repeats(candidates, 'type_id'), _merge_repeats(roles, 'role')
+    # Only repair an undeclared role when identity gives one unambiguous
+    # declared alternative. Start/End are already in the support closure.
+    declared = {r.get('role') for r in roles
+                if isinstance(r, dict) and isinstance(r.get('role'), str)}
+    repaired = []
+    for candidate in candidates:
+        if isinstance(candidate, dict) and isinstance(candidate.get('role'), str) and candidate['role'] not in declared:
+            kind = candidate.get('type_id')
+            if kind in ('start_node', 'end_node'):
+                continue
+            matches = [role for role in declared
+                       if any(kind in composition for composition in ROLE_TYPES.get(role, []))]
+            if len(matches) == 1:
+                candidate['role'] = matches[0]
+        repaired.append(candidate)
+    candidates = repaired
     selection = dict(candidates=candidates, roles=roles)
     if candidates:
         exact_ids(factory, [c.get('type_id') if isinstance(c, dict) else None for c in candidates])
