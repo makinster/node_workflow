@@ -351,7 +351,7 @@
         "tests/test_small_wins.py::test_snapshot_path_race_and_mutation",
         "tests/test_small_wins.py::test_ranges_utf8_bom_crlf"
       ],
-      "content_sha256": "78164f5258b599329c671973748d77242c15da21dcbf36ebfa51cb9cae429ad8",
+      "content_sha256": "0f78c5b9566f6b224bb864d1dd471ca016c31d0eb4b67f01babbbad048ee12eb",
       "author": "helper-family-record-author",
       "verifier": "helper-family-source-and-scenario-recheck",
       "reviewed": "2026-10-30",
