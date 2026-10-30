@@ -52,6 +52,52 @@ budget; its blocks never become Answer. Answer is capped at 16,000 characters.
 use **Check reply** for expected fields/types. A JSON instruction is not a
 provider guarantee, so a non-JSON response becomes `invalid_response`.
 
+**Reply schema** is an optional JSON Schema object (or its JSON text in the
+shared full-screen editor). Blank preserves the existing **Reply as JSON**
+behavior and sends no format. A schema enables JSON parsing even with that
+checkbox off, and sends `output_config.format = {"type": "json_schema",
+"schema": ...}` alongside the existing `output_config.effort`, on all three
+supported model routes. No structured-output beta header is added.
+
+This implementation uses explicit schemas; nodes remain graph-ignorant and do
+not inspect a linked Check reply. Put the same schema into Check reply's new
+**Reply schema** field. The v2 generator does this for each AI/check pair.
+Existing expected-field, size and semantic checks still run. Schema-aware
+Ask Claude validates the API projection before publishing; Check reply then
+validates the full schema with `jsonschema` Draft 2020-12, including nested
+fields, enums, string lengths and numeric ranges. A mismatch never becomes a
+successful reply. The adapter keeps Answer as JSON **text**, not a record.
+
+The bounded schema setting requires an object root (16,000 characters / 64,000
+UTF-8 bytes; bounded acyclic structure). Missing `additionalProperties` is set
+to false on every object; true or a map is rejected before the request. Supported
+constructs are basic types, properties/items, required, scalar enum/const,
+anyOf/allOf and local acyclic JSON-pointer references. Definitions are inlined;
+external/recursive references and unsupported keywords fail before credential
+lookup or any request. No schema fetches occur. Length/range/pattern/array
+constraints unsupported by the API grammar are described in the sent schema
+and retained unchanged for the subsequent full Check reply. Format checks must
+be available locally. An unsupported feature is an error, never an automatic
+fallback to prompt-only JSON.
+
+Refusal and max_tokens still raise `IncompleteReply` before reading answer
+content, keep sanitized usage/cost events, and publish no partial answer or
+Vault details. A finished response that fails JSON/schema validation also
+retains its billed usage through `IncompleteReply`. Enum identity stays exact:
+the local checker rejects casing drift instead of normalizing type IDs.
+
+Reference read before implementation: official
+[structured outputs / raw JSON schema](https://platform.claude.com/docs/en/build-with-claude/structured-outputs),
+including its exception and schema-limitation sections (2026-10-29).
+No provider calls were made; compilation/serving acceptance remains an owner
+trial check. The shipped schemas fit the documented subset, with zero optional
+properties and at most one union. API projections are 2,784 characters for
+analysis/resolve and 600 for judge; objects are closed at every depth.
+The workflow draft stays on `reply_json`:
+its arbitrary node-handle keys and heterogeneous config maps would need an
+open object, conflicting with closed-object output requirements. It retains
+Check workflow spec and the single structural repair.
+
 **Answer [string]** uses standard downstream/Vault routing and the standard
 **Forward incoming payload unchanged** checkbox. Optional **Run details [var]**
 is Vault only: model that served the reply, input/output tokens, cache read/write tokens (including writes by TTL), stop reason,

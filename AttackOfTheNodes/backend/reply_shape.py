@@ -43,7 +43,7 @@ def pairs(items):
     return record
 
 
-def check_record(result, rows, extra=False):
+def check_record(result, rows, extra=False, schema=None):
     """Shared decoded-record shape gate; nested protocol rules belong to clients."""
     problem = field_problem(rows)
     if problem:
@@ -65,10 +65,13 @@ def check_record(result, rows, extra=False):
                  'object': type(value) is dict, 'null': value is None}[kind]
         if not valid:
             raise mismatch()
+    if schema is not None:
+        from .reply_schema import check as check_schema
+        check_schema(result, schema)
     return result
 
 
-async def check(text, rows, limit=16000, extra=False):
+async def check(text, rows, limit=16000, extra=False, schema=None):
     problem = field_problem(rows)
     if problem:
         raise NodeError('shape_invalid', problem)
@@ -116,6 +119,6 @@ async def check(text, rows, limit=16000, extra=False):
         valid_decoded(result)
     except (ValueError, UnicodeError, RecursionError, OverflowError):
         raise mismatch() from None
-    check_record(result, rows, extra)
+    check_record(result, rows, extra, schema)
     await asyncio.sleep(0)
     return result

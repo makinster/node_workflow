@@ -154,6 +154,15 @@
         "type": "boolean",
         "label": "Validate candidate selection",
         "default": false
+      },
+      "reply_schema": {
+        "type": "code",
+        "language": "json",
+        "presentation": "json_schema",
+        "label": "Reply schema",
+        "tab": "Parameters",
+        "description": "Optional full JSON Schema. Checks nested fields, enums, lengths and numeric ranges after the API reply.",
+        "default": ""
       }
     }
   },

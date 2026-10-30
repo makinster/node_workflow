@@ -2,7 +2,7 @@
 
 This is an external test harness, not a new workflow node or a general English
 requirements prover. The frozen oracle in `cases.py` implements the approved
-10-case TEST_SET (version 3). `fixtures/calibration.json` contains 22 paired,
+10-case TEST_SET (version 3). `fixtures/calibration.json` contains 24 paired,
 hand-authored good/bad drafts. Mock mode exercises the actual SDK adapter,
 designer graph, Check nodes, authoring build/check and target engine. It supplies
 canned replies and a synthetic credential in memory; Secrets lazy loading and
@@ -204,7 +204,7 @@ TRIAL_ROOT=/home/makin/draft-trial-01
 cat "$TRIAL_ROOT/runs/000001/report.json"
 ```
 
-Recommend **$0.50 for a full run**. There are 44 calibration judge calls before
+Recommend **$0.50 for a full run**. There are 48 calibration judge calls before
 the ten cases (each may use one extra structural redraft); calibration alone is about $0.12–0.15 at current planning
 estimates, not a measured Step 1 result. `--budget USD` has **no default** and is
 required with `--real-calls`, even for calibration-only runs. Limits must be
@@ -264,7 +264,7 @@ Only display evidence is unwrapped: downstream labels, saved content, full-sourc
 provenance, actual writer path identity and route obligations remain strict.
 The bounded oracle supports a single whole-value interpolation with plain ASCII
 word/punctuation framing, not multiple fields, indexed fragments or path
-prefixes. All 22 existing negative calibration drafts still fail.
+prefixes. All 24 negative calibration drafts still fail.
 
 The saved case 5 analysis in run 000006 asked unique filename versus no write.
 The requirements prompt's former “Offer” default wording allowed that needless
@@ -361,7 +361,7 @@ workflow spec uses keep their default warning behavior. The exact structured
 warning reaches the one redraft, and the reviewer treats disconnected nodes as
 problems even if they appear decorative. The retry template uses real newlines.
 
-A full set-2 run without redrafts has **73 hosted calls**: 46 calibration, 10
+A full set-2 run without redrafts has **75 hosted calls**: 48 calibration, 10
 initial analyses, one clarification analysis, eight drafts and eight meaning
 reviews. Using run 000010's recorded per-stage estimated costs gives **$0.09354**;
 eight redrafts would project **$0.10966**. Allow roughly **$0.15** for planning.
@@ -378,3 +378,33 @@ still count the extra draft call. `disabled_transient` bad is now mechanically
 rejected; all 23 pairs retain their expected rule verdicts. No fixture changes.
 The optional second-analysis text is explicitly initialized so a status-only
 first analysis does not rely on Concat silently filling a missing key.
+
+## Structured reply schemas (2026-10-29)
+
+Analysis, resolve and judge use generated closed JSON schemas, repeated on their
+Check reply nodes for local validation. Candidate IDs and role IDs are generated
+from `backend.palette_selection.ADMITTED` and `ROLE_TYPES`; status/verdict are
+enums. Refresh the checked-in spec with:
+
+```bash
+python -m tools.draft_trials.reply_schemas --write
+```
+
+Tests require those schemas to equal the live generator, so palette/role changes
+cannot silently leave stale enums. Selection stays separate from outcome
+requirements. An unsupported capability without an allowed role returns
+needs_new_node rather than an invented role. Draft and structural repair retain
+reply_json plus Check workflow spec: arbitrary handle/config maps need an open
+schema, which structured outputs disallow. No extra inference call was added.
+
+The 24th pair, `end_framing_does_not_hide_missing_value`, uses identical connected
+graphs and enabled End completion logs: GOOD shows Ready; BAD shows unchanged
+Waiting input. The real local engine and case rules distinguish them even when
+End noise is ignored. All previous 23 pairs are unchanged. There are now 48
+calibration calls; totals without structural retries are 79 for set 1 and 75
+for set 2. Mock SDK tests bind the actual SDK stream signature and inspect the
+format/schema payload on all three supported routes, without provider calls.
+
+Full verification: **4,548 passed, 187 skipped, zero xfails** (`pytest -n auto`,
+38.22s); 24 calibration rule pairs retain their expected verdicts. No real API
+calls. The original 23 frozen pairs are byte-for-byte equivalent when decoded.

@@ -398,6 +398,9 @@ def _widget_for_field(
         )
     if field_type in {"multiline", "code"}:
         from .long_text import LongTextPreview
+        if field_schema.get('presentation') == 'json_schema' and isinstance(value, dict):
+            import json
+            value = json.dumps(value, ensure_ascii=False, indent=2)
         return LongTextPreview(
             value, id=f"field-{field_name}", placeholder=placeholder,
             field_label=field_schema.get("label") or field_name.replace("_", " ").title(),

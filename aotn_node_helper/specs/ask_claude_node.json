@@ -132,6 +132,15 @@
           "medium",
           "high"
         ]
+      },
+      "reply_schema": {
+        "type": "code",
+        "language": "json",
+        "presentation": "json_schema",
+        "label": "Reply schema",
+        "tab": "Parameters",
+        "description": "Optional JSON Schema object. Blank keeps Reply as JSON behavior. Use the same schema in Check reply for local constraints.",
+        "default": ""
       }
     }
   },
@@ -209,6 +218,11 @@
     {
       "code": "text_too_long",
       "description": "The assembled question exceeds Context limit + 12,000 characters.",
+      "retryable": false
+    },
+    {
+      "code": "shape_invalid",
+      "description": "Reply schema is invalid or unsupported.",
       "retryable": false
     }
   ],

@@ -33,6 +33,10 @@ class CheckReplyNode(Node):
     default_config['validate_selection'] = False
     config_schema['validate_selection'] = dict(type='boolean', label='Validate candidate selection')
 
+    default_config['reply_schema'] = ''
+    config_schema['reply_schema'] = dict(type='code', language='json', presentation='json_schema',
+        label='Reply schema', tab='Parameters', description='Optional full JSON Schema. Checks nested fields, enums, lengths and numeric ranges after the API reply.')
+
     async def execute(self, context: NodeContext) -> None:
         from ... import text_lines
         from ...node_errors import NodeError
@@ -41,7 +45,7 @@ class CheckReplyNode(Node):
             text_lines.validate_outputs(self.config, extra=False)
             from ...reply_shape import check
             value = await check(text_lines.source(self.config, context), self.config['expected_fields'],
-                                self.config['max_reply'], self.config['allow_other_fields'])
+                                self.config['max_reply'], self.config['allow_other_fields'], self.config.get('reply_schema'))
             if self.config.get('validate_selection'):
                 from ...palette_selection import validate_analysis
                 from ...node_factory import NodeFactory

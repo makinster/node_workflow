@@ -32,11 +32,18 @@ class AskClaudeNode(Node):
     default_config['context_source'] = 'Not used'
     config_schema['context_source']['options'].insert(0, 'Not used')
 
+    default_config['reply_schema'] = ''
+    config_schema['reply_schema'] = dict(type='code', language='json', presentation='json_schema',
+        label='Reply schema', tab='Parameters', description='Optional JSON Schema object. Blank keeps Reply as JSON behavior. Use the same schema in Check reply for local constraints.')
+    error_definitions.append(dict(code='shape_invalid', description='Reply schema is invalid or unsupported.', retryable=False))
+
     async def execute(self, context: NodeContext) -> None:
         from ...integrations import claude
         from ...node_errors import NodeError
         try:
             model, question = claude.prepare(self.config, context)
+            from ...reply_schema import provider_schema
+            schema = provider_schema(self.config.get('reply_schema'))
             key = context.get_secret('ANTHROPIC_API_KEY')
             if not isinstance(key, str) or not key.strip():
                 raise claude.failure('missing_key')
@@ -45,7 +52,8 @@ class AskClaudeNode(Node):
                             if (v := manager.get_secret(name))))
             result = await claude.ask(key=key, known=known, model=model, question=question,
                 timeout=self.config['timeout'], reply_json=self.config['reply_json'],
-                effort=self.config['effort'], max_tokens=self.config['max_tokens'])
+                effort=self.config['effort'], max_tokens=self.config['max_tokens'],
+                **({'reply_schema': schema} if schema is not None else {}))
         except NodeError as exc:
             if isinstance(exc, claude.IncompleteReply):
                 self._report_usage(context, exc.usage, partial=True)

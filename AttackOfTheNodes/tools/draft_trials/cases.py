@@ -668,4 +668,11 @@ def calibration_pairs():
         spec['nodes']['spare_end'] = {'type': 'end_node', 'config': {'record_line': False}}
 
     pair('unconnected_end', 8, spare_end)
+    # End completion framing cannot excuse displaying the wrong user value.
+    good = good_draft(1)
+    good['nodes']['start']['config']['greeting'] = 'Waiting'
+    good['nodes']['end']['config'].update(record_line=True)
+    bad = deepcopy(good)
+    bad['nodes']['show']['config']['template'] = '{input}'
+    pairs.append(dict(id='end_framing_does_not_hide_missing_value', case=1, good=good, bad=bad))
     return pairs

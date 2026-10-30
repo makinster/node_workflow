@@ -36,6 +36,31 @@ the config UI, connection matching, preflight, runtime routing and author
 tests, so that a green check means the runtime honours the generated UI.
 Keep `NodeContext` and graph-ignorant execution.
 
+## Structured reply schemas — 2026-10-29 (Important)
+
+Branch `codex/structured-replies`, from `ce2eb29` (#154), adds an optional explicit
+Reply schema to the hosted question adapter and full local schema validation to
+Check reply. Blank preserves the existing reply_json request. Every object is
+closed, unsafe references/unsupported schemas fail locally, and API-inexpressible
+length/range constraints stay in the subsequent Check reply. Refusal/capped and
+unusable replies retain `IncompleteReply` usage; no partial answer is published.
+
+V2 analysis/resolve/judge schemas are generated from live admitted/role lists and
+installed on both sides of each AI/check pair. Draft/repair keep reply_json and
+Check workflow spec because their dynamic handle/config maps need open objects.
+No palette expansion, extra ordinary calls or real API calls. Calibration now
+has 24 pairs: the added guard shows Ready versus unchanged Waiting under the
+same normal End framing. All previous pairs are unchanged. Mock call totals
+are 79 / 75 including the 48 calibration calls.
+
+See [implementation and limits](integrations/ASK_CLAUDE.md) and
+[trial regeneration](../tools/draft_trials/README.md#structured-reply-schemas-2026-10-29).
+API schema compilation/acceptance and inference quality await owner approval
+for a live trial; no claim of server-tested acceptance is made.
+
+Full `pytest -n auto`: **4,548 passed, 187 skipped, zero xfails** in 38.22s.
+`git diff --check` clean. All 24 calibration rule pairs retained; no real API calls.
+
 ## Exact palette selection — 2026-10-29 (Important)
 
 Milestone 1 part B on `codex/palette-selection`, from requested `ee0bca4` (#151),

@@ -21,7 +21,7 @@ async def test_integer_and_string_order_pass_workflow_and_case_scoring(tmp_path,
     requirements['requirements'][0]['order'] = order
     config = json.loads(runner.SPEC.read_text())['nodes']['analysis_shape']['config']
     assert await reply_shape.check(json.dumps(requirements), config['expected_fields'],
-        config['max_reply'], config['allow_other_fields']) == requirements
+        config['max_reply'], config['allow_other_fields'], config.get('reply_schema')) == requirements
     assert runner.valid_analysis(requirements)
     replies = [requirements, good_draft(number, case['root']), runner.meaning()]
     if number == 10:
@@ -42,7 +42,7 @@ async def test_unexpected_prompt_keeps_evidence_and_runs_next_case_with_known_co
             replies = [runner.requirements(case, 'clarify')]
         return await original(number, trial_root, library, replies, real_calls, scenario, **kwargs)
 
-    replies = [runner.meaning(v) for _ in range(23) for v in ('pass', 'fail')]
+    replies = [runner.meaning(v) for _ in range(24) for v in ('pass', 'fail')]
     case9 = case_record(9, tmp_path / 'cases/9/fixtures')
     case10 = case_record(10, tmp_path / 'cases/10/fixtures')
     replies += [runner.requirements(case9, 'clarify'), runner.requirements(case10, 'clarify'),
@@ -115,7 +115,7 @@ async def test_workflow_and_harness_share_top_level_shape_gate(node, mutation):
     config = json.loads(runner.SPEC.read_text())['nodes'][node]['config']
     try:
         await reply_shape.check(json.dumps(record), config['expected_fields'],
-            config['max_reply'], config['allow_other_fields'])
+            config['max_reply'], config['allow_other_fields'], config.get('reply_schema'))
         accepted = True
     except NodeError:
         accepted = False
@@ -124,7 +124,7 @@ async def test_workflow_and_harness_share_top_level_shape_gate(node, mutation):
 
 @pytest.mark.asyncio
 async def test_unreported_attempt_still_stops_before_next_case(tmp_path):
-    replies = [runner.meaning(v) for _ in range(23) for v in ('pass', 'fail')]
+    replies = [runner.meaning(v) for _ in range(24) for v in ('pass', 'fail')]
     mock = runner.MockSDK(replies + [{'_error': 'no usage returned'}])
     with ExitStack() as stack:
         mock.install(stack)
@@ -132,5 +132,5 @@ async def test_unreported_attempt_still_stops_before_next_case(tmp_path):
             budget_usd=1, shared_library=tmp_path / 'shared')
     assert report['result'] == 'fail' and report['case_count'] == 1
     assert 'cost unknown' in report['failure']
-    assert len(mock.calls) == 47 and not (tmp_path / 'cases/10').exists()
+    assert len(mock.calls) == 49 and not (tmp_path / 'cases/10').exists()
     assert (tmp_path / 'cases/9/evidence.json').exists()
