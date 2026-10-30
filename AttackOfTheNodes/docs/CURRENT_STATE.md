@@ -1,7 +1,7 @@
 # Current State
 
-Snapshot checked **2026-10-29**, against fetched `origin/main` `ce2eb29`
-after #154 merged. Structured replies: `codex/structured-replies`.
+Snapshot checked **2026-10-30**, against fetched `origin/main` `8ee108b`
+(includes #157). Helper family: `codex/helper-family`, awaiting owner review.
 No real API calls; earlier entries retain their dated scope.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
@@ -12,6 +12,58 @@ Sonnet/Opus and document the 512-token minimum prefix. Per-model price tests
 and real-engine run summaries cover all three supported models. See the latest
 Session Log entry for verification: full `pytest -n auto` passes **3,234 tests
 in 35.63 s** after the review fixes.
+
+## First helper family — 2026-10-30 (Important)
+
+The drafter now admits Find lines, Read lines, Check reply and Context Pack:
+sixteen types with reviewed records, exact lookalike links and live regenerated
+candidate/role schema enums (16 types / 21 roles). Source, Vault, output-mode,
+limit/error and fixed snapshot/masking scenarios run through the shared claims
+runner; all four execute implementations are unchanged. No claim/code mismatches
+or xfails were found. Claims receipt: 234 passing / 179 explicitly skipped generic
+claims, 152 value scenarios, and 33 engine graphs each run twice.
+
+Sets 1/2 retain the exact original twelve types / seventeen roles, requests,
+fixtures and expected outcomes, pinned by the new admission baseline receipt.
+Set 3 adds four requests / twelve variants, and five good/bad calibration pairs.
+The requested base actually has 25 existing pairs; all are preserved, for 30 total.
+The judge prompt is unchanged. No owner workflows were edited.
+
+Full catalogue Brief **14,687 → 15,794**, Compact **53,204 → 57,781** characters.
+Complete sixteen-type Brief/Compact: **8,484 / 26,444**, selected snapshot maximum
+**11,929 / 50,000**; context cap stays **100,000**. Per-node standard-flag and
+Configured descriptions are restored. The full catalogue fits the unchanged
+64,000 cap; the selected planning contracts retain 20% headroom. Exact enum lists and
+per-case sizes: [admission receipt](audits/claims_baseline_2026_10_29/helper_family_admission.json).
+
+PR #158 follow-up to `16a764c` restores per-node explanations, follows actual
+selected output ports in the family probe, and accepts outcome-preserving extra
+Conditional guards. The copied run 000035 case-3 draft passes rules and the real
+engine across all four fixtures. Unsupported admitted compositions report
+`needs_review` in case/batch summaries and are not executed or scored as failure.
+Frozen sets 1/2 keep their strict branch-layout checks. Candidate-role repair
+drops undeclared Start/End candidates and reassigns only unique declared matches;
+ambiguity still errors. Judge prompt, nodes-as-list repair and the first-line
+`needs_new_node` case are unchanged.
+
+Full `pytest -n auto`: **4,705 passed, 187 skipped, zero xfails in 42.67 s**,
+including mock trials for all three sets and all thirty calibration pairs.
+The owner's paid results on `16a764c` were 8/10, 8/10 and 2/4 with two bad
+calibration passes. This follow-up used no real API calls; paid reviewer quality
+has not been remeasured here.
+
+PR #158 follow-up 2 documents Context Pack's literal header, section/line
+prefixes, masking and normal/compact shortening footers without changing execute.
+Two independent UTF-8 byte scenarios pin multiline/trailing-empty-line masking
+and prefix removal. The record and shared Check reply dependency are re-attested;
+the scenario-version-4 claims receipt is refreshed. Requirement `kind` is optional
+(`action` by default, or `constraint`) before `acceptance` in regenerated schemas.
+Only actions need role coverage; constraints remain frozen and reach the drafter
+and judge, with judge coverage and case safety rules still enforced. Empty ready
+analyses and unknown kinds still error. Both analysis prompts identify prohibitions
+and limits as constraints. No admission, judge prompt or fixture changes.
+The owner's paid results on `cde189b` were 10/10, 8/10 and 2/4 with perfect
+calibration; this follow-up has mock/local evidence only.
 
 ## Structured reply schemas — 2026-10-29 (Important)
 

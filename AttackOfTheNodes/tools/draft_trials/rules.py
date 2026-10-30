@@ -22,6 +22,11 @@ class RuleFailure(ValueError):
     pass
 
 
+class NeedsReview(RuntimeError):
+    """The bounded oracle cannot certify this otherwise admitted composition."""
+
+
+
 @dataclass
 class Value:
     data: object
@@ -136,6 +141,9 @@ def effective_nodes(spec):
 
 
 def safety(spec, case):
+    if case.get("case_set") == 3:
+        from .rules_set_three import safety as third
+        return third(spec, case)
     """Inspect ALL nodes, including error routes, before any target execution."""
     if case.get("case_set") == 2:
         from .rules_set_two import safety as second
@@ -233,6 +241,9 @@ def safety(spec, case):
 
 
 def evaluate(spec, case, variant):
+    if case.get("case_set") == 3:
+        from .rules_set_three import evaluate as third
+        return third(spec, case, variant)
     nodes, outgoing = safety(spec, case)
     root = Path(case["root"])
     vault = {}
@@ -564,6 +575,9 @@ def display_outputs_match(outputs, expected, framing):
 
 
 def check_rules(spec, case):
+    if case.get("case_set") == 3:
+        from .rules_set_three import check_rules as third
+        return third(spec, case)
     if case.get("case_set") == 2:
         from .rules_set_two import check_rules as second
         return second(spec, case)

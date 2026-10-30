@@ -2288,7 +2288,7 @@
           "type": "text_output_node",
           "config": {
             "label": "",
-            "template": "{input[0]}udget: €20\nBring notes.\n"
+            "template": "{input[0]}udget: \u20ac20\nBring notes.\n"
           }
         },
         "read": {
@@ -3734,6 +3734,914 @@
         {
           "from": "show.default",
           "to": "end.input"
+        }
+      ]
+    }
+  },
+  {
+    "id": "helper_whole_file_not_excerpt",
+    "case": 1,
+    "case_set": 3,
+    "held_out": false,
+    "dependencies": {
+      "family": "text_json_line_helpers",
+      "helper_paths": [
+        "backend/text_lines.py",
+        "backend/reply_shape.py",
+        "backend/context_pack.py"
+      ],
+      "rule_ids": [
+        "structure",
+        "safety",
+        "semantics",
+        "required_structure"
+      ],
+      "used_types": [
+        "end_node",
+        "read_lines_node",
+        "start_node",
+        "text_output_node"
+      ],
+      "candidate_alternatives": [
+        "file_reader_node",
+        "read_lines_node"
+      ],
+      "required_capabilities": [
+        "inclusive_line_range"
+      ]
+    },
+    "good": {
+      "format": "aotn-workflow/1",
+      "name": "Helper case 1",
+      "nodes": {
+        "start": {
+          "type": "start_node",
+          "config": {}
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": false
+          }
+        },
+        "show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "{input}"
+          }
+        },
+        "read": {
+          "type": "read_lines_node",
+          "config": {
+            "file": "ROOT/events.txt",
+            "input_source": "Configured",
+            "input": 2,
+            "to_line": 3
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "show.default",
+          "to": "end.input"
+        },
+        {
+          "from": "start.default",
+          "to": "read.input"
+        },
+        {
+          "from": "read.default",
+          "to": "show.input"
+        }
+      ]
+    },
+    "bad": {
+      "format": "aotn-workflow/1",
+      "name": "Helper case 1",
+      "nodes": {
+        "start": {
+          "type": "start_node",
+          "config": {}
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": false
+          }
+        },
+        "show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "{input}"
+          }
+        },
+        "read": {
+          "type": "file_reader_node",
+          "config": {
+            "file_path": "ROOT/events.txt",
+            "input_source": "Configured"
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "show.default",
+          "to": "end.input"
+        },
+        {
+          "from": "start.default",
+          "to": "read.input"
+        },
+        {
+          "from": "read.default",
+          "to": "show.input"
+        }
+      ]
+    }
+  },
+  {
+    "id": "helper_configured_search_overrides_answer",
+    "case": 2,
+    "case_set": 3,
+    "held_out": false,
+    "dependencies": {
+      "family": "text_json_line_helpers",
+      "helper_paths": [
+        "backend/text_lines.py",
+        "backend/reply_shape.py",
+        "backend/context_pack.py"
+      ],
+      "rule_ids": [
+        "structure",
+        "safety",
+        "semantics",
+        "required_structure"
+      ],
+      "used_types": [
+        "end_node",
+        "find_lines_node",
+        "read_lines_node",
+        "start_node",
+        "text_output_node",
+        "user_text_input_node"
+      ],
+      "candidate_alternatives": [],
+      "required_capabilities": [
+        "literal_search",
+        "no_matches_error_route"
+      ]
+    },
+    "good": {
+      "format": "aotn-workflow/1",
+      "name": "Helper case 2",
+      "nodes": {
+        "start": {
+          "type": "start_node",
+          "config": {}
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": false
+          }
+        },
+        "show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "{input}"
+          }
+        },
+        "ask": {
+          "type": "user_text_input_node",
+          "config": {
+            "prompt": "What search text?"
+          }
+        },
+        "find": {
+          "type": "find_lines_node",
+          "config": {
+            "file": "ROOT/events.txt",
+            "input_source": "Upstream payload"
+          }
+        },
+        "read": {
+          "type": "read_lines_node",
+          "config": {
+            "file": "ROOT/events.txt",
+            "input_source": "Upstream payload",
+            "use_match": "First",
+            "lines_around": true,
+            "each_side": 0
+          }
+        },
+        "missing": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "No matches"
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "show.default",
+          "to": "end.input"
+        },
+        {
+          "from": "start.default",
+          "to": "ask.input"
+        },
+        {
+          "from": "ask.default",
+          "to": "find.input"
+        },
+        {
+          "from": "find.default",
+          "to": "read.input"
+        },
+        {
+          "from": "read.default",
+          "to": "show.input"
+        },
+        {
+          "from": "missing.default",
+          "to": "end.input"
+        },
+        {
+          "from": "read.error",
+          "to": "missing.input"
+        }
+      ]
+    },
+    "bad": {
+      "format": "aotn-workflow/1",
+      "name": "Helper case 2",
+      "nodes": {
+        "start": {
+          "type": "start_node",
+          "config": {}
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": false
+          }
+        },
+        "show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "{input}"
+          }
+        },
+        "ask": {
+          "type": "user_text_input_node",
+          "config": {
+            "prompt": "What search text?"
+          }
+        },
+        "find": {
+          "type": "find_lines_node",
+          "config": {
+            "file": "ROOT/events.txt",
+            "input_source": "Configured",
+            "input": "ERROR"
+          }
+        },
+        "read": {
+          "type": "read_lines_node",
+          "config": {
+            "file": "ROOT/events.txt",
+            "input_source": "Upstream payload",
+            "use_match": "First",
+            "lines_around": true,
+            "each_side": 0
+          }
+        },
+        "missing": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "No matches"
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "show.default",
+          "to": "end.input"
+        },
+        {
+          "from": "start.default",
+          "to": "ask.input"
+        },
+        {
+          "from": "ask.default",
+          "to": "find.input"
+        },
+        {
+          "from": "find.default",
+          "to": "read.input"
+        },
+        {
+          "from": "read.default",
+          "to": "show.input"
+        },
+        {
+          "from": "missing.default",
+          "to": "end.input"
+        },
+        {
+          "from": "read.error",
+          "to": "missing.input"
+        }
+      ]
+    }
+  },
+  {
+    "id": "helper_empty_match_wrong_message",
+    "case": 2,
+    "case_set": 3,
+    "held_out": false,
+    "dependencies": {
+      "family": "text_json_line_helpers",
+      "helper_paths": [
+        "backend/text_lines.py",
+        "backend/reply_shape.py",
+        "backend/context_pack.py"
+      ],
+      "rule_ids": [
+        "structure",
+        "safety",
+        "semantics",
+        "required_structure"
+      ],
+      "used_types": [
+        "end_node",
+        "find_lines_node",
+        "read_lines_node",
+        "start_node",
+        "text_output_node",
+        "user_text_input_node"
+      ],
+      "candidate_alternatives": [],
+      "required_capabilities": [
+        "literal_search",
+        "no_matches_error_route"
+      ]
+    },
+    "good": {
+      "format": "aotn-workflow/1",
+      "name": "Helper case 2",
+      "nodes": {
+        "start": {
+          "type": "start_node",
+          "config": {}
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": false
+          }
+        },
+        "show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "{input}"
+          }
+        },
+        "ask": {
+          "type": "user_text_input_node",
+          "config": {
+            "prompt": "What search text?"
+          }
+        },
+        "find": {
+          "type": "find_lines_node",
+          "config": {
+            "file": "ROOT/events.txt",
+            "input_source": "Upstream payload"
+          }
+        },
+        "read": {
+          "type": "read_lines_node",
+          "config": {
+            "file": "ROOT/events.txt",
+            "input_source": "Upstream payload",
+            "use_match": "First",
+            "lines_around": true,
+            "each_side": 0
+          }
+        },
+        "missing": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "No matches"
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "show.default",
+          "to": "end.input"
+        },
+        {
+          "from": "start.default",
+          "to": "ask.input"
+        },
+        {
+          "from": "ask.default",
+          "to": "find.input"
+        },
+        {
+          "from": "find.default",
+          "to": "read.input"
+        },
+        {
+          "from": "read.default",
+          "to": "show.input"
+        },
+        {
+          "from": "missing.default",
+          "to": "end.input"
+        },
+        {
+          "from": "read.error",
+          "to": "missing.input"
+        }
+      ]
+    },
+    "bad": {
+      "format": "aotn-workflow/1",
+      "name": "Helper case 2",
+      "nodes": {
+        "start": {
+          "type": "start_node",
+          "config": {}
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": false
+          }
+        },
+        "show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "{input}"
+          }
+        },
+        "ask": {
+          "type": "user_text_input_node",
+          "config": {
+            "prompt": "What search text?"
+          }
+        },
+        "find": {
+          "type": "find_lines_node",
+          "config": {
+            "file": "ROOT/events.txt",
+            "input_source": "Upstream payload"
+          }
+        },
+        "read": {
+          "type": "read_lines_node",
+          "config": {
+            "file": "ROOT/events.txt",
+            "input_source": "Upstream payload",
+            "use_match": "First",
+            "lines_around": true,
+            "each_side": 0
+          }
+        },
+        "missing": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "Found matches"
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "show.default",
+          "to": "end.input"
+        },
+        {
+          "from": "start.default",
+          "to": "ask.input"
+        },
+        {
+          "from": "ask.default",
+          "to": "find.input"
+        },
+        {
+          "from": "find.default",
+          "to": "read.input"
+        },
+        {
+          "from": "read.default",
+          "to": "show.input"
+        },
+        {
+          "from": "missing.default",
+          "to": "end.input"
+        },
+        {
+          "from": "read.error",
+          "to": "missing.input"
+        }
+      ]
+    }
+  },
+  {
+    "id": "helper_json_extra_fields_allowed",
+    "case": 3,
+    "case_set": 3,
+    "held_out": false,
+    "dependencies": {
+      "family": "text_json_line_helpers",
+      "helper_paths": [
+        "backend/text_lines.py",
+        "backend/reply_shape.py",
+        "backend/context_pack.py"
+      ],
+      "rule_ids": [
+        "structure",
+        "safety",
+        "semantics",
+        "required_structure"
+      ],
+      "used_types": [
+        "check_reply_node",
+        "end_node",
+        "file_reader_node",
+        "json_path_node",
+        "start_node",
+        "text_output_node"
+      ],
+      "candidate_alternatives": [],
+      "required_capabilities": [
+        "required_json_kinds",
+        "allow_extra_fields"
+      ]
+    },
+    "good": {
+      "format": "aotn-workflow/1",
+      "name": "Helper case 3",
+      "nodes": {
+        "start": {
+          "type": "start_node",
+          "config": {}
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": false
+          }
+        },
+        "show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "{input}"
+          }
+        },
+        "read": {
+          "type": "file_reader_node",
+          "config": {
+            "file_path": "ROOT/reply.json",
+            "input_source": "Configured"
+          }
+        },
+        "check": {
+          "type": "check_reply_node",
+          "config": {
+            "expected_fields": [
+              {
+                "id": "summary",
+                "name": "summary",
+                "kind": "string",
+                "required": true
+              },
+              {
+                "id": "count",
+                "name": "count",
+                "kind": "number",
+                "required": true
+              }
+            ],
+            "allow_other_fields": true
+          }
+        },
+        "field": {
+          "type": "json_path_node",
+          "config": {
+            "path": "summary"
+          }
+        },
+        "invalid": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "Invalid reply"
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "show.default",
+          "to": "end.input"
+        },
+        {
+          "from": "start.default",
+          "to": "read.input"
+        },
+        {
+          "from": "read.default",
+          "to": "check.input"
+        },
+        {
+          "from": "check.default",
+          "to": "field.input"
+        },
+        {
+          "from": "field.default",
+          "to": "show.input"
+        },
+        {
+          "from": "invalid.default",
+          "to": "end.input"
+        },
+        {
+          "from": "check.error",
+          "to": "invalid.input"
+        }
+      ]
+    },
+    "bad": {
+      "format": "aotn-workflow/1",
+      "name": "Helper case 3",
+      "nodes": {
+        "start": {
+          "type": "start_node",
+          "config": {}
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": false
+          }
+        },
+        "show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "{input}"
+          }
+        },
+        "read": {
+          "type": "file_reader_node",
+          "config": {
+            "file_path": "ROOT/reply.json",
+            "input_source": "Configured"
+          }
+        },
+        "check": {
+          "type": "check_reply_node",
+          "config": {
+            "expected_fields": [
+              {
+                "id": "summary",
+                "name": "summary",
+                "kind": "string",
+                "required": true
+              },
+              {
+                "id": "count",
+                "name": "count",
+                "kind": "number",
+                "required": true
+              }
+            ],
+            "allow_other_fields": false
+          }
+        },
+        "field": {
+          "type": "json_path_node",
+          "config": {
+            "path": "summary"
+          }
+        },
+        "invalid": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "Invalid reply"
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "show.default",
+          "to": "end.input"
+        },
+        {
+          "from": "start.default",
+          "to": "read.input"
+        },
+        {
+          "from": "read.default",
+          "to": "check.input"
+        },
+        {
+          "from": "check.default",
+          "to": "field.input"
+        },
+        {
+          "from": "field.default",
+          "to": "show.input"
+        },
+        {
+          "from": "invalid.default",
+          "to": "end.input"
+        },
+        {
+          "from": "check.error",
+          "to": "invalid.input"
+        }
+      ]
+    }
+  },
+  {
+    "id": "helper_pack_ignores_answer",
+    "case": 4,
+    "case_set": 3,
+    "held_out": true,
+    "dependencies": {
+      "family": "text_json_line_helpers",
+      "helper_paths": [
+        "backend/text_lines.py",
+        "backend/reply_shape.py",
+        "backend/context_pack.py"
+      ],
+      "rule_ids": [
+        "structure",
+        "safety",
+        "semantics",
+        "required_structure"
+      ],
+      "used_types": [
+        "context_pack_node",
+        "end_node",
+        "start_node",
+        "text_output_node",
+        "user_text_input_node"
+      ],
+      "candidate_alternatives": [],
+      "required_capabilities": [
+        "labelled_sources",
+        "masking"
+      ]
+    },
+    "good": {
+      "format": "aotn-workflow/1",
+      "name": "Helper case 4",
+      "nodes": {
+        "start": {
+          "type": "start_node",
+          "config": {}
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": false
+          }
+        },
+        "show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "{input}"
+          }
+        },
+        "ask": {
+          "type": "user_text_input_node",
+          "config": {
+            "prompt": "What incident note?"
+          }
+        },
+        "pack": {
+          "type": "context_pack_node",
+          "config": {
+            "include_run": false,
+            "include_errors": false,
+            "items": [
+              {
+                "id": "policy",
+                "label": "Policy",
+                "source": "Configured text",
+                "text": "Keep local"
+              },
+              {
+                "id": "incident",
+                "label": "Incident",
+                "source": "Upstream payload"
+              }
+            ]
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "show.default",
+          "to": "end.input"
+        },
+        {
+          "from": "start.default",
+          "to": "ask.input"
+        },
+        {
+          "from": "ask.default",
+          "to": "pack.input"
+        },
+        {
+          "from": "pack.default",
+          "to": "show.input"
+        }
+      ]
+    },
+    "bad": {
+      "format": "aotn-workflow/1",
+      "name": "Helper case 4",
+      "nodes": {
+        "start": {
+          "type": "start_node",
+          "config": {}
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": false
+          }
+        },
+        "show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "{input}"
+          }
+        },
+        "ask": {
+          "type": "user_text_input_node",
+          "config": {
+            "prompt": "What incident note?"
+          }
+        },
+        "pack": {
+          "type": "context_pack_node",
+          "config": {
+            "include_run": false,
+            "include_errors": false,
+            "items": [
+              {
+                "id": "policy",
+                "label": "Policy",
+                "source": "Configured text",
+                "text": "Keep local"
+              },
+              {
+                "id": "incident",
+                "label": "Incident",
+                "source": "Configured text",
+                "text": "Disk full"
+              }
+            ]
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "show.default",
+          "to": "end.input"
+        },
+        {
+          "from": "start.default",
+          "to": "ask.input"
+        },
+        {
+          "from": "ask.default",
+          "to": "pack.input"
+        },
+        {
+          "from": "pack.default",
+          "to": "show.input"
         }
       ]
     }

@@ -21,11 +21,11 @@ from tools.draft_trials.rules import check_rules
 
 @pytest.fixture
 def case(tmp_path):
-    def make(number):
+    def make(number, case_set=1):
         root = tmp_path / ("case-" + str(number))
         root.mkdir(exist_ok=True)
-        runner.prepare_files(root, fixture_variants(number)[0])
-        return case_record(number, root)
+        runner.prepare_files(root, fixture_variants(number, case_set)[0])
+        return case_record(number, root, case_set)
 
     return make
 
@@ -88,7 +88,7 @@ async def test_complete_palette_and_planning_budget():
 
 @pytest.mark.parametrize("pair", calibration_pairs(), ids=lambda p: p["id"])
 def test_each_calibration_pair(pair, case):
-    c = case(pair["case"])
+    c = case(pair["case"], pair.get("case_set",1))
     for variant, expected in [("good", "pass"), ("bad", "fail")]:
         spec = json.loads(json.dumps(pair[variant]).replace("ROOT", c["root"]))
         report = check_rules(spec, c)
@@ -227,7 +227,7 @@ def test_full_mock_batch_and_all_target_fixtures(tmp_path):
     assert report["result"] == "pass" and report["case_count"] == 10
     assert report["fixture_count"] == 21
     calibration = json.loads((run_root / "calibration-report.json").read_text())
-    assert len(calibration["fixtures"]) == 50 and calibration["result"] == "pass"
+    assert len(calibration["fixtures"]) == 60 and calibration["result"] == "pass"
     assert calibration["judge_false_passes"] == calibration["judge_false_failures"] == 0
     assert all(r["case_rules"] == r["expected"] for r in calibration["fixtures"])
     assert not (root / "library/secrets/secrets.json").exists()
@@ -259,7 +259,7 @@ async def test_calibration_detects_judge_false_passes_and_failures(tmp_path):
         replies += [runner.meaning("fail"), runner.meaning("pass")]
     result = await runner.calibrate(tmp_path, judge_replies=replies)
     assert result["result"] == "fail"
-    assert result["judge_false_passes"] == result["judge_false_failures"] == 25
+    assert result["judge_false_passes"] == result["judge_false_failures"] == 30
     assert all(r["case_rules"] == r["expected"] for r in result["fixtures"])
 
 

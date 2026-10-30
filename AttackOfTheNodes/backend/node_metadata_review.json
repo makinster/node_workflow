@@ -310,6 +310,107 @@
       "reviewed": "2026-10-29",
       "source_revision": "4775f5ec5eec6db6e835c88948bea6c49a160e6b",
       "verifier": "selection-dependency-source-recheck"
+    },
+    "find_lines_node": {
+      "sources": {
+        "backend/nodes/io/find_lines_node.py": "1b01cc5080cc03960fba07242158cc7c43d93d85e74d85be74a82da10dffe6e1",
+        "backend/text_lines.py": "62fcd1e24ef3101b3f3c3db2bb0200f3e7448173c4a22d34c2449e6f70bd1fe7",
+        "backend/system_access.py": "49296ed42c4288f02cddf54980f94be9218249c4bd7360810ec237d563630c6f",
+        "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
+        "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
+        "backend/port_types.py": "fba69be8d89a713cfc1e98870544420cd8809e973d0b1079eca397dde17d422a"
+      },
+      "tests": [
+        "tests/test_node_claims.py::test_reviewed_palette_scenarios",
+        "tests/test_node_claims.py::test_activated_vault_writes",
+        "tests/test_node_claims.py::test_palette_real_engine_delivery",
+        "tests/test_small_wins.py::test_file_security_and_caps",
+        "tests/test_small_wins.py::test_snapshot_path_race_and_mutation",
+        "tests/test_small_wins.py::test_ranges_utf8_bom_crlf"
+      ],
+      "content_sha256": "f0a0163fdb0a7f25d7bce2dc1fc8340c9754a263ef9005350a090585cf7df607",
+      "author": "helper-family-record-author",
+      "verifier": "helper-family-source-and-scenario-recheck",
+      "reviewed": "2026-10-30",
+      "source_revision": "8ee108b4e3e932790c94ad90c5bc419cee5f75e2"
+    },
+    "read_lines_node": {
+      "sources": {
+        "backend/nodes/io/read_lines_node.py": "6f020a494b83c810060c07866feaddece719eed69ff96b57bc9a3bc5331fbe16",
+        "backend/text_lines.py": "62fcd1e24ef3101b3f3c3db2bb0200f3e7448173c4a22d34c2449e6f70bd1fe7",
+        "backend/system_access.py": "49296ed42c4288f02cddf54980f94be9218249c4bd7360810ec237d563630c6f",
+        "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
+        "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
+        "backend/port_types.py": "fba69be8d89a713cfc1e98870544420cd8809e973d0b1079eca397dde17d422a"
+      },
+      "tests": [
+        "tests/test_node_claims.py::test_reviewed_palette_scenarios",
+        "tests/test_node_claims.py::test_activated_vault_writes",
+        "tests/test_node_claims.py::test_palette_real_engine_delivery",
+        "tests/test_small_wins.py::test_file_security_and_caps",
+        "tests/test_small_wins.py::test_snapshot_path_race_and_mutation",
+        "tests/test_small_wins.py::test_ranges_utf8_bom_crlf"
+      ],
+      "content_sha256": "78164f5258b599329c671973748d77242c15da21dcbf36ebfa51cb9cae429ad8",
+      "author": "helper-family-record-author",
+      "verifier": "helper-family-source-and-scenario-recheck",
+      "reviewed": "2026-10-30",
+      "source_revision": "8ee108b4e3e932790c94ad90c5bc419cee5f75e2"
+    },
+    "check_reply_node": {
+      "sources": {
+        "backend/nodes/data/check_reply_node.py": "2ae4d61c5ec54289e9e1371adafaf38cb9d24c6aece0cc757e65418addfe2d19",
+        "backend/text_lines.py": "62fcd1e24ef3101b3f3c3db2bb0200f3e7448173c4a22d34c2449e6f70bd1fe7",
+        "backend/system_access.py": "49296ed42c4288f02cddf54980f94be9218249c4bd7360810ec237d563630c6f",
+        "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
+        "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
+        "backend/port_types.py": "fba69be8d89a713cfc1e98870544420cd8809e973d0b1079eca397dde17d422a",
+        "backend/reply_shape.py": "f10b3e581338160414fb2d27a09a2a35c576f5d28f4a353f9f85a47ec17bb72f",
+        "backend/reply_schema.py": "4873fffbf0f34b8f71988686b300bc9ebdc75213babf380dcab10c52d771d779",
+        "backend/palette_selection.py": "e682119423684facc795107ae289470810a23a4192152612d1ceb663d2102470"
+      },
+      "tests": [
+        "tests/test_node_claims.py::test_reviewed_palette_scenarios",
+        "tests/test_node_claims.py::test_activated_vault_writes",
+        "tests/test_node_claims.py::test_palette_real_engine_delivery",
+        "tests/test_small_wins.py::test_all_reply_types_and_sources",
+        "tests/test_helper_family_followup.py::test_candidate_is_reassigned_to_its_unique_declared_role",
+        "tests/test_helper_family_followup.py::test_ambiguous_candidate_role_still_errors",
+        "tests/test_helper_family_followup.py::test_only_constraints_are_exempt_from_role_coverage",
+        "tests/test_helper_family_followup.py::test_unknown_requirement_kind_is_rejected_by_schema_and_selection",
+        "tests/test_helper_family_followup.py::test_uncovered_constraint_reaches_draft_and_judge_and_remains_enforced"
+      ],
+      "content_sha256": "53fd3cf9f2a6f9b7beede148363cca8dbcdaf7bbd4a3491567c9e7e94d88b0bc",
+      "author": "helper-family-record-author",
+      "verifier": "constraint-selection-source-and-schema-recheck",
+      "reviewed": "2026-10-30",
+      "source_revision": "cde189b7e2950463341699dafe457b42b9f85daa"
+    },
+    "context_pack_node": {
+      "sources": {
+        "backend/nodes/data/context_pack_node.py": "10c4c52fe5844afda48b3ebe32d949195a31d2f3a6a194e38b52040bcfe389dc",
+        "backend/text_lines.py": "62fcd1e24ef3101b3f3c3db2bb0200f3e7448173c4a22d34c2449e6f70bd1fe7",
+        "backend/system_access.py": "49296ed42c4288f02cddf54980f94be9218249c4bd7360810ec237d563630c6f",
+        "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
+        "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
+        "backend/port_types.py": "fba69be8d89a713cfc1e98870544420cd8809e973d0b1079eca397dde17d422a",
+        "backend/context_pack.py": "57443dd1922fa4fb744c7593e5708072457a8b133b5172080226eab38b9dbad9",
+        "backend/hermes_investigations.py": "680eb4669943a8ea0e23b4136c5c1c7d89008c16421e2ab336eb6e950de642ca",
+        "backend/run_snapshot.py": "435685111863cf22fbb3a02b36cdf1fb1bee60d292b5d9659f23cd0e70ad2e4f"
+      },
+      "tests": [
+        "tests/test_node_claims.py::test_reviewed_palette_scenarios",
+        "tests/test_node_claims.py::test_activated_vault_writes",
+        "tests/test_node_claims.py::test_palette_real_engine_delivery",
+        "tests/test_context_pack.py::test_preparation_caps_in_characters_bytes_and_combined",
+        "tests/test_context_pack.py::test_longest_first_tie_order_and_footer_cap",
+        "tests/test_context_pack.py::test_review_known_secrets_redacted_before_json_and_vault"
+      ],
+      "content_sha256": "238f20426ae87ba0d8b99fd2ef93e8bc0a5d51fece30cb798c9d6f1f00ebea5e",
+      "author": "helper-family-record-author",
+      "verifier": "exact-layout-source-and-byte-scenario-recheck",
+      "reviewed": "2026-10-30",
+      "source_revision": "cde189b7e2950463341699dafe457b42b9f85daa"
     }
   }
 }

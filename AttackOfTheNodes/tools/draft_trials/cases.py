@@ -195,11 +195,14 @@ STRUCTURES = {
 
 
 def case_record(number, root, case_set=1):
+    if case_set == 3:
+        from .case_set_three import case_record as third
+        return third(number, root)
     if case_set == 2:
         from .case_set_two import case_record as second
         return second(number, root)
     if case_set != 1:
-        raise ValueError("case_set must be 1 or 2")
+        raise ValueError("case_set must be 1, 2 or 3")
     return dict(
         version=3,
         id=number,
@@ -212,6 +215,9 @@ def case_record(number, root, case_set=1):
 
 
 def fixture_variants(number, case_set=1):
+    if case_set == 3:
+        from .case_set_three import fixture_variants as third
+        return third(number)
     if case_set == 2:
         from .case_set_two import fixture_variants as second
         return second(number)
@@ -322,6 +328,9 @@ def fixture_variants(number, case_set=1):
 
 
 def good_draft(number, root="ROOT", case_set=1):
+    if case_set == 3:
+        from .case_set_three import good_draft as third
+        return third(number, root)
     if case_set == 2:
         from .case_set_two import good_draft as second
         return second(number, root)
@@ -678,4 +687,5 @@ def calibration_pairs():
     # Held out from judge-prompt tuning: the same swap on a different request
     # (empty check), so a fix fitted only to case 7 would still miss it.
     pair("reversed_empty_check", 9, reverse)
-    return pairs
+    from .case_set_three import calibration_pairs as helpers
+    return pairs + helpers()

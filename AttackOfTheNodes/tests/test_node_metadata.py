@@ -367,7 +367,7 @@ async def test_v2_queries_return_their_frozen_inventory_and_full_records():
     from tools.draft_trials import runner
     text, inventory = await runner.contract_inventory()
     assert inventory == V2_INVENTORY
-    for node_type in node_metadata.NODE_METADATA:
+    for node_type in {kind for kinds in V2_INVENTORY.values() for kind in kinds}:
         record = NODE_METADATA[node_type]
         assert record['execution_contract']['output_payload'] in text
         assert record['not_for'] in text

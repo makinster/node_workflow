@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "source_revision": "8ee108b4e3e932790c94ad90c5bc419cee5f75e2",
+  "type_ids": [
+    "branch_end_node",
+    "branch_node",
+    "concat_node",
+    "conditional_node",
+    "end_node",
+    "file_output_node",
+    "file_reader_node",
+    "json_path_node",
+    "start_node",
+    "text_output_node",
+    "text_transform_node",
+    "user_text_input_node"
+  ],
+  "role_ids": [
+    "ask_text",
+    "branch_beacon",
+    "choose_path",
+    "compose_text",
+    "error_route",
+    "extract_json",
+    "finish",
+    "join",
+    "parallel_paths",
+    "persistent_state",
+    "read_file",
+    "show_saved_path",
+    "show_text",
+    "start",
+    "transform_text",
+    "vault_state",
+    "write_file"
+  ],
+  "calibration_pair_count": 25,
+  "calibration_sha256": "083917a184642413a1bd5fcd8c73fa6d1fc5957783153ccd91a92897babbb2d6",
+  "sets_sha256": {
+    "1": "c25dcd586660d8ee3102bca8e60ee59970ec8b64ea806c2b626fc747b812094f",
+    "2": "b2dc8389980b99c83856de4896af2241eba510320556aa1fd77263ad4d946fb9"
+  }
+}

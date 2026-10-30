@@ -1,0 +1,136 @@
+{
+  "before": {
+    "Brief": 14687,
+    "Compact": 53204,
+    "baseline_contracts": 21619
+  },
+  "after": {
+    "Brief": 15794,
+    "Compact": 57781,
+    "admitted_Brief": 8484,
+    "admitted_Compact": 26444,
+    "baseline_contracts": 22345
+  },
+  "admitted_type_ids": [
+    "branch_end_node",
+    "branch_node",
+    "check_reply_node",
+    "concat_node",
+    "conditional_node",
+    "context_pack_node",
+    "end_node",
+    "file_output_node",
+    "file_reader_node",
+    "find_lines_node",
+    "json_path_node",
+    "read_lines_node",
+    "start_node",
+    "text_output_node",
+    "text_transform_node",
+    "user_text_input_node"
+  ],
+  "role_ids": [
+    "ask_text",
+    "branch_beacon",
+    "check_json_reply",
+    "choose_path",
+    "compose_text",
+    "error_route",
+    "extract_json",
+    "find_in_file",
+    "finish",
+    "join",
+    "pack_context",
+    "parallel_paths",
+    "persistent_state",
+    "read_excerpt",
+    "read_file",
+    "show_saved_path",
+    "show_text",
+    "start",
+    "transform_text",
+    "vault_state",
+    "write_file"
+  ],
+  "contract_limit": 50000,
+  "context_limit": 100000,
+  "calibration_pairs": 30,
+  "snapshots": [
+    {
+      "case": 1,
+      "total_characters": 8500,
+      "contracts_characters": 7565,
+      "type_ids": [
+        "end_node",
+        "read_lines_node",
+        "start_node",
+        "text_output_node"
+      ]
+    },
+    {
+      "case": 2,
+      "total_characters": 11929,
+      "contracts_characters": 10719,
+      "type_ids": [
+        "end_node",
+        "find_lines_node",
+        "read_lines_node",
+        "start_node",
+        "text_output_node",
+        "user_text_input_node"
+      ]
+    },
+    {
+      "case": 3,
+      "total_characters": 11135,
+      "contracts_characters": 9924,
+      "type_ids": [
+        "check_reply_node",
+        "end_node",
+        "file_reader_node",
+        "json_path_node",
+        "start_node",
+        "text_output_node"
+      ]
+    },
+    {
+      "case": 4,
+      "total_characters": 9939,
+      "contracts_characters": 8862,
+      "type_ids": [
+        "context_pack_node",
+        "end_node",
+        "start_node",
+        "text_output_node",
+        "user_text_input_node"
+      ]
+    }
+  ],
+  "previous_head": "16a764c6869f8ceac7c646bde823281639bb4fb2",
+  "previous": {
+    "Brief": 15794,
+    "Compact": 53302,
+    "admitted_Brief": 8484,
+    "admitted_Compact": 25246,
+    "baseline_contracts": 25309
+  },
+  "per_node_descriptions_restored": true,
+  "followup_2_previous_head": "cde189b7e2950463341699dafe457b42b9f85daa",
+  "followup_2_previous": {
+    "Brief": 15794,
+    "Compact": 57481,
+    "admitted_Brief": 8484,
+    "admitted_Compact": 26144,
+    "baseline_contracts": 22345
+  },
+  "requirement_kind": {
+    "optional": true,
+    "default": "action",
+    "enum": [
+      "action",
+      "constraint"
+    ],
+    "role_coverage": "action requirements only",
+    "judge_coverage": "all requirements"
+  }
+}

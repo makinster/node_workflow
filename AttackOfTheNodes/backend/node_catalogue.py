@@ -16,7 +16,7 @@ from .port_types import port_metadata, resolved_metadata
 SCHEMA_VERSION = 2
 MAX_BYTES = 256 * 1024
 MAX_CHARS_LIMIT = 200_000
-PENDING_LINE = 'Metadata unreviewed: effects/needs unknown; not Read-only.'
+PENDING_LINE = 'Unreviewed: effects/needs unknown; not Read-only.'
 SOURCE_IDS = {'Upstream payload': 'upstream', 'Vault': 'vault', 'Configured': 'configured'}
 COMPACT_KEYS = ('type', 'required', 'options', 'min', 'max', 'secret', 'path_hint')
 DETAILS = ('Brief', 'Compact', 'Detailed')
@@ -126,6 +126,7 @@ def entry(factory, row, detail):
 
 
 PORT_LEGEND = 'Connections use port ids only; quoted names are labels.'
+LOOKALIKE_LEGEND = 'Use instead links name alternatives; they do not grant admission.'
 
 
 def port_label(port, *, brief=False):
@@ -159,6 +160,10 @@ def intent_lines(meta, *, notes):
     lines = [f"Use when: {meta['use_when']}"] if 'use_when' in meta else []
     if 'not_for' in meta:
         lines.append(f"Not for: {meta['not_for']}")
+    for link in meta.get('use_instead', []):
+        from .palette_selection import ADMITTED
+        status = ' (not admitted)' if link['node_type'] not in ADMITTED else ''
+        lines.append(f"Use instead: {link['when']}: {link['node_type']}{status}.")
     lines.append(f"Effects: {effects_text(meta)}. Needs: {needs_text(meta)}.")
     if 'cost_class' in meta:
         lines.append(f"Cost: {COST_PHRASES[meta['cost_class']]}. Time: {meta['time_class']}.")
@@ -167,7 +172,7 @@ def intent_lines(meta, *, notes):
 
 def brief_text(record, factory):
     lines = [header(record) + ': type|name|purpose|in -> out, then choosing facts',
-             PORT_LEGEND, '']
+             PORT_LEGEND, LOOKALIKE_LEGEND, '']
     family = None
     for item in sorted(record['entries'], key=lambda e: (factory.metadata_for_type(e['type']).get('primary_family', ''), e['type'])):
         item_family = factory.metadata_for_type(item['type']).get('primary_family', '')
@@ -191,7 +196,7 @@ def text_output(record, factory):
         return brief_text(record, factory)
     lines = [header(record) + (': default ports; field:type=default; required=no default.'
                                if record['detail'] == 'Compact' else ': default ports; full schema and defaults.'),
-             PORT_LEGEND, record['input_routing'], 'All nodes may raise node_error.', '']
+             PORT_LEGEND, LOOKALIKE_LEGEND, record['input_routing'], 'All nodes may raise node_error.', '']
     for item in record['entries']:
         lines.extend([f"{item['entry_kind']} {item['type']} | {item['display_name']} | {item['group'] or 'Ungrouped'}",
                       item['description'], *intent_lines(item['node_metadata'], notes=True),
@@ -233,8 +238,8 @@ async def build(factory, config):
     entries = []
     selected = None
     if config['scope'] == 'Exact IDs':
-        from .palette_selection import exact_ids
-        selected = exact_ids(factory, config.get('type_ids'))
+        from .palette_selection import exact_ids, admission
+        selected = exact_ids(factory, config.get('type_ids'), allowed=admission(config))
     for row in sorted(list_node_types(factory), key=lambda r: r['type']) if selected else list_node_types(factory):
         if selected is not None and row['type'] not in selected:
             continue

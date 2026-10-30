@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "base_revision": "ee0bca449425eaa23792b08f442ac3fd81e6b2fb",
-  "date": "2026-10-29",
+  "base_revision": "8ee108b4e3e932790c94ad90c5bc419cee5f75e2",
+  "date": "2026-10-30",
   "scope": "source-reviewed baseline refreshed after owner decisions on count/visits ports and suppression; authoring_accepts reflects current shared capability policy",
   "registered_count": 59,
-  "reviewed_count": 12,
+  "reviewed_count": 16,
   "nodes": [
     {
       "node_type": "ask_claude_node",
@@ -503,7 +503,7 @@
     },
     {
       "node_type": "check_reply_node",
-      "metadata_review": "pending",
+      "metadata_review": "reviewed",
       "authorable": true,
       "source": "backend/nodes/data/check_reply_node.py",
       "source_sha256": "2ae4d61c5ec54289e9e1371adafaf38cb9d24c6aece0cc757e65418addfe2d19",
@@ -762,7 +762,7 @@
     },
     {
       "node_type": "context_pack_node",
-      "metadata_review": "pending",
+      "metadata_review": "reviewed",
       "authorable": true,
       "source": "backend/nodes/data/context_pack_node.py",
       "source_sha256": "10c4c52fe5844afda48b3ebe32d949195a31d2f3a6a194e38b52040bcfe389dc",
@@ -1591,7 +1591,7 @@
     },
     {
       "node_type": "find_lines_node",
-      "metadata_review": "pending",
+      "metadata_review": "reviewed",
       "authorable": true,
       "source": "backend/nodes/io/find_lines_node.py",
       "source_sha256": "1b01cc5080cc03960fba07242158cc7c43d93d85e74d85be74a82da10dffe6e1",
@@ -2820,7 +2820,7 @@
       "metadata_review": "pending",
       "authorable": true,
       "source": "backend/nodes/data/node_catalogue_node.py",
-      "source_sha256": "b02382a20e5623edbd86d3c78ddd1ffd13b598d0fe5b2c00a6e038426725916a",
+      "source_sha256": "0e038471bbdfe2581a72d9f17c72af160534d7d803659bbac50f6fd8c687c311",
       "inputs": {
         "input": {
           "name": "Continue",
@@ -3547,7 +3547,7 @@
     },
     {
       "node_type": "read_lines_node",
-      "metadata_review": "pending",
+      "metadata_review": "reviewed",
       "authorable": true,
       "source": "backend/nodes/io/read_lines_node.py",
       "source_sha256": "6f020a494b83c810060c07866feaddece719eed69ff96b57bc9a3bc5331fbe16",

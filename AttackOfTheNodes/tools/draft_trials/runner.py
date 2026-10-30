@@ -377,7 +377,7 @@ def create_trial_service():
     )
 
 
-async def run_workflow(spec, answers, artifact, timeout=30):
+async def run_workflow(spec, answers, artifact, timeout=30, *, system_node_folders=None):
     # NODE_EXECUTION_UPDATE is observational: stop() there does not prevent the
     # current node from entering its adapter. Guard the actual call boundary.
     if _budget is not None:
@@ -391,11 +391,11 @@ async def run_workflow(spec, answers, artifact, timeout=30):
             return await original(**kwargs)
 
         with patch.object(claude, "ask", guarded_ask):
-            return await _run_workflow(spec, answers, artifact, timeout)
-    return await _run_workflow(spec, answers, artifact, timeout)
+            return await _run_workflow(spec, answers, artifact, timeout, system_node_folders=system_node_folders)
+    return await _run_workflow(spec, answers, artifact, timeout, system_node_folders=system_node_folders)
 
 
-async def _run_workflow(spec, answers, artifact, timeout=30):
+async def _run_workflow(spec, answers, artifact, timeout=30, *, system_node_folders=None):
     from backend.authoring import build_workflow
     from backend.node_factory import NodeFactory
     from backend.run_policies import InputProvider, TerminatePolicy
@@ -412,6 +412,8 @@ async def _run_workflow(spec, answers, artifact, timeout=30):
         raise ValueError(built)
     provider = Provider(answers)
     service = create_trial_service()
+    if system_node_folders is not None:
+        service.configuration.set('system_node_folders', str(system_node_folders))
     service.load(built["path"])
     started = time.monotonic()
     handles = {value: key for key, value in built["nodes"].items()}
@@ -453,6 +455,8 @@ async def _run_workflow(spec, answers, artifact, timeout=30):
             await asyncio.wait_for(service.wait(), 5)
             raise
         vault = deepcopy(service.master_state.memory_bank.get_state()["persistent"])
+        if system_node_folders is not None:
+            result['system_node_folders']=service.configuration.get('system_node_folders')
         result['output_records'] = [
             dict(text=str(line), handle=handles.get(getattr(line, 'node_id', '')))
             for line in result['outputs']
@@ -600,8 +604,9 @@ def clarification_ok(case, first, trace):
 
 
 def case_variants(case):
-    return (fixture_variants(case['id'], 2) if case.get('case_set') == 2
-            else fixture_variants(case['id']))
+    if case.get('case_set',1)==1:
+        return fixture_variants(case['id'])
+    return fixture_variants(case['id'], case['case_set'])
 
 
 async def target_fixtures(spec, case, directory):
@@ -620,7 +625,8 @@ async def target_fixtures(spec, case, directory):
         symbolic = evaluate(spec, case, variant)
         expected_prompts = list(zip(symbolic["prompts"], variant["answers"]))
         run, vault = await run_workflow(
-            trial, expected_prompts, directory / (variant["name"] + ".json")
+            trial, expected_prompts, directory / (variant["name"] + ".json"),
+            system_node_folders=root if case.get("case_set")==3 else None
         )
         # Classify by emitter, never by text: bare content may start with
         # [END] or another node's label. Persist handles before JSON loses
@@ -658,7 +664,9 @@ async def target_fixtures(spec, case, directory):
         )
         # Missing file fixture must error rather than report successful empty output.
         ok = (
-            bool(run["errors"]) == variant["error"]
+            (bool(run["errors"]) == variant["error"]
+             if case.get('case_set')!=3 else
+             [e['code'] for e in run['errors']]==variant['handled_errors'] and run['exit_code']==0)
             and display_outputs_match(
                 [{"body": body} for body in bodies], expected, allows_display_framing(case)
             )
@@ -699,6 +707,9 @@ async def run_case(
         directory / "frozen-case.json", dict(case, fixtures=variants)
     )
     spec = json.loads(SPEC.read_text())
+    from .admission import configure
+    from backend.palette_selection import ADMITTED, ORIGINAL_PALETTE
+    configure(spec, ORIGINAL_PALETTE if case_set in (1,2) else ADMITTED)
     spec["name"] += " case " + str(number)
     spec["nodes"]["judge"]["config"].update(model=judge_model, effort=judge_effort)
     drafts = directory / "drafts"
@@ -929,9 +940,14 @@ async def run_case(
             report["clarification"] != "pass"
             or report["spec_valid"] != "pass"
             or report["warnings"]
-            or report["case_rules"]["result"] != "pass"
         ):
             raise ValueError("Case gates failed; target not executed")
+        if report['case_rules']['result'] == 'needs_review':
+            report['result'] = 'needs_review'
+            report['review_reason'] = 'The bounded case oracle cannot certify this composition.'
+            return finish()
+        if report['case_rules']['result'] != 'pass':
+            raise ValueError('Case gates failed; target not executed')
         report["behavior"] = await target_fixtures(
             target, case, directory / "target-runs"
         )
@@ -1026,8 +1042,16 @@ async def calibrate(
     try:
         for pair in pairs:
             directory = trial_root / "calibration" / pair["id"]
-            case = case_record(pair["case"], directory / "fixtures")
-            prepare_files(Path(case["root"]), fixture_variants(pair["case"])[0])
+            family_set=pair.get('case_set',1)
+            case = case_record(pair["case"], directory / "fixtures", family_set)
+            prepare_files(Path(case["root"]), fixture_variants(pair["case"],family_set)[0])
+            pair_contracts=contracts
+            if family_set==3:
+                from backend import node_catalogue
+                from backend.palette_selection import ADMITTED
+                defaults=factory.create_config_template('node_catalogue_node')
+                pair_contracts=await node_catalogue.build(factory,dict(defaults,scope='Exact IDs',type_ids=sorted(ADMITTED),max_chars=50000))
+            write_json(directory/'contracts.json', dict(text=pair_contracts, characters=len(pair_contracts), sha256=sha(pair_contracts)))
             for variant in ("good", "bad"):
                 target = json.loads(json.dumps(pair[variant]).replace("ROOT", case["root"]))
                 expected = variant == "good"
@@ -1065,7 +1089,7 @@ async def calibrate(
                     model=judge_model,
                     effort=judge_effort,
                     context_source="Configured",
-                    context=contracts,
+                    context=pair_contracts,
                     vault_write_key="judge_text",
                     details_vault_key="judge_details",
                 )
@@ -1171,7 +1195,7 @@ async def calibrate(
 
 async def _batch(
     trial_root,
-    case_ids=range(1, 11),
+    case_ids=None,
     real_calls=False,
     calibrate_only=False,
     scenario="ready",
@@ -1249,6 +1273,9 @@ async def _batch(
             if not failure
             and calibration["result"] == "pass"
             and all(r["result"] == "pass" for r in rows)
+            else 'needs_review'
+            if not failure and calibration['result'] == 'pass'
+            and all(r['result'] in ('pass', 'needs_review') for r in rows)
             else "fail"
         ),
         seconds=time.monotonic() - start,
@@ -1274,9 +1301,11 @@ async def _batch(
     }
     summary["failures"] = dict(
         Counter(
-            r.get("failure", "behavior failure") for r in rows if r["result"] != "pass"
+            r.get("failure", "behavior failure") for r in rows if r["result"] == "fail"
         )
     )
+    summary['reviews_needed'] = [dict(case=r['case'], reason=r['review_reason'])
+                                 for r in rows if r['result'] == 'needs_review']
     if failure:
         summary["failure"] = failure
     summary["estimated_cost_usd"] = _budget.cost if _budget is not None else None
@@ -1290,7 +1319,7 @@ async def _batch(
 
 async def batch(
     trial_root,
-    case_ids=range(1, 11),
+    case_ids=None,
     real_calls=False,
     calibrate_only=False,
     scenario="ready",
@@ -1307,8 +1336,10 @@ async def batch(
     global _budget, _shared_library
     previous = _budget, _shared_library
     try:
-        if case_set not in (1, 2):
-            raise ValueError("case_set must be 1 or 2")
+        if case_ids is None:
+            case_ids=range(1,5) if case_set==3 else range(1,11)
+        if case_set not in (1, 2, 3):
+            raise ValueError("case_set must be 1, 2 or 3")
         _budget = TrialBudget(budget_usd, time_limit) if real_calls else None
         if real_calls and shared_library is None:
             raise ValueError("real calls require a prepared shared library")
