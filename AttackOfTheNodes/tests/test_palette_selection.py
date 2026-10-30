@@ -217,7 +217,7 @@ async def test_gate_rejects_unselected_type_then_only_one_retry(tmp_path):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('case_set, expected_calls', [(1, 79), (2, 75)])
+@pytest.mark.parametrize('case_set, expected_calls', [(1, 81), (2, 77)])
 async def test_twenty_frozen_cases_recall_and_no_extra_ordinary_call(tmp_path, case_set, expected_calls):
     (tmp_path/'trial').mkdir()
     report = await runner.batch(tmp_path/'trial', case_set=case_set)

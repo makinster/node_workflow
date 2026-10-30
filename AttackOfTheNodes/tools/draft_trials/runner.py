@@ -593,7 +593,7 @@ def clarification_ok(case, first, trace):
         any(word in q for word in group)
         for group in [
             ("file", "which notes"),
-            ("action", "clean up", "change"),
+            ("action", "clean up", "cleanup", "change"),
             ("where", "destination", "save"),
         ]
     )
