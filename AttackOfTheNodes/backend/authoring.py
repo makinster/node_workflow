@@ -65,6 +65,95 @@ INPUT_ARRIVAL_NOTE = (
 )
 HANDLE_PATTERN = re.compile(r"^[a-z][a-z0-9_]{0,39}$")
 
+# Fixed format guidance shared by CLI diagnostics and the persistence-safe node
+# report. Keys and type names are selected internally, never from spec values.
+SPEC_SHAPE_MESSAGES = {
+    "spec": 'spec: expected a JSON object. Example: {"format": "aotn-workflow/1", "name": "Example", "nodes": {...}}.',
+    "format": 'format: expected "aotn-workflow/1". Example: {"format": "aotn-workflow/1"}.',
+    "name": 'name: expected a non-empty string. Example: {"name": "Example"}.',
+    "nodes": 'nodes: expected a non-empty object keyed by handle or a list of objects with id. Example: {"read": {"type": "<type>"}}.',
+    "node": 'node: expected an object with a string type. Example: {"type": "<type>"}.',
+    "type": 'type: expected a string naming a registered type. Example: {"type": "<type>"}.',
+    "config": 'config: expected an object of configuration fields. Example: {"config": {}}.',
+    "alias": 'alias: expected a string. Example: {"alias": "Read"}.',
+    "node_fields": 'node: expected only type, alias and config (plus id in list form). Example: {"type": "<type>", "config": {}}.',
+    "handle": 'handle: expected 1–40 lowercase letters, digits or underscores, starting with a letter. Example: "read_notes".',
+    "id_missing": 'nodes: id is required on each list item. Example: {"id": "read", "type": "<type>"}.',
+    "id_invalid": 'nodes: id must be a handle of 1–40 lowercase letters, digits or underscores, starting with a letter. Example: {"id": "read_notes", "type": "<type>"}.',
+    "id_duplicate": 'nodes: duplicate id; give every list item a unique id. Example: [{"id": "first", "type": "<type>"}, {"id": "second", "type": "<type>"}].',
+    "list_mixed": 'nodes: mixed keyed entries and list items are not allowed; each list item needs id and type. Example: [{"id": "read", "type": "<type>"}].',
+    "list_item": 'nodes: each item must be an object with id and type. Example: [{"id": "read", "type": "<type>"}].',
+    "connections": 'connections: expected a list of connection objects. Example: [{"from": "first.default", "to": "second.input"}].',
+    "connection": 'connection: expected an object with from and to. Example: {"from": "first.default", "to": "second.input"}.',
+    "endpoint": 'connection endpoint: expected a string "handle.port". Example: {"from": "first.default", "to": "second.input"}.',
+    "endpoint_handle": 'connection endpoint: expected a handle declared in nodes. Example: nodes {"first": {...}} with "from": "first.default".',
+    "callable": 'callable: expected true or false. Example: {"callable": false}.',
+}
+_JSON_TYPES = ("null", "a boolean", "a string", "an object", "a list", "a number", "an unsupported value")
+
+
+def _json_type(value):
+    if value is None:
+        return "null"
+    for cls, name in ((bool, "a boolean"), (str, "a string"), (dict, "an object"),
+                      (list, "a list"), ((int, float), "a number")):
+        if isinstance(value, cls):
+            return name
+    return "an unsupported value"
+
+
+def spec_shape_message(diagnostic):
+    """Render only whitelisted templates and JSON type names, never raw values."""
+    message = SPEC_SHAPE_MESSAGES.get(diagnostic.get("hint"), SPEC_SHAPE_MESSAGES["spec"])
+    got = diagnostic.get("got")
+    if got in _JSON_TYPES:
+        message = message.replace(". Example:", "; got " + got + ". Example:", 1)
+    return message
+
+
+def _shape_error(add, hint, value, *, field=None, node=None, code="spec_invalid"):
+    diagnostic = dict(hint=hint, got=_json_type(value))
+    add("error", code, spec_shape_message(diagnostic), node=node, field=field, **diagnostic)
+
+
+def normalize_spec(spec):
+    """Losslessly convert list nodes to keyed nodes; never mutate the input.
+
+    Reject the entire list on ambiguous identity, before any graph checks.
+    The id is list syntax, not a node field; all other fields are preserved so
+    ordinary shape/metadata validation can reject unsupported fields itself.
+    """
+    if not isinstance(spec, dict) or not isinstance(spec.get("nodes"), list):
+        return spec, []
+    diagnostics = []
+
+    def add(level, code, message, **location):
+        diagnostics.append(dict(level=level, code=code, message=message, **location))
+
+    nodes = {}
+    for index, item in enumerate(spec["nodes"]):
+        field = f"nodes[{index}]"
+        if not isinstance(item, dict):
+            _shape_error(add, "list_item", item, field=field)
+            continue
+        if "id" not in item:
+            keyed = any(key not in {"type", "alias", "config"} and isinstance(value, dict)
+                        for key, value in item.items())
+            _shape_error(add, "list_mixed" if keyed else "id_missing", item, field=field)
+            continue
+        handle = item["id"]
+        if not isinstance(handle, str) or not HANDLE_PATTERN.fullmatch(handle):
+            _shape_error(add, "id_invalid", handle, field=field + ".id")
+            continue
+        if handle in nodes:
+            _shape_error(add, "id_duplicate", handle, field=field + ".id")
+            continue
+        nodes[handle] = {key: value for key, value in item.items() if key != "id"}
+    if diagnostics:
+        return spec, diagnostics
+    return {**spec, "nodes": nodes}, []
+
+
 #: Types an author never places directly.
 HIDDEN_TYPES = frozenset({"tombstone_node"})
 
@@ -262,9 +351,13 @@ def _checked_graph(factory: NodeFactory, spec: Any):
     def report(ok: bool, **extra: Any) -> Dict[str, Any]:
         return {"ok": ok, "format": FORMAT, "diagnostics": diagnostics, **extra}
 
-    def add(level: str, code: str, message: str, node: Optional[str] = None, field: Optional[str] = None) -> None:
-        diagnostics.append({"level": level, "code": code, "node": node, "field": field, "message": message})
+    def add(level: str, code: str, message: str, node: Optional[str] = None, field: Optional[str] = None, **guidance) -> None:
+        diagnostics.append({"level": level, "code": code, "node": node, "field": field, "message": message, **guidance})
 
+    spec, normalization_errors = normalize_spec(spec)
+    if normalization_errors:
+        diagnostics.extend(normalization_errors)
+        return report(False), None
     nodes_spec, connections, name = _read_spec(spec, add)
     # Only a spec that cannot be walked stops here; otherwise every problem
     # is collected so one build lists them all.
@@ -280,7 +373,7 @@ def _checked_graph(factory: NodeFactory, spec: Any):
         if isinstance(spec["callable"], bool):
             workflow_map.set_callable(spec["callable"])
         else:
-            add("error", "spec_invalid", "\"callable\" must be true or false", field="callable")
+            _shape_error(add, "callable", spec["callable"], field="callable")
     ids: Dict[str, str] = {}
     configs: Dict[str, Dict[str, Any]] = {}
     for handle, node_spec in nodes_spec.items():
@@ -335,52 +428,56 @@ def _checked_graph(factory: NodeFactory, spec: Any):
 
 
 def _read_spec(spec: Any, add) -> Tuple[Dict[str, Dict[str, Any]], List[Any], str]:
-    """Shape checks; returns (nodes, connections as ((src, port), (dst, port)), name)."""
+    """Format checks only; node knowledge stays in factory metadata."""
     if not isinstance(spec, dict):
-        add("error", "spec_invalid", "The spec must be a JSON object", field=None)
+        _shape_error(add, "spec", spec)
         return {}, [], ""
     if spec.get("format") != FORMAT:
-        add("error", "spec_invalid", f"\"format\" must be {FORMAT!r}", field="format")
+        _shape_error(add, "format", spec.get("format"), field="format")
     name = spec.get("name")
     if not isinstance(name, str) or not name.strip():
-        add("error", "spec_invalid", "\"name\" must be a non-empty string", field="name")
+        _shape_error(add, "name", name, field="name")
         name = ""
     nodes = spec.get("nodes")
     if not isinstance(nodes, dict) or not nodes:
-        add("error", "spec_invalid", "\"nodes\" must be a non-empty object of handle -> node", field="nodes")
-        nodes = {}
+        _shape_error(add, "nodes", nodes, field="nodes")
+        # Endpoints cannot be resolved without a usable node table.
+        return {}, [], name.strip()
     for handle, node in nodes.items():
-        if not HANDLE_PATTERN.match(str(handle)):
-            add("error", "bad_handle",
-                f"Handle {handle!r}: use lowercase letters, digits and _, starting with a letter", str(handle), "handle")
-        if not isinstance(node, dict) or not isinstance(node.get("type"), str):
-            add("error", "spec_invalid", f"Node {handle!r} needs a \"type\"", str(handle), "type")
+        if not isinstance(handle, str) or not HANDLE_PATTERN.fullmatch(handle):
+            _shape_error(add, "handle", handle, node=str(handle), field="handle", code="bad_handle")
+        if not isinstance(node, dict):
+            _shape_error(add, "node", node, node=str(handle), field="node")
+            continue
+        if not isinstance(node.get("type"), str):
+            _shape_error(add, "type", node.get("type"), node=str(handle), field="type")
             continue
         if "config" in node and not isinstance(node["config"], dict):
-            add("error", "spec_invalid", f"Node {handle!r}: \"config\" must be an object", str(handle), "config")
+            _shape_error(add, "config", node["config"], node=str(handle), field="config")
         if "alias" in node and not isinstance(node["alias"], str):
-            add("error", "spec_invalid", f"Node {handle!r}: \"alias\" must be a string", str(handle), "alias")
-        unknown = sorted(set(node) - {"type", "alias", "config"})
-        if unknown:
-            add("error", "spec_invalid", f"Node {handle!r}: unknown keys {unknown}", str(handle), "node")
+            _shape_error(add, "alias", node["alias"], node=str(handle), field="alias")
+        if set(node) - {"type", "alias", "config"}:
+            _shape_error(add, "node_fields", node, node=str(handle), field="node")
     connections = []
     raw_connections = spec.get("connections", [])
     if not isinstance(raw_connections, list):
-        add("error", "spec_invalid", "\"connections\" must be a list", field="connections")
+        _shape_error(add, "connections", raw_connections, field="connections")
         raw_connections = []
     for index, raw in enumerate(raw_connections):
+        if not isinstance(raw, dict):
+            _shape_error(add, "connection", raw, field=f"connections[{index}]")
+            continue
         ends = []
         for side in ("from", "to"):
-            value = raw.get(side) if isinstance(raw, dict) else None
-            handle, _, port = str(value or "").partition(".")
+            value = raw.get(side)
+            handle, _, port = value.partition(".") if isinstance(value, str) else ("", "", "")
             if not handle or not port:
-                add("error", "spec_invalid",
-                    f"Connection {index + 1}: \"{side}\" must be \"handle.port\" (got {value!r})", field=f"connections[{index}].{side}")
+                _shape_error(add, "endpoint", value, field=f"connections[{index}].{side}")
             elif handle not in nodes:
-                add("error", "spec_invalid", f"Connection {index + 1}: no node with handle {handle!r}", field=f"connections[{index}].{side}")
+                _shape_error(add, "endpoint_handle", value, field=f"connections[{index}].{side}")
             ends.append((handle, port))
         connections.append(tuple(ends))
-    return nodes, connections, str(name).strip()
+    return nodes, connections, name.strip()
 
 
 def _checked_config(meta: Dict[str, Any], overrides: Dict[str, Any], handle: str, add) -> Dict[str, Any]:
