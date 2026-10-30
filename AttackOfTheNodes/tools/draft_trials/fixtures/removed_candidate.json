@@ -1,0 +1,7 @@
+{
+  "description": "A required file-writing candidate is deliberately removed, while its role remains. One expansion must restore it or stop honestly before drafting.",
+  "remove_type_id": "file_output_node",
+  "required_role": "write_file",
+  "case_set": 1,
+  "case": 5
+}

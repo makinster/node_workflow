@@ -30,7 +30,7 @@ def test_node_catalogue_node_registration_and_metadata():
             }
             assert isinstance(info["required"], bool)
     # Declared error codes (D7); the default generic code is always first.
-    assert [error["code"] for error in metadata["errors"]] == ['node_error', 'invalid_config', 'catalogue_empty', 'catalogue_too_large']
+    assert [error["code"] for error in metadata["errors"]] == ['node_error', 'invalid_config', 'catalogue_empty', 'catalogue_too_large', 'selection_invalid', 'selection_incomplete']
 
 
 @pytest.mark.asyncio

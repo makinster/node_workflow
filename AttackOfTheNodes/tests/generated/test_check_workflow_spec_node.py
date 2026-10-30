@@ -31,7 +31,7 @@ def test_check_workflow_spec_node_registration_and_metadata():
             }
             assert isinstance(info["required"], bool)
     # Declared error codes (D7); the default generic code is always first.
-    assert [error["code"] for error in metadata["errors"]] == ['node_error', 'invalid_config', 'invalid_json', 'spec_invalid', 'spec_too_large']
+    assert [error["code"] for error in metadata["errors"]] == ['node_error', 'invalid_config', 'invalid_json', 'spec_invalid', 'spec_too_large', 'selection_invalid']
 
 
 @pytest.mark.asyncio

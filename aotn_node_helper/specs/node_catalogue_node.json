@@ -43,7 +43,9 @@
         "label": "Nodes",
         "options": [
           "All nodes",
-          "Filtered"
+          "Filtered",
+          "Exact IDs",
+          "Selected analysis"
         ],
         "tab": "Parameters",
         "default": "All nodes"
@@ -104,7 +106,7 @@
         ],
         "tab": "Parameters",
         "wrap_description": true,
-        "description": "Brief: names and one-liners to shortlist nodes (fits a model Context). Then Detailed, filtered to the chosen nodes, adds full config and row schemas.",
+        "description": "Brief: purpose, when to use, not for, effects and needs to shortlist nodes. Then Compact or Detailed, filtered to the chosen nodes, adds full records, ports and config.",
         "default": "Compact"
       },
       "format": {
@@ -122,7 +124,7 @@
         "type": "integer",
         "label": "Max catalogue (characters)",
         "min": 512,
-        "max": 64000,
+        "max": 200000,
         "tab": "Parameters",
         "wrap_description": true,
         "description": "Complete output only; narrow filters if the cap is exceeded. Context Pack and model context have separate limits.",
@@ -133,6 +135,67 @@
         "label": "Include debug nodes",
         "default": false,
         "tab": "Parameters"
+      },
+      "type_ids_source": {
+        "type": "select",
+        "label": "Selection source",
+        "options": [
+          "Upstream payload",
+          "Vault",
+          "Configured"
+        ],
+        "default": "Configured"
+      },
+      "type_ids_vault_key": {
+        "type": "string",
+        "label": "Selection Vault key",
+        "vault_type": "var",
+        "visible_when": {
+          "type_ids_source": "Vault"
+        },
+        "default": ""
+      },
+      "type_ids": {
+        "type": "multiselect",
+        "label": "Exact type IDs",
+        "options": [
+          "branch_end_node",
+          "branch_node",
+          "concat_node",
+          "conditional_node",
+          "end_node",
+          "file_output_node",
+          "file_reader_node",
+          "json_path_node",
+          "start_node",
+          "text_output_node",
+          "text_transform_node",
+          "user_text_input_node"
+        ],
+        "visible_when": {
+          "type_ids_source": "Configured"
+        },
+        "default": []
+      },
+      "selection_request_vault_key": {
+        "type": "string",
+        "label": "Original request Vault key",
+        "default": ""
+      },
+      "discovery_request_vault_key": {
+        "type": "string",
+        "label": "Discovery request Vault key",
+        "default": ""
+      },
+      "discovery_snapshot_vault_key": {
+        "type": "string",
+        "label": "Frozen discovery Vault key",
+        "default": ""
+      },
+      "selection_clarification_vault_key": {
+        "type": "string",
+        "label": "Clarification Vault key",
+        "default": ""
       }
     }
   },
@@ -151,6 +214,16 @@
       "code": "catalogue_too_large",
       "description": "Catalogue is too large. Narrow the filters or raise the cap.",
       "retryable": false
+    },
+    {
+      "code": "selection_invalid",
+      "description": "Unknown, duplicate, hidden or unadmitted selection; check the exact IDs.",
+      "retryable": false
+    },
+    {
+      "code": "selection_incomplete",
+      "description": "A required role lacks an admitted, proven composition; no draft.",
+      "retryable": false
     }
   ],
   "input_ports": [
@@ -159,7 +232,7 @@
   "input_port_metadata": {
     "input": {
       "name": "Continue",
-      "description": "Sequence this step; incoming data is not a filter.",
+      "description": "All/Filtered: trigger only. Exact IDs: a list of identities; Selected analysis: requirements JSON.",
       "data_type": "any",
       "required": false,
       "sources": [

@@ -506,7 +506,7 @@
       "metadata_review": "pending",
       "authorable": true,
       "source": "backend/nodes/data/check_reply_node.py",
-      "source_sha256": "24750255eb05fe78fb28d26a043d4120a72fac17f54473d69b602391667656c1",
+      "source_sha256": "351bb3323f95911a554f1fb304cc8446ec7f889141469c6e4144066e43ad8b85",
       "inputs": {
         "input": {
           "name": "Reply",
@@ -571,7 +571,7 @@
       "metadata_review": "pending",
       "authorable": true,
       "source": "backend/nodes/data/check_workflow_spec_node.py",
-      "source_sha256": "bd0e4cbf9959a22a9066155daa0aa4baba64c5df5a13ef454957af6f51750ede",
+      "source_sha256": "55cf4bf8e9c77b55a09a6438356a2e4d7d9a7ace582cdfb54c574a274a5d7490",
       "inputs": {
         "input": {
           "name": "Spec",
@@ -2820,11 +2820,11 @@
       "metadata_review": "pending",
       "authorable": true,
       "source": "backend/nodes/data/node_catalogue_node.py",
-      "source_sha256": "12af7cd08ccad2b33809b10e4c49b1e0744eeb75f48fbe72aec3035c39df5780",
+      "source_sha256": "b02382a20e5623edbd86d3c78ddd1ffd13b598d0fe5b2c00a6e038426725916a",
       "inputs": {
         "input": {
           "name": "Continue",
-          "description": "Sequence this step; incoming data is not a filter.",
+          "description": "All/Filtered: trigger only. Exact IDs: a list of identities; Selected analysis: requirements JSON.",
           "data_type": "any",
           "required": false,
           "sources": [

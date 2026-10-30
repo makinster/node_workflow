@@ -30,7 +30,7 @@ def test_check_reply_node_registration_and_metadata():
             }
             assert isinstance(info["required"], bool)
     # Declared error codes (D7); the default generic code is always first.
-    assert [error["code"] for error in metadata["errors"]] == ['node_error', 'shape_invalid', 'reply_mismatch']
+    assert [error["code"] for error in metadata["errors"]] == ['node_error', 'shape_invalid', 'reply_mismatch', 'selection_invalid']
 
 
 @pytest.mark.asyncio

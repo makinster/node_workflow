@@ -10,7 +10,7 @@
         "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
         "backend/authoring.py": "8b76e1d3e22b984d9956c863918a4c1f8baf9d3fc6a672b037cdad9e3829cdfc",
-        "backend/vault_declarations.py": "3f4fbad4245f9889fa17c552a05399d67d67699e68904265f01cec0aa341122d"
+        "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8"
       },
       "tests": [
         "tests/test_node_metadata_behavior.py::test_start_greeting_runs_next_step_even_when_empty_and_is_never_displayed",
@@ -23,8 +23,8 @@
       "content_sha256": "edd10e0599c4254e65f6ecd4a16c65e6530ccd2fd9a02f105d23f7a74278d592",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-29",
-      "source_revision": "ee0bca449425eaa23792b08f442ac3fd81e6b2fb",
-      "verifier": "claims-runtime-source-recheck"
+      "source_revision": "4775f5ec5eec6db6e835c88948bea6c49a160e6b",
+      "verifier": "selection-dependency-source-recheck"
     },
     "end_node": {
       "sources": {
@@ -36,7 +36,7 @@
         "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
         "backend/authoring.py": "8b76e1d3e22b984d9956c863918a4c1f8baf9d3fc6a672b037cdad9e3829cdfc",
-        "backend/vault_declarations.py": "3f4fbad4245f9889fa17c552a05399d67d67699e68904265f01cec0aa341122d"
+        "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8"
       },
       "tests": [
         "tests/test_node_metadata_behavior.py::test_end_line_framing_and_silence",
@@ -50,8 +50,8 @@
       "content_sha256": "241986825014650a91ad61f1b66bf9a525758c51b954169c4875b8a28fb12e22",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-29",
-      "source_revision": "ee0bca449425eaa23792b08f442ac3fd81e6b2fb",
-      "verifier": "claims-runtime-source-recheck"
+      "source_revision": "4775f5ec5eec6db6e835c88948bea6c49a160e6b",
+      "verifier": "selection-dependency-source-recheck"
     },
     "branch_end_node": {
       "sources": {
@@ -60,7 +60,7 @@
         "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
         "backend/authoring.py": "8b76e1d3e22b984d9956c863918a4c1f8baf9d3fc6a672b037cdad9e3829cdfc",
-        "backend/vault_declarations.py": "3f4fbad4245f9889fa17c552a05399d67d67699e68904265f01cec0aa341122d",
+        "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
         "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09"
       },
       "tests": [
@@ -73,8 +73,8 @@
       "content_sha256": "a7b11e79741185b004a04ca305cef2bd7c883b40c92421d50630578cf89c498f",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-29",
-      "source_revision": "ee0bca449425eaa23792b08f442ac3fd81e6b2fb",
-      "verifier": "claims-runtime-source-recheck"
+      "source_revision": "4775f5ec5eec6db6e835c88948bea6c49a160e6b",
+      "verifier": "selection-dependency-source-recheck"
     },
     "branch_node": {
       "sources": {
@@ -84,7 +84,7 @@
         "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
         "backend/authoring.py": "8b76e1d3e22b984d9956c863918a4c1f8baf9d3fc6a672b037cdad9e3829cdfc",
-        "backend/vault_declarations.py": "3f4fbad4245f9889fa17c552a05399d67d67699e68904265f01cec0aa341122d"
+        "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8"
       },
       "tests": [
         "tests/test_node_metadata_behavior.py::test_parallel_branch_default_starts_every_path_and_ignores_legacy_condition",
@@ -96,8 +96,8 @@
       "content_sha256": "e94e747ac47b035dd44de06a0de7188c15366d2669de39c648c8ad613a1e9cb5",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-29",
-      "source_revision": "ee0bca449425eaa23792b08f442ac3fd81e6b2fb",
-      "verifier": "claims-runtime-source-recheck"
+      "source_revision": "4775f5ec5eec6db6e835c88948bea6c49a160e6b",
+      "verifier": "selection-dependency-source-recheck"
     },
     "user_text_input_node": {
       "sources": {
@@ -108,7 +108,7 @@
         "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
         "backend/authoring.py": "8b76e1d3e22b984d9956c863918a4c1f8baf9d3fc6a672b037cdad9e3829cdfc",
-        "backend/vault_declarations.py": "3f4fbad4245f9889fa17c552a05399d67d67699e68904265f01cec0aa341122d"
+        "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8"
       },
       "tests": [
         "tests/test_node_metadata_behavior.py::test_user_text_input_waits_for_a_person_and_emits_the_answer",
@@ -122,14 +122,14 @@
       "content_sha256": "b49fab86123410d7c7cc55ce481d45872d203000676dc59f51e1b118c98dfde5",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-29",
-      "source_revision": "ee0bca449425eaa23792b08f442ac3fd81e6b2fb",
-      "verifier": "claims-runtime-source-recheck"
+      "source_revision": "4775f5ec5eec6db6e835c88948bea6c49a160e6b",
+      "verifier": "selection-dependency-source-recheck"
     },
     "text_output_node": {
       "sources": {
         "backend/nodes/text_output_node.py": "0382e1f748a203be7ee9f30c7c48ccaf2e9a8a0725192d80d639669238407054",
         "backend/output_entry.py": "6121bc67a278ac66244365ff5c23c235cd457316ef2826cd41db07b202af2ba2",
-        "backend/vault_declarations.py": "3f4fbad4245f9889fa17c552a05399d67d67699e68904265f01cec0aa341122d",
+        "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
         "backend/nodes/io/file_output_node.py": "74994c1760a6a65c97017b7bb4139a3c993f49055e06f069b0cd7af9b1bf8c1e",
         "backend/file_refs.py": "72b5edc5179e38bf12c050e56daef85055bf83c70b541c9204436240ae62dee6",
         "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
@@ -150,8 +150,8 @@
       "content_sha256": "693cd958d90e9520c157cbd97e97443b75d4a2063416ff78b4b32a1e927c093a",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-29",
-      "source_revision": "ee0bca449425eaa23792b08f442ac3fd81e6b2fb",
-      "verifier": "claims-runtime-source-recheck"
+      "source_revision": "4775f5ec5eec6db6e835c88948bea6c49a160e6b",
+      "verifier": "selection-dependency-source-recheck"
     },
     "text_transform_node": {
       "sources": {
@@ -160,7 +160,7 @@
         "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
         "backend/authoring.py": "8b76e1d3e22b984d9956c863918a4c1f8baf9d3fc6a672b037cdad9e3829cdfc",
-        "backend/vault_declarations.py": "3f4fbad4245f9889fa17c552a05399d67d67699e68904265f01cec0aa341122d",
+        "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
         "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09"
       },
       "tests": [
@@ -174,8 +174,8 @@
       "content_sha256": "db8e0c03527a975f0601863f06699ada4347512c1583652b8ad27c19e12ef6e2",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-29",
-      "source_revision": "ee0bca449425eaa23792b08f442ac3fd81e6b2fb",
-      "verifier": "claims-runtime-source-recheck"
+      "source_revision": "4775f5ec5eec6db6e835c88948bea6c49a160e6b",
+      "verifier": "selection-dependency-source-recheck"
     },
     "file_reader_node": {
       "sources": {
@@ -186,7 +186,7 @@
         "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
         "backend/authoring.py": "8b76e1d3e22b984d9956c863918a4c1f8baf9d3fc6a672b037cdad9e3829cdfc",
-        "backend/vault_declarations.py": "3f4fbad4245f9889fa17c552a05399d67d67699e68904265f01cec0aa341122d",
+        "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
         "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09"
       },
       "tests": [
@@ -201,8 +201,8 @@
       "content_sha256": "ea72295a985b2e71ab45df834a27f3514ad8263025f1bfb1f99ad9d33d3d1870",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-29",
-      "source_revision": "ee0bca449425eaa23792b08f442ac3fd81e6b2fb",
-      "verifier": "claims-runtime-source-recheck"
+      "source_revision": "4775f5ec5eec6db6e835c88948bea6c49a160e6b",
+      "verifier": "selection-dependency-source-recheck"
     },
     "file_output_node": {
       "sources": {
@@ -217,7 +217,7 @@
         "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
         "backend/authoring.py": "8b76e1d3e22b984d9956c863918a4c1f8baf9d3fc6a672b037cdad9e3829cdfc",
-        "backend/vault_declarations.py": "3f4fbad4245f9889fa17c552a05399d67d67699e68904265f01cec0aa341122d",
+        "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
         "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09"
       },
       "tests": [
@@ -233,8 +233,8 @@
       "content_sha256": "f8ca8c813eb43ad300395be7c6ed86572fd651c9ee6e9c5844a38bfded1c1438",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-29",
-      "source_revision": "ee0bca449425eaa23792b08f442ac3fd81e6b2fb",
-      "verifier": "claims-runtime-source-recheck"
+      "source_revision": "4775f5ec5eec6db6e835c88948bea6c49a160e6b",
+      "verifier": "selection-dependency-source-recheck"
     },
     "conditional_node": {
       "sources": {
@@ -243,7 +243,7 @@
         "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
         "backend/authoring.py": "8b76e1d3e22b984d9956c863918a4c1f8baf9d3fc6a672b037cdad9e3829cdfc",
-        "backend/vault_declarations.py": "3f4fbad4245f9889fa17c552a05399d67d67699e68904265f01cec0aa341122d"
+        "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8"
       },
       "tests": [
         "tests/test_node_metadata_behavior.py::test_conditional_modes_emit_one_port_with_the_left_value",
@@ -258,8 +258,8 @@
       "content_sha256": "c77fb3895f3ef4be218c700e63619574069a71f46b9783169bf98b84454e103f",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-29",
-      "source_revision": "ee0bca449425eaa23792b08f442ac3fd81e6b2fb",
-      "verifier": "claims-runtime-source-recheck"
+      "source_revision": "4775f5ec5eec6db6e835c88948bea6c49a160e6b",
+      "verifier": "selection-dependency-source-recheck"
     },
     "concat_node": {
       "sources": {
@@ -268,7 +268,7 @@
         "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
         "backend/authoring.py": "8b76e1d3e22b984d9956c863918a4c1f8baf9d3fc6a672b037cdad9e3829cdfc",
-        "backend/vault_declarations.py": "3f4fbad4245f9889fa17c552a05399d67d67699e68904265f01cec0aa341122d",
+        "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
         "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09"
       },
       "tests": [
@@ -285,8 +285,8 @@
       "content_sha256": "cc02379128b56a933eb9eb56b3a7c40a51566462db9b180ebe934b1f619149a6",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-29",
-      "source_revision": "ee0bca449425eaa23792b08f442ac3fd81e6b2fb",
-      "verifier": "claims-runtime-source-recheck"
+      "source_revision": "4775f5ec5eec6db6e835c88948bea6c49a160e6b",
+      "verifier": "selection-dependency-source-recheck"
     },
     "json_path_node": {
       "sources": {
@@ -294,7 +294,7 @@
         "backend/node_factory.py": "e7ee50b4d41aa91c56ff7919a8c098cbbf5a61b1f95e4dfb2cebaa556218905d",
         "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
         "backend/authoring.py": "8b76e1d3e22b984d9956c863918a4c1f8baf9d3fc6a672b037cdad9e3829cdfc",
-        "backend/vault_declarations.py": "3f4fbad4245f9889fa17c552a05399d67d67699e68904265f01cec0aa341122d",
+        "backend/vault_declarations.py": "6ed213fa48f1762f42930584fd45fa4b77cd4b16fe58c1ef4764a634962257e8",
         "backend/supervisor.py": "7e16ae02412be5611a65a838711975d9f35c74e00b90953007cd8f3d7e53dd09"
       },
       "tests": [
@@ -308,8 +308,8 @@
       "content_sha256": "097aa179e65876159dbfaa650ebaa7f7e19cdbc19b387c03e117796c69df4831",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-29",
-      "source_revision": "ee0bca449425eaa23792b08f442ac3fd81e6b2fb",
-      "verifier": "claims-runtime-source-recheck"
+      "source_revision": "4775f5ec5eec6db6e835c88948bea6c49a160e6b",
+      "verifier": "selection-dependency-source-recheck"
     }
   }
 }

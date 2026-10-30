@@ -91,11 +91,15 @@ def test_required_work_must_follow_declared_route(tmp_path, number, make):
 async def test_full_mock_trial_rejects_work_on_wrong_route(tmp_path, number, make):
     case = case_record(number, tmp_path / f"trial/cases/{number}/fixtures")
     spec = make(case["root"])
+    analysis = runner.requirements(case)
+    if any(n['type'] == 'concat_node' for n in spec['nodes'].values()):
+        analysis['selection']['candidates'].append(dict(type_id='concat_node',role='compose_text',requirement_ids=['r1'],reason='Possible Vault composition'))
+        analysis['selection']['roles'].append(dict(role='compose_text',requirement_ids=['r1'],reason='Possible composition'))
     report = await runner.run_case(
         number,
         tmp_path / "trial",
         tmp_path / "library",
-        replies=[runner.requirements(case), spec, runner.meaning()],
+        replies=[analysis, spec, runner.meaning()],
     )
     assert report["spec_valid"] == "pass"
     assert report["case_rules"]["result"] == "fail"

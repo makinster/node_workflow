@@ -168,7 +168,12 @@ def intent_lines(meta, *, notes):
 def brief_text(record, factory):
     lines = [header(record) + ': type|name|purpose|in -> out, then choosing facts',
              PORT_LEGEND, '']
-    for item in record['entries']:
+    family = None
+    for item in sorted(record['entries'], key=lambda e: (factory.metadata_for_type(e['type']).get('primary_family', ''), e['type'])):
+        item_family = factory.metadata_for_type(item['type']).get('primary_family', '')
+        if item_family != family:
+            family = item_family
+            lines.append('Family: ' + (family or 'Ungrouped'))
         # Brief JSON deliberately retains its original names-only arrays.
         # Resolve ids only for Text; never add/change JSON contract fields.
         description = describe_node_type(factory, item['type'])
@@ -186,7 +191,7 @@ def text_output(record, factory):
         return brief_text(record, factory)
     lines = [header(record) + (': default ports; field:type=default; required=no default.'
                                if record['detail'] == 'Compact' else ': default ports; full schema and defaults.'),
-             PORT_LEGEND, record['input_routing'], '']
+             PORT_LEGEND, record['input_routing'], 'All nodes may raise node_error.', '']
     for item in record['entries']:
         lines.extend([f"{item['entry_kind']} {item['type']} | {item['display_name']} | {item['group'] or 'Ungrouped'}",
                       item['description'], *intent_lines(item['node_metadata'], notes=True),
@@ -195,7 +200,8 @@ def text_output(record, factory):
                       'Out: ' + '; '.join(f"{port_label(p)} [{p['data_type']}] {'required' if p['required'] else 'optional'} ({'/'.join(p['to'])})" for p in item['outputs']),
                       'Config: ' + (config_text(item['config_fields']) if record['detail'] == 'Compact'
                                                   else compact_json(item['config_fields'])),
-                      'Errors: ' + compact_json(item['errors'])])
+                      *(['Errors: ' + compact_json([e for e in item['errors'] if e != 'node_error'])]
+                        if record['detail'] != 'Compact' or any(e != 'node_error' for e in item['errors']) else [])])
         for key, value in ((item['node_metadata'] or {}).get('execution_contract') or {}).items():
             lines.append(('Output payload: ' if key == 'output_payload' else 'Behavior: ') + value)
         for key, value in item.get('standard_key_docs', {}).items():
@@ -211,7 +217,7 @@ def text_output(record, factory):
 
 
 def validate_config(config):
-    if (config.get('scope') not in ('All nodes', 'Filtered')
+    if (config.get('scope') not in ('All nodes', 'Filtered', 'Exact IDs')
             or config.get('detail') not in DETAILS
             or config.get('format') not in ('Text', 'JSON')
             or type(config.get('include_debug')) is not bool
@@ -225,11 +231,17 @@ def validate_config(config):
 async def build(factory, config):
     validate_config(config)
     entries = []
-    for row in list_node_types(factory):
+    selected = None
+    if config['scope'] == 'Exact IDs':
+        from .palette_selection import exact_ids
+        selected = exact_ids(factory, config.get('type_ids'))
+    for row in sorted(list_node_types(factory), key=lambda r: r['type']) if selected else list_node_types(factory):
+        if selected is not None and row['type'] not in selected:
+            continue
         meta = factory.metadata_for_type(row['type'])
         if row['type'] in HIDDEN_TYPES or meta.get('editor_only'):
             continue
-        if is_debug(meta) and not config['include_debug']:
+        if selected is None and is_debug(meta) and not config['include_debug']:
             continue
         if config['scope'] == 'Filtered':
             group, tag = config['group_filter'], config['tag_filter']
@@ -245,6 +257,8 @@ async def build(factory, config):
                 continue
         await asyncio.sleep(0)
         entries.append(entry(factory, row, config['detail']))
+    if selected is not None and [e['type'] for e in entries] != selected:
+        raise NodeError('selection_invalid', 'Selected catalogue IDs are unavailable or duplicated; no partial contracts returned.')
     if not entries:
         raise NodeError('catalogue_empty', 'No nodes match. Broaden the filters.')
     record = dict(schema_version=SCHEMA_VERSION, node_metadata_version=RECORD_SCHEMA_VERSION,
@@ -252,6 +266,8 @@ async def build(factory, config):
                   ports_basis='defaults', detail=config['detail'],
                   include_debug=config['include_debug'], matched_count=len(entries),
                   complete=True, entries=entries)
+    if selected is not None:
+        record['selected_type_ids'] = selected
     if config['detail'] != 'Brief':
         record['input_routing'] = INPUT_ARRIVAL_NOTE
     value = record if config['format'] == 'JSON' else text_output(record, factory)

@@ -184,7 +184,17 @@ def config_vault_read_entries(node_type: str, config: dict[str, Any]) -> list[di
         if key:
             entries.append({"source_id": key, "target_port": target_port, "required": required})
 
-    if node_type == "get_variable_node":
+    if node_type == 'node_catalogue_node' and config.get('scope') in ('Exact IDs', 'Selected analysis'):
+        if config.get('type_ids_source') == 'Vault':
+            add(config.get('type_ids_vault_key', ''), 'type_ids_vault_key', required=True)
+        if config.get('discovery_request_vault_key'):
+            add(config['discovery_request_vault_key'], 'discovery_request_vault_key', required=True)
+        if config.get('scope') == 'Selected analysis':
+            for field in ('selection_request_vault_key', 'discovery_snapshot_vault_key', 'selection_clarification_vault_key'):
+                add(config.get(field, ''), field, required=True)
+    elif node_type == 'check_workflow_spec_node' and config.get('contract_snapshot_vault_key'):
+        add(config['contract_snapshot_vault_key'], 'contract_snapshot_vault_key', required=True)
+    elif node_type == "get_variable_node":
         add(config.get("variable_name", "value"), "variable_name")
     elif node_type == "variable_reader_node":
         add(config.get("variable_name") or "", "variable_name")

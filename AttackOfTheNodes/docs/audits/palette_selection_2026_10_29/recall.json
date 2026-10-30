@@ -1,0 +1,540 @@
+{
+  "mode": "mock",
+  "note": "Frozen role alternatives, not exact equality with a reference workflow; no hosted retrieval quality claim.",
+  "cases": [
+    {
+      "case_set": 1,
+      "case": 1,
+      "status": "ready",
+      "selected_type_ids": [
+        "end_node",
+        "start_node",
+        "text_output_node"
+      ],
+      "characters": 6096,
+      "utf8_bytes": 6103,
+      "expansion_count": 0,
+      "recall": {
+        "roles_covered": [
+          "start",
+          "message"
+        ],
+        "candidate_count": 3,
+        "missing_roles": [],
+        "unnecessary_candidates": [],
+        "status_only": false,
+        "evidence": "Frozen role recall; mock responses do not demonstrate semantic retrieval"
+      }
+    },
+    {
+      "case_set": 1,
+      "case": 2,
+      "status": "ready",
+      "selected_type_ids": [
+        "end_node",
+        "start_node",
+        "text_output_node",
+        "text_transform_node"
+      ],
+      "characters": 7369,
+      "utf8_bytes": 7377,
+      "expansion_count": 0,
+      "recall": {
+        "roles_covered": [
+          "source",
+          "strip",
+          "lower",
+          "message"
+        ],
+        "candidate_count": 4,
+        "missing_roles": [],
+        "unnecessary_candidates": [],
+        "status_only": false,
+        "evidence": "Frozen role recall; mock responses do not demonstrate semantic retrieval"
+      }
+    },
+    {
+      "case_set": 1,
+      "case": 3,
+      "status": "ready",
+      "selected_type_ids": [
+        "end_node",
+        "start_node",
+        "text_output_node",
+        "text_transform_node",
+        "user_text_input_node"
+      ],
+      "characters": 8577,
+      "utf8_bytes": 8586,
+      "expansion_count": 0,
+      "recall": {
+        "roles_covered": [
+          "ask",
+          "upper",
+          "message"
+        ],
+        "candidate_count": 5,
+        "missing_roles": [],
+        "unnecessary_candidates": [],
+        "status_only": false,
+        "evidence": "Frozen role recall; mock responses do not demonstrate semantic retrieval"
+      }
+    },
+    {
+      "case_set": 1,
+      "case": 4,
+      "status": "ready",
+      "selected_type_ids": [
+        "end_node",
+        "file_reader_node",
+        "start_node",
+        "text_output_node"
+      ],
+      "characters": 7552,
+      "utf8_bytes": 7560,
+      "expansion_count": 0,
+      "recall": {
+        "roles_covered": [
+          "read",
+          "message"
+        ],
+        "candidate_count": 4,
+        "missing_roles": [],
+        "unnecessary_candidates": [],
+        "status_only": false,
+        "evidence": "Frozen role recall; mock responses do not demonstrate semantic retrieval"
+      }
+    },
+    {
+      "case_set": 1,
+      "case": 5,
+      "status": "ready",
+      "selected_type_ids": [
+        "end_node",
+        "file_output_node",
+        "file_reader_node",
+        "start_node",
+        "text_output_node"
+      ],
+      "characters": 10415,
+      "utf8_bytes": 10424,
+      "expansion_count": 0,
+      "recall": {
+        "roles_covered": [
+          "read",
+          "write",
+          "path"
+        ],
+        "candidate_count": 5,
+        "missing_roles": [],
+        "unnecessary_candidates": [],
+        "status_only": false,
+        "evidence": "Frozen role recall; mock responses do not demonstrate semantic retrieval"
+      }
+    },
+    {
+      "case_set": 1,
+      "case": 6,
+      "status": "ready",
+      "selected_type_ids": [
+        "end_node",
+        "file_output_node",
+        "start_node",
+        "text_output_node",
+        "text_transform_node",
+        "user_text_input_node"
+      ],
+      "characters": 11441,
+      "utf8_bytes": 11451,
+      "expansion_count": 0,
+      "recall": {
+        "roles_covered": [
+          "ask",
+          "upper",
+          "write",
+          "path"
+        ],
+        "candidate_count": 6,
+        "missing_roles": [],
+        "unnecessary_candidates": [],
+        "status_only": false,
+        "evidence": "Frozen role recall; mock responses do not demonstrate semantic retrieval"
+      }
+    },
+    {
+      "case_set": 1,
+      "case": 7,
+      "status": "ready",
+      "selected_type_ids": [
+        "conditional_node",
+        "end_node",
+        "start_node",
+        "text_output_node",
+        "user_text_input_node"
+      ],
+      "characters": 8799,
+      "utf8_bytes": 8808,
+      "expansion_count": 0,
+      "recall": {
+        "roles_covered": [
+          "ask",
+          "choice",
+          "continue",
+          "stop"
+        ],
+        "candidate_count": 5,
+        "missing_roles": [],
+        "unnecessary_candidates": [],
+        "status_only": false,
+        "evidence": "Frozen role recall; mock responses do not demonstrate semantic retrieval"
+      }
+    },
+    {
+      "case_set": 1,
+      "case": 8,
+      "status": "ready",
+      "selected_type_ids": [
+        "branch_node",
+        "end_node",
+        "start_node",
+        "text_output_node",
+        "text_transform_node",
+        "user_text_input_node"
+      ],
+      "characters": 10263,
+      "utf8_bytes": 10273,
+      "expansion_count": 0,
+      "recall": {
+        "roles_covered": [
+          "ask",
+          "split",
+          "upper",
+          "lower",
+          "upper_message",
+          "lower_message"
+        ],
+        "candidate_count": 6,
+        "missing_roles": [],
+        "unnecessary_candidates": [],
+        "status_only": false,
+        "evidence": "Frozen role recall; mock responses do not demonstrate semantic retrieval"
+      }
+    },
+    {
+      "case_set": 1,
+      "case": 9,
+      "status": "ready",
+      "selected_type_ids": [
+        "conditional_node",
+        "end_node",
+        "file_output_node",
+        "file_reader_node",
+        "start_node",
+        "text_output_node",
+        "text_transform_node"
+      ],
+      "characters": 13184,
+      "utf8_bytes": 13195,
+      "expansion_count": 0,
+      "recall": {
+        "roles_covered": [
+          "read",
+          "strip",
+          "choice",
+          "empty",
+          "upper",
+          "write",
+          "path"
+        ],
+        "candidate_count": 7,
+        "missing_roles": [],
+        "unnecessary_candidates": [],
+        "status_only": false,
+        "evidence": "Frozen role recall; mock responses do not demonstrate semantic retrieval"
+      }
+    },
+    {
+      "case_set": 1,
+      "case": 10,
+      "status": "ready",
+      "selected_type_ids": [
+        "end_node",
+        "file_output_node",
+        "file_reader_node",
+        "start_node",
+        "text_output_node",
+        "text_transform_node"
+      ],
+      "characters": 11689,
+      "utf8_bytes": 11699,
+      "expansion_count": 0,
+      "recall": {
+        "roles_covered": [
+          "read",
+          "strip",
+          "lower",
+          "write",
+          "path"
+        ],
+        "candidate_count": 6,
+        "missing_roles": [],
+        "unnecessary_candidates": [],
+        "status_only": false,
+        "evidence": "Frozen role recall; mock responses do not demonstrate semantic retrieval"
+      }
+    },
+    {
+      "case_set": 2,
+      "case": 1,
+      "status": "ready",
+      "selected_type_ids": [
+        "conditional_node",
+        "end_node",
+        "start_node",
+        "text_output_node",
+        "text_transform_node",
+        "user_text_input_node"
+      ],
+      "characters": 10072,
+      "utf8_bytes": 10082,
+      "expansion_count": 0,
+      "recall": {
+        "roles_covered": [
+          "ask",
+          "choice",
+          "upper",
+          "lower",
+          "yes",
+          "no"
+        ],
+        "candidate_count": 6,
+        "missing_roles": [],
+        "unnecessary_candidates": [],
+        "status_only": false,
+        "evidence": "Frozen role recall; mock responses do not demonstrate semantic retrieval"
+      }
+    },
+    {
+      "case_set": 2,
+      "case": 2,
+      "status": "ready",
+      "selected_type_ids": [
+        "concat_node",
+        "end_node",
+        "start_node",
+        "text_output_node",
+        "user_text_input_node"
+      ],
+      "characters": 8694,
+      "utf8_bytes": 8703,
+      "expansion_count": 0,
+      "recall": {
+        "roles_covered": [
+          "first",
+          "last",
+          "combine",
+          "show"
+        ],
+        "candidate_count": 5,
+        "missing_roles": [],
+        "unnecessary_candidates": [],
+        "status_only": false,
+        "evidence": "Frozen role recall; mock responses do not demonstrate semantic retrieval"
+      }
+    },
+    {
+      "case_set": 2,
+      "case": 3,
+      "status": "ready",
+      "selected_type_ids": [
+        "end_node",
+        "file_reader_node",
+        "json_path_node",
+        "start_node",
+        "text_output_node"
+      ],
+      "characters": 8666,
+      "utf8_bytes": 8675,
+      "expansion_count": 0,
+      "recall": {
+        "roles_covered": [
+          "read",
+          "field",
+          "show"
+        ],
+        "candidate_count": 5,
+        "missing_roles": [],
+        "unnecessary_candidates": [],
+        "status_only": false,
+        "evidence": "Frozen role recall; mock responses do not demonstrate semantic retrieval"
+      }
+    },
+    {
+      "case_set": 2,
+      "case": 4,
+      "status": "ready",
+      "selected_type_ids": [
+        "end_node",
+        "file_output_node",
+        "file_reader_node",
+        "start_node",
+        "text_output_node",
+        "text_transform_node"
+      ],
+      "characters": 11689,
+      "utf8_bytes": 11699,
+      "expansion_count": 0,
+      "recall": {
+        "roles_covered": [
+          "read",
+          "trim",
+          "upper",
+          "write",
+          "show"
+        ],
+        "candidate_count": 6,
+        "missing_roles": [],
+        "unnecessary_candidates": [],
+        "status_only": false,
+        "evidence": "Frozen role recall; mock responses do not demonstrate semantic retrieval"
+      }
+    },
+    {
+      "case_set": 2,
+      "case": 5,
+      "status": "ready",
+      "selected_type_ids": [
+        "end_node",
+        "file_reader_node",
+        "start_node",
+        "text_output_node",
+        "text_transform_node"
+      ],
+      "characters": 8825,
+      "utf8_bytes": 8834,
+      "expansion_count": 0,
+      "recall": {
+        "roles_covered": [
+          "read",
+          "reverse",
+          "show"
+        ],
+        "candidate_count": 5,
+        "missing_roles": [],
+        "unnecessary_candidates": [],
+        "status_only": false,
+        "evidence": "Frozen role recall; mock responses do not demonstrate semantic retrieval"
+      }
+    },
+    {
+      "case_set": 2,
+      "case": 6,
+      "status": "outside_scope",
+      "recall": {
+        "roles_covered": [],
+        "candidate_count": 0,
+        "missing_roles": [],
+        "unnecessary_candidates": [],
+        "status_only": true,
+        "evidence": "Frozen role recall; mock responses do not demonstrate semantic retrieval"
+      }
+    },
+    {
+      "case_set": 2,
+      "case": 7,
+      "status": "needs_new_node",
+      "recall": {
+        "roles_covered": [],
+        "candidate_count": 0,
+        "missing_roles": [],
+        "unnecessary_candidates": [],
+        "status_only": true,
+        "evidence": "Frozen role recall; mock responses do not demonstrate semantic retrieval"
+      }
+    },
+    {
+      "case_set": 2,
+      "case": 8,
+      "status": "ready",
+      "selected_type_ids": [
+        "branch_node",
+        "end_node",
+        "file_output_node",
+        "start_node",
+        "text_output_node",
+        "text_transform_node",
+        "user_text_input_node"
+      ],
+      "characters": 13127,
+      "utf8_bytes": 13138,
+      "expansion_count": 0,
+      "recall": {
+        "roles_covered": [
+          "ask",
+          "split",
+          "upper",
+          "lower",
+          "write",
+          "shown",
+          "path"
+        ],
+        "candidate_count": 7,
+        "missing_roles": [],
+        "unnecessary_candidates": [],
+        "status_only": false,
+        "evidence": "Frozen role recall; mock responses do not demonstrate semantic retrieval"
+      }
+    },
+    {
+      "case_set": 2,
+      "case": 9,
+      "status": "ready",
+      "selected_type_ids": [
+        "end_node",
+        "file_output_node",
+        "file_reader_node",
+        "start_node",
+        "text_output_node"
+      ],
+      "characters": 10415,
+      "utf8_bytes": 10424,
+      "expansion_count": 0,
+      "recall": {
+        "roles_covered": [
+          "read",
+          "write",
+          "path"
+        ],
+        "candidate_count": 5,
+        "missing_roles": [],
+        "unnecessary_candidates": [],
+        "status_only": false,
+        "evidence": "Frozen role recall; mock responses do not demonstrate semantic retrieval"
+      }
+    },
+    {
+      "case_set": 2,
+      "case": 10,
+      "status": "ready",
+      "selected_type_ids": [
+        "end_node",
+        "start_node",
+        "text_output_node"
+      ],
+      "characters": 6096,
+      "utf8_bytes": 6103,
+      "expansion_count": 0,
+      "recall": {
+        "roles_covered": [
+          "start",
+          "show"
+        ],
+        "candidate_count": 3,
+        "missing_roles": [],
+        "unnecessary_candidates": [],
+        "status_only": false,
+        "evidence": "Frozen role recall; mock responses do not demonstrate semantic retrieval"
+      }
+    }
+  ]
+}

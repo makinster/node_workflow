@@ -36,6 +36,28 @@ the config UI, connection matching, preflight, runtime routing and author
 tests, so that a green check means the runtime honours the generated UI.
 Keep `NodeContext` and graph-ignorant execution.
 
+## Exact palette selection — 2026-10-29 (Important)
+
+Milestone 1 part B on `codex/palette-selection`, from requested `ee0bca4` (#151),
+rebased onto `4775f5e` (#152),
+keeps the same twelve admitted types. Node catalogue supports exact, bounded
+upstream/Vault/configured identity selection and complete-or-error snapshots.
+Requirements analysis selects candidate/role evidence in its existing call;
+reviewed support closure and at most one local expansion precede drafting.
+Draft/repair/judge share one snapshot, and both structural checks reject types
+outside it. The fixed `PALETTE` baseline remains checked independently.
+
+All 20 mocked cases have role-recall receipts and unchanged ordinary call
+counts; 23 calibration good/bad rule pairs remain unchanged. No hosted calls
+or live semantic recall proof. See [implementation, budgets and limits](audits/palette_selection_2026_10_29/README.md).
+Text Brief 14,687, Compact 53,146 characters; selected v2 snapshots
+6,096–13,184 / 50,000, with 100k Context cap and tested 20% headroom.
+No reviewed metadata claim changed or new mismatch was found. Integrated #152,
+which resolves the four previously pending strict xfails; no new admission.
+
+Full `pytest -n auto`: **4,524 passed, 187 skipped, zero xfails** (42.71s).
+No real API calls.
+
 ## Accepted palette scaling: claims milestone — 2026-10-29
 
 The owner accepted all eight recommendations in the external
