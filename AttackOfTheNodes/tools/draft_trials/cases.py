@@ -675,4 +675,7 @@ def calibration_pairs():
     bad = deepcopy(good)
     bad['nodes']['show']['config']['template'] = '{input}'
     pairs.append(dict(id='end_framing_does_not_hide_missing_value', case=1, good=good, bad=bad))
+    # Held out from judge-prompt tuning: the same swap on a different request
+    # (empty check), so a fix fitted only to case 7 would still miss it.
+    pair("reversed_empty_check", 9, reverse)
     return pairs

@@ -72,7 +72,7 @@ async def test_full_set_two_mock_batch_reports_statuses_and_case_set(tmp_path):
     report=await runner.batch(tmp_path,case_set=2)
     assert report['result']=='pass',report
     assert report['case_set']==2 and report['case_count']==10
-    assert report['model_calls']==dict(attempted=75,succeeded=75) # 48 calibration + 27 case calls
+    assert report['model_calls']==dict(attempted=77,succeeded=77) # 50 calibration + 27 case calls
     assert report['fixture_count']==23
     by_id={r['case']:r for r in report['cases']}
     assert by_id[5]['expected_outcome']=='clarified_workflow'
@@ -85,7 +85,7 @@ async def test_full_set_two_mock_batch_reports_statuses_and_case_set(tmp_path):
         assert row['behavior']['result']=='not_applicable'
         assert not list((tmp_path/f'cases/{number}/drafts').glob('*'))
     calibration=json.loads((tmp_path/'calibration-report.json').read_text())
-    assert len(calibration['fixtures'])==48 and calibration['judge_false_passes']==0
+    assert len(calibration['fixtures'])==50 and calibration['judge_false_passes']==0
 
 
 @pytest.mark.asyncio

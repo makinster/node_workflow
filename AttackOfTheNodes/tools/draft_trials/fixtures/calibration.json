@@ -3507,5 +3507,235 @@
         }
       ]
     }
+  },
+  {
+    "id": "reversed_empty_check",
+    "case": 9,
+    "good": {
+      "format": "aotn-workflow/1",
+      "name": "Case 9",
+      "nodes": {
+        "start": {
+          "type": "start_node",
+          "config": {
+            "greeting": ""
+          }
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": false
+          }
+        },
+        "show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "{input[path]}"
+          }
+        },
+        "read": {
+          "type": "file_reader_node",
+          "config": {
+            "input_source": "Configured",
+            "file_path": "ROOT/note-source.txt",
+            "transient_output": true
+          }
+        },
+        "strip": {
+          "type": "text_transform_node",
+          "config": {
+            "operation": "strip"
+          }
+        },
+        "if": {
+          "type": "conditional_node",
+          "config": {
+            "condition_type": "equals",
+            "left_value_source": "input",
+            "right_value": ""
+          }
+        },
+        "empty": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "Empty note"
+          }
+        },
+        "upper": {
+          "type": "text_transform_node",
+          "config": {
+            "operation": "uppercase"
+          }
+        },
+        "write": {
+          "type": "file_output_node",
+          "config": {
+            "content_source": "Upstream payload",
+            "file_path_source": "Configured",
+            "file_path": "ROOT/clean-note.txt",
+            "write_mode": "Create unique",
+            "binary_content": false,
+            "interpret_newlines": false,
+            "open_after_write": false,
+            "close_on_run_end": false,
+            "transient_output": true,
+            "dead_drop_passthrough": false
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "start.default",
+          "to": "read.input"
+        },
+        {
+          "from": "read.default",
+          "to": "strip.input"
+        },
+        {
+          "from": "strip.default",
+          "to": "if.input"
+        },
+        {
+          "from": "if.true",
+          "to": "empty.input"
+        },
+        {
+          "from": "empty.default",
+          "to": "end.input"
+        },
+        {
+          "from": "if.false",
+          "to": "upper.input"
+        },
+        {
+          "from": "upper.default",
+          "to": "write.content"
+        },
+        {
+          "from": "write.default",
+          "to": "show.input"
+        },
+        {
+          "from": "show.default",
+          "to": "end.input"
+        }
+      ]
+    },
+    "bad": {
+      "format": "aotn-workflow/1",
+      "name": "Case 9",
+      "nodes": {
+        "start": {
+          "type": "start_node",
+          "config": {
+            "greeting": ""
+          }
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": false
+          }
+        },
+        "show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "{input[path]}"
+          }
+        },
+        "read": {
+          "type": "file_reader_node",
+          "config": {
+            "input_source": "Configured",
+            "file_path": "ROOT/note-source.txt",
+            "transient_output": true
+          }
+        },
+        "strip": {
+          "type": "text_transform_node",
+          "config": {
+            "operation": "strip"
+          }
+        },
+        "if": {
+          "type": "conditional_node",
+          "config": {
+            "condition_type": "equals",
+            "left_value_source": "input",
+            "right_value": ""
+          }
+        },
+        "empty": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "Empty note"
+          }
+        },
+        "upper": {
+          "type": "text_transform_node",
+          "config": {
+            "operation": "uppercase"
+          }
+        },
+        "write": {
+          "type": "file_output_node",
+          "config": {
+            "content_source": "Upstream payload",
+            "file_path_source": "Configured",
+            "file_path": "ROOT/clean-note.txt",
+            "write_mode": "Create unique",
+            "binary_content": false,
+            "interpret_newlines": false,
+            "open_after_write": false,
+            "close_on_run_end": false,
+            "transient_output": true,
+            "dead_drop_passthrough": false
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "start.default",
+          "to": "read.input"
+        },
+        {
+          "from": "read.default",
+          "to": "strip.input"
+        },
+        {
+          "from": "strip.default",
+          "to": "if.input"
+        },
+        {
+          "from": "if.false",
+          "to": "empty.input"
+        },
+        {
+          "from": "empty.default",
+          "to": "end.input"
+        },
+        {
+          "from": "if.true",
+          "to": "upper.input"
+        },
+        {
+          "from": "upper.default",
+          "to": "write.content"
+        },
+        {
+          "from": "write.default",
+          "to": "show.input"
+        },
+        {
+          "from": "show.default",
+          "to": "end.input"
+        }
+      ]
+    }
   }
 ]

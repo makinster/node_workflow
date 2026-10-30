@@ -136,7 +136,7 @@ async def test_end_framing_guard_has_real_observable_difference(tmp_path, varian
     case = case_record(1, tmp_path/'fixtures')
     (tmp_path/'fixtures').mkdir()
     spec = pair[variant]
-    assert len(calibration_pairs()) == 24
+    assert len(calibration_pairs()) == 25
     assert check_rules(spec, case)['result'] == expected
     behavior = await runner.target_fixtures(spec, case, tmp_path/'runs')
     assert behavior['result'] == expected
