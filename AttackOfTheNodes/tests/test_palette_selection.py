@@ -186,14 +186,16 @@ async def test_expansion_and_structural_retry_have_separate_single_allowances(tm
 
 
 @pytest.mark.asyncio
-async def test_unproven_role_stops_pipeline_before_draft_and_saves_reason(tmp_path):
+async def test_unknown_role_enum_stops_before_draft_and_keeps_usage(tmp_path):
     case = case_record(1, tmp_path/'trial/cases/1/fixtures')
     a = runner.requirements(case)
     a['selection'] = dict(candidates=[], roles=[dict(role='count_words', requirement_ids=['r1'], reason='Need an actual word count')])
     report = await runner.run_case(1, tmp_path/'trial', tmp_path/'library', replies=[a])
     assert report['result'] == 'fail'
     assert report['model_calls'] == dict(attempted=1, succeeded=1)
-    assert report['selection_stop'] and not list((tmp_path/'trial/cases/1/drafts').iterdir())
+    assert any(e['code'] == 'invalid_response' for e in report['errors'])
+    assert report['usage_summary']['not_reported'] == 0
+    assert not list((tmp_path/'trial/cases/1/drafts').iterdir())
     assert report['meaning_review'] != 'pass'
 
 
@@ -215,7 +217,7 @@ async def test_gate_rejects_unselected_type_then_only_one_retry(tmp_path):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('case_set, expected_calls', [(1, 77), (2, 73)])
+@pytest.mark.parametrize('case_set, expected_calls', [(1, 79), (2, 75)])
 async def test_twenty_frozen_cases_recall_and_no_extra_ordinary_call(tmp_path, case_set, expected_calls):
     (tmp_path/'trial').mkdir()
     report = await runner.batch(tmp_path/'trial', case_set=case_set)

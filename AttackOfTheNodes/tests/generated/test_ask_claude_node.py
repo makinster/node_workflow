@@ -30,7 +30,7 @@ def test_ask_claude_node_registration_and_metadata():
             }
             assert isinstance(info["required"], bool)
     # Declared error codes (D7); the default generic code is always first.
-    assert [error["code"] for error in metadata["errors"]] == ['node_error', 'missing_key', 'settings_invalid', 'invalid_config', 'auth_error', 'rate_limited', 'overloaded', 'network_error', 'timed_out', 'api_error', 'refusal', 'incomplete_reply', 'invalid_response', 'response_too_large', 'context_too_long', 'text_too_long']
+    assert [error["code"] for error in metadata["errors"]] == ['node_error', 'missing_key', 'settings_invalid', 'invalid_config', 'auth_error', 'rate_limited', 'overloaded', 'network_error', 'timed_out', 'api_error', 'refusal', 'incomplete_reply', 'invalid_response', 'response_too_large', 'context_too_long', 'text_too_long', 'shape_invalid']
 
 
 @pytest.mark.asyncio

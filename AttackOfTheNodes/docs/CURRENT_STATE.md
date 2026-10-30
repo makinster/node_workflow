@@ -1,7 +1,7 @@
 # Current State
 
-Snapshot checked **2026-10-29**, against fetched `origin/main` `4775f5e`
-after #152 merged. Selection machinery: `codex/palette-selection`.
+Snapshot checked **2026-10-29**, against fetched `origin/main` `ce2eb29`
+after #154 merged. Structured replies: `codex/structured-replies`.
 No real API calls; earlier entries retain their dated scope.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
@@ -12,6 +12,31 @@ Sonnet/Opus and document the 512-token minimum prefix. Per-model price tests
 and real-engine run summaries cover all three supported models. See the latest
 Session Log entry for verification: full `pytest -n auto` passes **3,234 tests
 in 35.63 s** after the review fixes.
+
+## Structured reply schemas — 2026-10-29 (Important)
+
+Branch `codex/structured-replies`, from `ce2eb29` (#154), adds an optional explicit
+Reply schema to the hosted question adapter and full local schema validation to
+Check reply. Blank preserves the existing reply_json request. Every object is
+closed, unsafe references/unsupported schemas fail locally, and API-inexpressible
+length/range constraints stay in the subsequent Check reply. Refusal/capped and
+unusable replies retain `IncompleteReply` usage; no partial answer is published.
+
+V2 analysis/resolve/judge schemas are generated from live admitted/role lists and
+installed on both sides of each AI/check pair. Draft/repair keep reply_json and
+Check workflow spec because their dynamic handle/config maps need open objects.
+No palette expansion, extra ordinary calls or real API calls. Calibration now
+has 24 pairs: the added guard shows Ready versus unchanged Waiting under the
+same normal End framing. All previous pairs are unchanged. Mock call totals
+are 79 / 75 including the 48 calibration calls.
+
+See [implementation and limits](integrations/ASK_CLAUDE.md) and
+[trial regeneration](../tools/draft_trials/README.md#structured-reply-schemas-2026-10-29).
+API schema compilation/acceptance and inference quality await owner approval
+for a live trial; no claim of server-tested acceptance is made.
+
+Full `pytest -n auto`: **4,548 passed, 187 skipped, zero xfails** in 38.22s.
+`git diff --check` clean. All 24 calibration rule pairs retained; no real API calls.
 
 ## Exact palette selection — 2026-10-29 (Important)
 

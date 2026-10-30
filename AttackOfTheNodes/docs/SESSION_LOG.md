@@ -6,6 +6,35 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-29 — Structured replies and End framing guard (Important)
+
+Root `/home/makin/src/nw-structured-replies`, branch `codex/structured-replies`,
+fetched base `ce2eb29` (#154). Owner checkout/unrelated work untouched. Read the
+official structured-output reference before coding; SDK 2.3 stream signatures
+accept output_config.format. Implemented explicit optional object schemas, closed
+objects, a bounded local-reference-only schema parser, API-safe projection and
+full post-reply validation through Check reply. Added the jsonschema runtime
+dependency and preserved unsupported constraints locally. No implicit graph
+lookup for schema derivation. Generic JSON editing preserves object config on
+Cancel; no new frontend flow or node type.
+
+Generated v2 analysis/resolve/judge enums from live admission/roles; both AI and
+Check reply receive matching schemas. Dynamic workflow handle/config maps retain
+reply_json and Check workflow spec. Refusal/cap and finished-invalid response
+usage remains charged via IncompleteReply, without publishing partial content.
+Mock SDK checks all supported routes and keeps ordinary calls unchanged.
+
+Added only the 24th calibration pair: Ready versus unchanged Waiting, same
+connected graph and enabled End framing. Both real local-engine behavior and
+rules prove its distinction. Original 23 pairs unchanged; calibration JSON
+regenerated. Call totals 79 / 75, including 48 calibration calls. The two changed
+pending-node source fingerprints, source-menu audit and helper specs are
+refreshed; reviewed metadata claims are unchanged. Claims receipt now binds the
+shared schema/adapter helpers. No real API calls or provider compilation proof.
+
+Full `pytest -n auto`: **4,548 passed, 187 skipped, zero xfails** in 38.22s.
+`git diff --check` clean. All 24 calibration rule pairs retained; no real API calls.
+
 ## 2026-10-29 — Exact selection and measured role recall (Important)
 
 Root `/home/makin/src/nw-palette-selection`, branch `codex/palette-selection`,

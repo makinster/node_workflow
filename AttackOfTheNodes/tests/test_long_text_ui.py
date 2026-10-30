@@ -212,7 +212,8 @@ def test_registered_multiline_inventory_uses_shared_widget():
     assert "check_workflow_spec_node.input" in found
     assert "ask_claude_node.input" in found
     assert "ask_claude_node.context" in found
-    assert len(found) == 29 and len(types) == 15
+    assert {"ask_claude_node.reply_schema", "check_reply_node.reply_schema"} <= set(found)
+    assert len(found) == 31 and len(types) == 15
     assert 'text_output_node.template' in found
 
 

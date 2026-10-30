@@ -535,6 +535,7 @@ def evidence_hashes():
         'backend/vault_declarations.py','backend/supervisor.py','backend/memory_bank.py','backend/port_types.py',
         'backend/node_metadata.py','backend/saved_values.py','backend/meta_workflow.py',
         'backend/node_catalogue.py','backend/palette_selection.py',
+        'backend/reply_schema.py','backend/reply_shape.py','backend/integrations/claude.py',
         'backend/system_access.py','backend/text_lines.py','backend/contracts.py','tools/claims_compatibility.py',
     }
     files.update(Path(inspect.getsourcefile(cls)).relative_to(root).as_posix()

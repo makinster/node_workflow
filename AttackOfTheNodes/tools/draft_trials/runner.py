@@ -503,7 +503,7 @@ def valid_v2_shape(record, node):
 
     config = json.loads(SPEC.read_text())["nodes"][node]["config"]
     try:
-        check_record(record, config['expected_fields'], config['allow_other_fields'])
+        check_record(record, config['expected_fields'], config['allow_other_fields'], config.get('reply_schema'))
     except NodeError:
         return False
     return True

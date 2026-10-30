@@ -3433,5 +3433,79 @@
         }
       ]
     }
+  },
+  {
+    "id": "end_framing_does_not_hide_missing_value",
+    "case": 1,
+    "good": {
+      "format": "aotn-workflow/1",
+      "name": "Case 1",
+      "nodes": {
+        "start": {
+          "type": "start_node",
+          "config": {
+            "greeting": "Waiting"
+          }
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": true
+          }
+        },
+        "show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "Ready"
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "start.default",
+          "to": "show.input"
+        },
+        {
+          "from": "show.default",
+          "to": "end.input"
+        }
+      ]
+    },
+    "bad": {
+      "format": "aotn-workflow/1",
+      "name": "Case 1",
+      "nodes": {
+        "start": {
+          "type": "start_node",
+          "config": {
+            "greeting": "Waiting"
+          }
+        },
+        "end": {
+          "type": "end_node",
+          "config": {
+            "record_line": true
+          }
+        },
+        "show": {
+          "type": "text_output_node",
+          "config": {
+            "label": "",
+            "template": "{input}"
+          }
+        }
+      },
+      "connections": [
+        {
+          "from": "start.default",
+          "to": "show.input"
+        },
+        {
+          "from": "show.default",
+          "to": "end.input"
+        }
+      ]
+    }
   }
 ]
