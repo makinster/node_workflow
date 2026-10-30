@@ -123,7 +123,7 @@ async def test_continue_cases_preserves_budget_guards(tmp_path, monkeypatch, lim
 
 def test_judge_prompt_restricts_problems_to_blockers():
     prompt = json.loads(runner.SPEC.read_text())['nodes']['judge_question']['config']['template']
-    assert 'problems' in prompt and 'remarks go in summary' in prompt
+    assert 'problems' in prompt and 'every other observation goes in remarks' in prompt
     reply = runner.meaning()
     reply['problems'] = ['harmless remark']
     assert not runner.valid_judge(reply, runner.requirements({'request': 'Show Ready'}))

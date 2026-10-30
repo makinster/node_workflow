@@ -336,6 +336,7 @@ def meaning(verdict="pass"):
                 met=verdict == "pass",
             )
         ],
+        remarks=[],
         problems=[] if verdict == "pass" else ["Canned review problem"],
         summary="Canned review; not inference evidence",
     )

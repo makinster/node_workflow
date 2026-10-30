@@ -71,7 +71,7 @@
     "backend/nodes/text_output_node.py": "0382e1f748a203be7ee9f30c7c48ccaf2e9a8a0725192d80d639669238407054",
     "backend/nodes/user_text_input_node.py": "3289cbec6af2f679e92c15da27c9b05abd9924c48c6e4926c07669419e6b3b23",
     "backend/nodes/wait_until_node.py": "791ffd2b2da433d5af704b57aaf7a0d8735d53e92f2e6f0737caa04c10d3dc58",
-    "backend/palette_selection.py": "6df7a9543dc1a68e657d1a38af5103677aa797e50dcc6b30b3d407a565e13975",
+    "backend/palette_selection.py": "a0472b0d494bc7cd1453c13ec82ec00615ad7c6b2ca56a0d80ba398fcc67aa2d",
     "backend/port_types.py": "fba69be8d89a713cfc1e98870544420cd8809e973d0b1079eca397dde17d422a",
     "backend/reply_schema.py": "4873fffbf0f34b8f71988686b300bc9ebdc75213babf380dcab10c52d771d779",
     "backend/reply_shape.py": "f10b3e581338160414fb2d27a09a2a35c576f5d28f4a353f9f85a47ec17bb72f",

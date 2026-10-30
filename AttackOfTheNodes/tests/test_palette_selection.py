@@ -281,3 +281,17 @@ async def test_changed_discovery_binding_stops_before_snapshot_publication():
     await node.execute(ctx)
     assert not done and errors[0].code == 'selection_invalid'
     assert memory.read_persistent('snapshot') is None
+
+
+def test_repeated_candidates_and_roles_merge():
+    # A schema cannot forbid repeats; a repeated node or role is folded, not rejected.
+    analysis = dict(status='ready', requirements=[dict(id='r1'), dict(id='r2')], selection=dict(
+        candidates=[dict(type_id='text_transform_node', role='transform_text', requirement_ids=['r1'], reason='trim'),
+                    dict(type_id='text_transform_node', role='transform_text', requirement_ids=['r2', 'r1'], reason='lower')],
+        roles=[dict(role='transform_text', requirement_ids=['r1'], reason='trim'),
+               dict(role='transform_text', requirement_ids=['r2'], reason='lower')]))
+    original = deepcopy(analysis)
+    merged = selection.validate_analysis(NodeFactory(), analysis)
+    assert [c['requirement_ids'] for c in merged['candidates']] == [['r1', 'r2']]
+    assert [r['requirement_ids'] for r in merged['roles']] == [['r1', 'r2']]
+    assert analysis == original
