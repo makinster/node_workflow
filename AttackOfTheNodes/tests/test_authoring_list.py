@@ -166,3 +166,24 @@ def test_connection_shape_guidance_is_safe(spec, connections, hint):
     assert all('Example:' in d['message'] and 'CANARY' not in d['message'] for d in diagnostics)
     rendered, _ = meta_workflow.problem_report(diagnostics)
     assert 'CANARY' not in rendered
+
+
+def test_list_items_may_name_handle_instead_of_id(spec):
+    # Drafts write "handle" as often as "id"; both are the keyed handle.
+    listed = {**deepcopy(spec), 'nodes': [dict(handle=k, **deepcopy(v)) for k, v in spec['nodes'].items()]}
+    normalized, problems = authoring.normalize_spec(listed)
+    assert not problems and normalized['nodes'] == spec['nodes']
+    same = as_list(spec)
+    same['nodes'][0]['handle'] = same['nodes'][0]['id']
+    assert authoring.normalize_spec(same)[0]['nodes'] == spec['nodes']
+
+
+def test_conflicting_id_and_handle_is_rejected_without_type_noise(spec):
+    listed = as_list(spec)
+    listed['nodes'][0]['handle'] = 'other'
+    _, problems = authoring.normalize_spec(listed)
+    assert [p['hint'] for p in problems] == ['id_conflict']
+    duplicate = as_list(spec)
+    duplicate['nodes'].append(deepcopy(duplicate['nodes'][0]))
+    _, problems = authoring.normalize_spec(duplicate)
+    assert [p['hint'] for p in problems] == ['id_duplicate'] and 'got' not in problems[0]['message'].split('Example:')[0]

@@ -71,16 +71,17 @@ SPEC_SHAPE_MESSAGES = {
     "spec": 'spec: expected a JSON object. Example: {"format": "aotn-workflow/1", "name": "Example", "nodes": {...}}.',
     "format": 'format: expected "aotn-workflow/1". Example: {"format": "aotn-workflow/1"}.',
     "name": 'name: expected a non-empty string. Example: {"name": "Example"}.',
-    "nodes": 'nodes: expected a non-empty object keyed by handle or a list of objects with id. Example: {"read": {"type": "<type>"}}.',
+    "nodes": 'nodes: expected a non-empty object keyed by handle or a list of objects with id (or handle). Example: {"read": {"type": "<type>"}}.',
     "node": 'node: expected an object with a string type. Example: {"type": "<type>"}.',
     "type": 'type: expected a string naming a registered type. Example: {"type": "<type>"}.',
     "config": 'config: expected an object of configuration fields. Example: {"config": {}}.',
     "alias": 'alias: expected a string. Example: {"alias": "Read"}.',
-    "node_fields": 'node: expected only type, alias and config (plus id in list form). Example: {"type": "<type>", "config": {}}.',
+    "node_fields": 'node: expected only type, alias and config (plus id or handle in list form). Example: {"type": "<type>", "config": {}}.',
     "handle": 'handle: expected 1–40 lowercase letters, digits or underscores, starting with a letter. Example: "read_notes".',
-    "id_missing": 'nodes: id is required on each list item. Example: {"id": "read", "type": "<type>"}.',
-    "id_invalid": 'nodes: id must be a handle of 1–40 lowercase letters, digits or underscores, starting with a letter. Example: {"id": "read_notes", "type": "<type>"}.',
+    "id_missing": 'nodes: id is required on each list item (handle also works). Example: {"id": "read", "type": "<type>"}.',
+    "id_invalid": 'nodes: id must be a handle of 1–40 lowercase letters, digits or underscores, starting with a letter (handle also works as the key). Example: {"id": "read_notes", "type": "<type>"}.',
     "id_duplicate": 'nodes: duplicate id; give every list item a unique id. Example: [{"id": "first", "type": "<type>"}, {"id": "second", "type": "<type>"}].',
+    "id_conflict": 'nodes: a list item has different id and handle; give one name. Example: {"id": "read", "type": "<type>"}.',
     "list_mixed": 'nodes: mixed keyed entries and list items are not allowed; each list item needs id and type. Example: [{"id": "read", "type": "<type>"}].',
     "list_item": 'nodes: each item must be an object with id and type. Example: [{"id": "read", "type": "<type>"}].',
     "connections": 'connections: expected a list of connection objects. Example: [{"from": "first.default", "to": "second.input"}].',
@@ -90,6 +91,9 @@ SPEC_SHAPE_MESSAGES = {
     "callable": 'callable: expected true or false. Example: {"callable": false}.',
 }
 _JSON_TYPES = ("null", "a boolean", "a string", "an object", "a list", "a number", "an unsupported value")
+ID_KEYS = ("id", "handle")
+# The value's type says nothing useful when the problem is a repeat or clash.
+_NO_GOT = frozenset({"id_duplicate", "id_conflict"})
 
 
 def _json_type(value):
@@ -106,7 +110,7 @@ def spec_shape_message(diagnostic):
     """Render only whitelisted templates and JSON type names, never raw values."""
     message = SPEC_SHAPE_MESSAGES.get(diagnostic.get("hint"), SPEC_SHAPE_MESSAGES["spec"])
     got = diagnostic.get("got")
-    if got in _JSON_TYPES:
+    if got in _JSON_TYPES and diagnostic.get("hint") not in _NO_GOT:
         message = message.replace(". Example:", "; got " + got + ". Example:", 1)
     return message
 
@@ -136,19 +140,26 @@ def normalize_spec(spec):
         if not isinstance(item, dict):
             _shape_error(add, "list_item", item, field=field)
             continue
-        if "id" not in item:
+        # Drafts name list items with "handle" as often as "id"; both mean the
+        # keyed handle. Two different names for one node are ambiguous.
+        names = [key for key in ID_KEYS if key in item]
+        if not names:
             keyed = any(key not in {"type", "alias", "config"} and isinstance(value, dict)
                         for key, value in item.items())
             _shape_error(add, "list_mixed" if keyed else "id_missing", item, field=field)
             continue
-        handle = item["id"]
+        if len(names) > 1 and item["id"] != item["handle"]:
+            _shape_error(add, "id_conflict", item, field=field)
+            continue
+        key = names[0]
+        handle = item[key]
         if not isinstance(handle, str) or not HANDLE_PATTERN.fullmatch(handle):
-            _shape_error(add, "id_invalid", handle, field=field + ".id")
+            _shape_error(add, "id_invalid", handle, field=f"{field}.{key}")
             continue
         if handle in nodes:
-            _shape_error(add, "id_duplicate", handle, field=field + ".id")
+            _shape_error(add, "id_duplicate", handle, field=f"{field}.{key}")
             continue
-        nodes[handle] = {key: value for key, value in item.items() if key != "id"}
+        nodes[handle] = {k: value for k, value in item.items() if k not in ID_KEYS}
     if diagnostics:
         return spec, diagnostics
     return {**spec, "nodes": nodes}, []

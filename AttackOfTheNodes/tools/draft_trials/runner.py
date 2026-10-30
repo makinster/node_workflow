@@ -111,6 +111,16 @@ def sha(text):
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
+def draft_spec(raw):
+    # Same conversion as build/--check (list of nodes with ids -> keyed);
+    # a rejected list stays as written, so the spec check reports it.
+    from backend.authoring import normalize_spec
+
+    parsed = json.loads(raw)
+    normalized, problems = normalize_spec(parsed)
+    return parsed if problems else normalized
+
+
 def prepare_files(root, variant):
     root.mkdir(parents=True, exist_ok=True)
     for name, text in variant["files"].items():
@@ -921,7 +931,7 @@ async def run_case(
         if raw:
             (directory / "raw-draft.json").write_bytes(raw.encode("utf-8"))
             report["raw_sha256"] = sha(raw)
-            report["case_rules"] = check_rules(json.loads(raw), case)
+            report["case_rules"] = check_rules(draft_spec(raw), case)
         if not raw or not files:
             raise ValueError("No saved draft / no completed success gate")
         if (
@@ -963,7 +973,7 @@ async def run_case(
             "pass" if checked["exit_code"] == 0 and checked["report"]["ok"] else "fail"
         )
         report["warnings"] = checked["report"].get("diagnostics", [])
-        target = json.loads(raw)
+        target = draft_spec(raw)
         if needs_clarification:
             gate_order = [e["handle"] for e in run["steps"] if e["status"] == "done"]
             if (
