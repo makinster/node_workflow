@@ -45,7 +45,7 @@ def test_v2_structural_gate_and_contracts():
     assert nodes["pass"]["config"]["right_value"] == "pass"
     assert nodes["answer"]["config"]["prompt"] == "Answer the questions above"
     assert {h: nodes[h]["config"]["max_tokens"] for h in ("analysis", "resolve", "draft", "judge")} == {
-        "analysis": 2048, "resolve": 2048, "draft": 4096, "judge": 4096,
+        "analysis": 4096, "resolve": 4096, "draft": 4096, "judge": 4096,
     }
     assert "reasons under about 150 words" in nodes["judge_question"]["config"]["template"]
     judge_prompt = nodes['judge_question']['config']['template']

@@ -162,7 +162,7 @@ async def test_brief_families_positive_search_and_budgets():
         # Conservative bound includes contracts, raw draft, report, requirements
         # and each actual system/question template, not just an isolated item.
         for key in ('draft_question', 'judge_question', 'retry_question'):
-            assert len(text) + len(spec['nodes'][key]['config']['template']) + 8000 + 4000 * 3 <= selection.CONTEXT_LIMIT * .8
+            assert len(text) + len(spec['nodes'][key]['config']['template']) + 8000 + 8000 * 2 + 4000 <= selection.CONTEXT_LIMIT * .8
 
 
 async def _brief_rows(factory):
