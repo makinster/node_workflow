@@ -546,7 +546,10 @@ def _add_validation(workflow_map: WorkflowMap, factory: NodeFactory, handles: Di
             # A spec that wires one output twice is a mistake, not a choice.
             if code in BUILD_ERROR_CODES:
                 level = "error"
-            add(level, code, str(issue.get("message") or ""), handle, issue.get("field"))
+            guidance = {key: issue[key] for key in ("slot", "route", "repair") if issue.get(key)}
+            if issue.get("path"):
+                guidance["path"] = [handles.get(nid, nid) for nid in issue["path"]]
+            add(level, code, str(issue.get("message") or ""), handle, issue.get("field"), **guidance)
 
 
 def _reload_problem(factory: NodeFactory, workflow_id: str, built: WorkflowMap) -> str:

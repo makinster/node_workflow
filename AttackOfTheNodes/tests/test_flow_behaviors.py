@@ -348,3 +348,12 @@ def test_saved_value_router_is_exclusive_and_empty_mux_routes_are_inactive():
         {'id':'retry','label':'Retry','codes':['timeout']}
     ]}},FACTORY)
     assert ('empty',) not in mux.batches and ('retry',) in mux.batches
+
+
+def test_authoring_keeps_repair_guidance_and_path_handles():
+    spec = dict(format=FORMAT,name='Repairable wait',nodes={'start':{'type':'start_node'},
+        'wait':{'type':'wait_until_node','config':{'target_node_ids':['wait']}}},
+        connections=[{'from':'start.default','to':'wait.input'}])
+    result = check_workflow_spec(FACTORY,spec)
+    issue = next(d for d in result['diagnostics'] if d['code'] == 'impossible_wait')
+    assert issue['node'] == 'wait' and issue['path'] == ['wait','wait'] and issue['repair']

@@ -268,8 +268,8 @@ def analyze_flow(all_nodes: Mapping[str, dict], factory=None, *, draft: bool = F
         return report
 
     # Trace structural visits, retaining fork lineage and exclusive route guards.
-    # A join closes the family for onward static traversal; repeated joins are
-    # separately gated below instead of pretending a nearest-fork barrier exists.
+    # A join settles these incoming lineages, retaining the inherited root.
+    # Repeated joins are reported as needs_review rather than guessing a winner.
     contexts: dict[str, list[tuple]] = {nid: [] for nid in profiles}
     handoffs: dict[str, list[dict]] = {}
     ends: dict[str, list[str]] = {}
