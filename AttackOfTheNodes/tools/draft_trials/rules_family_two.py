@@ -19,7 +19,7 @@ from backend.palette_selection import stage_one_problems
 from .rules import NeedsReview, RuleFailure, safe_path, effective_nodes
 from .case_set_four import fixture_variants
 
-POLICY_VERSION = 'family-2-evaluator-2'
+POLICY_VERSION = 'family-2-evaluator-3'
 LOCAL_TYPES = frozenset('start_node end_node branch_node merge_node wait_until_node file_reader_node json_path_node concat_node text_output_node text_transform_node conditional_node context_pack_node'.split())
 
 
@@ -444,6 +444,12 @@ def context_pack(config,incoming,vault):
     return Datum(text,('pack',),uses=uses)
 
 
+def label_before_value(label):
+    """Accepted ways to label a value: "A: v", "[A] v", or A alone on the line above v."""
+    label=re.escape(label)
+    return r'(?:\b'+label+r'\s*:\s*|\['+label+r'\]\s*(?:\|\s*)?|(?m:^)'+label+r'[ \t]*\r?\n\s*)'
+
+
 def semantics(result,case,variant):
     if result['error'] or result['state']!='finished':
         return False
@@ -462,8 +468,7 @@ def semantics(result,case,variant):
         use=matching[0]
         if use.start<previous or final['body'][use.start:use.end]!=str(expected['value']):
             return False
-        label=re.escape(expected['label'])
-        if not re.search(r'(?:\b'+label+r'\s*:\s*|\['+label+r'\]\s*(?:\|\s*)?)$',final['body'][:use.start],re.I):
+        if not re.search(label_before_value(expected['label'])+r'$',final['body'][:use.start],re.I):
             return False
         if str(expected['value']) and final['body'].count(str(expected['value']))!=1:
             return False
@@ -506,8 +511,7 @@ def shown_fields_match(bodies,variant):
         return False
     position=0
     for expected in variant['fields']:
-        label=re.escape(expected['label'])
-        found=re.compile(r'(?:\b'+label+r'\s*:\s*|\['+label+r'\]\s*(?:\|\s*)?)'+re.escape(str(expected['value']))+r'(?=\W|$)',re.I).search(bodies[-1],position)
+        found=re.compile(label_before_value(expected['label'])+re.escape(str(expected['value']))+r'(?=\W|$)',re.I).search(bodies[-1],position)
         if found is None:
             return False
         position=found.end()

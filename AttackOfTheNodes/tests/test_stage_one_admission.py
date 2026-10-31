@@ -342,3 +342,18 @@ def test_reviewer_sees_flow_in_words_and_nothing_extra_without_a_merge():
     no_merge = dict(flow_analysis=dict(merges={}, findings=[]), ok=True)
     assert review_report(no_merge) == dict(ok=True)
     assert review_report(dict(ok=True)) == dict(ok=True)
+
+
+@pytest.mark.parametrize('body, right', [
+    ('A\nAlpha report\n\nB\nBeta report', True),  # Run 000050's correct draft.
+    ('a\n\nAlpha report\nB\nBeta report', True),
+    ('Data A\nAlpha report\nB\nBeta report', False),  # Not alone on its line.
+    ('B\nBeta report\nA\nAlpha report', False),  # Wrong order.
+    ('A\nBeta report\nB\nAlpha report', False),  # Values swapped.
+])
+def test_a_label_may_sit_alone_on_the_line_above_its_value(body, right):
+    assert shown_fields_match([body], fixture_variants(1)[0]) is right
+
+
+def test_label_alone_above_an_empty_value_still_counts():
+    assert shown_fields_match(['A\nAlpha report\n\nB\n'], fixture_variants(1)[2])

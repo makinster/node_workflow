@@ -182,3 +182,10 @@ plain summary and any findings; with no Merge and no finding it adds nothing, so
 older questions match 000044 again. `check` still returns the full analysis, which the
 Stage 1 draft check uses. That this caused the row splitting is a likely cause, not a
 proven one.
+
+## Label on its own line
+
+Run 000050's F2-01 draft printed each label alone on the line above its value. The
+output was correct and the judge passed it, but the scorer only accepted `A: value` or
+`[A] value`. It now accepts all three (`family-2-evaluator-3`). The label must still be
+alone on its line, and order and values are still checked.
