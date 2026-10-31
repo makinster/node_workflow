@@ -35,7 +35,10 @@ from .error_handler import ErrorHandler, unhandled_errors
 from .memory_bank import MemoryBank
 from .configuration_manager import ConfigurationManager
 from .output_manager import OutputManager
-from .run_context import RunContext
+from .run_context import (RunContext, Delivery, MergePlan, MergeBarrier,
+                          MergeArrival, BranchGroup, GroupMember, BranchLaunch)
+from .node_errors import NodeError
+from .branch_paths import path_index, path_port
 from .run_history import RunHistory
 from .run_session import RunSession
 from .secrets_manager import SecretsManager
@@ -236,6 +239,7 @@ class MasterState:
         recovery_policy: Optional[RecoveryPolicy] = None,
         input_provider: Optional[InputProvider] = None,
         inputs: Optional[Dict[str, Any]] = None,
+        merge_plans: Optional[Dict[str, MergePlan]] = None,
     ) -> bool:
         """Begin executing the loaded workflow.
 
@@ -253,7 +257,7 @@ class MasterState:
             input_provider = input_provider or default_provider
         async with self._start_lock:
             return await self._start_workflow_locked(
-                unattended, recovery_policy, input_provider, dict(inputs or {})
+                unattended, recovery_policy, input_provider, dict(inputs or {}), dict(merge_plans or {})
             )
 
     async def _start_workflow_locked(
@@ -262,6 +266,7 @@ class MasterState:
         recovery_policy: Optional[RecoveryPolicy],
         input_provider: Optional[InputProvider],
         inputs: Dict[str, Any],
+        merge_plans: Dict[str, MergePlan],
     ) -> bool:
         if not self._workflow_map.is_loaded:
             logger.error("Cannot start: no workflow loaded")
@@ -306,6 +311,7 @@ class MasterState:
             resolved_inputs=resolved_inputs,
             revision=workflow_revision(self._workflow_map.get_workflow_data_for_save()),
             started_at=datetime.now(timezone.utc).isoformat(),
+            merge_plans=merge_plans,
         )
         self._set_state(WorkflowState.RUNNING)
 
@@ -318,7 +324,7 @@ class MasterState:
         self._track_task(root.branch_id, asyncio.create_task(root.run()))
         return True
 
-    def _new_supervisor(self, run: RunContext, **kwargs: Any) -> Supervisor:
+    def _new_supervisor(self, run: RunContext, *, register=True, **kwargs: Any) -> Supervisor:
         """Create a supervisor whose callbacks are bound to ``run``."""
 
         async def mark_completed(node_id: str) -> None:
@@ -336,12 +342,12 @@ class MasterState:
         async def wait_for_merge(
             merge_node_id: str,
             branch_id: str,
-            selected_input_port: str,
-            inputs: Dict[str, Any],
+            delivery: Optional[Delivery],
+            visit: int,
             timeout_seconds: Optional[float] = None,
         ) -> Dict[str, Any]:
             return await self._wait_for_merge_in_run(
-                run, merge_node_id, branch_id, selected_input_port, inputs, timeout_seconds
+                run, merge_node_id, branch_id, delivery, visit, timeout_seconds
             )
 
         branch_id = str(kwargs.get("branch_id") or "")
@@ -400,7 +406,8 @@ class MasterState:
             get_setting=self._configuration_manager.get,
             **kwargs,
         )
-        run.live_supervisors[supervisor.branch_id] = supervisor
+        if register:
+            run.live_supervisors[supervisor.branch_id] = supervisor
         return supervisor
 
     def pause(self) -> None:
@@ -451,6 +458,7 @@ class MasterState:
         """Cancel and await supervisor tasks left over from a previous run."""
         tasks = [task for task in self._supervisor_tasks.values() if not task.done()]
         if self._run is not None:
+            self._run.stop_requested = True
             self._run.wait_registry.stop()
         for supervisor in list(self._supervisors.values()):
             supervisor.request_stop()
@@ -530,11 +538,15 @@ class MasterState:
         self._check_run_completion()
 
     def _on_supervisor_register(self, payload: Dict[str, Any]) -> None:
+        if payload.get('run_id') != self.current_run_id:
+            return
         branch_id = payload["branch_id"]
         self._supervisors[branch_id] = payload["supervisor"]
         logger.debug("Registered supervisor %s at depth %d", branch_id, payload["depth"])
 
     def _on_supervisor_terminating(self, payload: Dict[str, Any]) -> None:
+        if payload.get('run_id') != self.current_run_id:
+            return
         branch_id = payload["branch_id"]
         self._supervisors.pop(branch_id, None)
         self._supervisor_tasks.pop(branch_id, None)
@@ -550,40 +562,64 @@ class MasterState:
     def _forget_live_supervisor(self, run: Optional[RunContext], branch_id: str) -> None:
         if run is None:
             return
-        run.live_supervisors.pop(branch_id, None)
-        self._account_for_branch_termination(run, branch_id)
+        supervisor = run.live_supervisors.pop(branch_id, None)
+        self._account_for_branch_termination(run, branch_id, supervisor)
         self._after_outcome(run, branch_id)
 
     def _on_request_branch(self, payload: Dict[str, Any]) -> None:
+        """Preflight and register the entire handoff before scheduling children."""
+        response = payload.get('response')
+        if not isinstance(response, BranchLaunch):
+            return
         run = self._run
-        if run is None or payload.get("run_id") != run.run_id:
-            logger.warning("Ignoring branch request from inactive run %s", payload.get("run_id"))
+        if run is None or payload.get('run_id') != run.run_id or run.stop_requested:
+            response.error = NodeError('node_error', 'The Branch request belongs to an inactive run.')
             return
-        new_depth = payload["parent_depth"] + 1
-        max_branch_depth = int(self._configuration_manager.get("max_branch_depth"))
-        if new_depth > max_branch_depth:
-            logger.warning(
-                "Branch depth %d exceeds limit %d; not spawning",
-                new_depth,
-                max_branch_depth,
-            )
+        depth = payload['parent_depth'] + 1
+        limit = int(self._configuration_manager.get('max_branch_depth'))
+        if payload['branches'] and depth > limit:
+            response.error = NodeError('branch_depth_exceeded',
+                f'Branch depth {depth} exceeds the limit {limit}; no paths were launched.',
+                details=dict(depth=depth, limit=limit), retryable=False)
             return
-
-        child_branch_id = f"branch_{uuid.uuid4().hex[:6]}"
-        self._register_branch_group(run, payload["parent_branch_id"], child_branch_id)
-
-        # Delivery is recorded only for a child that actually exists, so a
-        # branch refused by the depth limit never looks delivered.
-        run.record_delivery(payload.get("source_node_id") or "", payload["start_node_id"])
-        child = self._new_supervisor(
-            run,
-            branch_id=child_branch_id,
-            depth=new_depth,
-            start_node_id=payload["start_node_id"],
-            initial_data=payload.get("initial_data", {}),
-            parent_branch_id=payload["parent_branch_id"],
-        )
-        self._track_task(child.branch_id, asyncio.create_task(child.run()))
+        parent = payload['parent_branch_id']
+        lineage = tuple(payload.get('parent_lineage', ()))
+        children = []
+        try:
+            for chosen in payload['branches']:
+                child = self._new_supervisor(run, register=False,
+                    branch_id=f'branch_{uuid.uuid4().hex[:6]}', depth=depth,
+                    start_node_id=chosen['start_node_id'], initial_data=chosen.get('initial_data', {}),
+                    parent_branch_id=parent, delivery=chosen.get('delivery'),
+                    lineage=lineage + (chosen['path_index'],))
+                children.append(child)
+        except Exception as exc:
+            response.error = NodeError('node_error', f'Branch could not prepare its paths: {exc}')
+            return
+        # No await or publication between replacing the parent and registering
+        # every child. A waiter can never observe an empty handoff window.
+        group_key = run.branch_groups.get(parent)
+        if group_key is None and children:
+            group_key = (run.run_id, f'group_{uuid.uuid4().hex}', 1)
+            run.merge_groups[group_key] = BranchGroup(group_key, payload['source_node_id'], lineage)
+        if group_key is not None:
+            group = run.merge_groups[group_key]
+            if parent in group.members:
+                group.members[parent].state = 'handoff'
+            for child in children:
+                run.branch_groups[child.branch_id] = group_key
+                group.members[child.branch_id] = GroupMember(child.lineage, child.depth)
+            for merge_id, plan in run.merge_plans.items():
+                if plan.fork_node_id == group.fork_node_id:
+                    self._merge_barrier(run, group, merge_id)
+        for child in children:
+            run.live_supervisors[child.branch_id] = child
+            run.record_delivery(payload.get('source_node_id') or '', child.position)
+        response.accepted = True
+        if group_key is not None:
+            self._update_merge_barriers(run, run.merge_groups[group_key])
+        for child in children:
+            self._track_task(child.branch_id, asyncio.create_task(child.run()))
 
     # -- completion registry ---------------------------------------------------
 
@@ -680,114 +716,191 @@ class MasterState:
         alias = str(data.get("alias") or "").strip()
         return f"'{alias}' ({node_id})" if alias else node_id
 
-    # -- merge barrier -----------------------------------------------------------
+    # -- actual-arrival merge barriers -----------------------------------------
 
-    async def wait_for_merge_arrival(
-        self,
-        merge_node_id: str,
-        branch_id: str,
-        selected_input_port: str,
-        inputs: Dict[str, Any],
-        timeout_seconds: Optional[float] = None,
-    ) -> Dict[str, Any]:
-        """Wait for sibling branches to reach/leave a merge, then elect one output."""
+    def _merge_barrier(self, run, group, merge_node_id):
+        key = (run.run_id, group.key[1], merge_node_id, 1)
+        if key not in run.merge_barriers:
+            plan = run.merge_plans.get(merge_node_id)
+            if plan is not None and plan.fork_node_id != group.fork_node_id:
+                plan = None
+            run.merge_barriers[key] = MergeBarrier(key, plan)
+        return run.merge_barriers[key]
+
+    async def wait_for_merge_arrival(self, merge_node_id, branch_id, delivery, visit=1,
+                                     timeout_seconds=None):
         if self._run is None:
-            return {"continue": True, "value": next(iter(inputs.values()), "")}
-        return await self._wait_for_merge_in_run(
-            self._run, merge_node_id, branch_id, selected_input_port, inputs, timeout_seconds
-        )
+            return dict(arrival_outcome='cancelled')
+        return await self._wait_for_merge_in_run(self._run, merge_node_id, branch_id,
+                                                  delivery, visit, timeout_seconds)
 
-    async def _wait_for_merge_in_run(
-        self,
-        run: RunContext,
-        merge_node_id: str,
-        branch_id: str,
-        selected_input_port: str,
-        inputs: Dict[str, Any],
-        timeout_seconds: Optional[float] = None,
-    ) -> Dict[str, Any]:
-        group_id = run.branch_groups.get(branch_id)
-        if group_id is None:
-            return {
-                "continue": True,
-                "value": inputs.get(selected_input_port, next(iter(inputs.values()), "")),
-            }
+    async def _wait_for_merge_in_run(self, run, merge_node_id, branch_id, delivery, visit,
+                                     timeout_seconds=None):
+        if run.stop_requested or run is not self._run:
+            return dict(arrival_outcome='cancelled')
+        # A repeated notification after the winner detached from its group
+        # is still the same arrival, never a new pass-through invocation.
+        if delivery is not None and any(key[2:] == (merge_node_id, 1, branch_id, visit, delivery.identity)
+                                        for key in run.arrival_outcomes):
+            return dict(arrival_outcome='absorbed')
+        group_key = run.branch_groups.get(branch_id)
+        if group_key is None:
+            result = {'continue': True, 'present': bool(delivery and delivery.present)}
+            if result['present']:
+                result['value'] = delivery.value
+            return result
+        group = run.merge_groups[group_key]
+        barrier = self._merge_barrier(run, group, merge_node_id)
+        member = group.members[branch_id]
+        if delivery is None or delivery.run_id != run.run_id or delivery.target_node_id != merge_node_id:
+            raise NodeError('merge_delivery_missing', 'Merge needs the actual incoming delivery, not a wire snapshot.')
+        identity = (run.run_id, group.key[1], merge_node_id, 1, branch_id, visit, delivery.identity)
+        if identity not in barrier.arrivals and barrier.state == 'open':
+            run.arrival_sequence += 1
+            barrier.arrivals[identity] = MergeArrival(run.run_id, group.key[1], merge_node_id,
+                branch_id, member.lineage, member.depth, run.arrival_sequence, visit, delivery)
+            member.state, member.merge_node_id = 'waiting', merge_node_id
+        self._update_merge_barriers(run, group)
+        if timeout_seconds is not None and timeout_seconds > 0:
+            await asyncio.wait_for(barrier.event.wait(), timeout_seconds)
+        else:
+            await barrier.event.wait()
+        barrier.observed.add(branch_id)
+        if barrier.state == 'cancelled':
+            outcome = dict(arrival_outcome='cancelled')
+        elif barrier.state == 'failed':
+            if not barrier.failure_claimed:
+                barrier.failure_claimed = True
+                run.arrival_outcomes[identity] = 'failed'
+                raise barrier.failure
+            outcome = dict(arrival_outcome='absorbed')
+        elif barrier.winner == branch_id and not barrier.continuation_claimed:
+            barrier.continuation_claimed = True
+            run.branch_groups.pop(branch_id, None)
+            member.state = 'joined'
+            outcome = {'continue': True, 'present': True, 'value': barrier.value}
+        else:
+            outcome = dict(arrival_outcome='absorbed')
+        name = outcome.get('arrival_outcome', 'continuing')
+        run.arrival_outcomes.setdefault(identity, name)
+        if name == 'absorbed':
+            member.state = 'absorbed'
+        self._retire_merge_group(run, group)
+        return outcome
 
-        async def wait_for_group() -> Dict[str, Any]:
-            async with run.merge_condition:
-                group = run.merge_groups.setdefault(
-                    group_id,
-                    {
-                        "pending": set(),
-                        "arrivals": {},
-                        "merge_node_id": merge_node_id,
-                        "selected_input_port": selected_input_port,
-                    },
-                )
-                group["merge_node_id"] = merge_node_id
-                group["selected_input_port"] = selected_input_port
-                group.setdefault("arrivals", {})[branch_id] = dict(inputs)
-                group.setdefault("pending", set()).discard(branch_id)
-                run.merge_condition.notify_all()
-                await run.merge_condition.wait_for(lambda: not group.get("pending"))
-                winner_branch = self._merge_winner_branch(group)
-                value = self._merge_selected_value(group, selected_input_port)
-                return {"continue": branch_id == winner_branch, "value": value}
+    def _update_merge_barriers(self, run, group):
+        for barrier in list(run.merge_barriers.values()):
+            if barrier.key[1] != group.key[1]:
+                continue
+            if barrier.state == 'failed' and not barrier.arrivals and not barrier.failure_claimed:
+                participants = [m for m in group.members.values() if m.state != 'handoff'
+                    and barrier.plan and barrier.plan.slots_for(m.lineage[len(group.root_lineage):])]
+                if not any(m.state in ('running', 'waiting') for m in participants):
+                    self._record_merge_failure(run, barrier, next(iter(group.members), ''))
+            if barrier.state != 'open':
+                continue
+            if run.stop_requested:
+                barrier.state = 'cancelled'
+                barrier.event.set()
+                continue
+            if barrier.plan is None:
+                if barrier.arrivals:
+                    self._fail_merge_barrier(barrier, NodeError('merge_shape_unknown',
+                        'Merge slot shape is not declared. Supply the reviewed graph plan (one or many per slot).'))
+                continue
+            participants = [(branch, m) for branch, m in group.members.items()
+                if m.state != 'handoff' and barrier.plan.slots_for(m.lineage[len(group.root_lineage):])]
+            failed = next(((branch, m) for branch, m in participants if m.state == 'failed'), None)
+            if failed:
+                branch, member = failed
+                slots = barrier.plan.slots_for(member.lineage[len(group.root_lineage):])
+                path = '/'.join(path_port(i) for i in member.lineage) or branch
+                self._fail_merge_barrier(barrier, NodeError('merge_member_failed',
+                    f'Path {path}, slot {", ".join(slots)}, failed at '
+                    f'{self._describe_node(member.failed_node_id or "")}: {member.failure_message}',
+                    details=dict(branch_id=branch, slots=slots, node_id=member.failed_node_id)))
+                run.wait_registry.mark_unreachable(node_key(barrier.key[2]), str(barrier.failure))
+                if not barrier.arrivals and not any(m.state in ('running', 'waiting') for _, m in participants):
+                    self._record_merge_failure(run, barrier, branch)
+                continue
+            if any(m.state == 'cancelled' for _, m in participants):
+                barrier.state = 'cancelled'
+                barrier.event.set()
+                continue
+            if any(m.state == 'running' or (m.state == 'waiting' and m.merge_node_id != barrier.key[2])
+                   for _, m in participants):
+                continue
+            if not barrier.arrivals:
+                continue
+            arrivals = sorted(barrier.arrivals.values(), key=lambda a: (a.lineage, a.sequence))
+            values = {}
+            unknown = {a.delivery.target_port for a in arrivals} - set(barrier.plan.slots)
+            if unknown:
+                self._fail_merge_barrier(barrier, NodeError('merge_shape_unknown',
+                    'Merge received undeclared slots: ' + ', '.join(sorted(unknown))))
+                continue
+            for slot in sorted(barrier.plan.slots, key=lambda s: path_index(s) if path_index(s) is not None else 1000):
+                rows = [a for a in arrivals if a.delivery.target_port == slot]
+                shape = barrier.plan.slots[slot]
+                if shape.cardinality == 'one' and len(rows) > 1:
+                    self._fail_merge_barrier(barrier, NodeError('merge_shape_invalid',
+                        f'Merge slot {slot} is declared scalar but received concurrent paths.'))
+                    break
+                present = [a.delivery.value for a in rows if a.delivery.present]
+                if present:
+                    values[slot] = present if shape.cardinality == 'many' else present[0]
+            else:
+                winner = min(arrivals, key=lambda a: (a.depth, a.sequence))
+                barrier.winner, barrier.value, barrier.state = winner.branch_id, values, 'sealed'
+                barrier.event.set()
 
-        if timeout_seconds is None or timeout_seconds <= 0:
-            return await wait_for_group()
-        return await asyncio.wait_for(wait_for_group(), timeout=timeout_seconds)
+    @staticmethod
+    def _fail_merge_barrier(barrier, error):
+        if barrier.state == 'open':
+            barrier.failure, barrier.state = error, 'failed'
+            barrier.event.set()
 
-    def _register_branch_group(
-        self, run: RunContext, parent_branch_id: str, child_branch_id: str
-    ) -> None:
-        group_id = run.branch_groups.get(parent_branch_id, parent_branch_id)
-        run.branch_groups[child_branch_id] = group_id
-        group = run.merge_groups.setdefault(
-            group_id,
-            {
-                "pending": set(),
-                "arrivals": {},
-                "merge_node_id": None,
-                "selected_input_port": "",
-            },
-        )
-        group.setdefault("pending", set()).add(child_branch_id)
-
-    def _account_for_branch_termination(self, run: RunContext, branch_id: str) -> None:
-        group_id = run.branch_groups.get(branch_id)
-        if group_id is None:
+    def _record_merge_failure(self, run, barrier, branch_id):
+        """No arrival can own the normal error pipeline (or the run is aborting)."""
+        if barrier.failure_claimed:
             return
-        group = run.merge_groups.get(group_id)
-        if group is None:
+        barrier.failure_claimed = True
+        merge_id = barrier.key[2]
+        self._error_handler.log_error(barrier.failure,
+            dict(run_id=run.run_id, node_id=merge_id, branch_id=branch_id),
+            code=barrier.failure.code)
+        run.record_outcome(merge_id, 'failed')
+        self._event_bus.publish(NODE_EXECUTION_UPDATE, dict(run_id=run.run_id,
+            node_id=merge_id, branch_id=branch_id, visit_index=0,
+            attempt_index=0, status='errored', reason=barrier.failure.code))
+        for supervisor in run.live_supervisors.values():
+            if supervisor.position == merge_id:
+                supervisor.suppress_terminal_status = True
+                supervisor.settled_arrival_node_id = merge_id
+
+    def _account_for_branch_termination(self, run, branch_id, supervisor=None):
+        key = run.branch_groups.pop(branch_id, None)
+        if key is None or key not in run.merge_groups:
             return
-        group.setdefault("pending", set()).discard(branch_id)
-        asyncio.create_task(self._notify_merge_waiters(run))
+        group = run.merge_groups[key]
+        member = group.members[branch_id]
+        reason = getattr(supervisor, 'termination_reason', 'cancelled')
+        if member.state not in ('handoff', 'absorbed', 'joined'):
+            member.state = 'cancelled' if run.stop_requested else reason
+            member.failed_node_id = getattr(supervisor, 'current_node_id', None)
+            member.failure_message = getattr(supervisor, 'terminal_error', '')
+        self._update_merge_barriers(run, group)
+        self._retire_merge_group(run, group)
 
-    async def _notify_merge_waiters(self, run: RunContext) -> None:
-        async with run.merge_condition:
-            run.merge_condition.notify_all()
-
-    def _merge_winner_branch(self, group: Dict[str, Any]) -> Optional[str]:
-        selected_port = str(group.get("selected_input_port") or "")
-        arrivals = group.get("arrivals") or {}
-        for branch_id, inputs in arrivals.items():
-            if inputs.get(selected_port) is not None:
-                return branch_id
-        return next(iter(arrivals.keys()), None)
-
-    def _merge_selected_value(
-        self, group: Dict[str, Any], selected_input_port: str
-    ) -> Any:
-        arrivals = group.get("arrivals") or {}
-        for inputs in arrivals.values():
-            if inputs.get(selected_input_port) is not None:
-                return inputs[selected_input_port]
-        for inputs in arrivals.values():
-            for value in inputs.values():
-                if value is not None:
-                    return value
-        return ""
+    def _retire_merge_group(self, run, group):
+        if any(m.state in ('running', 'waiting') for m in group.members.values()):
+            return
+        barriers = [b for b in run.merge_barriers.values() if b.key[1] == group.key[1]]
+        if any(len(b.observed) < len({a.branch_id for a in b.arrivals.values()}) for b in barriers):
+            return
+        for barrier in barriers:
+            run.merge_barriers.pop(barrier.key, None)
+        run.merge_groups.pop(group.key, None)
 
     # -- bus handlers --------------------------------------------------------------
 
@@ -803,6 +916,8 @@ class MasterState:
         # (A PAUSED run stays paused when a prompt is answered.)
 
     def _on_supervisor_error(self, payload: Dict[str, Any]) -> None:
+        if payload.get('run_id') != self.current_run_id:
+            return
         self._set_state(WorkflowState.ERROR)
         self._event_bus.publish(ERROR_OCCURRED, payload)
         self._capture_outputs()
@@ -829,6 +944,23 @@ class MasterState:
         timings[node_id] = timings.get(node_id, 0.0) + seconds
 
     def _on_terminate_workflow_requested(self, _payload: Dict[str, Any]) -> None:
+        if _payload.get('run_id') != self.current_run_id:
+            return
+        run = self._run
+        key = run.branch_groups.get(_payload.get('branch_id')) if run else None
+        if key in (run.merge_groups if run else {}):
+            group = run.merge_groups[key]
+            member = group.members[_payload['branch_id']]
+            member.state, member.failed_node_id = 'failed', _payload.get('node_id')
+            member.failure_message = _payload.get('error', '')
+            self._update_merge_barriers(run, group)
+            # An explicit whole-workflow abort must still leave the join's
+            # failure evidence. Its parked arrivals are about to be cancelled,
+            # so they cannot own the normal Merge error/recovery pipeline.
+            for barrier in run.merge_barriers.values():
+                if barrier.key[1] != group.key[1] or barrier.state != 'failed' or barrier.failure_claimed:
+                    continue
+                self._record_merge_failure(run, barrier, _payload['branch_id'])
         # A failure ended the run: paths it cut off are still skipped (D9).
         self._halt()
         self._set_state(WorkflowState.ERROR)
@@ -866,7 +998,11 @@ class MasterState:
     def _check_run_completion(self) -> None:
         if self._supervisors or self._supervisor_tasks:
             return
+        if self._run is not None:
+            self._run.clear_flow_state()
         if self.state == WorkflowState.ERROR:
+            self._capture_outputs()
+            self._record_run('ERROR')
             return
         self._check_required_results()
         self._capture_outputs()

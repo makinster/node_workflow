@@ -29,7 +29,7 @@ from .events import (
     SupervisorState,
 )
 from .error_handler import ErrorHandler
-from .memory_bank import MemoryBank, current_writer
+from .memory_bank import MemoryBank, _snapshot, current_writer
 from .node_base import Node, NodeContext
 from .node_errors import (
     MUX_INPUT_PORT,
@@ -56,6 +56,8 @@ from .run_policies import (
     unattended_policies,
 )
 from .run_session import RunSession
+from .run_context import BranchLaunch, Delivery
+from .branch_paths import path_index
 from .secrets_manager import SecretsManager
 from .wait_registry import TargetUnreachableError
 from .workflow_map import WorkflowMap
@@ -123,6 +125,26 @@ class _NodeResult:
     error: Optional[Exception] = None
 
 
+class _StepMemory:
+    """The shared bank with an invocation-local receipt of output writes.
+
+    Reads, Vault writes and every other operation retain the shared bank's
+    semantics. Capturing at store time prevents a shared producer's later
+    invocation from changing the value already delivered by this one.
+    """
+
+    def __init__(self, shared, node_id, outputs):
+        self.shared, self.node_id, self.outputs = shared, node_id, outputs
+
+    def __getattr__(self, key):
+        return getattr(self.shared, key)
+
+    def store_transient(self, node_id, port, value):
+        if node_id == self.node_id:
+            self.outputs[port] = _snapshot(value)
+        self.shared.store_transient(node_id, port, value)
+
+
 class Supervisor:
     """Walks one path through the workflow graph asynchronously."""
 
@@ -143,7 +165,7 @@ class Supervisor:
             Callable[[List[str], Optional[float]], Awaitable[None]]
         ] = None,
         wait_for_merge: Optional[
-            Callable[[str, str, str, Dict[str, Any], Optional[float]], Awaitable[Dict[str, Any]]]
+            Callable[[str, str, Optional[Delivery], int, Optional[float]], Awaitable[Dict[str, Any]]]
         ] = None,
         node_timeout_seconds: float = 30.0,
         run_session: Optional[RunSession] = None,
@@ -159,6 +181,8 @@ class Supervisor:
         call_subworkflow: Optional[Callable[..., Any]] = None,
         get_setting: Optional[Callable[[str], Any]] = None,
         run_started_at: Optional[str] = None,
+        delivery: Optional[Delivery] = None,
+        lineage: tuple[int, ...] = (),
     ) -> None:
         if unattended is not None:
             if unattended not in UNATTENDED_ACTIONS:
@@ -170,12 +194,20 @@ class Supervisor:
         self.branch_id = branch_id
         self.depth = depth
         self.parent_branch_id = parent_branch_id
+        self.lineage = lineage
+        self.delivery = delivery
+        self.termination_reason = 'ended'
+        self.terminal_error = ''
+        self.settled_arrival_node_id = None
+        self.suppress_terminal_status = False
+        self._step_outputs: Dict[str, Any] = {}
+        self._delivery_index = 0
 
         self._start_node_id = start_node_id
         self._initial_data = dict(initial_data) if initial_data else {}
         # (node_id, port) that routed this supervisor to its current node, so
         # an input port fed by several connections reads the one that fired.
-        self._arrived_from: Optional[tuple] = None
+        self._arrived_from: Optional[tuple] = ((delivery.source_node_id, delivery.source_port) if delivery else None)
         # The failed node's input, kept while a failure is routed along
         # `error` (offered to nodes with ``receives_failed_input``).
         self._failed_input: Any = None
@@ -244,7 +276,8 @@ class Supervisor:
         try:
             await self._run_loop()
         except asyncio.CancelledError:
-            if self._last_node_status in {"running", "waiting"}:
+            self.termination_reason = 'cancelled'
+            if not self.suppress_terminal_status and self._last_node_status in {"running", "waiting"}:
                 self._publish_node_execution("stopped")
             self.state = SupervisorState.TERMINATED
             raise
@@ -367,8 +400,10 @@ class Supervisor:
                         ERROR_PORT,
                         self._error_payload(failure, record),
                     )
+                    self._step_outputs[ERROR_PORT] = _snapshot(self._error_payload(failure, record))
                     self._report_outcome(failed_node_id, "failed", [target])
                     self._arrived_from = (failed_node_id, ERROR_PORT)
+                    self.delivery = self._capture_delivery(ERROR_PORT, target)
                     ports = node.get_input_ports()
                     self._failed_input = (
                         inputs.get(ports[0]) if len(ports) == 1 else dict(inputs)
@@ -390,13 +425,18 @@ class Supervisor:
                     self._publish_node_execution("skipped", reason="recovery_skip")
                     self._report_outcome(failed_node_id, "skipped", [], "recovery_skip")
                     self.state = SupervisorState.TERMINATED
+                    self.termination_reason = 'failed'
+                    self.terminal_error = failure.message
                     self._publish_state_update()
                     return
                 self._report_outcome(failed_node_id, "failed")
+                self.termination_reason = 'failed'
+                self.terminal_error = failure.message
                 if action == "TERMINATE_WORKFLOW":
                     self._event_bus.publish(
                         TERMINATE_WORKFLOW_REQUESTED,
-                        {"branch_id": self.branch_id, "run_id": self.run_id},
+                        {"branch_id": self.branch_id, "run_id": self.run_id,
+                         "node_id": failed_node_id, "error": failure.message},
                     )
                     self._stop_requested = True
                     return
@@ -411,6 +451,14 @@ class Supervisor:
 
             if not result.completed or result.payload is None:
                 self._fail(f"Node {self.current_node_id} returned without signaling")
+                return
+
+            if result.payload.get('arrival_outcome') in ('absorbed', 'cancelled'):
+                self.termination_reason = result.payload['arrival_outcome']
+                self.settled_arrival_node_id = self.current_node_id
+                self.current_node_id = None
+                self.state = SupervisorState.TERMINATED
+                self._publish_state_update()
                 return
 
             completed_node_id = self.current_node_id
@@ -467,11 +515,23 @@ class Supervisor:
     def _prepare_inputs(self, node: Node) -> Dict[str, Any]:
         """Build node inputs from connected upstream transient outputs."""
         inputs: Dict[str, Any] = {}
+        # A collecting join receives only the fired delivery, never a snapshot
+        # of every wire connected to its slots.
+        if node.node_type == 'merge_node':
+            if self.delivery is not None and self.delivery.present and self.delivery.target_port in node.get_input_ports():
+                inputs[self.delivery.target_port] = self.delivery.value
+            return inputs
         for input_port in node.get_input_ports():
             source = self._input_source(input_port)
             if source is None:
                 if input_port in self._initial_data:
                     inputs[input_port] = self._initial_data[input_port]
+                continue
+            if (self.delivery is not None and self.delivery.target_port == input_port
+                    and source['source_node_id'] == self.delivery.source_node_id
+                    and source['source_port'] == self.delivery.source_port):
+                if self.delivery.present:
+                    inputs[input_port] = self.delivery.value
                 continue
             missing = object()
             value = self._memory_bank.read_transient(
@@ -518,10 +578,13 @@ class Supervisor:
         self._publish_state_update()
         self._publish_node_execution("running")
         result = _NodeResult()
+        self._step_outputs = {}
 
         def signal_done(payload: Dict[str, Any]) -> None:
             result.completed = True
             result.payload = payload
+            for port, value in (payload.get('data') or {}).items():
+                self._step_outputs[port] = _snapshot(value)
 
         def signal_error(exc: Exception) -> None:
             result.completed = True
@@ -584,7 +647,7 @@ class Supervisor:
         async def wait_for_merge(
             merge_node_id: str,
             branch_id: str,
-            selected_input_port: str,
+            input_port: str,
             inputs: Dict[str, Any],
             timeout_seconds: Optional[float] = None,
         ) -> Dict[str, Any]:
@@ -598,8 +661,8 @@ class Supervisor:
             return await self._wait_for_merge(
                 merge_node_id,
                 branch_id,
-                selected_input_port,
-                inputs,
+                self.delivery,
+                self._visit_index,
                 timeout,
             )
 
@@ -619,7 +682,7 @@ class Supervisor:
             branch_id=self.branch_id,
             run_id=self.run_id,
             inputs=inputs,
-            memory_bank=self._memory_bank,
+            memory_bank=_StepMemory(self._memory_bank, self.current_node_id, self._step_outputs),
             signal_done=signal_done,
             signal_error=signal_error,
             signal_waiting_for_input=signal_waiting_for_input,
@@ -641,6 +704,8 @@ class Supervisor:
         started_at = perf_counter()
         try:
             await node.execute(context)
+            if result.error is None and result.payload and result.payload.get('branches'):
+                result.error = self._spawn_branches(result.payload['branches'])
         except Exception as exc:
             result.completed = True
             result.error = exc
@@ -666,7 +731,7 @@ class Supervisor:
             pass  # the failure pipeline reports errored or recovered
         elif not result.completed or result.payload is None:
             self._publish_node_execution("errored")
-        else:
+        elif result.payload.get('arrival_outcome') not in ('absorbed', 'cancelled'):
             self._publish_node_execution("done")
         return result
 
@@ -871,6 +936,7 @@ class Supervisor:
         data = payload.get("data", {})
         if data:
             for port_name, value in data.items():
+                self._step_outputs[port_name] = _snapshot(value)
                 self._memory_bank.store_transient(
                     self.current_node_id or "", port_name, value
                 )
@@ -880,13 +946,14 @@ class Supervisor:
 
         branches = payload.get("branches")
         if branches:
-            self._spawn_branches(branches)
+            self.termination_reason = 'handoff'
             return None
 
         explicit_next = payload.get("next_node_id")
         if explicit_next:
             self._last_delivered.append(explicit_next)
             self._arrived_from = (self.current_node_id, None)
+            self.delivery = self._capture_delivery(None, explicit_next)
             return explicit_next
 
         # Port routing hint embedded in data (used by RandomBranchNode and similar)
@@ -898,11 +965,24 @@ class Supervisor:
         if next_node_id:
             self._last_delivered.append(next_node_id)
             self._arrived_from = (self.current_node_id, output_port)
+            self.delivery = self._capture_delivery(output_port, next_node_id)
         return next_node_id
 
-    def _spawn_branches(self, branches: List[Dict[str, Any]]) -> None:
-        """Publish one branch request per requested output path."""
-        for branch in branches:
+    def _capture_delivery(self, output_port, target_node_id) -> Delivery:
+        outputs = (self._workflow_map.get_node_data(self.current_node_id) or {}).get('connections', {}).get('outputs', [])
+        edge = next((c for c in outputs if c.get('target_node_id') == target_node_id
+                     and (output_port is None or c.get('source_port') == output_port)), {})
+        port = edge.get('source_port', output_port or 'default')
+        self._delivery_index += 1
+        return Delivery(self.run_id, self.current_node_id or '', port, target_node_id,
+                        edge.get('target_port', 'input'), port in self._step_outputs,
+                        _snapshot(self._step_outputs.get(port)),
+                        (self.branch_id, self._delivery_index))
+
+    def _spawn_branches(self, branches: List[Dict[str, Any]]) -> Optional[Exception]:
+        """Ask for one accepted batch; no child can run before all are registered."""
+        chosen = []
+        for number, branch in enumerate(branches):
             output_port = branch.get("output_port", "default")
             start_node_id = self._workflow_map.find_next_node_id(
                 self.current_node_id or "", output_port=output_port
@@ -913,21 +993,33 @@ class Supervisor:
                     output_port,
                 )
                 continue
-            self._event_bus.publish(
-                SUPERVISOR_REQUEST_BRANCH,
-                {
-                    "parent_branch_id": self.branch_id,
-                    "parent_depth": self.depth,
-                    "run_id": self.run_id,
-                    "source_node_id": self.current_node_id,
-                    "start_node_id": start_node_id,
-                    "initial_data": branch.get("initial_data", {}),
-                },
-            )
+            delivery = self._capture_delivery(output_port, start_node_id)
+            # Legacy spawners may seed only initial_data, without publishing
+            # transient output. It is still an explicit value, including null.
+            initial = branch.get('initial_data', {})
+            if not delivery.present and 'input' in initial:
+                delivery = Delivery(delivery.run_id, delivery.source_node_id, delivery.source_port,
+                    delivery.target_node_id, delivery.target_port, True,
+                    _snapshot(initial['input']), delivery.identity)
+            index = path_index(output_port)
+            chosen.append(dict(start_node_id=start_node_id, initial_data=initial,
+                               delivery=delivery, path_index=index if index is not None else number))
+        response = BranchLaunch()
+        self._event_bus.publish(SUPERVISOR_REQUEST_BRANCH, dict(
+            run_id=self.run_id, parent_branch_id=self.branch_id, parent_depth=self.depth,
+            parent_lineage=self.lineage, source_node_id=self.current_node_id,
+            branches=chosen, response=response))
+        if response.error is not None:
+            return response.error
+        if not response.accepted:
+            return NodeError('node_error', 'The Branch coordinator did not accept its paths.')
+        return None
 
     def _fail(self, error: Any) -> None:
         """Transition to error and publish a supervisor error event."""
         self._report_outcome(self.current_node_id, "failed")
+        self.termination_reason = 'failed'
+        self.terminal_error = str(error)
         self.state = SupervisorState.ERROR
         self._publish_node_execution("errored")
         message = str(error) if isinstance(error, Exception) else error
@@ -979,5 +1071,8 @@ class Supervisor:
                 "run_id": self.run_id,
                 "current_node_id": self.current_node_id,
                 "stop_requested": self._stop_requested,
+                "settled_arrival_node_id": self.settled_arrival_node_id,
+                "reason": self.termination_reason,
+                "error": self.terminal_error,
             },
         )

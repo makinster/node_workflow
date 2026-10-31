@@ -80,7 +80,6 @@ def _branch_with_path_node(case):
         {
             "branches_to_close": [closure],
             "carry_forward_branch_id": closure,
-            "selected_input_port": "path_b",
         },
     )
     return factory, wm, merge, beacon, closure
@@ -130,7 +129,7 @@ def test_no_edit_merge_save_keeps_closure_carry_forward_and_beacon(case):
     config = saved["config"]
     assert config["branches_to_close"] == [closure]
     assert config["carry_forward_branch_id"] == closure
-    assert config["selected_input_port"] == "path_b"
+    assert "selected_input_port" not in config
     assert warning == []
     _apply_save(factory, wm, merge, saved)
     assert wm.get_node_data(beacon)["connections"]["outputs"] == [
@@ -189,7 +188,6 @@ def _merge_with_stale_values():
             "branches_to_close": [closure, ghost],
             "carry_forward_branch_id": ghost,
             "selected_branch_id": ghost,
-            "selected_input_port": "path_c",
         },
     )
     return factory, wm, merge, beacon, closure, ghost
@@ -223,7 +221,7 @@ def test_no_edit_save_keeps_unmatched_values_and_warns():
     assert config["branches_to_close"] == sorted([closure, ghost])
     assert config["carry_forward_branch_id"] == ghost
     assert config["selected_branch_id"] == ghost
-    assert config["selected_input_port"] == "path_c"
+    assert "selected_input_port" not in config
     assert len(warning) == 1 and ghost in warning[0]
 
 
@@ -285,4 +283,4 @@ async def _test_unchecking_a_kept_closure_drops_it():
         values = screen._merge_config_values()
     assert values["branches_to_close"] == [closure]
     assert values["carry_forward_branch_id"] == closure
-    assert values["selected_input_port"] == "path_b"
+    assert "selected_input_port" not in values

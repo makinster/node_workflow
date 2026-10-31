@@ -1,4 +1,4 @@
-"""Merge node: waits for sibling branches and emits one selected input."""
+"""Merge node: collects actual path arrivals and continues once."""
 
 from typing import Any, ClassVar, Dict, List, Optional
 
@@ -8,11 +8,11 @@ from ..node_category import NodeCategory
 
 
 class MergeNode(Node):
-    """Recombines branch paths by forwarding one selected incoming value."""
+    """Collects the delivered slot values after participating paths settle."""
 
     node_type: ClassVar[str] = "merge_node"
     display_name: ClassVar[str] = "Merge"
-    description: ClassVar[str] = "Waits for branch peers and forwards one input"
+    description: ClassVar[str] = "Wait for joining paths and collect their delivered values by input slot"
     category: ClassVar[str] = NodeCategory.FLOW
     # The type's full list; one node has its first ``input_slots`` slots.
     input_ports: ClassVar[List[str]] = list(ALL_PATH_PORTS)
@@ -21,10 +21,17 @@ class MergeNode(Node):
         "branches_to_close": [],
         "carry_forward_branch_id": "",
         "selected_branch_id": "",
-        "selected_input_port": "path_a",
         "input_slots": DEFAULT_MERGE_SLOTS,
     }
     config_schema: ClassVar[Dict[str, Dict[str, Any]]] = {}
+    error_definitions = [
+        {'code': code, 'description': description, 'retryable': False}
+        for code, description in (
+            ('merge_member_failed', 'A joining path failed before the Merge completed.'),
+            ('merge_shape_unknown', 'The graph has not declared a Merge slot shape.'),
+            ('merge_shape_invalid', 'Concurrent deliveries contradict a scalar slot declaration.'),
+            ('merge_delivery_missing', 'The actual incoming path delivery is unavailable.'),
+        )]
 
     @classmethod
     def resolve_input_ports(cls, config: Optional[Dict[str, Any]]) -> List[str]:
@@ -32,14 +39,11 @@ class MergeNode(Node):
         return path_ports(merge_slot_count(config))
 
     async def execute(self, context: NodeContext) -> None:
-        selected_port = str(self.config.get("selected_input_port") or "").strip()
-        if not selected_port:
-            selected_port = next(iter(context.inputs.keys()), "path_a")
         try:
             result = await context.wait_for_merge(
                 context.node_id,
                 context.branch_id,
-                selected_port,
+                next(iter(context.inputs), ''),
                 dict(context.inputs),
                 0.0,
             )
@@ -48,7 +52,10 @@ class MergeNode(Node):
             return
 
         if not result.get("continue"):
-            context.signal_done({"terminate_branch": True})
+            context.signal_done({'arrival_outcome': result.get('arrival_outcome', 'absorbed')})
             return
-
-        context.signal_done({"data": {"default": result.get("value", "")}})
+        data = {}
+        if result.get('present', 'value' in result):
+            data['default'] = result['value']
+            context.memory_bank.store_transient(context.node_id, 'default', result['value'])
+        context.signal_done({'data': data})

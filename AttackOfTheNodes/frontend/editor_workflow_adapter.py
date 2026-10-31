@@ -1031,7 +1031,6 @@ class EditorWorkflowAdapter:
             for field in ('carry_forward_branch_id', 'selected_branch_id'):
                 if config.get(field) in removed:
                     config[field] = ''
-                    config['selected_input_port'] = ''
                 elif config.get(field) in mapping:
                     config[field] = mapping[config[field]]
 
@@ -1044,8 +1043,6 @@ class EditorWorkflowAdapter:
         for source, port, target, slot in list(edges):
             if source in reset and (before.get(target) or {}).get('type') == MERGE_NODE_TYPE:
                 edges.discard((source, port, target, slot))
-                if target in after and after[target].get('config', {}).get('selected_input_port') == slot:
-                    after[target]['config']['selected_input_port'] = ''
         self._wire_graph(after, edges, removed=set(before) - set(after))
         self._merge_keys(after, {}, keys)
 
@@ -1449,8 +1446,6 @@ class EditorWorkflowAdapter:
                 for field in ('carry_forward_branch_id', 'selected_branch_id'):
                     if old_config.get(field) == old_key and not live_config.get(field):
                         live_config[field] = new_key
-                        if not live_config.get('selected_input_port'):
-                            live_config['selected_input_port'] = old_config.get('selected_input_port', '')
 
             consumed.add(entry['id'])
             if problems:

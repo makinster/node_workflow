@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterable, Optional, Set
 
 from .run_session import RunSession
 from .wait_registry import WaitRegistry, node_key
+from .node_errors import NodeError
 
 if TYPE_CHECKING:
     from .memory_bank import MemoryBank
@@ -38,6 +39,104 @@ SKIP_UPSTREAM_FAILED = "upstream_failed"
 SKIP_REASONS = frozenset(
     {SKIP_RECOVERY, SKIP_UPSTREAM_SKIPPED, SKIP_NOT_TAKEN, SKIP_UPSTREAM_FAILED}
 )
+
+
+@dataclass(frozen=True)
+class Delivery:
+    """One fired edge, with its value captured by the sending invocation."""
+
+    run_id: str
+    source_node_id: str
+    source_port: str
+    target_node_id: str
+    target_port: str
+    present: bool
+    value: Any = None
+    identity: tuple = ()
+    pass_number: int = field(default=1, init=False)
+
+
+@dataclass(frozen=True)
+class MergeSlot:
+    """Graph-declared shape; producer lineages are relative to the group fork.
+
+    These are supplied facts, not an analyser or a node configuration mode.
+    Empty producers means all actual members; explicit paths can exclude an
+    independent side path waiting for this Merge's completion.
+    """
+
+    cardinality: str
+    producers: tuple[tuple[int, ...], ...] = ()
+
+    def __post_init__(self):
+        if self.cardinality not in ('one', 'many'):
+            raise ValueError('Merge slot cardinality must be one or many')
+
+
+@dataclass(frozen=True)
+class MergePlan:
+    fork_node_id: str
+    slots: Dict[str, MergeSlot]
+
+    def slots_for(self, lineage: tuple[int, ...]) -> list[str]:
+        return [slot for slot, shape in self.slots.items() if not shape.producers or any(
+            lineage[:len(path)] == path or path[:len(lineage)] == lineage
+            for path in shape.producers)]
+
+
+@dataclass
+class BranchLaunch:
+    """Synchronous EventBus response; handlers return errors instead of raising."""
+
+    accepted: bool = False
+    error: Optional[NodeError] = None
+
+
+@dataclass
+class GroupMember:
+    lineage: tuple[int, ...]
+    depth: int
+    state: str = 'running'
+    merge_node_id: Optional[str] = None
+    failed_node_id: Optional[str] = None
+    failure_message: str = ''
+
+
+@dataclass
+class BranchGroup:
+    key: tuple[str, str, int]
+    fork_node_id: str
+    root_lineage: tuple[int, ...]
+    members: Dict[str, GroupMember] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class MergeArrival:
+    run_id: str
+    group_id: str
+    merge_node_id: str
+    branch_id: str
+    lineage: tuple[int, ...]
+    depth: int
+    sequence: int
+    visit: int
+    delivery: Delivery
+    pass_number: int = field(default=1, init=False)
+
+
+@dataclass
+class MergeBarrier:
+    key: tuple[str, str, str, int]
+    plan: Optional[MergePlan]
+    arrivals: Dict[tuple, MergeArrival] = field(default_factory=dict)
+    state: str = 'open'
+    winner: Optional[str] = None
+    value: Dict[str, Any] = field(default_factory=dict)
+    failure: Optional[NodeError] = None
+    failure_claimed: bool = False
+    observed: Set[str] = field(default_factory=set)
+    event: asyncio.Event = field(default_factory=asyncio.Event)
+    continuation_claimed: bool = False
 
 
 @dataclass
@@ -64,9 +163,13 @@ class RunContext:
     wait_registry: WaitRegistry = field(default_factory=WaitRegistry)
     node_timings: Dict[str, float] = field(default_factory=dict)
     agent_usage: list[dict] = field(default_factory=list)
-    branch_groups: Dict[str, str] = field(default_factory=dict)
-    merge_groups: Dict[str, Dict[str, Any]] = field(default_factory=dict)
-    merge_condition: asyncio.Condition = field(default_factory=asyncio.Condition)
+    branch_groups: Dict[str, tuple[str, str, int]] = field(default_factory=dict)
+    merge_groups: Dict[tuple[str, str, int], BranchGroup] = field(default_factory=dict)
+    merge_barriers: Dict[tuple[str, str, str, int], MergeBarrier] = field(default_factory=dict)
+    merge_plans: Dict[str, MergePlan] = field(default_factory=dict)
+    arrival_outcomes: Dict[tuple, str] = field(default_factory=dict)
+    arrival_sequence: int = 0
+    node_completions: Set[tuple[str, str, int]] = field(default_factory=set)
     # Delivery tracking: node id -> final state of its latest visit, and
     # node id -> target node ids it has routed to during this run.
     node_final: Dict[str, str] = field(default_factory=dict)
@@ -97,7 +200,15 @@ class RunContext:
         return self.call_counts[node_id]
 
     def mark_completed(self, node_id: str) -> None:
+        self.node_completions.add((self.run_id, node_id, 1))
         self.wait_registry.mark_completed(node_key(node_id))
+
+    def clear_flow_state(self) -> None:
+        """Only after participants end; completion evidence remains run-scoped."""
+        self.branch_groups.clear()
+        self.merge_groups.clear()
+        self.merge_barriers.clear()
+        self.arrival_outcomes.clear()
 
     # -- delivery tracking ---------------------------------------------------
 

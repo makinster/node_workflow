@@ -7,6 +7,7 @@ or standalone:
 """
 
 import pytest
+from backend.run_context import MergePlan, MergeSlot
 from tests.ui_sizes import LAYOUT_WIDTHS
 
 import asyncio
@@ -212,10 +213,12 @@ async def _test_deep_branch_respects_depth_limit():
     depths = []
     bus.subscribe(SUPERVISOR_REGISTER, lambda payload: depths.append(payload["depth"]))
 
-    await master.start_workflow()
+    await master.start_workflow(unattended="terminate_branch")
     await master.wait_for_completion()
 
     assert master.state.value == "FINISHED", master.state.value
+    errors = master.error_handler.get_errors_for_run(master.current_run_id)
+    assert len(errors) == 1 and "no paths were launched" in errors[0]["message"]
     assert sorted(depths) == [0, 1, 2, 3, 4, 5], depths
     print("test_deep_branch_respects_depth_limit PASSED")
 
@@ -2172,11 +2175,11 @@ def test_wait_target_options_exclude_downstream_nodes():
     print("test_wait_target_options_exclude_downstream_nodes PASSED")
 
 
-def test_merge_node_waits_and_forwards_selected_input():
-    asyncio.run(_test_merge_node_waits_and_forwards_selected_input())
+def test_merge_node_waits_and_collects_arrivals():
+    asyncio.run(_test_merge_node_waits_and_collects_arrivals())
 
 
-async def _test_merge_node_waits_and_forwards_selected_input():
+async def _test_merge_node_waits_and_collects_arrivals():
     master, wm, mb, _ = _make_services()
     wm.create_new("merge_selected_input")
     start = wm.add_node("start_node")
@@ -2192,7 +2195,6 @@ async def _test_merge_node_waits_and_forwards_selected_input():
     wm.update_node_config(slow, {"duration": 0.05})
     wm.update_node_config(left, {"label": "left"})
     wm.update_node_config(right, {"label": "right"})
-    wm.update_node_config(merge, {"selected_input_port": "path_a"})
     wm.update_node_config(after, {"label": "merged", "include_input": True})
 
     wm.connect(start, "default", branch, "input")
@@ -2204,7 +2206,8 @@ async def _test_merge_node_waits_and_forwards_selected_input():
     wm.connect(merge, "default", after, "input")
     wm.connect(after, "default", end, "input")
 
-    await master.start_workflow()
+    await master.start_workflow(merge_plans={merge: MergePlan(branch, {
+        "path_a": MergeSlot("one", ((0,),)), "path_b": MergeSlot("one", ((1,),))})})
     await master.wait_for_completion()
 
     assert master.state.value == "FINISHED"
@@ -2212,8 +2215,8 @@ async def _test_merge_node_waits_and_forwards_selected_input():
     merged_entries = [entry for entry in log if "[merged]" in entry]
     assert len(merged_entries) == 1, log
     assert "[left]" in merged_entries[0], merged_entries
-    assert "[right]" not in merged_entries[0], merged_entries
-    print("test_merge_node_waits_and_forwards_selected_input PASSED")
+    assert "[right]" in merged_entries[0], merged_entries
+    print("test_merge_node_waits_and_collects_arrivals PASSED")
 
 
 def test_merge_config_uses_multi_branch_selector_and_carry_forward_dropdown():
@@ -2262,7 +2265,6 @@ async def _test_merge_config_uses_multi_branch_selector_and_carry_forward_dropdo
             "selected_branch_id": f"{branch}:path_b",
             "branches_to_close": [f"{branch}:path_a", f"{branch}:path_b"],
             "carry_forward_branch_id": f"{branch}:path_b",
-            "selected_input_port": "path_b",
         },
     )
     node_data = wm.get_node_data(merge)
@@ -2307,7 +2309,6 @@ async def _test_merge_config_uses_multi_branch_selector_and_carry_forward_dropdo
             "branches_to_close": [f"{branch}:path_a"],
             "carry_forward_branch_id": f"{branch}:path_a",
             "selected_branch_id": f"{branch}:path_a",
-            "selected_input_port": "path_a",
         }
         app.set_focus(carry_selector)
         screen.action_activate_focused()
@@ -2512,7 +2513,6 @@ async def _test_merge_options_include_nested_merge_beacons():
             "branches_to_close": [f"{inner_branch}:path_a"],
             "carry_forward_branch_id": f"{inner_branch}:path_a",
             "selected_branch_id": f"{inner_branch}:path_a",
-            "selected_input_port": "path_a",
         },
     )
 
@@ -2620,7 +2620,6 @@ async def _test_saving_merge_config_connects_selected_branch_end():
                     "branches_to_close": [merge_choice],
                     "carry_forward_branch_id": merge_choice,
                     "selected_branch_id": merge_choice,
-                    "selected_input_port": "path_a",
                 },
             }
         )
@@ -2685,7 +2684,6 @@ async def _test_saving_merge_config_unchecked_branch_disconnects_branch_end():
             "branches_to_close": [f"{branch}:path_a"],
             "carry_forward_branch_id": f"{branch}:path_a",
             "selected_branch_id": f"{branch}:path_a",
-            "selected_input_port": "path_a",
         },
     )
     option_values = {
@@ -2711,7 +2709,6 @@ async def _test_saving_merge_config_unchecked_branch_disconnects_branch_end():
                     "branches_to_close": [],
                     "carry_forward_branch_id": "",
                     "selected_branch_id": "",
-                    "selected_input_port": "",
                 },
             }
         )
@@ -2769,7 +2766,6 @@ async def _test_saving_merge_config_preserves_merge_home_branch_input():
                     "branches_to_close": [merge_choice],
                     "carry_forward_branch_id": merge_choice,
                     "selected_branch_id": merge_choice,
-                    "selected_input_port": beacon_option["port"],
                 },
             }
         )
@@ -2812,7 +2808,6 @@ async def _test_deleting_merge_beacon_prunes_merge_config_selection():
             "branches_to_close": [f"{branch}:path_a"],
             "carry_forward_branch_id": f"{branch}:path_a",
             "selected_branch_id": f"{branch}:path_a",
-            "selected_input_port": "path_a",
         },
     )
 
@@ -8565,7 +8560,7 @@ if __name__ == "__main__":
         test_node_timings_are_recorded_for_run_history,
         test_wait_until_node_gates_cross_branch_completion,
         test_wait_target_options_exclude_downstream_nodes,
-        test_merge_node_waits_and_forwards_selected_input,
+        test_merge_node_waits_and_collects_arrivals,
         test_merge_config_uses_multi_branch_selector_and_carry_forward_dropdown,
         test_merge_config_does_not_autocheck_open_branches,
         test_merge_options_exclude_current_merge_path_and_branch_end_card_turns_green,

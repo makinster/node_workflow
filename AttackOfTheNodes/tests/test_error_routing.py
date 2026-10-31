@@ -22,6 +22,7 @@ from backend.events import (
     NODE_EXECUTION_UPDATE,
     RECOVERY_OPTIONS_AVAILABLE,
 )
+from backend.run_context import MergePlan, MergeSlot
 from backend.master_state import MasterState
 from backend.memory_bank import MemoryBank
 from backend.node_errors import (
@@ -129,7 +130,7 @@ async def test_skip_spreads_through_a_linear_chain():
     assert master.state.value == "FINISHED"
 
 
-async def test_skip_stops_at_a_merge_with_a_live_sibling():
+async def test_failed_member_fails_merge_without_partial_continuation():
     bus, workflow_map, master = _services()
     events = _events(bus)
     _answer(bus, master, "TERMINATE_BRANCH")
@@ -141,7 +142,6 @@ async def test_skip_stops_at_a_merge_with_a_live_sibling():
     merge = workflow_map.add_node("merge_node")
     after = workflow_map.add_node("no_op_node")
     workflow_map.update_node_config(slow, {"duration": 0.05})
-    workflow_map.update_node_config(merge, {"selected_input_port": "path_b"})
     workflow_map.connect(start, "default", fork, "input")
     workflow_map.connect(fork, "path_a", failing, "input")
     workflow_map.connect(failing, "default", dead, "input")
@@ -150,13 +150,15 @@ async def test_skip_stops_at_a_merge_with_a_live_sibling():
     workflow_map.connect(slow, "default", merge, "path_b")
     workflow_map.connect(merge, "default", after, "input")
 
-    assert await master.start_workflow()
+    assert await master.start_workflow(merge_plans={merge: MergePlan(fork, {
+        "path_a": MergeSlot("one", ((0,),)), "path_b": MergeSlot("one", ((1,),))})})
     await _finish(master)
 
-    assert master.run_context.skip_reasons == {dead: "upstream_failed"}
-    assert "done" in _status(events, merge)
-    assert "done" in _status(events, after)
-    assert merge in master.completed_nodes
+    assert master.run_context.skip_reasons == {dead: "upstream_failed", after: "upstream_failed"}
+    assert _status(events, merge).count("errored") == 1
+    assert "done" not in _status(events, merge)
+    assert "done" not in _status(events, after)
+    assert merge not in master.completed_nodes
 
 
 async def test_untaken_conditional_port_is_skipped_not_taken():

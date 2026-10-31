@@ -1,3 +1,4 @@
+from backend.run_context import MergePlan, MergeSlot
 """Exercise the shared source contract across real file and branch execution."""
 
 import asyncio
@@ -12,8 +13,8 @@ from frontend.screens.node_config import NodeConfigScreen
 from tests.test_debug_nodes import _make_services
 
 
-@pytest.mark.parametrize("selected_port,expected", [("path_a", "first\n"), ("path_b", "second\n")])
-async def test_manager_reader_writer_parallel_merge_and_end_branch(tmp_path, selected_port, expected):
+@pytest.mark.parametrize("shown_slot,expected", [("path_a", "first\n"), ("path_b", "second\n")])
+async def test_manager_reader_writer_parallel_merge_and_end_branch(tmp_path, shown_slot, expected):
     master, wm, mb, bus = _make_services()
     wm.create_new("payload_plan")
     first, second = tmp_path / "first.txt", tmp_path / "second.txt"
@@ -40,8 +41,7 @@ async def test_manager_reader_writer_parallel_merge_and_end_branch(tmp_path, sel
     configure("reader_b", input_source="Vault", input_vault_key="second_file")
     configure("writer", content_source="Upstream payload", file_path_source="Vault",
               file_path_vault_key="first_file", write_mode="Append", dead_drop_passthrough=True)
-    configure("merge", selected_input_port=selected_port)
-    configure("output", label="Merged", input_source="Upstream payload")
+    configure("output", label="Merged", input_source="Upstream payload", template="{input[" + shown_slot + "]}")
 
     for source, port, target, input_port in [
         ("start", "default", "manager", "file"), ("manager", "default", "branch", "input"),
@@ -67,7 +67,8 @@ async def test_manager_reader_writer_parallel_merge_and_end_branch(tmp_path, sel
         recovery.append(event)
         master.submit_recovery_action(event["branch_id"], "TERMINATE_WORKFLOW")
     bus.subscribe(RECOVERY_OPTIONS_AVAILABLE, stop_on_error)
-    assert await master.start_workflow()
+    assert await master.start_workflow(merge_plans={nodes["merge"]: MergePlan(nodes["branch"], {
+        "path_a": MergeSlot("one", ((0,),)), "path_b": MergeSlot("one", ((1,),))})})
     await asyncio.wait_for(master.wait_for_completion(), timeout=5)
     assert not recovery
     assert master.state.value == "FINISHED"
@@ -77,7 +78,7 @@ async def test_manager_reader_writer_parallel_merge_and_end_branch(tmp_path, sel
     assert mb.read_persistent("first_text") == "first\n"
     assert first.read_text(encoding="utf-8") == "first\nfirst\n"
     assert second.read_text(encoding="utf-8") == "second\n"
-    assert mb.read_transient(nodes["merge"], "default") == expected
+    assert mb.read_transient(nodes["merge"], "default") == {"path_a": "first\n", "path_b": "second\n"}
     assert mb.read_transient(nodes["output"], "default") == f"[Merged] {expected}"
     assert mb.read_persistent("output_log") == [f"[Merged] {expected}", f"[END] Branch completed"]
     assert nodes["end"] in master.completed_nodes

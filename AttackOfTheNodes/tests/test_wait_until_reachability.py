@@ -20,6 +20,7 @@ from backend.events import (
     RECOVERY_OPTIONS_AVAILABLE,
     USER_INPUT_NEEDED,
 )
+from backend.run_context import MergePlan, MergeSlot
 from backend.master_state import MasterState
 from backend.memory_bank import MemoryBank
 from backend.node_factory import NodeFactory
@@ -331,7 +332,7 @@ async def test_branch_refused_by_the_depth_limit_does_not_count_as_delivered(mon
 
     assert master._supervisor_tasks == {}
     assert target not in master.completed_nodes
-    assert [e["error"]["node_id"] for e in logged] == [waiter]
+    assert [e["error"]["node_id"] for e in logged] == [inner, waiter]
     assert recoveries == []
 
 
@@ -356,7 +357,8 @@ async def test_wait_on_a_node_after_a_merge_completes():
     workflow_map.connect(merge, "default", target, "input")
     waiter = _waiter_on(workflow_map, first, fork, "path_c")
 
-    assert await master.start_workflow()
+    assert await master.start_workflow(merge_plans={merge: MergePlan(fork, {
+        "path_a": MergeSlot("one", ((0,),)), "path_b": MergeSlot("one", ((1,),))})})
     await _finish(master)
 
     assert recoveries == []
