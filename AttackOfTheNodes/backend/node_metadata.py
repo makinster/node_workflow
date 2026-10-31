@@ -412,8 +412,8 @@ NODE_METADATA: Dict[str, Dict[str, Any]] = {
                                               'JSON excerpt (possibly incomplete). Final line: Shortened: none. '
                                               'or Shortened: label (N characters from the start). '
                                               'Notes join "; "; no final LF. Output <=32000 bytes. No external effects.',
-                            'notes': '1–16 items choose Upstream payload/Vault/Configured text '
-                                     '(ignores wire); missing/invalid values error. include_run=true (default) prepends '
+                            'notes': '1–16 items: Upstream payload=wired input, Vault=vault_key, Configured text=text; '
+                                     'missing/invalid error. include_run=true (default) prepends '
                                      '[This run] (Workflow:/Run:/Started:); include_errors appends [Recent errors]; '
                                      'disable both for repeatability. max_item 256–4000/max_total 2000–8000 trim '
                                      'longest-first prefixes. Omitted note: label (N characters from the start, omitted). '

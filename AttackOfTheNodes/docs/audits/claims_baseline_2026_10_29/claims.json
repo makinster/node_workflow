@@ -14,7 +14,7 @@
     "backend/node_capabilities.py": "fd421af39dc1e3fe5048ca48cff8e2fb037961a2bce6e224e92c92cd4f091262",
     "backend/node_catalogue.py": "1bae4801d883ad952605b4a69e1168c83a0a99e906fd63ca5cfcea48cea6a95e",
     "backend/node_factory.py": "67eafe7c37a4af7a83f20ba2de6d3a6bdc2f31e80b358284d4e3fad30ee53576",
-    "backend/node_metadata.py": "e80f6b5f548f1f8385c8a21af788df18631da9b4e2324b6bd4b8e125ba8a1f98",
+    "backend/node_metadata.py": "be6f27835b385eb189a3be43f16de999396df11ea33fead3ba838953ffec876d",
     "backend/nodes/ai/ask_claude_node.py": "a2e3d19151aa02688f239c65d3a6889ea9ea3e396532c2a466a485f42d268b65",
     "backend/nodes/ai/ask_local_model_node.py": "906a74138630732b7e18ade131c245dd26eacc12cce0497d038998a0120cd363",
     "backend/nodes/ai/hermes_ask_node.py": "519833d8e42e2c52d203f6a02ba75409cedd11ce8f1fa530b7fa9f6992e25120",
