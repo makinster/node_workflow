@@ -45,6 +45,21 @@ def publish(config, context, value, tag, report=None):
     context.signal_done({'data': {'default': value} if config.get('transient_output', True) else {}})
 
 
+def review_report(report):
+    """The check report a reviewer reads: flow findings in words, not the raw analysis.
+
+    Selection checks use the full analysis. With no Merge and no finding, nothing is added.
+    """
+    flow = report.get('flow_analysis')
+    if flow is None:
+        return report
+    reviewed = {key: value for key, value in report.items() if key != 'flow_analysis'}
+    merges = {merge_id: dict(summary=merge['summary']) for merge_id, merge in flow['merges'].items()}
+    if merges or flow['findings']:
+        reviewed['flow_analysis'] = dict(merges=merges, findings=flow['findings'])
+    return reviewed
+
+
 def spec_source(config, context):
     source = config.get('input_source')
     if source == 'Upstream payload':

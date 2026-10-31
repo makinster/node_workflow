@@ -38,7 +38,7 @@ class CheckWorkflowSpecNode(Node):
 
     async def execute(self, context: NodeContext) -> None:
         from ...node_factory import NodeFactory
-        from ...meta_workflow import validate_outputs, spec_source, check, publish
+        from ...meta_workflow import review_report, validate_outputs, spec_source, check, publish
         from ...node_errors import NodeError
         try:
             validate_outputs(self.config, report=True)
@@ -51,6 +51,6 @@ class CheckWorkflowSpecNode(Node):
                 receipt = check_draft(NodeFactory(), value, context.memory_bank.read_persistent(self.config['contract_snapshot_vault_key']),
                                       flow=report.get('flow_analysis'))
                 report['selection_sha256'] = receipt['contracts_sha256']
-            publish(self.config, context, value, 'var', report)
+            publish(self.config, context, value, 'var', review_report(report))
         except NodeError as exc:
             context.signal_error(exc)

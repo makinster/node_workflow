@@ -170,3 +170,15 @@ First real drafts with Merge: F2-01 fully right; F2-02 blocked itself, saying Br
 `branch_count`, but its output line shows the two default ports. The draft guidance
 now says `branch_count` sets the number of paths and that Merge has `path_a` to
 `path_e` unless `input_slots` raises it. Sets 1, 2 and 3 do not see this text.
+
+## Judge report size
+
+Runs 000048 and 000049 failed calibration on the old pair
+`helper_json_extra_fields_allowed`: the verdict was right, but the reply split its one
+requirement into several rows. The pair passed in 000044. The only difference in its
+judge question since then is the raw flow analysis added to the check report, which
+took it from 5,854 to 10,122 characters. The published report now carries each Merge's
+plain summary and any findings; with no Merge and no finding it adds nothing, so these
+older questions match 000044 again. `check` still returns the full analysis, which the
+Stage 1 draft check uses. That this caused the row splitting is a likely cause, not a
+proven one.

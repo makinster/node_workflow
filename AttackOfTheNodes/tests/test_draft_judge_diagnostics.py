@@ -10,7 +10,7 @@ from tools.draft_trials.containment import preparation_record
 
 @pytest.mark.asyncio
 async def test_calibration_reply_and_question_evidence(tmp_path, monkeypatch):
-    from backend.meta_workflow import check
+    from backend.meta_workflow import check, review_report
     from backend.node_errors import NodeError
     from backend.node_factory import NodeFactory
     from backend.secrets_manager import SecretsManager
@@ -56,7 +56,7 @@ async def test_calibration_reply_and_question_evidence(tmp_path, monkeypatch):
             _, expected = await check(NodeFactory(), draft, limit, fail_on_unreachable=True, fail_on_disabled_output=True)
         except NodeError as exc:
             expected = dict(ok=False, code=exc.code, message=str(exc), **exc.details)
-        assert structural == expected
+        assert structural == review_report(expected)
         assert 'note' not in structural
         if row['variant'] == 'good':
             assert structural['ok'] is True
