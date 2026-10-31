@@ -57,7 +57,9 @@ async def test_app_run_shows_escape_refusal():
     e, _ = refused_workflow('escape', 'no')
     app = AttackOfTheNodesApp(e.bus, e.factory, e.wm, e.memory, e.master)
     async with app.run_test(size=(100,40), notifications=True) as pilot:
-        await pilot.press('ctrl+r'); await pilot.pause(0.3)
+        # Call the asynchronous startup handler directly to exercise the safety
+        # net for a caller that skipped the new Run preflight.
+        await app._start_workflow(); await pilot.pause(0.1)
         toasts = [t for t in app.screen.query('Toast') if "Can't start:" in t._notification.message]
         assert len(toasts) == 1 and toasts[0].region.width > 0
         assert 'leads away' in toasts[0]._notification.message

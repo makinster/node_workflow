@@ -1,0 +1,146 @@
+{
+  "schema_version": 1,
+  "base_revision": "821688d461f17166d78ded5dd3fc182b708b929e",
+  "graph_count": 17,
+  "graphs": [
+    {
+      "path": "examples/ask_and_branch.json",
+      "pointer": "",
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "path": "examples/ask_hosted_question.json",
+      "pointer": "",
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "path": "examples/ask_local_model.json",
+      "pointer": "",
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "path": "examples/catch_http_errors.json",
+      "pointer": "",
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "path": "examples/context_pack.json",
+      "pointer": "",
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "path": "examples/fetch_and_save.json",
+      "pointer": "",
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "path": "examples/pause_and_wait.json",
+      "pointer": "",
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "path": "examples/summarise_file.json",
+      "pointer": "",
+      "errors": [],
+      "warnings": [
+        "file_not_found",
+        "secret_missing"
+      ]
+    },
+    {
+      "path": "examples/vault_handoff.json",
+      "pointer": "",
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "path": "docs/delivery_tests/draft-a-workflow.json",
+      "pointer": "/trial/draft_spec",
+      "errors": [
+        {
+          "node": "start_node",
+          "code": "undeclared_port",
+          "message": "Orphaned output connection on undeclared port 'default/Greeting' (node type 'start_node' has no such output)"
+        },
+        {
+          "node": "text_output_node",
+          "code": "undeclared_port",
+          "message": "Orphaned output connection on undeclared port 'default/Formatted output' (node type 'text_output_node' has no such output)"
+        },
+        {
+          "node": "text_output_node",
+          "code": "undeclared_port",
+          "message": "Orphaned input connection on undeclared port 'input/Input' (node type 'text_output_node' has no such input)"
+        },
+        {
+          "node": "end_node",
+          "code": "undeclared_port",
+          "message": "Orphaned input connection on undeclared port 'input/Input' (node type 'end_node' has no such input)"
+        }
+      ],
+      "warnings": []
+    },
+    {
+      "path": "docs/delivery_tests/draft-a-workflow.json",
+      "pointer": "/retrial/draft_spec",
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "path": "docs/delivery_tests/draft-a-workflow.json",
+      "pointer": "/medium_trial/draft_spec",
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "path": "docs/delivery_tests/fixtures/draft-a-workflow.json",
+      "pointer": "/0/draft",
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "path": "docs/delivery_tests/fixtures/draft-a-workflow.json",
+      "pointer": "/1/draft",
+      "errors": [],
+      "warnings": [
+        "unreachable"
+      ]
+    },
+    {
+      "path": "docs/delivery_tests/fixtures/draft-a-workflow.json",
+      "pointer": "/2/draft",
+      "errors": [],
+      "warnings": [
+        "ignored_fan_out"
+      ]
+    },
+    {
+      "path": "docs/delivery_tests/specs/draft-a-workflow-v2.json",
+      "pointer": "",
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "path": "docs/delivery_tests/specs/draft-a-workflow.json",
+      "pointer": "",
+      "errors": [],
+      "warnings": []
+    }
+  ],
+  "secrets": "Empty local store: no keys read",
+  "scope": "All authored graph objects in examples and docs/delivery_tests; existing full validate_workflow, no execution.",
+  "sources": {
+    "frontend/app.py": "fea05c41dbfcb7af0ffddc0eb7aaf8ad727ce8ff31200f14ffa0ea6e5de2da2c",
+    "frontend/screens/editor.py": "f446b760eced02b940e82a5601ea94c165b76e71be869949d5538370a23b9107",
+    "backend/validator.py": "4a2cdd6e083fc8359d92f302e50cd458b05359c6d30bd836d59ae69d1108e66a",
+    "tests/test_app_run_validation.py": "d91393b7c83eb7e1ae4c5c114da4b0cbf1a92e06df82b59ab9c3a99d3f9e6b16",
+    "tests/test_app_run_compatibility.py": "634b5844f10d2c0cd45a82d44e48261f7618abc60599eb3c65365bdfb69fb3b5"
+  }
+}

@@ -36,7 +36,9 @@ In Help, W/S or up/down scrolls the text; E/Enter closes it. Close stays visible
   until you move. `Esc` also closes the panel. Warning badges on the map
   reflect that last run, not continuous validation.
 - `Ctrl+S`: quick save.
-- `Ctrl+R`: execute workflow.
+- `Ctrl+R`: validate, then save and execute. Errors keep you in the editor and
+  open the Validation panel; repair them and press Run again. Warnings allow
+  execution.
 - `Ctrl+Q`: quit only from the editor.
 
 `A` is not add-node. New nodes are introduced through insert/add flows driven by

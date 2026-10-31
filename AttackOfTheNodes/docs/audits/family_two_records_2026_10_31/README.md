@@ -87,11 +87,12 @@ characters / 256 KiB. Check reports are complete or error at 64,000 characters /
    error-level finding from the one shared analysis before creating a run,
    including escaping required routes, omitted children and impossible/missing
    Wait targets. Both conditional inputs refuse with a plain repair message;
-   App Run displays `Can't start`, and a child call produces `child_flow_invalid`.
+   App Run now shows the shared Validation panel; its startup safety handler
+   retains `Can't start`, and a child call produces `child_flow_invalid`.
    Seven new real-engine receipt scenarios cover these refusals. General
-   `action_run_workflow` validation remains out of scope: the [validator audit](VALIDATOR_STARTUP_AUDIT.md)
-   lists the other validator errors that still enter a run, plus compatibility
-   results. No second analysis or new general validator call was added.
+   `action_run_workflow` now uses the full validator: the [validator audit](VALIDATOR_STARTUP_AUDIT.md)
+   distinguishes the old direct-start probes from current App Run preflight.
+   No second analysis was added; the UI reuses the existing full validator.
 2. The plan's original retained-winner-depth wording is superseded by the owner's
    requested repair: retain election identity, then restore opening Branch depth.
 3. R1 is approved, despite older provisional language. Current graph proofs

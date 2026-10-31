@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "recipe": "Start(seed) -> Text Output(label empty) -> Text Output(source Vault, key output_log, template {input[0]}, label empty) -> End(record_line false)",
+  "validator_errors": [
+    {
+      "code": "undeclared_vault_key",
+      "message": "Membank input source not declared: output_log"
+    }
+  ],
+  "raw_engine_outputs": [
+    "seed",
+    "seed"
+  ],
+  "raw_engine_errors": [],
+  "app_run": "refused before a new run; editor validation panel",
+  "panel_messages": [
+    "Membank input source not declared: output_log"
+  ],
+  "finding": "Implicit internal output_log writer is not a declared user Vault writer; the checker rejects a graph that raw execution supports. Report only; no check changed."
+}

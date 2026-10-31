@@ -6,6 +6,24 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-31 — App Run uses the shared checker
+
+From main `821688d`, `codex/app-run-validation`: Run validates before saving or
+switching screens, displays errors using the editor's manual Validation panel,
+and starts warnings-only graphs. Startup `Can't start` handling remains a safety
+net. No backend validator rule, subworkflow/RunService, trial or admission change.
+
+Real pilots cover tombstones, two Starts, an escaping route, repair-and-rerun,
+warnings, starter, late Vault/file values and invalid rerun from execution.
+The full validator checks 17 bundled graph objects: 16 error-free, one historical
+failed trial draft with four invalid-port errors. A separate probe found that
+reading internal `output_log` after Text Output writes it succeeds in raw
+execution but gets `undeclared_vault_key`; reported without changing the check.
+The [audit](audits/app_run_validation_2026_10_31/README.md) records a proposal and
+static-check limits. Three review dependencies and both claims receipts refreshed;
+no metadata claim changed. Full suite: **5,147 passed, 187 skipped**, 51.88 seconds.
+No real API calls.
+
 ## 2026-10-31 — PR #165 startup refusal follow-up
 
 On the same branch after `eaba8b3`, the MergePlan adapter now refuses every error

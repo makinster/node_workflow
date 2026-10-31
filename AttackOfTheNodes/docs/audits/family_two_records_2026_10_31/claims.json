@@ -30,9 +30,9 @@
     "tests/flow_claim_scenarios.py": "ceb7cf2cfe9acb7ada577b4ecef00d687c75a8adf1143b53c693991b131c1d7f",
     "tests/flow_engine_scenarios.py": "c0edde92649c44fe54b99f2efd8941eb2468d52fc8198fb53f7a86b1b01e1118",
     "tests/test_flow_claims.py": "cb78e3a902b498b9d55c4854c64df1dce9aacc695bbc9333dfd674c4f5bbd9e2",
-    "tests/test_flow_startup_refusals.py": "3807167af073974851ef1d09774ae32e2cc496e69c3bced8bea865036d58e454",
+    "tests/test_flow_startup_refusals.py": "2eddf3dfb2938773e747f7a7d8cd5f057843e37aeb58a0a4907771d50d44565e",
     "tests/test_merge_arrival_runtime.py": "6ef32f956034ee51f5c3e14e445b9d731f657d23cc0bc2c60292230600adb871",
-    "tests/test_merge_plan_integration.py": "0f4c76eab72206e300f488275d34c903ac3af25d4bc54344f858160e8fd35446",
+    "tests/test_merge_plan_integration.py": "4e306ec5c09af015f4c29b67891051afebeec11c5da5d000dc06a1ddc492e202",
     "tests/test_payload_plan_integration.py": "c0dbb2272d63badd4dc74639d0fbaf0f5f3819a9c31d01232e1b97e7d7a8649a",
     "tests/test_wait_until_reachability.py": "3993fa9506b778a4e014be0117426617e1a9edababd80591362e4133df755274"
   },
