@@ -1,0 +1,55 @@
+{
+  "scope": "Saved workflows and delivery JSON specs; read-only normal-mode analysis, no execution",
+  "count": 8,
+  "files": [
+    {
+      "path": "docs/delivery_tests/draft-a-workflow.json#/trial/draft_spec",
+      "errors": [],
+      "previously_refused": false,
+      "newly_refused": false
+    },
+    {
+      "path": "docs/delivery_tests/draft-a-workflow.json#/retrial/draft_spec",
+      "errors": [],
+      "previously_refused": false,
+      "newly_refused": false
+    },
+    {
+      "path": "docs/delivery_tests/draft-a-workflow.json#/medium_trial/draft_spec",
+      "errors": [],
+      "previously_refused": false,
+      "newly_refused": false
+    },
+    {
+      "path": "docs/delivery_tests/fixtures/draft-a-workflow.json#/0/draft",
+      "errors": [],
+      "previously_refused": false,
+      "newly_refused": false
+    },
+    {
+      "path": "docs/delivery_tests/fixtures/draft-a-workflow.json#/1/draft",
+      "errors": [],
+      "previously_refused": false,
+      "newly_refused": false
+    },
+    {
+      "path": "docs/delivery_tests/fixtures/draft-a-workflow.json#/2/draft",
+      "errors": [],
+      "previously_refused": false,
+      "newly_refused": false
+    },
+    {
+      "path": "docs/delivery_tests/specs/draft-a-workflow-v2.json#",
+      "errors": [],
+      "previously_refused": false,
+      "newly_refused": false
+    },
+    {
+      "path": "docs/delivery_tests/specs/draft-a-workflow.json#",
+      "errors": [],
+      "previously_refused": false,
+      "newly_refused": false
+    }
+  ],
+  "unanalysed": []
+}

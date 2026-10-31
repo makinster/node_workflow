@@ -4496,16 +4496,17 @@
     "new_errors": []
   },
   "flow_analysis_recheck": {
-    "source_revision": "64f3f0db01e1889b40078b19694f5b6560a94ee8",
-    "date": "2026-10-30",
+    "source_revision": "eaba8b354d05dea6ccd2e59d6b27da3ebf1cfbd7",
+    "date": "2026-10-31",
     "sources": {
-      "backend/authoring.py": "a3fe3b3a98177ce7e6d7600986d78d3da3c2e924c20ba6bc2fc294c00246b094",
+      "backend/authoring.py": "6d65af429d9afe67bb545c67698e3a71a6799bac121fd437311299c76ba0d8a3",
       "backend/branch_health.py": "692a001f949d36a144e4f252ac81c72e536a674038c1147f3f3469e91f2da751",
       "backend/validator.py": "4a2cdd6e083fc8359d92f302e50cd458b05359c6d30bd836d59ae69d1108e66a",
-      "backend/flow_behaviors.py": "255b99074aa05c30cf42de04cf9435487e645dc7aacef390007002392139ef1a",
+      "backend/flow_behaviors.py": "6bfad33b53fadf04de7bbf3b0cf8746ab62c76087e783058fcb55652ec89f39e",
       "backend/validation_codes.py": "5c6267fd9d7f555850564049fc4921451d60276f73427870cf21a6fa7a6f0443",
-      "tests/test_flow_behaviors.py": "2184506cda3a24a8e6c3edc286299f5a09c1b376ed44ca02926ed9d4d7cdb919"
+      "tests/test_flow_behaviors.py": "e4303ff2a3ebe56bef7dad04afcc1d3ef6f1dba84f87e2b71697d02b51904cb5",
+      "tests/test_flow_startup_refusals.py": "3807167af073974851ef1d09774ae32e2cc496e69c3bced8bea865036d58e454"
     },
-    "scope": "Shared graph checks only; node execute code, record contents and admission are unchanged. Dependency recheck is not independent admission review."
+    "scope": "Normal startup refuses every error-level shared flow finding; final flow records and real-engine receipts refreshed. No admission change; local dependency recheck is not independent admission review."
   }
 }

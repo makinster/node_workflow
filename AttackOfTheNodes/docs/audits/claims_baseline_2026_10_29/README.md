@@ -283,5 +283,5 @@ The 57 explicit-plan cases remain, alongside 30 startup integration cases.
 
 Generic flag checks remain protocol-level tests; they do not prove join or wait
 coordination through callback mocks. The separate [real-engine receipt](../family_two_records_2026_10_31/README.md)
-binds 88 scenarios to source hashes and observed runs. Metadata review and drafter
+binds 95 scenarios to source hashes and observed runs. Metadata review and drafter
 admission are separate; the generic receipt now reads actual record status.

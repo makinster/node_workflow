@@ -551,7 +551,7 @@ def reached_with_open_family(all_nodes: Mapping[str, dict], target: str, factory
 
 
 class MergePlanError(ValueError):
-    """The workflow cannot start because its Merge connections are unsupported."""
+    """The workflow cannot start because its flow has an error."""
 
 
 def merge_plans_from_analysis(report: FlowAnalysis):
@@ -563,9 +563,12 @@ def merge_plans_from_analysis(report: FlowAnalysis):
     """
     from .run_context import MergePlan, MergeSlot
 
-    uncertain = next((f for f in report.findings if f.code == 'flow_needs_review' and f.level == 'error'), None)
-    if uncertain:
-        raise MergePlanError(uncertain.message)
+    error = next((f for f in report.findings if f.level == 'error'), None)
+    if error:
+        message = error.message
+        if error.repair:
+            message += ' ' + error.repair
+        raise MergePlanError(message)
     plans = {}
     for mid, merge in report.merges.items():
         if merge.shape_status != 'proved':

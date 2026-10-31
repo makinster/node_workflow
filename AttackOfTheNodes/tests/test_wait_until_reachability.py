@@ -20,6 +20,7 @@ from backend.events import (
     RECOVERY_OPTIONS_AVAILABLE,
     USER_INPUT_NEEDED,
 )
+from backend.flow_behaviors import MergePlanError
 from backend.run_context import MergePlan, MergeSlot
 from backend.master_state import MasterState
 from backend.memory_bank import MemoryBank
@@ -132,19 +133,17 @@ async def test_wait_until_fails_when_its_targets_only_source_fails():
     assert [r["node_id"] for r in recoveries].count(waiter) == 1
 
 
-async def test_target_with_no_incoming_connections_is_unreachable_at_once():
+async def test_target_with_no_incoming_connections_is_refused_before_start():
     bus, workflow_map, master = _services()
     recoveries = _recoveries(bus, master)
     start = workflow_map.add_node("start_node")
     orphan = workflow_map.add_node("no_op_node")
-    waiter = _waiter_on(workflow_map, orphan, start, "default")
+    _waiter_on(workflow_map, orphan, start, "default")
 
-    assert await master.start_workflow()
-    await _finish(master)
-
-    assert len(recoveries) == 1
-    assert recoveries[0]["node_id"] == waiter
-    assert "no incoming connections" in recoveries[0]["error_message"]
+    with pytest.raises(MergePlanError, match="cannot run on an active control path"):
+        await master.start_workflow()
+    assert master.current_run_id is None and master.run_context is None
+    assert not recoveries and not master._supervisor_tasks
 
 
 async def test_target_on_an_untaken_conditional_port_is_unreachable():
@@ -246,8 +245,13 @@ async def test_stale_supervisor_marks_completions_only_in_its_own_run():
     waiter = workflow_map.add_node("wait_until_node")
     target = workflow_map.add_node("no_op_node")
     workflow_map.update_node_config(waiter, {"target_node_ids": target})
-    workflow_map.connect(start, "default", waiter, "input")
-    workflow_map.connect(waiter, "default", target, "input")
+    fork = workflow_map.add_node("branch_node")
+    delay = workflow_map.add_node("sleep_node")
+    workflow_map.update_node_config(delay, {"duration": 0.5})
+    workflow_map.connect(start, "default", fork, "input")
+    workflow_map.connect(fork, "path_a", waiter, "input")
+    workflow_map.connect(fork, "path_b", delay, "input")
+    workflow_map.connect(delay, "default", target, "input")
 
     assert await master.start_workflow()
     first_run = master.run_context

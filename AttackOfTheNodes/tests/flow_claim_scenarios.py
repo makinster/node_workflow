@@ -55,3 +55,8 @@ add('W2','test_failed_merge_releases_wait_until_without_completion')
 
 add('M1','test_manager_reader_writer_parallel_merge_and_end_branch',module='test_payload_plan_integration',shown_slot='path_a',expected='first\n')
 add('W2','test_wait_until_fails_when_its_target_errors_and_its_branch_is_terminated',module='test_wait_until_reachability')
+
+# Owner decision 7: refusal at the same direct startup entry point as App Run.
+for kind,greeting in [('escape','yes'),('escape','no'),('omitted','yes'),('omitted','no'),('impossible','yes'),('missing','yes')]:
+    add('G2','test_app_style_start_refuses_flow_error_without_a_run',module='test_flow_startup_refusals',kind=kind,greeting=greeting)
+add('G2','test_escaping_child_is_a_typed_subworkflow_error',module='test_flow_startup_refusals')

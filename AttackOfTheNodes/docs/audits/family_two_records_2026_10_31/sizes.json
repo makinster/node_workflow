@@ -35,20 +35,20 @@
       "bytes": 20728
     },
     "all_Compact_Text": {
-      "characters": 56674,
-      "bytes": 56739
+      "characters": 56693,
+      "bytes": 56758
     },
     "all_Compact_JSON": {
-      "characters": 78482,
-      "bytes": 78504
+      "characters": 78501,
+      "bytes": 78523
     },
     "all_Detailed_Text": {
-      "characters": 125006,
-      "bytes": 125107
+      "characters": 125025,
+      "bytes": 125126
     },
     "all_Detailed_JSON": {
-      "characters": 141233,
-      "bytes": 141291
+      "characters": 141252,
+      "bytes": 141310
     },
     "admitted_Brief_Text": {
       "characters": 8855,
@@ -76,8 +76,8 @@
     }
   },
   "record_bytes": {
-    "merge_node": 2523,
-    "wait_until_node": 1961,
+    "merge_node": 2520,
+    "wait_until_node": 1983,
     "branch_end_node": 1308
   },
   "caps": {
@@ -93,7 +93,7 @@
   "provenance": {
     "schema_version": 1,
     "policy_sha256": "374ef4938ed7c77a2aa5000e460391415e399bf5547b46b81bb9f6e01cbc787a",
-    "source_sha256": "b93d9b0e5dfa6c290696267e144ad4ac758bed3b0f74fb0566d3d6918f14f498",
+    "source_sha256": "6bfad33b53fadf04de7bbf3b0cf8746ab62c76087e783058fcb55652ec89f39e",
     "runtime_sources": {
       "master_state.py": "cd7ad2062283b5d717406f8f813870361432b06cb19f96343edeb3971d99f45e",
       "supervisor.py": "e70fb39f8db368372e25f1ed52894522c777e339ae497174c63be131434804f2",

@@ -19,7 +19,7 @@ Merge and Wait Until gain final records; Beacon remains a reviewed, visible edit
 joining tool, outside the drafter. Set/Get remain pending and not dev-only.
 Inventory: 18 reviewed / 25 pending / 16 dev-only, total 59.
 
-[claims.json](claims.json) binds 88 real-engine scenarios to source hashes,
+[claims.json](claims.json) binds 95 real-engine scenarios to source hashes,
 record digests, policy provenance and observed run results. The shared runner
 calls the actual source test, observes actual starts/finalization and retains
 Merge/Wait/Beacon outputs, completion counts, errors and cleanup. It does not
@@ -34,11 +34,11 @@ substitute coordinator callbacks. Scenario definitions live in
 | M7–M9 failure, cancellation, isolation, standalone | joined failure, independent End/failure, abort/recovery, Stop during wait, stale callbacks, two real RunServices, standalone payload presence |
 | B1 real nesting vs sequential groups | six/eight normal automatic-plan stages, nested depth refusal |
 | W1–W2 own value and sticky completion | six payloads × four target formats, absent payload, empty targets, shared/repeated Wait, fresh runs, timeout, Stop and failed targets |
-| G1/G2 refused graph forms | existing shared-analyser tests in `test_flow_behaviors.py` and normal-start integration tests: escaping routes, repeated joins, inner/outer, Merge/control-loop restrictions |
+| G1/G2 refused graph forms | seven new actual direct-start/child refusal scenarios plus existing shared-analyser tests in `test_flow_behaviors.py` and normal-start integration tests: escaping routes, repeated joins, inner/outer, Merge/control-loop restrictions |
 | C1 standard flags | refreshed generic [claims receipt](../claims_baseline_2026_10_29/claims.json); explicitly protocol-level, not coordinator proof |
 | E1 editor compatibility | existing real Textual Merge config/Beacon selector tests bound in Beacon's manifest; saving preserves slots, selection and unmatched warnings |
 
-The receipt exporter re-executes all 88 scenarios. It records local source and
+The receipt exporter re-executes all 95 scenarios. It records local source and
 runtime rechecks, **not an independent human review or family admission**. The PR
 still requires independent review. Reviewed claims were not weakened to obtain
 a passing result.
@@ -66,16 +66,16 @@ Exact character/UTF-8 counts and provenance: [sizes.json](sizes.json).
 | Text catalogue | Before chars | After chars |
 |---|---:|---:|
 | All Brief | 13,698 | 15,751 |
-| All Compact | 50,385 | 56,674 |
-| All Detailed | 118,717 | 125,006 |
+| All Compact | 50,385 | 56,693 |
+| All Detailed | 118,717 | 125,025 |
 | Existing admitted Brief | 7,997 | 8,855 |
 | Existing admitted Compact | 25,897 | 27,536 |
 | Existing admitted Detailed | 47,419 | 49,058 |
 
-Records: Merge 2,523 bytes, Wait Until 1,961, Beacon 1,308; cap 4,096.
+Records: Merge 2,520 bytes, Wait Until 1,983, Beacon 1,308; cap 4,096.
 Admitted Compact JSON is 37,601 characters, within the unchanged 50,000-contract
 budget; existing v2 context cap is 100,000. Whole-registry Compact text fits the
-default 64,000 catalogue cap. Whole-registry Compact JSON (78,482) and Detailed
+default 64,000 catalogue cap. Whole-registry Compact JSON (78,501) and Detailed
 text/JSON require an explicit larger catalogue cap or narrower selection, as
 whole-registry Detailed already did. The configurable ceiling stays 200,000
 characters / 256 KiB. Check reports are complete or error at 64,000 characters /
@@ -83,14 +83,15 @@ characters / 256 KiB. Check reports are complete or error at 64,000 characters /
 
 ## Plan/code disagreements and limits
 
-1. **General validation can still be bypassed.** Validator/spec checks refuse
-   `merge_required_path_escape`. A real direct-start probe instead ran a split
-   with A→Merge and B→Conditional→End (the other conditional route led to Merge),
-   accepted startup and published only `{'path_a': 'A'}`. App Run uses this direct
-   startup path. RunService's normal validation rejects it. Automatic plan
-   construction checks unproved slot shapes, not every validation diagnostic.
-   The record therefore says *Validation refuses* escaping routes. This existing
-   entry-point gap is reported for the owner, not repaired outside this milestone.
+1. **Flow startup gap fixed in the follow-up.** Normal startup now rejects every
+   error-level finding from the one shared analysis before creating a run,
+   including escaping required routes, omitted children and impossible/missing
+   Wait targets. Both conditional inputs refuse with a plain repair message;
+   App Run displays `Can't start`, and a child call produces `child_flow_invalid`.
+   Seven new real-engine receipt scenarios cover these refusals. General
+   `action_run_workflow` validation remains out of scope: the [validator audit](VALIDATOR_STARTUP_AUDIT.md)
+   lists the other validator errors that still enter a run, plus compatibility
+   results. No second analysis or new general validator call was added.
 2. The plan's original retained-winner-depth wording is superseded by the owner's
    requested repair: retain election identity, then restore opening Branch depth.
 3. R1 is approved, despite older provisional language. Current graph proofs
@@ -136,4 +137,25 @@ characters / 256 KiB. Check reports are complete or error at 64,000 characters /
 - New `test_flow_claims.py` plus scenario modules: data-driven actual-engine
   evidence, receipt freshness and fixed run/timeout/isolation cases.
 
-Full suite: **5,089 passed, 187 skipped in 48.27 seconds**. No real API calls.
+Initial block-3 suite: **5,089 passed, 187 skipped**. Follow-up verification is recorded below. No real API calls.
+
+## Startup refusal follow-up
+
+Owner decision 7 is enforced for normal App Run startup using the captured graph
+and existing shared analysis. The adapter checks severity rather than a code
+allow-list, so future error findings cannot silently become runnable. The same
+`MergePlanError` preserves App Run notifications and typed child errors. Existing
+explicit-plan runtime fixtures remain available. Merge/Wait records now describe
+startup refusal, and manifests, generic claims and the 95-scenario real-engine
+receipt are refreshed.
+
+New `test_flow_startup_refusals.py` covers both escaping inputs, omitted children,
+impossible/missing waits, no run/outputs/events, App Run toast, typed child error,
+and severity-based adapter handling. `test_run_lifecycle.py` and
+`test_wait_until_reachability.py` replace downstream-target test scaffolding with
+independent slow paths; their leak/Stop/isolation assertions remain. The latter
+now expects a disconnected target to refuse startup.
+
+Follow-up full suite: **5,105 passed, 187 skipped in 49.31 seconds**. The focused
+startup/lifecycle/reachability suite passed 53 tests. Documentation link checks
+and whitespace checks also pass. No API calls.

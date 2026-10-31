@@ -23,9 +23,9 @@ There are 18 reviewed, 25 pending and 16 dev-only registered types.
 
 The shared flow owner exports bounded versioned templates, policies and source
 provenance in catalogues and checked workflow facts. The source-bound receipt
-executes 88 real-engine scenarios. Full suite: **5,089 passed, 187 skipped**.
+executes 95 real-engine scenarios. Full suite: **5,105 passed, 187 skipped**.
 The [block-3 audit](audits/family_two_records_2026_10_31/README.md) records sizes,
-changed tests and plan differences, including the direct-start validation gap.
+changed tests and plan differences, including the repaired flow-startup gap and remaining general validator omissions.
 
 ## Family 2 block 2 — shared graph analysis (2026-10-30)
 

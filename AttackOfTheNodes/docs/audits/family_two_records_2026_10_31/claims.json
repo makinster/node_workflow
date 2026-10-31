@@ -4,7 +4,7 @@
   "provenance": {
     "schema_version": 1,
     "policy_sha256": "374ef4938ed7c77a2aa5000e460391415e399bf5547b46b81bb9f6e01cbc787a",
-    "source_sha256": "b93d9b0e5dfa6c290696267e144ad4ac758bed3b0f74fb0566d3d6918f14f498",
+    "source_sha256": "6bfad33b53fadf04de7bbf3b0cf8746ab62c76087e783058fcb55652ec89f39e",
     "runtime_sources": {
       "master_state.py": "cd7ad2062283b5d717406f8f813870361432b06cb19f96343edeb3971d99f45e",
       "supervisor.py": "e70fb39f8db368372e25f1ed52894522c777e339ae497174c63be131434804f2",
@@ -15,32 +15,33 @@
     }
   },
   "sources": {
-    "backend/flow_behaviors.py": "b93d9b0e5dfa6c290696267e144ad4ac758bed3b0f74fb0566d3d6918f14f498",
+    "backend/flow_behaviors.py": "6bfad33b53fadf04de7bbf3b0cf8746ab62c76087e783058fcb55652ec89f39e",
     "backend/master_state.py": "cd7ad2062283b5d717406f8f813870361432b06cb19f96343edeb3971d99f45e",
     "backend/memory_bank.py": "fe5e8fe144dc6537020f5d5c76a9d5e9dd44e6522ecdeebb2536b46e41cbef9c",
     "backend/node_base.py": "f7fab42eae93a5b98408ae0f95d097d82b72fce8bce646e0b253eb8819d77936",
     "backend/node_errors.py": "13f7cc5b3dd7d41b9c2e4bbf893dfd87dd3357c3eea91e1d940915b93b628292",
-    "backend/node_metadata.py": "be9b011c27ecc78193cac58d8565dfc40b7259041bf0ed1d4784fa4838ee92ab",
+    "backend/node_metadata.py": "e80f6b5f548f1f8385c8a21af788df18631da9b4e2324b6bd4b8e125ba8a1f98",
     "backend/nodes/branch_end_node.py": "cc396e5ba624fa7924a2c2a5f93fe815eada539ee6e645fc0464f59eb9ef97e5",
     "backend/nodes/merge_node.py": "7a38ded6be31d809465b4a95c1b1e6cc45de14f3ae4f8061dfe2d33a084d8692",
     "backend/nodes/wait_until_node.py": "2f596b79b7503a8dc3e701e05c91429acb0e15ae3190c95b962c5a84307df379",
     "backend/run_context.py": "1caa82194f4916a64cf9c66cc829a5b71cc4b468d7aa1e0cd5707a3f9559eb5d",
     "backend/supervisor.py": "e70fb39f8db368372e25f1ed52894522c777e339ae497174c63be131434804f2",
     "backend/wait_registry.py": "d81c4890b3b65ee835bff6d7ef4f85dccead49e2007b2086f197d7b7383ba0ef",
-    "tests/flow_claim_scenarios.py": "a2c914f66368e509d80fee2b1a83a3cee4b440501f014074e943a65de3825315",
+    "tests/flow_claim_scenarios.py": "ceb7cf2cfe9acb7ada577b4ecef00d687c75a8adf1143b53c693991b131c1d7f",
     "tests/flow_engine_scenarios.py": "c0edde92649c44fe54b99f2efd8941eb2468d52fc8198fb53f7a86b1b01e1118",
-    "tests/test_flow_claims.py": "5277b56c569e126712709a7dbfa8e9d929c79f9edbbe3a1834d230ba9b401d0b",
+    "tests/test_flow_claims.py": "cb78e3a902b498b9d55c4854c64df1dce9aacc695bbc9333dfd674c4f5bbd9e2",
+    "tests/test_flow_startup_refusals.py": "3807167af073974851ef1d09774ae32e2cc496e69c3bced8bea865036d58e454",
     "tests/test_merge_arrival_runtime.py": "6ef32f956034ee51f5c3e14e445b9d731f657d23cc0bc2c60292230600adb871",
     "tests/test_merge_plan_integration.py": "0f4c76eab72206e300f488275d34c903ac3af25d4bc54344f858160e8fd35446",
     "tests/test_payload_plan_integration.py": "c0dbb2272d63badd4dc74639d0fbaf0f5f3819a9c31d01232e1b97e7d7a8649a",
-    "tests/test_wait_until_reachability.py": "388fbc2586d7ed3666dde3e30609cc2fc1d1a15bff0c729220c3c6afc15acc85"
+    "tests/test_wait_until_reachability.py": "3993fa9506b778a4e014be0117426617e1a9edababd80591362e4133df755274"
   },
   "records": {
-    "merge_node": "3a8f5754833ead305ef4024d768c393f549d2fffc409ddd7973e12176dd7b1ba",
-    "wait_until_node": "5912e3f6e245deee6b01c7898e44c5d56cc995e10c89b319fc3d09f0c0c5cdcf",
+    "merge_node": "e81c833ac2facb056ccae9c08343d1d0a7487a7372420524cf19b74891ec609c",
+    "wait_until_node": "e5c7039125ef2eed59ca340257c5399e26817768421f67bf25003087b10f1b7a",
     "branch_end_node": "99072bc39d7c0cda5cf3fbd56bd79f25dd7074fe9989a806af95a7e299fe6619"
   },
-  "scenario_count": 88,
+  "scenario_count": 95,
   "observations": [
     {
       "claim": "M1",
@@ -5644,6 +5645,138 @@
               "node": "wait_until_node:4",
               "code": "engine.upstream_unreachable",
               "handled": false
+            }
+          ],
+          "groups_clean": true
+        }
+      ]
+    },
+    {
+      "claim": "G2",
+      "assertions": "tests.test_flow_startup_refusals::test_app_style_start_refuses_flow_error_without_a_run",
+      "params": {
+        "kind": "escape",
+        "greeting": "yes"
+      },
+      "status": "pass",
+      "start_attempts": [
+        {
+          "explicit_plans": false,
+          "refused": "MergePlanError"
+        }
+      ],
+      "runs": []
+    },
+    {
+      "claim": "G2",
+      "assertions": "tests.test_flow_startup_refusals::test_app_style_start_refuses_flow_error_without_a_run",
+      "params": {
+        "kind": "escape",
+        "greeting": "no"
+      },
+      "status": "pass",
+      "start_attempts": [
+        {
+          "explicit_plans": false,
+          "refused": "MergePlanError"
+        }
+      ],
+      "runs": []
+    },
+    {
+      "claim": "G2",
+      "assertions": "tests.test_flow_startup_refusals::test_app_style_start_refuses_flow_error_without_a_run",
+      "params": {
+        "kind": "omitted",
+        "greeting": "yes"
+      },
+      "status": "pass",
+      "start_attempts": [
+        {
+          "explicit_plans": false,
+          "refused": "MergePlanError"
+        }
+      ],
+      "runs": []
+    },
+    {
+      "claim": "G2",
+      "assertions": "tests.test_flow_startup_refusals::test_app_style_start_refuses_flow_error_without_a_run",
+      "params": {
+        "kind": "omitted",
+        "greeting": "no"
+      },
+      "status": "pass",
+      "start_attempts": [
+        {
+          "explicit_plans": false,
+          "refused": "MergePlanError"
+        }
+      ],
+      "runs": []
+    },
+    {
+      "claim": "G2",
+      "assertions": "tests.test_flow_startup_refusals::test_app_style_start_refuses_flow_error_without_a_run",
+      "params": {
+        "kind": "impossible",
+        "greeting": "yes"
+      },
+      "status": "pass",
+      "start_attempts": [
+        {
+          "explicit_plans": false,
+          "refused": "MergePlanError"
+        }
+      ],
+      "runs": []
+    },
+    {
+      "claim": "G2",
+      "assertions": "tests.test_flow_startup_refusals::test_app_style_start_refuses_flow_error_without_a_run",
+      "params": {
+        "kind": "missing",
+        "greeting": "yes"
+      },
+      "status": "pass",
+      "start_attempts": [
+        {
+          "explicit_plans": false,
+          "refused": "MergePlanError"
+        }
+      ],
+      "runs": []
+    },
+    {
+      "claim": "G2",
+      "assertions": "tests.test_flow_startup_refusals::test_escaping_child_is_a_typed_subworkflow_error",
+      "params": {},
+      "status": "pass",
+      "start_attempts": [
+        {
+          "explicit_plans": false
+        },
+        {
+          "explicit_plans": false,
+          "refused": "MergePlanError"
+        }
+      ],
+      "runs": [
+        {
+          "state": "FINISHED",
+          "stopped": false,
+          "pass_number": 1,
+          "outputs": {},
+          "completed": [
+            "end_node:3",
+            "start_node:0",
+            "text_output_node:2"
+          ],
+          "errors": [
+            {
+              "node": "subworkflow_node:1",
+              "code": "child_flow_invalid",
+              "handled": true
             }
           ],
           "groups_clean": true

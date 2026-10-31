@@ -1,0 +1,94 @@
+[
+  {
+    "probe": "deleted_node_stub",
+    "validator_errors": [
+      "deleted_node_stub"
+    ],
+    "startup": "started"
+  },
+  {
+    "probe": "multiple_start_nodes",
+    "validator_errors": [
+      "multiple_start_nodes"
+    ],
+    "startup": "started"
+  },
+  {
+    "probe": "unknown_node_type",
+    "validator_errors": [
+      "unknown_node_type"
+    ],
+    "startup": "started"
+  },
+  {
+    "probe": "missing_node",
+    "validator_errors": [
+      "missing_node",
+      "undeclared_port"
+    ],
+    "startup": "started"
+  },
+  {
+    "probe": "undeclared_port",
+    "validator_errors": [
+      "undeclared_port"
+    ],
+    "startup": "started"
+  },
+  {
+    "probe": "invalid_number",
+    "validator_errors": [
+      "invalid_number"
+    ],
+    "startup": "started"
+  },
+  {
+    "probe": "saved_name_missing",
+    "validator_errors": [
+      "saved_name_missing"
+    ],
+    "startup": "started"
+  },
+  {
+    "probe": "missing_file_path",
+    "validator_errors": [
+      "missing_file_path"
+    ],
+    "startup": "started"
+  },
+  {
+    "probe": "vault_source_key_missing",
+    "validator_errors": [
+      "vault_source_key_missing"
+    ],
+    "startup": "started"
+  },
+  {
+    "probe": "vault_output_key_missing",
+    "validator_errors": [
+      "vault_output_key_missing"
+    ],
+    "startup": "started"
+  },
+  {
+    "probe": "undeclared_vault_key",
+    "validator_errors": [
+      "undeclared_vault_key"
+    ],
+    "startup": "started"
+  },
+  {
+    "probe": "subworkflow_not_found",
+    "validator_errors": [
+      "subworkflow_not_found"
+    ],
+    "startup": "started"
+  },
+  {
+    "probe": "contract_row_invalid",
+    "validator_errors": [
+      "contract_row_invalid"
+    ],
+    "startup": "ContractInputError: missing required input(s): "
+  }
+]

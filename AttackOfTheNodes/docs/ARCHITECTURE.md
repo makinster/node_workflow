@@ -234,11 +234,13 @@ at limit 5 refuses all its children with `branch_depth_exceeded`. The execution
 view receives the restored depth. All coordination state retires per run;
 old-run callbacks cannot affect a new run's completion registry.
 
-General graph validation remains an entry-point responsibility. Validator and
-spec checks reject a required joining path that can escape to End; direct
-`start_workflow()` does not run that general check. App Run currently uses that
-direct entry point. The block-3 audit records this limitation; automatic plan
-construction is not a replacement for full validation.
+Normal startup rejects every error-level finding from the shared analysis before
+creating a run, including required paths escaping Merge, omitted required slots
+and impossible or missing Wait targets. The same `MergePlanError` surfaces in
+App Run and as `child_flow_invalid` in child calls. Explicit MergePlan runtime
+fixtures remain supported. No second analysis is added. Other general validator
+checks remain an entry-point responsibility: App Run still does not call the
+full validator. The block-3 validator audit lists those remaining omissions.
 
 Five input slots is the default, not a fixed maximum. Frontend configuration
 chooses actual slots/Beacon edges through WorkflowMap; refresh is not a license
