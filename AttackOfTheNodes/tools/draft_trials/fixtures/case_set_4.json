@@ -1,6 +1,9 @@
 {
   "schema_version": 1,
-  "admitted": false,
+  "admitted": [
+    1,
+    2
+  ],
   "default_evaluation_stage": 1,
   "cases": [
     {

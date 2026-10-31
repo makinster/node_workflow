@@ -13,6 +13,17 @@ and real-engine run summaries cover all three supported models. See the latest
 Session Log entry for verification: full `pytest -n auto` passes **3,234 tests
 in 35.63 s** after the review fixes.
 
+## Family 2 Stage 1 admission (2026-10-31)
+
+Drafts can now use `merge_node` for one shape only: one split, every path wired
+directly to one collecting Merge, with the result used downstream. Draft checks
+refuse anything beyond it in plain words through the one structural redraft, using
+the shared flow analysis. Wait Until, Merge Beacon and Set/Get stay out. Set 4's
+F2-01/02 and calibration pairs 1/6 join the normal run and `--case-set all`; Stage 2
+stays opt-in. Sets 1, 2 and 3 keep their exact palettes and designer prompts. No
+API calls were made, so this shows nothing yet about drafting quality.
+[Audit, replay comparison and sizes](audits/family_two_stage1_2026_10_31/README.md).
+
 ## Family 2 block 3 — records and depth (2026-10-31)
 
 Merge restores the elected continuing path to its opening Branch depth; six/eight

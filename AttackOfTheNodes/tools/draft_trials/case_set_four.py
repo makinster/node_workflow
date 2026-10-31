@@ -1,4 +1,4 @@
-"""Unadmitted Family 2 evaluation data. Stage 2 is opt-in, never a default suite."""
+"""Family 2 data. F2-01/02 and pairs 1/6 are in the normal run; Stage 2 stays opt-in."""
 from copy import deepcopy
 from pathlib import Path
 
@@ -25,7 +25,7 @@ def case_record(number, root, *, stage=1):
     return dict(version=VERSION, case_set=4, id=number, key=f'F2-{number:02d}',
                 root=root, request=REQUESTS[number-1].replace('ROOT', root), clarification='',
                 expected_status='ready', required_stage=STAGES[number], evaluation_stage=stage,
-                admitted=False, reference_note=REFERENCE_NOTE if number == 3 else '')
+                admitted=STAGES[number] == 1, reference_note=REFERENCE_NOTE if number == 3 else '')
 
 
 def case_ids(stage=1):
@@ -156,7 +156,7 @@ def calibration_pairs(*, stage=1):
         bad=deepcopy(good)
         mutate(bad)
         pairs.append(dict(id=name,number=number,case=case,case_set=4,required_stage=STAGES[case],
-                          admitted=False,good=good,bad=bad))
+                          admitted=STAGES[case]==1,good=good,bad=bad))
     def pick(s):
         s['nodes']['pick']=dict(type='json_path_node',config={'path':'path_a'})
         for e in s['connections']:

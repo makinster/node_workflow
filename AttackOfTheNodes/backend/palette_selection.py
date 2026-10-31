@@ -17,7 +17,16 @@ from .node_errors import NodeError
 ORIGINAL_PALETTE = frozenset('start_node end_node branch_node user_text_input_node text_output_node text_transform_node file_reader_node file_output_node conditional_node concat_node json_path_node'.split())
 ORIGINAL_ROLE_IDS = frozenset('start finish ask_text show_text show_saved_path read_file write_file transform_text choose_path parallel_paths compose_text extract_json join persistent_state vault_state error_route'.split())
 HELPERS = frozenset('find_lines_node read_lines_node check_reply_node context_pack_node'.split())
-ADMITTED = ORIGINAL_PALETTE | HELPERS
+# Frozen boundary of helper set 3; Merge is added beside it, not into it.
+HELPER_PALETTE = ORIGINAL_PALETTE | HELPERS
+# Family 2 Stage 1. Wait Until and sub-path joins wait for Stage 2; Set/Get are not in this milestone.
+STAGE_ONE = frozenset({'merge_node'})
+ADMITTED = HELPER_PALETTE | STAGE_ONE
+# These move together: admission changes the role schema, contracts and provider
+# cache prefixes. A snapshot from another version is stale, never reused.
+ADMISSION_VERSIONS = dict(admission=2, role_schema=2, contracts=2, cache=2, draft_stage=1)
+OUTSIDE_STAGE = 'This is outside this admission stage: '
+ONE_JOIN = 'Use one split, with each path wired directly to its own Merge input.'
 MAX_IDS = 64
 CONTRACT_LIMIT = 50000
 CONTEXT_LIMIT = 100000
@@ -61,6 +70,7 @@ SYNONYMS = {
     'parallel_paths': ('parallel', 'simultaneous'),
     'compose_text': ('combine', 'concatenate', 'concat'),
     'extract_json': ('json', 'field'),
+    'join': ('join', 'merge', 'collect results', 'together after'),
 }
 
 
@@ -246,7 +256,10 @@ async def snapshot(factory, analysis, request, config, *, clarification=''):
     # Refetch once with the expanded identities; no stale draft/check exists yet.
     contracts = await build(factory, dict(config, scope='Exact IDs', type_ids=selected,
                                           detail='Compact', format='Text', max_chars=min(config['max_chars'], CONTRACT_LIMIT)))
-    receipt = dict(schema_version=1, selected_type_ids=selected, initial_type_ids=sorted(initial),
+    # Frozen trial boundaries cannot select Merge and keep their earlier checks.
+    receipt = dict(schema_version=1, admission=ADMISSION_VERSIONS,
+                   draft_stage=ADMISSION_VERSIONS['draft_stage'] if STAGE_ONE <= allowed else None,
+                   selected_type_ids=selected, initial_type_ids=sorted(initial),
                    registry_sha256=registry_revision(factory), request_sha256=digest(request),
                    analysis_sha256=digest(analysis), clarification_sha256=digest(clarification),
                    roles=deepcopy(selection['roles']),
@@ -267,7 +280,8 @@ def read_snapshot(text):
         if not header.startswith(PREFIX):
             raise ValueError('snapshot header')
         receipt = json.loads(header[len(PREFIX):])
-        if (receipt['contracts_sha256'] != digest(contracts)
+        if (receipt['admission'] != ADMISSION_VERSIONS
+                or receipt['contracts_sha256'] != digest(contracts)
                 or receipt['contracts_characters'] != len(contracts)
                 or sorted(re.findall(r'^node ([a-z0-9_]+) \|', contracts, flags=re.M)) != receipt['selected_type_ids']):
             raise ValueError('snapshot binding')
@@ -276,7 +290,44 @@ def read_snapshot(text):
         raise NodeError('selection_invalid', 'Missing or stale selected contract snapshot.') from None
 
 
-def check_draft(factory, draft, text):
+def stage_one_problems(flow):
+    """Plain refusals of anything beyond Stage 1, read from analyze_flow's export.
+
+    The analysis owns the graph facts and admission stage; this only names them.
+    The engine runs these shapes: a refusal here says nothing about what it can do.
+    """
+    kinds = {nid: str(getattr(p['kind'], 'value', p['kind'])) for nid, p in flow['profiles'].items()}
+    merges = flow['merges']
+    problems = []
+    if 'wait' in kinds.values():
+        problems.append('Wait Until gates are not available in drafts yet. Remove the Wait Until node.')
+    if any(h['lineage'] for group in flow['groups'].values() for h in group['handoffs']):
+        problems.append('a split inside a path is not available in drafts yet. ' + ONE_JOIN)
+    if merges:
+        if len(merges) > 1:
+            problems.append('drafts allow one Merge. ' + ONE_JOIN)
+        if sum(kind == 'fork' for kind in kinds.values()) > 1:
+            problems.append('a draft with a Merge allows one split. ' + ONE_JOIN)
+        for mid, merge in merges.items():
+            if not merge['group_roots']:
+                problems.append('a Merge with no split is not available in drafts. ' + ONE_JOIN)
+                continue
+            arrivals = [a for slot in merge['slots'].values() for a in slot['producers']]
+            if any(len(slot['producers']) > 1 for slot in merge['slots'].values()):
+                problems.append('two paths into one Merge input are not available in drafts yet. Give each path its own input.')
+            if any(a['guards'] for a in arrivals):
+                problems.append('a choice or error route before Merge is not available in drafts yet. ' + ONE_JOIN)
+            if merge['independent_ends']:
+                problems.append('every path must reach the Merge; a path ending first is not available in drafts yet. ' + ONE_JOIN)
+            if not any(d['event'] == 'control' and d['source'] == mid and kinds.get(d['target']) != 'finish'
+                       for d in flow['dependencies']):
+                problems.append("the Merge's collected result must feed a later step before End.")
+    if flow['admission_stage'] > ADMISSION_VERSIONS['draft_stage'] and not problems:
+        problems.append(ONE_JOIN)
+    return [OUTSIDE_STAGE + p for p in dict.fromkeys(problems)]
+
+
+def check_draft(factory, draft, text, flow=None):
     receipt = read_snapshot(text)
     selected = set(exact_ids(factory, receipt['selected_type_ids']))
     if receipt['registry_sha256'] != registry_revision(factory):
@@ -284,4 +335,11 @@ def check_draft(factory, draft, text):
     used = {n.get('type') for n in draft.get('nodes', {}).values() if isinstance(n, dict)}
     if used - selected:
         raise NodeError('spec_invalid', 'Draft uses unselected type_ids: ' + ', '.join(sorted(used - selected)))
+    if receipt['draft_stage'] is not None:
+        if flow is None:
+            raise NodeError('selection_invalid', 'Draft check needs the shared flow analysis.')
+        problems = stage_one_problems(flow)
+        if problems:
+            raise NodeError('spec_invalid', 'Workflow spec did not pass.\n' + '\n'.join(problems),
+                            details=dict(problems=problems))
     return receipt

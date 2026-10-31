@@ -1,7 +1,8 @@
-"""Offline Family 2 evidence, not drafter or palette admission.
+"""Offline Family 2 evidence on the real engine.
 
 Usage: python -m tools.draft_trials.family_two --output /fresh/absolute/folder
-Stage 1 is the default. --stage 2 explicitly includes withheld Stage 2 fixtures.
+Stage 1, the admitted shape, is the default. --stage 2 explicitly includes the
+withheld Stage 2 fixtures; it grants no admission.
 There is no inference, judge, real-calls, or admission option.
 """
 import argparse
@@ -18,10 +19,11 @@ def canonical(value):
 
 
 def provenance():
-    from backend.palette_selection import ADMITTED
+    from backend.palette_selection import ADMITTED,ADMISSION_VERSIONS
     from .rules_family_two import POLICY_VERSION
     root=Path(__file__).resolve().parents[2]
     paths=['backend/flow_behaviors.py','backend/node_metadata_review.json','backend/palette_selection.py',
+           'tools/draft_trials/admission.py','docs/delivery_tests/specs/draft-a-workflow-v2.json',
            'tools/draft_trials/rules_family_two.py','tools/draft_trials/family_two_engine.py',
            'tools/draft_trials/family_two.py','tools/draft_trials/rules.py','tools/draft_trials/cases.py',
            'tools/draft_trials/rules_set_two.py','tools/draft_trials/rules_set_three.py',
@@ -31,7 +33,7 @@ def provenance():
            'tools/draft_trials/fixtures/calibration_set_4.json']
     return dict(evaluator_policy=POLICY_VERSION,pass_number=1,admitted=sorted(ADMITTED),
                 source_sha256={p:hashlib.sha256((root/p).read_bytes().replace(b'\r\n',b'\n')).hexdigest() for p in paths},
-                real_api_calls=0,admission_changed=False)
+                real_api_calls=0,admission=ADMISSION_VERSIONS)
 
 
 def typed_equal(a,b):
@@ -93,7 +95,7 @@ async def verify(output,*,stage=1):
         spec=good_draft(n,c['root'])
         rules=check_rules(spec,c)
         rows=[await evidence(spec,c,v,order) for v in fixture_variants(n) for order in ('forward','reverse')]
-        cases.append(dict(id=c['key'],required_stage=c['required_stage'],admitted=False,request=c['request'],
+        cases.append(dict(id=c['key'],required_stage=c['required_stage'],admitted=c['admitted'],request=c['request'],
                           rules=rules,result='pass' if rules['result']=='pass' and all(r['result']=='pass' and r['correct_output'] for r in rows) else 'fail',fixtures=rows))
     for pair in calibration_pairs(stage=stage):
         c=case_record(pair['case'],output/'fixtures'/pair['id'],stage=stage)
@@ -126,12 +128,12 @@ async def verify(output,*,stage=1):
             ok=ok and all(r['outputs']==['pass through'] for r in runs)
         control_rows.append(dict(id=control['id'],required_stage=control['required_stage'],result='pass' if ok else 'fail',
                                  rules=rules,engine=runs,expected_engine=control['expected_engine']))
-    report=dict(schema_version=1,case_set=4,evaluation_only=True,stage=stage,admitted=False,
+    report=dict(schema_version=1,case_set=4,evaluation_only=True,stage=stage,admitted=stage==1,
                 stage_2_default=False,provenance=provenance(),
                 result='pass' if all(r['result']=='pass' for r in cases+pairs+control_rows) else 'fail',cases=cases,calibration=pairs,controls=control_rows,
                 limits=['Two controlled ready orders, not exhaustive interleavings.',
                         'Unsupported local formatting/masking forms require review.',
-                        'No admission, judge-quality or fresh drafting-quality claim.'])
+                        'No judge-quality or fresh drafting-quality claim.'])
     output.mkdir(parents=True,exist_ok=True)
     (output/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
     return report
@@ -143,7 +145,7 @@ def main():
     parser.add_argument('--stage',type=int,choices=(1,2),default=1,help='Offline evaluation stage; 2 includes withheld cases and pairs')
     args=parser.parse_args()
     # Set isolation before importing any backend modules. This command neither
-    # reads the owner library nor enables the production draft palette.
+    # reads the owner library nor changes the production draft palette.
     root=args.output.expanduser()
     if not root.is_absolute() or root.exists() or '..' in root.parts:
         parser.error('--output must be a fresh absolute directory')
@@ -154,7 +156,7 @@ def main():
     report=asyncio.run(verify(root,stage=args.stage))
     print(json.dumps(dict(result=report['result'],case_set=4,evaluation_stage=args.stage,
                           cases=len(report['cases']),pairs=len(report['calibration']),real_api_calls=0,
-                          admitted=False,report=str(root/'report.json'))))
+                          admitted=report['admitted'],report=str(root/'report.json'))))
     return 0 if report['result']=='pass' else 1
 
 

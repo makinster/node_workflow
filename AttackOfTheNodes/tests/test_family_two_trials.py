@@ -1,4 +1,4 @@
-"""Offline set 4, independent collector/provenance oracle and real-engine proof."""
+"""Set 4, independent collector/provenance oracle and real-engine proof."""
 from copy import deepcopy
 import hashlib
 import json
@@ -22,22 +22,20 @@ def relocated(spec,root):
     return json.loads(json.dumps(spec).replace('ROOT',str(root)))
 
 
-def test_frozen_thirty_pairs_and_admission_are_unchanged():
+def test_frozen_thirty_pairs_are_unchanged_and_only_stage_one_is_admitted():
     from tools.draft_trials.cases import calibration_pairs as original
     frozen=(FIXTURES/'calibration.json').read_bytes()
     assert hashlib.sha256(frozen).hexdigest()=='684dc67afa52c557e501501a450c8706c55dc03fa943cb110af039fdff47cbf5'
     assert len(json.loads(frozen))==len(original())==30
-    assert not {'merge_node','wait_until_node','branch_end_node'} & ADMITTED
+    assert 'merge_node' in ADMITTED and not {'wait_until_node','branch_end_node'} & ADMITTED
     assert 'wait' not in ROLE_TYPES
-    assert sets_from_text('all')==[1,2,3]
-    with pytest.raises(ValueError):
-        sets_from_text('4')
+    assert sets_from_text('all')==[1,2,3,4]
 
 
 def test_data_snapshots_and_stage_partitions_are_explicit():
     data=json.loads((FIXTURES/'case_set_4.json').read_text())
     pairs=json.loads((FIXTURES/'calibration_set_4.json').read_text())
-    assert not data['admitted'] and data['default_evaluation_stage']==1
+    assert data['admitted']==[1,2] and data['default_evaluation_stage']==1
     assert [c['key'] for c in data['cases']]==[f'F2-{i:02d}' for i in range(1,6)]
     for row in data['cases']:
         n=row['id']
@@ -50,7 +48,7 @@ def test_data_snapshots_and_stage_partitions_are_explicit():
     assert case_ids()==[1,2] and case_ids(2)==[1,2,3,4,5]
     assert {p['number'] for p in calibration_pairs()}=={1,6}
     assert {p['number'] for p in pairs if p['required_stage']==2}=={2,3,4,5}
-    assert all(not p['admitted'] for p in pairs)
+    assert all(p['admitted']==(p['required_stage']==1) for p in pairs)
     assert good_draft(4)['nodes']['ready']['config']['label']==''
 
 
@@ -93,7 +91,7 @@ async def test_every_fixture_and_pair_has_real_engine_differential_evidence(tmp_
     rows += [f for p in report['calibration'] for v in p['variants'].values() for f in v['fixtures']]
     assert len(rows)==110 and all(r['result']=='pass' for r in rows)
     assert all(r['engine']['files_preserved'] for r in rows if r['engine']['state']=='finished')
-    assert report['provenance']['real_api_calls']==0 and not report['admitted']
+    assert report['provenance']['real_api_calls']==0 and not report['admitted']  # Stage 2 evidence admits nothing.
     assert report['provenance']['source_sha256']['backend/flow_behaviors.py']
     for pair in report['calibration']:
         bad=pair['variants']['bad']['fixtures']
@@ -115,7 +113,7 @@ async def test_every_fixture_and_pair_has_real_engine_differential_evidence(tmp_
 
 async def test_default_offline_evaluation_omits_stage_two(tmp_path):
     report=await verify(tmp_path/'stage-one')
-    assert report['result']=='pass'
+    assert report['result']=='pass' and report['admitted']
     assert [c['id'] for c in report['cases']]==['F2-01','F2-02']
     assert {p['number'] for p in report['calibration']}=={1,6}
     assert all(c['required_stage']==1 for c in report['controls'])

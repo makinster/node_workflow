@@ -20,7 +20,7 @@ from backend.node_metadata import (
 )
 from backend.nodes.data.node_catalogue_node import NodeCatalogueNode
 from backend.palette_selection import (
-    ADMITTED, HELPERS, ORIGINAL_PALETTE, ORIGINAL_ROLE_IDS, ROLE_TYPES, admission, exact_ids,
+    ADMITTED, HELPER_PALETTE, HELPERS, ORIGINAL_PALETTE, ORIGINAL_ROLE_IDS, ROLE_TYPES, STAGE_ONE, admission, exact_ids,
     implemented_not_admitted, positive_matches, validate_analysis,
 )
 from frontend.screens.node_selector import HIDDEN_NODE_TYPES, TABS, NodeSelectorScreen
@@ -211,12 +211,12 @@ async def test_saved_workflow_with_a_dev_node_loads_and_runs(engine):  # noqa: F
 
 def test_beacon_is_out_of_admission_roles_schemas_and_prompts():
     assert BEACON not in ORIGINAL_PALETTE and BEACON not in ADMITTED
-    assert ADMITTED == ORIGINAL_PALETTE | HELPERS and len(ADMITTED) == 15
+    assert ADMITTED == ORIGINAL_PALETTE | HELPERS | STAGE_ONE and len(ADMITTED) == 16
     assert 'branch_beacon' not in ROLE_TYPES and 'branch_beacon' not in ORIGINAL_ROLE_IDS
     assert not {k for roles in ROLE_TYPES.values() for alt in roles for k in alt} & {BEACON}
     schema = json.dumps(analysis_schema())
     assert BEACON not in schema and 'branch_beacon' not in schema
-    for admitted in (ORIGINAL_PALETTE, ADMITTED):
+    for admitted in (ORIGINAL_PALETTE, HELPER_PALETTE, ADMITTED):
         text = json.dumps(configure(deepcopy(SPEC), admitted))
         assert BEACON not in text and 'branch_beacon' not in text
     assert BEACON not in implemented_not_admitted(FACTORY, ADMITTED)

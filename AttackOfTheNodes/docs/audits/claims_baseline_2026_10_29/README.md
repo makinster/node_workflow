@@ -292,3 +292,10 @@ the executable receipt with unchanged observations (234 pass / 179 skip); no
 node source, record, palette or admission change. The separate
 [set-4 receipt](../family_two_set4_2026_10_31/README.md) carries new evaluator/data
 hashes and real-engine results; set 4 is not part of the thirty-pair default.
+
+2026-10-31 Family 2 Stage 1 recheck: `palette_selection.py` and the Check workflow
+spec node changed, so `check_reply_node`'s source hash, the Check node's baseline row
+and its source-contract runtime hash are refreshed. The node's only change passes
+its existing flow report to the draft check; no record text, source option or
+standard flag moved. Merge joins the admitted engine scenarios (normal plus
+supported Vault modes). [Stage 1 audit](../family_two_stage1_2026_10_31/README.md).

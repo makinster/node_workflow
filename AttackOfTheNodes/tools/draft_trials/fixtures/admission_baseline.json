@@ -37,5 +37,91 @@
   "sets_sha256": {
     "1": "c25dcd586660d8ee3102bca8e60ee59970ec8b64ea806c2b626fc747b812094f",
     "2": "b2dc8389980b99c83856de4896af2241eba510320556aa1fd77263ad4d946fb9"
+  },
+  "stage_1": {
+    "base_revision": "821688d",
+    "admission": {
+      "admission": 2,
+      "role_schema": 2,
+      "contracts": 2,
+      "cache": 2,
+      "draft_stage": 1
+    },
+    "type_ids": [
+      "branch_node",
+      "check_reply_node",
+      "concat_node",
+      "conditional_node",
+      "context_pack_node",
+      "end_node",
+      "file_output_node",
+      "file_reader_node",
+      "find_lines_node",
+      "json_path_node",
+      "merge_node",
+      "read_lines_node",
+      "start_node",
+      "text_output_node",
+      "text_transform_node",
+      "user_text_input_node"
+    ],
+    "frozen_helper_type_ids": [
+      "branch_node",
+      "check_reply_node",
+      "concat_node",
+      "conditional_node",
+      "context_pack_node",
+      "end_node",
+      "file_output_node",
+      "file_reader_node",
+      "find_lines_node",
+      "json_path_node",
+      "read_lines_node",
+      "start_node",
+      "text_output_node",
+      "text_transform_node",
+      "user_text_input_node"
+    ],
+    "role_ids": [
+      "ask_text",
+      "check_json_reply",
+      "choose_path",
+      "compose_text",
+      "error_route",
+      "extract_json",
+      "find_in_file",
+      "finish",
+      "join",
+      "pack_context",
+      "parallel_paths",
+      "persistent_state",
+      "read_excerpt",
+      "read_file",
+      "show_saved_path",
+      "show_text",
+      "start",
+      "transform_text",
+      "vault_state",
+      "write_file"
+    ],
+    "withheld_type_ids": [
+      "branch_end_node",
+      "get_variable_node",
+      "set_variable_node",
+      "wait_until_node"
+    ],
+    "case_ids": [
+      1,
+      2
+    ],
+    "pair_ids": [
+      "collect_vs_pick_one",
+      "join_vs_shared_end"
+    ],
+    "stage_1_sha256": "4b2c6db43f86f6648fe652484b8579e2593dadd1646375351138172bc5bf2c35",
+    "frozen_designer_sha256": {
+      "original": "5cd83ba518c3f08d130056ddea795983d9e3d28c6464f102f3d7eed481bbf9aa",
+      "helpers": "d9c0dd4a98b48c3989e528475b9277fa4a2906a3cf79dc8bff4b91f51c356b22"
+    }
   }
 }

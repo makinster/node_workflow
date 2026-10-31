@@ -433,7 +433,7 @@
         "backend/port_types.py": "fba69be8d89a713cfc1e98870544420cd8809e973d0b1079eca397dde17d422a",
         "backend/reply_shape.py": "f10b3e581338160414fb2d27a09a2a35c576f5d28f4a353f9f85a47ec17bb72f",
         "backend/reply_schema.py": "4873fffbf0f34b8f71988686b300bc9ebdc75213babf380dcab10c52d771d779",
-        "backend/palette_selection.py": "d5dad9172faf46c6b69c62d343d2bcba9bd7a9f47e65520383e28e99f73f9e4c"
+        "backend/palette_selection.py": "7713a7a662790987372f8670e8852877f82ecdcf47cf2dd6cea012cd5b9cf7fa"
       },
       "tests": [
         "tests/test_node_claims.py::test_reviewed_palette_scenarios",

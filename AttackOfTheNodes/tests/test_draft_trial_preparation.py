@@ -341,12 +341,12 @@ run_root = root / "runs" / sys.argv[2]
 os.environ["AOTN_DATA_DIR"] = str(run_root / "library")
 from tools.draft_trials import __main__ as cli
 from tools.draft_trials import runner
-from tools.draft_trials.cases import calibration_pairs, case_record, good_draft
+from tools.draft_trials.cases import case_record, good_draft
 original = runner.batch
 
 async def mocked_transport(*args, **kwargs):
     replies = []
-    for pair in calibration_pairs():
+    for pair in runner.current_calibration_pairs():
         replies.extend([runner.meaning("pass"), runner.meaning("fail")])
     case = case_record(1, run_root / "cases/1/fixtures")
     replies.extend([runner.requirements(case), good_draft(1, case["root"]), runner.meaning()])
@@ -355,7 +355,7 @@ async def mocked_transport(*args, **kwargs):
         mock.install(stack)
         report = await original(*args, **kwargs)
     assert not mock.replies
-    assert len(mock.calls) == 63
+    assert len(mock.calls) == 67
     return report
 
 runner.batch = mocked_transport

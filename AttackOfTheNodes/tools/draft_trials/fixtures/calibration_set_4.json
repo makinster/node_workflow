@@ -5,7 +5,7 @@
     "case": 2,
     "case_set": 4,
     "required_stage": 1,
-    "admitted": false,
+    "admitted": true,
     "good": {
       "format": "aotn-workflow/1",
       "name": "Family 2 case 2",
@@ -1147,7 +1147,7 @@
     "case": 1,
     "case_set": 4,
     "required_stage": 1,
-    "admitted": false,
+    "admitted": true,
     "good": {
       "format": "aotn-workflow/1",
       "name": "Family 2 case 1",

@@ -72,7 +72,7 @@ async def test_full_set_two_mock_batch_reports_statuses_and_case_set(tmp_path):
     report=await runner.batch(tmp_path,case_set=2)
     assert report['result']=='pass',report
     assert report['case_set']==2 and report['case_count']==10
-    assert report['model_calls']==dict(attempted=87,succeeded=87) # 60 calibration + 27 case calls
+    assert report['model_calls']==dict(attempted=91,succeeded=91) # 64 calibration + 27 case calls
     assert report['fixture_count']==23
     by_id={r['case']:r for r in report['cases']}
     assert by_id[5]['expected_outcome']=='clarified_workflow'
@@ -85,7 +85,7 @@ async def test_full_set_two_mock_batch_reports_statuses_and_case_set(tmp_path):
         assert row['behavior']['result']=='not_applicable'
         assert not list((tmp_path/f'cases/{number}/drafts').glob('*'))
     calibration=json.loads((tmp_path/'calibration-report.json').read_text())
-    assert len(calibration['fixtures'])==60 and calibration['judge_false_passes']==0
+    assert len(calibration['fixtures'])==64 and calibration['judge_false_passes']==0
 
 
 @pytest.mark.asyncio
@@ -138,7 +138,7 @@ async def test_status_without_reason_is_not_fully_right(tmp_path,number):
 
 def test_bad_case_set_rejected_before_creating_root(tmp_path):
     root=tmp_path/'unused'
-    proc=subprocess.run([sys.executable,'-m','tools.draft_trials','--trial-root',str(root),'--case-set','4'],
+    proc=subprocess.run([sys.executable,'-m','tools.draft_trials','--trial-root',str(root),'--case-set','5'],
                         cwd=runner.APP,text=True,capture_output=True,timeout=10)
     assert proc.returncode!=0 and not root.exists()
 
