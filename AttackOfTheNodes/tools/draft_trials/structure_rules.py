@@ -143,7 +143,6 @@ def check_required_structure(spec, declaration, results, *, allow_additional_con
                 not in (
                     "start_node",
                     "end_node",
-                    "branch_end_node",
                     "branch_node",
                     "conditional_node",
                 )
@@ -232,7 +231,6 @@ def check_required_structure(spec, declaration, results, *, allow_additional_con
                         in (
                             "start_node",
                             "end_node",
-                            "branch_end_node",
                             "branch_node",
                             "conditional_node",
                         )

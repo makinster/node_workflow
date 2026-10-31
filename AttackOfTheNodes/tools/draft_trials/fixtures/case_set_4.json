@@ -1,0 +1,1230 @@
+{
+  "schema_version": 1,
+  "admitted": false,
+  "default_evaluation_stage": 1,
+  "cases": [
+    {
+      "id": 1,
+      "key": "F2-01",
+      "required_stage": 1,
+      "request": "Read ROOT/report-a.txt and ROOT/report-b.txt in parallel. Show both contents once, labelled A then B, after both reads finish.",
+      "expected_status": "ready",
+      "good": {
+        "format": "aotn-workflow/1",
+        "name": "Family 2 case 1",
+        "nodes": {
+          "start": {
+            "type": "start_node",
+            "config": {
+              "greeting": ""
+            }
+          },
+          "split": {
+            "type": "branch_node",
+            "config": {
+              "branch_count": 2
+            }
+          },
+          "join": {
+            "type": "merge_node",
+            "config": {}
+          },
+          "show": {
+            "type": "text_output_node",
+            "config": {
+              "label": "",
+              "template": "A: {input[path_a]}\nB: {input[path_b]}"
+            }
+          },
+          "end": {
+            "type": "end_node",
+            "config": {
+              "record_line": false
+            }
+          },
+          "a": {
+            "type": "file_reader_node",
+            "config": {
+              "file_path": "ROOT/report-a.txt",
+              "input_source": "Configured"
+            }
+          },
+          "b": {
+            "type": "file_reader_node",
+            "config": {
+              "file_path": "ROOT/report-b.txt",
+              "input_source": "Configured"
+            }
+          }
+        },
+        "connections": [
+          {
+            "from": "start.default",
+            "to": "split.input"
+          },
+          {
+            "from": "join.default",
+            "to": "show.input"
+          },
+          {
+            "from": "show.default",
+            "to": "end.input"
+          },
+          {
+            "from": "split.path_a",
+            "to": "a.input"
+          },
+          {
+            "from": "a.default",
+            "to": "join.path_a"
+          },
+          {
+            "from": "split.path_b",
+            "to": "b.input"
+          },
+          {
+            "from": "b.default",
+            "to": "join.path_b"
+          }
+        ]
+      },
+      "variants": [
+        {
+          "name": "plain",
+          "files": {
+            "report-a.txt": "Alpha report",
+            "report-b.txt": "Beta report"
+          },
+          "answers": [],
+          "writes": {},
+          "error": false,
+          "fields": [
+            {
+              "label": "A",
+              "value": "Alpha report",
+              "expression": [
+                "file",
+                "report-a.txt"
+              ]
+            },
+            {
+              "label": "B",
+              "value": "Beta report",
+              "expression": [
+                "file",
+                "report-b.txt"
+              ]
+            }
+          ],
+          "outputs": [
+            "A: Alpha report\nB: Beta report"
+          ]
+        },
+        {
+          "name": "changed",
+          "files": {
+            "report-a.txt": "Café opened",
+            "report-b.txt": "Line one\nLine two"
+          },
+          "answers": [],
+          "writes": {},
+          "error": false,
+          "fields": [
+            {
+              "label": "A",
+              "value": "Café opened",
+              "expression": [
+                "file",
+                "report-a.txt"
+              ]
+            },
+            {
+              "label": "B",
+              "value": "Line one\nLine two",
+              "expression": [
+                "file",
+                "report-b.txt"
+              ]
+            }
+          ],
+          "outputs": [
+            "A: Café opened\nB: Line one\nLine two"
+          ]
+        },
+        {
+          "name": "empty-b",
+          "files": {
+            "report-a.txt": "Alpha report",
+            "report-b.txt": ""
+          },
+          "answers": [],
+          "writes": {},
+          "error": false,
+          "fields": [
+            {
+              "label": "A",
+              "value": "Alpha report",
+              "expression": [
+                "file",
+                "report-a.txt"
+              ]
+            },
+            {
+              "label": "B",
+              "value": "",
+              "expression": [
+                "file",
+                "report-b.txt"
+              ]
+            }
+          ],
+          "outputs": [
+            "A: Alpha report\nB: "
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "key": "F2-02",
+      "required_stage": 1,
+      "request": "Read ROOT/value.json, ROOT/flag.json and ROOT/note.txt at the same time. From value.json take the field named value, and from flag.json the field named flag. Show both and the complete note together, labelled Value, Flag and Note, after all three are ready.",
+      "expected_status": "ready",
+      "good": {
+        "format": "aotn-workflow/1",
+        "name": "Family 2 case 2",
+        "nodes": {
+          "start": {
+            "type": "start_node",
+            "config": {
+              "greeting": ""
+            }
+          },
+          "split": {
+            "type": "branch_node",
+            "config": {
+              "branch_count": 3
+            }
+          },
+          "join": {
+            "type": "merge_node",
+            "config": {}
+          },
+          "show": {
+            "type": "text_output_node",
+            "config": {
+              "label": "",
+              "template": "Value: {input[path_a]}\nFlag: {input[path_b]}\nNote: {input[path_c]}"
+            }
+          },
+          "end": {
+            "type": "end_node",
+            "config": {
+              "record_line": false
+            }
+          },
+          "value": {
+            "type": "file_reader_node",
+            "config": {
+              "file_path": "ROOT/value.json",
+              "input_source": "Configured"
+            }
+          },
+          "value_field": {
+            "type": "json_path_node",
+            "config": {
+              "path": "value"
+            }
+          },
+          "flag": {
+            "type": "file_reader_node",
+            "config": {
+              "file_path": "ROOT/flag.json",
+              "input_source": "Configured"
+            }
+          },
+          "flag_field": {
+            "type": "json_path_node",
+            "config": {
+              "path": "flag"
+            }
+          },
+          "note": {
+            "type": "file_reader_node",
+            "config": {
+              "file_path": "ROOT/note.txt",
+              "input_source": "Configured"
+            }
+          }
+        },
+        "connections": [
+          {
+            "from": "start.default",
+            "to": "split.input"
+          },
+          {
+            "from": "join.default",
+            "to": "show.input"
+          },
+          {
+            "from": "show.default",
+            "to": "end.input"
+          },
+          {
+            "from": "split.path_a",
+            "to": "value.input"
+          },
+          {
+            "from": "value.default",
+            "to": "value_field.input"
+          },
+          {
+            "from": "value_field.default",
+            "to": "join.path_a"
+          },
+          {
+            "from": "split.path_b",
+            "to": "flag.input"
+          },
+          {
+            "from": "flag.default",
+            "to": "flag_field.input"
+          },
+          {
+            "from": "flag_field.default",
+            "to": "join.path_b"
+          },
+          {
+            "from": "split.path_c",
+            "to": "note.input"
+          },
+          {
+            "from": "note.default",
+            "to": "join.path_c"
+          }
+        ]
+      },
+      "variants": [
+        {
+          "name": "plain",
+          "files": {
+            "value.json": "{\"value\": 42}",
+            "flag.json": "{\"flag\": true}",
+            "note.txt": "Hello"
+          },
+          "answers": [],
+          "writes": {},
+          "error": false,
+          "fields": [
+            {
+              "label": "Value",
+              "value": 42,
+              "expression": [
+                "project",
+                "value",
+                [
+                  "file",
+                  "value.json"
+                ]
+              ]
+            },
+            {
+              "label": "Flag",
+              "value": true,
+              "expression": [
+                "project",
+                "flag",
+                [
+                  "file",
+                  "flag.json"
+                ]
+              ]
+            },
+            {
+              "label": "Note",
+              "value": "Hello",
+              "expression": [
+                "file",
+                "note.txt"
+              ]
+            }
+          ],
+          "outputs": [
+            "Value: 42\nFlag: True\nNote: Hello"
+          ]
+        },
+        {
+          "name": "zero-false",
+          "files": {
+            "value.json": "{\"value\": 0}",
+            "flag.json": "{\"flag\": false}",
+            "note.txt": "Hello"
+          },
+          "answers": [],
+          "writes": {},
+          "error": false,
+          "fields": [
+            {
+              "label": "Value",
+              "value": 0,
+              "expression": [
+                "project",
+                "value",
+                [
+                  "file",
+                  "value.json"
+                ]
+              ]
+            },
+            {
+              "label": "Flag",
+              "value": false,
+              "expression": [
+                "project",
+                "flag",
+                [
+                  "file",
+                  "flag.json"
+                ]
+              ]
+            },
+            {
+              "label": "Note",
+              "value": "Hello",
+              "expression": [
+                "file",
+                "note.txt"
+              ]
+            }
+          ],
+          "outputs": [
+            "Value: 0\nFlag: False\nNote: Hello"
+          ]
+        },
+        {
+          "name": "null",
+          "files": {
+            "value.json": "{\"value\": null}",
+            "flag.json": "{\"flag\": true}",
+            "note.txt": "Hello"
+          },
+          "answers": [],
+          "writes": {},
+          "error": false,
+          "fields": [
+            {
+              "label": "Value",
+              "value": null,
+              "expression": [
+                "project",
+                "value",
+                [
+                  "file",
+                  "value.json"
+                ]
+              ]
+            },
+            {
+              "label": "Flag",
+              "value": true,
+              "expression": [
+                "project",
+                "flag",
+                [
+                  "file",
+                  "flag.json"
+                ]
+              ]
+            },
+            {
+              "label": "Note",
+              "value": "Hello",
+              "expression": [
+                "file",
+                "note.txt"
+              ]
+            }
+          ],
+          "outputs": [
+            "Value: None\nFlag: True\nNote: Hello"
+          ]
+        },
+        {
+          "name": "empty-text",
+          "files": {
+            "value.json": "{\"value\": \"\"}",
+            "flag.json": "{\"flag\": false}",
+            "note.txt": "Hello"
+          },
+          "answers": [],
+          "writes": {},
+          "error": false,
+          "fields": [
+            {
+              "label": "Value",
+              "value": "",
+              "expression": [
+                "project",
+                "value",
+                [
+                  "file",
+                  "value.json"
+                ]
+              ]
+            },
+            {
+              "label": "Flag",
+              "value": false,
+              "expression": [
+                "project",
+                "flag",
+                [
+                  "file",
+                  "flag.json"
+                ]
+              ]
+            },
+            {
+              "label": "Note",
+              "value": "Hello",
+              "expression": [
+                "file",
+                "note.txt"
+              ]
+            }
+          ],
+          "outputs": [
+            "Value: \nFlag: False\nNote: Hello"
+          ]
+        },
+        {
+          "name": "list",
+          "files": {
+            "value.json": "{\"value\": [1, 2]}",
+            "flag.json": "{\"flag\": true}",
+            "note.txt": "Hello"
+          },
+          "answers": [],
+          "writes": {},
+          "error": false,
+          "fields": [
+            {
+              "label": "Value",
+              "value": [
+                1,
+                2
+              ],
+              "expression": [
+                "project",
+                "value",
+                [
+                  "file",
+                  "value.json"
+                ]
+              ]
+            },
+            {
+              "label": "Flag",
+              "value": true,
+              "expression": [
+                "project",
+                "flag",
+                [
+                  "file",
+                  "flag.json"
+                ]
+              ]
+            },
+            {
+              "label": "Note",
+              "value": "Hello",
+              "expression": [
+                "file",
+                "note.txt"
+              ]
+            }
+          ],
+          "outputs": [
+            "Value: [1, 2]\nFlag: True\nNote: Hello"
+          ]
+        },
+        {
+          "name": "object",
+          "files": {
+            "value.json": "{\"value\": {\"a\": 1}}",
+            "flag.json": "{\"flag\": true}",
+            "note.txt": "Hello"
+          },
+          "answers": [],
+          "writes": {},
+          "error": false,
+          "fields": [
+            {
+              "label": "Value",
+              "value": {
+                "a": 1
+              },
+              "expression": [
+                "project",
+                "value",
+                [
+                  "file",
+                  "value.json"
+                ]
+              ]
+            },
+            {
+              "label": "Flag",
+              "value": true,
+              "expression": [
+                "project",
+                "flag",
+                [
+                  "file",
+                  "flag.json"
+                ]
+              ]
+            },
+            {
+              "label": "Note",
+              "value": "Hello",
+              "expression": [
+                "file",
+                "note.txt"
+              ]
+            }
+          ],
+          "outputs": [
+            "Value: {'a': 1}\nFlag: True\nNote: Hello"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "key": "F2-03",
+      "required_stage": 2,
+      "request": "Read ROOT/slow.txt on one path. On a second path read ROOT/gather.txt, then split that path in two: one makes an uppercase copy, the other a lowercase copy. When the slow.txt read and both copies have finished, show all three together once, labelled Slow, Upper and Lower.",
+      "expected_status": "ready",
+      "good": {
+        "format": "aotn-workflow/1",
+        "name": "Family 2 case 3",
+        "nodes": {
+          "start": {
+            "type": "start_node",
+            "config": {
+              "greeting": ""
+            }
+          },
+          "split": {
+            "type": "branch_node",
+            "config": {
+              "branch_count": 2
+            }
+          },
+          "join": {
+            "type": "merge_node",
+            "config": {}
+          },
+          "show": {
+            "type": "text_output_node",
+            "config": {
+              "label": "",
+              "template": "Slow: {input[path_a]}\nUpper: {input[path_b]}\nLower: {input[path_c]}"
+            }
+          },
+          "end": {
+            "type": "end_node",
+            "config": {
+              "record_line": false
+            }
+          },
+          "slow": {
+            "type": "file_reader_node",
+            "config": {
+              "file_path": "ROOT/slow.txt",
+              "input_source": "Configured"
+            }
+          },
+          "gather": {
+            "type": "file_reader_node",
+            "config": {
+              "file_path": "ROOT/gather.txt",
+              "input_source": "Configured"
+            }
+          },
+          "children": {
+            "type": "branch_node",
+            "config": {
+              "branch_count": 2
+            }
+          },
+          "upper": {
+            "type": "text_transform_node",
+            "config": {
+              "operation": "uppercase"
+            }
+          },
+          "lower": {
+            "type": "text_transform_node",
+            "config": {
+              "operation": "lowercase"
+            }
+          }
+        },
+        "connections": [
+          {
+            "from": "start.default",
+            "to": "split.input"
+          },
+          {
+            "from": "join.default",
+            "to": "show.input"
+          },
+          {
+            "from": "show.default",
+            "to": "end.input"
+          },
+          {
+            "from": "split.path_a",
+            "to": "slow.input"
+          },
+          {
+            "from": "split.path_b",
+            "to": "gather.input"
+          },
+          {
+            "from": "slow.default",
+            "to": "join.path_a"
+          },
+          {
+            "from": "gather.default",
+            "to": "children.input"
+          },
+          {
+            "from": "children.path_a",
+            "to": "upper.input"
+          },
+          {
+            "from": "upper.default",
+            "to": "join.path_b"
+          },
+          {
+            "from": "children.path_b",
+            "to": "lower.input"
+          },
+          {
+            "from": "lower.default",
+            "to": "join.path_c"
+          }
+        ]
+      },
+      "variants": [
+        {
+          "name": "plain",
+          "files": {
+            "slow.txt": "Slow result",
+            "gather.txt": "Mixed Case"
+          },
+          "answers": [],
+          "writes": {},
+          "error": false,
+          "fields": [
+            {
+              "label": "Slow",
+              "value": "Slow result",
+              "expression": [
+                "file",
+                "slow.txt"
+              ]
+            },
+            {
+              "label": "Upper",
+              "value": "MIXED CASE",
+              "expression": [
+                "operation",
+                "uppercase",
+                [
+                  "file",
+                  "gather.txt"
+                ]
+              ]
+            },
+            {
+              "label": "Lower",
+              "value": "mixed case",
+              "expression": [
+                "operation",
+                "lowercase",
+                [
+                  "file",
+                  "gather.txt"
+                ]
+              ]
+            }
+          ],
+          "outputs": [
+            "Slow: Slow result\nUpper: MIXED CASE\nLower: mixed case"
+          ]
+        },
+        {
+          "name": "changed",
+          "files": {
+            "slow.txt": "Other",
+            "gather.txt": "Ünï Code"
+          },
+          "answers": [],
+          "writes": {},
+          "error": false,
+          "fields": [
+            {
+              "label": "Slow",
+              "value": "Other",
+              "expression": [
+                "file",
+                "slow.txt"
+              ]
+            },
+            {
+              "label": "Upper",
+              "value": "ÜNÏ CODE",
+              "expression": [
+                "operation",
+                "uppercase",
+                [
+                  "file",
+                  "gather.txt"
+                ]
+              ]
+            },
+            {
+              "label": "Lower",
+              "value": "ünï code",
+              "expression": [
+                "operation",
+                "lowercase",
+                [
+                  "file",
+                  "gather.txt"
+                ]
+              ]
+            }
+          ],
+          "outputs": [
+            "Slow: Other\nUpper: ÜNÏ CODE\nLower: ünï code"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "key": "F2-04",
+      "required_stage": 2,
+      "request": "On one path read ROOT/source.txt. On a second path, wait until that read has finished, then show Ready. After both paths finish, show the file text and Ready together once, labelled File and Status.",
+      "expected_status": "ready",
+      "good": {
+        "format": "aotn-workflow/1",
+        "name": "Family 2 case 4",
+        "nodes": {
+          "start": {
+            "type": "start_node",
+            "config": {
+              "greeting": ""
+            }
+          },
+          "split": {
+            "type": "branch_node",
+            "config": {
+              "branch_count": 2
+            }
+          },
+          "join": {
+            "type": "merge_node",
+            "config": {}
+          },
+          "show": {
+            "type": "text_output_node",
+            "config": {
+              "label": "",
+              "template": "File: {input[path_a]}\nStatus: {input[path_b]}"
+            }
+          },
+          "end": {
+            "type": "end_node",
+            "config": {
+              "record_line": false
+            }
+          },
+          "read": {
+            "type": "file_reader_node",
+            "config": {
+              "file_path": "ROOT/source.txt",
+              "input_source": "Configured"
+            }
+          },
+          "wait": {
+            "type": "wait_until_node",
+            "config": {
+              "target_node_ids": [
+                "read"
+              ]
+            }
+          },
+          "ready": {
+            "type": "text_output_node",
+            "config": {
+              "template": "Ready",
+              "label": ""
+            }
+          }
+        },
+        "connections": [
+          {
+            "from": "start.default",
+            "to": "split.input"
+          },
+          {
+            "from": "join.default",
+            "to": "show.input"
+          },
+          {
+            "from": "show.default",
+            "to": "end.input"
+          },
+          {
+            "from": "split.path_a",
+            "to": "read.input"
+          },
+          {
+            "from": "split.path_b",
+            "to": "wait.input"
+          },
+          {
+            "from": "read.default",
+            "to": "join.path_a"
+          },
+          {
+            "from": "wait.default",
+            "to": "ready.input"
+          },
+          {
+            "from": "ready.default",
+            "to": "join.path_b"
+          }
+        ]
+      },
+      "variants": [
+        {
+          "name": "plain",
+          "files": {
+            "source.txt": "Source text"
+          },
+          "answers": [],
+          "writes": {},
+          "error": false,
+          "fields": [
+            {
+              "label": "File",
+              "value": "Source text",
+              "expression": [
+                "file",
+                "source.txt"
+              ]
+            },
+            {
+              "label": "Status",
+              "value": "Ready",
+              "expression": [
+                "literal",
+                "Ready"
+              ]
+            }
+          ],
+          "outputs": [
+            "Ready",
+            "File: Source text\nStatus: Ready"
+          ]
+        },
+        {
+          "name": "changed",
+          "files": {
+            "source.txt": "Other text"
+          },
+          "answers": [],
+          "writes": {},
+          "error": false,
+          "fields": [
+            {
+              "label": "File",
+              "value": "Other text",
+              "expression": [
+                "file",
+                "source.txt"
+              ]
+            },
+            {
+              "label": "Status",
+              "value": "Ready",
+              "expression": [
+                "literal",
+                "Ready"
+              ]
+            }
+          ],
+          "outputs": [
+            "Ready",
+            "File: Other text\nStatus: Ready"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "key": "F2-05",
+      "required_stage": 2,
+      "request": "Read ROOT/note.txt in parallel with ROOT/choice.txt. If choice.txt is exactly yes, make the message Approved; otherwise make the message Needs review. Show the note and whichever message was chosen together once, labelled Note and Decision.",
+      "expected_status": "ready",
+      "good": {
+        "format": "aotn-workflow/1",
+        "name": "Family 2 case 5",
+        "nodes": {
+          "start": {
+            "type": "start_node",
+            "config": {
+              "greeting": ""
+            }
+          },
+          "split": {
+            "type": "branch_node",
+            "config": {
+              "branch_count": 2
+            }
+          },
+          "join": {
+            "type": "merge_node",
+            "config": {}
+          },
+          "show": {
+            "type": "text_output_node",
+            "config": {
+              "label": "",
+              "template": "Note: {input[path_a]}\nDecision: {input[path_b]}"
+            }
+          },
+          "end": {
+            "type": "end_node",
+            "config": {
+              "record_line": false
+            }
+          },
+          "note": {
+            "type": "file_reader_node",
+            "config": {
+              "file_path": "ROOT/note.txt",
+              "input_source": "Configured"
+            }
+          },
+          "choice": {
+            "type": "file_reader_node",
+            "config": {
+              "file_path": "ROOT/choice.txt",
+              "input_source": "Configured"
+            }
+          },
+          "choose": {
+            "type": "conditional_node",
+            "config": {
+              "condition_type": "equals",
+              "right_value": "yes",
+              "left_value_source": "input"
+            }
+          },
+          "yes": {
+            "type": "concat_node",
+            "config": {
+              "template": "Approved"
+            }
+          },
+          "no": {
+            "type": "concat_node",
+            "config": {
+              "template": "Needs review"
+            }
+          }
+        },
+        "connections": [
+          {
+            "from": "start.default",
+            "to": "split.input"
+          },
+          {
+            "from": "join.default",
+            "to": "show.input"
+          },
+          {
+            "from": "show.default",
+            "to": "end.input"
+          },
+          {
+            "from": "split.path_a",
+            "to": "note.input"
+          },
+          {
+            "from": "split.path_b",
+            "to": "choice.input"
+          },
+          {
+            "from": "choice.default",
+            "to": "choose.input"
+          },
+          {
+            "from": "note.default",
+            "to": "join.path_a"
+          },
+          {
+            "from": "choose.true",
+            "to": "yes.input"
+          },
+          {
+            "from": "yes.default",
+            "to": "join.path_b"
+          },
+          {
+            "from": "choose.false",
+            "to": "no.input"
+          },
+          {
+            "from": "no.default",
+            "to": "join.path_b"
+          }
+        ]
+      },
+      "variants": [
+        {
+          "name": "yes",
+          "files": {
+            "note.txt": "Hello",
+            "choice.txt": "yes"
+          },
+          "answers": [],
+          "writes": {},
+          "error": false,
+          "fields": [
+            {
+              "label": "Note",
+              "value": "Hello",
+              "expression": [
+                "file",
+                "note.txt"
+              ]
+            },
+            {
+              "label": "Decision",
+              "value": "Approved",
+              "expression": [
+                "literal",
+                "Approved"
+              ]
+            }
+          ],
+          "outputs": [
+            "Note: Hello\nDecision: Approved"
+          ]
+        },
+        {
+          "name": "no",
+          "files": {
+            "note.txt": "Hello",
+            "choice.txt": "no"
+          },
+          "answers": [],
+          "writes": {},
+          "error": false,
+          "fields": [
+            {
+              "label": "Note",
+              "value": "Hello",
+              "expression": [
+                "file",
+                "note.txt"
+              ]
+            },
+            {
+              "label": "Decision",
+              "value": "Needs review",
+              "expression": [
+                "literal",
+                "Needs review"
+              ]
+            }
+          ],
+          "outputs": [
+            "Note: Hello\nDecision: Needs review"
+          ]
+        },
+        {
+          "name": "not-exact",
+          "files": {
+            "note.txt": "Hello",
+            "choice.txt": "not yes"
+          },
+          "answers": [],
+          "writes": {},
+          "error": false,
+          "fields": [
+            {
+              "label": "Note",
+              "value": "Hello",
+              "expression": [
+                "file",
+                "note.txt"
+              ]
+            },
+            {
+              "label": "Decision",
+              "value": "Needs review",
+              "expression": [
+                "literal",
+                "Needs review"
+              ]
+            }
+          ],
+          "outputs": [
+            "Note: Hello\nDecision: Needs review"
+          ]
+        },
+        {
+          "name": "capital",
+          "files": {
+            "note.txt": "Hello",
+            "choice.txt": "YES"
+          },
+          "answers": [],
+          "writes": {},
+          "error": false,
+          "fields": [
+            {
+              "label": "Note",
+              "value": "Hello",
+              "expression": [
+                "file",
+                "note.txt"
+              ]
+            },
+            {
+              "label": "Decision",
+              "value": "Needs review",
+              "expression": [
+                "literal",
+                "Needs review"
+              ]
+            }
+          ],
+          "outputs": [
+            "Note: Hello\nDecision: Needs review"
+          ]
+        }
+      ]
+    }
+  ]
+}
