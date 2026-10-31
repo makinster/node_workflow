@@ -321,3 +321,10 @@ def test_target_runs_refuse_a_second_show_and_keep_empty_text():
     variant = fixture_variants(1)[0]
     assert not shown_fields_match(['A: Alpha report', 'B: Beta report'], variant)
     assert shown_fields_match(['A: Alpha report\nB: '], fixture_variants(1)[2])
+
+
+def test_draft_guidance_says_how_to_get_more_than_two_paths():
+    # Run 000048: the drafter read Branch's default ports as a fixed limit of two.
+    draft = SPEC['nodes']['draft_question']['config']['template']
+    assert 'set branch_count on the branch_node' in JOIN_DRAFT and JOIN_DRAFT in draft
+    assert 'path_a to path_e unless input_slots' in JOIN_DRAFT

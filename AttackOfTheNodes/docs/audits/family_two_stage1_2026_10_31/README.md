@@ -162,3 +162,11 @@ draft would rely on the judge.
    issue, not this admission. They also say nothing about the sixteen-type drafter.
 8. **Cost.** Ten more calls than before (6 case, 4 judge) plus any redrafts, a third
    cached contract block, and judge prompts of 26–31 thousand characters. Not measured.
+
+## Paid run 000048 and the three-path fix
+
+First real drafts with Merge: F2-01 fully right; F2-02 blocked itself, saying Branch
+"exposes only two parallel outputs". The Branch contract says 2 to 64 and lists
+`branch_count`, but its output line shows the two default ports. The draft guidance
+now says `branch_count` sets the number of paths and that Merge has `path_a` to
+`path_e` unless `input_slots` raises it. Sets 1, 2 and 3 do not see this text.
