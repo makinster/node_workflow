@@ -262,8 +262,7 @@ def test_merge_keeps_its_branch_after_a_mux_is_inserted_inside_the_branch():
     workflow_map.connect(beacon, "default", merge, "path_b")
     closure = f"{branch}:path_b"
     workflow_map.update_node_config(merge, {
-        "branches_to_close": [closure], "carry_forward_branch_id": closure,
-        "selected_input_port": "path_b"})
+        "branches_to_close": [closure], "carry_forward_branch_id": closure})
 
     async def check(app, editor, pilot):
         editor._catch_errors_for(http)

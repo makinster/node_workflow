@@ -941,8 +941,6 @@ class EditorScreen(KeymapScreenMixin, Screen):
                 if str(config.get(key) or "") in stale_keys:
                     config[key] = ""
                     changed = True
-            if str(config.get("selected_input_port") or "") and changed:
-                config["selected_input_port"] = ""
             if changed:
                 config["branches_to_close"] = branches
                 self.workflow_map.update_node_config(merge_id, config)

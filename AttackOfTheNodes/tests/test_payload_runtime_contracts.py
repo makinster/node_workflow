@@ -1,7 +1,6 @@
 """Real source/output routing and explicit terminal-node behavior."""
 import pytest
 from backend.node_factory import NodeFactory
-from backend.supervisor import Supervisor
 from backend.vault_declarations import standard_vault_writes
 from tests.generated.test_file_view_node import _make_context
 
@@ -55,18 +54,25 @@ async def test_text_prompt_retained_after_source_resolution():
 
 
 async def test_text_output_payload_is_captured_before_continuing_connected_path():
-    context, done, errors, _ = _make_context(inputs={'input': ''})
-    node = NodeFactory().create_node('text_output_node','out')
-    await node.execute(context)
-    supervisor = object.__new__(Supervisor)
-    supervisor.current_node_id = 'out'
-    supervisor._memory_bank = context.memory_bank
-    class ConnectedGraph:
-        def find_next_node_id(self, *args, **kwargs):
-            return 'next_node'
-    supervisor._workflow_map = ConnectedGraph()
-    assert supervisor._handle_payload(done[0]) == 'next_node'
-    assert context.memory_bank.read_transient('out','default') == '[Output] '
+    from backend.events import NODE_EXECUTION_UPDATE
+    from tests.test_debug_nodes import _make_services
+
+    master, wm, memory, bus = _make_services()
+    wm.create_new('published text')
+    start, output, end = [wm.add_node(kind) for kind in ('start_node', 'text_output_node', 'end_node')]
+    wm.update_node_config(start, {'greeting': ''})
+    wm.update_node_config(end, {'record_line': False})
+    wm.connect(start, 'default', output, 'input')
+    wm.connect(output, 'default', end, 'input')
+    observed = []
+    bus.subscribe(NODE_EXECUTION_UPDATE, lambda event: observed.append(
+        memory.read_transient(output, 'default'))
+        if event['node_id'] == end and event['status'] == 'running' else None)
+    assert await master.start_workflow(unattended='terminate_branch')
+    await master.wait_for_completion()
+    assert not master.error_handler.get_errors_for_run(master.current_run_id)
+    assert observed == ['[Output] ']
+    assert memory.read_transient(output, 'default') == '[Output] '
 
 
 async def test_end_explicitly_terminates():

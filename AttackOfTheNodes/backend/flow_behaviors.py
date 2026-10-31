@@ -202,15 +202,15 @@ def analyze_flow(all_nodes: Mapping[str, dict], factory=None, *, draft: bool = F
                  max_states: int = 20000) -> FlowAnalysis:
     """Shared app/authoring/drafter/trial entry point; bounded, deterministic, pure.
 
-    Draft mode adds unsupported-shape gates. App mode preserves standalone and
-    repeated hand-built joins, while still rejecting unsafe joins and deadlocks.
+    Draft mode adds admission gates. App mode preserves standalone joins, but
+    rejects unproved/repeated collecting shapes before execution.
     Unknown payload presence is explicit; index-based resource labels are not certified.
     """
     # Explicit full-or-error limit keeps both control and dependency graph
     # traversals below Python's recursion bound; no obligations are truncated.
     if len(all_nodes) > 512:
-        return FlowAnalysis({}, {}, [Finding("error" if draft else "warning", "flow_needs_review", "",
-                            "Flow graph exceeds the 512-node analysis limit; needs review.")], [], [])
+        return FlowAnalysis({}, {}, [Finding("error" if draft or any(n.get("type") == MERGE_NODE_TYPE for n in all_nodes.values()) else "warning", "flow_needs_review", "",
+                            "This workflow is too large to check safely (limit: 512 nodes). Split it into smaller workflows.")], [], [])
     if factory is None:
         from .node_factory import NodeFactory
         factory = NodeFactory()
@@ -258,43 +258,50 @@ def analyze_flow(all_nodes: Mapping[str, dict], factory=None, *, draft: bool = F
             if nid not in colour:
                 visit(nid)
     except RecursionError:
-        findings.append(Finding("error" if draft else "warning", "flow_needs_review", "",
-                                "Flow graph exceeds analysis depth; needs review."))
+        findings.append(Finding("error" if draft or merges else "warning", "flow_needs_review", "",
+                                "This workflow is too deeply connected to check safely. Split it into smaller workflows."))
         return report
     if report.back_edges:
+        for mid, merge in merges.items():
+            merge.shape_status = "needs_review"
+            findings.append(Finding("error", "flow_needs_review", mid,
+                "This Merge is connected through a loop. Remove that connection before running."))
         for source, target in report.back_edges:
             findings.append(Finding("error" if draft else "warning", "flow_loop", source,
                                     "loops are not supported in drafts yet", (source, target)))
         return report
 
     # Trace structural visits, retaining fork lineage and exclusive route guards.
-    # A join settles these incoming lineages, retaining the inherited root.
-    # Repeated joins are reported as needs_review rather than guessing a winner.
+    # A join closes the current group. Keep a path-local closed-join marker
+    # until another fork opens a fresh group, without another graph traversal.
     contexts: dict[str, list[tuple]] = {nid: [] for nid in profiles}
     handoffs: dict[str, list[dict]] = {}
     ends: dict[str, list[str]] = {}
-    stack = [(nid, None, (), (), "", None) for nid, p in profiles.items() if p.entry]
+    already_joined: set[str] = set()
+    stack = [(nid, None, (), (), "", None, None) for nid, p in profiles.items() if p.entry]
     # With no entry, standalone graph fixtures/fragments still get a report.
     # A disabled Branch wire must not turn its unreachable target into an entry.
     incoming = {conn.get("target_node_id") for data in all_nodes.values()
                 for conn in data.get("connections", {}).get("outputs", [])}
     if not stack:
-        stack.extend((nid, None, (), (), "", None) for nid in profiles if nid not in incoming)
+        stack.extend((nid, None, (), (), "", None, None) for nid in profiles if nid not in incoming)
     seen = set()
     while stack:
-        nid, root, lineage, guards, path_name, incoming_edge = stack.pop()
-        state = (nid, root, lineage, guards, path_name, incoming_edge)
+        nid, root, lineage, guards, path_name, incoming_edge, closed_join = stack.pop()
+        state = (nid, root, lineage, guards, path_name, incoming_edge, closed_join)
         if state in seen:
             continue
         seen.add(state)
         if len(seen) > max_states:
-            findings.append(Finding("error" if draft else "warning", "flow_needs_review", nid,
-                                    "Flow graph exceeds the analysis state bound; needs review."))
+            findings.append(Finding("error" if draft or merges else "warning", "flow_needs_review", nid,
+                                    "This workflow has too many possible paths to check safely. Reduce the branches or split it into smaller workflows."))
             return report
         contexts[nid].append((root, lineage, guards))
         profile = profiles[nid]
         if profile.kind == Kind.JOIN:
             merge = merges[nid]
+            if closed_join is not None:
+                already_joined.add(nid)
             if root and root not in merge.group_roots:
                 merge.group_roots.append(root)
             if incoming_edge:
@@ -303,11 +310,13 @@ def analyze_flow(all_nodes: Mapping[str, dict], factory=None, *, draft: bool = F
                                   len(lineage), bool(guards))
                 if arrival not in merge.arrivals:
                     merge.arrivals.append(arrival)
-            lineage, path_name = (), ""
+            root, lineage, path_name, closed_join = None, (), "", nid
         if profile.kind == Kind.FINISH or not edges[nid]:
             if root and lineage and lineage[0][0] == root:
                 ends.setdefault(root, []).append(name(nid))
         if profile.kind == Kind.FORK:
+            if root is None:
+                closed_join = None
             root = root or nid
             children = [e for e in edges[nid] if e[0] != "error"]
             handoff = {"node_id": nid, "parent": path_name or name(nid),
@@ -336,7 +345,7 @@ def analyze_flow(all_nodes: Mapping[str, dict], factory=None, *, draft: bool = F
             if profile.kind == Kind.FORK and port != "error":
                 next_lineage += ((nid, port),)
                 next_name = str((all_nodes[nid].get("config") or {}).get(f"{port}_label") or name(target))
-            stack.append((target, root, next_lineage, next_guards, next_name, (nid, port, slot)))
+            stack.append((target, root, next_lineage, next_guards, next_name, (nid, port, slot), closed_join))
 
     for root, group in report.groups.items():
         group["handoffs"] = handoffs.get(root, [])
@@ -351,13 +360,16 @@ def analyze_flow(all_nodes: Mapping[str, dict], factory=None, *, draft: bool = F
                                     repair="Place the Merge after parallel paths from a split."))
         if len(merge.group_roots) > 1 or (merge.group_roots and any(not a.lineage for a in merge.arrivals)):
             merge.shape_status = "needs_review"
-            findings.append(Finding("error" if draft else "warning", "flow_needs_review", mid,
-                                    "Merge receives unrelated groups or an arrival outside its family; shape needs review."))
-        prior_joins = [other for other in merges if other != mid and mid in reachable(other)]
-        if prior_joins:
+            findings.append(Finding("error", "flow_needs_review", mid,
+                                    "This Merge combines paths from different splits or paths already joined. Connect paths from one split to one Merge."))
+        shared_split = any(other.node_id != mid and set(other.group_roots) & set(merge.group_roots)
+                           for other in merges.values())
+        if mid in already_joined or shared_split:
             merge.shape_status = "needs_review"
-            findings.append(Finding("error" if draft else "warning", "flow_needs_review", mid,
-                "Repeated joins retain their inherited family, but their arrival shape needs review."))
+            findings.append(Finding("error", "flow_needs_review", mid,
+                "This Merge joins paths that an earlier Merge already joined. Connect these paths to one Merge."
+                if mid in already_joined else
+                "Paths from this split reach different Merges. Connect these paths to one Merge."))
         for root in merge.group_roots:
             merge.handoffs.extend(h for h in handoffs.get(root, [])
                                   if h["node_id"] != root and mid in reachable(h["node_id"], mid))
@@ -407,7 +419,7 @@ def analyze_flow(all_nodes: Mapping[str, dict], factory=None, *, draft: bool = F
             merge.admission_stage = 2
         if any(profiles[a.source_id].kind == Kind.BEACON for a in merge.arrivals) and draft:
             findings.append(Finding("error", "flow_needs_review", mid,
-                                    "Merge Beacon wiring is supported in the editor, outside draft admission."))
+                                    "Use direct connections to Merge here. Merge Beacons are supported in the editor, but not in drafts."))
         waited = ", ".join(f"{a.path_name} ({a.slot})" for a in merge.arrivals)
         parts = [f'Merge "{name(mid)}": waits for {waited or "one incoming path"}.']
         for h in merge.handoffs:
@@ -535,3 +547,48 @@ def reached_with_open_family(all_nodes: Mapping[str, dict], target: str, factory
                 stack.append((nxt, opened))
                 used.add(port)
     return False
+
+
+class MergePlanError(ValueError):
+    """The workflow cannot start because its Merge connections are unsupported."""
+
+
+def merge_plans_from_analysis(report: FlowAnalysis):
+    """Translate the shared graph proof into run-local collector declarations.
+
+    No graph traversal or observed-arrival inference belongs in this adapter.
+    Standalone joins retain runtime pass-through; unproved group shapes cannot
+    be represented as runnable plans.
+    """
+    from .run_context import MergePlan, MergeSlot
+
+    uncertain = next((f for f in report.findings if f.code == 'flow_needs_review' and f.level == 'error'), None)
+    if uncertain:
+        raise MergePlanError(uncertain.message)
+    plans = {}
+    for mid, merge in report.merges.items():
+        if merge.shape_status != 'proved':
+            raise MergePlanError(f'Merge {mid} cannot combine these paths. Connect paths from one split to one Merge.')
+        if not merge.group_roots:
+            continue
+        if len(merge.group_roots) != 1:
+            raise MergePlanError(f'Merge {mid} combines different splits. Connect paths from one split to one Merge.')
+        slots = {}
+        for slot, schema in merge.slots.items():
+            if schema['cardinality'] not in {'one', 'many'}:
+                raise MergePlanError(f'Merge {mid}, input {slot}: cannot determine what this input supplies. Connect these paths to separate inputs.')
+            producers = []
+            for arrival in schema['producers']:
+                lineage = []
+                for fork, port in arrival['lineage']:
+                    index = path_index(port)
+                    lineage.append(index if index is not None else report.profiles[fork].ports.index(port))
+                if not lineage:
+                    raise MergePlanError('This Merge joins paths that an earlier Merge already joined. Connect these paths to one Merge.')
+                if tuple(lineage) not in producers:
+                    producers.append(tuple(lineage))
+            if not producers:
+                raise MergePlanError(f'Merge {mid}, input {slot}: no connected path supplies a value. Connect a path to this input.')
+            slots[slot] = MergeSlot(schema['cardinality'], tuple(producers))
+        plans[mid] = MergePlan(merge.group_roots[0], slots)
+    return plans

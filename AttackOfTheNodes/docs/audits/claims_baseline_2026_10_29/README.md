@@ -261,3 +261,19 @@ new graph fixtures. `claims.json` was regenerated through the executable claims
 runner using its existing local doubles; the authoring fingerprint changes and
 all recorded observations remain identical. No API/model execution or owner
 workflow scan was performed. Full-suite verification is in the latest Session Log.
+
+## Collecting Merge runtime dependency recheck — 2026-10-30
+
+The baseline source hashes for Branch and Merge are refreshed from `f57f4ed`.
+Reviewed record text and admission are unchanged. The receipt now also binds
+MasterState, RunContext and the real-engine Merge arrival tests; the reviewed
+ordinary source/Vault/forwarding graphs remain required. Merge remains pending
+metadata review and drafter admission. The original explicit
+`MergePlan` fixtures remain; the follow-up now derives normal-startup plans from
+the shared flow proof after rebasing onto #162/#163. Saved and child workflows
+are covered by normal-startup engine tests; unproved shapes fail preflight.
+
+2026-10-31 recheck: fresh groups after Merge, plain startup refusals, and the
+child-call error translation are covered by the refreshed receipt. Added the
+child-call source dependency; no reviewed metadata text or admission changed.
+The 57 explicit-plan cases remain, alongside 30 startup integration cases.

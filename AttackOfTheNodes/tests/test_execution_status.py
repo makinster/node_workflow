@@ -1,6 +1,8 @@
 """Execution lifecycle and mounted run-screen regressions."""
 import asyncio
 
+from backend.run_context import MergePlan, MergeSlot
+
 import pytest
 from tests.ui_sizes import LAYOUT_WIDTHS
 from textual.screen import ModalScreen
@@ -442,16 +444,23 @@ def test_barriers_keep_runtime_wait_semantics_and_finish_symbols(barrier):
             wm.update_node_config(wait, {"target_node_ids": slow, "timeout_seconds": 1})
             wm.connect(fork, "path_b", wait, "input")
         else:
-            wm.update_node_config(wait, {"selected_input_port": "path_b"})
             wm.connect(slow, "default", wait, "path_a")
             wm.connect(fork, "path_b", wait, "path_b")
         wm.connect(wait, "default", end, "input")
         app._on_backend_event = lambda payload=None: None
-        await master.start_workflow()
+        plans = {wait: MergePlan(fork, {"path_a": MergeSlot("one", ((0,),)),
+                                         "path_b": MergeSlot("one", ((1,),))})} if barrier == "merge_node" else {}
+        await master.start_workflow(merge_plans=plans)
         await until(lambda: app.node_statuses.get(wait) == "running")
         assert slow not in master.completed_nodes
         assert app.node_statuses.get(end, "idle") == "idle"
         await master.wait_for_completion()
         assert master.state.value == "FINISHED"
         assert all(app.node_statuses.get(n) == "done" for n in [start, fork, slow, wait, end])
+        if barrier == "merge_node":
+            arrivals = [attempt for branch in app.execution_state.branches.values()
+                        for visit in branch["visits"].values() if visit["node_id"] == wait
+                        for attempt in visit["attempts"].values()]
+            assert sorted(attempt["status"] for attempt in arrivals) == ["absorbed", "done"]
+            assert sum(attempt.get("arrival_outcome") == "absorbed" for attempt in arrivals) == 1
     asyncio.run(asyncio.wait_for(check(), timeout=15))

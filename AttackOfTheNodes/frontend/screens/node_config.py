@@ -756,7 +756,6 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                     "branches_to_close",
                     "carry_forward_branch_id",
                     "selected_branch_id",
-                    "selected_input_port",
                     "branch_output_name",
                     "branch_output_description",
                 }
@@ -3776,7 +3775,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         )
         self._merge_kept_carry_config = {
             key: config.get(key, "")
-            for key in ("carry_forward_branch_id", "selected_branch_id", "selected_input_port")
+            for key in ("carry_forward_branch_id", "selected_branch_id")
         }
         if not options:
             yield Static("No open branches are available to close.", classes="form-description")
@@ -3809,7 +3808,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             ),
             id="merge-branches-to-close",
         )
-        yield Label("Carry Forward Output", classes="form-label nav-section", id="merge-carry-forward-label")
+        yield Label("Merge home path (wiring)", classes="form-label nav-section", id="merge-carry-forward-label")
         carry_options = self._merge_carry_forward_options(options, selected_values)
         carry_value = self._selected_merge_carry_value(carry_options, config)
         yield Select(
@@ -3818,6 +3817,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             id="merge-carry-forward-selector",
             disabled=not bool(carry_options),
         )
+        yield Static("Merge collects delivered slot values. The shallowest arriving path continues; ties use first arrival. This selector controls wiring only.", classes="form-description")
         yield Static("", id="merge-selected-output-details", classes="form-description merge-branch-output-details")
 
     def _selected_merge_close_values(
@@ -3906,11 +3906,11 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
         option = self._merge_option_by_value(str(selected_value or ""))
         kept_carry = getattr(self, "_merge_kept_carry", "")
         if kept_carry and str(selected_value) == kept_carry:
-            detail.update(f"Carry forward: kept unchanged ({kept_carry}); it no longer matches a branch.")
+            detail.update(f"Editor home path: kept unchanged ({kept_carry}); it no longer matches a branch.")
             detail.display = True
             return
         if str(selected_value).startswith("home:"):
-            detail.update("Carry forward: home branch incoming payload")
+            detail.update("Editor home path: home branch")
             detail.display = True
             selector_query.first().display = True
             for label in self.query("#merge-carry-forward-label"):
@@ -3925,7 +3925,7 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 "\n".join(
                     [
                         f"Branches selected: {len(selected_closures)}",
-                        f"Carry forward: {option['branch_label']}",
+                        f"Editor home path: {option['branch_label']}",
                         f"Branch path: {option.get('branch_path') or option['branch_label']}",
                         f"Last node: {option['last_node']}",
                         f"Output: {option['output_name']}",
@@ -4224,7 +4224,6 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
             branches_to_close = sorted(self._selected_merge_close_values_from_widget())
         else:
             branches_to_close = sorted(kept_close)
-        assignments = selected_merge_ports(self.workflow_map, self.node_id, options, set(branches_to_close))
         carry_value = ""
         selector_query = self.query("#merge-carry-forward-selector")
         kept_carry = getattr(self, "_merge_kept_carry", "")
@@ -4239,25 +4238,22 @@ class NodeConfigScreen(CommandScreenMixin, ModalScreen):
                 "branches_to_close": branches_to_close,
                 "carry_forward_branch_id": kept.get("carry_forward_branch_id", ""),
                 "selected_branch_id": kept.get("selected_branch_id", ""),
-                "selected_input_port": kept.get("selected_input_port", ""),
             }
         if carry_value.startswith("home:"):
             port = carry_value.removeprefix("home:")
             if port in _reserved_merge_input_ports(self.workflow_map, self.node_id):
-                return {"branches_to_close": branches_to_close, "carry_forward_branch_id": carry_value, "selected_branch_id": "", "selected_input_port": port}
+                return {"branches_to_close": branches_to_close, "carry_forward_branch_id": carry_value, "selected_branch_id": ""}
         for option in options:
             if self._merge_option_value(option) == carry_value:
                 return {
                     "branches_to_close": branches_to_close,
                     "carry_forward_branch_id": carry_value,
                     "selected_branch_id": carry_value,
-                    "selected_input_port": assignments.get(carry_value, option["port"]),
                 }
         return {
             "branches_to_close": branches_to_close,
             "carry_forward_branch_id": "",
             "selected_branch_id": "",
-            "selected_input_port": "",
         }
 
     def _branch_end_status_text(self) -> str:

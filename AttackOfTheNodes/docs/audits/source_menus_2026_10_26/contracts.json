@@ -576,8 +576,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_b": {
           "mode": "topology",
@@ -585,8 +585,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_c": {
           "mode": "topology",
@@ -594,8 +594,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_d": {
           "mode": "topology",
@@ -603,8 +603,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_e": {
           "mode": "topology",
@@ -612,8 +612,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_f": {
           "mode": "topology",
@@ -621,8 +621,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_g": {
           "mode": "topology",
@@ -630,8 +630,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_h": {
           "mode": "topology",
@@ -639,8 +639,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_i": {
           "mode": "topology",
@@ -648,8 +648,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_j": {
           "mode": "topology",
@@ -657,8 +657,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_k": {
           "mode": "topology",
@@ -666,8 +666,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_l": {
           "mode": "topology",
@@ -675,8 +675,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_m": {
           "mode": "topology",
@@ -684,8 +684,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_n": {
           "mode": "topology",
@@ -693,8 +693,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_o": {
           "mode": "topology",
@@ -702,8 +702,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_p": {
           "mode": "topology",
@@ -711,8 +711,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_q": {
           "mode": "topology",
@@ -720,8 +720,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_r": {
           "mode": "topology",
@@ -729,8 +729,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_s": {
           "mode": "topology",
@@ -738,8 +738,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_t": {
           "mode": "topology",
@@ -747,8 +747,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_u": {
           "mode": "topology",
@@ -756,8 +756,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_v": {
           "mode": "topology",
@@ -765,8 +765,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_w": {
           "mode": "topology",
@@ -774,8 +774,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_x": {
           "mode": "topology",
@@ -783,8 +783,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_y": {
           "mode": "topology",
@@ -792,8 +792,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_z": {
           "mode": "topology",
@@ -801,8 +801,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_aa": {
           "mode": "topology",
@@ -810,8 +810,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_ab": {
           "mode": "topology",
@@ -819,8 +819,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_ac": {
           "mode": "topology",
@@ -828,8 +828,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_ad": {
           "mode": "topology",
@@ -837,8 +837,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_ae": {
           "mode": "topology",
@@ -846,8 +846,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_af": {
           "mode": "topology",
@@ -855,8 +855,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_ag": {
           "mode": "topology",
@@ -864,8 +864,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_ah": {
           "mode": "topology",
@@ -873,8 +873,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_ai": {
           "mode": "topology",
@@ -882,8 +882,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_aj": {
           "mode": "topology",
@@ -891,8 +891,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_ak": {
           "mode": "topology",
@@ -900,8 +900,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_al": {
           "mode": "topology",
@@ -909,8 +909,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_am": {
           "mode": "topology",
@@ -918,8 +918,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_an": {
           "mode": "topology",
@@ -927,8 +927,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_ao": {
           "mode": "topology",
@@ -936,8 +936,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_ap": {
           "mode": "topology",
@@ -945,8 +945,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_aq": {
           "mode": "topology",
@@ -954,8 +954,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_ar": {
           "mode": "topology",
@@ -963,8 +963,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_as": {
           "mode": "topology",
@@ -972,8 +972,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_at": {
           "mode": "topology",
@@ -981,8 +981,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_au": {
           "mode": "topology",
@@ -990,8 +990,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_av": {
           "mode": "topology",
@@ -999,8 +999,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_aw": {
           "mode": "topology",
@@ -1008,8 +1008,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_ax": {
           "mode": "topology",
@@ -1017,8 +1017,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_ay": {
           "mode": "topology",
@@ -1026,8 +1026,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_az": {
           "mode": "topology",
@@ -1035,8 +1035,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_ba": {
           "mode": "topology",
@@ -1044,8 +1044,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_bb": {
           "mode": "topology",
@@ -1053,8 +1053,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_bc": {
           "mode": "topology",
@@ -1062,8 +1062,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_bd": {
           "mode": "topology",
@@ -1071,8 +1071,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_be": {
           "mode": "topology",
@@ -1080,8 +1080,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_bf": {
           "mode": "topology",
@@ -1089,8 +1089,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_bg": {
           "mode": "topology",
@@ -1098,8 +1098,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_bh": {
           "mode": "topology",
@@ -1107,8 +1107,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_bi": {
           "mode": "topology",
@@ -1116,8 +1116,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_bj": {
           "mode": "topology",
@@ -1125,8 +1125,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_bk": {
           "mode": "topology",
@@ -1134,8 +1134,8 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         },
         "path_bl": {
           "mode": "topology",
@@ -1143,11 +1143,11 @@
             "upstream"
           ],
           "data_type": "any",
-          "control": "selected_input_port",
-          "notes": "All 64 declared path slots; input_slots activates 1\u201364. Engine coordinates selected payload; no standard source select."
+          "control": "input_slots",
+          "notes": "All 64 declared slots; input_slots activates at least five. Engine collects actual deliveries using graph-declared slot shapes; no standard source select."
         }
       },
-      "runtime_sha256": "4dc09ac0c7d55b96e85dcf4bcd2609405e983f57ece05ae78b67499b41f3b15c",
+      "runtime_sha256": "edd0fefe2275385c261384a422d6db27c38d818e53893fbd30e891107c764104",
       "runtime_file": "backend/nodes/merge_node.py"
     },
     {

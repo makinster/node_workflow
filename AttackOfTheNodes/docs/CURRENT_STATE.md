@@ -42,6 +42,44 @@ records or node admission are signed. Affected existing source dependencies
 and the executable claims receipt are re-attested; independent admission review
 is still required. Verification and code/plan differences are in the Session Log.
 
+## PR #164 review fixes — 2026-10-31 (Important)
+
+The shared analyser now closes the root/producer paths after Merge in its existing
+walk. Later splits open fresh groups; two and three sequential split/Merge stages
+run normally without explicit plans. Direct Merge-to-Merge chains, inner joins
+feeding outer joins and two joins sharing one split remain preflight errors.
+Three stages pass at depth limit 5; limit 2 refuses the third Branch. Depth is
+retained by the continuing supervisor rather than reset when a group closes.
+
+`MergePlanError` distinguishes startup refusals from other ValueErrors. App Run
+shows `Can't start: ...` and can run again after repair (pilot proof). Child calls
+emit the declared `child_flow_invalid` error, with an exercised error route and
+cleanup. Plain diagnostics describe the bad connections and the repair. No loop
+logic, metadata text, admission or trial changes. Fingerprints/claims receipt
+are re-attested. Full `pytest -n auto`: **4,976 passed, 187 skipped in 47.18 s**,
+zero xfails; 57 explicit-plan cases plus 30 startup integration cases remain.
+
+## Collecting Merge runtime, block 1 — 2026-10-30 (Important)
+
+Branch `codex/merge-arrival-runtime`, based on `f57f4ed`, implements approved
+family-2 runtime decisions 1–6 and same-slot R1. Merge collects actual deliveries
+in numeric slot/path order; nested forks hand off atomically, the shallowest
+arrival continues once, and failure/End/Stop have distinct outcomes. Beacon
+wiring helpers stay; the value selector is removed. Terminal absorption retires
+only that arrival's display status. No metadata claim or admission changed.
+
+PR #164 follow-up rebases onto `5839bfe` (#162/#163). Normal startup now derives
+`MergePlan` declarations from the run's captured workflow through the shared
+flow owner, covering the app, saved RunService workflows and subworkflow child
+maps. The 57 explicit-plan engine tests remain, plus 22 normal-startup cases.
+Independent side-path failures are excluded by producer lineages. Unproved and
+repeated join shapes now fail app validation before running: a bypassed two-Merge
+graph proved the second join passed through the first record unchanged.
+No metadata claim, admission or trial code changed. See
+[runtime evidence and changed tests](audits/merge_runtime_2026_10_30/README.md)
+and [runtime interface](ARCHITECTURE.md#waits-and-merges). Full `pytest -n auto`: **4,968 passed, 187 skipped in 46.97 s**, zero xfails;
+no real API or model calls.
+
 ## First helper family — 2026-10-30 (Important)
 
 The drafter now admits Find lines, Read lines, Check reply and Context Pack:

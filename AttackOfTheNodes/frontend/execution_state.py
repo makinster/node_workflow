@@ -36,6 +36,18 @@ class ExecutionDisplayState:
         branch["node_phase"] = "ended" if terminated else payload.get("node_phase", "queued")
         if terminated:
             branch["stop_requested"] = bool(payload.get("stop_requested"))
+            settled = payload.get("settled_arrival_node_id")
+            if settled and branch["node_statuses"].get(settled) in {"running", "waiting"}:
+                # Retain an explicit visit outcome without giving the saved
+                # Merge a completion, failure or skip from this supervisor.
+                position = branch["latest_visits"].get(settled)
+                if position:
+                    visit = branch["visits"][position[0]]
+                    attempt = visit["attempts"][position[1]]
+                    attempt["status"] = payload.get("reason", "absorbed")
+                    attempt["arrival_outcome"] = payload.get("reason", "absorbed")
+                branch["node_statuses"].pop(settled, None)
+                branch["node_reasons"].pop(settled, None)
 
     def visit(self, payload: dict[str, Any]) -> dict[str, Any]:
         visits = self.branch(payload["branch_id"])["visits"]

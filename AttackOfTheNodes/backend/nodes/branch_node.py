@@ -25,6 +25,8 @@ class BranchNode(Node):
     # The type's full list; one node has its first ``branch_count`` paths.
     output_ports: ClassVar[List[str]] = list(ALL_PATH_PORTS)
     spawns_branches: ClassVar[bool] = True
+    error_definitions = [dict(code='branch_depth_exceeded',
+        description='No paths launched because they would exceed the branch depth limit.', retryable=False)]
 
     default_config: ClassVar[Dict[str, Any]] = {
         "branch_count": 2,

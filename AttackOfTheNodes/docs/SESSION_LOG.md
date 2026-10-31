@@ -6,6 +6,52 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-31 — PR #164 fresh groups and visible startup refusals
+
+Same branch, main still `5839bfe`. Corrected the existing flow walk to clear a
+closed Merge's root/producer paths, carrying a closed-join marker only until a
+new split. Sequential splits get their own plans; already-joined and inner/outer
+joins stay refused. Removed the ancestor-join reachability test that overblocked
+fresh groups; no replacement traversal was added. Existing draft gates remain.
+
+Added eight integration cases (30 total): two/three sequential splits, three
+stages at depth limit 2, direct Merge-to-Merge refusal, inner/outer refusal, two
+joins sharing one split, a real Run-key pilot with visible refusal and successful
+repair/retry, and a child refusal routed as `child_flow_invalid`. The dedicated
+`MergePlanError(ValueError)` is handled by both app startup and child calls.
+User-facing diagnostics now name the bad connection and repair in plain words.
+Three stages complete at limit 5; at limit 2 the third Branch returns the typed
+refusal because supervisor depth accumulates even after its group closes.
+
+Focused runtime/flow/subworkflow checks: **163 passed**. Full `pytest -n auto`:
+**4,976 passed, 187 skipped in 47.18 s**, zero xfails. Re-attested runtime sources
+and refreshed the claims receipt, including the child-call dependency. No real
+API/model calls, loop logic, metadata record, admission or trial changes.
+
+## 2026-10-30 — PR #164 normal-startup integration follow-up
+
+Rebased `codex/merge-arrival-runtime` onto `5839bfe` (#162/#163), retaining both
+workers' documentation and regenerating runtime dependency attestations. The
+initial block lacked a production supplier of Merge plans. One adapter beside
+`analyze_flow` now translates its root, scalar/list and producer-lineage proof.
+MasterState's normal startup derives plans from its own captured workflow and
+uses the same snapshot for its revision hash; explicit overrides still work.
+This fixes the app, saved RunService workflows and child maps without caller
+patches or another graph analyser. Independent side-path failures do not poison
+joining slots because their lineages are excluded from producer declarations.
+
+Added 22 normal-startup real-engine cases: reversed two-file collection, all
+A/C/D reference hosts with direct/Beacon and concurrent same-slot combinations,
+exclusive scalar rejoin, independent End/failure paths, saved RunService and
+subworkflow runs, fresh captured revisions, and the two-Merge regression.
+The bypassed two-Merge run confirmed that the second join passed through the
+first record without wrapping/collecting it. Shared preflight now errors on
+unproved/repeated shapes, bounds and collecting loops before a normal run.
+Full `pytest -n auto`: **4,968 passed, 187 skipped in 46.97 s**, zero xfails.
+The existing 57 explicit-plan cases remain. No metadata text, admission, trial
+or owner workflow edits; no real API/model calls. Final verification is recorded
+in [the runtime audit](audits/merge_runtime_2026_10_30/README.md).
+
 ## 2026-10-30 — Family 2 revision 1, block 2: shared graph analysis
 
 Branch `codex/shared-flow-analysis`, isolated worktree
@@ -55,6 +101,33 @@ checks pass. No API/model calls or owner workflows were used.
 No changes to Builder 1's runtime/coordinator/node files, node picker, palette,
 drafter or trial tools. Runtime collection proof, final records and trial/admission
 integration remain the other builders' and later blocks' work.
+
+## 2026-10-30 — Collecting Merge runtime, family-2 block 1 (Important)
+
+Own worktree `/home/makin/src/nw-merge-arrivals`, branch
+`codex/merge-arrival-runtime`, base `f57f4ed`. Implemented approved revision-1
+runtime decisions 1–6 and R1 with run-scoped delivery frames, explicit graph
+slot/producer declarations, inherited groups/atomic handoff, shallowest/earliest
+election and one published completion. Missing/control-only is distinct from
+all falsy values. Failure releases join/completion waiters with no partial
+output; independent End settles a side path; user Stop stays quiet. Depth
+refusal is returned to Branch as an error before the accepted batch can launch.
+
+Removed the retired value selector from Merge and editor serialization, kept
+Beacon wiring settings and tests, and added arrival settlement to the display
+reducer so an absorbed branch's old running status cannot mask completed Merge.
+A late old-run callback cannot alter the new run. The real-engine matrix covers
+controlled nested A/B→C/D timing and host permutations, direct/Beacon joins,
+shared producers, simultaneous arrivals, failures, Stop, waits and fresh runs.
+
+The block intentionally supplies `MergePlan` facts in fixtures; block 2 must
+connect the shared graph analysis before app collecting joins are available.
+No graph analyser, validator, picker, palette or trial file changed. Rechecked
+reviewed records' runtime dependency fingerprints without changing claim text;
+refreshed baseline and claims receipt, including the Merge source-menu audit.
+[Evidence, verification and every changed existing test](audits/merge_runtime_2026_10_30/README.md).
+Full `pytest -n auto`: **4,853 passed, 187 skipped in 47.16 s**, zero xfails.
+No real API/model calls, owner workflow changes, migration or loop support.
 
 ## 2026-10-30 — PR #158 follow-up 2: layout and constraints (Important)
 

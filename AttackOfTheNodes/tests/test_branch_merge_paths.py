@@ -24,6 +24,7 @@ from backend.branch_paths import (
 from backend.configuration_manager import ConfigurationManager
 from backend.event_bus import EventBus
 from backend.events import NODE_EXECUTION_UPDATE
+from backend.run_context import MergePlan, MergeSlot
 from backend.master_state import MasterState
 from backend.memory_bank import MemoryBank
 from backend.node_factory import NodeFactory
@@ -103,15 +104,14 @@ def test_fixed_nodes_resolve_inputs_to_their_class_list():
 # ---------------------------------------------------------------------------
 
 
-def _wide_workflow(workflow_map, paths=8, slots=8, selected="path_h"):
+def _wide_workflow(workflow_map, paths=8, slots=8):
     start = workflow_map.add_node("start_node")
     fork = workflow_map.add_node("branch_node")
     merge = workflow_map.add_node("merge_node")
     end = workflow_map.add_node("no_op_node")
     workflow_map.update_node_config(start, {"greeting": "hello"})
     workflow_map.update_node_config(fork, {"branch_count": paths})
-    workflow_map.update_node_config(merge, {"selected_input_port": selected,
-                                            "input_slots": slots})
+    workflow_map.update_node_config(merge, {"input_slots": slots})
     workflow_map.connect(start, "default", fork, "input")
     steps = {}
     for port in path_ports(paths):
@@ -133,7 +133,8 @@ def test_an_eight_way_branch_runs_every_path_and_merges_once():
     assert not [w for w in result["warnings"] if "hidden" in w["message"]]
 
     async def run():
-        assert await master.start_workflow()
+        assert await master.start_workflow(merge_plans={merge: MergePlan(fork, {
+            port: MergeSlot("one", ((i,),)) for i, port in enumerate(path_ports(8))})})
         await asyncio.wait_for(master.wait_for_completion(), timeout=5)
     asyncio.run(run())
 
@@ -145,7 +146,7 @@ def test_an_eight_way_branch_runs_every_path_and_merges_once():
 
 def test_a_slot_above_input_slots_is_a_hidden_input_warning():
     bus, factory, workflow_map, master = _services()
-    fork, merge, end, steps = _wide_workflow(workflow_map, paths=6, slots=5, selected="path_a")
+    fork, merge, end, steps = _wide_workflow(workflow_map, paths=6, slots=5)
 
     result = validate_workflow(workflow_map, factory)
     warnings = [w["message"] for w in result["warnings"] if w.get("node_id") == merge]
@@ -176,7 +177,7 @@ def test_editor_raises_input_slots_to_cover_connected_slots():
     from frontend.screens.editor import EditorScreen
 
     bus, factory, workflow_map, master = _services()
-    fork, merge, end, steps = _wide_workflow(workflow_map, paths=7, slots=5, selected="path_a")
+    fork, merge, end, steps = _wide_workflow(workflow_map, paths=7, slots=5)
     editor = EditorScreen(factory, workflow_map)
 
     editor._ensure_merge_input_slots(merge)
