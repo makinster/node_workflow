@@ -6,6 +6,66 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-31 — Family 2 block 4 first half: scorer, set 4 and calibration
+
+Branch `codex/family-2-scorer-set4`, isolated worktree
+`/home/makin/src/nw-family2-set4`, from current main `58a2299`. Source implementation
+through `46daf57`; owner review/merge pending. Read the coordinator decisions in
+`/home/makin/src/agent_channel/set-4-proposal.md` and approved section 7 of
+`family-2-records-plan.md`; proposal differences take precedence, then merged code.
+
+Added `rules_family_two.py`: bounded ready queues and logical supervisors,
+atomic inherited handoffs, real-arrival presence/slot receipts, R1 ordered lists,
+shallowest/earliest election, completion waits and absorbed arrivals. All graph
+classification/group/obligation/slot facts come from `analyze_flow`; no second
+graph analyser or production collector is used. Per-field/list-item expressions
+and whole-value spans distinguish genuine source use from copied/literal words.
+Typed JSON, Concat, source/Vault selection, suppression and Show prefixes are
+modelled; bounded Context Pack forms preserve provenance and unproved formatting,
+masking or shortening returns `needs_review`. Missing, failure and quiet Stop
+have independent evaluator/engine checks.
+
+The five Beacon leftovers were confirmed at the supplied line numbers and
+removed. Existing admission checks reject Beacon. Added all five F2 requests,
+seventeen variants and six good/bad pairs in separate snapshots. The original
+thirty pairs are byte-for-byte unchanged. The normal trial CLI still supports
+only sets 1/2/3; `all` and its universal calibration do not include set 4. The new
+offline-only command defaults to Stage 1 cases 01/02 and pairs 1/6. Stage 2 cases
+03/04/05 and pairs 2/3/4/5 require explicit `--stage 2`. No node/role admission,
+backend records, engine/checker, drafter or judge prompt change.
+
+Real-engine proof uses ordinary RunService validation and real local node
+execute methods, with permission gates to control scheduling. No collector plans
+or expected values are injected. Every good/bad variant runs forward/reverse:
+**120 startup attempts**, **104 completed workflows**, **16 expected preflight
+refusals**; all comparisons agree. Refused fixtures did no node work. Completed
+BADs really produce the wrong/missing outputs. Ready's intermediate Show has a
+blank label; a separate negative proves `Status: [Output] Ready` is wrong.
+[Every fixture result, typed receipt and source hash](audits/family_two_set4_2026_10_31/README.md).
+
+Free baseline and updated replays of latest owner run `000046`, `--case-set all`:
+sets 1/2/3 are **10/10 / 10/10 / 3/4** on both revisions; original 30-pair
+calibration passes both. All **24 case outcomes** and **60 calibration
+observations** match after root relocation; zero newly passing/failing/diverged.
+Both consume 128 saved replies and make zero real API calls. Set-3 case-4's
+existing `No saved draft / no completed success gate` failure remains, making
+both overall replay reports fail. This is replay evidence, not fresh quality.
+
+Verification: new focused tests **29 passed**; existing trial/family checks
+**209 passed**. Final full `pytest -n 8 -q`: **5,005 passed / 187 skipped**, zero
+failures or xfails, **103.13 s**. A first full run caught the multiline-statement
+style rule; formatting retained identical ASTs and the final full run passes.
+Compile/whitespace checks pass. The claims receipt was regenerated: unchanged
+**234 pass / 179 skip** observations, with only the two changed trial-tool hashes
+updated. Node record attestations are untouched.
+
+Plan/code differences: coordinator pair 6 makes six pairs despite the proposal's
+"five" heading. Merged code already refuses direct/repeated-overlapping joins at
+app startup, beyond the older draft-only repeated-join restriction; later fresh
+splits form fresh groups. The scorer follows merged analysis. No engine/checker
+bug was found in this matrix. Two schedules are bounded evidence, not exhaustive
+interleaving proof. No API/model calls, real-calls trial or owner workflow writes.
+
 ## 2026-10-31 — PR #164 fresh groups and visible startup refusals
 
 Same branch, main still `5839bfe`. Corrected the existing flow walk to clear a

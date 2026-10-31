@@ -13,6 +13,29 @@ and real-engine run summaries cover all three supported models. See the latest
 Session Log entry for verification: full `pytest -n auto` passes **3,234 tests
 in 35.63 s** after the review fixes.
 
+## Family 2 block 4, first half — 2026-10-31
+
+Implemented on `codex/family-2-scorer-set4` from merged main `58a2299`, for owner
+review. The deterministic scorer has a bounded logical supervisor scheduler,
+independent arrival/value collection and per-field/list-item provenance, using
+`analyze_flow` for every group/slot/guard/shape fact. The five stale Beacon
+classifications are removed; Beacon drafts fail the existing admission boundary.
+
+F2-01–05 and six calibration pairs are evaluation data only. The ordinary trial
+CLI and `--case-set all` retain sets 1/2/3 and the unchanged thirty-pair core.
+`python -m tools.draft_trials.family_two --output /fresh/absolute/folder` verifies
+Stage 1 (F2-01/02 and pairs 1/6) locally. Only explicit `--stage 2` includes the
+withheld Stage 2 requests/pairs. Merge, Wait Until, set 4 and the proposed Wait
+role remain unadmitted. Backend records, engine/checker and drafter are unchanged.
+
+All request variants and good/bad pairs have real-engine evidence in two
+controlled schedules: 120 startup attempts, 104 completed workflows and 16
+expected preflight refusals, with no differential mismatch. F2-04 uses a blank
+Ready label. Full suite: **5,005 passed / 187 skipped**, zero failures or xfails,
+in **103.13 s**. Free replay of latest owner run `000046` stays **10/10, 10/10,
+3/4**, with passing calibration; all 24 cases and 60 calibration outcomes match.
+No API/model calls. [Per-fixture results and source-pinned receipt](audits/family_two_set4_2026_10_31/README.md).
+
 ## Family 2 block 2 — shared graph analysis (2026-10-30)
 
 Implemented on `codex/shared-flow-analysis`, from main `f57f4ed`, for owner
