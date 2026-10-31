@@ -113,7 +113,7 @@ CPU time, generated-spec quality and real-device proof remain unmeasured.
 
 `draft-a-workflow-v2.json` is the revised recipe; the original spec is unchanged.
 It analyzes requirements, permits one clarification turn of at most three
-questions, drafts with the fixed 12-type palette, checks the structure, and asks
+questions, drafts with the fixed admitted palette, checks the structure, and asks
 for an independent meaning review. Only the exact verdict `pass` reaches File
 Write (Create unique). Other verdicts, unresolved requests and errors explain
 what needs review and stop. There are no repair loops or automatic target runs.

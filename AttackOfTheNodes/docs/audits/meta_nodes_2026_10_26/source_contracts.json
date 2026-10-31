@@ -3,7 +3,7 @@
   "nodes": [
     {
       "node_type": "node_catalogue_node",
-      "runtime_sha256": "1ef4aedb747641058a51b34f572b11b97835c2e39573c22cc9e82fe9889b3fe6",
+      "runtime_sha256": "e3680cad3c747786701ad2125f7ed3ab432634c3a3fbfc91d4c8d7afccf950ce",
       "ports": {
         "input": {
           "mode": "control",

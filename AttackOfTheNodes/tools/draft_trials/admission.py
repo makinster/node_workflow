@@ -17,7 +17,7 @@ def configure(spec, admitted=ADMITTED):
         value = re.sub('Palette: [^.]+\\.', 'Palette: ' + ', '.join(sorted(admitted)) + '.', value)
         value = re.sub('Allowed role IDs: [^.]+\\.', 'Allowed role IDs: ' + ', '.join(roles) + '.', value)
         value = value.replace('in the admitted twelve', 'in the admitted palette')
-        value = re.sub('approved (?:12|16)-type palette: [^.]+\\.', 'approved ' + str(len(admitted)) + '-type palette: ' + ', '.join(sorted(admitted)) + '.', value)
+        value = re.sub('approved \\d+-type palette: [^.]+\\.', 'approved ' + str(len(admitted)) + '-type palette: ' + ', '.join(sorted(admitted)) + '.', value)
         value = re.sub('Allowed types: [^.]+\\.', 'Allowed types: ' + ', '.join(sorted(admitted)) + '.', value)
         config['template'] = value
     for node in spec['nodes'].values():

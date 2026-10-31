@@ -14,7 +14,7 @@ from .data_types import coerce_type
 from .config_migrations import normalize_node_config
 from .node_base import Node
 from .node_capabilities import supported_standard_flags
-from .node_metadata import record_for, standard_key_docs
+from .node_metadata import is_dev_test_only, record_for, standard_key_docs
 from .nodes import ALL_NODE_CLASSES
 
 
@@ -204,6 +204,7 @@ class NodeFactory:
                     "default_config": dict(node_class.default_config),
                     "ui_hints": dict(getattr(node_class, "ui_hints", {})),
                     "editor_only": bool(getattr(node_class, "editor_only", False)),
+                    "dev_test_only": is_dev_test_only(node_type),
                     "terminates_branch": bool(node_class.terminates_branch),
                     "spawns_branches": bool(node_class.spawns_branches),
                     # D7: declared codes plus the default generic code, which

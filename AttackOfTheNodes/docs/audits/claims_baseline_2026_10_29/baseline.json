@@ -2820,7 +2820,7 @@
       "metadata_review": "pending",
       "authorable": true,
       "source": "backend/nodes/data/node_catalogue_node.py",
-      "source_sha256": "0e038471bbdfe2581a72d9f17c72af160534d7d803659bbac50f6fd8c687c311",
+      "source_sha256": "28d42110415096a3cb19d523008dca22b7cac7def1f21d1725fa1591d88abbfb",
       "inputs": {
         "input": {
           "name": "Continue",

@@ -2,7 +2,8 @@
 
 Completeness counts every registered class (debug, hidden, editor-only and
 tombstone included), not the catalogue view. A type without a reviewed record
-must sit in the migration ledger, and then it has no effect claims at all.
+must sit in the migration ledger or the dev/test-only set, and then it has no
+effect claims at all.
 """
 import hashlib
 import json
@@ -18,7 +19,7 @@ from backend.node_errors import NodeError
 from backend.node_execution_contracts import EXECUTION_CONTRACTS
 from backend.node_factory import NodeFactory
 from backend.node_metadata import (
-    LIGHT_RECORD_TYPES, NODE_METADATA, PENDING_REVIEW, content_sha256, is_read_only,
+    DEV_TEST_ONLY, LIGHT_RECORD_TYPES, NODE_METADATA, PENDING_REVIEW, content_sha256, is_read_only,
     record_for, record_problems, selection, selection_problems,
 )
 from backend.nodes import ALL_NODE_CLASSES
@@ -28,7 +29,8 @@ MANIFEST = json.loads((ROOT / 'backend/node_metadata_review.json').read_text())
 V2 = json.loads((ROOT / 'docs/delivery_tests/specs/draft-a-workflow-v2.json').read_text())
 
 # The ledger as opened on 2026-10-29. It may only shrink: a new node type
-# needs a reviewed record in the same change, never a ledger entry.
+# needs a reviewed record in the same change, never a ledger entry. Leaving it
+# means a reviewed record or, by owner decision 2026-10-30, DEV_TEST_ONLY.
 LEDGER_AT_OPENING = frozenset("""
 merge_node wait_until_node error_mux_node set_variable_node get_variable_node
 variable_setter_node variable_reader_node random_number_node find_lines_node
@@ -58,13 +60,16 @@ def test_every_registered_type_has_a_record_or_a_ledger_entry():
     registered = set(ids)
     assert set(NodeFactory().get_registered_types()) == registered
     assert not set(NODE_METADATA) & PENDING_REVIEW
-    assert set(NODE_METADATA) | PENDING_REVIEW == registered
-    assert len(registered) == len(NODE_METADATA) + len(PENDING_REVIEW)
+    assert not (set(NODE_METADATA) | PENDING_REVIEW) & DEV_TEST_ONLY
+    assert set(NODE_METADATA) | PENDING_REVIEW | DEV_TEST_ONLY == registered
+    assert len(registered) == len(NODE_METADATA) + len(PENDING_REVIEW) + len(DEV_TEST_ONLY)
 
 
 def test_migration_ledger_only_shrinks():
     assert PENDING_REVIEW <= LEDGER_AT_OPENING
     assert LIGHT_RECORD_TYPES <= LEDGER_AT_OPENING | set(NODE_METADATA)
+    # The one owner-directed move: everything else left by gaining a record.
+    assert LEDGER_AT_OPENING - PENDING_REVIEW - set(NODE_METADATA) == DEV_TEST_ONLY
 
 
 @pytest.mark.parametrize('node_type', sorted(NODE_METADATA))
@@ -163,7 +168,7 @@ def test_light_records_for_debug_and_tombstone():
 def test_missing_data_is_never_read_only():
     factory = NodeFactory()
     assert is_read_only(None) is False
-    for node_type in PENDING_REVIEW:
+    for node_type in PENDING_REVIEW | DEV_TEST_ONLY:
         assert record_for(node_type) is None
         assert factory.metadata_for_type(node_type)['node_metadata'] is None
     assert is_read_only(NODE_METADATA['conditional_node'])
@@ -349,7 +354,7 @@ async def test_synthetic_200_entry_inventory_is_complete_or_a_size_error(monkeyp
 
 V2_INVENTORY = {
     'catalogue_start': ['start_node'],
-    'catalogue_ends': ['end_node', 'branch_end_node'],
+    'catalogue_ends': ['end_node'],
     'catalogue_output': ['text_output_node'],
     'catalogue_input': ['user_text_input_node'],
     'catalogue_reader': ['file_reader_node'],

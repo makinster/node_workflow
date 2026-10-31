@@ -97,7 +97,7 @@ def _text(screen, selector):
 def test_toggle_hides_nodes_that_cannot_take_the_upstream_type():
     async def body(pilot, screen):
         everything = _visible_types(screen)
-        assert {"file_reader_node", "no_op_node"} <= everything
+        assert {"file_reader_node", "branch_end_node"} <= everything
         assert _text(screen, "#node-selector-title") == "Add Node · after Dice (number)"
         assert "T fitting only" in _text(screen, "#selector-help")
 
@@ -106,7 +106,7 @@ def test_toggle_hides_nodes_that_cannot_take_the_upstream_type():
         fitting = _visible_types(screen)
         assert "file_reader_node" not in fitting
         assert "file_output_node" not in fitting
-        assert "no_op_node" in fitting
+        assert "branch_end_node" in fitting
         assert fitting == {t for t in everything if accepts_producers(FACTORY, t, ["number"])}
         assert "T show all" in _text(screen, "#selector-help")
 

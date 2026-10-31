@@ -201,7 +201,8 @@ async def test_catalogue_complete_default_and_headroom():
     assert 'tombstone_node' not in kinds
     assert kinds == {r['type'] for r in authoring.list_node_types(factory)
                      if not node_catalogue.is_debug(factory.metadata_for_type(r['type']))
-                     and not factory.metadata_for_type(r['type']).get('editor_only')}
+                     and not factory.metadata_for_type(r['type']).get('editor_only')
+                     and not factory.metadata_for_type(r['type'])['dev_test_only']}
     # Owner restored complete per-node descriptions. The full registry fits
     # the unchanged 64k cap; planning headroom applies to admitted contracts.
     assert cfg['max_chars'] == 64000 and len(text) <= 64000
@@ -263,7 +264,7 @@ async def test_debug_optin_and_and_filters():
     f = NodeFactory();cfg = deepcopy(f._node_registry['node_catalogue_node'].default_config)
     # Full debug catalogue may exceed cap in JSON: use Text, then filtered JSON.
     text = await node_catalogue.build(f, dict(cfg, include_debug=True))
-    assert 'probe_node |' in text
+    assert 'sleep_node |' in text and 'probe_node |' not in text
     record = await node_catalogue.build(f, dict(cfg, scope='Filtered',format='JSON',
         search='CATALOGUE NODE', tag_filter='META', group_filter='Any group'))
     assert [e['type'] for e in record['entries']] == ['node_catalogue_node']

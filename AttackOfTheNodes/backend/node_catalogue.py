@@ -244,7 +244,8 @@ async def build(factory, config):
         if selected is not None and row['type'] not in selected:
             continue
         meta = factory.metadata_for_type(row['type'])
-        if row['type'] in HIDDEN_TYPES or meta.get('editor_only'):
+        # include_debug does not reach dev/test-only types; they are never drafted.
+        if row['type'] in HIDDEN_TYPES or meta.get('editor_only') or meta.get('dev_test_only'):
             continue
         if selected is None and is_debug(meta) and not config['include_debug']:
             continue

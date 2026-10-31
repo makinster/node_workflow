@@ -2,7 +2,6 @@
   "version": 1,
   "source_revision": "8ee108b4e3e932790c94ad90c5bc419cee5f75e2",
   "type_ids": [
-    "branch_end_node",
     "branch_node",
     "concat_node",
     "conditional_node",
@@ -17,7 +16,6 @@
   ],
   "role_ids": [
     "ask_text",
-    "branch_beacon",
     "choose_path",
     "compose_text",
     "error_route",

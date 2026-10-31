@@ -21,8 +21,8 @@ from tools.draft_trials.rules import check_rules
 
 
 def test_family_schema_enums_and_frozen_baseline():
-    assert ORIGINAL_PALETTE==PALETTE and len(ORIGINAL_PALETTE)==12
-    assert ADMITTED==ORIGINAL_PALETTE|HELPERS and len(ADMITTED)==16
+    assert ORIGINAL_PALETTE==PALETTE and len(ORIGINAL_PALETTE)==11
+    assert ADMITTED==ORIGINAL_PALETTE|HELPERS and len(ADMITTED)==15
     spec=json.loads(runner.SPEC.read_text())
     for node in ('analysis','resolve','analysis_shape','resolved_shape'):
         schema=spec['nodes'][node]['config']['reply_schema']
