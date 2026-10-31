@@ -17,7 +17,7 @@
     },
     {
       "node_type": "check_workflow_spec_node",
-      "runtime_sha256": "d3e7d6e0a66fb41602fedde10fa81df0e34beb989c3bae5c1cf52e680e48b505",
+      "runtime_sha256": "6f3d44395c8a87b2c69f0d53080131b73c6f96742e7e9647ec2406e69d3f5193",
       "ports": {
         "input": {
           "mode": "standard",

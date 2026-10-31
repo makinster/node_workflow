@@ -166,6 +166,11 @@ a parser would otherwise keep only the last value; failed shared check → `spec
 normal error port; overflow → `spec_too_large`; bad settings → `invalid_config`.
 The problem list has `node`, `field`, `code`, `severity`, `message`; unknown
 locations remain null. Authoring diagnostics now carry structured locations.
+Shared flow findings use their own plain message and repair text, with the same
+redaction and caps. `meta_workflow.check()` retains the complete flow analysis for
+code callers and the selected-contract draft-stage check. Success reports and
+routed check errors use `review_report`: only Merge summaries and findings remain,
+so the one redraft receives plain problems without raw profiles/arrivals.
 Safe guidance replaces value-quoting CLI messages before error persistence;
 locations use the existing secret redactor before capping. No raw spec is
 copied into errors. Separately, for every node, the engine redacts a failed

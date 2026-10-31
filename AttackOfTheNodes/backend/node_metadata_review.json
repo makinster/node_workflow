@@ -492,7 +492,7 @@
         "backend/node_factory.py": "67eafe7c37a4af7a83f20ba2de6d3a6bdc2f31e80b358284d4e3fad30ee53576",
         "backend/authoring.py": "6d65af429d9afe67bb545c67698e3a71a6799bac121fd437311299c76ba0d8a3",
         "backend/node_catalogue.py": "1bae4801d883ad952605b4a69e1168c83a0a99e906fd63ca5cfcea48cea6a95e",
-        "backend/meta_workflow.py": "ae35830c685af0087c8e98b38e8e7104326a3dbc85682d843fc915bac434045b",
+        "backend/meta_workflow.py": "f7ba5301ed4d6b4965984c6ba5d18e89d8ee51ad3d77d0010442cecb6de4cca9",
         "tests/test_flow_claims.py": "cb78e3a902b498b9d55c4854c64df1dce9aacc695bbc9333dfd674c4f5bbd9e2",
         "tests/flow_claim_scenarios.py": "ceb7cf2cfe9acb7ada577b4ecef00d687c75a8adf1143b53c693991b131c1d7f",
         "tests/flow_engine_scenarios.py": "c0edde92649c44fe54b99f2efd8941eb2468d52fc8198fb53f7a86b1b01e1118",
@@ -510,9 +510,9 @@
       ],
       "content_sha256": "e81c833ac2facb056ccae9c08343d1d0a7487a7372420524cf19b74891ec609c",
       "author": "family-two-record-author",
-      "verifier": "app-run-validation-source-recheck",
+      "verifier": "plain-shared-check-source-and-mock-repair-recheck",
       "reviewed": "2026-10-31",
-      "source_revision": "821688d461f17166d78ded5dd3fc182b708b929e"
+      "source_revision": "e7efdaef9d1088ceaf0e76942bbf329fdbfa70f2"
     },
     "wait_until_node": {
       "sources": {
@@ -528,7 +528,7 @@
         "backend/node_factory.py": "67eafe7c37a4af7a83f20ba2de6d3a6bdc2f31e80b358284d4e3fad30ee53576",
         "backend/authoring.py": "6d65af429d9afe67bb545c67698e3a71a6799bac121fd437311299c76ba0d8a3",
         "backend/node_catalogue.py": "1bae4801d883ad952605b4a69e1168c83a0a99e906fd63ca5cfcea48cea6a95e",
-        "backend/meta_workflow.py": "ae35830c685af0087c8e98b38e8e7104326a3dbc85682d843fc915bac434045b",
+        "backend/meta_workflow.py": "f7ba5301ed4d6b4965984c6ba5d18e89d8ee51ad3d77d0010442cecb6de4cca9",
         "tests/test_flow_claims.py": "cb78e3a902b498b9d55c4854c64df1dce9aacc695bbc9333dfd674c4f5bbd9e2",
         "tests/flow_claim_scenarios.py": "ceb7cf2cfe9acb7ada577b4ecef00d687c75a8adf1143b53c693991b131c1d7f",
         "tests/flow_engine_scenarios.py": "c0edde92649c44fe54b99f2efd8941eb2468d52fc8198fb53f7a86b1b01e1118",
@@ -546,9 +546,9 @@
       ],
       "content_sha256": "e5c7039125ef2eed59ca340257c5399e26817768421f67bf25003087b10f1b7a",
       "author": "family-two-record-author",
-      "verifier": "app-run-validation-source-recheck",
+      "verifier": "plain-shared-check-source-and-mock-repair-recheck",
       "reviewed": "2026-10-31",
-      "source_revision": "821688d461f17166d78ded5dd3fc182b708b929e"
+      "source_revision": "e7efdaef9d1088ceaf0e76942bbf329fdbfa70f2"
     }
   }
 }

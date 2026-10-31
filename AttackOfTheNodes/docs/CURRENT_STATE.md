@@ -13,6 +13,16 @@ and real-engine run summaries cover all three supported models. See the latest
 Session Log entry for verification: full `pytest -n auto` passes **3,234 tests
 in 35.63 s** after the review fixes.
 
+## Plain shared-check refusals (2026-10-31)
+
+From main `e7efdae`, shared flow refusals now put each finding's plain message and
+repair in the top error. Routed errors use the existing reviewer projection;
+code callers and the draft-stage gate retain the complete analysis. Mock replies
+cover a second inner Merge and an escaping route, then a passing redraft.
+Sets 1–3 keep their pinned designer text; no pins or guidance changed.
+Full suite: **5,239 passed / 187 skipped**; no API calls.
+[Verification and retry sizes](audits/plain_shared_check_2026_10_31/README.md).
+
 ## Family 2 Stage 2 admission (2026-10-31)
 
 Drafts can now use a path that splits again with its children joining the same Merge,

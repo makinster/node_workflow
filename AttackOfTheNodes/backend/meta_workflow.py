@@ -166,8 +166,15 @@ def _safe(value, manager, limit):
     return ''.join(c if ord(c) >= 32 and ord(c) != 127 else ' ' for c in safe)[:limit]
 
 
-def problem_report(diagnostics, manager=None, *, invalid=False):
+def problem_report(diagnostics, manager=None, *, invalid=False, flow_findings=()):
     """No raw spec values in messages. Locations are redacted before capping."""
+    # Only shared flow findings may supply their own prose. Other validators
+    # can quote arbitrary config values and retain the safe-message whitelist.
+    finding_messages = {
+        (f['code'], f['node_id'] or None, f['message']):
+            ' '.join(part for part in (f['message'], f.get('repair')) if part)
+        for f in flow_findings
+    }
     problems = []
     total = len(diagnostics)
 
@@ -185,7 +192,10 @@ def problem_report(diagnostics, manager=None, *, invalid=False):
         code = str(diagnostic.get('code') or 'validation')
         # Core CLI messages can quote arbitrary config values. Preserve verdict,
         # structured location and code; render safe guidance for node persistence.
-        if code == 'spec_invalid' or diagnostic.get('hint') in authoring.SPEC_SHAPE_MESSAGES:
+        finding_message = finding_messages.get((code, diagnostic.get('node'), diagnostic.get('message')))
+        if finding_message:
+            message = finding_message
+        elif code == 'spec_invalid' or diagnostic.get('hint') in authoring.SPEC_SHAPE_MESSAGES:
             message = authoring.spec_shape_message(diagnostic)
         else:
             message = SAFE_MESSAGES.get(code, 'Check this node’s configuration: ' + code.replace('_', ' ') + '.')
@@ -245,7 +255,8 @@ async def check(factory, text, limit, manager=None, *, fail_on_unreachable=False
     if fail_on_disabled_output:
         rejected_codes.add('disabled_output_connection')
     rejected = not checked['ok'] or any(d.get('code') in rejected_codes for d in checked['diagnostics'])
-    message, details = problem_report(checked['diagnostics'], manager, invalid=rejected)
+    message, details = problem_report(checked['diagnostics'], manager, invalid=rejected,
+                                      flow_findings=(checked.get('flow_analysis') or {}).get('findings', ()))
     def safe_flow(value):
         if isinstance(value,str): return redact(value,manager,encoded=True)
         if isinstance(value,dict): return {safe_flow(k):safe_flow(v) for k,v in value.items()}
