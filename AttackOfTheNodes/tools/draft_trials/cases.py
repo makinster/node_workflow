@@ -195,6 +195,9 @@ STRUCTURES = {
 
 
 def case_record(number, root, case_set=1):
+    if case_set == 4:
+        from .case_set_four import case_record as fourth
+        return fourth(number, root)
     if case_set == 3:
         from .case_set_three import case_record as third
         return third(number, root)
@@ -215,6 +218,9 @@ def case_record(number, root, case_set=1):
 
 
 def fixture_variants(number, case_set=1):
+    if case_set == 4:
+        from .case_set_four import fixture_variants as fourth
+        return fourth(number)
     if case_set == 3:
         from .case_set_three import fixture_variants as third
         return third(number)
@@ -328,6 +334,9 @@ def fixture_variants(number, case_set=1):
 
 
 def good_draft(number, root="ROOT", case_set=1):
+    if case_set == 4:
+        from .case_set_four import good_draft as fourth
+        return fourth(number, root)
     if case_set == 3:
         from .case_set_three import good_draft as third
         return third(number, root)

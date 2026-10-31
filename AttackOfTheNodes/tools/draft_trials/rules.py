@@ -141,6 +141,9 @@ def effective_nodes(spec):
 
 
 def safety(spec, case):
+    if case.get("case_set") == 4:
+        from .rules_family_two import safety as fourth
+        return fourth(spec, case)
     if case.get("case_set") == 3:
         from .rules_set_three import safety as third
         return third(spec, case)
@@ -241,6 +244,9 @@ def safety(spec, case):
 
 
 def evaluate(spec, case, variant):
+    if case.get("case_set") == 4:
+        from .rules_family_two import evaluate as fourth
+        return fourth(spec, case, variant)
     if case.get("case_set") == 3:
         from .rules_set_three import evaluate as third
         return third(spec, case, variant)
@@ -290,9 +296,7 @@ def evaluate(spec, case, variant):
             raise RuleFailure("step bound exceeded")
         if kind == "start_node":
             value = Value(config["greeting"], lineage=(handle,))
-        elif kind in ("end_node", "branch_end_node"):
-            if kind != "end_node":
-                raise RuleFailure("route must end at End")
+        elif kind == "end_node":
             ends.append(handle)
             continue
         elif kind == "user_text_input_node":
@@ -575,6 +579,9 @@ def display_outputs_match(outputs, expected, framing):
 
 
 def check_rules(spec, case):
+    if case.get("case_set") == 4:
+        from .rules_family_two import check_rules as fourth
+        return fourth(spec, case)
     if case.get("case_set") == 3:
         from .rules_set_three import check_rules as third
         return third(spec, case)

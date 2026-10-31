@@ -51,6 +51,16 @@ The record/dependency attestations and version-4 claims receipt are refreshed.
 Full suite: 4,705 passed / 187 skipped; all three mock sets pass.
 
 
+## Family 2 block 4 first half — 2026-10-31
+
+| Deliverable | State | Remaining gate |
+|---|---|---|
+| Collecting/group-aware scorer, F2-01–05, six new calibration pairs and real-engine fixtures | Implemented on `codex/family-2-scorer-set4` from `58a2299`; full suite 5,005 passed / 187 skipped; replay unchanged | Owner review, then separately approved records/admission and integration. Set 4 is excluded from `all`; Stage 2 is explicit offline evaluation only. |
+
+Coordinator-approved source: `/home/makin/src/agent_channel/set-4-proposal.md`;
+[exhaustive fixture/replay receipt](audits/family_two_set4_2026_10_31/README.md).
+No admission has been granted by this first half.
+
 ## Family 2 revision 1 — block 2 (2026-10-30)
 
 | Block | State | Evidence / remaining gate |

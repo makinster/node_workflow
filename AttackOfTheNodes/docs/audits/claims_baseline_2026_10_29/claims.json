@@ -102,8 +102,8 @@
     "tools/draft_trials/case_set_three.py": "4b81c19bc128c9368442b84c66075b0626723b242ea1a9bc6eccb4571e60f390",
     "tools/draft_trials/fixtures/regressions/run_000035_case_3.json": "7d8eb1f463137aaf06365372225c34f247069cd5c63232bc4006023ef7483042",
     "tools/draft_trials/reply_schemas.py": "c4918a851cccb058086022345ba64bd8cba0459b37785ad1f563f4de71e71ba7",
-    "tools/draft_trials/rules_set_three.py": "a7e9796ed5c64f71c2220d1118d5ad440d0825383a58bf7ef84c33d1f666e35d",
-    "tools/draft_trials/structure_rules.py": "51d0b5223e464bca8584be849a7f0a4e7dbd915e42716e937a13728df43f7a95"
+    "tools/draft_trials/rules_set_three.py": "4cbe82a08bb19343bbf170d2590e33f7ca2c9988f94e136d1565381bfb2e1980",
+    "tools/draft_trials/structure_rules.py": "35721995b1a035d89f5376e7c9fb12dda2ccf20a5474ebeb2f40e449e14db5df"
   },
   "nodes": [
     {

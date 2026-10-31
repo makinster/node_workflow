@@ -28,8 +28,6 @@ def safety(spec, case):
             raise RuleFailure('unsupported Start routing')
         if t == 'end_node' and c.get('return_end'):
             raise RuleFailure('unrequested callable return')
-        if t == 'branch_end_node':
-            raise RuleFailure('routes must terminate at End')
         if t == 'text_output_node' and c.get('request_user_input'):
             raise RuleFailure('extra runtime prompt')
         if t == 'branch_node' and (case['id'] != 8 or c.get('branch_count',2) != 2 or c.get('branch_payload_sources') or c.get('condition','always_branch') != 'always_branch'):

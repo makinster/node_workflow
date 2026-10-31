@@ -592,3 +592,42 @@ All sixty judgment-variant comparisons are unchanged in each replay. Run 000039
 keeps its failed calibration and therefore remains an overall failure despite
 its 10/10 case score. Runs 000040/000041 keep their 9/10 and 3/4 case scores.
 No judge prompt, frozen expected result, backend service or workflows/ edit.
+
+
+## Family 2 set 4 — offline evaluation only (2026-10-31)
+
+Set 4, Merge and Wait Until are **not admitted**. `--case-set all` still means
+1/2/3, and the ordinary harness still uses the original thirty calibration pairs.
+The separate `case_set_4.json` and `calibration_set_4.json` snapshots add five
+requests / seventeen variants and six pairs without changing that core.
+
+```bash
+# Stage 1 only: F2-01/02 and pairs 1/6, with real local engine evidence.
+python -m tools.draft_trials.family_two --output /fresh/absolute/stage1
+# Explicitly verify withheld Stage 2; grants no node/role/drafter admission.
+python -m tools.draft_trials.family_two --output /fresh/absolute/stage2 --stage 2
+```
+
+The output directory must be fresh and absolute; library isolation is set before
+backend imports. No inference, judge or real-call mode exists in this command.
+The existing trial CLI intentionally continues rejecting `--case-set 4` until
+admission/integration is separately approved. Stage 2's requests and pairs stay
+out of the offline default as well.
+
+`rules.check_rules` / `evaluate` dispatch explicit set-4 records to the new
+bounded evaluator. It uses `analyze_flow` for graph facts and independently
+steps supervisors, arrivals, collection, waits, handoffs and absorption. Values
+retain per-field/list-item source expressions and whole-value formatting spans;
+literal expected words, copied sources and serial reads cannot certify a join.
+Unsupported format, dynamic file references and unproved Context Pack masking
+or shortening return `needs_review`. Node/value behaviour is checked against the
+real engine, whose execute methods are permission-gated for forward/reverse
+scheduling. A bad graph uses normal RunService startup validation; no disabled
+checker or injected plan makes it run. F2-04's Ready Show deliberately has a
+blank label because Show forwards its prefix in the value.
+
+[All request/pair engine outcomes, controls and replay comparison](../../docs/audits/family_two_set4_2026_10_31/README.md).
+The receipt binds evaluation policy, shared analysis, current admission, manifest
+and contract sources, frozen pair bytes and fixture snapshots. This is local
+behaviour/replay proof, not fresh drafting-quality evidence or exhaustive
+interleaving verification.
