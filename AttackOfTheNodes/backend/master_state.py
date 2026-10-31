@@ -605,7 +605,7 @@ class MasterState:
         group_key = run.branch_groups.get(parent)
         if group_key is None and children:
             group_key = (run.run_id, f'group_{uuid.uuid4().hex}', 1)
-            run.merge_groups[group_key] = BranchGroup(group_key, payload['source_node_id'], lineage)
+            run.merge_groups[group_key] = BranchGroup(group_key, payload['source_node_id'], lineage, payload['parent_depth'])
         if group_key is not None:
             group = run.merge_groups[group_key]
             if parent in group.members:
@@ -782,7 +782,8 @@ class MasterState:
             barrier.continuation_claimed = True
             run.branch_groups.pop(branch_id, None)
             member.state = 'joined'
-            outcome = {'continue': True, 'present': True, 'value': barrier.value}
+            outcome = {'continue': True, 'present': True, 'value': barrier.value,
+                       'continuation_depth': group.opening_depth}
         else:
             outcome = dict(arrival_outcome='absorbed')
         name = outcome.get('arrival_outcome', 'continuing')

@@ -28,6 +28,8 @@ import unicodedata
 from copy import deepcopy
 from typing import Any, Dict, List, Optional
 
+from .flow_behaviors import FLOW_RECORD_TYPES, flow_template, flow_template_problems
+
 RECORD_SCHEMA_VERSION = 1
 
 EFFECTS = (
@@ -84,7 +86,7 @@ _FULL_REQUIRED = (
     "schema_version", "purpose", "use_when", "not_for", "side_effects", "needs",
     "cost_class", "time_class", "execution_contract",
 )
-_FULL_OPTIONAL = ("cost_note", "time_note", "learnable_from", "use_instead")
+_FULL_OPTIONAL = ("cost_note", "time_note", "learnable_from", "use_instead", "flow_behavior")
 _LIGHT_REQUIRED = ("schema_version", "purpose", "side_effects", "needs")
 
 
@@ -132,16 +134,46 @@ NODE_METADATA: Dict[str, Dict[str, Any]] = {
     },
     "branch_end_node": {
         "schema_version": 1,
-        "purpose": "Pass a parallel path's value on unchanged and mark that path as ready for a Merge.",
-        "use_when": "A path started by Parallel Branch should be joined: place this as the path's last step and connect it to a Merge.",
-        "not_for": "Ending a path (use End) or changing the value. It does not stop the path or wait for other paths.",
-        "side_effects": _read_only(),
-        "needs": _none(),
-        "cost_class": "no_usage_fee",
-        "time_class": "quick",
+        "purpose": "Mark a long-distance join in the editor and pass this path's value on to Merge.",
+        "use_when": "In the editor, mark where a path joins a Merge elsewhere. Select this beacon's branch in that Merge's settings to create the connection.",
+        "not_for": "Ending a path, waiting for peers or collecting results itself. Merge does the joining. The drafter does not use Beacons yet.",
+        "side_effects": _read_only(), "needs": _none(),
+        "cost_class": "no_usage_fee", "time_class": "quick",
         "execution_contract": {
-            "output_payload": "default: input unchanged; absent: empty text.",
+            "output_payload": "default: this path's input unchanged; absent input becomes empty text. Forwarding happens here; collection happens at the connected Merge.",
+            "notes": "An unconnected beacon is an editor join marker, not a completed join. Its widget navigates to a Merge branch. Merge's branches_to_close, carry_forward_branch_id and selected_branch_id create real wiring; they do not select its continuing path. Beacon never waits for peers or completes Merge. It remains editor-visible, not dev/test-only.",
         },
+    },
+    "merge_node": {
+        "schema_version": 1,
+        "purpose": "Wait for joining paths, collect their results by input slot, and continue once.",
+        "use_when": "Parallel paths or their later sub-paths need to finish before the next step uses their results or shared Vault writes.",
+        "not_for": "Picking one input or starting paths. Ordinary either-or routes can share a next input without Merge. Use Wait Until to wait for named steps without collecting their values.",
+        "side_effects": _read_only(), "needs": _none(),
+        "cost_class": "no_usage_fee", "time_class": "waits",
+        "time_note": "No built-in deadline. Waits only for joining paths. A joined-path failure fails Merge; independent side paths may End. Stop cancels the wait.",
+        "execution_contract": {
+            "output_payload": "default: record of values actually delivered, keyed by slot in numeric order (path_z before path_aa). Null, false, 0 and empty values stay; absent payloads are omitted. The graph declares each slot: one logical producer (including exclusive alternatives) keeps its raw value; concurrent producers always give a list in path order, with nested lists kept. No split: pass the actual input through (hand-built only; drafts reject it).",
+            "notes": "One path continues: fewest nested splits, then first to reach Merge. It returns to the opening Branch's depth. Publish then complete once; other paths end without completing Merge. Children inherit the split's join; a new split after joining is independent. Independent side paths may End; failure of a joined path fails Merge once, with no partial output; Stop cancels quietly. Startup refuses routes escaping the join, two Merges on one split, inner-then-outer joins, and Merge with any control loop.",
+        },
+        "use_instead": [
+            {"when": "Wait for named steps while forwarding this path's input", "node_type": "wait_until_node"},
+            {"when": "Format collected values as labelled text", "node_type": "concat_node"},
+        ],
+    },
+    "wait_until_node": {
+        "schema_version": 1,
+        "purpose": "Hold this path until all selected steps have completed in this run.",
+        "use_when": "Work on this path must start after named steps on other paths finish. Put Wait Until before that work; other paths keep running.",
+        "not_for": "Starting paths, collecting target values or waiting for a new completion on every visit. It forwards this path's own input.",
+        "side_effects": _read_only(), "needs": _none(),
+        "cost_class": "no_usage_fee", "time_class": "waits",
+        "time_note": "Zero disables the timeout; positive seconds limit this wait. A target proved unreachable fails without waiting for the timeout.",
+        "execution_contract": {
+            "output_payload": "default: this step's own input unchanged, including null, false, 0, lists and objects; absent input becomes empty text. Waits until every target node ID has completed at least once in this run (pass 1). Empty targets pass immediately. It never reads target values. A Merge completes only after publishing its collected record.",
+            "notes": "Targets accept a list or comma/newline-separated IDs; spaces and blank entries are ignored. Completion stays satisfied for this run, not each visit. Failure, skip and an absorbed Merge path do not complete targets. Unreachable targets and positive timeout error; Stop cancels quietly. Startup rejects missing targets and self, downstream and mutual impossible waits. Exclusive-route targets may be warned in hand-built graphs, but drafts reject them unless proven safe. Draft control loops are unsupported.",
+        },
+        "use_instead": [{"when": "Collect parallel results and continue on only one path", "node_type": "merge_node"}],
     },
     "branch_node": {
         "schema_version": 1,
@@ -393,9 +425,12 @@ NODE_METADATA: Dict[str, Dict[str, Any]] = {
 #: They have no record and no effect claims. Remove a type from here in the
 #: same change that adds its record; a new node type needs a record, not a
 #: ledger entry. The ledger must be empty before the hard gate closes.
+for _flow_type in FLOW_RECORD_TYPES:
+    NODE_METADATA[_flow_type]['flow_behavior'] = flow_template(_flow_type)
+
 PENDING_REVIEW = frozenset({
     # Batch 2: data, control, meta and state
-    "merge_node", "wait_until_node", "error_mux_node", "set_variable_node",
+    "error_mux_node", "set_variable_node",
     "get_variable_node", "node_catalogue_node", "check_workflow_spec_node",
     "remember_node", "recall_node", "if_changed_node",
     # Batch 3: system, file, service, model and delegated
@@ -654,6 +689,10 @@ def record_problems(node_type: str, record: Any) -> List[str]:
         problems = _keys_problems("record", record, _LIGHT_REQUIRED)
     else:
         problems = _keys_problems("record", record, _FULL_REQUIRED, _FULL_OPTIONAL)
+    if node_type in FLOW_RECORD_TYPES and 'flow_behavior' not in record:
+        problems.append('record: missing flow_behavior')
+    if 'flow_behavior' in record:
+        problems += flow_template_problems(node_type, record['flow_behavior'])
     for field in ("purpose", "use_when", "not_for", "cost_note", "time_note"):
         if field in record:
             problems += _text_problems(field, record[field], _TEXT_LIMITS[field])

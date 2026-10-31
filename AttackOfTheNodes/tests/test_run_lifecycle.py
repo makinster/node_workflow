@@ -204,20 +204,24 @@ async def test_json_path_success_still_routes_default():
 
 
 def _wait_until_workflow(workflow_map: WorkflowMap):
-    """start -> wait_until(target) -> after -> target.
+    """Parallel waiter and slow target: valid and parked until Stop/completion.
 
-    The target stays structurally reachable (through the live waiter), so the
-    unreachable rule never fails the wait: it parks until stopped or until a
-    test marks the target completed.
+    A downstream target is now refused before startup. Keep lifecycle tests on
+    a genuinely independent path rather than bypassing the shared flow check.
     """
     start = workflow_map.add_node("start_node")
+    fork = workflow_map.add_node("branch_node")
     waiter = workflow_map.add_node("wait_until_node")
     after = workflow_map.add_node("no_op_node")
+    delay = workflow_map.add_node("sleep_node")
     target = workflow_map.add_node("no_op_node")
+    workflow_map.update_node_config(delay, {"duration": 0.5})
     workflow_map.update_node_config(waiter, {"target_node_ids": target})
-    workflow_map.connect(start, "default", waiter, "input")
+    workflow_map.connect(start, "default", fork, "input")
+    workflow_map.connect(fork, "path_a", waiter, "input")
     workflow_map.connect(waiter, "default", after, "input")
-    workflow_map.connect(after, "default", target, "input")
+    workflow_map.connect(fork, "path_b", delay, "input")
+    workflow_map.connect(delay, "default", target, "input")
     return waiter, after, target
 
 
@@ -345,7 +349,7 @@ async def test_overlapping_starts_leave_no_untracked_supervisor():
         if task is not asyncio.current_task() and not task.done()
         and "Supervisor.run" in repr(task.get_coro())
     ]
-    assert len(live) == 1
+    assert len(live) == 2  # waiter plus its independent slow target path
     assert set(master._supervisor_tasks.values()) == set(live)
     master.stop()
     await _finish(master)

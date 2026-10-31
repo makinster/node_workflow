@@ -199,7 +199,7 @@ async def test_inherited_A_and_B_handoff_to_C_D_collect_and_continue_on_shallow_
         e.gates['A'].set()
     await e.finish()
     assert e.errors() == []
-    assert len(e.seen) == 1 and e.seen[0]['depth'] == 1 and e.seen[0]['lineage'] == (0,)
+    assert len(e.seen) == 1 and e.seen[0]['depth'] == 0 and e.seen[0]['lineage'] == (0,)
     assert e.seen[0]['value'] == {'input': {'path_a':'slow result','path_b':'C resource','path_c':'D resource'}}
     assert len(e.done(merge)) == 1
 
@@ -517,7 +517,7 @@ async def test_later_fork_uses_shallow_winner_depth_and_fresh_group_receipts():
     e.gates['B'].set(); await e.at_merge(merge)
     e.gates['A'].set(); await e.finish()
     assert not e.errors() and len(e.seen) == 2
-    assert [r['depth'] for r in e.seen] == [1, 2]
+    assert [r['depth'] for r in e.seen] == [0, 0]
     assert e.seen[1]['value'] == {'input': {'path_a': 'C', 'path_b': 'D'}}
     assert len(e.done(merge)) == len(e.done(merge2)) == 1
 

@@ -107,6 +107,7 @@ class BranchGroup:
     key: tuple[str, str, int]
     fork_node_id: str
     root_lineage: tuple[int, ...]
+    opening_depth: int
     members: Dict[str, GroupMember] = field(default_factory=dict)
 
 

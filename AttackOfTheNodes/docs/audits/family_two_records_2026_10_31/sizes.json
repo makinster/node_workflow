@@ -1,0 +1,106 @@
+{
+  "before_text": {
+    "all_Brief": {
+      "characters": 13698,
+      "bytes": 13700
+    },
+    "all_Compact": {
+      "characters": 50385,
+      "bytes": 50450
+    },
+    "all_Detailed": {
+      "characters": 118717,
+      "bytes": 118818
+    },
+    "admitted_Brief": {
+      "characters": 7997,
+      "bytes": 7999
+    },
+    "admitted_Compact": {
+      "characters": 25897,
+      "bytes": 25936
+    },
+    "admitted_Detailed": {
+      "characters": 47419,
+      "bytes": 47458
+    }
+  },
+  "after": {
+    "all_Brief_Text": {
+      "characters": 15751,
+      "bytes": 15753
+    },
+    "all_Brief_JSON": {
+      "characters": 20728,
+      "bytes": 20728
+    },
+    "all_Compact_Text": {
+      "characters": 56693,
+      "bytes": 56758
+    },
+    "all_Compact_JSON": {
+      "characters": 78501,
+      "bytes": 78523
+    },
+    "all_Detailed_Text": {
+      "characters": 125025,
+      "bytes": 125126
+    },
+    "all_Detailed_JSON": {
+      "characters": 141252,
+      "bytes": 141310
+    },
+    "admitted_Brief_Text": {
+      "characters": 8855,
+      "bytes": 8857
+    },
+    "admitted_Brief_JSON": {
+      "characters": 12778,
+      "bytes": 12778
+    },
+    "admitted_Compact_Text": {
+      "characters": 27536,
+      "bytes": 27575
+    },
+    "admitted_Compact_JSON": {
+      "characters": 37601,
+      "bytes": 37623
+    },
+    "admitted_Detailed_Text": {
+      "characters": 49058,
+      "bytes": 49097
+    },
+    "admitted_Detailed_JSON": {
+      "characters": 57207,
+      "bytes": 57229
+    }
+  },
+  "record_bytes": {
+    "merge_node": 2520,
+    "wait_until_node": 1983,
+    "branch_end_node": 1308
+  },
+  "caps": {
+    "record_bytes": 4096,
+    "catalogue_default_chars": 64000,
+    "catalogue_max_configurable_chars": 200000,
+    "catalogue_bytes": 262144,
+    "check_report_chars": 64000,
+    "check_report_bytes": 262144,
+    "admitted_contract_chars": 50000,
+    "v2_context_chars": 100000
+  },
+  "provenance": {
+    "schema_version": 1,
+    "policy_sha256": "374ef4938ed7c77a2aa5000e460391415e399bf5547b46b81bb9f6e01cbc787a",
+    "source_sha256": "6bfad33b53fadf04de7bbf3b0cf8746ab62c76087e783058fcb55652ec89f39e",
+    "runtime_sources": {
+      "master_state.py": "cd7ad2062283b5d717406f8f813870361432b06cb19f96343edeb3971d99f45e",
+      "supervisor.py": "e70fb39f8db368372e25f1ed52894522c777e339ae497174c63be131434804f2",
+      "run_context.py": "1caa82194f4916a64cf9c66cc829a5b71cc4b468d7aa1e0cd5707a3f9559eb5d",
+      "wait_registry.py": "d81c4890b3b65ee835bff6d7ef4f85dccead49e2007b2086f197d7b7383ba0ef",
+      "node_base.py": "f7fab42eae93a5b98408ae0f95d097d82b72fce8bce646e0b253eb8819d77936",
+      "node_errors.py": "13f7cc5b3dd7d41b9c2e4bbf893dfd87dd3357c3eea91e1d940915b93b628292"
+    }
+  }
+}

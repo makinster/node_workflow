@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
-  "base_revision": "5839bfe273a461dafa0702b9fe7a3aa49bc47c38",
+  "base_revision": "58a22999f38ba03cca443fd4aff980d749ce838d",
   "date": "2026-10-30",
   "scope": "source-reviewed baseline refreshed after owner decisions on count/visits ports and suppression; authoring_accepts reflects current shared capability policy; collecting Merge runtime dependency recheck on 2026-10-30 (no admission change)",
   "registered_count": 59,
-  "reviewed_count": 16,
+  "reviewed_count": 18,
   "nodes": [
     {
       "node_type": "ask_claude_node",
@@ -2274,10 +2274,10 @@
     },
     {
       "node_type": "merge_node",
-      "metadata_review": "pending",
+      "metadata_review": "reviewed",
       "authorable": true,
       "source": "backend/nodes/merge_node.py",
-      "source_sha256": "cb801ee86edb2cf3cc1007b620ea911543b92c4e5bf1f7455fe043c70589cbb7",
+      "source_sha256": "7a38ded6be31d809465b4a95c1b1e6cc45de14f3ae4f8061dfe2d33a084d8692",
       "inputs": {
         "path_a": {
           "name": "Path A",
@@ -2710,7 +2710,7 @@
       "metadata_review": "reviewed",
       "authorable": true,
       "source": "backend/nodes/branch_end_node.py",
-      "source_sha256": "886600f9f0eb71e0964ac0d4559e11ea9d34f8481460c561540579b9f3c0671a",
+      "source_sha256": "cc396e5ba624fa7924a2c2a5f93fe815eada539ee6e645fc0464f59eb9ef97e5",
       "inputs": {
         "input": {
           "name": "Input",
@@ -4369,10 +4369,10 @@
     },
     {
       "node_type": "wait_until_node",
-      "metadata_review": "pending",
+      "metadata_review": "reviewed",
       "authorable": true,
       "source": "backend/nodes/wait_until_node.py",
-      "source_sha256": "791ffd2b2da433d5af704b57aaf7a0d8735d53e92f2e6f0737caa04c10d3dc58",
+      "source_sha256": "2f596b79b7503a8dc3e701e05c91429acb0e15ae3190c95b962c5a84307df379",
       "inputs": {
         "input": {
           "name": "Input",
@@ -4496,16 +4496,17 @@
     "new_errors": []
   },
   "flow_analysis_recheck": {
-    "source_revision": "64f3f0db01e1889b40078b19694f5b6560a94ee8",
-    "date": "2026-10-30",
+    "source_revision": "eaba8b354d05dea6ccd2e59d6b27da3ebf1cfbd7",
+    "date": "2026-10-31",
     "sources": {
-      "backend/authoring.py": "a3fe3b3a98177ce7e6d7600986d78d3da3c2e924c20ba6bc2fc294c00246b094",
+      "backend/authoring.py": "6d65af429d9afe67bb545c67698e3a71a6799bac121fd437311299c76ba0d8a3",
       "backend/branch_health.py": "692a001f949d36a144e4f252ac81c72e536a674038c1147f3f3469e91f2da751",
       "backend/validator.py": "4a2cdd6e083fc8359d92f302e50cd458b05359c6d30bd836d59ae69d1108e66a",
-      "backend/flow_behaviors.py": "255b99074aa05c30cf42de04cf9435487e645dc7aacef390007002392139ef1a",
+      "backend/flow_behaviors.py": "6bfad33b53fadf04de7bbf3b0cf8746ab62c76087e783058fcb55652ec89f39e",
       "backend/validation_codes.py": "5c6267fd9d7f555850564049fc4921451d60276f73427870cf21a6fa7a6f0443",
-      "tests/test_flow_behaviors.py": "2184506cda3a24a8e6c3edc286299f5a09c1b376ed44ca02926ed9d4d7cdb919"
+      "tests/test_flow_behaviors.py": "e4303ff2a3ebe56bef7dad04afcc1d3ef6f1dba84f87e2b71697d02b51904cb5",
+      "tests/test_flow_startup_refusals.py": "3807167af073974851ef1d09774ae32e2cc496e69c3bced8bea865036d58e454"
     },
-    "scope": "Shared graph checks only; node execute code, record contents and admission are unchanged. Dependency recheck is not independent admission review."
+    "scope": "Normal startup refuses every error-level shared flow finding; final flow records and real-engine receipts refreshed. No admission change; local dependency recheck is not independent admission review."
   }
 }

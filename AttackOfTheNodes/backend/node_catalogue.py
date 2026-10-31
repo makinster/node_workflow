@@ -11,6 +11,7 @@ from .node_metadata import (
     COST_PHRASES, RECORD_SCHEMA_VERSION, effects_text, needs_text, note_lines, selection,
 )
 from .port_types import port_metadata, resolved_metadata
+from .flow_behaviors import flow_provenance, flow_brief
 
 #: Catalogue schema 2 carries node metadata record v1; each versions separately.
 SCHEMA_VERSION = 2
@@ -53,11 +54,14 @@ def brief_entry(factory, row):
     """
     description = describe_node_type(factory, row['type'])
     record = factory.metadata_for_type(row['type']).get('node_metadata')
-    return dict(entry_kind='node', type=row['type'], display_name=row['name'],
+    result = dict(entry_kind='node', type=row['type'], display_name=row['name'],
                 description=' '.join(row['description'].splitlines()),
                 inputs=[p['name'] for p in description['inputs']],
                 outputs=[p['name'] for p in description['outputs']],
                 node_metadata=selection(record) if record else None)
+    if record and record.get("flow_behavior"):
+        result["flow_summary"] = flow_brief(record["flow_behavior"])
+    return result
 
 
 def entry(factory, row, detail):
@@ -188,6 +192,7 @@ def brief_text(record, factory):
         lines.append(f"{item['type']}|{item['display_name']}|{item['description']}|"
                      f"{ports('inputs')} -> {ports('outputs')}")
         lines.extend('  ' + line for line in intent_lines(item['node_metadata'], notes=False))
+        if item.get('flow_summary'): lines.append('  Flow: ' + item['flow_summary'])
     return '\n'.join(lines) + '\n'
 
 
@@ -207,6 +212,8 @@ def text_output(record, factory):
                                                   else compact_json(item['config_fields'])),
                       *(['Errors: ' + compact_json([e for e in item['errors'] if e != 'node_error'])]
                         if record['detail'] != 'Compact' or any(e != 'node_error' for e in item['errors']) else [])])
+        if (item['node_metadata'] or {}).get('flow_behavior'):
+            lines.append('Flow: ' + compact_json(item['node_metadata']['flow_behavior']))
         for key, value in ((item['node_metadata'] or {}).get('execution_contract') or {}).items():
             lines.append(('Output payload: ' if key == 'output_payload' else 'Behavior: ') + value)
         for key, value in item.get('standard_key_docs', {}).items():
@@ -271,12 +278,14 @@ async def build(factory, config):
                   metadata_projection='selection' if config['detail'] == 'Brief' else 'full',
                   ports_basis='defaults', detail=config['detail'],
                   include_debug=config['include_debug'], matched_count=len(entries),
-                  complete=True, entries=entries)
+                  complete=True, entries=entries, flow_provenance=flow_provenance())
     if selected is not None:
         record['selected_type_ids'] = selected
     if config['detail'] != 'Brief':
         record['input_routing'] = INPUT_ARRIVAL_NOTE
     value = record if config['format'] == 'JSON' else text_output(record, factory)
+    if config['format'] == 'Text':
+        value += 'Flow provenance: ' + compact_json(record['flow_provenance']) + '\n'
     serialized = compact_json(record) if config['format'] == 'JSON' else value
     characters, size = len(serialized), len(serialized.encode('utf-8'))
     if characters > config['max_chars'] or size > MAX_BYTES:

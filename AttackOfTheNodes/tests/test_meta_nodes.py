@@ -9,6 +9,7 @@ import pytest
 
 from backend import authoring, meta_workflow, node_catalogue, persistence
 from backend.event_bus import EventBus
+from backend.flow_behaviors import FLOW_RECORD_TYPES
 from backend.memory_bank import MemoryBank
 from backend.node_base import NodeContext
 from backend.node_errors import NodeError
@@ -380,7 +381,7 @@ async def test_brief_catalogue_fits_ask_local_model_context_with_headroom():
     assert record['metadata_projection'] == 'selection'
     for e in record['entries']:
         assert set(e) == {'entry_kind', 'type', 'display_name', 'description', 'inputs', 'outputs',
-                          'node_metadata'}
+                          'node_metadata'} | ({'flow_summary'} if e['type'] in FLOW_RECORD_TYPES else set())
         assert all(isinstance(name, str) for name in e['inputs'] + e['outputs'])
     assert 'check_workflow_spec_node|Check workflow spec|' in text
     assert 'input "Spec" -> default "Checked spec", report "Check report"' in text
@@ -407,7 +408,7 @@ async def test_text_ports_separate_machine_ids_from_display_names(detail):
         assert row['inputs'] == []
         assert row['outputs'] == ['Greeting', 'Error']
         assert set(row) == {'entry_kind','type','display_name','description','inputs','outputs',
-                            'node_metadata'}
+                            'node_metadata','flow_summary'}
     else:
         assert row['outputs'][0]['id'] == 'default'
         assert row['outputs'][0]['name'] == 'Greeting'

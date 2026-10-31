@@ -4,7 +4,23 @@ Owner-approved design: `agent_channel/node-metadata-plan/` (PLAN, DECISIONS,
 MIGRATION; all 15 recommendations accepted 2026-10-28, with debug nodes and
 the tombstone getting a lighter record). Batch 1 shipped 2026-10-29: the
 registry, catalogue schema 2 and reviewed records for the twelve Draft a
-workflow v2 palette types. The other 47 registered types are pending review.
+workflow v2 palette types. The current inventory is 18 reviewed, 25 pending and 16 dev-only types.
+Final Merge/Wait records do not admit them to the drafter.
+
+## Flow extension (block 3)
+
+Seven flow records carry additive `flow_behavior` templates generated and strictly
+validated by `backend/flow_behaviors.py`: Start, End, Branch, Conditional, Merge
+Beacon, Merge and Wait Until. Templates participate in record hashes and the
+4,096-byte record cap. Brief exports short summaries; Compact/Detailed retain
+complete templates. A single provenance block binds schema version, current
+policy and LF-normalized flow/runtime source hashes.
+
+Check workflow spec exports the existing shared analysis with spec handles,
+producer/cardinality facts and provenance. Reports are complete or fail with a
+size error (64,000 characters / 256 KiB); catalogue configured caps still apply.
+No second analyser, execution cache, new admission or loop policy is introduced.
+See the [evidence and limits](../audits/family_two_records_2026_10_31/README.md).
 
 ## What a record says
 

@@ -226,11 +226,21 @@ translate it into the declared, non-retryable `child_flow_invalid` error, which
 can be routed through the calling node's error output. Messages say which paths
 to reconnect, without exposing the analyser's internal vocabulary.
 
-Sequential groups do not reset supervisor depth. Three sequential stages complete
-with `max_branch_depth=5`; at limit 2, the third Branch refuses all its children
-with `branch_depth_exceeded`. The shallowest arrival still determines the depth
-retained after each join. All coordination state retires per run; old-run
-callbacks cannot affect a new run's completion registry.
+The winning path is still the shallowest arriving path (earliest on a tie).
+After election its depth returns to the depth of the Branch opening that group.
+Six and eight sequential split/Merge stages therefore run at the default limit 5;
+eight also pass at limit 1. Real nested splits still count: a sixth nested split
+at limit 5 refuses all its children with `branch_depth_exceeded`. The execution
+view receives the restored depth. All coordination state retires per run;
+old-run callbacks cannot affect a new run's completion registry.
+
+Normal startup rejects every error-level finding from the shared analysis before
+creating a run, including required paths escaping Merge, omitted required slots
+and impossible or missing Wait targets. The same `MergePlanError` surfaces in
+App Run and as `child_flow_invalid` in child calls. Explicit MergePlan runtime
+fixtures remain supported. No second analysis is added. Other general validator
+checks remain an entry-point responsibility: App Run still does not call the
+full validator. The block-3 validator audit lists those remaining omissions.
 
 Five input slots is the default, not a fixed maximum. Frontend configuration
 chooses actual slots/Beacon edges through WorkflowMap; refresh is not a license

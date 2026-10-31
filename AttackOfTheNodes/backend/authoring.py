@@ -52,7 +52,7 @@ from .port_types import (
 from .save_manager import SaveManager
 from .data_types import types_compatible
 from .validator import _build_ancestor_set, _build_reverse_adjacency, validate_workflow
-from .flow_behaviors import parse_targets
+from .flow_behaviors import parse_targets, referenced_flow
 from .vault_declarations import typed_vault_writes, vault_read_entries
 from .node_capabilities import STANDARD_FLAGS, supported_standard_flags
 from .workflow_map import WorkflowMap
@@ -433,10 +433,10 @@ def _checked_graph(factory: NodeFactory, spec: Any):
         workflow_map.connect(ids[source], source_port, ids[target], target_port)
 
     handles = {node_id: handle for handle, node_id in ids.items()}
-    _add_validation(workflow_map, factory, handles, add, diagnostics)
+    flow = _add_validation(workflow_map, factory, handles, add, diagnostics)
     if any(d["level"] == "error" for d in diagnostics):
-        return report(False), None
-    return report(True, workflow_id=workflow_map.workflow_id, name=name, nodes=ids), workflow_map
+        return report(False, flow_analysis=flow), None
+    return report(True, workflow_id=workflow_map.workflow_id, name=name, nodes=ids, flow_analysis=flow), workflow_map
 
 
 def _read_spec(spec: Any, add) -> Tuple[Dict[str, Dict[str, Any]], List[Any], str]:
@@ -550,6 +550,7 @@ def _add_validation(workflow_map: WorkflowMap, factory: NodeFactory, handles: Di
             if issue.get("path"):
                 guidance["path"] = [handles.get(nid, nid) for nid in issue["path"]]
             add(level, code, str(issue.get("message") or ""), handle, issue.get("field"), **guidance)
+    return referenced_flow(result["flow_analysis"], handles)
 
 
 def _reload_problem(factory: NodeFactory, workflow_id: str, built: WorkflowMap) -> str:
@@ -650,6 +651,7 @@ def inspect_workflow(factory: NodeFactory, workflow_map: WorkflowMap) -> Dict[st
         "workflow_id": workflow_map.workflow_id, "name": workflow_map.workflow_name,
         "nodes": summary, "execution": execution, "vault": vault,
         "data_flow": data_flow, "unchecked": unchecked, "validation": validation,
+        "flow_analysis": result["flow_analysis"],
     }
 
 

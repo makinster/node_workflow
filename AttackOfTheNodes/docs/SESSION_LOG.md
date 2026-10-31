@@ -6,6 +6,40 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-31 — PR #165 startup refusal follow-up
+
+On the same branch after `eaba8b3`, the MergePlan adapter now refuses every error
+from the already computed flow analysis, before a run exists. Escaping required
+routes (both inputs), omitted children, impossible waits and missing targets are
+covered by direct-start tests; real App Run shows the refusal and a child emits
+`child_flow_invalid`. There is no second traversal. The records, fingerprints,
+source provenance and 95-scenario real-engine receipt are refreshed.
+
+The lifecycle/stale-run tests now use valid independent slow target paths rather
+than manually completing impossible downstream targets. Disconnected targets
+refuse startup. All previously valid hand-built integration scenarios pass, and
+none of eight bundled delivery graphs is newly refused. General App Run
+validation remains unchanged: the [validator audit](audits/family_two_records_2026_10_31/VALIDATOR_STARTUP_AUDIT.md)
+lists confirmed remaining bypasses and the remaining source-level inventory.
+
+Full suite: **5,105 passed, 187 skipped**, 49.31 seconds; focused suite 53 passed.
+No real API calls, palette/trial/loop changes or edits to saved workflows.
+
+## 2026-10-31 — Family-2 final records, claims and depth
+
+Based on merged main `58a2299`. Separate depth commit `943c83f` restores the
+winning supervisor to its opening Branch depth after election; six/eight normal
+sequential groups pass and real nesting past five still fails atomically.
+Final Merge/Wait records, editor Beacon wording, seven bounded flow templates,
+checked-flow exports and source/policy provenance are implemented without
+admission or Set/Get changes. Real-engine claims receipt covers 88 scenarios.
+Full suite: **5,089 passed, 187 skipped**, 48.27 seconds. No API calls.
+
+The [audit](audits/family_two_records_2026_10_31/README.md) includes complete
+sizes, changed-test reasons and plan differences. A manual probe confirms that
+full validation refuses a joining path escaping to End, but direct startup can
+bypass this validation and emit a partial record. This existing App Run entry-
+point gap is reported, not silently changed in the records milestone.
 ## 2026-10-31 — Family 2 block 4 first half: scorer, set 4 and calibration
 
 Branch `codex/family-2-scorer-set4`, isolated worktree

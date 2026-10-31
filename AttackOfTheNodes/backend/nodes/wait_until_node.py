@@ -15,7 +15,7 @@ class WaitUntilNode(Node):
 
     node_type: ClassVar[str] = "wait_until_node"
     display_name: ClassVar[str] = "Wait Until"
-    description: ClassVar[str] = "Waits for selected nodes before continuing"
+    description: ClassVar[str] = 'Hold this path until all selected steps have completed in this run.'
     category: ClassVar[str] = NodeCategory.FLOW
     input_ports: ClassVar[List[str]] = ["input"]
     output_ports: ClassVar[List[str]] = ["default"]

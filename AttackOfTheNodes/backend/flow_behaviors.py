@@ -190,7 +190,8 @@ class FlowAnalysis:
         return not any(f.level == "error" for f in self.findings)
 
     def to_dict(self) -> dict:
-        return asdict(self)
+        return dict(schema_version=FLOW_SCHEMA_VERSION, policy=dict(FLOW_POLICY),
+                    provenance=flow_provenance(), **asdict(self))
 
 
 def _compatible(a: Arrival, b: Arrival) -> bool:
@@ -425,11 +426,11 @@ def analyze_flow(all_nodes: Mapping[str, dict], factory=None, *, draft: bool = F
         for h in merge.handoffs:
             parts.append(f'{h["parent"]} hands off to {" and ".join(h["children"])}.')
         if merge.shape_status == "needs_review":
-            parts.append("Continuation and output shape need review.")
+            parts.append("Reconnect these paths to one Merge before running.")
         elif len(shallowest_lineages) == 1:
             parts.append(f"Continues as {merge.continuation_candidates[0]}.")
         else:
-            parts.append("Continues as the first arrival at the shallowest depth.")
+            parts.append("Continues once on the path with the fewest nested splits; if tied, the path that gets here first.")
         parts.append("Output: {" + ", ".join(merge.slots) + "}.")
         for slot, schema in merge.slots.items():
             labels = list(dict.fromkeys(p["path_name"] if schema["cardinality"] == "many"
@@ -550,7 +551,7 @@ def reached_with_open_family(all_nodes: Mapping[str, dict], target: str, factory
 
 
 class MergePlanError(ValueError):
-    """The workflow cannot start because its Merge connections are unsupported."""
+    """The workflow cannot start because its flow has an error."""
 
 
 def merge_plans_from_analysis(report: FlowAnalysis):
@@ -562,9 +563,12 @@ def merge_plans_from_analysis(report: FlowAnalysis):
     """
     from .run_context import MergePlan, MergeSlot
 
-    uncertain = next((f for f in report.findings if f.code == 'flow_needs_review' and f.level == 'error'), None)
-    if uncertain:
-        raise MergePlanError(uncertain.message)
+    error = next((f for f in report.findings if f.level == 'error'), None)
+    if error:
+        message = error.message
+        if error.repair:
+            message += ' ' + error.repair
+        raise MergePlanError(message)
     plans = {}
     for mid, merge in report.merges.items():
         if merge.shape_status != 'proved':
@@ -592,3 +596,91 @@ def merge_plans_from_analysis(report: FlowAnalysis):
             slots[slot] = MergeSlot(schema['cardinality'], tuple(producers))
         plans[mid] = MergePlan(merge.group_roots[0], slots)
     return plans
+
+
+FLOW_SCHEMA_VERSION = 1
+FLOW_RECORD_TYPES = frozenset({'start_node','end_node','branch_node','conditional_node',
+                               'branch_end_node','merge_node','wait_until_node'})
+FLOW_POLICY = dict(pass_number=1, group_scope='inherited_family_in_run',
+    node_completion='once_per_run_pass', branch_registration='atomic_selected_batch',
+    winner='min_depth_then_arrival', continuation_depth='opening_branch_depth',
+    same_slot='analysis_one_or_many')
+
+
+def flow_template(node_type):
+    """Bounded registry facts from this flow owner; never 64 repeated port rows."""
+    if node_type not in FLOW_RECORD_TYPES:
+        return None
+    kind, entry = _BINDINGS[node_type]
+    template = dict(schema_version=FLOW_SCHEMA_VERSION, basis='template', kind=kind.value,
+                    entry=entry, pass_number=1, ports_from='resolved_output_ports')
+    if kind == Kind.JOIN:
+        template.update(input_ports_from='resolved_input_ports', payload='actual_deliveries_by_slot',
+            slot_order='numeric', same_slot=FLOW_POLICY['same_slot'],
+            dependencies='joining_paths_settled', winner=FLOW_POLICY['winner'],
+            continuation_depth=FLOW_POLICY['continuation_depth'],
+            completion='publish_then_complete_once', other_paths='absorbed_no_completion',
+            failure='fail_once_no_partial_release_waiters', stop='quiet_cancel',
+            timeout_seconds=0, no_split='actual_input_passthrough')
+    elif kind == Kind.WAIT:
+        template.update(payload='own_input_or_empty', dependencies='target_node_ids_completed_once',
+            scope='current_run', timeout_from='timeout_seconds', unreachable='error', stop='quiet_cancel')
+    elif kind == Kind.FORK:
+        template.update(selection_from='branch_config', payload='input_or_port_vault_seed',
+            group='inherit_else_new', handoff=FLOW_POLICY['branch_registration'],
+            depth_increment=1, depth_limit='max_branch_depth', refusal='typed_error_no_children')
+    elif kind == Kind.FINISH:
+        template.update(ports_from=None, terminal='finish_this_path', result='return_end_once')
+    elif kind == Kind.BEACON:
+        template.update(payload='own_input_or_empty', join_marker='editor_wires_to_merge', barrier=False)
+    elif entry:
+        template.update(payload='start_rows_or_greeting', activation='always')
+    else:
+        template.update(payload='compared_left', activation='exactly_one', choice_ports=['true','false'])
+    return template
+
+
+def flow_template_problems(node_type, value):
+    """Generated policy fields cannot be silently overridden by a record edit."""
+    expected = flow_template(node_type)
+    import json
+    try:
+        matches = expected is not None and value == expected and json.dumps(value,sort_keys=True,allow_nan=False) == json.dumps(expected,sort_keys=True)
+    except (TypeError,ValueError):
+        matches = False
+    return [] if matches else ['flow_behavior: must match the versioned flow declaration']
+
+
+def flow_provenance():
+    """Bind exported claims to the policy and its implementation, not just prose."""
+    import hashlib
+    import json
+    from pathlib import Path
+    return dict(schema_version=FLOW_SCHEMA_VERSION,
+        policy_sha256=hashlib.sha256(json.dumps(FLOW_POLICY,sort_keys=True,separators=(',',':')).encode()).hexdigest(),
+        source_sha256=hashlib.sha256(Path(__file__).read_bytes().replace(b'\r\n',b'\n')).hexdigest(),
+        runtime_sources={name:hashlib.sha256((Path(__file__).parent/name).read_bytes().replace(b'\r\n',b'\n')).hexdigest()
+            for name in ('master_state.py','supervisor.py','run_context.py','wait_registry.py','node_base.py','node_errors.py')})
+
+
+def referenced_flow(data, references):
+    """Stable spec handles replace temporary ids, including ids in route guards."""
+    import re
+    if not references:
+        return data
+    pattern = re.compile(r'(?<![\w])('+'|'.join(re.escape(k) for k in references)+r')(?![\w])')
+    def remap(value):
+        if isinstance(value,str): return pattern.sub(lambda m:references[m[0]],value)
+        if isinstance(value,dict): return {remap(k):remap(v) for k,v in value.items()}
+        if isinstance(value,(tuple,list)): return [remap(v) for v in value]
+        return value
+    return remap(data)
+
+
+def flow_brief(template):
+    return {'join':'Collect joining results by slot; continue once.',
+            'wait':'Wait for named steps; forward this path only.',
+            'fork':'Start the chosen paths together.',
+            'finish':'Finish this path.',
+            'beacon':'Editor marker wired to Merge; forwards without waiting.',
+            'route':'Start the run.' if template['entry'] else 'Take exactly one matching path.'}[template['kind']]
