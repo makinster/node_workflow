@@ -1072,7 +1072,7 @@ async def calibrate(
     if replay is not None and real_calls:
         raise ValueError('Replay is mock-only')
     from backend.agent_usage import usage_summary
-    from backend.meta_workflow import check
+    from backend.meta_workflow import check, review_report
     from backend.node_errors import NodeError
     from backend.node_factory import NodeFactory
 
@@ -1135,7 +1135,7 @@ async def calibrate(
                         clarification_answer=case["clarification"],
                         frozen_requirements=json.dumps(req),
                         draft_text=raw_draft,
-                        spec_check=json.dumps(structural),
+                        spec_check=json.dumps(review_report(structural)),
                     )
                 )
                 (directory / (variant + "-judge-question.txt")).write_text(

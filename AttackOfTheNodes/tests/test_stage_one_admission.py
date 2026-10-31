@@ -328,3 +328,32 @@ def test_draft_guidance_says_how_to_get_more_than_two_paths():
     draft = SPEC['nodes']['draft_question']['config']['template']
     assert 'set branch_count on the branch_node' in JOIN_DRAFT and JOIN_DRAFT in draft
     assert 'path_a to path_e unless input_slots' in JOIN_DRAFT
+
+
+def test_reviewer_sees_flow_in_words_and_nothing_extra_without_a_merge():
+    # Runs 000048/49: the raw analysis nearly doubled the judge's question.
+    from backend.meta_workflow import review_report
+    factory = NodeFactory()
+    with_merge = dict(ok=True, flow_analysis=check_workflow_spec(factory, good_draft(1))['flow_analysis'])
+    reviewed = review_report(with_merge)
+    assert set(reviewed['flow_analysis']) == {'merges', 'findings'}
+    assert reviewed['flow_analysis']['merges']['join']['summary'].startswith('Merge')
+    assert 'provenance' not in json.dumps(reviewed) and 'flow_analysis' in with_merge
+    no_merge = dict(flow_analysis=dict(merges={}, findings=[]), ok=True)
+    assert review_report(no_merge) == dict(ok=True)
+    assert review_report(dict(ok=True)) == dict(ok=True)
+
+
+@pytest.mark.parametrize('body, right', [
+    ('A\nAlpha report\n\nB\nBeta report', True),  # Run 000050's correct draft.
+    ('a\n\nAlpha report\nB\nBeta report', True),
+    ('Data A\nAlpha report\nB\nBeta report', False),  # Not alone on its line.
+    ('B\nBeta report\nA\nAlpha report', False),  # Wrong order.
+    ('A\nBeta report\nB\nAlpha report', False),  # Values swapped.
+])
+def test_a_label_may_sit_alone_on_the_line_above_its_value(body, right):
+    assert shown_fields_match([body], fixture_variants(1)[0]) is right
+
+
+def test_label_alone_above_an_empty_value_still_counts():
+    assert shown_fields_match(['A\nAlpha report\n\nB\n'], fixture_variants(1)[2])
