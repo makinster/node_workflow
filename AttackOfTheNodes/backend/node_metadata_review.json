@@ -472,7 +472,7 @@
         "tests/test_context_pack.py::test_longest_first_tie_order_and_footer_cap",
         "tests/test_context_pack.py::test_review_known_secrets_redacted_before_json_and_vault"
       ],
-      "content_sha256": "238f20426ae87ba0d8b99fd2ef93e8bc0a5d51fece30cb798c9d6f1f00ebea5e",
+      "content_sha256": "ab642e5f8eddbe10455626282cfcba826d0fe6cb657f3d91d726c416ff3b8320",
       "author": "helper-family-record-author",
       "verifier": "exact-layout-source-and-byte-scenario-recheck",
       "reviewed": "2026-10-30",
