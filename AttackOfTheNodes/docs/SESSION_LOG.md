@@ -6,6 +6,56 @@ Older entries remain whole in [Session Log History](archive/SESSION_LOG_HISTORY.
 Before rolling the window forward, extract owner decisions into their owning
 references; see [Contributing](CONTRIBUTING.md#keeping-the-session-log-bounded).
 
+## 2026-10-30 — Family 2 revision 1, block 2: shared graph analysis
+
+Branch `codex/shared-flow-analysis`, isolated worktree
+`/home/makin/src/nw-flow-analysis`, from main `f57f4ed`. Source implementation
+through `64f3f0d`; owner review/merge pending. Followed Owner approvals, final
+revision-1 decisions 7/8/11/12, approved section-2 R1, section 5 and block 2;
+superseded text was not used.
+
+`backend/flow_behaviors.py` owns typed/resolved profiles and policy validation,
+legacy Branch chosen batches, inherited groups, atomic parent/child handoffs,
+conditional membership, route guards per structural visit, per-Merge producers,
+numeric slots, one/many schema, shallowest/first-arrival continuation and plain
+summaries. Shared saved routers on concurrent paths have independent choices;
+duplicate labels cannot invent an equal-depth winner. All reports reserve pass 1.
+Required conditional/recovery escapes and control-plus-completion wait cycles
+error. Control back edges get "loops are not supported in drafts yet" before
+wait analysis. Exclusive same-slot joins and independent side Ends remain valid.
+
+App validation exposes structured findings plus `flow_analysis`; authoring uses
+draft mode and translates repair paths to author handles. Branch health consumes
+profiles and follows exclusive alternatives. Standalone hand-built Merges warn;
+existing ambiguous ordinary fan-out diagnostics take precedence over redundant
+standalone warnings. Repeated/unrelated-group shape is explicitly unproved
+(`needs_review`, no guessed cardinality), and drafts reject repeated joins.
+Analysis bounds are 512 nodes and 20,000 traced states. Unknown value presence
+remains explicit, and index-based member labels are not certified.
+
+Plan/code differences: the stable-code contract requires small additions to
+`backend/validation_codes.py` and Error Details labels, beyond the named primary
+files. `port_types.py` imports a branch-health constant, so compatibility exports
+remain. The Return End check counted open splits and closed only one per Merge;
+it now closes the inherited family after nested handoffs. No approved design
+decision needed revision. Multi-output value ports are not control alternatives;
+If Changed, Random Branch, Deep Branch and active Error Mux routes have profiles.
+
+Verification: full `pytest -n 8 -q`: **4,839 passed / 187 skipped**, zero failures or xfails,
+in **105.00 s**. The new test file has **43 graph-only cases**,
+including direct/Beacon A/B→C/D on A/C/D, R1 concurrent/exclusive slots,
+conditional/recovery escapes, self/downstream/mutual waits, actual back edges,
+valid cross-path gates, existing hand-built flows and bounded-analysis refusal.
+The executable claims receipt was regenerated (**234 pass / 179 explicit skip**)
+with unchanged observations. Twelve affected existing record dependencies and
+the claims baseline were source-rechecked; no new records/admission were signed,
+and this does not replace independent admission review. Compile and whitespace
+checks pass. No API/model calls or owner workflows were used.
+
+No changes to Builder 1's runtime/coordinator/node files, node picker, palette,
+drafter or trial tools. Runtime collection proof, final records and trial/admission
+integration remain the other builders' and later blocks' work.
+
 ## 2026-10-30 — PR #158 follow-up 2: layout and constraints (Important)
 
 Same branch `codex/helper-family`, following `cde189b`. Owner's paid results

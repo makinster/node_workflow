@@ -13,6 +13,35 @@ and real-engine run summaries cover all three supported models. See the latest
 Session Log entry for verification: full `pytest -n auto` passes **3,234 tests
 in 35.63 s** after the review fixes.
 
+## Family 2 block 2 — shared graph analysis (2026-10-30)
+
+Implemented on `codex/shared-flow-analysis`, from main `f57f4ed`, for owner
+review. `backend/flow_behaviors.py` owns typed flow profiles, legacy Branch
+selection, structural groups/lineages, atomic handoffs, per-Merge producers,
+exclusive guards, R1 scalar/list shape, numeric slot order and plain summaries.
+`analyze_flow(nodes, factory, draft=False)` is the shared pure entry point for
+future drafter and trial consumers. Validator results expose `flow_analysis`.
+Authoring checks use draft mode and retain structured path/slot/route/repair
+facts; no drafter, palette, trial scorer or runtime coordinator was changed.
+
+App checks reject required-join escapes and impossible completion waits. Drafts
+also reject loops (with the approved wording), standalone/repeated joins and
+unsupported shapes. Hand-built standalone Merges warn; existing ignored-fan-out
+warnings take precedence over redundant standalone-Merge warnings. Nested
+handoffs close one inherited family for the Return End check. Branch health
+uses the same flow profiles and follows exclusive alternatives through Beacons.
+
+Reports reserve pass 1. They declare potential missing values and do not certify
+index-based member labels. Repeated/unrelated-group joins require review rather
+than guessed cardinality. Bounds are explicit: 512 nodes / 20,000 traced states;
+exceeding either yields `flow_needs_review`, with no truncated proof. Beacon
+wiring remains supported by app analysis and outside draft admission.
+
+This is graph preflight, not proof of Builder 1's collecting runtime. No new
+records or node admission are signed. Affected existing source dependencies
+and the executable claims receipt are re-attested; independent admission review
+is still required. Verification and code/plan differences are in the Session Log.
+
 ## First helper family — 2026-10-30 (Important)
 
 The drafter now admits Find lines, Read lines, Check reply and Context Pack:

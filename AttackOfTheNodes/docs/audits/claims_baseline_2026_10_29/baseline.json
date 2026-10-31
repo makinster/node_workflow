@@ -4494,5 +4494,18 @@
     ],
     "spec_count": 17,
     "new_errors": []
+  },
+  "flow_analysis_recheck": {
+    "source_revision": "64f3f0db01e1889b40078b19694f5b6560a94ee8",
+    "date": "2026-10-30",
+    "sources": {
+      "backend/authoring.py": "a3fe3b3a98177ce7e6d7600986d78d3da3c2e924c20ba6bc2fc294c00246b094",
+      "backend/branch_health.py": "692a001f949d36a144e4f252ac81c72e536a674038c1147f3f3469e91f2da751",
+      "backend/validator.py": "4a2cdd6e083fc8359d92f302e50cd458b05359c6d30bd836d59ae69d1108e66a",
+      "backend/flow_behaviors.py": "255b99074aa05c30cf42de04cf9435487e645dc7aacef390007002392139ef1a",
+      "backend/validation_codes.py": "5c6267fd9d7f555850564049fc4921451d60276f73427870cf21a6fa7a6f0443",
+      "tests/test_flow_behaviors.py": "2184506cda3a24a8e6c3edc286299f5a09c1b376ed44ca02926ed9d4d7cdb919"
+    },
+    "scope": "Shared graph checks only; node execute code, record contents and admission are unchanged. Dependency recheck is not independent admission review."
   }
 }
