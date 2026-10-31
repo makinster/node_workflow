@@ -77,7 +77,7 @@ The ordinary designer labels output for manual review, never behavior-tested.
 
 Before any target executes, the harness checks the exact saved bytes and SHA,
 runs real `main.py build --check --json`, rejects all warnings, verifies the
-12-type palette and all configured/effective file paths, and interprets a bounded
+original palette and all configured/effective file paths, and interprets a bounded
 pure subset over every fixture. It inspects every node, including error routes.
 Dynamic file paths, escaping symlinks, ordinary output fan-out, cycles,
 unsupported source/routing overrides and unproven parallel Vault races fail.
@@ -420,13 +420,14 @@ sets `system_node_folders` to that case's fixture directory only; its execution
 artifact records that setting. These settings are a read-scope check, not an OS
 sandbox. No new target writes files or contacts a service.
 
-Sets 1 and 2 retain exactly their original twelve types and seventeen role IDs,
+Sets 1 and 2 retain their original types and role IDs, less Merge Beacon and its
+role since 2026-10-30 (the owner took it out of drafts): eleven types, sixteen roles,
 including the word-count `needs_new_node` and email `outside_scope` cases.
 `fixtures/admission_baseline.json` pins those IDs, all original requests,
 structures, reference drafts, variants and the first 25 calibration pairs by
 canonical digest. Scope is applied to the actual Brief lookup, discovery,
 selection/expansion and analysis/check schemas; it is not only prompt wording.
-Default delivery uses all sixteen admitted types / twenty-one roles.
+Default delivery uses all fifteen admitted types / twenty roles.
 
 Five new pairs cover whole-file versus excerpt, configured search overriding
 an answer, a wrong no-match message, rejecting permitted extra JSON fields and
@@ -434,7 +435,7 @@ a pack that ignores its answer. The pack pair is explicitly held out from prompt
 tuning. The base already contained 25 pairs (including the held-out reversed
 empty check); all remain unchanged, giving 30 pairs / 60 judge calls now.
 Per-pair `contracts.json` preserves the exact context the judge received;
-original pairs retain the twelve-type baseline, helper pairs get all sixteen.
+original pairs retain the eleven-type baseline, helper pairs get all fifteen.
 The judge prompt is unchanged.
 
 The set-3 oracle invokes real local execute methods with tiny temporary fixtures,
@@ -509,7 +510,7 @@ the invocation totals include it once. Budget, elapsed-time and unknown-cost
 guards cover the entire invocation without resetting between sets. Failed
 calibration blocks cases unless explicitly running the diagnostic override;
 even with that override, the overall result remains fail. Sets 1/2 retain the
-exact original twelve-type admission/contracts; set 3 retains its sixteen types.
+exact original eleven-type admission/contracts; set 3 retains its fifteen types.
 For multi-set `--replies`, use `{ "1": { "1": [replies...] }, "3": ... }`;
 single-set overrides retain the original case-ID object format.
 
@@ -543,7 +544,7 @@ RunService's setting lookup only. No settings file is changed, including the
 prepared key library and the owner's normal settings. The existing adapter
 serializes cached Context before the question; the question text and the order
 of all judge-template sections are unchanged. There are two reusable prefixes:
-the frozen twelve-type contracts and the admitted sixteen-type contracts.
+the frozen eleven-type contracts and the admitted fifteen-type contracts.
 `calibration-report.json.cache` reports ordinary/output/cache-read/cache-write
 tokens, estimated cost, the same tokens priced without caching and savings
 (which may be negative on a cache write). Unknown usage stays unknown. Mock or

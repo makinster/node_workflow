@@ -31,7 +31,7 @@ async def test_exact_identity_complete_sorted_and_capped():
     assert result['complete'] and result['matched_count'] == 2
     with pytest.raises(NodeError, match='too large') as exc:
         await node_catalogue.build(factory, config(scope='Exact IDs', type_ids=list(PALETTE), max_chars=512))
-    assert exc.value.details['matched_count'] == 12
+    assert exc.value.details['matched_count'] == 11
 
 
 @pytest.mark.parametrize('ids, message', [

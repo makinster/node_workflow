@@ -6424,24 +6424,24 @@ async def _test_node_selector_uses_family_tabs():
         assert "wait_until_node" in visible_types  # Wait / Timer, promoted
         assert "branch_node" not in visible_types  # behind the Branch group
 
-        # Utility tab: transform group plus debug/loop helper direct-adds.
+        # Utility tab: transform group plus the remaining debug direct-add.
         screen._set_active_tab("Utility")
         assert screen._active_tab == "Utility"
         assert "Data Transform" in group_entries(screen)
-        assert {"Transform", "Debug", "Loop Helpers"}.issubset(
+        assert {"Transform", "Debug"}.issubset(
             set(header_names(screen))
         )
         utility_types = {node["type"] for node in screen._visible_nodes}
-        assert {"echo_node", "probe_node", "counter_node", "check_reply_node"}.issubset(utility_types)
+        assert {"sleep_node", "check_reply_node"}.issubset(utility_types)
+        assert not {"echo_node", "probe_node", "counter_node"} & utility_types
 
         # Complex tab: the existing four nodes plus Ask Hermes.
         screen._set_active_tab("Complex")
         assert screen._active_tab == "Complex"
-        assert group_entries(screen).get("AI Processing") == 5
+        assert group_entries(screen).get("AI Processing") == 2
         ai_group = next(entry for entry in screen._entries
                         if entry["kind"] == "group" and entry["name"] == "AI Processing")
         assert {member["type"] for member in ai_group["members"]} == {
-            "chat_completion_node", "image_generation_node", "embedding_node",
             "pick_one_node", "hermes_ask_node",
         }
 
@@ -6451,14 +6451,14 @@ async def _test_node_selector_uses_family_tabs():
         assert filter_input.editing is False
         await pilot.press("e")
         assert filter_input.editing is True
-        filter_input.value = "chat"
+        filter_input.value = "pick_one"
         filter_input.end_edit()
         screen._apply_filter(filter_input.value)
         assert filter_input.editing is False
         assert header_names(screen) == []
         assert group_entries(screen) == {}
         assert {node["type"] for node in screen._visible_nodes} == {
-            "chat_completion_node",
+            "pick_one_node",
         }
 
         filter_input.value = "deleted"
@@ -6467,7 +6467,7 @@ async def _test_node_selector_uses_family_tabs():
 
         filter_input.value = ""
         screen._apply_filter(filter_input.value)
-        assert group_entries(screen).get("AI Processing") == 5
+        assert group_entries(screen).get("AI Processing") == 2
 
         screen.action_focus_node_list()
         assert app.focused is node_list

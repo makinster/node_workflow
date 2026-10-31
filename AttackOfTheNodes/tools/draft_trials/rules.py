@@ -153,7 +153,7 @@ def safety(spec, case):
     if len(spec.get("nodes", {})) > 64:
         raise RuleFailure("too many nodes")
     if any(n.get("type") not in PALETTE for n in spec["nodes"].values()):
-        raise RuleFailure("outside 12-type palette")
+        raise RuleFailure("outside original palette")
     nodes = effective_nodes(spec)
     out = defaultdict(list)
     for edge in spec["connections"]:
