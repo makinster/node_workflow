@@ -1913,6 +1913,52 @@
           "user_text_input_node"
         ]
       }
+    },
+    "draft_status": {
+      "type": "json_path_node",
+      "alias": "Read draft status",
+      "config": {
+        "path": "status",
+        "default_value": ""
+      }
+    },
+    "draft_blocked": {
+      "type": "conditional_node",
+      "alias": "Did the drafter stop?",
+      "config": {
+        "condition_type": "equals",
+        "left_value_source": "input",
+        "right_value": "blocked"
+      }
+    },
+    "draft_for_check": {
+      "type": "concat_node",
+      "alias": "Keep exact draft for check",
+      "config": {
+        "template": "{draft_text}"
+      }
+    },
+    "blocked_draft": {
+      "type": "json_path_node",
+      "alias": "Read blocked draft",
+      "config": {
+        "path": "",
+        "default_value": ""
+      }
+    },
+    "blocked_summary": {
+      "type": "concat_node",
+      "alias": "Explain why drafting stopped",
+      "config": {
+        "template": "Draft blocked.\nReason: {input[reason]}\nBlocked requirements: {input[blocked_requirements]}"
+      }
+    },
+    "blocked_text": {
+      "type": "concat_node",
+      "alias": "Keep blocked reply",
+      "config": {
+        "template": "{draft_text}"
+      }
     }
   },
   "connections": [
@@ -2090,7 +2136,7 @@
     },
     {
       "from": "draft.default",
-      "to": "check.input"
+      "to": "draft_status.input"
     },
     {
       "from": "check.default",
@@ -2414,6 +2460,58 @@
     },
     {
       "from": "selected_contracts.error",
+      "to": "error_message.input"
+    },
+    {
+      "from": "draft_status.default",
+      "to": "draft_blocked.input"
+    },
+    {
+      "from": "draft_blocked.false",
+      "to": "draft_for_check.input"
+    },
+    {
+      "from": "draft_for_check.default",
+      "to": "check.input"
+    },
+    {
+      "from": "draft_blocked.true",
+      "to": "blocked_text.input"
+    },
+    {
+      "from": "blocked_draft.default",
+      "to": "blocked_summary.input"
+    },
+    {
+      "from": "blocked_summary.default",
+      "to": "scope_output.input"
+    },
+    {
+      "from": "draft_status.error",
+      "to": "error_message.input"
+    },
+    {
+      "from": "draft_blocked.error",
+      "to": "error_message.input"
+    },
+    {
+      "from": "draft_for_check.error",
+      "to": "error_message.input"
+    },
+    {
+      "from": "blocked_draft.error",
+      "to": "error_message.input"
+    },
+    {
+      "from": "blocked_summary.error",
+      "to": "error_message.input"
+    },
+    {
+      "from": "blocked_text.default",
+      "to": "blocked_draft.input"
+    },
+    {
+      "from": "blocked_text.error",
       "to": "error_message.input"
     }
   ]

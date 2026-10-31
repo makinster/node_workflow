@@ -13,6 +13,19 @@ and real-engine run summaries cover all three supported models. See the latest
 Session Log entry for verification: full `pytest -n auto` passes **3,234 tests
 in 35.63 s** after the review fixes.
 
+## Blocked draft explanation (2026-10-31)
+
+On `codex/blocked-draft-reason`, based on main `b52ed36`, a first blocked draft
+uses the existing Needs review output to show its reason and blocked requirements
+before the structural check. No redraft, saved workflow or build command follows.
+Ready/unspecified-status drafts retain the check and one structural redraft.
+All existing node configs and prompts for sets 1–3 are identical to the base;
+the new blocked message applies to every set. Only the two configured-designer
+pins (`original`, `helpers`) are refreshed; no runtime fingerprints changed.
+Mock replies cover all four sets, including set 4 case 2. No API calls or
+admission/scoring/guidance changes. Full-suite results are recorded in the latest
+Session Log entry.
+
 ## Family 2 Stage 1 admission (2026-10-31)
 
 Drafts can now use `merge_node` for one shape only: one split, every path wired
