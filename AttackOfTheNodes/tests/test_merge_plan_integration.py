@@ -297,9 +297,12 @@ async def test_app_run_shows_refusal_and_can_run_after_repair():
     app=AttackOfTheNodesApp(e.bus,e.factory,e.wm,e.memory,e.master)
     async with app.run_test(size=(100, 40), notifications=True) as pilot:
         await pilot.press('ctrl+r'); await pilot.pause(0.3)
-        toasts=[t for t in app.screen.query('Toast') if "Can't start:" in t._notification.message]
-        assert len(toasts)==1 and toasts[0].region.width>0
-        assert 'earlier Merge' in toasts[0]._notification.message
+        from frontend.screens.editor import EditorScreen
+        from frontend.widgets.validation_panel import ValidationPanel
+        assert isinstance(app.screen, EditorScreen)
+        panel=app.screen.query_one(ValidationPanel)
+        assert panel.display and panel.region.width>0
+        assert any('earlier Merge' in issue['message'] for issue in panel.issues)
         assert e.master.current_run_id is None
         # Repair the refused graph and press Run again through the same app.
         incoming=e.wm.get_node_data(second)['connections']['inputs'][0]

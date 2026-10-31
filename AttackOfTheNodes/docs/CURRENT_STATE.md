@@ -1,8 +1,8 @@
 # Current State
 
-Snapshot checked **2026-10-31**, based on `origin/main` `58a2299`
-(includes #162–#164). Family-2 final records/claims are implemented on
-`codex/family-two-records` for review; no admission change or real API calls.
+Snapshot checked **2026-10-31**, based on `origin/main` `821688d`
+(includes #165). App Run preflight is implemented on `codex/app-run-validation`
+for review. No paid/API calls or admission changes.
 This is the live status snapshot; plans and logs preserve dated decisions.
 Live deployment facts below come from the owner's shared notes and confirmed
 delivery; this documentation refresh did not change or rerun live jobs.
@@ -23,6 +23,20 @@ F2-01/02 and calibration pairs 1/6 join the normal run and `--case-set all`; Sta
 stays opt-in. Sets 1, 2 and 3 keep their exact palettes and designer prompts. No
 API calls were made, so this shows nothing yet about drafting quality.
 [Audit, replay comparison and sizes](audits/family_two_stage1_2026_10_31/README.md).
+## App Run preflight — 2026-10-31
+
+Run now calls the existing full validator before saving or switching to execution.
+Errors open the editor's normal Validation panel; warnings allow a run. Repairing
+and running again works, including returning from a previous execution screen.
+Backend startup safety checks and subworkflow/RunService behavior are unchanged.
+Full suite: **5,147 passed, 187 skipped**. All 17 bundled graph objects were checked:
+16 are error-free, one is a preserved historical invalid-port draft. The actual
+starter and runtime-declared Vault/file cases run successfully.
+
+One existing checker compatibility exception is reported, not changed: reading
+internal `output_log` after Text Output writes it works in raw execution but is
+rejected as an undeclared Vault key. See the [App Run audit](audits/app_run_validation_2026_10_31/README.md)
+for evidence, remaining uncertainty and the proposed owner decision.
 
 ## Family 2 block 3 — records and depth (2026-10-31)
 

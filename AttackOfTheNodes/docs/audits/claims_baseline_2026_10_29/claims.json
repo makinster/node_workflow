@@ -94,7 +94,7 @@
     "tests/test_helper_family_admission.py": "92bafcea84b599679baa14638891cd7929589b829655a5940eb2a2b88ce213bb",
     "tests/test_helper_family_followup.py": "349f134e2569239c97c0bcd494a16748942e0a109644fdacd3b798e7a084a95c",
     "tests/test_merge_arrival_runtime.py": "6ef32f956034ee51f5c3e14e445b9d731f657d23cc0bc2c60292230600adb871",
-    "tests/test_merge_plan_integration.py": "0f4c76eab72206e300f488275d34c903ac3af25d4bc54344f858160e8fd35446",
+    "tests/test_merge_plan_integration.py": "4e306ec5c09af015f4c29b67891051afebeec11c5da5d000dc06a1ddc492e202",
     "tests/test_node_claims.py": "604ec0c698e9c1437f668fa098491c0b8df9027374b8839008e048a8c14fb48b",
     "tests/test_node_metadata_behavior.py": "e2b58bd0c0c66b603f0226fc688ca1dcdcfcb2981da5294fb3c741d22dda87e5",
     "tools/claims_compatibility.py": "7dc67f171fb1155bfbec8afcd8b1d0ff10a7e5adadf731f12b01d6cf9755246a",

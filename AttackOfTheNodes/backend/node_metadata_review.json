@@ -75,7 +75,7 @@
         "backend/flow_behaviors.py": "6bfad33b53fadf04de7bbf3b0cf8746ab62c76087e783058fcb55652ec89f39e",
         "backend/validator.py": "4a2cdd6e083fc8359d92f302e50cd458b05359c6d30bd836d59ae69d1108e66a",
         "backend/validation_codes.py": "5c6267fd9d7f555850564049fc4921451d60276f73427870cf21a6fa7a6f0443",
-        "frontend/screens/editor.py": "dcc7a805c951d4736cc984f22acf5eaec50f6f0b924e428418d696ff66955fab",
+        "frontend/screens/editor.py": "f446b760eced02b940e82a5601ea94c165b76e71be869949d5538370a23b9107",
         "frontend/screens/node_config.py": "acd56e2f8ec77c760470caa888e70b400c679fbd3912c84e48e67ab4fb09d0ec",
         "frontend/editor_workflow_adapter.py": "6775160e893937096ab7c4d50b84912a96d6041bd02a153704190ff196a1e21e"
       },
@@ -94,8 +94,8 @@
       "content_sha256": "99072bc39d7c0cda5cf3fbd56bd79f25dd7074fe9989a806af95a7e299fe6619",
       "author": "metadata-batch1-author-session",
       "reviewed": "2026-10-31",
-      "source_revision": "58a22999f38ba03cca443fd4aff980d749ce838d",
-      "verifier": "family-two-source-runtime-recheck"
+      "source_revision": "821688d461f17166d78ded5dd3fc182b708b929e",
+      "verifier": "app-run-validation-source-recheck"
     },
     "branch_node": {
       "sources": {
@@ -496,7 +496,7 @@
         "tests/test_flow_claims.py": "cb78e3a902b498b9d55c4854c64df1dce9aacc695bbc9333dfd674c4f5bbd9e2",
         "tests/flow_claim_scenarios.py": "ceb7cf2cfe9acb7ada577b4ecef00d687c75a8adf1143b53c693991b131c1d7f",
         "tests/flow_engine_scenarios.py": "c0edde92649c44fe54b99f2efd8941eb2468d52fc8198fb53f7a86b1b01e1118",
-        "tests/test_flow_startup_refusals.py": "3807167af073974851ef1d09774ae32e2cc496e69c3bced8bea865036d58e454"
+        "tests/test_flow_startup_refusals.py": "2eddf3dfb2938773e747f7a7d8cd5f057843e37aeb58a0a4907771d50d44565e"
       },
       "tests": [
         "tests/test_flow_startup_refusals.py::test_app_style_start_refuses_flow_error_without_a_run",
@@ -510,9 +510,9 @@
       ],
       "content_sha256": "e81c833ac2facb056ccae9c08343d1d0a7487a7372420524cf19b74891ec609c",
       "author": "family-two-record-author",
-      "verifier": "family-two-source-runtime-recheck",
+      "verifier": "app-run-validation-source-recheck",
       "reviewed": "2026-10-31",
-      "source_revision": "58a22999f38ba03cca443fd4aff980d749ce838d"
+      "source_revision": "821688d461f17166d78ded5dd3fc182b708b929e"
     },
     "wait_until_node": {
       "sources": {
@@ -532,7 +532,7 @@
         "tests/test_flow_claims.py": "cb78e3a902b498b9d55c4854c64df1dce9aacc695bbc9333dfd674c4f5bbd9e2",
         "tests/flow_claim_scenarios.py": "ceb7cf2cfe9acb7ada577b4ecef00d687c75a8adf1143b53c693991b131c1d7f",
         "tests/flow_engine_scenarios.py": "c0edde92649c44fe54b99f2efd8941eb2468d52fc8198fb53f7a86b1b01e1118",
-        "tests/test_flow_startup_refusals.py": "3807167af073974851ef1d09774ae32e2cc496e69c3bced8bea865036d58e454"
+        "tests/test_flow_startup_refusals.py": "2eddf3dfb2938773e747f7a7d8cd5f057843e37aeb58a0a4907771d50d44565e"
       },
       "tests": [
         "tests/test_flow_startup_refusals.py::test_app_style_start_refuses_flow_error_without_a_run",
@@ -546,9 +546,9 @@
       ],
       "content_sha256": "e5c7039125ef2eed59ca340257c5399e26817768421f67bf25003087b10f1b7a",
       "author": "family-two-record-author",
-      "verifier": "family-two-source-runtime-recheck",
+      "verifier": "app-run-validation-source-recheck",
       "reviewed": "2026-10-31",
-      "source_revision": "58a22999f38ba03cca443fd4aff980d749ce838d"
+      "source_revision": "821688d461f17166d78ded5dd3fc182b708b929e"
     }
   }
 }

@@ -150,8 +150,10 @@ node data in its config so that:
 **Boundary rules for tombstone:**
 
 - `tombstone_node` is execution-blocked. The validator must always flag it as
-  an error. `MasterState` / `Supervisor` must refuse to run a workflow
-  containing tombstones (this is already enforced).
+  an error. App Run and clients that validate reject the workflow before a run.
+  Raw `MasterState.start_workflow` does not perform general validation; a
+  tombstone reached by a supervisor fails execution. Callers wanting full
+  preflight must use the shared validator, as App Run now does.
 - The backend may register this type because it is part of the portable
   save-file format, not Textual-specific behavior. A CLI runner or API frontend
   consuming save files encounters the same tombstone records and can handle

@@ -28,6 +28,7 @@ from backend.events import (
     WORKFLOW_STATE_UPDATE,
 )
 from backend.workflow_names import DEFAULT_NAME, name_problem, unused_name
+from backend.validator import validate_workflow
 
 from .child_runs import ChildRuns
 from .execution_state import ExecutionDisplayState
@@ -425,6 +426,18 @@ class AttackOfTheNodesApp(KeymapScreenMixin, TextualApp):
         """Start workflow execution and show the execution screen."""
         if self.workflow_state in {"RUNNING", "PAUSED", "WAITING_FOR_INPUT"}:
             notifications.workflow_already_running(self)
+            return
+        self._materialize_editor_deleted_nodes()
+        result = validate_workflow(
+            self.workflow_map, self.factory, secrets_manager=self.secrets_manager,
+        )
+        if result["errors"]:
+            if isinstance(self.screen, EditorScreen):
+                self.screen.show_validation_result(result)
+            else:
+                editor = self._build_editor_screen()
+                self.switch_screen(editor)
+                self.call_after_refresh(editor.show_validation_result, result)
             return
         self.action_save_workflow()
         self._reset_run_display_state()
