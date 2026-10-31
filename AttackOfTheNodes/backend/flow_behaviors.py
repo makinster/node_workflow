@@ -370,9 +370,11 @@ def analyze_flow(all_nodes: Mapping[str, dict], factory=None, *, draft: bool = F
                                  "producers": [asdict(a) for a in arrivals],
                                  "presence": "possible_missing", "omit_if_no_present_values": True,
                                  "order": "structural_path_lineage", "index_labels_certified": False}
+        shallowest_lineages = set()
         if merge.arrivals and merge.shape_status == "proved":
             depth = min(a.depth for a in merge.arrivals)
             merge.continuation_candidates = list(dict.fromkeys(a.path_name for a in merge.arrivals if a.depth == depth))
+            shallowest_lineages = {a.lineage for a in merge.arrivals if a.depth == depth}
         # A route on a required path must lead to the Merge in every alternative.
         for nid, profile in profiles.items():
             if nid == mid or not (nid in merge.group_roots or any(root in merge.group_roots for root, _, _ in contexts[nid])):
@@ -412,7 +414,7 @@ def analyze_flow(all_nodes: Mapping[str, dict], factory=None, *, draft: bool = F
             parts.append(f'{h["parent"]} hands off to {" and ".join(h["children"])}.')
         if merge.shape_status == "needs_review":
             parts.append("Continuation and output shape need review.")
-        elif len(merge.continuation_candidates) == 1:
+        elif len(shallowest_lineages) == 1:
             parts.append(f"Continues as {merge.continuation_candidates[0]}.")
         else:
             parts.append("Continues as the first arrival at the shallowest depth.")

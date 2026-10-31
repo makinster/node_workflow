@@ -357,3 +357,11 @@ def test_authoring_keeps_repair_guidance_and_path_handles():
     result = check_workflow_spec(FACTORY,spec)
     issue = next(d for d in result['diagnostics'] if d['code'] == 'impossible_wait')
     assert issue['node'] == 'wait' and issue['path'] == ['wait','wait'] and issue['repair']
+
+
+def test_duplicate_path_labels_do_not_invent_equal_depth_winner():
+    nodes = exclusive()
+    nodes['split']['config'].update(path_a_label='same',path_b_label='same')
+    merge = analyze_flow(nodes,FACTORY).merges['combine']
+    assert 'Continues as same.' not in merge.summary
+    assert 'first arrival at the shallowest depth' in merge.summary
