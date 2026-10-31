@@ -56,6 +56,33 @@ No changes to Builder 1's runtime/coordinator/node files, node picker, palette,
 drafter or trial tools. Runtime collection proof, final records and trial/admission
 integration remain the other builders' and later blocks' work.
 
+## 2026-10-30 — Collecting Merge runtime, family-2 block 1 (Important)
+
+Own worktree `/home/makin/src/nw-merge-arrivals`, branch
+`codex/merge-arrival-runtime`, base `f57f4ed`. Implemented approved revision-1
+runtime decisions 1–6 and R1 with run-scoped delivery frames, explicit graph
+slot/producer declarations, inherited groups/atomic handoff, shallowest/earliest
+election and one published completion. Missing/control-only is distinct from
+all falsy values. Failure releases join/completion waiters with no partial
+output; independent End settles a side path; user Stop stays quiet. Depth
+refusal is returned to Branch as an error before the accepted batch can launch.
+
+Removed the retired value selector from Merge and editor serialization, kept
+Beacon wiring settings and tests, and added arrival settlement to the display
+reducer so an absorbed branch's old running status cannot mask completed Merge.
+A late old-run callback cannot alter the new run. The real-engine matrix covers
+controlled nested A/B→C/D timing and host permutations, direct/Beacon joins,
+shared producers, simultaneous arrivals, failures, Stop, waits and fresh runs.
+
+The block intentionally supplies `MergePlan` facts in fixtures; block 2 must
+connect the shared graph analysis before app collecting joins are available.
+No graph analyser, validator, picker, palette or trial file changed. Rechecked
+reviewed records' runtime dependency fingerprints without changing claim text;
+refreshed baseline and claims receipt, including the Merge source-menu audit.
+[Evidence, verification and every changed existing test](audits/merge_runtime_2026_10_30/README.md).
+Full `pytest -n auto`: **4,853 passed, 187 skipped in 47.16 s**, zero xfails.
+No real API/model calls, owner workflow changes, migration or loop support.
+
 ## 2026-10-30 — PR #158 follow-up 2: layout and constraints (Important)
 
 Same branch `codex/helper-family`, following `cde189b`. Owner's paid results

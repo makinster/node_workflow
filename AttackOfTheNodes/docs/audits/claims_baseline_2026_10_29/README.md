@@ -261,3 +261,12 @@ new graph fixtures. `claims.json` was regenerated through the executable claims
 runner using its existing local doubles; the authoring fingerprint changes and
 all recorded observations remain identical. No API/model execution or owner
 workflow scan was performed. Full-suite verification is in the latest Session Log.
+
+## Collecting Merge runtime dependency recheck — 2026-10-30
+
+The baseline source hashes for Branch and Merge are refreshed from `f57f4ed`.
+Reviewed record text and admission are unchanged. The receipt now also binds
+MasterState, RunContext and the real-engine Merge arrival tests; the reviewed
+ordinary source/Vault/forwarding graphs remain required. Merge remains pending
+metadata review and drafter admission. This runtime block uses explicit
+`MergePlan` fixtures; the shared graph-analysis integration is a separate block.

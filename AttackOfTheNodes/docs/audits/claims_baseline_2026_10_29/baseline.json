@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "base_revision": "8ee108b4e3e932790c94ad90c5bc419cee5f75e2",
+  "base_revision": "f57f4ed6d646ed9f1bf733c415d98792f171369e",
   "date": "2026-10-30",
-  "scope": "source-reviewed baseline refreshed after owner decisions on count/visits ports and suppression; authoring_accepts reflects current shared capability policy",
+  "scope": "source-reviewed baseline refreshed after owner decisions on count/visits ports and suppression; authoring_accepts reflects current shared capability policy; collecting Merge runtime dependency recheck on 2026-10-30 (no admission change)",
   "registered_count": 59,
   "reviewed_count": 16,
   "nodes": [
@@ -2277,7 +2277,7 @@
       "metadata_review": "pending",
       "authorable": true,
       "source": "backend/nodes/merge_node.py",
-      "source_sha256": "5bbac88410ae2e18a13403f56004b498bb6d1271de8533953417cbaf3ad58056",
+      "source_sha256": "cb801ee86edb2cf3cc1007b620ea911543b92c4e5bf1f7455fe043c70589cbb7",
       "inputs": {
         "path_a": {
           "name": "Path A",
@@ -2946,7 +2946,7 @@
       "metadata_review": "reviewed",
       "authorable": true,
       "source": "backend/nodes/branch_node.py",
-      "source_sha256": "3a3274190e2276a30627f3a9f036ba115104cf1ce7fa65633eaa658f359981af",
+      "source_sha256": "57a6f18c2f56b7f829ed9bb283e89e93dadba63b535d92e5da8132b6ad1936ec",
       "inputs": {
         "input": {
           "name": "Input",

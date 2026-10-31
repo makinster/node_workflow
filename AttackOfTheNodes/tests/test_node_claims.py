@@ -565,6 +565,7 @@ def evidence_hashes():
         'tests/test_node_claims.py','tests/node_claim_scenarios.py','tests/test_node_metadata_behavior.py',
         'backend/node_capabilities.py','backend/authoring.py','backend/node_factory.py',
         'backend/vault_declarations.py','backend/supervisor.py','backend/memory_bank.py','backend/port_types.py',
+        'backend/master_state.py','backend/run_context.py','tests/test_merge_arrival_runtime.py',
         'backend/node_metadata.py','backend/saved_values.py','backend/meta_workflow.py',
         'backend/node_catalogue.py','backend/palette_selection.py',
         'tests/test_helper_family_admission.py','tests/test_helper_family_followup.py',

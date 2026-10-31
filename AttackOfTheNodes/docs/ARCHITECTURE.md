@@ -179,12 +179,36 @@ not an arbitrary timeout. A missing required value remains a data error.
 Targets reachable only through their own parked waiter, or through a Merge that
 also waits on that branch, can still deadlock. This is not general deadlock detection.
 
-A Merge records arrivals in its branch group, removes them from pending and
-waits for pending siblings to arrive or end. One winning arriving supervisor
-continues with one selected value (with runtime fallbacks); others terminate.
-There is no aggregation. With no group it continues immediately. Groups are
-keyed by branch-group identity, not independent barriers per merge node; do not
-assume arbitrary overlapping/nested merge layouts provide isolated joins.
+A Merge collects the values on actual fired edges, not all connected transient
+keys. Invocation-local delivery frames preserve simultaneous shared-producer
+and Beacon values without isolating the shared Vault/transient stores. Groups
+and barriers use `(run, group, pass=1)` / `(run, group, Merge, pass=1)` identities.
+Nested forks atomically hand the parent's obligation to their accepted children.
+The shallowest arrival continues; ties use first arrival. It publishes the slot
+record before the saved Merge ID completes once. Other arrivals are absorbed,
+with no node completion/failure/skip; their termination retires the display's
+running arrival. End settles a side path; terminal member failure fails the join
+once and releases waiters without partial output; user Stop cancels quietly.
+
+`MasterState.start_workflow(merge_plans=...)` accepts run-scoped declarations:
+`{merge_id: MergePlan(fork_node_id, {slot: MergeSlot("one" | "many", producers)})}`.
+Producer paths are tuples of numeric fork-port indices relative to the group's
+root fork, e.g. `(0,)`, `(1, 0)`, `(1, 1)` for A and B's C/D children. They identify
+participants as well as shape, so an independent Wait Until on Merge need not
+block the join. Empty producer tuples include every actual group member.
+A `one` slot keeps its raw value; a `many` slot always lists present values in
+structural path order, preserving nested lists. Outer slots use numeric path
+order. Missing/control-only values are omitted; null/false/zero/empty survive.
+No-group Merge passes the actual arriving value through.
+
+**Block 1 integration boundary:** declarations currently come from explicit
+graph fixtures. There is no runtime graph analyser or cardinality guess. A
+split-group Merge without a declaration fails clearly with `merge_shape_unknown`.
+Block 2 must connect its shared graph facts to this interface before ordinary
+app runs can use collecting joins. Branch depth refusal is delivered as an error
+to Branch before any child launches. All coordination state retires per run;
+old-run callbacks cannot affect a new run's completion registry.
+
 Five input slots is the default, not a fixed maximum. Frontend configuration
 chooses actual slots/Beacon edges through WorkflowMap; refresh is not a license
 to silently repair legacy graph connections.

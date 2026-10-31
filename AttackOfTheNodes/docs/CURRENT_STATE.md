@@ -42,6 +42,23 @@ records or node admission are signed. Affected existing source dependencies
 and the executable claims receipt are re-attested; independent admission review
 is still required. Verification and code/plan differences are in the Session Log.
 
+## Collecting Merge runtime, block 1 — 2026-10-30 (Important)
+
+Branch `codex/merge-arrival-runtime`, based on `f57f4ed`, implements approved
+family-2 runtime decisions 1–6 and same-slot R1. Merge collects actual deliveries
+in numeric slot/path order; nested forks hand off atomically, the shallowest
+arrival continues once, and failure/End/Stop have distinct outcomes. Beacon
+wiring helpers stay; the value selector is removed. Terminal absorption retires
+only that arrival's display status. No metadata claim or admission changed.
+
+**Integration boundary:** explicit graph fixtures pass `MergePlan` declarations
+to `start_workflow`. Block 2's shared analysis still needs to supply them for app
+runs. No cardinality is guessed: split-group Merge without a declaration reports
+`merge_shape_unknown`. No validator, graph analyser, picker, palette or trial
+code is changed. See [runtime evidence and changed tests](audits/merge_runtime_2026_10_30/README.md)
+and [runtime interface](ARCHITECTURE.md#waits-and-merges). Full suite: **4,853 passed, 187 skipped in 47.16 s**, zero xfails; no real API
+or model calls.
+
 ## First helper family — 2026-10-30 (Important)
 
 The drafter now admits Find lines, Read lines, Check reply and Context Pack:

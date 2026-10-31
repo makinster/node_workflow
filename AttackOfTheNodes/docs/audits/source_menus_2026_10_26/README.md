@@ -25,6 +25,12 @@ unchanged. No partial Answer or Vault Run details is published on errors.
 Updated only this node's runtime fingerprint; the same source/schema/form and
 mocked source-combination checks remain required.
 
+2026-10-30 collecting-Merge follow-up: re-audited Merge's execute fingerprint
+and topology-controlled inputs. Actual delivered edges now supply collected slot
+values; `input_slots` controls editor visibility. The removed value selector is
+not a standard source selector. Beacon wiring helper fields stay in the editor.
+The source/schema checks and real-engine Merge tests cover this change.
+
 ## Mismatches
 
 | Node · port | Accepts | Previously offered | Fix |

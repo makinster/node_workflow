@@ -1,0 +1,97 @@
+# Collecting Merge runtime — block 1, 2026-10-30
+
+Base `f57f4ed6d646ed9f1bf733c415d98792f171369e`, branch
+`codex/merge-arrival-runtime`. Implements the owner's approved family-2 plan
+revision 1, decisions 1–6 and same-slot R1. Review level: Important.
+
+## Evidence and integration boundary
+
+`tests/test_merge_arrival_runtime.py` runs **57 real-engine cases**. Controlled
+Events govern local node execution; no Merge coordinator callback is faked.
+The matrix covers actual two-file reads with reversed arrivals; A slow and
+B→C/D with Merge hosted on A/C/D, direct/Beacon wiring, both arrival orders;
+concurrent same-slot values, exclusive scalar routes and absent values;
+shared producer/Beacon invocations; simultaneous/tied arrivals; independent
+End; Stop; terminal and recovered errors; workflow abort; no-arrival failure;
+depth refusal; fresh joins/runs and stale callbacks; numeric slots after z;
+Wait Until on Merge; duplicate notification and contradictory shape diagnostics.
+Vault/source integration also remains covered by the updated payload-plan graph.
+
+Graph facts are supplied via the run-scoped `MergePlan` interface documented in
+[Architecture](../../ARCHITECTURE.md#waits-and-merges). This is intentionally not
+a second production analyser. Until block 2 supplies those declarations, a
+split-group Merge in an ordinary app run reports `merge_shape_unknown` instead
+of guessing scalar/list or participant membership. No-group Merge passes through.
+No validator, graph-analysis module, node picker, palette selection or trial
+file changed. No records/admission added. Reviewed metadata text is unchanged;
+only dependency hashes and evidence receipts are re-attested.
+
+## Verification
+
+Full-suite command: `python -m pytest -n auto -q` from the app directory.
+Final result: **4,853 passed, 187 skipped in 47.16 seconds**, zero xfails.
+No real API or model calls.
+The first full run exposed two stale fingerprints, a half-initialized Supervisor
+test, and an accidental failure-abort/user-Stop flag regression. All are fixed;
+the existing failure-abort display assertion was preserved.
+
+## Changed existing tests and reasons
+
+- `test_branch_merge_paths.py`: `test_an_eight_way_branch_runs_every_path_and_merges_once`
+  now supplies eight explicit scalar slot declarations. `test_a_slot_above_input_slots_is_a_hidden_input_warning`
+  and `test_editor_raises_input_slots_to_cover_connected_slots` drop the removed
+  selected-value fixture argument; validator expectations are unchanged.
+- `test_debug_nodes.py`: `test_merge_node_waits_and_forwards_selected_input` is
+  renamed `test_merge_node_waits_and_collects_arrivals`, supplies graph facts and
+  expects both path values once. `test_deep_branch_respects_depth_limit` now
+  asserts the surfaced refusal error and uses unattended branch termination;
+  depth still stops at five, but refusal is no longer silently dropped.
+- `test_debug_nodes.py` editor fixtures/expected dictionaries remove only the
+  retired value field in `test_merge_config_uses_multi_branch_selector_and_carry_forward_dropdown`,
+  `test_merge_options_include_nested_merge_beacons`,
+  `test_saving_merge_config_connects_selected_branch_end`,
+  `test_saving_merge_config_unchecked_branch_disconnects_branch_end`,
+  `test_saving_merge_config_preserves_merge_home_branch_input`, and
+  `test_deleting_merge_beacon_prunes_merge_config_selection`.
+  Their async helper functions carry these assertions; wiring stays tested.
+- `test_error_routing.py`: `test_skip_stops_at_a_merge_with_a_live_sibling` becomes
+  `test_failed_member_fails_merge_without_partial_continuation`; it supplies graph
+  facts and requires one failed Merge, no successful continuation and downstream
+  upstream-failed status, replacing the old partial pick-one result.
+- `test_execution_status.py`: `test_barriers_keep_runtime_wait_semantics_and_finish_symbols`
+  supplies graph facts for Merge, preserving its final completed UI status.
+- `test_merge_branch_identity.py`: `test_no_edit_merge_save_keeps_closure_carry_forward_and_beacon`,
+  `test_no_edit_save_keeps_unmatched_values_and_warns`, and
+  `test_unchecking_a_kept_closure_drops_it` (async helper) remove the retired value
+  field and explicitly assert it is absent; closure/carry/Beacon identity is kept.
+- `test_payload_plan_integration.py`: `test_manager_reader_writer_parallel_merge_and_end_branch`
+  supplies graph facts and asserts the complete collected record. Both projection
+  variants now explicitly show `{input[path_a]}` or `{input[path_b]}` downstream,
+  preserving all file, Vault, display and End assertions.
+- `test_payload_runtime_contracts.py`: `test_text_output_payload_is_captured_before_continuing_connected_path`
+  uses an initialized real engine instead of `object.__new__(Supervisor)` and a
+  graph stub. It verifies publication before the connected End begins.
+- `test_recovery_flow.py`: `test_merge_keeps_its_branch_after_a_mux_is_inserted_inside_the_branch`
+  removes the retired value-field fixture; its wiring assertions are unchanged.
+- `test_wait_until_reachability.py`: `test_branch_refused_by_the_depth_limit_does_not_count_as_delivered`
+  now expects Branch's typed refusal plus the dependent waiter's unreachable
+  error, while still asserting no target delivery. `test_wait_on_a_node_after_a_merge_completes`
+  supplies participant/slot declarations, excluding the independent waiter path.
+- `test_node_claims.py`: evidence hashes now also bind MasterState, RunContext and
+  the new real-engine arrival matrix. No existing claim expectation is weakened.
+  Existing source-menu/manifest tests retain their checks against refreshed hashes.
+
+## Plan versus code
+
+The plan's main descriptions of the old runtime were accurate. Details found:
+normal Branch configs with `branch_count` always launch all paths; only legacy
+configs without that field select by `condition`. This is already reviewed and
+is preserved/tested. Unwired chosen ports still skip, as the reviewed record
+specifies. No required-join escape analysis was added (block 2 owns it).
+
+Absorption needed a small display-reducer change beyond the named runtime files:
+removing completion events alone leaves a stale running visit that outranks the
+winner's done status. A termination field now retires that arrival without a
+saved-node completion/error/skip event. The minimal editor edits decouple value
+selection from the explicitly preserved wiring helpers. No owner decision was
+reopened; no runtime shape is inferred from timing.
