@@ -11,6 +11,8 @@ JOIN_ANALYSIS = (' When parallel paths must all finish before one later step use
                  'A shared End only finishes paths; it never waits for or combines them.')
 JOIN_DRAFT = (' To use parallel results together: one branch_node, each path wired to its own merge_node input '
               '(reader_a.default to join.path_a, reader_b.default to join.path_b), then join.default to the next step. '
+              'For more than two paths set branch_count on the branch_node: 3 gives path_a, path_b and path_c, and so on up to 64. '
+              'Merge has inputs path_a to path_e unless input_slots raises it. '
               'Merge passes on one record keyed by input name, so that step reads {{input[path_a]}} and {{input[path_b]}}. '
               'Drafts allow one split and one Merge: no split inside a path, no two paths into one Merge input, '
               'no Merge without a split, no path ending before the Merge. '
